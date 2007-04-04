@@ -1,0 +1,405 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+#   Copyright 2007 Platform Computing Corporation
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+#
+#
+
+# This can be run by Apache, so be careful about paths!
+# NOTE:  Do not use mod_python.  See:
+#   http://www.modpython.org/FAQ/faqw.py?req=show&file=faq02.013.htp
+# for why not.
+
+import os
+import sys
+import string
+import cgi
+import time
+
+sys.path.append("/opt/ocs/bin:/opt/ocs/lib")
+
+from optparse import OptionParser
+from ocs.ocsapp import OCSapp
+from ocs.ocsdb import OCSDB
+
+
+class NodeInfo:
+    """This class will provide the functions for getting the Node Installation
+    Information, and for setting the database fields for a node """
+
+    def __init__(self, user='nobody'):
+        """__init__ - initializer for the class"""
+        self.db = OCSDB()
+        self.db.connect('ocsdb', user)
+
+        
+    def getNIInfo(self, nodename):
+        """getNII - Generates the Node Installation Information for a given
+        node."""
+        if not nodename:
+            return
+
+        # Create the nodeinfo line
+        query = ('select repos.installers, repos.repository, repos.ostype, '
+                 'nodegroups.ngid, nodegroups.installtype, nodes.nid from nodes, '
+                 'nodegroups, repos where nodes.ngid=nodegroups.ngid and '
+                 'nodegroups.repoid=repos.repoid and nodes.name="%s"' % nodename)
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            # Return 500
+            sys.exit(-1)
+        if not data:
+            # Need to trigger a 500 error
+            sys.exit(-1)
+        installer, repo, os, ngid, type, nid = data
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os, type, ngid)
+
+        # NICinfo section
+        query = ('select nics.ip, nics.dhcp, networks.network, '
+                 'networks.subnet, networks.device, networks.suffix, '
+                 'networks.gateway, networks.options '
+                 'from nics,networks where networks.netid=nics.netid '
+                 'and nics.nid="%i"' % nid)
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again"
+            sys.exit(-1)
+        if not data:
+            # Need to trigger a 500 error
+            print "Oops!"
+            sys.exit(-1)
+        for row in data:
+            ip, dhcp, network, subnet, dev, suffix, gw, opt = row
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s">' % (dev, ip, subnet, network, suffix, gw, dhcp, opt)
+
+        # Partition Info
+        query = ('select partition, mntpnt, fstype, size, options, preserve '
+                 'from partitions where ngid="%i"' % ngid )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again 3"
+            sys.exit(-1)
+        if data:
+            for row in data:
+                partition, mntpnt, fstype, size, options, preserve = row
+                print '    <partition device="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s">' % (partition, mntpnt, fstype, size, options, preserve)
+
+        # Component Info
+        query = ('select components.cname from components, ng_has_comp '
+                 'where components.cid=ng_has_comp.cid and '
+                 'ng_has_comp.ngid="%i"' % ngid )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again 3"
+            sys.exit(-1)
+        if data:
+            for row in data:
+                cname = row[0]
+                print '    <component name="%s">' % cname
+
+        # Optional packages
+        query = ('select packagename from packages '
+                 'where ngid="%i"' % ngid )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again 4"
+            sys.exit(-1)
+        if data:
+            for row in data:
+                pack = row[0]
+                print '    <optpackage name="%s">' % pack
+
+        # Optional scripts
+        query = ('select script from scripts '
+                 'where ngid="%i"' % ngid )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again 5"
+            sys.exit(-1)
+        if data:
+            for row in data:
+                script = row[0]
+                print '    <optscript name="%s">' % script
+
+        # Appglobals 
+        query = ('select kname, kvalue from appglobals where '
+                 'ngid is NULL or ngid="%i"' % ngid )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            # Return 500
+            print "Oops! again 6"
+            sys.exit(-1)
+        if data:
+            for row in data:
+                kname, kvalue = row
+                print '    <appglobals name="%s" value="%s">' % (kname, kvalue)
+
+        print '</nodeinfo>'
+
+
+
+    def getCFMfile(self):
+        """getCFMfile - Displays the contents of the Cluster File Management (CFM)
+        change file."""
+        cfmdir = self.db.getAppglobals('CFMBaseDir')
+        if not cfmdir:
+            return
+        cfmfile = os.path.join(cfmdir, 'changedfiles.lst')
+        if os.path.exists(cfmfile):
+            fp = file(cfmfile, 'r')
+            while True:
+                line = fp.readline()
+                if len(line) == 0:
+                    break
+                sys.stdout.write(line)
+            print ''
+
+
+    def getNodeName(self, nodename='', nodeip=''):
+        """getNodeName - returns the name of the node given the IP, or name."""
+        if nodename:
+            return nodename
+
+        if not nodeip:
+            return
+        
+        query = ('select nodes.name from nodes,nics where '
+                 'nodes.nid = nics.nid and nics.ip = "%s"' % nodeip)
+        try:
+            self.db.execute(query)
+
+        except:
+            # Return 500
+            sys.exit(-1)
+
+        data = self.db.fetchone()
+        if not data:
+            # Need to trigger a 404 error
+            # FIX ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            print "Cannot find host for IP: %s" % nodeip
+
+        return data[0]
+
+        
+    def setNodeInfo(self, nodename, state, bootfrom, timestamp):
+        """setState - Set the nodes state in the database.  One method is
+        used to reduce the DB calls."""
+        if not state and bootfrom == -1 and not timestamp:
+            return
+
+        cmdstr = 'update nodes set'
+        if state:
+            cmdstr = cmdstr + ' state="%s",' % state
+        if bootfrom != -1:
+            cmdstr = cmdstr + ' bootfrom=%i,' % bootfrom
+        if timestamp:
+            cmdstr = cmdstr + ' lastupdate="%s",' % timestamp
+        query = cmdstr[:-1] + ' where name="%s"' % nodename
+
+        try:
+            self.db.execute(query)
+
+        except:
+            # Return 500 (hopefully)
+            print "Query problem:  %s" % query
+            sys.exit(-1)
+                 
+
+    def regenPXE(self, nodename):
+        """regenPXE - Calls the boothost tool to cause the PXE file to be
+        regenerated.
+        NOTE:  This forces the database connection to close! """
+        self.db.disconnect()
+        os.system('/opt/ocs/bin/boothost.py -n %s' % nodename)
+
+
+
+class NodeBootApp(OCSapp):
+
+    def __init__(self):
+        OCSapp.__init__(self)
+
+
+    def toolVersion(self):
+        """toolVersion - provide a version screen for this tool."""
+        global version
+        self.errorMessage("Version %s\n", version)
+        sys.exit(0)
+
+
+    def parseargs(self):
+        """parseargs - Parse the command line arguments and populate the
+        class variables"""
+        
+        self.parser.add_option("-v", "--version", action="store",
+                               type="string", dest="getversion")
+        self.parser.add_option("-d", "--displaynii", action="store_true",
+                               dest="getnii", default=False)
+        self.parser.add_option("-f", "--displaycfm", action="store_true",
+                               dest="getcfm", default=False)
+        self.parser.add_option("-i", "--nodeip", action="store",
+                               type="string", dest="nodeip")
+        self.parser.add_option("-n", "--nodename", action="store",
+                               type="string", dest="nodename")
+        self.parser.add_option("-s", "--state", action="store",
+                               type="string", dest="nodestate")
+        self.parser.add_option("-b", "--bootfrom", action="store",
+                               type="string", dest="bootfrom")
+
+        (self.options, self.args) = self.parser.parse_args(sys.argv)
+
+            
+
+    def run(self):
+        """run - Run the application"""
+        self.parseargs()
+        node        = ''
+        ip          = ''
+        dumpnii     = 0
+        dumpcfm     = 0
+        state       = ''
+        bootfrom    = -1        # -1 means unchanged, 0=network, 1=disk
+        updatepxe   = 0
+        timestamp   = ''        # The timestamp to go in the nodes table
+        runascgi    = 0         # Flag to indicate this is running as a CGI 
+        
+        # Test to see if we are running as a CGI
+        if os.environ.has_key('REMOTE_ADDR'):
+            runascgi = 1
+            
+            # Prepare the CGI class
+            self.cgi = cgi.FieldStorage()
+            
+            if os.environ.has_key('REMOTE_HOST'):
+                node = os.environ['REMOTE_HOST']
+            else:
+                ip = os.environ['REMOTE_ADDR']
+
+            if self.cgi.has_key('dump'):
+                if self.cgi['dump'].value[0] == '1':
+                    dumpnii = 1
+
+            if self.cgi.has_key('getindex'):
+                if self.cgi['getindex'].value[0] == '1':
+                    dumpcfm = 1
+
+            if self.cgi.has_key('state'):
+                if self.cgi['state'].value:
+                    state = self.cgi['state'].value[:19]
+
+            if self.cgi.has_key('boot'):
+                if self.cgi['boot'].value[0] == 'd':
+                    bootfrom = 1
+                else:
+                    bootfrom = 0
+
+        else:
+            # Not running as a CGI
+            if self.options.getversion:
+                self.errorMessage("Version %s\n", self.version)
+                sys.exit(0)
+            else:
+                # We need the nodes name for any of the following operations
+                if self.options.nodename:
+                    node = self.options.nodename
+                else:
+                    if self.options.nodeip:
+                        ip = self.options.nodeip
+                    else:
+                        errorMessage('nodeboot_no_hostname_or_ip')
+                        sys.exit(-1)
+
+                if self.options.getnii:
+                    dumpnii = 1
+                if self.options.getcfm:
+                    dumpcfm = 1
+                if self.options.nodestate:
+                    state = self.options.nodestate[:19]
+                if self.options.bootfrom:
+                    if self.options.bootfrom == 'disk':
+                        bootfrom = 1
+                    else:
+                        bootfrom = 0
+                    
+
+        # The data should now be ready to call the methods
+        if runascgi:
+            print 'Content-type: text/html\n\n'
+
+
+        sys.stderr.write('ERROR:  Danger Will Robinson')
+        print "Got Here 1"
+        if self.cgi.has_key('dump'):
+            print "Dump NII: %s <p>" % dumpnii
+        print "State: %s <p>" % state
+        print "Dump CFM: %s <p>" % dumpcfm
+            
+        
+        # Test to see if we need write access to the database and connect 
+        if bootfrom or state:
+            nodefun = NodeInfo('apache')
+            updatepxe = 1
+        else:
+            nodefun = NodeInfo()
+
+        if not node:
+            node = nodefun.getNodeName('', ip)
+
+        print "Got Here 3, node = %s" % node
+        
+        if dumpnii:
+            nodefun.getNIInfo(node)
+
+        if dumpcfm:
+            nodefun.getCFMfile()
+            ltime = time.localtime(time.time())
+            timestamp = "%s/%s/%s %s:%s:%s" % (ltime[0], ltime[1],
+                                               ltime[2], ltime[3],
+                                               ltime[4], ltime[5]) 
+        # Update State, bootfrom, and timestamp  (Methods check validity)
+        nodefun.setNodeInfo(node, state, bootfrom, timestamp)
+        
+        # Update PXE file if needed
+        if updatepxe:
+            nodefun.regenPXE(node)
+
+        print "Got Here 7"
+
+        
+        
+if __name__ == '__main__':
+    app = NodeBootApp()
+    app.run()
+    sys.exit(0)
