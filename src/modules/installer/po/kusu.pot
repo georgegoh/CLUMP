@@ -1,0 +1,41 @@
+# Strings for the Kusu Installer.
+# Copyright (C) 2006 George Goh
+# This file is distributed under the same license as the KI package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: kusu 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-12 17:26+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: kusu_installer.py:108
+msgid "Prev"
+msgstr ""
+
+#: kusu_installer.py:113
+msgid "Next"
+msgstr ""
+
+#: kusu_installer.py:115
+msgid "Finish"
+msgstr ""
+
+#: kusu_installer.py:145
+msgid "Validation Failed"
+msgstr ""
+
+#: kusu_installer.py:146
+msgid "Ok"
+msgstr ""
+
+#: kusu_installer.py:167
+msgid "This is the help statement"
+msgstr ""
