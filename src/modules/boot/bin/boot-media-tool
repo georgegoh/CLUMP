@@ -4,133 +4,89 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
+#
 
 import sys
 import os
-import optparse
-import textwrap
-from kusu.ext.path import path
-from kusu.boot.distro import *
+from kusu.app import KusuApp
+from kusu.boot.distro import GeneralInstallSrc
+from kusu.boot.distro import CopyError
 from kusu.boot.image import *
 
-def getActionUsage(actionmap):
-    """ Properly formats the usage string as per optparse HelpFormatter. 
-        Code snippet is from Django codebase: 
-        http://code.djangoproject.com/browser/django/trunk/django/core/management.py.
-    """
 
-    usage = ["%prog action [options]\nactions:"]
-    
-    actions = actionmap.keys()
-    actions.sort()
-    
-    for action in actions:
-        func = actionmap[action]
+class BootMediaTool:
+    """ The management class for boot-media-tool operations. """
         
-        usage.append("  %s %s" % (action, func.args))
-        usage.extend(textwrap.wrap(getattr(func, 'help_doc', 
-            textwrap.dedent(func.__doc__.strip())), 
-            initial_indent='    ', subsequent_indent='    '))
-        usage.append("")
+    def initSrc(self,srcPath):
+        self.installsrc = GeneralInstallSrc(srcPath)
         
-    return '\n'.join(usage[:-1])
-
-class KusuOptionParser(optparse.OptionParser):
-    def printHelpAndExit(self):
-        self.print_help()
-        sys.exit(0)
-
-class App(object):
-    """ Base application class
-    """
-    
-    def __init__(self):
+    def checkValidSrcPath(self):
+        """ Verify if the srcPath is valid. """
+        return self.installsrc.verifySrcPath()
         
-        self.actionmap = {
-            'query':self.query,
-            'extract':self.extract
-        }
-        self.parser = KusuOptionParser(usage=getActionUsage(self.actionmap))
-
-    def query(self, installSrc):
-        """ Queries the path for valid installation sources. """
+    def getDistro(self):
+        """ Returns the OS type. """
+        return self.installsrc.ostype
         
-        if not path(installSrc).exists(): self.parser.printHelpAndExit()
+    def queryKernelPath(self):
+        """ Query the srcPath and returns the path of the kernel. """
+        return self.installsrc.getKernelPath()
         
-        installObj = GeneralInstallSrc(path(installSrc))
+    def queryInitrdPath(self):
+        """ Query the srcPath and returns the path of the initrd. """
+        return self.installsrc.getInitrdPath()
         
-        if not installObj.verifySrcPath():
-            self.parser.print_help()
-            print '\nInvalid installation source!'
-            sys.exit(-1)
+    def copyKernel(self,dest):
+        """ Extract the kernel from the srcPath to the dest. """
+        try:
+            self.installsrc.copyKernel(dest)
+            return True
+        except CopyError:
+            return False
             
-        print 'OS Type:', installObj.ostype
-        print 'Kernel image:', installObj.getKernelPath()
-        print 'Initrd image:', installObj.getInitrdPath()
-    
-    query.help_doc = "Queries the path for valid installation sources."
-    query.args = "installsrc"
-
-    def extract(self, installSrc, imgtype, dest=path.getcwd()):
-        """ Extract the kernel/initrd images from the installation source. """
-        
-        if not path(installSrc).exists(): self.parser.printHelpAndExit()
-        
-        installObj = GeneralInstallSrc(path(installSrc))
-        
-        if not installObj.verifySrcPath():
-            self.parser.print_help()
-            print '\nInvalid installation source!'
-            sys.exit(-1)
+    def copyInitrd(self,dest):
+        """ Extract the initrd from the srcPath to the dest. """
+        try:
+            self.installsrc.copyInitrd(dest)
+            return True
+        except CopyError:
+            return False
             
-        if imgtype == 'kernel':
-            print 'Extracting', installObj.getKernelPath(), 'to', dest
-            installObj.copyKernel(dest)
-        elif imgtype == 'initrd':
-            print 'Extracting', installObj.getInitrdPath(), 'to', dest
-            installObj.copyInitrd(dest)
-        elif imgtype == 'all':
-                print 'Extracting', installObj.getKernelPath(), 'to', dest
-                installObj.copyKernel(dest)
-                print 'Extracting', installObj.getInitrdPath(), 'to', dest
-                installObj.copyInitrd(dest)
-  
-    extract.help_doc = "Extract the kernel/initrd images from the installation source."
-    extract.args = "installsrc [kernel|initrd|all] destpath"
+    def packRootImg(self, dirname, rootimgpath, initscript=None):
+        """ Converts the rootfs directory into a initramfs image. """
+        try:
+            packInitramFS(dirname, rootimgpath, initscript)
+            return True
+        except FilePathError:
+            return False
+            
+    def unpackRootImg(self, rootimgpath, dirname):
+        """ Unpack a root image into a rootfs directory. """
+        try:
+            unpack(rootimgpath, dirname)
+            return True
+        except (FilePathError,NotPriviledgedUser):
+            return False
+            
+        
+class BootMediaApp(KusuApp):
+    """ Application class for boot-media-tool. """
+    
+    def __init__(self, bminst):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+        self.bminst = bminst
+        
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+        self.options, self.args = self.parser.parse_args()
         
     def run(self):
-        """ Main runner method.
-        """
+        """ Main launcher. """
+        self.parseargs()
         
-        self.opts, self.args = self.parser.parse_args()
-        
-        if len(self.args) < 1: 
-            self.parser.printHelpAndExit()
-        
-        action = self.args[0]
-        
-        if action == 'query':
-            if len(self.args) <> 2:
-                self.parser.printHelpAndExit()
-                
-            installSrc = self.args[1]
-            self.query(installSrc)
-            
-        elif action == 'extract':
-            if len(self.args) < 3:
-                self.parser.printHelpAndExit()
-                
-            installSrc = self.args[1]
-            imgtype = self.args[2]
-
-            if imgtype not in ['kernel','initrd','all']:
-                self.parser.printHelpAndExit()
-                
-            self.extract(installSrc,imgtype)            
-            
-            
-        
-        
-if  __name__ == '__main__':
-    app = App()
+if __name__ == '__main__':
+    bminst = BootMediaTool()
+    app = BootMediaApp(bminst)
     app.run()
+
