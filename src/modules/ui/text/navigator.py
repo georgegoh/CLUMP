@@ -48,9 +48,18 @@ class Navigator(object):
        The Navigator class takes a screenFactory object, and displays the
        screens in the order described in the screenFactory.
 
+       Hidden attribute - currentScreen
     """
     mainScreen = None
     sidebarWidth = 22
+    currentStep = 0
+    timerActivated = False
+
+    def __getattr__(self, name):
+        if name == 'currentScreen':
+            return self.screens[self.currentStep]
+        raise AttributeError, "%s instance has no attribute '%s'" % \
+                              (self.__class__, name)
 
     def popupStatus(self, title, msg, timeout):
         """ Show a status dialog that disappears after a timeout."""

@@ -20,7 +20,7 @@ NAV_FORWARD = 0
 NAV_BACK = 1
 NAV_QUIT = 2
 
-class BaseScreen:
+class BaseScreen(object):
     """Abstract base class for screens.
     
     This class is an abstract base class for other Screen classes to inherit.
@@ -36,6 +36,7 @@ class BaseScreen:
     backButtonDisabled = False
     isCommitment = False # if true, then this will be the point of no return.
     database = None
+    kusuApp = None
     screen = None
 
     def setCallbacks(self): # abstract
@@ -80,8 +81,9 @@ class BaseScreen:
         
         """
 
-    def __init__(self, database, gridWidth=45):
+    def __init__(self, database, kusuApp=None, gridWidth=45):
         self.database = database
+        self.kusuApp = kusuApp
         self.gridWidth = gridWidth
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
@@ -111,7 +113,7 @@ class BaseScreen:
             False if callback was not handled.
         """
 
-class ScreenFactory:
+class ScreenFactory(object):
     """Contains a number of screens used/navigated by the KusuInstaller class.
     
     The ScreenFactory is a base class for passing on to the 
