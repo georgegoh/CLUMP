@@ -160,3 +160,24 @@ msgstr "WARNING:  The base kit is not installed\n"
 msgid "Compressing Image.  This will take some time.  Please wait\n"
 msgstr "Compressing Image.  This will take some time.  Please wait\n"
 
+# Kitops intl messages
+msgid "kitops_Help"
+msgstr "KUSU kitops - kit operations tool"
+
+msgid "kitops_usage_add"
+msgstr "add the specified kit"
+
+msgid "kitops_usage_media"
+msgstr "specify the media iso or mountpoint for the kit"
+
+msgid "kitops_usage_list"
+msgstr "list all the kits available on the system"
+
+msgid "kitops_usage_upgrade"
+msgstr "upgrade the specified kit"
+
+msgid "kitops_usage_remove"
+msgstr "remove the specified kit"
+
+msgid "kitops: Exactly one kit operation expected\n"
+msgstr "kitops: Exactly one kit operation expected. Choose from add,remmove,upgrade,list\n"
