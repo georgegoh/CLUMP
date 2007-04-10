@@ -126,6 +126,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         """
         self.database.put(self.name, 'partition', 'tool')
         self.disk_profile.commit()
+        self.kusuApp['DiskProfile'] = self.disk_profile
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:

@@ -307,6 +307,16 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
 
+    def formatDisks(self):
+        for disk in self.disk_dict.itervalues():
+            for partition in disk.partitions_dict.itervalues:
+                if partition.type == 'ext2':
+                    commands.getoutput('mkfs.ext2 %s' % partition.path)
+                elif partition.type == 'ext3':
+                    commands.getoutput('mkfs.ext3 %s' % partition.path)
+                elif partition.type == 'swap':
+                    commands.getoutput('mkswap %s' % partition.path)
+        
 class Disk(object):
     """Disk class represents a physical disk in the system.
        Attributes:
@@ -356,7 +366,8 @@ class Disk(object):
         if name in self.__getattr_dict.keys():
             return eval(self.__getattr_dict[name])
         else:
-            raise AttributeError, "Disk instance has no attribute '%s'" % name
+            raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (__class__, name)
 
     def __appendToPartitionDict(self, pedPartition, mountpoint=None):
         new_partition = Partition(self, pedPartition, mountpoint)

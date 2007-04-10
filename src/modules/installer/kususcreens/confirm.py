@@ -93,3 +93,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         self.database.close()
+        disk_profile = self.kusuApp['DiskProfile']
+        self.formatDisk(self.disk_profile)
+
+    def formatDisk(self, disk_profile):
+        pass

@@ -39,6 +39,7 @@ class ScreenImpl(BaseScreen):
                                                  width=self.gridWidth),
                                  col=0, row=0)
 
+runtimeDict = {}
 
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the 
@@ -47,14 +48,14 @@ class ScreenFactoryImpl(ScreenFactory):
     """
     name = 'installer'
     currypot = SQLiteCurrypot()
-    ScreenFactory.screens = [WelcomeScreen(currypot),
-                             LanguageSelectionScreen(currypot),
-                             KeyboardSelectionScreen(currypot),
-                             ClusterInfoScreen(currypot),
-                             RootPasswordScreen(currypot),
-                             PartitionScreen(currypot),
-                             GatewayDNSSetupScreen(currypot),
-                             TZSelectionScreen(currypot),
-                             ConfirmScreen(currypot)
+    ScreenFactory.screens = [WelcomeScreen(currypot, kusuApp=runtimeDict),
+                             LanguageSelectionScreen(currypot, kusuApp=runtimeDict),
+                             KeyboardSelectionScreen(currypot, kusuApp=runtimeDict),
+                             ClusterInfoScreen(currypot, kusuApp=runtimeDict),
+                             RootPasswordScreen(currypot, kusuApp=runtimeDict),
+                             PartitionScreen(currypot, kusuApp=runtimeDict),
+                             GatewayDNSSetupScreen(currypot, kusuApp=runtimeDict),
+                             TZSelectionScreen(currypot, kusuApp=runtimeDict),
+                             ConfirmScreen(currypot, kusuApp=runtimeDict)
                             ]
 
