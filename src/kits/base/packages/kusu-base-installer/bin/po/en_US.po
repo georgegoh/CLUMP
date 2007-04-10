@@ -181,3 +181,29 @@ msgstr "remove the specified kit"
 
 msgid "kitops: Exactly one kit operation expected\n"
 msgstr "kitops: Exactly one kit operation expected. Choose from add,remmove,upgrade,list\n"
+
+# Buildinitrd specific messages
+msgid "WARNING: Unable to use System.map to verify module symbols\n"
+msgstr "WARNING: Unable to use System.map to verify module symbols\n"
+
+msgid "WARNING: Unable to locate module(s): %s\n"
+msgstr "WARNING: Unable to locate module(s): %s\n"
+
+msgid "Patching in modules:\n"
+msgstr "Patching in modules:\n"
+
+msgid "ERROR: Unknown kernel package type: %s"
+msgstr "ERROR: Unknown kernel package type: %s"
+
+msgid "Extracting modules\n"
+msgstr "Extracting modules\n"
+
+msgid "ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
+msgstr "ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
+
+msgid "Extracting template Initial Ram Disk\n"
+msgstr "Extracting template Initial Ram Disk\n"
+
+msgid "buildinitrd_Help"
+msgstr "buildimage [-h|-v| -n node_group {-i image_name} {-t type}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image."
+
