@@ -68,6 +68,31 @@ class BootMediaTool:
         except (FilePathError,NotPriviledgedUser):
             return False
             
+    def mkISOLinuxDir(self, isolinuxdir, kernelpath, initrdpath, ostype, isolinuxbin):
+        """ Creates isolinux directory. """
+        try:
+            obj = OperatingEnvironment(kernelpath,initrdpath,ostype)
+            makeISOLinuxDir(obj, isolinuxdir, isolinuxbin)
+            return True
+        except FilePathError:
+            return False
+            
+    def mkBootISO(self, isolinuxdir, isoname, volname="BootKit"):
+        """ Creates ISO based on the isolinux directory. """
+        try:
+            makeBootISO(isolinuxdir, isoname, volname="BootKit")
+            return True
+        except FilePathError:
+            return False
+            
+    def mkBootArchive(self, isolinuxdir, archive):
+        """ Creates a BootArchive based on the isolinux directory. """
+        try:
+            makeBootArchive(isolinuxdir, archive)
+            return True
+        except FilePathError:
+            return False
+        
         
 class BootMediaApp(KusuApp):
     """ Application class for boot-media-tool. """
@@ -75,18 +100,81 @@ class BootMediaApp(KusuApp):
     def __init__(self, bminst):
         """ App-specific initialization. """
         KusuApp.__init__(self)
-        self.bminst = bminst
         
+        self.commands = {'query':['source'], 
+            'extract':['source','image'], 
+            'unpack':['initrd','dir'], 
+            'pack':['dir','initramfs','template'], 
+            'make':['dir','os',
+                    'kernel','initrd',
+                    'isolinuxbin','bootarchive']}
+                
+        self.bminst = bminst
+        self.usagestr = self._('boot-media-tool_Help')
+        self.parser.set_usage(self.usagestr)
+        
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        self.stdoutMessage(self.usagestr)
+        sys.exit(0)
+        
+        
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+        
+        li = []
+        d = {}
+        
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+        
+        return d
+
     def parseargs(self):
         """ App-specific arguments goes here. """
+        
         self.options, self.args = self.parser.parse_args()
+        
+        
+        if len(self.args) < 2:
+            self.printUsageExit()
+            
+        # check if the first parsed argument is a supported command
+        command = self.args[0]
+        
+        
+        if command not in self.commands.keys():
+            self.printUsageExit()
+        d = self.handleArgPairs(self.args[1:])
+        
+        if not d:
+            self.printUsageExit()
+            
+        # iterate keys in d and validate against the commands'
+        # list of keys
+        for k in d.keys():
+            if k not in self.commands[command]:
+                self.printUsageExit()
         
     def run(self):
         """ Main launcher. """
         self.parseargs()
         
+        if self.args:
+            print 'commands used:', self.args
+        
 if __name__ == '__main__':
     bminst = BootMediaTool()
     app = BootMediaApp(bminst)
     app.run()
+
 
