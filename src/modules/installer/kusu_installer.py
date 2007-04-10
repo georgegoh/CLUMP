@@ -37,4 +37,4 @@ class KusuInstaller(navigator.Navigator):
             import sys
             sys.exit(1)
 
-        navigator.Navigator.__init__(self, screenFactory, screenTitle)
+        navigator.Navigator.__init__(self, screenFactory, screenTitle, showTrail)
