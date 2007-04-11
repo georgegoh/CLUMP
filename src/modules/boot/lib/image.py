@@ -7,7 +7,7 @@
 
 """This module handles operations relating to booting up nodes."""
 
-from kusu.ext.path import path
+from kusu.util.path import path
 import os
 import sys
 import commands
@@ -28,7 +28,7 @@ def packInitramFS(dirname, rootimgpath, initscript=None):
        Refer to Linux Kernel Documentation/filesystems/ramfs-rootfs-initramfs.txt for more information.
     """
     
-    if not path(dirname).exists( ): 
+    if not path(dirname).exists(): 
         raise FilePathError
     
     if os.environ['USER'] <> 'root': raise NotPriviledgedUser, "Operation requires root access!"
@@ -70,29 +70,34 @@ def unpack(rootimgpath, dirname):
     
     format = obj.getRootImgFormat()
     format.sort()
-  
-    if format == packType1:
-        cmd = 'zcat %s > %s' % (rootimgpath,rootimg)
-        launchCmd(cmd)
-        cmd = 'cd %s && cpio -I %s -id' % (tmprootdir,rootimg)
-        launchCmd(cmd)
-        cpio_copytree(tmprootdir,dirname)
+
+    try:
+        if format == packType1:
+            cmd = 'zcat %s > %s' % (rootimgpath,rootimg)
+            launchCmd(cmd)
+            cmd = 'cd %s && cpio -I %s -id' % (tmprootdir,rootimg)
+            launchCmd(cmd)
+            cpio_copytree(tmprootdir,dirname)
+            scratchdir.rmtree()
+        elif format == packType2:
+            cmd = 'zcat %s > %s' % (rootimgpath,rootimg)
+            launchCmd(cmd)
+            cmd = 'mount -o loop -t ext2 %s %s' % (rootimg,tmprootdir)
+            launchCmd(cmd)
+            cpio_copytree(tmprootdir,dirname)
+            cmd = 'umount %s' % tmprootdir
+            launchCmd(cmd)
+            scratchdir.rmtree()
+        else:
+            scratchdir.rmtree()
+            raise UnsupportedPackingType
+    except (UnsupportedPackingType, IOError), e:
         scratchdir.rmtree()
-    elif format == packType2:
-        cmd = 'zcat %s > %s' % (rootimgpath,rootimg)
-        launchCmd(cmd)
-        cmd = 'mount -o loop -t ext2 %s %s' % (rootimg,tmprootdir)
-        launchCmd(cmd)
-        cpio_copytree(tmprootdir,dirname)
-        cmd = 'umount %s' % tmprootdir
-        launchCmd(cmd)
-        scratchdir.rmtree()
-    else:
-        scratchdir.rmtree()
-        raise UnsupportedPackingType
+        raise e
+        
         
     
-def makeISOLinuxDir(oenvobj, isolinuxdir, isolinuxbin):
+def makeISOLinuxDir(isolinuxdir, oenvobj=None, isolinuxbin=None):
     """Create, or update if already existing, isolinux directory. Also updates the isolinux.cfg file accordingly."""
     
     labels = {}
