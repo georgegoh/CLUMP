@@ -1,0 +1,12 @@
+# $Id$
+# Configure
+PROJECT(pyparted)
+SET(LICENSE_FILE src/COPYING)
+SET(VERSION_STR 1.8.5)
+SET(SRC_URL http://people.redhat.com/dcantrel/pyparted/${PROJECT_NAME}-${VERSION_STR}.tar.gz)
+
+# Build template
+
+
+
+CONFIGURE_FILE(${LICENSE_FILE} ${KUSU_ROOT}/share/doc/${PROJECT_NAME}-${VERSION_STR}/LICENSE COPY_ONLY)
