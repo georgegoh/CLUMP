@@ -9,6 +9,7 @@
 import sys
 import os
 from kusu.app import KusuApp
+from kusu.util.path import path
 from kusu.boot.distro import GeneralInstallSrc
 from kusu.boot.distro import CopyError
 from kusu.boot.image import *
@@ -20,7 +21,7 @@ class BootMediaTool:
     def initSrc(self,srcPath):
         self.installsrc = GeneralInstallSrc(srcPath)
         
-    def checkValidSrcPath(self):
+    def validSrcPath(self):
         """ Verify if the srcPath is valid. """
         return self.installsrc.verifySrcPath()
         
@@ -28,11 +29,11 @@ class BootMediaTool:
         """ Returns the OS type. """
         return self.installsrc.ostype
         
-    def queryKernelPath(self):
+    def getKernelPath(self):
         """ Query the srcPath and returns the path of the kernel. """
         return self.installsrc.getKernelPath()
         
-    def queryInitrdPath(self):
+    def getInitrdPath(self):
         """ Query the srcPath and returns the path of the initrd. """
         return self.installsrc.getInitrdPath()
         
@@ -57,41 +58,41 @@ class BootMediaTool:
         try:
             packInitramFS(dirname, rootimgpath, initscript)
             return True
-        except FilePathError:
-            return False
+        except FilePathError, e:
+            raise e
             
     def unpackRootImg(self, rootimgpath, dirname):
         """ Unpack a root image into a rootfs directory. """
         try:
             unpack(rootimgpath, dirname)
             return True
-        except (FilePathError,NotPriviledgedUser):
-            return False
+        except (FilePathError,NotPriviledgedUser), e:
+            raise e
             
     def mkISOLinuxDir(self, isolinuxdir, kernelpath, initrdpath, ostype, isolinuxbin):
         """ Creates isolinux directory. """
         try:
             obj = OperatingEnvironment(kernelpath,initrdpath,ostype)
-            makeISOLinuxDir(obj, isolinuxdir, isolinuxbin)
+            makeISOLinuxDir(isolinuxdir, obj, isolinuxbin)
             return True
-        except FilePathError:
-            return False
+        except FilePathError, e:
+            raise e
             
     def mkBootISO(self, isolinuxdir, isoname, volname="BootKit"):
         """ Creates ISO based on the isolinux directory. """
         try:
             makeBootISO(isolinuxdir, isoname, volname="BootKit")
             return True
-        except FilePathError:
-            return False
+        except FilePathError, e:
+            raise e
             
     def mkBootArchive(self, isolinuxdir, archive):
         """ Creates a BootArchive based on the isolinux directory. """
         try:
             makeBootArchive(isolinuxdir, archive)
             return True
-        except FilePathError:
-            return False
+        except FilePathError, e:
+            raise e
         
         
 class BootMediaApp(KusuApp):
@@ -101,14 +102,21 @@ class BootMediaApp(KusuApp):
         """ App-specific initialization. """
         KusuApp.__init__(self)
         
-        self.commands = {'query':['source'], 
-            'extract':['source','image'], 
+        self.actions = {'query':['source'], 
+            'extract':['source','image','dest'], 
             'unpack':['initrd','dir'], 
             'pack':['dir','initramfs','template'], 
-            'make':['dir','os',
+            'make-isolinux':['dir','os',
                     'kernel','initrd',
-                    'isolinuxbin','bootarchive']}
-                
+                    'isobin'],
+            'make-iso':['dir','iso'],
+            'make-boot-tgz':['dir','bootarchive']}
+        
+        # self.action and self.actionargs will hold the current action and its arguments            
+        self.action = None 
+        self.actionargs = None
+        
+        # an instance of the BootMediaTool for managing the actions        
         self.bminst = bminst
         self.usagestr = self._('boot-media-tool_Help')
         self.parser.set_usage(self.usagestr)
@@ -117,6 +125,12 @@ class BootMediaApp(KusuApp):
         """ Print usage text and exit. """
         self.stdoutMessage(self.usagestr)
         sys.exit(0)
+        
+    def printMsgExit(self, msg):
+        """ Print msg and exit. """
+        self.stdoutMessage(msg)
+        sys.stdout.write(os.linesep)
+        sys.exit(1)
         
         
     def handleArgPairs(self, arglist):
@@ -148,11 +162,11 @@ class BootMediaApp(KusuApp):
         if len(self.args) < 2:
             self.printUsageExit()
             
-        # check if the first parsed argument is a supported command
-        command = self.args[0]
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
         
         
-        if command not in self.commands.keys():
+        if action not in self.actions.keys():
             self.printUsageExit()
         d = self.handleArgPairs(self.args[1:])
         
@@ -162,16 +176,157 @@ class BootMediaApp(KusuApp):
         # iterate keys in d and validate against the commands'
         # list of keys
         for k in d.keys():
-            if k not in self.commands[command]:
+            if k not in self.actions[action]:
                 self.printUsageExit()
+                
+        self.action = action
+        self.actionargs = d
         
     def run(self):
         """ Main launcher. """
         self.parseargs()
         
-        if self.args:
-            print 'commands used:', self.args
+        # call the correct sub-handler for the action
+        m = '_' + self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
+            
+        handler = getattr(self,m)
         
+        handler(self.actionargs)
+        
+
+    def _query(self,args):
+        """Handler for query action. args is a dict of supported key-value pairs for this action. """
+        self.bminst.initSrc(args['source'])
+        if not self.bminst.validSrcPath():
+            msg = self._('invalidSrcPath')
+            self.printMsgExit(msg)
+            
+        distro = self.bminst.getDistro()
+        kernpath = self.bminst.getKernelPath()
+        initrdpath = self.bminst.getInitrdPath()
+        
+        if distro:
+            print self._('OS Type:'), distro
+        else:
+            print self._('Cannot determine OS type.')
+            
+        if kernpath:
+            print self._('Kernel found:'), kernpath
+        else:
+            print self._('Cannot find kernel.')
+
+        if initrdpath:
+            print self._('Initrd found:'), initrdpath
+        else:
+            print self._('Cannot find initrd.')
+        
+    def _pack(self,args):
+        """Handler for pack action. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        initramfs = path(args['initramfs'])
+        template = args.get('template',None)
+
+        try:
+            self.bminst.packRootImg(dirname,initramfs,template)
+            print self._('Packed %(dirname)s into %(initramfs)s') % {'dirname':dirname, 'initramfs':initramfs}
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+        except FilePathError:
+            msg = self._('File path error. Please ensure the paths are valid.')
+            self.printMsgExit(msg)        
+
+    def _unpack(self,args):
+        """Handler for unpack action. args is a dict of supported key-value pairs for this action. """
+        initrd = path(args['initrd'])
+        dirname = args['dir']
+        
+        try:
+            self.bminst.unpackRootImg(initrd,dirname)
+            print self._('Unpacking initrd to'), dirname
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+        except FilePathError:
+            msg = self._('Path of initrd file not found. Please ensure path is valid.')
+            self.printMsgExit(msg)
+
+    def _extract(self,args):
+        """Handler for extract action. args is a dict of supported key-value pairs for this action. """
+        imagetype = args['image'].lower()
+        srcPath = args['source']
+        dest = args.get('dest',None)
+        
+        if not dest: dest = path.getcwd()
+        
+        self.bminst.initSrc(srcPath)
+        
+        if imagetype == 'kernel':
+            if not self.bminst.copyKernel(dest):
+                msg = self._('Error extracting kernel.')
+                self.printMsgExit(msg)
+            else:
+                print self._('Extracting kernel to'), dest
+        elif imagetype == 'initrd':
+            if not self.bminst.copyInitrd(dest):
+                msg = self._('Error extracting initrd.')
+                self.printMsgExit(msg)
+            else:
+                print self._('Extracting kernel to'), dest            
+        elif imagetype == 'all':  
+            if not self.bminst.copyKernel(dest):
+                    msg = self._('Error extracting kernel.')
+                    self.printMsgExit(msg)
+            else:
+                print self._('Extracting kernel to'), dest
+            if not self.bminst.copyInitrd(dest):
+                    msg = self._('Error extracting initrd.')
+                    self.printMsgExit(msg)
+            else:
+                print self._('Extracting kernel to'), dest
+
+        
+    def _makeIso(self,args):
+        """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        iso = path(args['iso'])
+          
+        try:
+            self.bminst.mkBootISO(dirname, iso, volname="BootKit")
+            print self._('Generated %(iso)s from %(dirname)s') % {'dirname':dirname, 'iso':iso}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the directory path is valid.')
+            self.printMsgExit(msg)        
+
+    def _makeIsolinux(self,args):
+        """Handler for make-isolinux. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        ostype = args['os']
+        kernpath = path(args['kernel'])
+        initrdpath = path(args['initrd'])
+        isobin = path(args['isobin'])
+
+        try:
+            self.bminst.mkISOLinuxDir(dirname, kernpath, initrdpath, ostype, isobin)
+            print self._('Updated isolinux.cfg in %(dirname)s') % {'dirname':dirname}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the paths are valid.')
+            self.printMsgExit(msg)
+
+    def _makeBootTgz(self,args):
+        """Handler for make-boot-tgz. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        bootarchive = path(args['bootarchive'])
+      
+        try:
+            self.bminst.mkBootArchive(dirname, bootarchive)
+            print self._('Created BootArchive %(bootarchive)s from %(dirname)s') \
+                % {'dirname':dirname,'bootarchive':bootarchive}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the directory is valid.')
+            self.printMsgExit(msg)
+   
 if __name__ == '__main__':
     bminst = BootMediaTool()
     app = BootMediaApp(bminst)

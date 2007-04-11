@@ -174,10 +174,11 @@ def makeBootISO(isolinuxdir, isoname, volname="BootKit"):
     -V %s\
     -quiet \
     -no-emul-boot \
-    -R -r -T -l \
+    -boot-load-size 4 \
+    -R -r -T -f -l \
     -o %s %s' %  (volname,isopath,scratchdir)
     
-    isoP = subprocess.Popen('mkisofs %s' % options,shell=True)
+    isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True)
     isoP.communicate()
     
     # cleanup
@@ -235,9 +236,9 @@ def cpio_copytree(src,dst):
         if path(dst).parent.access(R_OK|W_OK):
             path(dst).mkdir()
         else:
-            raise IOError, "No read/write permissions!"
+            raise IOError, "No read/write permissions in parent directory!"
     else:
-        if not path(dst).access(R_OK|W_OK): raise IOError, "No read/write permissions!"
+        if not path(dst).access(R_OK|W_OK): raise IOError, "No read/write permissions in destination directory!"
 
 
     findP = subprocess.Popen('find .',cwd=cwd,shell=True,stdout=subprocess.PIPE)
