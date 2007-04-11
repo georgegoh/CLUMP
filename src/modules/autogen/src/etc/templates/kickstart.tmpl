@@ -1,0 +1,47 @@
+# Redhat kickstart template
+#
+# \$Id$
+#
+# Copyright 2007 Platform Computing Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+install
+url --url $url
+rootpw --iscrypted $rootpw
+lang $lang
+langsupport --default=$lang $lang
+keyboard $keybd
+#for $net in $networks
+$net
+#end for
+firewall --disabled
+selinux --disabled
+firstboot --disable
+authconfig --enableshadow --enablemd5
+timezone $tz
+bootloader --location=mbr
+#clearpart --all
+clearpart --none
+#for $part in $partitions
+$part
+#end for
+reboot
+%packages
+#for $pkg in $packages
+$pkg
+#end for
+
+%post
+
