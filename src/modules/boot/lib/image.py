@@ -227,6 +227,9 @@ def cpio_copytree(src,dst):
     W_OK = 2   # Test for write permission.
     X_OK = 1   # Test for execute permission.
 
+    # convert paths to be absolute
+    src = path(src).abspath()
+    dst = path(dst).abspath()
     cwd = path(src)
 
     if not cwd.exists(): raise IOError, "Source directory does not exist!"
