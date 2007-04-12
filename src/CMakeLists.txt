@@ -1,0 +1,71 @@
+SET(KUSU_VERSION '0.1')
+
+IF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+  MESSAGE(FATAL_ERROR "Please build out of source directory.")
+ENDIF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+
+# Get the python interpreter
+INCLUDE(FindPythonInterp)
+
+IF(NOT PYTHONINTERP_FOUND)
+  MESSAGE(FATAL_ERROR "python executable not found")
+ENDIF(NOT PYTHONINTERP_FOUND)
+
+SET(PYTHON_VERSION)
+EXEC_PROGRAM(${PYTHON_EXECUTABLE}
+  ARGS  "-c 'import sys; print sys.version[:3]'"
+  OUTPUT_VARIABLE PYTHON_VERSION
+)
+
+SET(KUSU_DEVEL_ROOT ${CMAKE_BINARY_DIR})
+MESSAGE(STATUS "SET KUSU_DEVEL_ROOT=${KUSU_DEVEL_ROOT}")
+
+SET(KUSU_ROOT ${KUSU_DEVEL_ROOT}/kusuroot)
+SET(KUSU_BIN ${KUSU_ROOT}/bin)
+SET(KUSU_LIB ${KUSU_ROOT}/lib)
+
+SET(KUSU_3RDPARTY 
+  pyparted path
+)
+
+SET(KUSU_MODULES 
+  autogen
+)
+
+EXEC_PROGRAM(${CMAKE_COMMAND}
+  ARGS -E copy_directory ${CMAKE_SOURCE_DIR} 
+       ${KUSU_DEVEL_ROOT}
+)
+
+FILE(REMOVE_RECURSE ${KUSU_ROOT})
+FILE(MAKE_DIRECTORY ${KUSU_ROOT})
+FILE(MAKE_DIRECTORY ${KUSU_BIN})
+FILE(MAKE_DIRECTORY ${KUSU_LIB})
+FILE(MAKE_DIRECTORY ${KUSU_LIB}/python)
+FILE(MAKE_DIRECTORY ${KUSU_LIB}/python/kusu)
+
+
+FOREACH(external_module ${KUSU_3RDPARTY})
+  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/3rdparty/${external_module})
+ENDFOREACH(external_module)
+
+FOREACH (kusu_module ${KUSU_MODULES})
+  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/modules/${kusu_module} ${KUSU_DEVEL_ROOT}/modules/${kusu_module})
+ENDFOREACH(kusu_module)
+
+SET(PYTHONPATH ${KUSU_LIB}/python)
+MESSAGE(STATUS "$PYTHONPATH=${PYTHONPATH}")
+
+FIND_PROGRAM(BASH
+  NAMES bash
+  PATHS
+  /bin
+  /usr/bin
+  /usr/local/bin
+)
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/../bin/kusudevenv.sh
+          ${KUSU_BIN}/kusudevenv.sh)
+
+
+
