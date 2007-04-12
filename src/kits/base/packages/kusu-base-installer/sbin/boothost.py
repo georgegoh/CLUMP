@@ -39,6 +39,7 @@ class boothost:
         self.db = KusuDB()
         self.db.connect('kusudb', 'apache')
         self.gettext = gettext
+        
 
     def errorMessage(self, message, *args):
         """errorMessage - Output messages to STDERR with Internationalization.
@@ -70,6 +71,24 @@ class boothost:
         kparams.  If the localboot flag is true then the PXE file that is
         generated will attempt to boot from the local disk first."""
         
+        # Get the IP of the primary installer
+        query = ('select nics.ip from nics,nodes where nodes.nid=nics.nid '
+                 'and nodes.name=(select kvalue from appglobals where '
+                 'kname="PrimaryInstaller")')
+
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+                 
+        niihost = ''
+        if data:
+            for line in data:
+                niihost = niihost + "%s," % line[0]
+            niihost = niihost[:-1]
+                
         filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',mac)
         fp = file(filename, 'w')
         if hostname != '':
@@ -83,7 +102,7 @@ class boothost:
         fp.write("prompt 0\n")
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
-        fp.write("        append initrd=%s %s\n" % (initrd, kparams))
+        fp.write("        append initrd=%s %s niihost=%s\n" % (initrd, kparams, niihost))
 
         if localboot == True :
             fp.write("\nlabel localdisk\n")
