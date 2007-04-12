@@ -1,0 +1,4 @@
+#!${BASH}
+export KUSU_ROOT=${KUSU_ROOT}
+export PYTHONPATH=${PYTHONPATH}:$PYTHONPATH
+export PATH=${KUSU_ROOT}/bin:${KUSU_ROOT}/sbin:$PATH
