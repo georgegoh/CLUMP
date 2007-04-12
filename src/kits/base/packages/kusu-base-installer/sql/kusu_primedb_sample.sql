@@ -38,15 +38,15 @@ insert into repos_have_kits values (2, 2) ;
 insert into repos_have_kits values (2, 3) ;
 
 # Setup some node groups
-insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#GG', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
+insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
 
-insert into nodegroups values (2,1,'Compute', 'package', 'Default Compute Node group', 'node#GGGG', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'Test kernel args in grub.conf for Compute') ;
+insert into nodegroups values (2,1,'Compute', 'package', 'Default Compute Node group', 'node#NNNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'Test kernel args in grub.conf for Compute') ;
 
-insert into nodegroups values (3,1,'Compute Diskless', 'diskless', 'Default Diskless Compute Node group', 'host#GGG', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for diskless Compute') ;
+insert into nodegroups values (3,1,'Compute Diskless', 'diskless', 'Default Diskless Compute Node group', 'host#NNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for diskless Compute') ;
 
-insert into nodegroups values (4,1,'Compute Disked', 'disked', 'Default Disked Imaged Compute Node group', 'c#RR-#GG', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for disked Compute') ;
+insert into nodegroups values (4,1,'Compute Disked', 'disked', 'Default Disked Imaged Compute Node group', 'c#RR-#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for disked Compute') ;
 
-insert into nodegroups values (5,1,'test', 'diskless', 'Test image for dependency checks', 'c#RR-#GG', 'vmlinuz', 'Fedora_6.img.i386', 'Test') ;
+insert into nodegroups values (5,1,'test', 'diskless', 'Test image for dependency checks', 'c#RR-#NN', 'vmlinuz', 'Fedora_6.img.i386', 'Test') ;
 
 # Setup the nodes entries for the installer
 insert into nodes values (1,1,'installer0', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 0) ;
@@ -288,20 +288,31 @@ insert into modules values (3,3,'bonding',3) ;
 insert into modules values (4,3,'tg3',4) ;
 insert into modules values (5,3,'bnx2',5) ;
 insert into modules values (6,3,'e1000',6) ;
+insert into modules values (23,3,'jbd',7) ;
+insert into modules values (24,3,'lockd',8) ;
+insert into modules values (25,3,'fscache',9) ;
+insert into modules values (26,3,'nfs_acl',10) ;
+insert into modules values (27,3,'sunrpc',11) ;
 
 # Setup the modules for the disked compute nodes
-insert into modules values (7,3,'nfs',1) ;
-insert into modules values (8,3,'ext3',2) ;
-insert into modules values (9,3,'bonding',3) ;
-insert into modules values (10,3,'tg3',4) ;
-insert into modules values (11,3,'bnx2',5) ;
-insert into modules values (12,3,'e1000',6) ;
-insert into modules values (13,3,'mptscsih',7) ;
-insert into modules values (14,3,'mptsas',8) ;
-insert into modules values (15,3,'mptfc',9) ;
-insert into modules values (16,3,'mptspi',10) ;
-insert into modules values (17,3,'mptscsi',11) ;
-insert into modules values (18,3,'mptbase',12) ;
+insert into modules values (7,4,'nfs',1) ;
+insert into modules values (8,4,'ext3',2) ;
+insert into modules values (9,4,'bonding',3) ;
+insert into modules values (10,4,'tg3',4) ;
+insert into modules values (11,4,'bnx2',5) ;
+insert into modules values (12,4,'e1000',6) ;
+insert into modules values (13,4,'mptscsih',7) ;
+insert into modules values (14,4,'mptsas',8) ;
+insert into modules values (15,4,'mptfc',9) ;
+insert into modules values (16,4,'mptspi',10) ;
+insert into modules values (17,4,'mptscsi',11) ;
+insert into modules values (18,4,'mptbase',12) ;
+insert into modules values (19,4,'jbd',13) ;
+insert into modules values (20,4,'lockd',14) ;
+insert into modules values (21,4,'fscache',15) ;
+insert into modules values (22,4,'nfs_acl',16) ;
+# Used by diskless compute
+insert into modules values (28,4,'sunrpc',17) ;
 
 insert into appglobals values (1, 'ClusterName', 'BadBoy', NULL) ;
 insert into appglobals values (2, 'DNSZone', 'myzone.company.com', NULL) ;
