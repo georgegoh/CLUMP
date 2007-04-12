@@ -64,6 +64,7 @@ import commands
 import parted
 import exceptions
 
+
 class KusuError(exceptions.Exception):
     pass
 
@@ -152,7 +153,7 @@ class DiskProfile(object):
         """Create a new partition."""
         # sanity check
         if mountpoint in self.mountpoints.keys():
-            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
+            raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         disk = self.disk_dict[disk_id]
         logging.debug('Add New Partition to Disk ID: ' + disk_id)
@@ -164,6 +165,7 @@ class DiskProfile(object):
         if mountpoint:
             self.mountpoints[mountpoint] = new_partition
 
+        return new_partition
 
     def editPartition(self, part_id, size, fixed_size, fs_type, mountpoint):
         """Edit an existing partition.""
@@ -226,13 +228,13 @@ class DiskProfile(object):
         # sanity checks
         if lv_id != name:
             if name in logi_vol.keys():
-                raise DuplicateNameError, _('Logical Volume name already exists.')
+                raise DuplicateNameError, 'Logical Volume name already exists.'
         if size > lv.size:
             additional_size_required = size - lv.size
             if additional_size_required > lv_grp.availableSize():
                 raise OutOfSpaceError, _('Not enough free space on volume group.')
         if mountpoint in mountpoints.keys():
-            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
+            raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         # passed sanity checks, now do it!
         lv.size = size
@@ -262,10 +264,10 @@ class DiskProfile(object):
         _phys_extent = int(phys_extent)
         # sanity checks
         if name in lv_groups.keys():
-            raise DuplicateNameError, _('Logical Volume Group name already exists.')
+            raise DuplicateNameError, 'Logical Volume Group name already exists.'
         if _phys_extent not in range(2,513) or _phys_extent % 2:
-            raise KusuError, _('Volume Group physical extent must be a multiple ' +
-                               'of 2, between 2-512.')
+            raise KusuError, 'Volume Group physical extent must be a multiple ' + \
+                               'of 2, between 2-512.'
 
         # passed sanity checks, now do it!
         new_vol_group = VolGroup(phys_extent, phys_vol_ids)
@@ -281,8 +283,8 @@ class DiskProfile(object):
                 raise DuplicateNameError, _('Proposed name already exists.')
         if sorted(phys_vol_ids) != sorted(lvg.physical_volume_ids):
             if lvg.logical_volume_ids:
-                raise KusuError, _('Remove all logical volumes in this group ' +
-                                   'before modifying the list of physical volumes.')
+                raise KusuError, 'Remove all logical volumes in this group ' + \
+                                 'before modifying the list of physical volumes.'
         # passed sanity checks, now do it!
         if lvg_id != name:
             for lv in lvg.itervalues():
@@ -299,23 +301,18 @@ class DiskProfile(object):
         lvg = lv_groups[lvg_id]
         # sanity checks
         if lvg.logical_volume_ids:
-            raise KusuError, _('All logical volumes in this group must be ' +
-                               'removed before the group can be deleted.')
+            raise KusuError, 'All logical volumes in this group must be ' + \
+                             'removed before the group can be deleted.'
         lv_groups.pop(lvg_id)
 
     def commit(self):
         for disk in self.disk_dict.itervalues():
             disk.commit()
 
-    def formatDisks(self):
+    def formatAll(self):
         for disk in self.disk_dict.itervalues():
-            for partition in disk.partitions_dict.itervalues:
-                if partition.type == 'ext2':
-                    commands.getoutput('mkfs.ext2 %s' % partition.path)
-                elif partition.type == 'ext3':
-                    commands.getoutput('mkfs.ext3 %s' % partition.path)
-                elif partition.type == 'swap':
-                    commands.getoutput('mkswap %s' % partition.path)
+            disk.formatAll()
+
         
 class Disk(object):
     """Disk class represents a physical disk in the system.
@@ -375,7 +372,7 @@ class Disk(object):
         return new_partition
         
     def addPartition(self, size, partitionType=partitionTypes['PRIMARY'],
-                     fstype=None, mountpoint=None):
+                     fs_type=None, mountpoint=None):
         """Add a partition to this disk.
            Parameters:
               1. size in bytes.
@@ -456,8 +453,8 @@ class Disk(object):
                                                   end_sector)
         except parted.error, msg:
             if msg.__str__().startswith("Error: Can't have a partition outside the disk!"):
-                msg = _("Requested partition size is too large to fit into " + \
-                        "the remaining space available on the disk.")
+                msg = "Requested partition size is too large to fit into " + \
+                      "the remaining space available on the disk."
             raise KusuError, msg
 
         return (start_sector, end_sector)
@@ -506,6 +503,10 @@ class Disk(object):
     def commit(self):
         self.pedDisk.commit()
 
+    def formatAll(self):
+        for partition in self.partitions_dict.itervalues():
+            partition.format()
+
 
 class Partition(object):
     """A Partition object represents a partition residing on a disk in the
@@ -535,7 +536,6 @@ class Partition(object):
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
                        'part_type' : 'self.pedPartition.type',
-                       'fs_type' : 'self.pedPartition.fs_type.name',
                        'path' : 'self.disk.path + str(self.num)',
                        'num' : 'self.pedPartition.num',
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
@@ -569,6 +569,14 @@ class Partition(object):
 
     def size(self):
         return self.disk.sector_size * self.length
+
+    def format(self):
+        if self.fs_type == 'ext2':
+            print commands.getoutput('mkfs.ext2 %s' % self.path)
+        elif self.fs_type == 'ext3':
+            print commands.getoutput('mkfs.ext3 %s' % self.path)
+        elif self.fs_type == 'swap':
+            print commands.getoutput('mkswap %s' % self.path)
 
 
 import unittest
