@@ -64,6 +64,7 @@ class KusuDB:
             print "KusuDB: Operational Error occurred when connecting to the DB\n"+\
                   "       Most likely cause: insufficient permissions for user=%s" %self.dbuser
             print msg
+            raise OperationaError,msg
         else:
             #no exception occurred - obtain cursor
             self.__dbcursor = self.__dbconn.cursor()
