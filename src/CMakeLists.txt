@@ -30,7 +30,10 @@ SET(KUSU_3RDPARTY
 )
 
 SET(KUSU_MODULES 
+  core
   autogen
+  boot
+  util
 )
 
 EXEC_PROGRAM(${CMAKE_COMMAND}
