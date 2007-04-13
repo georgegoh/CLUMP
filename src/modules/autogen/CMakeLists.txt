@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 241 2007-04-09 01:31:05Z najib $
+# $Id$
 PROJECT(autogen)
 
 SET(SETUPPY_BUILD_ARGS build)
