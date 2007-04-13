@@ -44,7 +44,7 @@ FILE(MAKE_DIRECTORY ${KUSU_BIN})
 FILE(MAKE_DIRECTORY ${KUSU_LIB})
 FILE(MAKE_DIRECTORY ${KUSU_LIB}/python)
 FILE(MAKE_DIRECTORY ${KUSU_LIB}/python/kusu)
-
+FILE(WRITE ${KUSU_LIB}/python/kusu/__init__.py "")
 
 FOREACH(external_module ${KUSU_3RDPARTY})
   ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/3rdparty/${external_module})
