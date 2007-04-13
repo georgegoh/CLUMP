@@ -34,6 +34,7 @@ SET(KUSU_MODULES
   autogen
   boot
   util
+  ui
 )
 
 EXEC_PROGRAM(${CMAKE_COMMAND}
