@@ -53,6 +53,7 @@ class BuildImage:
         self.installtype = ''     # The type of the installation
         self.packages    = []     # A list of all the packages to include
         self.ostype      = ''     # The ostype for the repository
+        self.kernel      = ''     # The name of the kernel to use from db
         self.gettext     = 0
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
@@ -114,7 +115,7 @@ class BuildImage:
         """__validateNG - Test the node group name to make sure it is valid.
         Returns:  True - when the node group exists, otherwise False.
         It will also set the self.ngid to the value from the database."""
-        query = ('select ngid, repoid, installtype from nodegroups '
+        query = ('select ngid, repoid, installtype, kernel from nodegroups '
                  'where ngname="%s"' % nodegroup )
         try:
             self.db.execute(query)
@@ -122,7 +123,7 @@ class BuildImage:
         except:
             return False
         if data:
-            self.ngid, self.repoid, self.installtype = data
+            self.ngid, self.repoid, self.installtype, self.kernel = data
             self.nodegroup = nodegroup
             return True
         return False
@@ -302,6 +303,7 @@ class BuildImage:
         os.chdir(self.imagedir)
         os.system('tar cfj \"../%s.tar.bz2\" .' % self.nodegroup )
         os.system('rm -rf \"%s\"' %  self.imagedir)
+
 
 
 class BuildImageApp(KusuApp):

@@ -43,8 +43,11 @@ rpm:
 
 
 install::
+	mkdir -p $(ROOT)/etc/rc.kusu.d
+	mkdir -p $(ROOT)/tftpboot/kusu/pxelinux.cfg
 	mkdir -p $(ROOT)/opt/kusu/sbin
 	mkdir -p $(ROOT)/opt/kusu/bin
+	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/addhost 
@@ -54,10 +57,13 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
 	mkdir -p $(ROOT)/repo/repos
+	mkdir -p $(ROOT)/repo/repos/custom_scripts
 	mkdir -p $(ROOT)/repo/kits
 	mkdir -p $(ROOT)/repo/images
+	install -m755 sbin/S01KusuSetup $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
+	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/repo/repos/nodeboot.cgi
 	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
@@ -80,3 +86,5 @@ install::
 	install -m644 sql/kusu_dbperms.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_alterdb.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
+	echo "# CFM changed file list.  Generated automatically" > $(ROOT)/opt/kusu/cfm/changedfiles.lst
+	chown -R apache $(ROOT)/opt/kusu/cfm

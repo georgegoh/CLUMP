@@ -26,7 +26,7 @@ import string
 from kusu.kusuapp import KusuApp
 from kusu.kusudb import KusuDB
 
-PLUGINS='/space/mblack/kusu/sandbox/mblack/lib/plugins/dbreport'
+PLUGINS='/opt/kusu/lib/plugins/dbreport'
 
 class Report:
     """This class will be used to generate various configuration files

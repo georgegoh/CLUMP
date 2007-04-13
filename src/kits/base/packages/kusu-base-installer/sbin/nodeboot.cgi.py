@@ -29,11 +29,11 @@ import string
 import cgi
 import time
 
-sys.path.append("/opt/ocs/bin:/opt/ocs/lib")
+sys.path.append("/opt/kusu/bin:/opt/kusu/lib")
 
 from optparse import OptionParser
-from ocs.ocsapp import OCSapp
-from ocs.ocsdb import OCSDB
+from kusu.kusuapp import KusuApp
+from kusu.kusudb import KusuDB
 
 
 class NodeInfo:
@@ -42,8 +42,8 @@ class NodeInfo:
 
     def __init__(self, user='nobody'):
         """__init__ - initializer for the class"""
-        self.db = OCSDB()
-        self.db.connect('ocsdb', user)
+        self.db = KusuDB()
+        self.db.connect('kusudb', user)
 
         
     def getNIInfo(self, nodename):
@@ -70,7 +70,7 @@ class NodeInfo:
         print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os, type, ngid)
 
         # NICinfo section
-        query = ('select nics.ip, nics.dhcp, networks.network, '
+        query = ('select nics.ip, networks.usingdhcp, networks.network, '
                  'networks.subnet, networks.device, networks.suffix, '
                  'networks.gateway, networks.options '
                  'from nics,networks where networks.netid=nics.netid '
@@ -206,8 +206,7 @@ class NodeInfo:
 
         data = self.db.fetchone()
         if not data:
-            # Need to trigger a 404 error
-            # FIX ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # Need to trigger a 404 error, but don't see how.
             print "Cannot find host for IP: %s" % nodeip
 
         return data[0]
@@ -242,20 +241,20 @@ class NodeInfo:
         regenerated.
         NOTE:  This forces the database connection to close! """
         self.db.disconnect()
-        os.system('/opt/ocs/bin/boothost.py -n %s' % nodename)
+        if os.path.exists('/opt/kusu/sbin/boothost.py'):
+            os.system('/opt/kusu/sbin/boothost.py -n %s' % nodename)
 
 
 
-class NodeBootApp(OCSapp):
+class NodeBootApp(KusuApp):
 
     def __init__(self):
-        OCSapp.__init__(self)
+        KusuApp.__init__(self)
 
 
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
-        global version
-        self.errorMessage("Version %s\n", version)
+        self.errorMessage("Version %s\n", self.version)
         sys.exit(0)
 
 
@@ -338,7 +337,7 @@ class NodeBootApp(OCSapp):
                     if self.options.nodeip:
                         ip = self.options.nodeip
                     else:
-                        errorMessage('nodeboot_no_hostname_or_ip')
+                        self.errorMessage('nodeboot_no_hostname_or_ip\n')
                         sys.exit(-1)
 
                 if self.options.getnii:
@@ -358,11 +357,8 @@ class NodeBootApp(OCSapp):
         if runascgi:
             print 'Content-type: text/html\n\n'
 
-
-        sys.stderr.write('ERROR:  Danger Will Robinson')
-        print "Got Here 1"
-        if self.cgi.has_key('dump'):
-            print "Dump NII: %s <p>" % dumpnii
+        #if self.cgi.has_key('dump'):
+        print "Dump NII: %s <p>" % dumpnii
         print "State: %s <p>" % state
         print "Dump CFM: %s <p>" % dumpcfm
             
@@ -377,7 +373,7 @@ class NodeBootApp(OCSapp):
         if not node:
             node = nodefun.getNodeName('', ip)
 
-        print "Got Here 3, node = %s" % node
+        print "Node: %s" % node
         
         if dumpnii:
             nodefun.getNIInfo(node)
@@ -394,8 +390,6 @@ class NodeBootApp(OCSapp):
         # Update PXE file if needed
         if updatepxe:
             nodefun.regenPXE(node)
-
-        print "Got Here 7"
 
         
         

@@ -333,7 +333,7 @@ insert into appglobals values (16, 'PrimaryInstaller', 'installer0', NULL) ;
 insert into appglobals values (17, 'DHCPLeaseTime', '2400', NULL) ;
 insert into appglobals values (18, 'InstallerServeSMTP', 'False', NULL) ;
 insert into appglobals values (19, 'SMTPServer', 'mailserver.myzone.company.com', NULL) ;
-insert into appglobals values (20, 'CFMBaseDir', '/opt/ocs/cfm', NULL) ;
+insert into appglobals values (20, 'CFMBaseDir', '/opt/kusu/cfm', NULL) ;
 insert into appglobals values (21, 'ImageBaseDir', '/repo/images', 1) ;
 
 insert into scripts values (1, 3, '/repo/repos/custom_scripts/bogus.sh') ;
