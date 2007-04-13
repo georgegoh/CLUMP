@@ -8,7 +8,7 @@
 
 import sys
 import os
-from kusu.app import KusuApp
+from kusu.core.app import KusuApp
 from kusu.util.path import path
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
