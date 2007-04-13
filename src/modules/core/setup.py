@@ -2,7 +2,7 @@
 #
 # $Id: setup.py 262 2007-04-11 07:09:24Z ltsai $
 #
-# Kusu boot generator
+# Kusu core generator
 #
 # Copyright 2007 Platform Computing Corporation.
 #
@@ -11,15 +11,12 @@
 __version__ = "$Revision$"
 
 from distutils.core import setup
-setup(name="kusu-boot",
+setup(name="kusu-core",
     version="0.1",
     author="Najib Ninaba",
     author_email="najib@osgdc.org",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
-    packages=['boot'],
-    package_dir={'boot':'src/lib'},
-    data_files=[('share/po',['src/po/kusuapps.po']),
-                ('share/doc',['src/doc/LICENSE'])],
-    scripts=['src/bin/boot-media-tool']
+    packages=['core'],
+    package_dir={'core':'src/lib'}
      )
