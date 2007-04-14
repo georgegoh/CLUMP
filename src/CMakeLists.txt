@@ -26,7 +26,7 @@ SET(KUSU_BIN ${KUSU_ROOT}/bin)
 SET(KUSU_LIB ${KUSU_ROOT}/lib)
 
 SET(KUSU_3RDPARTY 
-  pyparted path
+  pyparted pysqlite path
 )
 
 SET(KUSU_MODULES 
@@ -35,6 +35,8 @@ SET(KUSU_MODULES
   boot
   util
   ui
+  partitiontool
+  installer
 )
 
 EXEC_PROGRAM(${CMAKE_COMMAND}

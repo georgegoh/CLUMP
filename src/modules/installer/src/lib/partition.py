@@ -15,9 +15,9 @@ from gettext import gettext as _
 from partition_new import *
 from partition_edit import *
 from partition_delete import *
-from partitiontool import partitiontool
-from ui.text import screenfactory, kusuwidgets
-from ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.partitiontool import partitiontool
+from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 
 def printCurrent(ps):
     print ps.listbox.current()

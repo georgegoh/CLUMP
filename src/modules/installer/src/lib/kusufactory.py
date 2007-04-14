@@ -12,16 +12,16 @@ __version__ = "$Revision: 248 $"
 
 import snack
 from currypot import *
-from ui.text.screenfactory import BaseScreen, ScreenFactory
-from kususcreens.welcome import WelcomeScreen
-from kususcreens.language import LanguageSelectionScreen
-from kususcreens.keyboard import KeyboardSelectionScreen
-from kususcreens.clusterinfo import ClusterInfoScreen
-from kususcreens.rootpasswd import RootPasswordScreen
-from kususcreens.partition import PartitionScreen
-from kususcreens.gatewaydns import GatewayDNSSetupScreen
-from kususcreens.tzselect import TZSelectionScreen
-from kususcreens.confirm import ConfirmScreen
+from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
+from welcome import WelcomeScreen
+from language import LanguageSelectionScreen
+from keyboard import KeyboardSelectionScreen
+from clusterinfo import ClusterInfoScreen
+from rootpasswd import RootPasswordScreen
+from partition import PartitionScreen
+from gatewaydns import GatewayDNSSetupScreen
+from tzselect import TZSelectionScreen
+from confirm import ConfirmScreen
 
 class ScreenImpl(BaseScreen):
     """This class is a template for other Screen classes."""

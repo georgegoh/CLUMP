@@ -10,12 +10,13 @@
 __version__ = "$Revision: 237 $"
 
 import __init__
+import os
 import logging
 import snack
 import gettext
 from gettext import gettext as _
-from ui.text import screenfactory, kusuwidgets
-from ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 
 class LanguageSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for language."""
@@ -29,8 +30,12 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         instruction = snack.Label(self.msg)
         self.screenGrid.setField(instruction, col=0, row=0)
         self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
-        
-        langTable = open('/usr/share/kusu-installer-tui/lang-table')
+
+        kusuroot = os.environ.get('KUSU_ROOT', None)
+        print '%s/etc/lang-table' % kusuroot
+        if kusuroot and os.path.exists('%s/etc/lang-table' % kusuroot):     
+            langTable = open('%s/etc/lang-table' % kusuroot)
+
         rows = langTable.readlines()
         self.langMap = {}
         for row in rows:
@@ -67,11 +72,13 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         
         """
         langAttr = self.listbox.current()
-        try:
-            t = gettext.translation('kusu', 'locale', languages=[langAttr[0]])
-            t.install()
-        except IOError, e:
-            snack.ButtonChoiceWindow(self.screen, 'Cannot display language',
+        print '"' + langAttr[0] + '"'
+        if langAttr[0] != 'en':
+            try:
+                t = gettext.translation('kusu', 'locale', languages=[langAttr[0]])
+                t.install()
+            except IOError, e:
+                snack.ButtonChoiceWindow(self.screen, 'Cannot display language.',
                                      'Selected language cannot be shown' + \
                                      ' on this display. This installation ' + \
                                      'will proceed in English.', buttons=['Ok'])

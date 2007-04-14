@@ -12,8 +12,8 @@ __version__ = "$Revision: 237 $"
 import logging
 import snack
 from gettext import gettext as _
-from ui.text import screenfactory, kusuwidgets
-from ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 
 NAV_NOTHING = -1
 

@@ -13,7 +13,7 @@ import socket
 import logging
 import snack
 from gettext import gettext as _
-from ui.text import screenfactory, kusuwidgets
+from kusu.ui.text import screenfactory, kusuwidgets
 NAV_NOTHING = -1
 
 class GatewayDNSSetupScreen(screenfactory.BaseScreen):

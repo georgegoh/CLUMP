@@ -106,14 +106,14 @@ def verifyFQDN(fqdn):
     p = re.compile('[^.a-zA-Z0-9]')
     li = p.findall(fqdn)
     if li:
-        return False, _('FQDN can only contain the characters .a-zA-Z0-9')
+        return False, 'FQDN can only contain the characters .a-zA-Z0-9'
     return True, None
 
 def verifyIP(ip):
     """Verifies that text is a valid IP"""
     li = ip.split('.')
-    errmsg = _('IP address must be in the form XXX.XXX.XXX.XXX, where ' +
-               '0 <= XXX <= 255')
+    errmsg = 'IP address must be in the form XXX.XXX.XXX.XXX, where ' + \
+               '0 <= XXX <= 255'
     if len(li) != 4:
         return False, errmsg
     for octet in li:
@@ -131,7 +131,7 @@ def verifyEmail(email):
                   '[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
     li = p.findall(email)
     if len(li) != 1:
-        return False, _('Ensure a valid email is entered(e.g. xxyy@zzz.com)')
+        return False, 'Ensure a valid email is entered(e.g. xxyy@zzz.com)'
     return True, None
 
 def verifyURL(url):
@@ -140,7 +140,7 @@ def verifyURL(url):
                    '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
     li = p.findall(url)
     if len(li) != 1:
-        return False, _('Ensure a valid url is entered(e.g. http://www.xyz.com)')
+        return False, 'Ensure a valid url is entered(e.g. http://www.xyz.com)'
     return True, None
 
 

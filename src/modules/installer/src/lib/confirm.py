@@ -12,8 +12,8 @@ __version__ = "$Revision: 248 $"
 import logging
 import snack
 from gettext import gettext as _
-from partitiontool import partitiontool
-from ui.text import screenfactory
+from kusu.partitiontool import partitiontool
+from kusu.ui.text import screenfactory
 
 NAV_RESTART = -2
 NAV_NOTHING = -1
@@ -94,7 +94,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
     def formAction(self):
         self.database.close()
         disk_profile = self.kusuApp['DiskProfile']
-        self.formatDisk(self.disk_profile)
+        self.formatDisk(disk_profile)
 
     def formatDisk(self, disk_profile):
         pass
