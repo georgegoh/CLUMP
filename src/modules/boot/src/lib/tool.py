@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.util.path import path
+from path import path
 from kusu.boot.distro import GeneralInstallSrc
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists

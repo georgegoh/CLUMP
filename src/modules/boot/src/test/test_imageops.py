@@ -16,7 +16,7 @@ from kusu.boot.distro import GeneralInstallSrc
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot import image
-from kusu.ext.path import path
+from path import path
 import py
 import tempfile
 

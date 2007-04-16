@@ -8,7 +8,7 @@
 import sys
 import os
 from kusu.boot.distro import GeneralInstallSrc
-from kusu.ext.path import path
+from path import path
 import tempfile
 
 class TestCentOSDetection:

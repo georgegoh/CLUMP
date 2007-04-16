@@ -7,7 +7,7 @@
 
 """This module handles operations that work with the meta-information of the supported native distros."""
 
-from kusu.util.path import path
+from path import path
 
 SUPPORTED_DISTROS = { 'CentOS': '4.4', 'Fedora Core': '6', 'OpenSuSE': '10.2', 'Ubuntu': '6.10' }
 

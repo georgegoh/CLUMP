@@ -7,7 +7,7 @@
 
 """This module handles operations relating to booting up nodes."""
 
-from kusu.util.path import path
+from path import path
 import os
 import sys
 import commands
