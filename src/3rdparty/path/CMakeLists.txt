@@ -49,8 +49,8 @@ ADD_CUSTOM_TARGET(copylicense  ALL echo
 
 ADD_CUSTOM_TARGET(build-${PROJECT_NAME} ALL echo
   COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python
-  COMMAND mv    ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python${PYTHON_VERSION}/site-packages
-                     ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python/kusu
+  COMMAND cp -rf
+${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python${PYTHON_VERSION}/site-packages/* ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python
   COMMAND cp    -rf ${CMAKE_CURRENT_BINARY_DIR}/installdir/* ${KUSU_ROOT}/.
   COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/installdir
   COMMENT "Copying files to ${KUSU_LIB}/python/kusu"
