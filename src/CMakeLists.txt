@@ -30,6 +30,7 @@ SET(KUSU_3RDPARTY
   pysqlite 
   path 
   md5crypt
+  cheetah
 )
 
 SET(KUSU_MODULES 
