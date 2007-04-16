@@ -26,7 +26,10 @@ SET(KUSU_BIN ${KUSU_ROOT}/bin)
 SET(KUSU_LIB ${KUSU_ROOT}/lib)
 
 SET(KUSU_3RDPARTY 
-  pyparted pysqlite path
+  pyparted 
+  pysqlite 
+  path 
+  md5crypt
 )
 
 SET(KUSU_MODULES 
