@@ -18,5 +18,6 @@ setup(name="kusu-autogen",
       url="http://www.osgdc.org/project/kusu",
       platforms=["any"],
       packages=['autogen'],
-      package_dir={'autogen':'src/lib'}
+      package_dir={'autogen':'src/lib'},
+      data_files=[('etc/templates', ['src/etc/templates/kickstart.tmpl'])]
      )
