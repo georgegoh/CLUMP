@@ -65,20 +65,12 @@ import parted
 import exceptions
 
 
-class KusuError(exceptions.Exception):
-    pass
-
-class OutOfSpaceError(KusuError):
-    pass
-
-class DuplicateNameError(KusuError):
-    pass
-
-class DuplicateMountpointError(KusuError):
-    pass
-
-class NameNotFoundError(KusuError):
-    pass
+class KusuError(exceptions.Exception): pass
+class OutOfSpaceError(KusuError): pass
+class DuplicateNameError(KusuError): pass
+class DuplicateMountpointError(KusuError): pass
+class NameNotFoundError(KusuError): pass
+class UnknownPartitionTypeError(KusuError): pass
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -140,7 +132,7 @@ class DiskProfile(object):
 
 
     def __init__(self, fresh):
-        fdisk_out = commands.getoutput("/sbin/fdisk -l | grep 'Disk' | awk '{ print $2 }'")
+        fdisk_out = commands.getoutput("/sbin/fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
         # Output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
 
         disks_str = fdisk_out.split('\n')
@@ -354,10 +346,15 @@ class Disk(object):
             pedDiskType = pedDevice.disk_probe()
             self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
         else:
-            self.pedDisk = parted.PedDisk.new(pedDevice)
-            for i in range(self.pedDisk.get_last_partition_num()):
-                pedPartition = self.pedDisk.get_partition(i+1)
-                self.__appendToPartitionDict(pedPartition)
+            try:
+                self.pedDisk = parted.PedDisk.new(pedDevice)
+                for i in range(self.pedDisk.get_last_partition_num()):
+                    pedPartition = self.pedDisk.get_partition(i+1)
+                    self.__appendToPartitionDict(pedPartition)
+            except parted.error, e:
+                if str(e).endswith('unrecognised disk label.'):
+                    pedDiskType = parted.disk_type_get('msdos')
+                    self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
 
     def __getattr__(self, name):
         if name in self.__getattr_dict.keys():
@@ -379,29 +376,53 @@ class Disk(object):
               2. type of partition(see partitionTypes).
               3. optional fs type(defaults to None).
         """
-        next_partition_num, is_extended_partition = self.__getNextPartitionNum()
+        next_partition_type = self.__getNextPartitionType()
         start_sector, end_sector = self.__getStartEndSectors(size)
+        new_pedPartition = None
 
         try:
-            if is_extended_partition:
-                raise KusuError, 'Maximum number of primary partitions ' + \
-                                 'reached on ' + self.path + '. Alpha only ' + \
-                                 'supports primary partitions for now.'
-            elif partitionType == partitionTypes['PRIMARY']:
-                pedPartition = self.pedDisk.partition_new(partitionType,
+            constraint = self.pedDevice.constraint_any()
+
+            if next_partition_type == 'PRIMARY':
+                new_pedPartition = self.pedDisk.partition_new(partitionType,
                                                           fs_type,
                                                           start_sector,
                                                           end_sector)
-                constraint = self.pedDevice.constraint_any()
-                self.pedDisk.add_partition(pedPartition, constraint)
 
-                new_partition = self.__appendToPartitionDict(pedPartition, mountpoint)
-                return new_partition
+            elif next_partition_type == 'EXTENDED':
+                # create and add extended partition to fill the rest of the disk.
+                extended_pedPartition = self.pedDisk.partition_new(
+                                            partitionTypes['EXTENDED'],
+                                            None,
+                                            start_sector,
+                                            self.length-1)
+                self.pedDisk.add_partition(extended_pedPartition, constraint)
+                self.__appendToPartitionDict(extended_pedPartition, None)
+                # create logical partition.
+                new_pedPartition = self.pedDisk.partition_new(
+                                        partitionTypes['LOGICAL'],
+                                        fs_type,
+                                        start_sector,
+                                        end_sector)
+
+            elif next_partition_type == 'LOGICAL':
+                # create logical partition.
+                new_pedPartition = self.pedDisk.partition_new(
+                                        partitionTypes['LOGICAL'],
+                                        fs_type,
+                                        start_sector,
+                                        end_sector)
+
             else:
-                raise KusuError, 'Alpha only supports primary partitions for now.'
+                raise UnknownPartitionTypeError
+
         except parted.error, msg:
             raise KusuError, msg
     
+        self.pedDisk.add_partition(new_pedPartition, constraint)
+        new_partition = self.__appendToPartitionDict(new_pedPartition, mountpoint)
+        return new_partition
+
     def delPartition(self, partition_obj):
         """Remove a partition from this disk. Argument is the Partition object
            itself.
@@ -410,21 +431,18 @@ class Disk(object):
         self.pedDisk.delete_partition(partition_obj.pedPartition)
 
 
-    def __getNextPartitionNum(self):
+    def __getNextPartitionType(self):
         """Get the next assignable partition number, and whether it should be an
            extended partition or not.
         """
         last_partition_num = self.pedDisk.get_last_partition_num()
-        if last_partition_num == -1:
-            next_partition_num = 1
-            is_extended_partition = False
-        elif last_partition_num == 3:
+        if last_partition_num == 3:
             next_partition_num = 5
-            is_extended_partition = True
+            return 'EXTENDED'
+        elif last_partition_num > 4:
+            return 'LOGICAL'
         else:
-            next_partition_num = last_partition_num + 1
-            is_extended_partition = False
-        return next_partition_num, is_extended_partition
+            return 'PRIMARY'
 
     def __getStartEndSectors(self, size):
         """For a given size(in bytes), return a tuple of (start_sector, end_sector)
@@ -535,7 +553,7 @@ class Partition(object):
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
-                       'part_type' : 'self.pedPartition.type',
+                       'part_type' : 'self.pedPartition.type_name',
                        'path' : 'self.disk.path + str(self.num)',
                        'num' : 'self.pedPartition.num',
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
