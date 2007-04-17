@@ -7,7 +7,6 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 
-import md5crypt
 import time
 
 class BaseInstall:
@@ -76,6 +75,7 @@ class BaseInstall:
 class Kickstart(BaseInstall):
 
     def setRootPw(self, rootpw):
+        import md5crypt
         self.attr['rootpw'] = md5crypt.md5crypt(rootpw, str(time.time()));
 
 

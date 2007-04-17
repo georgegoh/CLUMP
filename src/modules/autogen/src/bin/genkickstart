@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+from kusu.autogen.scriptfactory import KickstartFactory
+from kusu.autogen.autoinstall import Script
+from path import path
+import os
+
+template = path(os.getenv('KUSU_ROOT', None)) / 'templates' / 'kickstart.tmpl'
+
+kf = KickstartFactory(template)
+script = Script(kf)
+#script.setProfile(installprofile)
+#script.write('/var/www/html/kickstart.cfg')
+
+
+
+#import os
+
+#d = Disk(8000, 'sda') 
+#d.addPart('sda1', 1,100, '83')   
+#d.addPart('sda2', 2,2000, '8e') #linux lvm
+#d.addPart('sda3', 3,2000, '83')
+
+#vg00 = VolGrp('vg00', [d.getPart(2)])
+#vg00.addLv('lv00', 1000, '83')
+#vg00.addLv('lv01', 512, '82') #swap
+
+#lvol = []
+#lvol.append(Vol(d.getPart(1), '/boot', '/boot', 'ext3', True))
+#lvol.append(Vol(d.getPart(3), '/data', '/data', 'ext3', True))
+
+#lvol.append(Vol(vg00.getLv('lv00'), '/', '/', 'ext3', True))
+#lvol.append(Vol(vg00.getLv('lv01'), 'swap', 'swap', 'swap', True))
+
+#p = DiskProfile()
+#p.addDisk(d)
+#p.addVolGrp(vg00)
+#p.addVol(lvol)
+
+#k = Kickstart()
+#k.setRootPw('system')
+#k.setNetworkProfile(Network('eth0', 'DHCP'))
+#k.setDiskProfile(p)
+#k.setPackageProfile(['@Base'])
+#k.setTZ('Asia/Singapore')
+#k.setInstallSRC('http://172.25.208.218/repo/fedora/6/i386/os/')
+#k.setAttr('lang', 'us')
+#k.setAttr('keybd', 'us')
+
+#kt = KickstartTemplate('templates/kickstart.tmpl', kt)
+#kt.write('/var/www/html/kickstart.cfg')
+
+
+
