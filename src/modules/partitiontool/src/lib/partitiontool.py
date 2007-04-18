@@ -71,6 +71,7 @@ class DuplicateNameError(KusuError): pass
 class DuplicateMountpointError(KusuError): pass
 class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
+class PartitionSizeTooLargeError(KusuError): pass
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -149,10 +150,10 @@ class DiskProfile(object):
 
         disk = self.disk_dict[disk_id]
         logging.debug('Add New Partition to Disk ID: ' + disk_id)
-        new_partition = disk.addPartition(size,
-                                          self.partitionType_dict[fs_type],
-                                          self.fsType_dict[fs_type],
-                                          mountpoint)
+        if fs_type:
+            new_partition = disk.addPartition(size, fsTypes[fs_type], mountpoint)
+        else:
+            new_partition = disk.addPartition(size, None, mountpoint)
 
         if mountpoint:
             self.mountpoints[mountpoint] = new_partition
@@ -368,8 +369,7 @@ class Disk(object):
         self.partitions_dict[pedPartition.num] = new_partition
         return new_partition
         
-    def addPartition(self, size, partitionType=partitionTypes['PRIMARY'],
-                     fs_type=None, mountpoint=None):
+    def addPartition(self, size, fs_type=None, mountpoint=None):
         """Add a partition to this disk.
            Parameters:
               1. size in bytes.
@@ -384,7 +384,7 @@ class Disk(object):
             constraint = self.pedDevice.constraint_any()
 
             if next_partition_type == 'PRIMARY':
-                new_pedPartition = self.pedDisk.partition_new(partitionType,
+                new_pedPartition = self.pedDisk.partition_new(partitionTypes['PRIMARY'],
                                                           fs_type,
                                                           start_sector,
                                                           end_sector)
@@ -473,7 +473,7 @@ class Disk(object):
             if msg.__str__().startswith("Error: Can't have a partition outside the disk!"):
                 msg = "Requested partition size is too large to fit into " + \
                       "the remaining space available on the disk."
-            raise KusuError, msg
+            raise PartitionSizeTooLargeError, msg
 
         return (start_sector, end_sector)
 
@@ -536,16 +536,17 @@ class Partition(object):
           c. mountpoint
        A Partition instance encapsulates an instance of parted.PedPartition, and
        thus has the following additional(hidden) attributes, which can be 
-       read(-only) :
+       read(-only):
           a. start_sector
           b. end_sector
           c. length
           d. part_type
           e. fs_type
           f. path
-          g. num (num=1 for sda1, num=3 for hda3)
+          g. num (e.g., num=1 for sda1, num=3 for sda3)
           h. start_cylinder
           i. end_cylinder
+          j. type
     """
     disk = None
     pedPartition = None
@@ -557,7 +558,8 @@ class Partition(object):
                        'path' : 'self.disk.path + str(self.num)',
                        'num' : 'self.pedPartition.num',
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
-                       'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)'
+                       'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)',
+                       'type' : 'self.pedPartition.type_name'
                       }
     __setattr_dict = { 'start_sector' : "self.pedPartition.geom.set_start(long('%s'))",
                        'end_sector' : "self.pedPartition.geom.set_end(long('%s'))"
