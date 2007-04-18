@@ -10,6 +10,9 @@
 from Cheetah.Template import Template
 
 class Script:
+
+    factory = None
+
     def __init__(self, factory):
         self.factory = factory
 
