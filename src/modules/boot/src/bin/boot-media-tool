@@ -30,8 +30,9 @@ class BootMediaApp(KusuApp):
             'make-isolinux':['dir','os',
                     'kernel','initrd',
                     'isobin'],
-            'make-iso':['dir','iso'],
-            'make-boot-tgz':['dir','bootarchive']}
+            'make-iso':['dir','iso','source'],
+            'make-boot-tgz':['dir','bootarchive'],
+            'make-patch':['dir']}
         
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -39,12 +40,90 @@ class BootMediaApp(KusuApp):
         
         # an instance of the BootMediaTool for managing the actions        
         self.bminst = bminst
-        self.usagestr = self._('boot-media-tool_Help')
+        self.usagestr = self._("""\
+boot-media-tool [-h|-v] <action> arg1=val1 arg2=val2 ...
+
+boot-media-tool builds Kusu Boot Media from supported Linux distros' 
+installation sources. The tool also queries and extracts kernel/initrd 
+images from these sources.
+
+Options:
+
+    -h          - Provide the tool help (this screen).
+    -v          - Provide the version string.
+    -H          - Provide usage examples.
+    -f          - Force overwriting when extracting kernel/initrd.
+
+Actions:
+
+    query           - Probes and displays any kernel/initrd in the 
+                      installation source. Available arguments for 
+                      this action: 
+                        source=<path of installation source>
+    extract         - Extracts the kernel/initrd from the installation 
+                      source. Available arguments for this action:
+                        source=<path of installation source>
+                        image=<kernel|initrd|all>
+    unpack          - Unpacks the specified initrd into a directory. 
+                      Available arguments for this action:
+                        initrd=<path of initrd file>
+                        dir=<directory to unpack into>    
+    pack            - Packs the rootfs directory into a initramfs image.
+                      An optional init script template can be passed. 
+                      Available arguments for this action:
+                        dir=<path of rootfs directory>
+                        initramfs=<name of initramfs file>
+                        template=<init script template file>
+    make-isolinux   - Make isolinux directory with the specified kernel 
+                      and initrd. Available arguments for this action:
+                        dir=<directory for isolinux>
+                        os=<the os for the kernel/initrd>
+                        kernel=<path of kernel file>
+                        initrd=<path of initrd file>
+                        isobin=<path of isolinux.bin>
+    make-iso        - Make the Kusu Boot Media iso from the isolinuxdir.
+                      Available arguments for this action:
+                        patch=<path of installer patch>
+                        iso=<name of iso file>
+                        source=<path of installation source>
+    make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which
+                      then can be included in a Kusu Kit to make it bootable. 
+                      Available arguments for this action:
+                        bootarchive=<name of bootarchive>
+                        dir=<path of isolinuxdir>
+    make-patch      - Make the installer patchfile based on OS. Available
+                      arguments for this action:
+                        dir=<directory containing Kusu Installer runtime>
+""")
+        self.examples = self._("""\
+Example operation usages:
+
+    To query installation source mounted at /media/cdrom:
+    # boot-media-tool query source=/media/cdrom
+
+    To extract the kernel from the installation source:
+    # boot-media-tool extract source=/media/cdrom image=kernel
+
+    To extract the initrd from the installation source:
+    # boot-media-tool extract source=/media/cdrom image=initrd
+
+    To unpack the initrd into a directory called foodir:
+    # boot-media-tool unpack initrd=initrd.img dir=foodir
+
+    To pack the rootfs directory called foodir into an initramfs image:
+    # boot-media-tool pack dir=foodir initramfs=initram.img
+
+""")
         self.parser.set_usage(self.usagestr)
         
     def printUsageExit(self):
         """ Print usage text and exit. """
         self.stdoutMessage(self.usagestr)
+        sys.exit(0)
+        
+    def printExamplesExit(self):
+        """ Print examples text and exit. """
+        self.stdoutMessage(self.examples)
         sys.exit(0)
         
     def printMsgExit(self, msg):
@@ -78,8 +157,12 @@ class BootMediaApp(KusuApp):
         """ App-specific arguments goes here. """
         
         self.parser.add_option('-f','--force', action='store_true', dest='overwrite')
+        self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
         self.options, self.args = self.parser.parse_args()
         
+
+        if self.options.showexamples:
+            self.printExamplesExit()
         
         if len(self.args) < 2:
             self.printUsageExit()
@@ -224,7 +307,8 @@ class BootMediaApp(KusuApp):
         """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
         dirname = path(args['dir'])
         iso = path(args['iso'])
-          
+        srcpath = path(args['source'])
+                  
         try:
             self.bminst.mkBootISO(dirname, iso, volname="BootKit")
             print self._('Generated %(iso)s from %(dirname)s') % {'dirname':dirname, 'iso':iso}
@@ -259,6 +343,10 @@ class BootMediaApp(KusuApp):
         except FilePathError:
             msg = self._('File path error. Please ensure the directory is valid.')
             self.printMsgExit(msg)
+            
+    def _makePatch(self, args):
+        """Handler for make-patch. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
    
 if __name__ == '__main__':
     bminst = BootMediaTool()
