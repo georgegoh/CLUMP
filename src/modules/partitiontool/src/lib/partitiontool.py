@@ -151,7 +151,7 @@ class DiskProfile(object):
         disk = self.disk_dict[disk_id]
         logging.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
-            new_partition = disk.addPartition(size, fsTypes[fs_type], mountpoint)
+            new_partition = disk.addPartition(size, self.fsType_dict[fs_type], mountpoint)
         else:
             new_partition = disk.addPartition(size, None, mountpoint)
 
