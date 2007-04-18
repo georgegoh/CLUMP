@@ -120,15 +120,15 @@ class DiskProfile(object):
                     'ext3' : fsTypes['ext3'],
                     'physical volume' : None,
                     'software RAID' : None,
-                    'swap' : fsTypes['linux-swap'],
-                    'vfat' : fsTypes['fat32']
+                    'linux-swap' : fsTypes['linux-swap'],
+                    'fat32' : fsTypes['fat32']
                   }
     partitionType_dict = { 'ext2' : partitionTypes['PRIMARY'],
                            'ext3' : partitionTypes['PRIMARY'],
                            'physical volume' : partitionTypes['LVM'],
                            'software RAID' : partitionTypes['RAID'],
-                           'swap' : partitionTypes['SWAP'],
-                           'vfat' : partitionTypes['PRIMARY']
+                           'linux-swap' : partitionTypes['SWAP'],
+                           'fat32' : partitionTypes['PRIMARY']
                          }
 
 
