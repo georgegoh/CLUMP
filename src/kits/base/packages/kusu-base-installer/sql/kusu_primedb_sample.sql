@@ -280,6 +280,9 @@ insert into packages values (124,4,'component-base-node') ;
 
 # This is for testing dependencies on packages
 insert into packages values (125,5,'python') ;
+# Packages for the installer
+insert into packages values (126, 1, 'booger-pack') ;
+insert into packages values (127, 1, 'nuggets-pack') ;
 
 # Setup the modules for the diskless compute nodes
 insert into modules values (1,3,'nfs',1) ;
@@ -336,5 +339,21 @@ insert into appglobals values (19, 'SMTPServer', 'mailserver.myzone.company.com'
 insert into appglobals values (20, 'CFMBaseDir', '/opt/kusu/cfm', NULL) ;
 insert into appglobals values (21, 'ImageBaseDir', '/repo/images', 1) ;
 
+# Custom Scripts
 insert into scripts values (1, 3, '/repo/repos/custom_scripts/bogus.sh') ;
 insert into scripts values (2, 4, '/repo/repos/custom_scripts/bogus.sh') ;
+insert into scripts values (3, 1, '/repo/repos/custom_scripts/bogus-installer.sh') ;
+insert into scripts values (4, 1, '/repo/repos/custom_scripts/more-bogus-installer.sh') ;
+
+# Components
+insert into components values (1, 1, 'component-base-installer', 'This component provides the pieces needed for installer nodes', 'Fedora6.0') ;
+insert into components values (2, 1, 'component-base-installer', 'This component provides the pieces needed for installer nodes', 'RHEL5.1') ;
+insert into components values (3, 1, 'component-base-node', 'This component provides the pieces needed for all nodes', 'Fedora6.0') ;
+insert into components values (4, 1, 'component-base-node', 'This component provides the pieces needed for all nodes', 'RHEL5.1') ;
+
+# Nodegroup has Component
+insert into ng_has_comp values (1, 1, 1) ;
+insert into ng_has_comp values (2, 1, 3) ;
+insert into ng_has_comp values (3, 2, 3) ;
+insert into ng_has_comp values (4, 3, 3) ;
+insert into ng_has_comp values (5, 4, 3) ;

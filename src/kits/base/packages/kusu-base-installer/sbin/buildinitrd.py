@@ -304,15 +304,13 @@ class BuildInitrd:
             print "Packing initial RAM Disk"
 
         if type == 'initrd':
-
+            print "FIX ME"
 
         else:
             os.chdir(self.imagedir)
-            os.system('find . | cpio --quiet -o -H newc > \"/tftproot/kusu/%s\"' % 
-        self.initrd
-cd $(TARGET_DIR) && find . | cpio --quiet -o -H newc > $(CPIO_TARGET)
-
-
+            os.system('find . | cpio --quiet -o -H newc | gzip > \"/tftpboot/kusu/%s\"' % 
+                      self.initrd)
+            os.system 
 
 class BuildInitrdApp(KusuApp):
 

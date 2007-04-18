@@ -88,7 +88,7 @@ class NodeInfo:
             sys.exit(-1)
         for row in data:
             ip, dhcp, network, subnet, dev, suffix, gw, opt = row
-            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s">' % (dev, ip, subnet, network, suffix, gw, dhcp, opt)
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s"></nicinfo>' % (dev, ip, subnet, network, suffix, gw, dhcp, opt)
 
         # Partition Info
         query = ('select partition, mntpnt, fstype, size, options, preserve '
@@ -103,7 +103,7 @@ class NodeInfo:
         if data:
             for row in data:
                 partition, mntpnt, fstype, size, options, preserve = row
-                print '    <partition device="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s">' % (partition, mntpnt, fstype, size, options, preserve)
+                print '    <partition device="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (partition, mntpnt, fstype, size, options, preserve)
 
         # Component Info
         query = ('select components.cname from components, ng_has_comp '
@@ -119,7 +119,7 @@ class NodeInfo:
         if data:
             for row in data:
                 cname = row[0]
-                print '    <component name="%s">' % cname
+                print '    <component>%s</component>' % cname
 
         # Optional packages
         query = ('select packagename from packages '
@@ -134,7 +134,7 @@ class NodeInfo:
         if data:
             for row in data:
                 pack = row[0]
-                print '    <optpackage name="%s">' % pack
+                print '    <optpackage>%s</optpackage>' % pack
 
         # Optional scripts
         query = ('select script from scripts '
@@ -149,7 +149,7 @@ class NodeInfo:
         if data:
             for row in data:
                 script = row[0]
-                print '    <optscript name="%s">' % script
+                print '    <optscript>%s</optscript>' % script
 
         # Appglobals 
         query = ('select kname, kvalue from appglobals where '
@@ -164,7 +164,7 @@ class NodeInfo:
         if data:
             for row in data:
                 kname, kvalue = row
-                print '    <appglobals name="%s" value="%s">' % (kname, kvalue)
+                print '    <appglobals name="%s" value="%s"></appglobals>' % (kname, kvalue)
 
         print '</nodeinfo>'
 

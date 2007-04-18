@@ -46,6 +46,12 @@ else
 fi
 
 # Copy over a kernel and initrd to play with
+if [ -f /usr/lib/syslinux/pxelinux.0 ]; then
+    echo "Copying over pxelinux.0"
+    cp /usr/lib/syslinux/pxelinux.0 /tftpboot/kusu/pxelinux.0
+else
+    echo "ERROR:  Can't find /usr/lib/syslinux/pxelinux.0"
+fi
 echo "Copying over a kernel"
 REV=`uname -r`
 cp /boot/vmlinuz-${REV} /tftpboot/kusu/vmlinuz-${REV}
