@@ -49,6 +49,7 @@ SET(KUSU_MODULES
   ui
   partitiontool
   installer
+  networktool
 )
 
 EXEC_PROGRAM(${CMAKE_COMMAND}
