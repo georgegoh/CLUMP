@@ -67,10 +67,14 @@ class KickstartFactory(BaseFactory):
         for disk in disk_profile.disk_dict.values():
             for id, p in disk.partitions_dict.items():
                 fs_type = fstype_dict[p.fs_type]
-                #print id, p.path, p.mountpoint, fs_type, p.type
-              
-                # Empty partition. Do nothing with it
-                if not p.mountpoint and not fs_type == 'swap':
+                print id, p.path, p.mountpoint, fs_type, p.type
+
+                # Ignore other type of partitions             
+                if p.type.lower() in ['extended']: 
+                    continue
+
+                # Ignore empty partitions
+                if not p.mountpoint and not fs_type:
                     continue
 
                 if p.mountpoint:
@@ -128,9 +132,6 @@ class KickstartFactory(BaseFactory):
             p.append(str)
 
         
-    #    for id, p in sda.partitions_dict.items():
-    #print id, p.path, p.mountpoint, p.fs_type, p.type
- 
         return p
 
 
