@@ -8,18 +8,14 @@
 """This module handles operations that work with the meta-information of the supported native distros."""
 
 from path import path
+import os
 
 SUPPORTED_DISTROS = { 'CentOS': '4.4', 'Fedora Core': '6', 'OpenSuSE': '10.2', 'Ubuntu': '6.10' }
 
-# Taken from <unistd.h>, for file/dirs access modes
-# These can be OR'd together
-R_OK = 4   # Test for read permission.
-W_OK = 2   # Test for write permission.
-X_OK = 1   # Test for execute permission.
-
-
 class CopyError(Exception): pass
 class FileAlreadyExists(Exception): pass
+class InvalidInstallSource(Exception): pass
+
 
 class DistroInstallSrcBase(object):
     """Base class for a distro installation source and the operations that can work on it"""
@@ -32,6 +28,7 @@ class DistroInstallSrcBase(object):
         self.ostype - Name of the OS/Distro. It should be in lowercase for consistency. May be used for comparison cases.
         self.version - Version of the OS/Distro.
         self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
+        self.patchLayoutAttributes - a dict describing the layout of key directories/files for installation patches.
         
         The keys should the logical names of each layout attribute and the value should be the relative paths of the 
         directories/files."""
@@ -41,6 +38,7 @@ class DistroInstallSrcBase(object):
         self.ostype = None
         self.version = None
         self.pathLayoutAttributes = {}
+        self.patchLayoutAttributes = {}
     
     def verifySrcPath(self):
         """Call the correct verify*SrcPath method."""
@@ -89,11 +87,9 @@ class DistroInstallSrcBase(object):
             
     def copyKernel(self, dest, overwrite=False):
         """Copy the kernel file to a destination"""
-
-        global W_OK
         
         if path(dest).isdir():
-            if path(dest).access(W_OK):
+            if path(dest).access(os.W_OK):
                 filepath = path(dest) / self.getKernelPath().basename()
                 # check if the destpath already contains the same name as the kernelPath
                 if filepath.exists() and overwrite:
@@ -106,7 +102,7 @@ class DistroInstallSrcBase(object):
             else:
                 raise CopyError
         else:
-            if path(dest).parent.access(W_OK):
+            if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
                 if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
@@ -120,11 +116,9 @@ class DistroInstallSrcBase(object):
         
     def copyInitrd(self, dest, overwrite=False):
         """Copy the initrd file to a destination"""
-        
-        global W_OK
 
         if path(dest).isdir():
-            if path(dest).access(W_OK):
+            if path(dest).access(os.W_OK):
                 # check if the destpath already contains the same name as the initrdPath
                 filepath = path(dest) / self.getInitrdPath().basename()
                 if filepath.exists() and overwrite:
@@ -137,7 +131,7 @@ class DistroInstallSrcBase(object):
             else:
                 raise CopyError
         else:
-            if path(dest).parent.access(W_OK):
+            if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
                 if path(dest).exists() and overwrite: 
                     path(dest).chmod(0644)
@@ -164,6 +158,8 @@ class GeneralInstallSrc(DistroInstallSrcBase):
                 self.ostype = d.ostype
                 self.version = d.version
                 self.pathLayoutAttributes = d.pathLayoutAttributes
+                self.getStage2Path = d.getStage2Path
+                self.copyStage2 = d.copyStage2
                 break
             else:
                 self.srcPath = None
@@ -195,12 +191,57 @@ class CentOSInstallSrc(DistroInstallSrcBase):
             'isolinuxdir' : 'isolinux',
             'kernel' : 'isolinux/vmlinuz',
             'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
             'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
             'baseosdir' : 'CentOS',
             'packagesdir' : 'CentOS/RPMS',
             'metainfodir' : 'CentOS/base'
         }
         
+        # The following determines the patchfile layout for CentOS
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+        
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+            
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
 
 class FedoraInstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
@@ -225,8 +266,55 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             'isolinuxdir' : 'isolinux',
             'kernel' : 'isolinux/vmlinuz',
             'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
             'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
             'baseosdir' : 'Fedora',
             'packagesdir' : 'Fedora/RPMS',
             'metainfodir' : 'Fedora/base'
         }
+
+        # The following determines the patchfile layout for Fedora
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+        
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+            
+            
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+                

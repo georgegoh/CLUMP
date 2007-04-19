@@ -11,8 +11,8 @@ import os
 from kusu.core.app import KusuApp
 from path import path
 from kusu.boot.distro import CopyError
-from kusu.boot.distro import FileAlreadyExists
-from kusu.boot.tool import BootMediaTool
+from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource
+from kusu.boot.tool import BootMediaTool, FilePathError
 
         
         
@@ -32,7 +32,8 @@ class BootMediaApp(KusuApp):
                     'isobin'],
             'make-iso':['dir','iso','source'],
             'make-boot-tgz':['dir','bootarchive'],
-            'make-patch':['dir']}
+            'make-patch':['dir'],
+            'make-imgdir':['source','dir','patchfile']}
         
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -94,6 +95,12 @@ Actions:
     make-patch      - Make the installer patchfile based on OS. Available
                       arguments for this action:
                         dir=<directory containing Kusu Installer runtime>
+    make-imgdir     - Make the image directory based on installation source. 
+                      Available arguments for this action:
+                        source=<path of installation source>
+                        dir=<path of resulting image dir>
+                        patchfile=<path of patchfile image>
+
 """)
         self.examples = self._("""\
 Example operation usages:
@@ -347,7 +354,32 @@ Example operation usages:
     def _makePatch(self, args):
         """Handler for make-patch. args is a dict of supported key-value pairs for this action. """
         dirname = path(args['dir'])
-   
+        
+    def _makeImgdir(self,args):
+        """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """
+        srcpath = path(args['source'])
+        dirname = path(args['dir'])
+        patchfile = args.get('patchfile',None)
+        overwrite = self.options.overwrite
+
+        try:
+            print self._('Probing %(srcpath)s for second stage image(s).') \
+                % {'srcpath':srcpath}
+            self.bminst.mkImagesDir(srcpath,dirname,patchfile,overwrite)
+            print self._('Created images directory at %(dirname)s from %(srcpath)s') \
+                % {'dirname':dirname,'srcpath':srcpath}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the directory is valid.')
+            self.printMsgExit(msg)
+        except InvalidInstallSource:
+            msg = self._('The installation source is not supported')
+            self.printMsgExit(msg)
+        except FileAlreadyExists, e:
+            if not overwrite:
+                msg = self._('The second stage file(s) already exist in %(dirname)s. Use -f to force overwriting the file(s).') \
+                        % {'dirname':dirname}
+                self.printMsgExit(msg)
+
 if __name__ == '__main__':
     bminst = BootMediaTool()
     app = BootMediaApp(bminst)

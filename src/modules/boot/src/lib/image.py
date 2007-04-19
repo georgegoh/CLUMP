@@ -8,6 +8,7 @@
 """This module handles operations relating to booting up nodes."""
 
 from path import path
+from kusu.boot.distro import GeneralInstallSrc, InvalidInstallSource
 import os
 import sys
 import commands
@@ -31,7 +32,7 @@ def packInitramFS(dirname, rootimgpath, initscript=None):
     if not path(dirname).exists(): 
         raise FilePathError
     
-    if os.environ['USER'] <> 'root': raise NotPriviledgedUser, "Operation requires root access!"
+    if os.getuid() <> 0: raise NotPriviledgedUser, "Operation requires root access!"
     
     # nuke existing rootimgpath if existing
     if path(rootimgpath).exists(): rootimgpath.remove()
@@ -49,7 +50,7 @@ def unpack(rootimgpath, dirname):
     
     if not path(rootimgpath).exists(): raise FilePathError
     
-    if os.environ['USER'] <> 'root': raise NotPriviledgedUser
+    if os.getuid() <> 0: raise NotPriviledgedUser
     
     # nuke existing dirname
     if path(dirname).exists(): path(dirname).rmtree()
@@ -95,7 +96,28 @@ def unpack(rootimgpath, dirname):
         scratchdir.rmtree()
         raise e
         
+def makeImagesDir(srcpath, destdir, patchfile=None, overwrite=False):
+    """ Create the images directory given the installation source. Also puts in the patchfile image if available. """
+    
+    srcpath = path(srcpath)
+    destdir = path(destdir)
+    if patchfile: patchfile = path(patchfile)
+    
+    obj = GeneralInstallSrc(srcpath)
+    try:
+        stage2img = obj.getStage2Path()
+    except AttributeError:
+        raise InvalidInstallSource, "Installation source not supported!"
         
+    if not stage2img.exists(): raise FilePathError, "stage2.img not found within %s!" % srcpath
+    
+    if not destdir.exists(): destdir.mkdir()
+    
+    # copy the stage2.img into the destdir
+    obj.copyStage2(destdir,overwrite)
+        
+    if patchfile and patchfile.exists(): patchfile.copy(destdir,overwrite)
+    
     
 def makeISOLinuxDir(isolinuxdir, oenvobj=None, isolinuxbin=None):
     """Create, or update if already existing, isolinux directory. Also updates the isolinux.cfg file accordingly."""

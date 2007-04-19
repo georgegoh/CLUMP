@@ -6,7 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from path import path
-from kusu.boot.distro import GeneralInstallSrc
+from kusu.boot.distro import GeneralInstallSrc, InvalidInstallSource
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
@@ -97,6 +97,15 @@ class BootMediaTool:
             makeISOLinuxDir(isolinuxdir, obj, isolinuxbin)
             return True
         except FilePathError, e:
+            raise e
+            
+    def mkImagesDir(self, srcpath, destdir, patchfile=None,overwrite=False):
+        """ Creates images directory based on installsrc. A FilePathError
+            exception will be raised if the paths are invalid or unaccesible.
+        """
+        try:
+            makeImagesDir(srcpath,destdir,patchfile,overwrite)
+        except (FilePathError,InvalidInstallSource), e:
             raise e
             
     def mkBootISO(self, isolinuxdir, isoname, volname="BootKit"):
