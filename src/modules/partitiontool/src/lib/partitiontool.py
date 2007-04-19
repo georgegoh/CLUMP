@@ -7,10 +7,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
-"""This mockup is a stub for the real partitioner tool module. The following
-   describes the model of this tool.
-
-   The tool keeps track of the following entities in a system:
+"""This tool keeps track of the following entities in a system:
       a) physical disks (ie, /dev/sda, /dev/hda, ...)
       b) partitions (sda1, hda1, ...)
       c) logical volume groups
@@ -31,6 +28,11 @@
          partition;
       b) mountpoint collisions with an existing volume; and
       c) any special provisions to make this a primary, or extended partition.
+   The first 3 partitions created will be primary. Beyond the third partition,
+   an extended partition will be created, and new partitions are added there.
+   There will always be only one extended partition on a disk to contain the
+   logical partitions. An extended partition cannot be deleted until all
+   logical partitions are deleted.
 
    LOGICAL VOLUME GROUPS -
    If we have specified at least one partition on our disk(s) to be an LVM
@@ -79,28 +81,32 @@ while fs_type:
     fsTypes[fs_type.name] = fs_type
     fs_type = parted.file_system_type_get_next (fs_type)
 
-partitionTypes = {
-    'BOOT' : parted.PARTITION_BOOT,
-    'EXTENDED' : parted.PARTITION_EXTENDED,
+diskFlags = {
     'FIRST_FLAG' : parted.PARTITION_FIRST_FLAG,
-    'FREESPACE' : parted.PARTITION_FREESPACE,
-    'HIDDEN' : parted.PARTITION_HIDDEN,
-    'HPSERVICE' : parted.PARTITION_HPSERVICE,
     'LAST_FLAG' : parted.PARTITION_LAST_FLAG,
-    'LBA' : parted.PARTITION_LBA,
-    'LOGICAL' : parted.PARTITION_LOGICAL,
-    'LVM' : parted.PARTITION_LVM,
-    'METADATA' : parted.PARTITION_METADATA,
-    'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED,
-    'PALO' : parted.PARTITION_PALO,
-    'PREP' : parted.PARTITION_PREP,
-    'PRIMARY' : parted.PARTITION_PRIMARY,
-    'PROTECTED' : parted.PARTITION_PROTECTED,
-    'RAID' : parted.PARTITION_RAID,
-    'ROOT' : parted.PARTITION_ROOT,
-    'SWAP' : parted.PARTITION_SWAP
 }
 
+partitionTypes = {
+    'PRIMARY' : parted.PARTITION_PRIMARY,
+    'EXTENDED' : parted.PARTITION_EXTENDED,
+    'LOGICAL' : parted.PARTITION_LOGICAL,
+    'FREESPACE' : parted.PARTITION_FREESPACE,
+    'METADATA' : parted.PARTITION_METADATA
+}
+
+partitionFlags = {
+    'BOOT' : parted.PARTITION_BOOT,
+    'ROOT' : parted.PARTITION_ROOT,
+    'SWAP' : parted.PARTITION_SWAP,
+    'HIDDEN' : parted.PARTITION_HIDDEN,
+    'RAID' : parted.PARTITION_RAID,
+    'LVM' : parted.PARTITION_LVM,
+    'LBA' : parted.PARTITION_LBA,
+    'HPSERVICE' : parted.PARTITION_HPSERVICE,
+    'PALO' : parted.PARTITION_PALO,
+    'PREP' : parted.PARTITION_PREP,
+    'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
+}
 
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
@@ -123,13 +129,6 @@ class DiskProfile(object):
                     'linux-swap' : fsTypes['linux-swap'],
                     'fat32' : fsTypes['fat32']
                   }
-    partitionType_dict = { 'ext2' : partitionTypes['PRIMARY'],
-                           'ext3' : partitionTypes['PRIMARY'],
-                           'physical volume' : partitionTypes['LVM'],
-                           'software RAID' : partitionTypes['RAID'],
-                           'linux-swap' : partitionTypes['SWAP'],
-                           'fat32' : partitionTypes['PRIMARY']
-                         }
 
 
     def __init__(self, fresh):
@@ -362,7 +361,7 @@ class Disk(object):
             return eval(self.__getattr_dict[name])
         else:
             raise AttributeError, "%s instance has no attribute '%s'" % \
-                                  (__class__, name)
+                                  (self.__class__, name)
 
     def __appendToPartitionDict(self, pedPartition, mountpoint=None):
         new_partition = Partition(self, pedPartition, mountpoint)
@@ -382,7 +381,6 @@ class Disk(object):
 
         try:
             constraint = self.pedDevice.constraint_any()
-
             if next_partition_type == 'PRIMARY':
                 new_pedPartition = self.pedDisk.partition_new(partitionTypes['PRIMARY'],
                                                           fs_type,
@@ -427,9 +425,41 @@ class Disk(object):
         """Remove a partition from this disk. Argument is the Partition object
            itself.
         """
-        del self.partitions_dict[partition_obj.num]
-        self.pedDisk.delete_partition(partition_obj.pedPartition)
+        # get ordered list of partition keys.
+        partition_nums = sorted(self.partitions_dict.keys())
 
+        # delete the object from the dictionary and remove from pedDisk.
+        deleted_partition_number = partition_obj.num
+        deleted_partition = self.partitions_dict[deleted_partition_number]
+        del self.partitions_dict[deleted_partition_number]
+        self.pedDisk.delete_partition(deleted_partition.pedPartition)
+
+        partitions_to_move = []
+        # partition numbers start from one, so it's a happy coincidence that
+        # number of the partition that we want to delete is the index position
+        # of the first partition that we want to move. How to move? First, we
+        # delete...
+        for part_key in partition_nums[deleted_partition_number:]:
+            partition = self.partitions_dict[part_key]
+            if partition.type != 'extended':
+                partitions_to_move.append((partition.size(),
+                                           partition.fs_type,
+                                           partition.mountpoint
+                                          ))
+            del self.partitions_dict[part_key]
+            if partition.type == 'primary' or partition.type == 'extended':
+                self.pedDisk.delete_partition(partition.pedPartition)
+            if partition.mountpoint in self.profile.mountpoints.keys():
+                self.profile.mountpoints.pop(partition.mountpoint)
+
+        # ... then we re-add the partitions.
+        from path import path
+        for part_details in partitions_to_move:
+            self.profile.newPartition(path(self.path).basename(),
+                                      part_details[0],
+                                      False,
+                                      part_details[1],
+                                      part_details[2])
 
     def __getNextPartitionType(self):
         """Get the next assignable partition number, and whether it should be an
@@ -537,8 +567,8 @@ class Partition(object):
        A Partition instance encapsulates an instance of parted.PedPartition, and
        thus has the following additional(hidden) attributes, which can be 
        read(-only):
-          a. start_sector
-          b. end_sector
+          a. start_sector (writeable)
+          b. end_sector (writeable)
           c. length
           d. part_type
           e. fs_type
@@ -547,6 +577,11 @@ class Partition(object):
           h. start_cylinder
           i. end_cylinder
           j. type
+          k. boot_flag
+          l. lvm_flag
+          m. root_flag
+          n. swap_flag
+          o. raid_flag
     """
     disk = None
     pedPartition = None
@@ -559,10 +594,20 @@ class Partition(object):
                        'num' : 'self.pedPartition.num',
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
                        'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)',
-                       'type' : 'self.pedPartition.type_name'
+                       'type' : 'self.pedPartition.type_name',
+                       'boot_flag' : 'self.pedPartition.get_flag(parted.PARTITION_BOOT)',
+                       'lvm_flag' : 'self.pedPartition.get_flag(parted.PARTITION_LVM)',
+                       'root_flag' : 'self.pedPartition.get_flag(parted.PARTITION_ROOT)',
+                       'swap_flag' : 'self.pedPartition.get_flag(parted.PARTITION_SWAP)',
+                       'raid_flag' : 'self.pedPartition.get_flag(parted.PARTITION_RAID)'
                       }
     __setattr_dict = { 'start_sector' : "self.pedPartition.geom.set_start(long('%s'))",
-                       'end_sector' : "self.pedPartition.geom.set_end(long('%s'))"
+                       'end_sector' : "self.pedPartition.geom.set_end(long('%s'))",
+                       'boot_flag' : "self.pedPartition.set_flag(parted.PARTITION_BOOT, int('%s'))",
+                       'lvm_flag' : "self.pedPartition.set_flag(parted.PARTITION_LVM, int('%s'))",
+                       'root_flag' : "self.pedPartition.set_flag(parted.PARTITION_ROOT, int('%s'))",
+                       'swap_flag' : "self.pedPartition.set_flag(parted.PARTITION_SWAP, int('%s'))",
+                       'raid_flag' : "self.pedPartition.set_flag(parted.PARTITION_RAID, int('%s'))"
                      }
 
     def __init__(self, disk, pedPartition, mountpoint=None):
@@ -584,8 +629,10 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        else:
+        elif name == 'disk' or name == 'pedPartition' or name == 'mountpoint':
             object.__setattr__(self, name, value)
+        else:
+            raise AttributeError, "Partition instance has no or cannot modify attribute '%s'" % name
 
     def size(self):
         return self.disk.sector_size * self.length
@@ -595,8 +642,11 @@ class Partition(object):
             print commands.getoutput('mkfs.ext2 %s' % self.path)
         elif self.fs_type == 'ext3':
             print commands.getoutput('mkfs.ext3 %s' % self.path)
-        elif self.fs_type == 'swap':
+        elif self.fs_type == 'linux-swap':
             print commands.getoutput('mkswap %s' % self.path)
+        elif self.lvm_flag:
+            # do the lvm thing
+            pass
 
 
 import unittest
