@@ -37,6 +37,7 @@ class DistroInstallSrcBase(object):
         self.isRemote = False
         self.ostype = None
         self.version = None
+        self.arch = None
         self.pathLayoutAttributes = {}
         self.patchLayoutAttributes = {}
     
@@ -143,13 +144,20 @@ class DistroInstallSrcBase(object):
             else:
                 raise CopyError
 
+    def getVersion(self):
+        '''virtual function to be implemented by specific distro children'''
+        return self.version
+
+    def getArch(self):
+        return self.arch
+
 class GeneralInstallSrc(DistroInstallSrcBase):
     """General wrapper class to deal with the different distro installation sources."""
     
     def __init__(self, srcPath):
         super(GeneralInstallSrc,self).__init__()
         # set the list of possible distros
-        self.distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath)]
+        self.distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
         
         for d in self.distros:
             if d.verifySrcPath():
@@ -160,6 +168,8 @@ class GeneralInstallSrc(DistroInstallSrcBase):
                 self.pathLayoutAttributes = d.pathLayoutAttributes
                 self.getStage2Path = d.getStage2Path
                 self.copyStage2 = d.copyStage2
+                self.getVersion = d.getVersion #assign the proper function pointer
+                self.getArch = d.getArch #assign the proper function pointer
                 break
             else:
                 self.srcPath = None
@@ -167,6 +177,14 @@ class GeneralInstallSrc(DistroInstallSrcBase):
                 self.ostype = None
                 self.version = None
                 self.pathLayoutAttributes = {}
+
+def DistroFactory(srcPath):
+    distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
+    for d in distros:
+        if d.verifySrcPath():
+            return d
+    return DistroInstallSrcBase()
+
     
 class CentOSInstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
@@ -198,6 +216,10 @@ class CentOSInstallSrc(DistroInstallSrcBase):
             'packagesdir' : 'CentOS/RPMS',
             'metainfodir' : 'CentOS/base'
         }
+
+    def getVersion(self):
+        '''CentOS specific way of getting the distro version'''
+        return self.version
         
         # The following determines the patchfile layout for CentOS
         self.patchLayoutAttributes = {
@@ -259,7 +281,8 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
 
         self.ostype = 'fedora'
-        self.version = '6'
+        self.version = '0'
+        self.arch = 'noarch'
 
         # These should describe the key directories that identify a Fedora Core installation source layout.
         self.pathLayoutAttributes = {
@@ -279,7 +302,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             'patchdir' : 'images',
             'patchimage' : 'images/updates.img'
         }
-        
+
     def getStage2Path(self):
         """Get the stage2 path object"""
 
@@ -287,8 +310,8 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             return path(self.srcPath / self.pathLayoutAttributes['stage2'])
         else:
             return None
-            
-            
+
+
     def copyStage2(self, dest, overwrite=False):
         """Copy the stage2 file to a destination"""
 
@@ -302,13 +325,13 @@ class FedoraInstallSrc(DistroInstallSrcBase):
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 raise CopyError
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -317,4 +340,72 @@ class FedoraInstallSrc(DistroInstallSrcBase):
                     raise FileAlreadyExists
             else:
                 raise CopyError
-                
+
+    def getVersion(self):
+        '''Fedora specific way of getting the distro version'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] #second line is usually the name/version
+            words = line.split()
+            for i in range(0,len(words)):
+                if words[i].isdigit():
+                    break
+            self.version = words[i]
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            pass
+        return self.version
+
+    def getArch(self):
+        '''Fedora specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #any other way?
+            pass
+        return self.arch
+
+
+class RHELInstallSrc(DistroInstallSrcBase):
+    """This class describes how a RHEL installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(RHELInstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'rhel'
+        self.version = '4.4'
+
+        # These should describe the key directories that identify a CentOS installation source layout.
+        self.pathLayoutAttributes = {
+            'isolinuxdir' : 'isolinux',
+            'kernel' : 'isolinux/vmlinuz',
+            'initrd' : 'isolinux/initrd.img',
+            'imagesdir' : 'images',
+            'baseosdir' : 'RedHat',
+            'packagesdir' : 'RedHat/RPMS',
+            'metainfodir' : 'RedHat/base'
+        }
+
+    def getVersion(self):
+        '''RHEL specific way of getting the distro version'''
+        return self.version     #for now
+
