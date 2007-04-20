@@ -35,7 +35,7 @@ def packInitramFS(dirname, rootimgpath, initscript=None):
     if os.getuid() <> 0: raise NotPriviledgedUser, "Operation requires root access!"
     
     # nuke existing rootimgpath if existing
-    if path(rootimgpath).exists(): rootimgpath.remove()
+    if path(rootimgpath).exists(): path(rootimgpath).remove()
     
     cwd = path(dirname)
     findP = subprocess.Popen("find .",cwd=cwd,shell=True,stdout=subprocess.PIPE)
