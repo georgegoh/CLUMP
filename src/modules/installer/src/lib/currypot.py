@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id: currypot.py 237 2007-04-05 08:57:10Z ggoh $
 #
-# Kusu Installer Currypot Module
+# Kusu Installer Data Container Module
 #
 # Kusu Text Installer Framework.
 #
@@ -9,13 +9,13 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-"""This module is the currypot - any user can deposit context-based key/value
+"""This module is the data container - any user can deposit context-based key/value
    pairs into the objects here."""
 __version__ = "$Revision: 237 $"
 
 import pickle
-class Bowl:
-    """A Bowl is a collection of settings for a particular context."""
+class SettingsContainer:
+    """A collection of settings for a particular context."""
     context = ''
     settings = {}
 
@@ -23,22 +23,22 @@ class Bowl:
         self.context = context
 
 
-class PickledCurrypot:
-    """A PickledCurrypot is a collection of Bowls, stored in a flat file."""
+class PickledSettingsCollection:
+    """A collection of containers, stored in a flat file."""
     contexts = {}
 
-    def __init__(self, database='currypot.pic'):
+    def __init__(self, database='collection.pic'):
         self.database = database
         self.checkout(database)
 
     def put(self, context, key, value):
         """Put in a context-based key/value pair."""
         if self.contexts.has_key(context):
-            bowl = self.contexts[context]
+            container = self.contexts[context]
         else:
-            bowl = Bowl(context)
-            self.contexts[context] = bowl
-        bowl.settings[key] = value
+            container = SettingsContainer(context)
+            self.contexts[context] = container
+        container.settings[key] = value
 
     def getContexts(self):
         """Get all contexts stored previously."""
@@ -48,10 +48,10 @@ class PickledCurrypot:
         """Get the value associated with a given context and key."""
         if not self.contexts.has_key(context):
             return None
-        bowl = self.contexts[context]
-        if not bowl.settings.has_key(key):
+        container = self.contexts[context]
+        if not container.settings.has_key(key):
             return None
-        return bowl.settings[key]
+        return container.settings[key]
 
     def commit(self):
         """Save all transactions."""
@@ -80,8 +80,8 @@ class PickledCurrypot:
         return True
 
 from pysqlite2 import dbapi2 as sqlite
-class SQLiteCurrypot:
-    """A Currypot implemented with SQLite. All the taste, half the calories."""
+class SQLiteCollection:
+    """A Collection implemented with SQLite."""
     table_name = 'installer_settings'
     id_col = 'id'
     context_col = 'context'
@@ -199,29 +199,29 @@ class SQLiteCurrypot:
 
 import os
 import unittest
-class SQLiteCurrypotTestCase(unittest.TestCase):
+class SQLiteCollectionTestCase(unittest.TestCase):
     def setUp(self):
-        tmpfile = '/tmp/currypot.db'
+        tmpfile = '/tmp/collection.db'
         try:
             os.remove(tmpfile)
         except OSError, e:
             assert e.errno == 2, "OSError exception thrown"
-        self.currypot = SQLiteCurrypot(tmpfile)
+        self.collection = SQLiteCollection(tmpfile)
 
     def tearDown(self):
         print 'Test case done. Closing connection.'
-        self.currypot.close()
-        self.currypot = None
+        self.collection.close()
+        self.collection = None
 
     def testPutAndGet(self):
         """Do the standard action expected of users."""
-        print 'Testing currypot.put'
-        self.currypot.put('context1', 'setting1', 'value1')
-        listtuple_result = self.currypot.get()
+        print 'Testing collection.put'
+        self.collection.put('context1', 'setting1', 'value1')
+        listtuple_result = self.collection.get()
         assert listtuple_result[0] == (1, 'context1', 'setting1', 'value1'), \
                                       "Didn't get the same tuple as I put in."
         print 'Got the same tuple I put in.'
-        list_result = self.currypot.get('context1', 'setting1')
+        list_result = self.collection.get('context1', 'setting1')
         assert list_result[0] == 'value1', "Didn't get the right value from" + \
                                  " context/setting pair."
         print 'Got the same value I put in.'
@@ -229,27 +229,27 @@ class SQLiteCurrypotTestCase(unittest.TestCase):
     def testMultiplePutAndGet(self):
         """Put in multiple different values into the same context and setting. \
            Should reflect only the last value put in."""
-        print 'Testing currypot multiple put.'
-        self.currypot.put('context1', 'setting1', 'value1')
-        self.currypot.put('context1', 'setting1', 'value2')
-        self.currypot.put('context1', 'setting1', 'value3')
-        self.currypot.put('context1', 'setting1', 'value4')
-        listtuple_result = self.currypot.get()
+        print 'Testing collection multiple put.'
+        self.collection.put('context1', 'setting1', 'value1')
+        self.collection.put('context1', 'setting1', 'value2')
+        self.collection.put('context1', 'setting1', 'value3')
+        self.collection.put('context1', 'setting1', 'value4')
+        listtuple_result = self.collection.get()
         print listtuple_result
         assert listtuple_result[0] == (4, 'context1', 'setting1', 'value4'), \
                                       "Didn't get the same tuple as I last put in."
         print 'Got the same tuple I last put in.'
-        list_result = self.currypot.get('context1', 'setting1')
+        list_result = self.collection.get('context1', 'setting1')
         assert list_result == ['value4'], "Didn't get the right value from" + \
                                  " context/setting pair I last put in."
         print 'Got the same value I last put in.'
 
     def testRemove(self):
         """Test the remove functionality."""
-        print 'Testing currypot remove.'
-        self.currypot.put('context1', 'setting1', 'value1')
-        self.currypot.remove('context1', 'setting1')
-        listtuple_result = self.currypot.get()
+        print 'Testing collection remove.'
+        self.collection.put('context1', 'setting1', 'value1')
+        self.collection.remove('context1', 'setting1')
+        listtuple_result = self.collection.get()
         assert listtuple_result == [], 'Currypot not empty after call to remove.'
         print 'Successful remove.'
 
@@ -257,22 +257,22 @@ class SQLiteCurrypotTestCase(unittest.TestCase):
         """Create 2 contexts with same key/value pairs, and ensure that only
            key/value pairs of the requested context are returned."""
         print 'Testing multiple contexts.'
-        self.currypot.put('context1', 'setting1', 'wrong')
-        self.currypot.put('context2', 'setting1', 'right')
-        self.currypot.put('context1', 'setting2', 'wrong')
-        self.currypot.put('context2', 'setting2', 'right')
-        self.currypot.put('context1', 'setting3', 'wrong')
-        self.currypot.put('context2', 'setting3', 'right')
-        self.currypot.put('context1', 'setting4', 'wrong')
-        self.currypot.put('context2', 'setting4', 'right')
+        self.collection.put('context1', 'setting1', 'wrong')
+        self.collection.put('context2', 'setting1', 'right')
+        self.collection.put('context1', 'setting2', 'wrong')
+        self.collection.put('context2', 'setting2', 'right')
+        self.collection.put('context1', 'setting3', 'wrong')
+        self.collection.put('context2', 'setting3', 'right')
+        self.collection.put('context1', 'setting4', 'wrong')
+        self.collection.put('context2', 'setting4', 'right')
 
-        listtuple_result = self.currypot.get('context2')
+        listtuple_result = self.collection.get('context2')
         for tup in listtuple_result:
             assert tup[3] == 'right', "Didn't get the right value from " + \
                              "context-sensitive get."
             print tup, 'OK'
 
-        list_result = self.currypot.get('context1', 'setting3')
+        list_result = self.collection.get('context1', 'setting3')
         assert list_result == ['wrong'], "Didn't get the same value as I put in"
         print "Got the same value as I put in."
 

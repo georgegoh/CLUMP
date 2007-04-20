@@ -11,7 +11,7 @@
 __version__ = "$Revision: 248 $"
 
 import snack
-from currypot import *
+from collection import *
 from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
@@ -47,15 +47,15 @@ class ScreenFactoryImpl(ScreenFactory):
 
     """
     name = 'installer'
-    currypot = SQLiteCurrypot()
-    ScreenFactory.screens = [WelcomeScreen(currypot, kusuApp=runtimeDict),
-                             LanguageSelectionScreen(currypot, kusuApp=runtimeDict),
-                             KeyboardSelectionScreen(currypot, kusuApp=runtimeDict),
-                             ClusterInfoScreen(currypot, kusuApp=runtimeDict),
-                             RootPasswordScreen(currypot, kusuApp=runtimeDict),
-                             PartitionScreen(currypot, kusuApp=runtimeDict),
-                             GatewayDNSSetupScreen(currypot, kusuApp=runtimeDict),
-                             TZSelectionScreen(currypot, kusuApp=runtimeDict),
-                             ConfirmScreen(currypot, kusuApp=runtimeDict)
+    collection = SQLiteCollection()
+    ScreenFactory.screens = [WelcomeScreen(collection, kusuApp=runtimeDict),
+                             LanguageSelectionScreen(collection, kusuApp=runtimeDict),
+                             KeyboardSelectionScreen(collection, kusuApp=runtimeDict),
+                             ClusterInfoScreen(collection, kusuApp=runtimeDict),
+                             RootPasswordScreen(collection, kusuApp=runtimeDict),
+                             PartitionScreen(collection, kusuApp=runtimeDict),
+                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
+                             TZSelectionScreen(collection, kusuApp=runtimeDict),
+                             ConfirmScreen(collection, kusuApp=runtimeDict)
                             ]
 
