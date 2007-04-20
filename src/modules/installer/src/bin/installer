@@ -29,12 +29,6 @@ class KusuInstaller(Navigator, KusuApp):
     """
     def __init__(self, screenFactory, screenTitle, showTrail=True):
         KusuApp.__init__(self)
-        import commands
-        if commands.getoutput('whoami') != 'root':
-            msg = self._('You must be root to run the installer.\n')
-            self.errorMessage(msg)
-            sys.exit(1)
-
         Navigator.__init__(self, screenFactory, screenTitle, showTrail)
 
 
