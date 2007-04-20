@@ -15,6 +15,8 @@ import sys
 import logging
 import snack
 import gettext
+import re
+from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.core.app import KusuApp
 from kusu.ui.text.navigator import Navigator
 from kusu.installer.kusufactory import ScreenFactoryImpl
@@ -33,6 +35,18 @@ class KusuInstaller(Navigator, KusuApp):
 
 
 if __name__ == '__main__':
+    # get the map of the available partitions
+    devmap = getPartitionMap()
+    devices = devmap.keys()
+    
+    # set up a pattern of the devices we are interested in
+    pat = re.compile('[hs]d\d*')
+    for dev in devices:
+        m = pat.match(dev)
+        if m:
+            makeDev('b',devmap[dev]['major],devmap[dev]['minor'],dev)
+    
+    # create kusu installer instance
     ki = KusuInstaller(screenFactory=ScreenFactoryImpl,
                        screenTitle='Kusu Installer',
                        showTrail=True)
