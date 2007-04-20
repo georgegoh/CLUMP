@@ -1,46 +1,17 @@
 # $Id$
-SET(KUSU_VERSION '0.1')
+SET(KUSU_VERSION 0.1)
 
-IF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-  MESSAGE(FATAL_ERROR "Please build out of source directory.")
-ENDIF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-
-# Get the python interpreter
-INCLUDE(FindPythonInterp)
-
-IF(NOT PYTHONINTERP_FOUND)
-  MESSAGE(FATAL_ERROR "python executable not found")
-ENDIF(NOT PYTHONINTERP_FOUND)
-
-SET(PYTHON_VERSION)
-EXEC_PROGRAM(${PYTHON_EXECUTABLE}
-  ARGS  "-c 'import sys; print sys.version[:3]'"
-  OUTPUT_VARIABLE PYTHON_VERSION
-)
-
-SET(KUSU_DEVEL_ROOT ${CMAKE_BINARY_DIR})
-MESSAGE(STATUS "SET KUSU_DEVEL_ROOT=${KUSU_DEVEL_ROOT}")
-
-SET(KUSU_ROOT $ENV{KUSU_ROOT})
-
-IF(NOT KUSU_ROOT)
-  MESSAGE(STATUS "Environment KUSU_ROOT is not set. Defaulting to ${KUSU_DEVEL_ROOT}/kusuroot")
-  SET(KUSU_ROOT ${KUSU_DEVEL_ROOT}/kusuroot)
-ELSE(NOT KUSU_ROOT)
-  MESSAGE(STATUS "SET KUSU_ROOT=${KUSU_ROOT}")
-ENDIF(NOT KUSU_ROOT)
-
-SET(KUSU_BIN ${KUSU_ROOT}/bin)
-SET(KUSU_LIB ${KUSU_ROOT}/lib)
-
+## Add 3rd party modules to the build lists
 SET(KUSU_3RDPARTY 
-  pyparted 
-  pysqlite 
-  path 
+  pyparted
+  pysqlite
+  path
   md5crypt
   cheetah
+  urlgrabber
 )
 
+## Add kusu modules to the build lists
 SET(KUSU_MODULES 
   core
   autogen
@@ -49,43 +20,12 @@ SET(KUSU_MODULES
   ui
   partitiontool
   installer
-  networktool
 )
 
-EXEC_PROGRAM(${CMAKE_COMMAND}
-  ARGS -E copy_directory ${CMAKE_SOURCE_DIR} 
-       ${KUSU_DEVEL_ROOT}
-)
+## Include Kusu globals
+SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build/CMakeScripts)
+INCLUDE(KusuGlobals)
 
-FILE(REMOVE_RECURSE ${KUSU_ROOT})
-FILE(MAKE_DIRECTORY ${KUSU_ROOT})
-FILE(MAKE_DIRECTORY ${KUSU_BIN})
-FILE(MAKE_DIRECTORY ${KUSU_LIB})
-FILE(MAKE_DIRECTORY ${KUSU_LIB}/python)
-FILE(MAKE_DIRECTORY ${KUSU_LIB}/python/kusu)
-FILE(WRITE ${KUSU_LIB}/python/kusu/__init__.py "")
-
-FOREACH(external_module ${KUSU_3RDPARTY})
-  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/3rdparty/${external_module})
-ENDFOREACH(external_module)
-
-FOREACH (kusu_module ${KUSU_MODULES})
-  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/modules/${kusu_module} ${KUSU_DEVEL_ROOT}/modules/${kusu_module})
-ENDFOREACH(kusu_module)
-
-SET(PYTHONPATH ${KUSU_LIB}/python)
-MESSAGE(STATUS "$PYTHONPATH=${PYTHONPATH}")
-
-FIND_PROGRAM(BASH
-  NAMES bash
-  PATHS
-  /bin
-  /usr/bin
-  /usr/local/bin
-)
-
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/../bin/kusudevenv.sh
-          ${KUSU_BIN}/kusudevenv.sh)
 
 
 
