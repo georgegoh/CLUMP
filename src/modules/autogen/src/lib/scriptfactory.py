@@ -67,7 +67,7 @@ class KickstartFactory(BaseFactory):
         for disk in disk_profile.disk_dict.values():
             for id, p in disk.partitions_dict.items():
                 fs_type = fstype_dict[p.fs_type]
-                print id, p.path, p.mountpoint, fs_type, p.type
+                #print id, p.path, p.mountpoint, fs_type, p.type
 
                 # Ignore other type of partitions             
                 if p.type.lower() in ['extended']: 
