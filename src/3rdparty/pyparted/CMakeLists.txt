@@ -1,4 +1,4 @@
-# $Id$
+# $Id: CMakeLists.txt 275 2007-04-12 11:56:52Z hirwan $
 # Configure
 PROJECT(pyparted)
 SET(LICENSE_FILE COPYING)
@@ -11,3 +11,13 @@ SET(CONFIGURE_ARGS CFLAGS='-fPIC')
 
 INCLUDE(ConfigureMakeInstall)
 SET(KUSU_MODULE OFF)
+
+#Custom command and targets
+ADD_CUSTOM_TARGET(move-docdir
+  COMMAND mv ${SETUPPY_PATH}/installdir/share/doc/${PROJECT_NAME}-${VERSION_STR}/* 
+             ${SETUPPY_PATH}/installdir/share/doc/.
+  COMMAND rm -rf ${SETUPPY_PATH}/installdir/share/doc/${PROJECT_NAME}-${VERSION_STR}
+  DEPENDS ${SETUPPY_PATH}/installdir
+)
+
+ADD_DEPENDENCIES(build-${PROJECT_NAME} setuppy-install copy-license move-docdir)

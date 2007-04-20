@@ -15,3 +15,12 @@ SET(SETUPPY_BDIST_ARGS bdist)
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)
 
+#Custom command and targets
+ADD_CUSTOM_TARGET(move-docdir
+  COMMAND mv ${SETUPPY_PATH}/installdir/share/doc/pysqlite2-doc/* 
+             ${SETUPPY_PATH}/installdir/share/doc/.
+  COMMAND rm -rf ${SETUPPY_PATH}/installdir/share/doc/pysqlite2-doc
+  DEPENDS ${SETUPPY_PATH}/installdir
+)
+
+ADD_DEPENDENCIES(build-${PROJECT_NAME} setuppy-install copy-license move-docdir)
