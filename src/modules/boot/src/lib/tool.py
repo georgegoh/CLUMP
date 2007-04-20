@@ -13,11 +13,20 @@ from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
 
-class getPartitionMap(src='/proc/partitions'):
+def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
-    pass
+    partition_map = {}
+    lines = open(src).readlines()
+    for line in lines[2:]:
+        tokens = line.split()
+        details = {}
+        details['major'] = tokens[0]
+        details['minor'] = tokens[1]
+        details['blocks'] = tokens[2]
+        partition_map[tokens[3]] = details
+    return partition_map
     
-class makeDev(devtype,major,minor,devpath):
+def makeDev(devtype,major,minor,devpath):
     """ This function creates /dev/* entries. Mainly used for creating block devices. """
     
     # do not create if devpath already exists
@@ -25,7 +34,7 @@ class makeDev(devtype,major,minor,devpath):
     
     if devtype != 'b' or devtype != 'c': raise Exception, "devtype must be 'b' or 'c'!"
     
-    args = ' '.join([devpath,devtype,major minor])
+    args = ' '.join([devpath,devtype,major,minor])
     mknodP = subprocess.Popen("mknod %s" % args,cwd=cwd,shell=True)
     mknodP.communicate()
     
