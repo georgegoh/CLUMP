@@ -197,6 +197,7 @@ def makeBootISO(isolinuxdir, isoname, volname="BootKit"):
     -quiet \
     -no-emul-boot \
     -boot-load-size 4 \
+    -boot-info-table \
     -R -r -T -f -l \
     -o %s %s' %  (volname,isopath,scratchdir)
     
