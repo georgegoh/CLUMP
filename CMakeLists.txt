@@ -20,10 +20,11 @@ SET(KUSU_MODULES
   ui
   partitiontool
   installer
+  networktool
 )
 
 ## Include Kusu globals
-SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build/CMakeScripts)
+SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/CMakeScripts)
 INCLUDE(KusuGlobals)
 
 

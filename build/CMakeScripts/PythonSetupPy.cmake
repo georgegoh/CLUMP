@@ -1,3 +1,4 @@
+# $Id: PythonSetupPy.camke 293 2007-04-13 04:50:44Z hirwan $
 ## Python distutils Build template
 IF(PYTHONINTERP_FOUND)
   ADD_CUSTOM_COMMAND(
@@ -55,9 +56,11 @@ IF(PYTHONINTERP_FOUND)
       ${SETUPPY_PATH}/installdir
       COMMENT "Copying files to ${KUSU_LIB}/python/kusu"
     )
-
-    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/../docs/gpl.txt
-                   ${SETUPPY_PATH}/${LICENSE_FILE} COPYONLY)
+    
+    IF(NOT EXISTS ${SETUPPY_PATH}/${LICENSE_FILE})
+      CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/docs/gpl.txt
+                    ${SETUPPY_PATH}/${LICENSE_FILE} COPYONLY)
+    ENDIF(NOT EXISTS ${SETUPPY_PATH}/${LICENSE_FILE})
 
   ELSE(KUSU_MODULE)
     ADD_CUSTOM_TARGET(build-${PROJECT_NAME} ALL echo

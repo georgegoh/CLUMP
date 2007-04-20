@@ -1,3 +1,4 @@
+# $Id: KusuGlobals.cmake 293 2007-04-13 04:50:44Z hirwan $
 ## Assert out-of-source build
 IF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
   MESSAGE(FATAL_ERROR "Please build out of source directory.")
@@ -61,11 +62,11 @@ FILE(WRITE ${KUSU_LIB}/python/kusu/__init__.py "")
 
 ## Adding modules directory to top level CMakeLists.txt file
 FOREACH(external_module ${KUSU_3RDPARTY})
-  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/3rdparty/${external_module})
+  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/src/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/src/3rdparty/${external_module})
 ENDFOREACH(external_module)
 
 FOREACH (kusu_module ${KUSU_MODULES})
-  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/modules/${kusu_module} ${KUSU_DEVEL_ROOT}/modules/${kusu_module})
+  ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/src/modules/${kusu_module} ${KUSU_DEVEL_ROOT}/src/modules/${kusu_module})
 ENDFOREACH(kusu_module)
 
 ## Generating Kusu development environment
@@ -82,6 +83,6 @@ FIND_PROGRAM(BASH
   /usr/local/bin
 )
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/../bin/kusudevenv.sh
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/bin/kusudevenv.sh
           ${KUSU_BIN}/kusudevenv.sh)
 
