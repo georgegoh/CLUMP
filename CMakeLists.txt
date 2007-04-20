@@ -3,7 +3,6 @@ SET(KUSU_VERSION 0.1)
 
 ## Add 3rd party modules to the build lists
 SET(KUSU_3RDPARTY 
-  pyparted
   pysqlite
   path
   md5crypt
