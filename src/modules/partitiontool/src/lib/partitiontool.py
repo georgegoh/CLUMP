@@ -132,9 +132,13 @@ class DiskProfile(object):
 
 
     def __init__(self, fresh):
-        fdisk_out = commands.getoutput("/sbin/fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
+        status, fdisk_out = commands.getstatusoutput("fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
+        if status != 0:
+            print 'Error finding the disks on this system:', fdisk_out
+            import sys
+            sys.exit(1)
+ 
         # Output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
-
         disks_str = fdisk_out.split('\n')
         for disk_str in disks_str:
             if disk_str:
