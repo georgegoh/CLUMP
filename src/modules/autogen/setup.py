@@ -20,6 +20,5 @@ setup(name="kusu-autogen",
       packages=['autogen'],
       package_dir={'autogen':'src/lib'},
       data_files=[('etc/templates', ['src/etc/templates/kickstart.tmpl']),
-                  ('share/doc',['src/doc/LICENSE']),
                   ('share/doc/samples', ['src/doc/samples/genkickstart'])] 
      )
