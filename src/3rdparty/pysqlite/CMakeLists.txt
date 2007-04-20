@@ -1,64 +1,17 @@
 # $Id$
 # Configure
 PROJECT(pysqlite)
-SET(LICENSE_FILE src/LICENSE)
+SET(LICENSE_FILE LICENSE)
 SET(VERSION_STR 2.3.3)
 SET(SRC_URL http://initd.org/pub/software/pysqlite/releases/2.3/2.3.3/pysqlite-2.3.3.tar.gz)
+SET(KUSU_MODULE OFF) #Set to ON if this is a Kusu module else set to OFF.
 
-SET(SETUPPY_BUILD_ARGS build)
-SET(SETUPPY_INSTALL_ARGS install --prefix=${CMAKE_CURRENT_BINARY_DIR}/installdir)
+SET(SETUPPY_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
+SET(SETUPPY_BUILD_ARGS)
+SET(SETUPPY_INSTALL_ARGS --install-data=${SETUPPY_PATH}/installdir/share/doc)
 SET(SETUPPY_SDIST_ARGS sdist)
 SET(SETUPPY_BDIST_ARGS bdist)
 
-# Build template
-ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build
-        COMMAND ${PYTHON_EXECUTABLE}
-        ARGS    setup.py ${SETUPPY_BUILD_ARGS}
-        DEPENDS src/setup.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-        COMMENT "Running python setup.py ${SETUPPY_BUILD_ARGS} in ${CMAKE_CURRENT_BINARY_DIR}/src"
-)
-ADD_CUSTOM_TARGET(buildsrc  ALL echo
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/build
-)
+INCLUDE(PythonSetupPy)
+SET(KUSU_MODULE OFF)
 
-ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/installdir
-        COMMAND ${PYTHON_EXECUTABLE}
-        ARGS    setup.py ${SETUPPY_INSTALL_ARGS}
-        DEPENDS src/setup.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src
-        COMMENT "Running python setup.py ${SETUPPY_INSTALL_ARGS} in ${CMAKE_CURRENT_BINARY_DIR}/src"
-)
-ADD_CUSTOM_TARGET(installsrc  ALL echo
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/installdir
-)
-
-ADD_CUSTOM_COMMAND(
-  OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/installdir/share/doc/${PROJECT_NAME}-${VERSION_STR}/LICENSE
-  COMMAND ${CMAKE_COMMAND}
-  ARGS    -E copy ${CMAKE_CURRENT_BINARY_DIR}/${LICENSE_FILE}
-          ${CMAKE_CURRENT_BINARY_DIR}/installdir/share/doc/${PROJECT_NAME}-${VERSION_STR}/LICENSE
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LICENSE_FILE}
-  COMMENT "Copying ${PROJECT_NAME}-${VERSION_STR} license"
-)
-ADD_CUSTOM_TARGET(copylicense  ALL echo
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/installdir/share/doc/${PROJECT_NAME}-${VERSION_STR}/LICENSE
-)
-
-ADD_CUSTOM_TARGET(build-${PROJECT_NAME} ALL echo
-  COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python
-  COMMAND mv
-${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python${PYTHON_VERSION}/site-packages/*
-                     ${CMAKE_CURRENT_BINARY_DIR}/installdir/lib/python
-  COMMAND cp    -rf ${CMAKE_CURRENT_BINARY_DIR}/installdir/* ${KUSU_ROOT}/.
-  COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/installdir
-  COMMENT "Copying files to ${KUSU_LIB}/python"
-)
-
-ADD_DEPENDENCIES(build-${PROJECT_NAME} buildsrc installsrc copylicense)
-
-
-
-#CONFIGURE_FILE(${LICENSE_FILE} ${KUSU_ROOT}/share/doc/${PROJECT_NAME}-${VERSION_STR}/LICENSE COPYONLY)
