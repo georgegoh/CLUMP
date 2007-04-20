@@ -10,8 +10,6 @@
 from path import path
 import os
 
-SUPPORTED_DISTROS = { 'CentOS': '4.4', 'Fedora Core': '6', 'OpenSuSE': '10.2', 'Ubuntu': '6.10' }
-
 class CopyError(Exception): pass
 class FileAlreadyExists(Exception): pass
 class InvalidInstallSource(Exception): pass
@@ -179,6 +177,7 @@ class GeneralInstallSrc(DistroInstallSrcBase):
                 self.pathLayoutAttributes = {}
 
 def DistroFactory(srcPath):
+    """ Factory function that returns a DistroInstallSrcBase instance. """
     distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
