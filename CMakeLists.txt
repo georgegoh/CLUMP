@@ -14,7 +14,7 @@ SET(KUSU_3RDPARTY
 ## Add kusu modules to the build lists
 SET(KUSU_MODULES 
   core
-  autogen
+  autoinstall
   boot
   util
   ui
