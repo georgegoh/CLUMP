@@ -4,13 +4,32 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
+""" This module contains several convenience classes and functions for dealing with boot media and boot environments. """
 
 from path import path
+import subprocess
 from kusu.boot.distro import GeneralInstallSrc, InvalidInstallSource
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
 
+class getPartitionMap(src='/proc/partitions'):
+    """ This function returns a list of dicts containing the entries of /proc/partitions. """
+    pass
+    
+class makeDev(devtype,major,minor,devpath):
+    """ This function creates /dev/* entries. Mainly used for creating block devices. """
+    
+    # do not create if devpath already exists
+    if path(devpath).exists(): return
+    
+    if devtype != 'b' or devtype != 'c': raise Exception, "devtype must be 'b' or 'c'!"
+    
+    args = ' '.join([devpath,devtype,major minor])
+    mknodP = subprocess.Popen("mknod %s" % args,cwd=cwd,shell=True)
+    mknodP.communicate()
+    
+    return mknodP.retcode
 
 class BootMediaTool:
     """ The management class for boot-media-tool operations. This convenience class combines 
