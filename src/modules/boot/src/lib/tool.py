@@ -32,13 +32,7 @@ def makeDev(devtype,major,minor,devpath):
     # do not create if devpath already exists
     if path(devpath).exists(): return
     
-    if devtype != 'b' or devtype != 'c': raise Exception, "devtype must be 'b' or 'c'!"
-    
-    args = ' '.join([devpath,devtype,major,minor])
-    mknodP = subprocess.Popen("mknod %s" % args,cwd=cwd,shell=True)
-    mknodP.communicate()
-    
-    return mknodP.retcode
+    os.system('mknod /dev/%s %s %s %s' % (devpath,devtype,major,minor))
 
 class BootMediaTool:
     """ The management class for boot-media-tool operations. This convenience class combines 
