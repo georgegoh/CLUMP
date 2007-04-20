@@ -11,14 +11,14 @@
 __version__ = "$Revision$"
 
 from distutils.core import setup
-setup(name="kusu-autogen",
+setup(name="kusu-autoinstall",
       version="0.1",
       author="Tsai Li Ming",
       author_email="ltsai@osgdc.org",
       url="http://www.osgdc.org/project/kusu",
       platforms=["any"],
-      packages=['autogen'],
-      package_dir={'autogen':'src/lib'},
+      packages=['autoinstall'],
+      package_dir={'autoinstall':'src/lib'},
       data_files=[('etc/templates', ['src/etc/templates/kickstart.tmpl']),
                   ('share/doc/samples', ['src/doc/samples/genkickstart'])] 
      )

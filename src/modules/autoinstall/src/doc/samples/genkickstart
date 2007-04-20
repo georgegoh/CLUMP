@@ -7,9 +7,9 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 
-from kusu.autogen.scriptfactory import KickstartFactory
-from kusu.autogen.autoinstall import Script
-from kusu.autogen.installprofile import Kickstart
+from kusu.autoinstall.scriptfactory import KickstartFactory
+from kusu.autoinstall.autoinstall import Script
+from kusu.autoinstall.installprofile import Kickstart
 from kusu.partitiontool.partitiontool import DiskProfile
 from kusu.networktool.network import Network
 from path import path

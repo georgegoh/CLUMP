@@ -1,5 +1,5 @@
 # $Id$
-PROJECT(autogen)
+PROJECT(autoinstall)
 SET(LICENSE_FILE LICENSE)
 SET(VERSION_STR ${KUSU_VERSION})
 SET(SRC_URL http://www.osgdc.org)
