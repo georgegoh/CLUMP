@@ -31,7 +31,7 @@ class PartitionScreen(screenfactory.BaseScreen):
     name = _('Partitions')
     msg = _('Please enter the following information:')
     buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
-    disk_profile = partitiontool.DiskProfile(False)
+    disk_profile = None
 
     def setCallbacks(self):
         """
@@ -61,6 +61,8 @@ class PartitionScreen(screenfactory.BaseScreen):
                                                 RIGHT, LEFT, LEFT],
                                  returnExit=0)
 
+        if not self.disk_profile:
+            self.disk_profile = partitiontool.DiskProfile(False)
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lv_groups.keys()
         lvg_keys.sort()
