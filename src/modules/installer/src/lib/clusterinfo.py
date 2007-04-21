@@ -47,39 +47,71 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 10)
         entryWidth = 30
+        value = self.database.get(self.name, 'FQHN')
+        if not value: value = 'cluster.hpc.org'
+        else: value = value[0]
         self.fqhn = kusuwidgets.LabelledEntry(
                         labelTxt=_('Fully-Qualified Host Name ').rjust(26), 
-                        width=entryWidth, text='cluster.hpc.org')
+                        width=entryWidth, text=value)
         self.fqhn.addCheck(kusuwidgets.verifyFQDN)
 
+        value = self.database.get(self.name, 'ClusterName')
+        if not value: value = 'Our Cluster'
+        else: value = value[0]
         self.clusterName = kusuwidgets.LabelledEntry(
                                labelTxt=_('Cluster Name ').rjust(26),
-                               width=entryWidth, text='Our Cluster')
+                               width=entryWidth, text=value)
+
+        value = self.database.get(self.name, 'Organisation')
+        if not value: value = 'OSGDC'
+        else: value = value[0]
         self.organisation = kusuwidgets.LabelledEntry(
                                 labelTxt=_('Organisation ').rjust(26),
-                                width=entryWidth, text='OSGDC')
+                                width=entryWidth, text=value)
+
+        value = self.database.get(self.name, 'Locality')
+        if not value: value = 'Singapore'
+        else: value = value[0]
         self.locality = kusuwidgets.LabelledEntry(
                             labelTxt=_('Locality ').rjust(26),
-                            width=entryWidth, text='Singapore')
+                            width=entryWidth, text=value)
+
+        value = self.database.get(self.name, 'State')
+        if not value: value = 'Singapore'
+        else: value = value[0]
         self.state = kusuwidgets.LabelledEntry(
                          labelTxt=_('State ').rjust(26),
-                         width=entryWidth, text='Singapore')
+                         width=entryWidth, text=value)
+
+        value = self.database.get(self.name, 'Country')
+        if not value: value = 'Singapore'
+        else: value = value[0]
         self.country = kusuwidgets.LabelledEntry(
                            labelTxt=_('Country ').rjust(26),
-                           width=entryWidth, text='Singapore')
+                           width=entryWidth, text=value)
+
+        value = self.database.get(self.name, 'Contact')
+        if not value: value = 'admin@cluster.hpc.org'
+        else: value = value[0]
         self.contact = kusuwidgets.LabelledEntry(
                            labelTxt=_('Contact ').rjust(26),
-                           width=entryWidth, text='admin@cluster.hpc.org')
+                           width=entryWidth, text=value)
         self.contact.addCheck(kusuwidgets.verifyEmail)
 
+        value = self.database.get(self.name, 'URL')
+        if not value: value = 'http://cluster.hpc.org'
+        else: value = value[0]
         self.url = kusuwidgets.LabelledEntry(
                        labelTxt=_('URL ').rjust(26),
-                       width=entryWidth, text='http://cluster.hpc.org')
+                       width=entryWidth, text=value)
         self.url.addCheck(kusuwidgets.verifyURL)
 
+        value = self.database.get(self.name, 'LatLong')
+        if not value: value = 'N32.87 W117.22'
+        else: value = value[0]
         self.latlong = kusuwidgets.LabelledEntry(
                            labelTxt=_('LatLong ').rjust(26),
-                           width=entryWidth, text='N32.87 W117.22')
+                           width=entryWidth, text=value)
 
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
