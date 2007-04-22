@@ -298,7 +298,7 @@ Example operation usages:
                         msg = self._('Error extracting initrd.')
                         self.printMsgExit(msg)
                 else:
-                    print self._('Extracting kernel to'), dest
+                    print self._('Extracting initrd to'), dest
         except FileAlreadyExists, e:
             if imagetype != 'all' and not overwrite:
                 msg = self._('The %(imagetype)s file already exists in %(dest)s. Use -f to force overwriting the file') \

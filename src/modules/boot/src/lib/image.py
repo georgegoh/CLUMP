@@ -8,7 +8,7 @@
 """This module handles operations relating to booting up nodes."""
 
 from path import path
-from kusu.boot.distro import GeneralInstallSrc, InvalidInstallSource
+from kusu.boot.distro import DistroFactory, InvalidInstallSource
 import os
 import sys
 import commands
@@ -103,7 +103,7 @@ def makeImagesDir(srcpath, destdir, patchfile=None, overwrite=False):
     destdir = path(destdir)
     if patchfile: patchfile = path(patchfile)
     
-    obj = GeneralInstallSrc(srcpath)
+    obj = DistroFactory(srcpath)
     try:
         stage2img = obj.getStage2Path()
     except AttributeError:

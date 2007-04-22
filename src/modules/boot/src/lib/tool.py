@@ -8,7 +8,7 @@
 
 from path import path
 import subprocess
-from kusu.boot.distro import GeneralInstallSrc, InvalidInstallSource
+from kusu.boot.distro import DistroFactory, InvalidInstallSource
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
@@ -40,9 +40,9 @@ class BootMediaTool:
     """
         
     def _initSrc(self,srcpath):
-        """ Initializes the installsrc instance with GeneralInstallSrc. 
+        """ Initializes the installsrc instance with DistroFactory. 
         """
-        self.installsrc = GeneralInstallSrc(srcpath)
+        self.installsrc = DistroFactory(srcpath)
         
     def validSrcPath(self, srcpath):
         """ Verify if the srcpath is valid. """
