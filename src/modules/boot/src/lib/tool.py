@@ -4,10 +4,11 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-""" This module contains several convenience classes and functions for dealing with boot media and boot environments. """
+""" This module contains several classes and functions for dealing with boot media and boot environments. """
 
 from path import path
 import subprocess
+import os
 from kusu.boot.distro import DistroFactory, InvalidInstallSource
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
@@ -33,6 +34,123 @@ def makeDev(devtype,major,minor,devpath):
     if path(devpath).exists(): return
     
     os.system('mknod /dev/%s %s %s %s' % (devpath,devtype,major,minor))
+
+class KusuSVNSource:
+    """ This class contains data and operations that work with the Kusu SVN source. """
+    
+    def __init__(self, source):
+        self.srcpath = path(source)
+        self.isRemote = False
+        self.develroot = None
+        self.kusuroot = None
+        self.scratchdir = None
+
+        # These should describe the key directories/files that identify a Kusu SVN source layout.
+        self.srcpathLayoutAttributes = {
+            'bin' : 'bin',
+            'build' : 'build',
+            'CMakeLists' : 'CMakeLists.txt',
+            'docs' : 'docs',
+            'etc' : 'etc',
+            'src' : 'src',
+            'dists' : 'src/dists'
+        }
+
+    def verifySrcPath(self):
+        """Call the correct verify*SrcPath method."""
+
+        if self.isRemote:
+            return self.verifyRemoteSrcPath()
+        else:
+            return self.verifyLocalSrcPath()
+
+    def verifyLocalSrcPath(self):
+        """Verify the path for attributes that describes a valid Kusu SVN source"""
+
+        try:
+            if not self.srcpath.exists(): return False
+        except AttributeError:
+            # we could be testing on a NoneType object instead of a Path object
+            return False
+
+        # Check the path for each attribute listed, return if invalid path
+        for k,v in self.srcpathLayoutAttributes.items():
+            p = self.srcpath / v
+            if not p.exists(): return False
+
+        return True
+        
+    def setup(self,develroot=None,kusuroot=None):
+        """ General setup for Kusu develroot"""
+        
+        if not develroot:
+            self.scratchdir = path(tempfile.mkdtemp(dir='/tmp'))
+            self.develroot = path(tempfile.mkdtemp(dir=self.scratchdir))
+        else:
+            if path(develroot).exists():
+                self.develroot = path(develroot)
+            else:
+                raise FilePathError, "Please ensure that the develroot %s exists!" \
+                    % develroot
+            
+        if not kusuroot:
+            self.kusuroot = self.develroot / 'kusuroot'
+        else:
+            if path(kusuroot).exists():
+                self.kusuroot = path(kusuroot)
+            else:
+                raise FilePathError, "Please ensure that the kusuroot %s exists!" \
+                    % kusuroot
+            
+                
+    def runCMake(self):
+        """ Run CMake within the Kusu develroot. This is a blocking call. """
+        env = os.environ
+        env['KUSU_ROOT'] = self.kusuroot
+        cmakeP = subprocess.Popen('cmake %s > /dev/null 2>&1' % self.srcpath.abspath(),shell=True,
+                    cwd=self.develroot,env=env)
+        result = cmakeP.communicate()
+        
+        return cmakeP.returncode
+
+        
+    def runMake(self):
+        """ Run make within the Kusu develroot. This is a blocking call. """
+
+        makeP = subprocess.Popen('make > /dev/null 2>&1',shell=True,
+                    cwd=self.develroot)
+        result = makeP.communicate()
+
+        return makeP.returncode
+        
+    def cleanup(self):
+        """ Housecleaning for Kusu develroot. """
+        
+        # remove the scratchtree when done
+        if self.kusuroot.exists(): self.kusuroot.rmtree()
+        if self.develroot.exists(): self.develroot.rmtree()
+        if self.scratchdir.exists(): self.scratchdir.rmtree()
+        
+    def run(self):
+        """ Main launcher. """
+        
+        self.runCMake()
+        self.runMake()
+        
+    def copyKusuroot(self, dest, overwrite=False):
+        """Copy the kusuroot file to a destination"""
+
+        if path(dest).parent.access(os.W_OK):
+            # make sure that the existing destpath is accessible and writable
+            if path(dest).exists() and overwrite:
+                path(dest).rmtree()
+                cpio_copytree(self.kusuroot,dest)
+            elif not path(dest).exists():
+                cpio_copytree(self.kusuroot,dest)
+            else:
+                raise FileAlreadyExists
+        else:
+            raise CopyError        
 
 class BootMediaTool:
     """ The management class for boot-media-tool operations. This convenience class combines 
