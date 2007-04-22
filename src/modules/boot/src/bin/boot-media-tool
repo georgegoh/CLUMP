@@ -30,10 +30,9 @@ class BootMediaApp(KusuApp):
             'make-isolinux':['dir','os',
                     'kernel','initrd',
                     'isobin'],
-            'make-iso':['dir','iso','source'],
+            'make-iso':['patch','iso','source'],
             'make-boot-tgz':['dir','bootarchive'],
-            'make-patch':['dir'],
-            'make-imgdir':['source','dir','patchfile']}
+            'make-patch':['os','version','patch','kususrc','arch']}
         
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -54,6 +53,7 @@ Options:
     -v          - Provide the version string.
     -H          - Provide usage examples.
     -f          - Force overwriting when extracting kernel/initrd.
+    -s          - Read input from Kusu Boot Media scriptfile.
 
 Actions:
 
@@ -82,9 +82,9 @@ Actions:
                         kernel=<path of kernel file>
                         initrd=<path of initrd file>
                         isobin=<path of isolinux.bin>
-    make-iso        - Make the Kusu Boot Media iso from the isolinuxdir.
-                      Available arguments for this action:
-                        patch=<path of installer patch>
+    make-iso        - Make the Kusu Boot Media iso. Available arguments 
+                      for this action:
+                        patch=<path of installer patchfile>
                         iso=<name of iso file>
                         source=<path of installation source>
     make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which
@@ -92,14 +92,13 @@ Actions:
                       Available arguments for this action:
                         bootarchive=<name of bootarchive>
                         dir=<path of isolinuxdir>
-    make-patch      - Make the installer patchfile based on OS. Available
-                      arguments for this action:
-                        dir=<directory containing Kusu Installer runtime>
-    make-imgdir     - Make the image directory based on installation source. 
-                      Available arguments for this action:
-                        source=<path of installation source>
-                        dir=<path of resulting image dir>
-                        patchfile=<path of patchfile image>
+    make-patch      - Make the installer patchfile from the Kusu Trunk SVN 
+                      source. Available arguments for this action:
+                        kususrc=<directory containing Kusu Trunk>
+                        os=<name of OS>
+                        version=<version of OS>
+                        arch=<architechure of OS>
+                        patch=<name of installer patchfile>
 
 """)
         self.examples = self._("""\
@@ -165,14 +164,25 @@ Example operation usages:
         
         self.parser.add_option('-f','--force', action='store_true', dest='overwrite')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.add_option('-s','--script', action='store_true', dest='usescript')
         self.options, self.args = self.parser.parse_args()
         
 
         if self.options.showexamples:
             self.printExamplesExit()
+
+        if self.options.usescript and len(self.args) == 1:
+            # check if the first parsed argument is a scriptfile
+            scriptfile = self._checkscript(self.args[0])
+            if scriptfile:
+                self._runscript(scriptfile)
+            else:
+                msg = self._('Invalid Script!')
+                self.printMsgExit(msg)
         
         if len(self.args) < 2:
             self.printUsageExit()
+            
             
         # check if the first parsed argument is a supported action
         action = self.args[0]
@@ -206,7 +216,14 @@ Example operation usages:
         
         handler(self.actionargs)
         
-
+    def _checkscript(self,scriptfile):
+        """ Validates the Boot Media Tool script. """
+        return None
+        
+    def _runscript(self,scriptfile):
+        """ Run the actions listed in the Boot Media Tool in batch-mode. """
+        sys.exit(0)
+    
     def _query(self,args):
         """Handler for query action. args is a dict of supported key-value pairs for this action. """
         srcpath = path(args['source'])
@@ -312,7 +329,7 @@ Example operation usages:
         
     def _makeIso(self,args):
         """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
-        dirname = path(args['dir'])
+        patchfile = path(args['patch'])
         iso = path(args['iso'])
         srcpath = path(args['source'])
                   
@@ -353,7 +370,11 @@ Example operation usages:
             
     def _makePatch(self, args):
         """Handler for make-patch. args is a dict of supported key-value pairs for this action. """
-        dirname = path(args['dir'])
+        kususrc = path(args['kususrc'])
+        osname = args['os']
+        osver = args['version']
+        osarch = args['arch']
+        patchfile = args['patch']
         
     def _makeImgdir(self,args):
         """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """
