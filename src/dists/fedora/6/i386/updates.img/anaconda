@@ -21,10 +21,14 @@ export LANG="en_US.UTF-8"
 source /opt/kusu/bin/kusuenv.sh
 /usr/bin/python /opt/kusu/bin/installer
 
-# Restore the environment when we are done
-source $envfile
+if [ $? -eq 0 ]; then 
+    # Restore the environment when we are done
+    source $envfile;
 
-# exec the real anaconda
-/usr/bin/anaconda $@
-
+    # exec the real anaconda
+    /usr/bin/anaconda "$@";
+else
+    # in case of problem with the Kusu Installer, we halt
+    echo "Something has gone very wrong. Restarting!";
+fi
 
