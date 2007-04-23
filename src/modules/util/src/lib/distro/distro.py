@@ -11,7 +11,6 @@ import os
 import urlparse
 from urlcheck import URLCheck, HTTPError
 from path import path
-#from kusu.ext.path import path
 
 class CheckDistro:
     dirlayout = {}

@@ -12,20 +12,8 @@ import urllib
 import httplib
 import sys
 from path import path
-#from kusu.ext.path import path
 
 
-def verifyURL(url):
-    # Taken from ggoh
-    """Verifies that text is a valid URL"""
-
-    p = re.compile('^http://[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]' + '\.' + \
-                   '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
-    li = p.findall(url)
-    if len(li) != 1:
-        return False
-    else:
-        return True
 
 class HTTPError(Exception): pass
 class FTPError(Exception): pass
