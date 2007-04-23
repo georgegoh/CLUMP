@@ -45,6 +45,43 @@ def packInitramFS(dirname, rootimgpath, initscript=None):
     
     return gzipP.returncode
     
+def packExt2FS(dirname, rootimgpath, size=5000):
+    """Packs the directory dir into an ext2fs rootimgpath. The size of the image can be passed as well.
+    """
+
+    if not path(dirname).exists(): 
+        raise FilePathError
+
+    if os.getuid() <> 0: raise NotPriviledgedUser, "Operation requires root access!"
+
+    # nuke existing rootimgpath if existing
+    if path(rootimgpath).exists(): path(rootimgpath).remove()
+    
+    rootimgpath = path(rootimgpath).abspath()
+
+    # create scratchdir
+    scratchdir = path(tempfile.mkdtemp(dir='/tmp'))
+    tmprootdir = path(tempfile.mkdtemp(dir=scratchdir))
+
+    # create a block device, format it, mount it
+    cwd = path(scratchdir)
+    ddP = subprocess.Popen("dd of=%s if=/dev/zero bs=1024 count=%s >/dev/null 2>&1" % (rootimgpath,size),shell=True,cwd=scratchdir)
+    ddP.communicate()
+    mke2fsP = subprocess.Popen("mke2fs -F %s >/dev/null 2>&1" % rootimgpath,shell=True,cwd=scratchdir)
+    mke2fsP.communicate()
+    mountP = subprocess.Popen("mount -o loop %s %s" % (rootimgpath,tmprootdir),shell=True,cwd=scratchdir)
+    mountP.communicate()
+    
+    # copy the contents over to the newly made ext2fs filesystem
+    cpio_copytree(dirname,tmprootdir)
+    
+    # housecleaning
+    umountP = subprocess.Popen("umount %s" % tmprootdir,shell=True,cwd=scratchdir)
+    umountP.communicate()
+    if tmprootdir.exists(): tmprootdir.rmtree()
+    if scratchdir.exists(): scratchdir.rmtree()
+    
+    
 def unpack(rootimgpath, dirname):
     """Unpacks the file rootimgpath into the directory dir."""
     

@@ -13,6 +13,7 @@ from kusu.boot.distro import DistroFactory, InvalidInstallSource
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
+import tempfile
 
 def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
@@ -258,6 +259,28 @@ class BootMediaTool:
         except FilePathError, e:
             raise e
             
+    def mkPatch(self,kususrc,osname,osver,osarch,patchfile):
+        """ Creates a distro-specific Kusu Installer patchfile. """
+        try:
+            svnsrc = KusuSVNSource(kususrc)
+            # create a scratchdir to hold the patchfile contents
+            parentdir = path(patchfile).parent()
+            tmpdir = path(tempfile.mkdtemp(dir=parentdir))
+            if svnsrc.verifySrcPath():
+                svnsrc.setup()
+                svnsrc.run()
+                svnsrc.copyKusuroot(tmpdir)
+                svnsrc.cleanup()
+                
+                # add code for setting up updates.img for fedora
+                # like ks.cfg, copy stage2, etc
+                
+            path(tmpdir).rmtree()
+        except (FilePathError,NotPriviledgedUser), e:
+            svnsrc.cleanup()
+            if path(tmpdir).exists(): path(tmpdir).rmtree()
+            raise e
+        
     def mkBootArchive(self, isolinuxdir, archive):
         """ Creates a BootArchive based on the isolinux directory. A 
             FilePathError exception will be raised if the paths are 
