@@ -93,9 +93,44 @@ class ConfirmScreen(screenfactory.BaseScreen):
         return ''
 
     def formAction(self):
-        self.database.close()
         disk_profile = self.kusuApp['DiskProfile']
         self.formatDisk(disk_profile)
+        self.genAutoInstallScript(disk_profile)
+        self.database.close()
 
     def formatDisk(self, disk_profile):
         pass
+
+    def genAutoInstallScript(self, disk_profile):
+        from kusu.autoinstall.scriptfactory import KickstartFactory
+        from kusu.autoinstall.autoinstall import Script
+        from kusu.autoinstall.installprofile import Kickstart
+        from kusu.networktool.network import Network
+        from path import path
+        import os
+
+
+        # redhat based for now
+        script = '/tmp/ks.cfg'
+
+        k = Kickstart()
+        k.setRootPw(self.database.get('Root Password', 'RootPasswd')[0])
+        k.setNetworkProfile(Network('eth0', 'DHCP'))
+        k.setDiskProfile(disk_profile)
+        k.setPackageProfile(['@Base'])
+        k.setTZ(self.database.get('Time zone', 'Zone')[0])
+        k.setInstallSRC('http://172.25.208.218/repo/fedora/6/i386/os/')
+        k.setAttr('lang', self.database.get('Language', 'Language')[0])
+        k.setAttr('keybd', self.database.get('Keyboard', 'Keyboard')[0])
+
+        template = path(os.getenv('KUSU_ROOT', None)) / \
+                   'etc' / \
+                   'templates' / \
+                   'kickstart.tmpl'
+
+        kf = KickstartFactory(str(template))
+        script = Script(kf)
+        script.setProfile(k)
+        script.write(script)
+
+
