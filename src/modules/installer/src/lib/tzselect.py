@@ -38,6 +38,10 @@ class TZSelectionScreen(screenfactory.BaseScreen):
         instruction = snack.Label(self.msg)
 
         self.utc = snack.Checkbox(_('System uses UTC'))
+        value = self.database.get(self.context, 'UTC')
+        # by default checkbox is false, but if there's a stored value, use it.
+        if not value: pass
+        elif value[0] == 'True': self.utc.setValue('*')
 
         self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
         self.getTZ()
@@ -45,12 +49,17 @@ class TZSelectionScreen(screenfactory.BaseScreen):
         tzList.sort()
         for name in tzList:
             self.listbox.append(name, name)
-        self.listbox.setCurrent('America/New_York')
+        value = self.database.get(self.context, 'Zone')
+        if not value: self.listbox.setCurrent('America/New_York')
+        else: self.listbox.setCurrent(value[0])
 
         entryWidth = 22
+        value = self.database.get(self.context, 'NTP Server')
+        if not value: value = 'pool.ntp.org'
+        else: value = value[0]
         self.ntp = kusuwidgets.LabelledEntry(labelTxt=_('NTP Server '),
                                              width=entryWidth,
-                                             text='pool.ntp.org')
+                                             text=value)
 
         self.screenGrid.setField(instruction, col=0, row=0, growx=1)
         self.screenGrid.setField(self.utc, col=0, row=1, growx=1, padding=(0,1,0,0))

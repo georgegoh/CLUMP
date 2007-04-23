@@ -41,7 +41,11 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         keyboardList.sort()
         for name in keyboardList:
             self.listbox.append(name, name)
-        self.listbox.setCurrent('us')
+
+        value = self.database.get(self.context, 'Keyboard')
+        if not value: value = 'us'
+        else: value = value[0]
+        self.listbox.setCurrent(value)
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))

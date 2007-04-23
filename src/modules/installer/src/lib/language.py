@@ -48,7 +48,15 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         languages.sort()
         for language in languages:
             self.listbox.append(language, self.langMap[language])
-        self.listbox.setCurrent(self.langMap['English'])
+
+        value = self.database.get(self.context, 'Language')
+        if not value: value = self.langMap['English']
+        else:
+            for k,v in self.langMap.iteritems():
+                if v[0] == value[0]:
+                    value = v
+        self.listbox.setCurrent(value)
+
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
 

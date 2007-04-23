@@ -43,24 +43,37 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 5)
         entryWidth = 30
+
+        value = self.database.get(self.context, 'Default Gateway')
+        if not value: value = '192.168.111.2'
+        else: value = value[0]
         self.gateway = kusuwidgets.LabelledEntry(
                            labelTxt=_('Default Gateway ').ljust(23), 
-                           width=entryWidth, text='192.168.111.2')
+                           width=entryWidth, text=value)
         self.gateway.addCheck(kusuwidgets.verifyIP)
 
+        value = self.database.get(self.context, 'DNS 1')
+        if not value: value = '192.168.111.2'
+        else: value = value[0]
         self.dns1 = kusuwidgets.LabelledEntry(
                         labelTxt=_('DNS Server 1 ').ljust(23),
-                        width=entryWidth, text='192.168.111.2')
+                        width=entryWidth, text=value)
         self.dns1.addCheck(kusuwidgets.verifyIP)
 
+        value = self.database.get(self.context, 'DNS 2')
+        if not value: value = ''
+        else: value = value[0]
         self.dns2 = kusuwidgets.LabelledEntry(
                         labelTxt=_('DNS Server 2(optional) ').ljust(23),
-                        width=entryWidth, text='')
+                        width=entryWidth, text=value)
         self.dns2.addCheck(kusuwidgets.verifyIP)
 
+        value = self.database.get(self.context, 'DNS 3')
+        if not value: value = ''
+        else: value = value[0]
         self.dns3 = kusuwidgets.LabelledEntry(
                         labelTxt=_('DNS Server 3(optional) ').ljust(23), 
-                        width=entryWidth, text='')
+                        width=entryWidth, text=value)
         self.dns3.addCheck(kusuwidgets.verifyIP)
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
