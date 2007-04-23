@@ -148,7 +148,7 @@ def fileSystemCallback(args):
     fs_type = diskProfile.fsType_dict[filesystem]
     if textEntry.value() != '<Not Applicable>':
         stored_mountpoint = textEntry.value()
-    if not fs_type:
+    if not diskProfile.mountable_fsType[filesystem]:
         textEntry.setEntry('<Not Applicable>')
         textEntry.setEnabled(False)
     else:
