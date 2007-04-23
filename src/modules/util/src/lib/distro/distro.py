@@ -19,27 +19,19 @@ class CheckDistro:
     distroLayout = {}
 
     def __init__(self):
-        self.dirlayout['repodatadir'] = 'repodata'
-        self.dirlayout['imagesdir'] = 'images'
-        self.dirlayout['isolinuxdir'] = 'isolinux'
-        self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
-        self.dirlayout['basedir'] = 'Fedora/base'
 
-        self.filelayout['repodatadir'] = ['comps.xml', \
-                                         'filelists.xml.gz', \
-                                         'other.xml.gz', \
-                                         'primary.xml.gz', \
-                                         'repomd.xml']
-        self.filelayout['imagesdir'] = ['stage2.img']
-        self.filelayout['basedir'] = ['comps.xml']
+        kusu_root = os.getenv('KUSU_ROOT', None)
 
-        self.distroLayout['fedora'] = {}
-        self.distroLayout['fedora']['6'] = {'self.dirlayout':self.dirlayout,'filelayout':self.filelayout}
+        if not kusu_root:
+            raise Exception, 'KUSU_ROOT not found'
+
+        filename = path(kusu_root) / 'etc' / 'distro.conf'
+        self.distroLayout = self._loadConf(str(filename))
       
     def _loadConf(self, filename):
         config = ConfigParser.RawConfigParser()
-        f = open()
-        config.readfp(filename)
+        f = open(filename)
+        config.readfp(f)
         f.close()
 
         d = {}
@@ -77,14 +69,22 @@ class CheckDistro:
 
     def verify(self, p, os, version):
 
-        original_p = path(p)
+        #original_p = path(p)
         
-        for k,v in self.distroLayout[os][version]['self.dirlayout'].iteritems():
-            p = original_p / v
-            if self.distroLayout[os][version]['filelayout'].has_key(k):
-                for f in self.distroLayout[os][version]['filelayout'][k]:
-                    self._checkPathExist(p / f)
+        #for k,v in self.distroLayout[os][version]['self.dirlayout'].iteritems():
+        #    p = original_p / v
+        #    if self.distroLayout[os][version]['filelayout'].has_key(k):
+        #        for f in self.distroLayout[os][version]['filelayout'][k]:
+        #            self._checkPathExist(p / f)
+        #    else:
+        #        self._checkPathExist(p)
+
+        root_path = path(p)
+        distroLayout = self.distroLayout[os][version]
+
+        for dir in distroLayout.keys():
+            if distroLayout[dir]: 
+                for file in distroLayout[dir]:
+                    self._checkPathExist(root_path / dir / file)
             else:
-                self._checkPathExist(p)
-
-
+                    self._checkPathExist(root_path / dir)
