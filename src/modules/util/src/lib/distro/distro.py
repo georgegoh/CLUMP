@@ -9,6 +9,7 @@
 
 import os
 import urlparse
+import ConfigParser
 from urlcheck import URLCheck, HTTPError
 from path import path
 
@@ -34,7 +35,35 @@ class CheckDistro:
 
         self.distroLayout['fedora'] = {}
         self.distroLayout['fedora']['6'] = {'self.dirlayout':self.dirlayout,'filelayout':self.filelayout}
-        
+      
+    def _loadConf(self, filename):
+        config = ConfigParser.RawConfigParser()
+        f = open()
+        config.readfp(filename)
+        f.close()
+
+        d = {}
+        for sec in config.sections():
+            os, version = sec.split('-')
+
+            if not d.has_key(os):
+                d[os] = {}
+
+            d[os][version] = {}
+
+            for key, value in config.items(sec):
+                lst = value.split(':')
+                
+                dir = lst[0]
+                if len(lst) > 1:
+                    files = lst[1].split(',')
+                else:
+                    files = []
+            
+                d[os][version][dir] = files
+
+        return d
+
     def _checkPathExist(self, p):
         # Checks http/ftp/path. 
        
