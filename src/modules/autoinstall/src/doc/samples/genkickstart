@@ -28,21 +28,13 @@ def kickstart():
 
     k = Kickstart()
     k.rootpw = 'system'
-    #k.setRootPw('system')
     k.networkprofile = [Network('eth0', 'DHCP')]
-    #k.setNetworkProfile(Network('eth0', 'DHCP'))
     k.diskprofile = myDiskProfile
-    #k.setDiskProfile(myDiskProfile)
     k.packageprofile = ['@Base']
-    #k.setPackageProfile(['@Base'])
     k.tz = 'Asia/Singapore'
-    #k.setTZ('Asia/Singapore')
     k.installsrc = 'http://172.25.208.218/repo/fedora/6/i386/os/'
-    #k.setInstallSRC('http://172.25.208.218/repo/fedora/6/i386/os/')
     k.lang = 'us'
-    #k.setAttr('lang', 'us')
     k.keyboard = 'us'
-    #k.setAttr('keybd', 'us')
 
     return k
 
