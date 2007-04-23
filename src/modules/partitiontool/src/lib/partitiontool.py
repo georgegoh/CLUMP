@@ -74,6 +74,8 @@ class DuplicateMountpointError(KusuError): pass
 class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
 class PartitionSizeTooLargeError(KusuError): pass
+class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
+class CannotDeletePhysicalVolumeFromLogicalGroupError(KusuError): pass
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -118,10 +120,11 @@ class DiskProfile(object):
 
                       disk = diskProfile.disk_dict['sda']
     """
-    disk_dict = {}
-    mountpoints = {}
-    lv_groups = {} # not implemented yet.
-    logi_vol = {} # not implemented yet.
+    disk_dict = None
+    mountpoints = None
+    pv_dict = None
+    lvg_dict = None # not implemented yet.
+    lv_dict = None # not implemented yet.
     fsType_dict = { 'ext2' : fsTypes['ext2'],
                     'ext3' : fsTypes['ext3'],
                     'physical volume' : None,
@@ -138,6 +141,11 @@ class DiskProfile(object):
                        }
 
     def __init__(self, fresh):
+        self.disk_dict = {}
+        self.mountpoints = {}
+        self.pv_dict = {}
+        self.lvg_dict = {}
+        self.lv_dict = {}
         status, fdisk_out = commands.getstatusoutput("fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
         if status != 0:
             print 'Error finding the disks on this system:', fdisk_out
@@ -657,6 +665,62 @@ class Partition(object):
         elif self.lvm_flag:
             # do the lvm thing
             pass
+
+
+class PhysicalVolume(object):
+    """A physical volume object that can belong to a logical volume group."""
+    name = None
+    partition = None
+    group = None
+
+    def __init__(self,  partition):
+        """A partition may not have knowledge about it's physical volume role,
+           but a physical volume must have knowledge about its beginnings
+           (the partition).
+        """
+        import os
+        self.name = os.path.basename(self.partition.path)
+        self.partition = partition
+        lvm.createPhysicalVolume(self.partition.path)
+
+    def isInUse(self):
+        return lvm.physicalVolumeInUse(self.partition.path)
+
+
+class LogicalVolumeGroup(object):
+    """A logical volume group consists of physical volumes that are combined
+       to form a shared pool of disk space. Subsequently, it can be divided
+       into several logical volumes."""
+    name = None
+    pv_dict = None
+    lv_dict = None
+
+    def __init__(self, name, pv_list):
+        self.name = name
+        self.pv_dict = {}
+        self.lv_dict = {}
+        for pv in pv_list:
+            pv_dict[pv.name] = pv
+        pv_paths = [pv.partition.path for pv in pv_list]
+        lvm.createVolumeGroup(self.name, pv_paths)
+
+    def addPhysicalVolume(self, physicalVol):
+        if physicalVol.name in pv_dict.keys():
+            raise PhysicalVolumeAlreadyInLogicalGroupError
+        pv_dict[physicalVol.name] = physicalVol
+        physicalVol.group = self.name
+        lvm.extendVolumeGroup(self.name, physicalVol.partition.path)
+
+    def delPhysicalVolume(self, physicalVol):
+        if physicalVol.name not in pv_dict.keys():
+            raise CannotDeletePhysicalVolumeFromLogicalGroupError, \
+                  'Physical Volume does not exist in Logical Group.'
+        if physicalVol.isInUse():
+            raise CannotDeletePhysicalVolumeFromLogicalGroupError, \
+                  'Physical Volume is in use by a Logical Volume.'
+        physicalVol.name = None
+        del pv_dict[physicalVol.name]
+        lvm.reduceVolumeGroup(self.name, physicalVol.partition.path)
 
 
 import unittest
