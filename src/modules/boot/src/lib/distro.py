@@ -225,7 +225,44 @@ class CentOSInstallSrc(DistroInstallSrcBase):
             'patchdir' : 'images',
             'patchimage' : 'images/updates.img'
         }
-        
+ 
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
     def getStage2Path(self):
         """Get the stage2 path object"""
 
@@ -301,6 +338,44 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             'patchdir' : 'images',
             'patchimage' : 'images/updates.img'
         }
+
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -398,11 +473,49 @@ class RHELInstallSrc(DistroInstallSrcBase):
             'isolinuxdir' : 'isolinux',
             'kernel' : 'isolinux/vmlinuz',
             'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
             'imagesdir' : 'images',
             'baseosdir' : 'RedHat',
             'packagesdir' : 'RedHat/RPMS',
             'metainfodir' : 'RedHat/base'
         }
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
 
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
