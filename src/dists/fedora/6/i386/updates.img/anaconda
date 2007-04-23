@@ -12,13 +12,13 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 /usr/bin/env > $envfile
 
 # links the kusu runtime to /opt
-/usr/bin/ln -sf opt /opt
+/usr/bin/ln -sf /tmp/updates/opt /opt
 
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
 # setups our environment and launcher the Kusu Installer
-source /opt/kusu/bin/kusudevenv.sh
+source /opt/kusu/bin/kusuenv.sh
 /usr/bin/python /opt/kusu/bin/installer
 
 # Restore the environment when we are done

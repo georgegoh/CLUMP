@@ -263,21 +263,44 @@ class BootMediaTool:
         """ Creates a distro-specific Kusu Installer patchfile. """
         try:
             svnsrc = KusuSVNSource(kususrc)
+            
             # create a scratchdir to hold the patchfile contents
-            parentdir = path(patchfile).parent()
+            parentdir = path(patchfile).parent
             tmpdir = path(tempfile.mkdtemp(dir=parentdir))
+            kusuroot = tmpdir / 'opt/kusu'
+            kusuroot.makedirs()
+            
+            if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
+            
             if svnsrc.verifySrcPath():
                 svnsrc.setup()
                 svnsrc.run()
-                svnsrc.copyKusuroot(tmpdir)
+                svnsrc.copyKusuroot(kusuroot,overwrite=True)
                 svnsrc.cleanup()
+                # get the correct kusuenv.sh
+                if osname == 'fedora':
+                    # put in the kusuenv.sh
+                    p = svnsrc.srcpath / 'src/dists/fedora/%s/%s/kusuenv.sh' % (osver,osarch)
+                    kusuenv = path(p)
+                        
+                    if kusuenv.exists(): kusuenv.copy(kusuroot / 'bin')
+                    
+                    # remove the kusudevenv.sh
+                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
+                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
+                        
+                    # put in the the faux anaconda launcher
+                    p = svnsrc.srcpath / 'src/dists/fedora/%s/%s/updates.img/anaconda' % (osver,osarch)
+                    fakeanaconda = path(p)
+                    if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
+                        
                 
-                # add code for setting up updates.img for fedora
-                # like ks.cfg, copy stage2, etc
+                packExt2FS(tmpdir,patchfile)
                 
             path(tmpdir).rmtree()
         except (FilePathError,NotPriviledgedUser), e:
-            svnsrc.cleanup()
+            # do some housecleaning if possible
+            if svnsrc.verifySrcPath(): svnsrc.cleanup()
             if path(tmpdir).exists(): path(tmpdir).rmtree()
             raise e
         

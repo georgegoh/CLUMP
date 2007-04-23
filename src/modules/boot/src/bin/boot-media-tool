@@ -12,7 +12,7 @@ from kusu.core.app import KusuApp
 from path import path
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource
-from kusu.boot.tool import BootMediaTool, FilePathError
+from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser
 
         
         
@@ -116,8 +116,9 @@ Example operation usages:
     To unpack the initrd into a directory called foodir:
     # boot-media-tool unpack initrd=initrd.img dir=foodir
 
-    To pack the rootfs directory called foodir into an initramfs image:
-    # boot-media-tool pack dir=foodir initramfs=initram.img
+    To create the Kusu Installer patchfile for Fedora 6 i386
+    # boot-media-tool make-patch kususrc=<My local Kusu trunk> os=fedora
+    version=6 arch=i386 patch=updates.img
 
 """)
         self.parser.set_usage(self.usagestr)
@@ -375,6 +376,18 @@ Example operation usages:
         osver = args['version']
         osarch = args['arch']
         patchfile = args['patch']
+        
+        try:
+            print self._('Creating Kusu Installer patchfile for %(osname)s %(osver)s %(osarch)s. This may take awhile.' \
+                % {'osname':osname,'osver':osver,'osarch':osarch})
+            self.bminst.mkPatch(kususrc,osname,osver,osarch,patchfile)
+            print self._('Finished creating %(patchfile)s' % {'patchfile':patchfile})
+        except FilePathError:
+            msg = self._('File path error. Please ensure the paths for the kususrc and patchfile are valid.')
+            self.printMsgExit(msg)
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
         
     def _makeImgdir(self,args):
         """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """
