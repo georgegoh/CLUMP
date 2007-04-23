@@ -129,7 +129,13 @@ class DiskProfile(object):
                     'linux-swap' : fsTypes['linux-swap'],
                     'fat32' : fsTypes['fat32']
                   }
-
+    mountable_fsType = { 'ext2' : True,
+                         'ext3' : True,
+                         'physical volume' : False,
+                         'software RAID' : False,
+                         'linux-swap' : False,
+                         'fat32' : True
+                       }
 
     def __init__(self, fresh):
         status, fdisk_out = commands.getstatusoutput("fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
