@@ -10,75 +10,49 @@
 import time
 
 class BaseInstall:
-    attr = {}
-    attr['disk'] = None
-    attr['lpackage'] = []
-    attr['lnetwork'] = []
-    attr['rootpw'] = None
-    attr['tz'] = None
 
-    def setDiskProfile(self, disk):
-        self.attr['disk'] = disk 
-    
-    def getDiskProfile(self):
-        return self.attr['disk']
+    getattr_dict = { 'diskprofile' : None,
+                     'package' : [],
+                     'networkprofile' : None,
+                     'packageprofile' : None,
+                     'rootpw': None,
+                     'tz': None,
+                     'installsrc': None,
+                     'lang': None }
 
-    def setPackageProfile(self, pkg):
-        if type(pkg) is list:
-            self.attr['lpackage'].extend(pkg)
+    def __getattr__(self, name):
+        if name in self.getattr_dict.keys():
+            return self.getattr_dict[name]
         else:
-            self.attr['lpackage'].append(pkg)
-            
-    def getPackageProfile(self, pkg=None):
-        if pkg:
-            pass
+            raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (self.__class__, name)
+
+    def __setattr__(self, item, value):
+        if item in self.getattr_dict.keys():
+            if item == 'rootpw':
+                value = self._makeRootPw(value)
+ 
+            self.getattr_dict[item] = value
         else:
-            return self.attr['lpackage']
+             raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (self.__class__, item)
 
-    def setNetworkProfile(self, network):
-        if type(network) is list:
-            self.attr['lnetwork'].extend(network)
-        else:
-            self.attr['lnetwork'].append(network)
-
-    def getNetworkProfile(self, dev=None):
-        if dev:
-            pass
-        else:
-            return self.attr['lnetwork']
-
-    def setTZ(self, tz):
-        self.attr['tz'] = tz
-
-    def getTZ(self):
-        return self.attr['tz'] 
-
-    def setRootPw(self, rootpw):
+    def _makeRootPw(self, rootpw):
         pass
 
-    def getRootPw(self):
-        return self.attr['rootpw']
-
-    def setInstallSRC(self, url):
-        self.attr['install_src'] = url
-
-    def getInstallSRC(self):
-        return self.attr['install_src']
-
-    def setAttr(self, key, val):
-        self.attr[key] = val
-
-    def getAttr(self, key):
-        return self.attr[key]
-
-
 class Kickstart(BaseInstall):
-
-    def setRootPw(self, rootpw):
+    def __init__(self):
+        for k in ['keyboard']:
+            self.getattr_dict[k] = None
+ 
+    def _makeRootPw(self, rootpw):
         import md5crypt
+        import time
+
         # Not support unicode in root password
-        self.attr['rootpw'] = md5crypt.md5crypt(str(rootpw), str(time.time()));
+        return md5crypt.md5crypt(str(rootpw), str(time.time()));
 
 
 
+    
 

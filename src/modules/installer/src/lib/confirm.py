@@ -111,17 +111,17 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
 
         # redhat based for now
-        script = '/tmp/ks.cfg'
+        ks_file = '/tmp/ks.cfg'
 
         k = Kickstart()
-        k.setRootPw(self.database.get('Root Password', 'RootPasswd')[0])
-        k.setNetworkProfile(Network('eth0', 'DHCP'))
-        k.setDiskProfile(disk_profile)
-        k.setPackageProfile(['@Base'])
-        k.setTZ(self.database.get('Time zone', 'Zone')[0])
-        k.setInstallSRC('http://172.25.208.218/repo/fedora/6/i386/os/')
-        k.setAttr('lang', self.database.get('Language', 'Language')[0])
-        k.setAttr('keybd', self.database.get('Keyboard', 'Keyboard')[0])
+        k.rootpw = self.database.get('Root Password', 'RootPasswd')[0]
+        k.networkprofile = [Network('eth0', 'DHCP')]
+        k.diskprofile = disk_profile
+        k.packageprofile = ['@Base']
+        k.tz = self.database.get('Time zone', 'Zone')[0]
+        k.installsrc = 'http://172.25.208.218/repo/fedora/6/i386/os/'
+        k.lang = self.database.get('Language', 'Language')[0]
+        k.keyboard = self.database.get('Keyboard', 'Keyboard')[0]
 
         template = path(os.getenv('KUSU_ROOT', None)) / \
                    'etc' / \
@@ -131,6 +131,6 @@ class ConfirmScreen(screenfactory.BaseScreen):
         kf = KickstartFactory(str(template))
         script = Script(kf)
         script.setProfile(k)
-        script.write(script)
+        script.write(ks_file)
 
 

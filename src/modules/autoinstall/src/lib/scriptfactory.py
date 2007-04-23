@@ -28,28 +28,28 @@ class BaseFactory:
 
 class KickstartFactory(BaseFactory):
     
-    keys = ['url', 'rootpw', 'tz', 'lang', 'keybd', 'packages', 'partitions', 'networks']
-
-    def getVar(self):
-        pass
-
-    def getKeys(self):
-        return self.keys
-    
     def getNameSpace(self):
-        self.namespace['url'] = self.profile.getInstallSRC()
-        self.namespace['rootpw'] = self.profile.getRootPw()
-        self.namespace['tz'] = self.profile.getTZ()
-        self.namespace['lang'] = self.profile.getAttr('lang')
-        self.namespace['keybd'] = self.profile.getAttr('keybd')
-        self.namespace['packages'] = self.profile.getPackageProfile()
+        #self.namespace['url'] = self.profile.getInstallSRC()
+        #self.namespace['rootpw'] = self.profile.getRootPw()
+        #self.namespace['tz'] = self.profile.getTZ()
+        #self.namespace['lang'] = self.profile.getAttr('lang')
+        #self.namespace['keybd'] = self.profile.getAttr('keybd')
+        #self.namespace['packages'] = self.profile.getPackageProfile()
+        #self.namespace['partitions'] = self._getPartitions()
+
+        self.namespace['url'] = self.profile.installsrc
+        self.namespace['rootpw'] = self.profile.rootpw
+        self.namespace['tz'] = self.profile.tz
+        self.namespace['lang'] = self.profile.lang
+        self.namespace['keybd'] = self.profile.keyboard
+        self.namespace['packages'] = self.profile.packageprofile
         self.namespace['partitions'] = self._getPartitions()
 
 
         # Creates the kickstart option for networking 
         self.namespace['networks'] = \
         ['network --bootproto %s --device %s'  % 
-         (net.bootproto.lower(), net.dev) for net in self.profile.getNetworkProfile()]
+         (net.bootproto.lower(), net.dev) for net in self.profile.networkprofile]
 
         return self.namespace
 
@@ -63,7 +63,8 @@ class KickstartFactory(BaseFactory):
                         'linux-swap': 'swap',
                         None: None}
 
-        disk_profile = self.profile.getDiskProfile()
+        #disk_profile = self.profile.getDiskProfile()
+        disk_profile = self.profile.diskprofile
         for disk in disk_profile.disk_dict.values():
             for id, p in disk.partitions_dict.items():
                 fs_type = fstype_dict[p.fs_type]
@@ -82,7 +83,9 @@ class KickstartFactory(BaseFactory):
 
                 elif fs_type == 'swap':
                     str = 'part swap'
-
+                else:
+                    continue
+                
                 str = str + ' --fstype=%s' % fs_type
 
                 # Drop the /dev 
