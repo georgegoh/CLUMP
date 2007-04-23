@@ -29,8 +29,10 @@ class PartitionScreen(screenfactory.BaseScreen):
        drawing) established by other classes in the kusu installer package.
     """
     name = _('Partitions')
+    context = 'Partitions'
     msg = _('Please enter the following information:')
-    buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
+#    buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
+    buttons = [_('New'), _('Delete')]#, _('RAID')]
     disk_profile = None
 
     def setCallbacks(self):
@@ -41,7 +43,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         
         """
         self.buttonsDict[_('New')].setCallback_(createNew, self)
-        self.buttonsDict[_('Edit')].setCallback_(editDevice, self)
+#        self.buttonsDict[_('Edit')].setCallback_(editDevice, self)
         self.buttonsDict[_('Delete')].setCallback_(deleteDevice, self)
 #        self.buttonsDict[_('RAID')].setCallback_(self.raidPartition)
 
@@ -87,15 +89,18 @@ class PartitionScreen(screenfactory.BaseScreen):
 
         logging.debug('Partition screen: getting disk list')
         disk_keys = self.disk_profile.disk_dict.keys()
-        disk_keys.sort()
-        for key in disk_keys:
+        for key in sorted(disk_keys):
             # display device
             self.listbox.addRow(['/dev/'+key, '', '', '', '', ''], key)
             parts_dict = self.disk_profile.disk_dict[key].partitions_dict
             logging.debug('Disk %s has %d partitions as reported by parted.' % (key, \
                           self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
-            for partition in sorted(parts_dict.itervalues()):
+            parts_keys = parts_dict.keys()
+            for part_key in sorted(parts_keys):
+                partition = parts_dict[part_key]
                 part_devicename = '  ' + key + str(partition.num)
+                # indent one more level if logical partition.
+                if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
                 # display partition info
                 self.listbox.addRow([part_devicename,
                                     str(partition.start_cylinder),
@@ -126,7 +131,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         Store to database
         
         """
-        self.database.put(self.name, 'partition', 'tool')
+        self.database.put(self.context, 'partition', 'tool')
         self.disk_profile.commit()
         self.kusuApp['DiskProfile'] = self.disk_profile
 

@@ -20,6 +20,7 @@ NAV_NOTHING = -1
 class RootPasswordScreen(screenfactory.BaseScreen):
     """Collects info about the cluster."""
     name = _('Root Password')
+    context = 'Root Password'
     msg = _('Please enter a secure root password:')
     buttons = [_('Clear All')]
 
@@ -80,4 +81,4 @@ class RootPasswordScreen(screenfactory.BaseScreen):
         Store
         
         """
-        self.database.put(self.name, 'RootPasswd', self.password0.value())
+        self.database.put(self.context, 'RootPasswd', self.password0.value())

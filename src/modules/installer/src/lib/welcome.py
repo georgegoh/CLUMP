@@ -18,6 +18,7 @@ from kusu.ui.text import screenfactory, kusuwidgets
 class WelcomeScreen(screenfactory.BaseScreen):
     """This is the welcome screen."""
     name = _('Welcome')
+    context = 'Welcome'
     msg = _('Welcome to the Kusu installation program. In the ' + \
           'following screens, you will be presented with questions ' + \
           'that will help you configure your new Kusu cluster.\n\n' + \

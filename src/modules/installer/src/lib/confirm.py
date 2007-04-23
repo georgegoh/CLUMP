@@ -24,6 +24,7 @@ NAV_QUIT = 2
 class ConfirmScreen(screenfactory.BaseScreen):
     """This screen confirms all settings made."""
     name = _('Finalise')
+    context = 'Finalise'
     msg = _('Please confirm the following:')
     buttons = [_('Re-initialise')]
     # unless explicitly specified here, all contexts will be rendered in the

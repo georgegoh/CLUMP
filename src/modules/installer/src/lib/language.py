@@ -21,6 +21,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 class LanguageSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for language."""
     name = _('Language')
+    context = 'Language'
     msg = _('Please choose your language for installation:')
     buttons = []
 
@@ -32,7 +33,6 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
 
         kusuroot = os.environ.get('KUSU_ROOT', None)
-        print '%s/etc/lang-table' % kusuroot
         if kusuroot and os.path.exists('%s/etc/lang-table' % kusuroot):     
             langTable = open('%s/etc/lang-table' % kusuroot)
 
@@ -82,7 +82,7 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
                                      'Selected language cannot be shown' + \
                                      ' on this display. This installation ' + \
                                      'will proceed in English.', buttons=['Ok'])
-        self.database.put(self.name, 'Language', langAttr[0])
+        self.database.put(self.context, 'Language', langAttr[0])
 
     def executeCallback(self, obj):
         if obj is self.listbox:

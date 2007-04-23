@@ -19,6 +19,7 @@ NAV_NOTHING = -1
 class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     """This screen asks for DNS and Gateway setups."""
     name = _('Gateway & DNS')
+    context = 'Gateway & DNS'
     msg = _('Please enter the following information:')
     buttons = [_('Clear All')]
     backButtonDisabled = True
@@ -114,7 +115,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         Store the gateway settings.
         
         """
-        self.database.put(self.name, 'Default Gateway', self.gateway.value())
-        self.database.put(self.name, 'DNS 1', self.dns1.value())
-        self.database.put(self.name, 'DNS 2', self.dns2.value())
-        self.database.put(self.name, 'DNS 3', self.dns3.value())
+        self.database.put(self.context, 'Default Gateway', self.gateway.value())
+        self.database.put(self.context, 'DNS 1', self.dns1.value())
+        self.database.put(self.context, 'DNS 2', self.dns2.value())
+        self.database.put(self.context, 'DNS 3', self.dns3.value())

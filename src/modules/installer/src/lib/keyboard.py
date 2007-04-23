@@ -19,6 +19,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 class KeyboardSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for keyboard."""
     name = _('Keyboard')
+    context = 'Keyboard'
     msg = _('Please choose your keyboard:')
     buttons = []
 
@@ -63,7 +64,7 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         
         """
         keyboard = self.listbox.current()
-        self.database.put(self.name, 'Keyboard', keyboard)
+        self.database.put(self.context, 'Keyboard', keyboard)
 
     def executeCallback(self, obj):
         if obj is self.listbox:

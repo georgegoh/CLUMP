@@ -19,6 +19,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 class TZSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for timezone."""
     name = _('Time zone')
+    context = 'Time zone'
     msg = _('Please choose your time zone:')
     buttons = []
     tz_dict = {} # key=Location, value=[CC, Lat-long, Comments]
@@ -88,11 +89,11 @@ class TZSelectionScreen(screenfactory.BaseScreen):
         """
         tz = self.listbox.current()
         if self.utc.value():
-            self.database.put(self.name, 'UTC', 'True')
+            self.database.put(self.context, 'UTC', 'True')
         else:
-            self.database.put(self.name, 'UTC', 'False')
-        self.database.put(self.name, 'Zone', tz)
-        self.database.put(self.name, 'NTP Server', self.ntp.value())
+            self.database.put(self.context, 'UTC', 'False')
+        self.database.put(self.context, 'Zone', tz)
+        self.database.put(self.context, 'NTP Server', self.ntp.value())
 
     def executeCallback(self, obj):
         if obj is self.listbox:

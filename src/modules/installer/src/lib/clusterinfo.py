@@ -19,7 +19,8 @@ NAV_NOTHING = -1
 
 class ClusterInfoScreen(screenfactory.BaseScreen):
     """Collects info about the cluster."""
-    name = _('Cluster Info')
+    name = 'Cluster Info'
+    context = 'Cluster Info'
     msg = _('Please enter the following information:')
     buttons = [_('Clear All')]
 
@@ -47,7 +48,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 10)
         entryWidth = 30
-        value = self.database.get(self.name, 'FQHN')
+        value = self.database.get(self.context, 'FQHN')
         if not value: value = 'cluster.hpc.org'
         else: value = value[0]
         self.fqhn = kusuwidgets.LabelledEntry(
@@ -55,42 +56,42 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
                         width=entryWidth, text=value)
         self.fqhn.addCheck(kusuwidgets.verifyFQDN)
 
-        value = self.database.get(self.name, 'ClusterName')
+        value = self.database.get(self.context, 'ClusterName')
         if not value: value = 'Our Cluster'
         else: value = value[0]
         self.clusterName = kusuwidgets.LabelledEntry(
                                labelTxt=_('Cluster Name ').rjust(26),
                                width=entryWidth, text=value)
 
-        value = self.database.get(self.name, 'Organisation')
+        value = self.database.get(self.context, 'Organisation')
         if not value: value = 'OSGDC'
         else: value = value[0]
         self.organisation = kusuwidgets.LabelledEntry(
                                 labelTxt=_('Organisation ').rjust(26),
                                 width=entryWidth, text=value)
 
-        value = self.database.get(self.name, 'Locality')
+        value = self.database.get(self.context, 'Locality')
         if not value: value = 'Singapore'
         else: value = value[0]
         self.locality = kusuwidgets.LabelledEntry(
                             labelTxt=_('Locality ').rjust(26),
                             width=entryWidth, text=value)
 
-        value = self.database.get(self.name, 'State')
+        value = self.database.get(self.context, 'State')
         if not value: value = 'Singapore'
         else: value = value[0]
         self.state = kusuwidgets.LabelledEntry(
                          labelTxt=_('State ').rjust(26),
                          width=entryWidth, text=value)
 
-        value = self.database.get(self.name, 'Country')
+        value = self.database.get(self.context, 'Country')
         if not value: value = 'Singapore'
         else: value = value[0]
         self.country = kusuwidgets.LabelledEntry(
                            labelTxt=_('Country ').rjust(26),
                            width=entryWidth, text=value)
 
-        value = self.database.get(self.name, 'Contact')
+        value = self.database.get(self.context, 'Contact')
         if not value: value = 'admin@cluster.hpc.org'
         else: value = value[0]
         self.contact = kusuwidgets.LabelledEntry(
@@ -98,7 +99,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
                            width=entryWidth, text=value)
         self.contact.addCheck(kusuwidgets.verifyEmail)
 
-        value = self.database.get(self.name, 'URL')
+        value = self.database.get(self.context, 'URL')
         if not value: value = 'http://cluster.hpc.org'
         else: value = value[0]
         self.url = kusuwidgets.LabelledEntry(
@@ -106,7 +107,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
                        width=entryWidth, text=value)
         self.url.addCheck(kusuwidgets.verifyURL)
 
-        value = self.database.get(self.name, 'LatLong')
+        value = self.database.get(self.context, 'LatLong')
         if not value: value = 'N32.87 W117.22'
         else: value = value[0]
         self.latlong = kusuwidgets.LabelledEntry(
@@ -173,12 +174,12 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         Nothing here yet.
         
         """
-        self.database.put(self.name, 'FQHN', self.fqhn.value())
-        self.database.put(self.name, 'ClusterName', self.clusterName.value())
-        self.database.put(self.name, 'Organisation', self.organisation.value())
-        self.database.put(self.name, 'Locality', self.locality.value())
-        self.database.put(self.name, 'State', self.state.value())
-        self.database.put(self.name, 'Country', self.country.value())
-        self.database.put(self.name, 'Contact', self.contact.value())
-        self.database.put(self.name, 'URL', self.url.value())
-        self.database.put(self.name, 'LatLong', self.latlong.value())
+        self.database.put(self.context, 'FQHN', self.fqhn.value())
+        self.database.put(self.context, 'ClusterName', self.clusterName.value())
+        self.database.put(self.context, 'Organisation', self.organisation.value())
+        self.database.put(self.context, 'Locality', self.locality.value())
+        self.database.put(self.context, 'State', self.state.value())
+        self.database.put(self.context, 'Country', self.country.value())
+        self.database.put(self.context, 'Contact', self.contact.value())
+        self.database.put(self.context, 'URL', self.url.value())
+        self.database.put(self.context, 'LatLong', self.latlong.value())
