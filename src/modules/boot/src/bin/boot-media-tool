@@ -12,7 +12,7 @@ from kusu.core.app import KusuApp
 from path import path
 from kusu.boot.distro import CopyError
 from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource
-from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser
+from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser, InvalidKusuSource
 
         
         
@@ -30,7 +30,7 @@ class BootMediaApp(KusuApp):
             'make-isolinux':['dir','os',
                     'kernel','initrd',
                     'isobin'],
-            'make-iso':['patch','iso','source'],
+            'make-iso':['patch','iso','source','kususrc'],
             'make-boot-tgz':['dir','bootarchive'],
             'make-patch':['os','version','patch','kususrc','arch']}
         
@@ -87,6 +87,7 @@ Actions:
                         patch=<path of installer patchfile>
                         iso=<name of iso file>
                         source=<path of installation source>
+                        kususrc=<directory containing Kusu Trunk>
     make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which
                       then can be included in a Kusu Kit to make it bootable. 
                       Available arguments for this action:
@@ -107,19 +108,14 @@ Example operation usages:
     To query installation source mounted at /media/cdrom:
     # boot-media-tool query source=/media/cdrom
 
-    To extract the kernel from the installation source:
-    # boot-media-tool extract source=/media/cdrom image=kernel
-
-    To extract the initrd from the installation source:
-    # boot-media-tool extract source=/media/cdrom image=initrd
-
-    To unpack the initrd into a directory called foodir:
-    # boot-media-tool unpack initrd=initrd.img dir=foodir
-
     To create the Kusu Installer patchfile for Fedora 6 i386
-    # boot-media-tool make-patch kususrc=<My local Kusu trunk> os=fedora
-    version=6 arch=i386 patch=updates.img
+    # boot-media-tool make-patch os=fedora version=6 arch=i386
+    patch=updates.img kususrc=/tmp/svn/kusu/trunk
 
+    To create the Kusu Boot Media iso for Fedora 6 i386:
+    # boot-media-tool make-iso patch=updates.img iso=kusu.iso 
+    source=/mnt/cdrom kususrc=/tmp/svn/kusu/trunk
+    
 """)
         self.parser.set_usage(self.usagestr)
         
@@ -235,6 +231,7 @@ Example operation usages:
         distro = self.bminst.getDistro(srcpath)
         kernpath = self.bminst.getKernelPath(srcpath)
         initrdpath = self.bminst.getInitrdPath(srcpath)
+        isolinuxpath = self.bminst.getIsolinuxbinPath(srcpath)
         
         if distro:
             print self._('OS Type:'), distro
@@ -250,6 +247,11 @@ Example operation usages:
             print self._('Initrd found:'), initrdpath
         else:
             print self._('Cannot find initrd.')
+            
+        if initrdpath:
+            print self._('Isolinux.bin found:'), isolinuxpath
+        else:
+            print self._('Cannot find Isolinunx.bin.')
         
     def _pack(self,args):
         """Handler for pack action. args is a dict of supported key-value pairs for this action. """
@@ -330,16 +332,44 @@ Example operation usages:
         
     def _makeIso(self,args):
         """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
-        patchfile = path(args['patch'])
-        iso = path(args['iso'])
-        srcpath = path(args['source'])
+        patchfile = args.get('patch',None)
+        iso = path(args['iso']).abspath()
+        srcpath = path(args['source']).abspath()
+        kususrc = path(args['kususrc']).abspath()
+        tmpdir = None
+        
+        if patchfile: patchfile = path(patchfile).abspath()
                   
         try:
-            self.bminst.mkBootISO(dirname, iso, volname="BootKit")
-            print self._('Generated %(iso)s from %(dirname)s') % {'dirname':dirname, 'iso':iso}
+            print self._('Creating temporary iso contents based on installation source and Kusu SVN source tree.')
+            print self._('This may take awhile...')
+            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc)
+            print self._('Generating Kusu Boot Media ISO.')
+            self.bminst.mkBootISO(tmpdir, iso, volname="Kusu Boot Media")
+            print self._('Generated %(iso)s') % {'iso':iso}
+            # do housecleaning
+            if tmpdir.exists(): tmpdir.rmtree()
         except FilePathError:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
             msg = self._('File path error. Please ensure the directory path is valid.')
-            self.printMsgExit(msg)        
+            self.printMsgExit(msg)     
+        except InvalidInstallSource:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Invalid Installation source!') 
+            self.printMsgExit(msg) 
+        except InvalidKusuSource:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Invalid Kusu SVN source!') 
+            self.printMsgExit(msg)
 
     def _makeIsolinux(self,args):
         """Handler for make-isolinux. args is a dict of supported key-value pairs for this action. """
@@ -382,7 +412,7 @@ Example operation usages:
                 % {'osname':osname,'osver':osver,'osarch':osarch})
             self.bminst.mkPatch(kususrc,osname,osver,osarch,patchfile)
             print self._('Finished creating %(patchfile)s' % {'patchfile':patchfile})
-        except FilePathError:
+        except (FilePathError,InvalidKusuSource):
             msg = self._('File path error. Please ensure the paths for the kususrc and patchfile are valid.')
             self.printMsgExit(msg)
         except NotPriviledgedUser:

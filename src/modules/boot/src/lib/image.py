@@ -153,7 +153,7 @@ def makeImagesDir(srcpath, destdir, patchfile=None, overwrite=False):
     # copy the stage2.img into the destdir
     obj.copyStage2(destdir,overwrite)
         
-    if patchfile and patchfile.exists(): patchfile.copy(destdir,overwrite)
+    if patchfile and patchfile.exists(): patchfile.copy(destdir)
     
     
 def makeISOLinuxDir(isolinuxdir, oenvobj=None, isolinuxbin=None):
@@ -211,19 +211,18 @@ def makeISOLinuxDir(isolinuxdir, oenvobj=None, isolinuxbin=None):
     f.close()
     
      
-def makeBootISO(isolinuxdir, isoname, volname="BootKit"):
-    """Create a bootable ISO isoname out of the directory isolinuxdir. The volname can be used to specify
+def makeBootISO(isodir, isoname, volname="BootKit"):
+    """Create a bootable ISO isoname out of the directory isodir. The volname can be used to specify
        the ISO label name.
     """
     
-    tdir = path(isolinuxdir)
+    tdir = path(isodir)
     isopath = path(isoname)
     if not tdir.exists(): raise FilePathError
     
     # create a clean scratch directory for mkisofs operations
     scratchdir = path(tempfile.mkdtemp(dir='/tmp'))
-    bootdir = scratchdir / 'isolinux'
-    cpio_copytree(tdir,bootdir)
+    cpio_copytree(tdir,scratchdir)
     
     # nuke existing iso file if any
     if isopath.exists(): isopath.remove()
@@ -238,7 +237,7 @@ def makeBootISO(isolinuxdir, isoname, volname="BootKit"):
     -R -r -T -f -l \
     -o %s %s' %  (volname,isopath,scratchdir)
     
-    isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True)
+    isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True,cwd=scratchdir)
     isoP.communicate()
     
     # cleanup

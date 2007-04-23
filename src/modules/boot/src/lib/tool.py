@@ -15,6 +15,8 @@ from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
 import tempfile
 
+class InvalidKusuSource(Exception): pass
+
 def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
     partition_map = {}
@@ -240,6 +242,50 @@ class BootMediaTool:
         except FilePathError, e:
             raise e
             
+    def mkISOFromSource(self,srcpath,patchfile,kususrc):
+        """ Creates Kusu Boot ISO based on installation source. This method
+            returns the isodir.
+        """
+        d = DistroFactory(srcpath)
+        kususrc = KusuSVNSource(kususrc)
+        if not kususrc.verifySrcPath(): raise InvalidKusuSource, "Invalid Kusu SVN Source!"
+        try:
+            if d.ostype == 'fedora':
+                # create the isolinux directory
+                tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
+                isolinuxdir = tmpdir / 'isolinux'
+                isolinuxdir.mkdir()
+                self.mkISOLinuxDir(isolinuxdir,d.getKernelPath(),
+                    d.getInitrdPath(),d.ostype,d.getIsolinuxbinPath())
+            
+                # create the images directory and copy stage2/patchfile images
+                imagesdir = tmpdir / 'images'
+                imagesdir.mkdir()
+                self.mkImagesDir(srcpath,imagesdir,patchfile)
+
+                # put in the ks.cfg
+                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/ks.cfg' % (d.getVersion(),d.getArch())
+                kscfg = path(p)
+                if kscfg.exists(): kscfg.copy(tmpdir)
+                
+                # put in the isolinux.cfg
+                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/isolinux.cfg' % (d.getVersion(),d.getArch())
+                isocfg = path(p)
+                if isocfg.exists(): 
+                    path(isolinuxdir / 'isolinux.cfg').remove()
+                    isocfg.copy(isolinuxdir)
+                    
+                # finally, add the .discinfo stub
+                discinfo = path(tmpdir / '.discinfo')
+                discinfo.touch()
+                
+                return tmpdir
+
+            else:
+                raise InvalidInstallSource, "Installation source not supported!"
+        except (FilePathError,InvalidInstallSource,InvalidKusuSource), e:
+            raise e
+        
     def mkImagesDir(self, srcpath, destdir, patchfile=None,overwrite=False):
         """ Creates images directory based on installsrc. A FilePathError
             exception will be raised if the paths are invalid or unaccesible.
@@ -249,12 +295,12 @@ class BootMediaTool:
         except (FilePathError,InvalidInstallSource), e:
             raise e
             
-    def mkBootISO(self, isolinuxdir, isoname, volname="BootKit"):
-        """ Creates ISO based on the isolinux directory. A FilePathError 
+    def mkBootISO(self, isodir, isoname, volname="BootKit"):
+        """ Creates ISO based on the iso directory. A FilePathError 
             exception will be raised if the paths are invalid or unaccesible.
         """
         try:
-            makeBootISO(isolinuxdir, isoname, volname="BootKit")
+            makeBootISO(isodir, isoname, volname="BootKit")
             return True
         except FilePathError, e:
             raise e
