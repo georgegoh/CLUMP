@@ -111,7 +111,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
 
         # redhat based for now
-        ks_file = '/tmp/ks.cfg'
+        ks_file = '/tmp/install_script'
 
         k = Kickstart()
         k.rootpw = self.database.get('Root Password', 'RootPasswd')[0]
