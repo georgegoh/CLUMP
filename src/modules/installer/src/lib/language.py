@@ -80,7 +80,6 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         
         """
         langAttr = self.listbox.current()
-        print '"' + langAttr[0] + '"'
         if langAttr[0] != 'en':
             try:
                 t = gettext.translation('kusu', 'locale', languages=[langAttr[0]])
