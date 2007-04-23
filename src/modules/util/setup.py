@@ -11,12 +11,14 @@
 __version__ = "$Revision$"
 
 from distutils.core import setup
-setup(name="kusu-core",
+setup(name="kusu-util",
     version="0.1",
     author="Najib Ninaba",
     author_email="najib@osgdc.org",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
     packages=['util'],
-    package_dir={'util':'src/lib'}
+    package_dir={'util':'src/lib'},
+    data_files=[('etc', ['src/etc/distro.conf'])]
+
      )
