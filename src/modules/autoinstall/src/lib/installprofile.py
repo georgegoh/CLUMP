@@ -76,7 +76,8 @@ class Kickstart(BaseInstall):
 
     def setRootPw(self, rootpw):
         import md5crypt
-        self.attr['rootpw'] = md5crypt.md5crypt(rootpw, str(time.time()));
+        # Not support unicode in root password
+        self.attr['rootpw'] = md5crypt.md5crypt(str(rootpw), str(time.time()));
 
 
 
