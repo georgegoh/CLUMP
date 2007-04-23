@@ -29,6 +29,7 @@ class BaseScreen(object):
     
     """
     name = 'Base class'
+    context = 'No Context'
     msg = 'This is the base class.'
     gridWidth = 0
     buttons = []
