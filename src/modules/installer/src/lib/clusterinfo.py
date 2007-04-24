@@ -49,7 +49,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.screenGrid = snack.Grid(1, 10)
         entryWidth = 30
         value = self.database.get(self.context, 'FQHN')
-        if not value: value = 'cluster.hpc.org'
+        if not value: value = 'cluster.osgdc.org'
         else: value = value[0]
         self.fqhn = kusuwidgets.LabelledEntry(
                         labelTxt=_('Fully-Qualified Host Name ').rjust(26), 
@@ -92,7 +92,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
                            width=entryWidth, text=value)
 
         value = self.database.get(self.context, 'Contact')
-        if not value: value = 'admin@cluster.hpc.org'
+        if not value: value = 'admin@cluster.osgdc.org'
         else: value = value[0]
         self.contact = kusuwidgets.LabelledEntry(
                            labelTxt=_('Contact ').rjust(26),
@@ -100,7 +100,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.contact.addCheck(kusuwidgets.verifyEmail)
 
         value = self.database.get(self.context, 'URL')
-        if not value: value = 'http://cluster.hpc.org'
+        if not value: value = 'http://cluster.osgdc.org'
         else: value = value[0]
         self.url = kusuwidgets.LabelledEntry(
                        labelTxt=_('URL ').rjust(26),
@@ -171,7 +171,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
     def formAction(self):
         """
         
-        Nothing here yet.
+        Store the values entered here into the database.
         
         """
         self.database.put(self.context, 'FQHN', self.fqhn.value())
