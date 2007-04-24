@@ -93,15 +93,19 @@ class ConfirmScreen(screenfactory.BaseScreen):
         return ''
 
     def formAction(self):
-        disk_profile = self.kusuApp['DiskProfile']
-        self.formatDisk(disk_profile)
-        #self.copyKits()
-        #self.makeRepo()
-        self.genAutoInstallScript(disk_profile)
-        self.database.close()
+        result = snack.ButtonChoiceWindow(self.screen, title='Really continue?',
+                                          text='If you click yes, then your disks will be formatted.\n' + \
+                                               'You cannot recover data on a disk once it has been formatted.')
+        if result == 'ok':
+            disk_profile = self.kusuApp['DiskProfile']
+            self.formatDisk(disk_profile)
+            #self.copyKits()
+            #self.makeRepo()
+            self.genAutoInstallScript(disk_profile)
+            self.database.close()
 
     def formatDisk(self, disk_profile):
-        pass
+        disk_profile.formatAll()
 
     def copyKits(self):
         pass
