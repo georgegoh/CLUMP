@@ -66,23 +66,23 @@ class PartitionScreen(screenfactory.BaseScreen):
         if not self.disk_profile:
             self.disk_profile = partitiontool.DiskProfile(False)
         # retrieve info about logical volumes and lv groups
-        lvg_keys = self.disk_profile.lv_groups.keys()
+        lvg_keys = self.disk_profile.lvg_dict.keys()
         lvg_keys.sort()
         for key in lvg_keys:
             vg_devicename = 'VG ' + key
-            vg_pv = self.disk_profile.lv_groups[key].physical_volume_ids
+            vg_pv = self.disk_profile.lvg_dict[key].physical_volume_ids
             vg_size = 0
             for pv in vg_pv:
                 vg_size = vg_size + int(self.disk_profile.partitions[pv].size)
             # display volume groups first in listbox
             self.listbox.addRow(['VG ' + key, '', '', str(vg_size), 'VolGroup',
                                  ''], key)
-            vg_lv = self.disk_profile.lv_groups[key].logical_volume_ids
+            vg_lv = self.disk_profile.lvg_dict[key].logical_volume_ids
             for lv in vg_lv:
                 lv_devicename = '  LV ' + lv
-                lv_size = self.disk_profile.logi_vol[lv].size
-                lv_type = self.disk_profile.logi_vol[lv].fs_type
-                lv_mount = self.disk_profile.logi_vol[lv].mountpoint
+                lv_size = self.disk_profile.lv_dict[lv].size
+                lv_type = self.disk_profile.lv_dict[lv].fs_type
+                lv_mount = self.disk_profile.lv_dict[lv].mountpoint
                 # display indented logical volumes belonging to the vg.
                 self.listbox.addRow([lv_devicename, '', '', str(lv_size),lv_type,
                                     lv_mount], lv)
