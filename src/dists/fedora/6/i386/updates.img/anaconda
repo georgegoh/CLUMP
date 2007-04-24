@@ -22,6 +22,11 @@ source /opt/kusu/bin/kusuenv.sh
 /usr/bin/python /opt/kusu/bin/installer
 
 if [ $? -eq 0 ]; then 
+    # Unset kusu bits
+    for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 
+        unset $key 2>&1 > /dev/null
+    done
+ 
     # Restore the environment when we are done
     source $envfile;
 
