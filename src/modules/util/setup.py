@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id:$
 #
 # Kusu util generator
 #
@@ -8,7 +8,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-__version__ = "$Revision$"
+__version__ = "$Rev:$"
 
 from distutils.core import setup
 setup(name="kusu-util",
