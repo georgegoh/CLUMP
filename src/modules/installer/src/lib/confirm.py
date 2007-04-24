@@ -103,6 +103,16 @@ class ConfirmScreen(screenfactory.BaseScreen):
     def formatDisk(self, disk_profile):
         pass
 
+    def copyKits(self):
+        pass
+
+        #from kusu.util import util
+        
+        #url = self.database.get('Kits', 'FedoraURL')
+        #util.verifyDistro(url, 'fedora', '6')
+        #util.copy(url, destPath)
+
+
     def makeRepo(self):
         pass
 
