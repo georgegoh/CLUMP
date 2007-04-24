@@ -16,6 +16,7 @@ class TestLogger:
         self.logfilename = "kusulog_test.log"
         loggername = "kusulog_test"
         self.myLog = kusu.util.log.Logger(name=loggername, filename=self.logfilename)
+        self.myLog.setLevel(logging.NOTSET)
 
     def tearDown(self):
         # remove the log file after each test
@@ -260,18 +261,22 @@ class TestLoggerEnvLevel:
     def testBlank(self):
         """$KUSU_LOGLEVEL set to blank"""
         # This test assumes default level used by kusu.util.log.Logger is
-        # NOTSET/DEBUG.
+        # INFO
         os.environ['KUSU_LOGLEVEL'] = ""
         self.myLog = kusu.util.log.Logger(name=self.loggername,
                                     filename=self.logfilename)
 
         self.logAtAllLevels()
 
-        for level in range(0, 5):
+        for level in range(0, 1):
+            assert not findMessage(self.logfilename,
+                                   logging.getLevelName(self.levels[level]),
+                                   self.fmts[self.levels[level]])
+
+        for level in range(1, 5):
             assert findMessage(self.logfilename,
                                logging.getLevelName(self.levels[level]),
                                self.fmts[self.levels[level]])
-
     def logAtAllLevels(self):
         """Write one message at each log level to the log."""
         for level in self.fmts.keys():

@@ -50,8 +50,8 @@ class Logger(logging.Logger):
         except KeyError:
             loglevel = ""
 
-        if not isinstance(logging.getLevelName(loglevel), int):
-            loglevel = "NOTSET"     # NOTSET -> log everything
+        if loglevel not in logging._levelNames:
+            loglevel = "INFO"
 
         self.setLevel(logging.getLevelName(loglevel))
 
