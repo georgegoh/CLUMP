@@ -20,6 +20,7 @@ from clusterinfo import ClusterInfoScreen
 from rootpasswd import RootPasswordScreen
 from partition import PartitionScreen
 from gatewaydns import GatewayDNSSetupScreen
+from kits import KitsScreen
 from tzselect import TZSelectionScreen
 from confirm import ConfirmScreen
 
@@ -54,6 +55,7 @@ class ScreenFactoryImpl(ScreenFactory):
                              ClusterInfoScreen(collection, kusuApp=runtimeDict),
                              RootPasswordScreen(collection, kusuApp=runtimeDict),
                              PartitionScreen(collection, kusuApp=runtimeDict),
+                             KitsScreen(collection, kusuApp=runtimeDict),
                              GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
                              TZSelectionScreen(collection, kusuApp=runtimeDict),
                              ConfirmScreen(collection, kusuApp=runtimeDict)
