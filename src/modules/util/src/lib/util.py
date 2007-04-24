@@ -61,8 +61,8 @@ def verifyDistro(path, os, version):
         version - The version of the os
     """
     
-    from kusu.util.distro import CheckDistro
-    d = CheckDistro()
+    from kusu.util.distro import distro
+    d = distro.CheckDistro()
     d.verify(path, os, version)
 
 

@@ -7,11 +7,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 
-from kusu.util.distro import distro
 from kusu.util import util
 
-dist = distro.CheckDistro()
-
-
 url = 'http://download.fedora.redhat.com/pub/fedora/linux/core/6/i386/os/'
-dist.verify(url, 'fedora', '6')
+util.verifyDistro(url, 'fedora', '6')
