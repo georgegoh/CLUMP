@@ -99,6 +99,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
         if result == 'ok':
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
+            #self.setupNetwork()
             #self.copyKits()
             #self.makeRepo()
             self.genAutoInstallScript(disk_profile)
@@ -107,12 +108,21 @@ class ConfirmScreen(screenfactory.BaseScreen):
     def formatDisk(self, disk_profile):
         disk_profile.formatAll()
 
+    def setupNetwork(self):
+        pass
+        # Assuming eth0 is connected and can get a dhcp reply
+        #netdev = 'eth0'
+        #os.system('dhclient -1 -q -lf /tmp/dhclient-%s.leases -pf /tmp/dhclient-%s.pid %s 2&>1 > /dev/null' \
+        #          % (netdev,netdev,netdev))
+
+
     def copyKits(self):
         pass
 
         #from kusu.util import util
         
         #url = self.database.get('Kits', 'FedoraURL')
+        #destPath = '/mnt/sysimage/repo'
         #util.verifyDistro(url, 'fedora', '6')
         #util.copy(url, destPath)
 
