@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-__version__ = "$Rev$"
+__version__ = "$Rev:$"
 
 import os
 import logging
