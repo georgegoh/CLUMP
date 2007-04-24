@@ -95,10 +95,15 @@ class ConfirmScreen(screenfactory.BaseScreen):
     def formAction(self):
         disk_profile = self.kusuApp['DiskProfile']
         self.formatDisk(disk_profile)
+        #self.copyKits()
+        #self.makeRepo()
         self.genAutoInstallScript(disk_profile)
         self.database.close()
 
     def formatDisk(self, disk_profile):
+        pass
+
+    def makeRepo(self):
         pass
 
     def genAutoInstallScript(self, disk_profile):
@@ -111,6 +116,10 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
 
         # redhat based for now
+        #kusu_dist = os.environ.get('KUSU_DIST', None)
+        #kusu_distver = os.environ.get('KUSU_DISTVER', None)
+
+
         ks_file = '/tmp/install_script'
 
         k = Kickstart()
