@@ -36,7 +36,7 @@ def verifyIP(ip):
 
 def verifyEmail(email):
     """Verifies that text is a valid email"""
-    p = re.compile('^[a-zA-Z][\w\.]*[a-zA-Z0-9]' + '@' + \
+    p = re.compile('^[a-zA-Z][\w\.-]*[a-zA-Z0-9]' + '@' + \
                   '[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
     li = p.findall(email)
     if len(li) != 1:
@@ -46,7 +46,7 @@ def verifyEmail(email):
 def verifyURL(url):
     """Verifies that text is a valid URL"""
     p = re.compile('^http://[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]' + '\.' + \
-                   '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
+                   '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]')
     li = p.findall(url)
     if len(li) != 1:
         return False, 'Ensure a valid url is entered(e.g. http://www.xyz.com)'

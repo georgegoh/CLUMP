@@ -14,7 +14,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-
+from kusu.util.util import verifyURL, verifyEmail
 NAV_NOTHING = -1
 
 class ClusterInfoScreen(screenfactory.BaseScreen):
@@ -97,7 +97,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.contact = kusuwidgets.LabelledEntry(
                            labelTxt=_('Contact ').rjust(26),
                            width=entryWidth, text=value)
-        self.contact.addCheck(kusuwidgets.verifyEmail)
+        self.contact.addCheck(verifyEmail)
 
         value = self.database.get(self.context, 'URL')
         if not value: value = 'http://cluster.osgdc.org'
@@ -105,7 +105,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.url = kusuwidgets.LabelledEntry(
                        labelTxt=_('URL ').rjust(26),
                        width=entryWidth, text=value)
-        self.url.addCheck(kusuwidgets.verifyURL)
+        self.url.addCheck(verifyURL)
 
         value = self.database.get(self.context, 'LatLong')
         if not value: value = 'N32.87 W117.22'
