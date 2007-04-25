@@ -112,8 +112,11 @@ class ConfirmScreen(screenfactory.BaseScreen):
         pass
         # Assuming eth0 is connected and can get a dhcp reply
         #netdev = 'eth0'
-        #os.system('dhclient -1 -q -lf /tmp/dhclient-%s.leases -pf /tmp/dhclient-%s.pid %s 2&>1 > /dev/null' \
-        #          % (netdev,netdev,netdev))
+        #kusu_dist = os.environ.get('KUSU_DIST', None)
+        #kusu_distver = os.environ.get('KUSU_DISTVER', None)
+
+        # Use dhcpc from busybox
+       
 
 
     def copyKits(self):
