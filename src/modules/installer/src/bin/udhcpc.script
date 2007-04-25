@@ -15,7 +15,7 @@ def getVar(name):
     return os.environ.get(name, None)
 
 def doCommand(cmd):
-    return os.system(cmd + ' 2&>1 > /dev/null')
+    return os.system(cmd + ' 2>&1 > /dev/null')
 
 def doEvent(name):
     interface = getVar('interface')
