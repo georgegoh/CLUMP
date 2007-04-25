@@ -17,5 +17,6 @@ setup(name="kusu-networktool",
       url="http://www.osgdc.org/project/kusu",
       platforms=["any"],
       packages=['networktool'],
-      package_dir={'networktool':'src/lib'}
+      package_dir={'networktool':'src/lib'},
+      scripts=['src/bin/udhcpc.script']
      )
