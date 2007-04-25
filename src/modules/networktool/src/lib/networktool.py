@@ -16,6 +16,7 @@ class Interface:
 
     interface = None
     ip = None
+    broadcast = None
     netmask = None
         
     def __init__(self, interface):
@@ -34,6 +35,7 @@ class Interface:
         addr =  re.findall(regex_str, out)
 
         self.ip = addr[0]
+        self.broadcast = addr[1]
         self.netmask = addr[2]
 
     def setStaticIP(self, (ip, netmask)):
@@ -47,19 +49,18 @@ class Interface:
 
         script = path(kusu_root) / 'bin' / 'udhcpc.script'
 
-        cmd = 'udhcpc -q -n -s ' + script
+        cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
         try:
             retcode = subprocess.call(cmd, shell=True)
         
             if retcode:
-                return (self.getIP(), self.getNetmask())
+                self._getIPNetmask()
             else:
                 raise Exception, 'Failed to get ip from dhcp'
 
         except Exception, e:
             raise e
 
-        self._getIPNetmask()
 
     def getIPNetmask(self):
         return (self.ip, self.netmask)
