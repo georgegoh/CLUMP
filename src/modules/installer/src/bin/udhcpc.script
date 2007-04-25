@@ -38,8 +38,8 @@ def doEvent(name):
     
     elif name in ['renew', 'bound']:
         # ip
-        doCommand('ifconfig %s %s broadcast %s netmask %s' \
-                  % (interface, ip, broadcast, netmask))
+        doCommand('ifconfig %s %s netmask %s' \
+                  % (interface, ip, netmask))
 
         # routes
         while doCommand('route del default gw 0.0.0.0 dev %s' % interface) == 0: pass
