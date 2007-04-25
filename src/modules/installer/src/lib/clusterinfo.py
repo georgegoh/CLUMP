@@ -108,7 +108,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.url.addCheck(verifyURL)
 
         value = self.database.get(self.context, 'LatLong')
-        if not value: value = 'N32.87 W117.22'
+        if not value: value = 'N1.224225 E103.860139'
         else: value = value[0]
         self.latlong = kusuwidgets.LabelledEntry(
                            labelTxt=_('LatLong ').rjust(26),
