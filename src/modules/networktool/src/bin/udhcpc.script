@@ -20,7 +20,6 @@ def doCommand(cmd):
 def doEvent(name):
     interface = getVar('interface')
     ip = getVar('ip')
-    broadcast = getVar('broadcast')
     netmask = getVar('subnet')
     domain = getVar('domain')
     dns = getVar('dns')
