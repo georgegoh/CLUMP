@@ -15,7 +15,7 @@ def getVar(name):
     return os.environ.get(name, None)
 
 def doCommand(cmd):
-    return os.system(cmd + ' 2>&1 > /dev/null')
+    return os.system(cmd + ' > /dev/null 2>&1')
 
 def doEvent(name):
     interface = getVar('interface')
@@ -38,23 +38,27 @@ def doEvent(name):
     
     elif name in ['renew', 'bound']:
         # ip
-        doCommand('ifconfig %s %s netmask %s' \
-                  % (interface, ip, netmask))
+        if doCommand('ifconfig %s %s netmask %s' \
+                  % (interface, ip, netmask)):
+            sys.exit(1)
 
         # routes
-        while doCommand('route del default gw 0.0.0.0 dev %s' % interface) == 0: pass
+        while not doCommand('route del default gw 0.0.0.0 dev %s' % interface): pass
 
         for route in routes:
-            doCommand('route add default gw %s dev %s' % \
-                      (route, interface))
+            if doCommand('route add default gw %s dev %s' % \
+                         (route, interface)):
+                sys.exit(1)
 
         # /etc/resolv.conf
-        output = 'search %s\n%s' % (domain, \
+        output = 'search %s\n%s\n' % (domain, \
                  '\n'.join(['nameserver ' + d for d in dns]))
-        f = open('/etc/resolv.conf', 'w')
-        f.write(output)
-        f.close()
 
+        try:
+            f = open('/etc/resolv.conf', 'w')
+            f.write(output)
+            f.close()
+        except: sys.exit(1)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
