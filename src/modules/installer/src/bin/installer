@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
 # $Id: kusu_installer.py 247 2007-04-10 09:34:34Z ggoh $
 #
 # Kusu Text Installer Framework.
