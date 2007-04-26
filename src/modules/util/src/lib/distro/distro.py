@@ -61,7 +61,7 @@ class CheckDistro:
 
     def _checkPathExist(self, p):
         # Checks http/ftp/path. 
-       
+      
         if urlparse.urlsplit(p)[0] in ['http', 'ftp']:
             u = URLCheck()
             u.verify(p)
@@ -70,15 +70,30 @@ class CheckDistro:
                 raise Exception, (p,)
 
 
-    def verify(self, p, os, version):
+    def verify(self, p, os_name, version_name):
         """ verifies a given http/ftp url or local path for a specific distribution """
 
-        root_path = path(p)
-        distroLayout = self.distroLayout[os][version]
+        if urlparse.urlsplit(p)[0] in ['http', 'ftp']:
+            net = True
+        else:
+            if os.path.exists(p):
+                root_path = path(p) 
+            else:
+                raise Exception
+
+            
+        distroLayout = self.distroLayout[os_name][version_name]
 
         for dir in distroLayout.keys():
             if distroLayout[dir]: 
                 for file in distroLayout[dir]:
-                    self._checkPathExist(root_path / dir / file)
+                    if net:
+                        self._checkPathExist('%s/%s/%s' % (p, dir, file))
+                    else:
+                        self._checkPathExist(root_path / dir / file)
             else:
-                    self._checkPathExist(root_path / dir)
+                if net:
+                    self._checkPathExist('%s/%s/' % (p, dir))
+                else:
+                    self._checkPathExist(root_path / dir )
+
