@@ -50,18 +50,24 @@ class Interface:
         script = path(kusu_root) / 'bin' / 'udhcpc.script'
 
         cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
-        try:
-            retcode = subprocess.call(cmd, shell=True)
-            
-            if not retcode:
-                self._getIPNetmask()
-            else:
-                raise Exception, 'Failed to get ip from dhcp'
+        retcode = subprocess.call(cmd, shell=True)
 
+        try:
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
         except Exception, e:
             raise e
 
+        retcode = p.returncode
+       
+        if not retcode:
+            self._getIPNetmask()
+        else:
+            raise Exception, 'Failed to get ip from dhcp'
 
+        
     def getIPNetmask(self):
         return (self.ip, self.netmask)
       
