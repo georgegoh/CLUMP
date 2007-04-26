@@ -8,6 +8,7 @@ SET(KUSU_3RDPARTY
   md5crypt
   cheetah
   urlgrabber
+  wget
 )
 
 ## Add kusu modules to the build lists
