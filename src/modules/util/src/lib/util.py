@@ -53,7 +53,7 @@ def verifyURL(url):
     return True, None
 
 
-def verifyDistro(path, os, version):
+def verifyDistro(p, os_name, version_name):
     """ Verify a distribution source 
         
         path - Either a HTTP/FTP URL or a local path
@@ -63,7 +63,7 @@ def verifyDistro(path, os, version):
     
     from kusu.util.distro import distro
     d = distro.CheckDistro()
-    d.verify(path, os, version)
+    d.verify(p, os_name, version_name)
 
 
 def copy(src, dest):
