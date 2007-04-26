@@ -23,7 +23,6 @@ def getInterfaces():
         ifname = line.split(':')[0].strip()
         ifnames.append(ifname)
 
-
     return ifnames
 
 class Interface:
@@ -64,7 +63,7 @@ class Interface:
             print e
 
         if retcode:
-            raise Exception, 'interface %s cannot be brought up' % self.interface
+            raise Exception, 'interface %s cannot be brought down' % self.interface
 
 
     def _getIPNetmask(self):
