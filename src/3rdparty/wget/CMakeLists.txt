@@ -7,6 +7,7 @@ SET(SRC_URL http://ftp.gnu.org/pub/gnu/wget/${PROJECT_NAME}-${VERSION_STR}.tar.g
 SET(KUSU_MODULE OFF) #Set to ON if this is a Kusu module else set to OFF.
 
 SET(CONFIGURE_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
+SET(CONFIGURE_ARGS '--disable-nls')
 
 INCLUDE(ConfigureMakeInstall)
 SET(KUSU_MODULE OFF)
