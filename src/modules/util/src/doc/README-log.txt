@@ -36,11 +36,11 @@ import kusu.util.log
 kl = kusu.util.log.Logger(name='kusu.my.module')
 
 # there are five methods for logging at each level
-kl.debug('This is DEBUG message #%s" % 1)
-kl.info('This is INFO message #%s" % 1)
-kl.warning('This is WARNING message #%s" % 1)
-kl.error('This is ERROR message #%s" % 1)
-kl.critical('This is CRITICAL message #%s" % 1)
+kl.debug('This is DEBUG message #%s' % 1)
+kl.info('This is INFO message #%s' % 1)
+kl.warning('This is WARNING message #%s' % 1)
+kl.error('This is ERROR message #%s' % 1)
+kl.critical('This is CRITICAL message #%s' % 1)
 
 # End example
 
