@@ -149,32 +149,6 @@ class DistroInstallSrcBase(object):
     def getArch(self):
         return self.arch
 
-class GeneralInstallSrc(DistroInstallSrcBase):
-    """General wrapper class to deal with the different distro installation sources."""
-    
-    def __init__(self, srcPath):
-        super(GeneralInstallSrc,self).__init__()
-        # set the list of possible distros
-        self.distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
-        
-        for d in self.distros:
-            if d.verifySrcPath():
-                self.srcPath = d.srcPath
-                self.isRemote = d.isRemote
-                self.ostype = d.ostype
-                self.version = d.version
-                self.pathLayoutAttributes = d.pathLayoutAttributes
-                self.getStage2Path = d.getStage2Path
-                self.copyStage2 = d.copyStage2
-                self.getVersion = d.getVersion #assign the proper function pointer
-                self.getArch = d.getArch #assign the proper function pointer
-                break
-            else:
-                self.srcPath = None
-                self.isRemote = False
-                self.ostype = None
-                self.version = None
-                self.pathLayoutAttributes = {}
 
 def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
@@ -216,16 +190,17 @@ class CentOSInstallSrc(DistroInstallSrcBase):
             'metainfodir' : 'CentOS/base'
         }
 
-    def getVersion(self):
-        '''CentOS specific way of getting the distro version'''
-        return self.version
-        
         # The following determines the patchfile layout for CentOS
         self.patchLayoutAttributes = {
             'patchdir' : 'images',
             'patchimage' : 'images/updates.img'
         }
- 
+
+
+    def getVersion(self):
+        '''CentOS specific way of getting the distro version'''
+        return self.version
+        
     def getIsolinuxbinPath(self):
         """Get the isolinux.bin path object"""
 
@@ -431,6 +406,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             self.version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
         return self.version
 
@@ -445,7 +421,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             line = linelst[2] #third line is usually the arch
             self.arch = line.strip().split()[0].lower()
         else:
-            #any other way?
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
 
