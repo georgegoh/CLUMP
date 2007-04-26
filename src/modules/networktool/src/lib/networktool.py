@@ -31,7 +31,8 @@ class Interface:
     ip = None
     broadcast = None
     netmask = None
-        
+    state = None
+ 
     def __init__(self, interface):
         self.interface = interface
         self._getIPNetmask()
@@ -129,7 +130,7 @@ class Interface:
             # Check for distro & ver 
             #os.environ.get('KUSU_DIST', None) 
             #os.environ.get('KUSU_DISTVER', None) 
-            cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
+            cmd = 'udhcpc -f -q -n -i %s -s %s' % (self.interface, script)
         else:
             raise Exception, 'Not supported operating system'
     
@@ -139,10 +140,11 @@ class Interface:
                                  shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
         except Exception, e:
             raise e
 
-        retcode = p.returncode
        
         if not retcode:
             self._getIPNetmask()
