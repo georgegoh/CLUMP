@@ -29,10 +29,10 @@ def deleteDevice(baseScreen):
     selected_device = listbox.current()
 
     try:
-        if selected_device in diskProfile.lv_groups.keys():
-            raise partitiontool.KusuError, "Alpha can only work with primary partitions."
-        elif selected_device in diskProfile.logi_vol.keys():
-            raise partitiontool.KusuError, "Alpha can only work with primary partitions."
+        if selected_device in diskProfile.lvg_dict.keys():
+            raise partitiontool.KusuError, "Alpha can only work with primary, extended and logical partitions."
+        elif selected_device in diskProfile.lv_dict.keys():
+            raise partitiontool.KusuError, "Alpha can only work with primary, extended and logical partitions."
         elif selected_device in diskProfile.disk_dict.keys():
             print 'Disk'
         elif type(selected_device) is partitiontool.Partition:
