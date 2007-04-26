@@ -16,9 +16,13 @@ class DuplicateMountpointError(KusuError): pass
 class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
 class PartitionSizeTooLargeError(KusuError): pass
+class PartitionIsPartOfVolumeGroupError(KusuError): pass
 class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
 class CannotDeletePhysicalVolumeFromLogicalGroupError(KusuError): pass
+class InsufficentFreeSpaceInVolumeGroupError(KusuError): pass
 class LogicalVolumeAlreadyInLogicalGroupError(KusuError): pass
 class CannotDeleteLogicalVolumeFromLogicalGroupError(KusuError): pass
-
 class NotPhysicalVolumeError(KusuError): pass
+class InvalidVolumeGroupExtentSizeError(KusuError): pass
+class PhysicalVolumeStillInUseError(KusuError): pass
+class LogicalVolumeStillInUseError(KusuError): pass

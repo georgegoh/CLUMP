@@ -64,8 +64,9 @@ import math
 import logging
 import commands
 import parted
+from os.path import basename
 from kusuexceptions import *
-import lvm202 as lvm
+from lvm import *
 #from kusu.util.log import Logger
 
 #class KusuError(exceptions.Exception): pass
@@ -157,12 +158,36 @@ class DiskProfile(object):
             import sys
             sys.exit(1)
  
-        # Output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
+        # output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
         disks_str = fdisk_out.split('\n')
         for disk_str in disks_str:
             if disk_str:
                 self.disk_dict[disk_str[5:-1]] = Disk(disk_str[:-1], self, fresh)
 
+        # probe the physical volumes
+        pv_probe_dict = probePhysicalVolumes()
+        for pv_path, pv_prop_dict in pv_probe_dict.iteritems():
+            partition = self.getPartitionFromPath(pv_path)
+            partition.lvm_flag = 1
+            physicalVolume = PhysicalVolume(partition)
+            physicalVolume.group = pv_prop_dict['group']
+            self.pv_dict[basename(pv_path)] = physicalVolume
+
+        # probe the logical volume groups
+        vg_probe_dict = probeLogicalVolumeGroups()
+ 
+
+    def getPartitionFromPath(self, path_str):
+        i = -1
+        path = path_str.strip()
+        while path[i].isdigit():
+            i = i-1
+        i = i+1
+        disk_path = path[:i]
+        disk = self.disk_dict[basename(disk_path)]
+        partition_number = int(path[i:])
+        partition = disk.partitions_dict[partition_number]
+        return partition
 
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
@@ -182,29 +207,11 @@ class DiskProfile(object):
 
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
-            self.pv_dict[new_paritition.path] = PhysicalVolume(new_partition)
+            self.pv_dict[new_partition.path] = PhysicalVolume(new_partition)
         return new_partition
 
     def editPartition(self, part_id, size, fixed_size, fs_type, mountpoint):
-        """Edit an existing partition.""
-        partition = partitions[part_id]
-        disk = disks[partition.disk_id]
-
-        # sanity check
-        if size > partition.size:
-            additional_size_required = size - partition.size
-            free_space_sector = disk.lookForFreeSpace(additional_size_required,
-                                                      partition.start_sector)
-            if free_space_sector != partition.end_sector + 1:
-                raise OutOfSpaceError, _('Not enough space to expand partition to desired size')
-        if mountpoint in mountpoints.keys():
-            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
-
-        partition.size = size
-        partition.fixed_size = fixed_size
-        partition.fs_type = fs_type
-        partition.setMountpoint(mountpoint)
-"""
+        """!!!NOT READY!!! - Edit an existing partition."""
 
     def deletePartition(self, partition_obj):
         """Delete an existing partition by name. E.g., to delete the first
@@ -213,123 +220,95 @@ class DiskProfile(object):
         # if partition is a physical volume.
         if partition_obj.path in self.pv_dict.keys():
             physicalVol = self.pv_dict[partition_obj.path]
+            if physicalVol.group != None:
+                raise PartitionIsPartOfVolumeGroupError
+            del self.pv_dict[partition_obj.path]
 
         partition_obj.disk.delPartition(partition_obj)
         if partition_obj.mountpoint in self.mountpoints.keys():
             self.mountpoints.pop(partition_obj.mountpoint)
 
 
-    def newLogicalVolume(self, name, vol_grp_id, size, fs_type, mountpoint):
-        """Create a new logical volume."""
-        # sanity checks
-        if name in logi_vol.keys():
-            raise DuplicateNameError, _('Logical Volume name already exists.')
-        if mountpoint in mountpoints.keys():
-            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
-
-        logical_vol_grp = lv_groups[vol_grp_id]
-        proposed_lv = logical_vol_grp.proposeLogicalVolume(int(size),
-                                                           fs_type, mountpoint)
-
-        logical_vol_grp.logical_volume_ids.append(name)
-        logi_vol[name] = proposed_lv
-        proposed_lv.vol_group_id = vol_grp_id
-        mountpoints[mountpoint] = name
-
-
-    def editLogicalVolume(self, lv_id, name, vol_grp_id, size, fs_type, mountpoint):
-        """Edit an existing logical volume."""
-        lv = logi_vol[lv_id]
-        lv_grp = lv_groups[lv.vol_group_id]
-
-        # sanity checks
-        if lv_id != name:
-            if name in logi_vol.keys():
-                raise DuplicateNameError, 'Logical Volume name already exists.'
-        if size > lv.size:
-            additional_size_required = size - lv.size
-            if additional_size_required > lv_grp.availableSize():
-                raise OutOfSpaceError, _('Not enough free space on volume group.')
-        if mountpoint in mountpoints.keys():
-            raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
-
-        # passed sanity checks, now do it!
-        lv.size = size
-        lv.fs_type = fs_type
-        lv.mountpoint = mountpoint
-        if lv_id != name:
-            logi_vol[name] = lv
-            logi_vol.pop(lv_id)
-            lv_grp.logical_volume_ids.append(name)
-            lv_grp.logical_volume_ids.remove(lv_id)
-
-
-    def deleteLogicalVolume(self, lv_id):
-        """Delete an existing logical volume."""
-        lv = logi_vol[lv_id]
-        # remove from vol_group
-        lv_grp = lv_groups[lv.vol_group_id]
-        lv_grp.logical_volume_ids.remove(lv_id)
-        # remove from mountpoints
-        mountpoints.pop(lv.mountpoint)
-        # remove from logi_vol
-        logi_vol.pop(lv_id)
-
-
-    def newLogicalVolumeGroup(self, name, phys_extent, phys_vol_ids):
+    def newLogicalVolumeGroup(self, name, extent_size, pv_list):
         """Create a new logical volume group."""
-        _phys_extent = int(phys_extent)
         # sanity checks
-        if name in lv_groups.keys():
+        if name in self.lvg_dict.keys():
             raise DuplicateNameError, 'Logical Volume Group name already exists.'
-        if _phys_extent not in range(2,513) or _phys_extent % 2:
-            raise KusuError, 'Volume Group physical extent must be a multiple ' + \
-                               'of 2, between 2-512.'
+        unit = extent_size[-1]
+        if unit.upper() != 'M':
+            raise InvalidVolumeGroupExtentSizeError
+        _extent_size = int(extent_size[:-1])
+        if _extent_size not in range(2, 512+1) and \
+           _extent_size % 2:
+            raise InvalidVolumeGroupExtentSizeError
 
         # passed sanity checks, now do it!
-        new_vol_group = VolGroup(phys_extent, phys_vol_ids)
-        lv_groups[name] = new_vol_group
+        lvg = LogicalVolumeGroup(name, extent_size, pv_list)
+        self.lvg_dict[name] = lvg
 
 
     def editLogicalVolumeGroup(self, lvg_id, name, phys_vol_ids):
-        """Edit an existing logical volume group."""
-        lvg = lv_groups[lvg_id]
-        # sanity checks
-        if lvg_id != name:
-            if name in lv_groups.keys():
-                raise DuplicateNameError, _('Proposed name already exists.')
-        if sorted(phys_vol_ids) != sorted(lvg.physical_volume_ids):
-            if lvg.logical_volume_ids:
-                raise KusuError, 'Remove all logical volumes in this group ' + \
-                                 'before modifying the list of physical volumes.'
-        # passed sanity checks, now do it!
-        if lvg_id != name:
-            for lv in lvg.itervalues():
-                lv.vol_group_id = name
-            lv_groups.pop(lvg_id)
-            lv_groups[name] = lvg
+        """!!!NOT READY TO USE!!! - Edit an existing logical volume group."""
+        pass
 
-        if sorted(phys_vol_ids) != sorted(lvg.physical_volume_ids):
-            lvg.physical_volume_ids = phys_vol_ids
-        
-
-    def deleteLogicalVolumeGroup(self, lvg_id):
+    def deleteLogicalVolumeGroup(self, lvg):
         """Delete an existing logical volume group."""
-        lvg = lv_groups[lvg_id]
         # sanity checks
-        if lvg.logical_volume_ids:
-            raise KusuError, 'All logical volumes in this group must be ' + \
-                             'removed before the group can be deleted.'
-        lv_groups.pop(lvg_id)
+        for pv in lvg.pv_dict.itervalues():
+            if pv.isInUse():
+                raise PhysicalVolumeStillInUseError
+
+        for lv in lvg.lv_dict.intervalues():
+            lvg.delLogicalVolume(lv)
+
+        for pv in lvg.pv_dict.intervalues():
+            lvg.delPhysicalVolume(pv)
+
+        del self.lvg_dict[lvg.name]
+
+
+    def newLogicalVolume(self, name, lvg, size, fs_type=None, mountpoint=None):
+        """Create a new logical volume."""
+        # sanity checks
+        if name in self.lv_dict.keys():
+            raise DuplicateNameError, _('Logical Volume name already exists.')
+        if mountpoint in self.mountpoints.keys():
+            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
+
+        new_lv = lvg.createLogicalVolume(name, size, fs_type, mountpoint)
+
+        if mountpoint:
+            self.mountpoints[mountpoint] = new_lv
+
+
+    def editLogicalVolume(self, lv_id, name, vol_grp_id, size, fs_type, mountpoint):
+        """!!!NOT READY TO USE!!! - Edit an existing logical volume."""
+        pass
+
+    def deleteLogicalVolume(self, lv):
+        """Delete an existing logical volume."""
+        if lv.mountpoint in self.mountpoints.keys():
+            del self.mountpoints[lv.mountpoint]
+
+        lv.group.delLogicalVolume(lv)
+
 
     def commit(self):
         for disk in self.disk_dict.itervalues():
             disk.commit()
+        # now the partitions are actually created.
+        for pv in pv_dict.itervalues():
+            pv.commit()
+        for lvg in lvg_dict.itervalues():
+            lvg.commit()
+        for lv in lv_dict.itervalues():
+            lv.commit()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
             disk.formatAll()
-
+        for lvg in lvg_dict.iterValues():
+            lvg.formatAll()
         
 class Disk(object):
     """Disk class represents a physical disk in the system.
@@ -352,6 +331,8 @@ class Disk(object):
     profile = None
     pedDisk = None
     partitions_dict = None
+    leave_unchanged = None
+
     __getattr_dict = { 'length' : 'self.pedDevice.length',
                        'model' : 'self.pedDevice.model',
                        'path' : 'self.pedDevice.path',
@@ -366,6 +347,7 @@ class Disk(object):
     def __init__(self, path, profile, fresh=False):
         self.profile = profile
         self.partitions_dict = {}
+        self.leave_unchanged = True
         pedDevice = parted.PedDevice.get(path)
         if fresh:
             pedDiskType = pedDevice.disk_probe()
@@ -483,7 +465,6 @@ class Disk(object):
                 self.profile.mountpoints.pop(partition.mountpoint)
 
         # ... then we re-add the partitions.
-        from os.path import basename
         for part_details in partitions_to_move:
             self.profile.newPartition(basename(self.path),
                                       part_details[0],
@@ -579,11 +560,13 @@ class Disk(object):
         return sector
 
     def commit(self):
-        self.pedDisk.commit()
+        if not self.leave_unchanged:
+            self.pedDisk.commit()
 
     def formatAll(self):
-        for partition in self.partitions_dict.itervalues():
-            partition.format()
+        if not self.leave_unchanged:
+            for partition in self.partitions_dict.itervalues():
+                partition.format()
 
 
 class Partition(object):
@@ -616,6 +599,7 @@ class Partition(object):
     disk = None
     pedPartition = None
     mountpoint = None
+    leave_unchanged = None
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
@@ -629,7 +613,8 @@ class Partition(object):
                        'lvm_flag' : 'self.pedPartition.get_flag(parted.PARTITION_LVM)',
                        'root_flag' : 'self.pedPartition.get_flag(parted.PARTITION_ROOT)',
                        'swap_flag' : 'self.pedPartition.get_flag(parted.PARTITION_SWAP)',
-                       'raid_flag' : 'self.pedPartition.get_flag(parted.PARTITION_RAID)'
+                       'raid_flag' : 'self.pedPartition.get_flag(parted.PARTITION_RAID)',
+                       'size' : 'self.disk.sector_size * self.length'
                       }
     __setattr_dict = { 'start_sector' : "self.pedPartition.geom.set_start(long('%s'))",
                        'end_sector' : "self.pedPartition.geom.set_end(long('%s'))",
@@ -644,6 +629,7 @@ class Partition(object):
         self.disk = disk
         self.pedPartition = pedPartition
         self.mountpoint = mountpoint
+        self.leave_unchanged = True
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -654,20 +640,25 @@ class Partition(object):
         elif name in self.__getattr_dict.keys():
             return eval(self.__getattr_dict[name])
         else:
-            raise AttributeError, "Partition instance has no attribute '%s'" % name
+            raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (self.__class__, name)
 
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        elif name == 'disk' or name == 'pedPartition' or name == 'mountpoint':
+        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged']:
             object.__setattr__(self, name, value)
         else:
-            raise AttributeError, "Partition instance has no or cannot modify attribute '%s'" % name
+            raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
+                                  (self.__class__, name)
 
     def size(self):
         return self.disk.sector_size * self.length
 
     def format(self):
+        if self.leave_unchanged:
+            return
+
         if self.fs_type == 'ext2':
             print commands.getoutput('mkfs.ext2 %s' % self.path)
         elif self.fs_type == 'ext3':
@@ -677,98 +668,6 @@ class Partition(object):
         elif self.lvm_flag:
             # do the lvm thing
             pass
-
-
-class PhysicalVolume(object):
-    """A physical volume object that can belong to a logical volume group."""
-    name = None
-    partition = None
-    group = None
-
-    def __init__(self,  partition):
-        """A partition may not have knowledge about it's physical volume role,
-           but a physical volume must have knowledge about its beginnings
-           (the partition).
-        """
-        from os.path import basename
-        self.name = basename(self.partition.path)
-        self.partition = partition
-        lvm.createPhysicalVolume(self.partition.path)
-
-    def isInUse(self):
-        return lvm.physicalVolumeInUse(self.partition.path)
-
-
-class LogicalVolumeGroup(object):
-    """A logical volume group consists of physical volumes that are combined
-       to form a shared pool of disk space. Subsequently, it can be divided
-       into several logical volumes."""
-    name = None
-    pv_dict = None
-    lv_dict = None
-
-    def __init__(self, name, pv_list):
-        logger.info('Creating new logical volume group %s' % name)
-        self.name = name
-        self.pv_dict = {}
-        self.lv_dict = {}
-        for pv in pv_list:
-            pv_dict[pv.name] = pv
-        pv_paths = [pv.partition.path for pv in pv_list]
-        lvm.createVolumeGroup(self.name, pv_paths)
-
-    def addPhysicalVolume(self, physicalVol):
-        """Add a physical volume(i.e., partition) into this group."""
-        logger.info('Adding physical volume %s to volume group %s' % (physicalVol.name, self.name))
-        if physicalVol.name in self.pv_dict.keys():
-            raise PhysicalVolumeAlreadyInLogicalGroupError
-        self.pv_dict[physicalVol.name] = physicalVol
-        physicalVol.group = self.name
-        lvm.extendVolumeGroup(self.name, physicalVol.partition.path)
-
-    def delPhysicalVolume(self, physicalVol):
-        logger.info('Deleting physical volume')
-        if physicalVol.name not in self.pv_dict.keys():
-            raise CannotDeletePhysicalVolumeFromLogicalGroupError, \
-                  'Physical Volume ' + physicalVol.name + ' does not exist ' + \
-                  'in Logical Group ' + self.name + '.'
-        physicalVol.group = None
-        del self.pv_dict[physicalVol.name]
-        lvm.reduceVolumeGroup(self.name, physicalVol.partition.path)
-        lvm.removePhysicalVolume(physicalVol.path)
-
-    def createLogicalVolume(self, name, size):
-        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
-        if name in self.lv_dict.keys():
-            raise LogicalVolumeAlreadyInLogicalGroupError
-        lv = LogicalVolume(name, self)
-        self.lv_dict[name] = lv
-        lvm.createLogicalVolume(self.name, name, size)
-
-    def delLogicalVolume(self, logicalVol):
-        logger.info('Deleting logical volume %s from volume group %s' % (name, self.name))
-        if logicalVol.name not in self.lv_dict.keys():
-            raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
-                  'Logical Volume ' + logicalVol.name + ' does not exist ' + \
-                  'in Logical Group ' + self.name + '.'
-        if logicalVol.isInUse():
-            raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
-                  'Logical Volume ' + logicalVol.name + ' is still in use.'
-        logicalVol.group = None
-        del self.lv_dict[logicalVol.name]
-        lvm.removeLogicalVolume(logicalVol.path)
-
-
-class LogicalVolume(object):
-    """A logical volume assigned from a logical volume group."""
-    name = None
-    group = None
-
-    def __init__(self, name, volumeGroup):
-        self.name = name
-        self.group = volumeGroup
-
-        
 
 import unittest
 class DiskProfileTestCase(unittest.TestCase):
