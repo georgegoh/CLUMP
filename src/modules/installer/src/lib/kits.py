@@ -41,9 +41,14 @@ class KitsScreen(screenfactory.BaseScreen):
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 2)
         entryWidth = 20
+
+        value = self.database.get(self.context, 'FedoraURL')
+        if not value: value = 'http://172.25.208.218/repo/fedora/6/i386/os/'
+        else: value = value[0]
+ 
         self.url = kusuwidgets.LabelledEntry(
                         labelTxt=_('URL ').rjust(4), 
-                        width=entryWidth)
+                        width=entryWidth, text=value)
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),

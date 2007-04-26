@@ -99,37 +99,56 @@ class ConfirmScreen(screenfactory.BaseScreen):
         if result == 'ok':
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
-            #self.setupNetwork()
-            #self.copyKits()
+            self.setupNetwork()
+            self.copyKits(disk_profile)
             #self.makeRepo()
-            self.genAutoInstallScript(disk_profile)
+            #self.genAutoInstallScript(disk_profile)
             self.database.close()
 
     def formatDisk(self, disk_profile):
         disk_profile.formatAll()
 
     def setupNetwork(self):
-        pass
-        # Assuming eth0 is connected and can get a dhcp reply
-        #netdev = 'eth0'
-        #kusu_dist = os.environ.get('KUSU_DIST', None)
-        #kusu_distver = os.environ.get('KUSU_DISTVER', None)
-
         # Use dhcpc from busybox
+        # Assume eth0 for now
+        from kusu.networktool import networktool
+
+        interface = networktool.Interface('lo')
+        interface.up()
+        #interface = interface.setStaticIP(('127.0.0.1', '255.0.0.0'))
+
+        interface = networktool.Interface('eth0')
+        interface.up()
+        interface = interface.setDHCP()
        
+    def copyKits(self, disk_profile):
+        # Assume a Fedora 6 repo
+        # Assume a fedora 6 distro: /mnt/sysimage
+        import subprocess
+        import os
+        from path import path
+        from kusu.util import util
 
+        def mount_dir(disk_profile, mntpnt, repo_dir):
+            for disk in disk_profile.disk_dict.values():
+                for id, p in disk.partitions_dict.items():
+                    #print id, p.path, p.mountpoint, fs_type, p.type
+                    if p.mountpoint == mntpnt: 
+                        cmd = 'mount -t %s %s %s' % (p.fs_type, p.path, repo_dir)
+                        os.system(cmd)
+                    
 
-    def copyKits(self):
-        pass
+        url = str(self.database.get('Kits', 'FedoraURL')[0])
 
-        #from kusu.util import util
+        # Mount /repo for now
+        repo_dir = path('/mnt/kusu/repo')
+        repo_dir.makedirs()
+        mount_dir(disk_profile, path('/repo'), repo_dir)
+
+        util.verifyDistro(url, 'fedora', '6')
+        util.copy(url, repo_dir)
+
         
-        #url = self.database.get('Kits', 'FedoraURL')
-        #destPath = '/mnt/sysimage/repo'
-        #util.verifyDistro(url, 'fedora', '6')
-        #util.copy(url, destPath)
-
-
     def makeRepo(self):
         pass
 
