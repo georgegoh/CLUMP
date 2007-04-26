@@ -37,6 +37,36 @@ class Interface:
         self.interface = interface
         self._getIPNetmask()
 
+    def up(self):
+        try:
+            p = subprocess.Popen('ifconfig %s up' % self.interface,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+        except Exception, e:
+            print e
+
+        if retcode:
+            raise Exception, 'interface %s cannot be brought up' % self.interface
+
+
+    def down(self):
+        try:
+            p = subprocess.Popen('ifconfig %s down' % self.interface,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+        except Exception, e:
+            print e
+
+        if retcode:
+            raise Exception, 'interface %s cannot be brought up' % self.interface
+
+
     def _getIPNetmask(self):
         try:
             p = subprocess.Popen('ifconfig ' + self.interface,
@@ -55,13 +85,15 @@ class Interface:
         regex_str = '\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b'
         addr =  re.findall(regex_str, out)
 
-        self.ip = addr[0]
-        
-        if len(addr) > 2:
-            self.broadcast = addr[1]
-            self.netmask = addr[2]
-        else:
-            self.netmask = addr[1]
+        if len(addr): # IP is configured
+            self.ip = addr[0]
+            
+            if len(addr) > 2:
+                self.broadcast = addr[1]
+                self.netmask = addr[2]
+            else:
+                self.ip = addr[0]
+                self.netmask = addr[1]
 
     def setStaticIP(self, IPNetmask):
         cmd = 'ifconfig %s %s netmask %s' % (self.interface, IPNetmask[0], IPNetmask[1])
