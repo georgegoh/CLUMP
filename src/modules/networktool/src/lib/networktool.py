@@ -52,8 +52,8 @@ class Interface:
         cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
         try:
             retcode = subprocess.call(cmd, shell=True)
-        
-            if retcode:
+            
+            if not retcode:
                 self._getIPNetmask()
             else:
                 raise Exception, 'Failed to get ip from dhcp'
