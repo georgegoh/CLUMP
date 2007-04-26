@@ -49,7 +49,16 @@ class Interface:
 
         script = path(kusu_root) / 'bin' / 'udhcpc.script'
 
-        cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
+        
+        if  os.uname()[0] in ['Linux']:
+
+            # Check for distro & ver 
+            #os.environ.get('KUSU_DIST', None) 
+            #os.environ.get('KUSU_DISTVER', None) 
+            cmd = 'udhcpc -q -n -i %s -s %s' % (self.interface, script)
+        else:
+            raise Exception, 'Not supported operating system'
+    
         retcode = subprocess.call(cmd, shell=True)
 
         try:
