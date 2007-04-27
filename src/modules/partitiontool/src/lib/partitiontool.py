@@ -467,9 +467,10 @@ class Disk(object):
         for part_key in partition_nums[deleted_partition_number:]:
             partition = self.partitions_dict[part_key]
             if partition.type != 'extended':
-                partitions_to_move.append((partition.size(),
+                partitions_to_move.append((partition.size,
                                            partition.fs_type,
-                                           partition.mountpoint
+                                           partition.mountpoint,
+                                           partition.lvm_flag
                                           ))
             del self.partitions_dict[part_key]
             if partition.type == 'primary' or partition.type == 'extended':
@@ -479,11 +480,12 @@ class Disk(object):
 
         # ... then we re-add the partitions.
         for part_details in partitions_to_move:
-            self.profile.newPartition(basename(self.path),
-                                      part_details[0],
-                                      False,
-                                      part_details[1],
-                                      part_details[2])
+            new_partition = self.profile.newPartition(basename(self.path),
+                                                      part_details[0],
+                                                      False,
+                                                      part_details[1],
+                                                      part_details[2])
+            new_partition.lvm_flag = part_details[3]
 
     def __getNextPartitionType(self):
         """Get the next assignable partition number, and whether it should be an
