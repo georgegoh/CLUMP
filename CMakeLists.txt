@@ -9,6 +9,7 @@ SET(KUSU_3RDPARTY
   cheetah
   urlgrabber
   wget
+  thttpd
 )
 
 ## Add kusu modules to the build lists
