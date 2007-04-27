@@ -1,6 +1,6 @@
 Index: Makefile.in
 ===================================================================
---- Makefile.in	(revision 474)
+--- Makefile.in	(revision 485)
 +++ Makefile.in	(working copy)
 @@ -30,7 +30,7 @@
  prefix = @prefix@
@@ -20,7 +20,7 @@ Index: Makefile.in
  this:		$(ALL)
  
  thttpd: $(OBJ)
-@@ -106,7 +106,7 @@
+@@ -106,11 +106,11 @@
  	) ; done
  
  
@@ -29,3 +29,8 @@ Index: Makefile.in
  
  installthis:
  	-mkdir -p $(DESTDIR)$(BINDIR)
+-	$(INSTALL) -m 555 -o bin -g bin thttpd $(DESTDIR)$(BINDIR)
++	$(INSTALL) -m 755 thttpd $(DESTDIR)$(BINDIR)
+ 
+ install-man:
+ 	-mkdir -p $(DESTDIR)$(MANDIR)/man8
