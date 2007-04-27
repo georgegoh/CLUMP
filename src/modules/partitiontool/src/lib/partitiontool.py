@@ -61,7 +61,7 @@
 """
 import math
 import logging
-import commands
+import subprocess
 import parted
 from os.path import basename
 from kusuexceptions import *
@@ -129,7 +129,7 @@ class DiskProfile(object):
     mountpoints = None
     pv_dict = None
     lvg_dict = None
-    lv_dict = None # not implemented yet.
+    lv_dict = None
     fsType_dict = { 'ext2' : fsTypes['ext2'],
                     'ext3' : fsTypes['ext3'],
                     'physical volume' : None,
@@ -151,8 +151,22 @@ class DiskProfile(object):
         self.pv_dict = {}
         self.lvg_dict = {}
         self.lv_dict = {}
-        status, fdisk_out = commands.getstatusoutput("fdisk -l 2>/dev/null | grep 'Disk' | awk '{ print $2 }'")
-        if status != 0:
+        fdisk = subprocess.Popen('fdisk -l 2>/dev/null',
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        grep = subprocess.Popen("grep 'Disk'",
+                                shell=True,
+                                stdin=fdisk.stdout,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        awk = subprocess.Popen("awk '{ print $2 }'",
+                               shell=True,
+                               stdin=grep.stdout,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        fdisk_out, status = awk.communicate()
+        if status != '':
             print 'Error finding the disks on this system:', fdisk_out
             import sys
             sys.exit(1)
