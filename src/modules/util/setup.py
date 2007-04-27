@@ -19,7 +19,7 @@ setup(name="kusu-util",
     platforms=["any"],
     packages=['util', 'util.distro'],
     package_dir={'util':'src/lib',
-                 'util.distrp': 'src/lib/util'},
+                 'util.distro': 'src/lib/util'},
     data_files=[('etc', ['src/etc/distro.conf']),
                 ('share/doc/samples', ['src/doc/samples/verify-fc6-repo'])] 
      )
