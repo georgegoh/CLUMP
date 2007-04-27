@@ -25,7 +25,6 @@
       b) name collisions with an existing LV; and
       c) mountpoint collisions with an existing volume.
 """
-__version__ = "$Revision$"
 import commands
 from kusuexceptions import *
 import lvm202 as lvm

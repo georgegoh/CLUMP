@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
-__version__ = "$Revision: 268 $"
 import subprocess
 from kusuexceptions import *
 #from kusu.util.log import Logger

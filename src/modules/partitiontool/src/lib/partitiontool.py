@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id: partitiontool.py 268 2007-04-12 02:29:30Z ggoh $
 #
-# Kusu Text Installer Partition Tool Mockup.
+# Kusu Text Installer Partition Tool.
 #
 # Copyright 2007 Platform Computing Corporation.
 #
@@ -59,7 +59,6 @@
       c) DuplicateMountpointError
 
 """
-__version__ = "$Revision: 268 $"
 import math
 import logging
 import commands
