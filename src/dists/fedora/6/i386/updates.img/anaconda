@@ -32,10 +32,11 @@ if [ $? -eq 0 ]; then
     source $envfile;
 
     # start thttpd
-    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -d /mnt/kusu/repo -l /dev/null
+    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -u root -d /mnt/kusu/repo -l /dev/null
 
     # exec the real anaconda
-    /usr/bin/anaconda "$@";
+    # Need a better to replace existing -m and --kickstart option in $@
+    /usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/install_script ;
 else
     # in case of problem with the Kusu Installer, we halt
     echo "Something has gone very wrong. Restarting!";
