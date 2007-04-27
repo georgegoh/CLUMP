@@ -30,6 +30,9 @@ if [ $? -eq 0 ]; then
     # Restore the environment when we are done
     source $envfile;
 
+    # start thttpd
+    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -d /mnt/kusu/repo -l /dev/null
+
     # exec the real anaconda
     /usr/bin/anaconda "$@";
 else
