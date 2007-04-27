@@ -129,7 +129,7 @@ class DiskProfile(object):
     disk_dict = None
     mountpoints = None
     pv_dict = None
-    lvg_dict = None # not implemented yet.
+    lvg_dict = None
     lv_dict = None # not implemented yet.
     fsType_dict = { 'ext2' : fsTypes['ext2'],
                     'ext3' : fsTypes['ext3'],
@@ -169,13 +169,27 @@ class DiskProfile(object):
         for pv_path, pv_prop_dict in pv_probe_dict.iteritems():
             partition = self.getPartitionFromPath(pv_path)
             partition.lvm_flag = 1
-            physicalVolume = PhysicalVolume(partition)
-            physicalVolume.group = pv_prop_dict['group']
-            self.pv_dict[basename(pv_path)] = physicalVolume
+            pv = PhysicalVolume(partition)
+            pv.group = pv_prop_dict['group']
+            self.pv_dict[basename(pv_path)] = pv
 
         # probe the logical volume groups
-        vg_probe_dict = probeLogicalVolumeGroups()
- 
+        lvg_probe_dict = probeLogicalVolumeGroups()
+        for lvg_name, lvg_prop_dict in lvg_probe_dict.iteritems():
+            pv_list = [pv for pv in self.pv_dict.itervalues() if pv.group == lvg_name]
+            lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'], pv_list)
+            self.lvg_dict[lvg_name] = lvg
+
+        # probe logical volumes
+        lv_probe_dict = probeLogicalVolumes()
+        for lv_path, lv_prop_dict in lv_probe_dict.iteritems():
+            lvg_name = lv_prop_dict['group']
+            lvg = self.lvg_dict[lvg_name]
+            lv_name = basename(lv_path)
+            lv = LogicalVolume(lv_name, lvg, 0)
+            lv.extents = lv_prop_dict['extents']
+            lvg.lv_dict[lv_name] = lv
+            self.lv_dict[lv_name] = lv
 
     def getPartitionFromPath(self, path_str):
         i = -1
@@ -652,8 +666,6 @@ class Partition(object):
             raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
                                   (self.__class__, name)
 
-    def size(self):
-        return self.disk.sector_size * self.length
 
     def format(self):
         if self.leave_unchanged:

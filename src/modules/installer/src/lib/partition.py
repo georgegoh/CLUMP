@@ -67,25 +67,21 @@ class PartitionScreen(screenfactory.BaseScreen):
             self.disk_profile = partitiontool.DiskProfile(False)
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()
-        lvg_keys.sort()
-        for key in lvg_keys:
-            vg_devicename = 'VG ' + key
-            vg_pv = self.disk_profile.lvg_dict[key].physical_volume_ids
-            vg_size = 0
-            for pv in vg_pv:
-                vg_size = vg_size + int(self.disk_profile.partitions[pv].size)
+        for key in sorted(lvg_keys):
+            lvg = self.disk_profile.lvg_dict[key]
+            lvg_displayname = 'VG ' + key
+            lvg_size_MB = lvg.extentsTotal() * lvg.extent_size / (1024 * 1024)
             # display volume groups first in listbox
-            self.listbox.addRow(['VG ' + key, '', '', str(vg_size), 'VolGroup',
+            self.listbox.addRow(['VG ' + key, '', '', str(lvg_size_MB), 'VolGroup',
                                  ''], key)
-            vg_lv = self.disk_profile.lvg_dict[key].logical_volume_ids
-            for lv in vg_lv:
-                lv_devicename = '  LV ' + lv
-                lv_size = self.disk_profile.lv_dict[lv].size
-                lv_type = self.disk_profile.lv_dict[lv].fs_type
-                lv_mount = self.disk_profile.lv_dict[lv].mountpoint
+            lv_keys = lvg.lv_dict.keys()
+            for lv_key in sorted(lv_keys):
+                lv = self.disk_profile.lv_dict[lv_key]
+                lv_devicename = '  LV ' + lv.name
+                lv_size_MB = lv.size / (1024 * 1024)
                 # display indented logical volumes belonging to the vg.
-                self.listbox.addRow([lv_devicename, '', '', str(lv_size),lv_type,
-                                    lv_mount], lv)
+                self.listbox.addRow([lv_devicename, '', '', str(lv_size_MB),lv.fs_type,
+                                    lv.mountpoint], lv)
 
         logging.debug('Partition screen: getting disk list')
         disk_keys = self.disk_profile.disk_dict.keys()
@@ -101,13 +97,20 @@ class PartitionScreen(screenfactory.BaseScreen):
                 part_devicename = '  ' + key + str(partition.num)
                 # indent one more level if logical partition.
                 if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
+                fs_type = partition.fs_type
+                mountpoint = partition.mountpoint
+                if partition.lvm_flag:
+                    fs_type = 'phys_vol'
+                    for pv_name, pv in self.disk_profile.pv_dict.iteritems():
+                        if pv.partition is partition and pv.group:
+                            mountpoint = pv.group.name
                 # display partition info
                 self.listbox.addRow([part_devicename,
                                     str(partition.start_cylinder),
                                     str(partition.end_cylinder),
-                                    str(partition.size()/(1024*1024)),
-                                    partition.fs_type,
-                                    partition.mountpoint], partition)
+                                    str(partition.size/(1024*1024)),
+                                    fs_type,
+                                    mountpoint], partition)
 
         self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
                                  padding=(0,0,0,0))

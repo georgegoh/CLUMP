@@ -46,6 +46,10 @@ def probeLogicalVolumeGroups():
     return probeLVMEntities(lvm.retrieveLogicalVolumeGroupNames,
                             lvm.probeLogicalVolumeGroup)
 
+def probeLogicalVolumes():
+    return probeLVMEntities(lvm.retrieveLogicalVolumePaths,
+                            lvm.probeLogicalVolume)
+
 
 class PhysicalVolume(object):
     """A physical volume object that can belong to a logical volume group.
@@ -86,9 +90,9 @@ class PhysicalVolume(object):
                                   (self.__class__, name)
 
     def __extents(self):
-        if not group:
+        if not self.group:
             return 0
-        return self.size / self.group.extent_size
+        return self.partition.size / self.group.extent_size
 
     def commit(self):
         if not self.partition.leave_unchanged:
@@ -121,12 +125,14 @@ class LogicalVolumeGroup(object):
     def extentsTotal(self):
         extents = 0
         for pv in self.pv_dict.itervalues():
-            extents = extents + pv.extents()
+            extents = extents + pv.extents
+        return extents
 
     def extentsUsed(self):
         extents = 0
         for lv in self.lv_dict.itervalues():
-            extents = extents + lv.extents()
+            extents = extents + lv.extents
+        return extents
 
     def parsesize(self, text_size):
         """This method parses text such as '100K', '20M' into integers(base k).
@@ -229,7 +235,7 @@ class LogicalVolume(object):
 
     def __getattr__(self, name):
         if name == 'size':
-            return self.__size
+            return self.__size()
         elif name == 'path':
             return '/dev/' + group.name + '/' + name
         else:
@@ -239,6 +245,8 @@ class LogicalVolume(object):
     def __setattr__(self, name, value):
         if name in ['name', 'group', 'fs_type', 'mountpoint']:
             object.__setattr__(self, name, value)
+        elif name == 'extents':
+            object.__setattr__(self, name, long(value))
         else:
             raise AttributeError, "%s instance does not have or cannot modify attribute %s" % \
                                   (self.__class__, name)

@@ -33,11 +33,15 @@ def retrieveLVMEntityData(command, field):
 
 
 def retrievePhysicalVolumePaths():
-    return retrieveLVMEntityData('pvdisplay', 'PV Name')
+    return retrieveLVMEntityData('lvm pvdisplay', 'PV Name')
 
 
 def retrieveLogicalVolumeGroupNames():
-    return retrieveLVMEntityData('vgdisplay', 'VG Name')
+    return retrieveLVMEntityData('lvm vgdisplay', 'VG Name')
+
+
+def retrieveLogicalVolumePaths():
+    return retrieveLVMEntityData('lvm lvdisplay', 'LV Name')
 
 
 def probeLVMEntity(command, probe_dict):
@@ -62,29 +66,37 @@ def probeLVMEntity(command, probe_dict):
                                        stderr=subprocess.PIPE)
                 value = awk.communicate()[0]
                 probe_result_dict[k] = value.strip()
+                if not probe_result_dict[k]:
+                    probe_result_dict[k] = None
     return probe_result_dict
 
 
 def probePhysicalVolume(path):
     probe_dict = { 'group' : 'VG Name' }
-    return probeLVMEntity('pvdisplay %s' % path, probe_dict)
+    return probeLVMEntity('lvm pvdisplay %s' % path, probe_dict)
 
 
 def probeLogicalVolumeGroup(name):
-    probe_dict = { 'extent' : 'PE Size' }
-    results_dict =  probeLVMEntity('vgdisplay %s --units b' % name, probe_dict)
-    extent = long(results_dict['extent'])
+    probe_dict = { 'extent_size' : 'PE Size' }
+    results_dict = probeLVMEntity('lvm vgdisplay %s --units b' % name, probe_dict)
+    extent = long(results_dict['extent_size'])
     if extent < (1024*1024):
         extent = extent / 1024
-        results_dict['extent'] = str(extent) + 'K'
+        results_dict['extent_size'] = str(extent) + 'K'
     else:
         extent = extent / 1024 / 1024
-        results_dict['extent'] = str(extent) + 'M'
+        results_dict['extent_size'] = str(extent) + 'M'
     return results_dict
 
 
+def probeLogicalVolume(path):
+    probe_dict = { 'group' : 'VG Name',
+                   'extents' : 'Current LE' }
+    return probeLVMEntity('lvm lvdisplay %s' % path, probe_dict)
+
+
 def createPhysicalVolume(partition_path):
-    p = subprocess.Popen('pvcreate %s' % partition_path,
+    p = subprocess.Popen('lvm pvcreate %s' % partition_path,
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -95,7 +107,7 @@ def createPhysicalVolume(partition_path):
 
 def removePhysicalVolume(partition_path):
     if not physicalVolumeInUse(partition_path):
-        p = subprocess.Popen('pvremove %s' % partition_path,
+        p = subprocess.Popen('lvm pvremove %s' % partition_path,
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -105,7 +117,7 @@ def removePhysicalVolume(partition_path):
         print 'Err: ', err
 
 def physicalVolumeInUse(path):
-    p = subprocess.Popen('pvdisplay %s' % path,
+    p = subprocess.Popen('lvm pvdisplay %s' % path,
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -125,7 +137,7 @@ def physicalVolumeInUse(path):
          
 
 def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):
-    p = subprocess.Popen('vgcreate %s -s %s %s' % 
+    p = subprocess.Popen('lvm vgcreate %s -s %s %s' % 
                             (vg_name,
                              extent_size,
                              ' '.join(pv_path_list)),
@@ -139,7 +151,7 @@ def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):
 
 
 def extendVolumeGroup(vg_name, partition_path):
-    p = subprocess.Popen('vgextend %s %s' % (vg_name, partition_path),
+    p = subprocess.Popen('lvm vgextend %s %s' % (vg_name, partition_path),
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -150,7 +162,7 @@ def extendVolumeGroup(vg_name, partition_path):
 
 
 def reduceVolumeGroup(vg_name, partition_path):
-    p = subprocess.Popen('vgreduce %s %s' % (vg_name, partition_path),
+    p = subprocess.Popen('lvm vgreduce %s %s' % (vg_name, partition_path),
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -161,7 +173,7 @@ def reduceVolumeGroup(vg_name, partition_path):
 
 
 def createLogicalVolume(vg_name, lv_name, lv_size):
-    p = subprocess.Popen('lvcreate -L%d -n%s %s' % (lv_size, lv_name, vg_name),
+    p = subprocess.Popen('lvm lvcreate -L%d -n%s %s' % (lv_size, lv_name, vg_name),
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -172,7 +184,7 @@ def createLogicalVolume(vg_name, lv_name, lv_size):
 
 
 def removeLogicalVolume(lv_path):
-    p = subprocess.Popen('lvremove %s' % lv_path,
+    p = subprocess.Popen('lvm lvremove %s' % lv_path,
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
