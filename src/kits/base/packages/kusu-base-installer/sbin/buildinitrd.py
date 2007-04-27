@@ -24,7 +24,7 @@ import os
 import sys
 import string
 import glob
-import string
+
 from optparse import OptionParser
 from kusu.kusuapp import KusuApp
 from kusu.kusudb import KusuDB
@@ -50,7 +50,8 @@ class BuildInitrd:
         self.ostype      = ''     # The ostype for the repository
         self.kernel      = ''     # The name of the kernel to use from db
         self.initrd      = ''     # The name of the initrd
-        self.template    = '/mblack/kusu/buildroot/rootfs.x86_64.cpio.gz'
+        self.initrd64    = '/mblack/kusu/buildroot/rootfs.x86_64.cpio.gz'   # FIX ME
+        self.initrd32    = '/space/mblack/buildroot-32bit/buildroot/rootfs.i686.cpio.gz'    # FIX ME
         self.gettext     = 0
         self.imagedir    = ''     # Location of the initial ram disk image
         self.moduledir   = ''     # Location of the tempory module directory
@@ -62,7 +63,7 @@ class BuildInitrd:
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""
         self.database = database
-        self.user = user
+        self.user     = user
         self.password = password
         self.db.disconnect()
         self.db.connect(self.database, self.user, self.password)
@@ -130,6 +131,29 @@ class BuildInitrd:
         if not idir:
             idir = '/repo/images'
 
+        # Get the architecture from the kits that are part of the repo
+        query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
+                 'where nodegroups.repoid=repos.repoid and '
+                 'repos.repoid=repos_have_kits.repoid and '
+                 'repos_have_kits.kid=kits.kid and kits.arch is not NULL ' 
+                 'and nodegroups.ngid="%s"' % self.ngid)
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            if self.stderrout:
+                self.stderrout("DB_Query_Error: %s\n", query)
+
+            sys.exit(-1)
+
+        if data:
+            arch = data[0]
+
+        if arch == 'x86_64':
+            template = self.initrd64
+        else:
+            template = self.initrd32
+
         self.imagedir = os.path.join(idir, '%s-initrd' % self.nodegroup)
         self.moduledir = os.path.join(idir, '%s-modules' % self.nodegroup)
         if not os.path.exists(idir):
@@ -151,7 +175,8 @@ class BuildInitrd:
         os.chdir(self.imagedir)
         if self.stdoutout:
                 self.stdoutout("Extracting template Initial Ram Disk\n")
-        os.system('zcat %s |cpio -id >/dev/null' % self.template) 
+                print "%s" % template
+        os.system('zcat %s |cpio -id >/dev/null' % template) 
 
 
     def getModules(self):
@@ -249,7 +274,7 @@ class BuildInitrd:
         else:
             print "Patching in modules:"
 
-        mlist = self.modules
+        mlist = self.modules[:]
         for root, dirs, files in os.walk(self.moduledir):
             if files and mlist:
                 # print root
@@ -276,7 +301,32 @@ class BuildInitrd:
                     list = list + "%s\t" % (mod)
                     
                 self.stderrout("WARNING: Unable to locate module(s): %s\n", list)
-                                      
+
+        # Add a load order list
+        fp = open('%s/etc/module-load-order.lst' % self.imagedir, 'w')
+        for m in self.modules:
+            out = "%s\n" % m
+            fp.write(out)
+        fp.close()
+
+        # Add the libraries for the imageinit
+        pattern = '%s/usr/lib/python2*' % self.imagedir
+
+        flist = glob.glob(pattern)
+        if len(flist) == 0:
+            if self.stderrout:
+                # Fatal error
+                self.stderrout("ERROR: Unable to locate python package in: %s  Try running:  ls %s\n"
+                               % (self.imagedir, pattern) )
+                sys.exit(-1)
+        pythondir = "%s" % flist[0]
+        os.system('cp -r /opt/kusu/lib/kusu/* \"%s\"' % pythondir)
+        os.system('cp /opt/kusu/sbin/imageinit.py \"%s\"' % self.imagedir)
+        file = '%s/imageinit.py' % self.imagedir
+        # os.system('cp /opt/kusu/sbin/imageinit.py \"%s\"' % file)
+        print 'Running:  cp /opt/kusu/sbin/imageinit.py %s' % file
+        os.chmod(file, 0755)
+
         # Locate the System map, then run depmod
         pattern = ''
         if self.ostype == 'Fedora6.0':    # Get the real types from Alex
@@ -310,7 +360,8 @@ class BuildInitrd:
             os.chdir(self.imagedir)
             os.system('find . | cpio --quiet -o -H newc | gzip > \"/tftpboot/kusu/%s\"' % 
                       self.initrd)
-            os.system 
+            print "Wrote:  /tftpboot/kusu/%s" %  self.initrd
+
 
 class BuildInitrdApp(KusuApp):
 

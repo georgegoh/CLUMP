@@ -63,7 +63,7 @@ class BuildImage:
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""
         self.database = database
-        self.user = user
+        self.user     = user
         self.password = password
         self.db.disconnect()
         self.db.connect(self.database, self.user, self.password)
@@ -138,7 +138,7 @@ class BuildImage:
 
         self.imagedir = os.path.join(idir, self.nodegroup)
         if not os.path.exists(idir):
-            os.system('mkdir -p %s' % idir)
+            os.system('mkdir -p \"%s\"' % idir)
             
         if os.path.exists(self.imagedir):
             if self.stdoutout:
@@ -210,13 +210,15 @@ class BuildImage:
                        'dev' : 0755, 'etc' : 0755, 'var' : 0755
                        }
 
+        yumhost = self.db.getAppglobals('PrimaryInstaller')
+        
         for dir,perms in neededdirs.items():
             os.mkdir(os.path.join(self.imagedir, dir), perms)
 
         # Make the second level directories.  This is not done in the upper code
         # because the dictionary does not guarentee the order in which they come out.
-        neededdirs = { 'etc/sysconfig' : 0755, 'var/lib' : 0755
-                       }
+        neededdirs = { 'etc/sysconfig' : 0755, 'var/lib' : 0755,
+                       'var/log' : 0755 }
         for dir,perms in neededdirs.items():
             os.mkdir(os.path.join(self.imagedir, dir), perms)
 
@@ -244,7 +246,7 @@ class BuildImage:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=RHEL-%s - Base\n'
-                'baseurl=http://localhost/repos/%s/Fedora6/RPMS/\n' % (self.ostype, self.repoid)
+                'baseurl=http://%s/repos/%s/Fedora6/RPMS/\n' % (self.ostype, yumhost, self.repoid)
                 )
 
         fp.write(out)

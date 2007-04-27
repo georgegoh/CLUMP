@@ -20,6 +20,7 @@ fi
 cd /var/www/html
 ln -s /opt/ocs/cfm cfm
 ln -s /repo/repos repos
+ln -s /repo/images images
 
 # Generate ocs.conf file
 if [ -f dbreport.py ] ; then

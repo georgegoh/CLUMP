@@ -98,6 +98,16 @@ class thisReport(dbreport.Report):
         print '</Directory>'
         print ''
 
+        # Allow access to the Images
+        print '<Directory "/var/www/html/images/">'
+        print '\tOptions FollowSymLinks Indexes'
+        print '\tAllowOverride None'
+        print '\tOrder deny,allow'
+        print allowlist
+        print '\tDeny from all'
+        print '</Directory>'
+        print ''
+        
         # Allow access to the CFM base directory
         print '<Directory "%s">' % cfmdir
         print '\tOptions FollowSymLinks Indexes'

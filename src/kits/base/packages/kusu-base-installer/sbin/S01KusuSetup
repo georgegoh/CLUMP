@@ -59,6 +59,7 @@ chmod 644  /tftpboot/kusu/vmlinuz-${REV}
 
 # Setting up permissions
 chgrp -R apache /repo/repos
+chgrp -R apache /repo/images
 chgrp -R apache /opt/kusu/cfm
 
 # Setup Apache
@@ -68,6 +69,7 @@ else
     cd /var/www/html
     ln -s /opt/kusu/cfm cfm
     ln -s /repo/repos repos
+    ln -s /repo/images images
 
     # Generate Kusu.conf
     if [ -f /opt/kusu/bin/dbreport ]; then

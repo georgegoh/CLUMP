@@ -22,9 +22,13 @@
 # Node installation Information.
 
 
+import string
+import os
+import sys
+import urllib
+
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
-import urllib
 
 
 class NodeInstInfoHandler(ContentHandler):
@@ -119,31 +123,20 @@ class NodeInstInfoHandler(ContentHandler):
 
 
 
-class NNIFun():
+class NIIFun:
     """This class is responsible for retrieving the NII"""
     
     def __init__ (self):
         self.state   = ''
         self.cfmflag = 0
         self.niiflag = 0
-        self.installer = []     # List of all of the IP's for the primary installer node
-        try:
-            # fp = file('/proc/cpuinfo', 'r')
-            fp = file('/tftpboot/kusu/pxelinux.cfg/00:11:22:33:44:00', 'r')  # Remove after testing
-            for line in fp.readlines():
-                for entry in string.split(line):
-                    if entry[:8] == 'niihost=':
-                        self.installer = string.split(entry[8:], ',')
-            fp.close()
-            
-        except:
-            print "ERROR:  The /proc/cmdline file is unavalible!"
         
 
     def setState(self, state):
         """setState - Set the value of the state.  This needs to be used in
         conjunction with the callNodeboot to actually cause the state to be set."""
         self.state = state[:20]    # Database size is the limiting factor
+
 
     def wantCFM(self, flag):
         """wantCFM - Set the flag to request the CFM data.  This needs to be used in
@@ -161,25 +154,34 @@ class NNIFun():
         else:
             self.niiflag = 0 
 
-    def callNodeboot(self, url):
+
+    def callNodeboot(self, host):
+        """callNodeboot  - Call the CGI script to gather the data, and return a file
+        with the response in it."""
         if not self.state and not self.cfmflag and not self.niiflag :
             # Do nothing
             return
         
-        options = '?'
+        options = 'http://%s/repos/nodeboot.cgi?' % host
         if self.niiflag:
             options += 'dump=1&'
         if self.cfmflag:
             options += 'getindex=1&'
         if self.state:
             options += 'state=%s&' % self.state
-            
 
+        print "URL: %s" % options[:-1]
+        (niidata, header) = urllib.urlretrieve(options[:-1])
+        return niidata
 
 # Run the unittest if run directly
 if __name__ == '__main__':
+    # The host is is using in the URL has to be in the database
+    (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1&getindex=1")
 
-    niidata, header = urllib.urlretrieve("http://localhost/repos/nodeboot.cgi?dump=1&getindex=1")
+    fp = open(niidata)
+    print fp.readlines()
+    fp.close()
     
     parser = make_parser()
     niihandler = NodeInstInfoHandler()

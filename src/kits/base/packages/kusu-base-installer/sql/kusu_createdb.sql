@@ -41,7 +41,7 @@ CREATE TABLE kits (
   rname VARCHAR(45) NULL,
   rdesc VARCHAR(255) NULL,
   version VARCHAR(20) NULL,
-  upgradeable BOOL NULL DEFAULT 0,
+  isOS BOOL NULL DEFAULT 0,
   removeable BOOL NULL DEFAULT 0,
   arch VARCHAR(20) NULL,
   PRIMARY KEY(kid)

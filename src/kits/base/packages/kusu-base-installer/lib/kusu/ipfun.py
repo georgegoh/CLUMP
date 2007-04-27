@@ -90,6 +90,21 @@ def incrementIP(startIP, increment=1, subnet=''):
     return number2ip(newIPnum)
 
 
+def onNetwork(network, subnet, ip):
+    """onNetwork - Determine if the given ip lies within the network.
+    Requires the network address, on an IP on that network, as well as
+    the subnet mask, from which it checks the given ip to see if it
+    is on the same network."""
+    netnum  = ip2number(network)
+    masknum = ip2number(subnet)
+    ipnum   = ip2number(ip)
+    minnum  = netnum & masknum
+    maxnum  = minnum + (masknum ^ 0xffffffff)
+    if ipnum > minnum and ipnum < maxnum:
+        return True
+    return False
+
+
 def getNetwork(ip, subnet):
     """getNetwork - Get the network address given and IP, and the subnet mask"""
     netnum = ip2number(ip) & ip2number(subnet)
