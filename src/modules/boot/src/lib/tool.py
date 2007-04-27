@@ -340,8 +340,8 @@ class BootMediaTool:
                     fakeanaconda = path(p)
                     if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
                         
-                
-                packExt2FS(tmpdir,patchfile)
+                # pack the tmpdir into a patchfile with size of 10MB
+                packExt2FS(tmpdir,patchfile,size=10000)
                 
             path(tmpdir).rmtree()
         except (FilePathError,NotPriviledgedUser), e:
