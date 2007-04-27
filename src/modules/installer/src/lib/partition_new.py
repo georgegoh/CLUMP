@@ -33,9 +33,9 @@ def createNew(baseScreen):
 
     choice = snack.Listbox(4, returnExit=1)
     choice.append('partition', 'partition')
-    choice.append('logical volume', 'logical volume')
     choice.append('volume group', 'volume group')
-    choice.append('RAID device','RAID device')
+    choice.append('logical volume', 'logical volume')
+#    choice.append('RAID device','RAID device')
     gridForm.add(choice, 0,1, padding=(0,1,0,1))
 
     ok_button = kusuwidgets.Button(_('OK'))
@@ -167,10 +167,10 @@ class NewPartition:
     def processForm(self):
         """Process the fields."""
         fs_type = self.filesystem.current()
-        if self.diskProfile.fsType_dict[fs_type]:
+        if self.diskProfile.mountable_fsType[fs_type]:
             mountpoint = self.mountpoint.value()
         else:
-            mountpoint = ''
+            mountpoint = None
         disk = self.drives.current()
 
         size, fixed_size = self.calculatePartitionSize(disk)
@@ -289,9 +289,9 @@ class NewVolumeGroup:
     """Form for specifying a new logical volume group."""
     title = _('Make Logical Volume Group')
 
-    def __init__(self, screen, diskProfile):
+    def __init__(self, screen, disk_profile):
         self.screen = screen
-        self.diskProfile = diskProfile
+        self.disk_profile = disk_profile
         self.gridForm = snack.GridForm(screen, self.title, 1, 5)
 
         self.vg_name = kusuwidgets.LabelledEntry(
@@ -318,14 +318,12 @@ class NewVolumeGroup:
         # physical volume to use
         self.gridForm.add(self.phys_to_use_lbl, 0,2)
 
-        # list of available partitions
-        partitions_list = partitiontool.partitions.keys()
-        partitions_list.sort()
-        for partition_name in partitions_list:
-            partition = partitiontool.partitions[partition_name]
-            if partition.fs_type in partitiontool.VolGroup.valid_fs_types:
-                if not self.physicalVolAlreadyAssigned(partition_name):
-                    self.phys_to_use.append(partition_name, partition_name)
+        # list of available physical volumes
+        pv_list = self.disk_profile.pv_dict.keys()
+        for pv_name in sorted(pv_list):
+            pv = self.disk_profile.pv_dict[pv_name]
+            if pv.group is None:
+                self.phys_to_use.append(pv_name, pv)
         self.gridForm.add(self.phys_to_use, 0,3)
 
         subgrid = snack.Grid(2,1)
@@ -334,15 +332,6 @@ class NewVolumeGroup:
         self.gridForm.add(subgrid, 0,4)
 
         self.gridForm.draw()
-
-    def physicalVolAlreadyAssigned(self, name):
-        assignedVols = []
-        for key in partitiontool.lv_groups.keys():
-            vg = partitiontool.lv_groups[key]
-            assignedVols = assignedVols + vg.physical_volume_ids
-        if name in assignedVols:
-            return True
-        return False
 
     def start(self):
         self.draw()
