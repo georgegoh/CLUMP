@@ -102,7 +102,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.setupNetwork()
             self.copyKits(disk_profile)
             #self.makeRepo()
-            #self.genAutoInstallScript(disk_profile)
+            self.genAutoInstallScript(disk_profile)
             self.database.close()
 
     def formatDisk(self, disk_profile):
@@ -166,7 +166,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
         #kusu_distver = os.environ.get('KUSU_DISTVER', None)
 
 
-        ks_file = '/tmp/install_script'
+        install_script = '/tmp/install_script'
 
         k = Kickstart()
         k.rootpw = self.database.get('Root Password', 'RootPasswd')[0]
@@ -174,7 +174,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
         k.diskprofile = disk_profile
         k.packageprofile = ['@Base']
         k.tz = self.database.get('Time zone', 'Zone')[0]
-        k.installsrc = 'http://172.25.208.218/repo/fedora/6/i386/os/'
+        k.installsrc = 'http://127.0.0.1/'
         k.lang = self.database.get('Language', 'Language')[0]
         k.keyboard = self.database.get('Keyboard', 'Keyboard')[0]
 
@@ -186,6 +186,6 @@ class ConfirmScreen(screenfactory.BaseScreen):
         kf = KickstartFactory(str(template))
         script = Script(kf)
         script.setProfile(k)
-        script.write(ks_file)
+        script.write(install_script)
 
 
