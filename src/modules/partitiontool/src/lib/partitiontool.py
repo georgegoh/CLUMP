@@ -311,17 +311,17 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
-        for pv in pv_dict.itervalues():
+        for pv in self.pv_dict.itervalues():
             pv.commit()
-        for lvg in lvg_dict.itervalues():
+        for lvg in self.lvg_dict.itervalues():
             lvg.commit()
-        for lv in lv_dict.itervalues():
+        for lv in self.lv_dict.itervalues():
             lv.commit()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
             disk.formatAll()
-        for lvg in lvg_dict.iterValues():
+        for lvg in self.lvg_dict.iterValues():
             lvg.formatAll()
         
 class Disk(object):

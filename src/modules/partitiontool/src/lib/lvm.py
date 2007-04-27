@@ -34,8 +34,9 @@ import lvm202 as lvm
 def probeLVMEntities(retrieveAllEntitiesPropFunc, probeEntityFunc):
     probe_dict = {}
     entity_prop_list = retrieveAllEntitiesPropFunc()
-    for entity_prop in entity_prop_list:
-        probe_dict[entity_prop] = probeEntityFunc(entity_prop)
+    if entity_prop_list:
+        for entity_prop in entity_prop_list:
+            probe_dict[entity_prop] = probeEntityFunc(entity_prop)
     return probe_dict
 
 def probePhysicalVolumes():

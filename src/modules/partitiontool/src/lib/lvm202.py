@@ -29,6 +29,8 @@ def retrieveLVMEntityData(command, field):
                            stderr=subprocess.PIPE)
     result = awk.communicate()[0]
     data_list = result.strip().split('\n')
+    while '' in data_list:
+        data_list.remove('')
     return data_list
 
 
