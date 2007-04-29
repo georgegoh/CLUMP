@@ -9,6 +9,7 @@
 
 # Preserve the current environment 
 envfile="/tmp/anaconda-current-environment.$$.tmp"
+echo $TERMCAP
 /usr/bin/env > $envfile
 
 # links the kusu runtime to /opt
@@ -27,13 +28,14 @@ if [ $? -eq 0 ]; then
         unset $key > /dev/null 2>&1
     done
     unset LANG > /dev/null 2>&1
+    unset PYTHONPATH  > /dev/null 2>&1
  
     
     # Restore the environment when we are done
-    source $envfile;
+    source $envfile > /dev/null 2>&1 
 
     # start thttpd
-    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -u root -d /mnt/kusu/repo -l /dev/null
+    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -u root -d /mnt/kusu/repo -l /dev/null 
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
