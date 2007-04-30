@@ -22,6 +22,7 @@ SET(KUSU_MODULES
   partitiontool
   installer
   networktool
+  hardware
 )
 
 ## Include Kusu globals
