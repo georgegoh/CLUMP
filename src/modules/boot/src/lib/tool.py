@@ -33,10 +33,11 @@ def getPartitionMap(src='/proc/partitions'):
 def makeDev(devtype,major,minor,devpath):
     """ This function creates /dev/* entries. Mainly used for creating block devices. """
     
+    dp = '/dev/' + devpath
     # do not create if devpath already exists
-    if path(devpath).exists(): return
+    if path(dp).exists(): return
     
-    os.system('mknod /dev/%s %s %s %s' % (devpath,devtype,major,minor))
+    os.system('mknod %s %s %s %s' % (dp,devtype,major,minor))
 
 class KusuSVNSource:
     """ This class contains data and operations that work with the Kusu SVN source. """
