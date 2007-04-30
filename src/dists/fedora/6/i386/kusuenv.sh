@@ -11,3 +11,8 @@
 export KUSU_ROOT=/opt/kusu
 export PYTHONPATH=$KUSU_ROOT/lib/python:$PYTHONPATH
 export PATH=$KUSU_ROOT/bin:$KUSU_ROOT/sbin:$PATH
+export KUSU_DIST=fedora
+export KUSU_DISTVER=6
+export KUSU_TMP=/tmp/kusu
+export KUSU_LOGLEVEL=DEBUG
+export KUSU_LOGFILE=$KUSU_TMP/kusulog.log
