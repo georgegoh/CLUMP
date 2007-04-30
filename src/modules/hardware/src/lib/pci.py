@@ -7,15 +7,11 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-import re
+"""The class PCI parses the pci.ids file and returning a dictionary, keyed by the vendor code
 
-class PCI:
-"""
-Parses the pci.ids file and returning a dictionary, keyed by the vendor code
-
->>> from kusu.hardware import PCI
+>>> from kusu.hardware.pci import PCI
 >>> pci = PCI()
->>> pci['101e']
+>>> pci.ids['101e']
 {'DEVICE': {'0009': {'NAME': 'MegaRAID 428 Ultra RAID Controller (rev 03)'},
             '1960': {'NAME': 'MegaRAID',
                      'SUBVENDOR': {'101e': {'0471': 'MegaRAID 471 Enterprise 1600 RAID Controller',
@@ -40,18 +36,21 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
             '9060': {'NAME': 'MegaRAID 434 Ultra GT RAID Controller'},
             '9063': {'NAME': 'MegaRAC',
                      'SUBVENDOR': {'101e': {'0767': 'Dell Remote Assistant Card 2'}}}},
- 'NAME': 'American Megatrends Inc'}
-"""
-    ids = '/usr/share/hwdata/pci.ids'
-    d = {}
+ 'NAME': 'American Megatrends Inc'}"""
+
+import re
+
+class PCI:
+    ids_file = '/usr/share/hwdata/pci.ids'
+    ids = {}
     
     def __init__(self):
 
-        f = open(self.ids, 'r')
+        f = open(self.ids_file, 'r')
         content = f.readlines()
         f.close()
 
-        return self._parse(content)
+        self._parse(content)
         
     def _parse(self, content):
         # Syntax:
@@ -65,7 +64,7 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
             if m: continue
            
             # vendor  vendor_name
-            m = re.match('[^\t][\w ]+', line)
+            m = re.match('[^\t\n]+', line)
 
             if m:
                 line = m.group()
@@ -76,30 +75,30 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
                     break
                 
                 vendor_name = ' '.join(line[1:])
-                self.d[vendor_code] = {}
-                self.d[vendor_code]['NAME'] = vendor_name
+                self.ids[vendor_code] = {}
+                self.ids[vendor_code]['NAME'] = vendor_name
 
             else:
                 #	device  device_name				<-- single tab
-                m = re.match('\t[\w ]+', line)
+                m = re.match('\t[^\t]+', line)
                 
                 if m:
                     line = line.split()
                     device_code = line[0]
                     device_name = ' '.join(line[1:])
 
-                    if not self.d[vendor_code].has_key('DEVICE'):
-                        self.d[vendor_code]['DEVICE'] = {}
+                    if not self.ids[vendor_code].has_key('DEVICE'):
+                        self.ids[vendor_code]['DEVICE'] = {}
 
-                    if not self.d[vendor_code]['DEVICE'].has_key(device_code):
-                        self.d[vendor_code]['DEVICE'][device_code] = {} 
+                    if not self.ids[vendor_code]['DEVICE'].has_key(device_code):
+                        self.ids[vendor_code]['DEVICE'][device_code] = {} 
                     
-                    self.d[vendor_code]['DEVICE'][device_code]['NAME'] = device_name
+                    self.ids[vendor_code]['DEVICE'][device_code]['NAME'] = device_name
 
                     
                 else:
                     #		subvendor subdevice  subsystem_name	<-- two tabs
-                    m = re.match('\t\t[\w ]+', line)
+                    m = re.match('\t\t[^\t]+', line)
                     
                     if m:
                         line = line.split()
@@ -107,13 +106,12 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
                         subdevice_code = line[1]
                         subsystem_name = ' '.join(line[2:])
 
-                        if not self.d[vendor_code]['DEVICE'][device_code].has_key('SUBVENDOR'):
-                            self.d[vendor_code]['DEVICE'][device_code]['SUBVENDOR'] = {}
+                        if not self.ids[vendor_code]['DEVICE'][device_code].has_key('SUBVENDOR'):
+                            self.ids[vendor_code]['DEVICE'][device_code]['SUBVENDOR'] = {}
                       
-                        if not self.d[vendor_code]['DEVICE'][device_code]['SUBVENDOR'].has_key(subvendor_code): 
-                            self.d[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code] = {}
+                        if not self.ids[vendor_code]['DEVICE'][device_code]['SUBVENDOR'].has_key(subvendor_code): 
+                            self.ids[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code] = {}
                        
-                        self.d[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code][subdevice_code] = subsystem_name
+                        self.ids[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code][subdevice_code] = subsystem_name
 
-        return self.d
 
