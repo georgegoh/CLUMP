@@ -9,6 +9,7 @@ __version__ = "$Rev:$"
 
 import os
 import logging
+from path import path
 
 class Logger(logging.Logger):
     """
@@ -39,7 +40,13 @@ class Logger(logging.Logger):
             if filename == "":
                 filename = "kusulog.log"
 
-        self.addFileHandler(filename)
+        # Checks whether the path exists, if not mkdir
+        filename = path(filename)
+        parent_path = filename.splitpath()[0].abspath()
+        if not parent_path.exists():
+            parent_path.makedirs()
+
+        self.addFileHandler(str(filename))
 
         # set log level according to $KUSU_LOGLEVEL
         try:
