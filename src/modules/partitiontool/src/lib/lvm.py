@@ -173,11 +173,11 @@ class LogicalVolumeGroup(object):
         del self.pv_dict[physicalVol.name]
 #        lvm.reduceVolumeGroup(self.name, physicalVol.partition.path)
 
-    def createLogicalVolume(self, name, size):
-        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
+    def createLogicalVolume(self, name, size_MB, fs_type, mountpoint):
+#        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError
-        lv = LogicalVolume(name, self, size)
+        lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
         self.lv_dict[name] = lv
 #        lvm.createLogicalVolume(self.name, name, size)
         return lv
@@ -198,11 +198,11 @@ class LogicalVolumeGroup(object):
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
             if pv.partition.leave_unchanged:
+                print "Respecting leave_unchanged flag on %s" % pv.partition.path
                 return True
 
     def commit(self):
         if self.leaveUnchanged():
-            print "Respecting leave_unchanged flag on %s" % pv.partition.path
             return
         pv_paths = [ pv.partition.path for pv in self.pv_dict.itervalues() ]
         lvm.createVolumeGroup(self.name,
@@ -222,8 +222,9 @@ class LogicalVolume(object):
     fs_type = None
     mountpoint = None
 
-    def __init__(self, name, volumeGroup, size, fs_type=None, mountpoint=None):
+    def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
+        size = size_MB * 1024 * 1024
         newExtentsToAllocate = size / volumeGroup.extent_size
         if newExtentsToAllocate > vg_extentsFree:
             raise InsufficientFreeSpaceInVolumeGroupError

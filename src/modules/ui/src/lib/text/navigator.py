@@ -187,40 +187,49 @@ class Navigator(object, KusuApp):
 
 
     def run(self):
-        loop=True
-        self.selectScreen(0)
-        while(loop):
+        try:
+            loop=True
             self.mainScreen = PlatformScreen(self.screenTitle)
-            form = self.draw()
-            result = self.startEventLoop(form)
-            if result is NAV_FORWARD:
-                currentScreen = self.screens[self.currentStep]
-                valid, msg = currentScreen.validate()
-                if not valid:
-                    snack.ButtonChoiceWindow(self.mainScreen, 
-                                             self._('Validation Failed'), msg,
-                                             buttons=[self._('Ok')])
-                    continue
-                currentScreen.formAction()
-                self.mainScreen.popWindow()
-                self.mainScreen.finish()
-                if self.hasNextScreen():                
-                    self.selectScreen(self.currentStep+1)
+            self.selectScreen(0)
+            while(loop):
+                form = self.draw()
+                result = self.startEventLoop(form)
+                if result is NAV_FORWARD:
+                    currentScreen = self.screens[self.currentStep]
+                    valid, msg = currentScreen.validate()
+                    if not valid:
+                        snack.ButtonChoiceWindow(self.mainScreen, 
+                                                 self._('Validation Failed'), msg,
+                                                 buttons=[self._('Ok')])
+                        continue
+                    currentScreen.formAction()
+                    self.mainScreen.popWindow()
+                    self.mainScreen.finish()
+                    self.mainScreen = PlatformScreen(self.screenTitle)
+                    if self.hasNextScreen():                
+                        self.selectScreen(self.currentStep+1)
+                        loop=True
+                    else:
+                        loop=False
+                elif result is NAV_BACK:
+                    self.mainScreen.finish()
+                    self.mainScreen = PlatformScreen(self.screenTitle)
+                    self.selectScreen(self.currentStep-1)
+                    loop=True
+                elif result is NAV_NOTHING:
+                    self.mainScreen.finish()
+                    self.mainScreen = PlatformScreen(self.screenTitle)
+                    self.selectScreen(self.currentStep)
                     loop=True
                 else:
+                    self.mainScreen.popWindow()
+                    self.mainScreen.finish()
                     loop=False
-            elif result is NAV_BACK:
-                self.mainScreen.finish()
-                self.selectScreen(self.currentStep-1)
-                loop=True
-            elif result is NAV_NOTHING:
-                self.mainScreen.finish()
-                self.selectScreen(self.currentStep)
-                loop=True
-            else:
-                self.mainScreen.popWindow()
-                self.mainScreen.finish()
-                loop=False
+        except Exception, e:
+            self.mainScreen.popWindow()
+            self.mainScreen.finish()
+            import traceback
+            traceback.print_exc()
 
     def draw(self):
         self.mainScreen.drawRootText(0,0, self.screenTitle)

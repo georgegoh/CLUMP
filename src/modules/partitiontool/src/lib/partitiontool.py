@@ -263,11 +263,11 @@ class DiskProfile(object):
             raise DuplicateNameError, 'Logical Volume Group name already exists.'
         unit = extent_size[-1]
         if unit.upper() != 'M':
-            raise InvalidVolumeGroupExtentSizeError
+            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group Extent Size.'
         _extent_size = int(extent_size[:-1])
         if _extent_size not in range(2, 512+1) and \
            _extent_size % 2:
-            raise InvalidVolumeGroupExtentSizeError
+            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group Extent Size.'
 
         # passed sanity checks, now do it!
         lvg = LogicalVolumeGroup(name, extent_size, pv_list)
@@ -294,7 +294,7 @@ class DiskProfile(object):
         del self.lvg_dict[lvg.name]
 
 
-    def newLogicalVolume(self, name, lvg, size, fs_type=None, mountpoint=None):
+    def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None):
         """Create a new logical volume."""
         # sanity checks
         if name in self.lv_dict.keys():
@@ -302,13 +302,14 @@ class DiskProfile(object):
         if mountpoint in self.mountpoints.keys():
             raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
 
-        new_lv = lvg.createLogicalVolume(name, size, fs_type, mountpoint)
+        new_lv = lvg.createLogicalVolume(name, long(size_MB), fs_type, mountpoint)
+        self.lv_dict[name] = new_lv
 
         if mountpoint:
             self.mountpoints[mountpoint] = new_lv
 
 
-    def editLogicalVolume(self, lv_id, name, vol_grp_id, size, fs_type, mountpoint):
+    def editLogicalVolume(self, lv_id, name, vol_grp_id, size_MB, fs_type, mountpoint):
         """!!!NOT READY TO USE!!! - Edit an existing logical volume."""
         pass
 

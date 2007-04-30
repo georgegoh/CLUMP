@@ -54,7 +54,7 @@ if __name__ == '__main__':
         m = pat.match(dev)
         if m:
             makeDev('b',devmap[dev]['major'],devmap[dev]['minor'],dev)
-    
+
     # create kusu installer instance
     ki = KusuInstaller(screenFactory=ScreenFactoryImpl,
                        screenTitle='Kusu Installer',

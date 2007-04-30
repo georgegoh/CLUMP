@@ -48,7 +48,6 @@ def createNew(baseScreen):
     gridForm.draw()
     gridForm.run()
     screen.popWindow()
-
     scr=None
     while True:
         try:
@@ -191,9 +190,9 @@ class NewLogicalVolume:
     """Form for specifying a new logical volume."""
     title = _('Make Logical Volume')
 
-    def __init__(self, screen, diskProfile):
+    def __init__(self, screen, disk_profile):
         self.screen = screen
-        self.diskProfile = diskProfile
+        self.disk_profile = disk_profile
         self.gridForm = snack.GridForm(screen, self.title, 1, 6)
 
         self.mountpoint = kusuwidgets.LabelledEntry(_('Mount Point:').rjust(20),
@@ -206,6 +205,7 @@ class NewLogicalVolume:
                                         20, text="", hidden=0, password=0,
                                         scroll=0, returnExit=0
                                    )
+        self.lv_name.addCheck(LVMNameCheck)
         self.size = kusuwidgets.LabelledEntry(_('Size (MB):').rjust(20), 20,
                                               text="", hidden=0, password=0,
                                               scroll=0, returnExit=0
@@ -233,19 +233,17 @@ class NewLogicalVolume:
         self.gridForm.add(self.size, 0,2)
 
         # query filesystems
-        fs_types = partitiontool.filesystem_types.keys()
+        fs_types = self.disk_profile.fsType_dict.keys()
         fs_types.sort()
         for fs in fs_types:
             self.filesystem.addRow([fs], fs)
 
         self.filesystem.setCallback_(partition.fileSystemCallback,
-                                     (self.filesystem, self.mountpoint))
+                                     (self.filesystem, self.mountpoint, self.disk_profile))
 
         # query volume groups
-        vol_grps = partitiontool.lv_groups.keys()
-        vol_grps.sort()
-        for vol_grp in vol_grps:
-            self.volumegroup.addRow([vol_grp], vol_grp)
+        for vg_key in sorted(self.disk_profile.lvg_dict.keys()):
+            self.volumegroup.addRow([vg_key], self.disk_profile.lvg_dict[vg_key])
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.filesystem, 0,0, padding=(0,0,2,0))
@@ -272,18 +270,19 @@ class NewLogicalVolume:
     def processForm(self):
         """Process the fields."""
         fs_type = self.filesystem.current()
-        if partitiontool.filesystem_types[fs_type].mountable:
+        if self.disk_profile.mountable_fsType[fs_type]:
             mountpoint = self.mountpoint.value()
         else:
-            mountpoint = ''
-        vol_grp_id = self.volumegroup.current()
-        size = self.size.value()
+            mountpoint = None
+
+        vol_grp = self.volumegroup.current()
+        size = long(self.size.value())
         new_lv_name = self.lv_name.value()
-        partitiontool.newLogicalVolume(new_lv_name,
-                                       vol_grp_id,
-                                       size,
-                                       fs_type,
-                                       mountpoint)
+        self.disk_profile.newLogicalVolume(name=new_lv_name,
+                                           lvg=vol_grp,
+                                           size_MB=size,
+                                           fs_type=fs_type,
+                                           mountpoint=mountpoint)
 
 class NewVolumeGroup:
     """Form for specifying a new logical volume group."""
@@ -299,6 +298,7 @@ class NewVolumeGroup:
                                        21, text="", hidden=0, password=0,
                                        scroll=0, returnExit=0
                                    )
+        self.vg_name.addCheck(LVMNameCheck)
         self.phys_extent = kusuwidgets.LabelledEntry(
                                            _('Physical Extent (MB):').rjust(21),
                                            21, text="32", hidden=0, password=0,
@@ -343,14 +343,25 @@ class NewVolumeGroup:
 
     def processForm(self):
         """Process the fields."""
-        vol_grp_name = self.vg_name.value()
-        phys_extent = self.phys_extent.value()
+        verified, msg = self.vg_name.verify()
+        if not verified:
+            raise partitiontool.KusuError, msg
+        vol_grp_name = self.vg_name.value() 
+        phys_extent = self.phys_extent.value() + 'M' 
         phys_vols = self.phys_to_use.getSelection()
-        
-        partitiontool.newLogicalVolumeGroup(vol_grp_name,
-                                            phys_extent,
-                                            phys_vols)
 
+        self.disk_profile.newLogicalVolumeGroup(vol_grp_name,
+                                                phys_extent,
+                                                phys_vols)
+
+import re
+def LVMNameCheck(string):
+    """Verifies that the string is a valid LVM name."""
+    p = re.compile('[^a-zA-Z0-9]')
+    li = p.findall(string)
+    if li:
+        return False, 'Valid LVM names contain only letters and numbers.'
+    return True, None
 
 class NewRAIDDevice:
     """Form for specifying a new RAID device."""

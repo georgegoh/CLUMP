@@ -19,7 +19,7 @@ class PartitionSizeTooLargeError(KusuError): pass
 class PartitionIsPartOfVolumeGroupError(KusuError): pass
 class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
 class CannotDeletePhysicalVolumeFromLogicalGroupError(KusuError): pass
-class InsufficentFreeSpaceInVolumeGroupError(KusuError): pass
+class InsufficientFreeSpaceInVolumeGroupError(KusuError): pass
 class LogicalVolumeAlreadyInLogicalGroupError(KusuError): pass
 class CannotDeleteLogicalVolumeFromLogicalGroupError(KusuError): pass
 class NotPhysicalVolumeError(KusuError): pass
