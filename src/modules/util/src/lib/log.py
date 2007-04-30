@@ -39,10 +39,7 @@ class Logger(logging.Logger):
             if filename == "":
                 filename = "kusulog.log"
 
-        kloghandler = logging.FileHandler(filename)
-        klogfmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:%(lineno)d) %(asctime)s %(message)s")
-        kloghandler.setFormatter(klogfmt)
-        self.addHandler(kloghandler)
+        self.addFileHandler(filename)
 
         # set log level according to $KUSU_LOGLEVEL
         try:
@@ -54,6 +51,12 @@ class Logger(logging.Logger):
             loglevel = "INFO"
 
         self.setLevel(logging.getLevelName(loglevel))
+
+    def addFileHandler (self, file, fmt="%(levelname)-8s %(name)s(%(filename)s:%(lineno)d) %(asctime)s %(message)s"):
+        logfileHandler = logging.FileHandler(file)
+        flogfmt = logging.Formatter(fmt)
+        logfileHandler.setFormatter(flogfmt)
+        self.addHandler(logfileHandler)
 
 #        self.critical("Kusu logger online")
 #        self.debug("\n\tkusulog at %x\n\t%s logger at %x\n\troot logger at %x"
