@@ -15,4 +15,4 @@ export KUSU_DIST=fedora
 export KUSU_DISTVER=6
 export KUSU_TMP=/tmp/kusu
 export KUSU_LOGLEVEL=DEBUG
-export KUSU_LOGFILE=$KUSU_TMP/kusulog.log
+export KUSU_LOGFILE=$KUSU_TMP/kusu.log

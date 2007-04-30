@@ -6,4 +6,4 @@ export KUSU_DIST=${KUSU_BUILD_DIST}
 export KUSU_DISTVER=${KUSU_BUILD_DISTVER}
 export KUSU_TMP=${KUSU_TMP}
 export KUSU_LOGLEVEL=DEBUG
-export KUSU_LOGFILE=${KUSU_TMP}/kusulog.log
+export KUSU_LOGFILE=${KUSU_TMP}/kusu.log
