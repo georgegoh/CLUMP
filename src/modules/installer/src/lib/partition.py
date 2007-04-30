@@ -83,14 +83,14 @@ class PartitionScreen(screenfactory.BaseScreen):
                 self.listbox.addRow([lv_devicename, '', '', str(lv_size_MB),lv.fs_type,
                                     lv.mountpoint], lv)
 
-        logging.debug('Partition screen: getting disk list')
+        #logging.debug('Partition screen: getting disk list')
         disk_keys = self.disk_profile.disk_dict.keys()
         for key in sorted(disk_keys):
             # display device
             self.listbox.addRow(['/dev/'+key, '', '', '', '', ''], key)
             parts_dict = self.disk_profile.disk_dict[key].partitions_dict
-            logging.debug('Disk %s has %d partitions as reported by parted.' % (key, \
-                          self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
+            #logging.debug('Disk %s has %d partitions as reported by parted.' % (key, \
+            #              self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
             parts_keys = parts_dict.keys()
             for part_key in sorted(parts_keys):
                 partition = parts_dict[part_key]
