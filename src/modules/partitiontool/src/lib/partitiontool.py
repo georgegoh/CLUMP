@@ -235,6 +235,7 @@ class DiskProfile(object):
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
             self.pv_dict[new_partition.path] = PhysicalVolume(new_partition)
+            new_partition.lvm_flag = 1
         return new_partition
 
     def editPartition(self, part_id, size, fixed_size, fs_type, mountpoint):
