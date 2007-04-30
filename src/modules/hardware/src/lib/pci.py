@@ -13,6 +13,9 @@ class PCI:
 """
 Parses the pci.ids file and returning a dictionary, keyed by the vendor code
 
+>>> from kusu.hardware import PCI
+>>> pci = PCI()
+>>> pci['101e']
 {'DEVICE': {'0009': {'NAME': 'MegaRAID 428 Ultra RAID Controller (rev 03)'},
             '1960': {'NAME': 'MegaRAID',
                      'SUBVENDOR': {'101e': {'0471': 'MegaRAID 471 Enterprise 1600 RAID Controller',
@@ -48,8 +51,8 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
         content = f.readlines()
         f.close()
 
-        self._parse(content)
-
+        return self._parse(content)
+        
     def _parse(self, content):
         # Syntax:
         # vendor  vendor_name
@@ -112,8 +115,5 @@ Parses the pci.ids file and returning a dictionary, keyed by the vendor code
                        
                         self.d[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code][subdevice_code] = subsystem_name
 
+        return self.d
 
-
-if __name__ == '__main__':
-        p = PCI()
-        
