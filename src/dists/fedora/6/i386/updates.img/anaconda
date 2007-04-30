@@ -9,7 +9,6 @@
 
 # Preserve the current environment 
 envfile="/tmp/anaconda-current-environment.$$.tmp"
-echo $TERMCAP
 /usr/bin/env > $envfile
 
 # links the kusu runtime to /opt
