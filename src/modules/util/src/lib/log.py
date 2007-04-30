@@ -9,6 +9,7 @@ __version__ = "$Rev:$"
 
 import os
 import logging
+from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 from path import path
 
 class Logger(logging.Logger):
@@ -46,6 +47,9 @@ class Logger(logging.Logger):
         if not parent_path.exists():
             parent_path.makedirs()
 
+        # Set default formatter
+        self.fmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:%(lineno)d) %(asctime)s %(message)s")
+
         self.addFileHandler(str(filename))
 
         # set log level according to $KUSU_LOGLEVEL
@@ -59,11 +63,16 @@ class Logger(logging.Logger):
 
         self.setLevel(logging.getLevelName(loglevel))
 
-    def addFileHandler (self, file, fmt="%(levelname)-8s %(name)s(%(filename)s:%(lineno)d) %(asctime)s %(message)s"):
+    def addFileHandler (self, file):
         logfileHandler = logging.FileHandler(file)
-        flogfmt = logging.Formatter(fmt)
-        logfileHandler.setFormatter(flogfmt)
+        logfileHandler.setFormatter(self.fmt)
         self.addHandler(logfileHandler)
+
+    def addSysLogHandler (self, host, port=SYSLOG_UDP_PORT, facility=SysLogHandler.LOG_USER):
+        syslogHandler = SysLogHandler((host, port), facility)
+        syslogHandler.setFormatter(self.fmt)
+        self.addHandler(syslogHandler)
+
 
 #        self.critical("Kusu logger online")
 #        self.debug("\n\tkusulog at %x\n\t%s logger at %x\n\troot logger at %x"
