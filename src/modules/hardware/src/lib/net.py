@@ -19,17 +19,36 @@ def getInterfaces():
 class Net:
     sys_net = path('/sys/class/net/')
 
+    interface = None
+    vendor = None
+    device = None
+    module = None
+
     def __init__(self, interface):
         if interface not in getInterfaces():
             raise Exception, 'Interface not found'
 
+        self.interface = interface
+        self.dev_path = self.sys_net / interface / 'device'    
 
-        dev_path = self.sys_net / interface / 'device'    
-        f = open(dev_path / 'vendor', 'r')
+        if self.isPhysical():
+            self._getVendorDevice()
+            self._getModule()
+
+    def isPhysical(self):
+        if self.dev_path.exists():
+            return True
+        else:
+            return False
+
+    def _getVendorDevice(self):
+        vendor_path = self.dev_path / 'vendor'
+        f = open(vendor_path, 'r')
         vendor = f.read()
         f.close()
-
-        f = open(dev_path / 'device', 'r')
+    
+        device_path = self.dev_path / 'device'
+        f = open(device_path, 'r')
         device = f.read()
         f.close()
 
@@ -41,7 +60,6 @@ class Net:
         #subsystem_vendor = f.read()
         #f.close()
 
-
         # Strip off 0x and \n
         vendor = vendor[2:].strip()
         device = device[2:].strip()
@@ -51,6 +69,16 @@ class Net:
         self.pci = PCI()
         self.vendor = self.pci.ids[vendor]['NAME']
         self.device = self.pci.ids[vendor]['DEVICE'][device]['NAME']
-
+   
+    def _getModule(self):
+        # Attempt /sys/class/net/<if>/driver symlink
+        driver_path = path(self.sys_net / self.interface / 'driver')
+        if driver_path.exists():
+            self.module = driver_path.realpath().basename()
+        else:
+            # Attempt /sys/class/net/<if>/devce/driver symlink
+            driver_path = self.dev_path / 'driver'
+            if driver_path.exists(): 
+                self.module = driver_path.realpath().basename()
 
 
