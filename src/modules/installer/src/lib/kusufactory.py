@@ -23,6 +23,7 @@ from gatewaydns import GatewayDNSSetupScreen
 from kits import KitsScreen
 from tzselect import TZSelectionScreen
 from confirm import ConfirmScreen
+from network import NetworkScreen
 
 class ScreenImpl(BaseScreen):
     """This class is a template for other Screen classes."""
@@ -56,6 +57,7 @@ class ScreenFactoryImpl(ScreenFactory):
                              RootPasswordScreen(collection, kusuApp=runtimeDict),
                              PartitionScreen(collection, kusuApp=runtimeDict),
                              KitsScreen(collection, kusuApp=runtimeDict),
+                             NetworkScreen(collection, kusuApp=runtimeDict),
 #                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
                              TZSelectionScreen(collection, kusuApp=runtimeDict),
                              ConfirmScreen(collection, kusuApp=runtimeDict)
