@@ -11,12 +11,16 @@ import re
 from path import path
 from kusu.hardware.pci import PCI
 
-class Net:
-    def __init__(self, interface):
-        self.sys_net = path('/sys/class/net/')
-        self.interfaces = [p.basename() for p in self.sys_net.dirs()]
 
-        if interface not in self.interfaces:
+def getInterfaces():
+    sys_net = path('/sys/class/net/')
+    return [p.basename() for p in sys_net.dirs()]
+
+class Net:
+    sys_net = path('/sys/class/net/')
+
+    def __init__(self, interface):
+        if interface not in getInterfaces():
             raise Exception, 'Interface not found'
 
 
