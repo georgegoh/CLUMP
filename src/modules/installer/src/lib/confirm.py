@@ -109,6 +109,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.database.close()
 
     def formatDisk(self, disk_profile):
+        disk_profile.commit()
         disk_profile.formatAll()
 
     def setupNetwork(self):

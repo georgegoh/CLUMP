@@ -338,7 +338,8 @@ class DiskProfile(object):
             disk.formatAll()
         for lvg in self.lvg_dict.itervalues():
             lvg.formatAll()
-        
+
+
 class Disk(object):
     """Disk class represents a physical disk in the system.
        Attributes:
@@ -377,13 +378,12 @@ class Disk(object):
         self.profile = profile
         self.partitions_dict = {}
         pedDevice = parted.PedDevice.get(path)
+        self.leave_unchanged = False
         if fresh:
-            self.leave_unchanged = False
             pedDiskType = pedDevice.disk_probe()
             self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
         else:
             try:
-                self.leave_unchanged = True
                 self.pedDisk = parted.PedDisk.new(pedDevice)
                 for i in range(self.pedDisk.get_last_partition_num()):
                     pedPartition = self.pedDisk.get_partition(i+1)
@@ -689,19 +689,23 @@ class Partition(object):
         if self.leave_unchanged:
             return
 
+        from commands import getoutput
         if self.fs_type == 'ext2':
+            print 'Make ext2 fs on', self.path
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
+            print 'Make ext3 fs on', self.path
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
+            print 'Make swap fs on', self.path
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
