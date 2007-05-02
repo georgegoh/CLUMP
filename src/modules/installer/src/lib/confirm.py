@@ -29,7 +29,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
     buttons = [_('Re-initialise')]
     # unless explicitly specified here, all contexts will be rendered in the
     # minimal "key=value" form
-    render_exceptions = {'Partitions':'self.renderPartition'}
+    render_exceptions = {'Partitions':'self.renderPartition',
+                         'Root Password':''}
 
     def setCallbacks(self):
         """
@@ -50,8 +51,10 @@ class ConfirmScreen(screenfactory.BaseScreen):
         confirmText = ''
         for context_key in self.database.getContexts():
             if context_key in self.render_exceptions.keys():
-                confirmText = confirmText + \
-                              eval(self.render_exceptions[context_key] + '()')
+                renderFunc = self.render_exceptions[context_key]
+                if renderFunc: 
+                    confirmText = confirmText + \
+                                  eval(renderFunc + '()')
             else:
                 confirmText = confirmText + '[' + context_key + ']' + '\n'
                 settings_for_context = self.database.get(context_key)
