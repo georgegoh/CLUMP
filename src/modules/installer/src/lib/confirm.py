@@ -145,9 +145,9 @@ class ConfirmScreen(screenfactory.BaseScreen):
         url = str(self.database.get('Kits', 'FedoraURL')[0])
 
         # Mount /repo for now
-        repo_dir = path('/mnt/kusu/repo')
+        repo_dir = path('/mnt/kusu/depot')
         repo_dir.makedirs()
-        mount_dir(disk_profile, path('/repo'), repo_dir)
+        mount_dir(disk_profile, path('/depot'), repo_dir)
 
         util.verifyDistro(url, 'fedora', '6')
         util.copy(url, repo_dir)

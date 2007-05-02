@@ -34,7 +34,7 @@ if [ $? -eq 0 ]; then
     source $envfile > /dev/null 2>&1 
 
     # start thttpd
-    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -u root -d /mnt/kusu/repo -l /dev/null 
+    /opt/kusu/bin/thttpd -p 80 -h 127.0.0.1 -u root -d /mnt/kusu/depot -l /dev/null 
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
