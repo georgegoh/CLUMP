@@ -336,7 +336,7 @@ class DiskProfile(object):
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
             disk.formatAll()
-        for lvg in self.lvg_dict.iterValues():
+        for lvg in self.lvg_dict.itervalues():
             lvg.formatAll()
         
 class Disk(object):
