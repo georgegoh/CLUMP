@@ -9,7 +9,7 @@
 #
 __version__ = "$Revision: 248 $"
 
-import logging
+#import logging
 import snack
 from gettext import gettext as _
 from partition_new import *
@@ -18,6 +18,10 @@ from partition_delete import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.util.log import Logger
+from kusu.hardware import disk
+
+kl = Logger()
 
 def printCurrent(ps):
     print ps.listbox.current()
@@ -64,6 +68,10 @@ class PartitionScreen(screenfactory.BaseScreen):
                                  returnExit=0)
 
         if not self.disk_profile:
+            try:
+                kl.debug(disk.getDisks())
+            except: pass
+
             self.disk_profile = partitiontool.DiskProfile(False)
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()
