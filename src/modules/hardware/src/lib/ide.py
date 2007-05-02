@@ -12,6 +12,9 @@ from path import path
 import subprocess
 
 def getIDE(type):
+    if type not in ['disk', 'cdrom', 'tape']:
+        raise Exception, 'Unknown type'
+
     ide_path = path('/proc/ide')
 
     d = {}
