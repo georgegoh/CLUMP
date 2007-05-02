@@ -47,9 +47,15 @@ class KusuApp:
         """langinit - Initialize the Internationalization """
         langdomain = 'kusuapps'
         localedir  = ''
+
+        # check if KUSU_ROOT environment exists
+        kusuroot = os.environ.get('KUSU_ROOT',None)
         
         # Locate the Internationalization stuff
-        if os.path.exists('../locale'):
+        if kusuroot and \ 
+            os.path.exists('%s/share/locale' % kusuroot): 
+            localedir = '%s/share/locale' % kusuroot 
+        elif os.path.exists('../locale'):
             localedir = '../locale'
         else:
             # Try the system path
