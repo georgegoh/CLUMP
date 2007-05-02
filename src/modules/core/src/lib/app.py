@@ -52,7 +52,7 @@ class KusuApp:
         kusuroot = os.environ.get('KUSU_ROOT',None)
         
         # Locate the Internationalization stuff
-        if kusuroot and \ 
+        if kusuroot and \
             os.path.exists('%s/share/locale' % kusuroot): 
             localedir = '%s/share/locale' % kusuroot 
         elif os.path.exists('../locale'):
