@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: kusuapp.py 223 2007-04-04 20:43:50Z mblack $
+# $Id: kusuapp.py 245 2007-04-09 22:54:52Z atumanov $
 #
 #  Copyright (C) 2007 Platform Computing
 #
@@ -45,17 +45,11 @@ class KusuApp:
 
     def langinit(self):
         """langinit - Initialize the Internationalization """
-        langdomain = 'ocsapps'
+        langdomain = 'kusuapps'
         localedir  = ''
-
-        # check if KUSU_ROOT environment exists
-        kusuroot = os.environ.get('KUSU_ROOT',None)
-
+        
         # Locate the Internationalization stuff
-        if kusuroot and \
-            os.path.exists('%s/share/locale' % kusuroot):
-            localedir = '%s/share/locale' % kusuroot
-        elif os.path.exists('../locale'):
+        if os.path.exists('../locale'):
             localedir = '../locale'
         else:
             # Try the system path
@@ -80,7 +74,7 @@ class KusuApp:
 
 
     def stdoutMessage(self, message, *args):
-        """errorMessage - Output messages to STDERR with Internationalization.
+        """errorMessage - Output messages to STDOUT with Internationalization.
         Additional arguments will be used to substitute variables in the
         message output"""
         if len(args) > 0:
@@ -88,3 +82,38 @@ class KusuApp:
         else:
             mesg = self.gettext(message)
         sys.stdout.write(mesg)
+
+    def optargs(self, option, opt_str, value, parser):
+        ''' optargs - a callback function that allows parsing CL keys with
+        an optional argument. In RE terms, we can parse --foo [arg]?'''
+        value = ''
+        if parser.rargs:
+            arg = parser.rargs[0]
+            if not ((arg[:2] == '--' and len(arg)>2) or
+                    (arg[:1] == '-'  and len(arg)>1 and arg[1] != '-')):
+                    value = arg
+                    del parser.rargs[0]
+        setattr(parser.values, option.dest, value)
+
+
+    def varargs(self, option, opt_str, value, parser):
+        ''' varargs - a callback function that allows parsing CL keys with
+        arbitrary # of args. In RE terms, we can parse --foo [arg]*'''
+
+        # 3-liner below allows for mult. instances of the CL option
+        # value = getattr(parser.values, option.dest)
+        # if not value:
+        #     value = []
+
+        value = []
+        rargs = parser.rargs # CL args trailing this option
+        while rargs:
+            arg = rargs[0]
+            if ((arg[:2] == '--' and len(arg)>2) or
+                (arg[:1] == '-'  and len(arg)>1 and arg[1] != '-')):
+                break
+            else:
+                value.append(arg)
+                del rargs[0]
+        setattr(parser.values, option.dest, value)
+
