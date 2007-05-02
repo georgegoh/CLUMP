@@ -79,11 +79,23 @@ class KusuDB:
         self.__dbconn.close()
         self.__dbconn = self.__dbcursor = None
 
-    def execute(self, query):
+    def execute(self, query, args=None):
         if not self.isconnected():
             print "KusuDB: Connect to the Database first using connect([db,[user,[pass]]])"
             return None
-        return self.__dbcursor.execute(query)
+        if args is None:
+            return self.__dbcursor.execute(query)
+        else:
+            return self.__dbcursor.execute(query, args)
+
+    def executemany(self, query, args=None):
+        if not self.isconnected():
+            print "KusuDB: Connect to the Database first using connect([db,[user,[pass]]])"
+            return None
+        if args is None:
+            return self.__dbcursor.executemany(query)
+        else:
+            return self.__dbcursor.executemany(query, args)
 
     def fetchone(self):
         if not self.isconnected():
