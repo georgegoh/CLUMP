@@ -376,13 +376,14 @@ class Disk(object):
     def __init__(self, path, profile, fresh=False):
         self.profile = profile
         self.partitions_dict = {}
-        self.leave_unchanged = True
         pedDevice = parted.PedDevice.get(path)
         if fresh:
+            self.leave_unchanged = False
             pedDiskType = pedDevice.disk_probe()
             self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
         else:
             try:
+                self.leave_unchanged = True
                 self.pedDisk = parted.PedDisk.new(pedDevice)
                 for i in range(self.pedDisk.get_last_partition_num()):
                     pedPartition = self.pedDisk.get_partition(i+1)
@@ -660,7 +661,7 @@ class Partition(object):
         self.disk = disk
         self.pedPartition = pedPartition
         self.mountpoint = mountpoint
-        self.leave_unchanged = True
+        self.leave_unchanged = False
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -689,11 +690,23 @@ class Partition(object):
             return
 
         if self.fs_type == 'ext2':
-            print commands.getoutput('mkfs.ext2 %s' % self.path)
+            mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            print commands.getoutput('mkfs.ext3 %s' % self.path)
+            mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            print commands.getoutput('mkswap %s' % self.path)
+            mkfs = subprocess.Popen('mkswap %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()
         elif self.lvm_flag:
             # do the lvm thing
             pass
@@ -722,63 +735,4 @@ class DiskTestCase(unittest.TestCase):
 
 class PartitionTestCase(unittest.TestCase):
     """"""
-
-class VolGrp:
-    name = None
-    lpart = []
-    llv = []
-
-    def __init__(self, name, lpart):
-        self.name = name
-        self.lpart = lpart
-
-    def addLv(self, name, size, partition_id):
-        lv = LogVol(name, size, partition_id)
-        lv.setVolGrpName(self.name)
-        self.llv.append(lv)
-
-    def getLv(self, name=None):
-        if name:
-            for lv in self.llv:
-                if lv.name == name:
-                    return lv
-            return None
-        else:
-            return self.llv
-
-    def getPart(self):
-        return self.lpart
-    
-class LogVol:
-    name = None
-    volgrp_name = None
-    part_id = None
-
-    def __init__(self, name,size,part_id):
-        self.name = name
-        self.size = size
-        self.part_id = part_id
-
-    def setVolGrpName(self, name):
-        self.volgrp_name = name
-
-    def getVolGrpName(self):
-        return self.volgrp_name
-
-class Vol:
-    mntpoint = None
-    label = None
-    fstype = None
-    format = None
-
-    def __init__(self, obj, mntpoint, label, fstype, format):
-        self.obj = obj
-        self.mntpoint = mntpoint
-        self.label = label
-        self.fstype = fstype
-        self.format = format
-
-         
-    
-#if __name__ == '__main__':
 
