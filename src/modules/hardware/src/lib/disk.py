@@ -18,15 +18,11 @@ def getDisks():
 
 
 def _readFile(filename):
+    f = open(filename, 'r')
+    content = f.read()
+    f.close()
 
-    if os.path.exists(filename):
-        f = open(filename, 'r')
-        content = f.read()
-        f.close()
-
-        return content.strip()
-
-    return None
+    return content.strip()
 
 def _getIDE(type):
     ide_path = path('/proc/ide')
@@ -53,7 +49,8 @@ def _getSCSI(type):
 
     d = {}
     for s in scsi_path.listdir():
-        if int(_readFile(s / 'type')) in type_map[type]:
+        if os.path.exists(s / 'type') and \
+           int(_readFile(s / 'type')) in type_map[type]:
 
             dev = s.listdir('block:*')
             
