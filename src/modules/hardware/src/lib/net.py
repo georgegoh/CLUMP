@@ -11,10 +11,21 @@ import re
 from path import path
 from kusu.hardware.pci import PCI
 
-
 def getInterfaces():
     sys_net = path('/sys/class/net/')
-    return [p.basename() for p in sys_net.dirs()]
+
+    d = {}
+    for p in sys_net.dirs():
+        intf = p.basename()
+        n = Net(intf) 
+
+        d[intf] = {}
+        d[intf]['vendor'] = n.vendor
+        d[intf]['device'] = n.device
+        d[intf]['module'] = n.module
+        d[intf]['isPhysical'] = n.isPhysical()
+        
+    return d
 
 class Net:
     sys_net = path('/sys/class/net/')
@@ -25,7 +36,7 @@ class Net:
     module = None
 
     def __init__(self, interface):
-        if interface not in getInterfaces():
+        if interface not in self._getInterfaces():
             raise Exception, 'Interface not found'
 
         self.interface = interface
@@ -34,6 +45,10 @@ class Net:
         if self.isPhysical():
             self._getVendorDevice()
             self._getModule()
+
+    def _getInterfaces(self):
+        sys_net = path('/sys/class/net/')
+        return [p.basename() for p in sys_net.dirs()]
 
     def isPhysical(self):
         if self.dev_path.exists():
@@ -67,8 +82,12 @@ class Net:
         #subsystem_vendor = subsystem_vendor[2:].strip()
 
         self.pci = PCI()
-        self.vendor = self.pci.ids[vendor]['NAME']
-        self.device = self.pci.ids[vendor]['DEVICE'][device]['NAME']
+
+        if self.pci.ids.has_key(vendor):
+            self.vendor = self.pci.ids[vendor]['NAME']
+
+            if self.pci.ids[vendor]['DEVICE'].has_key(device):
+                self.device = self.pci.ids[vendor]['DEVICE'][device]['NAME']
    
     def _getModule(self):
         # Attempt /sys/class/net/<if>/driver symlink

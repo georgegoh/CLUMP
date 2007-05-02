@@ -32,10 +32,11 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(instruction, col=0, row=0)
 
         self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
-        for intf in net.getInterfaces():
-            intf = net.Net(intf)
-            if intf.isPhysical():
-                self.listbox.append('%s - %s %s' % (intf.interface, intf.vendor, intf.device), intf)
+        for intf, v in net.getInterfaces().items():
+            if v['isPhysical']:
+                vendor = v['vendor']
+                device = v['device']
+                self.listbox.append('%s - %s %s' % (intf, vendor, device), intf)
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
