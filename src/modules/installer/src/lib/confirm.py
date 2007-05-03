@@ -9,7 +9,7 @@
 #
 __version__ = "$Revision: 248 $"
 
-import logging
+#import logging
 import snack
 from gettext import gettext as _
 from kusu.partitiontool import partitiontool
@@ -44,8 +44,10 @@ class ConfirmScreen(screenfactory.BaseScreen):
     def reinit(self):
         self.selector.selectScreen(0)
         return NAV_NOTHING
-
+ 
     def drawImpl(self):
+        from kusu.util.log import Logger
+        self.logger = Logger()
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(snack.Label(self.msg), col=0, row=0)
         confirmText = ''
@@ -102,11 +104,16 @@ class ConfirmScreen(screenfactory.BaseScreen):
         if result == 'ok':
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
+            self.logger.debug('Formatted Disks.')
             self.setupNetwork()
+            self.logger.debug('Network set up.')
             self.copyKits(disk_profile)
+            self.logger.debug('Kits copied.')
             #self.makeRepo()
             self.genAutoInstallScript(disk_profile)
+            self.logger.debug('Auto install script generated.')
             self.database.close()
+            self.logger.debug('Closed database connection.')
 
     def formatDisk(self, disk_profile):
         disk_profile.commit()
@@ -139,6 +146,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
                     #print id, p.path, p.mountpoint, fs_type, p.type
                     if p.mountpoint == mntpnt: 
                         cmd = 'mount -t %s %s %s' % (p.fs_type, p.path, repo_dir)
+                        self.logger.debug(cmd)
                         os.system(cmd)
                     
 
