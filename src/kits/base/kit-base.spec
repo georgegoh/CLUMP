@@ -19,7 +19,7 @@ Summary: Base Kit
 Name: kit-base
 Version: 0.1
 Release: 0
-License: Copyright 2007 Platform Computing Corporation
+License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
@@ -42,7 +42,7 @@ mkdir -p $plugdir/addhost $plugdir/dbreport $plugdir/ngedit
 
 /usr/bin/install -m 444 %{_topdir}/docs/index.html    $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
-/usr/bin/install -m 444 %{_topdir}/docs/LICENSE       $docdir
+/usr/bin/install -m 444 %{_topdir}/docs/COPYING       $docdir
 
 /usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py     $plugdir/addhost
 /usr/bin/install -m 444 %{_topdir}/plugins/dbreport/*.py    $plugdir/dbreport
@@ -56,7 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 # documentation
 /repo/www/kits/%{name}/%{version}/index.html
 /repo/www/kits/%{name}/%{version}/readme.html
-/repo/www/kits/%{name}/%{version}/LICENSE
+/repo/www/kits/%{name}/%{version}/COPYING
 
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py

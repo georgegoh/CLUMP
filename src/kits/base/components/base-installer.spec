@@ -21,7 +21,7 @@ Summary: Component for Kusu Installer Base
 Name: component-base-installer
 Version: 0.1
 Release: 0
-License: Copyright 2007 Platform Computing Corporation
+License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArchitectures: noarch

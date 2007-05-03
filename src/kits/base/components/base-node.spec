@@ -20,7 +20,7 @@ Summary: Component for Kusu Node Base
 Name: component-base-node
 Version: 0.1
 Release: 0
-License: Copyright 2007 Platform Computing Corporation
+License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 Requires: kusu-base-node = 1.0
