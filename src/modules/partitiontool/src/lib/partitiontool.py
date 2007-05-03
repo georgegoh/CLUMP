@@ -68,18 +68,6 @@ from kusuexceptions import *
 from lvm import *
 #from kusu.util.log import Logger
 
-#class KusuError(exceptions.Exception): pass
-#class OutOfSpaceError(KusuError): pass
-#class DuplicateNameError(KusuError): pass
-#class DuplicateMountpointError(KusuError): pass
-#class NameNotFoundError(KusuError): pass
-#class UnknownPartitionTypeError(KusuError): pass
-#class PartitionSizeTooLargeError(KusuError): pass
-#class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
-#class CannotDeletePhysicalVolumeFromLogicalGroupError(KusuError): pass
-#class LogicalVolumeAlreadyInLogicalGroupError(KusuError): pass
-#class CannotDeleteLogicalVolumeFromLogicalGroupError(KusuError): pass
-
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
 while fs_type:
@@ -253,8 +241,6 @@ class DiskProfile(object):
             del self.pv_dict[partition_obj.path]
 
         partition_obj.disk.delPartition(partition_obj)
-        if partition_obj.mountpoint in self.mountpoints.keys():
-            self.mountpoints.pop(partition_obj.mountpoint)
 
 
     def newLogicalVolumeGroup(self, name, extent_size, pv_list):
@@ -367,6 +353,7 @@ class Disk(object):
                        'model' : 'self.pedDevice.model',
                        'path' : 'self.pedDevice.path',
                        'sector_size' : 'self.pedDevice.sector_size',
+                       'size' : 'self.length * self.sector_size',
                        'type' : 'self.pedDevice.type',
                        'heads' : 'self.pedDevice.heads',
                        'sectors' : 'self.pedDevice.sectors',
@@ -387,7 +374,8 @@ class Disk(object):
                 self.pedDisk = parted.PedDisk.new(pedDevice)
                 for i in range(self.pedDisk.get_last_partition_num()):
                     pedPartition = self.pedDisk.get_partition(i+1)
-                    self.__appendToPartitionDict(pedPartition)
+                    new_partition = self.__appendToPartitionDict(pedPartition)
+                    new_partition.on_disk = True
             except parted.error, e:
                 if str(e).endswith('unrecognised disk label.'):
                     pedDiskType = parted.disk_type_get('msdos')
@@ -483,6 +471,8 @@ class Disk(object):
         # delete...
         for part_key in partition_nums[deleted_partition_number:]:
             partition = self.partitions_dict[part_key]
+            if partition.on_disk:
+                pass
             if partition.type != 'extended':
                 partitions_to_move.append((partition.size,
                                            partition.fs_type,
@@ -594,6 +584,8 @@ class Disk(object):
     def commit(self):
         if not self.leave_unchanged:
             self.pedDisk.commit()
+            for partition in self.partitions_dict.itervalues():
+                partition.on_disk = True
 
     def formatAll(self):
         if not self.leave_unchanged:
@@ -632,6 +624,7 @@ class Partition(object):
     pedPartition = None
     mountpoint = None
     leave_unchanged = None
+    on_disk = None
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
@@ -662,6 +655,7 @@ class Partition(object):
         self.pedPartition = pedPartition
         self.mountpoint = mountpoint
         self.leave_unchanged = False
+        self.on_disk = False
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -678,7 +672,7 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged']:
+        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged', 'on_disk']:
             object.__setattr__(self, name, value)
         else:
             raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
