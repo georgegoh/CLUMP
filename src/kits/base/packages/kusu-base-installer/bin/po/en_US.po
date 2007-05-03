@@ -29,6 +29,12 @@ msgstr "Display the version of the tool"
 msgid "Winky"
 msgstr "Nodd"
 
+msgid "quit_button"
+msgstr "Quit"
+
+msgid "finish_button"
+msgstr "Finish"
+
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
 
@@ -127,20 +133,80 @@ msgstr "Use the following file as the source of the MAC address"
 msgid "addhost_remove_usage"
 msgstr "Remove the list of hosts"
 
-msgid "addhost_rank_usage"
+msgid "addhost_rack_usage"
 msgstr "The rack number to assign the hosts to (if used)"
 
-msgid "sel_node_group"
+msgid "addhost_replace_usage"
+msgstr "Replace an existing host using the same node information except MAC address"
+
+msgid "addhost_window_title_nodegroup"
 msgstr "Select Node Group"
 
-msgid "instruction_node_group"
+msgid "addhost_instruction_nodegroup"
 msgstr "Select the node group to use for the installation of new nodes."
 
-msgid "exit_addhost_title"
+msgid "addhost_window_title_exit"
 msgstr "Exit add hosts?"
 
-msgid "exit_addhost_instructions"
+msgid "addhost_instructions_exit"
 msgstr "Are you sure you want to quit?"
+
+msgid "addhost_window_title_rack"
+msgstr "Enter rack number"
+
+msgid "addhost_instructions_rack"
+msgstr "Please enter a rack number"
+
+msgid "addhost_gui_text_rack"
+msgstr "Rack Number"
+
+msgid "addhost_window_title_error"
+msgstr "Error"
+
+msgid "addhost_yes_button"
+msgstr "Yes"
+
+msgid "addhost_no_button"
+msgstr "No"
+
+msgid "addhost_ok_button"
+msgstr "OK"
+
+msgid "addhost_window_title_interface"
+msgstr "Select Network Interface"
+
+msgid "addhost_instruction_interface"
+msgstr "Select the network interface to install your node group from"
+
+msgid "addhost_window_title_installing"
+msgstr "Installing Node Status"
+
+msgid "addhost_options_exclusive"
+msgstr "The options -n, -p and -e are mutually exclusive"
+
+msgid "addhost_options_interface_required"
+msgstr "The -i option requires an interface name"
+
+msgid "addhost_options_invalid_interface\n"
+msgstr "Not a valid network interface. Please try again\n"
+
+msgid "addhost_options_macfile_options_needed"
+msgstr "The -f option requires the -i and -n options"
+
+msgid "addhost_options_nodegroup_required"
+msgstr "The -n option requires a Node group name"
+
+msgid "addhost_options_invalid_nodegroup\n"
+msgstr "Not a valid node group. Please try again\n"
+
+msgid "addhost_options_invalid_node"
+msgstr "The -p option requires a valid node name"
+
+msgid "addhost_textprompt_rack"
+msgstr "Please enter a rack number: "
+
+msgid "Error: The value %s is not a number. Please try again"
+msgstr "Error: The value %s is not a number. Please try again"
 
 msgid "buildimage_Help"
 msgstr "buildimage [-h|-v| -n node_group {-i image_name}]\n\nThe buildimage tool will build the root filesystem for diskless and disked\nnodes.  It uses the data in the database for a node group to determine which\npackages to install.  It then creates a chroot'ed filesystem under which it\ncopies the files.  It then runs any post installation scripts and any user\nprovided custom scripts.  The arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -n node-group  - The name pf the node group to generate the root\n                   filesystem for.\n  -i image_name  - (Optional) The name to assign the generated image.\nThe full list of arguments is as follows:"
