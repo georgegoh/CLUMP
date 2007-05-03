@@ -107,6 +107,9 @@ class BuildImage:
         # Do the post processing
         self.__runPostScripts()
 
+        # Cleanup the installation fragments
+        self.__cleanImage()
+
         # Package the image for use
         self.__packageImage()
         
@@ -288,7 +291,7 @@ class BuildImage:
         pscript = "%s/%s" % (self.imagedir, KUSUPOSTSCRIPT)
         if os.path.exists(pscript):
             if self.stdoutout:
-                self.stdoutout("Chroot'ing to run script(s)\n")
+                self.stdoutout("Chroot'ing to run script(s) in: %s\n" % self.imagedir)
 
             os.system('chroot \"%s\" %s' % (self.imagedir, KUSUPOSTSCRIPT))
         else:
@@ -296,6 +299,15 @@ class BuildImage:
                 self.stderrout("WARNING:  The base kit is not installed\n")
 
 
+    def __cleanImage(self):
+        """cleanImage - Removes all the junk left over from the image creation
+        process."""
+        if self.ostype == 'Fedora6.0':    # Get the real types from Alex
+            os.chdir(self.imagedir)
+            os.system('rm -rf var/cache/yum/base/packages/*.rpm')
+            print 'Removing:  \"%s/var/cache/yum/base/packages/*.rpm\"' %  self.imagedir
+
+            
     def __packageImage(self):
         """__packageImage  - Package the image into a tar.bz2 file for use
         by the installing nodes."""
@@ -303,8 +315,9 @@ class BuildImage:
             self.stdoutout("Compressing Image.  This will take some time.  Please wait\n")
 
         os.chdir(self.imagedir)
-        os.system('tar cfj \"../%s.tar.bz2\" .' % self.nodegroup )
+        os.system('tar cfj \"../%s.img.tar.bz2\" .' % self.ngid )
         os.system('rm -rf \"%s\"' %  self.imagedir)
+
 
 
 

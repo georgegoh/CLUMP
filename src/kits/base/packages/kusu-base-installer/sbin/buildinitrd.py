@@ -323,10 +323,19 @@ class BuildInitrd:
         os.system('cp -r /opt/kusu/lib/kusu/* \"%s\"' % pythondir)
         os.system('cp /opt/kusu/sbin/imageinit.py \"%s\"' % self.imagedir)
         file = '%s/imageinit.py' % self.imagedir
-        # os.system('cp /opt/kusu/sbin/imageinit.py \"%s\"' % file)
         print 'Running:  cp /opt/kusu/sbin/imageinit.py %s' % file
         os.chmod(file, 0755)
 
+        # Add the entry to startup imageinit.py at boot (Too lazy to open write close)
+        os.chdir(self.imagedir)
+        os.system('echo "null::sysinit:/imageinit.py" >> etc/inittab')
+
+        # Add the entry to switch the root filesystem
+        os.system('echo "null::sysinit:/sbin/switch_root /newroot /sbin/init" >> etc/inittab')
+
+        # Change the /etc/issue
+        os.system('echo "Kusu Initial Ram Disk" > etc/issue')
+        
         # Locate the System map, then run depmod
         pattern = ''
         if self.ostype == 'Fedora6.0':    # Get the real types from Alex
