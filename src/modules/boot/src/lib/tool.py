@@ -276,6 +276,18 @@ class BootMediaTool:
                     path(isolinuxdir / 'isolinux.cfg').remove()
                     isocfg.copy(isolinuxdir)
                     
+                # put in the splash.lss
+                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/splash.lss' % (d.getVersion(),d.getArch())
+                splashlss = path(p)
+                if splashlss.exists(): 
+                    splashlss.copy(isolinuxdir)
+                    
+                # put in the boot.msg
+                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/boot.msg' % (d.getVersion(),d.getArch())
+                bootmsg = path(p)
+                if bootmsg.exists(): 
+                    bootmsg.copy(isolinuxdir)                    
+                   
                 # finally, add the .discinfo stub
                 discinfo = path(tmpdir / '.discinfo')
                 discinfo.touch()

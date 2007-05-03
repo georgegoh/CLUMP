@@ -1,3 +1,5 @@
+splash.lss
+
 Project Kusu Cluster Toolkit
 
 Type one of the 
