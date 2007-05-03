@@ -14,7 +14,6 @@ def getRAID():
     # list of devices under raid
     #dmraid -b -c 
 
-
     dmraidP = subprocess.Popen('dmraid -s -c', 
                                shell=True,
                                stdout=subprocess.PIPE,

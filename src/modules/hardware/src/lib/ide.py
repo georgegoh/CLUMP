@@ -9,7 +9,6 @@
 
 from kusu.hardware.read import readFile
 from path import path
-import subprocess
 
 def getIDE(type):
     if type not in ['disk', 'cdrom', 'tape']:
