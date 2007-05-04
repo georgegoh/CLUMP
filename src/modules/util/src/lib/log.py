@@ -4,7 +4,6 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-
 __version__ = "$Rev:$"
 
 import os
@@ -12,7 +11,6 @@ import logging
 from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 from path import path
 
-#def getLogger(name='kusulog'):
 def getLogger(name='kusulog'):
     return logging.getLogger(name)
 
