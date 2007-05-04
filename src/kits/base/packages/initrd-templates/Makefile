@@ -46,6 +46,10 @@ rpm:
 
 install::
 	mkdir -p $(ROOT)/opt/kusu/initrds/
+	mkdir -p $(ROOT)/opt/kusu/etc/
 	install -m644 initrds/rootfs.x86_64.cpio.gz $(ROOT)/opt/kusu/initrds/
 	install -m644 initrds/rootfs.i686.cpio.gz $(ROOT)/opt/kusu/initrds/
+	install -m755 etc/depmod.pl $(ROOT)/opt/kusu/etc/
+	install -m755 etc/imageinit.py $(ROOT)/opt/kusu/etc/
+	install -m755 etc/imageinit.sh $(ROOT)/opt/kusu/etc/
 

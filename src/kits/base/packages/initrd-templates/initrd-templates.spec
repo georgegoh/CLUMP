@@ -92,6 +92,10 @@ make ROOT=$RPM_BUILD_ROOT install
 %files
 %defattr(-,root,root)
 /opt/kusu/initrds/*
+/opt/kusu/etc/depmod.pl
+/opt/kusu/etc/imageinit.py
+/opt/kusu/etc/imageinit.sh
+
 
 
 ##
