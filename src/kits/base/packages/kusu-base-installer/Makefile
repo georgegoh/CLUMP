@@ -41,6 +41,9 @@ rpm:
 	# @rm -rf $(HOME)/.rpmmacros
 
 
+lang:
+	`cd po ; msgfmt -o kusuapps.mo en_US.po ; \
+        cp kusuapps.mo ../locale/en/LC_MESSAGES/`
 
 install::
 	mkdir -p $(ROOT)/etc/rc.kusu.d
@@ -64,6 +67,7 @@ install::
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
+	install -m755 sbin/imageinit.py $(ROOT)/opt/kusu/sbin/imageinit.py
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu

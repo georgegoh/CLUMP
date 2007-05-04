@@ -321,9 +321,9 @@ class BuildInitrd:
                 sys.exit(-1)
         pythondir = "%s" % flist[0]
         os.system('cp -r /opt/kusu/lib/kusu/* \"%s\"' % pythondir)
-        os.system('cp /opt/kusu/sbin/imageinit.py \"%s\"' % self.imagedir)
+        os.system('cp /opt/kusu/etc/imageinit.py \"%s\"' % self.imagedir)
         file = '%s/imageinit.py' % self.imagedir
-        print 'Running:  cp /opt/kusu/sbin/imageinit.py %s' % file
+        print 'Running:  cp /opt/kusu/etc/imageinit.py %s' % file
         os.chmod(file, 0755)
 
         # Add the entry to startup imageinit.py at boot (Too lazy to open write close)
@@ -344,13 +344,13 @@ class BuildInitrd:
         if pattern:
             flist = glob.glob(pattern)
             if len(flist) > 0:
-                os.system('depmod -e -b \"%s\" -F \"%s\"' % (self.imagedir, flist[0]))
+                os.system('/opt/kusu/etc/depmod.pl -e -b \"%s\" -F \"%s\"' % (self.imagedir, flist[0]))
                 return
 
         if self.stderrout:
             self.stderrout("WARNING: Unable to use System.map to verify module symbols\n")
-            
-        os.system('depmod -b \"%s" ' % (self.imagedir))
+
+        os.system('/opt/kusu/etc/depmod.pl -b \"%s" ' % (self.imagedir))
 
 
     def compactInitrd(self, type):
