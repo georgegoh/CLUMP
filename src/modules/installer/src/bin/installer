@@ -21,7 +21,7 @@ from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.core.app import KusuApp
 from kusu.ui.text.navigator import Navigator
 from kusu.installer.kusufactory import ScreenFactoryImpl
-from kusu.util.log import Logger
+import kusu.util.log as kusulog
 
 class KusuInstaller(Navigator, KusuApp):
     """Framework for displaying installation steps and screens.
@@ -37,7 +37,7 @@ class KusuInstaller(Navigator, KusuApp):
 
 if __name__ == '__main__':
     # Sets up kusu logging
-    kl = Logger()
+    kl = kusulog.getKusuLog()
 
     # kusu_dist = os.environ.get('KUSU_DIST', None)
     # if kusu_dist in ['rhel', 'fedora']:

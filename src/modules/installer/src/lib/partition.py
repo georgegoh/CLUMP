@@ -18,10 +18,10 @@ from partition_delete import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-from kusu.util.log import Logger
 from kusu.hardware import disk
+import kusu.util.log as kusulog
 
-kl = Logger()
+kl = kusulog.getKusuLog()
 
 def printCurrent(ps):
     print ps.listbox.current()
