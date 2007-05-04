@@ -12,6 +12,16 @@ import logging
 from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 from path import path
 
+#def getLogger(name='kusulog'):
+def getLogger(name='kusulog'):
+    return logging.getLogger(name)
+
+def getKusuLog(name=None):
+    if not name:
+        return getLogger()
+    else:
+        return getLogger('kusulog.' + name)
+
 class Logger(logging.Logger):
     """
     This Logger class inherits from logging.Logger class.
@@ -24,11 +34,6 @@ class Logger(logging.Logger):
 
     def __init__(self, name="kusulog", filename=""):
         logging.Logger.__init__(self, name)
-
-        # Set level of root logger to NOTSET
-        # in order to control the log level from kusu.util.log.
-        rootlog = logging.getLogger()
-        rootlog.setLevel(logging.NOTSET)
 
         # If the filename is not specified, try $KUSU_LOGFILE environment
         # variable, or use the default filename.
@@ -73,10 +78,4 @@ class Logger(logging.Logger):
         syslogHandler.setFormatter(self.fmt)
         self.addHandler(syslogHandler)
 
-
-#        self.critical("Kusu logger online")
-#        self.debug("\n\tkusulog at %x\n\t%s logger at %x\n\troot logger at %x"
-#                    % (id(self), name, id(logging.getLogger(name)),
-#                        id(logging.getLogger())))
-#        self.debug("\n\tkloghandler at %x\n\tklogfmt at %x"
-#                    % (id(kloghandler), id(klogfmt)))
+logging.setLoggerClass(Logger)

@@ -30,10 +30,10 @@ on where they originate.
 Brief Example
 =============
 
-import kusu.util.log
+import kusu.util.log as kusulog
 
 # kusu.util.log.Logger(name='name', filename='filename')
-kl = kusu.util.log.Logger(name='kusu.my.module')
+kl = kusulog.getKusuLog() # kl.name will be 'kusulog'
 
 # there are five methods for logging at each level
 kl.debug('This is DEBUG message #%s' % 1)
@@ -41,6 +41,27 @@ kl.info('This is INFO message #%s' % 1)
 kl.warning('This is WARNING message #%s' % 1)
 kl.error('This is ERROR message #%s' % 1)
 kl.critical('This is CRITICAL message #%s' % 1)
+
+# if we want more files to write to
+kl.addFileHandler('/path/to/another/file')
+
+# adding another logger as a child of kusulog
+partitionlog = kusulog.getKusuLog('partition') # partitionlog.name will be
+                                               # 'kusulog.partition'
+
+# partitionlog will log to all handlers in partitionlog and kl
+partitionlog.addFileHandler('/path/to/partition/log')
+kl.error('An error from kl')
+partitionlog.critical('Hi, from partitionlog')
+
+# $ cat /tmp/kusu/kusu.log
+# ERROR kusulog An error from kl
+# CRITICAL kusulog.partition Hi, from partitionlog
+# $ cat /path/to/another/file
+# ERROR kusulog An error from kl
+# CRITICAL kusulog.partition Hi, from partitionlog
+# $ cat /path/to/partition/log
+# CRITICAL kusulog.partition Hi, from partitionlog
 
 # End example
 
