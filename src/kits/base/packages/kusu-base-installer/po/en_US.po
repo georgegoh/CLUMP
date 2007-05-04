@@ -226,6 +226,15 @@ msgstr "WARNING:  The base kit is not installed\n"
 msgid "Compressing Image.  This will take some time.  Please wait\n"
 msgstr "Compressing Image.  This will take some time.  Please wait\n"
 
+msgid "ERROR: Invalid node group: %s\n"
+msgstr "ERROR: Invalid node group: %s\n"
+
+msgid "ERROR: Yum Failed!\n"
+msgstr "ERROR: Yum Failed!\n"
+
+msgid "buildimage_need_a_node_group\n"
+msgstr "ERROR:  No node group specified\n"
+
 # Kitops intl messages
 msgid "kitops_Help"
 msgstr "KUSU kitops - kit operations tool"
@@ -272,7 +281,6 @@ msgstr "Extracting template Initial Ram Disk\n"
 
 msgid "buildinitrd_Help"
 msgstr "buildimage [-h|-v| -n node_group {-i image_name} {-t type}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image."
-
 
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
