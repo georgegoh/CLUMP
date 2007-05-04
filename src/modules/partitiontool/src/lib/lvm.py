@@ -33,14 +33,16 @@ import lvm202 as lvm
 cmd_fifo = None
 
 def queueCommand(func, args):
+    global cmd_fifo
     if cmd_fifo == None:
         cmd_fifo = []
     cmd_fifo.append((func, args))
 
 def execFifo():
+    global cmd_fifo
     if cmd_fifo:
         for func,args in cmd_fifo:
-            func(args)
+            apply(func, args)
 
 
 def probeLVMEntities(retrieveAllEntitiesPropFunc, probeEntityFunc):
@@ -192,7 +194,8 @@ class LogicalVolumeGroup(object):
             raise LogicalVolumeAlreadyInLogicalGroupError
         lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
         self.lv_dict[name] = lv
-        queueCommand(lvm.createLogicalVolume, (self.name, name, size))
+        size_str = str(size_MB) + 'M'
+        queueCommand(lvm.createLogicalVolume, (self.name, name, size_str))
         return lv
 
     def delLogicalVolume(self, logicalVol):
@@ -213,6 +216,10 @@ class LogicalVolumeGroup(object):
             if pv.partition.leave_unchanged:
                 print "Respecting leave_unchanged flag on %s" % pv.partition.path
                 return True
+
+    def formatAll(self):
+        for lv in self.lv_dict.itervalues():
+            lv.format()
 
 
 class LogicalVolume(object):
@@ -262,8 +269,28 @@ class LogicalVolume(object):
     def __size(self):
         return (self.extents * self.group.extent_size)
 
-    def commit(self):
-        if self.group.leaveUnchanged():
-            print "Respecting Group's leaveUnchanged request"
+    def format(self):
+        if self.leave_unchanged:
             return
-        lvm.createLogicalVolume(self.group.name, self.name, size)
+
+        if self.fs_type == 'ext2':
+            print 'Make ext2 fs on', self.path
+            mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()
+        elif self.fs_type == 'ext3':
+            print 'Make ext3 fs on', self.path
+            mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()
+        elif self.fs_type == 'linux-swap':
+            print 'Make swap fs on', self.path
+            mkfs = subprocess.Popen('mkswap %s' % self.path,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            mkfs_out, status = mkfs.communicate()

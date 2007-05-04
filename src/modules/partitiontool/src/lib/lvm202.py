@@ -99,34 +99,27 @@ def probeLogicalVolume(path):
     return probeLVMEntity('lvm lvdisplay %s' % path, probe_dict)
 
 
-def createPhysicalVolume(partition_path):
-    p = subprocess.Popen('lvm pvcreate %s' % partition_path,
+def runCommand(command):
+    p = subprocess.Popen(command,
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
+    out, err = p.communicate()
     print 'Out: ', out
     print 'Err: ', err
+    return (out, err)
+
+
+def createPhysicalVolume(partition_path):
+    out, err = runCommand('lvm pvcreate %s' % partition_path)
 
 def removePhysicalVolume(partition_path):
     if not physicalVolumeInUse(partition_path):
-        p = subprocess.Popen('lvm pvremove %s' % partition_path,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out = p.stdout.read()
-        err = p.stderr.read()
-        print 'Out: ', out
-        print 'Err: ', err
+        out, err = runCommand('lvm pvremove %s' % partition_path)
 
 def physicalVolumeInUse(path):
-    p = subprocess.Popen('lvm pvdisplay %s' % path,
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    out, err = runCommand('lvm pvdisplay %s' % path)
     allocated = -1
-    out = p.stdout.read()
     if out:
         out_line = out.split('\n')
         for line in out_line:
@@ -138,61 +131,30 @@ def physicalVolumeInUse(path):
         return True
 
     raise NotPhysicalVolumeError
-         
+
 
 def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):
-    p = subprocess.Popen('lvm vgcreate %s -s %s %s' % 
+    out, err = runCommand('lvm vgcreate %s -s %s %s' % 
                             (vg_name,
                              extent_size,
-                             ' '.join(pv_path_list)),
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
-    print 'Out: ', out
-    print 'Err: ', err
+                             ' '.join(pv_path_list)))
 
 
 def extendVolumeGroup(vg_name, partition_path):
-    p = subprocess.Popen('lvm vgextend %s %s' % (vg_name, partition_path),
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
-    print 'Out: ', out
-    print 'Err: ', err
+    out, err = runCommand('lvm vgextend %s %s' % (vg_name, partition_path))
 
 
 def reduceVolumeGroup(vg_name, partition_path):
-    p = subprocess.Popen('lvm vgreduce %s %s' % (vg_name, partition_path),
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
-    print 'Out: ', out
-    print 'Err: ', err
+    out, err = runCommand('lvm vgreduce %s %s' % (vg_name, partition_path))
+
+
+def removeLogicalVolumeGroup(vg_name):
+    out, err = runCommand('lvm vgremove %s' % vg_name)
 
 
 def createLogicalVolume(vg_name, lv_name, lv_size):
-    p = subprocess.Popen('lvm lvcreate -L%d -n%s %s' % (lv_size, lv_name, vg_name),
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
-    print 'Out: ', out
-    print 'Err: ', err
+    out, err = runCommand('lvm lvcreate -L%s -n%s %s' % (lv_size, lv_name, vg_name))
 
 
 def removeLogicalVolume(lv_path):
-    p = subprocess.Popen('lvm lvremove %s' % lv_path,
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out = p.stdout.read()
-    err = p.stderr.read()
-    print 'Out: ', out
-    print 'Err: ', err
+    out, err = runCommand('lvm lvremove %s' % lv_path)

@@ -57,10 +57,11 @@ import math
 import logging
 import subprocess
 import parted
+import lvm
 from os.path import basename
 from kusuexceptions import *
 from lvm import *
-from kusu.util.log import Logger
+from kusu.util.log import getKusuLog
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -95,7 +96,7 @@ partitionFlags = {
     'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
 }
 
-logger = Logger('partitiontool')
+logger = getKusuLog('kusulog')
 
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
@@ -158,6 +159,7 @@ class DiskProfile(object):
                        }
 
     def __init__(self, fresh):
+        global cmd_fifo
         self.disk_dict = {}
         self.mountpoint_dict = {}
         self.pv_dict = {}
@@ -179,7 +181,7 @@ class DiskProfile(object):
                                stderr=subprocess.PIPE)
         fdisk_out, status = awk.communicate()
         if status != '':
-            print 'Error finding the disks on this system:', fdisk_out
+            print 'Error finding the disks on this system:', fdisk_out, status
             import sys
             sys.exit(1)
 
@@ -351,7 +353,7 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
-        lvm.execFifo()
+        execFifo()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
@@ -592,7 +594,6 @@ class Disk(object):
          return cylinder       
 
     def convertEndSectorToCylinder(self, end_sector):
-        print 'convertEndSectorToCylinder:', end_sector
         cylinder = int(math.ceil(float(end_sector + 1) /
                            (self.pedDisk.dev.heads * self.pedDisk.dev.sectors)))
         return cylinder
@@ -724,12 +725,34 @@ class Partition(object):
             raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
                                   (self.__class__, name)
 
+    def mount(self, mountpoint=None, readonly=False):
+        """Mounts this partition. If no mountpoint is given, then the
+           default mountpoint is used.
+        """
+        if not mountpoint:
+            mountpoint = self.mountpoint
+        args = ''
+        if readonly:
+            args = args + '-r'
+        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type, self.path, mountpoint, args),
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        print out, err
+
+    def unmount(self):
+        """Unmounts this partition."""
+        p = subprocess.Popen('umount %s' % self.path,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
 
     def format(self):
         if self.leave_unchanged:
             return
 
-        from commands import getoutput
         if self.fs_type == 'ext2':
             print 'Make ext2 fs on', self.path
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
