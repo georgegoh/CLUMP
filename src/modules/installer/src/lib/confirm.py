@@ -46,8 +46,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
         return NAV_NOTHING
  
     def drawImpl(self):
-        from kusu.util.log import Logger
-        self.logger = Logger()
+        import kusu.util.log as kusulog
+        self.logger = kusulog.getKusuLog('installer.confirm')
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(snack.Label(self.msg), col=0, row=0)
         confirmText = ''
