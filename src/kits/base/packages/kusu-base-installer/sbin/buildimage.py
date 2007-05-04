@@ -94,15 +94,19 @@ class BuildImage:
         # length of args.
         arg = ''
         yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
-        for package in self.packages:
-            arg = arg + " %s" % package
-            if len(arg) > 8000:
-                # Call yum to install the packages
+        try:
+            for package in self.packages:
+                arg = arg + " %s" % package
+                if len(arg) > 8000:
+                    # Call yum to install the packages
+                    os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
+                    arg = ''
+            if len(arg):
                 os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
-                arg = ''
-        if len(arg):
-            os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
-            print ""
+                print ""
+        except:
+            if self.stderrout:
+                self.stderrout("ERROR: Yum Failed!\n")
 
         # Do the post processing
         self.__runPostScripts()
@@ -137,7 +141,7 @@ class BuildImage:
         and make that directory."""
         idir = self.db.getAppglobals('ImageBaseDir')
         if not idir:
-            idir = '/repo/images'
+            idir = '/depot/images'
 
         self.imagedir = os.path.join(idir, self.nodegroup)
         if not os.path.exists(idir):
@@ -317,6 +321,7 @@ class BuildImage:
         os.chdir(self.imagedir)
         os.system('tar cfj \"../%s.img.tar.bz2\" .' % self.ngid )
         os.system('rm -rf \"%s\"' %  self.imagedir)
+        os.system('chown apache:apache \"../%s.img.tar.bz2\"' % self.ngid )
 
 
 

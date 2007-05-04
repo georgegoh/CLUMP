@@ -56,16 +56,15 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
-	mkdir -p $(ROOT)/repo/repos
-	mkdir -p $(ROOT)/repo/repos/custom_scripts
-	mkdir -p $(ROOT)/repo/kits
-	mkdir -p $(ROOT)/repo/images
+	mkdir -p $(ROOT)/depot/repos
+	mkdir -p $(ROOT)/depot/kits
+	mkdir -p $(ROOT)/depot/images
 	install -m755 sbin/S01KusuSetup $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
-	install -m755 sbin/nodeboot.cgi.py $(ROOT)/repo/repos/nodeboot.cgi
+	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu

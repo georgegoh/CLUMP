@@ -91,9 +91,9 @@ make ROOT=$RPM_BUILD_ROOT install
 /opt/kusu/*
 /etc/rc.kusu.d/S01KusuSetup
 %defattr(-,apache,apache)
-/repo/repos/nodeboot.cgi
-/repo/kits
-/repo/images
+/depot/repos/nodeboot.cgi
+/depot/kits
+/depot/images
 /opt/kusu/cfm/changedfiles.lst
 
 ##

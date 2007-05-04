@@ -19,8 +19,8 @@
 
 
 # Setup a default repo and kits
-insert into repos values (1, "Fedora_6", "/repo/repos/1", "installer0", 'Fedora6.0') ;
-insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/repo/repos/2", "installer0", 'RHEL5.1') ;
+insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer0", 'Fedora6.0') ;
+insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'RHEL5.1') ;
 
 insert into kits values (1, "Fedora 6", "Fedora 6 i386", "6.0", 0, 0, "i386") ;
 insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 0, 0, "i386") ;
@@ -79,7 +79,7 @@ insert into partitions values (1,1,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
 insert into partitions values (2,1,'/dev/VolGroup00/LogVol00', '/', 'ext3', '10G', NULL, 0) ;
 insert into partitions values (3,1,'/dev/VolGroup00/LogVol01', '', 'swap', '1G', NULL, 0) ;
 insert into partitions values (4,1,'/dev/VolGroup00/LogVol02', '/export', 'ext3', '20G', NULL, 0) ;
-insert into partitions values (5,1,'/dev/VolGroup00/LogVol03', '/repo', 'ext3', 'rest', NULL, 0) ;
+insert into partitions values (5,1,'/dev/VolGroup00/LogVol03', '/depot', 'ext3', 'rest', NULL, 0) ;
 
 # Setup the default partitioning scheme for default package based compute nodes
 insert into partitions values (6,2,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
@@ -337,19 +337,19 @@ insert into appglobals values (17, 'DHCPLeaseTime', '2400', NULL) ;
 insert into appglobals values (18, 'InstallerServeSMTP', 'False', NULL) ;
 insert into appglobals values (19, 'SMTPServer', 'mailserver.myzone.company.com', NULL) ;
 insert into appglobals values (20, 'CFMBaseDir', '/opt/kusu/cfm', NULL) ;
-insert into appglobals values (21, 'ImageBaseDir', '/repo/images', 1) ;
+insert into appglobals values (21, 'ImageBaseDir', '/depot/images', 1) ;
 
 # Custom Scripts
-insert into scripts values (1, 3, '/repo/repos/custom_scripts/bogus.sh') ;
-insert into scripts values (2, 4, '/repo/repos/custom_scripts/bogus.sh') ;
-insert into scripts values (3, 1, '/repo/repos/custom_scripts/bogus-installer.sh') ;
-insert into scripts values (4, 1, '/repo/repos/custom_scripts/more-bogus-installer.sh') ;
+insert into scripts values (1, 3, '/depot/repos/custom_scripts/bogus.sh') ;
+insert into scripts values (2, 4, '/depot/repos/custom_scripts/bogus.sh') ;
+insert into scripts values (3, 1, '/depot/repos/custom_scripts/bogus-installer.sh') ;
+insert into scripts values (4, 1, '/depot/repos/custom_scripts/more-bogus-installer.sh') ;
 
 # Components
-insert into components values (1, 1, 'component-base-installer', 'This component provides the pieces needed for installer nodes', 'Fedora6.0') ;
-insert into components values (2, 1, 'component-base-installer', 'This component provides the pieces needed for installer nodes', 'RHEL5.1') ;
-insert into components values (3, 1, 'component-base-node', 'This component provides the pieces needed for all nodes', 'Fedora6.0') ;
-insert into components values (4, 1, 'component-base-node', 'This component provides the pieces needed for all nodes', 'RHEL5.1') ;
+insert into components values (1, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'Fedora6.0') ;
+insert into components values (2, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'RHEL5.1') ;
+insert into components values (3, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora6.0') ;
+insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'RHEL5.1') ;
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1, 1) ;

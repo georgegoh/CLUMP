@@ -58,8 +58,8 @@ cp /boot/vmlinuz-${REV} /tftpboot/kusu/vmlinuz-${REV}
 chmod 644  /tftpboot/kusu/vmlinuz-${REV}
 
 # Setting up permissions
-chgrp -R apache /repo/repos
-chgrp -R apache /repo/images
+chgrp -R apache /depot/repos
+chgrp -R apache /depot/images
 chgrp -R apache /opt/kusu/cfm
 
 # Setup Apache
@@ -68,8 +68,8 @@ if [ ! -d /var/www/html ]; then
 else
     cd /var/www/html
     ln -s /opt/kusu/cfm cfm
-    ln -s /repo/repos repos
-    ln -s /repo/images images
+    ln -s /depot/repos repos
+    ln -s /depot/images images
 
     # Generate Kusu.conf
     if [ -f /opt/kusu/bin/dbreport ]; then

@@ -50,8 +50,8 @@ class BuildInitrd:
         self.ostype      = ''     # The ostype for the repository
         self.kernel      = ''     # The name of the kernel to use from db
         self.initrd      = ''     # The name of the initrd
-        self.initrd64    = '/mblack/kusu/buildroot/rootfs.x86_64.cpio.gz'   # FIX ME
-        self.initrd32    = '/space/mblack/buildroot-32bit/buildroot/rootfs.i686.cpio.gz'    # FIX ME
+        self.initrd64    = '/opt/kusu/initrds/rootfs.x86_64.cpio.gz'   # 64bit image
+        self.initrd32    = '/opt/kusu/initrds/rootfs.i686.cpio.gz'     # 32bit image
         self.gettext     = 0
         self.imagedir    = ''     # Location of the initial ram disk image
         self.moduledir   = ''     # Location of the tempory module directory
@@ -129,7 +129,7 @@ class BuildInitrd:
 
         idir = self.db.getAppglobals('ImageBaseDir')
         if not idir:
-            idir = '/repo/images'
+            idir = '/depot/images'
 
         # Get the architecture from the kits that are part of the repo
         query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
