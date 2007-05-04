@@ -52,12 +52,6 @@
    A mountpoint corresponds to a line in the /etc/fstab file. See man page for
    /etc/fstab for details about /etc/fstab.
 
-   EXCEPTIONS -
-   From the above, the following exceptions are noted:
-      a) OutOfSpaceError
-      b) DuplicateNameError
-      c) DuplicateMountpointError
-
 """
 import math
 import logging
@@ -66,7 +60,7 @@ import parted
 from os.path import basename
 from kusuexceptions import *
 from lvm import *
-#from kusu.util.log import Logger
+from kusu.util.log import Logger
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -101,7 +95,7 @@ partitionFlags = {
     'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
 }
 
-#logger = Logger('partitiontool')
+logger = Logger('partitiontool')
 
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
@@ -112,9 +106,39 @@ class DiskProfile(object):
                    example, to get the first disk on the SCSI bus, we do this:
 
                       disk = diskProfile.disk_dict['sda']
+
+       mountpoint_dict - a dictionary of mountpoints in a system. The key is
+                          the mountpoint, and the value is the partition or
+                          logical volume object that is mounted at the
+                          mountpoint. To get the partition or logical volume
+                          at a desired mountpoint, do this:
+
+                             volume = diskProfile.mountpoint_dict['/boot']
+
+       pv_dict - a dictionary of physical volumes in a system. The key is the
+                 path, and the value is the PhysicalVolume (see LVM module)
+                 object that the path refers to. To get the PhysicalVolume
+                 object at a desired path, do this:
+
+                    physicalVolume = diskProfile.pv_dict['/dev/sda2']
+
+       lvg_dict - a dictionary of Logical Volume Groups in a system. The key is
+                  the Logical Volume Group name, and the value is the
+                  LogicalVolumeGroup (see LVM module) object that the name
+                  refers to. To get the LogicalVolumeGroup object of a
+                  particular name, do this:
+
+                     logicalVolumeGroup = diskProfile.lvg_dict['LogVol00']
+
+       lv_dict - a dictionary of Logical Volumes in a system. The key is the
+                 Logical Volume name, and the value is the LogicalVolume
+                 (see LVM module) object that the name refers to. To get a
+                 LogicalVolume object of a desired name, do this:
+
+                    logicalVolume = diskProfile.lv_dict['Scratch']
     """
     disk_dict = None
-    mountpoints = None
+    mountpoint_dict = None
     pv_dict = None
     lvg_dict = None
     lv_dict = None
@@ -135,7 +159,7 @@ class DiskProfile(object):
 
     def __init__(self, fresh):
         self.disk_dict = {}
-        self.mountpoints = {}
+        self.mountpoint_dict = {}
         self.pv_dict = {}
         self.lvg_dict = {}
         self.lv_dict = {}
@@ -158,29 +182,39 @@ class DiskProfile(object):
             print 'Error finding the disks on this system:', fdisk_out
             import sys
             sys.exit(1)
- 
+
+        logger.debug('Finding disks.') 
         # output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
         disks_str = fdisk_out.split('\n')
         for disk_str in disks_str:
             if disk_str:
                 self.disk_dict[disk_str[5:-1]] = Disk(disk_str[:-1], self, fresh)
+        logger.debug('Found disks.')
 
+        logger.debug('Finding PVs.')
         # probe the physical volumes
         pv_probe_dict = probePhysicalVolumes()
+        logger.debug('Probed PVs.')
         for pv_path, pv_prop_dict in pv_probe_dict.iteritems():
             partition = self.getPartitionFromPath(pv_path)
             partition.lvm_flag = 1
             pv = PhysicalVolume(partition)
+            pv.on_disk = True
             pv.group = pv_prop_dict['group']
             self.pv_dict[basename(pv_path)] = pv
+        logger.debug('Found PVs.')
 
+        logger.debug('Finding LVGs.')
         # probe the logical volume groups
         lvg_probe_dict = probeLogicalVolumeGroups()
         for lvg_name, lvg_prop_dict in lvg_probe_dict.iteritems():
             pv_list = [pv for pv in self.pv_dict.itervalues() if pv.group == lvg_name]
             lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'], pv_list)
+            lvg.on_disk = True
             self.lvg_dict[lvg_name] = lvg
+        logger.debug('Found LVGs.')
 
+        logger.debug('Finding LVs.')
         # probe logical volumes
         lv_probe_dict = probeLogicalVolumes()
         for lv_path, lv_prop_dict in lv_probe_dict.iteritems():
@@ -188,9 +222,11 @@ class DiskProfile(object):
             lvg = self.lvg_dict[lvg_name]
             lv_name = basename(lv_path)
             lv = LogicalVolume(lv_name, lvg, 0)
+            lv.on_disk = True
             lv.extents = lv_prop_dict['extents']
             lvg.lv_dict[lv_name] = lv
             self.lv_dict[lv_name] = lv
+        logger.debug('Found LVs.')
 
     def getPartitionFromPath(self, path_str):
         i = -1
@@ -201,13 +237,13 @@ class DiskProfile(object):
         disk_path = path[:i]
         disk = self.disk_dict[basename(disk_path)]
         partition_number = int(path[i:])
-        partition = disk.partitions_dict[partition_number]
+        partition = disk.partition_dict[partition_number]
         return partition
 
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
         # sanity check
-        if mountpoint in self.mountpoints.keys():
+        if mountpoint in self.mountpoint_dict.keys():
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         disk = self.disk_dict[disk_id]
@@ -218,7 +254,7 @@ class DiskProfile(object):
             new_partition = disk.createPartition(size, None, mountpoint)
 
         if mountpoint:
-            self.mountpoints[mountpoint] = new_partition
+            self.mountpoint_dict[mountpoint] = new_partition
 
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
@@ -239,6 +275,9 @@ class DiskProfile(object):
             if physicalVol.group != None:
                 raise PartitionIsPartOfVolumeGroupError
             del self.pv_dict[partition_obj.path]
+
+        if partition_obj.mountpoint in self.mountpoint_dict.keys():
+            del self.mountpoint_dict[partition_obj.mountpoint]
 
         partition_obj.disk.delPartition(partition_obj)
 
@@ -286,14 +325,14 @@ class DiskProfile(object):
         # sanity checks
         if name in self.lv_dict.keys():
             raise DuplicateNameError, _('Logical Volume name already exists.')
-        if mountpoint in self.mountpoints.keys():
+        if mountpoint in self.mountpoint_dict.keys():
             raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
 
         new_lv = lvg.createLogicalVolume(name, long(size_MB), fs_type, mountpoint)
         self.lv_dict[name] = new_lv
 
         if mountpoint:
-            self.mountpoints[mountpoint] = new_lv
+            self.mountpoint_dict[mountpoint] = new_lv
 
 
     def editLogicalVolume(self, lv_id, name, vol_grp_id, size_MB, fs_type, mountpoint):
@@ -302,8 +341,8 @@ class DiskProfile(object):
 
     def deleteLogicalVolume(self, lv):
         """Delete an existing logical volume."""
-        if lv.mountpoint in self.mountpoints.keys():
-            del self.mountpoints[lv.mountpoint]
+        if lv.mountpoint in self.mountpoint_dict.keys():
+            del self.mountpoint_dict[lv.mountpoint]
 
         lv.group.delLogicalVolume(lv)
 
@@ -312,12 +351,7 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
-        for pv in self.pv_dict.itervalues():
-            pv.commit()
-        for lvg in self.lvg_dict.itervalues():
-            lvg.commit()
-        for lv in self.lv_dict.itervalues():
-            lv.commit()
+        lvm.execFifo()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
@@ -331,7 +365,7 @@ class Disk(object):
        Attributes:
           a. profile - reference to the DiskProfile object that owns this disk.
           b. pedDisk - encapsulated instance of parted.PedDisk.
-          c. partitions_dict - dictionary of partitions on this disk.
+          c. partition_dict - dictionary of partitions on this disk.
        A PedDisk instance encapsulates an instance of parted.PedDevice, and thus
        Disk has the following additional(hidden) attributes, which can be 
        read(-only) :
@@ -346,7 +380,7 @@ class Disk(object):
     """
     profile = None
     pedDisk = None
-    partitions_dict = None
+    partition_dict = None
     leave_unchanged = None
 
     __getattr_dict = { 'length' : 'self.pedDevice.length',
@@ -363,7 +397,7 @@ class Disk(object):
 
     def __init__(self, path, profile, fresh=False):
         self.profile = profile
-        self.partitions_dict = {}
+        self.partition_dict = {}
         pedDevice = parted.PedDevice.get(path)
         self.leave_unchanged = False
         if fresh:
@@ -394,7 +428,7 @@ class Disk(object):
            this disk.
         """
         new_partition = Partition(self, pedPartition, mountpoint)
-        self.partitions_dict[pedPartition.num] = new_partition
+        self.partition_dict[pedPartition.num] = new_partition
         return new_partition
         
     def createPartition(self, size, fs_type=None, mountpoint=None):
@@ -456,12 +490,12 @@ class Disk(object):
            itself.
         """
         # get ordered list of partition keys.
-        partition_nums = sorted(self.partitions_dict.keys())
+        partition_nums = sorted(self.partition_dict.keys())
 
         # delete the object from the dictionary and remove from pedDisk.
         deleted_partition_number = partition_obj.num
-        deleted_partition = self.partitions_dict[deleted_partition_number]
-        del self.partitions_dict[deleted_partition_number]
+        deleted_partition = self.partition_dict[deleted_partition_number]
+        del self.partition_dict[deleted_partition_number]
         self.pedDisk.delete_partition(deleted_partition.pedPartition)
 
         partitions_to_move = []
@@ -470,28 +504,28 @@ class Disk(object):
         # of the first partition that we want to move. How to move? First, we
         # delete...
         for part_key in partition_nums[deleted_partition_number:]:
-            partition = self.partitions_dict[part_key]
+            partition = self.partition_dict[part_key]
             if partition.on_disk:
-                pass
+                continue
             if partition.type != 'extended':
                 partitions_to_move.append((partition.size,
                                            partition.fs_type,
                                            partition.mountpoint,
                                            partition.lvm_flag
                                           ))
-            del self.partitions_dict[part_key]
+            del self.partition_dict[part_key]
             if partition.type == 'primary' or partition.type == 'extended':
                 self.pedDisk.delete_partition(partition.pedPartition)
-            if partition.mountpoint in self.profile.mountpoints.keys():
-                self.profile.mountpoints.pop(partition.mountpoint)
+            if partition.mountpoint in self.profile.mountpoint_dict.keys():
+                self.profile.mountpoint_dict.pop(partition.mountpoint)
 
         # ... then we re-add the partitions.
         for part_details in partitions_to_move:
-            new_partition = self.profile.newPartition(basename(self.path),
-                                                      part_details[0],
-                                                      False,
-                                                      part_details[1],
-                                                      part_details[2])
+            new_partition = self.profile.newPartition(disk_id=basename(self.path),
+                                                      size=part_details[0],
+                                                      fixed_size=False,
+                                                      fs_type=part_details[1],
+                                                      mountpoint=part_details[2])
             new_partition.lvm_flag = part_details[3]
 
     def __getNextPartitionType(self):
@@ -515,6 +549,17 @@ class Disk(object):
         if last_part_num < 1: # no partitions found
             start_sector = 0
         else:
+            if last_part_num > self.pedDisk.get_primary_partition_count():
+                pedPartition = self.pedDisk.next_partition()
+                while pedPartition.num < last_part_num:
+                    if pedPartition.num == -1:
+                        start_sector = pedPartition.geom.start
+                        end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
+                        end_sector = self.__alignEndSector(end_sector)
+                        if end_sector <= pedPartition.geom.end:
+                            return (start_sector, end_sector) 
+                        pedPartition = self.pedDisk.next_partition(pedPartition)
+
             lastPart = self.pedDisk.get_partition(last_part_num)
             if lastPart.type == parted.PARTITION_FREESPACE:
                 start_sector = lastPart.geom.start
@@ -547,6 +592,7 @@ class Disk(object):
          return cylinder       
 
     def convertEndSectorToCylinder(self, end_sector):
+        print 'convertEndSectorToCylinder:', end_sector
         cylinder = int(math.ceil(float(end_sector + 1) /
                            (self.pedDisk.dev.heads * self.pedDisk.dev.sectors)))
         return cylinder
@@ -584,12 +630,12 @@ class Disk(object):
     def commit(self):
         if not self.leave_unchanged:
             self.pedDisk.commit()
-            for partition in self.partitions_dict.itervalues():
+            for partition in self.partition_dict.itervalues():
                 partition.on_disk = True
 
     def formatAll(self):
         if not self.leave_unchanged:
-            for partition in self.partitions_dict.itervalues():
+            for partition in self.partition_dict.itervalues():
                 partition.format()
 
 

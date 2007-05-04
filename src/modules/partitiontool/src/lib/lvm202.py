@@ -9,7 +9,9 @@
 # 
 import subprocess
 from kusuexceptions import *
-#from kusu.util.log import Logger
+from kusu.util.log import Logger
+
+logger = Logger()
 
 def retrieveLVMEntityData(command, field):
     display = subprocess.Popen(command,
@@ -30,6 +32,7 @@ def retrieveLVMEntityData(command, field):
     data_list = result.strip().split('\n')
     while '' in data_list:
         data_list.remove('')
+    logger.debug('Data list from %s: %s' % (command, data_list))
     return data_list
 
 

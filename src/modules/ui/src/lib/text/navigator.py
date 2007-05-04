@@ -14,9 +14,9 @@ __version__ = "$Revision: 242 $"
 import os
 import sys
 import time
-import logging
 import snack
 from kusu.core.app import KusuApp
+from kusu.util.log import Logger
 
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
@@ -25,17 +25,22 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
     Inherits SnackScreen to display a custom help line at the foot of the screen.
 
     """
+    logger = None
+    instance_cnt = 0
+
     def __init__(self, title):
         snack.SnackScreen.__init__(self)
         KusuApp.__init__(self)
+        self.logger = Logger()
         helpLine=self._('Copyright(C) 2007 Platform Computing Inc.\t\t' + \
                         'Press F12 to quit')
-        self.pushHelpLine(helpLine)
+        snack.SnackScreen.pushHelpLine(self, helpLine)
+        self.instance_cnt = self.instance_cnt + 1
 
     def finish(self):
-        self.popHelpLine()
+        self.instance_cnt = self.instance_cnt - 1
+        snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.finish(self)
-
 
 NAV_NOTHING = -1
 NAV_FORWARD = 0
@@ -54,6 +59,7 @@ class Navigator(object, KusuApp):
     sidebarWidth = 22
     currentStep = 0
     timerActivated = False
+    logger = None
 
     def __getattr__(self, name):
         if name == 'currentScreen':
@@ -92,6 +98,7 @@ class Navigator(object, KusuApp):
               which is shown as a sidebar.
         """
         KusuApp.__init__(self)
+        self.logger = Logger()
         self.screenTitle = screenTitle
         self.timerActivated = False
         self.quitButtonTitle = self._('Finish')
@@ -195,14 +202,13 @@ class Navigator(object, KusuApp):
                 form = self.draw()
                 result = self.startEventLoop(form)
                 if result is NAV_FORWARD:
-                    currentScreen = self.screens[self.currentStep]
-                    valid, msg = currentScreen.validate()
+                    valid, msg = self.currentScreen.validate()
                     if not valid:
                         snack.ButtonChoiceWindow(self.mainScreen, 
                                                  self._('Validation Failed'), msg,
                                                  buttons=[self._('Ok')])
                         continue
-                    currentScreen.formAction()
+                    self.currentScreen.formAction()
                     self.mainScreen.popWindow()
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
@@ -212,6 +218,7 @@ class Navigator(object, KusuApp):
                     else:
                         loop=False
                 elif result is NAV_BACK:
+                    self.logger.debug('Back navigation from ' + self.currentScreen.name + ' number: ' + str(self.currentStep))
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
                     self.selectScreen(self.currentStep-1)

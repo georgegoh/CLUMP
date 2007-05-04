@@ -30,6 +30,19 @@ from kusuexceptions import *
 import lvm202 as lvm
 #from kusu.util.log import Logger
 
+cmd_fifo = None
+
+def queueCommand(func, args):
+    if cmd_fifo == None:
+        cmd_fifo = []
+    cmd_fifo.append((func, args))
+
+def execFifo():
+    if cmd_fifo:
+        for func,args in cmd_fifo:
+            func(args)
+
+
 def probeLVMEntities(retrieveAllEntitiesPropFunc, probeEntityFunc):
     probe_dict = {}
     entity_prop_list = retrieveAllEntitiesPropFunc()
@@ -60,6 +73,8 @@ class PhysicalVolume(object):
     name = None
     partition = None
     group = None
+    on_disk = None
+    delete_flag = None
 
     def __init__(self,  partition):
         """A partition may not have knowledge about it's physical volume role,
@@ -69,6 +84,8 @@ class PhysicalVolume(object):
         from os.path import basename
         self.name = basename(partition.path)
         self.partition = partition
+        self.on_disk = False
+        self.delete_flag = False
 
     def isInUse(self):
         return lvm.physicalVolumeInUse(self.partition.path)
@@ -83,7 +100,7 @@ class PhysicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'partition', 'group']:
+        if name in ['name', 'partition', 'group', 'on_disk', 'delete_flag']:
             object.__setattr__(self, name, value)
         else:
             raise AttributeError, "%s instance does not have or cannot modify attribute %s" % \
@@ -93,12 +110,6 @@ class PhysicalVolume(object):
         if not self.group:
             return 0
         return self.partition.size / self.group.extent_size
-
-    def commit(self):
-        if not self.partition.leave_unchanged:
-            lvm.createPhysicalVolume(self.partition.path)
-        else:
-            print "Respecting partition's leave_unchanged flag"
 
 
 class LogicalVolumeGroup(object):
@@ -110,6 +121,7 @@ class LogicalVolumeGroup(object):
     lv_dict = None
     extent_size_humanreadable = None
     extent_size = 0
+    on_disk = None
 
     def __init__(self, name, extent_size='32M', pv_list=[]):
         #logger.info('Creating new logical volume group %s' % name)
@@ -118,6 +130,7 @@ class LogicalVolumeGroup(object):
         self.lv_dict = {}
         self.extent_size_humanreadable = extent_size
         self.extent_size = self.parsesize(extent_size)
+        self.on_disk = False
         for pv in pv_list:
             self.pv_dict[pv.name] = pv
             pv.group = self
@@ -161,7 +174,7 @@ class LogicalVolumeGroup(object):
             raise PhysicalVolumeAlreadyInLogicalGroupError
         self.pv_dict[physicalVol.name] = physicalVol
         physicalVol.group = self.name
-#        lvm.extendVolumeGroup(self.name, physicalVol.partition.path)
+        queueCommand(lvm.extendVolumeGroup, (self.name, physicalVol.partition.path))
 
     def delPhysicalVolume(self, physicalVol):
         logger.info('Deleting physical volume')
@@ -171,7 +184,7 @@ class LogicalVolumeGroup(object):
                   'in Logical Group ' + self.name + '.'
         physicalVol.group = None
         del self.pv_dict[physicalVol.name]
-#        lvm.reduceVolumeGroup(self.name, physicalVol.partition.path)
+        queueCommand(lvm.reduceVolumeGroup, (self.name, physicalVol.partition.path))
 
     def createLogicalVolume(self, name, size_MB, fs_type, mountpoint):
 #        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
@@ -179,7 +192,7 @@ class LogicalVolumeGroup(object):
             raise LogicalVolumeAlreadyInLogicalGroupError
         lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
         self.lv_dict[name] = lv
-#        lvm.createLogicalVolume(self.name, name, size)
+        queueCommand(lvm.createLogicalVolume, (self.name, name, size))
         return lv
 
     def delLogicalVolume(self, logicalVol):
@@ -193,21 +206,13 @@ class LogicalVolumeGroup(object):
                   'Logical Volume ' + logicalVol.name + ' is still in use.'
         logicalVol.group = None
         del self.lv_dict[logicalVol.name]
-#        lvm.removeLogicalVolume(logicalVol.path)
+        queueCommand(lvm.removeLogicalVolume, (logicalVol.path))
 
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
             if pv.partition.leave_unchanged:
                 print "Respecting leave_unchanged flag on %s" % pv.partition.path
                 return True
-
-    def commit(self):
-        if self.leaveUnchanged():
-            return
-        pv_paths = [ pv.partition.path for pv in self.pv_dict.itervalues() ]
-        lvm.createVolumeGroup(self.name,
-                              self.extent_size,
-                              pv_paths)
 
 
 class LogicalVolume(object):
@@ -221,6 +226,7 @@ class LogicalVolume(object):
     extents = 0
     fs_type = None
     mountpoint = None
+    on_disk = None
 
     def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
@@ -233,6 +239,7 @@ class LogicalVolume(object):
         self.extents = newExtentsToAllocate
         self.fs_type = fs_type
         self.mountpoint = mountpoint
+        self.on_disk = False
 
     def __getattr__(self, name):
         if name == 'size':
@@ -244,7 +251,7 @@ class LogicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'group', 'fs_type', 'mountpoint']:
+        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk']:
             object.__setattr__(self, name, value)
         elif name == 'extents':
             object.__setattr__(self, name, long(value))
