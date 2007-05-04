@@ -21,7 +21,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.hardware import disk
 import kusu.util.log as kusulog
 
-kl = kusulog.getKusuLog()
+kl = kusulog.getKusuLog('installer.partition')
 
 def printCurrent(ps):
     print ps.listbox.current()
