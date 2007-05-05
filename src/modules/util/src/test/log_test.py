@@ -9,14 +9,19 @@ __version__ = "$Rev:$"
 
 import os
 import logging
-import kusu.util.log
+import kusu.util.log as kusulog
 
 class TestLogger:
     def setUp(self):
         self.logfilename = "kusulog_test.log"
+        os.environ['KUSU_LOGFILE'] = self.logfilename
         loggername = "kusulog_test"
-        self.myLog = kusu.util.log.Logger(name=loggername, filename=self.logfilename)
+        #self.myLog = kusulog.getKusuLog(name=loggername, filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=loggername)
         self.myLog.setLevel(logging.NOTSET)
+
+        # setting myLog level to NOTSET uses root logger default level WARNING
+        logging.getLogger().setLevel(logging.NOTSET)
 
     def tearDown(self):
         # remove the log file after each test
@@ -24,7 +29,7 @@ class TestLogger:
 
         # make sure logging modules are fresh for next test
         reload(logging)
-        reload(kusu.util.log)
+        reload(kusulog)
 
     def testLog(self):
         """Log message at each logging level with log()."""
@@ -96,7 +101,7 @@ class TestLoggerEnvFilename:
 
         # make sure logging modules are fresh for next test
         reload(logging)
-        reload(kusu.util.log)
+        reload(kusulog)
 
     def testEnvFilename(self):
         """Log to $KUSU_LOGFILE file."""
@@ -105,9 +110,9 @@ class TestLoggerEnvFilename:
         # See python os module docs for more information.
         os.environ['KUSU_LOGFILE'] = self.logfilename
 
-        # Instantiating kusu.util.log.Logger without the filename forces it to check
-        # the $KUSU_LOGFILE environment variable.
-        self.myLog = kusu.util.log.Logger(name=self.loggername)
+        # Instantiating kusulog.getKusuLog without the filename forces it to
+        # check the $KUSU_LOGFILE environment variable.
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         fmt = "This is a CRITICAL message written to env filename"
         self.myLog.critical(fmt)
@@ -122,9 +127,9 @@ class TestLoggerEnvFilename:
         # See python os module docs for more information.
         os.environ['KUSU_LOGFILE'] = ""
 
-        # Instantiating kusu.util.log.Logger without the filename forces it to check
-        # the $KUSU_LOGFILE environment variable.
-        self.myLog = kusu.util.log.Logger(name=self.loggername)
+        # Instantiating kusulog.getKusuLog without the filename forces it to
+        # check the $KUSU_LOGFILE environment variable.
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
         self.logfilename = self.myLog.handlers[0].baseFilename
 
         fmt = "This is a CRITICAL message written to blank env filename"
@@ -144,9 +149,9 @@ class TestLoggerEnvLevel:
                   % logging.getLevelName(level))
                  for level in levels])
 
-
     def setUp(self):
         self.logfilename = "kusulog_test_env_level.log"
+        os.environ['KUSU_LOGFILE'] = self.logfilename
         self.loggername = "kusulog_test_env_level"
 
     def tearDown(self):
@@ -158,17 +163,23 @@ class TestLoggerEnvLevel:
 
         # make sure logging modules are fresh for next test
         reload(logging)
-        reload(kusu.util.log)
+        reload(kusulog)
 
     def testNotset(self):
         """$KUSU_LOGLEVEL set to NOTSET"""
         os.environ['KUSU_LOGLEVEL'] = "NOTSET"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
-        for level in range(0, 5):
+        # When $KUSU_LOGLEVEL is NOTSET, the logging level is determined by
+        # the root logger, which defaults to WARNING.
+        for level in range(0, 2):
+            assert not findMessage(self.logfilename,
+                                   logging.getLevelName(self.levels[level]),
+                                   self.fmts[self.levels[level]])
+
+        for level in range(2, 5):
             assert findMessage(self.logfilename,
                                logging.getLevelName(self.levels[level]),
                                self.fmts[self.levels[level]])
@@ -176,8 +187,7 @@ class TestLoggerEnvLevel:
     def testDebug(self):
         """$KUSU_LOGLEVEL set to DEBUG"""
         os.environ['KUSU_LOGLEVEL'] = "DEBUG"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -189,8 +199,7 @@ class TestLoggerEnvLevel:
     def testInfo(self):
         """$KUSU_LOGLEVEL set to INFO"""
         os.environ['KUSU_LOGLEVEL'] = "INFO"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -207,8 +216,7 @@ class TestLoggerEnvLevel:
     def testWarning(self):
         """$KUSU_LOGLEVEL set to WARNING"""
         os.environ['KUSU_LOGLEVEL'] = "WARNING"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -225,8 +233,7 @@ class TestLoggerEnvLevel:
     def testError(self):
         """$KUSU_LOGLEVEL set to ERROR"""
         os.environ['KUSU_LOGLEVEL'] = "ERROR"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -243,8 +250,7 @@ class TestLoggerEnvLevel:
     def testCritical(self):
         """$KUSU_LOGLEVEL set to CRITICAL"""
         os.environ['KUSU_LOGLEVEL'] = "CRITICAL"
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -260,11 +266,10 @@ class TestLoggerEnvLevel:
 
     def testBlank(self):
         """$KUSU_LOGLEVEL set to blank"""
-        # This test assumes default level used by kusu.util.log.Logger is
+        # This test assumes default level used by kusulog.getKusuLog is
         # INFO
         os.environ['KUSU_LOGLEVEL'] = ""
-        self.myLog = kusu.util.log.Logger(name=self.loggername,
-                                    filename=self.logfilename)
+        self.myLog = kusulog.getKusuLog(name=self.loggername)
 
         self.logAtAllLevels()
 
@@ -277,6 +282,7 @@ class TestLoggerEnvLevel:
             assert findMessage(self.logfilename,
                                logging.getLevelName(self.levels[level]),
                                self.fmts[self.levels[level]])
+
     def logAtAllLevels(self):
         """Write one message at each log level to the log."""
         for level in self.fmts.keys():

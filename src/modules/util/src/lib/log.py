@@ -30,19 +30,16 @@ class Logger(logging.Logger):
     respectively.
     """
 
-    def __init__(self, name="kusulog", filename=""):
+    def __init__(self, name="kusulog"):
         logging.Logger.__init__(self, name)
 
-        # If the filename is not specified, try $KUSU_LOGFILE environment
-        # variable, or use the default filename.
-        if filename == "":
-            try:
-                filename = os.environ["KUSU_LOGFILE"]
-            except KeyError:
-                filename = ""
-
-            if filename == "":
-                filename = "kusulog.log"
+        # Try $KUSU_LOGFILE environment variable, or use the default filename.
+        try:
+            filename = os.environ["KUSU_LOGFILE"]
+        except KeyError:
+            filename = "kusu.log"
+        if filename == '':
+            filename = "kusu.log"
 
         # Checks whether the path exists, if not mkdir
         filename = path(filename)
@@ -51,7 +48,8 @@ class Logger(logging.Logger):
             parent_path.makedirs()
 
         # Set default formatter
-        self.fmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:%(lineno)d) %(asctime)s %(message)s")
+        self.fmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:" +
+                                     "%(lineno)d) %(asctime)s %(message)s")
 
         self.addFileHandler(str(filename))
 
@@ -71,7 +69,8 @@ class Logger(logging.Logger):
         logfileHandler.setFormatter(self.fmt)
         self.addHandler(logfileHandler)
 
-    def addSysLogHandler (self, host, port=SYSLOG_UDP_PORT, facility=SysLogHandler.LOG_USER):
+    def addSysLogHandler (self, host, port=SYSLOG_UDP_PORT, 
+                          facility=SysLogHandler.LOG_USER):
         syslogHandler = SysLogHandler((host, port), facility)
         syslogHandler.setFormatter(self.fmt)
         self.addHandler(syslogHandler)
