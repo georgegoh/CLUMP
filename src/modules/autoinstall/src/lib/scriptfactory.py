@@ -66,7 +66,7 @@ class KickstartFactory(BaseFactory):
         #disk_profile = self.profile.getDiskProfile()
         disk_profile = self.profile.diskprofile
         for disk in disk_profile.disk_dict.values():
-            for id, p in disk.partitions_dict.items():
+            for id, p in disk.partition_dict.items():
                 fs_type = fstype_dict[p.fs_type]
                 #print id, p.path, p.mountpoint, fs_type, p.type
 
