@@ -246,7 +246,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
         kusu_tmp = path(kusu_tmp)
         kusu_log = path(kusu_log)
 
-        files = [kusu_tmp / 'kusu.db', kusu_log]
+        #files = [kusu_tmp / 'kusu.db', kusu_log]
+        files = [path('/kusu.db'), kusu_log]
 
         for f in files:
             if f.exists():
