@@ -114,6 +114,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.logger.debug('Auto install script generated.')
             self.database.close()
             self.logger.debug('Closed database connection.')
+            self.migrate(disk_profile)
+            self.logger.debug('Migrated kusu.db and kusu.log')
 
     def formatDisk(self, disk_profile):
         disk_profile.commit()
@@ -140,14 +142,14 @@ class ConfirmScreen(screenfactory.BaseScreen):
         from path import path
         from kusu.util import util
 
-        def mount_dir(disk_profile, mntpnt, repo_dir):
-            for disk in disk_profile.disk_dict.values():
-                for id, p in disk.partitions_dict.items():
-                    #print id, p.path, p.mountpoint, fs_type, p.type
-                    if p.mountpoint == mntpnt: 
-                        cmd = 'mount -t %s %s %s' % (p.fs_type, p.path, repo_dir)
-                        self.logger.debug(cmd)
-                        os.system(cmd)
+        #def mount_dir(disk_profile, mntpnt, repo_dir):
+        #    for disk in disk_profile.disk_dict.values():
+        #        for id, p in disk.partition_dict.items():
+        #            #print id, p.path, p.mountpoint, fs_type, p.type
+        #            if p.mountpoint == mntpnt: 
+        #                cmd = 'mount -t %s %s %s' % (p.fs_type, p.path, repo_dir)
+        #                self.logger.debug(cmd)
+        #                os.system(cmd)
                     
 
         url = str(self.database.get('Kits', 'FedoraURL')[0])
@@ -155,7 +157,12 @@ class ConfirmScreen(screenfactory.BaseScreen):
         # Mount /repo for now
         repo_dir = path('/mnt/kusu/depot')
         repo_dir.makedirs()
-        mount_dir(disk_profile, path('/depot'), repo_dir)
+
+        for disk in disk_profile.disk_dict.values():
+            for id, p in disk.partition_dict.items():
+                if p.mountpoint == '/depot':
+                    p.mount(repo_dir)
+                    break
 
         util.verifyDistro(url, 'fedora', '6')
         util.copy(url, repo_dir)
@@ -199,5 +206,55 @@ class ConfirmScreen(screenfactory.BaseScreen):
         script = Script(kf)
         script.setProfile(k)
         script.write(install_script)
+
+    def migrate(self, disk_profile):
+        from path import path
+        import os
+
+        dest = path('/mnt/kusu/root')
+        
+        if not dest.exists():
+            dest.makedirs()
+
+        # Search for /root first, followed by /
+        rootPartition = None
+        for disk in disk_profile.disk_dict.values():
+                for id, p in disk.partition_dict.items():
+                    if p.mountpoint == '/root':
+                        rootPartition = p
+                        break;
+                    if p.mountpoint == '/':
+                        rootPartition = p
+
+        if rootPartition:
+            rootPartition.mount(dest)
+            
+            # Need to make /root, if it's only /
+            if rootPartition.mountpoint == '/':
+                dest = dest / 'root'
+                dest.makedirs(mode=750)
+                
+        else:
+            raise Exception, '/root partition not found'
+        
+        kusu_tmp = os.environ.get('KUSU_TMP', None)
+        kusu_log = os.environ.get('KUSU_LOGFILE', None)
+
+        if not kusu_tmp or not kusu_log:
+            raise Exception
+
+        kusu_tmp = path(kusu_tmp)
+        kusu_log = path(kusu_log)
+
+        files = [kusu_tmp / 'kusu.db', kusu_log]
+
+        for f in files:
+            if f.exists():
+                self.logger.debug('Moved %s -> %s' % (f, dest))
+                f.move(dest)
+
+        rootPartition.unmount()
+
+
 
 
