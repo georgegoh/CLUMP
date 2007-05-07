@@ -4,21 +4,24 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-__version__ = "$Rev:$"
+__version__ = "$Rev: $"
 
 import os
 import logging
 from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 from path import path
 
-def getLogger(name='kusulog'):
+def _getLogger(name='kusulog'):
     return logging.getLogger(name)
 
 def getKusuLog(name=None):
     if not name:
-        return getLogger()
+        return _getLogger()
     else:
-        return getLogger('kusulog.' + name)
+        return _getLogger('kusulog.' + name)
+
+def shutdown():
+    logging.shutdown()
 
 class Logger(logging.Logger):
     """
@@ -33,25 +36,9 @@ class Logger(logging.Logger):
     def __init__(self, name="kusulog"):
         logging.Logger.__init__(self, name)
 
-        # Try $KUSU_LOGFILE environment variable, or use the default filename.
-        try:
-            filename = os.environ["KUSU_LOGFILE"]
-        except KeyError:
-            filename = "kusu.log"
-        if filename == '':
-            filename = "kusu.log"
-
-        # Checks whether the path exists, if not mkdir
-        filename = path(filename)
-        parent_path = filename.splitpath()[0].abspath()
-        if not parent_path.exists():
-            parent_path.makedirs()
-
-        # Set default formatter
+        # set default formatter
         self.fmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:" +
                                      "%(lineno)d) %(asctime)s %(message)s")
-
-        self.addFileHandler(str(filename))
 
         # set log level according to $KUSU_LOGLEVEL
         try:
@@ -64,13 +51,40 @@ class Logger(logging.Logger):
 
         self.setLevel(logging.getLevelName(loglevel))
 
-    def addFileHandler (self, file):
-        logfileHandler = logging.FileHandler(file)
+    def addFileHandler(self, filename=""):
+        """
+        Adds a file handler to logger.
+
+        If filename not specified, will try $KUSU_LOGFILE, else use default of
+        /tmp/kusu/kusu.log. File and full path will be created.
+        """
+
+        # try $KUSU_LOGFILE environment variable, or use the default filename
+        if filename == "":
+            try:
+                filename = os.environ["KUSU_LOGFILE"]
+            except KeyError:
+                filename = "/tmp/kusu/kusu.log"
+            if filename == "":
+                filename = "/tmp/kusu/kusu.log"
+
+        # checks whether the path exists, if not mkdir.
+        filename = path(filename)
+        parent_path = filename.splitpath()[0].abspath()
+        if not parent_path.exists():
+            parent_path.makedirs()
+
+        logfileHandler = logging.FileHandler(str(filename))
         logfileHandler.setFormatter(self.fmt)
         self.addHandler(logfileHandler)
 
-    def addSysLogHandler (self, host, port=SYSLOG_UDP_PORT, 
-                          facility=SysLogHandler.LOG_USER):
+    def addSysLogHandler(self, host='localhost', port=SYSLOG_UDP_PORT, 
+                         facility=SysLogHandler.LOG_USER):
+        """
+        Adds a syslog handler capable of logging to UNIX system identified by
+        (host, port).
+        """
+
         syslogHandler = SysLogHandler((host, port), facility)
         syslogHandler.setFormatter(self.fmt)
         self.addHandler(syslogHandler)
