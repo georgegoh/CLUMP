@@ -58,7 +58,7 @@ class ScreenFactoryImpl(ScreenFactory):
                              PartitionScreen(collection, kusuApp=runtimeDict),
                              KitsScreen(collection, kusuApp=runtimeDict),
                              NetworkScreen(collection, kusuApp=runtimeDict),
-#                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
+                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
                              TZSelectionScreen(collection, kusuApp=runtimeDict),
                              ConfirmScreen(collection, kusuApp=runtimeDict)
                             ]

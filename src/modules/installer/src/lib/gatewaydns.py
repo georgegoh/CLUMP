@@ -14,23 +14,25 @@ import socket
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.installer.network import toggleEnabled
 NAV_NOTHING = -1
 
 class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     """This screen asks for DNS and Gateway setups."""
+
     name = _('Gateway & DNS')
-    context = 'Gateway & DNS'
-    msg = _('Please enter the following information:')
+#    context = 'Gateway & DNS'
+    context = 'Network'
+    msg = _('Please configure your Gateway/DNS settings')
     buttons = [_('Clear All')]
-    backButtonDisabled = True
+#    backButtonDisabled = True
 
     def setCallbacks(self):
         """
-        
         Implementation of the setCallbacks interface defined in parent class
         screenfactory.BaseScreen. Initialise button callbacks here.
-        
         """
+
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
@@ -41,8 +43,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         return NAV_NOTHING
 
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 5)
+        self.screenGrid = snack.Grid(1, 6)
         entryWidth = 30
+
+        self.use_dhcp = snack.Checkbox(_('Configure using DHCP'), isOn=1)
 
         value = self.database.get(self.context, 'Default Gateway')
         if not value: value = '192.168.111.2'
@@ -77,17 +81,25 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.dns3.addCheck(kusuwidgets.verifyIP)
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
-                                                 width=self.gridWidth),
+                                                       width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        self.screenGrid.setField(self.gateway, col=0, row=1, anchorLeft=1,
+        self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
                                  padding=(0,1,0,0))
-        self.screenGrid.setField(self.dns1, col=0, row=2, anchorLeft=1,
+        self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
                                  padding=(0,1,0,0))
-        self.screenGrid.setField(self.dns2, col=0, row=3, anchorLeft=1,
-                                 padding=(0,1,0,0))
-        self.screenGrid.setField(self.dns3, col=0, row=4, anchorLeft=1,
-                                 padding=(0,1,0,0))
+        self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
+                                 padding=(0,0,0,0))
+        self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
+                                 padding=(0,0,0,0))
+        self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
+                                 padding=(0,0,0,0))
 
+        # add callback for toggling static IP fields
+        self.use_dhcp.setCallback(toggleEnabled,
+                                  (self.use_dhcp, self.gateway,
+                                   self.dns1, self.dns2, self.dns3))
+        toggleEnabled((self.use_dhcp, self.gateway,
+                       self.dns1, self.dns2, self.dns3))
 
     def validate(self):
         errList = []
