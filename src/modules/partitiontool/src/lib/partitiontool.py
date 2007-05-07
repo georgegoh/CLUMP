@@ -203,7 +203,7 @@ class DiskProfile(object):
             pv = PhysicalVolume(partition)
             pv.on_disk = True
             pv.group = pv_prop_dict['group']
-            self.pv_dict[basename(pv_path)] = pv
+            self.pv_dict[pv_path] = pv
         logger.debug('Found PVs.')
 
         logger.debug('Finding LVGs.')
@@ -260,7 +260,7 @@ class DiskProfile(object):
 
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
-            self.pv_dict[new_partition.path] = PhysicalVolume(new_partition)
+            self.pv_dict[new_partition.path] = PhysicalVolume(new_partition, createNew=True)
             new_partition.lvm_flag = 1
         return new_partition
 
@@ -268,8 +268,7 @@ class DiskProfile(object):
         """!!!NOT READY!!! - Edit an existing partition."""
 
     def deletePartition(self, partition_obj):
-        """Delete an existing partition by name. E.g., to delete the first
-           partition of the first disk(sda), the argument would be 'sda1'.
+        """Delete an existing partition.
         """
         # if partition is a physical volume.
         if partition_obj.path in self.pv_dict.keys():
@@ -298,9 +297,9 @@ class DiskProfile(object):
             raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group Extent Size.'
 
         # passed sanity checks, now do it!
-        lvg = LogicalVolumeGroup(name, extent_size, pv_list)
+        lvg = LogicalVolumeGroup(name, extent_size, pv_list, createNew=True)
         self.lvg_dict[name] = lvg
-
+        return lvg
 
     def editLogicalVolumeGroup(self, lvg_id, name, phys_vol_ids):
         """!!!NOT READY TO USE!!! - Edit an existing logical volume group."""
@@ -335,7 +334,7 @@ class DiskProfile(object):
 
         if mountpoint:
             self.mountpoint_dict[mountpoint] = new_lv
-
+        return new_lv
 
     def editLogicalVolume(self, lv_id, name, vol_grp_id, size_MB, fs_type, mountpoint):
         """!!!NOT READY TO USE!!! - Edit an existing logical volume."""
@@ -353,7 +352,13 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
+        executeLVMFifo()
+
+    def execLVMFifo(self):
         execFifo()
+
+    def printLVMFifo(self):
+        printFifo()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():
@@ -739,7 +744,7 @@ class Partition(object):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        print out, err
+        logger.debug('Mount stdout: %s, stderr: %s' % (out, err))
 
     def unmount(self):
         """Unmounts this partition."""
@@ -754,21 +759,21 @@ class Partition(object):
             return
 
         if self.fs_type == 'ext2':
-            print 'Make ext2 fs on', self.path
+            logger.debug('Make ext2 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            print 'Make ext3 fs on', self.path
+            logger.debug('Make ext3 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            print 'Make swap fs on', self.path
+            logger.debug('Make swap fs on %s' % self.path)
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,

@@ -28,7 +28,9 @@
 import commands
 from kusuexceptions import *
 import lvm202 as lvm
-#from kusu.util.log import Logger
+from kusu.util.log import getKusuLog
+
+logger = getKusuLog('lvm')
 
 cmd_fifo = None
 
@@ -42,8 +44,15 @@ def execFifo():
     global cmd_fifo
     if cmd_fifo:
         for func,args in cmd_fifo:
-            apply(func, args)
+            if type(args) is tuple:
+                apply(func, args)
+            else:
+                func(args)
+    cmd_fifo = None
 
+def printFifo():
+    global cmd_fifo
+    print cmd_fifo
 
 def probeLVMEntities(retrieveAllEntitiesPropFunc, probeEntityFunc):
     probe_dict = {}
@@ -78,7 +87,7 @@ class PhysicalVolume(object):
     on_disk = None
     delete_flag = None
 
-    def __init__(self,  partition):
+    def __init__(self,  partition, createNew=False):
         """A partition may not have knowledge about it's physical volume role,
            but a physical volume must have knowledge about its beginnings
            (the partition).
@@ -88,6 +97,8 @@ class PhysicalVolume(object):
         self.partition = partition
         self.on_disk = False
         self.delete_flag = False
+        if createNew:
+            queueCommand(lvm.createPhysicalVolume, (partition.path))
 
     def isInUse(self):
         return lvm.physicalVolumeInUse(self.partition.path)
@@ -125,8 +136,10 @@ class LogicalVolumeGroup(object):
     extent_size = 0
     on_disk = None
 
-    def __init__(self, name, extent_size='32M', pv_list=[]):
-        #logger.info('Creating new logical volume group %s' % name)
+    def __init__(self, name, extent_size='32M', pv_list=[], createNew=False):
+        logger.info('Creating new logical volume group %s' % name)
+        if not pv_list:
+           raise VolumeGroupMustHaveAtLeastOnePhysicalVolumeError
         self.name = name
         self.pv_dict = {}
         self.lv_dict = {}
@@ -136,6 +149,9 @@ class LogicalVolumeGroup(object):
         for pv in pv_list:
             self.pv_dict[pv.name] = pv
             pv.group = self
+        if createNew:
+            pv_paths = [pv.partition.path for pv in pv_list]
+            queueCommand(lvm.createVolumeGroup, (name, extent_size, pv_paths))
 
     def extentsTotal(self):
         extents = 0
@@ -189,7 +205,7 @@ class LogicalVolumeGroup(object):
         queueCommand(lvm.reduceVolumeGroup, (self.name, physicalVol.partition.path))
 
     def createLogicalVolume(self, name, size_MB, fs_type, mountpoint):
-#        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
+        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError
         lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
@@ -199,7 +215,7 @@ class LogicalVolumeGroup(object):
         return lv
 
     def delLogicalVolume(self, logicalVol):
-        logger.info('Deleting logical volume %s from volume group %s' % (name, self.name))
+        logger.info('Deleting logical volume %s from volume group %s' % (logicalVol.name, self.name))
         if logicalVol.name not in self.lv_dict.keys():
             raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
                   'Logical Volume ' + logicalVol.name + ' does not exist ' + \
@@ -248,6 +264,9 @@ class LogicalVolume(object):
         self.fs_type = fs_type
         self.mountpoint = mountpoint
         self.on_disk = False
+
+    def isInUse(self):
+        return False
 
     def __getattr__(self, name):
         if name == 'size':

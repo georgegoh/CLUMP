@@ -17,6 +17,7 @@ class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
 class PartitionSizeTooLargeError(KusuError): pass
 class PartitionIsPartOfVolumeGroupError(KusuError): pass
+class VolumeGroupMustHaveAtLeastOnePhysicalVolumeError(KusuError): pass
 class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
 class CannotDeletePhysicalVolumeFromLogicalGroupError(KusuError): pass
 class InsufficientFreeSpaceInVolumeGroupError(KusuError): pass

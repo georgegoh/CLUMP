@@ -9,9 +9,9 @@
 # 
 import subprocess
 from kusuexceptions import *
-from kusu.util.log import Logger
+from kusu.util.log import getKusuLog
 
-logger = Logger()
+logger = getKusuLog('lvm202')
 
 def retrieveLVMEntityData(command, field):
     display = subprocess.Popen(command,
@@ -100,13 +100,14 @@ def probeLogicalVolume(path):
 
 
 def runCommand(command):
+    logger.debug('runCommand called with command: %s' % command)
     p = subprocess.Popen(command,
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     out, err = p.communicate()
-    print 'Out: ', out
-    print 'Err: ', err
+    logger.debug('"%s" output: %s' %(command, out))
+    logger.debug('"%s" errors: %s' %(command, err))
     return (out, err)
 
 
