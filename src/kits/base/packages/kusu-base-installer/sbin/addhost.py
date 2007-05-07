@@ -25,13 +25,13 @@ import string
 import gettext
 import time
 import popen2
-from kusuapp import KusuApp
-from kusudb import KusuDB
+from kusu.app import KusuApp
+from kusu.db import KusuDB
 import snack
-import screens.screenfactory
-import screens.navigator
-import screens.kusuwidgets
-import ipfun
+import kusu.screens.screenfactory
+import kusu.screens.navigator
+import kusu.screens.kusuwidgets
+import kusu.ipfun
 
 NAV_NOTHING = -1
 NAV_FORWARD = 0
@@ -374,7 +374,7 @@ class AddHostApp(KusuApp):
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Add Hosts - Version 5.0", wizardmode=False)
+        ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Add Hosts - Version 5.0", wizardmode=False)
         ks.run()
 
 """ AddHostPlugin class
@@ -875,7 +875,7 @@ class NodeInfo:
 global myNode
 myNode = NodeInfo(myNodeInfo.addHostPlugins)
 
-class ScreenActions(screens.screenfactory.BaseScreen, screens.navigator.PlatformScreen):
+class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
         
     def hotkeyCallback(self):
         """ hotkeyCallback()
@@ -904,7 +904,7 @@ class ScreenActions(screens.screenfactory.BaseScreen, screens.navigator.Platform
                     finishNodes.plugins_finished()
                 sys.exit(0)
 
-class NodeGroupWindow(ScreenActions, screens.screenfactory.BaseScreen, screens.navigator.PlatformScreen):
+class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
     title = "addhost_window_title_nodegroup"
     #name = 'Node Group'   # used for wizardmode sidebar
@@ -954,7 +954,7 @@ class NodeGroupWindow(ScreenActions, screens.screenfactory.BaseScreen, screens.n
         """
         pass
 
-class WindowSelectNode(ScreenActions, screens.screenfactory.BaseScreen, screens.navigator.PlatformScreen):
+class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
     title = "addhost_window_title_interface"
     msg = "addhost_instruction_interface"
@@ -1037,7 +1037,7 @@ class WindowSelectNode(ScreenActions, screens.screenfactory.BaseScreen, screens.
 
         return True, 'Success'
         
-class WindowNodeStatus(ScreenActions, screens.screenfactory.BaseScreen, screens.navigator.PlatformScreen):
+class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
     title = "addhost_window_title_installing"
     buttons = []
 
@@ -1148,13 +1148,13 @@ def i18nPrint(message, *args):
         sys.stderr.write(mesg)
 
             
-class ScreenFactoryImpl(screens.screenfactory.ScreenFactory):
+class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
        Navigator(or it's child) class.
     """
 
     def __init__(self, screenlist):
-        screens.screenfactory.ScreenFactory.screens = screenlist
+        kusu.screens.screenfactory.ScreenFactory.screens = screenlist
 
 if __name__ == '__main__':
     app = AddHostApp()
