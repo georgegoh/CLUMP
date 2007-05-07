@@ -96,7 +96,7 @@ partitionFlags = {
     'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
 }
 
-logger = getKusuLog('kusulog')
+logger = getKusuLog('partitiontool')
 
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
