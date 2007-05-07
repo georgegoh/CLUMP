@@ -38,6 +38,7 @@ class KusuInstaller(Navigator, KusuApp):
 if __name__ == '__main__':
     # Sets up kusu logging
     kl = kusulog.getKusuLog()
+    kl.addFileHandler()
 
     # kusu_dist = os.environ.get('KUSU_DIST', None)
     # if kusu_dist in ['rhel', 'fedora']:
