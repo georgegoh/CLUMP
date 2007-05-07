@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import kusudb
+import kusu.db
 import os
 import string
 
@@ -37,15 +37,16 @@ class AddHostPlugin:
 		pass # Silently fail
 
 	    # Convert to HEX each octal.
-	    ipaddress = result[0].split('.')
-	    for oct in ipaddress:
-                 hexaddress.append("%X" % int(oct))
-		 print "boothost.py: octal = int = %d, %x" % (int(oct), int(oct))
-	    ipstring = string.join(hexaddress, "")
-	    if os.path.isfile("/tftpboot/kusu/pxelinux.cfg/%s" % ipstring):
-		 print "boothost.py: Deleting: /tfpboot/kusu/pxelinux.cfg/%s" % ipstring
-		 os.system("rm -f /tftpboot/kusu/pxelinux.cfg/%s" % ipstring)
-		 return 0
-	    else:
-		 print "boothost.py: No PXE File /tftpboot/kusu/pxelinux.cfg/%s found." % ipstring
-		 return -1
+	    if ipaddress:  # Installer nodes may not have a PXE file?
+	        ipaddress = result[0].split('.')
+	        for oct in ipaddress:
+                     hexaddress.append("%X" % int(oct))
+		     print "boothost.py: octal = int = %d, %x" % (int(oct), int(oct))
+	             ipstring = string.join(hexaddress, "")
+	        if os.path.isfile("/tftpboot/kusu/pxelinux.cfg/%s" % ipstring):
+		    print "boothost.py: Deleting: /tfpboot/kusu/pxelinux.cfg/%s" % ipstring
+		    os.system("rm -f /tftpboot/kusu/pxelinux.cfg/%s" % ipstring)
+		    return 0
+	        else:
+		    print "boothost.py: No PXE File /tftpboot/kusu/pxelinux.cfg/%s found." % ipstring
+		    return -1
