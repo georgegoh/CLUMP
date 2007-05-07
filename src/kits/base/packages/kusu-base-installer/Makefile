@@ -72,6 +72,7 @@ install::
 	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusudb.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusuapp.py $(ROOT)/opt/kusu/lib/kusu
