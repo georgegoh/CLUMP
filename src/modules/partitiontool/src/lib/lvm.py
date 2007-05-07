@@ -289,6 +289,30 @@ class LogicalVolume(object):
     def __size(self):
         return (self.extents * self.group.extent_size)
 
+    def mount(self, mountpoint=None, readonly=False):
+        """Mounts this partition. If no mountpoint is given, then the
+           default mountpoint is used.
+        """
+        if not mountpoint:
+            mountpoint = self.mountpoint
+        args = ''
+        if readonly:
+            args = args + '-r'
+        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type, self.path, mountpoint, args),
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        logger.debug('Mount stdout: %s, stderr: %s' % (out, err))
+
+    def unmount(self):
+        """Unmounts this partition."""
+        p = subprocess.Popen('umount %s' % self.path,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+
     def format(self):
         if self.leave_unchanged:
             return

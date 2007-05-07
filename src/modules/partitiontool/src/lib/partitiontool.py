@@ -369,7 +369,7 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
-        #executeLVMFifo()
+        self.executeLVMFifo()
 
     def executeLVMFifo(self):
         execFifo()
