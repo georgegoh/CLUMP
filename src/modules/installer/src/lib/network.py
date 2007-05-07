@@ -11,7 +11,7 @@
 __version__ = "$Revision: 237 $"
 
 import socket
-import logging
+#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets

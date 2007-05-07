@@ -11,7 +11,7 @@ __version__ = "$Revision: 237 $"
 
 import __init__
 import os
-import logging
+#import logging
 import snack
 import gettext
 from gettext import gettext as _

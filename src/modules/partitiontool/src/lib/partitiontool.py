@@ -54,14 +54,15 @@
 
 """
 import math
-import logging
+#import logging
 import subprocess
 import parted
 import lvm
 from os.path import basename
 from kusuexceptions import *
 from lvm import *
-from kusu.util.log import getKusuLog
+#from kusu.util.log import getKusuLog
+import kusu.util.log as kusulog
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -96,7 +97,7 @@ partitionFlags = {
     'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
 }
 
-logger = getKusuLog('partitiontool')
+logger = kusulog.getKusuLog('partitiontool')
 
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
@@ -249,7 +250,7 @@ class DiskProfile(object):
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         disk = self.disk_dict[disk_id]
-        logging.debug('Add New Partition to Disk ID: ' + disk_id)
+        #logging.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
             new_partition = disk.createPartition(size, self.fsType_dict[fs_type], mountpoint)
         else:
@@ -352,7 +353,7 @@ class DiskProfile(object):
         for disk in self.disk_dict.itervalues():
             disk.commit()
         # now the partitions are actually created.
-        executeLVMFifo()
+        #executeLVMFifo()
 
     def execLVMFifo(self):
         execFifo()

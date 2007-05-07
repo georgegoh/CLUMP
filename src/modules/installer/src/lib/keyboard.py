@@ -10,7 +10,7 @@
 __versio__ = "$Revision: 237 $"
 
 import __init__
-import logging
+#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
