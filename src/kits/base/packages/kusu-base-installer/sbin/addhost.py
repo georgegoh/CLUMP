@@ -409,24 +409,23 @@ class AddHostPlugin:
     This class handles adding, deleting, updating, replacing, it also provides functionality to generate a node name. """
 class NodeInfo:
     def __init__(self, pluginlist=None, rack=0, nodegroup=None):
-        self.__rackNumber = rack  
-        self.__rankNumber = 0
-        self.__nodeGroupType = nodegroup
-        self.__nodeName = ""
-        self.__nodeList = []
-        self.__nodeFormat = ""
-        self.__rackCount = 0
-        self.__rankCount = 0
-        self.__isMasterInstaller = False
-        self.__primaryInstallerName = ""
-        self.__dbReadonly = KusuDB()
-        self.__dbRWrite = KusuDB()
-        self.__pluginList = pluginlist
-        self.newIPAddress = None
+        self._rackNumber = rack  
+        self._rankNumber = 0
+        self._nodeGroupType = nodegroup
+        self._nodeName = ""
+        self._nodeList = []
+        self._nodeFormat = ""
+        self._rankCount = 0
+        self._isMasterInstaller = False
+        self._primaryInstallerName = ""
+        self._dbReadonly = KusuDB()
+        self._dbRWrite = KusuDB()
+        self._pluginList = pluginlist
+        self._newIPAddress = None
                 
         # Do a try here
-        self.__dbReadonly.connect()
-        self.__dbRWrite.connect('kusudb', 'apache')
+        self._dbReadonly.connect()
+        self._dbRWrite.connect('kusudb', 'apache')
 
     def isNodenameHasRack(self):
         """isNodenameHasRack() - Public
@@ -435,16 +434,15 @@ class NodeInfo:
         
         flag = 0
         # Find special characters
-        for i in range (0, len(self.__nodeFormat)):
-             if self.__nodeFormat[i] == "#":
+        for i in range (0, len(self._nodeFormat)):
+             if self._nodeFormat[i] == "#":
                  flag = 1
                  continue
 
              if flag:
-                 if self.__nodeFormat[i] == 'R':
+                 if self._nodeFormat[i] == 'R':
                      return True
 
-        self.__rackCount = 0
         return False	
 
     def getNodeFormat(self):
@@ -452,11 +450,11 @@ class NodeInfo:
         Gets and sets the node format from database.
         """
         
-        self.__dbReadonly.execute("select nameformat from nodegroups where ngid=%s" % self.__nodeGroupType)
-        self.__nodeFormat = self.__dbReadonly.fetchone()[0]
+        self._dbReadonly.execute("select nameformat from nodegroups where ngid=%s" % self._nodeGroupType)
+        self._nodeFormat = self._dbReadonly.fetchone()[0]
 
-    def __hostNameParse(self):
-        """__hostNameParse()
+    def _hostNameParse(self):
+        """_hostNameParse()
         Parses the node format and generates the appropriate node name
         """
         
@@ -464,28 +462,28 @@ class NodeInfo:
         newString = []
         rackNum = 0 
         rankNum = 0
-        self.__nodeName = None
-        tmpR = "%s" % self.__rackNumber   # Use rack number, maybe 0 depending on node format.
-        tmpN = "%s" % self.__rankCount
+        self._nodeName = None
+        tmpR = "%s" % self._rackNumber   # Use rack number, maybe 0 depending on node format.
+        tmpN = "%s" % self._rankCount
 
         # Find special characters and count the number of each special character.
-        for i in range (0, len(self.__nodeFormat)):
-             if self.__nodeFormat[i] == "#":
+        for i in range (0, len(self._nodeFormat)):
+             if self._nodeFormat[i] == "#":
                  flag = 1
                  continue
 
              if flag == 1:
-                 if self.__nodeFormat[i] == 'N':
+                 if self._nodeFormat[i] == 'N':
                      flag = 2
                      rankNum += 1
-                 elif self.__nodeFormat[i] == 'R':
+                 elif self._nodeFormat[i] == 'R':
                      flag = 2
                      rackNum += 1
                  continue
 
-             if flag == 2 and self.__nodeFormat[i] == 'R' and rackNum:
+             if flag == 2 and self._nodeFormat[i] == 'R' and rackNum:
                  rackNum += 1
-             elif flag == 2 and self.__nodeFormat[i] == 'N' and rankNum:
+             elif flag == 2 and self._nodeFormat[i] == 'N' and rankNum:
                  rankNum += 1
              else:
                  flag = 0
@@ -495,23 +493,23 @@ class NodeInfo:
                  if rankNum:
                      newString += tmpN.zfill(rankNum)
                      rankNum = 0
-                 newString += self.__nodeFormat[i]
+                 newString += self._nodeFormat[i]
 
         if rackNum:
             newString += tmpR.zfill(rackNum)
         if rankNum:
             newString += tmpN.zfill(rankNum)
 
-        self.__nodeName = string.join(newString, "")
+        self._nodeName = string.join(newString, "")
 
-    def __getNodes (self):
-        """__getNodes()
+    def _getNodes (self):
+        """_getNodes()
         Gets the nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format
         """
         
         self.getNodeFormat()
-        self.__dbReadonly.execute("SELECT ngid from nodegroups WHERE nameformat='%s'" % self.__nodeFormat)
-        ngConflicts = self.__dbReadonly.fetchall()
+        self._dbReadonly.execute("SELECT ngid from nodegroups WHERE nameformat='%s'" % self._nodeFormat)
+        ngConflicts = self._dbReadonly.fetchall()
         
         # Build the SQL query since there many be more than one node group that has the same node group format.
         sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid AND ("
@@ -525,50 +523,50 @@ class NodeInfo:
 
         sqlquery += ") AND nodes.rack=%d ORDER BY nodes.rack, nodes.rank"
 
-        self.__dbReadonly.execute(sqlquery % self.__rackNumber)
-        data = self.__dbReadonly.fetchall()
+        self._dbReadonly.execute(sqlquery % self._rackNumber)
+        data = self._dbReadonly.fetchall()
 
         for info in data:
-             self.__nodeList.append(info[0])
-        self.__nodeList.sort()
-        return self.__nodeList, ngConflicts
+             self._nodeList.append(info[0])
+        self._nodeList.sort()
+        return self._nodeList, ngConflicts
 
-    def __getPrimaryInstaller(self):
-        """__getPrimaryInstaller()
+    def _getPrimaryInstaller(self):
+        """_getPrimaryInstaller()
         gets and sets the primary installer name
         """
         
-        self.__primaryInstallerName = self.__dbReadonly.getAppglobals('PrimaryInstaller')
+        self._primaryInstallerName = self._dbReadonly.getAppglobals('PrimaryInstaller')
                         
-    def __getNodeID (self, nodename):
-        """__getNodeID(nodename)
+    def _getNodeID (self, nodename):
+        """_getNodeID(nodename)
         Returns the node ID if found, otherwise false if nodename is the primary installer name, or not found in db
         """
-        self.__getPrimaryInstaller()
-        if nodename.strip() == self.__primaryInstallerName:
-            self.__isMasterInstaller = True
+        self._getPrimaryInstaller()
+        if nodename.strip() == self._primaryInstallerName:
+            self._isMasterInstaller = True
             return None
         try:
-            self.__dbReadonly.execute("SELECT nid from nodes WHERE nodes.name='%s'" % nodename)
-            self.__isMasterInstaller = False
-            return self.__dbReadonly.fetchone()[0]
+            self._dbReadonly.execute("SELECT nid from nodes WHERE nodes.name='%s'" % nodename)
+            self._isMasterInstaller = False
+            return self._dbReadonly.fetchone()[0]
         except:
              return None
     
-    def __getNodeInformation(self, nodename):
-        """__getNodeInformation(nodename)
+    def _getNodeInformation(self, nodename):
+        """_getNodeInformation(nodename)
         Returns node information: nodegroup id, node id, nic id, network id, ip address, mac address, node name
         """
         info = {}
         
-        self.__getPrimaryInstaller()
-        if nodename.strip() == self.__primaryInstallerName:
+        self._getPrimaryInstaller()
+        if nodename.strip() == self._primaryInstallerName:
             self.isMasterInstaller = True
             return None
-        self.__dbReadonly.execute("SELECT nodes.ngid, nodes.nid, nodes.name, nics.netid, nics.ip, nics.mac FROM nodes, nics \
+        self._dbReadonly.execute("SELECT nodes.ngid, nodes.nid, nodes.name, nics.netid, nics.ip, nics.mac FROM nodes, nics \
                                    WHERE nodes.name='%s' AND nodes.nid=nics.nid" % nodename)
 
-        data = self.__dbReadonly.fetchall()
+        data = self._dbReadonly.fetchall()
         
         for i in range(0, len(data)):
              info["%s" % data[i][2]] = {}
@@ -590,13 +588,13 @@ class NodeInfo:
         """newNode() - Public
         Returns a valid node not present in the kusu database. Use this function to create a new node.
         """
-        self.__nodeList, ngConflicts = self.__getNodes()
+        self._nodeList, ngConflicts = self._getNodes()
 
         # Check if the node format has a rack AND rank.
         self.isNodenameHasRack()
 
         # Build SQL query based on the node groups sharing the same node format.
-        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid AND (" % self.__rackNumber
+        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid AND (" % self._rackNumber
         for ngid in ngConflicts:
              sqlquery += "nodegroups.ngid=%d" % ngid
              if ngid:
@@ -607,38 +605,38 @@ class NodeInfo:
 
         sqlquery += ") ORDER BY nodes.rank"
 
-        self.__dbReadonly.execute(sqlquery)
-        data = self.__dbReadonly.fetchall()
+        self._dbReadonly.execute(sqlquery)
+        data = self._dbReadonly.fetchall()
         
         # If there's no RANK data found in query, then the rank starts from 0.
         if not len(data):
-            self.__rankCount = 0
+            self._rankCount = 0
         else:
             # Iterate though the list, increment the rack count if a previous number exists.
             for rankInfo in data:
-                 if rankInfo[0] == self.__rankCount:
-                     self.__rankCount += 1
+                 if rankInfo[0] == self._rankCount:
+                     self._rankCount += 1
                  else:
                      break
 
         # If there's no node name in the list. Generate a new one.
-        if not len(self.__nodeList):
-            self.__hostNameParse()
+        if not len(self._nodeList):
+            self._hostNameParse()
         else:
             # Iterate though list, generate a node, check if it exists already in the list. If it does, increment the rank number
             # Otherwise, return the new node name.
-            for nodeIdx in self.__nodeList:
-                 self.__hostNameParse()
-                 if self.__nodeName in self.__nodeList:
-                     self.__rankCount += 1
+            for nodeIdx in self._nodeList:
+                 self._hostNameParse()
+                 if self._nodeName in self._nodeList:
+                     self._rankCount += 1
                  else:
-                     self.__createNodeEntry(macaddr)
-                     return self.__nodeName
+                     self._createNodeEntry(macaddr)
+                     return self._nodeName
 
         # All existing nodes are consecutive, just create a new one (rank of 0).
-        self.__hostNameParse()
-        self.__createNodeEntry(macaddr)
-        return self.__nodeName
+        self._hostNameParse()
+        self._createNodeEntry(macaddr)
+        return self._nodeName
 
     def doUpdates(self):
         pass
@@ -649,49 +647,49 @@ class NodeInfo:
         """
         
         # We can't be the master installer
-        if not self.__isMasterInstaller:
-            nid = self.__getNodeID(nodename)
-            self.__deleteDHCPLease(nodename)
-            self.__dbRWrite.execute("DELETE FROM nics where nid='%s'" % nid)
-            self.__dbRWrite.execute("DELETE FROM nodes where nid='%s'" % nid)
+        if not self._isMasterInstaller:
+            nid = self._getNodeID(nodename)
+            self._deleteDHCPLease(nodename)
+            self._dbRWrite.execute("DELETE FROM nics where nid='%s'" % nid)
+            self._dbRWrite.execute("DELETE FROM nodes where nid='%s'" % nid)
 
-    def __isIPUsed(self, ipaddress):
-        self.__dbReadonly.execute("SELECT COUNT(*) FROM nics WHERE ip = '%s'" % ipaddress)
-        result = self.__dbReadonly.fetchone()[0]
+    def _isIPUsed(self, ipaddress):
+        self._dbReadonly.execute("SELECT COUNT(*) FROM nics WHERE ip = '%s'" % ipaddress)
+        result = self._dbReadonly.fetchone()[0]
         if int(result) == 0:
             return False
         return True
         
-    def __createNodeEntry(self, macaddr):
+    def _createNodeEntry(self, macaddr):
         """createNodeEntry()
         Create a node in the database.
         """            
-        self.__dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" % 
-        (self.__nodeGroupType, self.__nodeName, self.__rackNumber, self.__rankCount))
+        self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" % 
+        (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
         
-        nodeID = self.__getNodeID(self.__nodeName)
-        interfaces = self.__findInterfaces()
+        nodeID = self._getNodeID(self._nodeName)
+        interfaces = self._findInterfaces()
         # Iterate though list of interface devices.
         for nicdev in interfaces:
              NICInfo = interfaces[nicdev].split()
              networkID = NICInfo[0]
              subnetNetwork = NICInfo[1]
-             self.newIPAddress = NICInfo[2]
+             self._newIPAddress = NICInfo[2]
              IPincrement = int(NICInfo[3])
              
              while True:
-                 if self.__isIPUsed(self.newIPAddress):
-                      self.newIPAddress = ipfun.incrementIP(self.newIPAddress, IPincrement, subnetNetwork)
+                 if self._isIPUsed(self._newIPAddress):
+                      self._newIPAddress = ipfun.incrementIP(self._newIPAddress, IPincrement, subnetNetwork)
                  else:
                     break
                 
              # We're a DHCP/boot interface
              if nicdev == myNodeInfo.selectedInterface:
-                 self.__createNICBootEntry(nodeID, networkID, self.newIPAddress, 1, macaddr)
-                 self.__writeDHCPLease(self.newIPAddress, macaddr)
+                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
+                 self._writeDHCPLease(self._newIPAddress, macaddr)
              else:
              # Not a boot interface, just write out other info.
-                 self.__createNICBootEntry(nodeID, networkID, self.newIPAddress, 0)
+                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0)
 
     def replaceNodeEntry(self, nodename):
         """replaceNodeEntry(nodename)
@@ -699,11 +697,11 @@ class NodeInfo:
         Replaces an existing node, first by deleting the existing DHCP entry for the node since it contains the old mac address. 
         Then setting the MAC address to NULL so a new DHCP request may be done. 
         """
-        nid = self.__getNodeID(nodename)
-        if not self.__isMasterInstaller:
-            self.__deleteDHCPLease(nodename)
-            self.__dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
-            self.__dbRWrite.execute("UPDATE nodes SET state='Expired' WHERE nid='%s'" % nid)
+        nid = self._getNodeID(nodename)
+        if not self._isMasterInstaller:
+            self._deleteDHCPLease(nodename)
+            self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
+            self._dbRWrite.execute("UPDATE nodes SET state='Expired' WHERE nid='%s'" % nid)
             return True
         else:
             print "Error: Cannot replace the primary installer!!!!"
@@ -713,26 +711,26 @@ class NodeInfo:
         """replaceNICBootEntry(nodename, macaddress)
         Replaces nics table containing new mac address for replaced node
         """
-        nid = self.__getNodeID(nodename)
-        self.__dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = 1" % (macaddress, nid))
-        self.__dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
-        data = self.__dbReadonly.fetchone()[0]
-        self.__nodeName = nodename
+        nid = self._getNodeID(nodename)
+        self._dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = 1" % (macaddress, nid))
+        self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
+        data = self._dbReadonly.fetchone()[0]
+        self._nodeName = nodename
         # Recreate DHCP lease, this time using the new mac address found
-        self.__writeDHCPLease(data, macaddress)
+        self._writeDHCPLease(data, macaddress)
             
-    def __createNICBootEntry(self, nodeid, networkid, ipaddress, bootflag, macaddress=None):
+    def _createNICBootEntry(self, nodeid, networkid, ipaddress, bootflag, macaddress=None):
         """createNICBootEntry(nodeid, networkid, ipaddress, bootflag, macaddress)
         Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
         will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from.
         """
         
         if macaddress:
-            self.__dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
+            self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
-            self.__dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
+            self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
    
-    def __writeDHCPLease(self, ipaddr, macaddr):
+    def _writeDHCPLease(self, ipaddr, macaddr):
         """writeDHCPLease(ipaddr, macaddr)
         Use DHCP's API to create a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file
         """
@@ -742,7 +740,7 @@ class NodeInfo:
         tochild.flush()
         tochild.write("new host\n")
         tochild.flush()
-        tochild.write('set name = "%s"\n' % self.__nodeName)
+        tochild.write('set name = "%s"\n' % self._nodeName)
         tochild.flush()
         tochild.write("set hardware-address = %s\n" % macaddr)
         tochild.flush()
@@ -755,7 +753,7 @@ class NodeInfo:
         tochild.close()
         fromchild.close()
 
-    def __deleteDHCPLease(self, nodename):
+    def _deleteDHCPLease(self, nodename):
         """writeDHCPLease(nodename)
         Use DHCP's API to delete a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file
         """
@@ -774,26 +772,26 @@ class NodeInfo:
         fromchild.close()
     
     def findMACAddress(self, macaddr):
-        self.__dbReadonly.execute("SELECT mac FROM nics WHERE mac='%s'" % macaddr)
+        self._dbReadonly.execute("SELECT mac FROM nics WHERE mac='%s'" % macaddr)
         try:
-          result = self.__dbReadonly.fetchone()[0] 
+          result = self._dbReadonly.fetchone()[0] 
           # Mac address exists
           return True
         except:
           # Mac address does not exist
           return False
         
-    def __findInterfaces(self):
+    def _findInterfaces(self):
         """findInterfaces()
         Returns a dictionary containing Networks ID number, Subnetwork, Starting IP Address and IP Increment value.
         The dictionary uses the device name as its key item[1].
         """
         
         interfaceInfo = {}
-        self.__dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc FROM \
+        self._dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc FROM \
                                    networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s AND \
-                                   networks.usingdhcp = 0" % self.__nodeGroupType)
-        data = self.__dbReadonly.fetchall()
+                                   networks.usingdhcp = 0" % self._nodeGroupType)
+        data = self._dbReadonly.fetchall()
         for item in data:
              interfaceInfo[item[1]] = "%d %s %s %s" % (item[0], item[2], item[3], item[4])
         return interfaceInfo
@@ -802,9 +800,9 @@ class NodeInfo:
         """findBootDevice() - Public
         Returns the boot device that has its boot flag set to 1
         """
-        nid = self.__getNodeID(nodename)
-        self.__dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
-        data = self.__dbReadonly.fetchone()
+        nid = self._getNodeID(nodename)
+        self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
+        data = self._dbReadonly.fetchone()
         return data[0]
 
     # Plugin call actions
@@ -813,27 +811,27 @@ class NodeInfo:
         Call all Add host plugins added() method
         """
         
-        info = self.__getNodeInformation(nodename)
+        info = self._getNodeInformation(nodename)
         print "DEBUG: Calling added() method from plugins"
-        for plugin in self.__pluginList:
+        for plugin in self._pluginList:
              # Does this AddHostPlugin instance have a added() method? If so, execute it.
              if callable(getattr(plugin, "added", None)):
-                 plugin.added(self.__dbReadonly, nodename, info)
+                 plugin.added(self._dbReadonly, nodename, info)
          
     def plugins_removed(self, nodename):
         """plugins_removed(nodename)
         Call all Add host plugins removed() method
         """
         
-        self.__getPrimaryInstaller()
-        info = self.__getNodeInformation(nodename)
+        self._getPrimaryInstaller()
+        info = self._getNodeInformation(nodename)
         # We can't remove the master installer
         print "DEBUG: Calling removed() method from plugins"
-        if not self.__isMasterInstaller:
-            for plugin in self.__pluginList:
+        if not self._isMasterInstaller:
+            for plugin in self._pluginList:
                  # Does this AddHostPlugin instance have a removed() method? If so, execute it.
                  if callable(getattr(plugin, "removed", None)):
-                     plugin.removed(self.__dbReadonly, nodename, info)
+                     plugin.removed(self._dbReadonly, nodename, info)
         else:
             print "Error: You cannot remove the master installer!"
             
@@ -841,16 +839,16 @@ class NodeInfo:
         """plugins_replaced(nodename)
         Call all Add host plugins replaced() method
         """
-        self.__getPrimaryInstaller()
-        info = self.__getNodeInformation(nodename)
+        self._getPrimaryInstaller()
+        info = self._getNodeInformation(nodename)
         
         # We can't replace the master installer
         print "DEBUG: Calling replaced() method from plugins"
-        if not self.__isMasterInstaller:
-            for plugin in self.__pluginList:
+        if not self._isMasterInstaller:
+            for plugin in self._pluginList:
                  # Does this AddHostPlugin instance have a replaced() method If so, execute it.
                  if callable(getattr(plugin, "replaced", None)):
-                     plugin.replace(self.__dbReadonly, info)
+                     plugin.replace(self._dbReadonly, info)
         else:
             print "Error: You cannot replace the master installer itself!"
             
@@ -859,20 +857,20 @@ class NodeInfo:
         Call all Add host plugins finished() method
         """
         print "DEBUG: Calling finished() method from plugins"
-        for plugin in self.__pluginList:
+        for plugin in self._pluginList:
              # Does this AddHostPlugin instance have a finished() method If so, execute it.
              if callable(getattr(plugin, "finished", None)):
-                 plugin.finished(self.__dbReadonly)
+                 plugin.finished(self._dbReadonly)
     
     def plugins_updated(self):
         """plugins_updated()
         Call all Add host plugins updated() method
         """
         print "DEBUG: Calling updated() method from plugins"
-        for plugin in self.__pluginList:
+        for plugin in self._pluginList:
              # Does this AddHostPlugin instance have a update() method If so, execute it.
              if callable(getattr(plugin, "update", None)):
-                 plugin.updated(self.__dbReadonly)
+                 plugin.updated(self._dbReadonly)
 
 global myNode
 myNode = NodeInfo(myNodeInfo.addHostPlugins)
