@@ -44,6 +44,7 @@ class BaseScreen(object):
         """Children should implement this if there are any buttons that
            require callbacks.
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
 
     def drawImpl(self):
         """(Abstract)
@@ -52,6 +53,7 @@ class BaseScreen(object):
         Don't draw the buttons as well, this is already done for you.
         
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
 
     def draw(self, screen, selector):
         """Template pattern method for drawing a screen
@@ -113,6 +115,8 @@ class BaseScreen(object):
             True if callback was handled.
             False if callback was not handled.
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
+
 
 class ScreenFactory(object):
     """Contains a number of screens used/navigated by the KusuInstaller class.
