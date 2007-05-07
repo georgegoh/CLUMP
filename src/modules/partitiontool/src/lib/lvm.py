@@ -234,6 +234,7 @@ class LogicalVolume(object):
     fs_type = None
     mountpoint = None
     on_disk = None
+    leave_unchanged = False
 
     def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
