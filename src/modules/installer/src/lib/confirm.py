@@ -102,19 +102,23 @@ class ConfirmScreen(screenfactory.BaseScreen):
                                           text='If you click yes, then your disks will be formatted.\n' + \
                                                'You cannot recover data on a disk once it has been formatted.')
         if result == 'ok':
+            mntpnt = '/mnt/kusu'
+
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
             self.logger.debug('Formatted Disks.')
             self.setupNetwork()
             self.logger.debug('Network set up.')
-            self.copyKits(disk_profile)
+            self.mountKusuMntPts(mntpnt, disk_profile)
+            self.logger.debug('Kusu mount points set up')
+            self.copyKits(mntpnt)
             self.logger.debug('Kits copied.')
             #self.makeRepo()
             self.genAutoInstallScript(disk_profile)
             self.logger.debug('Auto install script generated.')
             self.database.close()
             self.logger.debug('Closed database connection.')
-            self.migrate(disk_profile)
+            self.migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
 
     def formatDisk(self, disk_profile):
@@ -134,38 +138,17 @@ class ConfirmScreen(screenfactory.BaseScreen):
         interface.up()
         interface = interface.setDHCP()
        
-    def copyKits(self, disk_profile):
+    def copyKits(self, prefix):
         # Assume a Fedora 6 repo
         # Assume a fedora 6 distro: /mnt/sysimage
-        import subprocess
-        import os
         from path import path
         from kusu.util import util
 
-        #def mount_dir(disk_profile, mntpnt, repo_dir):
-        #    for disk in disk_profile.disk_dict.values():
-        #        for id, p in disk.partition_dict.items():
-        #            #print id, p.path, p.mountpoint, fs_type, p.type
-        #            if p.mountpoint == mntpnt: 
-        #                cmd = 'mount -t %s %s %s' % (p.fs_type, p.path, repo_dir)
-        #                self.logger.debug(cmd)
-        #                os.system(cmd)
-                    
-
         url = str(self.database.get('Kits', 'FedoraURL')[0])
 
-        # Mount /repo for now
-        repo_dir = path('/mnt/kusu/depot')
-        repo_dir.makedirs()
-
-        for disk in disk_profile.disk_dict.values():
-            for id, p in disk.partition_dict.items():
-                if p.mountpoint == '/depot':
-                    p.mount(repo_dir)
-                    break
-
+        prefix = path(prefix)
         util.verifyDistro(url, 'fedora', '6')
-        util.copy(url, repo_dir)
+        util.copy(url, prefix + '/depot')
 
         
     def makeRepo(self):
@@ -207,35 +190,11 @@ class ConfirmScreen(screenfactory.BaseScreen):
         script.setProfile(k)
         script.write(install_script)
 
-    def migrate(self, disk_profile):
+    def migrate(self, prefix):
         from path import path
         import os
 
-        dest = path('/mnt/kusu/root')
-        
-        if not dest.exists():
-            dest.makedirs()
-
-        # Search for /root first, followed by /
-        rootPartition = None
-        for disk in disk_profile.disk_dict.values():
-                for id, p in disk.partition_dict.items():
-                    if p.mountpoint == '/root':
-                        rootPartition = p
-                        break;
-                    if p.mountpoint == '/':
-                        rootPartition = p
-
-        if rootPartition:
-            rootPartition.mount(dest)
-            
-            # Need to make /root, if it's only /
-            if rootPartition.mountpoint == '/':
-                dest = dest / 'root'
-                dest.makedirs(mode=750)
-                
-        else:
-            raise Exception, '/root partition not found'
+        dest = path(prefix) + '/root'
         
         kusu_tmp = os.environ.get('KUSU_TMP', None)
         kusu_log = os.environ.get('KUSU_LOGFILE', None)
@@ -254,8 +213,27 @@ class ConfirmScreen(screenfactory.BaseScreen):
                 self.logger.debug('Moved %s -> %s' % (f, dest))
                 f.move(dest)
 
-        rootPartition.unmount()
+    def mountKusuMntPts(self, prefix, disk_profile):
+        from path import path
+ 
+        prefix = path(prefix)
 
+        d = {}
+        for disk in disk_profile.disk_dict.values():
+            for id, p in disk.partition_dict.items():
+                d[p.mountpoint] = p
+        
+        # Mount /, /root, /depot in order
+        for m in ['/', '/root', '/depot']:
+            mntpnt = prefix + m
 
-
+            if not mntpnt.exists():
+                mntpnt.makedirs()
+                self.logger.debug('Made %s dir' % mntpnt)
+            
+            # mountpoint has an associated partition,
+            # and mount it at the mountpoint
+            if d.has_key(m):
+                d[m].mount(mntpnt)
+                self.logger.debug('Mounted %s on %s' % (d[m].mountpoint, mntpnt))
 
