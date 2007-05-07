@@ -111,9 +111,10 @@ class thisReport(dbreport.Report):
                     for row in dhcpdata:
                         print '\thost %s {' % row[0]
                         print '\t\thardware ethernet %s;' % row[2]
-                        print '\t\toption host-name "%s"' % row[0]
-                        print '\t\tfixed-address %s' % row[1]
+                        print '\t\toption host-name "%s";' % row[0]
+                        print '\t\tfixed-address %s;' % row[1]
                         print '\t}'
 
                 print '}'
-        
+        else:
+	    print "# This machine is not the primary installer" 

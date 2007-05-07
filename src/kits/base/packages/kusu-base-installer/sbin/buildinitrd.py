@@ -55,6 +55,8 @@ class BuildInitrd:
         self.gettext     = 0
         self.imagedir    = ''     # Location of the initial ram disk image
         self.moduledir   = ''     # Location of the tempory module directory
+        self.modlink     = ''     # Symbolic link to self.moduledir  (fix for depmod.pl bug)
+        self.initlink    = ''     # Symbolic link to self.imagedir   (fix for depmod.pl bug)
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
@@ -154,8 +156,11 @@ class BuildInitrd:
         else:
             template = self.initrd32
 
-        self.imagedir = os.path.join(idir, '%s-initrd' % self.nodegroup)
+        self.imagedir  = os.path.join(idir, '%s-initrd' % self.nodegroup)
         self.moduledir = os.path.join(idir, '%s-modules' % self.nodegroup)
+        self.modlink   = os.path.join(idir, 'modules')
+        self.initlink  = os.path.join(idir, 'initrd')
+        
         if not os.path.exists(idir):
             os.system('mkdir -p %s' % idir)
             
@@ -171,7 +176,19 @@ class BuildInitrd:
                 self.stdoutout("Removing: %s\n", self.moduledir)
             os.system('rm -rf \"%s\"' % self.moduledir)
         os.mkdir(self.moduledir, 0700)
-        
+
+        # Make symbolic links to the directories, because depmod.pl can't
+        # have spaces in the path.
+        if os.path.lexists(self.modlink):
+            os.unlink(self.modlink)
+
+        if os.path.lexists(self.initlink):
+            os.unlink(self.initlink)
+
+        os.system('ln -s \"%s\" %s' % (self.moduledir, self.modlink))
+        os.system('ln -s \"%s\" %s' % (self.imagedir, self.initlink))
+
+        # Extract the template
         os.chdir(self.imagedir)
         if self.stdoutout:
                 self.stdoutout("Extracting template Initial Ram Disk\n")
@@ -328,29 +345,42 @@ class BuildInitrd:
 
         # Add the entry to startup imageinit.py at boot (Too lazy to open write close)
         os.chdir(self.imagedir)
-        os.system('echo "null::sysinit:/imageinit.py" >> etc/inittab')
+        # os.system('echo "null::sysinit:/imageinit.py" >> etc/inittab')
+        os.system('rm -rf init')
+        os.system('cp /opt/kusu/etc/imageinit.sh init')
+        os.system('chmod 755 init')
+
 
         # Add the entry to switch the root filesystem
-        os.system('echo "null::sysinit:/sbin/switch_root /newroot /sbin/init" >> etc/inittab')
+        # os.system('echo "null::sysinit:/sbin/switch_root /newroot /sbin/init" >> etc/inittab')
 
         # Change the /etc/issue
         os.system('echo "Kusu Initial Ram Disk" > etc/issue')
         
         # Locate the System map, then run depmod
-        pattern = ''
+        os.chdir(self.imagedir)
+        pattern  = ''
+        pattern2 = ''
         if self.ostype == 'Fedora6.0':    # Get the real types from Alex
-            pattern = os.path.join(self.moduledir, 'boot/System.map*')
+            pattern  = os.path.join(self.modlink, 'boot/System.map*')
+            pattern2 = os.path.join(self.initlink, 'lib/modules/2*')
             
         if pattern:
-            flist = glob.glob(pattern)
-            if len(flist) > 0:
-                os.system('/opt/kusu/etc/depmod.pl -e -b \"%s\" -F \"%s\"' % (self.imagedir, flist[0]))
+            flist  = glob.glob(pattern)
+            flist2 = glob.glob(pattern2)
+            if len(flist) > 0 and len(flist2) > 0:
+                os.system('/opt/kusu/etc/depmod.pl -b %s -F %s' % (flist2[0], flist[0]))
                 return
 
-        if self.stderrout:
-            self.stderrout("WARNING: Unable to use System.map to verify module symbols\n")
+            if len(flist2) > 0:
+                if self.stderrout:
+                    self.stderrout("WARNING: Unable to use System.map to verify module symbols\n")
 
-        os.system('/opt/kusu/etc/depmod.pl -b \"%s" ' % (self.imagedir))
+                os.system('/opt/kusu/etc/depmod.pl -b %s -k /tftpboot/kusu/%s' % (flist2[0], self.kernel))
+                
+        else:
+            print "Unsupported OS!  Fix me!"
+
 
 
     def compactInitrd(self, type):

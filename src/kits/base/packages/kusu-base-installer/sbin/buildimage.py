@@ -29,7 +29,6 @@ KUSUPOSTSCRIPT='/etc/rc.kusu.sh'
 
 import os
 import sys
-import string
 from optparse import OptionParser
 from kusu.kusuapp import KusuApp
 from kusu.kusudb import KusuDB
@@ -239,8 +238,8 @@ class BuildImage:
         os.system('touch \"%s/etc/fstab\"' % self.imagedir)
         os.system('mknod \"%s/dev/null\" c 1 3 >/dev/null 2>&1' % self.imagedir)
 
-        print "repoid = %s" % self.repoid
-        print "repodir = %s" % self.repodir
+        # print "repoid = %s" % self.repoid
+        # print "repodir = %s" % self.repodir
 
         # Create the yum config file
         yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
@@ -267,6 +266,22 @@ class BuildImage:
         post installation scripts.  It then runs the custom scripts"""
 
         print "Running post installation script(s)"
+
+        # Copy Passwd and shadow
+        os.system('cp /etc/passwd \"%s/etc/passwd\"' % self.imagedir)
+        os.system('cp /etc/shadow \"%s/etc/shadow\"' % self.imagedir)
+
+        # Create the initial /etc/fstab entry
+        fstabent = []
+        fstabent.append('# Created by buildimage.  Append your own lines\n')
+        fstabent.append('devpts\t\t\t/dev/pts\t\tdevpts\tgid=5,mode=620\t0 0\n')
+        fstabent.append('tmpfs\t\t\t/dev/shm\t\ttmpfs\tdefaults\t0 0\n')
+        fstabent.append('proc\t\t\t/proc\t\tproc\tdefaults\t0 0\n')
+        fstabent.append('sysfs\t\t\t/sys\t\tsysfs\tdefaults\t0 0\n')
+        fp = open('%s/etc/fstab' % self.imagedir, 'w')
+        fp.writelines(fstabent)
+        fp.close()
+        
         query = ('select script from scripts where ngid="%s"' % self.ngid)
         try:
             self.db.execute(query)
@@ -320,8 +335,10 @@ class BuildImage:
 
         os.chdir(self.imagedir)
         os.system('tar cfj \"../%s.img.tar.bz2\" .' % self.ngid )
-        os.system('rm -rf \"%s\"' %  self.imagedir)
         os.system('chown apache:apache \"../%s.img.tar.bz2\"' % self.ngid )
+        os.chdir('/tmp')
+        os.system('rm -rf \"%s\"' %  self.imagedir)
+
 
 
 
