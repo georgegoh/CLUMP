@@ -222,7 +222,10 @@ class ConfirmScreen(screenfactory.BaseScreen):
         for disk in disk_profile.disk_dict.values():
             for id, p in disk.partition_dict.items():
                 d[p.mountpoint] = p
-        
+       
+        for lv in disk_profile.lv_dict.values():
+            d[lv.mountpoint] = lv
+ 
         # Mount /, /root, /depot in order
         for m in ['/', '/root', '/depot']:
             mntpnt = prefix + m
