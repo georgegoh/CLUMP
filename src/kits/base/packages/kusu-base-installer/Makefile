@@ -68,7 +68,7 @@ install::
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
-	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport.py
+	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/kusu
