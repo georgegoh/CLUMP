@@ -25,7 +25,7 @@
       b) name collisions with an existing LV; and
       c) mountpoint collisions with an existing volume.
 """
-import commands
+import subprocess
 from kusuexceptions import *
 import lvm202 as lvm
 from kusu.util.log import getKusuLog
@@ -223,9 +223,9 @@ class LogicalVolumeGroup(object):
         if logicalVol.isInUse():
             raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
                   'Logical Volume ' + logicalVol.name + ' is still in use.'
-        logicalVol.group = None
         del self.lv_dict[logicalVol.name]
         queueCommand(lvm.removeLogicalVolume, (logicalVol.path))
+        logicalVol.group = None
 
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
@@ -272,7 +272,7 @@ class LogicalVolume(object):
         if name == 'size':
             return self.__size()
         elif name == 'path':
-            return '/dev/' + group.name + '/' + name
+            return '/dev/' + self.group.name + '/' + self.name
         else:
             raise AttributeError, "%s instance has no attribute '%s'" % \
                                   (self.__class__, name)
@@ -294,21 +294,21 @@ class LogicalVolume(object):
             return
 
         if self.fs_type == 'ext2':
-            print 'Make ext2 fs on', self.path
+            logger.info('Making ext2 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            print 'Make ext3 fs on', self.path
+            logger.info('Making ext3 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            print 'Make swap fs on', self.path
+            logger.info('Making swap fs on %s' % self.path)
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,

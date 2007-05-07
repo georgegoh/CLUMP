@@ -81,7 +81,7 @@ class PartitionScreen(screenfactory.BaseScreen):
             lvg_size_MB = lvg.extentsTotal() * lvg.extent_size / (1024 * 1024)
             # display volume groups first in listbox
             self.listbox.addRow(['VG ' + key, '', '', str(lvg_size_MB), 'VolGroup',
-                                 ''], key)
+                                 ''], lvg)
             lv_keys = lvg.lv_dict.keys()
             for lv_key in sorted(lv_keys):
                 lv = self.disk_profile.lv_dict[lv_key]

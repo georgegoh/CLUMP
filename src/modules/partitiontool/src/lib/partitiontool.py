@@ -243,6 +243,20 @@ class DiskProfile(object):
         partition = disk.partition_dict[partition_number]
         return partition
 
+    def delete(self, deviceObj):
+        """Polymorphic delete function."""
+        logger.debug('Device %s of type %s' % (str(deviceObj), str(type(deviceObj))))
+        if type(deviceObj) is Partition:
+            self.deletePartition(deviceObj)
+        elif type(deviceObj) is LogicalVolumeGroup:
+            self.deleteLogicalVolumeGroup(deviceObj)
+        elif type(deviceObj) is LogicalVolume:
+            self.deleteLogicalVolume(deviceObj)
+        elif type(deviceObj) is Disk:
+            pass
+        else:
+            raise KusuError, "Uknown device type"
+
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
         # sanity check
@@ -313,10 +327,12 @@ class DiskProfile(object):
             if pv.isInUse():
                 raise PhysicalVolumeStillInUseError
 
-        for lv in lvg.lv_dict.intervalues():
+        lv_list = lvg.lv_dict.values()
+        for lv in lv_list:
             lvg.delLogicalVolume(lv)
 
-        for pv in lvg.pv_dict.intervalues():
+        pv_list = lvg.pv_dict.values()
+        for pv in pv_list:
             lvg.delPhysicalVolume(pv)
 
         del self.lvg_dict[lvg.name]
@@ -355,7 +371,7 @@ class DiskProfile(object):
         # now the partitions are actually created.
         #executeLVMFifo()
 
-    def execLVMFifo(self):
+    def executeLVMFifo(self):
         execFifo()
 
     def printLVMFifo(self):
@@ -760,21 +776,21 @@ class Partition(object):
             return
 
         if self.fs_type == 'ext2':
-            logger.debug('Make ext2 fs on %s' % self.path)
+            logger.info('Making ext2 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            logger.debug('Make ext3 fs on %s' % self.path)
+            logger.info('Making ext3 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            logger.debug('Make swap fs on %s' % self.path)
+            logger.info('Making swap fs on %s' % self.path)
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,

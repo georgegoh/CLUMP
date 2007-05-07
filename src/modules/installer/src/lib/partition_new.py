@@ -46,8 +46,11 @@ def createNew(baseScreen):
     gridForm.add(subgrid, 0,2)
 
     gridForm.draw()
-    gridForm.run()
+    exitCmd = gridForm.run()
     screen.popWindow()
+    if exitCmd is cancel_button:
+        return NAV_NOTHING
+
     scr=None
     while True:
         try:

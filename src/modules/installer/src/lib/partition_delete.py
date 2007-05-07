@@ -29,17 +29,7 @@ def deleteDevice(baseScreen):
     selected_device = listbox.current()
 
     try:
-        if selected_device in diskProfile.lvg_dict.keys():
-            raise partitiontool.KusuError, "Alpha can only work with primary, extended and logical partitions."
-        elif selected_device in diskProfile.lv_dict.keys():
-            raise partitiontool.KusuError, "Alpha can only work with primary, extended and logical partitions."
-        elif selected_device in diskProfile.disk_dict.keys():
-            print 'Disk'
-        elif type(selected_device) is partitiontool.Partition:
-            diskProfile.deletePartition(selected_device)
-        else:
-            raise partitiontool.KusuError, "Cannot identify selected device."
-
+        diskProfile.delete(selected_device)
     except partitiontool.KusuError, e:
         msgbox = snack.GridForm(screen, 'Error', 1, 2)
         text = snack.TextboxReflowed(30, str(e))

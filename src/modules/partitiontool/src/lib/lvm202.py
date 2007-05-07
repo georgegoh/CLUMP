@@ -158,4 +158,4 @@ def createLogicalVolume(vg_name, lv_name, lv_size):
 
 
 def removeLogicalVolume(lv_path):
-    out, err = runCommand('lvm lvremove %s' % lv_path)
+    out, err = runCommand('lvm lvremove -f %s' % lv_path)
