@@ -17,8 +17,13 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
-# setups our environment and launcher the Kusu Installer
+# setups our environment
 source /opt/kusu/bin/kusuenv.sh
+
+# setup /tmp/kusu
+/usr/bin/mkdir -p $KUSU_TMP
+
+# launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/installer
 
 if [ $? -eq 0 ]; then 
