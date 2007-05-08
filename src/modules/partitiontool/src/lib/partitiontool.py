@@ -342,9 +342,9 @@ class DiskProfile(object):
         """Create a new logical volume."""
         # sanity checks
         if name in self.lv_dict.keys():
-            raise DuplicateNameError, _('Logical Volume name already exists.')
+            raise DuplicateNameError, 'Logical Volume name already exists.'
         if mountpoint in self.mountpoint_dict.keys():
-            raise DuplicateMountpointError, _('Assigned mountpoint already exists.')
+            raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         new_lv = lvg.createLogicalVolume(name, long(size_MB), fs_type, mountpoint)
         self.lv_dict[name] = new_lv
