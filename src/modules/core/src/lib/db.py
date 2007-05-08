@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-#  $Id: kusudb.py 279 2007-04-12 19:53:16Z atumanov $
+#  $Id$
 #
 #  Copyright 2007 Platform Computing Corporation
 #

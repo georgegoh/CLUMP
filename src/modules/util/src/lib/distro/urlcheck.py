@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: urlcheck.py 203 2007-03-29 12:18:16Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Corporation.
 #

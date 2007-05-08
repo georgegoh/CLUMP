@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: kusuapp.py 245 2007-04-09 22:54:52Z atumanov $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

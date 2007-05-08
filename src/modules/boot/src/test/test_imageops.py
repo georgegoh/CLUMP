@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: test_imageops.py 209 2007-04-02 05:28:53Z najib $
+# $Id$
 #
 # Copyright 2007 Platform Computing Corporation.
 #

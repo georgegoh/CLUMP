@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: template.py 196 2007-03-29 08:03:42Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Corporation.
 #

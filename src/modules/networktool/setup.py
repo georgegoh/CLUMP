@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: setup.py 311 2007-04-17 13:45:20Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Corporation.
 #

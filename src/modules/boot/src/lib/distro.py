@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: distro.py 194 2007-03-29 07:36:10Z najib $
+# $Id$
 # 
 # Copyright 2007 Platform Computing Corporation.
 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: network.py 197 2007-03-29 09:34:52Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Corporation.
 #
