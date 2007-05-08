@@ -7,11 +7,8 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
-__version__ = "$Revision: 237 $"
 
 import socket
-#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
@@ -51,36 +48,47 @@ class NetworkScreen(screenfactory.BaseScreen):
         screenfactory.BaseScreen. Initialise button callbacks here.
         """
 
-        self.buttonsDict[_('Configure')].setCallback_(self.configureIntf)
+        self.buttonsDict[_('Configure')].setCallback_(\
+            ConfigureIntfScreen.configureIntf, (ConfigureIntfScreen(self), ))
+
+class ConfigureIntfScreen:
+
+    def __init__(self, baseScreen):
+        self.baseScreen = baseScreen
+        self.screen = baseScreen.screen
+        self.selector = baseScreen.selector
+        self.database = baseScreen.database
+        self.context = baseScreen.context
 
     def configureIntf(self):
         # listbox stores interface names as string objects (ie 'eth0')
-        intf = self.listbox.current()
+        self.intf = self.baseScreen.listbox.current()
 
         gridForm = snack.GridForm(self.screen,
-                                   _('Configuring [%s]' % intf), 1, 3)
+                                   _('Configuring [%s]' % self.intf), 1, 3)
 
         # DHCP/activate on boot checkboxes
-        use_dhcp = snack.Checkbox(_('Configure using DHCP'), isOn=1)
-        active_on_boot = snack.Checkbox(_('Activate on boot'), isOn=1)
+        self.use_dhcp = snack.Checkbox(_('Configure using DHCP'), isOn=1)
+        self.active_on_boot = snack.Checkbox(_('Activate on boot'), isOn=1)
 
         # IP address/netmask text fields
         entryWidth = 22
-        ip_address = kusuwidgets.LabelledEntry(labelTxt=_('IP Address '),
-                                               width=entryWidth)
-        ip_address.addCheck(kusuwidgets.verifyIP)
-        netmask = kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(11)),
-                                            width=entryWidth)
-        netmask.addCheck(kusuwidgets.verifyIP)
+        self.ip_address = kusuwidgets.LabelledEntry(labelTxt=_('IP Address '),
+                                                    width=entryWidth)
+        self.ip_address.addCheck(kusuwidgets.verifyIP)
+        self.netmask = \
+            kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(11)),
+                                      width=entryWidth)
+        self.netmask.addCheck(kusuwidgets.verifyIP)
 
         # initialize fields with data from database or reasonable defaults
-        self.populateIPs(intf, use_dhcp, active_on_boot, ip_address, netmask)
+        self.populateIPs()
 
         subgrid = snack.Grid(1, 4)
-        subgrid.setField(use_dhcp, 0, 0, (0, 1, 0, 1), anchorLeft=1)
-        subgrid.setField(ip_address, 0, 1, anchorLeft=1)
-        subgrid.setField(netmask, 0, 2, anchorLeft=1)
-        subgrid.setField(active_on_boot, 0, 3, (0, 1, 0, 1), anchorLeft=1)
+        subgrid.setField(self.use_dhcp, 0, 0, (0, 1, 0, 1), anchorLeft=1)
+        subgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
+        subgrid.setField(self.netmask, 0, 2, anchorLeft=1)
+        subgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 1), anchorLeft=1)
         gridForm.add(subgrid, 0, 1)
 
         # add OK and Cancel buttons
@@ -92,33 +100,129 @@ class NetworkScreen(screenfactory.BaseScreen):
         gridForm.add(subgrid, 0, 2)
 
         # add callback for toggling static IP fields
-        use_dhcp.setCallback(toggleEnabled, (use_dhcp, ip_address, netmask))
-        toggleEnabled((use_dhcp, ip_address, netmask))
+        self.use_dhcp.setCallback(enabledByValue, (self.use_dhcp,
+                                   self.ip_address, self.netmask))
+        enabledByValue((self.use_dhcp, self.ip_address, self.netmask))
 
-        # all done, draw and run
-        gridForm.draw()
-        exitCmd = gridForm.run()
+        while True:
+            # all done, draw and run
+            gridForm.draw()
+            exitCmd = gridForm.run()
+
+            if exitCmd is ok_button:
+                if self.configureIntfVerify():
+                    self.configureIntfOK()
+                    break
+
+            if exitCmd is cancel_button:
+                    break
+
         self.screen.popWindow()
-
-        if exitCmd is ok_button:
-            # store information
-            pass
-
         return NAV_NOTHING
 
-    def populateIPs(self, intf, use_dhcp, active_on_boot, ip_address, netmask):
+    def configureIntfVerify(self):
+        if self.use_dhcp.value():
+            return True
+
+        errList = []
+
+        rv, msg = self.ip_address.verify()
+        if rv is None:
+            errList.append(_('IP address field is empty.'))
+        elif not rv:
+            errList.append(_('IP address: ') + msg)
+
+        rv, msg = self.netmask.verify()
+        if rv is None:
+            errList.append(_('Netmask field is empty.'))
+        elif not rv:
+            errList.append(_('Netmask: ') + msg)
+
+        if errList:
+            errMsg = _('Please correct the following errors:')
+            for i, string in enumerate(errList):
+                errMsg = errMsg + '\n\n' + str(i + 1) + '. ' + string
+            self.selector.popupMsg(_('Error'), errMsg, height=10)
+            return False
+
+        return True
+
+    def configureIntfOK(self):
+        # verify IP and netmask fields
+
+        # store information
+        self.database.put(self.context, 'use_dhcp_' + self.intf,
+                          str(self.use_dhcp.value()))
+        self.database.put(self.context, 'active_on_boot_' + self.intf,
+                          str(self.active_on_boot.value()))
+
+        if not self.use_dhcp.value():
+            self.database.put(self.context, 'ip_address_' + self.intf,
+                              self.ip_address.value())
+            self.database.put(self.context, 'netmask_' + self.intf,
+                              self.netmask.value())
+
+        # decide whether to show Gateway/DNS screen next
+        self.controlDNSScreen()
+
+    def controlDNSScreen(self):
+        from gatewaydns import GatewayDNSSetupScreen
+        dnsscreen = GatewayDNSSetupScreen(self.database,
+                                          kusuApp=self.baseScreen.kusuApp)
+
+        dnsscreen_exists = False
+        for screen in self.selector.screens:
+            if screen.name is dnsscreen.name:
+                dnsscreen_exists = True
+                dnsscreen = screen
+                break
+
+        # if no interfaces use DHCP, skip the Gateway/DNS screen
+        using_dhcp = False
+        network_entries = self.database.get(self.context)
+        for network_entry in network_entries:
+            if 'use_dhcp_' in network_entry[2] and network_entry[3] == u'1':
+                # remove DNS screen if exists, since we won't be using it
+                if dnsscreen_exists:
+                    self.selector.screens.remove(dnsscreen)
+
+                return
+
+        # add the screen if it does not already exists
+        if not dnsscreen_exists:
+            self.selector.screens.insert(\
+                self.selector.screens.index(self.baseScreen) + 1, dnsscreen)
+
+    def populateIPs(self):
         """
         Populate fields with data from database or reasonable defaults.
         """
+        
+        network_entries = self.database.get(self.context)
 
-        use_dhcp.setValue('*')
-        active_on_boot.setValue('*')
-        ip_address.setEntry('192.168.1.50')
-        netmask.setEntry('255.255.255.0')
+        # defaults: DHCP & active on boot enabled, ip & netmask blank
+        self.use_dhcp.setValue('*')
+        self.active_on_boot.setValue('*')
 
-def toggleEnabled(args):
+        for network_entry in network_entries:
+            if 'use_dhcp_' + self.intf in network_entry[2]:
+                if network_entry[3] == u'1':
+                    self.use_dhcp.setValue('*')
+                else:
+                    self.use_dhcp.setValue(' ')
+            elif 'active_on_boot_' + self.intf in network_entry[2]:
+                if network_entry[3] == u'1':
+                    self.active_on_boot.setValue('*')
+                else:
+                    self.active_on_boot.setValie(' ')
+            elif 'ip_address_' + self.intf in network_entry[2]:
+                self.ip_address.setEntry(network_entry[3])
+            elif 'netmask_' + self.intf in network_entry[2]:
+                self.netmask.setEntry(network_entry[3])
+
+def enabledByValue(args):
     """
-    Toggles the enabled bit of widgets based on value of controlling widget.
+    Sets the enabled bit of widgets based on value of controlling widget.
 
     args -- a tuple of arguments. The first argument's value will be checked,
             all other arguments will be set accordingly.

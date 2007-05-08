@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 # $Id: kusuwidgets.py 236 2007-04-05 08:54:09Z ggoh $
 #
 # Kusu Text Installer Widgets.
@@ -8,7 +9,6 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 """This module contains a number of widgets used in the Text Installer Framework."""
-__version__ = "$Revision: 236 $"
 
 import snack
 
@@ -34,6 +34,8 @@ class Button(snack.Button):
         if self.callback_:
             if self.args is None:
                 result = self.callback_()
+            elif type(self.args) == type(()) or type(self.args) == type([]):
+                result = self.callback_(*self.args)
             else:
                 result = self.callback_(self.args)
             if result == NAV_NOTHING:

@@ -6,15 +6,12 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
-__version__ = "$Revision: 237 $"
 
 import socket
-#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
-from kusu.installer.network import toggleEnabled
+
 NAV_NOTHING = -1
 
 class GatewayDNSSetupScreen(screenfactory.BaseScreen):
@@ -36,20 +33,18 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
-        self.gateway.setEntry('')
-        self.dns1.setEntry('')
-        self.dns2.setEntry('')
-        self.dns3.setEntry('')
+        self.database.put(self.context, 'Default Gateway', '')
+        self.database.put(self.context, 'DNS 1', '')
+        self.database.put(self.context, 'DNS 2', '')
+        self.database.put(self.context, 'DNS 3', '')
         return NAV_NOTHING
 
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 6)
+        self.screenGrid = snack.Grid(1, 5)
         entryWidth = 30
 
-        self.use_dhcp = snack.Checkbox(_('Configure using DHCP'), isOn=1)
-
         value = self.database.get(self.context, 'Default Gateway')
-        if not value: value = '192.168.111.2'
+        if not value: value = ''
         else: value = value[0]
         self.gateway = kusuwidgets.LabelledEntry(
                            labelTxt=_('Default Gateway ').ljust(23), 
@@ -57,7 +52,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.gateway.addCheck(kusuwidgets.verifyIP)
 
         value = self.database.get(self.context, 'DNS 1')
-        if not value: value = '192.168.111.2'
+        if not value: value = ''
         else: value = value[0]
         self.dns1 = kusuwidgets.LabelledEntry(
                         labelTxt=_('DNS Server 1 ').ljust(23),
@@ -83,23 +78,14 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
+        self.screenGrid.setField(self.gateway, col=0, row=1, anchorLeft=1,
                                  padding=(0,1,0,0))
-        self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
-                                 padding=(0,1,0,0))
-        self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
+        self.screenGrid.setField(self.dns1, col=0, row=2, anchorLeft=1,
                                  padding=(0,0,0,0))
-        self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
+        self.screenGrid.setField(self.dns2, col=0, row=3, anchorLeft=1,
                                  padding=(0,0,0,0))
-        self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
+        self.screenGrid.setField(self.dns3, col=0, row=4, anchorLeft=1,
                                  padding=(0,0,0,0))
-
-        # add callback for toggling static IP fields
-        self.use_dhcp.setCallback(toggleEnabled,
-                                  (self.use_dhcp, self.gateway,
-                                   self.dns1, self.dns2, self.dns3))
-        toggleEnabled((self.use_dhcp, self.gateway,
-                       self.dns1, self.dns2, self.dns3))
 
     def validate(self):
         errList = []

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 # $Id: clusterinfo.py 237 2007-04-05 08:57:10Z ggoh $
 #
 # Kusu Text Installer Cluster Info Setup Screen.
@@ -6,10 +7,7 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
-__version__ = "$Revision: 237 $"
 
-#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
@@ -34,15 +32,15 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
-        self.fqhn.setEntry('')
-        self.clusterName.setEntry('')
-        self.organisation.setEntry('')
-        self.locality.setEntry('')
-        self.state.setEntry('')
-        self.country.setEntry('')
-        self.contact.setEntry('')
-        self.url.setEntry('')
-        self.latlong.setEntry('')
+        self.database.put(self.context, 'FQHN', '')
+        self.database.put(self.context, 'ClusterName', '')
+        self.database.put(self.context, 'Organisation', '')
+        self.database.put(self.context, 'Locality', '')
+        self.database.put(self.context, 'State', '')
+        self.database.put(self.context, 'Country', '')
+        self.database.put(self.context, 'Contact', '')
+        self.database.put(self.context, 'URL', '')
+        self.database.put(self.context, 'LatLong', '')
         return NAV_NOTHING
 
     def drawImpl(self):
