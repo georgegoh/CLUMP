@@ -76,6 +76,7 @@ install::
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusudb.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusuapp.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/screens/__init__.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/kusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/navigator.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/screenfactory.py $(ROOT)/opt/kusu/lib/kusu/screens
