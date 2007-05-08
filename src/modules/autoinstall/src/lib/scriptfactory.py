@@ -114,7 +114,7 @@ class KickstartFactory(BaseFactory):
        
         #LV
         for lv in disk_profile.lv_dict.values(): 
-            str = 'logvol $s --vgname=%s --name=%s --noformat' % 
+            str = 'logvol %s --vgname=%s --name=%s --noformat' % 
                   (lv.mountpoint, lv.group.name, lv.name)
             part_lines.append(str)
 
