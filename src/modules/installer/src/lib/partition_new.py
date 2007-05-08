@@ -149,7 +149,7 @@ class NewPartition:
         subgrid.setField(self.min_size_entry, 1,0)
         self.gridForm.add(subgrid, 0,3, anchorLeft=1)
 
-        self.gridForm.add(self.primary_partition, 0,4, padding=(0,0,0,1))
+        self.gridForm.add(self.primary_partition, 0,4, padding=(0,1,0,1))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)

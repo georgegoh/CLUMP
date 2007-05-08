@@ -82,10 +82,10 @@ class Navigator(object, KusuApp):
         msgbox = snack.ButtonChoiceWindow(self.mainScreen, title, msg, buttonList)
         return msgbox
 
-    def popupMsg(self, title, msg):
+    def popupMsg(self, title, msg, width=30):
         """Show a popup dialog with a given title and message."""
         msgbox = snack.GridForm(self.mainScreen, title, 1,2)
-        text = snack.TextboxReflowed(30, msg)
+        text = snack.TextboxReflowed(width, msg)
         msgbox.add(text, 0,0)
         msgbox.add(snack.Button(self._('Ok')), 0,1)
         return msgbox.runPopup()
@@ -233,10 +233,11 @@ class Navigator(object, KusuApp):
                     self.mainScreen.finish()
                     loop=False
         except Exception, e:
+            import traceback
+            tb = traceback.format_exc()
+            self.popupMsg('Unresolved exception', tb, width=50)
             self.mainScreen.popWindow()
             self.mainScreen.finish()
-            import traceback
-            traceback.print_exc()
 
     def draw(self):
         self.mainScreen.drawRootText(0,0, self.screenTitle)
