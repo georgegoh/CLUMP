@@ -775,6 +775,42 @@ class Partition(object):
         if self.leave_unchanged:
             return
 
+        # temp solution, until ggoh refactor this
+        import stat
+        from os import mknod, makedev, path
+        if not path.exists(self.path):
+            dev_basename = basename(self.disk.path)
+            if dev_basename.startswith('sd'):
+                alpha = 'abcdefghijklmnopqrstuvwxyz'
+                li = [ x for x in alpha ]
+                dev_major_num = 8
+                dev_minor_multiplier = li.index(self.disk.path[-1])
+                part_minor_num = 16 * dev_minor_multiplier + self.num
+                
+            elif dev_basename.startswith('hd'):
+                if dev_basename.startswith('hda'):
+                    dev_major_num = 3
+                    part_minor_num = self.num
+                elif dev_basename.startswith('hdb'):
+                    dev_major_num = 3
+                    part_minor_num = 31 + self.num
+                elif dev_basename.startswith('hdc'):
+                    dev_major_num = 22
+                    part_minor_num = self.num
+                elif dev_basename.startswith('hdd'):
+                    dev_major_num = 22
+                    part_minor_num = 31 + self.num
+                elif dev_basename.startswith('hde'):
+                    dev_major_num = 33
+                    part_minor_num = self.num
+                elif dev_basename.startswith('hdf'):
+                    dev_major_num = 33
+                    part_minor_num = 31 + self.num
+
+            #print "Create block device, major: %s, minor: %s, path: %s" % (dev_major_num, part_minor_num, self.path)
+            raw_dev_num = makedev(dev_major_num, part_minor_num)
+            mknod(self.path, stat.S_IFBLK, raw_dev_num)
+                    
         if self.fs_type == 'ext2':
             logger.info('Making ext2 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
