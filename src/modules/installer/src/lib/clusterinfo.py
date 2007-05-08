@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: clusterinfo.py 237 2007-04-05 08:57:10Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Cluster Info Setup Screen.
 #

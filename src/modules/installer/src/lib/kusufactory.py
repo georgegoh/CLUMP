@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-# $Id: kusufactory.py 248 2007-04-10 09:35:57Z ggoh $
+#
+# $Id$
 #
 # Kusu Text Installer Screen Factory.
 #
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
+
 """This module sets up the sequence of screens to be shown in the framework."""
-__version__ = "$Revision: 248 $"
 
 import snack
 from collection import *

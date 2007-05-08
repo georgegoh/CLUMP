@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: kusuwidgets.py 236 2007-04-05 08:54:09Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Widgets.
 #

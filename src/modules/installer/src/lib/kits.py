@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: rootpasswd.py 237 2007-04-05 08:57:10Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Kits Setup Screen.
 #
