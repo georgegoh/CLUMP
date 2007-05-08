@@ -151,15 +151,15 @@ class ConfigureIntfScreen:
         # verify IP and netmask fields
 
         # store information
-        self.database.put(self.context, 'use_dhcp_' + self.intf,
+        self.database.put(self.context, 'use_dhcp:' + self.intf,
                           str(self.use_dhcp.value()))
-        self.database.put(self.context, 'active_on_boot_' + self.intf,
+        self.database.put(self.context, 'active_on_boot:' + self.intf,
                           str(self.active_on_boot.value()))
 
         if not self.use_dhcp.value():
-            self.database.put(self.context, 'ip_address_' + self.intf,
+            self.database.put(self.context, 'ip_address:' + self.intf,
                               self.ip_address.value())
-            self.database.put(self.context, 'netmask_' + self.intf,
+            self.database.put(self.context, 'netmask:' + self.intf,
                               self.netmask.value())
 
         # decide whether to show Gateway/DNS screen next
@@ -181,7 +181,7 @@ class ConfigureIntfScreen:
         using_dhcp = False
         network_entries = self.database.get(self.context)
         for network_entry in network_entries:
-            if 'use_dhcp_' in network_entry[2] and network_entry[3] == u'1':
+            if 'use_dhcp:' in network_entry[2] and network_entry[3] == u'1':
                 # remove DNS screen if exists, since we won't be using it
                 if dnsscreen_exists:
                     self.selector.screens.remove(dnsscreen)
@@ -205,19 +205,19 @@ class ConfigureIntfScreen:
         self.active_on_boot.setValue('*')
 
         for network_entry in network_entries:
-            if 'use_dhcp_' + self.intf in network_entry[2]:
+            if 'use_dhcp:' + self.intf in network_entry[2]:
                 if network_entry[3] == u'1':
                     self.use_dhcp.setValue('*')
                 else:
                     self.use_dhcp.setValue(' ')
-            elif 'active_on_boot_' + self.intf in network_entry[2]:
+            elif 'active_on_boot:' + self.intf in network_entry[2]:
                 if network_entry[3] == u'1':
                     self.active_on_boot.setValue('*')
                 else:
                     self.active_on_boot.setValie(' ')
-            elif 'ip_address_' + self.intf in network_entry[2]:
+            elif 'ip_address:' + self.intf in network_entry[2]:
                 self.ip_address.setEntry(network_entry[3])
-            elif 'netmask_' + self.intf in network_entry[2]:
+            elif 'netmask:' + self.intf in network_entry[2]:
                 self.netmask.setEntry(network_entry[3])
 
 def enabledByValue(args):
