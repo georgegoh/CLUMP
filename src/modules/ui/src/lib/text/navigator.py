@@ -235,7 +235,7 @@ class Navigator(object, KusuApp):
         except Exception, e:
             import traceback
             tb = traceback.format_exc()
-            self.popupMsg('Unresolved exception', tb, width=50, height=10)
+            self.popupMsg('Unresolved exception', tb, width=50, height=13)
             self.mainScreen.popWindow()
             self.mainScreen.finish()
             sys.exit(1)
