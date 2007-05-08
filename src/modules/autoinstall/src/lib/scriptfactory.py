@@ -101,14 +101,14 @@ class KickstartFactory(BaseFactory):
         cnt = 1
         #PV
         for pv in disk_profile.pv_dict.values(): 
-            str = 'part pv.%d --onpart=%s'  % (cnt,
+            str = 'part pv.%d --onpart=%s --noformat'  % (cnt,
                    os.path.sep.join((path(pv.partition.path).splitall()[2:])))
             pv_id[pv.partition.path] = cnt                  
             part_lines.append(str)
 
         #VG
         for vg in disk_profile.lvg_dict.values(): 
-            str = 'volgroup %s %s' % (vg.name, ' '.join(['pv.%s' % \
+            str = 'volgroup %s %s --noformat' % (vg.name, ' '.join(['pv.%s' % \
                   pv_id[pv.partition.path] for pv in vg.pv_dict.values()]))
             part_lines.append(str)
        
