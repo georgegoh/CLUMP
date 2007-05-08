@@ -53,6 +53,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu
+	mkdir -p $(ROOT)/opt/kusu/lib/kusu/screens
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/addhost 
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/dbreport
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/ngedit
