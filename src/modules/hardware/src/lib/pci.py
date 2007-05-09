@@ -44,15 +44,15 @@ class PCI:
     ids_file = '/usr/share/hwdata/pci.ids'
     ids = {}
     
-    def __init__(self):
+    def __init__(self, vcodes):
 
         f = open(self.ids_file, 'r')
         content = f.readlines()
         f.close()
 
-        self._parse(content)
+        self._parse(content, vcodes)
         
-    def _parse(self, content):
+    def _parse(self, content, vcodes):
         # Syntax:
         # vendor  vendor_name
         #	device  device_name				<-- single tab
@@ -75,14 +75,23 @@ class PCI:
                     break
                 
                 vendor_name = ' '.join(line[1:])
-                self.ids[vendor_code] = {}
-                self.ids[vendor_code]['NAME'] = vendor_name
+
+                # We are only interested in the vendor
+                # codes that we want
+                if vendor_code in vcodes:
+                    self.ids[vendor_code] = {}
+                    self.ids[vendor_code]['NAME'] = vendor_name
 
             else:
                 #	device  device_name				<-- single tab
                 m = re.match('\t[^\t]+', line)
                 
                 if m:
+                    # We are only interested in the vendor
+                    # codes that we want
+                    if not self.ids.has_key(vendor_code):
+                        continue
+
                     line = line.split()
                     device_code = line[0]
                     device_name = ' '.join(line[1:])
@@ -101,6 +110,11 @@ class PCI:
                     m = re.match('\t\t[^\t]+', line)
                     
                     if m:
+                        # We are only interested in the vendor
+                        # codes that we want
+                        if not self.ids.has_key(vendor_code):
+                            continue
+
                         line = line.split()
                         subvendor_code = line[0]
                         subdevice_code = line[1]

@@ -93,7 +93,7 @@ class Net:
         #subsystem_device = subsystem_device[2:].strip()
         #subsystem_vendor = subsystem_vendor[2:].strip()
 
-        self.pci = PCI()
+        self.pci = PCI([vendor])
 
         if self.pci.ids.has_key(vendor):
             self.vendor = self.pci.ids[vendor]['NAME']
