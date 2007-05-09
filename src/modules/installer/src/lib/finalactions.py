@@ -8,9 +8,12 @@
 #
 
 import os
+import kusu.util.log as kusulog
 from path import path
 
-def setupNetwork(self):
+logger = kusulog.getKusuLog('installer.final')
+
+def setupNetwork():
     # Use dhcpc from busybox
     # Assume eth0 for now
     from kusu.networktool import networktool
@@ -23,12 +26,12 @@ def setupNetwork(self):
     interface.up()
     interface = interface.setDHCP()
    
-def copyKits(self, prefix):
+def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
     from kusu.util import util
 
-    url = str(self.database.get('Kits', 'FedoraURL')[0])
+    url = str(database.get('Kits', 'FedoraURL')[0])
 
     prefix = path(prefix)
     util.verifyDistro(url, 'fedora', '6')
@@ -38,7 +41,7 @@ def copyKits(self, prefix):
 def makeRepo(self):
     pass
 
-def genAutoInstallScript(self, disk_profile):
+def genAutoInstallScript(disk_profile, database):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart
@@ -52,14 +55,16 @@ def genAutoInstallScript(self, disk_profile):
     install_script = '/tmp/install_script'
 
     k = Kickstart()
-    k.rootpw = self.database.get('Root Password', 'RootPasswd')[0]
-    k.networkprofile = [Network('eth0')]
+    k.rootpw = database.get('Root Password', 'RootPasswd')[0]
+    n = Network('eth0')
+    n.bootproto = 'dhcp'
+    k.networkprofile = [n]
     k.diskprofile = disk_profile
     k.packageprofile = ['@Base']
-    k.tz = self.database.get('Time zone', 'Zone')[0]
+    k.tz = database.get('Time zone', 'Zone')[0]
     k.installsrc = 'http://127.0.0.1/'
-    k.lang = self.database.get('Language', 'Language')[0]
-    k.keyboard = self.database.get('Keyboard', 'Keyboard')[0]
+    k.lang = database.get('Language', 'Language')[0]
+    k.keyboard = database.get('Keyboard', 'Keyboard')[0]
 
     template = path(os.getenv('KUSU_ROOT', None)) / \
                'etc' / \
@@ -71,7 +76,7 @@ def genAutoInstallScript(self, disk_profile):
     script.setProfile(k)
     script.write(install_script)
 
-def migrate(self, prefix):
+def migrate(prefix):
     dest = path(prefix) + '/root'
     
     kusu_tmp = os.environ.get('KUSU_TMP', None)
@@ -88,10 +93,10 @@ def migrate(self, prefix):
 
     for f in files:
         if f.exists():
-            self.logger.debug('Moved %s -> %s' % (f, dest))
+            logger.debug('Moved %s -> %s' % (f, dest))
             f.move(dest)
 
-def mountKusuMntPts(self, prefix, disk_profile):
+def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
 
     d = {}
@@ -108,11 +113,11 @@ def mountKusuMntPts(self, prefix, disk_profile):
 
         if not mntpnt.exists():
             mntpnt.makedirs()
-            self.logger.debug('Made %s dir' % mntpnt)
+            logger.debug('Made %s dir' % mntpnt)
         
         # mountpoint has an associated partition,
         # and mount it at the mountpoint
         if d.has_key(m):
             d[m].mount(mntpnt)
-            self.logger.debug('Mounted %s on %s' % (d[m].mountpoint, mntpnt))
+            logger.debug('Mounted %s on %s' % (d[m].mountpoint, mntpnt))
 

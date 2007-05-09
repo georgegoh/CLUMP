@@ -14,6 +14,7 @@ import snack
 from gettext import gettext as _
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory
+from kusu.installer.finalactions import *
 
 NAV_RESTART = -2
 NAV_NOTHING = -1
@@ -102,141 +103,29 @@ class ConfirmScreen(screenfactory.BaseScreen):
                                           text='If you click yes, then your disks will be formatted.\n' + \
                                                'You cannot recover data on a disk once it has been formatted.')
         if result == 'ok':
+            self.database.commit()
+            self.logger.debug('Commited database')
+
             mntpnt = '/mnt/kusu'
 
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
             self.logger.debug('Formatted Disks.')
-            self.setupNetwork()
+            setupNetwork()
             self.logger.debug('Network set up.')
-            self.mountKusuMntPts(mntpnt, disk_profile)
+            mountKusuMntPts(mntpnt, disk_profile)
             self.logger.debug('Kusu mount points set up')
-            self.copyKits(mntpnt)
-            self.logger.debug('Kits copied.')
+            #copyKits(mntpnt, self.database)
+            #self.logger.debug('Kits copied.')
             #self.makeRepo()
-            self.genAutoInstallScript(disk_profile)
+            genAutoInstallScript(disk_profile, self.database)
             self.logger.debug('Auto install script generated.')
             self.database.close()
             self.logger.debug('Closed database connection.')
-            self.migrate(mntpnt)
+            migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
 
     def formatDisk(self, disk_profile):
         disk_profile.commit()
         disk_profile.formatAll()
-
-    def setupNetwork(self):
-        # Use dhcpc from busybox
-        # Assume eth0 for now
-        from kusu.networktool import networktool
-
-        interface = networktool.Interface('lo')
-        interface.up()
-        #interface = interface.setStaticIP(('127.0.0.1', '255.0.0.0'))
-
-        interface = networktool.Interface('eth0')
-        interface.up()
-        interface = interface.setDHCP()
-       
-    def copyKits(self, prefix):
-        # Assume a Fedora 6 repo
-        # Assume a fedora 6 distro: /mnt/sysimage
-        from path import path
-        from kusu.util import util
-
-        url = str(self.database.get('Kits', 'FedoraURL')[0])
-
-        prefix = path(prefix)
-        util.verifyDistro(url, 'fedora', '6')
-        util.copy(url, prefix + '/depot')
-
-        
-    def makeRepo(self):
-        pass
-
-    def genAutoInstallScript(self, disk_profile):
-        from kusu.autoinstall.scriptfactory import KickstartFactory
-        from kusu.autoinstall.autoinstall import Script
-        from kusu.autoinstall.installprofile import Kickstart
-        from kusu.networktool.network import Network
-        from path import path
-        import os
-
-
-        # redhat based for now
-        #kusu_dist = os.environ.get('KUSU_DIST', None)
-        #kusu_distver = os.environ.get('KUSU_DISTVER', None)
-
-
-        install_script = '/tmp/install_script'
-
-        k = Kickstart()
-        k.rootpw = self.database.get('Root Password', 'RootPasswd')[0]
-        k.networkprofile = [Network('eth0', 'DHCP')]
-        k.diskprofile = disk_profile
-        k.packageprofile = ['@Base']
-        k.tz = self.database.get('Time zone', 'Zone')[0]
-        k.installsrc = 'http://127.0.0.1/'
-        k.lang = self.database.get('Language', 'Language')[0]
-        k.keyboard = self.database.get('Keyboard', 'Keyboard')[0]
-
-        template = path(os.getenv('KUSU_ROOT', None)) / \
-                   'etc' / \
-                   'templates' / \
-                   'kickstart.tmpl'
-
-        kf = KickstartFactory(str(template))
-        script = Script(kf)
-        script.setProfile(k)
-        script.write(install_script)
-
-    def migrate(self, prefix):
-        from path import path
-        import os
-
-        dest = path(prefix) + '/root'
-        
-        kusu_tmp = os.environ.get('KUSU_TMP', None)
-        kusu_log = os.environ.get('KUSU_LOGFILE', None)
-
-        if not kusu_tmp or not kusu_log:
-            raise Exception
-
-        kusu_tmp = path(kusu_tmp)
-        kusu_log = path(kusu_log)
-
-        #files = [kusu_tmp / 'kusu.db', kusu_log]
-        files = [path('/kusu.db'), kusu_log]
-
-        for f in files:
-            if f.exists():
-                self.logger.debug('Moved %s -> %s' % (f, dest))
-                f.move(dest)
-
-    def mountKusuMntPts(self, prefix, disk_profile):
-        from path import path
- 
-        prefix = path(prefix)
-
-        d = {}
-        for disk in disk_profile.disk_dict.values():
-            for id, p in disk.partition_dict.items():
-                d[p.mountpoint] = p
-       
-        for lv in disk_profile.lv_dict.values():
-            d[lv.mountpoint] = lv
- 
-        # Mount /, /root, /depot in order
-        for m in ['/', '/root', '/depot']:
-            mntpnt = prefix + m
-
-            if not mntpnt.exists():
-                mntpnt.makedirs()
-                self.logger.debug('Made %s dir' % mntpnt)
-            
-            # mountpoint has an associated partition,
-            # and mount it at the mountpoint
-            if d.has_key(m):
-                d[m].mount(mntpnt)
-                self.logger.debug('Mounted %s on %s' % (d[m].mountpoint, mntpnt))
 
