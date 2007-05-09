@@ -9,6 +9,8 @@
 
 class NetworkProfile:
     net_dict = {}
+    dns = []
+    gateway = None
 
     def __int__(self):
         pass
