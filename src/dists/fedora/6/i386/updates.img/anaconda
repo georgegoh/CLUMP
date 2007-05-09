@@ -43,7 +43,7 @@ if [ $? -eq 0 ]; then
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
-    /usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart $KUSU_TMP/install_script ;
+    /usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
 else
     # in case of problem with the Kusu Installer, we halt
     echo "Something has gone very wrong. Restarting!";
