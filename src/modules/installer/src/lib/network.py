@@ -32,7 +32,14 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(instruction, col=0, row=0)
 
         self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
-        for intf, v in net.getInterfaces().items():
+
+        
+        interfaces = net.getInterfaces()    # we get a dictionary
+        intfs = interfaces.keys()
+        intfs.sort()   # we want interfaces in alphabetical order
+
+        for intf in intfs:
+            v = interfaces[intf]
             if v['isPhysical']:
                 vendor = v['vendor']
                 device = v['device']
