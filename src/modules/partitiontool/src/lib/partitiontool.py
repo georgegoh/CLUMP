@@ -58,7 +58,7 @@ import math
 import subprocess
 import parted
 import lvm
-from os.path import basename
+from os.path import basename, exists
 from kusuexceptions import *
 from lvm import *
 import kusu.util.log as kusulog
@@ -801,12 +801,25 @@ class Partition(object):
         args = ''
         if readonly:
             args = args + '-r'
+
+        if not exists(mountpoint):
+            err_msg = 'Mount point: %s does not exists' % mountpoint
+            raise MountFailedError, err_msg
+            
         p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type, self.path, mountpoint, args),
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        logger.debug('Mount stdout: %s, stderr: %s' % (out, err))
+        returncode = p.returncode
+        
+
+        if returncode:
+            err_msg =  'Unable to mount %s on %s'  % (self.path, mountpoint)
+            logger.error(err_msg)
+            raise MountFailedError, err_msg
+        else:
+            logger.info('Mounted %s on %s' % (self.path, mountpoint))
 
     def unmount(self):
         """Unmounts this partition."""

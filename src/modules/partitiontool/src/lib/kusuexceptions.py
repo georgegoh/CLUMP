@@ -27,3 +27,4 @@ class NotPhysicalVolumeError(KusuError): pass
 class InvalidVolumeGroupExtentSizeError(KusuError): pass
 class PhysicalVolumeStillInUseError(KusuError): pass
 class LogicalVolumeStillInUseError(KusuError): pass
+class MountFailedError(KusuError): pass
