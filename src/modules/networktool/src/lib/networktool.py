@@ -18,10 +18,6 @@ class Interface:
     ip = None
     broadcast = None
     netmask = None
-    state = None # Up/Down
-    link_state = None #connected/disconnected
-    speed = None #10/100/1000
- 
  
     def __init__(self, interface):
         self.interface = interface
