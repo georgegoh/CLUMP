@@ -812,8 +812,8 @@ class Partition(object):
                     dev_major_num = 33
                     part_minor_num = 31 + self.num
 
-            logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % 
-                        (dev_major_num, part_minor_num, self.path)))
+            logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
+                        (dev_major_num, part_minor_num, self.path))
             raw_dev_num = makedev(dev_major_num, part_minor_num)
             mknod(self.path, stat.S_IFBLK, raw_dev_num)
 
