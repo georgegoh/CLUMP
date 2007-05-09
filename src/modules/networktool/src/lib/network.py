@@ -7,6 +7,13 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+class NetworkProfile:
+    def __int__(self):
+        self.net_dict = {}
+
+    def addNetwork(self, intf):
+        self.net_dict[intf] = Network(intf)
+
 class Network:
     dev = None
     bootproto = None
@@ -15,15 +22,8 @@ class Network:
     gateway = None
     nameserver = None
 
-    def __init__(self, dev, bootproto='DHCP'):
+    def __init__(self, dev):
         self.dev = dev
-        self.bootproto = bootproto
 
-    def add(self, dev, bootproto):
-        pass
-
-    def addIP(self, ip):
-        if self.bootproto != 'DHCP':
-            self.ip = ip
 
 
