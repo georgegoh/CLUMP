@@ -8,8 +8,10 @@
 #
 
 class NetworkProfile:
+    net_dict = {}
+
     def __int__(self):
-        self.net_dict = {}
+        pass
 
     def addNetwork(self, intf):
         self.net_dict[intf] = Network(intf)
@@ -21,6 +23,7 @@ class Network:
     netmask = None
     gateway = None
     nameserver = None
+    hostname = None
 
     def __init__(self, dev):
         self.dev = dev

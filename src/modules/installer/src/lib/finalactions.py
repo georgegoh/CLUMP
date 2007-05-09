@@ -45,7 +45,8 @@ def genAutoInstallScript(disk_profile, database):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart
-    from kusu.networktool.network import Network
+    from kusu.networktool.network import NetworkProfile
+    from kusu.installer.network import retrieveNetworkContext
 
     # redhat based for now
     #kusu_dist = os.environ.get('KUSU_DIST', None)
@@ -59,11 +60,38 @@ def genAutoInstallScript(disk_profile, database):
     else:
         install_script = path(kusu_tmp) / 'install_script'
 
+    # Build network profile    
+    # Ignore unicode
+
+    #gateway = database.get('Nttwork', 'Default Gateway')
+    #dns1 = database.get('Network', 'DNS 1')
+    #dns2 = database.get('Network', 'DNS 2')
+    #dns3 = database.get('Network, 'DNS 3')
+
+    network_profile = NetworkProfile()
+    for intf, value in retrieveNetworkContext(database).items():
+        network_profile.addNetwork(intf)
+        
+        network = network_profile.net_dict[intf]
+        
+        if int(value['use_dhcp']):
+            # Using dhcp
+            network.bootproto = 'dhcp'
+        elif network.ip != '':
+            # static
+            network.bootproto = 'static'
+            network.ip = str(value['ip_address'])
+            network.netmask = str(value['netmask'])
+            network.hostname = str(value['hostname'])
+        else:
+            # unconfigured
+            pass
+ 
+    # Build kickstart object
+    # Retrieve all the data required
     k = Kickstart()
     k.rootpw = database.get('Root Password', 'RootPasswd')[0]
-    n = Network('eth0')
-    n.bootproto = 'dhcp'
-    k.networkprofile = [n]
+    k.networkprofile = network_profile
     k.diskprofile = disk_profile
     k.packageprofile = ['@Base']
     k.tz = database.get('Time zone', 'Zone')[0]
@@ -71,11 +99,11 @@ def genAutoInstallScript(disk_profile, database):
     k.lang = database.get('Language', 'Language')[0]
     k.keyboard = database.get('Keyboard', 'Keyboard')[0]
 
+    # Generate kickstart
     template = path(os.getenv('KUSU_ROOT', None)) / \
                'etc' / \
                'templates' / \
                'kickstart.tmpl'
-
     kf = KickstartFactory(str(template))
     script = Script(kf)
     script.setProfile(k)

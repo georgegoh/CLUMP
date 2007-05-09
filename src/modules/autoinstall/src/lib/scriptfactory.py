@@ -36,14 +36,29 @@ class KickstartFactory(BaseFactory):
         self.namespace['keybd'] = self.profile.keyboard
         self.namespace['packages'] = self.profile.packageprofile
         self.namespace['partitions'] = self._getPartitions()
-
-
-        # Creates the kickstart option for networking 
-        self.namespace['networks'] = \
-        ['network --bootproto %s --device %s'  % 
-         (net.bootproto.lower(), net.dev) for net in self.profile.networkprofile]
+        self.namespace['networks'] = self._getNetworks()
 
         return self.namespace
+
+    def _getNetworks(self):
+        # Creates the kickstart option for networking 
+
+        network_lines = []
+        networks = self.profile.networkprofile.net_dict.values()
+        for network in networks:
+            str = ''
+
+            if network.bootproto == 'dhcp':
+                str = 'network --bootproto dhcp --device %s' % network.dev
+            #elif network.bootproto == 'static':
+            #    str = 'network --bootproto static  --device %s' % network.dev
+            else:
+                pass #Ignore other types
+
+            if str:            
+                network_lines.append(str)
+
+        return network_lines
 
     def _getPartitions(self):
 
@@ -79,7 +94,8 @@ class KickstartFactory(BaseFactory):
                 elif fs_type == 'swap':
                     str = 'part swap'
                 else:
-                    continue
+                    # Ignore other bits like empty mount point
+                    continue 
                 
                 str = str + ' --fstype=%s' % fs_type
 
