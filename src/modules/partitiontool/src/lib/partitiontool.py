@@ -61,7 +61,6 @@ import lvm
 from os.path import basename
 from kusuexceptions import *
 from lvm import *
-#from kusu.util.log import getKusuLog
 import kusu.util.log as kusulog
 
 fsTypes = {}
@@ -279,8 +278,9 @@ class DiskProfile(object):
             new_partition.lvm_flag = 1
         return new_partition
 
-    def editPartition(self, part_id, size, fixed_size, fs_type, mountpoint):
+    def editPartition(self, partition_obj, size, fixed_size, fs_type, mountpoint):
         """!!!NOT READY!!! - Edit an existing partition."""
+        original_size = partition_obj.size
 
     def deletePartition(self, partition_obj):
         """Delete an existing partition.
@@ -725,6 +725,7 @@ class Partition(object):
         self.mountpoint = mountpoint
         self.leave_unchanged = False
         self.on_disk = False
+        
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -772,13 +773,17 @@ class Partition(object):
         out, err = p.communicate()
 
     def format(self):
+        """Format this partition with the FS type defined."""
+        logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
         if self.leave_unchanged:
             return
 
         # temp solution, until ggoh refactor this
+        logger.info('FORMAT %s: Checking if node already exists in /dev.' % self.path)
         import stat
         from os import mknod, makedev, path
         if not path.exists(self.path):
+            logger.info('FORMAT %s: %s does not exist. Creating...' % (self.path, self.path))
             dev_basename = basename(self.disk.path)
             if dev_basename.startswith('sd'):
                 alpha = 'abcdefghijklmnopqrstuvwxyz'
@@ -807,26 +812,27 @@ class Partition(object):
                     dev_major_num = 33
                     part_minor_num = 31 + self.num
 
-            #print "Create block device, major: %s, minor: %s, path: %s" % (dev_major_num, part_minor_num, self.path)
+            logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % 
+                        (dev_major_num, part_minor_num, self.path)))
             raw_dev_num = makedev(dev_major_num, part_minor_num)
             mknod(self.path, stat.S_IFBLK, raw_dev_num)
-                    
+
         if self.fs_type == 'ext2':
-            logger.info('Making ext2 fs on %s' % self.path)
+            logger.info('FORMAT %s: Making ext2 fs on %s' % (self.path, self.path))
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            logger.info('Making ext3 fs on %s' % self.path)
+            logger.info('FORMAT %s: Making ext3 fs on %s' % (self.path, self.path))
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            logger.info('Making swap fs on %s' % self.path)
+            logger.info('FORMAT %s: Making swap fs on %s' % (self.path, self.path))
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
