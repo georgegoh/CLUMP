@@ -289,6 +289,19 @@ class LogicalVolume(object):
     def __size(self):
         return (self.extents * self.group.extent_size)
 
+    def resize(self, size_MB, force=False):
+        size = size_MB * 1024 * 1024
+        if size == self.size:
+            return
+        elif size < self.size:
+            if (self.size - size) < self.group.extent_size:
+                # don't bother reducing if the change is less than an extent.
+                return
+            else:
+                queueCommand(lvm.reduceLogicalVolume, (str(size_MB) + 'M', self.fs_type))
+        else:
+            queueCommand(lvm.extendLogicalVolume, (str(size_MB) + 'M', self.fs_type))
+        
     def mount(self, mountpoint=None, readonly=False):
         """Mounts this partition. If no mountpoint is given, then the
            default mountpoint is used.

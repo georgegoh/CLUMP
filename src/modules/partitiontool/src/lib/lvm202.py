@@ -113,10 +113,12 @@ def runCommand(command):
 
 def createPhysicalVolume(partition_path):
     out, err = runCommand('lvm pvcreate %s' % partition_path)
+    return (out, err)
 
 def removePhysicalVolume(partition_path):
     if not physicalVolumeInUse(partition_path):
         out, err = runCommand('lvm pvremove %s' % partition_path)
+        return (out, err)
 
 def physicalVolumeInUse(path):
     out, err = runCommand('lvm pvdisplay %s' % path)
@@ -139,23 +141,36 @@ def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):
                             (vg_name,
                              extent_size,
                              ' '.join(pv_path_list)))
-
+    return (out, err)
 
 def extendVolumeGroup(vg_name, partition_path):
     out, err = runCommand('lvm vgextend %s %s' % (vg_name, partition_path))
-
+    return (out, err)
 
 def reduceVolumeGroup(vg_name, partition_path):
     out, err = runCommand('lvm vgreduce %s %s' % (vg_name, partition_path))
-
+    return (out, err)
 
 def removeLogicalVolumeGroup(vg_name):
     out, err = runCommand('lvm vgremove %s' % vg_name)
-
+    return (out, err)
 
 def createLogicalVolume(vg_name, lv_name, lv_size):
     out, err = runCommand('lvm lvcreate -L%s -n%s %s' % (lv_size, lv_name, vg_name))
+    return (out, err)
 
+def extendLogicalVolume(lv_path, size_str, fs_type):
+    out, err = runCommand('lvm lvextend -L%s %s' % (size_str, lv_path))
+    if fs_type == 'ext2' or fs_type == 'ext3':
+        out, err = runCommand('e2fsck -f %s' % lv_path)
+        out, err = runCommand('resize2fs %s' % lv_path)
+    return (out, err)
+
+def reduceLogicalVolume(lv_path, size_str, fs_type):
+    if fs_type == 'ext2' or fs_type == 'ext3':
+        out, err = runCommand('resize2fs %s %s' % (lv_path, size_str))
+    out, err = runCommand('lvm lvreduce -L%s %s' % (size_str, lv_path))
 
 def removeLogicalVolume(lv_path):
     out, err = runCommand('lvm lvremove -f %s' % lv_path)
+    return (out, err)

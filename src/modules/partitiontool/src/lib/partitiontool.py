@@ -252,9 +252,9 @@ class DiskProfile(object):
         elif type(deviceObj) is LogicalVolume:
             self.deleteLogicalVolume(deviceObj)
         elif type(deviceObj) is Disk:
-            pass
+            raise KusuError, 'Cannot delete the selected device because it is a physical disk in the system.'
         else:
-            raise KusuError, "Uknown device type"
+            raise KusuError, 'An internal error has occurred in the program. Please restart.'
 
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
@@ -280,7 +280,29 @@ class DiskProfile(object):
 
     def editPartition(self, partition_obj, size, fixed_size, fs_type, mountpoint):
         """!!!NOT READY!!! - Edit an existing partition."""
-        original_size = partition_obj.size
+        backup_disk_id = basename(partition.disk.path)
+        backup_size = partition_obj.size
+        backup_fs_type = partition_obj.fs_type
+        backup_mountpoint = partition_obj.mountpoint
+
+        self.deletePartition(partition_obj)
+        try:
+            edited_partition = self.newPartition(backup_disk_id,
+                                                 size,
+                                                 fixed_size,
+                                                 fs_type,
+                                                 mountpoint)
+
+        except KusuError, e:
+            self.newPartition(backup_disk_id,
+                              backup_size,
+                              False,
+                              backup_fs_type,
+                              backup_mountpoint)
+            raise KusuError, e
+
+        return edited_partition
+
 
     def deletePartition(self, partition_obj):
         """Delete an existing partition.
@@ -316,9 +338,24 @@ class DiskProfile(object):
         self.lvg_dict[name] = lvg
         return lvg
 
-    def editLogicalVolumeGroup(self, lvg_id, name, phys_vol_ids):
-        """!!!NOT READY TO USE!!! - Edit an existing logical volume group."""
-        pass
+
+    def editLogicalVolumeGroup(self, lvg_obj, pv_obj_list):
+        """!!!NOT READY TO USE!!! - Edit the list of physical volumes for
+           a named existing logical volume group."""
+        deleted_pvs = []
+        inserted_pvs = []
+
+        # deletetion pass
+        for existing_pv in lvg_obj.pv_dict.itervalues():
+            if existing_pv not in pv_obj_list:
+                lvg.delPhysicalVolume(existing_pv)
+        # insertion pass
+        for pv in pv_obj_list:
+            if pv.name not in lvg_obj.pv_dict.keys():
+                lvg_obj.addPhysicalVolume(pv)
+
+        return lvg_obj
+
 
     def deleteLogicalVolumeGroup(self, lvg):
         """Delete an existing logical volume group."""
@@ -353,9 +390,16 @@ class DiskProfile(object):
             self.mountpoint_dict[mountpoint] = new_lv
         return new_lv
 
-    def editLogicalVolume(self, lv_id, name, vol_grp_id, size_MB, fs_type, mountpoint):
+
+    def editLogicalVolume(self, lv, name, size_MB, fs_type, mountpoint):
         """!!!NOT READY TO USE!!! - Edit an existing logical volume."""
-        pass
+        size = size_MB * 1024 * 1024
+        if size != lv.size:
+            lv.resize(size_MB)
+            
+        lv.fs_type = fs_type
+        lv.mountpoint = mountpoint
+
 
     def deleteLogicalVolume(self, lv):
         """Delete an existing logical volume."""
@@ -813,7 +857,7 @@ class Partition(object):
                     part_minor_num = 31 + self.num
 
             logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
-                        (dev_major_num, part_minor_num, self.path))
+                        (self.path, dev_major_num, part_minor_num, self.path))
             raw_dev_num = makedev(dev_major_num, part_minor_num)
             mknod(self.path, stat.S_IFBLK, raw_dev_num)
 
