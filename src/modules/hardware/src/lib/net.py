@@ -11,7 +11,7 @@ import re
 from path import path
 from kusu.hardware.pci import PCI
 
-def getInterfaces():
+def getAllInterfaces():
     sys_net = path('/sys/class/net/')
 
     d = {}
@@ -25,6 +25,18 @@ def getInterfaces():
         d[intf]['module'] = n.module
         d[intf]['isPhysical'] = n.isPhysical()
         
+    return d
+
+def getPhysicalInterfaces():
+    d = getAllInterfaces()
+
+    dkeys = d.keys()
+
+    # remove non-physical interfaces from dictionary
+    for key in dkeys:
+        if not d[key]['isPhysical']:
+            d.pop(key)
+
     return d
 
 class Net:
