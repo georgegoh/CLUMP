@@ -12,19 +12,6 @@ import os
 import re
 from path import path
 
-
-def getInterfaces():
-    f = open('/proc/net/dev', 'r')
-    dev = f.readlines()
-    f.close()
-
-    ifnames = []
-    for line in dev[2:]:
-        ifname = line.split(':')[0].strip()
-        ifnames.append(ifname)
-
-    return ifnames
-
 class Interface:
 
     interface = None
