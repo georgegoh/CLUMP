@@ -51,8 +51,13 @@ def genAutoInstallScript(disk_profile, database):
     #kusu_dist = os.environ.get('KUSU_DIST', None)
     #kusu_distver = os.environ.get('KUSU_DISTVER', None)
 
+    kusu_tmp = os.environ.get('KUSU_TMP', None)
 
-    install_script = '/tmp/install_script'
+    # is None
+    if not kusu_tmp: 
+        install_script = '/tmp/install_script'
+    else:
+        install_script = path(kusu_tmp) / 'install_script'
 
     k = Kickstart()
     k.rootpw = database.get('Root Password', 'RootPasswd')[0]
@@ -107,8 +112,8 @@ def mountKusuMntPts(prefix, disk_profile):
     for lv in disk_profile.lv_dict.values():
         d[lv.mountpoint] = lv
 
-    # Mount /, /root, /depot in order
-    for m in ['/', '/root', '/depot']:
+    # Mount and create in order
+    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits']:
         mntpnt = prefix + m
 
         if not mntpnt.exists():
@@ -119,5 +124,4 @@ def mountKusuMntPts(prefix, disk_profile):
         # and mount it at the mountpoint
         if d.has_key(m):
             d[m].mount(mntpnt)
-            logger.debug('Mounted %s on %s' % (d[m].mountpoint, mntpnt))
 
