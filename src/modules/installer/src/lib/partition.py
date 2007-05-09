@@ -35,8 +35,8 @@ class PartitionScreen(screenfactory.BaseScreen):
     name = _('Partitions')
     context = 'Partitions'
     msg = _('Please enter the following information:')
-#    buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
-    buttons = [_('New'), _('Delete')]#, _('RAID')]
+    buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
+#    buttons = [_('New'), _('Delete')]#, _('RAID')]
     disk_profile = None
 
     def setCallbacks(self):
@@ -47,7 +47,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         
         """
         self.buttonsDict[_('New')].setCallback_(createNew, self)
-#        self.buttonsDict[_('Edit')].setCallback_(editDevice, self)
+        self.buttonsDict[_('Edit')].setCallback_(editDevice, self)
         self.buttonsDict[_('Delete')].setCallback_(deleteDevice, self)
 #        self.buttonsDict[_('RAID')].setCallback_(self.raidPartition)
 

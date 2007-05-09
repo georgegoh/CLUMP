@@ -250,7 +250,8 @@ class LogicalVolume(object):
     fs_type = None
     mountpoint = None
     on_disk = None
-    leave_unchanged = False
+    leave_unchanged = None
+    do_not_format = None
 
     def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
@@ -264,6 +265,8 @@ class LogicalVolume(object):
         self.fs_type = fs_type
         self.mountpoint = mountpoint
         self.on_disk = False
+        self.leave_unchanged = False
+        self.do_not_format = False
 
     def isInUse(self):
         return False
@@ -278,7 +281,7 @@ class LogicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk']:
+        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk', 'leave_unchanged', 'do_not_format']:
             object.__setattr__(self, name, value)
         elif name == 'extents':
             object.__setattr__(self, name, long(value))
@@ -327,7 +330,7 @@ class LogicalVolume(object):
         out, err = p.communicate()
 
     def format(self):
-        if self.leave_unchanged:
+        if self.leave_unchanged or self.do_not_format:
             return
 
         if self.fs_type == 'ext2':

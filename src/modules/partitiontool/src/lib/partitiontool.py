@@ -279,8 +279,8 @@ class DiskProfile(object):
         return new_partition
 
     def editPartition(self, partition_obj, size, fixed_size, fs_type, mountpoint):
-        """!!!NOT READY!!! - Edit an existing partition."""
-        backup_disk_id = basename(partition.disk.path)
+        """Edit an existing partition."""
+        backup_disk_id = basename(partition_obj.disk.path)
         backup_size = partition_obj.size
         backup_fs_type = partition_obj.fs_type
         backup_mountpoint = partition_obj.mountpoint
@@ -294,24 +294,23 @@ class DiskProfile(object):
                                                  mountpoint)
 
         except KusuError, e:
+            logger.debug('Exception raised when trying to create a new partition')
             self.newPartition(backup_disk_id,
                               backup_size,
                               False,
                               backup_fs_type,
                               backup_mountpoint)
-            raise KusuError, e
+            raise KusuError, "Couldn't create new partition"
 
         return edited_partition
 
-
     def deletePartition(self, partition_obj):
-        """Delete an existing partition.
-        """
+        """Delete an existing partition."""
         # if partition is a physical volume.
         if partition_obj.path in self.pv_dict.keys():
             physicalVol = self.pv_dict[partition_obj.path]
             if physicalVol.group != None:
-                raise PartitionIsPartOfVolumeGroupError
+                raise PartitionIsPartOfVolumeGroupError, 'Partition cannot be deleted because it is part of a Logical Volume Group.'
             del self.pv_dict[partition_obj.path]
 
         if partition_obj.mountpoint in self.mountpoint_dict.keys():
@@ -340,7 +339,7 @@ class DiskProfile(object):
 
 
     def editLogicalVolumeGroup(self, lvg_obj, pv_obj_list):
-        """!!!NOT READY TO USE!!! - Edit the list of physical volumes for
+        """Edit the list of physical volumes for
            a named existing logical volume group."""
         deleted_pvs = []
         inserted_pvs = []
@@ -362,13 +361,14 @@ class DiskProfile(object):
         # sanity checks
         for pv in lvg.pv_dict.itervalues():
             if pv.isInUse():
-                raise PhysicalVolumeStillInUseError
+                raise PhysicalVolumeStillInUseError, 'Cannot delete Volume Group. Delete Logical Volumes first.'
 
         lv_list = lvg.lv_dict.values()
         for lv in lv_list:
             lvg.delLogicalVolume(lv)
 
         pv_list = lvg.pv_dict.values()
+
         for pv in pv_list:
             lvg.delPhysicalVolume(pv)
 
@@ -391,12 +391,14 @@ class DiskProfile(object):
         return new_lv
 
 
-    def editLogicalVolume(self, lv, name, size_MB, fs_type, mountpoint):
-        """!!!NOT READY TO USE!!! - Edit an existing logical volume."""
+    def editLogicalVolume(self, lv, size_MB, fs_type, mountpoint):
+        """Edit size for an existing logical volume."""
         size = size_MB * 1024 * 1024
         if size != lv.size:
             lv.resize(size_MB)
-            
+
+        if lv.fs_type == fs_type:
+            lv.do_not_format = True
         lv.fs_type = fs_type
         lv.mountpoint = mountpoint
 
@@ -738,6 +740,8 @@ class Partition(object):
     mountpoint = None
     leave_unchanged = None
     on_disk = None
+    do_not_format = None
+
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
@@ -769,7 +773,7 @@ class Partition(object):
         self.mountpoint = mountpoint
         self.leave_unchanged = False
         self.on_disk = False
-        
+        self.do_not_format = False
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -786,7 +790,7 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged', 'on_disk']:
+        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged', 'on_disk', 'do_not_format']:
             object.__setattr__(self, name, value)
         else:
             raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
@@ -832,7 +836,7 @@ class Partition(object):
     def format(self):
         """Format this partition with the FS type defined."""
         logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
-        if self.leave_unchanged:
+        if self.leave_unchanged or self.do_not_format:
             return
 
         # temp solution, until ggoh refactor this

@@ -323,10 +323,10 @@ class NewVolumeGroup:
 
         # list of available physical volumes
         pv_list = self.disk_profile.pv_dict.keys()
-        for pv_name in sorted(pv_list):
-            pv = self.disk_profile.pv_dict[pv_name]
+        for pv_key in sorted(pv_list):
+            pv = self.disk_profile.pv_dict[pv_key]
             if pv.group is None:
-                self.phys_to_use.append(pv_name, pv)
+                self.phys_to_use.append(pv_key, pv)
         self.gridForm.add(self.phys_to_use, 0,3)
 
         subgrid = snack.Grid(2,1)

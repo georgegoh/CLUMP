@@ -220,3 +220,6 @@ class ColumnListbox(snack.Grid):
 
     def setCallback_(self, obj, data = None):
         self.listbox.setCallback(obj, data)
+
+    def clear(self):
+        self.listbox.clear()
