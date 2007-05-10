@@ -30,12 +30,26 @@ def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
     from kusu.util import util
+    from kusu.util.distro import kusuexceptions
 
     url = str(database.get('Kits', 'FedoraURL')[0])
-
     prefix = path(prefix)
-    util.verifyDistro(url, 'fedora', '6')
-    util.copy(url, prefix + '/depot')
+
+    try:
+        util.verifyDistro(url, 'fedora', '6')
+    except kusuexceptions.KusuError, e: raise e
+
+    try:
+        util.copy(url, prefix + '/depot')
+    except kusuexceptions.InvalidPath.HTTPError. e:
+        url, status, reason  = e.args
+        # Do something here
+        raise e
+    except kusuexceptions.InvalidPath.FTPError. e:
+        url, status, reason  = e.args
+        # Do something here
+        raise e
+    except kusuexceptions.KusuError, e: raise e
 
     
 def makeRepo(self):
@@ -63,17 +77,18 @@ def genAutoInstallScript(disk_profile, database):
     # Build network profile    
     # Ignore unicode
 
-    #gateway = database.get('Nttwork', 'Default Gateway')
-    #dns1 = database.get('Network', 'DNS 1')
-    #dns2 = database.get('Network', 'DNS 2')
-    #dns3 = database.get('Network, 'DNS 3')
+    gateway = database.get('Network', 'Default Gateway')
+    dns1 = database.get('Network', 'DNS 1')
+    dns2 = database.get('Network', 'DNS 2')
+    dns3 = database.get('Network', 'DNS 3')
 
     network_profile = NetworkProfile()
     for intf, value in retrieveNetworkContext(database).items():
         network_profile.addNetwork(intf)
-        
+        network_profile.gateway = gateway
+        network_profile.dns = [dns1, dns1, dns2] 
+
         network = network_profile.net_dict[intf]
-        
         if int(value['use_dhcp']):
             # Using dhcp
             network.bootproto = 'dhcp'
