@@ -103,7 +103,7 @@ class NetworkScreen(screenfactory.BaseScreen):
             entrystr = 'not configured'
             if self.interfaces[intf]['configure']:
                 if self.interfaces[intf]['use_dhcp']:
-                    entrystr = '<DHCP>'
+                    entrystr = 'DHCP'
                 # we check against false to account for unconfigured adapter
                 elif self.interfaces[intf]['use_dhcp'] is False:
                     entrystr = self.interfaces[intf]['ip_address'] + '/' + \
