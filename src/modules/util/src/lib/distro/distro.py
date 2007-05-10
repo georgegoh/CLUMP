@@ -76,6 +76,7 @@ class CheckDistro:
         if urlparse.urlsplit(p)[0] in ['http', 'ftp']:
             net = True
         else:
+            net = False
             if os.path.exists(p):
                 root_path = path(p) 
             else:

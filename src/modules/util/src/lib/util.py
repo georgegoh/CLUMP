@@ -85,6 +85,9 @@ def copy(src, dest):
         else:
             cutaway = len(p[1:])
 
+        if cutaway <= 0:
+            cutaway = 0
+        
         ec = os.system('cd %s && \
                         wget -m -np -nH -q --cut-dirs=%s %s' % (dest, cutaway, src))
 
