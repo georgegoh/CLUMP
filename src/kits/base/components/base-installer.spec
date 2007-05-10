@@ -32,6 +32,7 @@ Requires: mysql-server >= 5.0
 Requires: dhcp >= 3.0
 Requires: xinetd >= 2.3
 Requires: tftp-server >= 0.40
+Requires: syslinux >= 3.11
 Requires: httpd >= 2.2.3
 Requires: python >= 2.4.3
 Requires: python-devel >= 2.4.3
