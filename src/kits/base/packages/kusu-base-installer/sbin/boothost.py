@@ -88,8 +88,9 @@ class boothost:
             for line in data:
                 niihost = niihost + "%s," % line[0]
             niihost = niihost[:-1]
-                
-        filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',mac)
+
+        newmac = '01-%s' % string.replace(mac, '-')
+        filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',newmac)
         fp = file(filename, 'w')
         if hostname != '':
             fp.write("# PXE file for: %s\n" % hostname)
