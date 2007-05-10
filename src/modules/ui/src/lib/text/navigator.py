@@ -17,7 +17,7 @@ import time
 import snack
 from kusu.core.app import KusuApp
 from kusu.util.log import Logger
-
+from path import path
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
@@ -240,7 +240,12 @@ class Navigator(object, KusuApp):
             import traceback
             tb = traceback.format_exc()
             self.popupMsg(self._('Unresolved exception'), tb)
-            exception_log = open('/tmp/kusu/exception.dump', 'w')
+            kusu_tmp = os.environ.get('KUSU_TMP', None)
+           
+            if not kusu_tmp: 
+                kusu_tmp = '/tmp/kusu'
+
+            exception_log = open(path(kusu_tmp) / 'exception.dump', 'w')
             exception_log.write(tb)
             exception_log.close()
             self.mainScreen.popWindow()
