@@ -74,17 +74,17 @@ class Navigator(object, KusuApp):
         msgbox.add(text,0, 0)
         msgbox.draw()
         self.mainScreen.refresh()
-        time.sleep(timeout)
-        self.mainScreen.popWindow()
+        if timeout >= 0:
+            time.sleep(timeout)
+            self.mainScreen.popWindow()
 
     def popupDialogBox(self, title, msg, buttonList):
         """ Show a popup dialog box and handle return a value for each button pressed. """
         msgbox = snack.ButtonChoiceWindow(self.mainScreen, title, msg, buttonList)
         return msgbox
 
-    def popupMsg(self, title, msg, width=30, height=20):
+    def popupMsg(self, title, msg):
         """Show a popup dialog with a given title and message."""
-
         snack.ButtonChoiceWindow(self.mainScreen, title, msg,
                                  buttons=[self._('Ok')])
 
@@ -226,17 +226,27 @@ class Navigator(object, KusuApp):
                     self.mainScreen = PlatformScreen(self.screenTitle)
                     self.selectScreen(self.currentStep)
                     loop=True
+                elif result is NAV_QUIT:
+                    self.mainScreen.popWindow()
+                    self.mainScreen.finish()
+                    loop=False
+                    return False
                 else:
                     self.mainScreen.popWindow()
                     self.mainScreen.finish()
                     loop=False
+                    return None
         except Exception, e:
             import traceback
             tb = traceback.format_exc()
             self.popupMsg(self._('Unresolved exception'), tb)
+            exception_log = open('/tmp/kusu/exception.dump', 'w')
+            exception_log.write(tb)
+            exception_log.close()
             self.mainScreen.popWindow()
             self.mainScreen.finish()
             sys.exit(1)
+        return True
 
     def draw(self):
         self.mainScreen.drawRootText(0,0, self.screenTitle)

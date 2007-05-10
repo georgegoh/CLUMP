@@ -108,22 +108,42 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
             mntpnt = '/mnt/kusu'
 
+            self.selector.popupStatus('Formatting Disks', 'Formatting disks...', -1)
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
             self.logger.debug('Formatted Disks.')
+            self.selector.mainScreen.popWindow()
+
+            self.selector.popupStatus('Setting Up Network', 'Setting up networking...', -1)
             setupNetwork()
             self.logger.debug('Network set up.')
+            self.selector.mainScreen.popWindow()
+
+            self.selector.popupStatus('Setting Up Mountpoints', 'Setting up mountpoints...', -1)
             mountKusuMntPts(mntpnt, disk_profile)
             self.logger.debug('Kusu mount points set up')
+            self.selector.mainScreen.popWindow()
+
+            self.selector.popupStatus('Copying Kits', 'Copying kits...', -1)
             copyKits(mntpnt, self.database)
             self.logger.debug('Kits copied.')
+            self.selector.mainScreen.popWindow()
+
             #self.makeRepo()
+            self.selector.popupStatus('Creating Auto-install Script', 'Creating Auto-install script...', -1)
             genAutoInstallScript(disk_profile, self.database)
             self.logger.debug('Auto install script generated.')
+            self.selector.mainScreen.popWindow()
+
+            self.selector.popupStatus('Closing Database Connection', 'Closing database connection...', -1)
             self.database.close()
             self.logger.debug('Closed database connection.')
+            self.selector.mainScreen.popWindow()
+
+            self.selector.popupStatus('Migrating Mountpoint', 'Migrating mountpoint...', -1)
             migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
+            self.selector.mainScreen.popWindow()
 
     def formatDisk(self, disk_profile):
         disk_profile.commit()

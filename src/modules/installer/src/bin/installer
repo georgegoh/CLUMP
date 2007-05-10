@@ -60,4 +60,11 @@ if __name__ == '__main__':
     ki = KusuInstaller(screenFactory=ScreenFactoryImpl,
                        screenTitle='Kusu Installer',
                        showTrail=True)
-    ki.run()
+
+    installer_return_code = ki.run()
+    if installer_return_code is False:
+        sys.exit(2)
+    elif installer_return_code is None:
+        sys.exit(1)
+
+    sys.exit(0)
