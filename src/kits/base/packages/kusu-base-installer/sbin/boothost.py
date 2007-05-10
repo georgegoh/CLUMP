@@ -89,7 +89,7 @@ class boothost:
                 niihost = niihost + "%s," % line[0]
             niihost = niihost[:-1]
 
-        newmac = '01-%s' % string.replace(mac, '-')
+        newmac = '01-%s' % string.replace(mac, ':', '-')
         filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',newmac)
         fp = file(filename, 'w')
         if hostname != '':
