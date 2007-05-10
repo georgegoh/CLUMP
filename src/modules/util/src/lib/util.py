@@ -9,6 +9,15 @@
 
 import re
 import os
+from path import path
+import kusu.util.log as kusulog
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
+logger = kusulog.getKusuLog('util')
 
 def verifyFQDN(fqdn):
     """Verifies that text is a valid FQDN(.a-zA-Z0-9)"""
@@ -72,6 +81,8 @@ def verifyDistro(p, os_name, version_name):
     """
     
     from kusu.util.distro import distro
+
+    logger.info('Verifying %s for %s %s' % (p, os_name, version_name))
     d = distro.CheckDistro()
     d.verify(p, os_name, version_name)
 
@@ -82,7 +93,6 @@ def copy(src, dest):
     """
 
     import urlparse
-    from path import path
 
     if urlparse.urlsplit(src)[0] in ['http', 'ftp']:
         p = path(urlparse.urlsplit(src)[2]).splitall()
@@ -97,14 +107,25 @@ def copy(src, dest):
 
         if cutaway <= 0:
             cutaway = 0
-        
-        ec = os.system('cd %s && \
-                        wget -m -np -nH -q --cut-dirs=%s %s' % (dest, cutaway, src))
 
-        if ec:
+        cmd = 'wget -m -np -nH --cut-dirs=%s %s' % (cutaway, src)
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 cwd = dest,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+        except Exception, e:
+            raise e    
+
+        if retcode:
             raise Exception
         else:
             return True
+
 
     else:
         if os.path.exists(src):
