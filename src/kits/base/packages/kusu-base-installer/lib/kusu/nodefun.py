@@ -310,8 +310,8 @@ class NodeFun:
                  self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
                  self._writeDHCPLease(self._newIPAddress, macaddr)
              else:
-             # Not a boot interface, just write out other info.
-                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0)
+             # Not a boot interface, just write out other info. 
+                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0, macaddr)
 
     def replaceNodeEntry(self, nodename):
         """replaceNodeEntry(nodename)
