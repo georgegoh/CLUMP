@@ -84,11 +84,9 @@ class Navigator(object, KusuApp):
 
     def popupMsg(self, title, msg, width=30, height=20):
         """Show a popup dialog with a given title and message."""
-        msgbox = snack.GridForm(self.mainScreen, title, 1,2)
-        text = snack.Textbox(width, height, msg, scroll=1, wrap=1)
-        msgbox.add(text, 0,0)
-        msgbox.add(snack.Button(self._('Ok')), 0,1)
-        return msgbox.runPopup()
+
+        snack.ButtonChoiceWindow(self.mainScreen, title, msg,
+                                 buttons=[self._('Ok')])
 
     def __init__(self, screenFactory, screenTitle, showTrail=False):
         """Constructor parameters:
@@ -235,7 +233,7 @@ class Navigator(object, KusuApp):
         except Exception, e:
             import traceback
             tb = traceback.format_exc()
-            self.popupMsg('Unresolved exception', tb, width=50, height=13)
+            self.popupMsg(_('Unresolved exception'), tb)
             self.mainScreen.popWindow()
             self.mainScreen.finish()
             sys.exit(1)

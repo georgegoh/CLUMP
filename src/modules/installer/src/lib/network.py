@@ -255,7 +255,7 @@ class ConfigureIntfScreen:
             errMsg = _('Please correct the following errors:')
             for i, string in enumerate(errList):
                 errMsg = errMsg + '\n\n' + str(i + 1) + '. ' + string
-            self.selector.popupMsg(_('Error'), errMsg, height=10)
+            self.selector.popupMsg(_('Error'), errMsg)
             return False
 
         return True
