@@ -96,7 +96,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         for key in sorted(disk_keys):
             # display device
             device = self.disk_profile.disk_dict[key]
-            self.listbox.addRow(['/dev/'+key, '', '', str(device.size/1024/1024), '', ''], key)
+            self.listbox.addRow(['/dev/'+key, '', '', str(device.size/1024/1024), '', ''], device)
             parts_dict = self.disk_profile.disk_dict[key].partition_dict
             #logging.debug('Disk %s has %d partitions as reported by parted.' % (key, \
             #              self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
