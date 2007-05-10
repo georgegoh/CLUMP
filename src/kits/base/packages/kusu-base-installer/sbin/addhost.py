@@ -703,6 +703,7 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                         self.aNode = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                         nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface)
                         self.listbox.append("%s\t%s\t(Installing)" % (nodeName, macAddress), nodeName)
+                        pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodesInstalled.append([nodeName, macAddress])
                         del self.aNode
                     
