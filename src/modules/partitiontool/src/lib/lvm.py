@@ -46,8 +46,10 @@ def execFifo():
         for func,args in cmd_fifo:
             if type(args) is tuple:
                 apply(func, args)
-            else:
+            elif args:
                 func(args)
+            else:
+                func()
     cmd_fifo = None
 
 def printFifo():
@@ -135,6 +137,7 @@ class LogicalVolumeGroup(object):
     extent_size_humanreadable = None
     extent_size = 0
     on_disk = None
+    deleted = None
 
     def __init__(self, name, extent_size='32M', pv_list=[], createNew=False):
         logger.info('Creating new logical volume group %s' % name)
@@ -146,20 +149,24 @@ class LogicalVolumeGroup(object):
         self.extent_size_humanreadable = extent_size
         self.extent_size = self.parsesize(extent_size)
         self.on_disk = False
+        self.deleted = False
         for pv in pv_list:
             self.pv_dict[pv.name] = pv
             pv.group = self
         if createNew:
             pv_paths = [pv.partition.path for pv in pv_list]
             queueCommand(lvm.createVolumeGroup, (name, extent_size, pv_paths))
+            queueCommand(lvm.activateAllVolumeGroups, None)
 
     def extentsTotal(self):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         extents = 0
         for pv in self.pv_dict.itervalues():
             extents = extents + pv.extents
         return extents
 
     def extentsUsed(self):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         extents = 0
         for lv in self.lv_dict.itervalues():
             extents = extents + lv.extents
@@ -173,6 +180,7 @@ class LogicalVolumeGroup(object):
            Acceptable suffixes: kKmM - all other suffixes will be ignored
                                 (i.e., return -1)
         """
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         if text_size[-1] not in "kKmM":
             return -1
 
@@ -186,6 +194,7 @@ class LogicalVolumeGroup(object):
 
 
     def addPhysicalVolume(self, physicalVol):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         """Add a physical volume(i.e., partition) into this group."""
         logger.info('Adding physical volume %s to volume group %s' % (physicalVol.name, self.name))
         if physicalVol.name in self.pv_dict.keys():
@@ -195,6 +204,7 @@ class LogicalVolumeGroup(object):
         queueCommand(lvm.extendVolumeGroup, (self.name, physicalVol.partition.path))
 
     def delPhysicalVolume(self, physicalVol):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Deleting physical volume')
         if physicalVol.name not in self.pv_dict.keys():
             raise CannotDeletePhysicalVolumeFromLogicalGroupError, \
@@ -205,6 +215,7 @@ class LogicalVolumeGroup(object):
         queueCommand(lvm.reduceVolumeGroup, (self.name, physicalVol.partition.path))
 
     def createLogicalVolume(self, name, size_MB, fs_type, mountpoint):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError
@@ -215,6 +226,7 @@ class LogicalVolumeGroup(object):
         return lv
 
     def delLogicalVolume(self, logicalVol):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Deleting logical volume %s from volume group %s' % (logicalVol.name, self.name))
         if logicalVol.name not in self.lv_dict.keys():
             raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
@@ -227,6 +239,11 @@ class LogicalVolumeGroup(object):
         queueCommand(lvm.removeLogicalVolume, (logicalVol.path))
         logicalVol.group = None
 
+    def delete(self):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
+        logger.info('Deleting volume group %s' % self.name)
+        self.delete = True
+
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
             if pv.partition.leave_unchanged:
@@ -234,6 +251,7 @@ class LogicalVolumeGroup(object):
                 return True
 
     def formatAll(self):
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         for lv in self.lv_dict.itervalues():
             lv.format()
 

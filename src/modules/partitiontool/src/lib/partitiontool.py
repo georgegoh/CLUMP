@@ -263,14 +263,17 @@ class DiskProfile(object):
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         disk = self.disk_dict[disk_id]
-        #logging.debug('Add New Partition to Disk ID: ' + disk_id)
+        logger.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
+            logger.debug('FS type specified')
             new_partition = disk.createPartition(size, self.fsType_dict[fs_type], mountpoint)
         else:
+            logger.debug('FS type not specified')
             new_partition = disk.createPartition(size, None, mountpoint)
 
         if mountpoint:
             self.mountpoint_dict[mountpoint] = new_partition
+        logger.debug('Created mountpoint')
 
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
@@ -280,18 +283,21 @@ class DiskProfile(object):
 
     def editPartition(self, partition_obj, size, fixed_size, fs_type, mountpoint):
         """Edit an existing partition."""
+        logger.debug('Edit partition')
         backup_disk_id = basename(partition_obj.disk.path)
         backup_size = partition_obj.size
         backup_fs_type = partition_obj.fs_type
         backup_mountpoint = partition_obj.mountpoint
 
-        self.deletePartition(partition_obj)
+        self.deletePartition(partition_obj, keep_in_place=True)
+        logger.debug('Original partition deleted. Remaining partitions: ' + str(partition_obj.disk.partition_dict.keys()))
         try:
             edited_partition = self.newPartition(backup_disk_id,
                                                  size,
                                                  fixed_size,
                                                  fs_type,
                                                  mountpoint)
+            logger.debug('New partition created')
 
         except KusuError, e:
             logger.debug('Exception raised when trying to create a new partition')
@@ -304,7 +310,7 @@ class DiskProfile(object):
 
         return edited_partition
 
-    def deletePartition(self, partition_obj):
+    def deletePartition(self, partition_obj, keep_in_place=False):
         """Delete an existing partition."""
         # if partition is a physical volume.
         if partition_obj.path in self.pv_dict.keys():
@@ -316,7 +322,7 @@ class DiskProfile(object):
         if partition_obj.mountpoint in self.mountpoint_dict.keys():
             del self.mountpoint_dict[partition_obj.mountpoint]
 
-        partition_obj.disk.delPartition(partition_obj)
+        partition_obj.disk.delPartition(partition_obj, keep_in_place)
 
 
     def newLogicalVolumeGroup(self, name, extent_size, pv_list):
@@ -359,21 +365,17 @@ class DiskProfile(object):
     def deleteLogicalVolumeGroup(self, lvg):
         """Delete an existing logical volume group."""
         # sanity checks
-        for pv in lvg.pv_dict.itervalues():
-            if pv.isInUse():
-                raise PhysicalVolumeStillInUseError, 'Cannot delete Volume Group. Delete Logical Volumes first.'
-
-        lv_list = lvg.lv_dict.values()
-        for lv in lv_list:
-            lvg.delLogicalVolume(lv)
+        if lvg.lv_dict:
+            raise PhysicalVolumeStillInUseError, 'Cannot delete Volume Group. Delete Logical Volumes first.'
 
         pv_list = lvg.pv_dict.values()
 
         for pv in pv_list:
             lvg.delPhysicalVolume(pv)
 
-        del self.lvg_dict[lvg.name]
+        self.lvg_dict.pop(lvg.name)
 
+        lvg.delete()
 
     def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None):
         """Create a new logical volume."""
@@ -509,8 +511,7 @@ class Disk(object):
               3. optional fs type(defaults to None).
            Returns an instance of Partition that represents the partition just created.
         """
-        next_partition_type = self.__getNextPartitionType()
-        start_sector, end_sector = self.__getStartEndSectors(size)
+        start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size)
         new_pedPartition = None
 
         try:
@@ -555,7 +556,7 @@ class Disk(object):
         new_partition = self.__appendToPartitionDict(new_pedPartition, mountpoint)
         return new_partition
 
-    def delPartition(self, partition_obj):
+    def delPartition(self, partition_obj, keep_in_place=False):
         """Remove a partition from this disk. Argument is the Partition object
            itself.
         """
@@ -567,6 +568,8 @@ class Disk(object):
         deleted_partition = self.partition_dict[deleted_partition_number]
         del self.partition_dict[deleted_partition_number]
         self.pedDisk.delete_partition(deleted_partition.pedPartition)
+
+        if keep_in_place: return
 
         partitions_to_move = []
         # partition numbers start from one, so it's a happy coincidence that
@@ -598,6 +601,15 @@ class Disk(object):
                                                       mountpoint=part_details[2])
             new_partition.lvm_flag = part_details[3]
 
+    def __getPartitionType(self, num):
+        """Get the type of partition for a given partition number."""
+        if num < 4:
+            return 'PRIMARY'
+        elif num == 4:
+            return 'EXTENDED'
+        else:
+            return 'LOGICAL'
+
     def __getNextPartitionType(self):
         """Get the next assignable partition number, and whether it should be an
            extended partition or not.
@@ -615,6 +627,7 @@ class Disk(object):
         """For a given size(in bytes), return a tuple of (start_sector, end_sector)
            that will accommodate this new partition.
         """
+        selected_partition_num = 1
         last_part_num = self.pedDisk.get_last_partition_num()
         if last_part_num < 1: # no partitions found
             start_sector = 0
@@ -622,19 +635,24 @@ class Disk(object):
             if last_part_num > self.pedDisk.get_primary_partition_count():
                 pedPartition = self.pedDisk.next_partition()
                 while pedPartition.num < last_part_num:
+                    logger.debug('Iterating partition num: ' + str(pedPartition.num))
                     if pedPartition.num == -1:
                         start_sector = pedPartition.geom.start
                         end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
                         end_sector = self.__alignEndSector(end_sector)
                         if end_sector <= pedPartition.geom.end:
-                            return (start_sector, end_sector) 
-                        pedPartition = self.pedDisk.next_partition(pedPartition)
+                            return (start_sector, end_sector,
+                                    self.__getPartitionType(selected_partition_num))
+                    pedPartition = self.pedDisk.next_partition(pedPartition)
+                    selected_partition_num = selected_partition_num + 1
 
             lastPart = self.pedDisk.get_partition(last_part_num)
             if lastPart.type == parted.PARTITION_FREESPACE:
                 start_sector = lastPart.geom.start
+                selected_partition_num = last_part_num
             else:
-				start_sector = lastPart.geom.end + 1
+                start_sector = lastPart.geom.end + 1
+                selected_partition_num = last_part_num + 1
         start_sector = self.__alignStartSector(start_sector)
 
         end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
@@ -653,7 +671,7 @@ class Disk(object):
                       "the remaining space available on the disk."
             raise PartitionSizeTooLargeError, msg
 
-        return (start_sector, end_sector)
+        return (start_sector, end_sector, self.__getPartitionType(selected_partition_num))
 
     def convertStartSectorToCylinder(self, start_sector):
          cylinder = int(math.floor(

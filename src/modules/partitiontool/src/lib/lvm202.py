@@ -151,8 +151,12 @@ def reduceVolumeGroup(vg_name, partition_path):
     out, err = runCommand('lvm vgreduce %s %s' % (vg_name, partition_path))
     return (out, err)
 
-def removeLogicalVolumeGroup(vg_name):
+def removeVolumeGroup(vg_name):
     out, err = runCommand('lvm vgremove %s' % vg_name)
+    return (out, err)
+
+def activateAllVolumeGroups():
+    out, err = runCommand('lvm vgchange -a y')
     return (out, err)
 
 def createLogicalVolume(vg_name, lv_name, lv_size):
