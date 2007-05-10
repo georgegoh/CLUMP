@@ -55,10 +55,10 @@ class ScreenFactoryImpl(ScreenFactory):
                              KeyboardSelectionScreen(collection, kusuApp=runtimeDict),
                              ClusterInfoScreen(collection, kusuApp=runtimeDict),
                              NetworkScreen(collection, kusuApp=runtimeDict),
+                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
                              RootPasswordScreen(collection, kusuApp=runtimeDict),
                              PartitionScreen(collection, kusuApp=runtimeDict),
                              KitsScreen(collection, kusuApp=runtimeDict),
-#                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
                              TZSelectionScreen(collection, kusuApp=runtimeDict),
                              ConfirmScreen(collection, kusuApp=runtimeDict)
                             ]

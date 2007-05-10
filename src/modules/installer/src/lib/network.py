@@ -43,20 +43,17 @@ class NetworkScreen(screenfactory.BaseScreen):
         Write self.interfaces dictionary to database.
         """
 
-        kl.info('Writing to DB: %s' % self.interfaces)
-
         for intf in self.interfaces.keys():
             # store information
-            if self.interfaces[intf]['use_dhcp']:
-                self.database.put(self.context, 'use_dhcp:' + intf, u'1')
-            else:
-                self.database.put(self.context, 'use_dhcp:' + intf, u'0')
+            # these are bools, we do str(int(bool)) to convert True to '1'
+            # and False to '0'
+            self.database.put(self.context, 'configure:' + intf,
+                              str(int(self.interfaces[intf]['configure'])))
+            self.database.put(self.context, 'use_dhcp:' + intf,
+                              str(int(self.interfaces[intf]['use_dhcp'])))
+            self.database.put(self.context, 'active_on_boot:' + intf,
+                              str(int(self.interfaces[intf]['active_on_boot'])))
 
-            if self.interfaces[intf]['active_on_boot']:
-                self.database.put(self.context, 'active_on_boot:' + intf, u'1')
-            else:
-                self.database.put(self.context, 'active_on_boot:' + intf, u'0')
-                                  
             if not self.interfaces[intf]['use_dhcp']:
                 self.database.put(self.context, 'hostname:' + intf,
                                   self.interfaces[intf]['hostname'])
@@ -65,54 +62,69 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.database.put(self.context, 'netmask:' + intf,
                                   self.interfaces[intf]['netmask'])
 
+            kl.info('Wrote to DB %s: %s' % (intf, self.interfaces[intf]))
+
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid = snack.Grid(1, 3)
         
         instruction = snack.Label(self.msg)
         self.screenGrid.setField(instruction, col=0, row=0)
-
-        self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
 
         initial_view = False
         # returning from Configure screen provides a filled-in self.interfaces
         if not self.interfaces:
             # we get a dictionary
             self.interfaces = retrieveNetworkContext(self.database)
-            initial_view = True
 
         # we want interfaces in alphabetical order
         intfs = self.interfaces.keys()
         intfs.sort()
 
+        self.listbox = snack.Listbox(6, scroll=1, returnExit=1)
+
         for intf in intfs:
             # DHCP config for first interface
-            if initial_view and len(intfs) and intf == intfs[0]:
+            if len(intfs) and intf == intfs[0] \
+                and self.interfaces[intf]['configure'] == '':
+                self.interfaces[intf]['configure'] = True
                 self.interfaces[intf]['use_dhcp'] = True
                 self.interfaces[intf]['active_on_boot'] = True
 
             # static IP for second interface
-            if initial_view and len(intfs) > 1 and intf == intfs[1]:
+            if len(intfs) > 1 and intf == intfs[1] \
+                and self.interfaces[intf]['configure'] == '':
+                self.interfaces[intf]['configure'] = True
                 self.interfaces[intf]['use_dhcp'] = False
                 self.interfaces[intf]['hostname'] = 'cluster-' + intf
                 self.interfaces[intf]['ip_address'] = '172.20.0.1'
                 self.interfaces[intf]['netmask'] = '255.255.0.0'
                 self.interfaces[intf]['active_on_boot'] = True
 
-            entrystr = '<Unconfigured>'
-            if self.interfaces[intf]['use_dhcp']:
-                entrystr = '<DHCP>'
-            # we check against false to account for unconfigured adapter
-            elif self.interfaces[intf]['use_dhcp'] is False:
-                entrystr = self.interfaces[intf]['ip_address'] + '/' + \
-                           self.interfaces[intf]['netmask'] + ' <' + \
-                           self.interfaces[intf]['hostname'] + '>'
-            entrystr = intf + ' ' + entrystr
+            entrystr = 'not configured'
+            if self.interfaces[intf]['configure']:
+                if self.interfaces[intf]['use_dhcp']:
+                    entrystr = '<DHCP>'
+                # we check against false to account for unconfigured adapter
+                elif self.interfaces[intf]['use_dhcp'] is False:
+                    entrystr = self.interfaces[intf]['ip_address'] + '/' + \
+                               self.interfaces[intf]['netmask'] + ' ' + \
+                               self.interfaces[intf]['hostname']
 
-            kl.debug('Adding interface: %s' % self.interfaces[intf])
+            if self.interfaces[intf]['configure'] \
+                and self.interfaces[intf]['active_on_boot']:
+                entrystr = '* ' + intf + ' ' + entrystr
+            else:
+                entrystr = '  ' + intf + ' ' + entrystr
+
+            kl.debug('Adding interface %s: %s' % (intf, self.interfaces[intf]))
             self.listbox.append(entrystr[:50], intf)
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
-                                 padding=(0, 1, 0, -1))
+                                 padding=(0, 1, 0, 0))
+
+        footnote = '* Activate interface on boot'
+        footnote = snack.Textbox(len(footnote), 1, footnote)
+        self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
 
 class ConfigureIntfScreen:
 
@@ -127,7 +139,7 @@ class ConfigureIntfScreen:
         self.intf = self.baseScreen.listbox.current()
 
         gridForm = snack.GridForm(self.screen,
-                                  _('Configuring [%s]' % self.intf), 1, 3)
+                                  _('Configuring [%s]' % self.intf), 1, 4)
 
         interfaces = self.baseScreen.interfaces
         device = snack.Textbox(40, 1, 'Device: ' + self.intf)
@@ -145,9 +157,14 @@ class ConfigureIntfScreen:
         subgrid.setField(module, 0, 3, anchorLeft=1)
         gridForm.add(subgrid, 0, 0)
 
+        self.configdevice = snack.Checkbox(_('Configure this device'))
+
+        gridForm.add(self.configdevice, 0, 1,
+                     padding=(0, 1, 0, 0), anchorLeft=1)
+
         # DHCP/activate on boot checkboxes
-        self.use_dhcp = snack.Checkbox(_('Configure using DHCP'))
-        self.active_on_boot = snack.Checkbox(_('Activate on boot'), isOn=1)
+        self.use_dhcp = snack.Checkbox(_('Use DHCP'))
+        self.active_on_boot = snack.Checkbox(_('Activate on boot'))
 
         # IP address/netmask text fields
         entryWidth = 22
@@ -166,12 +183,12 @@ class ConfigureIntfScreen:
         self.populateIPs()
 
         subgrid = snack.Grid(1, 5)
-        subgrid.setField(self.use_dhcp, 0, 0, (0, 1, 0, 1), anchorLeft=1)
+        subgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
         subgrid.setField(self.hostname, 0, 1, anchorLeft=1)
         subgrid.setField(self.ip_address, 0, 2, anchorLeft=1)
         subgrid.setField(self.netmask, 0, 3, anchorLeft=1)
-        subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 1), anchorLeft=1)
-        gridForm.add(subgrid, 0, 1)
+        subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 0), anchorLeft=1)
+        gridForm.add(subgrid, 0, 2)
 
         # add OK and Cancel buttons
         ok_button = kusuwidgets.Button(_('OK'))
@@ -179,13 +196,9 @@ class ConfigureIntfScreen:
         subgrid = snack.Grid(2, 1)
         subgrid.setField(ok_button, 0, 0, (0, 1, 1, 0))
         subgrid.setField(cancel_button, 1, 0, (0, 1, 0, 0))
-        gridForm.add(subgrid, 0, 2)
+        gridForm.add(subgrid, 0, 3)
 
-        # add callback for toggling static IP fields
-        self.use_dhcp.setCallback(enabledByValue, (self.use_dhcp,
-                                  self.hostname, self.ip_address, self.netmask))
-        enabledByValue((self.use_dhcp,
-                        self.hostname, self.ip_address, self.netmask))
+        self.addCheckboxCallbacks()
 
         while True:
             # all done, draw and run
@@ -202,6 +215,23 @@ class ConfigureIntfScreen:
 
         self.screen.popWindow()
         return NAV_NOTHING
+
+    def addCheckboxCallbacks(self):
+        # add callback for toggling static IP fields
+        configd = {'control': self.configdevice,
+                   'disable': (self.use_dhcp, self.active_on_boot,
+                                self.hostname, self.ip_address, self.netmask),
+                   'enable': (self.use_dhcp, self.active_on_boot),
+                   'invert': False}
+        dhcpd = {'control': self.use_dhcp,
+                 'disable': (self.hostname, self.ip_address, self.netmask),
+                 'enable': (self.hostname, self.ip_address, self.netmask),
+                 'invert': True}
+
+        self.configdevice.setCallback(enabledByValue, [dhcpd, configd])
+        self.use_dhcp.setCallback(enabledByValue, [dhcpd])
+
+        enabledByValue([dhcpd, configd])
 
     def configureIntfVerify(self):
         if self.use_dhcp.value():
@@ -233,22 +263,17 @@ class ConfigureIntfScreen:
     def configureIntfOK(self):
         interfaces = self.baseScreen.interfaces
 
-        if self.use_dhcp.value():
-            interfaces[self.intf]['use_dhcp'] = True
-        else:
-            interfaces[self.intf]['use_dhcp'] = False
-
-        if self.active_on_boot.value():
-            interfaces[self.intf]['active_on_boot'] = True
-        else:
-            interfaces[self.intf]['active_on_boot'] = False
+        interfaces[self.intf]['configure'] = bool(self.configdevice.value())
+        interfaces[self.intf]['use_dhcp'] = bool(self.use_dhcp.value())
+        interfaces[self.intf]['active_on_boot'] = \
+                                            bool(self.active_on_boot.value())
 
         interfaces[self.intf]['hostname'] = self.hostname.value()
         interfaces[self.intf]['ip_address'] = self.ip_address.value()
         interfaces[self.intf]['netmask'] = self.netmask.value()
 
         # decide whether to show Gateway/DNS screen next
-        self.controlDNSScreen()
+        #self.controlDNSScreen()
 
     def controlDNSScreen(self):
         from gatewaydns import GatewayDNSSetupScreen
@@ -286,6 +311,11 @@ class ConfigureIntfScreen:
         
         interfaces = self.baseScreen.interfaces
 
+        if interfaces[self.intf]['configure']:
+            self.configdevice.setValue('*')
+        else:
+            self.configdevice.setValue(' ')
+
         if interfaces[self.intf]['use_dhcp']:
             self.use_dhcp.setValue('*')
         else:
@@ -308,19 +338,25 @@ def enabledByValue(args):
             all other arguments will be set accordingly.
     """
 
-    control = args[0]
-    if control.value():
-        for arg in args[1:]:
-            arg.setEnabled(False)
-    else:
-        for arg in args[1:]:
-            arg.setEnabled(True)
+    for d in args:
+        control = d['control']
+
+        if bool(control.value()) ^ d['invert']:
+            for subject in d['enable']:
+                if isinstance(subject, kusuwidgets.LabelledEntry):
+                    subject.setEnabled(True)
+                elif isinstance(subject, snack.Checkbox):
+                    subject.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
+        else:
+            for subject in d['disable']:
+                if isinstance(subject, kusuwidgets.LabelledEntry):
+                    subject.setEnabled(False)
+                elif isinstance(subject, snack.Checkbox):
+                    subject.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
 
 def retrieveNetworkContext(db):
-    interfaces = net.getPhysicalInterfaces()    # we get a dictionary
-    network_entries = db.get('Network')
-
     adapters = {}
+    network_entries = db.get('Network')
     for network_entry in network_entries:
         # properties stored in format property:adapter
         # ie: use_dhcp:eth0
@@ -334,9 +370,11 @@ def retrieveNetworkContext(db):
 
     kl.info('Adapters in DB: %s' % adapters)
     
+    interfaces = net.getPhysicalInterfaces()    # we get a dictionary
     for intf in interfaces.keys():
         # default to using DHCP and active on boot
-        interfaces[intf].update({'use_dhcp': '',
+        interfaces[intf].update({'configure': '',
+                                 'use_dhcp': '',
                                  'hostname': '',
                                  'ip_address': '',
                                  'netmask': '',
@@ -345,16 +383,22 @@ def retrieveNetworkContext(db):
         try:
             interfaces[intf].update(adapters[intf])
         except KeyError:
-            # this interface has not been configured
+            # this interface is not in the database
             pass
 
     # SQLite stores these values as unicode strings
     for intf in interfaces.keys():
-        # if use_dhcp not in the DB, leave as is for unconfigured interfaces
+        # if use_dhcp or configure not in the DB,
+        # leave as is for unconfigured interfaces
         if interfaces[intf]['use_dhcp'] == u'1':
             interfaces[intf]['use_dhcp'] = True
         elif interfaces[intf]['use_dhcp'] == u'0':
             interfaces[intf]['use_dhcp'] = False
+
+        if interfaces[intf]['configure'] == u'1':
+            interfaces[intf]['configure'] = True
+        elif interfaces[intf]['configure'] == u'0':
+            interfaces[intf]['configure'] = False
 
         if interfaces[intf]['active_on_boot'] == u'1':
             interfaces[intf]['active_on_boot'] = True
