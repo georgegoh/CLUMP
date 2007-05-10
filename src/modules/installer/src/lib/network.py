@@ -47,6 +47,9 @@ class NetworkScreen(screenfactory.BaseScreen):
             # store information
             # these are bools, we do str(int(bool)) to convert True to '1'
             # and False to '0'
+            if self.interfaces[intf]['configure'] == '':
+                self.interfaces[intf]['configure'] = False
+
             self.database.put(self.context, 'configure:' + intf,
                               str(int(self.interfaces[intf]['configure'])))
             self.database.put(self.context, 'use_dhcp:' + intf,
@@ -80,7 +83,7 @@ class NetworkScreen(screenfactory.BaseScreen):
         intfs = self.interfaces.keys()
         intfs.sort()
 
-        self.listbox = snack.Listbox(6, scroll=1, returnExit=1)
+        self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=56)
 
         for intf in intfs:
             # DHCP config for first interface
@@ -104,15 +107,14 @@ class NetworkScreen(screenfactory.BaseScreen):
             if self.interfaces[intf]['configure']:
                 if self.interfaces[intf]['use_dhcp']:
                     entrystr = 'DHCP'
-                # we check against false to account for unconfigured adapter
-                elif self.interfaces[intf]['use_dhcp'] is False:
+                else:
                     entrystr = self.interfaces[intf]['ip_address'] + '/' + \
                                self.interfaces[intf]['netmask'] + ' ' + \
                                self.interfaces[intf]['hostname']
 
-            if self.interfaces[intf]['configure'] \
-                and self.interfaces[intf]['active_on_boot']:
-                entrystr = '* ' + intf + ' ' + entrystr
+                if self.interfaces[intf]['active_on_boot']:
+                    entrystr = '* ' + intf + ' ' + entrystr
+
             else:
                 entrystr = '  ' + intf + ' ' + entrystr
 
@@ -390,15 +392,15 @@ def retrieveNetworkContext(db):
     for intf in interfaces.keys():
         # if use_dhcp or configure not in the DB,
         # leave as is for unconfigured interfaces
-        if interfaces[intf]['use_dhcp'] == u'1':
-            interfaces[intf]['use_dhcp'] = True
-        elif interfaces[intf]['use_dhcp'] == u'0':
-            interfaces[intf]['use_dhcp'] = False
-
         if interfaces[intf]['configure'] == u'1':
             interfaces[intf]['configure'] = True
         elif interfaces[intf]['configure'] == u'0':
             interfaces[intf]['configure'] = False
+
+        if interfaces[intf]['use_dhcp'] == u'1':
+            interfaces[intf]['use_dhcp'] = True
+        else:
+            interfaces[intf]['use_dhcp'] = False
 
         if interfaces[intf]['active_on_boot'] == u'1':
             interfaces[intf]['active_on_boot'] = True
