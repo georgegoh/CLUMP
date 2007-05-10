@@ -105,7 +105,7 @@ import re
 
 def verifyFQDN(fqdn):
     """Verifies that text is a valid FQDN(.a-zA-Z0-9)"""
-    p = re.compile('[^.a-zA-Z0-9]')
+    p = re.compile('[^.\-a-zA-Z0-9]')
     li = p.findall(fqdn)
     if li:
         return False, 'FQDN can only contain the characters .a-zA-Z0-9'
