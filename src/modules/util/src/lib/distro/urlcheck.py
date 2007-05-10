@@ -12,11 +12,7 @@ import urllib
 import httplib
 import sys
 from path import path
-
-
-
-class HTTPError(Exception): pass
-class FTPError(Exception): pass
+from kusu.util.distro.kusuexceptions import *
 
 class myftpwrapper(urllib.ftpwrapper):
     # Overrides the default behaviour in urllib.
@@ -150,4 +146,4 @@ class URLCheck:
 
         else:
             # Why are we here?
-            raise Exception
+            raise KusuError
