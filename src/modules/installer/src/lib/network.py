@@ -12,9 +12,9 @@ import socket
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
-from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.hardware import net
 import kusu.util.log as kusulog
+import kusu.util.util as kusutil
 
 NAV_NOTHING = -1
 
@@ -67,6 +67,58 @@ class NetworkScreen(screenfactory.BaseScreen):
 
             kl.info('Wrote to DB %s: %s' % (intf, self.interfaces[intf]))
 
+    def validate(self):
+        errList = [] 
+
+        rv, dups = self.checkDuplicates('ip_address')
+        if not rv:
+            msg = _('Identical IP %s %s assigned to more than one interface.')
+            if len(dups) > 1:
+                errList.append(msg % ('addresses',
+                               ', '.join(dups[:len(dups) - 1]) +
+                               ' and %s' % dups[len(dups) - 1]))
+            else:
+                errList.append(msg % ('address', dups[0]))
+
+        rv, dups = self.checkDuplicates('hostname')
+        if not rv:
+            msg = _('Identical %s %s assigned to more than one interface.')
+            if len(dups) > 1:
+                errList.append(msg % ('host names',
+                               ', '.join(dups[:len(dups) - 1]) +
+                               ' and %s' % dups[len(dups) - 1]))
+            else:
+                errList.append(msg % ('host name', dups[0]))
+
+        if errList:
+            errMsg = _('Please correct the following errors:')
+            for i, string in enumerate(errList):
+                errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
+            return False, errMsg
+
+        return True, ''
+
+    def checkDuplicates(self, prop):
+        if len(self.interfaces) <= 1:
+            return True, []
+
+        dup_props = []
+        props = []
+
+        for intf in self.interfaces.keys():
+            if self.interfaces[intf]['configure'] \
+                and not self.interfaces[intf]['use_dhcp'] \
+                and self.interfaces[intf][prop] not in dup_props:
+                if self.interfaces[intf][prop] in props:
+                    dup_props.append(self.interfaces[intf][prop])
+                else:
+                    props.append(self.interfaces[intf][prop])
+
+        if dup_props:
+            return False, dup_props
+
+        return True, []
+ 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 3)
         
@@ -103,7 +155,7 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.interfaces[intf]['netmask'] = '255.255.0.0'
                 self.interfaces[intf]['active_on_boot'] = True
 
-            entrystr = 'not configured'
+            entrystr = '  ' + intf + ' not configured'
             if self.interfaces[intf]['configure']:
                 if self.interfaces[intf]['use_dhcp']:
                     entrystr = 'DHCP'
@@ -114,9 +166,8 @@ class NetworkScreen(screenfactory.BaseScreen):
 
                 if self.interfaces[intf]['active_on_boot']:
                     entrystr = '* ' + intf + ' ' + entrystr
-
-            else:
-                entrystr = '  ' + intf + ' ' + entrystr
+                else:
+                    entrystr = '  ' + intf + ' ' + entrystr
 
             kl.debug('Adding interface %s: %s' % (intf, self.interfaces[intf]))
             self.listbox.append(entrystr[:50], intf)
@@ -172,14 +223,15 @@ class ConfigureIntfScreen:
         entryWidth = 22
         self.ip_address = kusuwidgets.LabelledEntry(labelTxt=_('IP Address '),
                                                     width=entryWidth)
-        self.ip_address.addCheck(kusuwidgets.verifyIP)
+        self.ip_address.addCheck(kusutil.verifyIP)
         self.netmask = \
             kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(11)),
                                       width=entryWidth)
-        self.netmask.addCheck(kusuwidgets.verifyIP)
+        self.netmask.addCheck(kusutil.verifyIP)
         self.hostname = \
             kusuwidgets.LabelledEntry(labelTxt=_('Host name '.rjust(11)),
                                                   width=entryWidth)
+        self.hostname.addCheck(kusutil.verifyHostname)
 
         # initialize fields
         self.populateIPs()
@@ -240,6 +292,12 @@ class ConfigureIntfScreen:
             return True
 
         errList = []
+
+        rv, msg = self.hostname.verify()
+        if rv is None:
+            errList.append(_('Host name is empty.'))
+        elif not rv:
+            errList.append(msg)
 
         rv, msg = self.ip_address.verify()
         if rv is None:

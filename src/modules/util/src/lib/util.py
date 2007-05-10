@@ -18,6 +18,16 @@ def verifyFQDN(fqdn):
         return False, 'FQDN can only contain the characters .a-zA-Z0-9'
     return True, None
 
+def verifyHostname(hostname):
+    """Verifies that text is a valid host name (-a-zA-Z0-9)"""
+    
+    p = re.compile('[^\-a-zA-Z0-9]')
+    li = p.findall(hostname)
+
+    if li:
+        return False, 'Host name can only contain the characters -a-zA-Z0-9'
+    return True, None
+
 def verifyIP(ip):
     """Verifies that text is a valid IP"""
     li = ip.split('.')
