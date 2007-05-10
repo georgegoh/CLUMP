@@ -58,6 +58,8 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.database.put(self.context, 'active_on_boot:' + intf, u'0')
                                   
             if not self.interfaces[intf]['use_dhcp']:
+                self.database.put(self.context, 'hostname:' + intf,
+                                  self.interfaces[intf]['hostname'])
                 self.database.put(self.context, 'ip_address:' + intf,
                                   self.interfaces[intf]['ip_address'])
                 self.database.put(self.context, 'netmask:' + intf,
