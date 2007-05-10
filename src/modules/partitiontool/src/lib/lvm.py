@@ -29,6 +29,7 @@ import subprocess
 from kusuexceptions import *
 import lvm202 as lvm
 from kusu.util.log import getKusuLog
+from os.path import basename, exists
 
 logger = getKusuLog('lvm')
 
@@ -149,11 +150,12 @@ class LogicalVolumeGroup(object):
         self.extent_size_humanreadable = extent_size
         self.extent_size = self.parsesize(extent_size)
         self.on_disk = False
+        if exists('/dev/' + name): self.on_disk = True
         self.deleted = False
         for pv in pv_list:
             self.pv_dict[pv.name] = pv
             pv.group = self
-        if createNew:
+        if createNew or not self.on_disk:
             pv_paths = [pv.partition.path for pv in pv_list]
             queueCommand(lvm.createVolumeGroup, (name, extent_size, pv_paths))
             queueCommand(lvm.activateAllVolumeGroups, None)
@@ -223,6 +225,7 @@ class LogicalVolumeGroup(object):
         self.lv_dict[name] = lv
         size_str = str(size_MB) + 'M'
         queueCommand(lvm.createLogicalVolume, (self.name, name, size_str))
+        queueCommand(lvm.makeNodes, None)
         return lv
 
     def delLogicalVolume(self, logicalVol):
@@ -261,6 +264,7 @@ class LogicalVolume(object):
        Hidden attributes available:
           a. size
           b. extents
+          c. path
     """
     name = None
     group = None
@@ -315,13 +319,13 @@ class LogicalVolume(object):
         if size == self.size:
             return
         elif size < self.size:
-            if (self.size - size) < self.group.extent_size:
+            if (self.size - size) < (self.group.extent_size * 1024 * 1024):
                 # don't bother reducing if the change is less than an extent.
                 return
             else:
-                queueCommand(lvm.reduceLogicalVolume, (str(size_MB) + 'M', self.fs_type))
+                queueCommand(lvm.reduceLogicalVolume, (self.path, str(size_MB) + 'M', self.fs_type))
         else:
-            queueCommand(lvm.extendLogicalVolume, (str(size_MB) + 'M', self.fs_type))
+            queueCommand(lvm.extendLogicalVolume, (self.path, str(size_MB) + 'M', self.fs_type))
         
     def mount(self, mountpoint=None, readonly=False):
         """Mounts this partition. If no mountpoint is given, then the

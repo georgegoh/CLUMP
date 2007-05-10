@@ -178,3 +178,7 @@ def reduceLogicalVolume(lv_path, size_str, fs_type):
 def removeLogicalVolume(lv_path):
     out, err = runCommand('lvm lvremove -f %s' % lv_path)
     return (out, err)
+
+def makeNodes():
+    out, err = runCommand('lvm vgmknodes')
+    return (out, err)

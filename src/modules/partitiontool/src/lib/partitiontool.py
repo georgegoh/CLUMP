@@ -212,7 +212,6 @@ class DiskProfile(object):
         for lvg_name, lvg_prop_dict in lvg_probe_dict.iteritems():
             pv_list = [pv for pv in self.pv_dict.itervalues() if pv.group == lvg_name]
             lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'], pv_list)
-            lvg.on_disk = True
             self.lvg_dict[lvg_name] = lvg
         logger.debug('Found LVGs.')
 
@@ -224,7 +223,6 @@ class DiskProfile(object):
             lvg = self.lvg_dict[lvg_name]
             lv_name = basename(lv_path)
             lv = LogicalVolume(lv_name, lvg, 0)
-            lv.on_disk = True
             lv.extents = lv_prop_dict['extents']
             lvg.lv_dict[lv_name] = lv
             self.lv_dict[lv_name] = lv

@@ -281,11 +281,14 @@ class NewLogicalVolume:
         vol_grp = self.volumegroup.current()
         size = long(self.size.value())
         new_lv_name = self.lv_name.value()
-        self.disk_profile.newLogicalVolume(name=new_lv_name,
-                                           lvg=vol_grp,
-                                           size_MB=size,
-                                           fs_type=fs_type,
-                                           mountpoint=mountpoint)
+        lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
+                                                lvg=vol_grp,
+                                                size_MB=size,
+                                                fs_type=fs_type,
+                                                mountpoint=mountpoint)
+        if not self.format_partition.value():
+            lv.do_not_format = True
+
 
 class NewVolumeGroup:
     """Form for specifying a new logical volume group."""
