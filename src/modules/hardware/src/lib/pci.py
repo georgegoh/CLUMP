@@ -10,7 +10,7 @@
 """The class PCI parses the pci.ids file and returning a dictionary, keyed by the vendor code
 
 >>> from kusu.hardware.pci import PCI
->>> pci = PCI()
+>>> pci = PCI(['101e', '0b0b'])
 >>> pci.ids['101e']
 {'DEVICE': {'0009': {'NAME': 'MegaRAID 428 Ultra RAID Controller (rev 03)'},
             '1960': {'NAME': 'MegaRAID',
@@ -56,7 +56,7 @@ class PCI:
         # Syntax:
         # vendor  vendor_name
         #	device  device_name				<-- single tab
-        #		subvendor subdevice  subsystem_name	<-- two tabs
+        #		subvendor subdevice  subsystem_name	<-- two tab
 
         for line in content:
             # Ignore comments
@@ -70,7 +70,13 @@ class PCI:
                 line = m.group()
                 line = line.split()
 
+                # No more vendor code to check and is no
+                # no longer the same vendor
+                if len(vcodes) <= 0 and line[0] != vendor_code:
+                    break
+
                 vendor_code = line[0]
+
                 if vendor_code == 'ffff':
                     break
                 
@@ -81,7 +87,8 @@ class PCI:
                 if vendor_code in vcodes:
                     self.ids[vendor_code] = {}
                     self.ids[vendor_code]['NAME'] = vendor_name
-
+                    vcodes.pop(vcodes.index(vendor_code))
+            
             else:
                 #	device  device_name				<-- single tab
                 m = re.match('\t[^\t]+', line)
@@ -128,4 +135,4 @@ class PCI:
                        
                         self.ids[vendor_code]['DEVICE'][device_code]['SUBVENDOR'][subvendor_code][subdevice_code] = subsystem_name
 
-
+            
