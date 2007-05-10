@@ -37,6 +37,21 @@ def verifyHostname(hostname):
         return False, 'Host name can only contain the characters -a-zA-Z0-9'
     return True, None
 
+def isHostRoutable(ip, nm, host):
+    """Indicates whether host is routable from ip/nm (nm = netmask).
+
+    All arguments are strings in dotted-quad format (xxx.xxx.xxx.xxx).
+    """
+
+    import socket
+    import struct
+
+    ip_n = struct.unpack('>L', socket.inet_aton(ip))[0]
+    nm_n = struct.unpack('>L', socket.inet_aton(nm))[0]
+    host_n = struct.unpack('>L', socket.inet_aton(host))[0]
+
+    return ip_n & nm_n == host_n & nm_n
+
 def verifyIP(ip):
     """Verifies that text is a valid IP"""
     li = ip.split('.')
