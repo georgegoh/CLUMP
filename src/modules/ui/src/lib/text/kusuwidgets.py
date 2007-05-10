@@ -154,7 +154,6 @@ class ColumnListbox(snack.Grid):
     colLabels = []
     colWidths = []
     justification = []
-    rows = []
 
     def __init__(self, height, colWidths, colLabels, justification, returnExit=1):
         if len(colWidths) is not len(colLabels) or \

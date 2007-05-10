@@ -26,9 +26,9 @@ def deleteDevice(baseScreen):
     screen = baseScreen.screen
     diskProfile = baseScreen.disk_profile
     listbox = baseScreen.listbox
-    selected_device = listbox.current()
 
     try:
+        selected_device = listbox.current()
         diskProfile.delete(selected_device)
     except partitiontool.KusuError, e:
         msgbox = snack.GridForm(screen, 'Error', 1, 2)
@@ -36,5 +36,10 @@ def deleteDevice(baseScreen):
         msgbox.add(text, 0, 0)
         msgbox.add(snack.Button('Ok'), 0, 1)
         msgbox.runPopup()
-
+    except KeyError:
+        msgbox = snack.GridForm(screen, 'Error', 1, 2)
+        text = snack.TextboxReflowed(30, 'Nothing to delete.')
+        msgbox.add(text, 0, 0)
+        msgbox.add(snack.Button('Ok'), 0, 1)
+        msgbox.runPopup()
     return NAV_NOTHING
