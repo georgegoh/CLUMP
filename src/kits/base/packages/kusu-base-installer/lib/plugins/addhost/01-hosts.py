@@ -18,7 +18,9 @@ import string
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-        print "dbreport-hosts.py: AddHostPlugin->added()"
+        #print "dbreport-hosts.py: AddHostPlugin->added()"
+	pass
 
     def removed(self, dbconn, nodename, info):
-        print "dbreport-hosts.py: AddHostPlugin->removed()"
+        #print "dbreport-hosts.py: AddHostPlugin->removed()"
+	pass

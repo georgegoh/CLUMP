@@ -18,23 +18,26 @@ import os
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-	print "dbreport-reverse.py: called AddHostPlugin->added()"
+	#print "dbreport-reverse.py: called AddHostPlugin->added()"
 	dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                         AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
-        
+
         networks = dbconn.fetchall()
 	for net in networks:
 	     # Run dbeport for each network
-	     print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
+	     #print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
 	     #os.system("/opt/kusu/bin/dbreport reverse %s" % net)
+	     pass
 
     def removed(self, dbconn, nodename, info):
 	if info:
-            print "dbreport-reverse.py: called AddHostPlugin->removed()"
+            #print "dbreport-reverse.py: called AddHostPlugin->removed()"
+	    print "DEBUG: %s" % nodename
             dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
             networks = dbconn.fetchall()
             for net in networks:
                  # Run dbeport for each network
-	         print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
+	         #print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
                  #os.system("/opt/kusu/bin/dbreport reverse %s" % net)
+                 pass

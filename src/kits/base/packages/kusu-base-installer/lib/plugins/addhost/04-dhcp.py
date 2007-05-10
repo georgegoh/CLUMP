@@ -17,6 +17,7 @@ import os
 
 class AddHostPlugin:
     def finished(self, dbconn):
-	print "dhcpd.py: called AddHostPlugin->finished()"
-	print "dhcpd.py: system call: /opt/kusu/bin/dbreport dhcpd"
-	#os.system("/opt/kusu/sbin/dbreport dhcpd")
+	#print "dhcpd.py: called AddHostPlugin->finished()"
+	#print "dhcpd.py: system call: /opt/kusu/bin/dbreport dhcpd"
+	os.system("/opt/kusu/bin/dbreport.py dhcpd > /etc/dhcpd.conf")
+	os.system("/etc/init.d/dhcpd restart")

@@ -17,7 +17,9 @@ import os
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-	print "dbreport-zone.py: called AddHostPlugin->added()"
+	#print "dbreport-zone.py: called AddHostPlugin->added()"
+	pass
 
     def removed(self, dbconn, nodename, info):
-        print "dbreport-zone.py: AddHostPlugin->removed()"
+        #print "dbreport-zone.py: AddHostPlugin->removed()"
+	pass
