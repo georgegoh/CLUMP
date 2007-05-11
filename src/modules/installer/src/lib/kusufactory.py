@@ -11,6 +11,7 @@
 """This module sets up the sequence of screens to be shown in the framework."""
 
 import snack
+from path import path
 from collection import *
 from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
 from welcome import WelcomeScreen
@@ -47,10 +48,23 @@ runtimeDict = {}
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the 
        KusuInstaller class.
-
     """
+
     name = 'installer'
-    collection = SQLiteCollection()
+
+    try:
+        kusutmp = os.environ['KUSU_TMP']
+    except KeyError:
+        kusutmp = '/tmp/kusu'
+    if kusutmp == '':
+        kusutmp = '/tmp/kusu'
+
+    kusudb = path(kusutmp) / 'kusu.db'
+    kusudb_parent = path(kusutmp).abspath()
+    if not kusudb_parent.exists():
+        kusudb_parent.makedirs()
+
+    collection = SQLiteCollection(kusudb)
     ScreenFactory.screens = [WelcomeScreen(collection, kusuApp=runtimeDict),
                              LanguageSelectionScreen(collection, kusuApp=runtimeDict),
                              KeyboardSelectionScreen(collection, kusuApp=runtimeDict),
