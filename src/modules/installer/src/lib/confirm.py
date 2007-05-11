@@ -130,8 +130,9 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.selector.mainScreen.popWindow()
 
             #self.makeRepo()
+
             self.selector.popupStatus('Creating Auto-install Script', 'Creating Auto-install script...', -1)
-            genAutoInstallScript(disk_profile, self.database)
+            genAutoInstallScript(disk_profile, self.kusuApp['netProfile'], self.database)
             self.logger.debug('Auto install script generated.')
             self.selector.mainScreen.popWindow()
 
@@ -140,7 +141,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.logger.debug('Closed database connection.')
             self.selector.mainScreen.popWindow()
 
-            self.selector.popupStatus('Migrating Mountpoint', 'Migrating mountpoint...', -1)
+            self.selector.popupStatus('Migrating kusu logs', 'Migrating kusu logs...', -1)
             migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
             self.selector.mainScreen.popWindow()

@@ -44,26 +44,36 @@ class KickstartFactory(BaseFactory):
         # Creates the kickstart option for networking 
 
         network_lines = []
-        networks = self.profile.networkprofile.net_dict.values()
-        for net in networks:
+        networks = self.profile.networkprofile
+        for intf, v in networks['interfaces'].items():
             str = ''
 
-            # Translate to kickstart syntax
-            if net.onboot:
-                net.onboot = 'yes'
+            # Convert to anaconda syntax
+            if v['active_on_boot']:
+                v['active_on_boot'] = 'yes'
             else:
-                net.onboot = 'no'
+                v['active_on_boot'] = 'no'
 
-            if net.bootproto == 'dhcp':
-                str = 'network --bootproto dhcp --device %s --onboot=%s' % (net.dev, net.onboot)
-            elif net.bootproto == 'static':
-                str = 'network --bootproto static  --device=%s --ip=%s --netmask=%s --onboot=%s' % \
-                      (net.dev, net.ip, net.netmask, net.onboot)
-            else:
-                pass #Ignore other types
+            if v['configure']:
+                if v['use_dhcp']:
+                    str = 'network --bootproto dhcp --device %s --onboot %s' % \
+                          (intf, v['active_on_boot'])
+                else:
+                    str = 'network --bootproto static  --device=%s --ip=%s --netmask=%s --onboot %s' % \
+                          (intf, v['ip_address'], v['netmask'], v['active_on_boot'])
 
-            if str:            
+                if not networks['gw_dns_use_dhcp']: # manual gw and dns
+                    str = str + ' --gateway %s --dns %s' % \
+                          (networks['default_gw'], networks['dns1']) # Only 1 dns allowed
+                   
+                if not networks['fqhn_use_dhcp']: # manual hostname
+                    str = str + ' --hostname %s' % networks['fqhn']
+                 
                 network_lines.append(str)
+
+            else:
+                # Do nothing for not configured interfaces
+                pass
 
         return network_lines
 
@@ -71,9 +81,11 @@ class KickstartFactory(BaseFactory):
 
         part_lines = []
 
+        # Translate from parted to anaconda defn
+        # parted filesystem type -> anaconda
         fstype_dict = { 'ext2': 'ext2',
                         'ext3': 'ext3',
-                        'vfat': 'vfat', # Need to check this
+                        'fat32': 'vfat', 
                         'linux-swap': 'swap',
                         None: None}
 

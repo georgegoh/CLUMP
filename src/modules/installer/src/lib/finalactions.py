@@ -55,11 +55,10 @@ def copyKits(prefix, database):
 def makeRepo(self):
     pass
 
-def genAutoInstallScript(disk_profile, database):
+def genAutoInstallScript(disk_profile, network_profile, database):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart
-    from kusu.networktool.network import NetworkProfile
     from kusu.installer.network import retrieveNetworkContext
 
     # redhat based for now
@@ -74,45 +73,7 @@ def genAutoInstallScript(disk_profile, database):
     else:
         install_script = path(kusu_tmp) / 'install_script'
 
-    # Build network profile    
-    # Ignore unicode
-    gateway = database.get('Network', 'Default Gateway')
-    dns1 = database.get('Network', 'DNS 1')
-    dns2 = database.get('Network', 'DNS 2')
-    dns3 = database.get('Network', 'DNS 3')
 
-    network_profile = NetworkProfile()
-    network_profile.gateway = gateway
-    network_profile.dns = [dns1, dns1, dns2] 
-
-    for intf, value in retrieveNetworkContext(database).items():
-        network_profile.addNetwork(intf)
-        network = network_profile.net_dict[intf]
-        
-        # Use ipv4
-        network.ipv4 = True
-        network.ipv6 = False
-
-        # Activate on boot
-        if int(value['active_on_boot']):
-            network.onboot = True 
-        else:
-            network.onboot = False
-
-        if int(value['configure']):
-            if int(value['use_dhcp']):
-                # Using dhcp
-                network.bootproto = 'dhcp'
-            else:
-                # static
-                network.bootproto = 'static'
-                network.ip = str(value['ip_address'])
-                network.netmask = str(value['netmask'])
-                network.hostname = str(value['hostname'])
-        else: 
-            # Do nothing for unconfigured interface
-            pass
-             
     # Build kickstart object
     # Retrieve all the data required
     k = Kickstart()
@@ -142,13 +103,13 @@ def migrate(prefix):
     kusu_log = os.environ.get('KUSU_LOGFILE', None)
 
     if not kusu_tmp or not kusu_log:
-        raise Exception
+        kusu_tmp = '/tmp/kusu'
+        kusu_log = '/tmp/kusu/kusu.log'
 
     kusu_tmp = path(kusu_tmp)
     kusu_log = path(kusu_log)
 
-    #files = [kusu_tmp / 'kusu.db', kusu_log]
-    files = [path('/kusu.db'), kusu_log]
+    files = [kusu_tmp / 'kusu.db', kusu_log]
 
     for f in files:
         if f.exists():
