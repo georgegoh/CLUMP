@@ -18,13 +18,13 @@ SET(KUSU_MODULE OFF)
 #Custom command and targets
 ADD_CUSTOM_TARGET(patch-createrepo
   COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/createrepo.patch
-  WORKING_DIRECTORY ${MAKE_CURRENT_SOURCE_DIR}/kusuroot/bin
+  WORKING_DIRECTORY ${SETUPPY_PATH}/src
 )
 
 #Custom command and targets
 ADD_CUSTOM_TARGET(patch-modifyrepo
   COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/modifyrepo.patch
-  WORKING_DIRECTORY ${MAKE_CURRENT_SOURCE_DIR}/kusuroot/bin # workaround
+  WORKING_DIRECTORY ${SETUPPY_PATH}/src
 )
 
 
