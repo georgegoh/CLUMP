@@ -222,3 +222,24 @@ class ColumnListbox(snack.Grid):
 
     def clear(self):
         self.listbox.clear()
+
+
+class ProgressDialogWindow(object):
+
+    msgbox = None
+    textbox = None
+    snackScreen = None
+
+    def __init__(self, snackScreen, title, msg):
+        self.snackScreen = snackScreen
+        self.msgbox = snack.GridForm(snackScreen, title, 1,1)
+        self.textbox = snack.TextboxReflowed(30, msg)
+        self.msgbox.add(self.textbox,0, 0)
+        self.msgbox.draw()
+        snackScreen.refresh()
+
+    def setText(self, text):
+        self.textbox.setText(text)
+
+    def close(self):
+        self.snackScreen.popWindow()

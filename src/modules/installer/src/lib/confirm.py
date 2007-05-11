@@ -108,43 +108,42 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
             mntpnt = '/mnt/kusu'
 
-            self.selector.popupStatus('Formatting Disks', 'Formatting disks...', -1)
+            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
             disk_profile = self.kusuApp['DiskProfile']
             self.formatDisk(disk_profile)
             self.logger.debug('Formatted Disks.')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
-            self.selector.popupStatus('Setting Up Network', 'Setting up networking...', -1)
+            prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
             setupNetwork()
             self.logger.debug('Network set up.')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
-            self.selector.popupStatus('Setting Up Mountpoints', 'Setting up mountpoints...', -1)
+            prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
             mountKusuMntPts(mntpnt, disk_profile)
             self.logger.debug('Kusu mount points set up')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
-            self.selector.popupStatus('Copying Kits', 'Copying kits...', -1)
+            prog_dlg = self.selector.popupProgress('Copying Kits', 'Copying kits...')
             copyKits(mntpnt, self.database)
             self.logger.debug('Kits copied.')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
             #self.makeRepo()
-
-            self.selector.popupStatus('Creating Auto-install Script', 'Creating Auto-install script...', -1)
+            prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
             genAutoInstallScript(disk_profile, self.kusuApp['netProfile'], self.database)
             self.logger.debug('Auto install script generated.')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
-            self.selector.popupStatus('Closing Database Connection', 'Closing database connection...', -1)
+            prog_dlg = self.selector.popupProgress('Closing Database Connection', 'Closing database connection...')
             self.database.close()
             self.logger.debug('Closed database connection.')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
-            self.selector.popupStatus('Migrating kusu logs', 'Migrating kusu logs...', -1)
+            prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
             migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
-            self.selector.mainScreen.popWindow()
+            prog_dlg.close()
 
     def formatDisk(self, disk_profile):
         disk_profile.commit()

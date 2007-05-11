@@ -18,6 +18,7 @@ import snack
 from kusu.core.app import KusuApp
 from kusu.util.log import Logger
 from path import path
+from kusuwidgets import *
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
@@ -64,6 +65,9 @@ class Navigator(object, KusuApp):
             return self.screens[self.currentStep]
         raise AttributeError, "%s instance has no attribute '%s'" % \
                               (self.__class__, name)
+
+    def popupProgress(self, title, msg):
+        return ProgressDialogWindow(self.mainScreen, title, msg)
 
     def popupStatus(self, title, msg, timeout):
         """ Show a status dialog that disappears after a timeout."""

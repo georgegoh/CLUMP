@@ -56,6 +56,7 @@ class PartitionScreen(screenfactory.BaseScreen):
         """Stub function"""
 
     def drawImpl(self):
+        prog_dlg = self.selector.popupProgress('Scanning System', 'Scanning System disks...')
         self.screenGrid = snack.Grid(1, 1)
 
         self.listbox = kusuwidgets.ColumnListbox(height=8, 
@@ -73,6 +74,7 @@ class PartitionScreen(screenfactory.BaseScreen):
             except: pass
 
             self.disk_profile = partitiontool.DiskProfile(False)
+
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()
         for key in sorted(lvg_keys):
@@ -121,6 +123,7 @@ class PartitionScreen(screenfactory.BaseScreen):
                                     fs_type,
                                     mountpoint], partition)
 
+        prog_dlg.close()
         self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
                                  padding=(0,0,0,0))
 
