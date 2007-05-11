@@ -54,18 +54,29 @@ def isHostRoutable(ip, nm, host):
 
 def verifyIP(ip):
     """Verifies that text is a valid IP"""
+
     li = ip.split('.')
+
     errmsg = 'IP address must be in the form XXX.XXX.XXX.XXX, where ' + \
                '0 <= XXX <= 255'
+
     if len(li) != 4:
         return False, errmsg
+
     for octet in li:
+        if len(octet) == 0:
+            return False, errmsg
+
+        if len(octet) > 1 and octet[0] == '0':
+            return False, errmsg + ', leading zeros are not permitted'
+
         try:
             octet_int = int(octet)
             if octet_int < 0 or octet_int > 255:
                 return False, errmsg
         except ValueError:
             return False, errmsg
+
     return True, None
 
 def verifyEmail(email):

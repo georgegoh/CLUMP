@@ -43,12 +43,26 @@ class NetworkScreen(screenfactory.BaseScreen):
         Write self.interfaces dictionary to database.
         """
 
+        try:
+            self.kusuApp['netProfile']
+        except KeyError:
+            self.kusuApp['netProfile'] = {}
+
+        self.kusuApp['netProfile']['have_dhcp'] = False
+        self.kusuApp['netProfile']['have_static'] = False
+
         for intf in self.interfaces.keys():
             # store information
             # these are bools, we do str(int(bool)) to convert True to '1'
             # and False to '0'
             if self.interfaces[intf]['configure'] == '':
                 self.interfaces[intf]['configure'] = False
+
+            if self.interfaces[intf]['configure']:
+                if self.interfaces[intf]['use_dhcp']:
+                    self.kusuApp['netProfile']['have_dhcp'] = True
+                else:
+                    self.kusuApp['netProfile']['have_static'] = True
 
             self.database.put(self.context, 'configure:' + intf,
                               str(int(self.interfaces[intf]['configure'])))
@@ -66,6 +80,8 @@ class NetworkScreen(screenfactory.BaseScreen):
                                   self.interfaces[intf]['netmask'])
 
             kl.info('Wrote to DB %s: %s' % (intf, self.interfaces[intf]))
+
+        self.kusuApp['netProfile']['interfaces'] = self.interfaces
 
     def validate(self):
         errList = [] 
@@ -130,6 +146,13 @@ class NetworkScreen(screenfactory.BaseScreen):
         if not self.interfaces:
             # we get a dictionary
             self.interfaces = retrieveNetworkContext(self.database)
+
+            for intf in self.interfaces.keys():
+                try:
+                    if self.interfaces[intf]['first_seen']:
+                        self.interfaces[intf]['configure'] = ''
+                except KeyError:
+                    pass
 
         # we want interfaces in alphabetical order
         intfs = self.interfaces.keys()
@@ -443,8 +466,7 @@ def retrieveNetworkContext(db):
         try:
             interfaces[intf].update(adapters[intf])
         except KeyError:
-            # this interface is not in the database
-            pass
+            interfaces[intf]['first_seen'] = True
 
     # SQLite stores these values as unicode strings
     for intf in interfaces.keys():
@@ -452,7 +474,7 @@ def retrieveNetworkContext(db):
         # leave as is for unconfigured interfaces
         if interfaces[intf]['configure'] == u'1':
             interfaces[intf]['configure'] = True
-        elif interfaces[intf]['configure'] == u'0':
+        else:
             interfaces[intf]['configure'] = False
 
         if interfaces[intf]['use_dhcp'] == u'1':

@@ -20,11 +20,9 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     """This screen asks for DNS and Gateway setups."""
 
     name = _('Gateway & DNS')
-#    context = 'Gateway & DNS'
     context = 'Network'
     msg = _('Please configure your Gateway/DNS settings')
     buttons = [_('Clear All')]
-#    backButtonDisabled = True
 
     def setCallbacks(self):
         """
@@ -42,10 +40,12 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         return NAV_NOTHING
 
     def drawImpl(self):
+        self.netProfile = self.kusuApp['netProfile']
+
         self.screenGrid = snack.Grid(1, 6)
         entryWidth = 29
 
-        self.use_dhcp = snack.Checkbox(_('Use DHCP'))
+        self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
 
         self.gateway = kusuwidgets.LabelledEntry(
                                    labelTxt=_('Default Gateway ').rjust(24), 
@@ -81,6 +81,8 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
                                  padding=(3, 0, 0, 0))
 
+        self.initializeFields()
+
         dhcpd = {'control': self.use_dhcp,
                  'disable': (self.gateway, self.dns1, self.dns2, self.dns3),
                  'enable': (self.gateway, self.dns1, self.dns2, self.dns3),
@@ -89,32 +91,34 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         network.enabledByValue([dhcpd])
 
     def initializeFields(self):
-        value = self.database.get(self.context, 'use_dhcp_gw_dns')
-        if not value: value = ''
-        elif value == u'1':
-            self.use_dhcp.setValue('*')
-        else: 
-            self.use_dhcp.setValue(' ')
+        self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
 
-        value = self.database.get(self.context, 'Default Gateway')
-        if not value: value = ''
-        else: value = value[0]
-        self.gateway.setEntry(value)
+        try:
+            if not self.netProfile['have_dhcp']:
+                self.use_dhcp.setValue(' ')
+                self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
+        except KeyError:
+            pass
 
-        value = self.database.get(self.context, 'DNS 1')
-        if not value: value = ''
-        else: value = value[0]
-        self.dns1.setEntry(value)
+        try:
+            self.gateway.setEntry(self.netProfile['default_gw'])
+        except KeyError:
+            self.gateway.setEntry('')
 
-        value = self.database.get(self.context, 'DNS 2')
-        if not value: value = ''
-        else: value = value[0]
-        self.dns2.setEntry(value)
+        try:
+            self.dns1.setEntry(self.netProfile['dns1'])
+        except KeyError:
+            self.dns1.setEntry('')
 
-        value = self.database.get(self.context, 'DNS 3')
-        if not value: value = ''
-        else: value = value[0]
-        self.dns3.setEntry(value)
+        try:
+            self.dns2.setEntry(self.netProfile['dns2'])
+        except KeyError:
+            self.dns2.setEntry('')
+
+        try:
+            self.dns3.setEntry(self.netProfile['dns3'])
+        except KeyError:
+            self.dns3.setEntry('')
 
     def validate(self):
         if not self.use_dhcp.value():
@@ -126,9 +130,11 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
             elif not result:
                 errList.append(_('Default Gateway: ') + msg)
 
-            result, msg = self.checkGatewayWithSubnets()
-            if not result:
-                errList.append(_('Default Gateway: ') + msg)
+            # we only want to check this if valid IP is provided
+            if result:
+                result, msg = self.checkGatewayWithSubnets()
+                if not result:
+                    errList.append(_('Default Gateway: ') + msg)
 
             result, msg = self.dns1.verify()
             if result is None:
@@ -167,15 +173,18 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
                                       self.gateway.value()):
                 return True, ''
 
-        return False, _('Not reachable by any configured device.')
+        return False, _('Not routable by any configured device.')
 
     def formAction(self):
         """
         Store the gateway settings.
         """
 
-        self.database.put(self.context, 'use_dhcp_gw_dns',
-                          str(self.gateway.value()))
+        self.netProfile['default_gw'] = self.gateway.value()
+        self.netProfile['dns1'] = self.dns1.value()
+        self.netProfile['dns2'] = self.dns2.value()
+        self.netProfile['dns3'] = self.dns3.value()
+
         self.database.put(self.context, 'Default Gateway', self.gateway.value())
         self.database.put(self.context, 'DNS 1', self.dns1.value())
         self.database.put(self.context, 'DNS 2', self.dns2.value())
