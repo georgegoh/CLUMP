@@ -26,7 +26,6 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
 
     """
     logger = None
-    instance_cnt = 0
 
     def __init__(self, title):
         snack.SnackScreen.__init__(self)
@@ -34,11 +33,10 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
         self.logger = Logger()
         helpLine=self._('Copyright(C) 2007 Platform Computing Inc.\t\t' + \
                         'Press F12 to quit')
+        snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.pushHelpLine(self, helpLine)
-        self.instance_cnt = self.instance_cnt + 1
 
     def finish(self):
-        self.instance_cnt = self.instance_cnt - 1
         snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.finish(self)
 
