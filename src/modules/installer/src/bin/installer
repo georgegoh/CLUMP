@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # create kusu installer instance
     ki = KusuInstaller(screenFactory=ScreenFactoryImpl,
-                       screenTitle='Kusu Installer',
+                       screenTitle='Project Kusu Cluster Toolkit',
                        showTrail=True)
 
     installer_return_code = ki.run()
