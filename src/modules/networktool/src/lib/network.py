@@ -26,6 +26,9 @@ class Network:
     gateway = None
     nameserver = None
     hostname = None
+    onboot = None
+    ipv4 = None
+    ipv6 = None
 
     def __init__(self, dev):
         self.dev = dev
