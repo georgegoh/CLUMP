@@ -45,13 +45,20 @@ class KickstartFactory(BaseFactory):
 
         network_lines = []
         networks = self.profile.networkprofile.net_dict.values()
-        for network in networks:
+        for net in networks:
             str = ''
 
-            if network.bootproto == 'dhcp':
-                str = 'network --bootproto dhcp --device %s' % network.dev
-            #elif network.bootproto == 'static':
-            #    str = 'network --bootproto static  --device %s' % network.dev
+            # Translate to kickstart syntax
+            if net.onboot:
+                net.onboot = 'yes'
+            else:
+                net.onboot = 'no'
+
+            if net.bootproto == 'dhcp':
+                str = 'network --bootproto dhcp --device %s --onboot=%s' % (net.dev, net.onboot)
+            elif net.bootproto == 'static':
+                str = 'network --bootproto static  --device=%s --ip=%s --netmask=%s --onboot=%s' % \
+                      (net.dev, net.ip, net.netmask, net.onboot)
             else:
                 pass #Ignore other types
 
