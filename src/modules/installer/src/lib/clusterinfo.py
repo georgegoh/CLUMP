@@ -12,7 +12,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-from kusu.util.util import verifyURL, verifyEmail
+from kusu.util.util import verifyURL, verifyEmail, verifyFQDN
 NAV_NOTHING = -1
 
 class ClusterInfoScreen(screenfactory.BaseScreen):
@@ -52,7 +52,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         self.fqhn = kusuwidgets.LabelledEntry(
                         labelTxt=_('Fully-Qualified Host Name ').rjust(26), 
                         width=entryWidth, text=value)
-        self.fqhn.addCheck(kusuwidgets.verifyFQDN)
+        self.fqhn.addCheck(verifyFQDN)
 
         value = self.database.get(self.context, 'ClusterName')
         if not value: value = 'Our Cluster'
