@@ -79,7 +79,7 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.database.put(self.context, 'netmask:' + intf,
                                   self.interfaces[intf]['netmask'])
 
-            kl.info('Wrote to DB %s: %s' % (intf, self.interfaces[intf]))
+            kl.info('Wrote to DB %s: %s.' % (intf, self.interfaces[intf]))
 
         self.kusuApp['netProfile']['interfaces'] = self.interfaces
 
@@ -178,6 +178,9 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.interfaces[intf]['netmask'] = '255.255.0.0'
                 self.interfaces[intf]['active_on_boot'] = True
 
+            if len(intf) > 2 and self.interfaces[intf]['configure'] == '':
+                self.interfaces[intf]['configure'] = False
+
             entrystr = '  ' + intf + ' not configured'
             if self.interfaces[intf]['configure']:
                 if self.interfaces[intf]['use_dhcp']:
@@ -192,13 +195,13 @@ class NetworkScreen(screenfactory.BaseScreen):
                 else:
                     entrystr = '  ' + intf + ' ' + entrystr
 
-            kl.debug('Adding interface %s: %s' % (intf, self.interfaces[intf]))
+            kl.debug('Adding interface %s: %s.' % (intf, self.interfaces[intf]))
             self.listbox.append(entrystr[:50], intf)
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0, 1, 0, 0))
 
-        footnote = '* Activate interface on boot'
+        footnote = '* activate interface on boot'
         footnote = snack.Textbox(len(footnote), 1, footnote)
         self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
 
@@ -451,7 +454,7 @@ def retrieveNetworkContext(db):
                 adapters[prop[1]] = {}
                 adapters[prop[1]][prop[0]] = network_entry[3]
 
-    kl.info('Adapters in DB: %s' % adapters)
+    kl.info('Adapters in DB: %s.' % adapters)
     
     interfaces = net.getPhysicalInterfaces()    # we get a dictionary
     for intf in interfaces.keys():

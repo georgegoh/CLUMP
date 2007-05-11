@@ -14,8 +14,11 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.installer import network
 import kusu.util.util as kusutil
+import kusu.util.log as kusulog
 
 NAV_NOTHING = -1
+
+kl = kusulog.getKusuLog('installer.network')
 
 class FQHNScreen(screenfactory.BaseScreen):
     """Collects kits information."""
@@ -107,3 +110,8 @@ class FQHNScreen(screenfactory.BaseScreen):
                           self.netProfile['fqhn_host'])
         self.database.put(self.context, 'fqhn_domain',
                           self.netProfile['fqhn_domain'])
+
+        if self.netProfile['fqhn_use_dhcp']:
+            kl.info('Set FQHN via DHCP.')
+        else:
+            kl.info('Set FQHN: %s.' % self.netProfile['fqhn'])

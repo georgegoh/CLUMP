@@ -13,8 +13,11 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
 import kusu.util.util as kusutil
+import kusu.util.log as kusulog
 
 NAV_NOTHING = -1
+
+kl = kusulog.getKusuLog('installer.network')
 
 class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     """This screen asks for DNS and Gateway setups."""
@@ -202,3 +205,12 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.database.put(self.context, 'dns1', self.netProfile['dns1'])
         self.database.put(self.context, 'dns2', self.netProfile['dns2'])
         self.database.put(self.context, 'dns3', self.netProfile['dns3'])
+
+        if self.netProfile['gw_dns_use_dhcp']:
+            kl.info('Set default gateway and DNS via DHCP.')
+        else:
+            kl.info('Set default gateway: %s, DNS 1-3: %s.' %
+                    (self.netProfile['default_gw'],
+                     ', '.join((self.netProfile['dns1'],
+                                self.netProfile['dns2'],
+                                self.netProfile['dns3']))))
