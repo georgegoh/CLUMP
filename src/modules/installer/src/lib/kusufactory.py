@@ -24,6 +24,7 @@ from kits import KitsScreen
 from tzselect import TZSelectionScreen
 from confirm import ConfirmScreen
 from network import NetworkScreen
+from hostname import FQHNScreen
 
 class ScreenImpl(BaseScreen):
     """This class is a template for other Screen classes."""
@@ -56,6 +57,7 @@ class ScreenFactoryImpl(ScreenFactory):
                              ClusterInfoScreen(collection, kusuApp=runtimeDict),
                              NetworkScreen(collection, kusuApp=runtimeDict),
                              GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
+                             FQHNScreen(collection, kusuApp=runtimeDict),
                              RootPasswordScreen(collection, kusuApp=runtimeDict),
                              PartitionScreen(collection, kusuApp=runtimeDict),
                              KitsScreen(collection, kusuApp=runtimeDict),

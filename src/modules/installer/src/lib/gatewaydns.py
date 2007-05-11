@@ -33,17 +33,24 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
-        self.database.put(self.context, 'Default Gateway', '')
-        self.database.put(self.context, 'DNS 1', '')
-        self.database.put(self.context, 'DNS 2', '')
-        self.database.put(self.context, 'DNS 3', '')
+        self.netProfile['gw_dns_use_dhcp'] = bool(self.use_dhcp.value())
+        self.netProfile['default_gw'] = self.gateway.value()
+        self.netProfile['dns1'] = self.dns1.value()
+        self.netProfile['dns2'] = self.dns2.value()
+        self.netProfile['dns3'] = self.dns3.value()
+
+        if not self.netProfile['gw_dns_use_dhcp']:
+            self.netProfile['default_gw'] = ''
+            self.netProfile['dns1'] = ''
+            self.netProfile['dns2'] = ''
+            self.netProfile['dns3'] = ''
         return NAV_NOTHING
 
     def drawImpl(self):
         self.netProfile = self.kusuApp['netProfile']
 
         self.screenGrid = snack.Grid(1, 6)
-        entryWidth = 29
+        entryWidth = 28
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
 
@@ -97,6 +104,8 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
             if not self.netProfile['have_dhcp']:
                 self.use_dhcp.setValue(' ')
                 self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
+            if not self.netProfile['gw_dns_use_dhcp']:
+                self.use_dhcp.setValue(' ')
         except KeyError:
             pass
 
@@ -180,12 +189,16 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         Store the gateway settings.
         """
 
+        self.netProfile['gw_dns_use_dhcp'] = bool(self.use_dhcp.value())
         self.netProfile['default_gw'] = self.gateway.value()
         self.netProfile['dns1'] = self.dns1.value()
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-        self.database.put(self.context, 'Default Gateway', self.gateway.value())
-        self.database.put(self.context, 'DNS 1', self.dns1.value())
-        self.database.put(self.context, 'DNS 2', self.dns2.value())
-        self.database.put(self.context, 'DNS 3', self.dns3.value())
+        self.database.put(self.context, 'gw_dns_use_dhcp',
+                          str(int(self.netProfile['gw_dns_use_dhcp'])))
+        self.database.put(self.context, 'default_gw',
+                          self.netProfile['default_gw'])
+        self.database.put(self.context, 'dns1', self.netProfile['dns1'])
+        self.database.put(self.context, 'dns2', self.netProfile['dns2'])
+        self.database.put(self.context, 'dns3', self.netProfile['dns3'])

@@ -158,7 +158,7 @@ class NetworkScreen(screenfactory.BaseScreen):
         intfs = self.interfaces.keys()
         intfs.sort()
 
-        self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=56)
+        self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=55)
 
         for intf in intfs:
             # DHCP config for first interface
