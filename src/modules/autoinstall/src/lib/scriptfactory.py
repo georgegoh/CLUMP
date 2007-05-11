@@ -56,19 +56,19 @@ class KickstartFactory(BaseFactory):
 
             if v['configure']:
                 if v['use_dhcp']:
-                    str = 'network --bootproto dhcp --device %s --onboot %s' % \
+                    str = 'network --bootproto dhcp --device=%s --onboot=%s' % \
                           (intf, v['active_on_boot'])
                 else:
-                    str = 'network --bootproto static  --device=%s --ip=%s --netmask=%s --onboot %s' % \
+                    str = 'network --bootproto static  --device=%s --ip=%s --netmask=%s --onboot=%s' % \
                           (intf, v['ip_address'], v['netmask'], v['active_on_boot'])
 
                 if not networks['gw_dns_use_dhcp']: # manual gw and dns
-                    str = str + ' --gateway %s --dns %s' % \
+                    str = str + ' --gateway=%s --nameserver=%s' % \
                           (networks['default_gw'], networks['dns1']) # Only 1 dns allowed
                    
                 if not networks['fqhn_use_dhcp']: # manual hostname
                     str = str + ' --hostname %s' % networks['fqhn']
-                 
+                
                 network_lines.append(str)
 
             else:
