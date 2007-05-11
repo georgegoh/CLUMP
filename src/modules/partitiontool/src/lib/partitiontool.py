@@ -297,14 +297,15 @@ class DiskProfile(object):
                                                  mountpoint)
             logger.debug('New partition created')
 
-        except KusuError, e:
-            logger.debug('Exception raised when trying to create a new partition')
+        except PartitionSizeTooLargeError, e:
+            logger.debug('Exception raised when trying to edit partition %s' % partition_obj.path)
+            logger.debug('There is no contiguous free space on disk to fit new size')
             self.newPartition(backup_disk_id,
                               backup_size,
                               False,
                               backup_fs_type,
                               backup_mountpoint)
-            raise KusuError, "Couldn't create new partition"
+            raise KusuError, "Couldn't find a contiguous free space to fit the new size. Try deleting other partitions."
 
         return edited_partition
 
