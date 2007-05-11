@@ -1,4 +1,4 @@
-# $Id:$
+# $Id$
 # Configure
 PROJECT(createrepo)
 SET(LICENSE_FILE src/COPYING)
@@ -18,7 +18,14 @@ SET(KUSU_MODULE OFF)
 #Custom command and targets
 ADD_CUSTOM_TARGET(patch-createrepo
   COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/createrepo.patch
-  WORKING_DIRECTORY ${SETUPPY_PATH}/src
+  WORKING_DIRECTORY ${MAKE_CURRENT_SOURCE_DIR}/kusuroot/bin
 )
 
-ADD_DEPENDENCIES(build-${PROJECT_NAME} patch-createrepo setuppy-install copy-license)
+#Custom command and targets
+ADD_CUSTOM_TARGET(patch-modifyrepo
+  COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/modifyrepo.patch
+  WORKING_DIRECTORY ${MAKE_CURRENT_SOURCE_DIR}/kusuroot/bin # workaround
+)
+
+
+ADD_DEPENDENCIES(build-${PROJECT_NAME} patch-createrepo patch-modifyrepo setuppy-install copy-license)

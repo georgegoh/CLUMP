@@ -8,8 +8,8 @@ setup(name="createrepo",
       version="0.4.8",
       platforms=["any"],
       packages=['createrepo'],
-      package_dir={'createrepo': '.'},
-      scripts=['bin/createrepo', 
-               'bin/modifyrepo']
+      package_dir={'createrepo': 'src'},
+      scripts=['src/bin/createrepo', 
+               'src/bin/modifyrepo']
  
      )
