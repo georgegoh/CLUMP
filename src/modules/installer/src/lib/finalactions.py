@@ -76,32 +76,43 @@ def genAutoInstallScript(disk_profile, database):
 
     # Build network profile    
     # Ignore unicode
-
     gateway = database.get('Network', 'Default Gateway')
     dns1 = database.get('Network', 'DNS 1')
     dns2 = database.get('Network', 'DNS 2')
     dns3 = database.get('Network', 'DNS 3')
 
     network_profile = NetworkProfile()
+    network_profile.gateway = gateway
+    network_profile.dns = [dns1, dns1, dns2] 
+
     for intf, value in retrieveNetworkContext(database).items():
         network_profile.addNetwork(intf)
-        network_profile.gateway = gateway
-        network_profile.dns = [dns1, dns1, dns2] 
-
         network = network_profile.net_dict[intf]
-        if int(value['use_dhcp']):
-            # Using dhcp
-            network.bootproto = 'dhcp'
-        elif network.ip != '':
-            # static
-            network.bootproto = 'static'
-            network.ip = str(value['ip_address'])
-            network.netmask = str(value['netmask'])
-            network.hostname = str(value['hostname'])
+        
+        # Use ipv4
+        network.ipv4 = True
+        network.ipv6 = False
+
+        # Activate on boot
+        if int(value['active_on_boot']):
+            network.onboot = True 
         else:
-            # unconfigured
+            network.onboot = False
+
+        if int(value['configure']):
+            if int(value['use_dhcp']):
+                # Using dhcp
+                network.bootproto = 'dhcp'
+            else:
+                # static
+                network.bootproto = 'static'
+                network.ip = str(value['ip_address'])
+                network.netmask = str(value['netmask'])
+                network.hostname = str(value['hostname'])
+        else: 
+            # Do nothing for unconfigured interface
             pass
- 
+             
     # Build kickstart object
     # Retrieve all the data required
     k = Kickstart()
