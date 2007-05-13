@@ -11,5 +11,8 @@ SET(SETUPPY_INSTALL_ARGS)
 SET(SETUPPY_SDIST_ARGS sdist)
 SET(SETUPPY_BDIST_ARGS bdist)
 
+CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/installer
+               ${SETUPPY_PATH}/src/bin/installer)
+
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)
