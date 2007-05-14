@@ -201,8 +201,9 @@ class AddHostApp(KusuApp):
                 self.parser.error(self.kusuApp._("addhost_options_nodegroup_required"))
             else:
                 # Check for valid nodegroup. if not return an error.
-                if myNode.validateNodegroup(self.options.nodegroup):
-                    myNodeInfo.nodeGroupSelected = self.options.nodegroup
+                result, ngid = myNode.validateNodegroup(self.options.nodegroup)
+                if result:
+                    myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
                 else:
                     i18nPrint(self.kusuApp._("addhost_options_invalid_nodegroup\n"))
@@ -320,7 +321,7 @@ class AddHostApp(KusuApp):
                           flag = 1
                        else:
                           myNodeInfo.nodeRackNumber = result
-                          print "Setting Rack number to: %s" % myNodeInfo.nodeRackNumber
+                          #print "Setting Rack number to: %s" % myNodeInfo.nodeRackNumber
                           flag = 0
                    except:
                        print self.kusuApp._("Error: The value %s is not a number. Please try again" % response)
