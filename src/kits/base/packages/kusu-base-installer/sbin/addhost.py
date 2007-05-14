@@ -125,8 +125,9 @@ class AddHostApp(KusuApp):
         # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
         for pluginName in pluginFileList:
              plugin, ext = os.path.splitext(pluginName)
-             if (ext != ".pyc" or ext != ".pyo") and not plugin == "__init__" and not plugin[0] == '.':
-                pluginList.append(plugin)
+             if ext == ".py":
+                if not plugin == "__init__" and not plugin[0] == '.':
+                    pluginList.append(plugin)
                 
         # Import the plugins
         moduleInstances = map(__import__, pluginList)
@@ -297,7 +298,7 @@ class AddHostApp(KusuApp):
         # Handle -u option
         if self.options.update:
             # Handle any local pending updates.
-            myNode.doUpdates()
+            #myNode.doUpdates()
 
             # Ask all plugins to call updated() function
             pluginActions.plugins_updated()
