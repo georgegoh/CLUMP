@@ -400,7 +400,7 @@ class PluginActions:
             print "ERROR: Cannot add primary installer again!"
             return
             
-        print "DEBUG: Calling added() method from plugins"
+        #print "DEBUG: Calling added() method from plugins"
         info = self._NodeHandler.getNodeInformation(nodename)
 
         for plugin in self._pluginInstances:
