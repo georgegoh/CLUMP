@@ -187,8 +187,7 @@ class AddHostApp(KusuApp):
             else:
                 checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
 
-                result, dummy = myNode.validateInterface(self.options.interface)
-                if result:
+                if myNode.validateInterface(self.options.interface):
                     myNodeInfo.selectedInterface = self.options.interface
                     haveInterface = True
                 else:
@@ -200,11 +199,8 @@ class AddHostApp(KusuApp):
             if self.options.nodegroup[0] == '-':
                 self.parser.error(self.kusuApp._("addhost_options_nodegroup_required"))
             else:
-                checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
-
                 # Check for valid nodegroup. if not return an error.
-                result, dummy = myNode.validateNodegroup(self.options.nodegroup)
-                if result:
+                if myNode.validateNodegroup(self.options.nodegroup):
                     myNodeInfo.nodeGroupSelected = self.options.nodegroup
                     haveNodegroup = True
                 else:
@@ -267,16 +263,15 @@ class AddHostApp(KusuApp):
                 if self.options.replace[0] == '-':
                     self.parser.error(self.kusuApp._("addhost_options_replace_required"))
                 else:
-                    result, dummy = myNode.validateNode(self.options.replace)
-                if result:
-                    replaceMode = True
-                    myNodeInfo.optionReplaceMode = True
-                    myNodeInfo.replaceNodeName = self.options.replace
-                    if myNode.replaceNodeEntry(self.options.replace) == False:
+                    if myNode.validateNode(self.options.replace):
+                        replaceMode = True
+                        myNodeInfo.optionReplaceMode = True
+                        myNodeInfo.replaceNodeName = self.options.replace
+                        if myNode.replaceNodeEntry(self.options.replace) == False:
+                            sys.exit(-1)
+                    else:
+                        i18nPrint(self.kusuApp._("The node %s is not found. Please try again\n" % self.options.replace))
                         sys.exit(-1)
-                else:
-                    i18nPrint(self.kusuApp._("The node %s is not found. Please try again\n" % self.options.replace))
-                    sys.exit(-1)
 
         # Handle -e option
         if self.options.remove:
