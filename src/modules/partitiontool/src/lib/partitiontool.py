@@ -59,7 +59,7 @@ import subprocess
 import parted
 import lvm
 from os.path import basename, exists
-from kusuexceptions import *
+from kusu.util.kusuexceptions import *
 from lvm import *
 import kusu.util.log as kusulog
 
