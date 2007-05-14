@@ -187,19 +187,11 @@ class AddHostApp(KusuApp):
             else:
                 checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
 
-                try:
-                    self.dbconnection.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
-                                               AND nics.netid=networks.netid AND networks.device='%s' AND \
-                                               nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % self.options.interface)
-                    result = self.dbconnection.fetchone()
-                except:
-                    i18nPrint(self.kusuApp._("DB_Query_Error\n"))
-                    sys.exit(-1)
-
-                try:
-                    myNodeInfo.selectedInterface = result[0]
+                result, dummy = myNode.validateInterface(self.options.interface)
+                if result:
+                    myNodeInfo.selectedInterface = self.options.interface
                     haveInterface = True
-                except:
+                else:
                     i18nPrint (self.kusuApp._("addhost_options_invalid_interface\n\n"))
                     sys.exit(-1)
 
@@ -211,21 +203,14 @@ class AddHostApp(KusuApp):
                 checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
 
                 # Check for valid nodegroup. if not return an error.
-                try:
-                    self.dbconnection.execute("SELECT ngid, ngname FROM nodegroups WHERE ngname = '%s'" % self.options.nodegroup)
-                    result = self.dbconnection.fetchone()
-                except:
-                    i18nPrint(self.kusuApp._("DB_Query_Error\n"))
-                    sys.exit(-1)
-
-                try:
-                    myNodeInfo.nodeGroupSelected = result[0]
-                except:
+                result, dummy = myNode.validateNodegroup(self.options.nodegroup)
+                if result:
+                    myNodeInfo.nodeGroupSelected = self.options.nodegroup
+                    haveNodegroup = True
+                else:
                     i18nPrint(self.kusuApp._("addhost_options_invalid_nodegroup\n"))
                     sys.exit(-1)
 
-                haveNodegroup = True
-                
         # Handle -f -i -n options
         if (self.options.macfile and self.options.interface and self.options.nodegroup):
             
@@ -282,26 +267,15 @@ class AddHostApp(KusuApp):
                 if self.options.replace[0] == '-':
                     self.parser.error(self.kusuApp._("addhost_options_replace_required"))
                 else:
-                    checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
-
-                    # Check for valid node to replace. if not return an error.
-                try:
-                    self.dbconnection.execute("SELECT nodes.name FROM nodes WHERE nodes.name = '%s'" % self.options.replace)
-                    result = self.dbconnection.fetchone()
-                except:
-                    i18nPrint(self.kusuApp._("DB_Query_Error\n"))
-                    sys.exit(-1)
-
-                try:
-                    checkvalNode = result[0]
-                except:
+                    result, dummy = myNode.validateNode(self.options.replace)
+                if result:
+                    replaceMode = True
+                    myNodeInfo.optionReplaceMode = True
+                    myNodeInfo.replaceNodeName = self.options.replace
+                    if myNode.replaceNodeEntry(self.options.replace) == False:
+                        sys.exit(-1)
+                else:
                     i18nPrint(self.kusuApp._("The node %s is not found. Please try again\n" % self.options.replace))
-                    sys.exit(-1)
-
-                replaceMode = True
-                myNodeInfo.optionReplaceMode = True
-                myNodeInfo.replaceNodeName = self.options.replace
-                if myNode.replaceNodeEntry(self.options.replace) == False:
                     sys.exit(-1)
 
         # Handle -e option
