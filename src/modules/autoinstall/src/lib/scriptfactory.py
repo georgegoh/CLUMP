@@ -45,6 +45,11 @@ class KickstartFactory(BaseFactory):
 
         network_lines = []
         networks = self.profile.networkprofile
+
+        if not self.profile.networkprofile:
+            # No network
+            return network_lines
+
         for intf, v in networks['interfaces'].items():
             str = ''
 
