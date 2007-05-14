@@ -88,6 +88,8 @@ class FQHNScreen(screenfactory.BaseScreen):
     def validate(self):
         if not self.use_dhcp.value():
             rv, msg = self.hostname.verify()
+            if rv is None:
+                return False, _('Host name field is empty')
             if not rv:
                 return False, msg
 

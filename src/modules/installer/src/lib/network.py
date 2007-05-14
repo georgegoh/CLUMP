@@ -83,6 +83,31 @@ class NetworkScreen(screenfactory.BaseScreen):
 
         self.kusuApp['netProfile']['interfaces'] = self.interfaces
 
+        # decide whether to show Gateway/DNS screen next
+        self.controlDNSScreen()
+
+    def controlDNSScreen(self):
+        from gatewaydns import GatewayDNSSetupScreen
+        dnsscreen = GatewayDNSSetupScreen(self.database, self.kusuApp)
+
+        dnsscreen_exists = False
+        for screen in self.selector.screens:
+            if screen.name is dnsscreen.name:
+                dnsscreen_exists = True
+                dnsscreen = screen
+                break
+
+        # if no interfaces are configured (or none exist), remove dns screen
+        if dnsscreen_exists and not self.kusuApp['netProfile']['have_static'] \
+            and not self.kusuApp['netProfile']['have_dhcp']:
+            self.selector.screens.remove(dnsscreen)
+            return
+
+        # add the screen if it does not already exists
+        if not dnsscreen_exists:
+            self.selector.screens.insert(\
+                self.selector.screens.index(self) + 1, dnsscreen)
+
     def validate(self):
         errList = [] 
 
@@ -216,22 +241,20 @@ class ConfigureIntfScreen:
     def configureIntf(self):
         try:
             # listbox stores interface names as string objects (ie 'eth0')
-            self.intf = self.baseScreen.listbox.current()
+            intf = self.baseScreen.listbox.current()
         except KeyError:
             # the listbox is empty
             return NAV_NOTHING
 
-        gridForm = snack.GridForm(self.screen,
-                                  _('Configuring [%s]' % self.intf), 1, 4)
+        self.interface = self.baseScreen.interfaces[intf]
 
-        interfaces = self.baseScreen.interfaces
-        device = snack.Textbox(40, 1, 'Device: ' + self.intf)
-        vendor = snack.Textbox(40, 1,
-                               'Vendor: ' + interfaces[self.intf]['vendor'])
-        model = snack.Textbox(40, 1,
-                              'Model: ' + interfaces[self.intf]['device'])
-        module = snack.Textbox(40, 1,
-                               'Module: ' + interfaces[self.intf]['module'])
+        gridForm = snack.GridForm(self.screen,
+                                  _('Configuring [%s]' % intf), 1, 4)
+
+        device = snack.Textbox(40, 1, 'Device: ' + intf)
+        vendor = snack.Textbox(40, 1, 'Vendor: ' + self.interface['vendor'])
+        model = snack.Textbox(40, 1, 'Model: ' + self.interface['device'])
+        module = snack.Textbox(40, 1, 'Module: ' + self.interface['module'])
 
         subgrid = snack.Grid(1, 4)
         subgrid.setField(device, 0, 0, anchorLeft=1)
@@ -351,74 +374,37 @@ class ConfigureIntfScreen:
         return True
 
     def configureIntfOK(self):
-        interfaces = self.baseScreen.interfaces
+        self.interface['configure'] = bool(self.configdevice.value())
+        self.interface['use_dhcp'] = bool(self.use_dhcp.value())
+        self.interface['active_on_boot'] = bool(self.active_on_boot.value())
 
-        interfaces[self.intf]['configure'] = bool(self.configdevice.value())
-        interfaces[self.intf]['use_dhcp'] = bool(self.use_dhcp.value())
-        interfaces[self.intf]['active_on_boot'] = \
-                                            bool(self.active_on_boot.value())
-
-        interfaces[self.intf]['hostname'] = self.hostname.value()
-        interfaces[self.intf]['ip_address'] = self.ip_address.value()
-        interfaces[self.intf]['netmask'] = self.netmask.value()
-
-        # decide whether to show Gateway/DNS screen next
-        #self.controlDNSScreen()
-
-    def controlDNSScreen(self):
-        from gatewaydns import GatewayDNSSetupScreen
-        dnsscreen = GatewayDNSSetupScreen(self.baseScreen.database,
-                                          kusuApp=self.baseScreen.kusuApp)
-
-        dnsscreen_exists = False
-        for screen in self.selector.screens:
-            if screen.name is dnsscreen.name:
-                dnsscreen_exists = True
-                dnsscreen = screen
-                break
-
-        interfaces = self.baseScreen.interfaces
-
-        # if any interface uses DHCP, skip the Gateway/DNS screen
-        using_dhcp = False
-        for intf in interfaces.keys():
-            if interfaces[intf]['use_dhcp']:
-                # remove DNS screen if exists, since we won't be using it
-                if dnsscreen_exists:
-                    self.selector.screens.remove(dnsscreen)
-
-                return
-
-        # add the screen if it does not already exists
-        if not dnsscreen_exists:
-            self.selector.screens.insert(\
-                self.selector.screens.index(self.baseScreen) + 1, dnsscreen)
+        self.interface['hostname'] = self.hostname.value()
+        self.interface['ip_address'] = self.ip_address.value()
+        self.interface['netmask'] = self.netmask.value()
 
     def populateIPs(self):
         """
         Populate fields with data.
         """
         
-        interfaces = self.baseScreen.interfaces
-
-        if interfaces[self.intf]['configure']:
+        if self.interface['configure']:
             self.configdevice.setValue('*')
         else:
             self.configdevice.setValue(' ')
 
-        if interfaces[self.intf]['use_dhcp']:
+        if self.interface['use_dhcp']:
             self.use_dhcp.setValue('*')
         else:
             self.use_dhcp.setValue(' ')
 
-        if interfaces[self.intf]['active_on_boot']:
+        if self.interface['active_on_boot']:
             self.active_on_boot.setValue('*')
         else:
             self.active_on_boot.setValue(' ')
 
-        self.hostname.setEntry(interfaces[self.intf]['hostname'])
-        self.ip_address.setEntry(interfaces[self.intf]['ip_address'])
-        self.netmask.setEntry(interfaces[self.intf]['netmask'])
+        self.hostname.setEntry(self.interface['hostname'])
+        self.ip_address.setEntry(self.interface['ip_address'])
+        self.netmask.setEntry(self.interface['netmask'])
 
 def enabledByValue(args):
     """
