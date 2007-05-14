@@ -179,7 +179,12 @@ class AddHostApp(KusuApp):
 
         # Handle -r option
         if self.options.rack:
-            myNodeInfo.nodeRackNumber = self.options.rack
+            result = int(self.options.rack)
+            if result < 0:
+                print "Error: Cannot specify a negative number. Please try again"
+                sys.exit(-1)
+            else:
+                myNodeInfo.nodeRackNumber = self.options.rack
 
         # Handle -i option
         if self.options.interface:
