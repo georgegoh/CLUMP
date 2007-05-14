@@ -52,6 +52,13 @@ class NodeFun:
         Checks if the node format has a Rack AND rank. If it does, returns true, else false """
         
         flag = 0
+        
+        self.getNodeFormat()
+        
+        # If the nodeformat is None, return False immediately.
+        if not self._nodeFormat:
+            return False
+            
         # Find special characters
         for i in range (0, len(self._nodeFormat)):
              if self._nodeFormat[i] == "#":
@@ -67,13 +74,11 @@ class NodeFun:
     def getNodeFormat(self):
         """getNodeFormat()
         Gets and sets the node format from database. """
-        
         try:
-            self._dbReadonly.execute("SELECT nameformat FROM nodegroups WHERE ngid=%s" % self._nodeGroupType)
+            self._dbReadonly.execute("SELECT nameformat FROM nodegroups WHERE ngid='%s'" % self._nodeGroupType)
             self._nodeFormat = self._dbReadonly.fetchone()[0]
         except:
             self._nodeFormat = None
-            raise OperationalError,msg
 
     def _hostNameParse(self):
         """_hostNameParse()
@@ -130,22 +135,26 @@ class NodeFun:
         self.getNodeFormat()
         self._dbReadonly.execute("SELECT ngid FROM nodegroups WHERE nameformat='%s'" % self._nodeFormat)
         ngConflicts = self._dbReadonly.fetchall()
-        
+                    
         # Build the SQL query since there many be more than one node group that has the same node group format.
-        sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid AND ("
-        for ngid in ngConflicts:
-            sqlquery += "nodegroups.ngid=%s" % ngid
-            if ngid:
-                sqlquery += " OR "
+        sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid"
+        
+        if ngConflicts:
+            sqlquery += " AND ("
+            for ngid in ngConflicts:
+                sqlquery += "nodegroups.ngid=%s" % ngid
+                if ngid:
+                    sqlquery += " OR "
+            sqlquery += ")"
 
-        if sqlquery[len(sqlquery)-3:].strip() == "OR":
-                sqlquery = sqlquery[:-4]
+        if sqlquery[len(sqlquery)-4:].strip() == "OR )":
+            sqlquery = sqlquery[:-4].strip() + ")"
 
-        sqlquery += ") AND nodes.rack=%d ORDER BY nodes.rack, nodes.rank"
+        sqlquery += " AND nodes.rack=%d ORDER BY nodes.rack, nodes.rank"
 
         self._dbReadonly.execute(sqlquery % self._rackNumber)
         data = self._dbReadonly.fetchall()
-
+        
         for info in data:
              self._nodeList.append(info[0])
         self._nodeList.sort()
@@ -158,12 +167,16 @@ class NodeFun:
         return self._dbReadonly.getAppglobals('PrimaryInstaller')
     
     def nodeIsPrimaryInstaller(self, nodename):
+
+        if not nodename:
+            return False
+            
         if nodename.strip() == self._getPrimaryInstaller():
             return True
         return False
         
-    def _getNodeID (self, nodename):
-        """_getNodeID(nodename)
+    def getNodeID (self, nodename):
+        """getNodeID(nodename)
         Returns the node ID if found, otherwise false if nodename is the primary installer name, or not found in db """
         
         if self.nodeIsPrimaryInstaller(nodename):
@@ -212,21 +225,33 @@ class NodeFun:
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
         
         self._nodeList, ngConflicts = self._getNodes()
+        
+        if not self._nodeList and not ngConflicts:
+            return False
 
-        # Check if the node format has a rack AND rank.
-        self.isNodenameHasRack()
-
+        # Check if the node format has a rack AND rank. If it doesn't set the rack to 0 always,
+        if self.isNodenameHasRack() == False:
+            self._rackNumber = 0
+   
+        # Check if node group exists by looking for the nodeformat If it's empty. Abort.
+        if self._nodeFormat == None:
+            return False
+            
         # Build SQL query based on the node groups sharing the same node format.
-        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid AND (" % self._rackNumber
-        for ngid in ngConflicts:
-             sqlquery += "nodegroups.ngid=%d" % ngid
-             if ngid:
-                 sqlquery += " OR "
+        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
+        
+        if ngConflicts:
+            sqlquery += " AND ("
+            for ngid in ngConflicts:
+                sqlquery += "nodegroups.ngid=%s" % ngid
+                if ngid:
+                    sqlquery += " OR "
+            sqlquery += ")"
 
-        if sqlquery[len(sqlquery)-3:].strip() == "OR":
-                sqlquery = sqlquery[:-4]
-
-        sqlquery += ") ORDER BY nodes.rank"
+        if sqlquery[len(sqlquery)-4:].strip() == "OR )":
+            sqlquery = sqlquery[:-4].strip() + ")"
+        
+        sqlquery += " ORDER BY nodes.rank"
 
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
@@ -264,16 +289,23 @@ class NodeFun:
     def deleteNode(self, nodename):
         """deleteNode(nodename)
         Deletes node from database, and calls deleteDHCPLease() to delete the DHCP entry also. """
-        
+
+        if not nodename or nodename == None:
+            return False
+            
         # We can't be the master installer
         if not self._isMasterInstaller:
-            nid = self._getNodeID(nodename)
+            nid = self.getNodeID(nodename)
+            if nid == None:
+                return False
+                
             self._deleteDHCPLease(nodename)
-            self._dbRWrite.execute("DELETE FROM nics where nid='%s'" % nid)
-            self._dbRWrite.execute("DELETE FROM nodes where nid='%s'" % nid)
+            self._dbRWrite.execute("DELETE FROM nics where nid=%s" % nid)
+            self._dbRWrite.execute("DELETE FROM nodes where nid=%s" % nid)
+            return True
 
-    def _isIPUsed(self, ipaddress):
-        """_isIPUsed(ipaddress)
+    def isIPUsed(self, ipaddress):
+        """isIPUsed(ipaddress)
         Checks if the IP is in use, returns false if not, true if it is. """
         
         self._dbReadonly.execute("SELECT COUNT(*) FROM nics WHERE ip = '%s'" % ipaddress)
@@ -289,7 +321,7 @@ class NodeFun:
         self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" % 
         (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
         
-        nodeID = self._getNodeID(self._nodeName)
+        nodeID = self.getNodeID(self._nodeName)
         interfaces = self._findInterfaces()
         # Iterate though list of interface devices.
         for nicdev in interfaces:
@@ -300,7 +332,7 @@ class NodeFun:
              IPincrement = int(NICInfo[3])
              
              while True:
-                 if self._isIPUsed(self._newIPAddress):
+                 if self.isIPUsed(self._newIPAddress):
                       self._newIPAddress = kusu.ipfun.incrementIP(self._newIPAddress, IPincrement, subnetNetwork)
                  else:
                     break
@@ -318,7 +350,7 @@ class NodeFun:
         Replaces an existing node, first by deleting the existing DHCP entry for the node since it contains the old mac address. 
         Then setting the MAC address to NULL so a new DHCP request may be done.  """
         
-        nid = self._getNodeID(nodename)
+        nid = self.getNodeID(nodename)
         if not self._isMasterInstaller:
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
@@ -332,7 +364,7 @@ class NodeFun:
         """replaceNICBootEntry(nodename, macaddress)
         Replaces nics table containing new mac address for replaced node """
         
-        nid = self._getNodeID(nodename)
+        nid = self.getNodeID(nodename)
         self._dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = 1" % (macaddress, nid))
         self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
         data = self._dbReadonly.fetchone()[0]
@@ -398,7 +430,49 @@ class NodeFun:
         except:
           # Mac address does not exist
           return False
+    
+    def validateInterface(self, interface):
+        """validateInterface(self, interface)
+        Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
         
+        self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
+                                   AND nics.netid=networks.netid AND networks.device='%s' AND \
+                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % interface)
+        result = self._dbReadonly.fetchone()
+ 
+        try:
+            testval = result[0]
+            return True
+        except:
+            return False
+
+    def validateNodegroup(self, nodegroup):
+        """validateNodegroup(self, nodegroup)
+        Checks if the requested node group exists. If it does, returns True and the ngid, otherwise False"""
+
+        # Check for valid nodegroup.
+        self._dbReadonly.execute("SELECT ngid, ngname FROM nodegroups WHERE ngname = '%s'" % nodegroup)
+        result = self._dbReadonly.fetchone()
+        try:
+            testval = result[0]
+            return True, testval
+        except:
+            return False, None
+
+    def validateNode(self, node):
+        """validateNode(self, node)
+        Checks if the requested node exists or not. If it does, returns True, otherwise False"""
+        
+        # Check for valid node to replace. if not return an error.
+        self._dbReadonly.execute("SELECT nodes.name FROM nodes WHERE nodes.name = '%s'" % node)
+        result = self._dbReadonly.fetchone()
+ 
+        try:
+            testval = result[0]
+            return True
+        except:
+            return False
+
     def _findInterfaces(self):
         """findInterfaces()
         Returns a dictionary containing Networks ID number, Subnetwork, Starting IP Address and IP Increment value.
@@ -417,8 +491,182 @@ class NodeFun:
         """findBootDevice()
         Returns the boot device that has its boot flag set to 1 """
         
-        nid = self._getNodeID(nodename)
-        self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
-        data = self._dbReadonly.fetchone()
-        return data[0]
+        nid = self.getNodeID(nodename)
+        try:
+            self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
+        except:
+            return None
+        try:
+            data = self._dbReadonly.fetchone()
+            return data[0]
+        except:
+            return None
         
+# Run some unittests
+if __name__ == "__main__":
+    myNodeFun = NodeFun()
+
+    # Test validateNode
+    if myNodeFun.validateNode("node0000"):
+        print "* Testing NodeFun.validateNode(\"node0000\"): Result: PASS (Found)"
+    else:
+        print "* Testing NodeFun.validateNode(\"node0000\"): Result: FAIL (Not found)"
+    
+    if myNodeFun.validateNode("foobar001") == False:  # Does not exist in database, PASS if NOT found.
+        print "* Testing NodeFun.validateNode(\"foobar001\"): Result: PASS (Not found)"
+    else:
+        print "* Testing NodeFun.validateNode(\"foobar001\"): Result: FAIL (Found)"
+    
+    # Test findMACAddress
+    if myNodeFun.findMACAddress("aa:bb:cc:dd:ee:ff") == False:
+        print "* Testing NodeFun.findMACAddress(\"aa:bb:cc:dd:ee:ff\"): Result: PASS (Not found)"
+    else:
+        print "* Testing NodeFun.findMACAddress(\"aa:bb:cc:dd:ee:ff\"): Result: FAIL (Found)"
+    
+    if myNodeFun.findMACAddress("00:11:22:33:44:32"):
+        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:32\"): Result: PASS (Found)"
+    else:
+        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:32\"): Result: FAIL (Not found)"
+        
+    # Test findBootDevice
+    if myNodeFun.findBootDevice("foobar001"):
+        print "* Testing NodeFun.findBootDevice(\"foobar001\"): Result: FAIL (Found)"
+    else:
+        print "* Testing NodeFun.findBootDevice(\"foobar001\"): Result: PASS (Not found)"
+
+    if myNodeFun.findBootDevice("c01-01"):
+        print "* Testing NodeFun.findBootDevice(\"c01-01\"): Result: PASS (Found)"
+    else:
+        print "* Testing NodeFun.findBootDevice(\"c01-01\"): Result: FAIL (Not found)"
+
+    # Test validateNodegroup
+    result, ngid = myNodeFun.validateNodegroup("Kusu Rules")
+    if result:
+        print "* Testing NodeFun.validateNodegroup(\"Kusu Rules\"): Result: FAIL (Found)"
+    else:
+        print "* Testing NodeFun.validateNodegroup(\"Kusu Rules\"): Result: PASS (Not found)"
+    
+    result, ngid = myNodeFun.validateNodegroup("Compute Diskless")
+    if result:
+        print "* Testing NodeFun.validateNodegroup(\"Compute Diskless\"): Result: PASS (Found)"
+    else:
+        print "* Testing NodeFun.validateNodegroup(\"Compute Diskless\"): Result: FAIL (Not found)"
+        
+    # Test getNodeInformation
+    nodeinfo = myNodeFun.getNodeInformation("hello-00-world00-24")
+    if nodeinfo:
+        print "* Testing NodeFun.getNodeInformation(\"hello-00-world00-24\"): Result: FAIL (Found)"
+    else:
+        print "* Testing NodeFun.getNodeInformation(\"hello-00-world00-24\"): Result: PASS (Not found)"
+        
+    nodeinfo = myNodeFun.getNodeInformation("c02-01")
+    if nodeinfo:
+        print "* Testing NodeFun.getNodeInformation(\"c02-01\"): Result: PASS (Found)"
+        print "* NodeFun.getNodeInformation() Returns: %s" % nodeinfo
+    else:
+        print "* Testing NodeFun.getNodeInformation(\"c02-01\"): Result: FAIL (Not found)"
+        
+    # Test isIPused
+    if myNodeFun.isIPUsed("192.168.30.62") == False:
+        print "* Testing NodeFun.isIPUsed(\"192.168.30.62\"): Result: PASS (IP Not used)"
+    else:
+        print "* Testing NodeFun.isIPUsed(\"192.168.30.62\"): Result: FAIL (IP Used)"
+
+    if myNodeFun.isIPUsed("10.1.2.13"):
+        print "* Testing NodeFun.isIPUsed(\"10.1.2.13\"): Result: PASS (IP used)"
+    else:
+        print "* Testing NodeFun.isIPUsed(\"10.1.2.13\"): Result: FAIL (IP Not Used)"
+        
+    # Test getNodeID
+    if myNodeFun.getNodeID("gooble092-agZf43t"):
+        print "* Testing NodeFun.getNodeID(\"gooble092-agZf43t\"): Result: FAIL (Found)"
+    else:
+        print "* Testing NodeFun.getNodeID(\"gooble092-agZf43t\"): Result: PASS (Not found)"
+
+    if myNodeFun.getNodeID("host003"):
+        print "* Testing NodeFun.getNodeID(\"host003\"): Result: PASS (Found)"
+    else:
+        print "* Testing NodeFun.getNodeID(\"host003\"): Result: FAIL (Not found)"
+    
+    del myNodeFun
+    
+    # Invalid case, No such rack -100 and nodegroup -5.
+    myNodeFun = NodeFun(rack=-100, nodegroup=-5)
+    if myNodeFun.addNode("aa:bb:cc:dd:ee:ff", "eth0") == False:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth0\"): Given: Rack -100, ngid -5 (Invalid): Result: PASS (Node group not found)"
+    else:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth0\"): Given: Rack -100, ngid -5 (Invalid): Result: FAIL (Node group found)"
+    del myNodeFun
+    
+    # Valid case, create node in 'Compute' node group.
+    myNodeFun = NodeFun(rack=1, nodegroup=2)
+    createdNode = myNodeFun.addNode("aa:bb:cc:dd:ee:ff", "eth1")
+    if createdNode:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 1, ngid 2 (Compute): Result: PASS (Node created)"
+        print "\t* NodeFun.addNode(): Returns: %s" % createdNode
+    else:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 1, ngid 2 (Compute): Result: FAIL (Node not created)"
+        
+    del myNodeFun
+
+    # Valid case, delete created node and check.
+    myNodeFun = NodeFun()
+    if myNodeFun.deleteNode(createdNode):
+        print "* Testing NodeFun.deleteNode(\"%s\"): Result: PASS (Deleted)" % createdNode
+        if myNodeFun.validateNode(createdNode) == False:
+            print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: PASS (Deleted)" % (createdNode, createdNode)
+            createdNode = None
+        else:
+            print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: FAIL (Not deleted)" % (createdNode, createdNode)
+        
+    else:
+        print "* Testing NodeFun.deleteNode(\"%s\"): Result: FAIL (Not deleted)" % createdNode
+        
+    # Invalid case, create node in Bogus rack and nodegroup.
+    myNodeFun = NodeFun(rack=54645, nodegroup=999999)
+    if myNodeFun.addNode("aa:bb:cc:dd:ee:ff", "eth1") == False:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 54645, ngid 999999 (Invalid): Result: PASS (Node group not found)"
+        createdNode = None
+    else:
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 54645, ngid 999999 (Invalid): Result: FAIL (Node created)"
+        print "* NodeFun.addNode(): Returns: %s" % createdNode
+
+    del myNodeFun
+    # Invalid case, delete created node and check. Shouldn't get to this at all.
+    
+    if createdNode:
+        myNodeFun = NodeFun()
+        if myNodeFun.deleteNode(createdNode):
+            print "* Testing NodeFun.deleteNode(\"%s\"): Result: PASS (Deleted)" % createdNode
+            if myNodeFun.validateNode(createdNode):
+                print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: PASS (Deleted)" % (createdNode, createdNode)
+            else:
+                print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: FAIL (Not deleted)" % (createdNode, createdNode)
+        
+        else:
+            print "* Testing NodeFun.deleteNode(\"%s\"): Result: FAIL (Not deleted)" % createdNode
+        
+        del myNodeFun
+
+    # Valid case, delete node c02-01
+    createdNode = "c02-01"
+    myNodeFun = NodeFun()
+    if myNodeFun.deleteNode(createdNode):
+        print "* Testing NodeFun.deleteNode(\"%s\"): Result: PASS (Deleted)" % createdNode
+        if myNodeFun.validateNode(createdNode) == False:
+            print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: PASS (Deleted)" % (createdNode, createdNode)
+        else:
+            print "\t* Confirm Node %s is deleted: NodeFun.validateNode(\"%s\"): Result: FAIL (Not deleted)" % (createdNode, createdNode)
+        
+    else:
+        print "* Testing NodeFun.deleteNode(\"%s\"): Result: FAIL (Not deleted)" % createdNode
+
+    # Invalid case, create node in 'Compute Diskless'
+    myNodeFun = NodeFun(rack=2, nodegroup=4)
+    if myNodeFun.addNode("aa:bb:cc:dd:ee:ab", "eth1"):
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: PASS (Node created)"
+        print "\t* NodeFun.addNode(): Returns: %s" % createdNode
+        if createdNode == "c02-01":
+            print "\t* Testing NodeFun.addNode() PASSED. Correct node added."
+    else:
+            print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: FAIL (Node not created)"
