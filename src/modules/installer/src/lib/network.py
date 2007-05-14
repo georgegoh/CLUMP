@@ -21,7 +21,10 @@ NAV_NOTHING = -1
 kl = kusulog.getKusuLog('installer.network')
 
 class NetworkScreen(screenfactory.BaseScreen):
-    """This is the network screen."""
+    """
+    The network screen lists all available network interfaces and provides
+    their configuration.
+    """
 
     name = _('Network')
     context = 'Network'
@@ -40,7 +43,7 @@ class NetworkScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         """
-        Write self.interfaces dictionary to database.
+        Store the configurations options in the network profile.
         """
 
         try:
@@ -87,6 +90,11 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.controlDNSScreen()
 
     def controlDNSScreen(self):
+        """
+        Dynamically insert or remove Gateway/DNS screen based on configuration
+        of network interfaces.
+        """
+
         from gatewaydns import GatewayDNSSetupScreen
         dnsscreen = GatewayDNSSetupScreen(self.database, self.kusuApp)
 
@@ -109,6 +117,10 @@ class NetworkScreen(screenfactory.BaseScreen):
                 self.selector.screens.index(self) + 1, dnsscreen)
 
     def validate(self):
+        """
+        Perform validity checks on received data.
+        """
+
         errList = [] 
 
         rv, dups = self.checkDuplicates('ip_address')
@@ -140,6 +152,16 @@ class NetworkScreen(screenfactory.BaseScreen):
         return True, ''
 
     def checkDuplicates(self, prop):
+        """
+        Checks whether the same prop is specified for more than one interface.
+
+        Returns False and the list of properties duplicated, or True and empty
+        list if all props are unique.
+
+        Arguments:
+        prop -- string index of property from interfaces dictionary to check
+        """
+
         if len(self.interfaces) <= 1:
             return True, []
 
@@ -161,6 +183,10 @@ class NetworkScreen(screenfactory.BaseScreen):
         return True, []
  
     def drawImpl(self):
+        """
+        Draw the window.
+        """
+
         self.screenGrid = snack.Grid(1, 3)
         
         instruction = snack.Label(self.msg)
@@ -231,14 +257,29 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
 
 class ConfigureIntfScreen:
+    """
+    Class implements the individual network adapter configuration.
+
+    The dialog controls whether the interface is configured, the interface's IP
+    and netmask or whether to configure it via DHCP, and whether to bring the
+    interface up at boot.
+    """
 
     def __init__(self, baseScreen):
+        """
+        Instantiation, set a few member variables from main network screen.
+        """
+
         self.baseScreen = baseScreen
         self.screen = baseScreen.screen
         self.selector = baseScreen.selector
         self.context = baseScreen.context
 
     def configureIntf(self):
+        """
+        Draw the window, add callbacks, etc.
+        """
+
         try:
             # listbox stores interface names as string objects (ie 'eth0')
             intf = self.baseScreen.listbox.current()
@@ -324,6 +365,10 @@ class ConfigureIntfScreen:
         return NAV_NOTHING
 
     def addCheckboxCallbacks(self):
+        """
+        Adds callback functions to the use_dhcp and configdevice fields.
+        """
+
         # add callback for toggling static IP fields
         configd = {'control': self.configdevice,
                    'disable': (self.use_dhcp, self.active_on_boot,
@@ -341,6 +386,10 @@ class ConfigureIntfScreen:
         enabledByValue([dhcpd, configd])
 
     def configureIntfVerify(self):
+        """
+        Perform validity checks on received data.
+        """
+
         if self.use_dhcp.value():
             return True
 
@@ -374,6 +423,11 @@ class ConfigureIntfScreen:
         return True
 
     def configureIntfOK(self):
+        """
+        Store the configurations options.
+        """
+
+
         self.interface['configure'] = bool(self.configdevice.value())
         self.interface['use_dhcp'] = bool(self.use_dhcp.value())
         self.interface['active_on_boot'] = bool(self.active_on_boot.value())
@@ -410,8 +464,7 @@ def enabledByValue(args):
     """
     Sets the enabled bit of widgets based on value of controlling widget.
 
-    args -- a tuple of arguments. The first argument's value will be checked,
-            all other arguments will be set accordingly.
+    args -- a dictionary containing the controlling and controlled elements.
     """
 
     for d in args:
@@ -431,6 +484,11 @@ def enabledByValue(args):
                     subject.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
 
 def retrieveNetworkContext(db):
+    """
+    Obtains information about system's network interfaces from the database and
+    pci.inf file via net.getPhysicalInterfaces.
+    """
+
     adapters = {}
     network_entries = db.get('Network')
     for network_entry in network_entries:

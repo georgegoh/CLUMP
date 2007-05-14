@@ -21,7 +21,8 @@ NAV_NOTHING = -1
 kl = kusulog.getKusuLog('installer.network')
 
 class FQHNScreen(screenfactory.BaseScreen):
-    """Collects kits information."""
+    """Collects fully-qualified host name."""
+
     name = _('Host Name')
     context = 'Network'
     msg = _('Please specify a fully-qualified host name for this computer:')
@@ -36,6 +37,10 @@ class FQHNScreen(screenfactory.BaseScreen):
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
+        """
+        Erase all data entered by the user.
+        """
+
         self.netProfile['fqhn_use_dhcp'] = self.use_dhcp.value()
         self.netProfile['fqhn'] = self.hostname.value()
 
@@ -44,6 +49,10 @@ class FQHNScreen(screenfactory.BaseScreen):
         return NAV_NOTHING
 
     def drawImpl(self):
+        """
+        Draw the window.
+        """
+
         self.netProfile = self.kusuApp['netProfile']
 
         self.screenGrid = snack.Grid(1, 3)
@@ -86,6 +95,10 @@ class FQHNScreen(screenfactory.BaseScreen):
                                  padding=(3, 0, 0, 1), anchorLeft=1)
 
     def validate(self):
+        """
+        Perform validity checks on received data.
+        """
+
         if not self.use_dhcp.value():
             rv, msg = self.hostname.verify()
             if rv is None:
@@ -97,7 +110,7 @@ class FQHNScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         """
-        Store
+        Store the gateway settings.
         """
 
         self.netProfile['fqhn_use_dhcp'] = bool(self.use_dhcp.value())

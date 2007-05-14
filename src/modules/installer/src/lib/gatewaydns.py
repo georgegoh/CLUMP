@@ -36,6 +36,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
 
     def clearAllFields(self):
+        """
+        Erase all data entered by the user.
+        """
+
         self.netProfile['gw_dns_use_dhcp'] = bool(self.use_dhcp.value())
         self.netProfile['default_gw'] = self.gateway.value()
         self.netProfile['dns1'] = self.dns1.value()
@@ -50,6 +54,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         return NAV_NOTHING
 
     def drawImpl(self):
+        """
+        Draw the window.
+        """
+
         self.netProfile = self.kusuApp['netProfile']
 
         self.screenGrid = snack.Grid(1, 6)
@@ -101,6 +109,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         network.enabledByValue([dhcpd])
 
     def initializeFields(self):
+        """
+        Populate fields with data.
+        """
+        
         self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
 
         try:
@@ -133,6 +145,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
             self.dns3.setEntry('')
 
     def validate(self):
+        """
+        Perform validity checks on received data.
+        """
+
         if not self.use_dhcp.value():
             errList = []
 
@@ -173,6 +189,10 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         return True, ''
 
     def checkGatewayWithSubnets(self):
+        """
+        Checks whether the provided default gateway is routable by an interface.
+        """
+
         interfaces = network.retrieveNetworkContext(self.database)
 
         for intf in interfaces.keys():
