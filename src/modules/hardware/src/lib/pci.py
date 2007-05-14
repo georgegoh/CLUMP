@@ -39,14 +39,27 @@
  'NAME': 'American Megatrends Inc'}"""
 
 import re
+import os
+from path import path
 
 class PCI:
-    ids_file = '/usr/share/hwdata/pci.ids'
     ids = {}
     
     def __init__(self, vcodes):
 
-        f = open(self.ids_file, 'r')
+        ids_file = path('/usr/share/hwdata/pci.ids')
+
+        if not ids_file.exists():
+            # Try our own pci.ids
+            kusu_root = os.environ.get('KUSU_ROOT', None)
+
+            if kusu_root:
+                ids_file = path(kusu_root) / 'etc' / 'pci.ids'
+            else:
+                # Try here
+                ids_file = '/etc/pci.ids'
+                
+        f = open(ids_file, 'r')
         content = f.readlines()
         f.close()
 

@@ -15,5 +15,6 @@ setup(name="kusu-hardware",
       url="http://www.osgdc.org/project/kusu",
       platforms=["any"],
       packages = ['hardware'],
-      package_dir={'hardware': 'src/lib'}
+      package_dir={'hardware': 'src/lib'},
+      data_files=[('etc/', ['src/etc/pci.ids'])]
      )
