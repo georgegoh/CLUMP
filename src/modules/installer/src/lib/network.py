@@ -214,8 +214,12 @@ class ConfigureIntfScreen:
         self.context = baseScreen.context
 
     def configureIntf(self):
-        # listbox stores interface names as string objects (ie 'eth0')
-        self.intf = self.baseScreen.listbox.current()
+        try:
+            # listbox stores interface names as string objects (ie 'eth0')
+            self.intf = self.baseScreen.listbox.current()
+        except KeyError:
+            # the listbox is empty
+            return NAV_NOTHING
 
         gridForm = snack.GridForm(self.screen,
                                   _('Configuring [%s]' % self.intf), 1, 4)
