@@ -181,6 +181,11 @@ class BootMediaTool:
         self._initSrc(srcpath)
         return self.installsrc.getKernelPath()
         
+    def getIsolinuxbinPath(self, srcpath):
+        """ Query the srcpath and returns the path of the isolinux.bin. """
+        self._initSrc(srcpath)
+        return self.installsrc.getIsolinuxbinPath()
+
     def getInitrdPath(self, srcpath):
         """ Query the srcpath and returns the path of the initrd. """
         self._initSrc(srcpath)
