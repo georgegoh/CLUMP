@@ -26,7 +26,7 @@
       c) mountpoint collisions with an existing volume.
 """
 import subprocess
-from kusu.util.exceptions import *
+from kusu.util.kusuexceptions import *
 import lvm202 as lvm
 from kusu.util.log import getKusuLog
 from os.path import basename, exists

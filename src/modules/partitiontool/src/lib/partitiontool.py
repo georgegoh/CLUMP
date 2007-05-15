@@ -54,14 +54,13 @@
 
 """
 import math
-#import logging
-import subprocess
 import parted
-import lvm
-from os.path import basename, exists
-from kusu.util.exceptions import *
+import subprocess
 from lvm import *
+import kusu.hardware
 import kusu.util.log as kusulog
+from os.path import basename, exists
+from kusu.util.kusuexceptions import *
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()
@@ -159,38 +158,20 @@ class DiskProfile(object):
                        }
 
     def __init__(self, fresh):
+        """Initialises a DiskProfile object by doing the following:
+           
+        """
         global cmd_fifo
         self.disk_dict = {}
         self.mountpoint_dict = {}
         self.pv_dict = {}
         self.lvg_dict = {}
         self.lv_dict = {}
-        fdisk = subprocess.Popen('fdisk -l 2>/dev/null',
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        grep = subprocess.Popen("grep 'Disk'",
-                                shell=True,
-                                stdin=fdisk.stdout,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        awk = subprocess.Popen("awk '{ print $2 }'",
-                               shell=True,
-                               stdin=grep.stdout,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-        fdisk_out, status = awk.communicate()
-        if status != '':
-            print 'Error finding the disks on this system:', fdisk_out, status
-            import sys
-            sys.exit(1)
 
         logger.debug('Finding disks.') 
-        # output is in the form of "/dev/XXX:\n/dev/YYY", so massage it into a usable form.
-        disks_str = fdisk_out.split('\n')
+        disks_str = kusu.hardware.disk.getDisks().keys()
         for disk_str in disks_str:
-            if disk_str:
-                self.disk_dict[disk_str[5:-1]] = Disk(disk_str[:-1], self, fresh)
+            self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
         logger.debug('Found disks.')
 
         logger.debug('Finding PVs.')

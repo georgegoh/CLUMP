@@ -205,7 +205,8 @@ class Navigator(object, KusuApp):
                     valid, msg = self.currentScreen.validate()
                     if not valid:
                         snack.ButtonChoiceWindow(self.mainScreen, 
-                                                 self._('Validation Failed'), msg,
+                                                 self._('Validation Failed'),
+                                                 msg,
                                                  buttons=[self._('Ok')])
                         continue
                     self.currentScreen.formAction()
@@ -218,7 +219,9 @@ class Navigator(object, KusuApp):
                     else:
                         loop=False
                 elif result is NAV_BACK:
-                    self.logger.debug('Back navigation from ' + self.currentScreen.name + ' number: ' + str(self.currentStep))
+                    self.logger.debug('Back navigation from ' + \
+                                      self.currentScreen.name + \
+                                      ' number: ' + str(self.currentStep))
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
                     self.selectScreen(self.currentStep-1)

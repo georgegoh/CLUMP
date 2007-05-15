@@ -21,10 +21,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.hardware import disk
 import kusu.util.log as kusulog
 
-kl = kusulog.getKusuLog('installer.partition')
-
-def printCurrent(ps):
-    print ps.listbox.current()
+logger = kusulog.getKusuLog('installer.partition')
 
 class PartitionScreen(screenfactory.BaseScreen):
     """This screen asks for partition setups. This class is probably not the
@@ -69,10 +66,6 @@ class PartitionScreen(screenfactory.BaseScreen):
                                  returnExit=0)
 
         if not self.disk_profile:
-            try:
-                kl.debug(disk.getDisks())
-            except: pass
-
             self.disk_profile = partitiontool.DiskProfile(False)
 
         # retrieve info about logical volumes and lv groups
@@ -93,15 +86,15 @@ class PartitionScreen(screenfactory.BaseScreen):
                 self.listbox.addRow([lv_devicename, '', '', str(lv_size_MB),lv.fs_type,
                                     lv.mountpoint], lv)
 
-        #logging.debug('Partition screen: getting disk list')
+        logger.debug('Partition screen: getting disk list')
         disk_keys = self.disk_profile.disk_dict.keys()
         for key in sorted(disk_keys):
             # display device
             device = self.disk_profile.disk_dict[key]
             self.listbox.addRow(['/dev/'+key, '', '', str(device.size/1024/1024), '', ''], device)
             parts_dict = self.disk_profile.disk_dict[key].partition_dict
-            #logging.debug('Disk %s has %d partitions as reported by parted.' % (key, \
-            #              self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
+            logger.debug('Disk %s has %d partitions as reported by parted.' % (key, \
+                          self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
             parts_keys = parts_dict.keys()
             for part_key in sorted(parts_keys):
                 partition = parts_dict[part_key]
@@ -127,7 +120,6 @@ class PartitionScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
                                  padding=(0,0,0,0))
 
-        #self.listbox.setCallback_(printCurrent, self)
 
     def validate(self):
         errList = []
