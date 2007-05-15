@@ -29,7 +29,7 @@ EXEC_PROGRAM(${SVN} ${CMAKE_CURRENT_SOURCE_DIR}
 
 # Stamp version string and revision number
 CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/installer
-               ${SETUPPY_PATH}/src/bin/installer)
+               ${SETUPPY_PATH}/src/bin/test)
 
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)

@@ -25,5 +25,6 @@ setup(name="kusu-installer-text",
                   ('share/doc', ['src/doc/LICENSE']),
                   ('etc', ['src/etc/lang-names']),
                   ('etc', ['src/etc/lang-table'])],
-      scripts=['src/bin/installer']
+      scripts=['src/bin/installer',
+               'src/bin/test']
      )
