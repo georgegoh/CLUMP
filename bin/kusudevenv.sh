@@ -1,9 +1,26 @@
-#!${BASH}
+#!/usr/bin/bash
+# $Id$
+#
+# Kusu specific environment script
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+export KUSU_DEVEL_ROOT=${CMAKE_CURRENT_BINARY_DIR}
+export KUSU_INSTALL_PREFIX=${KUSU_INSTALL_PREFIX}
+export KUSU_BUILD_DIST=${KUSU_BUILD_DIST}
+export KUSU_BUILD_DISTVER=${KUSU_BUILD_DISTVER}
+export KUSU_BUILD_ARCH=${KUSU_BUILD_ARCH}
+export KUSU_BUILD_ISOBIN=${KUSU_BUILD_ISOBIN}
+export KUSU_DISTRO_SRC=${KUSU_DISTRO_SRC}
+export KUSU_CACHE_DIR=${KUSU_CACHE_DIR}
+
 export KUSU_ROOT=${KUSU_ROOT}
 export PYTHONPATH=${PYTHONPATH}:$PYTHONPATH
 export PATH=${KUSU_ROOT}/bin:${KUSU_ROOT}/sbin:$PATH
 export KUSU_DIST=${KUSU_BUILD_DIST}
 export KUSU_DISTVER=${KUSU_BUILD_DISTVER}
 export KUSU_TMP=${KUSU_TMP}
-export KUSU_LOGLEVEL=DEBUG
-export KUSU_LOGFILE=${KUSU_TMP}/kusu.log
+export KUSU_LOGLEVEL=${KUSU_LOGLEVEL}
+export KUSU_LOGFILE=${KUSU_LOGFILE}

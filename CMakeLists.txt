@@ -29,6 +29,9 @@ SET(KUSU_MODULES
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/CMakeScripts)
 INCLUDE(KusuGlobals)
 
+MESSAGE(STATUS "Please run make and source ${KUSU_ROOT}/bin/kusudevenv.sh.")
+
+
 
 
 
