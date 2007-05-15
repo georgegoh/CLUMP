@@ -37,7 +37,7 @@ class ScreenImpl(BaseScreen):
           'option. Otherwise select Next to continue.' 
     buttons = ['Action 1']
 
-    def draw(self):
+    def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                  width=self.gridWidth),
@@ -78,4 +78,3 @@ class ScreenFactoryImpl(ScreenFactory):
                              TZSelectionScreen(collection, kusuApp=runtimeDict),
                              ConfirmScreen(collection, kusuApp=runtimeDict)
                             ]
-
