@@ -36,7 +36,10 @@ def copyKits(prefix, database):
     prefix = path(prefix)
 
     try:
-        util.verifyDistro(url, 'fedora', '6')
+        os_name = os.environ.get('KUSU_DIST', None)
+        os_version = os.environ.get('KUSU_DISTVER', None)
+
+        util.verifyDistro(url, os_name, os_version)
     except kusuexceptions.KusuError, e: raise e
 
     try:
