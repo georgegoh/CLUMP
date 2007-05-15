@@ -110,56 +110,14 @@ class LabelledEntry(snack.Grid):
         self.setField(self.label, col=0, row=0, anchorLeft=1)
         self.setField(self.entry, col=1, row=0, anchorRight=1)
 
-import re
-
-def verifyFQDN(fqdn):
-    """Verifies that text is a valid FQDN(.a-zA-Z0-9)"""
-    p = re.compile('[^.a-zA-Z0-9]')
-    li = p.findall(fqdn)
-    if li:
-        return False, _('FQDN can only contain the characters .a-zA-Z0-9')
-    return True, None
-
-def verifyIP(ip):
-    """Verifies that text is a valid IP"""
-    li = ip.split('.')
-    errmsg = _('IP address must be in the form XXX.XXX.XXX.XXX, where ' +
-               '0 <= XXX <= 255')
-    if len(li) != 4:
-        return False, errmsg
-    for octet in li:
-        try:
-            octet_int = int(octet)
-            if octet_int < 0 or octet_int > 255:
-                return False, errmsg
-        except ValueError:
-            return False, errmsg
-    return True, None
-
-def verifyEmail(email):
-    """Verifies that text is a valid email"""
-    p = re.compile('^[a-zA-Z][\w\.]*[a-zA-Z0-9]' + '@' + \
-                  '[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
-    li = p.findall(email)
-    if len(li) != 1:
-        return False, _('Ensure a valid email is entered(e.g. xxyy@zzz.com)')
-    return True, None
-
-def verifyURL(url):
-    """Verifies that text is a valid URL"""
-    p = re.compile('^http://[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]' + '\.' + \
-                   '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
-    li = p.findall(url)
-    if len(li) != 1:
-        return False, _('Ensure a valid url is entered(e.g. http://www.xyz.com)')
-    return True, None
-
 class ColumnListbox(snack.Grid):
+    """A ColumnListbox behaves like a normal Listbox widget, but lets the
+       programmer define multiple columns of data for the listbox.
+    """
     height = 0
     colLabels = []
     colWidths = []
     justification = []
-    rows = []
 
     def __init__(self, height, colWidths, colLabels, justification, returnExit=1):
         if len(colWidths) is not len(colLabels) or \
@@ -172,15 +130,15 @@ class ColumnListbox(snack.Grid):
         self.colLabels = colLabels
         self.colWidths = colWidths
         self.justification = justification
-        hdr = self.createHeader()
+        hdr = self.__createHeader()
         self.setField(hdr, col=0, row=0)
         self.listbox = snack.Listbox(height, scroll=1, returnExit=returnExit,
                                      showCursor=0)
         self.setField(self.listbox, col=0, row=1)
         
 
-    def createHeader(self):
-        """"""
+    def __createHeader(self):
+        """Draw the header labels."""
         totalWidth = 0
         for width in self.colWidths:
             totalWidth = totalWidth + width
@@ -202,6 +160,8 @@ class ColumnListbox(snack.Grid):
                               number of items in colTexts."
         rowText = ''
         for i, text in enumerate(colTexts):
+            if not text:
+                text = ''
             currentColWidth = self.colWidths[i]
             currentColText = text[:currentColWidth]
 
@@ -223,3 +183,26 @@ class ColumnListbox(snack.Grid):
 
     def setCallback_(self, obj, data = None):
         self.listbox.setCallback(obj, data)
+
+    def clear(self):
+        self.listbox.clear()
+
+class ProgressDialogWindow(object):
+
+    msgbox = None
+    textbox = None
+    snackScreen = None
+
+    def __init__(self, snackScreen, title, msg):
+        self.snackScreen = snackScreen
+        self.msgbox = snack.GridForm(snackScreen, title, 1,1)
+        self.textbox = snack.TextboxReflowed(30, msg)
+        self.msgbox.add(self.textbox,0, 0)
+        self.msgbox.draw()
+        snackScreen.refresh()
+
+    def setText(self, text):
+        self.textbox.setText(text)
+
+    def close(self):
+        self.snackScreen.popWindow()

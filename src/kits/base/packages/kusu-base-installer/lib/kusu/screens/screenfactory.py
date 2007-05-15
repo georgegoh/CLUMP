@@ -33,7 +33,7 @@ NAV_FORWARD = 0
 NAV_BACK = 1
 NAV_QUIT = 2
 
-class BaseScreen:
+class BaseScreen(object):
     """Abstract base class for screens.
     
     This class is an abstract base class for other Screen classes to inherit.
@@ -47,16 +47,17 @@ class BaseScreen:
     buttons = []
     buttonsDict = {} # Will be generated on init.
     backButtonDisabled = False
-    dbconnection = None
+    isCommitment = False  # if true, then this will be the point of no return.
+    database = None
+    kusuApp = None
     screen = None
 
-    def setCallbacks(self):
-        """(Abstract)
-
+    def setCallbacks(self): # abstract
+        """
 	Children should implement this if there are any buttons that
         require callbacks.
-
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
 
     def drawImpl(self):
         """(Abstract)
@@ -65,6 +66,7 @@ class BaseScreen:
         Don't draw the buttons as well, this is already done for you.
         
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
 
     def draw(self, screen, selector):
         """Template pattern method for drawing a screen
@@ -94,11 +96,12 @@ class BaseScreen:
         button is pressed.
         
         """
+        pass
 
-    def __init__(self, database, kusuapp, gridWidth=45):
+    def __init__(self, database, kusuApp=None, gridWidth=45):
 	# Database instance of an KusuDB
-        self.db = database
-	self.kusuApp = kusuapp
+        self.database = database
+	self._ = kusuApp.langinit()
         self.gridWidth = gridWidth
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
@@ -127,8 +130,9 @@ class BaseScreen:
             True if callback was handled.
             False if callback was not handled.
         """
+        pass # this statement may be replaced by raising a 'NotImplemented' exception.
 
-class ScreenFactory:
+class ScreenFactory(object):
     """Contains a number of screens used/navigated by the KusuInstaller class.
     
     The ScreenFactory is a base class for passing on to the 

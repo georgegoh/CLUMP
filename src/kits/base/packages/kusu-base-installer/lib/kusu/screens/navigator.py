@@ -21,7 +21,6 @@
 
 """This module is the backbone of the Text Installer Framework. It performs the 
    presentation, navigation,and data validation tasks."""
-__version__ = "$Revision: 155 $"
 
 import sys
 import logging
@@ -29,8 +28,9 @@ import snack
 import gettext
 import os
 import time
+from kusu.app import KusuApp
 
-class PlatformScreen(snack.SnackScreen):
+class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
     
     Inherits SnackScreen to display a custom help line at the foot of the screen.
@@ -38,11 +38,13 @@ class PlatformScreen(snack.SnackScreen):
     """
     def __init__(self, title, helpLine='Copyright(C) 2007 Platform Computing Inc.\t\t' + \
                                 'Press F12 to quit'):
+        KusuApp.__init__(self)
         snack.SnackScreen.__init__(self)
-        self.pushHelpLine(helpLine)
+        snack.SnackScreen.popHelpLine(self)
+        snack.SnackScreen.pushHelpLine(self, helpLine)
 
     def finish(self):
-        self.popHelpLine()
+        snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.finish(self)
 
 NAV_NOTHING = -1
@@ -50,7 +52,7 @@ NAV_FORWARD = 0
 NAV_BACK = 1
 NAV_QUIT = 2
 
-class Navigator:
+class Navigator(object, KusuApp):
     """Framework for displaying installation steps and screens.
 
     The Navigator class takes a screenFactory object, and displays the
@@ -59,7 +61,18 @@ class Navigator:
     """
     mainScreen = None
     sidebarWidth = 22
+    currentStep = 0
+    timerActivated = False
 
+    def __getattr__(self, name):
+        if name == 'currentScreen':
+            return self.screens[self.currentStep]
+        raise AttributeError, "%s instance has no attribute '%s'" % \
+                              (self.__class__, name)
+
+    def popupProgress(self, title, msg):
+        return ProgressDialogWindow(self.mainScreen, title, msg)
+        
     def popupMsg(self, title, msg):
         """Show a popup dialog with a given title and message."""
         msgbox = snack.GridForm(self.mainScreen, title, 1,2)
@@ -75,8 +88,9 @@ class Navigator:
 	msgbox.add(text,0, 0)
 	msgbox.draw()
 	self.mainScreen.refresh()
-	time.sleep(timeout)
-	self.mainScreen.popWindow()
+        if timeout >= 0:
+	    time.sleep(timeout)
+	    self.mainScreen.popWindow()
 	
     def popupDialogBox(self, title, msg, buttonList):
 	""" Show a popup dialog box and handle return a value for each button pressed. """
@@ -88,20 +102,20 @@ class Navigator:
 	buttonPressed, entryValue = snack.EntryWindow(self.mainScreen, title, msg, prompts, allowCancel=cancelmode, width=40, entryWidth=20, buttons=buttonlist, help=None)
 	return entryValue
 
-    def __init__(self, screenFactory, screentitle, wizardmode=False):
-	""" Constructor parameters:
-	
-	screentitle is title of the Application Screen
-	wizardmode is the sidebar text displayed by default turned off for kusu applications.
-
+    def __init__(self, screenFactory, screentitle, showTrail=False):
+        """Constructor parameters:
+              screenFactory - instance of the ScreenFactory class
+              screenTitle - title of the Application Screen
+              showTrail is a boolean to turn on or off the cookie trail display,
+              which is shown as a sidebar.
 	"""
-	self._ = self.langinit()
+	KusuApp.__init__(self)
 	self.screenTitle = self._(screentitle)
-	self.screenTimer = 0
-	self.activeTimer = False
+        self.screenTimer = 0
+	self.timerActivated = False
 	self.quitButtonTitle = self._('finish_button')
         self.screens = screenFactory.createAllScreens()
-	self.wizardMode = wizardmode
+	self.showTrail = showTrail
 
     def isActiveTimer(self):
 	return self.activeTimer
@@ -117,24 +131,6 @@ class Navigator:
     def endButtonTitle(self, title):
 	self.quitButtonTitle = self._(title)
 
-    def langinit(self):
-        """langinit - Initialize the Internationalization """
-        langdomain = 'kusuapps'
-        localedir  = ''
-
-        # Locate the Internationalization stuff
-        if os.path.exists('../locale'):
-            localedir = '../locale'
-        else:
-            # Try the system path
-            if os.path.exists('/usr/share/locale'):
-                localedir = '/usr/share/locale'
-
-        gettext.bindtextdomain(langdomain, localedir)
-        gettext.textdomain(langdomain)
-        self.gettext = gettext.gettext
-        return self.gettext
-
     def selectScreen(self, step):
         """Select(by number) the screen to be displayed. Will neither go below
            0, nor above the total number of screens available.
@@ -146,16 +142,16 @@ class Navigator:
         else:
             self.currentStep=step
 
-	if self.wizardMode:	
-           sidebarGrid = self.setupSidebarGrid()
-
+        # after we know which step we're on, display it(with or without trail).
         contentGrid = self.setupContentGrid()
-        self.mainGrid = snack.Grid(2, 1)
-        
-        if self.wizardMode:
-           self.mainGrid.setField(sidebarGrid, col=0, row=0, padding=(0,0,0,0))
-
-        self.mainGrid.setField(contentGrid, col=1, row=0, padding=(0,0,0,1))
+        if self.showTrail:
+            sidebarGrid = self.setupSidebarGrid()
+            self.mainGrid = snack.Grid(2,1)
+            self.mainGrid.setField(sidebarGrid, col=0, row=0, padding=(0,0,0,0))
+            self.mainGrid.setField(contentGrid, col=1, row=0, padding=(0,0,0,1))
+        else:
+            self.mainGrid = snack.Grid(1,1)
+            self.mainGrid.setField(contentGrid, col=0, row=0, padding=(0,0,0,0))
 
     def getCurrentScreen(self):
 	""" Returns current screen """
@@ -185,7 +181,7 @@ class Navigator:
             buttons.append(self.screens[self.currentStep].buttonsDict[key])
         buttonPanel = self.setupButtonPanel(buttons)
         contentGrid.setField(buttonPanel, col=0, row=1, growx=1, growy=1,
-                             padding=(0,0,0,0))
+                             padding=(0,0,0,2))
         return contentGrid
 
     def setupButtonPanel(self, buttons=[]):
@@ -198,7 +194,7 @@ class Navigator:
             self.nextButton = snack.Button(self._('Next'))
         else:
             self.nextButton = snack.Button(self.quitButtonTitle)
-        buttons.append(self.nextButton)
+        buttons.insert(0, self.nextButton)
         buttonGrid = snack.Grid(len(buttons), 1)
         for i, button in enumerate(buttons):
             buttonGrid.setField(button, col=i, row=0, padding=(0,0,0,0))
@@ -215,29 +211,32 @@ class Navigator:
     def hasPrevScreen(self):
         """Is there a screen before the current displayed?"""
         currentScreen = self.screens[self.currentStep]
+        previousScreen = self.screens[self.currentStep - 1]
         if currentScreen.backButtonDisabled or self.currentStep == 0:
+            return False
+        elif previousScreen.isCommitment:
             return False
         else:
             return True
 
     def run(self):
         loop=True
+        self.mainScreen = PlatformScreen(self.screenTitle)
         self.selectScreen(0)
         while(loop):
-            self.mainScreen = PlatformScreen(self.screenTitle)
             form = self.draw()
             result = self.startEventLoop(form)
             if result is NAV_FORWARD:
-                currentScreen = self.screens[self.currentStep]
-                valid, msg = currentScreen.validate()
+                valid, msg = self.currentScreen.validate()
                 if not valid:
                     snack.ButtonChoiceWindow(self.mainScreen, 
                                              self._('Validation Failed'), msg,
                                              buttons=[self._('Ok')])
                     continue
-                currentScreen.formAction()
+                self.currentScreen.formAction()
                 self.mainScreen.popWindow()
                 self.mainScreen.finish()
+                self.mainScreen = PlatformScreen(self.screenTitle)
                 if self.hasNextScreen():                
                     self.selectScreen(self.currentStep+1)
                     loop=True
@@ -246,12 +245,18 @@ class Navigator:
                     loop=False
             elif result is NAV_BACK:
                 self.mainScreen.finish()
+                self.mainScreen = PlatformScreen(self.screenTitle)
                 self.selectScreen(self.currentStep-1)
                 loop=True
             elif result is NAV_NOTHING:
                 self.mainScreen.finish()
+                self.mainScreen = PlatformScreen(self.screenTitle)
                 self.selectScreen(self.currentStep)
                 loop=True
+            elif result is NAV_QUIT:
+                self.mainScreen.popWindow()
+                self.mainScreen.finish()
+                loop=False
             else:
                 self.mainScreen.popWindow()
                 self.mainScreen.finish()
@@ -260,7 +265,6 @@ class Navigator:
     def draw(self):
 	self.mainScreen.drawRootText(0, 0, self.screenTitle)
 	currentScreen = self.screens[self.currentStep]
-	
 	self.mainScreen.gridWrappedWindow(self.mainGrid, self._(currentScreen.title))
         form = snack.Form(self._("This is the help statement"))
         form.add(self.mainGrid)
@@ -277,7 +281,6 @@ class Navigator:
             result = form.run()
 	    if result is "TIMER":
 		timercallback_result = self.screens[self.currentStep].timerCallback()
-
             if result is "F12":
 		hotkeycallback_result = self.screens[self.currentStep].hotkeyCallback()
                 #return NAV_QUIT
