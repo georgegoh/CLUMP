@@ -100,7 +100,7 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         result = snack.ButtonChoiceWindow(self.screen, title='Really continue?',
-                                          text='If you click yes, then your disks will be formatted.\n' + \
+                                          text='If you click ok, then your disks will be formatted.\n' + \
                                                'You cannot recover data on a disk once it has been formatted.')
         if result == 'ok':
             self.database.commit()
