@@ -167,7 +167,7 @@ class Navigator(object, KusuApp):
             self.nextButton = snack.Button(self._('Next'))
         else:
             self.nextButton = snack.Button(self.quitButtonTitle)
-        buttons.append(self.nextButton)
+        buttons.insert(0, self.nextButton)
 
         buttonGrid = snack.Grid(len(buttons), 1)
         for i, button in enumerate(buttons):
