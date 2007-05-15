@@ -357,6 +357,22 @@ class BootMediaTool:
                     p = svnsrc.srcpath / 'src/dists/fedora/%s/%s/updates.img/anaconda' % (osver,osarch)
                     fakeanaconda = path(p)
                     if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
+                    
+                if osname == 'centos':
+                    # put in the kusuenv.sh
+                    p = svnsrc.srcpath / 'src/dists/centos/%s/%s/kusuenv.sh' % (osver,osarch)
+                    kusuenv = path(p)
+
+                    if kusuenv.exists(): kusuenv.copy(kusuroot / 'bin')
+
+                    # remove the kusudevenv.sh
+                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
+                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
+
+                    # put in the the faux anaconda launcher
+                    p = svnsrc.srcpath / 'src/dists/centos/%s/%s/updates.img/anaconda' % (osver,osarch)
+                    fakeanaconda = path(p)
+                    if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
                         
                 # pack the tmpdir into a patchfile with size of 10MB
                 packExt2FS(tmpdir,patchfile,size=10000)
