@@ -130,11 +130,11 @@ def copy(src, dest):
         # Deals with non-ending slash. 
         # Non-ending slash url ends up with an empty string in the 
         # last index of the list when a splitall is done
-        if not p[-1]: # Non-ending slash
+        if not p[-1]: 
             cutaway = len(p[1:]) - 1
-            src = src + '/' # Append a trailing slash for a directory
-        else:
+        else: # non-ending slash
             cutaway = len(p[1:])
+            src = src + '/' # Append a trailing slash
 
         if cutaway <= 0:
             cutaway = 0
