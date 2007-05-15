@@ -70,7 +70,7 @@ class AddHostApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
-        self.dbconnection = KusuDB()
+        self.database = KusuDB()
         self.kusuApp = KusuApp()
 
     def toolVersion(self, option, opt, value, parser):
@@ -191,7 +191,7 @@ class AddHostApp(KusuApp):
             if self.options.interface[0] == '-':
                 self.parser.error(self.kusuApp._("addhost_options_interface_required"))
             else:
-                checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.dbconnection)
+                checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.database)
 
                 if myNode.validateInterface(self.options.interface):
                     myNodeInfo.selectedInterface = self.options.interface
@@ -341,22 +341,22 @@ class AddHostApp(KusuApp):
 
         # Screen ordering
         if replaceMode:
-            screenList = [ WindowNodeStatus(self.dbconnection, self.kusuApp) ]
+            screenList = [ WindowNodeStatus(self.database, self.kusuApp) ]
 
         elif haveInterface and haveNodegroup:
-            screenList = [ WindowNodeStatus(self.dbconnection, self.kusuApp) ]
+            screenList = [ WindowNodeStatus(self.database, self.kusuApp) ]
 
         elif haveNodegroup and not haveInterface:
-            screenList = [ WindowSelectNode(self.dbconnection, self.kusuApp), WindowNodeStatus(self.dbconnection, self.kusuApp) ]
+            screenList = [ WindowSelectNode(self.database, self.kusuApp), WindowNodeStatus(self.database, self.kusuApp) ]
 
         else:
-            screenList = [ NodeGroupWindow(self.dbconnection, self.kusuApp), 
-                          WindowSelectNode(self.dbconnection, self.kusuApp),
-                          WindowNodeStatus(self.dbconnection, self.kusuApp)
+            screenList = [ NodeGroupWindow(self.database, self.kusuApp), 
+                          WindowSelectNode(self.database, self.kusuApp),
+                          WindowNodeStatus(self.database, self.kusuApp)
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Add Hosts - Version 5.0", wizardmode=False)
+        ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
 
 """ AddHostPlugin class
@@ -478,8 +478,8 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         """
         
         if myNodeInfo.quitPrompt:
-            result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"), 
-                     (self.kusuApp._("addhost_yes_button"), self.kusuApp._("addhost_no_button")))
+            result = self.selector.popupDialogBox(self._("addhost_window_title_exit"), self._("addhost_instructions_exit"), 
+                     (self._("addhost_yes_button"), self._("addhost_no_button")))
             if result == "no":
                 return NAV_NOTHING
             if result == "yes":
@@ -505,34 +505,33 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
         """ Get list of node groups and allow a user to choose one """
         
         try:
-            self.db.connect()
+            self.database.connect()
         except:
             self.finish()
-            i18nPrint(self.kusuApp._("DB_Query_Error\n"))
+            i18nPrint(self._("DB_Query_Error\n"))
             sys.exit(-1)
 
         query = "SELECT ngname,ngid FROM nodegroups"
         try:
-            self.db.execute(query)
-            nodeGroups = self.db.fetchall()
+            self.database.execute(query)
+            nodeGroups = self.database.fetchall()
         except:
             self.finish()
-            i18nPrint(self.kusuApp._("DB_Query_Error\n"))
+            i18nPrint(self._("DB_Query_Error\n"))
             sys.exit(-1)
    
         self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
+        instruction = snack.Textbox(40, 2, self._(self.msg), scroll=0, wrap=1)      
         self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
         for ng,ngid in nodeGroups:
             self.listbox.append("%s" % ng, "%s" % ngid)
-
-        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=0)
-        self.screenGrid.setField(self.listbox, col=0, row=1, padding=(0,1,0,0), growx=0)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 1), growx=1)
+        self.screenGrid.setField(self.listbox, col=0, row=1, padding=(0, 0, 0, 1), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
         myNodeInfo.nodeGroupSelected = self.listbox.current()
-        #result = self.selector.popupStatus(self.kusuApp._("Debug Window"), self.kusuApp._("Debug: %s ") % nodeGroupSelected, 1)
+        #result = self.selector.popupStatus(self._("Debug Window"), self._("Debug: %s ") % nodeGroupSelected, 1)
         return True, 'Success'
 
     def formAction(self):
@@ -555,17 +554,17 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         query = "SELECT networks.device, nics.ip FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                  nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
         try:
-            self.db.connect()
-            self.db.execute(query)
-            networks = self.db.fetchall()
+            self.database.connect()
+            self.database.execute(query)
+            networks = self.database.fetchall()
         except:
             self.finish()
-            i18nPrint(self.kusuApp._("DB_Query_Error\n"))
+            i18nPrint(self._("DB_Query_Error\n"))
             sys.exit(-1)
         
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Label(self.msg)
-        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0) 
+        instruction = snack.Textbox(40, 2, self._(self.msg), scroll=0, wrap=0) 
         defaultFlag = 1
         for networkInfo in networks:
             itemName = "%s  (%s)" % (networkInfo[0].ljust(4), networkInfo[1])
@@ -577,13 +576,13 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
  
         self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
             
-        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=0)
-        self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,1,0,1), growx=0)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,2), growx=1)
+        self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
         myNodeInfo.selectedInterface = self.radioButtonList.getSelection()[0]
-        #result = self.selector.popupStatus(self.kusuApp._("Debug Window"), "Interface Selected: %s " % self.radioButtonList.getSelection()[0], 1)
+        #result = self.selector.popupStatus(self._("Debug Window"), "Interface Selected: %s " % self.radioButtonList.getSelection()[0], 1)
         return True, 'Success'
     
     def formAction(self):
@@ -594,7 +593,7 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         flag = 1
         filep = open("/var/log/messages", 'r')
         filep.seek(0, 2)
-        #result = self.selector.popupStatus(self.kusuApp._("Debug Window"), "nodeRackNumber %s" % nodeRackNumber, 1)
+        #result = self.selector.popupStatus(self._("Debug Window"), "nodeRackNumber %s" % nodeRackNumber, 1)
         myNodeInfo.selectedInterface = self.radioButtonList.getSelection()[0]
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
@@ -605,21 +604,21 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
            checkHost.getNodeFormat()
            if checkHost.isNodenameHasRack():
                while flag:
-                 result = self.selector.popupInputBox(self.kusuApp._("addhost_window_title_rack"),
-                    self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")], 
-                    NOCANCEL, [self.kusuApp._("addhost_ok_button")], 40, 20)
+                 result = self.selector.popupInputBox(self._("addhost_window_title_rack"),
+                    self._("addhost_instructions_rack"), [self._("addhost_gui_text_rack")], 
+                    NOCANCEL, [self._("addhost_ok_button")], 40, 20)
                  try:
                      result = int(result[0])
                      if result < 0:
-                         self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
-                         self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                         self.selector.popupStatus(self._("addhost_window_title_error"), 
+                         self._("Error: Cannot specify a negative number. Please try again"), 2)
                          flag = 1
                      else:
                          myNodeInfo.nodeRackNumber = result
                          flag = 0
                  except:
-                     self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
-                            self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                     self.selector.popupStatus(self._("addhost_window_title_error"), 
+                            self._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                      flag = 1
 
         return True, 'Success'
@@ -635,10 +634,10 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         # We can't go back after we get here
         myNodeInfo.quitPrompt = False
         self.selector.disableBackButton()
-        self.selector.endButtonTitle(self.kusuApp._("quit_button"))
+        self.selector.endButtonTitle(self._("quit_button"))
         self.selector.setScreenTimer(500)
         self.screenGrid = snack.Grid(1, 2)
-        self.screenGrid.setField(self.listbox, col=0, row=0, padding=(0,0,0,-1))
+        self.screenGrid.setField(self.listbox, col=0, row=0, padding=(0,0,0,0))
 
     def timerCallback(self):
         """timerCallback()
@@ -687,7 +686,7 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
-                           self.selector.popupStatus(self.kusuApp._("Node Discovery"), "Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress), 3)
+                           self.selector.popupStatus(self._("Node Discovery"), "Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress), 3)
                            self.myNode.replaceNICBootEntry (myNodeInfo.replaceNodeName, macAddress)
                            # Call Replace mode plugins
                            self.finish()
