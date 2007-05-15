@@ -83,6 +83,7 @@ class BaseScreen(object):
         button is pressed.
         
         """
+        pass
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.database = database

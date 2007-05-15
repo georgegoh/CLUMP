@@ -101,50 +101,6 @@ class LabelledEntry(snack.Grid):
         self.setField(self.label, col=0, row=0, anchorLeft=1)
         self.setField(self.entry, col=1, row=0, anchorRight=1)
 
-import re
-
-def verifyFQDN(fqdn):
-    """Verifies that text is a valid FQDN(.a-zA-Z0-9)"""
-    p = re.compile('[^.\-a-zA-Z0-9]')
-    li = p.findall(fqdn)
-    if li:
-        return False, 'FQDN can only contain the characters .a-zA-Z0-9'
-    return True, None
-
-def verifyIP(ip):
-    """Verifies that text is a valid IP"""
-    li = ip.split('.')
-    errmsg = 'IP address must be in the form XXX.XXX.XXX.XXX, where ' + \
-               '0 <= XXX <= 255'
-    if len(li) != 4:
-        return False, errmsg
-    for octet in li:
-        try:
-            octet_int = int(octet)
-            if octet_int < 0 or octet_int > 255:
-                return False, errmsg
-        except ValueError:
-            return False, errmsg
-    return True, None
-
-def verifyEmail(email):
-    """Verifies that text is a valid email"""
-    p = re.compile('^[a-zA-Z][\w\.]*[a-zA-Z0-9]' + '@' + \
-                  '[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
-    li = p.findall(email)
-    if len(li) != 1:
-        return False, 'Ensure a valid email is entered(e.g. xxyy@zzz.com)'
-    return True, None
-
-def verifyURL(url):
-    """Verifies that text is a valid URL"""
-    p = re.compile('^http://[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]' + '\.' + \
-                   '[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$')
-    li = p.findall(url)
-    if len(li) != 1:
-        return False, 'Ensure a valid url is entered(e.g. http://www.xyz.com)'
-    return True, None
-
 
 class ColumnListbox(snack.Grid):
     """A ColumnListbox behaves like a normal Listbox widget, but lets the
