@@ -4,7 +4,6 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-__version__ = "$Revision: $"
 
 import os
 import logging
