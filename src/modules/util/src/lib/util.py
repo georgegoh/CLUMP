@@ -11,6 +11,7 @@ import re
 import os
 from path import path
 import kusu.util.log as kusulog
+from kusu.util.kusuexceptions import *
 
 try:
     import subprocess
@@ -121,6 +122,7 @@ def copy(src, dest):
     """
 
     import urlparse
+    import errno
 
     if urlparse.urlsplit(src)[0] in ['http', 'ftp']:
         p = path(urlparse.urlsplit(src)[2]).splitall()
@@ -128,8 +130,9 @@ def copy(src, dest):
         # Deals with non-ending slash. 
         # Non-ending slash url ends up with an empty string in the 
         # last index of the list when a splitall is done
-        if not p[-1]:
+        if not p[-1]: # Non-ending slash
             cutaway = len(p[1:]) - 1
+            src = src + '/' # Append a trailing slash for a directory
         else:
             cutaway = len(p[1:])
 
@@ -146,11 +149,18 @@ def copy(src, dest):
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
+
+        except OSError, e:
+            if e.errno == errno.ENOENT:
+                raise FileDoesNotExist, 'wget not found' 
+            else:
+                raise KusuError, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
+
         except Exception, e:
-            raise e    
+            raise KusuError
 
         if retcode:
-            raise Exception
+            raise CopyFailed, 'Failed to copy %s to %s' % (src,dest)
         else:
             return True
 
@@ -161,7 +171,7 @@ def copy(src, dest):
             return True
 
         else:  
-            raise Exception
+            raise CopyFailed, 'Failed to copy %s to %s' % (src,dest)
 
 
 
