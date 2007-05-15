@@ -11,6 +11,12 @@ from kusu.hardware.read import readFile
 from path import path
 
 def getIDE(type):
+    """Probes for a specific type of IDE device(disk, cdrom, or tape).
+       Returns a dictionary of dictionaries. Sample code:
+          disks = getIDE('disk')
+          hda = disks['hda']
+          print hda['model'] # prints model name of first IDE hard disk.
+    """
     if type not in ['disk', 'cdrom', 'tape']:
         raise Exception, 'Unknown type'
 
@@ -27,6 +33,3 @@ def getIDE(type):
             d[hd.basename()] = {'model': model}
 
     return d
-
-
-

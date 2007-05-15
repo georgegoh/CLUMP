@@ -11,7 +11,14 @@ from kusu.hardware.read import readFile
 from path import path
 
 def getSCSI(type):
-
+    """Probes for a specific type of SCSI device(disk, cdrom, or floppy).
+       Returns a dictionary of dictionaries. Sample code:
+          disks = getIDE('disk')
+          sda = disks['sda']
+          print sda['model'] # prints model name of first SCSI hard disk.
+          print sda['vendor'] # prints vendor name of first SCSI hard disk.
+    """
+ 
     # Based on scsi.h, scsi.c(kudzu) 
     type_map = {'disk': [0x00, 0x07, 0x0e], \
                 'cdrom': [0x04, 0x05], \
@@ -25,7 +32,7 @@ def getSCSI(type):
     d = {}
     for s in scsi_path.listdir():
         if (s / 'type').exists() and \
-           int(readFile(s / 'type')) in type_map[type]:
+            int(readFile(s / 'type')) in type_map[type]:
 
             dev = s.listdir('block:*')
         
@@ -56,15 +63,10 @@ def getSCSI(type):
             # Handle cciss!c0d0 in /sys/block
             if dev.find('cciss!') != -1:
                 dev = dev.replace('!', os.sep)
-            
+
             d[dev] = {}
             d[dev]['vendor'] = readFile(s / 'vendor')
             d[dev]['model'] = readFile(s / 'model')
-        
+    
 
     return d 
-
-
-        
-
-
