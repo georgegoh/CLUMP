@@ -49,15 +49,7 @@ boot-media-tool builds Kusu Boot Media from supported Linux distros'
 installation sources. The tool also queries and extracts kernel/initrd 
 images from these sources.
 
-Options:
-
-    -h          - Provide the tool help (this screen).
-    -v          - Provide the version string.
-    -H          - Provide usage examples.
-    -f          - Force overwriting when extracting kernel/initrd.
-    -s          - Read input from Kusu Boot Media scriptfile.
-
-Actions:
+actions:
 
     query           - Probes and displays any kernel/initrd in the 
                       installation source. Available arguments for 
@@ -103,7 +95,6 @@ Actions:
                         version=<version of OS>
                         arch=<architechure of OS>
                         patch=<name of installer patchfile>
-
 """)
         self.examples = self._("""\
 Example operation usages:
@@ -125,6 +116,7 @@ Example operation usages:
     def printUsageExit(self):
         """ Print usage text and exit. """
         self.stdoutMessage(self.usagestr)
+        sys.stdout.write(os.linesep)
         sys.exit(0)
         
     def printExamplesExit(self):

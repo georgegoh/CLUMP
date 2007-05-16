@@ -23,6 +23,8 @@ SET(KUSU_MODULES
   installer
   networktool
   hardware
+  kit
+  buildkit
 )
 
 ## Include Kusu globals

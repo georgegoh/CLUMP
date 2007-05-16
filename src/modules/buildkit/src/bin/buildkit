@@ -7,14 +7,15 @@
 
 import sys
 import os
+import optparse
 from kusu.core.app import KusuApp
-from kusu.kit.devel import KitSrcFactory
+from kusu.kit.devel import KitSrcFactory, KitSrcAlreadyExists
 from path import path
 
 class BuildKit:
     """This class is the model class for the buildkit app."""
     
-    def prepKitSrc(self,srcpath):
+    def newKitSrc(self,srcpath):
         """prepare the Kit source directory"""
         newkit = KitSrcFactory(srcpath)
         newkit.prepareSrcPath()
@@ -26,7 +27,7 @@ class App(KusuApp):
         """ App-specific initialization. """
         KusuApp.__init__(self)
 
-        self.actions = {'prep':['dir'], 
+        self.actions = {'new':['kit'], 
             'make':['dir','iso']}
 
         # self.action and self.actionargs will hold the current action and its arguments            
@@ -40,28 +41,20 @@ buildkit [-h|-v] <action> arg1=val1 arg2=val2 ...
 
 buildkit is used to construct new Kusu Kits.
 
-Options:
+actions:
 
-    -h          - Provide the tool help (this screen).
-    -V          - Provide the version string.
-    -H          - Provide usage examples.
-    -f          - Force overwriting.
-
-Actions:
-
-    prep            - Prepares a new Kit directory. Available arguments for 
+    new             - Create a new Kit directory. Available arguments for 
                       this action: 
-                        dir=<name of kit directory to create>
+                        kit=<name of kit directory to create>
     make            - Make a Kit iso. Available arguments for this action:
                         dir=<path of kit directory>
-                        iso=<filepath of iso to create>
-
+                        iso=<filepath of iso to create>                 
 """)
         self.examples = self._("""\
-Example operation usages:
+Example operations:
 
     To prepare a new Kit called hellokit:
-    # buildkit prep dir=hellokit
+    # buildkit new kit=hellokit
 
     To make the hello Kit:
     # buildkit make dir=hellokit iso=hellokit.iso
@@ -72,6 +65,7 @@ Example operation usages:
     def printUsageExit(self):
         """ Print usage text and exit. """
         self.stdoutMessage(self.usagestr)
+        sys.stdout.write(os.linesep)
         sys.exit(0)
 
     def printExamplesExit(self):
@@ -79,12 +73,11 @@ Example operation usages:
         self.stdoutMessage(self.examples)
         sys.exit(0)
 
-    def printMsgExit(self, msg):
+    def printMsgExit(self, msg, exitcode=1):
         """ Print msg and exit. """
         self.stdoutMessage(msg)
         sys.stdout.write(os.linesep)
-        sys.exit(1)
-
+        sys.exit(exitcode)
 
     def handleArgPairs(self, arglist):
         """ Handle the argument list and return a dict of key-value pairs. """
@@ -153,15 +146,20 @@ Example operation usages:
 
         handler(self.actionargs)
     
-    def _prep(self, args):
-        """ Handler for prep action. args is a dict of supported key-value pairs for this action. """
-        dirname = path(args['dir'])
-        msg = self._('Preparing %(kitname)s directory..' % {'kitname':dirname.basename()})
+    def _new(self, args):
+        """ Handler for new action. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['kit'])
+        
+        if dirname.exists():
+            msg = self._('There is already a directory called %(dirname)s. Please remove it and try again.' % {'dirname':dirname})
+            self.printMsgExit(msg)          
+
+        msg = self._('Creating %(kitname)s directory..' % {'kitname':dirname.basename()})
         print msg
-        self.bkinst.prepKitSrc(dirname)
+        self.bkinst.newKitSrc(dirname)
         msg = self._('%(kitname)s directory created.' % {'kitname':dirname.basename()})
         print msg
-        
+
     def _make(self, args):
         """ Handler for make action. args is a dict of supported key-value pairs for this action. """
         dirname = path(args['dir'])
