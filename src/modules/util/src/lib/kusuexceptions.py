@@ -9,7 +9,12 @@
 # 
 import exceptions
 
+
+# General
 class KusuError(exceptions.Exception): pass
+class InvalidPath(KusuError):pass
+
+# partitiontool
 class OutOfSpaceError(KusuError): pass
 class DuplicateNameError(KusuError): pass
 class DuplicateMountpointError(KusuError): pass
@@ -29,3 +34,5 @@ class PhysicalVolumeStillInUseError(KusuError): pass
 class LogicalVolumeStillInUseError(KusuError): pass
 class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
+
+#
