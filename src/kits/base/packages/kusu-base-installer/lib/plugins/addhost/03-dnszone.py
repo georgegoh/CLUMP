@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -13,13 +13,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+import kusu.db
 import os
-
+ 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-	#print "dbreport-zone.py: called AddHostPlugin->added()"
-	pass
+        dnsZone = dbconn.getAppglobals('DNSZone')
+        os.system("/opt/kusu/bin/dbreport.py zone > /var/named/zone.%s" % dnsZone)
 
     def removed(self, dbconn, nodename, info):
-        #print "dbreport-zone.py: AddHostPlugin->removed()"
-	pass
+        dnsZone = dbconn.getAppglobals('DNSZone')
+        os.system("/opt/kusu/bin/dbreport.py zone > /var/named/zone.%s" % dnsZone)

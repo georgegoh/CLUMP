@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -18,26 +18,22 @@ import os
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-	#print "dbreport-reverse.py: called AddHostPlugin->added()"
-	dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
-                        AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
+        if info:
+            dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
+                            AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
 
-        networks = dbconn.fetchall()
-	for net in networks:
-	     # Run dbeport for each network
-	     #print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
-	     #os.system("/opt/kusu/bin/dbreport reverse %s" % net)
-	     pass
+            networks = dbconn.fetchall()
+
+            # Run dbreport for each network
+            for net in networks:
+                 os.system("/opt/kusu/bin/dbreport reverse %s > /var/named/reverse.%s" % (net[0], net[0]))
 
     def removed(self, dbconn, nodename, info):
-	if info:
-            #print "dbreport-reverse.py: called AddHostPlugin->removed()"
-	    print "DEBUG: %s" % nodename
+        if info:
             dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
             networks = dbconn.fetchall()
+
+            # Run dbreport for each network
             for net in networks:
-                 # Run dbeport for each network
-	         #print "dbreport-reverse.py: Will run /opt/kusu/bin/dbreport reverse %s" % net
-                 #os.system("/opt/kusu/bin/dbreport reverse %s" % net)
-                 pass
+                 os.system("/opt/kusu/bin/dbreport reverse %s > /var/named/reverse.%s" % (net[0], net[0]))

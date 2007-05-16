@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -14,13 +14,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
-import string
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-        #print "dbreport-hosts.py: AddHostPlugin->added()"
-	pass
+        os.system("/opt/kusu/bin/dbreport.py hosts > /etc/hosts")
 
     def removed(self, dbconn, nodename, info):
-        #print "dbreport-hosts.py: AddHostPlugin->removed()"
-	pass
+        os.system("/opt/kusu/bin/dbreport.py hosts > /etc/hosts")

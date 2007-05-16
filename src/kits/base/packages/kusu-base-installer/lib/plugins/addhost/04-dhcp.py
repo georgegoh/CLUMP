@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -17,7 +17,5 @@ import os
 
 class AddHostPlugin:
     def finished(self, dbconn):
-	#print "dhcpd.py: called AddHostPlugin->finished()"
-	#print "dhcpd.py: system call: /opt/kusu/bin/dbreport dhcpd"
 	os.system("/opt/kusu/bin/dbreport.py dhcpd > /etc/dhcpd.conf")
 	os.system("/etc/init.d/dhcpd restart")
