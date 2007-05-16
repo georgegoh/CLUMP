@@ -36,4 +36,7 @@ class LogicalVolumeStillInUseError(KusuError): pass
 class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
 
-#
+# util
+class CopyFailed(KusuError): pass
+class FileDoesNotExist(KusuError): pass
+
