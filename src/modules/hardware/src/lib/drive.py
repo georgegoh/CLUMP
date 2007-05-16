@@ -71,7 +71,7 @@ def getIDE(type):
 
 # SCSI
 def getSCSI(type):
-    """Probes for a specific type of SCSI device(disk, cdrom, or floppy).
+    """Probes for a specific type of SCSI device(disk, cdrom, floppy or usb-storage).
        Returns a dictionary of dictionaries. Sample code:
           disks = getIDE('disk')
           sda = disks['sda']
@@ -82,7 +82,8 @@ def getSCSI(type):
     # Based on scsi.h, scsi.c(kudzu) 
     type_map = {'disk': [0x00, 0x07, 0x0e], \
                 'cdrom': [0x04, 0x05], \
-                'floppy': [0x06] }             
+                'floppy': [0x06], \
+                'usb-storage': [0x00, 0x07, 0x0e] }             
 
     if type not in type_map.keys():
         raise Exception, 'Unknown type'
@@ -104,12 +105,17 @@ def getSCSI(type):
                 else: # block exists
                     dev = (s / 'block').realpath()
 
-                # Check for removable, including usb cdrom/thumbdrive
-                # usb portable hardrive are not excluded here
                 removable = dev.realpath() / 'removable'
-                if removable.exists() \
-                   and int(readFile(removable)) \
-                   and type in ['disk']: continue
+                if type in ['disk']:
+                    # Exclude removable drives, including usb cdrom/thumbdrive
+                    # usb portable hardrive are not excluded here when type is
+                    # 'disk'
+                    if removable.exists() \
+                       and int(readFile(removable)): continue
+                elif type in ['usb-storage']:
+                    # Exclude non-removable disks if type is 'usb-storage'
+                    if removable.exists() \
+                       and not int(readFile(removable)): continue
 
                 # Checks for usb devices that presents itself as scsi
                 # such as usb portable hardrive which removable=0

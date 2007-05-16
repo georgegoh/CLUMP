@@ -30,7 +30,7 @@ def getCDROM():
 
        Returns a dictionary of dictionaries. Sample code:
             cdroms = getCDROM()
-
+            
     """
 
     d = drive.getIDE('cdrom')
@@ -40,7 +40,7 @@ def getCDROM():
 
 def getPortableUSB():
     """Returns a dictionary of portable usb storage disks"""
-    pass
+    return drive.getSCSI('usb-storage')
 
 def getAllInterfaces():
     """Returns a dictionary of all network interfaces"""
