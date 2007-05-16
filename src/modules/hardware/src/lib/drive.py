@@ -12,11 +12,15 @@ from path import path
 
 # General utility
 def readFile(filename):
-    f = open(filename, 'r')
-    content = f.read()
-    f.close()
+    if os.path.exists(filename):
+        f = open(filename, 'r')
+        content = f.read()
+        f.close()
 
-    return content.strip()
+        # Remove any \n 
+        return content.strip()
+    else:
+        return None
 
 
 # dmraid
@@ -62,7 +66,7 @@ def getIDE(type):
                 model = readFile(model)
 
                 d[hd.basename()] = {'model': model}
-
+    
     return d
 
 # SCSI

@@ -26,10 +26,17 @@ def getDisks():
     return d
 
 def getCDROM():
-    """Returns a dictionary of disks """
-    #d = drive.getIDE('cdrom')
-    #d.update(drive.getSCSI('cdrom'))
-    pass
+    """Probes for cdroms
+
+       Returns a dictionary of dictionaries. Sample code:
+            cdroms = getCDROM()
+
+    """
+
+    d = drive.getIDE('cdrom')
+    d.update(drive.getSCSI('cdrom'))
+
+    return d
 
 def getPortableUSB():
     """Returns a dictionary of portable usb storage disks"""
