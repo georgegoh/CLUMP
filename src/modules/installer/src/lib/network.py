@@ -12,7 +12,7 @@ import socket
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
-from kusu.hardware import net
+from kusu.hardware import probe
 import kusu.util.log as kusulog
 import kusu.util.util as kusutil
 
@@ -496,7 +496,7 @@ def enabledByValue(args):
 def retrieveNetworkContext(db):
     """
     Obtains information about system's network interfaces from the database and
-    pci.inf file via net.getPhysicalInterfaces.
+    pci.inf file via probe.getPhysicalInterfaces.
     """
 
     adapters = {}
@@ -514,7 +514,7 @@ def retrieveNetworkContext(db):
 
     kl.info('Adapters in DB: %s.' % adapters)
     
-    interfaces = net.getPhysicalInterfaces()    # we get a dictionary
+    interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
     for intf in interfaces.keys():
         # default to using DHCP and active on boot
         interfaces[intf].update({'configure': '',
