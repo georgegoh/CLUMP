@@ -13,7 +13,7 @@ from path import path
 from kusu.boot.distro import CopyError, SUPPORTED_ARCH, UnsupportedDistro
 from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource, SUPPORTED_DISTROS
 from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser, InvalidKusuSource
-
+from kusu.boot.tool import FailedBuildCMake, FailedBuildMake
         
         
 class BootMediaApp(KusuApp):
@@ -213,6 +213,8 @@ Example operation usages:
         handler = getattr(self,m)
         
         handler(self.actionargs)
+        
+        sys.exit(0)
         
     def _checkscript(self,scriptfile):
         """ Validates the Boot Media Tool script. """
@@ -456,7 +458,10 @@ Example operation usages:
             self.printMsgExit(msg)
         except UnsupportedDistro:
             msg = self._('Distro-specific assets not found in Kusu SVN source!')
-            self.printMsgExit(msg) 
+            self.printMsgExit(msg)
+        except (FailedBuildMake,FailedBuildCMake), e:
+            msg = self._('Failed building the Kusu Runtime. Please file a bug!')
+            self.printMsgExit(msg)
         
     def _makeImgdir(self,args):
         """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """

@@ -16,6 +16,8 @@ from kusu.boot.image import *
 import tempfile
 
 class InvalidKusuSource(Exception): pass
+class FailedBuildCMake(Exception): pass
+class FailedBuildMake(Exception): pass
 
 def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
@@ -138,8 +140,15 @@ class KusuSVNSource:
     def run(self):
         """ Main launcher. """
         
-        self.runCMake()
-        self.runMake()
+        retcode = self.runCMake()
+        if retcode <> 0:
+            self.cleanup()
+            raise FailedBuildCMake, "Failed CMake build for Kusu"
+
+        retcode = self.runMake()
+        if retcode <> 0:
+            self.cleanup()
+            raise FailedBuildMake, "Failed Make build for Kusu"
         
     def copyKusuroot(self, dest, overwrite=False):
         """Copy the kusuroot file to a destination"""
