@@ -169,7 +169,7 @@ class DiskProfile(object):
         self.lv_dict = {}
 
         logger.debug('Finding disks.') 
-        disks_str = kusu.hardware.disk.getDisks().keys()
+        disks_str = kusu.hardware.probe.getDisks().keys()
         for disk_str in disks_str:
             self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
         logger.debug('Found disks.')
