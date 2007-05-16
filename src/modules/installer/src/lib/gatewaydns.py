@@ -25,6 +25,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
     name = _('Gateway & DNS')
     context = 'Network'
     profile = context
+    netProfile = None   # we assign the Network profile to this local variable
     msg = _('Please configure your Gateway/DNS settings')
     buttons = [_('Clear All')]
 
@@ -52,6 +53,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
             self.netProfile['dns1'] = ''
             self.netProfile['dns2'] = ''
             self.netProfile['dns3'] = ''
+
         return NAV_NOTHING
 
     def drawImpl(self):
@@ -114,6 +116,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         Populate fields with data.
         """
         
+        # enable the use_dhcp checkbox, if no dhcp configured, disable it
         self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
 
         try:
@@ -125,25 +128,26 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         except KeyError:
             pass
 
+        # try to set field with data, or leave blank if no data
         try:
             self.gateway.setEntry(self.netProfile['default_gw'])
         except KeyError:
-            self.gateway.setEntry('')
+            pass
 
         try:
             self.dns1.setEntry(self.netProfile['dns1'])
         except KeyError:
-            self.dns1.setEntry('')
+            pass
 
         try:
             self.dns2.setEntry(self.netProfile['dns2'])
         except KeyError:
-            self.dns2.setEntry('')
+            pass
 
         try:
             self.dns3.setEntry(self.netProfile['dns3'])
         except KeyError:
-            self.dns3.setEntry('')
+            pass
 
     def validate(self):
         """
@@ -194,17 +198,17 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         Checks whether the provided default gateway is routable by an interface.
         """
 
-        interfaces = network.retrieveNetworkContext(self.database)
+        if self.kiprofile[self.profile]['have_dhcp']:
+            return True, ''
+
+        interfaces = self.kiprofile[self.profile]['interfaces']
 
         for intf in interfaces.keys():
-            if not int(interfaces[intf]['configure']):
-                continue
-            if int(interfaces[intf]['use_dhcp']):
-                return True, ''
-            if kusutil.isHostRoutable(interfaces[intf]['ip_address'],
-                                      interfaces[intf]['netmask'],
-                                      self.gateway.value()):
-                return True, ''
+            if interfaces[intf]['configure']:
+                if kusutil.isHostRoutable(interfaces[intf]['ip_address'],
+                                          interfaces[intf]['netmask'],
+                                          self.gateway.value()):
+                    return True, ''
 
         return False, _('Not routable by any configured device.')
 
@@ -219,28 +223,82 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-        self.database.put(self.context, 'gw_dns_use_dhcp',
-                          str(int(self.netProfile['gw_dns_use_dhcp'])))
-        self.database.put(self.context, 'default_gw',
-                          self.netProfile['default_gw'])
-        self.database.put(self.context, 'dns1', self.netProfile['dns1'])
-        self.database.put(self.context, 'dns2', self.netProfile['dns2'])
-        self.database.put(self.context, 'dns3', self.netProfile['dns3'])
+    def restoreProfileFromSQLCollection(db, context, profile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
 
-        if self.netProfile['gw_dns_use_dhcp']:
-            kl.info('Set default gateway and DNS via DHCP.')
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
+        profile['gw_dns_use_dhcp'] = True
+        profile['default_gw'] = ''
+        profile['dns1'] = ''
+        profile['dns2'] = ''
+        profile['dns3'] = ''
+
+        data = db.get(context, 'gw_dns_use_dhcp')
+        if data:
+            profile['gw_dns_use_dhcp'] = bool(int(data[0]))
+
+        if profile['gw_dns_use_dhcp']:
+            kl.info('Read default gateway and DNS is determined via DHCP')
         else:
-            kl.info('Set default gateway: %s, DNS 1-3: %s.' %
-                    (self.netProfile['default_gw'],
-                     ', '.join((self.netProfile['dns1'],
-                                self.netProfile['dns2'],
-                                self.netProfile['dns3']))))
+            data = db.get(context, 'default_gw')
+            if data:
+                profile['default_gw'] = data[0]
 
-        #self.kiprofile.update(self.kusuApp)
+            data = db.get(context, 'dns1')
+            if data:
+                profile['dns1'] = data[0]
 
-    def saveProfileToSQLCollection(db, context, profile):
+            data = db.get(context, 'dns2')
+            if data:
+                profile['dns2'] = data[0]
+
+            data = db.get(context, 'dns3')
+            if data:
+                profile['dns3'] = data[0]
+
+            kl.info('Read default gateway: %s, DNS 1-3: %s' %
+                    (profile['default_gw'], ', '.join((profile['dns1'],
+                                                       profile['dns2'],
+                                                       profile['dns3']))))
+
         return True
 
-    dbSaveFunctions = {'MySQL': None,
-                       'SQLite': None,
-                       'SQLColl': saveProfileToSQLCollection}
+    def saveProfileToSQLCollection(db, context, profile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
+        db.put(context, 'gw_dns_use_dhcp',
+               str(int(profile['gw_dns_use_dhcp'])))
+
+        if profile['gw_dns_use_dhcp']:
+            kl.info('Set default gateway and DNS via DHCP')
+        else:
+            db.put(context, 'default_gw', profile['default_gw'])
+            db.put(context, 'dns1', profile['dns1'])
+            db.put(context, 'dns2', profile['dns2'])
+            db.put(context, 'dns3', profile['dns3'])
+
+            kl.info('Set default gateway: %s, DNS 1-3: %s' %
+                    (profile['default_gw'], ', '.join((profile['dns1'],
+                                                       profile['dns2'],
+                                                       profile['dns3']))))
+
+        return True
+
+    dbFunctions = {'MySQL': None,
+                   'SQLite': None,
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}

@@ -29,22 +29,41 @@ class Profile(dict):
 
         dict.__init__(self, d)
 
+    def restore(self):
+        """
+        Restore profiles from DB by calling each provided restore function.
+        """
+
+        for func, profile in self.save_functions:
+            self.runFunc(func[0], profile)
+
     def save(self):
         """
         Save all profiles to DB by calling each provided save function.
         """
 
         for func, profile in self.save_functions:
-            rv = func(self.database, profile, self[profile])
-            if rv:
-                kl.debug("SUCCESS executing %s with profile '%s'" %
-                         (func.__str__(), profile))
-            else:
-                kl.debug("FAIL executing %s with profile '%s'" %
-                         (func.__str__(), profile))
+            self.runFunc(func[1], profile)
 
         kl.info('Committing database')
         self.database.commit()
+
+    def runFunc(self, func, profile):
+        """
+        Run DB operation function.
+        """
+
+        if func is None:
+            kl.debug('Attempted to execute None function')
+            return
+
+        rv = func(self.database, profile, self[profile])
+        if rv:
+            kl.debug("SUCCESS executing %s with profile '%s'" %
+                     (func.__str__(), profile))
+        else:
+            kl.debug("FAIL executing %s with profile '%s'" %
+                     (func.__str__(), profile))
 
     def addDatabase(self, db):
         """
@@ -53,7 +72,7 @@ class Profile(dict):
 
         self.database = db
 
-    def addSaveFunction(self, func, profile):
+    def addFunctions(self, func, profile):
         """
         Add function to be called when saving profile to DB.
 
@@ -70,3 +89,8 @@ class Profile(dict):
             self.save_functions.append((func, profile))
             kl.debug("Appended %s with profile '%s'" %
                      (func.__str__(), profile))
+
+        try:
+            self[profile]
+        except KeyError:
+            self[profile] = {}

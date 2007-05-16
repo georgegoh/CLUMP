@@ -70,17 +70,20 @@ class ScreenFactoryImpl(ScreenFactory):
 
     collection = SQLiteCollection(kusudb)
     kiprofile.addDatabase(collection)
+
     ScreenFactory.screens = \
         [WelcomeScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          LanguageSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          KeyboardSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          ClusterInfoScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         NetworkScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         GatewayDNSSetupScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         FQHNScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         NetworkScreen(collection, kusuApp=None, kiprofile=kiprofile),
+         GatewayDNSSetupScreen(collection, kusuApp=None, kiprofile=kiprofile),
+         FQHNScreen(collection, kusuApp=None, kiprofile=kiprofile),
          RootPasswordScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          PartitionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          KitsScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          TZSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          ConfirmScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile)
-        ] 
+        ]
+
+    kiprofile.restore()

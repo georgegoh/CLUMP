@@ -26,6 +26,7 @@ class FQHNScreen(screenfactory.BaseScreen):
     name = _('Host Name')
     context = 'Network'
     profile = context
+    netProfile = None   # we assign the Network profile to this local variable
     msg = _('Please specify a fully-qualified host name for this computer:')
     buttons = [_('Clear All')]
 
@@ -120,24 +121,70 @@ class FQHNScreen(screenfactory.BaseScreen):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-        self.database.put(self.context, 'fqhn_use_dhcp',
-                          str(int(self.netProfile['fqhn_use_dhcp'])))
-        self.database.put(self.context, 'fqhn_host',
-                          self.netProfile['fqhn_host'])
-        self.database.put(self.context, 'fqhn_domain',
-                          self.netProfile['fqhn_domain'])
-
-        if self.netProfile['fqhn_use_dhcp']:
-            kl.info('Set FQHN via DHCP.')
-        else:
-            kl.info('Set FQHN: %s.' % self.netProfile['fqhn'])
-
-        #self.kiprofile.update(self.kusuApp)
+        # TODO: remove this call, should only happen after Finalize screen
         self.kiprofile.save()
 
-    def saveProfileToSQLCollection(db, context, profile):
+    def restoreProfileFromSQLCollection(db, context, profile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
+        # reasonable defaults
+        profile['fqhn_use_dhcp'] = True
+        profile['fqhn_host'] = ''
+        profile['fqhn_domain'] = ''
+        profile['fqhn'] = ''
+
+        data = db.get(context, 'fqhn_use_dhcp')
+        if data:
+            profile['fqhn_use_dhcp'] = bool(int(data[0]))
+
+        if profile['fqhn_use_dhcp']:
+            kl.info('Read FQHN is determined via DHCP')
+        else:
+            data = db.get(context, 'fqhn_host')
+            if data:
+                profile['fqhn_host'] = data[0]
+
+            data = db.get(context, 'fqhn_domain')
+            if data:
+                profile['fqhn_domain'] = data[0]
+
+            profile['fqhn'] = '.'.join((profile['fqhn_host'],
+                                        profile['fqhn_domain']))
+
+            kl.info('Read FQHN: %s' % profile['fqhn'])
+
         return True
 
-    dbSaveFunctions = {'MySQL': None,
-                       'SQLite': None,
-                       'SQLColl': saveProfileToSQLCollection}
+    def saveProfileToSQLCollection(db, context, profile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
+        db.put(context, 'fqhn_use_dhcp', str(int(profile['fqhn_use_dhcp'])))
+        db.put(context, 'fqhn_host', profile['fqhn_host'])
+        db.put(context, 'fqhn_domain', profile['fqhn_domain'])
+
+        if profile['fqhn_use_dhcp']:
+            kl.info('Set FQHN via DHCP')
+        else:
+            kl.info('Set FQHN: %s' % profile['fqhn'])
+
+        return True
+
+    dbFunctions = {'MySQL': (None, None),
+                   'SQLite': (None, None),
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}

@@ -42,9 +42,9 @@ class BaseScreen(object):
     kiprofile = None
     profile = 'No Profile'
     dbSelected = 'SQLColl'
-    dbSaveFunctions = {'MySQL': None,
-                       'SQLite': None,
-                       'SQLColl': None}
+    dbFunctions = {'MySQL': (None, None),
+                   'SQLite': (None, None),
+                   'SQLColl': (None, None)}
 
     def setCallbacks(self): # abstract
         """Children should implement this if there are any buttons that
@@ -100,14 +100,14 @@ class BaseScreen(object):
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
 
+        dbFuncs = ()
         try:
-            saveFunc = self.dbSaveFunctions[self.dbSelected]
+            dbFuncs = self.dbFunctions[self.dbSelected]
         except KeyError:
-            kl.warning('Saving to database %s not supported' % self.dbSelected)
-            saveFunc = False
+            pass
 
-        if saveFunc:
-            self.kiprofile.addSaveFunction(saveFunc, self.profile)
+        if dbFuncs:
+            self.kiprofile.addFunctions(dbFuncs, self.profile)
 
     def eventCallback(self, obj):
         """Template method for handling events(buttons or otherwise)."""

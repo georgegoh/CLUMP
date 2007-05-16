@@ -74,7 +74,7 @@ class NetworkScreen(screenfactory.BaseScreen):
         """
 
         from gatewaydns import GatewayDNSSetupScreen
-        dnsscreen = GatewayDNSSetupScreen(self.database, self.kusuApp,
+        dnsscreen = GatewayDNSSetupScreen(self.database, None,
                                           self.kiprofile)
 
         dnsscreen_exists = False
@@ -148,7 +148,7 @@ class NetworkScreen(screenfactory.BaseScreen):
         dup_props = []
         props = []
 
-        for intf in self.interfaces.keys():
+        for intf in self.interfaces:
             if self.interfaces[intf]['configure'] \
                 and not self.interfaces[intf]['use_dhcp'] \
                 and self.interfaces[intf][prop] not in dup_props:
@@ -236,7 +236,29 @@ class NetworkScreen(screenfactory.BaseScreen):
         footnote = snack.Textbox(len(footnote), 1, footnote)
         self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
 
+    def restoreProfileFromSQLCollection(db, context, profile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
+        return True
+
     def saveProfileToSQLCollection(db, context, profile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db
+        profile -- the profile (a dictionary) with data to commit
+        """
+
         interfaces = profile['interfaces']
 
         for intf in interfaces.keys():
@@ -262,9 +284,10 @@ class NetworkScreen(screenfactory.BaseScreen):
 
         return True
 
-    dbSaveFunctions = {'MySQL': None,
-                       'SQLite': None,
-                       'SQLColl': saveProfileToSQLCollection}
+    dbFunctions = {'MySQL': None,
+                   'SQLite': None,
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}
 
 class ConfigureIntfScreen:
     """
