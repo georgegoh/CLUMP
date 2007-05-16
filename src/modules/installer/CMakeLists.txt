@@ -31,5 +31,9 @@ EXEC_PROGRAM(${SVN} ${CMAKE_CURRENT_SOURCE_DIR}
 CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/installer
                ${SETUPPY_PATH}/src/bin/installer)
 
+CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/test
+               ${SETUPPY_PATH}/src/bin/test)
+
+
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)

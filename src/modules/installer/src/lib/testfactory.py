@@ -32,19 +32,19 @@ class ScreenImpl(BaseScreen):
     """This class is a template for other Screen classes."""
     name = 'Welcome'
     context = 'welcome'
-    msg = 'This is sample text that should stretch reasonably long ' + \
-          'enough to be realistic in simulating real text in real ' + \
-          'screens. In its place could be descriptive text explaining ' + \
+    msg = 'This sample text should stretch reasonably long ' + \
+          'enough to be realistic in simulating text in real ' + \
+          'screens. This could be descriptive text explaining ' + \
           'the current step for the user and what to do next.' 
     buttons = ['Action 1', 'Action 2']
 
-#    def __init__(self, database, kusuApp, number):
-#        BaseScreen(self, database, kusuApp)
-#        self.number = number
+    def __init__(self, database, kusuApp, gridWidth, number):
+        BaseScreen.__init__(self, database, kusuApp, gridWidth)
+        self.number = number
 
-#    def setCallbacks(self):
-#        self.buttonsDict['Action 1'].setCallback_(self.action1)
-#        self.buttonsDict['Action 2'].setCallback_(self.action2)
+    def setCallbacks(self):
+        self.buttonsDict['Action 1'].setCallback_(self.action1)
+        self.buttonsDict['Action 2'].setCallback_(self.action2)
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 3)
@@ -53,8 +53,8 @@ class ScreenImpl(BaseScreen):
                                                  width=self.gridWidth),
                                  col=0, row=0)
 
-        self.labelledEntry = LabelledEntry('This is a labelled entry widget',
-                                           30, 'This is default text')
+        self.labelledEntry = LabelledEntry('Labelled entry widget',
+                                           20, 'This is default text')
         self.screenGrid.setField(self.labelledEntry, col=0, row=1, padding=(0,1,0,1))
 
         self.colListBox = ColumnListbox(3, [5,8,4,7],
@@ -74,10 +74,10 @@ class ScreenImpl(BaseScreen):
 
     def action2(self):
         self.kusuApp[str(self.number) + 'action2'] = 'Clicked'
+        print 'action 2'
 
     def formAction(self):
-        #self.kusuApp[str(self.number)] = self.colListBox.current()
-        pass
+        self.kusuApp[str(self.number)] = self.colListBox.current()
 
 runtimeDict = {}
 
@@ -101,19 +101,19 @@ class ScreenFactoryTest(ScreenFactory):
         kusudb_parent.makedirs()
 
     collection = SQLiteCollection(kusudb)
-    ScreenFactory.screens = [ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#, number=1),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#, number=2),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#, number=3)
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=4),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=5),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=6),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=7),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=8),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=9),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=10),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=11),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=12),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=13),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60),#number=14),
-                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=60)#number=15)
+    ScreenFactory.screens = [ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=1),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=2),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=3),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=4),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=5),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=6),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=7),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=8),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=9),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=10),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=11),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=12),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=13),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=14),
+                             ScreenImpl(collection, kusuApp=runtimeDict, gridWidth=50, number=15)
                             ]

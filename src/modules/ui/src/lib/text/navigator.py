@@ -212,8 +212,8 @@ class Navigator(object, KusuApp):
                     self.currentScreen.formAction()
                     self.mainScreen.popWindow()
                     self.mainScreen.finish()
-                    self.mainScreen = PlatformScreen(self.screenTitle)
                     if self.hasNextScreen():                
+                        self.mainScreen = PlatformScreen(self.screenTitle)
                         self.selectScreen(self.currentStep+1)
                         loop=True
                     else:
