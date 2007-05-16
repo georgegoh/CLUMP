@@ -103,6 +103,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
                                           text='If you click ok, then your disks will be formatted.\n' + \
                                                'You cannot recover data on a disk once it has been formatted.')
         if result == 'ok':
+            self.kiprofile.save()
+
             self.database.commit()
             self.logger.debug('Commited database')
 

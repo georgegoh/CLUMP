@@ -28,6 +28,7 @@ class NetworkScreen(screenfactory.BaseScreen):
 
     name = _('Network')
     context = 'Network'
+    profile = context
     msg = _('Please configure your network')
     buttons = [_('Configure')]
     interfaces = {}
@@ -47,44 +48,21 @@ class NetworkScreen(screenfactory.BaseScreen):
         """
 
         try:
-            self.kusuApp['netProfile']
+            self.kiprofile[self.profile]
         except KeyError:
-            self.kusuApp['netProfile'] = {}
+            self.kiprofile[self.profile] = {}
 
-        self.kusuApp['netProfile']['have_dhcp'] = False
-        self.kusuApp['netProfile']['have_static'] = False
+        self.kiprofile[self.profile]['have_dhcp'] = False
+        self.kiprofile[self.profile]['have_static'] = False
 
         for intf in self.interfaces.keys():
-            # store information
-            # these are bools, we do str(int(bool)) to convert True to '1'
-            # and False to '0'
-            if self.interfaces[intf]['configure'] == '':
-                self.interfaces[intf]['configure'] = False
-
             if self.interfaces[intf]['configure']:
                 if self.interfaces[intf]['use_dhcp']:
-                    self.kusuApp['netProfile']['have_dhcp'] = True
+                    self.kiprofile[self.profile]['have_dhcp'] = True
                 else:
-                    self.kusuApp['netProfile']['have_static'] = True
+                    self.kiprofile[self.profile]['have_static'] = True
 
-            self.database.put(self.context, 'configure:' + intf,
-                              str(int(self.interfaces[intf]['configure'])))
-            self.database.put(self.context, 'use_dhcp:' + intf,
-                              str(int(self.interfaces[intf]['use_dhcp'])))
-            self.database.put(self.context, 'active_on_boot:' + intf,
-                              str(int(self.interfaces[intf]['active_on_boot'])))
-
-            if not self.interfaces[intf]['use_dhcp']:
-                self.database.put(self.context, 'hostname:' + intf,
-                                  self.interfaces[intf]['hostname'])
-                self.database.put(self.context, 'ip_address:' + intf,
-                                  self.interfaces[intf]['ip_address'])
-                self.database.put(self.context, 'netmask:' + intf,
-                                  self.interfaces[intf]['netmask'])
-
-            kl.info('Wrote to DB %s: %s.' % (intf, self.interfaces[intf]))
-
-        self.kusuApp['netProfile']['interfaces'] = self.interfaces
+        self.kiprofile[self.profile]['interfaces'] = self.interfaces
 
         # decide whether to show Gateway/DNS screen next
         self.controlDNSScreen()
@@ -96,7 +74,8 @@ class NetworkScreen(screenfactory.BaseScreen):
         """
 
         from gatewaydns import GatewayDNSSetupScreen
-        dnsscreen = GatewayDNSSetupScreen(self.database, self.kusuApp)
+        dnsscreen = GatewayDNSSetupScreen(self.database, self.kusuApp,
+                                          self.kiprofile)
 
         dnsscreen_exists = False
         for screen in self.selector.screens:
@@ -106,8 +85,9 @@ class NetworkScreen(screenfactory.BaseScreen):
                 break
 
         # if no interfaces are configured (or none exist), remove dns screen
-        if dnsscreen_exists and not self.kusuApp['netProfile']['have_static'] \
-            and not self.kusuApp['netProfile']['have_dhcp']:
+        if dnsscreen_exists \
+            and not self.kiprofile[self.profile]['have_static'] \
+            and not self.kiprofile[self.profile]['have_dhcp']:
             self.selector.screens.remove(dnsscreen)
             return
 
@@ -255,6 +235,36 @@ class NetworkScreen(screenfactory.BaseScreen):
         footnote = '* activate interface on boot'
         footnote = snack.Textbox(len(footnote), 1, footnote)
         self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
+
+    def saveProfileToSQLCollection(db, context, profile):
+        interfaces = profile['interfaces']
+
+        for intf in interfaces.keys():
+            # these are bools,
+            # we do str(int(bool)) to convert True to '1' and False to '0'
+            db.put(context, 'configure:' + intf,
+                              str(int(interfaces[intf]['configure'])))
+            if interfaces[intf]['configure']:
+                db.put(context, 'use_dhcp:' + intf,
+                                  str(int(interfaces[intf]['use_dhcp'])))
+                db.put(context, 'active_on_boot:' + intf,
+                                  str(int(interfaces[intf]['active_on_boot'])))
+
+                if not interfaces[intf]['use_dhcp']:
+                    db.put(context, 'hostname:' + intf,
+                                      interfaces[intf]['hostname'])
+                    db.put(context, 'ip_address:' + intf,
+                                      interfaces[intf]['ip_address'])
+                    db.put(context, 'netmask:' + intf,
+                                      interfaces[intf]['netmask'])
+
+            kl.info('Wrote to DB %s: %s.' % (intf, interfaces[intf]))
+
+        return True
+
+    dbSaveFunctions = {'MySQL': None,
+                       'SQLite': None,
+                       'SQLColl': saveProfileToSQLCollection}
 
 class ConfigureIntfScreen:
     """
@@ -539,3 +549,5 @@ def retrieveNetworkContext(db):
             interfaces[intf]['active_on_boot'] = False
 
     return interfaces
+
+

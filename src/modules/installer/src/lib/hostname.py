@@ -25,6 +25,7 @@ class FQHNScreen(screenfactory.BaseScreen):
 
     name = _('Host Name')
     context = 'Network'
+    profile = context
     msg = _('Please specify a fully-qualified host name for this computer:')
     buttons = [_('Clear All')]
 
@@ -53,7 +54,7 @@ class FQHNScreen(screenfactory.BaseScreen):
         Draw the window.
         """
 
-        self.netProfile = self.kusuApp['netProfile']
+        self.netProfile = self.kiprofile[self.profile]
 
         self.screenGrid = snack.Grid(1, 3)
         entryWidth = 33
@@ -130,3 +131,13 @@ class FQHNScreen(screenfactory.BaseScreen):
             kl.info('Set FQHN via DHCP.')
         else:
             kl.info('Set FQHN: %s.' % self.netProfile['fqhn'])
+
+        #self.kiprofile.update(self.kusuApp)
+        self.kiprofile.save()
+
+    def saveProfileToSQLCollection(db, context, profile):
+        return True
+
+    dbSaveFunctions = {'MySQL': None,
+                       'SQLite': None,
+                       'SQLColl': saveProfileToSQLCollection}

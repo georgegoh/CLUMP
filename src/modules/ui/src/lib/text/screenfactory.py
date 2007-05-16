@@ -10,7 +10,6 @@
 """This module contains the abstract classes BaseScreen and ScreenFactory, that
    users of the framework must subclass in order to use the Text Installer
    Framework."""
-__version__ = "$Revision: 242 $"
 
 import snack
 import kusuwidgets
@@ -39,6 +38,13 @@ class BaseScreen(object):
     database = None
     kusuApp = None
     screen = None
+
+    kiprofile = None
+    profile = 'No Profile'
+    dbSelected = 'SQLColl'
+    dbSaveFunctions = {'MySQL': None,
+                       'SQLite': None,
+                       'SQLColl': None}
 
     def setCallbacks(self): # abstract
         """Children should implement this if there are any buttons that
@@ -85,12 +91,23 @@ class BaseScreen(object):
         """
         pass
 
-    def __init__(self, database, kusuApp=None, gridWidth=45):
+    def __init__(self, database, kusuApp=None, kiprofile=None, gridWidth=45):
         self.database = database
         self.kusuApp = kusuApp
         self.gridWidth = gridWidth
+        self.kiprofile = kiprofile
+
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
+
+        try:
+            saveFunc = self.dbSaveFunctions[self.dbSelected]
+        except KeyError:
+            kl.warning('Saving to database %s not supported' % self.dbSelected)
+            saveFunc = False
+
+        if saveFunc:
+            self.kiprofile.addSaveFunction(saveFunc, self.profile)
 
     def eventCallback(self, obj):
         """Template method for handling events(buttons or otherwise)."""

@@ -24,6 +24,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
 
     name = _('Gateway & DNS')
     context = 'Network'
+    profile = context
     msg = _('Please configure your Gateway/DNS settings')
     buttons = [_('Clear All')]
 
@@ -58,7 +59,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         Draw the window.
         """
 
-        self.netProfile = self.kusuApp['netProfile']
+        self.netProfile = self.kiprofile[self.profile]
 
         self.screenGrid = snack.Grid(1, 6)
         entryWidth = 28
@@ -234,3 +235,12 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
                      ', '.join((self.netProfile['dns1'],
                                 self.netProfile['dns2'],
                                 self.netProfile['dns3']))))
+
+        #self.kiprofile.update(self.kusuApp)
+
+    def saveProfileToSQLCollection(db, context, profile):
+        return True
+
+    dbSaveFunctions = {'MySQL': None,
+                       'SQLite': None,
+                       'SQLColl': saveProfileToSQLCollection}

@@ -13,6 +13,7 @@
 import snack
 from path import path
 from collection import *
+from kusu.util.profile import Profile
 from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
@@ -45,6 +46,9 @@ class ScreenImpl(BaseScreen):
 
 runtimeDict = {}
 
+# we start with a blank kusu installer profile
+kiprofile = Profile()
+
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the 
        KusuInstaller class.
@@ -65,16 +69,18 @@ class ScreenFactoryImpl(ScreenFactory):
         kusudb_parent.makedirs()
 
     collection = SQLiteCollection(kusudb)
-    ScreenFactory.screens = [WelcomeScreen(collection, kusuApp=runtimeDict),
-                             LanguageSelectionScreen(collection, kusuApp=runtimeDict),
-                             KeyboardSelectionScreen(collection, kusuApp=runtimeDict),
-                             ClusterInfoScreen(collection, kusuApp=runtimeDict),
-                             NetworkScreen(collection, kusuApp=runtimeDict),
-                             GatewayDNSSetupScreen(collection, kusuApp=runtimeDict),
-                             FQHNScreen(collection, kusuApp=runtimeDict),
-                             RootPasswordScreen(collection, kusuApp=runtimeDict),
-                             PartitionScreen(collection, kusuApp=runtimeDict),
-                             KitsScreen(collection, kusuApp=runtimeDict),
-                             TZSelectionScreen(collection, kusuApp=runtimeDict),
-                             ConfirmScreen(collection, kusuApp=runtimeDict)
-                            ]
+    kiprofile.addDatabase(collection)
+    ScreenFactory.screens = \
+        [WelcomeScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         LanguageSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         KeyboardSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         ClusterInfoScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         NetworkScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         GatewayDNSSetupScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         FQHNScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         RootPasswordScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         PartitionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         KitsScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         TZSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         ConfirmScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile)
+        ] 
