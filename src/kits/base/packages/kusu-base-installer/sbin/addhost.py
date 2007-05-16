@@ -2,7 +2,7 @@
 #
 # Kusu add host
 #
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -70,8 +70,8 @@ class AddHostApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
-        self.database = KusuDB()
-        self.kusuApp = KusuApp()
+        self._database = KusuDB()
+        self._kusuApp = KusuApp()
 
     def toolVersion(self, option, opt, value, parser):
         """ 
@@ -79,7 +79,7 @@ class AddHostApp(KusuApp):
         Prints out the version of the tool to screen. 
         """
         
-        i18nPrint("Addhosts Version %s\n\n", self.version)
+        print "Addhosts Version %s\n" % self.version
         sys.exit(0)
         
     def parseargs(self):
@@ -88,22 +88,22 @@ class AddHostApp(KusuApp):
         Parse the command line arguments. """
 
         self.parser.add_option("-v", "--version", action="callback",
-                                callback=self.toolVersion, help=self.kusuApp._("addhost_version_usage"))
+                                callback=self.toolVersion, help=self._kusuApp._("addhost_version_usage"))
         self.parser.add_option("-n", "--nodegroup", action="store",
-                                type="string", dest="nodegroup", help=self.kusuApp._("addhost_nodegroup_usage"))
+                                type="string", dest="nodegroup", help=self._kusuApp._("addhost_nodegroup_usage"))
         self.parser.add_option("-i", "--interface", action="store",
-                                type="string", dest="interface", help=self.kusuApp._("addhost_interface_usage"))
+                                type="string", dest="interface", help=self._kusuApp._("addhost_interface_usage"))
         self.parser.add_option("-f", "--file", action="store",
-                                type="string", dest="macfile", help=self.kusuApp._("addhost_macfile_usage"))
+                                type="string", dest="macfile", help=self._kusuApp._("addhost_macfile_usage"))
         self.parser.add_option("-e", "--remove", action="callback",
-                                dest="remove", callback=self.varargs, help=self.kusuApp._("addhost_remove_usage"))
+                                dest="remove", callback=self.varargs, help=self._kusuApp._("addhost_remove_usage"))
         self.parser.add_option("-p", "--replace", action="store",
-                                type="string", dest="replace", help=self.kusuApp._("addhost_replace_usage"))
+                                type="string", dest="replace", help=self._kusuApp._("addhost_replace_usage"))
         self.parser.add_option("-r", "--rack", action="store",
-                                type="int", dest="rack", help=self.kusuApp._("addhost_rack_usage"))
-        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=self.kusuApp._("addhost_update_usage"))
+                                type="int", dest="rack", help=self._kusuApp._("addhost_rack_usage"))
+        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=self._kusuApp._("addhost_update_usage"))
     
-        (self.options, self.args) = self.parser.parse_args(sys.argv[1:])
+        (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
     def loadPlugins(self):
         """ loadPlugins()
@@ -138,8 +138,7 @@ class AddHostApp(KusuApp):
                   thisPlugin = thisModule.AddHostPlugin()
                   pluginInstances.append(thisPlugin)
              except:
-                  print "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule
-                  
+                  print self._kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule)
         pluginActions = PluginActions(pluginInstances)
     
     def nxor(self, *args):
@@ -165,92 +164,85 @@ class AddHostApp(KusuApp):
         self.loadPlugins()
         
         # Lists are special in Python, handle boolean differently.
-        if self.options.remove == []:
+        if self._options.remove == []:
             removeFlag = True
         else:
-            removeFlag = bool(self.options.remove)
+            removeFlag = bool(self._options.remove)
            
         # Don't allow option -n -p -e -u to be used together. Mututually Exclusive.
-        if (not self.nxor(bool(self.options.nodegroup), bool(self.options.replace), bool(self.options.update), removeFlag)):
-                    if (bool(self.options.nodegroup) == False and bool(self.options.replace) == False and bool(self.options.update) == False and removeFlag == False):
+        if (not self.nxor(bool(self._options.nodegroup), bool(self._options.replace), bool(self._options.update), removeFlag)):
+                    if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False):
                         pass
                     else:
-                        self.parser.error(self.kusuApp._("addhost_options_exclusive"))
+                        self.parser.error(self._kusuApp._("addhost_options_exclusive"))
 
         # Handle -r option
-        if self.options.rack:
-            result = int(self.options.rack)
+        if self._options.rack:
+            result = int(self._options.rack)
             if result < 0:
-                print "Error: Cannot specify a negative number. Please try again"
-                sys.exit(-1)
+                self.parser.error(self._kusuApp._("addhost_negative_number"))
             else:
-                myNodeInfo.nodeRackNumber = self.options.rack
+                myNodeInfo.nodeRackNumber = self._options.rack
 
         # Handle -i option
-        if self.options.interface:
-            if self.options.interface[0] == '-':
-                self.parser.error(self.kusuApp._("addhost_options_interface_required"))
+        if self._options.interface:
+            if self._options.interface[0] == '-':
+                self.parser.error(self._kusuApp._("addhost_options_interface_required"))
             else:
-                checkDBConnection(self.kusuApp._("DB_Query_Error\n"), self.database)
-
-                if myNode.validateInterface(self.options.interface):
-                    myNodeInfo.selectedInterface = self.options.interface
+                if myNode.validateInterface(self._options.interface):
+                    myNodeInfo.selectedInterface = self._options.interface
                     haveInterface = True
                 else:
-                    i18nPrint (self.kusuApp._("addhost_options_invalid_interface\n\n"))
-                    sys.exit(-1)
+                    self.parser.error(self._kusuApp._("addhost_options_invalid_interface"))
 
         # Handle -n option
-        if self.options.nodegroup:
-            if self.options.nodegroup[0] == '-':
-                self.parser.error(self.kusuApp._("addhost_options_nodegroup_required"))
+        if self._options.nodegroup:
+            if self._options.nodegroup[0] == '-':
+                self.parser.error(self._kusuApp._("addhost_options_nodegroup_required"))
             else:
                 # Check for valid nodegroup. if not return an error.
-                result, ngid = myNode.validateNodegroup(self.options.nodegroup)
+                result, ngid = myNode.validateNodegroup(self._options.nodegroup)
                 if result:
                     myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
                 else:
-                    i18nPrint(self.kusuApp._("addhost_options_invalid_nodegroup\n"))
-                    sys.exit(-1)
+                    self.parser.error(self._kusuApp._("addhost_options_invalid_nodegroup"))
 
         # Handle -f -i -n options
-        if (self.options.macfile and self.options.interface and self.options.nodegroup):
+        if (self._options.macfile and self._options.interface and self._options.nodegroup):
             
             # Check if the file specified exists.
-            if not os.path.isfile(self.options.macfile):
-                i18nPrint(self.kusuApp._("addhost_options_file_notfound\n"))
-                sys.exit(-1)
+            if not os.path.isfile(self._options.macfile):
+                self.parser.error(self._kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
-            if haveNodegroup and not self.options.rack:
+            if haveNodegroup and not self._options.rack:
                 checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                 checkHost.getNodeFormat()
                 flag = 1
                 if checkHost.isNodenameHasRack() and haveInterface:
                   while flag:
-                      response = raw_input(self.kusuApp._("addhost_textprompt_rack"))
+                      response = raw_input(self._kusuApp._("addhost_textprompt_rack"))
                       try:
                           result = int(response)
                           if result < 0:
-                             print "Error: Cannot specify a negative number. Please try again"
+                             print self._kusuApp._("Error: Cannot specify a negative number. Please try again")
                              flag = 1
                           else:
                              myNodeInfo.nodeRackNumber = result
-                             #print "Setting Rack number to: %s" % myNodeInfo.nodeRackNumber
                              flag = 0
                       except:
-                          print self.kusuApp._("Error: The value %s is not a number. Please try again" % response)
+                          print self._kusuApp._("Error: The value %s is not a number. Please try again" % response)
                           flag = 1
               
             # Read in list of mac addresses
-            macfileList = open(self.options.macfile,'r').readlines()
+            macfileList = open(self._options.macfile,'r').readlines()
             self.prepopulateNodes = kusu.nodefun.NodeFun(myNodeInfo.nodeRackNumber, myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = self.prepopulateNodes.findMACAddress(macaddr)
                  if checkMacAddr == False:
                      nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedInterface)
-                     print "Adding Node: %s, %s" % (nodeName, macaddr)
+                     print self._kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
                      pluginActions.plugins_add(nodeName)
                      myNodeInfo.nodesInstalled.append([nodeName, macaddr])
@@ -258,51 +250,50 @@ class AddHostApp(KusuApp):
                      #print "Duplicate: %s, Ignoring" % macaddr
             sys.exit(0)
               
-        if self.options.macfile:
-            if not self.options.interface or not self.options.nodegroup:
-               self.parser.error(self.kusuApp._("addhost_options_macfile_options_needed"))
+        if self._options.macfile:
+            if not self._options.interface or not self._options.nodegroup:
+               self.parser.error(self._kusuApp._("addhost_options_macfile_options_needed"))
 
         # Handle -p option
-        if self.options.replace:
-            if self.options.replace.strip().isdigit():
-                self.parser.error(self.kusuApp._("addhost_options_invalid_node"))
+        if self._options.replace:
+            if self._options.replace.strip().isdigit():
+                self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
             else:
-                if self.options.replace[0] == '-':
-                    self.parser.error(self.kusuApp._("addhost_options_replace_required"))
+                if self._options.replace[0] == '-':
+                    self.parser.error(self._kusuApp._("addhost_options_replace_required"))
                 else:
-                    if myNode.validateNode(self.options.replace):
+                    if myNode.validateNode(self._options.replace):
                         replaceMode = True
                         myNodeInfo.optionReplaceMode = True
-                        myNodeInfo.replaceNodeName = self.options.replace
-                        if myNode.replaceNodeEntry(self.options.replace) == False:
+                        myNodeInfo.replaceNodeName = self._options.replace
+                        if myNode.replaceNodeEntry(self._options.replace) == False:
                             sys.exit(-1)
                     else:
-                        i18nPrint(self.kusuApp._("The node %s is not found. Please try again\n" % self.options.replace))
+                        print self._kusuApp._("The node %s is not found. Please try again\n" % self._options.replace)
                         sys.exit(-1)
 
         # Handle -e option
-        if self.options.remove:
-            for delnode in self.options.remove:
+        if self._options.remove:
+            for delnode in self._options.remove:
                  if delnode.strip().isdigit():
-                     self.parser.error(self.kusuApp._("addhost_options_invalid_node"))
+                     self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
                  # Disallow options next to options.
                  if delnode[0] == '-':
-                     self.parser.error(addhost_options_invalid_node)
+                     self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
 
                  # Ask all plugins to call removed() function
                  pluginActions.plugins_removed(delnode)
 
                  # Handle removing node from db.
-                 myNode.deleteNode(delnode)                 
+                 myNode.deleteNode(delnode)
                  pluginActions.plugins_finished()
-                
-            sys.exit(-1)
+            sys.exit(0)
 
-        elif self.options.remove == []:
-              self.parser.error(self.kusuApp._("addhost_options_invalid_node"))
+        elif self._options.remove == []:
+              self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
 
         # Handle -u option
-        if self.options.update:
+        if self._options.update:
             # Handle any local pending updates.
             #myNode.doUpdates()
 
@@ -312,28 +303,27 @@ class AddHostApp(KusuApp):
             sys.exit(-1)
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
-        if haveNodegroup and not self.options.rack and not self.options.macfile:
+        if haveNodegroup and not self._options.rack and not self._options.macfile:
             checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
             checkHost.getNodeFormat()
             flag = 1
             if checkHost.isNodenameHasRack() and haveInterface:
                 while flag:
-                   response = raw_input(self.kusuApp._("addhost_textprompt_rack"))
+                   response = raw_input(self._kusuApp._("addhost_textprompt_rack"))
                    try:
                        result = int(response)
                        if result < 0:
-                          print "Error: Cannot specify a negative number. Please try again"
+                          print self._kusuApp._("Error: Cannot specify a negative number. Please try again.")
                           flag = 1
                        else:
                           myNodeInfo.nodeRackNumber = result
-                          #print "Setting Rack number to: %s" % myNodeInfo.nodeRackNumber
                           flag = 0
                    except:
-                       print self.kusuApp._("Error: The value %s is not a number. Please try again" % response)
+                       print self._kusuApp._("Error: The value %s is not a number. Please try again" % response)
                        flag = 1
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
-        if (haveNodegroup and self.options.rack):
+        if (haveNodegroup and self._options.rack):
             checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
             checkHost.getNodeFormat()
             if not checkHost.isNodenameHasRack():
@@ -341,18 +331,18 @@ class AddHostApp(KusuApp):
 
         # Screen ordering
         if replaceMode:
-            screenList = [ WindowNodeStatus(self.database, self.kusuApp) ]
+            screenList = [ WindowNodeStatus(self._database, self._kusuApp) ]
 
         elif haveInterface and haveNodegroup:
-            screenList = [ WindowNodeStatus(self.database, self.kusuApp) ]
+            screenList = [ WindowNodeStatus(self._database, self._kusuApp) ]
 
         elif haveNodegroup and not haveInterface:
-            screenList = [ WindowSelectNode(self.database, self.kusuApp), WindowNodeStatus(self.database, self.kusuApp) ]
+            screenList = [ WindowSelectNode(self._database, self._kusuApp), WindowNodeStatus(self._database, self._kusuApp) ]
 
         else:
-            screenList = [ NodeGroupWindow(self.database, self.kusuApp), 
-                          WindowSelectNode(self.database, self.kusuApp),
-                          WindowNodeStatus(self.database, self.kusuApp)
+            screenList = [ NodeGroupWindow(self._database, self._kusuApp), 
+                          WindowSelectNode(self._database, self._kusuApp),
+                          WindowNodeStatus(self._database, self._kusuApp)
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
@@ -387,12 +377,13 @@ class AddHostPlugin:
         """virtual"""
         pass
     
-class PluginActions:
+class PluginActions(object, KusuApp):
     def __init__(self, pluginInstances):
+        KusuApp.__init__(self)
         self._pluginInstances = pluginInstances
         self._dbconnection = KusuDB()  # Read only database connection
         self._NodeHandler = kusu.nodefun.NodeFun()
-        
+        self._kusuApp = KusuApp()
         self._dbconnection.connect()
         
     # Plugin call actions
@@ -402,7 +393,7 @@ class PluginActions:
         """
         
         if self._NodeHandler.nodeIsPrimaryInstaller(nodename):
-            print "ERROR: Cannot add primary installer again!"
+            print self._kusuApp._("add_primary_installer_error\n")
             return
             
         #print "DEBUG: Calling added() method from plugins"
@@ -426,7 +417,7 @@ class PluginActions:
                  if callable(getattr(plugin, "removed", None)):
                      plugin.removed(self._dbconnection, nodename, info)
         else:
-            print "Error: You cannot remove the master installer!"
+            print self._kusuApp._("remove_primary_installer_error\n")
             
     def plugins_replaced(self, nodename):
         """plugins_replaced(nodename)
@@ -441,7 +432,8 @@ class PluginActions:
                  if callable(getattr(plugin, "replaced", None)):
                      plugin.replace(self._dbconnection, info)
         else:
-            print "Error: You cannot replace the master installer itself!"
+            print self._kusuApp._("replace_primary_installer_error\n")
+            sys.exit(-1)
             
     def plugins_finished(self):
         """plugins_finished()
@@ -508,7 +500,7 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
             self.database.connect()
         except:
             self.finish()
-            i18nPrint(self._("DB_Query_Error\n"))
+            print self._("DB_Query_Error\n")
             sys.exit(-1)
 
         query = "SELECT ngname,ngid FROM nodegroups"
@@ -517,7 +509,7 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
             nodeGroups = self.database.fetchall()
         except:
             self.finish()
-            i18nPrint(self._("DB_Query_Error\n"))
+            print self._("DB_Query_Error\n")
             sys.exit(-1)
    
         self.screenGrid = snack.Grid(1, 2)
@@ -559,7 +551,7 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
             networks = self.database.fetchall()
         except:
             self.finish()
-            i18nPrint(self._("DB_Query_Error\n"))
+            print self._("DB_Query_Error\n")
             sys.exit(-1)
         
         self.screenGrid = snack.Grid(1, 2)
@@ -593,7 +585,6 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         flag = 1
         filep = open("/var/log/messages", 'r')
         filep.seek(0, 2)
-        #result = self.selector.popupStatus(self._("Debug Window"), "nodeRackNumber %s" % nodeRackNumber, 1)
         myNodeInfo.selectedInterface = self.radioButtonList.getSelection()[0]
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
@@ -677,7 +668,7 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                         and not myNodeInfo.optionReplaceMode:
                         self.aNode = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                         nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface)
-                        self.listbox.append("%s\t%s\t(Installing)" % (nodeName, macAddress), nodeName)
+                        self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self._("addhost_installing_string")), nodeName)
                         pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodesInstalled.append([nodeName, macAddress])
                         del self.aNode
@@ -686,7 +677,7 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
-                           self.selector.popupStatus(self._("Node Discovery"), "Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress), 3)
+                           self.selector.popupStatus(self._("addhost_node_discovery"), self._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
                            self.myNode.replaceNICBootEntry (myNodeInfo.replaceNodeName, macAddress)
                            # Call Replace mode plugins
                            self.finish()
@@ -712,29 +703,6 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         """
         pass
 
-def checkDBConnection(message, dbinst):
-    """checkDBConnection(message, dbinst)
-    Check if the database is present, otherwise, throw i18n error
-    """
-    
-    try:
-       dbinst.connect()
-    except:
-       i18nPrint(message)
-       sys.exit(-1)
-
-def i18nPrint(message, *args):
-    """i18nPrint - Output messages to STDERR with Internationalization.
-    Additional arguments will be used to substitute variables in the
-    message output"""
-
-    if len(args) > 0:
-        mesg = message % args
-    else:
-        mesg = message
-        sys.stderr.write(mesg)
-
-            
 class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
        Navigator(or it's child) class.
