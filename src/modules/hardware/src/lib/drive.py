@@ -136,6 +136,9 @@ def getSCSI(type):
                     if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename() \
                        and type in ['disk']: continue
 
+                # Ignore if it's not on usb bus and type is 'usb-storage'
+                elif type in ['usb-storage']: continue
+
                 dev = dev.basename()
                 # Handle cciss!c0d0 in /sys/block
                 if dev.find('cciss!') != -1:
