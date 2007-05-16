@@ -86,46 +86,47 @@ def getSCSI(type):
     scsi_path = path('/sys/bus/scsi/devices')
 
     d = {}
-    for s in scsi_path.listdir():
-        if (s / 'type').exists() and \
-            int(readFile(s / 'type')) in type_map[type]:
 
-            dev = s.listdir('block:*')
-        
-            # block:<dev> exists
-            if dev: 
-                dev = dev[0].realpath()
-            else: # block exists
-                dev = (s / 'block').realpath()
+    if scsi_path.exists():
+        for s in scsi_path.listdir():
+            if (s / 'type').exists() and \
+                int(readFile(s / 'type')) in type_map[type]:
 
-            # Check for removable, including usb cdrom/thumbdrive
-            # usb portable hardrive are not excluded here
-            removable = dev.realpath() / 'removable'
-            if removable.exists() \
-               and int(readFile(removable)) \
-               and type in ['disk']: continue
+                dev = s.listdir('block:*')
+            
+                # block:<dev> exists
+                if dev: 
+                    dev = dev[0].realpath()
+                else: # block exists
+                    dev = (s / 'block').realpath()
 
-            # Checks for usb devices that presents itself as scsi
-            # such as usb portable hardrive which removable=0
-            idx = (dev / 'device').realpath().find('usb')
-            if idx != -1: # part of the usb bus
-                usb = path((dev / 'device').realpath()[idx:])
-
-                # And yes, the block device matches back
-                if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename() \
+                # Check for removable, including usb cdrom/thumbdrive
+                # usb portable hardrive are not excluded here
+                removable = dev.realpath() / 'removable'
+                if removable.exists() \
+                   and int(readFile(removable)) \
                    and type in ['disk']: continue
 
-            dev = dev.basename()
-            # Handle cciss!c0d0 in /sys/block
-            if dev.find('cciss!') != -1:
-                dev = dev.replace('!', os.sep)
+                # Checks for usb devices that presents itself as scsi
+                # such as usb portable hardrive which removable=0
+                idx = (dev / 'device').realpath().find('usb')
+                if idx != -1: # part of the usb bus
+                    usb = path((dev / 'device').realpath()[idx:])
 
-            d[dev] = {}
-            d[dev]['vendor'] = readFile(s / 'vendor')
-            d[dev]['model'] = readFile(s / 'model')
-    
+                    # And yes, the block device matches back
+                    if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename() \
+                       and type in ['disk']: continue
+
+                dev = dev.basename()
+                # Handle cciss!c0d0 in /sys/block
+                if dev.find('cciss!') != -1:
+                    dev = dev.replace('!', os.sep)
+
+                d[dev] = {}
+                d[dev]['vendor'] = readFile(s / 'vendor')
+                d[dev]['model'] = readFile(s / 'model')
+        
 
     return d 
-#
 
 
