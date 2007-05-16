@@ -10,8 +10,8 @@ import sys
 import os
 from kusu.core.app import KusuApp
 from path import path
-from kusu.boot.distro import CopyError
-from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource
+from kusu.boot.distro import CopyError, SUPPORTED_ARCH, UnsupportedDistro
+from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource, SUPPORTED_DISTROS
 from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser, InvalidKusuSource
 
         
@@ -30,7 +30,7 @@ class BootMediaApp(KusuApp):
             'make-isolinux':['dir','os',
                     'kernel','initrd',
                     'isobin'],
-            'make-iso':['patch','iso','source','kususrc'],
+            'make-iso':['patch','iso','source','kususrc','arch'],
             'make-boot-tgz':['dir','bootarchive'],
             'make-patch':['os','version','patch','kususrc','arch']}
         
@@ -86,6 +86,7 @@ Actions:
                       for this action:
                         patch=<path of installer patchfile>
                         iso=<name of iso file>
+                        arch=<architechure of OS>
                         source=<path of installation source>
                         kususrc=<directory containing Kusu Trunk>
     make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which
@@ -114,7 +115,7 @@ Example operation usages:
 
     To create the Kusu Boot Media iso for Fedora 6 i386:
     # boot-media-tool make-iso patch=updates.img iso=kusu.iso 
-    source=/mnt/cdrom kususrc=/tmp/svn/kusu/trunk
+    arch=i386 source=/mnt/cdrom kususrc=/tmp/svn/kusu/trunk
     
 """)
         self.parser.set_usage(self.usagestr)
@@ -225,10 +226,13 @@ Example operation usages:
         """Handler for query action. args is a dict of supported key-value pairs for this action. """
         srcpath = path(args['source'])
         if not self.bminst.validSrcPath(srcpath):
-            msg = self._('invalidSrcPath')
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('The path %(srcpath)s is not a supported installation source. Supported distros are %(distros)s.' \
+                % {'srcpath':srcpath,'distros':distros})
             self.printMsgExit(msg)
             
         distro = self.bminst.getDistro(srcpath)
+        version = self.bminst.getVersion(srcpath)
         kernpath = self.bminst.getKernelPath(srcpath)
         initrdpath = self.bminst.getInitrdPath(srcpath)
         isolinuxpath = self.bminst.getIsolinuxbinPath(srcpath)
@@ -237,7 +241,12 @@ Example operation usages:
             print self._('OS Type:'), distro
         else:
             print self._('Cannot determine OS type.')
-            
+
+        if version:
+            print self._('Major Version:'), version
+        else:
+            print self._('Cannot determine major version.')
+
         if kernpath:
             print self._('Kernel found:'), kernpath
         else:
@@ -334,16 +343,27 @@ Example operation usages:
         """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
         patchfile = args.get('patch',None)
         iso = path(args['iso']).abspath()
+        arch = args.get('arch',None)
         srcpath = path(args['source']).abspath()
         kususrc = path(args['kususrc']).abspath()
         tmpdir = None
+        
+        if not arch:
+            msg = self._('Please supply the arch= option!')
+            self.printMsgExit(msg)
+        
+        if arch not in SUPPORTED_ARCH:
+            arches = ', '.join(SUPPORTED_ARCH)
+            msg = self._('%(arch)s architechure not supported. Supported architechures are %(arches)s' \
+                % {'arch':arch,'arches':arches})
+            self.printMsgExit(msg)
         
         if patchfile: patchfile = path(patchfile).abspath()
                   
         try:
             print self._('Creating temporary iso contents based on installation source and Kusu SVN source tree.')
             print self._('This may take awhile...')
-            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc)
+            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc,arch)
             print self._('Generating Kusu Boot Media ISO.')
             self.bminst.mkBootISO(tmpdir, iso, volname="Kusu Boot Media")
             print self._('Generated %(iso)s') % {'iso':iso}
@@ -369,6 +389,13 @@ Example operation usages:
             elif tmpdir.exists(): 
                 tmpdir.rmtree()
             msg = self._('Invalid Kusu SVN source!') 
+            self.printMsgExit(msg)
+        except UnsupportedDistro:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Distro-specific assets not found in Kusu SVN source!') 
             self.printMsgExit(msg)
 
     def _makeIsolinux(self,args):
@@ -403,9 +430,18 @@ Example operation usages:
         """Handler for make-patch. args is a dict of supported key-value pairs for this action. """
         kususrc = path(args['kususrc'])
         osname = args['os']
-        osver = args['version']
+        version = args['version']
         osarch = args['arch']
         patchfile = args['patch']
+        
+        if osname not in SUPPORTED_DISTROS:
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
+                % {'osname':osname, 'distros':distros})
+            self.printMsgExit(msg)
+        
+        # we're only interested in the major version
+        osver = version.split('.')[0]
         
         try:
             print self._('Creating Kusu Installer patchfile for %(osname)s %(osver)s %(osarch)s. This may take awhile.' \
@@ -418,6 +454,9 @@ Example operation usages:
         except NotPriviledgedUser:
             msg = self._('This operation requires root access.')
             self.printMsgExit(msg)
+        except UnsupportedDistro:
+            msg = self._('Distro-specific assets not found in Kusu SVN source!')
+            self.printMsgExit(msg) 
         
     def _makeImgdir(self,args):
         """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """

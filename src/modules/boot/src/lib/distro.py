@@ -13,7 +13,11 @@ import os
 class CopyError(Exception): pass
 class FileAlreadyExists(Exception): pass
 class InvalidInstallSource(Exception): pass
+class UnsupportedDistro(Exception): pass
 
+SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
+USES_ANACONDA_LIST = ['centos', 'fedora', 'rhel']
+SUPPORTED_ARCH = ['i386', 'x86_64']
 
 class DistroInstallSrcBase(object):
     """Base class for a distro installation source and the operations that can work on it"""
@@ -24,7 +28,7 @@ class DistroInstallSrcBase(object):
         self.srcPath - refers to the path of the installation source. Note that it can be a remote or local path.
         self.isRemote - booleanType and should reflect that self.srcPath is a remote or not.
         self.ostype - Name of the OS/Distro. It should be in lowercase for consistency. May be used for comparison cases.
-        self.version - Version of the OS/Distro.
+        self.version - Major version number of the OS/Distro.
         self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
         self.patchLayoutAttributes - a dict describing the layout of key directories/files for installation patches.
         
@@ -152,18 +156,18 @@ class DistroInstallSrcBase(object):
 
 def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
-    distros = [CentOSInstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
+    distros = [CentOS5InstallSrc(srcPath), CentOS4InstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
             return d
     return DistroInstallSrcBase()
 
     
-class CentOSInstallSrc(DistroInstallSrcBase):
+class CentOS4InstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
     
     def __init__(self, srcPath):
-        super(CentOSInstallSrc,self).__init__()
+        super(CentOS4InstallSrc,self).__init__()
         if srcPath.startswith('http://'):
             self.srcPath = srcPath
             self.isRemote = True
@@ -175,7 +179,7 @@ class CentOSInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
             
         self.ostype = 'centos'
-        self.version = '4.4'
+        self.version = '4'
 
         # These should describe the key directories that identify a CentOS installation source layout.
         self.pathLayoutAttributes = {
@@ -442,7 +446,7 @@ class RHELInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
 
         self.ostype = 'rhel'
-        self.version = '4.4'
+        self.version = '4'
 
         # These should describe the key directories that identify a CentOS installation source layout.
         self.pathLayoutAttributes = {
@@ -496,4 +500,119 @@ class RHELInstallSrc(DistroInstallSrcBase):
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
         return self.version     #for now
+
+class CentOS5InstallSrc(DistroInstallSrcBase):
+    """This class describes how a CentOS installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(CentOS5InstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'centos'
+        self.version = '5'
+
+        # These should describe the key directories that identify a CentOS installation source layout.
+        self.pathLayoutAttributes = {
+            'isolinuxdir' : 'isolinux',
+            'kernel' : 'isolinux/vmlinuz',
+            'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
+            'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
+            'baseosdir' : 'CentOS',
+            'packagesdir' : 'CentOS'
+        }
+
+        # The following determines the patchfile layout for CentOS
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+
+
+    def getVersion(self):
+        '''CentOS specific way of getting the distro version'''
+        return self.version
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
 

@@ -9,8 +9,8 @@
 from path import path
 import subprocess
 import os
-from kusu.boot.distro import DistroFactory, InvalidInstallSource
-from kusu.boot.distro import CopyError
+from kusu.boot.distro import DistroFactory, InvalidInstallSource, SUPPORTED_DISTROS, USES_ANACONDA_LIST
+from kusu.boot.distro import CopyError, UnsupportedDistro
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
 import tempfile
@@ -176,6 +176,11 @@ class BootMediaTool:
         self._initSrc(srcpath)
         return self.installsrc.ostype
         
+    def getVersion(self, srcpath):
+        """ Returns the OS type. """
+        self._initSrc(srcpath)
+        return self.installsrc.getVersion()
+        
     def getKernelPath(self, srcpath):
         """ Query the srcpath and returns the path of the kernel. """
         self._initSrc(srcpath)
@@ -248,15 +253,19 @@ class BootMediaTool:
         except FilePathError, e:
             raise e
             
-    def mkISOFromSource(self,srcpath,patchfile,kususrc):
+    def mkISOFromSource(self,srcpath,patchfile,kususrc,arch):
         """ Creates Kusu Boot ISO based on installation source. This method
             returns the isodir.
         """
         d = DistroFactory(srcpath)
         kususrc = KusuSVNSource(kususrc)
         if not kususrc.verifySrcPath(): raise InvalidKusuSource, "Invalid Kusu SVN Source!"
+                
         try:
-            if d.ostype == 'fedora':
+            p = 'src/dists/%s/%s/%s' % (d.ostype,d.getVersion(),arch)
+            if not (kususrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
+            
+            if d.ostype in SUPPORTED_DISTROS and d.ostype in USES_ANACONDA_LIST:
                 # create the isolinux directory
                 tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
                 isolinuxdir = tmpdir / 'isolinux'
@@ -270,25 +279,26 @@ class BootMediaTool:
                 self.mkImagesDir(srcpath,imagesdir,patchfile)
 
                 # put in the ks.cfg
-                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/ks.cfg' % (d.getVersion(),d.getArch())
+                p = kususrc.srcpath / 'src/dists/%s/%s/%s/ks.cfg' % (d.ostype,d.getVersion(),arch)
                 kscfg = path(p)
-                if kscfg.exists(): kscfg.copy(tmpdir)
+                if kscfg.exists(): 
+                    kscfg.copy(tmpdir)
                 
                 # put in the isolinux.cfg
-                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/isolinux.cfg' % (d.getVersion(),d.getArch())
+                p = kususrc.srcpath / 'src/dists/%s/%s/%s/isolinux.cfg' % (d.ostype,d.getVersion(),arch)
                 isocfg = path(p)
                 if isocfg.exists(): 
                     path(isolinuxdir / 'isolinux.cfg').remove()
                     isocfg.copy(isolinuxdir)
                     
                 # put in the splash.lss
-                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/splash.lss' % (d.getVersion(),d.getArch())
+                p = kususrc.srcpath / 'src/dists/common/splash.lss'
                 splashlss = path(p)
                 if splashlss.exists(): 
                     splashlss.copy(isolinuxdir)
                     
                 # put in the boot.msg
-                p = kususrc.srcpath / 'src/dists/fedora/%s/%s/boot.msg' % (d.getVersion(),d.getArch())
+                p = kususrc.srcpath / 'src/dists/%s/%s/%s/boot.msg' % (d.ostype,d.getVersion(),arch)
                 bootmsg = path(p)
                 if bootmsg.exists(): 
                     bootmsg.copy(isolinuxdir)                    
@@ -301,7 +311,7 @@ class BootMediaTool:
 
             else:
                 raise InvalidInstallSource, "Installation source not supported!"
-        except (FilePathError,InvalidInstallSource,InvalidKusuSource), e:
+        except (FilePathError,InvalidInstallSource,InvalidKusuSource, UnsupportedDistro), e:
             raise e
         
     def mkImagesDir(self, srcpath, destdir, patchfile=None,overwrite=False):
@@ -336,15 +346,18 @@ class BootMediaTool:
             
             if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
             
+            p = 'src/dists/%s/%s/%s' % (osname,osver,osarch)
+            if not (svnsrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
+            
             if svnsrc.verifySrcPath():
                 svnsrc.setup()
                 svnsrc.run()
                 svnsrc.copyKusuroot(kusuroot,overwrite=True)
                 svnsrc.cleanup()
                 # get the correct kusuenv.sh
-                if osname == 'fedora':
+                if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA_LIST:
                     # put in the kusuenv.sh
-                    p = svnsrc.srcpath / 'src/dists/fedora/%s/%s/kusuenv.sh' % (osver,osarch)
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/kusuenv.sh' % (osname,osver,osarch)
                     kusuenv = path(p)
                         
                     if kusuenv.exists(): kusuenv.copy(kusuroot / 'bin')
@@ -354,33 +367,23 @@ class BootMediaTool:
                         path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
                         
                     # put in the the faux anaconda launcher
-                    p = svnsrc.srcpath / 'src/dists/fedora/%s/%s/updates.img/anaconda' % (osver,osarch)
-                    fakeanaconda = path(p)
-                    if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
-                    
-                if osname == 'centos':
-                    # put in the kusuenv.sh
-                    p = svnsrc.srcpath / 'src/dists/centos/%s/%s/kusuenv.sh' % (osver,osarch)
-                    kusuenv = path(p)
-
-                    if kusuenv.exists(): kusuenv.copy(kusuroot / 'bin')
-
-                    # remove the kusudevenv.sh
-                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
-                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
-
-                    # put in the the faux anaconda launcher
-                    p = svnsrc.srcpath / 'src/dists/centos/%s/%s/updates.img/anaconda' % (osver,osarch)
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/updates.img/anaconda' % (osname,osver,osarch)
                     fakeanaconda = path(p)
                     if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
                         
-                # pack the tmpdir into a patchfile with size of 10MB
-                packExt2FS(tmpdir,patchfile,size=10000)
-                
+                    # pack the tmpdir into a patchfile with size of 10MB
+                    packExt2FS(tmpdir,patchfile,size=10000)
+                    
+                else:
+                    raise UnsupportedDistro, "Unsupported Distro!"
+
             path(tmpdir).rmtree()
         except (FilePathError,NotPriviledgedUser), e:
             # do some housecleaning if possible
             if svnsrc.verifySrcPath(): svnsrc.cleanup()
+            if path(tmpdir).exists(): path(tmpdir).rmtree()
+            raise e
+        except UnsupportedDistro,e:
             if path(tmpdir).exists(): path(tmpdir).rmtree()
             raise e
         
