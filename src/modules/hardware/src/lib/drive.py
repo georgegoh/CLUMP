@@ -80,6 +80,8 @@ def getSCSI(type):
     """
  
     # Based on scsi.h, scsi.c(kudzu) 
+    # usb-storage is really just a disk
+    # but on the usb bus. 
     type_map = {'disk': [0x00, 0x07, 0x0e], \
                 'cdrom': [0x04, 0x05], \
                 'floppy': [0x06], \

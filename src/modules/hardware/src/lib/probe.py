@@ -42,6 +42,14 @@ def getPortableUSB():
     """Returns a dictionary of portable usb storage disks"""
     return drive.getSCSI('usb-storage')
 
+def getAllDisks():
+    """Returns a dictionary of all disks"""
+
+    d = getDisks()
+    d.update(getPortableUSB())
+
+    return d
+
 def getAllInterfaces():
     """Returns a dictionary of all network interfaces"""
     return net.getAllInterfaces()
