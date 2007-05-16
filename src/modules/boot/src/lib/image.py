@@ -18,7 +18,7 @@ import subprocess
 
 ROOTIMG_PACKING_TYPE = ['cpio','ext2', 'gzip']
 
-TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat']
+TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 'mkisofs']
 
 class FilePathError(Exception): pass
 class NotPriviledgedUser(Exception): pass
