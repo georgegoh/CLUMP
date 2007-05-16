@@ -26,11 +26,12 @@ def getDisks():
     return d
 
 def getCDROM():
-    """Probes for cdroms
+    """Probes for cdrom devices.
 
        Returns a dictionary of dictionaries. Sample code:
             cdroms = getCDROM()
-            
+            hdc = cdroms['hdc']
+            print hdc['model'] # prints model name of cdrom.
     """
 
     d = drive.getIDE('cdrom')
@@ -39,7 +40,13 @@ def getCDROM():
     return d
 
 def getPortableUSB():
-    """Returns a dictionary of portable usb storage disks"""
+    """Returns a dictionary of portable usb storage disks
+
+       Returns a dictionary of dictioanries. Sample code:
+            usbs = getPortableUSB()
+            sdb = usbs['sdb']
+            print sdb['model'] # prints model name of usb flash drive
+    """
     return drive.getSCSI('usb-storage')
 
 def getAllDisks():

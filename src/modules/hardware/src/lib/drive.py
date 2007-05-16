@@ -8,6 +8,7 @@
 #
 
 import os
+from kusu.util.kusuexceptions import *
 from path import path
 
 # General utility
@@ -18,7 +19,13 @@ def readFile(filename):
         f.close()
 
         # Remove any \n 
-        return content.strip()
+        content = content.strip()
+
+        if content:
+            return content
+        else:
+            return None # Don't return '' 
+        
     else:
         return None
 
@@ -52,7 +59,7 @@ def getIDE(type):
           print hda['model'] # prints model name of first IDE hard disk.
     """
     if type not in ['disk', 'cdrom', 'tape']:
-        raise Exception, 'Unknown type'
+        raise UnknownType, 'Unknown type'
 
     ide_path = path('/proc/ide')
 
@@ -88,7 +95,7 @@ def getSCSI(type):
                 'usb-storage': [0x00, 0x07, 0x0e] }             
 
     if type not in type_map.keys():
-        raise Exception, 'Unknown type'
+        raise UnknownType, 'Unknown type'
 
     scsi_path = path('/sys/bus/scsi/devices')
 

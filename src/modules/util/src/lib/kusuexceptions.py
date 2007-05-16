@@ -12,7 +12,8 @@ import exceptions
 
 # General
 class KusuError(exceptions.Exception): pass
-class InvalidPath(KusuError):pass
+class InvalidPath(KusuError): pass
+class UnknownType(KusuError): pass
 
 # partitiontool
 class OutOfSpaceError(KusuError): pass
