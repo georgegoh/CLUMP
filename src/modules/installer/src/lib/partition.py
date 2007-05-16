@@ -18,7 +18,6 @@ from partition_delete import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-from kusu.hardware import disk
 import kusu.util.log as kusulog
 
 logger = kusulog.getKusuLog('installer.partition')
