@@ -47,8 +47,6 @@ msgstr "ERROR:  Database query failed!  Make sure the database is available\nFai
 msgid "DB_Update_Error\n"
 msgstr "ERROR:  Unable to update database\n"
 
-
-
 msgid "boothost_Help"
 msgstr "boothost [-h|-v|-l {nodename}]\nboothost [-t node_group] | [-n node_list] | [-s node_group]\n         [-r] [-k Kernel] [-i Initrd] [-p Kern_Parms]\nThe boothost tool is responsible for generating the PXE configuration\nfiles nodes will use to boot over the network with.  This tool can\nmanipulate the kernel, initrd, and kernel parameters a node group or\nnode will boot with.  It can optionally attempt to trigger a reinstall\nof all the nodes in a node group, or a list of nodes.  The options are:\n    -h             - Provide tool help (This screen)\n    -v             - Print the tool version\n    -l {nodename}  - Output the booting status of the given node.\n                     If no name is provided list all nodes that PXE.\n    -t node_group  - Update all the PXE files for all nodes in the\n                     node group node_group.\n    -n node_list   - Update all the PXE files for all nodes in the\n                     comma seperated list of nodes.\n    -s node_group  - Update all the PXE files for all nodes in the\n                     node group node_group that are out of sync.\n                     (This option may be removed)\n    -r             - If specified attempt to connect to all affected\n                     nodes and trigger a reinstall.  Uses pdsh.\n    -k Kernel      - If specified it will use the kernel provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -i Initrd      - If specified it will use the Initrd provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -p Kern_Parms  - If specified it will use the kernel parameters\n                     provided in the PXE file(s) for the nodes or\n                     node_group.  The database will be updated\n                     accordingly."
 
@@ -116,7 +114,7 @@ msgid "repoman_Help"
 msgstr "Repoman help goes here"
 
 msgid "addhost_Help"
-msgstr "FIXME: addhost_Help Needs to be translated!"
+msgstr "Usage: addhost [-h | --help]\n\t       [-v | --version]\n\t       [-n {Node Group} | --nodegroup {Node Group}]\n\t       [-i {Interface} | --interface {Interface}]\n\t       [-f {MAC File} | --file {MAC File}]\n\t       [-e host1 host2 host3 ... | --remove host1 host2 host3 ...]\n\t       [-r {Rack #} | --racknumber {Rack #}]\n\t       [-p {Hostname} | --replace {Hostname}]\n\t       [-u | --update]"
 
 msgid "addhost_version_usage"
 msgstr "Display version of tool"
@@ -133,11 +131,14 @@ msgstr "Use the following file as the source of the MAC address"
 msgid "addhost_remove_usage"
 msgstr "Remove the list of hosts"
 
+msgid "addhost_replace_usage"
+msgstr "Replace an existing host using the same node information except MAC address"
+
 msgid "addhost_rack_usage"
 msgstr "The rack number to assign the hosts to (if used)"
 
-msgid "addhost_replace_usage"
-msgstr "Replace an existing host using the same node information except MAC address"
+msgid "addhost_update_usage"
+msgstr "Updates configurations on the installer node the tool is run from"
 
 msgid "addhost_window_title_nodegroup"
 msgstr "Select Node Group"
@@ -187,8 +188,8 @@ msgstr "The options -n, -p and -e are mutually exclusive"
 msgid "addhost_options_interface_required"
 msgstr "The -i option requires an interface name"
 
-msgid "addhost_options_invalid_interface\n"
-msgstr "Not a valid network interface. Please try again\n"
+msgid "addhost_options_invalid_interface"
+msgstr "Not a valid network interface. Please try again"
 
 msgid "addhost_options_macfile_options_needed"
 msgstr "The -f option requires the -i and -n options"
@@ -196,17 +197,50 @@ msgstr "The -f option requires the -i and -n options"
 msgid "addhost_options_nodegroup_required"
 msgstr "The -n option requires a Node group name"
 
-msgid "addhost_options_invalid_nodegroup\n"
-msgstr "Not a valid node group. Please try again\n"
+msgid "addhost_options_invalid_nodegroup"
+msgstr "Not a valid node group. Please try again"
+
+msgid "The node %s is not found. Please try again\n"
+msgstr "The node %s is not found. Please try again\n"
 
 msgid "addhost_options_invalid_node"
 msgstr "The -p option requires a valid node name"
 
+msgid "The file '%s' was not found"
+msgstr "The file '%s' was not found"
+
+msgid "addhost_negative_number"
+msgstr "Cannot specify a negative number. Please try again."
+
+msgid "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
+msgstr "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
+
 msgid "addhost_textprompt_rack"
 msgstr "Please enter a rack number: "
 
+msgid "Adding Node: %s, %s"
+msgstr "Adding Node: %s, %s"
+
+msgid "addhost_installing_string"
+msgstr "Installing"
+
+msgid "addhost_node_discovery"
+msgstr "Node Discovery"
+
+msgid "Discovered Node: %s\nMac Address: %s"
+msgstr "Discovered Node: %s\nMac Address: %s"
+
 msgid "Error: The value %s is not a number. Please try again"
 msgstr "Error: The value %s is not a number. Please try again"
+
+msgid "replace_primary_installer_error\n"
+msgstr "ERROR:  Cannot replace the primary installer!\n"
+
+msgid "add_primary_installer_error\n"
+msgstr "ERROR:  Cannot add the primary installer again!\n"
+
+msgid "remove_primary_installer_error\n"
+msgstr "ERROR:  Cannot remove the primary installer!\n"
 
 msgid "buildimage_Help"
 msgstr "buildimage [-h|-v| -n node_group {-i image_name}]\n\nThe buildimage tool will build the root filesystem for diskless and disked\nnodes.  It uses the data in the database for a node group to determine which\npackages to install.  It then creates a chroot'ed filesystem under which it\ncopies the files.  It then runs any post installation scripts and any user\nprovided custom scripts.  The arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -n node-group  - The name pf the node group to generate the root\n                   filesystem for.\n  -i image_name  - (Optional) The name to assign the generated image.\nThe full list of arguments is as follows:"
