@@ -52,7 +52,6 @@ class NodeData:
         self.syslogFilePosition = None
         self.optionReplaceMode = False
         self.pluginLocation = "/opt/kusu/lib/plugins/addhost"
-        self.optionReplaceMode = False
         # We don't want to prompt the user to quit if we reached the last screen.
         self.quitPrompt = True
 
