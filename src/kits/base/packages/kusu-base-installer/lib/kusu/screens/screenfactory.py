@@ -105,7 +105,7 @@ class BaseScreen(object):
 	self._ = kusuApp.langinit()
         self.gridWidth = gridWidth
         for button in self.buttons:
-            self.buttonsDict[button] = kusuwidgets.Button(button)
+            self.buttonsDict[self._(button)] = kusuwidgets.Button(self._(button))
 
     def eventCallback(self, obj):
         """Template method for handling events(buttons or otherwise)."""
