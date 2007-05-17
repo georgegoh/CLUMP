@@ -470,7 +470,7 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         
         if myNodeInfo.quitPrompt:
             result = self.selector.popupDialogBox(self._("addhost_window_title_exit"), self._("addhost_instructions_exit"), 
-                     (self._("addhost_yes_button"), self._("addhost_no_button")))
+                     (self._("yes_button"), self._("no_button")))
             if result == "no":
                 return NAV_NOTHING
             if result == "yes":
@@ -487,10 +487,11 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
     title = "addhost_window_title_nodegroup"
     #name = 'Node Group'   # used for wizardmode sidebar
     msg = "addhost_instruction_nodegroup"
-    buttons = ['Exit']
+    buttons = ['exit_button']
     
     def setCallbacks(self):
-        self.buttonsDict['Exit'].setCallback_(self.ExitAction)
+        self.buttons = [ self._('exit_button') ]
+        self.buttonsDict[self.buttons[0]].setCallback_(self.ExitAction)
 
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
@@ -596,7 +597,7 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                while flag:
                  result = self.selector.popupInputBox(self._("addhost_window_title_rack"),
                     self._("addhost_instructions_rack"), [self._("addhost_gui_text_rack")], 
-                    NOCANCEL, [self._("addhost_ok_button")], 40, 20)
+                    NOCANCEL, [self._("ok_button")], 40, 20)
                  try:
                      result = int(result[0])
                      if result < 0:
