@@ -47,6 +47,7 @@ class BaseScreen(object):
     buttons = []
     buttonsDict = {} # Will be generated on init.
     backButtonDisabled = False
+    quitButtonDisabled = False
     isCommitment = False  # if true, then this will be the point of no return.
     database = None
     kusuApp = None

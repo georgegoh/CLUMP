@@ -102,7 +102,7 @@ class Navigator(object, KusuApp):
 	buttonPressed, entryValue = snack.EntryWindow(self.mainScreen, title, msg, prompts, allowCancel=cancelmode, width=40, entryWidth=20, buttons=buttonlist, help=None)
 	return entryValue
 
-    def __init__(self, screenFactory, screentitle, showTrail=False):
+    def __init__(self, screenFactory, screentitle, buttonspace=0, showTrail=False):
         """Constructor parameters:
               screenFactory - instance of the ScreenFactory class
               screenTitle - title of the Application Screen
@@ -116,6 +116,7 @@ class Navigator(object, KusuApp):
 	self.quitButtonTitle = self._('finish_button')
         self.screens = screenFactory.createAllScreens()
 	self.showTrail = showTrail
+        self.buttonSpacing = buttonspace
 
     def isActiveTimer(self):
 	return self.activeTimer
@@ -186,18 +187,25 @@ class Navigator(object, KusuApp):
 
     def setupButtonPanel(self, buttons=[]):
         """Set up the buttons that navigate the screens."""
-        self.prevButton = snack.Button(self._('Prev'))
+        currentScreen = self.screens[self.currentStep]
+        self.prevButton = snack.Button(self._('previous_button'))
         if self.hasPrevScreen():
             buttons.insert(0, self.prevButton)
-
+       
         if self.hasNextScreen():
-            self.nextButton = snack.Button(self._('Next'))
+            self.nextButton = snack.Button(self._('next_button'))
         else:
-            self.nextButton = snack.Button(self.quitButtonTitle)
-        buttons.insert(0, self.nextButton)
+            if currentScreen.quitButtonDisabled:
+                self.nextButton = snack.Button(self.quitButtonTitle)
+            else:
+                self.nextButton = None
+            
+        if self.nextButton:
+            buttons.insert(0, self.nextButton)
+
         buttonGrid = snack.Grid(len(buttons), 1)
         for i, button in enumerate(buttons):
-            buttonGrid.setField(button, col=i, row=0, padding=(0,0,0,0))
+            buttonGrid.setField(button, col=i, row=0, padding=(0,0,self.buttonSpacing,0))
         return buttonGrid
 
     def hasNextScreen(self):
@@ -207,6 +215,10 @@ class Navigator(object, KusuApp):
     def disableBackButton(self):
 	currentScreen = self.screens[self.currentStep]
 	currentScreen.backButtonDisabled = True
+
+    def disableQuitButton(self):
+        currentScreen = self.screens[self.currentStep]
+        currentScreen.quitButtonDisabled = False
 
     def hasPrevScreen(self):
         """Is there a screen before the current displayed?"""
