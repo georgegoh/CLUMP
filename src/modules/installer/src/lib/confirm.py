@@ -133,8 +133,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
 
             #self.makeRepo()
             prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
-            if self.kusuApp.has_key('netProfile'):
-                genAutoInstallScript(disk_profile, self.kusuApp['netProfile'], self.database)
+            if self.kiprofile.has_key('Network'):
+                genAutoInstallScript(disk_profile, self.kiprofile['Network'], self.database)
             else:
                 genAutoInstallScript(disk_profile, {}, self.database)
             self.logger.debug('Auto install script generated.')
