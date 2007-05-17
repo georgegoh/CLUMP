@@ -74,7 +74,6 @@ class ScreenImpl(BaseScreen):
 
     def action2(self):
         self.kusuApp[str(self.number) + 'action2'] = 'Clicked'
-        print 'action 2'
 
     def formAction(self):
         self.kusuApp[str(self.number)] = self.colListBox.current()

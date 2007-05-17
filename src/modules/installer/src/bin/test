@@ -69,5 +69,7 @@ if __name__ == '__main__':
     elif installer_return_code is None:
         sys.exit(1)
 
-    print ScreenFactoryTest.screens[-1].kusuApp
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(ScreenFactoryTest.screens[-1].kusuApp)
     sys.exit(0)
