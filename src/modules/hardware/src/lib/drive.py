@@ -132,7 +132,9 @@ def getSCSI(type):
                         # And yes, the block device matches back
                         if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename():
                             continue
-              
+                        elif (path('/sys/bus/usb/devices') / usb / 'block:' + dev.basename()).realpath().basename() == dev.basename():
+                            continue
+ 
                 elif type in ['usb-storage']:
                     # Exclude non-removable disks if type is 'usb-storage'
                     # Removable=0 even when it is a usb portable hdd drives (those 
