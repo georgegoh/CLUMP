@@ -22,14 +22,18 @@
 import os
 import string
 import popen2
+import sys
+from kusu.app import KusuApp
 from kusu.db import KusuDB
 import kusu.ipfun
 
 """ class NodeFun
     This class handles adding, deleting, updating, replacing nodes, it also provides functionality to generate a node name. """
-class NodeFun:
+class NodeFun(object, KusuApp):
     def __init__(self, rack=0, nodegroup=None):
+	KusuApp.__init__(self)
         # Housekeeping
+        self.kusuApp = KusuApp()
         self._nodeList = []
         self._nodeName = None
         self._nodeFormat = None
@@ -44,8 +48,12 @@ class NodeFun:
         self._dbRWrite = KusuDB()
                 
         # Do a try here
-        self._dbReadonly.connect()
-        self._dbRWrite.connect('kusudb', 'apache')
+	try:
+            self._dbReadonly.connect()
+            self._dbRWrite.connect('kusudb', 'apache')
+        except:
+            print self.kusuApp._("DB_Query_Error\n")
+            sys.exit(-1)
 
     def isNodenameHasRack(self):
         """ isNodenameHasRack()
@@ -357,7 +365,7 @@ class NodeFun:
             self._dbRWrite.execute("UPDATE nodes SET state='Expired' WHERE nid='%s'" % nid)
             return True
         else:
-            print "Error: Cannot replace the primary installer!!!!"
+            print self.kusuApp._("replace_primary_installer_error\n")
             return False
     
     def replaceNICBootEntry(self, nodename, macaddress):
