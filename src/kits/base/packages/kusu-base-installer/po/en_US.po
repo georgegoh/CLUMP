@@ -35,6 +35,21 @@ msgstr "Quit"
 msgid "finish_button"
 msgstr "Finish"
 
+msgid "yes_button"
+msgstr "Yes"
+
+msgid "no_button"
+msgstr "No"
+
+msgid "ok_button"
+msgstr "OK"
+
+msgid "next_button"
+msgstr "Next"
+
+msgid "previous_button"
+msgstr "Prev"
+
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
 
@@ -163,15 +178,6 @@ msgstr "Rack Number"
 
 msgid "addhost_window_title_error"
 msgstr "Error"
-
-msgid "addhost_yes_button"
-msgstr "Yes"
-
-msgid "addhost_no_button"
-msgstr "No"
-
-msgid "addhost_ok_button"
-msgstr "OK"
 
 msgid "addhost_window_title_interface"
 msgstr "Select Network Interface"
