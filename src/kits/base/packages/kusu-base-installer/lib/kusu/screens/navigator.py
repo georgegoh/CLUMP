@@ -195,7 +195,7 @@ class Navigator(object, KusuApp):
         if self.hasNextScreen():
             self.nextButton = snack.Button(self._('next_button'))
         else:
-            if currentScreen.quitButtonDisabled:
+            if currentScreen.quitButtonDisabled == False:
                 self.nextButton = snack.Button(self.quitButtonTitle)
             else:
                 self.nextButton = None
@@ -218,7 +218,7 @@ class Navigator(object, KusuApp):
 
     def disableQuitButton(self):
         currentScreen = self.screens[self.currentStep]
-        currentScreen.quitButtonDisabled = False
+        currentScreen.quitButtonDisabled = True
 
     def hasPrevScreen(self):
         """Is there a screen before the current displayed?"""
