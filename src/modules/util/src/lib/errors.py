@@ -14,6 +14,7 @@ import exceptions
 class KusuError(exceptions.Exception): pass
 class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
+class FileDoesNotExistError(KusuError): pass
 
 # partitiontool
 class OutOfSpaceError(KusuError): pass
@@ -40,7 +41,6 @@ class VolumeGroupHasBeenDeletedError(KusuError): pass
 class CopyFailed(KusuError): pass
 
 # util/distro
-class FileDoesNotExistError(KusuError): pass
 class LoadDistroConfFailedError(KusuError): pass
 class HTTPError(Exception): pass
 class FTPError(Exception): pass
