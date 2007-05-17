@@ -8,7 +8,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 import subprocess
-from kusu.util.kusuexceptions import *
+from kusu.util.errors import *
 from kusu.util.log import getKusuLog
 
 logger = getKusuLog('lvm202')

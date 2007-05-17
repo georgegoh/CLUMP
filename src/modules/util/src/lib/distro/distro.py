@@ -12,7 +12,7 @@ import urlparse
 import ConfigParser
 from path import path
 from urlcheck import URLCheck
-from kusu.util.distro.kusuexceptions import *
+from kusu.util.distro.errors import *
 
 class CheckDistro:
     dirlayout = {}

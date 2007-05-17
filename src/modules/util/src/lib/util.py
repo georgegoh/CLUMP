@@ -11,7 +11,7 @@ import re
 import os
 from path import path
 import kusu.util.log as kusulog
-from kusu.util.kusuexceptions import *
+from kusu.util.errors import *
 
 try:
     import subprocess

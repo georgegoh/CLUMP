@@ -60,7 +60,7 @@ from lvm import *
 import kusu.hardware
 import kusu.util.log as kusulog
 from os.path import basename, exists
-from kusu.util.kusuexceptions import *
+from kusu.util.errors import *
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()

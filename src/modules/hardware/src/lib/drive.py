@@ -8,7 +8,7 @@
 #
 
 import os
-from kusu.util.kusuexceptions import *
+from kusu.util.errors import *
 from path import path
 
 # General utility

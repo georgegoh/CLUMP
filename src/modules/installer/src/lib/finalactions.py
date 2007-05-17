@@ -30,7 +30,7 @@ def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
     from kusu.util import util
-    from kusu.util.distro import kusuexceptions
+    from kusu.util.distro import errors
 
     url = str(database.get('Kits', 'FedoraURL')[0])
     prefix = path(prefix)
@@ -40,19 +40,19 @@ def copyKits(prefix, database):
         os_version = os.environ.get('KUSU_DISTVER', None)
 
         util.verifyDistro(url, os_name, os_version)
-    except kusuexceptions.KusuError, e: raise e
+    except errors.KusuError, e: raise e
 
     try:
         util.copy(url, prefix + '/depot')
-    except kusuexceptions.InvalidPath.HTTPError. e:
+    except errors.InvalidPath.HTTPError. e:
         url, status, reason  = e.args
         # Do something here
         raise e
-    except kusuexceptions.InvalidPath.FTPError. e:
+    except errors.InvalidPath.FTPError. e:
         url, status, reason  = e.args
         # Do something here
         raise e
-    except kusuexceptions.KusuError, e: raise e
+    except errors.KusuError, e: raise e
 
     
 def makeRepo(self):
