@@ -222,7 +222,7 @@ class ClusterInfoScreen(screenfactory.BaseScreen):
         kiprofile -- the profile (a dictionary) with data to commit
         """
 
-        clusterinfo = profile[context]
+        clusterinfo = kiprofile[context]
 
         for setting in clusterinfo.keys():
             db.put(context, setting, clusterinfo[setting])
