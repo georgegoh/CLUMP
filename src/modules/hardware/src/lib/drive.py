@@ -73,6 +73,7 @@ def getIDE(type):
                 model = readFile(model)
 
                 d[hd.basename()] = {'model': model}
+                d[hd.basename()] = {'vendor': None}
     
     return d
 
@@ -120,24 +121,25 @@ def getSCSI(type):
                     # usb portable hardrive are not excluded here when type is
                     # 'disk'
                     if removable.exists() \
-                       and int(readFile(removable)): continue
+                        and int(readFile(removable)): continue
+
+                    # Checks for usb devices that presents itself as scsi
+                    # such as usb portable hardrive which removable=0
+                    idx = (dev / 'device').realpath().find('usb')
+                    if idx != -1: # part of the usb bus
+                        usb = path((dev / 'device').realpath()[idx:])
+
+                        # And yes, the block device matches back
+                        if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename():
+                            continue
+              
                 elif type in ['usb-storage']:
                     # Exclude non-removable disks if type is 'usb-storage'
+                    # Removable=0 even when it is a usb portable hdd drives (those 
+                    # mobile 2.5" or 3.5" drive)
                     if removable.exists() \
-                       and not int(readFile(removable)): continue
-
-                # Checks for usb devices that presents itself as scsi
-                # such as usb portable hardrive which removable=0
-                idx = (dev / 'device').realpath().find('usb')
-                if idx != -1: # part of the usb bus
-                    usb = path((dev / 'device').realpath()[idx:])
-
-                    # And yes, the block device matches back
-                    if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename() \
-                       and type in ['disk']: continue
-
-                # Ignore if it's not on usb bus and type is 'usb-storage'
-                elif type in ['usb-storage']: continue
+                       and not int(readFile(removable)) \
+                       and (dev / 'device').realpath().find('usb') == -1: continue
 
                 dev = dev.basename()
                 # Handle cciss!c0d0 in /sys/block
