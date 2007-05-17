@@ -1,8 +1,6 @@
 #!${BASH_EXE}
 
 source ${KUSU_ROOT}/bin/kusudevenv.sh
-mkdir scratch
-cd scratch
 BUILDDATE=`date +"%Y%m%d%H%m%S"`
 KUSUREVISION=`svn info svn://svn.osgdc.org/kusu-repo/sandbox/kusu/ | grep Revision | awk '{print $2}'`
 boot-media-tool make-patch kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=${KUSU_BUILD_DIST} version=${KUSU_BUILD_DISTVER} arch=${KUSU_BUILD_ARCH} patch=updates.img
