@@ -42,7 +42,11 @@ class CopyFailed(KusuError): pass
 
 # util/distro
 class LoadDistroConfFailedError(KusuError): pass
-class HTTPError(Exception): pass
-class FTPError(Exception): pass
+class HTTPError(KusuError): pass
+class FTPError(KusuError): pass
 
-
+# networktool
+class InterfaceNotBroughtUp(KusuError): pass
+class InterfaceNotBroughtDown(KusuError): pass
+class FailedDHCPRequest(KusuError): pass
+class FailedSetStaticIP(KusuError): pass
