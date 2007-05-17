@@ -85,5 +85,3 @@ class ScreenFactoryImpl(ScreenFactory):
          TZSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
          ConfirmScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile)
         ]
-
-    kiprofile.restore()

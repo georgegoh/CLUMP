@@ -72,6 +72,13 @@ class Profile(dict):
 
         self.database = db
 
+    def getDatabase(self):
+        """
+        Returns the database currently used. Take care not to close this object.
+        """
+
+        return self.database
+
     def addFunctions(self, func, profile):
         """
         Add function to be called when saving profile to DB.

@@ -109,6 +109,11 @@ class BaseScreen(object):
         if dbFuncs:
             self.kiprofile.addFunctions(dbFuncs, self.profile)
 
+        if not self.dbFunctions[self.dbSelected][0] is None:
+            self.dbFunctions[self.dbSelected][0](self.kiprofile.getDatabase(),
+                                                 self.profile,
+                                                 self.kiprofile[self.profile])
+
     def eventCallback(self, obj):
         """Template method for handling events(buttons or otherwise)."""
         buttonSuccess = self.executeCallbackForButton(obj)
