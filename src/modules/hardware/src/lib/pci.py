@@ -7,38 +7,17 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-"""The class PCI parses the pci.ids file and returning a dictionary, keyed by the vendor code
+"""The class PCI parses the pci.ids file and returning a dictionary, keyed 
+   by the vendor code
 
->>> from kusu.hardware.pci import PCI
->>> pci = PCI(['101e', '0b0b'])
->>> pci.ids['101e']
-{'DEVICE': {'0009': {'NAME': 'MegaRAID 428 Ultra RAID Controller (rev 03)'},
-            '1960': {'NAME': 'MegaRAID',
-                     'SUBVENDOR': {'101e': {'0471': 'MegaRAID 471 Enterprise 1600 RAID Controller',
-                                            '0475': 'MegaRAID 475 Express 500/500LC RAID Controller',
-                                            '0477': 'MegaRAID 477 Elite 3100 RAID Controller',
-                                            '0493': 'MegaRAID 493 Elite 1600 RAID Controller',
-                                            '0494': 'MegaRAID 494 Elite 1650 RAID Controller',
-                                            '0503': 'MegaRAID 503 Enterprise 1650 RAID Controller',
-                                            '0511': 'MegaRAID 511 i4 IDE RAID Controller',
-                                            '0522': 'MegaRAID 522 i4133 RAID Controller'},
-                                   '1028': {'0471': 'PowerEdge RAID Controller 3/QC',
-                                            '0475': 'PowerEdge RAID Controller 3/SC',
-                                            '0493': 'PowerEdge RAID Controller 3/DC',
-                                            '0511': 'PowerEdge Cost Effective RAID Controller ATA100/4Ch'},
-                                   '103c': {'60e7': 'NetRAID-1M'}}},
-            '9010': {'NAME': 'MegaRAID 428 Ultra RAID Controller'},
-            '9030': {'NAME': 'EIDE Controller'},
-            '9031': {'NAME': 'EIDE Controller'},
-            '9032': {'NAME': 'EIDE & SCSI Controller'},
-            '9033': {'NAME': 'SCSI Controller'},
-            '9040': {'NAME': 'Multimedia card'},
-            '9060': {'NAME': 'MegaRAID 434 Ultra GT RAID Controller'},
-            '9063': {'NAME': 'MegaRAC',
-                     'SUBVENDOR': {'101e': {'0767': 'Dell Remote Assistant Card 2'}}}},
- 'NAME': 'American Megatrends Inc'}"""
+   It attempts to load well known location for the pci.ids file. If the 
+   file cannot be found, it will just return an empy dictionary.
 
-import re
+  >>> from kusu.hardware.pci import PCI
+  >>> pci = PCI(['101e', '0b0b'])
+  >>> p = pci.ids['101e']
+  >>> print p['NAME'] # prints the name
+"""
 import os
 from path import path
 
