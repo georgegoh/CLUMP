@@ -6,20 +6,21 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
-__versio__ = "$Revision: 237 $"
 
 import __init__
-#import logging
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+import kusu.util.log as kusulog
+
+kl = kusulog.getKusuLog('installer.keyboard')
 
 class KeyboardSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for keyboard."""
     name = _('Keyboard')
     context = 'Keyboard'
+    profile = context
     msg = _('Please choose your keyboard:')
     buttons = []
 
@@ -42,10 +43,7 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         for name in keyboardList:
             self.listbox.append(name, name)
 
-        value = self.database.get(self.context, 'Keyboard')
-        if not value: value = 'us'
-        else: value = value[0]
-        self.listbox.setCurrent(value)
+        self.listbox.setCurrent(self.kiprofile[self.profile])
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
@@ -63,17 +61,58 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         """
-        
         Store the keyboard settings.
-        
         """
-        keyboard = self.listbox.current()
-        self.database.put(self.context, 'Keyboard', keyboard)
+
+        self.kiprofile[self.profile] = self.listbox.current()
 
     def executeCallback(self, obj):
         if obj is self.listbox:
             return True
         return False
+
+    def restoreProfileFromSQLCollection(db, context, kiprofile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the complete profile (a dictionary) which we fill in
+        """
+
+        profile = db.get(context, context)
+        if not profile:
+            profile = 'us'
+        else:
+            profile = profile[0]
+
+        kl.info('Read keyboard from DB: %s' % profile)
+
+        kiprofile[context] = profile
+        return True
+
+    def saveProfileToSQLCollection(db, context, kiprofile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the profile (a dictionary) with data to commit
+        """
+
+        db.put(context, context, kiprofile[context])
+
+        kl.info('Set keyboard %s' % kiprofile[context])
+
+        return True
+
+    dbFunctions = {'MySQL': None,
+                   'SQLite': None,
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}
 
 # The following is data taken from the rhpl package 'keyboard_models.py',
 # which is licensed under GPL v2.
