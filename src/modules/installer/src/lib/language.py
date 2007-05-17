@@ -6,22 +6,23 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
-__version__ = "$Revision: 237 $"
 
 import __init__
 import os
-#import logging
 import snack
 import gettext
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+import kusu.util.log as kusulog
+
+kl = kusulog.getKusuLog('installer.language')
 
 class LanguageSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for language."""
     name = _('Language')
     context = 'Language'
+    profile = context
     msg = _('Please choose your language for installation:')
     buttons = []
 
@@ -49,13 +50,13 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         for language in languages:
             self.listbox.append(language, self.langMap[language])
 
-        value = self.database.get(self.context, 'Language')
-        if not value: value = self.langMap['English']
+        if not self.kiprofile[self.profile]:
+            self.kiprofile[self.profile] = self.langMap['English']
         else:
-            for k,v in self.langMap.iteritems():
-                if v[0] == value[0]:
-                    value = v
-        self.listbox.setCurrent(value)
+            for k, v in self.langMap.iteritems():
+                if v[0] == self.kiprofile[self.profile]:
+                    self.kiprofile[self.profile] = v
+        self.listbox.setCurrent(self.kiprofile[self.profile])
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
@@ -79,19 +80,64 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         language.
         
         """
+
         langAttr = self.listbox.current()
         if langAttr[0] != 'en':
             try:
-                t = gettext.translation('kusu', 'locale', languages=[langAttr[0]])
+                t = gettext.translation('kusu', 'locale',
+                                        languages=[langAttr[0]])
                 t.install()
             except IOError, e:
-                snack.ButtonChoiceWindow(self.screen, 'Cannot display language.',
+                snack.ButtonChoiceWindow(self.screen,
+                                     'Cannot display language.',
                                      'Selected language cannot be shown' + \
                                      ' on this display. This installation ' + \
                                      'will proceed in English.', buttons=['Ok'])
-        self.database.put(self.context, 'Language', langAttr[0])
+
+        self.kiprofile[self.profile] = langAttr[0]
 
     def executeCallback(self, obj):
         if obj is self.listbox:
             return True
         return False
+
+    def restoreProfileFromSQLCollection(db, context, kiprofile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the complete profile (a dictionary) which we fill in
+        """
+
+        profile = db.get(context, context)
+        if profile:
+            profile = profile[0]
+
+        kl.info('Read language from DB: %s' % profile)
+
+        kiprofile[context] = profile
+        return True
+
+    def saveProfileToSQLCollection(db, context, kiprofile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the profile (a dictionary) with data to commit
+        """
+
+        db.put(context, context, kiprofile[context])
+
+        kl.info('Set language %s' % kiprofile[context])
+
+        return True
+
+    dbFunctions = {'MySQL': None,
+                   'SQLite': None,
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}

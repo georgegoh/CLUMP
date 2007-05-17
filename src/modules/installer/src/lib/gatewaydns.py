@@ -223,17 +223,18 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-    def restoreProfileFromSQLCollection(db, context, profile):
+    def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
         profile.
 
         Arguments:
         db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db
-        profile -- the profile (a dictionary) with data to commit
+        context -- the context to use to access data in db and profile
+        kiprofile -- the complete profile (a dictionary) which we fill in
         """
 
+        profile = {}
         profile['gw_dns_use_dhcp'] = True
         profile['default_gw'] = ''
         profile['dns1'] = ''
@@ -268,18 +269,22 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
                                                        profile['dns2'],
                                                        profile['dns3']))))
 
+        # need to update because network screen already assigned
+        kiprofile[context].update(profile)
+
         return True
 
-    def saveProfileToSQLCollection(db, context, profile):
+    def saveProfileToSQLCollection(db, context, kiprofile):
         """
         Writes data from profile to SQLiteCollection db according to context.
 
         Arguments:
         db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db
-        profile -- the profile (a dictionary) with data to commit
+        context -- the context to use to access data in db and profile
+        kiprofile -- the profile (a dictionary) with data to commit
         """
 
+        profile = kiprofile[context]
         db.put(context, 'gw_dns_use_dhcp',
                str(int(profile['gw_dns_use_dhcp'])))
 

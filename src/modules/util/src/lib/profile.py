@@ -57,7 +57,7 @@ class Profile(dict):
             kl.debug('Attempted to execute None function')
             return
 
-        rv = func(self.database, profile, self[profile])
+        rv = func(self.database, profile, self.copy())
         if rv:
             kl.debug("SUCCESS executing %s with profile '%s'" %
                      (func.__str__(), profile))

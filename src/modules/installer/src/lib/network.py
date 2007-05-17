@@ -228,15 +228,15 @@ class NetworkScreen(screenfactory.BaseScreen):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
-    def restoreProfileFromSQLCollection(db, context, profile):
+    def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
         profile.
 
         Arguments:
         db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db
-        profile -- the profile (a dictionary) with data to commit
+        context -- the context to use to access data in db and profile
+        kiprofile -- the complete profile (a dictionary) which we fill in
         """
 
         adapters = {}
@@ -286,27 +286,22 @@ class NetworkScreen(screenfactory.BaseScreen):
             else:
                 interfaces[intf]['active_on_boot'] = False
 
-        try:
-            profile[context]
-        except KeyError:
-            profile[context] = {}
-
         kl.info('Read interfaces into profile: %s' % interfaces)
-        profile['interfaces'] = interfaces
+        kiprofile[context]['interfaces'] = interfaces
 
         return True
 
-    def saveProfileToSQLCollection(db, context, profile):
+    def saveProfileToSQLCollection(db, context, kiprofile):
         """
         Writes data from profile to SQLiteCollection db according to context.
 
         Arguments:
         db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db
-        profile -- the profile (a dictionary) with data to commit
+        context -- the context to use to access data in db and profile
+        kiprofile -- the profile (a dictionary) with data to commit
         """
 
-        interfaces = profile['interfaces']
+        interfaces = kiprofile[context]['interfaces']
 
         for intf in interfaces.keys():
             # these are bools,
