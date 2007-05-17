@@ -59,7 +59,7 @@ def getIDE(type):
           print hda['model'] # prints model name of first IDE hard disk.
     """
     if type not in ['disk', 'cdrom', 'tape']:
-        raise UnknownType, 'Unknown type'
+        raise UnknownTypeError, 'Unknown type'
 
     ide_path = path('/proc/ide')
 
@@ -96,7 +96,7 @@ def getSCSI(type):
                 'usb-storage': [0x00, 0x07, 0x0e] }             
 
     if type not in type_map.keys():
-        raise UnknownType, 'Unknown type'
+        raise UnknownTypeError, 'Unknown type'
 
     scsi_path = path('/sys/bus/scsi/devices')
 

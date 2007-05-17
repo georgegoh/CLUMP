@@ -12,7 +12,7 @@ import urllib
 import httplib
 import sys
 from path import path
-from kusu.util.distro.errors import *
+from kusu.util.errors import *
 
 class myftpwrapper(urllib.ftpwrapper):
     # Overrides the default behaviour in urllib.

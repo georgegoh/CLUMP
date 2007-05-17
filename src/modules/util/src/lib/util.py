@@ -152,7 +152,7 @@ def copy(src, dest):
 
         except OSError, e:
             if e.errno == errno.ENOENT:
-                raise FileDoesNotExist, 'wget not found' 
+                raise FileDoesNotExistError, 'wget not found' 
             else:
                 raise KusuError, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
 
@@ -160,7 +160,7 @@ def copy(src, dest):
             raise KusuError
 
         if retcode:
-            raise CopyFailed, 'Failed to copy %s to %s' % (src,dest)
+            raise CopyFailedError, 'Failed to copy %s to %s' % (src,dest)
         else:
             return True
 
@@ -171,7 +171,7 @@ def copy(src, dest):
             return True
 
         else:  
-            raise CopyFailed, 'Failed to copy %s to %s' % (src,dest)
+            raise CopyFailedError, 'Failed to copy %s to %s' % (src,dest)
 
 
 

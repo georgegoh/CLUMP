@@ -12,7 +12,7 @@ import urlparse
 import ConfigParser
 from path import path
 from urlcheck import URLCheck
-from kusu.util.distro.errors import *
+from kusu.util.errors import *
 
 class CheckDistro:
     dirlayout = {}
@@ -58,7 +58,7 @@ class CheckDistro:
 
             return d
         except:
-            raise LoadDistroConfFailed, 'Cannot load distro.conf'
+            raise LoadDistroConfFailedError, 'Cannot load distro.conf'
 
     def _checkPathExist(self, p):
         # Checks http/ftp/path. 
@@ -68,7 +68,7 @@ class CheckDistro:
             u.verify(p)
         else:
             if not os.path.exists(p):
-                raise InvalidPath, '%s does not exist' % p
+                raise InvalidPathError, '%s does not exist' % p
 
 
     def verify(self, p, os_name, version_name):
@@ -81,7 +81,7 @@ class CheckDistro:
             if os.path.exists(p):
                 root_path = path(p) 
             else:
-                raise InvalidPath, '%s does not exists' % p
+                raise InvalidPathError, '%s does not exists' % p
 
             
         distroLayout = self.distroLayout[os_name][version_name]
