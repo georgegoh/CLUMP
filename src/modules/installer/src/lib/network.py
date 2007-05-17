@@ -31,7 +31,6 @@ class NetworkScreen(screenfactory.BaseScreen):
     profile = context
     msg = _('Please configure your network')
     buttons = [_('Configure')]
-    interfaces = {}
 
     def setCallbacks(self):
         """
@@ -55,14 +54,13 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.kiprofile[self.profile]['have_dhcp'] = False
         self.kiprofile[self.profile]['have_static'] = False
 
-        for intf in self.interfaces.keys():
-            if self.interfaces[intf]['configure']:
-                if self.interfaces[intf]['use_dhcp']:
+        interfaces = self.kiprofile[self.profile]['interfaces']
+        for intf in interfaces:
+            if interfaces[intf]['configure']:
+                if interfaces[intf]['use_dhcp']:
                     self.kiprofile[self.profile]['have_dhcp'] = True
                 else:
                     self.kiprofile[self.profile]['have_static'] = True
-
-        self.kiprofile[self.profile]['interfaces'] = self.interfaces
 
         # decide whether to show Gateway/DNS screen next
         self.controlDNSScreen()
@@ -142,20 +140,21 @@ class NetworkScreen(screenfactory.BaseScreen):
         prop -- string index of property from interfaces dictionary to check
         """
 
-        if len(self.interfaces) <= 1:
+        interfaces = self.kiprofile[self.profile]['interfaces']
+        if len(interfaces) <= 1:
             return True, []
 
         dup_props = []
         props = []
 
-        for intf in self.interfaces:
-            if self.interfaces[intf]['configure'] \
-                and not self.interfaces[intf]['use_dhcp'] \
-                and self.interfaces[intf][prop] not in dup_props:
-                if self.interfaces[intf][prop] in props:
-                    dup_props.append(self.interfaces[intf][prop])
+        for intf in interfaces:
+            if interfaces[intf]['configure'] \
+                and not interfaces[intf]['use_dhcp'] \
+                and interfaces[intf][prop] not in dup_props:
+                if interfaces[intf][prop] in props:
+                    dup_props.append(interfaces[intf][prop])
                 else:
-                    props.append(self.interfaces[intf][prop])
+                    props.append(interfaces[intf][prop])
 
         if dup_props:
             return False, dup_props
@@ -172,62 +171,8 @@ class NetworkScreen(screenfactory.BaseScreen):
         instruction = snack.Label(self.msg)
         self.screenGrid.setField(instruction, col=0, row=0)
 
-        initial_view = False
-        # returning from Configure screen provides a filled-in self.interfaces
-        if not self.interfaces:
-            # we get a dictionary
-            self.interfaces = retrieveNetworkContext(self.database)
-
-            for intf in self.interfaces.keys():
-                try:
-                    if self.interfaces[intf]['first_seen']:
-                        self.interfaces[intf]['configure'] = ''
-                except KeyError:
-                    pass
-
-        # we want interfaces in alphabetical order
-        intfs = self.interfaces.keys()
-        intfs.sort()
-
         self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=55)
-
-        for intf in intfs:
-            # DHCP config for first interface
-            if len(intfs) and intf == intfs[0] \
-                and self.interfaces[intf]['configure'] == '':
-                self.interfaces[intf]['configure'] = True
-                self.interfaces[intf]['use_dhcp'] = True
-                self.interfaces[intf]['active_on_boot'] = True
-
-            # static IP for second interface
-            if len(intfs) > 1 and intf == intfs[1] \
-                and self.interfaces[intf]['configure'] == '':
-                self.interfaces[intf]['configure'] = True
-                self.interfaces[intf]['use_dhcp'] = False
-                self.interfaces[intf]['hostname'] = 'cluster-' + intf
-                self.interfaces[intf]['ip_address'] = '172.20.0.1'
-                self.interfaces[intf]['netmask'] = '255.255.0.0'
-                self.interfaces[intf]['active_on_boot'] = True
-
-            if len(intf) > 2 and self.interfaces[intf]['configure'] == '':
-                self.interfaces[intf]['configure'] = False
-
-            entrystr = '  ' + intf + ' not configured'
-            if self.interfaces[intf]['configure']:
-                if self.interfaces[intf]['use_dhcp']:
-                    entrystr = 'DHCP'
-                else:
-                    entrystr = self.interfaces[intf]['ip_address'] + '/' + \
-                               self.interfaces[intf]['netmask'] + ' ' + \
-                               self.interfaces[intf]['hostname']
-
-                if self.interfaces[intf]['active_on_boot']:
-                    entrystr = '* ' + intf + ' ' + entrystr
-                else:
-                    entrystr = '  ' + intf + ' ' + entrystr
-
-            kl.debug('Adding interface %s: %s.' % (intf, self.interfaces[intf]))
-            self.listbox.append(entrystr[:50], intf)
+        self.populateListbox(self.listbox)
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0, 1, 0, 0))
@@ -235,6 +180,53 @@ class NetworkScreen(screenfactory.BaseScreen):
         footnote = '* activate interface on boot'
         footnote = snack.Textbox(len(footnote), 1, footnote)
         self.screenGrid.setField(footnote, 0, 2, padding=(0, 0, 0, -1))
+
+    def populateListbox(self, listbox):
+        """
+        Populate the listbox with interfaces.
+        """
+
+        interfaces = self.kiprofile[self.profile]['interfaces']
+
+        # we want interfaces in alphabetical order
+        intfs = interfaces.keys()
+        intfs.sort()
+
+        for intf in intfs:
+            # DHCP config for first interface
+            if len(intfs) and intf == intfs[0] \
+                and interfaces[intf]['first_seen']:
+                interfaces[intf]['configure'] = True
+                interfaces[intf]['use_dhcp'] = True
+                interfaces[intf]['active_on_boot'] = True
+
+            # static IP for second interface
+            if len(intfs) > 1 and intf == intfs[1] \
+                and interfaces[intf]['first_seen']:
+                interfaces[intf]['configure'] = True
+                interfaces[intf]['use_dhcp'] = False
+                interfaces[intf]['hostname'] = 'cluster-' + intf
+                interfaces[intf]['ip_address'] = '172.20.0.1'
+                interfaces[intf]['netmask'] = '255.255.0.0'
+                interfaces[intf]['active_on_boot'] = True
+            interfaces[intf]['first_seen'] = False
+
+            entrystr = '  ' + intf + ' not configured'
+            if interfaces[intf]['configure']:
+                if interfaces[intf]['use_dhcp']:
+                    entrystr = 'DHCP'
+                else:
+                    entrystr = interfaces[intf]['ip_address'] + '/' + \
+                               interfaces[intf]['netmask'] + ' ' + \
+                               interfaces[intf]['hostname']
+
+                if interfaces[intf]['active_on_boot']:
+                    entrystr = '* ' + intf + ' ' + entrystr
+                else:
+                    entrystr = '  ' + intf + ' ' + entrystr
+
+            kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
+            listbox.append(entrystr[:50], intf)
 
     def restoreProfileFromSQLCollection(db, context, profile):
         """
@@ -246,6 +238,61 @@ class NetworkScreen(screenfactory.BaseScreen):
         context -- the context to use to access data in db
         profile -- the profile (a dictionary) with data to commit
         """
+
+        adapters = {}
+        network_entries = db.get(context)
+        for network_entry in network_entries:
+            # properties stored in format property:adapter
+            # ie: use_dhcp:eth0
+            prop = network_entry[2].split(':')
+            if len(prop) > 1:
+                try: 
+                    adapters[prop[1]][prop[0]] = network_entry[3]
+                except KeyError:
+                    adapters[prop[1]] = {}
+                    adapters[prop[1]][prop[0]] = network_entry[3]
+
+        kl.info('Adapters from DB: %s.' % adapters)
+ 
+        interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
+        for intf in interfaces:
+            # default to using DHCP and active on boot
+            interfaces[intf].update({'configure': '',
+                                     'use_dhcp': '',
+                                     'hostname': '',
+                                     'ip_address': '',
+                                     'netmask': '',
+                                     'active_on_boot': '',
+                                     'first_seen': False})
+
+            try:
+                interfaces[intf].update(adapters[intf])
+            except KeyError:
+                interfaces[intf]['first_seen'] = True
+
+            # SQLite stores these values as unicode strings
+            if interfaces[intf]['configure'] == u'1':
+                interfaces[intf]['configure'] = True
+            else:
+                interfaces[intf]['configure'] = False
+
+            if interfaces[intf]['use_dhcp'] == u'1':
+                interfaces[intf]['use_dhcp'] = True
+            else:
+                interfaces[intf]['use_dhcp'] = False
+
+            if interfaces[intf]['active_on_boot'] == u'1':
+                interfaces[intf]['active_on_boot'] = True
+            else:
+                interfaces[intf]['active_on_boot'] = False
+
+        try:
+            profile[context]
+        except KeyError:
+            profile[context] = {}
+
+        kl.info('Read interfaces into profile: %s' % interfaces)
+        profile['interfaces'] = interfaces
 
         return True
 
@@ -320,7 +367,8 @@ class ConfigureIntfScreen:
             # the listbox is empty
             return NAV_NOTHING
 
-        self.interface = self.baseScreen.interfaces[intf]
+        self.interface = \
+          self.baseScreen.kiprofile[self.baseScreen.profile]['interfaces'][intf]
 
         gridForm = snack.GridForm(self.screen,
                                   _('Configuring [%s]' % intf), 1, 4)
@@ -460,7 +508,6 @@ class ConfigureIntfScreen:
         Store the configurations options.
         """
 
-
         self.interface['configure'] = bool(self.configdevice.value())
         self.interface['use_dhcp'] = bool(self.use_dhcp.value())
         self.interface['active_on_boot'] = bool(self.active_on_boot.value())
@@ -538,7 +585,7 @@ def retrieveNetworkContext(db):
     kl.info('Adapters in DB: %s.' % adapters)
     
     interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
-    for intf in interfaces.keys():
+    for intf in interfaces:
         # default to using DHCP and active on boot
         interfaces[intf].update({'configure': '',
                                  'use_dhcp': '',

@@ -156,8 +156,10 @@ class FQHNScreen(screenfactory.BaseScreen):
             if data:
                 profile['fqhn_domain'] = data[0]
 
-            profile['fqhn'] = '.'.join((profile['fqhn_host'],
-                                        profile['fqhn_domain']))
+            profile['fqhn'] = profile['fqhn_host']
+            if not profile['fqhn_domain'] == '':
+                profile['fqhn'] = '.'.join((profile['fqhn_host'],
+                                            profile['fqhn_domain']))
 
             kl.info('Read FQHN: %s' % profile['fqhn'])
 
