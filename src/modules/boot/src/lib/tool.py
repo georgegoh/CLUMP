@@ -19,6 +19,14 @@ class InvalidKusuSource(Exception): pass
 class FailedBuildCMake(Exception): pass
 class FailedBuildMake(Exception): pass
 
+SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX', 
+                        'KUSU_BUILD_DISTVER', 'KUSU_BUILD_ARCH',
+                        'KUSU_ROOT', 'KUSU_DEVEL_ROOT',
+                        'KUSU_BUILD_ISOBIN', 'KUSU_DISTRO_SRC',
+                        'KUSU_CACHE_DIR', 'KUSU_DIST',
+                        'KUSU_DISTVER', 'KUSU_TMP',
+                        'KUSU_LOGLEVEL', 'KUSU_LOGFILE']
+
 def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
     partition_map = {}
@@ -44,12 +52,16 @@ def makeDev(devtype,major,minor,devpath):
 class KusuSVNSource:
     """ This class contains data and operations that work with the Kusu SVN source. """
     
-    def __init__(self, source):
+    def __init__(self, source, env=None):
+        """ source refers to the Kusu SVN trunk source. env refers to a dict containing KUSU_* environment variables
+            that can be used to control the build.
+        """
         self.srcpath = path(source)
         self.isRemote = False
         self.develroot = None
         self.kusuroot = None
         self.scratchdir = None
+        self.env = env
 
         # These should describe the key directories/files that identify a Kusu SVN source layout.
         self.srcpathLayoutAttributes = {
@@ -345,7 +357,17 @@ class BootMediaTool:
     def mkPatch(self,kususrc,osname,osver,osarch,patchfile):
         """ Creates a distro-specific Kusu Installer patchfile. """
         try:
-            svnsrc = KusuSVNSource(kususrc)
+            # prepares the env dict
+            env = {}
+            env['KUSU_BUILD_DIST'] = osname
+            env['KUSU_BUILD_DISTVER'] = osver
+            env['KUSU_BUILD_ARCH'] = osarch
+            # check the current environment if any KUSU_* is set
+            for k,v in os.environ.items():
+                if k.startswith('KUSU_') and k in SUPPORTED_DISTROS:
+                    env[k] = v
+                
+            svnsrc = KusuSVNSource(kususrc,env)
             
             # create a scratchdir to hold the patchfile contents
             parentdir = path(patchfile).parent
