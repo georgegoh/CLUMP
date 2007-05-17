@@ -19,6 +19,7 @@
   >>> print p['NAME'] # prints the name
 """
 import os
+import re
 from path import path
 
 class PCI:
