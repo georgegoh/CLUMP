@@ -35,6 +35,9 @@ msgstr "Quit"
 msgid "finish_button"
 msgstr "Finish"
 
+msgid "exit_button"
+msgstr "Exit"
+
 msgid "yes_button"
 msgstr "Yes"
 
@@ -49,6 +52,15 @@ msgstr "Next"
 
 msgid "previous_button"
 msgstr "Prev"
+
+msgid "new_button"
+msgstr "New"
+
+msgid "edit_button"
+msgstr "Edit"
+
+msgid "delete_button"
+msgstr "Delete"
 
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
@@ -325,3 +337,14 @@ msgstr "buildimage [-h|-v| -n node_group {-i image_name} {-t type}]\n\nThe build
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
 
+msgid "netedit_window_title_network"
+msgstr "Network Editor"
+
+msgid "netedit_instruction_network"
+msgstr "Welcome to the Kusu Network Editor! Please make a choice.\n\nNetwork\tSubnet\t\t\t  Description"
+
+msgid "netedit_window_title_exit"
+msgstr "Exit netedit"
+
+msgid "netedit_instructions_exit"
+msgstr "Do you want to quit the Network Editor?"
