@@ -173,7 +173,7 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(instruction, col=0, row=0)
 
         self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=55)
-#        self.populateListbox(self.listbox)
+        self.populateListbox(self.listbox)
         if len(self.listbox.key2item) < 1:
             raise KusuError, 'The setup cannot continue because no network ' + \
                              'interface devices could be found. Please ' + \
