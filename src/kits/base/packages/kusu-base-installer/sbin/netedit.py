@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Kusu add host
+# Kusu netedit
 #
 # Copyright (C) 2007 Platform Computing Inc.
 
@@ -200,9 +200,9 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         Set callback function
         """
         
-        self.ExitAction()
+        self.exitAction()
         
-    def ExitAction(self, data=None):
+    def exitAction(self, data=None):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
@@ -214,7 +214,51 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         if result == "yes":
             self.finish()  # Destroy the screens, exit
             sys.exit(0)
-
+            
+    def newAction(self, data=None):
+        flag = 1
+        myScreen = snack.SnackScreen()
+        g1 = snack.Grid(1, 12)
+        instruction = snack.Textbox(60, 1, self._("Please enter the network information below."), scroll=0, wrap=0)
+        newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
+        newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
+        newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
+        newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
+        newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
+        newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
+        newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), width=30, password=0, returnExit = 0)
+        newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
+        newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
+        dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
+        buttonBar1 = snack.ButtonBar(self.selector.getCurrentScreen(), (("OK", "Cancel")))
+        g1.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1)
+        g1.setField(newNetwork, 0, 1, padding=(0,0,0,0))
+        g1.setField(newSubnet, 0, 2, padding=(0,0,0,0))
+        g1.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
+        g1.setField(newDevice, 0, 4, padding=(0,0,0,0))
+        g1.setField(newStartIP, 0, 5, padding=(0,0,0,0))
+        g1.setField(newSuffix, 0, 6, padding=(0,0,0,0))
+        g1.setField(newInc, 0, 7, padding=(0,0,0,0))
+        g1.setField(newOpt, 0, 8, padding=(0,0,0,0))
+        g1.setField(newDesc, 0, 9, padding=(0,0,0,1))
+        g1.setField(dhcpCheck, 0, 10, padding=(13, 0, 0, 1), anchorLeft=1)
+        g1.setField(buttonBar1, 0, 11, (0, 0, 0, 0))
+        myScreen.gridWrappedWindow(g1, "New Network Entry")
+        f1 = snack.Form()
+        f1.add(g1)
+        
+        while flag:
+            result = f1.run()
+            if newNetwork.value() != "172.25.244.0":
+                self.selector.popupStatus("Wrong Text", "You didn't type 172.25.244.0", 1)
+                newNetwork.setEntry('')
+                flag = 1
+            else:
+                self.selector.popupStatus("Wrong Text", "Valid Network!", 1)
+                flag = 0
+                
+        return NAV_NOTHING
+    
 class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
     title = "netedit_window_title_network"
@@ -223,7 +267,12 @@ class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, ku
     buttons = [ 'new_button', 'edit_button', 'delete_button', 'quit_button' ]
     def setCallbacks(self):
         self.buttons = [self._('new_button'), self._('edit_button'), self._('delete_button'), self._('quit_button')]
-        self.buttonsDict[self.buttons[3]].setCallback_(self.ExitAction)
+
+        # Quit action
+        self.buttonsDict[self.buttons[3]].setCallback_(self.exitAction)
+        
+        # New action
+        self.buttonsDict[self.buttons[0]].setCallback_(self.newAction)
 
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
