@@ -19,6 +19,7 @@ from kusu.core.app import KusuApp
 from kusu.util.log import Logger
 from path import path
 from kusuwidgets import *
+from kusu.util.errors import *
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
@@ -59,12 +60,15 @@ class Navigator(object, KusuApp):
     currentStep = 0
     timerActivated = False
     logger = None
+    currentScreen = property(lambda self : self.screens[self.currentStep],
+                             None,
+                             doc='The screen object that is currently displayed.')
 
-    def __getattr__(self, name):
-        if name == 'currentScreen':
-            return self.screens[self.currentStep]
-        raise AttributeError, "%s instance has no attribute '%s'" % \
-                              (self.__class__, name)
+#    def __getattr__(self, name):
+#        if name == 'currentScreen':
+#            return self.screens[self.currentStep]
+#        raise AttributeError, "%s instance has no attribute '%s'" % \
+#                              (self.__class__, name)
 
     def popupProgress(self, title, msg):
         return ProgressDialogWindow(self.mainScreen, title, msg)
@@ -241,6 +245,10 @@ class Navigator(object, KusuApp):
                     self.mainScreen.finish()
                     loop=False
                     return None
+        except KusuError, e:
+            self.popupMsg(self.currentScreen.name, str(e))
+            self.mainScreen.finish()
+            sys.exit(1)
         except Exception, e:
             import traceback
             tb = traceback.format_exc()

@@ -110,23 +110,31 @@ class ColumnListbox(snack.Grid):
     colLabels = []
     colWidths = []
     justification = []
+    length = property((lambda self : len(self.listbox.key2item)), None,
+                      doc='The number of items in this listbox.')
 
     def __init__(self, height, colWidths, colLabels, justification, returnExit=1):
-        if len(colWidths) is not len(colLabels) or \
-           len(colLabels) is not len(justification):
-            raise Exception, _("The lengths of colWidth, colLabels, and \
+        if len(colLabels) is not len(justification):
+            raise Exception, _("The lengths of colLabels and \
                               justification must be the same.")
-        snack.Grid.__init__(self, 1, 2)
         
         self.height = height
         self.colLabels = colLabels
         self.colWidths = colWidths
         self.justification = justification
-        hdr = self.__createHeader()
-        self.setField(hdr, col=0, row=0)
+
+        row = 0
+        if colLabels:   # draw header row if labels are defined.
+            snack.Grid.__init__(self, 1, 2)
+            hdr = self.__createHeader()
+            self.setField(hdr, col=0, row=row)
+            row = row + 1
+        else:
+            snack.Grid.__init__(self, 1, 1)
+
         self.listbox = snack.Listbox(height, scroll=1, returnExit=returnExit,
                                      showCursor=0)
-        self.setField(self.listbox, col=0, row=1)
+        self.setField(self.listbox, col=0, row=row)
         
 
     def __createHeader(self):

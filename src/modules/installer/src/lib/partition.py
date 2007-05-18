@@ -19,6 +19,7 @@ from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
+from kusu.util.errors import *
 
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -119,6 +120,11 @@ class PartitionScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
                                  padding=(0,0,0,0))
 
+        if self.listbox.length < 1:
+           raise KusuError, 'The setup cannot continue because no ' + \
+                            'disks could be found. Please check your ' + \
+                            'system hardware to make sure that you have ' + \
+                            'installed your disks correctly.'
 
     def validate(self):
         errList = []

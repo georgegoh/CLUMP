@@ -15,6 +15,7 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.hardware import probe
 import kusu.util.log as kusulog
 import kusu.util.util as kusutil
+from kusu.util.errors import *
 
 NAV_NOTHING = -1
 
@@ -172,7 +173,13 @@ class NetworkScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(instruction, col=0, row=0)
 
         self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=55)
-        self.populateListbox(self.listbox)
+#        self.populateListbox(self.listbox)
+        if len(self.listbox.key2item) < 1:
+            raise KusuError, 'The setup cannot continue because no network ' + \
+                             'interface devices could be found. Please ' + \
+                             'check your system hardware to make sure that ' + \
+                             'you have installed your network interface ' + \
+                             'devices correctly.'
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0, 1, 0, 0))
