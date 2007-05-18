@@ -9,7 +9,7 @@
 from path import path
 import subprocess
 import os
-from kusu.boot.distro import DistroFactory, InvalidInstallSource, SUPPORTED_DISTROS, USES_ANACONDA_LIST
+from kusu.boot.distro import DistroFactory, InvalidInstallSource, SUPPORTED_DISTROS, USES_ANACONDA
 from kusu.boot.distro import CopyError, UnsupportedDistro
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
@@ -286,7 +286,7 @@ class BootMediaTool:
             p = 'src/dists/%s/%s/%s' % (d.ostype,d.getVersion(),arch)
             if not (kususrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
             
-            if d.ostype in SUPPORTED_DISTROS and d.ostype in USES_ANACONDA_LIST:
+            if d.ostype in SUPPORTED_DISTROS and d.ostype in USES_ANACONDA:
                 # create the isolinux directory
                 tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
                 isolinuxdir = tmpdir / 'isolinux'
@@ -386,12 +386,15 @@ class BootMediaTool:
                 svnsrc.copyKusuroot(kusuroot,overwrite=True)
                 svnsrc.cleanup()
                 # get the correct kusuenv.sh
-                if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA_LIST:
+                if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA:
                     # put in the kusuenv.sh
                     p = svnsrc.srcpath / 'src/dists/%s/%s/%s/kusuenv.sh' % (osname,osver,osarch)
                     kusuenv = path(p)
                         
-                    if kusuenv.exists(): kusuenv.copy(kusuroot / 'bin')
+                    if kusuenv.exists(): 
+                        kusuenv.copy(kusuroot / 'bin')
+                        # make it excutable
+                        path(kusuroot / 'bin' / 'kusuenv.sh').chmod(0755)
                     
                     # remove the kusudevenv.sh
                     if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
@@ -400,7 +403,10 @@ class BootMediaTool:
                     # put in the the faux anaconda launcher
                     p = svnsrc.srcpath / 'src/dists/%s/%s/%s/updates.img/anaconda' % (osname,osver,osarch)
                     fakeanaconda = path(p)
-                    if fakeanaconda.exists(): fakeanaconda.copy(tmpdir)
+                    if fakeanaconda.exists(): 
+                        fakeanaconda.copy(tmpdir)
+                        # make it excutable
+                        path(tmpdir / 'anaconda').chmod(0755)
                         
                     # pack the tmpdir into a patchfile with size of 10MB
                     packExt2FS(tmpdir,patchfile,size=10000)

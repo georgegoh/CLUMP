@@ -16,7 +16,7 @@ class InvalidInstallSource(Exception): pass
 class UnsupportedDistro(Exception): pass
 
 SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
-USES_ANACONDA_LIST = ['centos', 'fedora', 'rhel']
+USES_ANACONDA = ['centos', 'fedora', 'rhel']
 SUPPORTED_ARCH = ['i386', 'x86_64']
 
 class DistroInstallSrcBase(object):
