@@ -17,6 +17,7 @@ class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
 
 # partitiontool
+class NoDisksFoundError(KusuError) : pass
 class OutOfSpaceError(KusuError): pass
 class DuplicateNameError(KusuError): pass
 class DuplicateMountpointError(KusuError): pass

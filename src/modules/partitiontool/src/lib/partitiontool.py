@@ -191,8 +191,10 @@ class DiskProfile(object):
         # probe the logical volume groups
         lvg_probe_dict = probeLogicalVolumeGroups()
         for lvg_name, lvg_prop_dict in lvg_probe_dict.iteritems():
-            pv_list = [pv for pv in self.pv_dict.itervalues() if pv.group == lvg_name]
-            lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'], pv_list)
+            pv_list = [pv for pv in self.pv_dict.itervalues() \
+                              if pv.group == lvg_name]
+            lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'],
+                                     pv_list)
             self.lvg_dict[lvg_name] = lvg
         logger.debug('Found LVGs.')
 
@@ -223,7 +225,8 @@ class DiskProfile(object):
 
     def delete(self, deviceObj):
         """Polymorphic delete function."""
-        logger.debug('Device %s of type %s' % (str(deviceObj), str(type(deviceObj))))
+        logger.debug('Device %s of type %s' % (str(deviceObj), 
+                     str(type(deviceObj))))
         if type(deviceObj) is Partition:
             self.deletePartition(deviceObj)
         elif type(deviceObj) is LogicalVolumeGroup:
@@ -231,21 +234,26 @@ class DiskProfile(object):
         elif type(deviceObj) is LogicalVolume:
             self.deleteLogicalVolume(deviceObj)
         elif type(deviceObj) is Disk:
-            raise KusuError, 'Cannot delete the selected device because it is a physical disk in the system.'
+            raise KusuError, 'Cannot delete the selected device because ' + \
+                             'it is a physical disk in the system.'
         else:
-            raise KusuError, 'An internal error has occurred in the program. Please restart.'
+            raise KusuError, 'An internal error has occurred in the ' + \
+                             'program. Please restart.'
 
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
         # sanity check
         if mountpoint in self.mountpoint_dict.keys():
-            raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
+            raise DuplicateMountpointError, 'Assigned mountpoint ' + \
+                                            'already exists.'
 
         disk = self.disk_dict[disk_id]
         logger.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
             logger.debug('FS type specified')
-            new_partition = disk.createPartition(size, self.fsType_dict[fs_type], mountpoint)
+            new_partition = disk.createPartition(size,
+                                                 self.fsType_dict[fs_type],
+                                                 mountpoint)
         else:
             logger.debug('FS type not specified')
             new_partition = disk.createPartition(size, None, mountpoint)
@@ -256,7 +264,8 @@ class DiskProfile(object):
 
         # if it's a LVM physical volume, add it to the dict.
         if fs_type == 'physical volume':
-            self.pv_dict[new_partition.path] = PhysicalVolume(new_partition, createNew=True)
+            self.pv_dict[new_partition.path] = PhysicalVolume(new_partition,
+                                                              createNew=True)
             new_partition.lvm_flag = 1
         return new_partition
 
@@ -269,7 +278,8 @@ class DiskProfile(object):
         backup_mountpoint = partition_obj.mountpoint
 
         self.deletePartition(partition_obj, keep_in_place=True)
-        logger.debug('Original partition deleted. Remaining partitions: ' + str(partition_obj.disk.partition_dict.keys()))
+        logger.debug('Original partition deleted. Remaining partitions: ' + \
+                     str(partition_obj.disk.partition_dict.keys()))
         try:
             edited_partition = self.newPartition(backup_disk_id,
                                                  size,
@@ -279,14 +289,17 @@ class DiskProfile(object):
             logger.debug('New partition created')
 
         except PartitionSizeTooLargeError, e:
-            logger.debug('Exception raised when trying to edit partition %s' % partition_obj.path)
-            logger.debug('There is no contiguous free space on disk to fit new size')
+            logger.debug('Exception raised when trying to edit partition %s' % \
+                         partition_obj.path)
+            logger.debug('There is no contiguous free space on disk ' + \
+                         'to fit new size')
             self.newPartition(backup_disk_id,
                               backup_size,
                               False,
                               backup_fs_type,
                               backup_mountpoint)
-            raise KusuError, "Couldn't find a contiguous free space to fit the new size. Try deleting other partitions."
+            raise KusuError, "Couldn't find a contiguous free space to " + \
+                             "fit the new size. Try deleting other partitions."
 
         return edited_partition
 
@@ -296,7 +309,8 @@ class DiskProfile(object):
         if partition_obj.path in self.pv_dict.keys():
             physicalVol = self.pv_dict[partition_obj.path]
             if physicalVol.group != None:
-                raise PartitionIsPartOfVolumeGroupError, 'Partition cannot be deleted because it is part of a Logical Volume Group.'
+                raise PartitionIsPartOfVolumeGroupError, 'Partition cannot ' + \
+                    'be deleted because it is part of a Logical Volume Group.'
             del self.pv_dict[partition_obj.path]
 
         if partition_obj.mountpoint in self.mountpoint_dict.keys():
@@ -312,11 +326,13 @@ class DiskProfile(object):
             raise DuplicateNameError, 'Logical Volume Group name already exists.'
         unit = extent_size[-1]
         if unit.upper() != 'M':
-            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group Extent Size.'
+            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
+                                                     'Extent Size.'
         _extent_size = int(extent_size[:-1])
         if _extent_size not in range(2, 512+1) and \
            _extent_size % 2:
-            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group Extent Size.'
+            raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
+                                                     'Extent Size.'
 
         # passed sanity checks, now do it!
         lvg = LogicalVolumeGroup(name, extent_size, pv_list, createNew=True)
@@ -346,7 +362,8 @@ class DiskProfile(object):
         """Delete an existing logical volume group."""
         # sanity checks
         if lvg.lv_dict:
-            raise PhysicalVolumeStillInUseError, 'Cannot delete Volume Group. Delete Logical Volumes first.'
+            raise PhysicalVolumeStillInUseError, 'Cannot delete Volume ' + \
+                                       'Group. Delete Logical Volumes first.'
 
         pv_list = lvg.pv_dict.values()
 
@@ -365,7 +382,8 @@ class DiskProfile(object):
         if mountpoint in self.mountpoint_dict.keys():
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
-        new_lv = lvg.createLogicalVolume(name, long(size_MB), fs_type, mountpoint)
+        new_lv = lvg.createLogicalVolume(name, long(size_MB), \
+                                         fs_type, mountpoint)
         self.lv_dict[name] = new_lv
 
         if mountpoint:
@@ -489,7 +507,8 @@ class Disk(object):
               1. size in bytes.
               2. type of partition(see partitionTypes).
               3. optional fs type(defaults to None).
-           Returns an instance of Partition that represents the partition just created.
+           Returns an instance of Partition that represents the partition just
+           created.
         """
         start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size)
         new_pedPartition = None
@@ -533,7 +552,8 @@ class Disk(object):
             raise KusuError, msg
     
         self.pedDisk.add_partition(new_pedPartition, constraint)
-        new_partition = self.__appendToPartitionDict(new_pedPartition, mountpoint)
+        new_partition = self.__appendToPartitionDict(new_pedPartition,
+                                                     mountpoint)
         return new_partition
 
     def delPartition(self, partition_obj, keep_in_place=False):
@@ -604,8 +624,8 @@ class Disk(object):
             return 'PRIMARY'
 
     def __getStartEndSectors(self, size):
-        """For a given size(in bytes), return a tuple of (start_sector, end_sector)
-           that will accommodate this new partition.
+        """For a given size(in bytes), return a tuple of (start_sector,
+           end_sector) that will accommodate this new partition.
         """
         selected_partition_num = 1
         last_part_num = self.pedDisk.get_last_partition_num()
@@ -615,10 +635,12 @@ class Disk(object):
             if last_part_num > self.pedDisk.get_primary_partition_count():
                 pedPartition = self.pedDisk.next_partition()
                 while pedPartition.num < last_part_num:
-                    logger.debug('Iterating partition num: ' + str(pedPartition.num))
+                    logger.debug('Iterating partition num: ' + \
+                                 str(pedPartition.num))
                     if pedPartition.num == -1:
                         start_sector = pedPartition.geom.start
-                        end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
+                        end_sector = start_sector + (size / \
+                                     self.pedDisk.dev.sector_size) - 1
                         end_sector = self.__alignEndSector(end_sector)
                         if end_sector <= pedPartition.geom.end:
                             return (start_sector, end_sector,
@@ -646,17 +668,20 @@ class Disk(object):
                                                   start_sector,
                                                   end_sector)
         except parted.error, msg:
-            if msg.__str__().startswith("Error: Can't have a partition outside the disk!"):
+            if msg.__str__().startswith("Error: Can't have a partition " + \
+                                        "outside the disk!"):
                 msg = "Requested partition size is too large to fit into " + \
                       "the remaining space available on the disk."
             raise PartitionSizeTooLargeError, msg
 
-        return (start_sector, end_sector, self.__getPartitionType(selected_partition_num))
+        return (start_sector, end_sector,
+                self.__getPartitionType(selected_partition_num))
 
     def convertStartSectorToCylinder(self, start_sector):
          cylinder = int(math.floor(
                         (float(start_sector) /
-                        (self.pedDisk.dev.heads * self.pedDisk.dev.sectors)) + 1))
+                        (self.pedDisk.dev.heads * self.pedDisk.dev.sectors)) \
+                        + 1))
          return cylinder       
 
     def convertEndSectorToCylinder(self, end_sector):
@@ -788,10 +813,12 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged', 'on_disk', 'do_not_format']:
+        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged',
+                      'on_disk', 'do_not_format']:
             object.__setattr__(self, name, value)
         else:
-            raise AttributeError, "%s instance does not have or cannot modify attribute '%s'" % \
+            raise AttributeError, "%s instance does not have or cannot " + \
+                                  "modify attribute '%s'" % \
                                   (self.__class__, name)
 
     def mount(self, mountpoint=None, readonly=False):
@@ -808,7 +835,10 @@ class Partition(object):
             err_msg = 'Mount point: %s does not exists' % mountpoint
             raise MountFailedError, err_msg
             
-        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type, self.path, mountpoint, args),
+        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type,
+                                                       self.path,
+                                                       mountpoint,
+                                                       args),
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -838,11 +868,13 @@ class Partition(object):
             return
 
         # temp solution, until ggoh refactor this
-        logger.info('FORMAT %s: Checking if node already exists in /dev.' % self.path)
+        logger.info('FORMAT %s: Checking if node already exists in /dev.' % \
+                    self.path)
         import stat
         from os import mknod, makedev, path
         if not path.exists(self.path):
-            logger.info('FORMAT %s: %s does not exist. Creating...' % (self.path, self.path))
+            logger.info('FORMAT %s: %s does not exist. Creating...' % \
+                        (self.path, self.path))
             dev_basename = basename(self.disk.path)
             if dev_basename.startswith('sd'):
                 alpha = 'abcdefghijklmnopqrstuvwxyz'
@@ -877,21 +909,24 @@ class Partition(object):
             mknod(self.path, stat.S_IFBLK, raw_dev_num)
 
         if self.fs_type == 'ext2':
-            logger.info('FORMAT %s: Making ext2 fs on %s' % (self.path, self.path))
+            logger.info('FORMAT %s: Making ext2 fs on %s' % \
+                        (self.path, self.path))
             mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'ext3':
-            logger.info('FORMAT %s: Making ext3 fs on %s' % (self.path, self.path))
+            logger.info('FORMAT %s: Making ext3 fs on %s' % \
+                        (self.path, self.path))
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
         elif self.fs_type == 'linux-swap':
-            logger.info('FORMAT %s: Making swap fs on %s' % (self.path, self.path))
+            logger.info('FORMAT %s: Making swap fs on %s' % \
+                        (self.path, self.path))
             mkfs = subprocess.Popen('mkswap %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,

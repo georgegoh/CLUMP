@@ -14,6 +14,8 @@ import socket
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.boot.tool import getPartitionMap, makeDev
+from kusu.util.errors import *
 
 class WelcomeScreen(screenfactory.BaseScreen):
     """This is the welcome screen."""
@@ -31,5 +33,24 @@ class WelcomeScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0)
+        self.prechecks()
 
+    def prechecks(self):
+        # get the map of the available partitions
+        devmap = getPartitionMap()
+        devices = devmap.keys()
 
+        # set up a pattern of the devices we are interested in
+        disks = []
+        import re
+        pat = re.compile('[hs]d\d*')
+        for dev in devices:
+            m = pat.match(dev)
+            if m:
+                disks.append(dev)
+
+        if not disks:
+            raise NoDisksFoundError, 'This system cannot be set up because ' + \
+                      'no disks could be found. Please check your system ' + \
+                      'hardware to make sure that you have installed your ' + \
+                      'disks correctly.'

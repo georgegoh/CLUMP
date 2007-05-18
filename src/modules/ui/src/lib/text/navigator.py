@@ -52,8 +52,6 @@ class Navigator(object, KusuApp):
 
        The Navigator class takes a screenFactory object, and displays the
        screens in the order described in the screenFactory.
-
-       Hidden attribute - currentScreen
     """
     mainScreen = None
     sidebarWidth = 22
@@ -63,12 +61,6 @@ class Navigator(object, KusuApp):
     currentScreen = property(lambda self : self.screens[self.currentStep],
                              None,
                              doc='The screen object that is currently displayed.')
-
-#    def __getattr__(self, name):
-#        if name == 'currentScreen':
-#            return self.screens[self.currentStep]
-#        raise AttributeError, "%s instance has no attribute '%s'" % \
-#                              (self.__class__, name)
 
     def popupProgress(self, title, msg):
         return ProgressDialogWindow(self.mainScreen, title, msg)
@@ -148,9 +140,8 @@ class Navigator(object, KusuApp):
     def setupContentGrid(self):
         """Set up the main content part of the screen."""
         contentGrid = snack.Grid(1, 2)
-        currentScreen = self.screens[self.currentStep]
-        currentScreen.draw(self.mainScreen, self)
-        contentGrid.setField(currentScreen.screenGrid, col=0,
+        self.currentScreen.draw(self.mainScreen, self)
+        contentGrid.setField(self.currentScreen.screenGrid, col=0,
                              row=0, padding=(0,0,0,0))
         buttons = []
         for key in self.screens[self.currentStep].buttons:
@@ -186,10 +177,9 @@ class Navigator(object, KusuApp):
 
     def hasPrevScreen(self):
         """Is there a screen before the current displayed?"""
-        currentScreen = self.screens[self.currentStep]
         previousScreen = self.screens[self.currentStep - 1]
 
-        if currentScreen.backButtonDisabled or self.currentStep == 0:
+        if self.currentScreen.backButtonDisabled or self.currentStep == 0:
             return False
         elif previousScreen.isCommitment:
             return False
@@ -248,7 +238,7 @@ class Navigator(object, KusuApp):
         except KusuError, e:
             self.popupMsg(self.currentScreen.name, str(e))
             self.mainScreen.finish()
-            sys.exit(1)
+            raise e
         except Exception, e:
             import traceback
             tb = traceback.format_exc()
@@ -263,13 +253,12 @@ class Navigator(object, KusuApp):
             self.popupMsg(self._('Unresolved exception'), tb)
             self.mainScreen.popWindow()
             self.mainScreen.finish()
-            sys.exit(1)
+            raise e
         return True
 
     def draw(self):
         self.mainScreen.drawRootText(0,0, self.screenTitle)
-        currentScreen = self.screens[self.currentStep]
-        self.mainScreen.gridWrappedWindow(self.mainGrid, currentScreen.name)
+        self.mainScreen.gridWrappedWindow(self.mainGrid, self.currentScreen.name)
         form = snack.Form(self._("This is the help statement"))
         form.add(self.mainGrid)
         return form

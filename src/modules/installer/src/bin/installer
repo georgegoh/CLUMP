@@ -27,6 +27,7 @@ from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.core.app import KusuApp
 from kusu.ui.text.navigator import Navigator
 from kusu.installer.kusufactory import ScreenFactoryImpl
+from kusu.util.errors import *
 
 class KusuInstaller(Navigator, KusuApp):
     """Framework for displaying installation steps and screens.
@@ -40,9 +41,20 @@ class KusuInstaller(Navigator, KusuApp):
         Navigator.__init__(self, screenFactory, screenTitle, showTrail)
 
 
+def kusuErrorHandler(error):
+    """This method is the last chance for a KusuError to be handled within the
+       installer."""
+    sys.exit(1)
+
+
+def unknownExceptionHandler(error):
+    """This method is the last chance for a general Exception to be handled
+       within the installer."""
+    sys.exit(1)
+
+
 if __name__ == '__main__':
-    # kusu_dist = os.environ.get('KUSU_DIST', None)
-    # if kusu_dist in ['rhel', 'fedora']:
+    # set up tty3 for logging output
     if os.access("/dev/tty3", os.W_OK):
         kl.addFileHandler('/dev/tty3')
 
@@ -63,10 +75,16 @@ if __name__ == '__main__':
                        screenTitle=screentitle ,
                        showTrail=True)
 
-    installer_return_code = ki.run()
-    if installer_return_code is False:
+    try:
+        installer_return_code = ki.run()
+    except KusuError, e:
+        kusuErrorHandler(e)
+    except Exception, e:
+        unknownExceptionHandler(e)
+
+    if installer_return_code is False: # User requested exit
         sys.exit(2)
-    elif installer_return_code is None:
+    elif installer_return_code is None: # Unknown exit
         sys.exit(1)
 
     sys.exit(0)
