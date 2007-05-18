@@ -30,7 +30,7 @@ def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
     from kusu.util import util
-    from kusu.util.distro import errors
+    from kusu.util import errors
 
     url = str(database.get('Kits', 'FedoraURL')[0])
     prefix = path(prefix)
@@ -44,11 +44,11 @@ def copyKits(prefix, database):
 
     try:
         util.copy(url, prefix + '/depot')
-    except errors.InvalidPath.HTTPError. e:
+    except errors.HTTPError, e:
         url, status, reason  = e.args
         # Do something here
         raise e
-    except errors.InvalidPath.FTPError. e:
+    except errors.FTPError, e:
         url, status, reason  = e.args
         # Do something here
         raise e

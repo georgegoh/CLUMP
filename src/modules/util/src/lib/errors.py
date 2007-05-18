@@ -38,7 +38,7 @@ class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
 
 # util
-class CopyFailed(KusuError): pass
+class CopyFailedError(KusuError): pass
 
 # util/distro
 class LoadDistroConfFailedError(KusuError): pass
@@ -46,7 +46,7 @@ class HTTPError(KusuError): pass
 class FTPError(KusuError): pass
 
 # networktool
-class InterfaceNotBroughtUp(KusuError): pass
-class InterfaceNotBroughtDown(KusuError): pass
-class FailedDHCPRequest(KusuError): pass
-class FailedSetStaticIP(KusuError): pass
+class InterfaceNotBroughtUpError(KusuError): pass
+class InterfaceNotBroughtDownError(KusuError): pass
+class FailedDHCPRequestError(KusuError): pass
+class FailedSetStaticIPError(KusuError): pass
