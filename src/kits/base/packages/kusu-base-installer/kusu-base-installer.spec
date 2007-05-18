@@ -94,6 +94,7 @@ make ROOT=$RPM_BUILD_ROOT install
 /depot/repos/nodeboot.cgi
 /depot/kits
 /depot/images
+/depot/repos/custom_scripts
 /opt/kusu/cfm/changedfiles.lst
 
 ##

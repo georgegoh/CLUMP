@@ -1,6 +1,8 @@
 #!/bin/sh
-
-# Copyright (C) 2007 Platform Computing Corporation
+# 
+# $Id$
+# 
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -16,8 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
-# 
+
+export PYTHONPATH=/opt/kusu/lib
 
 echo "Configuring this node as an Installer"
 
@@ -58,8 +60,7 @@ cp /boot/vmlinuz-${REV} /tftpboot/kusu/vmlinuz-${REV}
 chmod 644  /tftpboot/kusu/vmlinuz-${REV}
 
 # Setting up permissions
-chgrp -R apache /depot/repos
-chgrp -R apache /depot/images
+chgrp -R apache /depot/
 chgrp -R apache /opt/kusu/cfm
 
 # Setup Apache
@@ -72,14 +73,14 @@ else
     ln -s /depot/images images
 
     # Generate Kusu.conf
-    if [ -f /opt/kusu/bin/dbreport ]; then
-	/opt/kusu/bin/dbreport apache_conf > /etc/httpd/conf.d/kusu.conf
+    if [ -f /opt/kusu/bin/genconfig ]; then
+	/opt/kusu/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
 	if [ -x /etc/init.d/httpd ]; then
 	    /etc/init.d/httpd stop
 	    /etc/init.d/httpd start
 	fi
     else
-	echo "ERROR:  Cannot find dbreport"
+	echo "ERROR:  Cannot find genconfig"
     fi
 
 fi

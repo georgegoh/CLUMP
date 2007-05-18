@@ -55,21 +55,24 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu/screens
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/addhost 
-	mkdir -p $(ROOT)/opt/kusu/lib/plugins/dbreport
+	mkdir -p $(ROOT)/opt/kusu/lib/plugins/genconfig
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/ngedit
 	mkdir -p $(ROOT)/opt/kusu/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
-	mkdir -p $(ROOT)/depot/repos
+	mkdir -p $(ROOT)/depot/repos/custom_scripts
 	mkdir -p $(ROOT)/depot/kits
 	mkdir -p $(ROOT)/depot/images
+	# Just for development
+	echo "Letmein" > $(ROOT)/opt/kusu/etc/db.passwd
+	touch $(ROOT)/depot/repos/custom_scripts/bogus.sh
 	install -m755 sbin/S01KusuSetup $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
-	install -m755 bin/dbreport.py $(ROOT)/opt/kusu/bin/dbreport
+	install -m755 bin/genconfig.py $(ROOT)/opt/kusu/bin/genconfig
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/kusu
@@ -80,15 +83,15 @@ install::
 	install -m644 lib/kusu/screens/kusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/navigator.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/screenfactory.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/plugins/dbreport/__init__.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/apache_conf.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/debug.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/dhcpd.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/hosts.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/named.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/nodes.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/reverse.py $(ROOT)/opt/kusu/lib/plugins/dbreport
-	install -m644 lib/plugins/dbreport/zone.py $(ROOT)/opt/kusu/lib/plugins/dbreport	
+	install -m644 lib/plugins/genconfig/__init__.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/apache_conf.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/debug.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/dhcpd.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/hosts.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/named.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/nodes.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/reverse.py $(ROOT)/opt/kusu/lib/plugins/genconfig
+	install -m644 lib/plugins/genconfig/zone.py $(ROOT)/opt/kusu/lib/plugins/genconfig	
 	install	-m644 lib/plugins/addhost/00-boothost.py $(ROOT)/opt/kusu/lib/plugins/addhost
 	install	-m644 lib/plugins/addhost/01-hosts.py $(ROOT)/opt/kusu/lib/plugins/addhost
 	install	-m644 lib/plugins/addhost/02-dnsreverse.py $(ROOT)/opt/kusu/lib/plugins/addhost

@@ -1,6 +1,6 @@
 # $Id$
 #
-#   Copyright 2007 Platform Computing Corporation
+#   Copyright 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -17,14 +17,14 @@
 #
 #
 
-import dbreport
+import genconfig
 
-class thisReport(dbreport.Report):
+class thisReport(genconfig.Report):
     
     def toolHelp(self):
         """toolHelp - This method provides the help screen for this particular
         plugin.  All plugins must implement this method."""
-        print self.gettext("dbreport_Nodes_Help")
+        print self.gettext("genconfig_Nodes_Help")
 
 
     def runPlugin(self, pluginargs):

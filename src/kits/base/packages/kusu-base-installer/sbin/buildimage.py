@@ -400,7 +400,7 @@ class BuildImageApp(KusuApp):
         # Do we need a new database connection?
         if self.options.database or self.options.user or self.options.password :
             if self.options.database == '' or self.options.user == '' or self.options.password == '':
-                self.errorMessage("dbreport_provide_database_user_password\n")
+                self.errorMessage("genconfig_provide_database_user_password\n")
                 sys.exit(-1)
                 
             imgfun.altDb(self.options.database, self.options.user, self.options.password)
