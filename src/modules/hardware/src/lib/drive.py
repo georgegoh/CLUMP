@@ -69,11 +69,8 @@ def getIDE(type):
             media = hd / 'media'
             
             if readFile(media) == type:
-                model = hd / 'model'
-                model = readFile(model)
-
-                d[hd.basename()] = {'model': model}
-                d[hd.basename()] = {'vendor': None}
+                d[hd.basename()] = {'model': readFile(hd / 'model')}
+                d[hd.basename()] = {'vendor': readFile(hd / 'vendor')}
     
     return d
 
