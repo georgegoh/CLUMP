@@ -14,13 +14,17 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+import kusu.util.log as kusulog
 
 NAV_NOTHING = -1
+
+kl = kusulog.getKusuLog('installer.rootpasswd')
 
 class RootPasswordScreen(screenfactory.BaseScreen):
     """Collects info about the cluster."""
     name = _('Root Password')
-    context = 'Root Password'
+    context = 'RootPasswd'
+    profile = context
     msg = _('Please enter a secure root password:')
     buttons = [_('Clear All')]
 
@@ -77,8 +81,43 @@ class RootPasswordScreen(screenfactory.BaseScreen):
 
     def formAction(self):
         """
-        
         Store
-        
         """
-        self.database.put(self.context, 'RootPasswd', self.password0.value())
+
+        self.kiprofile[self.profile] = self.password0.value()
+
+    def restoreProfileFromSQLCollection(db, context, kiprofile):
+        """
+        Reads data from SQLiteCollection db according to context and fills
+        profile.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the complete profile (a dictionary) which we fill in
+        """
+
+        # We do not restore the root password from the DB. We always force the
+        # user to re-enter the root password when continuing past the screen.
+        return True
+
+    def saveProfileToSQLCollection(db, context, kiprofile):
+        """
+        Writes data from profile to SQLiteCollection db according to context.
+
+        Arguments:
+        db -- an SQLiteCollection object ready to accept data
+        context -- the context to use to access data in db and profile
+        kiprofile -- the profile (a dictionary) with data to commit
+        """
+
+        db.put(context, context, kiprofile[context])
+ 
+        kl.info('Wrote root password to DB')
+
+        return True
+
+    dbFunctions = {'MySQL': (None, None),
+                   'SQLite': (None, None),
+                   'SQLColl': (restoreProfileFromSQLCollection,
+                               saveProfileToSQLCollection)}

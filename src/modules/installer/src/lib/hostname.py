@@ -121,9 +121,6 @@ class FQHNScreen(screenfactory.BaseScreen):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-        # TODO: remove this call, should only happen after Finalize screen
-        self.kiprofile.save()
-
     def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
