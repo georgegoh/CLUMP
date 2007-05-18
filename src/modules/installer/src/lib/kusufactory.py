@@ -73,15 +73,15 @@ class ScreenFactoryImpl(ScreenFactory):
 
     ScreenFactory.screens = \
         [WelcomeScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         LanguageSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         KeyboardSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         ClusterInfoScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         LanguageSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
+         KeyboardSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
+         ClusterInfoScreen(collection, kusuApp=None, kiprofile=kiprofile),
          NetworkScreen(collection, kusuApp=None, kiprofile=kiprofile),
          GatewayDNSSetupScreen(collection, kusuApp=None, kiprofile=kiprofile),
          FQHNScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         RootPasswordScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         RootPasswordScreen(collection, kusuApp=None, kiprofile=kiprofile),
          PartitionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         KitsScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         TZSelectionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+         KitsScreen(collection, kusuApp=None, kiprofile=kiprofile),
+         TZSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
          ConfirmScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile)
         ]

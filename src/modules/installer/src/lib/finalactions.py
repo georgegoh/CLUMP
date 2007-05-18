@@ -79,11 +79,11 @@ def genAutoInstallScript(disk_profile, network_profile, database):
     # Build kickstart object
     # Retrieve all the data required
     k = Kickstart()
-    k.rootpw = database.get('Root Password', 'RootPasswd')[0]
+    k.rootpw = database.get('RootPasswd', 'RootPasswd')[0]
     k.networkprofile = network_profile
     k.diskprofile = disk_profile
     k.packageprofile = ['@Base']
-    k.tz = database.get('Time zone', 'Zone')[0]
+    k.tz = database.get('Timezone', 'Zone')[0]
     k.installsrc = 'http://127.0.0.1/'
     k.lang = database.get('Language', 'Language')[0]
     k.keyboard = database.get('Keyboard', 'Keyboard')[0]
