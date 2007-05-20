@@ -1,0 +1,37 @@
+# Redhat kickstart template
+#
+# \$Id$
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+# 
+
+install
+url --url $url
+rootpw --iscrypted $rootpw
+lang $lang
+langsupport --default=$lang $lang
+keyboard $keybd
+#for $net in $networks
+$net
+#end for
+firewall --disabled
+selinux --disabled
+firstboot --disable
+authconfig --enableshadow --enablemd5
+timezone $tz
+bootloader --location=mbr
+#clearpart --all
+clearpart --none
+#for $part in $partitions
+$part
+#end for
+reboot
+%packages
+#for $pkg in $packages
+$pkg
+#end for
+
+%post
+

@@ -1,0 +1,86 @@
+#!/bin/sh
+# 
+# $Id$
+# 
+# Copyright (C) 2007 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+# 
+
+export PYTHONPATH=/opt/kusu/lib
+
+echo "Configuring this node as an Installer"
+
+echo "Setting up the TFTP server"
+if [ ! -d /tftpboot/kusu/pxelinux.cfg ] ; then
+    mkdir -p /tftpboot/kusu/pxelinux.cfg
+fi
+chgrp -R apache /tftpboot/kusu/pxelinux.cfg
+
+if [ ! -f /etc/xinetd.d/tftp ] ; then
+    echo "ERROR:  Xinetd config for tftp not found"
+else
+    # Fix the tftp config file
+    awk -F' ' ' $1 == "server_args"                    { print "        server_args   = -s /tftpboot/kusu" }
+                $1 == "disable"                        { print "        disable       = no" }
+                $1 != "disable" && $1 != "server_args" { print $0 }' < /etc/xinetd.d/tftp > /etc/xinetd.d/tftp.new
+    mv /etc/xinetd.d/tftp.new /etc/xinetd.d/tftp
+
+    # Restart xinetd
+    if [ -f /etc/init.d/xinetd ] ; then
+	/etc/init.d/xinetd stop
+	/etc/init.d/xinetd start
+    else
+	echo "ERROR:  Can't find xinetd startup script"
+    fi
+fi
+
+# Copy over a kernel and initrd to play with
+if [ -f /usr/lib/syslinux/pxelinux.0 ]; then
+    echo "Copying over pxelinux.0"
+    cp /usr/lib/syslinux/pxelinux.0 /tftpboot/kusu/pxelinux.0
+else
+    echo "ERROR:  Can't find /usr/lib/syslinux/pxelinux.0"
+fi
+echo "Copying over a kernel"
+REV=`uname -r`
+cp /boot/vmlinuz-${REV} /tftpboot/kusu/vmlinuz-${REV}
+chmod 644  /tftpboot/kusu/vmlinuz-${REV}
+
+# Setting up permissions
+chgrp -R apache /depot/
+chgrp -R apache /opt/kusu/cfm
+
+# Setup Apache
+if [ ! -d /var/www/html ]; then
+    echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
+else
+    cd /var/www/html
+    ln -s /opt/kusu/cfm cfm
+    ln -s /depot/repos repos
+    ln -s /depot/images images
+
+    # Generate Kusu.conf
+    if [ -f /opt/kusu/bin/genconfig ]; then
+	/opt/kusu/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
+	if [ -x /etc/init.d/httpd ]; then
+	    /etc/init.d/httpd stop
+	    /etc/init.d/httpd start
+	fi
+    else
+	echo "ERROR:  Cannot find genconfig"
+    fi
+
+fi

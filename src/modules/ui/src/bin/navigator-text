@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# $Id: navigator_sample.py 236 2007-04-05 08:54:09Z ggoh $
+#
+# Kusu Text Installer Screen Factory Sample.
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+"""This module shows a simplified example of using the ScreenFactory classes."""
+__version__ = "$Revision: 236 $"
+
+import snack
+from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
+
+NAV_NOTHING = -1
+NAV_FORWARD = 0
+NAV_BACK = 1
+NAV_QUIT = 2
+
+class Screen1(BaseScreen):
+    """This class is a a basic implementation of the BaseScreen abstract class."""
+    name = 'Welcome'
+    msg = 'Welcome to the Kusu installation program. In the ' + \
+          'following screens, you will be presented with questions ' + \
+          'that will help you configure your new Kusu cluster.\n\n' + \
+          'If you do not wish to continue, please select the Quit ' + \
+          'option. Otherwise select Next to continue.' 
+    buttons = ['Action 1']
+
+    def setCallbacks(self):
+        """
+        
+        Implementation of the setCallbacks interface defined in parent class
+        screenfactory.BaseScreen. Initialise button callbacks here.
+
+        Note the correspondence between the keys for self.buttonsDict, and the
+        member(s) of the self.buttons list.
+        
+        """
+        self.buttonsDict['Action 1'].setCallback_(self.Action1)
+
+    def Action1(self, data=None):
+        """
+        
+        This is an action that is mapped to the 'Action1' button in the
+        setCallbacks method.
+        
+        """
+        self.selector.popupMsg('Action1', 'Action here')
+        return NAV_NOTHING
+
+
+    def drawImpl(self):
+        """
+        
+        All screen drawing code goes here. Don't draw the buttons as well, this
+        is already done for you.
+        
+        """
+        self.screenGrid = snack.Grid(1, 1)
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
+                                                 width=self.gridWidth),
+                                 col=0, row=0)
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        """Any action other than validation that takes place after the 
+           'Next button is pressed.
+        """
+        pass
+
+class Screen2(Screen1):
+    """This class is a template for other Screen classes."""
+    name = 'Hello World!'
+    msg = 'This is the second page.' 
+    buttons = []
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        """Any other action other than validation that takes place after the 
+           'Next button is pressed.
+        """
+        pass
+
+
+class ScreenFactoryImpl(ScreenFactory):
+    """The ScreenFactory is defined by the programmer, and passed on to the 
+       Navigator(or it's child) class.
+
+    """
+    ScreenFactory.screens = \
+                            [ Screen1(None),
+                              Screen2(None)
+                            ]
+
+
+from kusu.ui.text.navigator import Navigator
+
+if __name__ == '__main__':
+    screenFactory = ScreenFactoryImpl
+    nav = Navigator(screenFactory, "Navigator Sample", True)
+    nav.run()

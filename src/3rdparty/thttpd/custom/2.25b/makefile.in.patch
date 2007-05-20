@@ -1,0 +1,36 @@
+Index: Makefile.in
+===================================================================
+--- Makefile.in	(revision 485)
++++ Makefile.in	(working copy)
+@@ -30,7 +30,7 @@
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ # Pathname of directory to install the binary.
+-BINDIR = @sbindir@
++BINDIR = @bindir@
+ # Pathname of directory to install the man page.
+ MANDIR = @mandir@
+ # Pathname of directory to install the CGI programs.
+@@ -74,7 +74,7 @@
+ 
+ SUBDIRS =	cgi-src extras
+ 
+-all:		this subdirs
++all:		this
+ this:		$(ALL)
+ 
+ thttpd: $(OBJ)
+@@ -106,11 +106,11 @@
+ 	) ; done
+ 
+ 
+-install:	installthis install-man installsubdirs
++install:	installthis 
+ 
+ installthis:
+ 	-mkdir -p $(DESTDIR)$(BINDIR)
+-	$(INSTALL) -m 555 -o bin -g bin thttpd $(DESTDIR)$(BINDIR)
++	$(INSTALL) -m 755 thttpd $(DESTDIR)$(BINDIR)
+ 
+ install-man:
+ 	-mkdir -p $(DESTDIR)$(MANDIR)/man8

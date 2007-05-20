@@ -1,0 +1,503 @@
+#!/usr/bin/env python
+# $Id$
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+
+import sys
+import os
+import subprocess
+from kusu.core.app import KusuApp
+from path import path
+from kusu.boot.distro import CopyError, SUPPORTED_ARCH, UnsupportedDistro
+from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource, SUPPORTED_DISTROS
+from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser, InvalidKusuSource
+from kusu.boot.tool import FailedBuildCMake, FailedBuildMake
+from kusu.boot.image import TOOLS_DEPS
+        
+        
+class BootMediaApp(KusuApp):
+    """ Application class for boot-media-tool. """
+    
+    def __init__(self, bminst):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+        
+        self.actions = {'query':['source'], 
+            'extract':['source','image','dest'], 
+            'unpack':['initrd','dir'], 
+            'pack':['dir','initramfs','template'], 
+            'make-isolinux':['dir','os',
+                    'kernel','initrd',
+                    'isobin'],
+            'make-iso':['patch','iso','source','kususrc','arch'],
+            'make-boot-tgz':['dir','bootarchive'],
+            'make-patch':['os','version','patch','kususrc','arch']}
+        
+        # self.action and self.actionargs will hold the current action and its arguments            
+        self.action = None 
+        self.actionargs = None
+        
+        # an instance of the BootMediaTool for managing the actions        
+        self.bminst = bminst
+        self.usagestr = self._("""\
+boot-media-tool [-h|-v] <action> arg1=val1 arg2=val2 ...
+
+boot-media-tool builds Kusu Boot Media from supported Linux distros' 
+installation sources. The tool also queries and extracts kernel/initrd 
+images from these sources.
+
+actions:
+
+    query           - Probes and displays any kernel/initrd in the 
+                      installation source. Available arguments for 
+                      this action: 
+                        source=<path of installation source>
+    extract         - Extracts the kernel/initrd from the installation 
+                      source. Available arguments for this action:
+                        source=<path of installation source>
+                        image=<kernel|initrd|all>
+    unpack          - Unpacks the specified initrd into a directory. 
+                      Available arguments for this action:
+                        initrd=<path of initrd file>
+                        dir=<directory to unpack into>    
+    pack            - Packs the rootfs directory into a initramfs image.
+                      An optional init script template can be passed. 
+                      Available arguments for this action:
+                        dir=<path of rootfs directory>
+                        initramfs=<name of initramfs file>
+                        template=<init script template file>
+    make-isolinux   - Make isolinux directory with the specified kernel 
+                      and initrd. Available arguments for this action:
+                        dir=<directory for isolinux>
+                        os=<the os for the kernel/initrd>
+                        kernel=<path of kernel file>
+                        initrd=<path of initrd file>
+                        isobin=<path of isolinux.bin>
+    make-iso        - Make the Kusu Boot Media iso. Available arguments 
+                      for this action:
+                        patch=<path of installer patchfile>
+                        iso=<name of iso file>
+                        arch=<architechure of OS>
+                        source=<path of installation source>
+                        kususrc=<directory containing Kusu Trunk>
+    make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which
+                      then can be included in a Kusu Kit to make it bootable. 
+                      Available arguments for this action:
+                        bootarchive=<name of bootarchive>
+                        dir=<path of isolinuxdir>
+    make-patch      - Make the installer patchfile from the Kusu Trunk SVN 
+                      source. Available arguments for this action:
+                        kususrc=<directory containing Kusu Trunk>
+                        os=<name of OS>
+                        version=<version of OS>
+                        arch=<architechure of OS>
+                        patch=<name of installer patchfile>
+""")
+        self.examples = self._("""\
+Example operation usages:
+
+    To query installation source mounted at /media/cdrom:
+    # boot-media-tool query source=/media/cdrom
+
+    To create the Kusu Installer patchfile for Fedora 6 i386
+    # boot-media-tool make-patch os=fedora version=6 arch=i386
+    patch=updates.img kususrc=/tmp/svn/kusu/trunk
+
+    To create the Kusu Boot Media iso for Fedora 6 i386:
+    # boot-media-tool make-iso patch=updates.img iso=kusu.iso 
+    arch=i386 source=/mnt/cdrom kususrc=/tmp/svn/kusu/trunk
+    
+""")
+        self.parser.set_usage(self.usagestr)
+        
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        self.stdoutMessage(self.usagestr)
+        sys.stdout.write(os.linesep)
+        sys.exit(0)
+        
+    def printExamplesExit(self):
+        """ Print examples text and exit. """
+        self.stdoutMessage(self.examples)
+        sys.exit(0)
+        
+    def printMsgExit(self, msg):
+        """ Print msg and exit. """
+        self.stdoutMessage(msg)
+        sys.stdout.write(os.linesep)
+        sys.exit(1)
+        
+        
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+        
+        li = []
+        d = {}
+        
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+        
+        return d
+
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+        
+        self.parser.add_option('-f','--force', action='store_true', dest='overwrite')
+        self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.add_option('-s','--script', action='store_true', dest='usescript')
+        self.options, self.args = self.parser.parse_args()
+        
+
+        if self.options.showexamples:
+            self.printExamplesExit()
+
+        if self.options.usescript and len(self.args) == 1:
+            # check if the first parsed argument is a scriptfile
+            scriptfile = self._checkscript(self.args[0])
+            if scriptfile:
+                self._runscript(scriptfile)
+            else:
+                msg = self._('Invalid Script!')
+                self.printMsgExit(msg)
+        
+        if len(self.args) < 2:
+            self.printUsageExit()
+            
+            
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
+        
+        
+        if action not in self.actions.keys():
+            self.printUsageExit()
+        d = self.handleArgPairs(self.args[1:])
+        
+        if not d:
+            self.printUsageExit()
+            
+        # iterate keys in d and validate against the commands'
+        # list of keys
+        for k in d.keys():
+            if k not in self.actions[action]:
+                self.printUsageExit()
+                
+        self.action = action
+        self.actionargs = d
+        
+    def checkRequirements(self):
+        """ Check if the list of tools needed by BMT are indeed available. """
+        
+        for tool in TOOLS_DEPS:
+            cmd = 'which %s > /dev/null 2>&1' % tool
+            whichP = subprocess.Popen(cmd,shell=True)
+            whichP.communicate()
+            if whichP.returncode <> 0:
+                msg = self._('%(toolname)s not in your PATH. Please ensure that it is installed and available.' \
+                    % {'toolname':tool})
+                self.printMsgExit(msg)
+        
+    def run(self):
+        """ Main launcher. """
+        self.parseargs()
+        self.checkRequirements()
+        
+        # call the correct sub-handler for the action
+        m = '_' + self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
+            
+        handler = getattr(self,m)
+        
+        handler(self.actionargs)
+        
+        sys.exit(0)
+        
+    def _checkscript(self,scriptfile):
+        """ Validates the Boot Media Tool script. """
+        return None
+        
+    def _runscript(self,scriptfile):
+        """ Run the actions listed in the Boot Media Tool in batch-mode. """
+        sys.exit(0)
+    
+    def _query(self,args):
+        """Handler for query action. args is a dict of supported key-value pairs for this action. """
+        srcpath = path(args['source'])
+        if not self.bminst.validSrcPath(srcpath):
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('The path %(srcpath)s is not a supported installation source. Supported distros are %(distros)s.' \
+                % {'srcpath':srcpath,'distros':distros})
+            self.printMsgExit(msg)
+            
+        distro = self.bminst.getDistro(srcpath)
+        version = self.bminst.getVersion(srcpath)
+        kernpath = self.bminst.getKernelPath(srcpath)
+        initrdpath = self.bminst.getInitrdPath(srcpath)
+        isolinuxpath = self.bminst.getIsolinuxbinPath(srcpath)
+        
+        if distro:
+            print self._('OS Type:'), distro
+        else:
+            print self._('Cannot determine OS type.')
+
+        if version:
+            print self._('Major Version:'), version
+        else:
+            print self._('Cannot determine major version.')
+
+        if kernpath:
+            print self._('Kernel found:'), kernpath
+        else:
+            print self._('Cannot find kernel.')
+
+        if initrdpath:
+            print self._('Initrd found:'), initrdpath
+        else:
+            print self._('Cannot find initrd.')
+            
+        if initrdpath:
+            print self._('Isolinux.bin found:'), isolinuxpath
+        else:
+            print self._('Cannot find Isolinunx.bin.')
+        
+    def _pack(self,args):
+        """Handler for pack action. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        initramfs = path(args['initramfs'])
+        template = args.get('template',None)
+
+        try:
+            self.bminst.packRootImg(dirname,initramfs,template)
+            print self._('Packed %(dirname)s into %(initramfs)s') % {'dirname':dirname, 'initramfs':initramfs}
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+        except FilePathError:
+            msg = self._('File path error. Please ensure the paths are valid.')
+            self.printMsgExit(msg)        
+
+    def _unpack(self,args):
+        """Handler for unpack action. args is a dict of supported key-value pairs for this action. """
+        initrd = path(args['initrd'])
+        dirname = args['dir']
+        
+        try:
+            self.bminst.unpackRootImg(initrd,dirname)
+            print self._('Unpacking initrd to'), dirname
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+        except FilePathError:
+            msg = self._('Path of initrd file not found. Please ensure path is valid.')
+            self.printMsgExit(msg)
+
+    def _extract(self,args):
+        """Handler for extract action. args is a dict of supported key-value pairs for this action. """
+        imagetype = args['image'].lower()
+        srcpath = path(args['source'])
+        dest = args.get('dest',None)
+        overwrite = self.options.overwrite
+        
+        if not dest: 
+            dest = path.getcwd()
+        else:
+            dest = path(dest)
+        try:
+            if imagetype == 'kernel':
+                if not self.bminst.copyKernel(srcpath, dest, overwrite):
+                    msg = self._('Error extracting kernel.')
+                    self.printMsgExit(msg)
+                else:
+                    print self._('Extracting kernel to'), dest
+            elif imagetype == 'initrd':
+                if not self.bminst.copyInitrd(srcpath, dest, overwrite):
+                    msg = self._('Error extracting initrd.')
+                    self.printMsgExit(msg)
+                else:
+                    print self._('Extracting initrd to'), dest            
+            elif imagetype == 'all':  
+                if not self.bminst.copyKernel(srcpath, dest, overwrite):
+                        msg = self._('Error extracting kernel.')
+                        self.printMsgExit(msg)
+                else:
+                    print self._('Extracting kernel to'), dest
+                if not self.bminst.copyInitrd(srcpath, dest, overwrite):
+                        msg = self._('Error extracting initrd.')
+                        self.printMsgExit(msg)
+                else:
+                    print self._('Extracting initrd to'), dest
+        except FileAlreadyExists, e:
+            if imagetype != 'all' and not overwrite:
+                msg = self._('The %(imagetype)s file already exists in %(dest)s. Use -f to force overwriting the file') \
+                        % {'imagetype':imagetype, 'dest':dest}
+                self.printMsgExit(msg)
+            elif imagetype == 'all' and not overwrite:
+                msg = self._('The kernel/initrd files already exist in %(dest)s.\nUse -f to force overwriting the files') \
+                        % {'dest':dest}
+                self.printMsgExit(msg)
+            
+        
+    def _makeIso(self,args):
+        """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
+        patchfile = args.get('patch',None)
+        iso = path(args['iso']).abspath()
+        arch = args.get('arch',None)
+        srcpath = path(args['source']).abspath()
+        kususrc = path(args['kususrc']).abspath()
+        tmpdir = None
+        
+        if not arch:
+            msg = self._('Please supply the arch= option!')
+            self.printMsgExit(msg)
+        
+        if arch not in SUPPORTED_ARCH:
+            arches = ', '.join(SUPPORTED_ARCH)
+            msg = self._('%(arch)s architechure not supported. Supported architechures are %(arches)s' \
+                % {'arch':arch,'arches':arches})
+            self.printMsgExit(msg)
+        
+        if patchfile: patchfile = path(patchfile).abspath()
+                  
+        try:
+            print self._('Creating temporary iso contents based on installation source and Kusu SVN source tree.')
+            print self._('This may take awhile...')
+            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc,arch)
+            print self._('Generating Kusu Boot Media ISO.')
+            self.bminst.mkBootISO(tmpdir, iso, volname="Kusu Boot Media")
+            print self._('Generated %(iso)s') % {'iso':iso}
+            # do housecleaning
+            if tmpdir.exists(): tmpdir.rmtree()
+        except FilePathError:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('File path error. Please ensure the directory path is valid.')
+            self.printMsgExit(msg)     
+        except InvalidInstallSource:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Invalid Installation source!') 
+            self.printMsgExit(msg) 
+        except InvalidKusuSource:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Invalid Kusu SVN source!') 
+            self.printMsgExit(msg)
+        except UnsupportedDistro:
+            if not tmpdir:
+                pass
+            elif tmpdir.exists(): 
+                tmpdir.rmtree()
+            msg = self._('Distro-specific assets not found in Kusu SVN source!') 
+            self.printMsgExit(msg)
+
+    def _makeIsolinux(self,args):
+        """Handler for make-isolinux. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        ostype = args['os']
+        kernpath = path(args['kernel'])
+        initrdpath = path(args['initrd'])
+        isobin = path(args['isobin'])
+
+        try:
+            self.bminst.mkISOLinuxDir(dirname, kernpath, initrdpath, ostype, isobin)
+            print self._('Updated isolinux.cfg in %(dirname)s') % {'dirname':dirname}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the paths are valid.')
+            self.printMsgExit(msg)
+
+    def _makeBootTgz(self,args):
+        """Handler for make-boot-tgz. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['dir'])
+        bootarchive = path(args['bootarchive'])
+      
+        try:
+            self.bminst.mkBootArchive(dirname, bootarchive)
+            print self._('Created BootArchive %(bootarchive)s from %(dirname)s') \
+                % {'dirname':dirname,'bootarchive':bootarchive}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the directory is valid.')
+            self.printMsgExit(msg)
+            
+    def _makePatch(self, args):
+        """Handler for make-patch. args is a dict of supported key-value pairs for this action. """
+        kususrc = path(args['kususrc'])
+        osname = args['os']
+        version = args['version']
+        osarch = args['arch']
+        patchfile = args['patch']
+        
+        if osname not in SUPPORTED_DISTROS:
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
+                % {'osname':osname, 'distros':distros})
+            self.printMsgExit(msg)
+        
+        # we're only interested in the major version
+        osver = version.split('.')[0]
+        
+        try:
+            print self._('Creating Kusu Installer patchfile for %(osname)s %(osver)s %(osarch)s. This may take awhile.' \
+                % {'osname':osname,'osver':osver,'osarch':osarch})
+            self.bminst.mkPatch(kususrc,osname,osver,osarch,patchfile)
+            print self._('Finished creating %(patchfile)s' % {'patchfile':patchfile})
+        except (FilePathError,InvalidKusuSource):
+            msg = self._('File path error. Please ensure the paths for the kususrc and patchfile are valid.')
+            self.printMsgExit(msg)
+        except NotPriviledgedUser:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+        except UnsupportedDistro:
+            msg = self._('Distro-specific assets not found in Kusu SVN source!')
+            self.printMsgExit(msg)
+        except (FailedBuildMake,FailedBuildCMake), e:
+            msg = self._('Failed building the Kusu Runtime. Please file a bug!')
+            self.printMsgExit(msg)
+        
+    def _makeImgdir(self,args):
+        """Handler for make-imgdir. args is a dict of supported key-value pairs for this action. """
+        srcpath = path(args['source'])
+        dirname = path(args['dir'])
+        patchfile = args.get('patchfile',None)
+        overwrite = self.options.overwrite
+
+        try:
+            print self._('Probing %(srcpath)s for second stage image(s).') \
+                % {'srcpath':srcpath}
+            self.bminst.mkImagesDir(srcpath,dirname,patchfile,overwrite)
+            print self._('Created images directory at %(dirname)s from %(srcpath)s') \
+                % {'dirname':dirname,'srcpath':srcpath}
+        except FilePathError:
+            msg = self._('File path error. Please ensure the directory is valid.')
+            self.printMsgExit(msg)
+        except InvalidInstallSource:
+            msg = self._('The installation source is not supported')
+            self.printMsgExit(msg)
+        except FileAlreadyExists, e:
+            if not overwrite:
+                msg = self._('The second stage file(s) already exist in %(dirname)s. Use -f to force overwriting the file(s).') \
+                        % {'dirname':dirname}
+                self.printMsgExit(msg)
+
+if __name__ == '__main__':
+    bminst = BootMediaTool()
+    app = BootMediaApp(bminst)
+    app.run()
+
+
