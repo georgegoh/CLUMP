@@ -7,10 +7,15 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-import subprocess 
 import os
 import re
 from path import path
+from kusu.util.errors import *
+
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
 
 class Interface:
 
@@ -31,11 +36,11 @@ class Interface:
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
-        except Exception, e:
-            print e
+        except:
+            raise CommandFailedToRun
 
         if retcode:
-            raise Exception, 'interface %s cannot be brought up' % self.interface
+            raise InterfaceNotBroughtUpError, 'interface %s cannot be brought up' % self.interface
 
 
     def down(self):
@@ -46,11 +51,11 @@ class Interface:
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
-        except Exception, e:
-            print e
+        except:
+            raise CommandFailedToRun
 
         if retcode:
-            raise Exception, 'interface %s cannot be brought down' % self.interface
+            raise InterfaceNotBroughtDownError, 'interface %s cannot be brought down' % self.interface
 
 
     def _getIPNetmask(self):
@@ -61,11 +66,11 @@ class Interface:
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
-        except Exception, e:
-            print e
+        except:
+            raise CommandFailedToRun
 
         if retcode:
-            raise Exception, 'interface %s not found' % self.interface
+            raise InterfaceNotFound, 'interface %s not found' % self.interface
 
         #From http://www.regular-expressions.info
         regex_str = '\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b'
@@ -92,13 +97,13 @@ class Interface:
 
             out, err = p.communicate()
             retcode = p.returncode
-        except Exception, e:
-            raise e
+        except:
+            raise CommandFailedToRun
 
         if not retcode:
             self._getIPNetmask()
         else:
-            raise Exception, 'Failed to set static IP'
+            raise FailedSetStaticIPError, 'Failed to set static IP'
 
  
             
@@ -106,7 +111,7 @@ class Interface:
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
-            raise Exception, 'KUSU_ROOT not found'
+            kusu_root = '/opt/kusu'
 
         script = path(kusu_root) / 'bin' / 'udhcpc.script'
 
@@ -118,7 +123,7 @@ class Interface:
             #os.environ.get('KUSU_DISTVER', None) 
             cmd = 'udhcpc -f -q -n -i %s -s %s' % (self.interface, script)
         else:
-            raise Exception, 'Not supported operating system'
+            raise NotSupportedOperatingSystem, 'Not supported operating system'
     
 
         try:
@@ -128,14 +133,14 @@ class Interface:
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
-        except Exception, e:
+        except:
             raise e
 
        
         if not retcode:
             self._getIPNetmask()
         else:
-            raise Exception, 'Failed to get ip from dhcp'
+            raise FailedSetStaticIPError, 'Failed to get ip from dhcp'
 
         
     def getIPNetmask(self):

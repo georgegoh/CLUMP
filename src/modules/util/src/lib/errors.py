@@ -15,6 +15,7 @@ class KusuError(exceptions.Exception): pass
 class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
+class CommandFailedToRun(KusuError): pass
 
 # partitiontool
 class NoDisksFoundError(KusuError) : pass
@@ -51,3 +52,7 @@ class InterfaceNotBroughtUpError(KusuError): pass
 class InterfaceNotBroughtDownError(KusuError): pass
 class FailedDHCPRequestError(KusuError): pass
 class FailedSetStaticIPError(KusuError): pass
+class NotSupportedOperatingSystem(KusuError): pass
+class InterfaceNotFound(KusuError): pass
+
+
