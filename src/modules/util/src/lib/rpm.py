@@ -12,9 +12,8 @@
 import rpm
 import os
 import types
-import glob
 import gzip
-import shutil
+from path import path
 
 class RPM:
     """A RPM abstraction class"""
@@ -42,10 +41,10 @@ class RPM:
            3. RPM filename (foo.rpm)"""
         
         if type(r) == types.StringType:
-            self.ext = os.path.splitext(r)[1]
-            r = os.path.abspath(r)
+            r = path(r).realpath()
+            self.ext = r.ext
             self.file = r
-            self.path,self.fname = os.path.split(r)
+            self.path, self.fname = r.splitpath()
 
             if self.ext  == '.rpm':
                 self.filename = r
@@ -79,10 +78,10 @@ class RPM:
         dst = "%s-%s-%s.%s.hdr" % (n,v,r,a)
 
         if not dir:
-            dir = os.path.abspath(os.curdir)
+            dir = path(os.curdir).realpath()
             
-        dst = os.path.join(dir, dst)
-        if os.path.exists(dst):
+        dst = path(dir) / dst
+        if dst.exits():
             os.unlink(dst)
         
         if compress:
@@ -113,7 +112,7 @@ class RPM:
         filename = self.get_filename()
 
         if filename:
-            return os.path.split(filename)
+            return path(filename).splitpath()
         else:
             return None
 
