@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+# $Id: boot-media-tool 833 2007-05-16 17:02:06Z najib $
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+
+from kusu.core.app import KusuApp
+from kusu.kitops.kitops import KitOps
+
+class KitOpsApp(KusuApp):
+    def __init__(self, koinst):
+        """Create instance of KitOpsApp. koinst is a KitOps instance."""
+
+        KusuApp.__init__(self)
+
+        self.koinst = koinst
+        self.kitop = KITOP_NONE
+
+        # setup command line parser
+        self.parser.add_option('-a', '--add', dest='addkit',
+                               help=self._('kitops_usage_add'), 
+                               action='callback', callback=self.optargs)
+        self.parser.add_option('-m', dest='media',
+                               help=self._('kitops_usage_media'))
+#        self.parser.add_option('-l','--list', action='store_true', dest='list',default=False,\
+#            help=self._('kitops_usage_list'))
+        self.parser.add_option('-l', '--list', dest='lstkit',
+                               help=self._('kitops_usage_list'),
+                               action='callback',callback=self.optargs )
+        self.parser.add_option('-e', '--remove', dest='delkit',
+                               help=self._('kitops_usage_remove'))
+
+    def nxor(*args):
+        '''N-way XOR for an  arbitrary number of bool args'''
+        return len([x for x in args if x]) == 1
+    nxor = staticmethod(nxor)
+        
+    def parseArgs(self):
+        (options, args) = self.parser.parse_args()
+        print "DEBUG: options = ", options
+        print "DEBUG: args = ", args
+
+        if args:
+            sys.stderr.write("kitops: No arguments expected - encountered args = %s\n" %args)
+            self.printHelp()
+            sys.exit(1)
+
+        if options.addkit == '':
+            addbool = True  #want to resolve '' to true
+        else:
+            addbool = bool(options.addkit)
+
+        if options.lstkit == '':
+            lstbool = True  #want to resolve '' to true
+        else:
+            lstbool = bool(options.lstkit)
+
+        #must specify exactly one of the following (want rv==true)
+        rv = KitopsApp.nxor(addbool, bool(options.delkit), lstbool)
+        if not rv:
+            self.errorMessage('kitops: Exactly one kit operation expected\n')
+            self.printHelp()
+            sys.exit(1)
+
+        if addbool:
+            koinst.setKitname(options.addkit)
+            koinst.setKitmedia(options.media)
+            self.kitop = KITOP_ADD
+        elif options.delkit:
+            koinst.setKitname(options.delkit)
+            self.kitop = KITOP_DEL
+        elif lstbool:
+            koinst.setKitname(options.lstkit)
+            self.kitop = KITOP_LST
+
+    def run(self):
+        '''The main body of the application.  '''
+
+        self.parseArgs()
+        
+        if self.kitop == KITOP_ADD:
+            print 'kitops: performing add operation'
+            if not self.koinst.addKitPrepare():
+                sys.stderr.write("kitops: add preparation failed. For more info - see above\n")
+                sys.exit(1)
+            rv = self.koinst.addKit()
+            if not rv:
+                print 'kitops: add operation successful'
+            else:
+                print 'kitops: add operation failed'
+
+            self.koinst.unmountMedia()
+
+        elif self.kitop == KITOP_DEL:
+            print 'kitops: performing delete operation'
+            rv = self.koinst.deleteKit()
+            if not rv:
+                print 'kitops: delete operation successful'
+            else:
+                print 'kitops: delete operation failed'
+
+
+        elif self.kitop == KITOP_LST:
+            print 'kitops: performing list operation'
+            rv = self.koinst.listKit()
+            if not rv:
+                print 'kitops: list operation successful'
+            else:
+                print 'kitops: list operation failed'
+
+        else:
+            print 'kitops: unknown operation=%d requested' %self.kitop
+        
+    def printHelp(self):
+        self.parser.print_help()
+
+if __name__ == '__main__':
+    koinst = KitOps()
+    app = KitOpsApp(koinst)
+    app.run()
