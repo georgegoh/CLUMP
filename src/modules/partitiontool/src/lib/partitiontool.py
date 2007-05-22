@@ -57,7 +57,7 @@ import math
 import parted
 import subprocess
 from lvm import *
-import kusu.hardware
+import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
 from kusu.util.errors import *
