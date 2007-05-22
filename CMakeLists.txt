@@ -24,6 +24,7 @@ SET(KUSU_MODULES
   networktool
   hardware
   kit
+  kitops
   buildkit
 )
 
