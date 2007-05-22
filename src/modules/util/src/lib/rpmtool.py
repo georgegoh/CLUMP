@@ -78,7 +78,7 @@ class RPM:
         dst = "%s-%s-%s.%s.hdr" % (n,v,r,a)
 
         if not dir:
-            dir = path(os.curdir).realpath()
+            dir = path.getcwd()
             
         dst = path(dir) / dst
         if dst.exits():
@@ -380,25 +380,25 @@ class RPM:
             fname = "%s-%s-%s.%s.rpm" % (n,v,r,a)
 
             # Try to detect a yum cache or repo
-            if os.path.basename(self.path) == 'headers':
-                pkgdir   = os.path.join(os.path.dirname(self.path),'packages')
-                filename = os.path.join(pkgdir,fname)
+            if self.path.basename() == 'headers':
+                pkgdir   = self.path.dirname() / 'packages'
+                filename = pkgdir / fname
             
                 # yum cache directory stucture
                 # /headers.info
                 # /headers
                 # /packages
-                if os.path.isfile(filename):
+                if filename.isfile():
                     self.filename = filename
                     return self.filename
                 
                 else:
-                    pkgdir   = os.path.dirname(self.path)
-                    filename = os.path.join(self.path, 'header.info')
+                    pkgdir   = self.path.dirname()
+                    filename = self.path / 'header.info'
 
                     # yum repo
                     # header.info contains the location of the rpm
-                    if os.path.isfile(filename):
+                    if filename.isfile()
                         search = "%s:%s-%s-%s.%s" % (e,n,v,r,a)
                         f = open(filename)
                         stat = f.readlines()
@@ -407,10 +407,10 @@ class RPM:
                             i = [s.split('=')[0] for s in stat].index(search)
                         except:
                             return None
-                    
-                        filename = os.path.join(pkgdir, stat[i].split('=')[1].strip())
+                        
+                        filename = pkgdir / stat[i].split('=')[1].strip()
 
-                        if os.path.isfile(filename):
+                        if filename.isfile()
                             self.filename = filename
                             return self.filename
                         else:
@@ -420,8 +420,8 @@ class RPM:
             
             else:
                 # current dir
-                filename = os.path.join(self.path, fname)
-                if os.path.isfile(filename):
+                filename = self.path / fname
+                if filename.isfile():
                     self.filename = filename
                     return self.filename
                 else:
