@@ -72,7 +72,7 @@ class ScreenFactoryImpl(ScreenFactory):
     kiprofile.addDatabase(collection)
 
     ScreenFactory.screens = \
-        [WelcomeScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
+        [WelcomeScreen(collection, kusuApp=None, kiprofile=kiprofile),
          LanguageSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
          KeyboardSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
          ClusterInfoScreen(collection, kusuApp=None, kiprofile=kiprofile),
