@@ -398,7 +398,7 @@ class RPM:
 
                     # yum repo
                     # header.info contains the location of the rpm
-                    if filename.isfile()
+                    if filename.isfile():
                         search = "%s:%s-%s-%s.%s" % (e,n,v,r,a)
                         f = open(filename)
                         stat = f.readlines()
@@ -410,7 +410,7 @@ class RPM:
                         
                         filename = pkgdir / stat[i].split('=')[1].strip()
 
-                        if filename.isfile()
+                        if filename.isfile():
                             self.filename = filename
                             return self.filename
                         else:
