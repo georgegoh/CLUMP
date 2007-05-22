@@ -42,7 +42,12 @@ NAV_QUIT = 2
 NOCANCEL    = 0
 ALLOWCANCEL = 1
 
-class NetEditApp(KusuApp):
+class NetworkData(object):
+    def __init__(self):
+        self.selectedNetworkID = 0
+        
+    
+class NetEditApp(object, KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
@@ -210,11 +215,51 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         result = self.selector.popupDialogBox(self._("netedit_window_title_exit"), self._("netedit_instructions_exit"), 
                  (self._("yes_button"), self._("no_button")))
         if result == "no":
+            self.popWindow()
             return NAV_NOTHING
         if result == "yes":
             self.finish()  # Destroy the screens, exit
             sys.exit(0)
-            
+    
+    def editAction(self, data=None):
+        self.selector.popupStatus("Not Implemented", "This is not implemented yet", 1)
+        self.popWindow()
+        return NAV_NOTHING
+        
+    def deleteAction(self, data=None):
+        self.database.connect('kusudb', 'apache')
+        # Check if the network selected is not in use.
+        netuse = 0
+        netInfo = self.networkListbox.current().split()
+        
+        query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(netInfo[0])
+
+        try:
+            self.database.execute(query)
+            netuse = self.database.fetchone()[0]
+        except:
+            self.finish()
+            print self._("DB_Query_Error\n")
+            sys.exit(-1)
+        
+        if int(netuse) == 0:
+            # Prompt for delete dialog.
+            result = self.selector.popupDialogBox(self._("netedit_window_title_delete"), 
+                    self._("Do you want to delete the network '%s'?") % netInfo[1], (self._("yes_button"), self._("no_button")))
+            if result == "no":
+                self.popWindow()
+                return NAV_NOTHING
+            if result == "yes":
+                pass # Delete the entry!
+                self.database.execute("DELETE FROM networks WHERE netid = %d" % int(netInfo[0]))
+                self.popWindow()
+                return NAV_NOTHING
+        else:
+            self.selector.popupMsg(self._("netedit_window_title_delete"), 
+            self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor.\n\n" % netInfo[1]))
+            self.popWindow()
+            return NAV_NOTHING
+        
     def newAction(self, data=None):
         flag = 1
         myScreen = snack.SnackScreen()
@@ -273,6 +318,12 @@ class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, ku
         
         # New action
         self.buttonsDict[self.buttons[0]].setCallback_(self.newAction)
+        
+        # Edit action
+        self.buttonsDict[self.buttons[1]].setCallback_(self.editAction)
+        
+        # Delete action
+        self.buttonsDict[self.buttons[2]].setCallback_(self.deleteAction)
 
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
@@ -287,7 +338,7 @@ class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, ku
             print self._("DB_Query_Error\n")
             sys.exit(-1)
 
-        query = "SELECT netid, network, subnet, netname FROM networks"
+        query = "SELECT netid, network, subnet, netname FROM networks ORDER BY netid"
         try:
             self.database.execute(query)
             networkInfo = self.database.fetchall()
@@ -298,15 +349,15 @@ class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, ku
 
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(80, 3, self._(self.msg), scroll=0, wrap=0)
-        self.listbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
+        self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
         for nid, net,sub,netname in networkInfo:
             # If string is too long, show elipsis.
             if len(netname) > 46: 
                netname = netname[:43] + "..."
-
-            self.listbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s" % nid)
+               
+            self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
-        self.screenGrid.setField(self.listbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
+        self.screenGrid.setField(self.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
