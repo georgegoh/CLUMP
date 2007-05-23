@@ -9,6 +9,7 @@
 
 from path import path
 from kusu.boot.distro import DistroFactory, InvalidInstallSource
+from kusu.util.tools import cpio_copytree
 import os
 import sys
 import commands
@@ -275,41 +276,6 @@ def launchCmd(cmd,*args):
     
     return value
     
-def cpio_copytree(src,dst):
-    """A cpio-based copytree functionality. Only use this when shutil.copytree don't cut
-       it. NOTE: This needs to move to the common util library.
-    """
-
-    # Taken from <unistd.h>, for file/dirs access modes
-    # These can be OR'd together
-    R_OK = 4   # Test for read permission.
-    W_OK = 2   # Test for write permission.
-    X_OK = 1   # Test for execute permission.
-
-    # convert paths to be absolute
-    src = path(src).abspath()
-    dst = path(dst).abspath()
-    cwd = path(src)
-
-    if not cwd.exists(): raise IOError, "Source directory does not exist!"
-
-    # create the dst directory if it doesn't exist initially
-    if not path(dst).exists():
-        if path(dst).parent.access(R_OK|W_OK):
-            path(dst).mkdir()
-        else:
-            raise IOError, "No read/write permissions in parent directory!"
-    else:
-        if not path(dst).access(R_OK|W_OK): raise IOError, "No read/write permissions in destination directory!"
-
-
-    findP = subprocess.Popen('find .',cwd=cwd,shell=True,stdout=subprocess.PIPE)
-    cpioP = subprocess.Popen('cpio -mpdu --quiet %s' % dst,cwd=cwd,stdin=findP.stdout,shell=True)
-    cpioP.communicate()
-    return cpioP.returncode
-
-
-
 class OperatingEnvironment(object):
     """An OperatingEnvironment is a set of environement that contains the kernel and initial ramdisks. It also contains related
        methods and attributes. A RootImg refers to the initrd or initramfs image file.

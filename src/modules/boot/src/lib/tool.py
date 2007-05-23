@@ -13,6 +13,7 @@ from kusu.boot.distro import DistroFactory, InvalidInstallSource, SUPPORTED_DIST
 from kusu.boot.distro import CopyError, UnsupportedDistro
 from kusu.boot.distro import FileAlreadyExists
 from kusu.boot.image import *
+from kusu.util.tools import cpio_copytree
 import tempfile
 
 class InvalidKusuSource(Exception): pass
