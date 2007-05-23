@@ -180,7 +180,7 @@ class DiskProfile(object):
         if test:
             self.populateDiskProfileTest(fresh, test)
         else:
-            self.populateDiskProfile()
+            self.populateDiskProfile(fresh)
 
     def probeLVMEntities(self):
         logger.debug('Probing PVs.')
@@ -224,7 +224,7 @@ class DiskProfile(object):
                             lvg.lv_dict[lv_name] = lv
                             self.lv_dict[lv_name] = lv
 
-    def populateDiskProfile(self):
+    def populateDiskProfile(self, fresh):
         logger.debug('Finding disks.') 
         disks_str = kusu.hardware.probe.getDisks().keys()
         for disk_str in disks_str:
