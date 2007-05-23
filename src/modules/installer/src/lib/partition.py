@@ -31,6 +31,7 @@ class PartitionScreen(screenfactory.BaseScreen):
     """
     name = _('Partitions')
     context = 'Partitions'
+    profile = context
     msg = _('Please enter the following information:')
     buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
 #    buttons = [_('New'), _('Delete')]#, _('RAID')]
@@ -143,13 +144,23 @@ class PartitionScreen(screenfactory.BaseScreen):
         Store to database
         
         """
-        self.database.put(self.context, 'partition', 'tool')
-        self.kusuApp['DiskProfile'] = self.disk_profile
+        try:
+            profile = self.kiprofile[self.profile]
+        except KeyError:
+            profile = {}
+            self.kiprofile[self.profile] = profile
+
+        profile['DiskProfile'] = self.disk_profile
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:
             return True
         return False
+
+    dbFunctions = {'MySQL': None,
+                   'SQLite': None,
+                   'SQLColl': (None, None)}
+
 
 stored_mountpoint=''
 def fileSystemCallback(args):

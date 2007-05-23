@@ -111,9 +111,8 @@ class ConfirmScreen(screenfactory.BaseScreen):
             mntpnt = '/mnt/kusu'
 
             prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-            disk_profile = self.kusuApp['DiskProfile']
-            self.formatDisk(disk_profile)
-            self.logger.debug('Formatted Disks.')
+            disk_profile = self.kiprofile['Partitions']['DiskProfile']
+            setupDisks(disk_profile)
             prog_dlg.close()
 
             prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
@@ -149,8 +148,3 @@ class ConfirmScreen(screenfactory.BaseScreen):
             migrate(mntpnt)
             self.logger.debug('Migrated kusu.db and kusu.log')
             prog_dlg.close()
-
-    def formatDisk(self, disk_profile):
-        disk_profile.commit()
-        disk_profile.formatAll()
-

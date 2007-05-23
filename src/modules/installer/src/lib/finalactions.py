@@ -17,6 +17,10 @@ from path import path
 
 logger = kusulog.getKusuLog('installer.final')
 
+def setupDisks(disk_profile):
+    disk_profile.commit()
+    disk_profile.formatAll()
+ 
 def setupNetwork():
     # Use dhcpc from busybox
     # Assume eth0 for now
