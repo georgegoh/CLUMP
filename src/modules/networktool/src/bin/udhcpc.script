@@ -33,9 +33,7 @@ def doCommand(cmd):
     except:
         raise CommandFailedToRun
 
-    if retcode:
-        raise CommandFailedToRun
-
+    return retcode
 
 def doEvent(name):
     interface = getVar('interface')
