@@ -74,7 +74,7 @@ class FQHNScreen(screenfactory.BaseScreen):
 
         self.hostname = kusuwidgets.LabelledEntry(
                     labelTxt=_('Host name '), width=entryWidth)
-        self.hostname.addCheck(kusutil.verifyFQDN)
+        self.hostname.addCheck(verifyFQDN)
 
         try:
             self.hostname.setEntry(self.netProfile['fqhn'])
