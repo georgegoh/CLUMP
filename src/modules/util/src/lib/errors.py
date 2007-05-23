@@ -39,10 +39,11 @@ class LogicalVolumeStillInUseError(KusuError): pass
 class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
 
-# util
+# util.tools
 class CopyFailedError(KusuError): pass
+class NotSupportedURIError(KusuError): pass
 
-# util/distro
+# util.distro
 class LoadDistroConfFailedError(KusuError): pass
 class HTTPError(KusuError): pass
 class FTPError(KusuError): pass

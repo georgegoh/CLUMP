@@ -19,14 +19,12 @@ except:
 
 logger = kusulog.getKusuLog('util.tools')
 
-def copy(src, dest):
-    """ Performs a recursive copy. Source can either be 
-        http/ftp or a local path
-    """
 
-    import urlparse
-    import errno
-
+def url_mirror_copy(src, dst):
+    """Performs a mirror copy of a http or ftp url.
+       It will mirror everything that is under the 
+       url.
+    """ 
     if urlparse.urlsplit(src)[0] in ['http', 'ftp']:
         p = path(urlparse.urlsplit(src)[2]).splitall()
 
@@ -43,10 +41,9 @@ def copy(src, dest):
             cutaway = 0
 
         cmd = 'wget -m -np -nH --cut-dirs=%s %s' % (cutaway, src)
-
         try:
             p = subprocess.Popen(cmd,
-                                 cwd = dest,
+                                 cwd = dst,
                                  shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
@@ -57,23 +54,18 @@ def copy(src, dest):
             if e.errno == errno.ENOENT:
                 raise FileDoesNotExistError, 'wget not found' 
             else:
-                raise KusuError, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
+                raise CommandFailedToRun, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
 
-        except Exception, e:
-            raise KusuError
+        except:
+            raise CommandFailedToRun
 
         if retcode:
-            raise CopyFailedError, 'Failed to copy %s to %s' % (src,dest)
+            raise CopyFailedError, 'Failed to copy %s to %s' % (src,dst)
         else:
             return True
-
-
     else:
-        if os.path.exists(src):
-            cpio_copytree(src, dest)
+        raise NotSupportedURIError
 
-        else:  
-            raise CopyFailedError, 'Failed to copy %s to %s' % (src,dest)
 
 
 def cpio_copytree(src,dst):
