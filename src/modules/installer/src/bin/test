@@ -58,7 +58,7 @@ if __name__ == '__main__':
             makeDev('b',devmap[dev]['major'],devmap[dev]['minor'],dev)
 
     # create kusu installer instance
-    screentitle = 'Project Kusu Cluster Toolkit %s (build %s)' % ('0.1', '906')
+    screentitle = 'Project Kusu Cluster Toolkit %s (build %s)' % ('${VERSION_STR}', '${KUSU_REVISION}')
     ki = KusuInstallerTest(screenFactory=ScreenFactoryTest,
                        screenTitle=screentitle ,
                        showTrail=True)

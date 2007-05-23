@@ -15,6 +15,5 @@ setup(name="kusu-kitops",
       url="http://www.osgdc.org/project/kusu",
       platforms=["any"],
       packages = ['kitops'],
-      package_dir={'kitops': 'src/lib'},
-      scripts=['src/bin/kitops']
+      package_dir={'kitops': 'src/lib'}
      )
