@@ -174,10 +174,39 @@ class DiskProfile(object):
             self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
         logger.debug('Found disks.')
 
-        logger.debug('Finding PVs.')
-        # probe the physical volumes
+        logger.debug('Probing PVs.')
         pv_probe_dict = probePhysicalVolumes()
-        logger.debug('Probed PVs.')
+        logger.debug('Probing VGs.')
+        lvg_probe_dict = probeLogicalVolumeGroups()
+        logger.debug('Probing LVs.')
+        lv_probe_dict = probeLogicalVolumes()
+
+        if fresh:
+            self.__wipeLVMObjects(pv_probe_dict,
+                                  lvg_probe_dict,
+                                  lv_probe_dict)
+            # re-probe
+            pv_probe_dict = {}
+            lvg_probe_dict = {}
+            lv_probe_dict = {}
+
+        self.__createLVMObjects(pv_probe_dict,
+                                    lvg_probe_dict,
+                                    lv_probe_dict)
+
+    def __wipeLVMObjects(self, pv_probe_dict, lvg_probe_dict, lv_probe_dict):
+        logger.debug('Wiping LVs.')
+        for lv_path in lv_probe_dict.iterkeys():
+            LogicalVolume.remove(lv_path)
+        logger.debug('Wiping VGs.')
+        for lvg_name in lvg_probe_dict.iterkeys():
+            LogicalVolumeGroup.remove(lvg_name)
+        logger.debug('Wiping PVs.')
+        for pv_path in pv_probe_dict.iterkeys():
+            PhysicalVolume.remove(pv_path)
+
+    def __createLVMObjects(self, pv_probe_dict, lvg_probe_dict, lv_probe_dict):
+        logger.debug('Creating PV objects.')
         for pv_path, pv_prop_dict in pv_probe_dict.iteritems():
             partition = self.getPartitionFromPath(pv_path)
             partition.lvm_flag = 1
@@ -185,22 +214,16 @@ class DiskProfile(object):
             pv.on_disk = True
             pv.group = pv_prop_dict['group']
             self.pv_dict[pv_path] = pv
-        logger.debug('Found PVs.')
 
-        logger.debug('Finding LVGs.')
-        # probe the logical volume groups
-        lvg_probe_dict = probeLogicalVolumeGroups()
+        logger.debug('Creating VG objects.')
         for lvg_name, lvg_prop_dict in lvg_probe_dict.iteritems():
             pv_list = [pv for pv in self.pv_dict.itervalues() \
                               if pv.group == lvg_name]
             lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'],
                                      pv_list)
             self.lvg_dict[lvg_name] = lvg
-        logger.debug('Found LVGs.')
 
-        logger.debug('Finding LVs.')
-        # probe logical volumes
-        lv_probe_dict = probeLogicalVolumes()
+        logger.debug('Creating LV objects.')
         for lv_path, lv_prop_dict in lv_probe_dict.iteritems():
             lvg_name = lv_prop_dict['group']
             lvg = self.lvg_dict[lvg_name]
@@ -209,7 +232,6 @@ class DiskProfile(object):
             lv.extents = lv_prop_dict['extents']
             lvg.lv_dict[lv_name] = lv
             self.lv_dict[lv_name] = lv
-        logger.debug('Found LVs.')
 
     def getPartitionFromPath(self, path_str):
         i = -1
@@ -243,7 +265,7 @@ class DiskProfile(object):
     def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
         """Create a new partition."""
         # sanity check
-        if mountpoint in self.mountpoint_dict.keys():
+        if self.mountpoint_dict.has_key(mountpoint):
             raise DuplicateMountpointError, 'Assigned mountpoint ' + \
                                             'already exists.'
 
@@ -306,14 +328,14 @@ class DiskProfile(object):
     def deletePartition(self, partition_obj, keep_in_place=False):
         """Delete an existing partition."""
         # if partition is a physical volume.
-        if partition_obj.path in self.pv_dict.keys():
+        if self.pv_dict.has_key(partition_obj.path):
             physicalVol = self.pv_dict[partition_obj.path]
             if physicalVol.group != None:
                 raise PartitionIsPartOfVolumeGroupError, 'Partition cannot ' + \
                     'be deleted because it is part of a Logical Volume Group.'
             del self.pv_dict[partition_obj.path]
 
-        if partition_obj.mountpoint in self.mountpoint_dict.keys():
+        if self.mountpoint_dict.has_key(partition_obj.mountpoint):
             del self.mountpoint_dict[partition_obj.mountpoint]
 
         partition_obj.disk.delPartition(partition_obj, keep_in_place)
@@ -322,7 +344,7 @@ class DiskProfile(object):
     def newLogicalVolumeGroup(self, name, extent_size, pv_list):
         """Create a new logical volume group."""
         # sanity checks
-        if name in self.lvg_dict.keys():
+        if self.lvg_dict.has_key(name):
             raise DuplicateNameError, 'Logical Volume Group name already exists.'
         unit = extent_size[-1]
         if unit.upper() != 'M':
@@ -377,9 +399,9 @@ class DiskProfile(object):
     def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None):
         """Create a new logical volume."""
         # sanity checks
-        if name in self.lv_dict.keys():
+        if self.lv_dict.has_key(name):
             raise DuplicateNameError, 'Logical Volume name already exists.'
-        if mountpoint in self.mountpoint_dict.keys():
+        if self.mountpoint_dict.has_key(mountpoint):
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         new_lv = lvg.createLogicalVolume(name, long(size_MB), \
@@ -405,11 +427,14 @@ class DiskProfile(object):
 
     def deleteLogicalVolume(self, lv):
         """Delete an existing logical volume."""
-        if lv.mountpoint in self.mountpoint_dict.keys():
-            del self.mountpoint_dict[lv.mountpoint]
-
+        # delete from Volume Group.
         lv.group.delLogicalVolume(lv)
-
+        # delete from mountpoints(if any).
+        if self.mountpoint_dict.has_key(lv.mountpoint):
+            del self.mountpoint_dict[lv.mountpoint]
+        # delete from Logical Volume dictionary.
+        if self.lv_dict.has_key(lv.name):
+            del self.lv_dict[lv.name]
 
     def commit(self):
         for disk in self.disk_dict.itervalues():
