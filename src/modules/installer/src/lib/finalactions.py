@@ -9,6 +9,10 @@
 
 import os
 import kusu.util.log as kusulog
+from kusu.util.verify import *
+from kusu.util import util
+from kusu.util.errors import *
+
 from path import path
 
 logger = kusulog.getKusuLog('installer.final')
@@ -29,8 +33,6 @@ def setupNetwork():
 def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
-    from kusu.util.verify import *
-    from kusu.util import errors
 
     url = str(database.get('Kits', 'FedoraURL')[0])
     prefix = path(prefix)
@@ -40,19 +42,19 @@ def copyKits(prefix, database):
         os_version = os.environ.get('KUSU_DISTVER', None)
 
         verifyDistro(url, os_name, os_version)
-    except errors.KusuError, e: raise e
+    except KusuError, e: raise e
 
     try:
         util.copy(url, prefix + '/depot')
-    except errors.HTTPError, e:
+    except HTTPError, e:
         url, status, reason  = e.args
         # Do something here
         raise e
-    except errors.FTPError, e:
+    except FTPError, e:
         url, status, reason  = e.args
         # Do something here
         raise e
-    except errors.KusuError, e: raise e
+    except KusuError, e: raise e
 
     
 def makeRepo(self):
