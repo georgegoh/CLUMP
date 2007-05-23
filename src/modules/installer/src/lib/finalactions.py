@@ -88,14 +88,7 @@ def genAutoInstallScript(disk_profile, network_profile, database):
     k.lang = database.get('Language', 'Language')[0]
     k.keyboard = database.get('Keyboard', 'Keyboard')[0]
 
-    # Generate kickstart
-    template = path(os.getenv('KUSU_ROOT', None)) / \
-               'etc' / \
-               'templates' / \
-               'kickstart.tmpl'
-    kf = KickstartFactory(str(template))
-    script = Script(kf)
-    script.setProfile(k)
+    script = Script(KickstartFactory(k))
     script.write(install_script)
 
 def migrate(prefix):

@@ -7,27 +7,65 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 
-from path import path
 import os
+from path import path
+from kusu.util.errors import *
 
 class BaseFactory:
     namespace = {}
     profile = None
 
-    def __init__(self, template):
+    def __init__(self, template, profile):
         self.template = template
-
-    def setProfile(self, profile):
+         
         if self._validateProfile(profile):
             self.profile = profile
         else:
-            raise Exception
+            raise ProfileNotCompleteError
 
     def _validateProfile(self, profile):
         return True
 
 class KickstartFactory(BaseFactory):
+ 
+    def __init__(self, profile, template=None):
     
+        if template:
+            self.template = path(template)
+        else:
+            kusu_root = os.getenv('KUSU_ROOT', None)
+
+            if not kusu_root:
+                kusu_root = '/opt/kusu'
+
+            self.template = path(kusu_root) / \
+                            'etc' / \
+                            'templates' / \
+                            'kickstart.tmpl'
+           
+        if not self.template.exists():
+            raise TemplateNotFoundError, '%s not found' % self.template
+
+        if self._validateProfile(profile):
+            self.profile = profile
+
+    def _validateProfile(self, profile):
+        
+        keys = ['diskprofile', \
+                'networkprofile', \
+                'packageprofile', \
+                'rootpw', \
+                'tz', \
+                'installsrc', \
+                'lang', \
+                'keyboard']
+         
+        for key in keys:
+            if not getattr(profile, key):
+                raise ProfileNotCompleteError, '%s attribute not found' % key
+
+        return True
+   
     def getNameSpace(self):
         self.namespace['url'] = self.profile.installsrc
         self.namespace['rootpw'] = self.profile.rootpw
@@ -141,10 +179,11 @@ class KickstartFactory(BaseFactory):
         cnt = 1
         #PV
         for pv in disk_profile.pv_dict.values(): 
-            str = 'part pv.%d --onpart=%s --noformat'  % (cnt,
+            str = 'part pv.%d --onpart=%s --noformat'  % (cnt, \
                    os.path.sep.join((path(pv.partition.path).splitall()[2:])))
             pv_id[pv.partition.path] = cnt                  
             part_lines.append(str)
+            cnt = cnt + 1
 
         #VG
         for vg in disk_profile.lvg_dict.values(): 

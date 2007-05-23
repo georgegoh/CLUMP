@@ -55,4 +55,6 @@ class FailedSetStaticIPError(KusuError): pass
 class NotSupportedOperatingSystem(KusuError): pass
 class InterfaceNotFound(KusuError): pass
 
-
+#autoinstall
+class ProfileNotCompleteError(KusuError): pass
+class TemplateNotFoundError(KusuError): pass

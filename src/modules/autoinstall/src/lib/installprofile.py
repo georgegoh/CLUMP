@@ -12,7 +12,6 @@ import time
 class BaseInstall:
 
     getattr_dict = { 'diskprofile' : None,
-                     'package' : [],
                      'networkprofile' : None,
                      'packageprofile' : None,
                      'rootpw': None,
