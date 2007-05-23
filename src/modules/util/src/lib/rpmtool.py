@@ -65,16 +65,15 @@ class RPM:
         
         if not self.hdr:
             raise Exception, "Invalid header"
-        
                     
-    def write_header(self, dir=None, compress=True):
+    def writeHeader(self, dir=None, compress=True):
         """Write rpm header to a directory.
 
            dir:      If dir is None, the current directoy will be used
            compress: Default is True. Compress header with gzip
         """
 
-        n,e,v,r,a = self.get_nevra()
+        n,e,v,r,a = self.getNEVRA()
         dst = "%s-%s-%s.%s.hdr" % (n,v,r,a)
 
         if not dir:
@@ -93,7 +92,7 @@ class RPM:
 
         return dst
         
-    def get_filename(self):
+    def getFilename(self):
         """Returns the fileanme of the rpm"""
 
         if self.filename:
@@ -102,78 +101,78 @@ class RPM:
         if self.ext == '.rpm':
             return self.filename
         elif self.ext == '.hdr':
-            return self._get_filename()
+            return self._getFilename()
         else:
             return None
         
-    def get_splitfilename(self):
+    def getSplitfilename(self):
         """Returns the tuple (path, filename) of the rpm"""
        
-        filename = self.get_filename()
+        filename = self.getFilename()
 
         if filename:
             return path(filename).splitpath()
         else:
             return None
 
-    def get_name(self):
+    def getName(self):
         """Returns the name"""
         return self.hdr[rpm.RPMTAG_NAME]
     
-    def get_arch(self):
+    def getArch(self):
         """Returns the arch"""
         return self.hdr[rpm.RPMTAG_ARCH]
     
-    def get_version(self):
+    def getVersion(self):
         """Returns the version"""
         return self.hdr[rpm.RPMTAG_VERSION]
 
-    def get_release(self):
+    def getRelease(self):
         """Returns the release"""
         return self.hdr[rpm.RPMTAG_RELEASE]
 
-    def get_epoch(self):
+    def getEpoch(self):
         """Returns the epoch"""
         if self.hdr[rpm.RPMTAG_EPOCH]:
             return self.hdr[rpm.RPMTAG_EPOCH]
         else:
             return 0
             
-    def get_nevra(self):
+    def getNEVRA(self):
         """Returns the name,epoch,version,release,arch"""
-        n = self.get_name()
-        e = self.get_epoch()
-        v = self.get_version()
-        r = self.get_release()
-        a = self.get_arch()
+        n = self.getName()
+        e = self.getEpoch()
+        v = self.getVersion()
+        r = self.getRelease()
+        a = self.getArch()
 
         return (n,e,v,r,a)
 
-    def get_evr(self):
+    def getEVR(self):
         """Returns the epoch,version,release"""
-        e = self.get_epoch()
-        v = self.get_version()
-        r = self.get_release()
+        e = self.getEpoch()
+        v = self.getVersion()
+        r = self.getRelease()
 
         return (e,v,r)
 
-    def get_nvr(self):
+    def getNVR(self):
         """Returns the name,version,release"""
-        n = self.get_name()
-        v = self.get_version()
-        r = self.get_release()
+        n = self.getName()
+        v = self.getVersion()
+        r = self.getRelease()
 
         return (n,v,r)
 
-    def get_header(self):
+    def getHeader(self):
         """Returns the rpm header"""
         return self.hdr
 
-    def get_buildhost(self):
+    def getBuildhost(self):
         """Returns the build host"""
         return self.hdr[rpm.RPMTAG_BUILDHOST]
 
-    def get_provides(self):
+    def getProvides(self):
         """Returns a list of provides"""
 
         lst = []
@@ -196,11 +195,11 @@ class RPM:
         else:
             return None
     
-    def get_vendor(self):
+    def getVendor(self):
         """Returns the vendor"""
         return self.hdr[rpm.RPMTAG_VENDOR]
 
-    def get_install_time(self):
+    def getInstallTime(self):
         """Returns the installed time
            None if there's no install time"""
         if not self.hdr[rpm.RPMTAG_INSTALLTIME]:
@@ -208,11 +207,11 @@ class RPM:
         else:
             return self.hdr[rpm.RPMTAG_INSTALLTIME]
    
-    def get_file_list(self):
+    def getFileList(self):
         """Returns the file list"""
         return self.hdr[rpm.RPMTAG_FILENAMES]
 
-    def get_requires(self):
+    def getRequires(self):
         """Returns a tuple of the require tag"""
         lst = []
         for i in xrange(len(self.hdr[rpm.RPMTAG_REQUIRENAME])):
@@ -235,7 +234,7 @@ class RPM:
         else:
             return None
         
-    def get_changelog(self):
+    def getChangelog(self):
         """Returns the changelog in a dictionary, sorted in reverse chronological order"""
         
         def _cmp_time(self, other):
@@ -260,15 +259,23 @@ class RPM:
         lst.reverse()
         return lst
 
-    def get_attributes(self):
+    def getAttributes(self):
         """Returns a list of attributes available for the RPM"""
         return self.rpmtags.keys()
+    
+    def getSummary(self):
+        """Returns the summary."""
+        return self.hdr[rpm.RPMTAG_SUMMARY]
+    
+    def getConflicts(self):
+        """Returns the summary."""
+        return self.hdr[rpm.RPMTAG_CONFLICTS]
     
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""
                
-        n1,e1,v1,r1,a1 = self.get_nevra()
-        n2,e2,v2,r2,a2 = other.get_nevra()
+        n1,e1,v1,r1,a1 = self.getNEVRA()
+        n2,e2,v2,r2,a2 = other.getNEVRA()
         x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
         
         if n1 == n2 and a1 == a2 and x == 0:
@@ -283,8 +290,8 @@ class RPM:
                     -1 other is newer than self
            Raises an exception when both rpms have different name
         """
-        n1,e1,v1,r1,a1 = self.get_nevra()
-        n2,e2,v2,r2,a2 = other.get_nevra()
+        n1,e1,v1,r1,a1 = self.getNEVRA()
+        n2,e2,v2,r2,a2 = other.getNEVRA()
         x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
      
         #if n1 == n2 and a1 == a2:
@@ -304,7 +311,7 @@ class RPM:
         str = "<%s instance at %s" % (self.__class__, hex(id(self)))
         
         if self.hdr:
-            n,e,v,r,a = self.get_nevra()
+            n,e,v,r,a = self.getNEVRA()
             str = str + ". %s-%s-%s.%s" % (n,v,r,a)
         
         return str + ">"
@@ -320,7 +327,6 @@ class RPM:
             return 1
         if s1 == s2:
             return 0
-
 
     def _compareEVR(self, (e1, v1, r1), (e2, v2, r2)):
         """Use EVR to compare 2 rpms"""
@@ -368,15 +374,15 @@ class RPM:
                 raise Exception, 'rpm unable to load header: %s' % f
                 
     def __getattr__(self, attr):
-        if attr not in self.get_attributes():
+        if attr not in self.getAttributes():
             raise AttributeError, "'module' object has no attribute '%s'" % attr
             
         return self.hdr[self.rpmtags[attr]]
                     
-    def _get_filename(self):
+    def _getFilename(self):
         """Determine the filename from headers"""
         if self.ext == '.hdr':           
-            n,e,v,r,a = self.get_nevra()
+            n,e,v,r,a = self.getNEVRA()
             fname = "%s-%s-%s.%s.rpm" % (n,v,r,a)
 
             # Try to detect a yum cache or repo
@@ -431,22 +437,21 @@ class RPM:
             # .rpm file
             return self.filename
 
-
 def print_rpm(robj):
-    n,e,v,r,a = robj.get_nevra()
+    n,e,v,r,a = robj.getNEVRA()
 
-    print 'Filename:      ', robj.get_filename()
+    print 'Filename:      ', robj.getFilename()
     print 'Name:          ', n
     print 'Epoch:         ', e
     print 'Version:       ', v
     print 'Release:       ', r
     print 'Arch:          ', a
-    print 'Vendor:        ', robj.get_vendor()
-    print 'Buildhost:     ', robj.get_buildhost()
-    print 'Provides:      ', robj.get_provides()
-    print 'Requires:      ', robj.get_requires()
-    print 'Install Time:  ', robj.get_install_time()
-    print 'Files list:    ', robj.get_file_list()
+    print 'Vendor:        ', robj.getVendor()
+    print 'Buildhost:     ', robj.getBuildhost()
+    print 'Provides:      ', robj.getProvides()
+    print 'Requires:      ', robj.getRequires()
+    print 'Install Time:  ', robj.getInstallTime()
+    print 'Files list:    ', robj.getFileList()
     
     
 if __name__ == '__main__':
