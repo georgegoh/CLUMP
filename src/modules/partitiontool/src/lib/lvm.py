@@ -90,6 +90,11 @@ class PhysicalVolume(object):
     on_disk = None
     delete_flag = None
 
+    def remove(path):
+        """Static method to remove a physical volume."""
+        queueCommand(lvm.removePhysicalVolume, (path))
+    remove = staticmethod(remove)
+        
     def __init__(self,  partition, createNew=False):
         """A partition may not have knowledge about it's physical volume role,
            but a physical volume must have knowledge about its beginnings
@@ -139,6 +144,11 @@ class LogicalVolumeGroup(object):
     extent_size = 0
     on_disk = None
     deleted = None
+
+    def remove(name):
+        """Static method used on a path."""
+        queueCommand(lvm.removeVolumeGroup, (name))
+    remove = staticmethod(remove)
 
     def __init__(self, name, extent_size='32M', pv_list=[], createNew=False):
         logger.info('Creating new logical volume group %s' % name)
@@ -202,7 +212,7 @@ class LogicalVolumeGroup(object):
         if physicalVol.name in self.pv_dict.keys():
             raise PhysicalVolumeAlreadyInLogicalGroupError
         self.pv_dict[physicalVol.name] = physicalVol
-        physicalVol.group = self.name
+        physicalVol.group = self
         queueCommand(lvm.extendVolumeGroup, (self.name, physicalVol.partition.path))
 
     def delPhysicalVolume(self, physicalVol):
@@ -246,6 +256,7 @@ class LogicalVolumeGroup(object):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Deleting volume group %s' % self.name)
         self.delete = True
+        queueCommand(lvm.removeVolumeGroup(self.name))
 
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
@@ -274,6 +285,11 @@ class LogicalVolume(object):
     on_disk = None
     leave_unchanged = None
     do_not_format = None
+
+    def remove(path):
+        """Static method used on a path."""
+        queueCommand(lvm.removeLogicalVolume, (path))
+    remove = staticmethod(remove)
 
     def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()

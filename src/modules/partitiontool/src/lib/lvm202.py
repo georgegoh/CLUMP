@@ -133,7 +133,7 @@ def physicalVolumeInUse(path):
     elif allocated > 0:
         return True
 
-    raise NotPhysicalVolumeError
+    raise NotPhysicalVolumeError, path
 
 
 def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):

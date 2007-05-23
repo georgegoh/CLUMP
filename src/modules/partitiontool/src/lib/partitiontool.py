@@ -157,7 +157,16 @@ class DiskProfile(object):
                          'fat32' : True
                        }
 
-    def __init__(self, fresh):
+    def __str__(self):
+        from pprint import pformat
+        s = 'Disk Dictionary:\n' + pformat(self.disk_dict)
+        s = s + '\nPhysical Volume Dictionary:\n' + pformat(self.pv_dict)
+        s = s + '\nLogical Volume Group Dictionary:\n' + pformat(self.lvg_dict)
+        s = s + '\nLogical Volume Dictionary:\n' + pformat(self.lv_dict)
+        s = s + '\nMountpoints:\n' + pformat(self.mountpoint_dict)
+        return s
+
+    def __init__(self, fresh, test=None):
         """Initialises a DiskProfile object by doing the following:
            
         """
@@ -168,18 +177,61 @@ class DiskProfile(object):
         self.lvg_dict = {}
         self.lv_dict = {}
 
-        logger.debug('Finding disks.') 
-        disks_str = kusu.hardware.probe.getDisks().keys()
-        for disk_str in disks_str:
-            self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
-        logger.debug('Found disks.')
+        if test:
+            self.populateDiskProfileTest(fresh, test)
+        else:
+            self.populateDiskProfile()
 
+    def probeLVMEntities(self):
         logger.debug('Probing PVs.')
         pv_probe_dict = probePhysicalVolumes()
         logger.debug('Probing VGs.')
         lvg_probe_dict = probeLogicalVolumeGroups()
         logger.debug('Probing LVs.')
         lv_probe_dict = probeLogicalVolumes()
+        return pv_probe_dict, lvg_probe_dict, lv_probe_dict
+
+    def populateDiskProfileTest(self, fresh, test):
+        testDisk = Disk('/dev/'+test, self, fresh)
+        self.disk_dict[test] = testDisk
+        if testDisk.partition_dict:
+            pv_probe_dict, lvg_probe_dict, lv_probe_dict = self.probeLVMEntities()
+            for partition in testDisk.partition_dict.values():
+                if partition.lvm_flag and pv_probe_dict.has_key(partition.path):
+                    pv = PhysicalVolume(partition)
+                    pv.on_disk = True
+                    pv_prop_dict = pv_probe_dict[partition.path]
+                    pv.group = pv_prop_dict['group']
+                    self.pv_dict[partition.path] = pv
+
+                    if self.lvg_dict.has_key(pv.group):
+                        self.lvg_dict[pv.group].addPhysicalVolume(pv)
+                    else:
+                        lvg_prop_dict = lvg_probe_dict[pv.group]
+                        lvg_name = pv.group
+                        lvg = LogicalVolumeGroup(lvg_name, 
+                                                 lvg_prop_dict['extent_size'],
+                                                 [pv])
+                        self.lvg_dict[lvg_name] = lvg
+
+                    for lv_path, lv_prop_dict in lv_probe_dict.iteritems():
+                        lvg_name = lv_prop_dict['group']
+                        if self.lvg_dict.has_key(lvg_name):
+                            lvg = self.lvg_dict[lvg_name]
+                            lv_name = basename(lv_path)
+                            lv = LogicalVolume(lv_name, lvg, 0)
+                            lv.extents = lv_prop_dict['extents']
+                            lvg.lv_dict[lv_name] = lv
+                            self.lv_dict[lv_name] = lv
+
+    def populateDiskProfile(self):
+        logger.debug('Finding disks.') 
+        disks_str = kusu.hardware.probe.getDisks().keys()
+        for disk_str in disks_str:
+            self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
+        logger.debug('Found disks.')
+
+        pv_probe_dict, lvg_probe_dict, lv_probe_dict = self.probeLVMEntities()
 
         if fresh:
             self.__wipeLVMObjects(pv_probe_dict,
@@ -496,7 +548,10 @@ class Disk(object):
         pedDevice = parted.PedDevice.get(path)
         self.leave_unchanged = False
         if fresh:
-            pedDiskType = pedDevice.disk_probe()
+            try:
+                pedDiskType = pedDevice.disk_probe()
+            except parted.error:
+                pedDiskType = parted.disk_type_get_next()
             self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
         else:
             try:
@@ -746,7 +801,13 @@ class Disk(object):
 
     def commit(self):
         if not self.leave_unchanged:
-            self.pedDisk.commit()
+            try:
+                self.pedDisk.commit()
+            except parted.error, e:
+                msg = str(e)
+                if not msg.startswith('Warning: The kernel was unable ' + \
+                                      'to re-read the partition table'):
+                    raise e
             for partition in self.partition_dict.itervalues():
                 partition.on_disk = True
 
@@ -794,7 +855,7 @@ class Partition(object):
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',
                        'part_type' : 'self.pedPartition.type_name',
-                       'path' : 'self.disk.path + str(self.num)',
+                       'path' : 'self.getpath()',
                        'num' : 'self.pedPartition.num',
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
                        'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)',
@@ -822,6 +883,12 @@ class Partition(object):
         self.leave_unchanged = False
         self.on_disk = False
         self.do_not_format = False
+
+    def getpath(self):
+        if self.disk.path[-1].isdigit():
+            return self.disk.path + 'p' + str(self.num)
+        else:
+            return self.disk.path + str(self.num)
 
     def __getattr__(self, name):
         if name == 'fs_type':
@@ -960,29 +1027,3 @@ class Partition(object):
         elif self.lvm_flag:
             # do the lvm thing
             pass
-
-import unittest
-class DiskProfileTestCase(unittest.TestCase):
-    """Test cases for the DiskProfile class.
-
-       Note: We are assuming that our machine has 2 SCSI disks:
-          /dev/sda: 250 GB (250 * 10^9)
-          /dev/sdb: 250 GB (250 * 10^9)
-    """
-    def setUp(self):
-        self.dp = DiskProfile()
-
-    def tearDown(self):
-        pass
-
-    def testRead(self):
-        keys = sorted(self.dp.disk_dict.keys())
-        assert keys[0] == 'sda', "Didn't detect disks correctly."
-        assert keys[1] == 'sdb', "Didn't detect disks correctly."
-
-class DiskTestCase(unittest.TestCase):
-    """"""
-
-class PartitionTestCase(unittest.TestCase):
-    """"""
-
