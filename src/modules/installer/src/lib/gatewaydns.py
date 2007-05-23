@@ -12,7 +12,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
-import kusu.util.util as kusutil
+from kusu.util.verify import *
 import kusu.util.log as kusulog
 
 NAV_NOTHING = -1
@@ -71,22 +71,22 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.gateway = kusuwidgets.LabelledEntry(
                                    labelTxt=_('Default Gateway ').rjust(24), 
                                    width=entryWidth)
-        self.gateway.addCheck(kusutil.verifyIP)
+        self.gateway.addCheck(verifyIP)
 
         self.dns1 = kusuwidgets.LabelledEntry(
                                     labelTxt=_('DNS Server 1 ').rjust(24),
                                     width=entryWidth)
-        self.dns1.addCheck(kusutil.verifyIP)
+        self.dns1.addCheck(verifyIP)
 
         self.dns2 = kusuwidgets.LabelledEntry(
                             labelTxt=_('DNS Server 2 (optional) ').rjust(24),
                             width=entryWidth)
-        self.dns2.addCheck(kusutil.verifyIP)
+        self.dns2.addCheck(verifyIP)
 
         self.dns3 = kusuwidgets.LabelledEntry(
                             labelTxt=_('DNS Server 3 (optional) ').rjust(24), 
                             width=entryWidth)
-        self.dns3.addCheck(kusutil.verifyIP)
+        self.dns3.addCheck(verifyIP)
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
@@ -205,7 +205,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
 
         for intf in interfaces.keys():
             if interfaces[intf]['configure']:
-                if kusutil.isHostRoutable(interfaces[intf]['ip_address'],
+                if isHostRoutable(interfaces[intf]['ip_address'],
                                           interfaces[intf]['netmask'],
                                           self.gateway.value()):
                     return True, ''

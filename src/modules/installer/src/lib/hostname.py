@@ -13,7 +13,7 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.installer import network
-import kusu.util.util as kusutil
+from kusu.util.verify import *
 import kusu.util.log as kusulog
 
 NAV_NOTHING = -1

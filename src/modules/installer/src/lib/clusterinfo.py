@@ -12,7 +12,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-from kusu.util.util import verifyURL, verifyEmail, verifyFQDN
+from kusu.util.verify import verifyURL, verifyEmail, verifyFQDN
 NAV_NOTHING = -1
 
 class ClusterInfoScreen(screenfactory.BaseScreen):

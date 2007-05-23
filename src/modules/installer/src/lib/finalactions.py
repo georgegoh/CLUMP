@@ -29,7 +29,7 @@ def setupNetwork():
 def copyKits(prefix, database):
     # Assume a Fedora 6 repo
     # Assume a fedora 6 distro: /mnt/sysimage
-    from kusu.util import util
+    from kusu.util.verify import *
     from kusu.util import errors
 
     url = str(database.get('Kits', 'FedoraURL')[0])
@@ -39,7 +39,7 @@ def copyKits(prefix, database):
         os_name = os.environ.get('KUSU_DIST', None)
         os_version = os.environ.get('KUSU_DISTVER', None)
 
-        util.verifyDistro(url, os_name, os_version)
+        verifyDistro(url, os_name, os_version)
     except errors.KusuError, e: raise e
 
     try:

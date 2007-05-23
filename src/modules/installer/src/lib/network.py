@@ -14,7 +14,7 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.hardware import probe
 import kusu.util.log as kusulog
-import kusu.util.util as kusutil
+from kusu.util.verify import *
 from kusu.util.errors import *
 
 NAV_NOTHING = -1
@@ -400,15 +400,15 @@ class ConfigureIntfScreen:
         entryWidth = 22
         self.ip_address = kusuwidgets.LabelledEntry(labelTxt=_('IP Address '),
                                                     width=entryWidth)
-        self.ip_address.addCheck(kusutil.verifyIP)
+        self.ip_address.addCheck(verifyIP)
         self.netmask = \
             kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(11)),
                                       width=entryWidth)
-        self.netmask.addCheck(kusutil.verifyIP)
+        self.netmask.addCheck(verifyIP)
         self.hostname = \
             kusuwidgets.LabelledEntry(labelTxt=_('Host name '.rjust(11)),
                                                   width=entryWidth)
-        self.hostname.addCheck(kusutil.verifyHostname)
+        self.hostname.addCheck(verifyHostname)
 
         # initialize fields
         self.populateIPs()
