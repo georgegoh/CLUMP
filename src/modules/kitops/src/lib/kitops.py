@@ -68,8 +68,8 @@ class KitOps:
         self.__db = KusuDB()
 
         self.prefix = path(kw.get('prefix', '/'))
-        self.kits_dir = self.prefix / path('depot/kits/')
-        self.pxeboot_dir = self.prefix / path('/tftpboot/pxelinux/')
+        self.kits_dir = self.prefix / 'depot/kits/'
+        self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
         try:
             #self.__db.connect('kusudb','apache')
@@ -84,33 +84,15 @@ class KitOps:
         """
 
         self.prefix = path(prefix)
-        self.kits_dir = self.depot_prefix / path('depot/kits/')
-        self.pxeboot_dir = self.prefix / path('/tftpboot/pxelinux/')
+        self.kits_dir = self.depot_prefix / 'depot/kits/'
+        self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
            PostCondition: the kit media is mounted to self.mountpoint'''
         # 1. kit media was not specified - auto-detect
         if not self.kitmedia:
-            lst = self.findMediaDevices()
-            print "DEBUG: media device list = ",lst
-            try:
-                assert(lst)
-            except AssertionError:
-                sys.stderr.write('kitops: kit media neither specified nor found\n')
-                return EKITLOC_FAIL
-
-            for dev in lst:
-                try:
-                    self.mountMedia('/dev/%s' %dev)
-                except EMOUNTFAIL,inst:
-                    sys.stderr.write('kitops: failed mounting device /dev/%s\n' %dev)
-                    self.__handleMountError(int(inst))
-                else:
-                    #mountpoint is defined - mount was successful
-                    self.MediaDevice = '/dev/%s' %dev
-                    return 0
-            return EKITLOC_FAIL
+            return self.autoDetectMedia()
 
         # 2. kit media was specified - determine what to do with it
         rv = urlparse.urlparse(self.kitmedia)
@@ -146,6 +128,32 @@ class KitOps:
         #at this point we have the kit mounted to self.mountpoint
         return 0
 
+    def autoDetectMedia(self):
+        """
+        Attemp to find kit media.
+        """
+
+        lst = self.findMediaDevices()
+        print "DEBUG: media device list = ",lst
+        try:
+            assert(lst)
+        except AssertionError:
+            sys.stderr.write('kitops: kit media neither specified nor found\n')
+            return EKITLOC_FAIL
+
+        for dev in lst:
+            try:
+                self.mountMedia('/dev/%s' %dev)
+            except EMOUNTFAIL,inst:
+                sys.stderr.write('kitops: failed mounting device /dev/%s\n' %
+                                 dev)
+                self.__handleMountError(int(inst))
+            else:
+                #mountpoint is defined - mount was successful
+                self.MediaDevice = '/dev/%s' %dev
+                return 0
+        return EKITLOC_FAIL
+
     def addKit(self):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
@@ -160,31 +168,11 @@ class KitOps:
 
         #check if it's an OS kit
         if path(self.mountpoint / 'isolinux').exists():
-            rv = self.addOsKit()
-            return rv
+            return self.addOsKit()
 
         #handle most common scenario
         if self.kitname == '':  #kit to install was NOT specified
-            #create list of candidate kits to install
-            dirlst = []
-            for dir in self.mountpoint.dirs():
-                if dir.glob('kit-*.rpm'):
-                    dirlst.append(dir)
-
-            if not dirlst:
-                print 'kitops: bad media provided - no kits found'
-                return EKIT_BAD
-
-            if len(dirlst) == 1:
-                self.kitname = dirlst[0].basename()
-            elif len(dirlst) > 1:
-                # TODO: Implement metakit handling.
-                #handleMetaKit - return the kit to work with (self.kitname must be set)
-                rv = self.selectKit(self.mountpoint, dirlst)
-                if not rv:
-                    print 'kitops: bad media provided - no kits found'
-                    return EKIT_BAD
-                self.kitname = rv
+            self.determineKitName()
 
         # at this point self.kitname must be defined
         try:
@@ -193,45 +181,31 @@ class KitOps:
             sys.stderr.write("kitops: kitname still not defined - shouldn't happen\n%s" %msg)
             return EKITADD_FAIL
 
-        #kitRPMlst = glob.glob('%s/%s/kit-%s*.rpm' %(self.mountpoint,self.kitname,self.kitname))
         kitRPMlst = path(self.mountpoint / self.kitname).glob('kit-%s*.rpm' %
                                                               self.kitname)
         try:
             assert(len(kitRPMlst)==1)
         except AssertionError,msg:
-            sys.stderr.write('kitops: number of kit RPMs under %s/%s must be exactly one\n%s' \
-                %(self.mountpoint,self.kitname,msg))
+            sys.stderr.write('kitops: number of kit RPMs under %s' % 
+                                 self.mountpoint / self.kitname + 
+                             'must be exactly one\n%s' % msg)
             return EKITADD_FAIL
 
-        kit = {} #the struct for kit info
-        kit['rpmloc'] = kitRPMlst[0].abspath()   #absolute path to kit RPM
-
-        #extract some RPMTAG info
-        kit['inst'] = PackageFactory(str(kit['rpmloc']))
-        kit['ver'] = kit['inst'].getVersion()
-        kit['name'] = kit['inst'].getName()
-        if kit['name'].startswith('kit-'):
-            kit['name'] = kit['name'][len('kit-'):]
-        kit['sum'] = kit['inst'].getSummary()
-        print 'DEBUG: kitops: ', kit['name'],kit['ver'],kit['sum']
+        kit = self.parseRPMTag(kitRPMlst[0].abspath())
 
         #check if this kit is already installed - by name and version
         try:
             if self.checkKitInstalled(kit['name'], kit['ver']):
-                print "kitops: Kit '%s' version '%s' is already installed." %(kit['name'],kit['ver'])
+                print "kitops: Kit '%s' version '%s' is already installed." % \
+                      (kit['name'],kit['ver'])
                 return EKITADD_FAIL
         except Exception,msg:
-            sys.stderr.write('kitops: DB check on the kit %s failed with msg=%s\n' % (kit['name'],msg))
+            sys.stderr.write('kitops: DB check on the kit %s' % kit['name'] +
+                             'failed with msg=%s\n' % msg)
             return EKITADD_FAIL
 
         # 1. copy the RPMS
         repodir = self.kits_dir / kit['name'] / kit['ver']
-        if not repodir.exists():
-            repodir.makedirs()
-        cmd = 'cd %s/%s; tar cf - --exclude %s *.rpm | (cd %s; tar xf -)' % \
-              (self.mountpoint, self.kitname, kit['rpmloc'].basename(), repodir)
-        print 'DEBUG: kitops: cmd = %s' %cmd
-
         srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % kit['rpmloc'],
                                 cwd=self.mountpoint / self.kitname,
                                 shell=True, stdout=subprocess.PIPE)
@@ -251,7 +225,8 @@ class KitOps:
             return EKITADD_FAIL
 
         #extract the kit id to associate with components
-        query = "select kid from kits where rname='%s' and version='%s'" %(kit['name'],kit['ver'])
+        query = "select kid from kits where rname='%s' and version='%s'" % \
+                (kit['name'], kit['ver'])
         self.__db.execute(query)
         kit['kid'], = self.__db.fetchone()
         print 'addKIT: DEBUG - kid = ',kit['kid']
@@ -266,6 +241,15 @@ class KitOps:
             return EKITADD_FAIL
 
         # 4. check/populate component table
+        self.updateComponents(kit)
+
+        return 0
+
+    def updateComponents(self, kit):
+        """
+        Update components table with information from kit.
+        """
+
         complst = path(self.mountpoint / kit['name']).glob('component-*.rpm')
         for comploc in complst:
             comp = {}
@@ -284,25 +268,73 @@ class KitOps:
 
             comp['ver'] = comp['inst'].getVersion()
             comp['sum'] = comp['inst'].getSummary()
-            query = "select cid,kid from components where cname = '%s'" % comp['name']
+            query = "select cid,kid from components where cname = '%s'" % \
+                    comp['name']
             self.__db.execute(query)
-            comp['dbcidlst'] = self.__db.fetchall() #len>1 only if multi-distro explicit support
+            #len>1 only if multi-distro explicit support
+            comp['dbcidlst'] = self.__db.fetchall() 
 
-            if not comp['dbcidlst']: #this component was not inserted in kit RPM's %post
+            if not comp['dbcidlst']: 
+                #this component was not inserted in kit RPM's %post
                 #generate an entry for this component
-                query = "insert into components (kid,cname,cdesc) values (%s,'%s','%s')"\
-                            %(kit['kid'], comp['name'], comp['sum'])
+                query = "insert into components (kid,cname,cdesc) " + \
+                        "values (%s,'%s','%s')" % \
+                        (kit['kid'], comp['name'], comp['sum'])
                 self.__db.execute(query)
             else:
-                for dbcid,dbkid in comp['dbcidlst']:
-                    if dbkid>0 and dbkid != kit['kid']:
-                        print "kitops: Warning, updating kit ID for component '%s', cid=%s" \
-                                %(comp['name'], dbcid)
-                    query = "UPDATE components SET kid=%s where cid=%s" %(kit['kid'],dbcid)
+                for dbcid, dbkid in comp['dbcidlst']:
+                    if dbkid > 0 and dbkid != kit['kid']:
+                        print "kitops: Warning, updating kit ID " + \
+                              "for component '%s', cid=%s" % \
+                              (comp['name'], dbcid)
+                    query = "UPDATE components SET kid=%s where cid=%s" % \
+                            (kit['kid'],dbcid)
                     self.__db.execute(query)
-        # 5. done
 
-        return 0
+    def parseRPMTag(self, rpmloc):
+        """
+        Obtains some information from RPM tag and returns in a dictionary.
+        """
+
+        kit = {} #the struct for kit info
+        kit['rpmloc'] = rpmloc   #absolute path to kit RPM
+
+        #extract some RPMTAG info
+        kit['inst'] = PackageFactory(str(kit['rpmloc']))
+        kit['ver'] = kit['inst'].getVersion()
+        kit['name'] = kit['inst'].getName()
+        if kit['name'].startswith('kit-'):
+            kit['name'] = kit['name'][len('kit-'):]
+        kit['sum'] = kit['inst'].getSummary()
+        print 'DEBUG: kitops: ', kit['name'],kit['ver'],kit['sum']
+
+        return kit
+
+    def determineKitName(self):
+        """
+        Scan subdirectories for possible kits for installation.
+        """
+
+        #create list of candidate kits to install
+        dirlst = []
+        for dir in self.mountpoint.dirs():
+            if dir.glob('kit-*.rpm'):
+                dirlst.append(dir)
+
+        if not dirlst:
+            print 'kitops: bad media provided - no kits found'
+            return EKIT_BAD
+
+        if len(dirlst) == 1:
+            self.kitname = dirlst[0].basename()
+        elif len(dirlst) > 1:
+            # TODO: Implement metakit handling.
+            #handleMetaKit - return the kit to work with (self.kitname must be set)
+            rv = self.selectKit(self.mountpoint, dirlst)
+            if not rv:
+                print 'kitops: bad media provided - no kits found'
+                return EKIT_BAD
+            self.kitname = rv
 
     def findMediaDevices(self):
         '''Check for IDE/ATAPI, SCSI CD-ROM/DVD/CDRW devices, including USB storage
@@ -417,11 +449,12 @@ class KitOps:
 
         kit = {} #a struct to hold the kit info for the distro
         #instantiate a distro via the factory
-        osdistro = DistroFactory(str(self.mountpoint))      #distro instance
-        kit['ver']    = osdistro.getVersion()               #os kit version in the db
-        kit['arch']   = osdistro.getArch()                  #os kit arch in the db
+        osdistro = DistroFactory(str(self.mountpoint)) #distro instance
+        kit['ver']    = osdistro.getVersion()          #os kit version in the db
+        kit['arch']   = osdistro.getArch()             #os kit arch in the db
         kit['name'] = '%s-%s-%s' %(osdistro.ostype, kit['ver'], kit['arch'])
-        kit['sum'] = 'OS kit for %s %s %s' %(osdistro.ostype, kit['ver'], kit['arch'])
+        kit['sum'] = 'OS kit for %s %s %s' % \
+                        (osdistro.ostype, kit['ver'], kit['arch'])
 
         query = "SELECT * from kits where rname = '%s'" %kit['name']
         print "DEBUG: addOsKit: query = ", query
@@ -606,7 +639,7 @@ class KitOps:
             query = 'SELECT rname Kit, rdesc Description, version Version, ' +\
                     'arch Architecture, removeable Removable FROM kits'
 
-        #print "DEBUG: listKit, query = %s" %query
+        print "DEBUG: listKit, query = %s" %query
         mysqlP = subprocess.Popen("mysql -e '%s' %s" %
                                   (query, self.__db.dbname), shell=True)
         mysqlP.wait()
