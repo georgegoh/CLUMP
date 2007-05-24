@@ -284,10 +284,6 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen):
         self.screenGrid.setField(newOpt, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(newDesc, 0, 9, padding=(0,0,0,1))
         self.screenGrid.setField(dhcpCheck, 0, 10, padding=(0, 0, 0, -2), anchorLeft=1)
-        myScreen = self.selector.getCurrentScreen()
-        #self.screenGrid.setField(buttonBar1, 0, 11, (0, 0, 0, 0))
-        #self.screenGrid.popHelpLine()
-        #snack.SnackScreen.pushHelpLine(self, "Copyright(C) 2007 Platform Computing Inc.")
 
     def validate(self):
         return True, 'Success'
