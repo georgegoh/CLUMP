@@ -120,4 +120,6 @@ IF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
                  ${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makeiso.sh)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/syncstatus.sh
                  ${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/syncstatus.sh)
+  CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makebasekitiso.sh
+                 ${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makebasekitiso.sh)
 ENDIF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
