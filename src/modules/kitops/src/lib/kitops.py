@@ -401,7 +401,7 @@ class KitOps:
         kit['ver']    = osdistro.getVersion()               #os kit version in the db
         kit['arch']   = osdistro.getArch()                  #os kit arch in the db
         kit['name'] = '%s-%s-%s' %(osdistro.ostype, kit['ver'], kit['arch'])
-        kit['sum'] = 'OS kit for %s %s %s' %(osdistro.ostype, kit['name'], kit['ver'], kit['arch'])
+        kit['sum'] = 'OS kit for %s %s %s' %(osdistro.ostype, kit['ver'], kit['arch'])
 
         query = "SELECT * from kits where rname = '%s'" %kit['name']
         print "DEBUG: addOsKit: query = ", query
