@@ -476,7 +476,7 @@ class KitOps:
                 
 
         #populate the database with info
-        query = "insert into kits (rname,rdesc,version,upgradeable,removable,arch) values \
+        query = "insert into kits (rname,rdesc,version,upgradeable,removeable,arch) values \
             ('%s','%s','%s',0,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
         print "DEBUG: addOsKit: query = ", query
 
@@ -508,17 +508,17 @@ class KitOps:
         kit = {} #data struct to hold delkit's properties
         kit['name'] = self.kitname
 
-        query = "select kid,removable,version from kits  where rname='%s' " %kit['name']
+        query = "select kid,removeable,version from kits  where rname='%s' " %kit['name']
         self.__db.execute(query)
         rv = self.__db.fetchone()
         print 'DEBUG: del kit DB record: ', rv
         if not rv:
             print "kitops: kit '%s' is not in the database" %kit['name']
             return EKITDEL_FAIL
-        (kit['kid'], kit['removable'], kit['ver']) = rv
+        (kit['kid'], kit['removeable'], kit['ver']) = rv
 
-        if not kit['removable']:
-            print "kitops: kit '%s' is not removable" %kit['name']
+        if not kit['removeable']:
+            print "kitops: kit '%s' is not removeable" %kit['name']
             return EKITDEL_FAIL
 
         # at this point kit is removable and in the DB
@@ -580,7 +580,7 @@ class KitOps:
 #            query = '''select rname Kit,rdesc Description,Version, arch Architecture,
 #                    Upgradeable,Removeable from kits'''
             query = 'SELECT rname Kit, rdesc Description, version Version, ' +\
-                    'arch Architecture, removable Removable FROM kits'
+                    'arch Architecture, removeable Removable FROM kits'
 
         #print "DEBUG: listKit, query = %s" %query
         os.system("mysql -e '%s' %s" %(query,self.__db.dbname))
