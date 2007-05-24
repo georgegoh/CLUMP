@@ -333,8 +333,8 @@ class NetworkScreen(screenfactory.BaseScreen):
 
         return True
 
-    dbFunctions = {'MySQL': None,
-                   'SQLite': None,
+    dbFunctions = {'MySQL': (None, None),
+                   'SQLite': (None, None),
                    'SQLColl': (restoreProfileFromSQLCollection,
                                saveProfileToSQLCollection)}
 

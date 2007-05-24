@@ -157,8 +157,8 @@ class PartitionScreen(screenfactory.BaseScreen):
             return True
         return False
 
-    dbFunctions = {'MySQL': None,
-                   'SQLite': None,
+    dbFunctions = {'MySQL': (None, None),
+                   'SQLite': (None, None),
                    'SQLColl': (None, None)}
 
 
