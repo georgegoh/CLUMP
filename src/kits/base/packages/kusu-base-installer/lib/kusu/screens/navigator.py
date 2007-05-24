@@ -175,6 +175,11 @@ class Navigator(object, KusuApp):
         contentGrid = snack.Grid(1, 2)
         currentScreen = self.screens[self.currentStep]
         currentScreen.draw(self.mainScreen, self)
+
+	# Set up the Help text for each window.
+	if currentScreen.helptext:
+		self.mainScreen.pushHelpLine(currentScreen.helptext)
+
         contentGrid.setField(currentScreen.screenGrid, col=0,
                              row=0, padding=(0,0,0,0))
         buttons = []
