@@ -15,6 +15,7 @@ from gettext import gettext as _
 from partition_new import *
 from partition_edit import *
 from partition_delete import *
+from defaults import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
@@ -68,6 +69,21 @@ class PartitionScreen(screenfactory.BaseScreen):
 
         if not self.disk_profile:
             self.disk_profile = partitiontool.DiskProfile(False)
+            first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
+            first_disk = self.disk_profile.disk_dict[first_disk_key]
+            if first_disk.partition_dict:
+                # tell user a schema exists and ask to proceed.
+                msg = 'The installer has detected that one of the disks  ' + \
+                      'is already partitioned. Do you want to edit the ' + \
+                      'partitions using the existing schema, or would ' + \
+                      'you like to use the default schema?'
+                result = self.selector.popupDialogBox('Partitions exist',
+                                                      msg,
+                                             ['Default', 'Use Existing'])
+                if str(result) == 'default':
+                    logger.debug('Default chosen')
+                    self.disk_profile = partitiontool.DiskProfile(True)
+                    setupDiskProfile(self.disk_profile)
 
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()

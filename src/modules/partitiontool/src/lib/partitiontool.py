@@ -314,7 +314,7 @@ class DiskProfile(object):
             raise KusuError, 'An internal error has occurred in the ' + \
                              'program. Please restart.'
 
-    def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint):
+    def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint, fill=False):
         """Create a new partition."""
         # sanity check
         if self.mountpoint_dict.has_key(mountpoint):
@@ -327,10 +327,11 @@ class DiskProfile(object):
             logger.debug('FS type specified')
             new_partition = disk.createPartition(size,
                                                  self.fsType_dict[fs_type],
-                                                 mountpoint)
+                                                 mountpoint,
+                                                 fill)
         else:
             logger.debug('FS type not specified')
-            new_partition = disk.createPartition(size, None, mountpoint)
+            new_partition = disk.createPartition(size, None, mountpoint, fill)
 
         if mountpoint:
             self.mountpoint_dict[mountpoint] = new_partition
@@ -581,7 +582,7 @@ class Disk(object):
         self.partition_dict[pedPartition.num] = new_partition
         return new_partition
         
-    def createPartition(self, size, fs_type=None, mountpoint=None):
+    def createPartition(self, size, fs_type=None, mountpoint=None, fill=None):
         """Add a partition to this disk.
            Parameters:
               1. size in bytes.
@@ -590,7 +591,7 @@ class Disk(object):
            Returns an instance of Partition that represents the partition just
            created.
         """
-        start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size)
+        start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size, fill)
         new_pedPartition = None
 
         try:
@@ -703,7 +704,7 @@ class Disk(object):
         else:
             return 'PRIMARY'
 
-    def __getStartEndSectors(self, size):
+    def __getStartEndSectors(self, size, fill=False):
         """For a given size(in bytes), return a tuple of (start_sector,
            end_sector) that will accommodate this new partition.
         """
@@ -711,6 +712,7 @@ class Disk(object):
         last_part_num = self.pedDisk.get_last_partition_num()
         if last_part_num < 1: # no partitions found
             start_sector = 0
+            if fill: size = disk.size - 1
         else:
             if last_part_num > self.pedDisk.get_primary_partition_count():
                 pedPartition = self.pedDisk.next_partition()
@@ -723,6 +725,9 @@ class Disk(object):
                                      self.pedDisk.dev.sector_size) - 1
                         end_sector = self.__alignEndSector(end_sector)
                         if end_sector <= pedPartition.geom.end:
+                            if fill:
+                                end_sector = pedPartition.geom.end
+                                end_sector = self.alignEndSector(end_sector)
                             return (start_sector, end_sector,
                                     self.__getPartitionType(selected_partition_num))
                     pedPartition = self.pedDisk.next_partition(pedPartition)
@@ -732,14 +737,17 @@ class Disk(object):
             if lastPart.type == parted.PARTITION_FREESPACE:
                 start_sector = lastPart.geom.start
                 selected_partition_num = last_part_num
+                if fill:
+                    end_sector = lastPart.geom.end
             else:
                 start_sector = lastPart.geom.end + 1
                 selected_partition_num = last_part_num + 1
+                if fill:
+                    end_sector = self.length - (self.heads * self.sectors) + 1
         start_sector = self.__alignStartSector(start_sector)
-
-        end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
+        if not fill:
+            end_sector = start_sector + (size / self.sector_size) - 1
         end_sector = self.__alignEndSector(end_sector)
-
         # Not actually making a new partition, but using parted to catch any
         # size errors.
         try:
@@ -748,12 +756,27 @@ class Disk(object):
                                                   start_sector,
                                                   end_sector)
         except parted.error, msg:
-            if msg.__str__().startswith("Error: Can't have a partition " + \
+            if str(msg).startswith("Error: Can't have a partition " + \
                                         "outside the disk!"):
-                msg = "Requested partition size is too large to fit into " + \
-                      "the remaining space available on the disk."
-            raise PartitionSizeTooLargeError, msg
-
+                if fill:
+                    try:
+                        end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
+                        end_sector = self.__alignEndSector(end_sector)
+                        new_part = self.pedDisk.partition_new(parted.PARTITION_PRIMARY,
+                                                  fsTypes['ext3'],
+                                                  start_sector,
+                                                  end_sector)
+                    except parted.error, msg:
+                        if str(msg).startswith("Error: Can't have a partition " + \
+                                               "outside the disk!"):
+                            msg = "Requested partition size is too large to fit into " + \
+                                  "the remaining space available on the disk."
+                            raise PartitionSizeTooLargeError, msg
+                else:
+                    msg = "Requested partition size is too large to fit into " + \
+                          "the remaining space available on the disk."
+                    raise PartitionSizeTooLargeError, msg
+ 
         return (start_sector, end_sector,
                 self.__getPartitionType(selected_partition_num))
 
