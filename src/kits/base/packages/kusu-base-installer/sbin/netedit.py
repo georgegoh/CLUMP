@@ -354,7 +354,7 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         kusu.screens.screenfactory.ScreenFactory.screens = \
                         [ NetworkNewWindow(self.database, self.kusuApp) ]
                         
-        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory, screentitle="Huh?", showTrail=False)
+        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory,screentitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
         return NAV_NOTHING    
     
@@ -362,7 +362,7 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         kusu.screens.screenfactory.ScreenFactory.screens = \
                         [ NetworkEditWindow(self.database, self.kusuApp) ]
                         
-        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory, screentitle="Huh?", showTrail=False)
+        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory,screentitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
         return NAV_NOTHING
     
