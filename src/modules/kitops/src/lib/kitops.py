@@ -29,7 +29,8 @@ import urlparse
 import tempfile
 import glob
 import re
-import path
+import subprocess
+from path import path
 from kusu.core.db import KusuDB
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
@@ -63,27 +64,28 @@ class KitOps:
         self.mountpoint = None
         self.medialoc = None
         self.MediaDevice = None
-        self.__tmpfname = None
         self.__tmpmntdir = None
         self.__db = KusuDB()
 
-        self.depot_prefix = path(kw.get('prefix', '/'))
-        self.kits = self.depot_prefix / path('depot/kits/')
+        self.prefix = path(kw.get('prefix', '/'))
+        self.kits_dir = self.prefix / path('depot/kits/')
+        self.pxeboot_dir = self.prefix / path('/tftpboot/pxelinux/')
 
         try:
-            self.__db.connect('kusudb','apache')
-            #self.__db.connect('test')
+            #self.__db.connect('kusudb','apache')
+            self.__db.connect('test')
         except Exception,msg:
             sys.stderr.write('kitops: Connection to the database failed with error message %s' %msg)
             sys.exit(EDB_FAIL)
 
     def setPrefix(self, prefix):
         """
-        Provide a new depot_prefix.
+        Provide a new prefix.
         """
 
-        self.depot_prefix = path(prefix)
-        self.kits = self.depot_prefix / path('depot/kits/')
+        self.prefix = path(prefix)
+        self.kits_dir = self.depot_prefix / path('depot/kits/')
+        self.pxeboot_dir = self.prefix / path('/tftpboot/pxelinux/')
 
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
@@ -115,13 +117,13 @@ class KitOps:
 
         if rv[0]:
             print "kitops: Network kit specified - retrieving..."
-            (self.__tmpfname, headers) = urllib.urlretrieve(self.kitmedia)
-            self.medialoc = os.path.abspath(self.__tmpfname)
+            (tmpfname, headers) = urllib.urlretrieve(self.kitmedia)
+            self.medialoc = path(tmpfname)
         else :
-            self.medialoc = os.path.abspath(self.kitmedia)
+            self.medialoc = path(self.kitmedia)
 
         #at this point, media can be either an iso file or a mountpoint dir
-        if os.path.isfile(self.medialoc) and os.path.splitext(self.medialoc)[1].lower()=='.iso':
+        if self.medialoc.isfile() and self.medialoc.ext.lower() == '.iso':
             print 'kitops: media iso file was provided: %s' %self.medialoc
             isISO = True
             try:
@@ -132,7 +134,7 @@ class KitOps:
             #mountpoint is defined - we're done
             return 0
                 
-        elif os.path.isdir(self.medialoc) and os.path.ismount(self.medialoc):
+        elif self.medialoc.isdir() and self.medialoc.ismount():
             print 'kitops: media mountpoint was provided: %s' %self.medialoc
             self.mountpoint = self.medialoc
 
@@ -150,30 +152,33 @@ class KitOps:
 
         #at this point we have the kit mounted to self.mountpoint
         try:
-            assert(self.mountpoint and os.path.isdir(self.mountpoint) and os.path.ismount(self.mountpoint))
+            assert(self.mountpoint
+                   and self.mountpoint.isdir() and self.mountpoint.ismount())
         except AssertionError,msg:
             sys.stderr.write('kitops: mountpoint sanity assertion failed:\n%s' %msg)
             return EKITLOC_FAIL
 
         #check if it's an OS kit
-        if os.path.isdir('%s/isolinux' %self.mountpoint):
+        if path(self.mountpoint / 'isolinux').exists():
             rv = self.addOsKit()
             return rv
 
         #handle most common scenario
         if self.kitname == '':  #kit to install was NOT specified
             #create list of candidate kits to install
-            dirlst = self.__getDirList(self.mountpoint)
-            for i in range(0,len(dirlst)):
-                if not glob.glob('%s/%s/kit-*.rpm' % (self.mountpoint, dirlst[i])):
-                    del dirlst[i]
+            dirlst = []
+            for dir in self.mountpoint.dirs():
+                if dir.glob('kit-*.rpm'):
+                    dirlst.append(dir)
+
             if not dirlst:
                 print 'kitops: bad media provided - no kits found'
                 return EKIT_BAD
 
             if len(dirlst) == 1:
-                self.kitname = dirlst[0]
+                self.kitname = dirlst[0].basename()
             elif len(dirlst) > 1:
+                # TODO: Implement metakit handling.
                 #handleMetaKit - return the kit to work with (self.kitname must be set)
                 rv = self.selectKit(self.mountpoint, dirlst)
                 if not rv:
@@ -188,7 +193,9 @@ class KitOps:
             sys.stderr.write("kitops: kitname still not defined - shouldn't happen\n%s" %msg)
             return EKITADD_FAIL
 
-        kitRPMlst = glob.glob('%s/%s/kit-%s*.rpm' %(self.mountpoint,self.kitname,self.kitname))
+        #kitRPMlst = glob.glob('%s/%s/kit-%s*.rpm' %(self.mountpoint,self.kitname,self.kitname))
+        kitRPMlst = path(self.mountpoint / self.kitname).glob('kit-%s*.rpm' %
+                                                              self.kitname)
         try:
             assert(len(kitRPMlst)==1)
         except AssertionError,msg:
@@ -197,7 +204,7 @@ class KitOps:
             return EKITADD_FAIL
 
         kit = {} #the struct for kit info
-        kit['rpmloc'] = path(kitRPMlst[0])    #absolute path to kit RPM
+        kit['rpmloc'] = kitRPMlst[0].abspath()   #absolute path to kit RPM
 
         #extract some RPMTAG info
         kit['inst'] = PackageFactory(str(kit['rpmloc']))
@@ -218,13 +225,19 @@ class KitOps:
             return EKITADD_FAIL
 
         # 1. copy the RPMS
-        repodir = self.kits / kit['name'] / kit['ver']
+        repodir = self.kits_dir / kit['name'] / kit['ver']
         if not repodir.exists():
             repodir.makedirs()
         cmd = 'cd %s/%s; tar cf - --exclude %s *.rpm | (cd %s; tar xf -)' % \
               (self.mountpoint, self.kitname, kit['rpmloc'].basename(), repodir)
         print 'DEBUG: kitops: cmd = %s' %cmd
-        os.system(cmd)
+
+        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % kit['rpmloc'],
+                                cwd=self.mountpoint / self.kitname,
+                                shell=True, stdout=subprocess.PIPE)
+        dstP = subprocess.Popen('tar xf -',
+                                cwd=repodir, shell=True, stdin=srcP.stdout)
+        dstP.communicate()
 
         # 2. populate the kit DB table with info
         query = "insert into kits (rname,rdesc,version) values \
@@ -245,18 +258,18 @@ class KitOps:
 
         # 3. install the kit RPM
         try:
-            os.system('rpm -ihv %s' %kit['rpmloc'])
+            rpmP = subprocess.Popen('rpm -ihv %s' % kit['rpmloc'], shell=True)
+            rpmP.wait()
         except Exception, msg:
             sys.stderr.write('kitops: kit RPM installation failed with message %s' %msg)
             #possible to reverse the DB transaction at this point and gracefully exit
             return EKITADD_FAIL
 
-        #at this point kit RPM must've populated the components table - check
         # 4. check/populate component table
-        complst = glob.glob('%s/%s/component-*.rpm' %(self.mountpoint,kit['name']))
+        complst = path(self.mountpoint / kit['name']).glob('component-*.rpm')
         for comploc in complst:
             comp = {}
-            comp['inst'] = PackageFactory(comploc)
+            comp['inst'] = PackageFactory(str(comploc))
             comp['name'] = comp['inst'].getName()
             if comp['name'].startswith('component-'):
                 comp['name'] = comp['name'][len('component-'):]
@@ -264,8 +277,8 @@ class KitOps:
             try:
                 assert(bool(comp['name']))
             except:
-                sys.stderr.write('kitops: encountered corrupt name for component from %s' \
-                        %os.path.basename(comploc))
+                sys.stderr.write('kitops: encountered corrupt name for ' +
+                                 'component from %s' % comploc.basename())
                 #handleAddFailure - reverse DB Transaction, remove RPMS?
                 return EKITADD_FAIL
 
@@ -297,23 +310,25 @@ class KitOps:
         MediaDevLst = []
         devdirlst = []
 
-        devdirlst = os.listdir("/sys/block")
+        devdirlst = path('/sys/block').listdir()
         devdirlst.sort()
 
         for dev in devdirlst:
-            if re.match("^hd?", dev):
-                devinfo = open("/sys/block/%s/removable" % dev, 'r')
+            if re.match("^hd?", dev.basename()):
+                #devinfo = open("/sys/block/%s/removable" % dev, 'r')
+                devinfo = open(dev / 'removable', 'r')
                 removable = devinfo.readline().strip()
                 devinfo.close()
                 if int(removable) == 1:
-                    MediaDevLst.append(dev)
+                    MediaDevLst.append(dev.basename())
 
             elif re.match("^sr?", dev):
-                devinfo = open("/sys/block/%s/removable" % dev, 'r')
+                #devinfo = open("/sys/block/%s/removable" % dev, 'r')
+                devinfo = open(dev / 'removable', 'r')
                 removable = devinfo.readline().strip()
                 devinfo.close()
                 if int(removable) == 1:
-                    scsidev = "scd%s" % dev[2:]
+                    scsidev = "scd%s" % dev.basename()[2:]
                     MediaDevLst.append(scsidev)
         return MediaDevLst
 
@@ -337,7 +352,7 @@ class KitOps:
            returns None if it fails or the kit name/dir if it succeeds'''
 
         if dirlst == None:
-            dirlst = self.__getDirList(mountpoint)
+            dirlst = mountpoint.dirs()
             for i in range(0, len(dirlst)):
                 if not glob.glob('%s/%s/kit-*.rpm' % (mountpoint, dirlst[i])):
                     del dirlst[i]
@@ -349,15 +364,17 @@ class KitOps:
     def mountMedia(self, media, isISO=False):
         ''' mount the specified media to a temporary dir
             PostCondition: self.__tmpmntdir & self.mountpoint are set & equal if successful'''
-        self.__tmpmntdir = tempfile.mkdtemp()
+        self.__tmpmntdir = path(tempfile.mkdtemp())
 
         if isISO:
-            cmd = "mount -o loop %s %s 2> /dev/null" % (media, self.__tmpmntdir)
+            mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                      (media, self.__tmpmntdir), shell=True)
         else:
-            cmd = "mount %s %s 2> /dev/null" % (media, self.__tmpmntdir)
-        rv = os.system(cmd)
-        if rv != 0:
-            os.rmdir(self.__tmpmntdir)
+            mountP = subprocess.Popen('mount %s %s 2> /dev/null' %
+                                      (media, self.__tmpmntdir), shell=True)
+
+        if mountP.wait() != 0:
+            self.__tmpmntdir.rmdir()
             self.__tmpmntdir = None
             raise EMOUNTFAIL(rv)
 
@@ -367,10 +384,13 @@ class KitOps:
         '''PostCondition: self.mountpoint is unmounted, self.__tmpmntdir is removed,
             and both are set to None ''' 
         if self.mountpoint:
-            os.system('umount -l %s 2> /dev/null' %self.mountpoint)
+            #umountP = subprocess.Popen('umount -l %s 2> /dev/null' %
+            umountP = subprocess.Popen('umount %s 2> /dev/null' %
+                                       self.mountpoint, shell=True)
             self.mountpoint = None
         if self.__tmpmntdir:
-            os.system('rm -rf %s 2> /dev/null' %self.__tmpmntdir)
+            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
+                                   shell=True)
             self.__tmpmntdir = None
 
     def __handleMountError(self,rv):
@@ -397,7 +417,7 @@ class KitOps:
 
         kit = {} #a struct to hold the kit info for the distro
         #instantiate a distro via the factory
-        osdistro = DistroFactory(self.mountpoint)           #distro instance
+        osdistro = DistroFactory(str(self.mountpoint))      #distro instance
         kit['ver']    = osdistro.getVersion()               #os kit version in the db
         kit['arch']   = osdistro.getArch()                  #os kit arch in the db
         kit['name'] = '%s-%s-%s' %(osdistro.ostype, kit['ver'], kit['arch'])
@@ -417,9 +437,8 @@ class KitOps:
             return EKITADD_FAIL
 
         #copy kernel & initrd to pxedir
-        pxedir = '/tftpboot/pxelinux/'
-        if not os.path.isdir(pxedir):
-            os.makedirs(pxedir)
+        if not self.pxeboot_dir.exists():
+            self.pxeboot_dir.makedirs()
 
         bmt = BootMediaTool()
         fd,tmprd1 = tempfile.mkstemp()
@@ -432,15 +451,17 @@ class KitOps:
         bmt.unpackRootImg(tmprd1, tmprootfs)
         #patch tmprootfs with necessary pieces HERE
         #pack up the patched rootfs & put it under tftpboot
-        bmt.packRootImg(tmprootfs, pxedir+'/initrd-%s.img'  %kit['name'])
+        bmt.packRootImg(tmprootfs,
+                        self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
         #copy kernel to tftpboot & rename
-        bmt.copyKernel(self.mountpoint, pxedir+'/kernel-%s' %kit['name'],True)
+        bmt.copyKernel(self.mountpoint,
+                       self.pxeboot_dir / 'kernel-%s' % kit['name'], True)
 
         #copy the RPMS to repo dir
         print "kitops: copying the RPMs - this may take a LOOONG time..."
-        repodir = '/depot/kits/%s/%s/' %(kit['name'],kit['ver'])
-        if not os.path.exists(repodir):
-            os.makedirs(repodir)
+        repodir = self.kits_dir / kit['name'] / kit['ver']
+        if not repodir.exists():
+            repodir.makedirs()
 
 
         disk = 0
@@ -451,8 +472,15 @@ class KitOps:
             cmd = 'cd %s/%s; tar -cf - --exclude TRANS.TBL . | (cd %s; tar xf -)' \
                 % (self.mountpoint, osdistro.pathLayoutAttributes['packagesdir'], repodir)
             print "DEBUG: rpm copy cmd = ", cmd
+
             try:
-                os.system(cmd)
+                srcP = subprocess.Popen('tar -cf - --exclude TRANS.TBL .',
+                            cwd=self.mountpoint /
+                                osdistro.pathLayoutAttributes['packagesdir'],
+                            shell=True, stdout=subprocess.PIPE)
+                dstP = subprocess.Popen('tar xf -', cwd=repodir, shell=True,
+                                        stdin=srcP.stdout)
+                dstP.communicate()
             except Exception,msg:
                 print "kitops: OS system command failed executing '%s' with message = %s" % (cmd,msg)
                 return EKITADD_FAIL
@@ -476,8 +504,8 @@ class KitOps:
                 
 
         #populate the database with info
-        query = "insert into kits (rname,rdesc,version,upgradeable,removeable,arch) values \
-            ('%s','%s','%s',0,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
+        query = "insert into kits (rname,rdesc,version,isOS,removeable,arch) values \
+            ('%s','%s','%s',1,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
         print "DEBUG: addOsKit: query = ", query
 
         try:
@@ -488,13 +516,6 @@ class KitOps:
 
         
         return 0
-
-    def __getDirList(self, topdir):
-        '''returns a list of directories under a specified topdir, excluding . & ..'''
-        return [d for d in os.listdir(topdir) if os.path.isdir(os.path.join(topdir, d))]
-
-    def __getFileList(self, topdir):
-        return [f for f in os.listdir(topdir) if os.path.isfile(os.path.join(topdir, d))]
 
     def deleteKit(self):
         '''perform the delete operation on the kit specified '''
@@ -532,11 +553,14 @@ class KitOps:
 
         #the kit is NOT in use
         #1. remove the RPMS from /depot/kits/<kitname>/<kitver>
-        cmd = "/bin/rm -rf /depot/kits/%s/%s/ " % (kit['name'],kit['ver'])
-        os.system(cmd)
+        rmP = subprocess.Popen('/bin/rm -rf %s' %
+                               (self.kits_dir / kit['name'] / kit['ver']),
+                               shell=True)
 
         #2. remove kit RPM
-        os.system('/bin/rpm -e --nodeps kit-%s' %kit['name'])
+        rmP = subprocess.Popen('/bin/rpm -e --nodeps kit-%s' % kit['name'],
+                               shell=True)
+        rmP.wait()
 
         #3. remove component info from DB
         query = "DELETE from components where kid=%s" %kit['kid']
@@ -583,7 +607,9 @@ class KitOps:
                     'arch Architecture, removeable Removable FROM kits'
 
         #print "DEBUG: listKit, query = %s" %query
-        os.system("mysql -e '%s' %s" %(query,self.__db.dbname))
+        mysqlP = subprocess.Popen("mysql -e '%s' %s" %
+                                  (query, self.__db.dbname), shell=True)
+        mysqlP.wait()
 
         return 0    #success
 
