@@ -126,6 +126,13 @@ class KitOps:
             return EKITLOC_FAIL
 
         #at this point we have the kit mounted to self.mountpoint
+        try:
+            assert(self.mountpoint
+                   and self.mountpoint.isdir() and self.mountpoint.ismount())
+        except AssertionError,msg:
+            sys.stderr.write('kitops: mountpoint sanity assertion failed:\n%s' %msg)
+            return EKITLOC_FAIL
+
         return 0
 
     def autoDetectMedia(self):
@@ -154,21 +161,12 @@ class KitOps:
                 return 0
         return EKITLOC_FAIL
 
+    def isOSKit(self):
+        return path(self.mountpoint / 'isolinux').exists()
+
     def addKit(self):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
-
-        #at this point we have the kit mounted to self.mountpoint
-        try:
-            assert(self.mountpoint
-                   and self.mountpoint.isdir() and self.mountpoint.ismount())
-        except AssertionError,msg:
-            sys.stderr.write('kitops: mountpoint sanity assertion failed:\n%s' %msg)
-            return EKITLOC_FAIL
-
-        #check if it's an OS kit
-        if path(self.mountpoint / 'isolinux').exists():
-            return self.addOsKit()
 
         #handle most common scenario
         if self.kitname == '':  #kit to install was NOT specified
@@ -442,7 +440,7 @@ class KitOps:
             if status & key:
                 print "kitops: mount failed with this error: %s" % errdict[key]
 
-    def addOsKit(self):
+    def addOSKit(self):
         '''handle the special case when the kit is an OS
            Precondition: self.mountpoint is defined, media successfully mounted'''
         print 'kitops: adding OS KIT'
@@ -457,7 +455,7 @@ class KitOps:
                         (osdistro.ostype, kit['ver'], kit['arch'])
 
         query = "SELECT * from kits where rname = '%s'" %kit['name']
-        print "DEBUG: addOsKit: query = ", query
+        print "DEBUG: addOSKit: query = ", query
         try:
             self.__db.execute(query)
             rv = self.__db.fetchone()
@@ -539,7 +537,7 @@ class KitOps:
         #populate the database with info
         query = "insert into kits (rname,rdesc,version,isOS,removeable,arch) values \
             ('%s','%s','%s',1,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
-        print "DEBUG: addOsKit: query = ", query
+        print "DEBUG: addOSKit: query = ", query
 
         try:
             self.__db.execute(query)
