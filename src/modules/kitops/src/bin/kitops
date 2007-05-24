@@ -117,7 +117,7 @@ class KitOpsApp(KusuApp):
         isOSKit = self.koinst.isOSKit()
 
         if isOSKit:
-            rv = self.koinst.addOSKit()
+            rv = self.runAddOSKit()
         else:
             rv = self.koinst.addKit()
 
@@ -127,7 +127,34 @@ class KitOpsApp(KusuApp):
             print 'kitops: add operation failed'
 
         self.koinst.unmountMedia()
-       
+
+    def runAddOSKit(self):
+        rv, kit, osdistro = self.koinst.prepareOSKit()
+
+        if rv:  # we have a non-zero return code
+            return rv
+
+        while 1:    #loop to go through all the media disks...
+            res = ''
+
+            rv = self.koinst.copyOSKitMedia(kit, osdistro, res)
+            if rv:
+                return rv
+
+            while not (res.lower() == 'y' or res == 'N'):
+                res = raw_input('Any more disks for this OS kit? [y/N] ')
+
+            if res == 'N':
+                break
+
+            print "Please insert next disk if installing from phys. media NOW"
+            res = raw_input('(URI for next ISO | blank if phys. media | N to finish): ')
+            res = string.strip(res)
+            if res == 'N':
+                break
+      
+        return self.koinst.finalizeOSKit(kit)
+
     def printHelp(self):
         self.parser.print_help()
 

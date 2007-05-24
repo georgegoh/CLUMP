@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Kusu kitops - kit operations tool
 #
@@ -406,7 +406,8 @@ class KitOps:
             mountP = subprocess.Popen('mount %s %s 2> /dev/null' %
                                       (media, self.__tmpmntdir), shell=True)
 
-        if mountP.wait() != 0:
+        rv = mountP.wait()
+        if rv != 0:
             self.__tmpmntdir.rmdir()
             self.__tmpmntdir = None
             raise EMOUNTFAIL(rv)
@@ -448,6 +449,7 @@ class KitOps:
            Precondition: self.mountpoint is defined, media successfully mounted'''
         print 'kitops: adding OS KIT'
 
+    def prepareOSKit(self):
         kit = {} #a struct to hold the kit info for the distro
         #instantiate a distro via the factory
         osdistro = DistroFactory(str(self.mountpoint)) #distro instance
@@ -464,11 +466,11 @@ class KitOps:
             rv = self.__db.fetchone()
         except Exception,msg:
             print 'kitops: Database query=%s failed with msg=%s' %(query,msg)
-            return EKITADD_FAIL
+            return EKITADD_FAIL, None, None
 
         if rv != None:
             print 'kitops: The OS kit %s is already installed' % kit['name']
-            return EKITADD_FAIL
+            return EKITADD_FAIL, None, None
 
         #copy kernel & initrd to pxedir
         if not self.pxeboot_dir.exists():
@@ -491,52 +493,39 @@ class KitOps:
         bmt.copyKernel(self.mountpoint,
                        self.pxeboot_dir / 'kernel-%s' % kit['name'], True)
 
+        return 0, kit, osdistro
+
+
+    def copyOSKitMedia(self, kit, osdistro, media=''):
+        if media:
+            #unmount current, prepare for next
+            self.unmountMedia()
+            self.kitmedia = media
+            print "DEBUG: kitmedia specified by user=%s=" %self.kitmedia
+            self.addKitPrepare()
+
         #copy the RPMS to repo dir
         print "kitops: copying the RPMs - this may take a LOOONG time..."
         repodir = self.kits_dir / kit['name'] / kit['ver']
         if not repodir.exists():
             repodir.makedirs()
 
+        try:
+            srcP = subprocess.Popen('tar -cf - --exclude TRANS.TBL .',
+                        cwd=self.mountpoint /
+                            osdistro.pathLayoutAttributes['packagesdir'],
+                        shell=True, stdout=subprocess.PIPE)
+            dstP = subprocess.Popen('tar xf -', cwd=repodir, shell=True,
+                                    stdin=srcP.stdout)
+            dstP.communicate()
+        except Exception,msg:
+            print "kitops: OS system command failed with message = %s" % msg
+            return EKITADD_FAIL
 
-        disk = 0
-        while 1:    #loop to go through all the media disks...
-            disk += 1
-            print "kitops: Copying packages from Disk %d ..." %disk
+        return 0
 
-            cmd = 'cd %s/%s; tar -cf - --exclude TRANS.TBL . | (cd %s; tar xf -)' \
-                % (self.mountpoint, osdistro.pathLayoutAttributes['packagesdir'], repodir)
-            print "DEBUG: rpm copy cmd = ", cmd
-
-            try:
-                srcP = subprocess.Popen('tar -cf - --exclude TRANS.TBL .',
-                            cwd=self.mountpoint /
-                                osdistro.pathLayoutAttributes['packagesdir'],
-                            shell=True, stdout=subprocess.PIPE)
-                dstP = subprocess.Popen('tar xf -', cwd=repodir, shell=True,
-                                        stdin=srcP.stdout)
-                dstP.communicate()
-            except Exception,msg:
-                print "kitops: OS system command failed executing '%s' with message = %s" % (cmd,msg)
-                return EKITADD_FAIL
-            res = ''
-            while not (res == 'y' or res == 'N'):
-                res = raw_input('Any more disks for this OS kit? [y/N] ')
-            if res == 'N':
-                break
-            print "Please insert next disk if installing from phys. media NOW"
-            res = raw_input('(URI for next ISO | blank if phys. media | N to finish): ')
-            res = string.strip(res)
-            if res == 'N':
-                break
-
-            #unmount current, prepare for next
-            self.unmountMedia()
-            self.kitmedia = res
-            print "DEBUG: kitmedia specified by user=%s=" %self.kitmedia
-            self.addKitPrepare()
-        # end while
                 
-
+    def finalizeOSKit(self, kit):
         #populate the database with info
         query = "insert into kits (rname,rdesc,version,isOS,removeable,arch) values \
             ('%s','%s','%s',1,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
@@ -547,7 +536,6 @@ class KitOps:
         except Exception,msg:
             print 'kitops: Database query=%s failed with msg=%s' %(query,msg)
             return EKITADD_FAIL
-
         
         return 0
 
