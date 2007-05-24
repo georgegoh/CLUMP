@@ -2,7 +2,7 @@
 
 # $Id$
 #
-#  Copyright (C) 2007 Platform Computing
+#  Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -86,7 +86,7 @@ class ImagedNodeConfiger:
             fp.close()
             for mod in self.modules:
                 self.log("Loading:  %s" % mod)
-                sys.stdout.write("Loading module:  %s\n" % mod)
+                sys.stdout.write("Loading module:  %s" % mod)
                 os.system('modprobe %s > /dev/null 2>&1' % mod)
         else:
             self.log("No modules to load!\n")
@@ -103,8 +103,9 @@ class ImagedNodeConfiger:
 
 
     def setInterface(self, device, ip, subnet, dgateway=''):
-        """setInterface - Configure the named device with the given ip, and subnet
-        mask.  If the dgateway is provided it will also set the default route."""
+        """setInterface - Configure the named device with the given ip,
+        and subnet mask.  If the gateway is provided it will also set
+        the default route."""
         if not device or not ip or not subnet:
             return
 
@@ -135,6 +136,7 @@ class ImagedNodeConfiger:
                 self.log("Address:  %s,  Mask:  %s\n" % (ip, mask))
 
                 for instip in self.installer:
+                    print "Testing:  %s, %s, %s" % (ip, mask, instip)
                     if ipfun.onNetwork(ip, mask, instip):
                         # This is the interface to use
                         return instip
@@ -169,7 +171,6 @@ class ImagedNodeConfiger:
 app = ImagedNodeConfiger()
 app.loadModules()
 app.upInterfaces()
-app.mkNewRoot('/newroot')
 
 bestip = app.findBestInstaller()
 app.log("Best Installer = %s" % bestip )
@@ -217,6 +218,20 @@ for i in niihandler.nics.keys():
     app.log("        dhcp    = %s\n" % (niihandler.nics[i]['dhcp']))
     app.log("        options = %s\n" % (niihandler.nics[i]['options']))
 
+# Bring up the interfaces according to the NII
+for i in niihandler.nics.keys():
+    if niihandler.nics[i]['dhcp'] == 0:
+        if niihandler.nics[i]['gateway'] != '':
+            app.setInterface(niihandler.nics[i]['device'],
+                             niihandler.nics[i]['ip'],
+                             niihandler.nics[i]['subnet'],
+                             niihandler.nics[i]['gateway'])
+        else:
+            app.setInterface(niihandler.nics[i]['device'],
+                             niihandler.nics[i]['ip'],
+                             niihandler.nics[i]['subnet'])
 
+# Download the image
+app.mkNewRoot('/newroot')
 app.getImage(niihandler.nodegrpid)
 os.unlink('/tmp/%s.img.tar.bz2' % niihandler.nodegrpid)

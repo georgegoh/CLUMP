@@ -44,7 +44,6 @@ class BuildInitrd:
         self.ngid        = 0      # Node group database ID
         self.repoid      = 0      # Repository ID from database
         self.repodir     = ''     # The location of the repository to use
-        self.ostype      = ''     # The OS type
         self.installtype = ''     # The type of the installation
         self.modules     = []     # A list of all the modules to include
         self.ostype      = ''     # The ostype for the repository
@@ -224,7 +223,7 @@ class BuildInitrd:
 
         # Locate the kernel package.  
         pattern = ''
-        if self.ostype == 'Fedora6.0':    # Get the real types from Alex
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             pattern = os.path.join(self.repodir, '*/RPMS/kernel-[2-3].[0-9].[0-9]*')
 
         if not pattern:
@@ -340,7 +339,7 @@ class BuildInitrd:
         os.system('cp -r /opt/kusu/lib/kusu/* \"%s\"' % pythondir)
         os.system('cp /opt/kusu/etc/imageinit.py \"%s\"' % self.imagedir)
         file = '%s/imageinit.py' % self.imagedir
-        print 'Running:  cp /opt/kusu/etc/imageinit.py %s' % file
+        # print 'Running:  cp /opt/kusu/etc/imageinit.py %s' % file
         os.chmod(file, 0755)
 
         # Add the entry to startup imageinit.py at boot (Too lazy to open write close)
@@ -361,7 +360,7 @@ class BuildInitrd:
         os.chdir(self.imagedir)
         pattern  = ''
         pattern2 = ''
-        if self.ostype == 'Fedora6.0':    # Get the real types from Alex
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             pattern  = os.path.join(self.modlink, 'boot/System.map*')
             pattern2 = os.path.join(self.initlink, 'lib/modules/2*')
             

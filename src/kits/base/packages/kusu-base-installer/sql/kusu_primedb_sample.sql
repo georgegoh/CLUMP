@@ -19,10 +19,10 @@
 
 
 # Setup a default repo and kits
-insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer0", 'Fedora6.0') ;
+insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer0", 'fedora-6-i386') ;
 insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'RHEL5.1') ;
 
-insert into kits values (1, "Fedora 6", "Fedora 6 i386", "6.0", 0, 0, "i386") ;
+insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 0, 0, "i386") ;
 insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 0, 0, "i386") ;
 insert into kits values (3, "Base", "OSC Base", "5.1", 0, 0, "i386") ;
 insert into kits values (4, "LSF", "LSF 7.0 EP2", "7.2", 1, 1, "i386") ;

@@ -48,7 +48,6 @@ class BuildImage:
         self.ngid        = 0      # Node group database ID
         self.repoid      = 0      # Repository ID from database
         self.repodir     = ''     # The location of the repository to use
-        self.ostype      = ''     # The OS type
         self.installtype = ''     # The type of the installation
         self.packages    = []     # A list of all the packages to include
         self.ostype      = ''     # The ostype for the repository
@@ -241,6 +240,14 @@ class BuildImage:
         # print "repoid = %s" % self.repoid
         # print "repodir = %s" % self.repodir
 
+        dirname = 'Redhat'
+        if self.ostype[:6] == 'fedora':
+            dirname = 'Fedora'
+        if self.ostype[:4] == 'rhel' :
+            dirname = 'Redhat'
+        if self.ostype[:6] == 'centos':
+            dirname = 'CentOS'
+
         # Create the yum config file
         yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
         fp = file(yumconf, 'w')
@@ -252,7 +259,7 @@ class BuildImage:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=RHEL-%s - Base\n'
-                'baseurl=http://%s/repos/%s/Fedora6/RPMS/\n' % (self.ostype, yumhost, self.repoid)
+                'baseurl=http://%s/repos/%s/%s/RPMS/\n' % (self.ostype, yumhost, self.repoid, dirname)
                 )
 
         fp.write(out)
@@ -321,7 +328,7 @@ class BuildImage:
     def __cleanImage(self):
         """cleanImage - Removes all the junk left over from the image creation
         process."""
-        if self.ostype == 'Fedora6.0':    # Get the real types from Alex
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             os.chdir(self.imagedir)
             os.system('rm -rf var/cache/yum/base/packages/*.rpm')
             print 'Removing:  \"%s/var/cache/yum/base/packages/*.rpm\"' %  self.imagedir
