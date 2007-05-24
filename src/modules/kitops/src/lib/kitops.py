@@ -204,6 +204,9 @@ class KitOps:
 
         # 1. copy the RPMS
         repodir = self.kits_dir / kit['name'] / kit['ver']
+        if not repodir.exists():
+            repodir.makedirs()
+
         srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % kit['rpmloc'],
                                 cwd=self.mountpoint / self.kitname,
                                 shell=True, stdout=subprocess.PIPE)
