@@ -44,9 +44,11 @@ ALLOWCANCEL = 1
 
 class NetworkData(object):
     def __init__(self):
-        self.selectedNetworkID = 0
-
-
+        self.networkListbox = None
+    
+global dataGlobal
+dataGlobal = NetworkData()
+    
 class NetEditApp(object, KusuApp):
 
     def __init__(self):
@@ -190,7 +192,7 @@ class NetEditApp(object, KusuApp):
             print "Check if -a -d -c used otherwise usage()!"
             if (not bool(self._options.add) or not bool(self._options.delete) or not bool(self._options.change)):
                 self.parser.error(self._kusuApp._("netedit_options_required_options"))
-
+                
         # Screen ordering
         screenList = [ NetworkMainWindow(self._database, self._kusuApp) ]
 
@@ -198,28 +200,25 @@ class NetEditApp(object, KusuApp):
         ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
 
-class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
-
+class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen):
+    title = "netedit_window_title_edit"
+    #name = 'Network Edit'   # used for showtrail sidebar
+    msg = "netedit_instruction_edit"
+    buttons = [ 'ok_button', 'cancel_button' ]
+    helptext = "Copyright(C) 2007 Platform Computing Inc\tInstructions: Please edit the network information"
+           
     def hotkeyCallback(self):
-        """ hotkeyCallback()
-        Set callback function
-        """
-
-        self.exitAction()
-
-    def exitAction(self, data=None):
-        """ExitAction()
-        Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
-        """
-
-        result = self.selector.popupDialogBox(self._("netedit_window_title_exit"), self._("netedit_instructions_exit"), 
-                 (self._("yes_button"), self._("no_button")))
-        if result == "no":
-            return NAV_NOTHING
-        if result == "yes":
-            self.finish()  # Destroy the screens, exit
-            sys.exit(0)
-
+        pass
+    
+    def cancelAction(self):
+        #self.selector.popupStatus(self._("Debug Window"), "Cancel Action", 1)
+        return NAV_BACK
+    
+    def setCallbacks(self):
+        self.buttons = [ self._('ok_button'), self._('cancel_button') ]
+        self.buttonsDict[self.buttons[0]].setCallback_(self.validate)
+        self.buttonsDict[self.buttons[1]].setCallback_(self.cancelAction)
+    
     def test(self):
         val = self.newNetwork.value()
         if val and not self.newSubnet.value ():
@@ -230,10 +229,11 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
 
             self.newSubnet.setEntry(mask)
 
-    def editAction(self, data=None):
+    def drawImpl(self):
         flag = 1
         badFields = 0
-        netInfo = self.networkListbox.current().split()[0]
+        global dataGlobal
+        netInfo = dataGlobal.networkListbox.current()[0]
         networkRecord = []
         # Get the record to edit
         query = "SELECT network, subnet, gateway, device, startip, suffix, inc, options, netname, usingdhcp FROM networks WHERE netid = %d" % \
@@ -247,8 +247,8 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
             print self._("DB_Query_Error\n")
             sys.exit(-1)
 
-        myScreen = snack.SnackScreen()
-        g1 = snack.Grid(1, 12)
+        self.selector.disableQuitButton()
+        self.screenGrid  = snack.Grid(1, 11)
         instruction = snack.Textbox(60, 1, self._("Please edit any of the network information below."), scroll=0, wrap=0)
         self.newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), text=networkRecord[0], width=30, 
                     password=0, returnExit = 0)
@@ -270,87 +270,112 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
                     password=0, returnExit = 0)
 
         dhcpCheck = snack.Checkbox("Use DHCP", isOn = int(networkRecord[9]))
-        buttonBar1 = snack.ButtonBar(self.selector.getCurrentScreen(), (("OK", "Cancel")))
+        #buttonBar1 = snack.ButtonBar(self.selector.getCurrentScreen(), (("OK", "Cancel")))
         self.newNetwork.setCallback(self.test)
 
-        g1.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1)
-        g1.setField(self.newNetwork, 0, 1, padding=(0,0,0,0))
-        g1.setField(self.newSubnet, 0, 2, padding=(0,0,0,0))
-        g1.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
-        g1.setField(newDevice, 0, 4, padding=(0,0,0,0))
-        g1.setField(newStartIP, 0, 5, padding=(0,0,0,0))
-        g1.setField(newSuffix, 0, 6, padding=(0,0,0,0))
-        g1.setField(newInc, 0, 7, padding=(0,0,0,0))
-        g1.setField(newOpt, 0, 8, padding=(0,0,0,0))
-        g1.setField(newDesc, 0, 9, padding=(0,0,0,1))
-        g1.setField(dhcpCheck, 0, 10, padding=(13, 0, 0, 1), anchorLeft=1)
-        g1.setField(buttonBar1, 0, 11, (0, 0, 0, 0))
-        myScreen.gridWrappedWindow(g1, self._("Edit Network"))
-        myScreen.popHelpLine()
-        myScreen.pushHelpLine("Copyright(C) 2007 Platform Computing Inc.")
+        self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1, anchorLeft=1)
+        self.screenGrid.setField(self.newNetwork, 0, 1, padding=(0,0,0,0))
+        self.screenGrid.setField(self.newSubnet, 0, 2, padding=(0,0,0,0))
+        self.screenGrid.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
+        self.screenGrid.setField(newDevice, 0, 4, padding=(0,0,0,0))
+        self.screenGrid.setField(newStartIP, 0, 5, padding=(0,0,0,0))
+        self.screenGrid.setField(newSuffix, 0, 6, padding=(0,0,0,0))
+        self.screenGrid.setField(newInc, 0, 7, padding=(0,0,0,0))
+        self.screenGrid.setField(newOpt, 0, 8, padding=(0,0,0,0))
+        self.screenGrid.setField(newDesc, 0, 9, padding=(0,0,0,1))
+        self.screenGrid.setField(dhcpCheck, 0, 10, padding=(0, 0, 0, -2), anchorLeft=1)
+        myScreen = self.selector.getCurrentScreen()
+        #self.screenGrid.setField(buttonBar1, 0, 11, (0, 0, 0, 0))
+        #self.screenGrid.popHelpLine()
+        #snack.SnackScreen.pushHelpLine(self, "Copyright(C) 2007 Platform Computing Inc.")
 
-        f1 = snack.Form()
-        f1.addHotKey("F9")
-        f1.add(g1)
+    def validate(self):
+        return True, 'Success'
+        
+class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen):
 
-        while flag:
-            result = f1.run()
-            if buttonBar1.buttonPressed(result) == "cancel":
-                self.popWindow()
-                return NAV_NOTHING
+    title = "netedit_window_title_new"
+    #name = 'Network Edit'   # used for showtrail sidebar
+    msg = "netedit_instruction_new"
+    buttons = [ 'ok_button', 'cancel_button' ]
+    helptext = "Copyright(C) 2007 Platform Computing Inc.\tInstructions: Please enter the new network information"
+    
+    def hotkeyCallback(self):
+        return NAV_BACK
+        
+    def cancelAction(self):
+        #self.selector.popupStatus(self._("Debug Window"), "Cancel Action", 1)
+        return NAV_BACK
+    
+    def setCallbacks(self):
+        self.buttons = [ self._('ok_button'), self._('cancel_button') ]
+        self.buttonsDict[self.buttons[0]].setCallback_(self.validate)
+        self.buttonsDict[self.buttons[1]].setCallback_(self.cancelAction)
 
-            if result == "TAB":
-                self.selector.popupStatus("WAHAHAHAH!", "BOOBLGE", 3)
+    def drawImpl(self):
+    
+        self.selector.disableQuitButton()
+        self.screenGrid = snack.Grid(1, 11)
+        instruction = snack.Textbox(60, 1, self._("Please enter the network information below."), scroll=0, wrap=0)
+        newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
+        newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
+        newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
+        newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
+        newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
+        newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
+        newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), width=30, password=0, returnExit = 0)
+        newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
+        newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
+        dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
+        self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1, anchorLeft=1)
+        self.screenGrid.setField(newNetwork, 0, 1, padding=(0,0,0,0))
+        self.screenGrid.setField(newSubnet, 0, 2, padding=(0,0,0,0))
+        self.screenGrid.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
+        self.screenGrid.setField(newDevice, 0, 4, padding=(0,0,0,0))
+        self.screenGrid.setField(newStartIP, 0, 5, padding=(0,0,0,0))
+        self.screenGrid.setField(newSuffix, 0, 6, padding=(0,0,0,0))
+        self.screenGrid.setField(newInc, 0, 7, padding=(0,0,0,0))
+        self.screenGrid.setField(newOpt, 0, 8, padding=(0,0,0,0))
+        self.screenGrid.setField(newDesc, 0, 9, padding=(0,0,0,1))
+        self.screenGrid.setField(dhcpCheck, 0, 10, padding=(0, 0, 0, -2), anchorLeft=1)
 
-            if result != "F12":
-                # Validate if the value is in IP format.
-                if kusu.ipfun.validIP(self.newNetwork.value()):
-                    # Convert to hex
-                    networkcheck = kusu.ipfun.ip2number(self.newNetwork.value())
-                else:
-                    badFields = 1
-                    self.newNetwork.setEntry('')
+class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
-                if kusu.ipfun.validIP(self.newSubnet.value()):
-                    subnetcheck = kusu.ipfun.ip2number(self.newSubnet.value())
-                else:
-                    badFields = 1
-                    self.newSubnet.setEntry('')
+    title = "netedit_window_title_network"
+    #name = 'Network Edit'   # used for showtrail sidebar
+    msg = "netedit_instruction_network"
+    buttons = [ 'new_button', 'edit_button', 'delete_button', 'quit_button' ]
 
-                if newGateway == "" or kusu.ipfun.validIP(newGateway.value()):
-                    gatewaycheck = kusu.ipfun.ip2number(newGateway.value())
-                else:
-                    badFields = 1
-                    newGateway.setEntry('')
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        self.kusuApp = KusuApp()
+        kusu.screens.screenfactory.BaseScreen.__init__(self, database, kusuApp=self.kusuApp, gridWidth=45)
+        self.buttons = [self._('new_button'), self._('edit_button'), self._('delete_button'), self._('quit_button')]
 
-                if kusu.ipfun.validIP(newStartIP.value()):
-                    ipcheck = kusu.ipfun.ip2number(newStartIP.value())
-                else:
-                    badFields = 1
-                    newStartIP.setEntry('')
-
-                # If Gateway is NOT specified validate if the network is correct.
-#                if flag:
-
-                # Validate if the gateway and subnet give a valid network.
-
-                # Display all bad fields here.
-                if badFields:
-                    self.selector.popupMsg(self._("Invalid fields"), self._("Some fields were invalid. Please reenter these values. They have been reset.\n\n"))
-                    self.popWindow()
-                    badFields = 0
-                else:
-                    flag = 0
-
-        self.popWindow()
+    def hotkeyCallback(self):
+        self.exitAction()
+        
+    def newAction(self, data=None):
+        kusu.screens.screenfactory.ScreenFactory.screens = \
+                        [ NetworkNewWindow(self.database, self.kusuApp) ]
+                        
+        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory, screentitle="Huh?", showTrail=False)
+        ks.run()
+        return NAV_NOTHING    
+    
+    def editAction(self, data=None):
+        kusu.screens.screenfactory.ScreenFactory.screens = \
+                        [ NetworkEditWindow(self.database, self.kusuApp) ]
+                        
+        ks = kusu.screens.navigator.Navigator(screenFactory=kusu.screens.screenfactory.ScreenFactory, screentitle="Huh?", showTrail=False)
+        ks.run()
         return NAV_NOTHING
-
+    
     def deleteAction(self, data=None):
         self.database.connect('kusudb', 'apache')
         # Check if the network selected is not in use.
         netuse = 0
-        netInfo = self.networkListbox.current().split()
-
+        global dataGlobal
+        netInfo = dataGlobal.networkListbox.current()
         query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(netInfo[0])
 
         try:
@@ -366,86 +391,37 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
             result = self.selector.popupDialogBox(self._("netedit_window_title_delete"), 
                     self._("Do you want to delete the network '%s'?") % netInfo[1], (self._("yes_button"), self._("no_button")))
             if result == "no":
-                self.popWindow()
                 return NAV_NOTHING
             if result == "yes":
-                pass # Delete the entry!
                 self.database.execute("DELETE FROM networks WHERE netid = %d" % int(netInfo[0]))
-                self.popWindow()
                 return NAV_NOTHING
         else:
             self.selector.popupMsg(self._("netedit_window_title_delete"), 
             self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor.\n\n" % netInfo[1]))
-            self.popWindow()
             return NAV_NOTHING
+            
+    def exitAction(self, data=None):
+        """ExitAction()
+        Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
+        """
 
-    def newAction(self, data=None):
-        flag = 1
-        myScreen = snack.SnackScreen()
-        g1 = snack.Grid(1, 12)
-        instruction = snack.Textbox(60, 1, self._("Please enter the network information below."), scroll=0, wrap=0)
-        newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
-        newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
-        newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
-        newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
-        newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
-        newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
-        newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), width=30, password=0, returnExit = 0)
-        newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
-        newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
-        dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
-        buttonBar1 = snack.ButtonBar(self.selector.getCurrentScreen(), (("OK", "Cancel")))
-        g1.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1)
-        g1.setField(newNetwork, 0, 1, padding=(0,0,0,0))
-        g1.setField(newSubnet, 0, 2, padding=(0,0,0,0))
-        g1.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
-        g1.setField(newDevice, 0, 4, padding=(0,0,0,0))
-        g1.setField(newStartIP, 0, 5, padding=(0,0,0,0))
-        g1.setField(newSuffix, 0, 6, padding=(0,0,0,0))
-        g1.setField(newInc, 0, 7, padding=(0,0,0,0))
-        g1.setField(newOpt, 0, 8, padding=(0,0,0,0))
-        g1.setField(newDesc, 0, 9, padding=(0,0,0,1))
-        g1.setField(dhcpCheck, 0, 10, padding=(13, 0, 0, 1), anchorLeft=1)
-        g1.setField(buttonBar1, 0, 11, (0, 0, 0, 0))
-        myScreen.gridWrappedWindow(g1, "New Network Entry")
-        myScreen.popHelpLine()
-        myScreen.pushHelpLine("Copyright(C) 2007 Platform Computing Inc.")
-        f1 = snack.Form()
-        f1.add(g1)
-
-        while flag:
-            result = f1.run()
-            if newNetwork.value() != "172.25.244.0":
-                self.selector.popupStatus("Wrong Text", "You didn't type 172.25.244.0", 1)
-                newNetwork.setEntry('')
-                flag = 1
-            else:
-                self.selector.popupStatus("Wrong Text", "Valid Network!", 1)
-                flag = 0
-
-        return NAV_NOTHING
-
-class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
-
-    title = "netedit_window_title_network"
-    #name = 'Network Edit'   # used for showtrail sidebar
-    msg = "netedit_instruction_network"
-    buttons = [ 'new_button', 'edit_button', 'delete_button', 'quit_button' ]
+        result = self.selector.popupDialogBox(self._("netedit_window_title_exit"), self._("netedit_instructions_exit"), 
+                 (self._("yes_button"), self._("no_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            self.finish()
+            sys.exit(0)
+        else:
+            return NAV_NOTHING
+        
     def setCallbacks(self):
-        self.buttons = [self._('new_button'), self._('edit_button'), self._('delete_button'), self._('quit_button')]
-
-        # Quit action
-        self.buttonsDict[self.buttons[3]].setCallback_(self.exitAction)
-
-        # New action
-        self.buttonsDict[self.buttons[0]].setCallback_(self.newAction)
-
         # Edit action
-        self.buttonsDict[self.buttons[1]].setCallback_(self.editAction)
-
-        # Delete action
+        self.buttonsDict[self.buttons[0]].setCallback_(self.newAction)
+        self.buttonsDict[self.buttons[1]].setCallback_(self.editAction) 
         self.buttonsDict[self.buttons[2]].setCallback_(self.deleteAction)
-
+        self.buttonsDict[self.buttons[3]].setCallback_(self.exitAction)
+        
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
 
@@ -466,30 +442,24 @@ class NetworkMainWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, ku
         except:
             self.finish()
             print self._("DB_Query_Error\n")
+            return
             sys.exit(-1)
 
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(80, 3, self._(self.msg), scroll=0, wrap=0)
-        self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
+        dataGlobal.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
         for nid, net,sub,netname in networkInfo:
             # If string is too long, show ellipsis.
             if len(netname) > 46: 
                netname = netname[:43] + "..."
 
-            self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
+            dataGlobal.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
-        self.screenGrid.setField(self.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
+        self.screenGrid.setField(dataGlobal.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
-        #result = self.selector.popupStatus(self._("Debug Window"), self._("Debug: %s ") % nodeGroupSelected, 1)
         return True, 'Success'
-
-    def formAction(self):
-        """Any other action other than validation that takes place after the
-           'Next button is pressed.
-        """
-        pass
 
 class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
@@ -502,3 +472,4 @@ class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
 if __name__ == '__main__':
     app = NetEditApp()
     app.run()
+
