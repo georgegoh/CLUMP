@@ -78,7 +78,7 @@ class Navigator(object, KusuApp):
         msgbox = snack.GridForm(self.mainScreen, title, 1,2)
         text = snack.TextboxReflowed(30, msg)
         msgbox.add(text, 0,0)
-        msgbox.add(snack.Button('Ok'), 0,1)
+        msgbox.add(snack.Button(self._('ok_button')), 0,1)
         return msgbox.runPopup()
 
     def popupStatus(self, title, msg, timeout):
@@ -248,7 +248,7 @@ class Navigator(object, KusuApp):
                 if not valid:
                     snack.ButtonChoiceWindow(self.mainScreen, 
                                              self._('Validation Failed'), msg,
-                                             buttons=[self._('Ok')])
+                                             buttons=[self._('ok_button')])
                     continue
                 self.currentScreen.formAction()
                 self.mainScreen.popWindow()
