@@ -89,7 +89,7 @@ class KitOpsApp(KusuApp):
         
         if self.kitop == KITOP_ADD:
             print 'kitops: performing add operation'
-            if self.koinst.addKitPrepare() =! 0:
+            if self.koinst.addKitPrepare() != 0:
                 sys.stderr.write("kitops: add preparation failed. For more info - see above\n")
                 sys.exit(1)
             rv = self.koinst.addKit()
