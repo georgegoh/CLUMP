@@ -47,6 +47,9 @@ msgstr "No"
 msgid "ok_button"
 msgstr "OK"
 
+msgid "cancel_button"
+msgstr "Cancel"
+
 msgid "next_button"
 msgstr "Next"
 
@@ -348,3 +351,9 @@ msgstr "Exit netedit"
 
 msgid "netedit_instructions_exit"
 msgstr "Do you want to quit the Network Editor?"
+
+msgid "netedit_window_title_delete"
+msgstr "Delete Selected Network"
+
+msgid "Do you want to delete the network '%s'?"
+msgstr "Do you want to delete the network '%s'?"
