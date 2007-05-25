@@ -7,6 +7,15 @@
 #
 
 import sys
+import os
+from path import path
+
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog()
+kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
+                       'kusu-kitops.log')
+kl = kusulog.getKusuLog('kitops-app')
+
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps, EMOUNT_OK
 
@@ -46,11 +55,11 @@ class KitOpsApp(KusuApp):
         
     def parseArgs(self):
         (options, args) = self.parser.parse_args()
-        print "DEBUG: options = ", options
-        print "DEBUG: args = ", args
+        kl.debug("options: %s", options)
+        kl.debug("args: %s", args)
 
         if args:
-            sys.stderr.write("kitops: No arguments expected - encountered args = %s\n" %args)
+            kl.critical("No more arguments expected. Remaining args: %s" % args)
             self.printHelp()
             sys.exit(1)
 
@@ -91,28 +100,28 @@ class KitOpsApp(KusuApp):
             self.runAdd()
 
         elif self.kitop == KITOP_DEL:
-            print 'kitops: performing delete operation'
+            kl.debug('Performing delete operation')
             rv = self.koinst.deleteKit()
             if not rv:
-                print 'kitops: delete operation successful'
+                kl.debug('SUCCESS performing delete operation')
             else:
-                print 'kitops: delete operation failed'
+                kl.debug('FAIL performing delete operation')
 
         elif self.kitop == KITOP_LST:
-            print 'kitops: performing list operation'
+            kl.debug('Performing list operation')
             rv = self.koinst.listKit()
             if not rv:
-                print 'kitops: list operation successful'
+                kl.debug('SUCCESS performing list operation')
             else:
-                print 'kitops: list operation failed'
+                kl.debug('FAIL performing list operation')
 
         else:
-            print 'kitops: unknown operation=%d requested' %self.kitop
+            kl.debug('Unknown operation requested: %d', self.kitop)
 
     def runAdd(self):
-        print 'kitops: performing add operation'
+        kl.debug('Performing add operation')
         if self.koinst.addKitPrepare() != 0:
-            sys.stderr.write("kitops: add preparation failed. For more info - see above\n")
+            kl.debug('FAIL add preparation; see above fore more info')
             sys.exit(1)
         isOSKit = self.koinst.isOSKit()
 
@@ -122,9 +131,9 @@ class KitOpsApp(KusuApp):
             rv = self.koinst.addKit()
 
         if not rv:
-            print 'kitops: add operation successful'
+            kl.debug('SUCCESS performing add operation')
         else:
-            print 'kitops: add operation failed'
+            kl.debug('FAIL performing add operation')
 
         self.koinst.unmountMedia()
 

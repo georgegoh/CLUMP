@@ -36,6 +36,9 @@ from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
 
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog('kitops')
+
 EMOUNT_OK       =  0
 EMOUNT_FAIL     = -1
 EKITLOC_FAIL    = -2
@@ -67,7 +70,7 @@ class KitOps:
         self.__tmpmntdir = None
         self.__db = KusuDB()
 
-        self.prefix = path(kw.get('prefix', '/'))
+        self.prefix = path(kw.get('prefix', os.environ.get('KUSU_ROOT', '/')))
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
@@ -75,7 +78,7 @@ class KitOps:
             #self.__db.connect('kusudb','apache')
             self.__db.connect('test')
         except Exception,msg:
-            sys.stderr.write('kitops: Connection to the database failed with error message %s' %msg)
+            kl.error('Connection to DB failed: %s', msg)
             sys.exit(EDB_FAIL)
 
     def setPrefix(self, prefix):
@@ -84,7 +87,7 @@ class KitOps:
         """
 
         self.prefix = path(prefix)
-        self.kits_dir = self.depot_prefix / 'depot/kits/'
+        self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
     def addKitPrepare(self):
@@ -98,7 +101,7 @@ class KitOps:
         rv = urlparse.urlparse(self.kitmedia)
 
         if rv[0]:
-            print "kitops: Network kit specified - retrieving..."
+            kl.debug('Network kit specified, retrieving')
             (tmpfname, headers) = urllib.urlretrieve(self.kitmedia)
             self.medialoc = path(tmpfname)
         else :
@@ -106,7 +109,7 @@ class KitOps:
 
         #at this point, media can be either an iso file or a mountpoint dir
         if self.medialoc.isfile() and self.medialoc.ext.lower() == '.iso':
-            print 'kitops: media iso file was provided: %s' %self.medialoc
+            kl.debug('Media ISO file provided: %s', self.medialoc)
             isISO = True
             try:
                 self.mountMedia(self.medialoc, isISO)
@@ -117,7 +120,7 @@ class KitOps:
             return 0
                 
         elif self.medialoc.isdir() and self.medialoc.ismount():
-            print 'kitops: media mountpoint was provided: %s' %self.medialoc
+            kl.debug('Media mountpoint: %s', self.medialoc)
             self.mountpoint = self.medialoc
 
         else:
@@ -141,7 +144,7 @@ class KitOps:
         """
 
         lst = self.findMediaDevices()
-        print "DEBUG: media device list = ",lst
+        kl.debug('Media device list: %s', lst)
         try:
             assert(lst)
         except AssertionError:
@@ -150,14 +153,14 @@ class KitOps:
 
         for dev in lst:
             try:
-                self.mountMedia('/dev/%s' %dev)
+                self.mountMedia('/dev/%s' % dev)
             except EMOUNTFAIL,inst:
                 sys.stderr.write('kitops: failed mounting device /dev/%s\n' %
                                  dev)
                 self.__handleMountError(int(inst))
             else:
                 #mountpoint is defined - mount was successful
-                self.MediaDevice = '/dev/%s' %dev
+                self.MediaDevice = '/dev/%s' % dev
                 return 0
         return EKITLOC_FAIL
 
@@ -194,12 +197,11 @@ class KitOps:
         #check if this kit is already installed - by name and version
         try:
             if self.checkKitInstalled(kit['name'], kit['ver']):
-                print "kitops: Kit '%s' version '%s' is already installed." % \
-                      (kit['name'],kit['ver'])
+                kl.debug("Kit '%s' version '%s' already installed",
+                         kit['name'], kit['ver'])
                 return EKITADD_FAIL
         except Exception,msg:
-            sys.stderr.write('kitops: DB check on the kit %s' % kit['name'] +
-                             'failed with msg=%s\n' % msg)
+            kl.error('DB check on kit %s failed with: %s', kit['name'], msg)
             return EKITADD_FAIL
 
         # 1. copy the RPMS
@@ -220,9 +222,9 @@ class KitOps:
 
         try:
             rv = self.__db.execute(query)
-            print "kitops: DEBUG: kit table update, rv=",rv
+            kl.debug('Kit table udpate rv: %s', rv)
         except Exception,msg:
-            print 'kitops: Database query=%s failed with msg=%s' %(query,msg)
+            kl.debug('FAIL query: %s, message: %s', query, msg)
             return EKITADD_FAIL
 
         #extract the kit id to associate with components
@@ -230,7 +232,7 @@ class KitOps:
                 (kit['name'], kit['ver'])
         self.__db.execute(query)
         kit['kid'], = self.__db.fetchone()
-        print 'addKIT: DEBUG - kid = ',kit['kid']
+        kl.debug('Addkit kid: %s', kit['kid'])
 
         # 3. install the kit RPM
         try:
@@ -285,9 +287,8 @@ class KitOps:
             else:
                 for dbcid, dbkid in comp['dbcidlst']:
                     if dbkid > 0 and dbkid != kit['kid']:
-                        print "kitops: Warning, updating kit ID " + \
-                              "for component '%s', cid=%s" % \
-                              (comp['name'], dbcid)
+                        kl.warning("Updating kit id for component '%s', cid=%s",
+                                   comp['name'], dbcid)
                     query = "UPDATE components SET kid=%s where cid=%s" % \
                             (kit['kid'],dbcid)
                     self.__db.execute(query)
@@ -307,7 +308,6 @@ class KitOps:
         if kit['name'].startswith('kit-'):
             kit['name'] = kit['name'][len('kit-'):]
         kit['sum'] = kit['inst'].getSummary()
-        print 'DEBUG: kitops: ', kit['name'],kit['ver'],kit['sum']
 
         return kit
 
@@ -323,7 +323,7 @@ class KitOps:
                 dirlst.append(dir)
 
         if not dirlst:
-            print 'kitops: bad media provided - no kits found'
+            kl.error('Bad media provided, no kits found')
             return EKIT_BAD
 
         if len(dirlst) == 1:
@@ -333,7 +333,7 @@ class KitOps:
             #handleMetaKit - return the kit to work with (self.kitname must be set)
             rv = self.selectKit(self.mountpoint, dirlst)
             if not rv:
-                print 'kitops: bad media provided - no kits found'
+                kl.error('Bad media provided, no kits found')
                 return EKIT_BAD
             self.kitname = rv
 
@@ -368,7 +368,7 @@ class KitOps:
     def checkKitInstalled(self,kitname,kitver):
         '''Returns true if specified kit is already in the DB, false otherwise'''
         query = "select * from kits where rname='%s' and version='%s'" %(kitname,kitver)
-        print 'checkKitInstalled: query=',query
+        kl.debug('checkKitInstalled query: %s', query)
         try:
             self.__db.execute(query)
             rv = self.__db.fetchone()
@@ -390,7 +390,7 @@ class KitOps:
                 if not glob.glob('%s/%s/kit-*.rpm' % (mountpoint, dirlst[i])):
                     del dirlst[i]
             if not dirlst:
-                print 'kitops: bad media provided - no kits found'
+                kl.error('Bad media provided, no kits found')
                 return EKIT_BAD
         #TO BE CONTINUED
         
@@ -442,12 +442,7 @@ class KitOps:
 
         for key in errdict.keys():
             if status & key:
-                print "kitops: mount failed with this error: %s" % errdict[key]
-
-    def addOSKit(self):
-        '''handle the special case when the kit is an OS
-           Precondition: self.mountpoint is defined, media successfully mounted'''
-        print 'kitops: adding OS KIT'
+                kl.error('Mount fail error: %s', errdict[key])
 
     def prepareOSKit(self):
         kit = {} #a struct to hold the kit info for the distro
@@ -460,16 +455,16 @@ class KitOps:
                         (osdistro.ostype, kit['ver'], kit['arch'])
 
         query = "SELECT * from kits where rname = '%s'" %kit['name']
-        print "DEBUG: addOSKit: query = ", query
+        kl.debug('addOSkit query: %s', query)
         try:
             self.__db.execute(query)
             rv = self.__db.fetchone()
         except Exception,msg:
-            print 'kitops: Database query=%s failed with msg=%s' %(query,msg)
+            kl.error('FAIL query: %s, message: %s', query, msg)
             return EKITADD_FAIL, None, None
 
         if rv != None:
-            print 'kitops: The OS kit %s is already installed' % kit['name']
+            kl.info("OS kit '%s' already installed", kit['name'])
             return EKITADD_FAIL, None, None
 
         #copy kernel & initrd to pxedir
@@ -495,17 +490,16 @@ class KitOps:
 
         return 0, kit, osdistro
 
-
     def copyOSKitMedia(self, kit, osdistro, media=''):
         if media:
             #unmount current, prepare for next
             self.unmountMedia()
             self.kitmedia = media
-            print "DEBUG: kitmedia specified by user=%s=" %self.kitmedia
+            kl.debug('Provided kit media: %s', self.kitmedia)
             self.addKitPrepare()
 
         #copy the RPMS to repo dir
-        print "kitops: copying the RPMs - this may take a LOOONG time..."
+        kl.info('Copying RPMs, this may take a while...')
         repodir = self.kits_dir / kit['name'] / kit['ver']
         if not repodir.exists():
             repodir.makedirs()
@@ -519,22 +513,21 @@ class KitOps:
                                     stdin=srcP.stdout)
             dstP.communicate()
         except Exception,msg:
-            print "kitops: OS system command failed with message = %s" % msg
+            kl.error('Error during copy: %s', msg)
             return EKITADD_FAIL
 
         return 0
-
                 
     def finalizeOSKit(self, kit):
         #populate the database with info
         query = "insert into kits (rname,rdesc,version,isOS,removeable,arch) values \
             ('%s','%s','%s',1,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
-        print "DEBUG: addOSKit: query = ", query
+        kl.debug('addOSKit query: %s', query)
 
         try:
             self.__db.execute(query)
         except Exception,msg:
-            print 'kitops: Database query=%s failed with msg=%s' %(query,msg)
+            kl.debug('FAIL query: %s, message: %s', query, msg)
             return EKITADD_FAIL
         
         return 0
@@ -554,14 +547,14 @@ class KitOps:
         query = "select kid,removeable,version from kits  where rname='%s' " %kit['name']
         self.__db.execute(query)
         rv = self.__db.fetchone()
-        print 'DEBUG: del kit DB record: ', rv
+        kl.debug('Delete kit DB record: %s', rv)
         if not rv:
-            print "kitops: kit '%s' is not in the database" %kit['name']
+            kl.error("Kit '%s' is not in the database", kit['name'])
             return EKITDEL_FAIL
         (kit['kid'], kit['removeable'], kit['ver']) = rv
 
         if not kit['removeable']:
-            print "kitops: kit '%s' is not removeable" %kit['name']
+            kl.error("Kit '%s' is not removable", kit['name'])
             return EKITDEL_FAIL
 
         # at this point kit is removable and in the DB
@@ -570,7 +563,8 @@ class KitOps:
         self.__db.execute(query)
         rv = self.__db.fetchall()
         if rv:  #the kit is in use by some repo
-            print "kitops: kit '%s' is in use by a repo - can't delete" %kit['name']
+            kl.error("Cannot delete kit '%s', it is used by a repo",
+                     kit['name'])
             return EKITDEL_FAIL
 
         #the kit is NOT in use
@@ -617,19 +611,20 @@ class KitOps:
                 return EKITLST_FAIL
 
             if not rv:
-                print "kitops: specified kit '%s' is not in the DB" %self.kitname
+                kl.error("Kit '%s' is not in DB", self.kitname)
                 return EKITLST_FAIL
             kid = rv[0] #extract the kid of the specified kit
-            query = '''select k.rname Kit, c.cname Component, c.cdesc Description, c.OS 
-                    from kits k, components c where c.kid=k.kid and k.kid=%s''' %kid
+            #query = '''select k.rname Kit, c.cname Component, c.cdesc Description, c.OS 
+            #        from kits k, components c where c.kid=k.kid and k.kid=%s''' %kid
+            query = 'SELECT rname Kit, rdesc Description, version Version, ' + \
+                    'arch Architecture, removeable Removable FROM kits ' + \
+                    'WHERE kid=%s' % kid
         else:
-#            query = '''select rname Kit,rdesc Description,Version, arch Architecture,
-#                    Upgradeable,Removeable from kits'''
-            query = 'SELECT rname Kit, rdesc Description, version Version, ' +\
+            query = 'SELECT rname Kit, rdesc Description, version Version, ' + \
                     'arch Architecture, removeable Removable FROM kits'
 
-        print "DEBUG: listKit, query = %s" %query
-        mysqlP = subprocess.Popen("mysql -e '%s' %s" %
+        kl.debug('listKit query: %s', query)
+        mysqlP = subprocess.Popen("mysql -u nobody -e '%s' %s" %
                                   (query, self.__db.dbname), shell=True)
         mysqlP.wait()
 
