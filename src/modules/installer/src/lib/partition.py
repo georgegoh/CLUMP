@@ -83,7 +83,8 @@ class PartitionScreen(screenfactory.BaseScreen):
                 if str(result) == 'default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
-                    setupDiskProfile(self.disk_profile)
+                    schema = vanillaSchemaLVM()
+                    setupDiskProfile(self.disk_profile, schema)
 
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()

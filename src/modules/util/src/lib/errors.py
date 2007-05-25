@@ -18,6 +18,7 @@ class FileDoesNotExistError(KusuError): pass
 class CommandFailedToRun(KusuError): pass
 
 # partitiontool
+class PartitionSchemaError(KusuError): pass
 class DiskProfileNotEmptyError(KusuError): pass
 class NoDisksFoundError(KusuError) : pass
 class OutOfSpaceError(KusuError): pass

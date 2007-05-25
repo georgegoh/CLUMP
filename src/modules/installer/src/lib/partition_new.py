@@ -175,18 +175,17 @@ class NewPartition:
             mountpoint = None
         disk = self.drives.current()
 
-        size, fixed_size = self.calculatePartitionSize(disk)
-        self.diskProfile.newPartition(disk, size, fixed_size, fs_type, mountpoint)
+        size_MB, fixed_size = self.calculatePartitionSize(disk)
+        self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint)
             
 
     def calculatePartitionSize(self, disk):
         """Calculate Partition size from the form's fields. Multiply by
            megabyte (1024 * 1024)"""
-        MB = 1024 * 1024
         if self.fixed_size.selected():
-            return (long(self.fixed_size_entry.value()) * MB, 'True')
+            return (long(self.fixed_size_entry.value()), 'True')
         elif self.min_size.selected():
-            return (long(self.min_size_entry.value()) * MB, 'False')
+            return (long(self.min_size_entry.value()), 'False')
 
 
 class NewLogicalVolume:

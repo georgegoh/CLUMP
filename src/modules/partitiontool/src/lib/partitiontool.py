@@ -137,11 +137,6 @@ class DiskProfile(object):
 
                     logicalVolume = diskProfile.lv_dict['Scratch']
     """
-    disk_dict = None
-    mountpoint_dict = None
-    pv_dict = None
-    lvg_dict = None
-    lv_dict = None
     fsType_dict = { 'ext2' : fsTypes['ext2'],
                     'ext3' : fsTypes['ext3'],
                     'physical volume' : None,
@@ -314,13 +309,13 @@ class DiskProfile(object):
             raise KusuError, 'An internal error has occurred in the ' + \
                              'program. Please restart.'
 
-    def newPartition(self, disk_id, size, fixed_size, fs_type, mountpoint, fill=False):
+    def newPartition(self, disk_id, size_MB, fixed_size, fs_type, mountpoint, fill=False):
         """Create a new partition."""
         # sanity check
         if self.mountpoint_dict.has_key(mountpoint):
             raise DuplicateMountpointError, 'Assigned mountpoint ' + \
                                             'already exists.'
-
+        size = size_MB * 1024 * 1024
         disk = self.disk_dict[disk_id]
         logger.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
@@ -344,9 +339,10 @@ class DiskProfile(object):
             new_partition.lvm_flag = 1
         return new_partition
 
-    def editPartition(self, partition_obj, size, fixed_size, fs_type, mountpoint):
+    def editPartition(self, partition_obj, size_MB, fixed_size, fs_type, mountpoint):
         """Edit an existing partition."""
         logger.debug('Edit partition')
+        size = size_MB * 1024 * 1024
         backup_disk_id = basename(partition_obj.disk.path)
         backup_size = partition_obj.size
         backup_fs_type = partition_obj.fs_type
@@ -449,7 +445,7 @@ class DiskProfile(object):
 
         lvg.delete()
 
-    def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None):
+    def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None, fill=False):
         """Create a new logical volume."""
         # sanity checks
         if self.lv_dict.has_key(name):
@@ -458,7 +454,7 @@ class DiskProfile(object):
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 
         new_lv = lvg.createLogicalVolume(name, long(size_MB), \
-                                         fs_type, mountpoint)
+                                         fs_type, mountpoint, fill)
         self.lv_dict[name] = new_lv
 
         if mountpoint:
@@ -471,7 +467,6 @@ class DiskProfile(object):
         size = size_MB * 1024 * 1024
         if size != lv.size:
             lv.resize(size_MB)
-
         if lv.fs_type == fs_type:
             lv.do_not_format = True
         lv.fs_type = fs_type
@@ -526,11 +521,6 @@ class Disk(object):
           g. sectors
           h. cylinders
     """
-    profile = None
-    pedDisk = None
-    partition_dict = None
-    leave_unchanged = None
-
     __getattr_dict = { 'length' : 'self.pedDevice.length',
                        'model' : 'self.pedDevice.model',
                        'path' : 'self.pedDevice.path',
@@ -867,13 +857,6 @@ class Partition(object):
           n. swap_flag
           o. raid_flag
     """
-    disk = None
-    pedPartition = None
-    mountpoint = None
-    leave_unchanged = None
-    on_disk = None
-    do_not_format = None
-
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
                        'length' : 'self.pedPartition.geom.length',

@@ -185,9 +185,9 @@ class LogicalVolumeGroup(object):
         return extents
 
     def parsesize(self, text_size):
-        """This method parses text such as '100K', '20M' into integers(base k).
-           For example, text_size=20M would return 20 * 1024 = 2048 and 
-           text_size=100k would return 100 * 1 = 100.
+        """This method parses text such as '100K', '20M' into integers.
+           For example, text_size=20M would return 20 * 1024 * 1024 and 
+           text_size=100k would return 100 * 1024.
 
            Acceptable suffixes: kKmM - all other suffixes will be ignored
                                 (i.e., return -1)
@@ -226,11 +226,15 @@ class LogicalVolumeGroup(object):
         del self.pv_dict[physicalVol.name]
         queueCommand(lvm.reduceVolumeGroup, (self.name, physicalVol.partition.path))
 
-    def createLogicalVolume(self, name, size_MB, fs_type, mountpoint):
+    def createLogicalVolume(self, name, size_MB, fs_type, mountpoint, fill=False):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError
+        if fill:
+            freeExtents = self.extentsTotal - self.extentsUsed
+            freeSpace = freeExtents * self.extent_size
+            size_MB = freeSpace / 1024 / 1024
         lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
         self.lv_dict[name] = lv
         size_str = str(size_MB) + 'M'

@@ -94,8 +94,8 @@ class EditPartition(NewPartition):
         else:
             mountpoint = ''
         disk = self.drives.current()
-        size, fixed = self.calculatePartitionSize(disk)
-        self.diskProfile.editPartition(self.partition, size, fixed,
+        size_MB, fixed = self.calculatePartitionSize(disk)
+        self.diskProfile.editPartition(self.partition, size_MB, fixed,
                                        fs_type, mountpoint)
 
 
