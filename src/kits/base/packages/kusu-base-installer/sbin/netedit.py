@@ -200,92 +200,130 @@ class NetEditApp(object, KusuApp):
         ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
 
-class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen):
+class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
     title = "netedit_window_title_edit"
     #name = 'Network Edit'   # used for showtrail sidebar
     msg = "netedit_instruction_edit"
     buttons = [ 'ok_button', 'cancel_button' ]
     helptext = "Copyright(C) 2007 Platform Computing Inc\tInstructions: Please edit the network information"
-           
+    
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        kusu.screens.screenfactory.BaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=45)
+        self.noValidate = 1
+    
     def hotkeyCallback(self):
-        pass
+        return NAV_QUIT
     
     def cancelAction(self):
-        #self.selector.popupStatus(self._("Debug Window"), "Cancel Action", 1)
-        return NAV_BACK
-    
+        self.noValidate = 0
+        return NAV_QUIT
+            
     def setCallbacks(self):
         self.buttons = [ self._('ok_button'), self._('cancel_button') ]
-        self.buttonsDict[self.buttons[0]].setCallback_(self.validate)
         self.buttonsDict[self.buttons[1]].setCallback_(self.cancelAction)
     
-    def test(self):
-        val = self.newNetwork.value()
-        if val and not self.newSubnet.value ():
-            try:
-                mask = "hahahaha this is so cool! :-)"
-            except ValueError:
-                return
-
-            self.newSubnet.setEntry(mask)
-
+    def guessIPandGateway(self):
+        # First check if the values are valid IP address notation
+        net = self.newNetwork.value()
+        sub = self.newSubnet.value()
+        
+        if kusu.ipfun.validIP(net) and kusu.ipfun.validIP(sub):
+            calcnet = kusu.ipfun.ip2number(net)
+            calcsub = kusu.ipfun.ip2number(sub)
+        
+        # Fill in missing fields as needed
+            if not self.newStartIP.value():
+                # Calculate the new IP Address
+                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet
+                self.newStartIP.setEntry(kusu.ipfun.number2ip(xip))
+            
+            if not self.newGateway.value():
+                yip = calcnet | (( ~calcsub) -1)
+                self.newGateway.setEntry(kusu.ipfun.number2ip(yip))
+                        
     def drawImpl(self):
-        flag = 1
-        badFields = 0
         global dataGlobal
         netInfo = dataGlobal.networkListbox.current()[0]
-        networkRecord = []
+        self.networkRecord = None   
         # Get the record to edit
         query = "SELECT network, subnet, gateway, device, startip, suffix, inc, options, netname, usingdhcp FROM networks WHERE netid = %d" % \
                 int(netInfo)
 
         try:
             self.database.execute(query)
-            networkRecord = self.database.fetchone()
+            self.networkRecord = list(self.database.fetchone())
         except:
-            self.finish()
             print self._("DB_Query_Error\n")
             sys.exit(-1)
 
         self.selector.disableQuitButton()
         self.screenGrid  = snack.Grid(1, 11)
+        
         instruction = snack.Textbox(60, 1, self._("Please edit any of the network information below."), scroll=0, wrap=0)
-        self.newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), text=networkRecord[0], width=30, 
+        
+        self.newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), text=self.networkRecord[0], width=30, 
+                password=0, returnExit = 0)
+        self.newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), text=self.networkRecord[1], width=30, 
                     password=0, returnExit = 0)
-        self.newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), text=networkRecord[1], width=30, 
+        self.newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), text=self.networkRecord[2], width=30, 
                     password=0, returnExit = 0)
-        newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), text=networkRecord[2], width=30, 
+        newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), text=self.networkRecord[3], width=30, 
                     password=0, returnExit = 0)
-        newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), text=networkRecord[3], width=30, 
+        self.newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), text=self.networkRecord[4], width=30, 
                     password=0, returnExit = 0)
-        newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), text=networkRecord[4], width=30, 
+        newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), text=self.networkRecord[5], width=30, 
                     password=0, returnExit = 0)
-        newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), text=networkRecord[5], width=30, 
+        newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), text="%s" % self.networkRecord[6], width=30, 
                     password=0, returnExit = 0)
-        newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), text="%s" % networkRecord[6], width=30, 
-                    password=0, returnExit = 0)
-        newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), text=networkRecord[7], width=30, 
+        newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), text=self.networkRecord[7], width=30, 
                     password=0, returnExit = 0, scroll=1)
-        newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), text=networkRecord[8], width=30, 
+        newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), text=self.networkRecord[8], width=30, 
                     password=0, returnExit = 0)
 
-        dhcpCheck = snack.Checkbox("Use DHCP", isOn = int(networkRecord[9]))
-        #buttonBar1 = snack.ButtonBar(self.selector.getCurrentScreen(), (("OK", "Cancel")))
-        self.newNetwork.setCallback(self.test)
+        dhcpCheck = snack.Checkbox("Use DHCP", isOn = int(self.networkRecord[9]))
+        
+        # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
+        self.newNetwork.setCallback(self.guessIPandGateway)
+        self.newSubnet.setCallback(self.guessIPandGateway)
 
-        self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1, anchorLeft=1)
+        self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(self.newNetwork, 0, 1, padding=(0,0,0,0))
         self.screenGrid.setField(self.newSubnet, 0, 2, padding=(0,0,0,0))
-        self.screenGrid.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
+        self.screenGrid.setField(self.newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
         self.screenGrid.setField(newDevice, 0, 4, padding=(0,0,0,0))
-        self.screenGrid.setField(newStartIP, 0, 5, padding=(0,0,0,0))
+        self.screenGrid.setField(self.newStartIP, 0, 5, padding=(0,0,0,0))
         self.screenGrid.setField(newSuffix, 0, 6, padding=(0,0,0,0))
         self.screenGrid.setField(newInc, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(newOpt, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(newDesc, 0, 9, padding=(0,0,0,1))
         self.screenGrid.setField(dhcpCheck, 0, 10, padding=(0, 0, 0, -2), anchorLeft=1)
-
+        self.popWindow()
+    
     def validate(self):
+        self.badFields = 0
+        
+        if self.noValidate:
+            # Validate if the value is in IP format. 
+            if not kusu.ipfun.validIP(self.newNetwork.value()): 
+                #self.selector.popupStatus(self._("Debug Window"), "Validate a new network record: '%s'" % type(self.networkRecord[0]), 2)
+                self.newNetwork.setEntry('')
+                self.badFields  = 1
+   
+            if not kusu.ipfun.validIP(self.newSubnet.value()):    
+                self.newSubnet.setEntry('')
+                self.badFields  = 1
+   
+            if not kusu.ipfun.validIP(self.newGateway.value()):
+                self.newGateway.setEntry('')
+                self.badFields  = 1 
+   
+            if not kusu.ipfun.validIP(self.newStartIP.value()): 
+                self.newStartIP.setEntry('')
+                self.badFields  = 1
+            
+            if self.badFields:
+                self.popWindow()
+                return False, 'Some fields were invalid. Please reenter these values. They have been reset.\n\n'
         return True, 'Success'
         
 class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen):
@@ -297,12 +335,30 @@ class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen):
     helptext = "Copyright(C) 2007 Platform Computing Inc.\tInstructions: Please enter the new network information"
     
     def hotkeyCallback(self):
-        return NAV_BACK
+        return NAV_QUIT
         
     def cancelAction(self):
-        #self.selector.popupStatus(self._("Debug Window"), "Cancel Action", 1)
-        return NAV_BACK
+        return NAV_QUIT
     
+    def guessIPandGateway(self):
+        # First check if the values are valid IP address notation
+        net = self.newNetwork.value()
+        sub = self.newSubnet.value()
+
+        if kusu.ipfun.validIP(net) and kusu.ipfun.validIP(sub):
+            calcnet = kusu.ipfun.ip2number(net)
+            calcsub = kusu.ipfun.ip2number(sub)
+        
+        # Fill in missing fields as needed
+            if not self.newStartIP.value():
+                # Calculate the new IP Address
+                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet
+                self.newStartIP.setEntry(kusu.ipfun.number2ip(xip))
+            
+            if not self.newGateway.value():
+                yip = calcnet | (( ~calcsub) -1)
+                self.newGateway.setEntry(kusu.ipfun.number2ip(yip))
+                
     def setCallbacks(self):
         self.buttons = [ self._('ok_button'), self._('cancel_button') ]
         self.buttonsDict[self.buttons[0]].setCallback_(self.validate)
@@ -313,27 +369,35 @@ class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen):
         self.selector.disableQuitButton()
         self.screenGrid = snack.Grid(1, 11)
         instruction = snack.Textbox(60, 1, self._("Please enter the network information below."), scroll=0, wrap=0)
-        newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
-        newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
-        newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
+        self.newNetwork= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
+        self.newSubnet = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
+        self.newGateway= kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
         newDevice = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
-        newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
+        self.newStartIP = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
         newSuffix = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
         newInc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), width=30, password=0, returnExit = 0)
         newOpt = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
         newDesc = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
         dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1, anchorLeft=1)
-        self.screenGrid.setField(newNetwork, 0, 1, padding=(0,0,0,0))
-        self.screenGrid.setField(newSubnet, 0, 2, padding=(0,0,0,0))
-        self.screenGrid.setField(newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
+        self.screenGrid.setField(self.newNetwork, 0, 1, padding=(0,0,0,0))
+        self.screenGrid.setField(self.newSubnet, 0, 2, padding=(0,0,0,0))
+        self.screenGrid.setField(self.newGateway, 0, 3, padding=(0,0,0,0)) # anchorLeft=1
         self.screenGrid.setField(newDevice, 0, 4, padding=(0,0,0,0))
-        self.screenGrid.setField(newStartIP, 0, 5, padding=(0,0,0,0))
+        self.screenGrid.setField(self.newStartIP, 0, 5, padding=(0,0,0,0))
         self.screenGrid.setField(newSuffix, 0, 6, padding=(0,0,0,0))
         self.screenGrid.setField(newInc, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(newOpt, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(newDesc, 0, 9, padding=(0,0,0,1))
         self.screenGrid.setField(dhcpCheck, 0, 10, padding=(0, 0, 0, -2), anchorLeft=1)
+        
+        # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
+        self.newNetwork.setCallback(self.guessIPandGateway)
+        self.newSubnet.setCallback(self.guessIPandGateway)
+        
+    def checkForm(self):
+        self.selector.popupStatus(self._("Debug Window"), "Validate a new network record", 1)
+        return True, 'Success'
 
 class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
@@ -371,13 +435,13 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         # Check if the network selected is not in use.
         netuse = 0
         global dataGlobal
-        netInfo = dataGlobal.networkListbox.current()
+        netInfo = dataGlobal.networkListbox.current().split()
         query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(netInfo[0])
 
         try:
             self.database.execute(query)
             netuse = self.database.fetchone()[0]
-        except:
+        except: 
             self.finish()
             print self._("DB_Query_Error\n")
             sys.exit(-1)
