@@ -209,7 +209,8 @@ class KitOps:
         if not repodir.exists():
             repodir.makedirs()
 
-        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % kit['rpmloc'],
+        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' %
+                                kit['rpmloc'].basename(),
                                 cwd=self.mountpoint / self.kitname,
                                 shell=True, stdout=subprocess.PIPE)
         dstP = subprocess.Popen('tar xf -',
@@ -236,7 +237,8 @@ class KitOps:
 
         # 3. install the kit RPM
         try:
-            rpmP = subprocess.Popen('rpm -ihv %s' % kit['rpmloc'], shell=True)
+            rpmP = subprocess.Popen('rpm --quiet -i %s' % kit['rpmloc'],
+                                    shell=True)
             rpmP.wait()
         except Exception, msg:
             sys.stderr.write('kitops: kit RPM installation failed with message %s' %msg)
@@ -574,8 +576,8 @@ class KitOps:
                                shell=True)
 
         #2. remove kit RPM
-        rmP = subprocess.Popen('/bin/rpm -e --nodeps kit-%s' % kit['name'],
-                               shell=True)
+        rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
+                               kit['name'], shell=True)
         rmP.wait()
 
         #3. remove component info from DB

@@ -17,7 +17,7 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 kl = kusulog.getKusuLog('kitops-app')
 
 from kusu.core.app import KusuApp
-from kusu.kitops.kitops import KitOps, EMOUNT_OK
+from kusu.kitops.kitops import KitOps
 
 KITOP_NONE  = 0x00
 KITOP_ADD   = 0x01
