@@ -85,7 +85,20 @@ class PartitionScreen(screenfactory.BaseScreen):
                     self.disk_profile = partitiontool.DiskProfile(True)
                     schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
-
+            else:
+                # tell user nothing exists and ask to proceed.
+                msg = 'The installer has detected that no disk(s) ' + \
+                      'are already partitioned. Do you want to ' + \
+                      'use the default schema?'
+                result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
+                                                      msg,
+                                             ['Default', "Don't use defaults"])
+                if str(result) == 'default':
+                    logger.debug('Default chosen')
+                    self.disk_profile = partitiontool.DiskProfile(True)
+                    schema = vanillaSchemaLVM()
+                    setupDiskProfile(self.disk_profile, schema)
+ 
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()
         for key in sorted(lvg_keys):

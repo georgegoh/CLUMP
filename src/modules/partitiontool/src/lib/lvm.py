@@ -230,9 +230,9 @@ class LogicalVolumeGroup(object):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
         if name in self.lv_dict.keys():
-            raise LogicalVolumeAlreadyInLogicalGroupError
+            raise LogicalVolumeAlreadyInLogicalGroupError, 'Logical volume already exists in Volume Group'
         if fill:
-            freeExtents = self.extentsTotal - self.extentsUsed
+            freeExtents = self.extentsTotal() - self.extentsUsed()
             freeSpace = freeExtents * self.extent_size
             size_MB = freeSpace / 1024 / 1024
         lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)

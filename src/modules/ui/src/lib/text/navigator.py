@@ -236,6 +236,10 @@ class Navigator(object, KusuApp):
                     loop=False
                     return None
         except KusuError, e:
+            msg = str(e)
+            import traceback
+            tb = traceback.format_exc()
+            msg = msg + '\n' + tb
             self.popupMsg(self.currentScreen.name, str(e))
             self.mainScreen.finish()
             raise e

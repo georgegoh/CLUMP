@@ -81,6 +81,7 @@ def setupDiskProfile(disk_profile, schema=None):
 
         createPhysicalSchema(disk_profile, schema['disk_dict'])
         createLVMSchema(disk_profile, schema['vg_dict'])
+    logger.debug('Disk Profile set up')
 
 
 def createPhysicalSchema(disk_profile, disk_schemata):
@@ -96,11 +97,12 @@ def createPhysicalSchema(disk_profile, disk_schemata):
             schema_disk = disk_schemata[i+1]
             schema_partition_dict = schema_disk['partition_dict']
             try:
-                for j in range(1, len(schema_partition_dict)):
+                for j in range(len(schema_partition_dict)):
                     # for each partition in the current disk.
                     schema_partition = schema_partition_dict[j+1]
                     disk_key = sorted_disk_keys[i]
                     size_MB = schema_partition['size_MB']
+                    logger.debug('Creating new partition of size: %d' % size_MB)
                     fs = schema_partition['fs']
                     mountpoint = schema_partition['mountpoint']
                     fillAvailableSpace = schema_partition['fillAvailableSpace']
@@ -134,9 +136,25 @@ def createLVMSchema(disk_profile, lvm_schemata):
                                                 pv_list)
         # create the Logical Volumes.
         lv_schema = vg_schema['lv_dict']
+        last_lv = []
         for lv_name, lv_schema in lv_schema.iteritems():
+            if lv_schema['fillAvailableSpace']:
+                last_lv.append(lv_name)
+                last_lv.append(lv_schema)
+                continue
+            logger.debug('Creating %s' % lv_name)
             disk_profile.newLogicalVolume(lv_name,
+                                          vg,
                                           lv_schema['size_MB'],
                                           lv_schema['fs'],
                                           lv_schema['mountpoint'],
                                           lv_schema['fillAvailableSpace'])
+            logger.debug('Finished creating %s' % lv_name)
+        if last_lv:
+            disk_profile.newLogicalVolume(last_lv[0],
+                                          vg,
+                                          last_lv[1]['size_MB'],
+                                          last_lv[1]['fs'],
+                                          last_lv[1]['mountpoint'],
+                                          last_lv[1]['fillAvailableSpace'])
+    logger.debug('Create LVM Schema finished')

@@ -617,7 +617,7 @@ class Disk(object):
                                         end_sector)
 
             else:
-                raise UnknownPartitionTypeError
+                raise UnknownPartitionTypeError, 'Cannot create unknown partition type'
 
         except parted.error, msg:
             raise KusuError, msg
