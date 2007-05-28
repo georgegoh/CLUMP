@@ -7,6 +7,7 @@
 
 import sqlalchemy as sa
 import os
+from kusu.util.errors import *
 
 class AppGlobals(object): 
     def __init__(self, kname, kvalue, ngid):
@@ -169,12 +170,6 @@ class Scripts(object):
         self.ngid = ngid 
         self.script = script
 
-
-class NoSuchDBError(Exception): pass
-class NoSuchTableError(Exception): pass
-class UnsupportedDriverError(Exception): pass
-class UsernameNotSpecifiedError(Exception): pass
-
 class DB:
 
     entity_name = None
@@ -186,6 +181,7 @@ class DB:
                       'modules' : Modules,
                       'ng_has_comp' : NGHasComp,
                       'networks' : Networks,
+                      'nics' : Nics,
                       'ng_has_net' : NGHasNet,
                       'nodegroups ' : NodeGroups,              
                       'nodes ' : Nodes,
@@ -280,7 +276,7 @@ class DB:
             # Returns mapper based on class name and entity name
             return sa.orm.class_mapper(self.mapTableClass[name], self.entity_name)
         except:
-            raise AttributeError
+            raise AttributeError, 'No mapper for table %s' % name
 
     def _load(self):
         """Loads all table mappers into class attributes. 

@@ -61,3 +61,11 @@ class InterfaceNotFound(KusuError): pass
 #autoinstall
 class ProfileNotCompleteError(KusuError): pass
 class TemplateNotFoundError(KusuError): pass
+
+# core.database
+class NoSuchDBError(Exception): pass
+class NoSuchTableError(Exception): pass
+class UnsupportedDriverError(Exception): pass
+class UsernameNotSpecifiedError(Exception): pass
+
+
