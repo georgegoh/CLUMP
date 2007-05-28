@@ -568,7 +568,7 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
  
         self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
             
-        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,2), growx=1)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=1)
         self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
 
     def validate(self):
