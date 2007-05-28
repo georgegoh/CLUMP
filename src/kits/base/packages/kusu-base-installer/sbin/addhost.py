@@ -168,7 +168,7 @@ class AddHostApp(KusuApp):
         else:
             removeFlag = bool(self._options.remove)
            
-        # Don't allow option -n -p -e -u to be used together. Mututually Exclusive.
+        # Don't allow option -n -p -e -u to be used together. Mutually exclusive.
         if (not self.nxor(bool(self._options.nodegroup), bool(self._options.replace), bool(self._options.update), removeFlag)):
                     if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False):
                         pass
