@@ -10,6 +10,7 @@
 
 import snack
 from gettext import gettext as _
+from kits_add import *
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
@@ -24,34 +25,36 @@ class KitsScreen(screenfactory.BaseScreen):
     context = 'Kits'
     profile = context
     msg = _('Please enter a Fedora 6 URL:')
-    buttons = [_('Clear All')]
+    buttons = [_('Add'), _('Remove')]
 
     def setCallbacks(self):
         """
         Implementation of the setCallbacks interface defined in parent class
         screenfactory.BaseScreen. Initialise button callbacks here.
         """
+        self.buttonsDict[_('Add')].setCallback_(kitAdd, self)
+        self.buttonsDict[_('Remove')].setCallback_(self.removeKit)
 
-        self.buttonsDict[_('Clear All')].setCallback_(self.clearAllFields)
+    def addKit(self):
+        return NAV_NOTHING
 
-    def clearAllFields(self):
-        self.kiprofile[self.profile]['fedora_url'] = ''
+    def removeKit(self):
         return NAV_NOTHING
 
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 2)
-        entryWidth = 33
+        prog_dlg = self.selector.popupProgress('Detecting Kits', 'Detecting kits...')
 
-        self.url = kusuwidgets.LabelledEntry(
-                        labelTxt=_('URL ').rjust(4), 
-                        width=entryWidth,
-                        text=self.kiprofile[self.profile]['fedora_url'])
+        self.screenGrid = snack.Grid(1, 1)
 
-        self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
-                                                       width=self.gridWidth),
-                                 col=0, row=0, anchorLeft=1)
-        self.screenGrid.setField(self.url, col=0, row=1,
-                                 padding=(0,1,0,1), anchorLeft=1)
+        self.listbox = kusuwidgets.ColumnListbox(height=8, 
+                                 colWidths=[15,7,8],
+                                 colLabels=[_('Kit Name'), _('Version'), _('Arch  ')],
+                                 justification=[LEFT, RIGHT, RIGHT],
+                                 returnExit=0)
+
+        prog_dlg.close()
+        self.screenGrid.setField(self.listbox, col=0, row=0,
+                                 padding=(0,0,0,0), anchorLeft=1)
 
     def validate(self):
         return True, ''
@@ -60,8 +63,7 @@ class KitsScreen(screenfactory.BaseScreen):
         """
         Store
         """
-
-        self.kiprofile[self.profile]['fedora_url'] = self.url.value()
+        pass
 
     def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
@@ -73,17 +75,6 @@ class KitsScreen(screenfactory.BaseScreen):
         context -- the context to use to access data in db and profile
         kiprofile -- the complete profile (a dictionary) which we fill in
         """
-
-        fedora = db.get(context, 'FedoraURL')
-        if not fedora:
-            fedora = 'http://172.25.208.218/repo/fedora/6/i386/os/'
-        else:
-            fedora = fedora[0]
-
-        kl.info('Read Fedora URL from DB: %s' % fedora)
-
-        kiprofile[context]['fedora_url'] = fedora
-
         return True
 
     def saveProfileToSQLCollection(db, context, kiprofile):
@@ -95,11 +86,6 @@ class KitsScreen(screenfactory.BaseScreen):
         context -- the context to use to access data in db and profile
         kiprofile -- the profile (a dictionary) with data to commit
         """
-
-        db.put(context, 'FedoraURL', kiprofile[context]['fedora_url'])
- 
-        kl.info('Wrote kits info to DB')
-
         return True
 
     dbFunctions = {'MySQL': (None, None),

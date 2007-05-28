@@ -62,10 +62,11 @@ class InterfaceNotFound(KusuError): pass
 class ProfileNotCompleteError(KusuError): pass
 class TemplateNotFoundError(KusuError): pass
 
+#kits
+class CannotAddKitError(KusuError): pass
+
 # core.database
 class NoSuchDBError(Exception): pass
 class NoSuchTableError(Exception): pass
 class UnsupportedDriverError(Exception): pass
 class UsernameNotSpecifiedError(Exception): pass
-
-

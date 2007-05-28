@@ -9,7 +9,6 @@
 #
 __version__ = "$Revision: 237 $"
 
-#import logging
 import snack
 import partition
 from gettext import gettext as _
