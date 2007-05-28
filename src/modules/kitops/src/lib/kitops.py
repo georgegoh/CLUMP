@@ -125,7 +125,7 @@ class KitOps:
 
         else:
             #if neither of the above - error
-            self.errorMessage('kitops: improper kit media location specification\n')
+            sys.stderr.write('kitops: improper kit media location specification\n')
             return EKITLOC_FAIL
 
         #at this point we have the kit mounted to self.mountpoint

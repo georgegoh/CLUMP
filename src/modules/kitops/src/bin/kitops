@@ -78,7 +78,7 @@ class KitOpsApp(KusuApp):
         #must specify exactly one of the following (want rv==true)
         rv = KitOpsApp.nxor(addbool, bool(options.delkit), lstbool)
         if not rv:
-            self.errorMessage('kitops: Exactly one kit operation expected\n')
+            sys.stderr.write('kitops: Exactly one kit operation expected\n')
             self.printHelp()
             sys.exit(1)
 
