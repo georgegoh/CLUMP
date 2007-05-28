@@ -8,6 +8,7 @@
 
 import sys
 import os
+import string
 from path import path
 
 import kusu.util.log as kusulog
@@ -143,9 +144,8 @@ class KitOpsApp(KusuApp):
         if rv:  # we have a non-zero return code
             return rv
 
+        res = ''
         while 1:    #loop to go through all the media disks...
-            res = ''
-
             rv = self.koinst.copyOSKitMedia(kit, osdistro, res)
             if rv:
                 return rv

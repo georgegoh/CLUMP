@@ -23,7 +23,6 @@
 
 import sys
 import os
-import string
 import urllib
 import urlparse
 import tempfile
