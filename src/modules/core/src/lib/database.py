@@ -9,6 +9,11 @@ import sqlalchemy as sa
 import os
 from kusu.util.errors import *
 
+import kusu.util.log as kusulog
+import logging
+
+logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
+
 class AppGlobals(object): 
     def __init__(self, kname, kvalue, ngid):
         self.kname = kname

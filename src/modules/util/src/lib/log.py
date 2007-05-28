@@ -10,14 +10,14 @@ import logging
 from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 from path import path
 
-def _getLogger(name='kusulog'):
+def _getLogger(name='kusu'):
     return logging.getLogger(name)
 
 def getKusuLog(name=None):
     if not name:
         return _getLogger()
     else:
-        return _getLogger('kusulog.' + name)
+        return _getLogger('kusu.' + name)
 
 def shutdown():
     logging.shutdown()
@@ -32,7 +32,7 @@ class Logger(logging.Logger):
     respectively.
     """
 
-    def __init__(self, name="kusulog"):
+    def __init__(self, name="kusu"):
         logging.Logger.__init__(self, name)
 
         # set default formatter
