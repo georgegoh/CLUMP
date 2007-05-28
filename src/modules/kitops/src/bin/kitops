@@ -169,8 +169,30 @@ class KitOpsApp(KusuApp):
             if not kits:
                 print "No kits found"
             else:
-                print "Kits:"
-                print kits  # I have to go now, this will look nicer soon
+                print 'Kit'.ljust(16) + 'Description'.ljust(27) + \
+                      'Version'.ljust(8) + 'Architecture'.ljust(13) + \
+                      'OS Kit'.ljust(7) + 'Removable'.ljust(9)
+
+                for kit in kits:
+                    kit_name = ' ' + kit.rname
+                    kit_desc = ' ' + kit.rdesc
+                    kit_version = ' ' + kit.version
+
+                    kit_arch = ' noarch'
+                    if kit.arch:
+                        kit_arch = kit.arch
+
+                    kit_isOS = ' No'
+                    if kit.isOS:
+                        kit_isOS = ' Yes'
+
+                    kit_removable = ' No'
+                    if kit.removeable:
+                        kit_removable = ' Yes'
+
+                    print kit_name.ljust(16) + kit_desc.ljust(27) + \
+                          kit_version.ljust(8) + kit_arch.ljust(13) + \
+                          kit_isOS.ljust(7) + kit_removable.ljust(9)
 
             kl.debug('SUCCESS performing list operation')
 
