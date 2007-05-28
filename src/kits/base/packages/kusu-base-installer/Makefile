@@ -71,6 +71,8 @@ install::
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
+	install -m755 sbin/update.py $(ROOT)/opt/kusu/sbin/update
+	install -m755 sbin/netedit.py $(ROOT)/opt/kusu/sbin/netedit
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 bin/genconfig.py $(ROOT)/opt/kusu/bin/genconfig
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
@@ -79,6 +81,9 @@ install::
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusudb.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/kusuapp.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/screens/__init__.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/kusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/kusu/screens/navigator.py $(ROOT)/opt/kusu/lib/kusu/screens
