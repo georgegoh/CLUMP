@@ -30,6 +30,8 @@ import glob
 import re
 import subprocess
 from path import path
+
+import kusu.core.database as db
 from kusu.core.db import KusuDB
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
@@ -598,34 +600,17 @@ class KitOps:
         '''if the kit was specified, lists component summary for it, else prints
          kit table summary'''
 
+        kusudb = db.DB('mysql', 'test', 'nobody')
+        session = kusudb.createSession()
+
+        kits = []
         if self.kitname:
-            q = "select kid from kits where rname = '%s'" % self.kitname
-            try:
-                self.__db.execute(q)
-                rv = self.__db.fetchone()
-            except:
-                sys.stderr.write("kitops: Error occurred accessing the DB during list operation")
-                return EKITLST_FAIL
-
-            if not rv:
-                kl.error("Kit '%s' is not in DB", self.kitname)
-                return EKITLST_FAIL
-            kid = rv[0] #extract the kid of the specified kit
-            #query = '''select k.rname Kit, c.cname Component, c.cdesc Description, c.OS 
-            #        from kits k, components c where c.kid=k.kid and k.kid=%s''' %kid
-            query = 'SELECT rname Kit, rdesc Description, version Version, ' + \
-                    'arch Architecture, removeable Removable FROM kits ' + \
-                    'WHERE kid=%s' % kid
+            kits = session.query(kusudb.kits).select_by(
+                            kusudb.kits.c.rname.like('%%%s%%' % self.kitname))
         else:
-            query = 'SELECT rname Kit, rdesc Description, version Version, ' + \
-                    'arch Architecture, removeable Removable FROM kits'
+            kits = session.query(kusudb.kits).select()
 
-        kl.debug('listKit query: %s', query)
-        mysqlP = subprocess.Popen("mysql -u nobody -e '%s' %s" %
-                                  (query, self.__db.dbname), shell=True)
-        mysqlP.wait()
-
-        return 0    #success
+        return kits
 
     def setKitname(self, kitname):
         self.kitname = kitname

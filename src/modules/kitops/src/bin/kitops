@@ -110,12 +110,7 @@ class KitOpsApp(KusuApp):
                 kl.debug('FAIL performing delete operation')
 
         elif self.kitop == KITOP_LST:
-            kl.debug('Performing list operation')
-            rv = self.koinst.listKit()
-            if not rv:
-                kl.debug('SUCCESS performing list operation')
-            else:
-                kl.debug('FAIL performing list operation')
+            self.runListKit()
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
@@ -165,6 +160,19 @@ class KitOpsApp(KusuApp):
                 break
       
         return self.koinst.finalizeOSKit(kit)
+
+    def runListKit(self):
+            kl.debug('Performing list operation')
+
+            kits = self.koinst.listKit()
+
+            if not kits:
+                print "No kits found"
+            else:
+                print "Kits:"
+                print kits  # I have to go now, this will look nicer soon
+
+            kl.debug('SUCCESS performing list operation')
 
     def printHelp(self):
         self.parser.print_help()
