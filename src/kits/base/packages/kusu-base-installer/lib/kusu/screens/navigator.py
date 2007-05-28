@@ -116,7 +116,6 @@ class Navigator(object, KusuApp):
 	self.quitButtonTitle = self._('finish_button')
         self.screens = screenFactory.createAllScreens()
 	self.showTrail = showTrail
-        self.buttonSpacing = buttonspace
 
     def isActiveTimer(self):
 	return self.activeTimer
@@ -186,8 +185,8 @@ class Navigator(object, KusuApp):
         for key in self.screens[self.currentStep].buttons:
             buttons.append(self.screens[self.currentStep].buttonsDict[key])
         buttonPanel = self.setupButtonPanel(buttons)
-        contentGrid.setField(buttonPanel, col=0, row=1, growx=1, growy=1,
-                             padding=(0,0,0,2))
+        contentGrid.setField(buttonPanel, col=0, row=1, growx=1, anchorLeft=1,
+                             padding=(0,0,0,0))
         return contentGrid
 
     def setupButtonPanel(self, buttons=[]):
@@ -210,7 +209,7 @@ class Navigator(object, KusuApp):
 
         buttonGrid = snack.Grid(len(buttons), 1)
         for i, button in enumerate(buttons):
-            buttonGrid.setField(button, col=i, row=0, padding=(0,0,self.buttonSpacing,0))
+            buttonGrid.setField(button, col=i, row=0, padding=(0,0,0,0))
         return buttonGrid
 
     def hasNextScreen(self):
