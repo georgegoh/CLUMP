@@ -1,0 +1,32 @@
+--- setup.py.orig	2007-05-24 19:01:58.000000000 +0800
++++ setup.py	2007-05-24 19:02:02.000000000 +0800
+@@ -1,6 +1,6 @@
+-from ez_setup import use_setuptools
+-use_setuptools()
+-from setuptools import setup, find_packages
++#!/usr/bin/env python
++
++from distutils.core import setup
+ 
+ setup(name = "SQLAlchemy",
+     version = "0.3.7",
+@@ -8,12 +8,8 @@
+     author = "Mike Bayer",
+     author_email = "mike_mp@zzzcomputing.com",
+     url = "http://www.sqlalchemy.org",
+-    packages = find_packages('lib'),
+-    package_dir = {'':'lib'},
+-    entry_points = { 
+-      'sqlalchemy.databases': [
+-        '%s = sqlalchemy.databases.%s:dialect' % (f,f) for f in 
+-          ['sqlite', 'postgres', 'mysql', 'oracle', 'mssql', 'firebird']]},
++    packages = ['sqlalchemy'],
++    package_dir={'sqlalchemy': 'lib/sqlalchemy'},
+     license = "MIT License",
+     long_description = """\
+ SQLAlchemy is:
+@@ -57,3 +53,4 @@
+ 
+ 
+ 
++
