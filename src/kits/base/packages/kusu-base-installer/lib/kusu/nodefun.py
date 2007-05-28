@@ -669,7 +669,7 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.deleteNode(\"%s\"): Result: FAIL (Not deleted)" % createdNode
 
-    # Invalid case, create node in 'Compute Diskless'
+    # Valid case, create node in 'Compute Diskless'
     myNodeFun = NodeFun(rack=2, nodegroup=4)
     if myNodeFun.addNode("aa:bb:cc:dd:ee:ab", "eth1"):
         print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: PASS (Node created)"
