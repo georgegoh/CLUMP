@@ -34,6 +34,7 @@ from kusu.core.db import KusuDB
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
+from kusu.util.tools import cpio_copytree
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -506,13 +507,7 @@ class KitOps:
             repodir.makedirs()
 
         try:
-            srcP = subprocess.Popen('tar -cf - --exclude TRANS.TBL .',
-                        cwd=self.mountpoint /
-                            osdistro.pathLayoutAttributes['packagesdir'],
-                        shell=True, stdout=subprocess.PIPE)
-            dstP = subprocess.Popen('tar xf -', cwd=repodir, shell=True,
-                                    stdin=srcP.stdout)
-            dstP.communicate()
+            cpio_copytree(self.mountpoint, repodir)
         except Exception,msg:
             kl.error('Error during copy: %s', msg)
             return EKITADD_FAIL
