@@ -1,0 +1,447 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>SQLAlchemy 0.3 Documentation - module sqlalchemy.engine.strategies</title>
+	
+    
+    <link rel="stylesheet" href="style.css"></link>
+    <link rel="stylesheet" href="docs.css"></link>
+    <link href="syntaxhighlight.css" rel="stylesheet" type="text/css"></link>
+    <script src="scripts.js"></script>
+
+    <link rel="stylesheet" href="docutil.css"></link>
+
+
+
+</head>
+<body>
+
+
+
+
+
+
+
+
+<div id="topanchor"><a name="top">&nbsp;</a></div>
+
+
+<h1>SQLAlchemy 0.3 Documentation</h1>
+
+<div id="pagecontrol"><a href="index.html">Multiple Pages</a> | <a href="documentation.html">One Page</a></div>
+
+<div class="versionheader">Version: 0.3.7   Last Updated: 04/30/07 00:08:52</div>
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="topnav">
+
+    
+    <div class="navbanner">
+        <a href="index.html">Table of Contents</a>
+        
+    <div class="prevnext">
+            Up: <a href="docstrings.html">Generated Documentation</a>
+
+               |   
+            Previous: <a href="sqlalchemy_engine_url.html">module sqlalchemy.engine.url</a>
+
+               |   
+            Next: <a href="sqlalchemy_engine_default.html">module sqlalchemy.engine.default</a>
+    </div>
+
+        <h2>module sqlalchemy.engine.strategies</h2>
+    </div>
+
+	
+	
+    <ul>
+        
+        <li><A style="" href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_DefaultEngineStrategy">class DefaultEngineStrategy(EngineStrategy)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_EngineStrategy">class EngineStrategy(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_MockEngineStrategy">class MockEngineStrategy(EngineStrategy)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_PlainEngineStrategy">class PlainEngineStrategy(DefaultEngineStrategy)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_ThreadLocalEngineStrategy">class ThreadLocalEngineStrategy(DefaultEngineStrategy)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+    </ul>
+
+	</div>
+
+
+
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies"></a>
+    
+    <div class="sectionL2">
+
+    <h3>module sqlalchemy.engine.strategies</h3>
+    
+    
+    <div class="darkcell"><p>Define different strategies for creating new instances of sql.Engine.</p>
+<p>By default there are two, one which is the &quot;thread-local&quot; strategy,
+one which is the &quot;plain&quot; strategy.</p>
+<p>New strategies can be added via constructing a new EngineStrategy
+object which will add itself to the list of available strategies here,
+or replace one of the existing name.  this can be accomplished via a
+mod; see the sqlalchemy/mods package for details.</p>
+</div>
+    
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies_DefaultEngineStrategy"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class DefaultEngineStrategy(<a href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_EngineStrategy">EngineStrategy</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def create(<i>self</i>, <i>name_or_url</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_engine_cls(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_pool_provider(<i>self</i>, <i>url</i>, <i>pool</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def pool_threadlocal(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies_EngineStrategy"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class EngineStrategy(object)</h3>
+    
+    
+    <div class="darkcell"><p>Define a function that receives input arguments and produces an
+instance of sql.Engine, typically an instance
+sqlalchemy.engine.base.Engine or a subclass.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name</i>)</b>
+    <div class="docstring">
+    <p>Construct a new EngineStrategy object.</p>
+<p>Sets it in the list of available strategies under this name.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def create(<i>self</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Given arguments, returns a new sql.Engine instance.</p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies_MockEngineStrategy"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class MockEngineStrategy(<a href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_EngineStrategy">EngineStrategy</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Produces a single Connection object which dispatches statement executions
+to a passed-in function</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def create(<i>self</i>, <i>name_or_url</i>, <i>executor</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies_PlainEngineStrategy"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class PlainEngineStrategy(<a href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_DefaultEngineStrategy">DefaultEngineStrategy</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_engine_cls(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_pool_provider(<i>self</i>, <i>url</i>, <i>pool</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def pool_threadlocal(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.engine.strategies_ThreadLocalEngineStrategy"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ThreadLocalEngineStrategy(<a href="sqlalchemy_engine_strategies.html#docstrings_sqlalchemy.engine.strategies_DefaultEngineStrategy">DefaultEngineStrategy</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_engine_cls(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_pool_provider(<i>self</i>, <i>url</i>, <i>pool</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def pool_threadlocal(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+    
+
+    </div>
+
+
+
+
+
+    <div class="bottomnav">
+        
+    <div class="prevnext">
+            Up: <a href="docstrings.html">Generated Documentation</a>
+
+               |   
+            Previous: <a href="sqlalchemy_engine_url.html">module sqlalchemy.engine.url</a>
+
+               |   
+            Next: <a href="sqlalchemy_engine_default.html">module sqlalchemy.engine.default</a>
+    </div>
+
+    </div>
+
+
+
+
+
+
+
+
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,4770 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>SQLAlchemy 0.3 Documentation - module sqlalchemy.sql</title>
+	
+    
+    <link rel="stylesheet" href="style.css"></link>
+    <link rel="stylesheet" href="docs.css"></link>
+    <link href="syntaxhighlight.css" rel="stylesheet" type="text/css"></link>
+    <script src="scripts.js"></script>
+
+    <link rel="stylesheet" href="docutil.css"></link>
+
+
+
+</head>
+<body>
+
+
+
+
+
+
+
+
+<div id="topanchor"><a name="top">&nbsp;</a></div>
+
+
+<h1>SQLAlchemy 0.3 Documentation</h1>
+
+<div id="pagecontrol"><a href="index.html">Multiple Pages</a> | <a href="documentation.html">One Page</a></div>
+
+<div class="versionheader">Version: 0.3.7   Last Updated: 04/30/07 00:08:52</div>
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="topnav">
+
+    
+    <div class="navbanner">
+        <a href="index.html">Table of Contents</a>
+        
+    <div class="prevnext">
+            Up: <a href="docstrings.html">Generated Documentation</a>
+
+
+            
+            Next: <a href="sqlalchemy_schema.html">module sqlalchemy.schema</a>
+    </div>
+
+        <h2>module sqlalchemy.sql</h2>
+    </div>
+
+	
+	
+    <ul>
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc">Module Functions</a></li>
+        
+            
+    <ul>
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_alias">alias()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_and_">and_()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_asc">asc()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_between">between()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_between_">between_()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_bindparam">bindparam()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_case">case()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_cast">cast()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_column">column()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_delete">delete()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_desc">desc()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_except_">except_()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_except_all">except_all()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_exists">exists()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_extract">extract()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_insert">insert()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_intersect">intersect()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_intersect_all">intersect_all()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_is_column">is_column()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_join">join()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_label">label()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_literal">literal()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_literal_column">literal_column()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_not_">not_()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_null">null()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_or_">or_()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_outerjoin">outerjoin()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_subquery">subquery()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_table">table()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_text">text()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_union">union()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_union_all">union_all()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_update">update()</a></li>
+        
+            
+    <ul>
+    </ul>
+
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_AbstractDialect">class AbstractDialect(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Alias">class Alias(FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BinaryClause">class _BinaryClause(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BinaryExpression">class _BinaryExpression(_BinaryClause,ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BindParamClause">class _BindParamClause(ClauseElement,_CompareMixin)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BooleanExpression">class _BooleanExpression(_BinaryExpression)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CalculatedClause">class _CalculatedClause(ClauseList,ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Cast">class _Cast(ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">class ClauseElement(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseList">class ClauseList(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseParameters">class ClauseParameters(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseVisitor">class ClauseVisitor(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__ColumnClause">class _ColumnClause(ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnCollection">class ColumnCollection(OrderedProperties)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">class ColumnElement(Selectable,_CompareMixin)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">class _CompareMixin(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Compiled">class Compiled(ClauseVisitor)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompoundClause">class _CompoundClause(ClauseList)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">class CompoundSelect(_SelectBaseMixin,FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Delete">class _Delete(_UpdateBase)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Executor">class Executor(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Exists">class _Exists(_BooleanExpression)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">class FromClause(Selectable)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Function">class _Function(_CalculatedClause,FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__FunctionGateway">class _FunctionGateway(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__FunctionGenerator">class _FunctionGenerator(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Insert">class _Insert(_UpdateBase)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Join">class Join(FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Label">class _Label(ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_LoggingClauseVisitor">class LoggingClauseVisitor(ClauseVisitor)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_NoColumnVisitor">class NoColumnVisitor(ClauseVisitor)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Null">class _Null(ColumnElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">class Select(_SelectBaseMixin,FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__SelectBaseMixin">class _SelectBaseMixin(object)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Selectable">class Selectable(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_TableClause">class TableClause(FromClause)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__TextClause">class _TextClause(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__TypeClause">class _TypeClause(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Update">class _Update(_UpdateBase)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+        
+        <li><A style="" href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__UpdateBase">class _UpdateBase(ClauseElement)</a></li>
+        
+            
+    <ul>
+    </ul>
+
+    </ul>
+
+	</div>
+
+
+
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql"></a>
+    
+    <div class="sectionL2">
+
+    <h3>module sqlalchemy.sql</h3>
+    
+    
+    <div class="darkcell"><p>Define the base components of SQL expression trees.</p>
+<p>All components are derived from a common base class <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>.
+Common behaviors are organized based on class hierarchies, in some cases
+via mixins.</p>
+<p>All object construction from this package occurs via functions which in some
+cases will construct composite <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> structures together, and
+in other cases simply return a single <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> constructed directly.
+The function interface affords a more &quot;DSL-ish&quot; feel to constructing SQL expressions
+and also allows future class reorganizations.</p>
+<p>Even though classes are not constructed directly from the outside, most
+classes which have additional public methods are considered to be public (i.e. have no leading underscore).
+Other classes which are &quot;semi-public&quot; are marked with a single leading
+underscore; these classes usually have few or no public methods and
+are less guaranteed to stay the same in future releases.</p>
+</div>
+    
+
+        
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc"></a>
+    
+    <div class="sectionL3">
+
+    <h3>Module Functions</h3>
+    
+    
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_alias"></a>
+    <b>def alias(<i>selectable</i>, <i>alias=None</i>)</b>
+    <div class="docstring">
+    <p>Return an <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Alias">Alias</a> object.</p>
+<p>An <tt class="docutils literal"><span class="pre">Alias</span></tt> represents any <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a> with
+an alternate name assigned within SQL, typically using the <tt class="docutils literal"><span class="pre">AS</span></tt>
+clause when generated, e.g. <tt class="docutils literal"><span class="pre">SELECT</span> <span class="pre">*</span> <span class="pre">FROM</span> <span class="pre">table</span> <span class="pre">AS</span> <span class="pre">aliasname</span></tt>.</p>
+<p>Similar functionality is available via the <tt class="docutils literal"><span class="pre">alias()</span></tt> method
+available on all <tt class="docutils literal"><span class="pre">FromClause</span></tt> subclasses.</p>
+<blockquote>
+<dl class="docutils">
+<dt>selectable</dt>
+<dd>any <tt class="docutils literal"><span class="pre">FromClause</span></tt> subclass, such as a table, select statement, etc..</dd>
+<dt>alias</dt>
+<dd>string name to be assigned as the alias.  If <tt class="docutils literal"><span class="pre">None</span></tt>, a random
+name will be generated.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_and_"></a>
+    <b>def and_(<i>*clauses</i>)</b>
+    <div class="docstring">
+    <p>Join a list of clauses together using the <tt class="docutils literal"><span class="pre">AND</span></tt> operator.</p>
+<p>The <tt class="docutils literal"><span class="pre">&amp;</span></tt> operator is also overloaded on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a>
+subclasses to produce the same result.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_asc"></a>
+    <b>def asc(<i>column</i>)</b>
+    <div class="docstring">
+    <p>Return an ascending <tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt> clause element.</p>
+<p>E.g.:</p>
+<pre class="literal-block">
+order_by = [asc(table1.mycol)]
+</pre>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_between"></a>
+    <b>def between(<i>ctest</i>, <i>cleft</i>, <i>cright</i>)</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">BETWEEN</span></tt> predicate clause.</p>
+<p>Equivalent of SQL <tt class="docutils literal"><span class="pre">clausetest</span> <span class="pre">BETWEEN</span> <span class="pre">clauseleft</span> <span class="pre">AND</span> <span class="pre">clauseright</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">between()</span></tt> method on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a> subclasses
+provides similar functionality.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_between_"></a>
+    <b>def between_(<i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>synonym for <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_between">between()</a> (deprecated).</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_bindparam"></a>
+    <b>def bindparam(<i>key</i>, <i>value=None</i>, <i>type=None</i>, <i>shortname=None</i>, <i>unique=False</i>)</b>
+    <div class="docstring">
+    <p>Create a bind parameter clause with the given key.</p>
+<dl class="docutils">
+<dt>value</dt>
+<dd>a default value for this bind parameter.  a bindparam with a value
+is called a <tt class="docutils literal"><span class="pre">value-based</span> <span class="pre">bindparam</span></tt>.</dd>
+<dt>shortname</dt>
+<dd>an <tt class="docutils literal"><span class="pre">alias</span></tt> for this bind parameter.  usually used to alias the <tt class="docutils literal"><span class="pre">key</span></tt> and
+<tt class="docutils literal"><span class="pre">label</span></tt> of a column, i.e. <tt class="docutils literal"><span class="pre">somecolname</span></tt> and <tt class="docutils literal"><span class="pre">sometable_somecolname</span></tt></dd>
+<dt>type</dt>
+<dd>a sqlalchemy.types.TypeEngine object indicating the type of this bind param, will
+invoke type-specific bind parameter processing</dd>
+<dt>unique</dt>
+<dd>if True, bind params sharing the same name will have their underlying <tt class="docutils literal"><span class="pre">key</span></tt> modified
+to a uniquely generated name.  mostly useful with value-based bind params.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_case"></a>
+    <b>def case(<i>whens</i>, <i>value=None</i>, <i>else_=None</i>)</b>
+    <div class="docstring">
+    <p>Produce a <tt class="docutils literal"><span class="pre">CASE</span></tt> statement.</p>
+<dl class="docutils">
+<dt>whens</dt>
+<dd>A sequence of pairs to be translated into &quot;when / then&quot; clauses.</dd>
+<dt>value</dt>
+<dd>Optional for simple case statements.</dd>
+<dt>else_</dt>
+<dd>Optional as well, for case defaults.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_cast"></a>
+    <b>def cast(<i>clause</i>, <i>totype</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">CAST</span></tt> function.</p>
+<p>Equivalent of SQL <tt class="docutils literal"><span class="pre">CAST(clause</span> <span class="pre">AS</span> <span class="pre">totype)</span></tt>.</p>
+<p>Use with a <a href="sqlalchemy_types.html#docstrings_sqlalchemy.types_TypeEngine">TypeEngine</a> subclass, i.e:</p>
+<pre class="literal-block">
+cast(table.c.unit_price * table.c.qty, Numeric(10,4))
+</pre>
+<p>or:</p>
+<pre class="literal-block">
+cast(table.c.timestamp, DATE)
+</pre>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_column"></a>
+    <b>def column(<i>text</i>, <i>type=None</i>)</b>
+    <div class="docstring">
+    <p>Return a textual column clause, as would be in the columns
+clause of a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</p>
+<p>The object returned is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__ColumnClause">_ColumnClause</a>,
+which represents the &quot;syntactical&quot; portion of the schema-level
+<a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Column">Column</a> object.</p>
+<blockquote>
+<dl class="docutils">
+<dt>text</dt>
+<dd>the name of the column.  Quoting rules will be applied to
+the clause like any other column name.  For textual column
+constructs that are not to be quoted, use the <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_literal_column">literal_column()</a>
+function.</dd>
+<dt>type</dt>
+<dd>an optional <a href="sqlalchemy_types.html#docstrings_sqlalchemy.types_TypeEngine">TypeEngine</a> object which will provide
+result-set translation for this column.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_delete"></a>
+    <b>def delete(<i>table</i>, <i>whereclause=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Delete">_Delete</a> clause element.</p>
+<p>Similar functionality is available via the <tt class="docutils literal"><span class="pre">delete()</span></tt>
+method on <a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Table">Table</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>table</dt>
+<dd>The table to be updated.</dd>
+<dt>whereclause</dt>
+<dd>A <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> describing the <tt class="docutils literal"><span class="pre">WHERE</span></tt> condition of the
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_desc"></a>
+    <b>def desc(<i>column</i>)</b>
+    <div class="docstring">
+    <p>Return a descending <tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt> clause element.</p>
+<p>E.g.:</p>
+<pre class="literal-block">
+order_by = [desc(table1.mycol)]
+</pre>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_except_"></a>
+    <b>def except_(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">EXCEPT</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_except_all"></a>
+    <b>def except_all(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">EXCEPT</span> <span class="pre">ALL</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_exists"></a>
+    <b>def exists(<i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">EXISTS</span></tt> clause as applied to a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> object.</p>
+<p>The resulting <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Exists">_Exists</a> object can be executed by itself
+or used as a subquery within an enclosing select.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*args, **kwargs</dt>
+<dd>all arguments are sent directly to the <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a> function
+to produce a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_extract"></a>
+    <b>def extract(<i>field</i>, <i>expr</i>)</b>
+    <div class="docstring">
+    <p>Return the clause <tt class="docutils literal"><span class="pre">extract(field</span> <span class="pre">FROM</span> <span class="pre">expr)</span></tt>.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_insert"></a>
+    <b>def insert(<i>table</i>, <i>values=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Insert">_Insert</a> clause element.</p>
+<p>Similar functionality is available via the <tt class="docutils literal"><span class="pre">insert()</span></tt>
+method on <a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Table">Table</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>table</dt>
+<dd>The table to be inserted into.</dd>
+<dt>values</dt>
+<dd>A dictionary which specifies the column specifications of the
+<tt class="docutils literal"><span class="pre">INSERT</span></tt>, and is optional.  If left as None, the column
+specifications are determined from the bind parameters used
+during the compile phase of the <tt class="docutils literal"><span class="pre">INSERT</span></tt> statement.  If the
+bind parameters also are None during the compile phase, then the
+column specifications will be generated from the full list of
+table columns.</dd>
+</dl>
+</blockquote>
+<p>If both <cite>values</cite> and compile-time bind parameters are present, the
+compile-time bind parameters override the information specified
+within <cite>values</cite> on a per-key basis.</p>
+<p>The keys within <cite>values</cite> can be either <tt class="docutils literal"><span class="pre">Column</span></tt> objects or their
+string identifiers.  Each key may reference one of:</p>
+<ul class="simple">
+<li>a literal data value (i.e. string, number, etc.);</li>
+<li>a Column object;</li>
+<li>a SELECT statement.</li>
+</ul>
+<p>If a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement is specified which references this
+<tt class="docutils literal"><span class="pre">INSERT</span></tt> statement's table, the statement will be correlated
+against the <tt class="docutils literal"><span class="pre">INSERT</span></tt> statement.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_intersect"></a>
+    <b>def intersect(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">INTERSECT</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_intersect_all"></a>
+    <b>def intersect_all(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">INTERSECT</span> <span class="pre">ALL</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_is_column"></a>
+    <b>def is_column(<i>col</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_join"></a>
+    <b>def join(<i>left</i>, <i>right</i>, <i>onclause=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">JOIN</span></tt> clause element (regular inner join).</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Join">Join</a>.</p>
+<p>Similar functionality is also available via the <tt class="docutils literal"><span class="pre">join()</span></tt> method on any
+<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>left</dt>
+<dd>The left side of the join.</dd>
+<dt>right</dt>
+<dd>The right side of the join.</dd>
+<dt>onclause</dt>
+<dd>Optional criterion for the <tt class="docutils literal"><span class="pre">ON</span></tt> clause, is derived from
+foreign key relationships established between left and right
+otherwise.</dd>
+</dl>
+</blockquote>
+<p>To chain joins together, use the <tt class="docutils literal"><span class="pre">join()</span></tt> or <tt class="docutils literal"><span class="pre">outerjoin()</span></tt>
+methods on the resulting <tt class="docutils literal"><span class="pre">Join</span></tt> object.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_label"></a>
+    <b>def label(<i>name</i>, <i>obj</i>)</b>
+    <div class="docstring">
+    <p>Return a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Label">_Label</a> object for the given <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>.</p>
+<p>A label changes the name of an element in the columns clause
+of a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement, typically via the <tt class="docutils literal"><span class="pre">AS</span></tt> SQL keyword.</p>
+<p>This functionality is more conveniently available via
+the <tt class="docutils literal"><span class="pre">label()</span></tt> method on <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>name</dt>
+<dd>label name</dd>
+<dt>obj</dt>
+<dd>a <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_literal"></a>
+    <b>def literal(<i>value</i>, <i>type=None</i>)</b>
+    <div class="docstring">
+    <p>Return a literal clause, bound to a bind parameter.</p>
+<p>Literal clauses are created automatically when non-
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects (such as strings, ints, dates, etc.) are used in
+a comparison operation with a <b>_CompareMixin</b>
+subclass, such as a <tt class="docutils literal"><span class="pre">Column</span></tt> object.  Use this function
+to force the generation of a literal clause, which will
+be created as a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BindParamClause">_BindParamClause</a> with a bound
+value.</p>
+<blockquote>
+<dl class="docutils">
+<dt>value</dt>
+<dd>the value to be bound.  can be any Python object supported by
+the underlying DBAPI, or is translatable via the given type
+argument.</dd>
+<dt>type</dt>
+<dd>an optional <a href="sqlalchemy_types.html#docstrings_sqlalchemy.types_TypeEngine">TypeEngine</a> which will provide
+bind-parameter translation for this literal.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_literal_column"></a>
+    <b>def literal_column(<i>text</i>, <i>type=None</i>)</b>
+    <div class="docstring">
+    <p>Return a textual column clause, as would be in the columns
+clause of a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</p>
+<p>The object returned is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__ColumnClause">_ColumnClause</a>,
+which represents the &quot;syntactical&quot; portion of the schema-level
+<a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Column">Column</a> object.</p>
+<blockquote>
+<dl class="docutils">
+<dt>text</dt>
+<dd>the name of the column.  Quoting rules will not be applied
+to the column.   For textual column
+constructs that should be quoted like any other column
+construct, use the <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_column">column()</a>
+function.</dd>
+<dt>type</dt>
+<dd>an optional <a href="sqlalchemy_types.html#docstrings_sqlalchemy.types_TypeEngine">TypeEngine</a> object which will provide
+result-set translation for this column.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_not_"></a>
+    <b>def not_(<i>clause</i>)</b>
+    <div class="docstring">
+    <p>Return a negation of the given clause, i.e. <tt class="docutils literal"><span class="pre">NOT(clause)</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">~</span></tt> operator is also overloaded on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a>
+subclasses to produce the same result.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_null"></a>
+    <b>def null()</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">_Null</span></tt> object, which compiles to <tt class="docutils literal"><span class="pre">NULL</span></tt> in a sql statement.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_or_"></a>
+    <b>def or_(<i>*clauses</i>)</b>
+    <div class="docstring">
+    <p>Join a list of clauses together using the <tt class="docutils literal"><span class="pre">OR</span></tt> operator.</p>
+<p>The <tt class="docutils literal"><span class="pre">|</span></tt> operator is also overloaded on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a>
+subclasses to produce the same result.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_outerjoin"></a>
+    <b>def outerjoin(<i>left</i>, <i>right</i>, <i>onclause=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <tt class="docutils literal"><span class="pre">OUTER</span> <span class="pre">JOIN</span></tt> clause element.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Join">Join</a>.</p>
+<p>Similar functionality is also available via the <tt class="docutils literal"><span class="pre">outerjoin()</span></tt> method on any
+<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>left</dt>
+<dd>The left side of the join.</dd>
+<dt>right</dt>
+<dd>The right side of the join.</dd>
+<dt>onclause</dt>
+<dd>Optional criterion for the <tt class="docutils literal"><span class="pre">ON</span></tt> clause, is derived from
+foreign key relationships established between left and right
+otherwise.</dd>
+</dl>
+</blockquote>
+<p>To chain joins together, use the <tt class="docutils literal"><span class="pre">join()</span></tt> or <tt class="docutils literal"><span class="pre">outerjoin()</span></tt>
+methods on the resulting <tt class="docutils literal"><span class="pre">Join</span></tt> object.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_select"></a>
+    <b>def select(<i>columns=None</i>, <i>whereclause=None</i>, <i>from_obj=[]</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Returns a <tt class="docutils literal"><span class="pre">SELECT</span></tt> clause element.</p>
+<p>Similar functionality is also available via the <tt class="docutils literal"><span class="pre">select()</span></tt> method on any
+<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a>.</p>
+<p>All arguments which accept <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> arguments also
+accept string arguments, which will be converted as appropriate
+into either <tt class="docutils literal"><span class="pre">text()</span></tt> or <tt class="docutils literal"><span class="pre">literal_column()</span></tt> constructs.</p>
+<blockquote>
+<dl class="docutils">
+<dt>columns</dt>
+<dd><p class="first">A list of <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects, typically <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>
+objects or subclasses, which will form
+the columns clause of the resulting statement.  For all
+members which are instances of <tt class="docutils literal"><span class="pre">Selectable</span></tt>, the individual
+<tt class="docutils literal"><span class="pre">ColumnElement</span></tt> members of the <tt class="docutils literal"><span class="pre">Selectable</span></tt> will be
+added individually to the columns clause.  For example, specifying
+a <tt class="docutils literal"><span class="pre">Table</span></tt> instance will result in all the contained <tt class="docutils literal"><span class="pre">Column</span></tt>
+objects within to be added to the columns clause.</p>
+<p class="last">This argument is not present on the form of <tt class="docutils literal"><span class="pre">select()</span></tt> available
+on <tt class="docutils literal"><span class="pre">Table</span></tt>.</p>
+</dd>
+<dt>whereclause</dt>
+<dd>A <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> expression which will be used to form the
+<tt class="docutils literal"><span class="pre">WHERE</span></tt> clause.</dd>
+<dt>from_obj</dt>
+<dd>A list of <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects which will be added to the <tt class="docutils literal"><span class="pre">FROM</span></tt>
+clause of the resulting statement.  Note that &quot;from&quot; objects
+are automatically located within the columns and whereclause
+ClauseElements.  Use this parameter to explicitly specify
+&quot;from&quot; objects which are not automatically locatable.
+This could include <tt class="docutils literal"><span class="pre">Table</span></tt> objects that aren't otherwise
+present, or <tt class="docutils literal"><span class="pre">Join</span></tt> objects whose presence will supercede
+that of the <tt class="docutils literal"><span class="pre">Table</span></tt> objects already located in the other
+clauses.</dd>
+<dt>**kwargs</dt>
+<dd><p class="first">Additional parameters include:</p>
+<dl class="last docutils">
+<dt>order_by</dt>
+<dd>a scalar or list of <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects
+which will comprise the <tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt> clause of the resulting
+select.</dd>
+<dt>group_by</dt>
+<dd>a list of <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects which will comprise
+the <tt class="docutils literal"><span class="pre">GROUP</span> <span class="pre">BY</span></tt> clause of the resulting select.</dd>
+<dt>having</dt>
+<dd>a <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> that will comprise the <tt class="docutils literal"><span class="pre">HAVING</span></tt>
+clause of the resulting select when <tt class="docutils literal"><span class="pre">GROUP</span> <span class="pre">BY</span></tt> is used.</dd>
+<dt>use_labels=False</dt>
+<dd>when <tt class="docutils literal"><span class="pre">True</span></tt>, the statement will be generated using
+labels for each column in the columns clause, which qualify
+each column with its parent table's (or aliases) name so
+that name conflicts between columns in different tables don't
+occur.  The format of the label is &lt;tablename&gt;_&lt;column&gt;.  The
+&quot;c&quot; collection of the resulting <tt class="docutils literal"><span class="pre">Select</span></tt> object will use these
+names as well for targeting column members.</dd>
+<dt>distinct=False</dt>
+<dd>when <tt class="docutils literal"><span class="pre">True</span></tt>, applies a <tt class="docutils literal"><span class="pre">DISTINCT</span></tt> qualifier to the
+columns clause of the resulting statement.</dd>
+<dt>for_update=False</dt>
+<dd>when <tt class="docutils literal"><span class="pre">True</span></tt>, applies <tt class="docutils literal"><span class="pre">FOR</span> <span class="pre">UPDATE</span></tt> to the end of the
+resulting statement.  Certain database dialects also
+support alternate values for this parameter, for example
+mysql supports &quot;read&quot; which translates to <tt class="docutils literal"><span class="pre">LOCK</span> <span class="pre">IN</span> <span class="pre">SHARE</span> <span class="pre">MODE</span></tt>,
+and oracle supports &quot;nowait&quot; which translates to
+<tt class="docutils literal"><span class="pre">FOR</span> <span class="pre">UPDATE</span> <span class="pre">NOWAIT</span></tt>.</dd>
+<dt>engine=None</dt>
+<dd>an <tt class="docutils literal"><span class="pre">Engine</span></tt> instance to which the resulting <tt class="docutils literal"><span class="pre">Select</span></tt>
+object will be bound.  The <tt class="docutils literal"><span class="pre">Select</span></tt> object will otherwise
+automatically bind to whatever <tt class="docutils literal"><span class="pre">Engine</span></tt> instances can be located
+within its contained <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> members.</dd>
+<dt>limit=None</dt>
+<dd>a numerical value which usually compiles to a <tt class="docutils literal"><span class="pre">LIMIT</span></tt> expression
+in the resulting select.  Databases that don't support <tt class="docutils literal"><span class="pre">LIMIT</span></tt>
+will attempt to provide similar functionality.</dd>
+<dt>offset=None</dt>
+<dd>a numerical value which usually compiles to an <tt class="docutils literal"><span class="pre">OFFSET</span></tt> expression
+in the resulting select.  Databases that don't support <tt class="docutils literal"><span class="pre">OFFSET</span></tt>
+will attempt to provide similar functionality.</dd>
+<dt>scalar=False</dt>
+<dd>when <tt class="docutils literal"><span class="pre">True</span></tt>, indicates that the resulting <tt class="docutils literal"><span class="pre">Select</span></tt> object
+is to be used in the &quot;columns&quot; clause of another select statement,
+where the evaluated value of the column is the scalar result of
+this statement.  Normally, placing any <tt class="docutils literal"><span class="pre">Selectable</span></tt> within the
+columns clause of a <tt class="docutils literal"><span class="pre">select()</span></tt> call will expand the member
+columns of the <tt class="docutils literal"><span class="pre">Selectable</span></tt> individually.</dd>
+<dt>correlate=True</dt>
+<dd>indicates that this <tt class="docutils literal"><span class="pre">Select</span></tt> object should have its contained
+<tt class="docutils literal"><span class="pre">FromClause</span></tt> elements &quot;correlated&quot; to an enclosing <tt class="docutils literal"><span class="pre">Select</span></tt>
+object.  This means that any <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> instance within
+the &quot;froms&quot; collection of this <tt class="docutils literal"><span class="pre">Select</span></tt> which is also present
+in the &quot;froms&quot; collection of an enclosing select will not be
+rendered in the <tt class="docutils literal"><span class="pre">FROM</span></tt> clause of this select statement.</dd>
+</dl>
+</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_subquery"></a>
+    <b>def subquery(<i>alias</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Alias">Alias</a> object derived from a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a>.</p>
+<dl class="docutils">
+<dt>name</dt>
+<dd>alias name</dd>
+<dt>*args, **kwargs</dt>
+<dd>all other arguments are delivered to the <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a> function.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_table"></a>
+    <b>def table(<i>name</i>, <i>*columns</i>)</b>
+    <div class="docstring">
+    <p>Return a <b>Table</b> object.</p>
+<p>This is a primitive version of the <a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Table">Table</a> object, which
+is a subclass of this object.</p>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_text"></a>
+    <b>def text(<i>text</i>, <i>engine=None</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Create literal text to be inserted into a query.</p>
+<p>When constructing a query from a <tt class="docutils literal"><span class="pre">select()</span></tt>, <tt class="docutils literal"><span class="pre">update()</span></tt>,
+<tt class="docutils literal"><span class="pre">insert()</span></tt> or <tt class="docutils literal"><span class="pre">delete()</span></tt>, using plain strings for argument
+values will usually result in text objects being created
+automatically.  Use this function when creating textual clauses
+outside of other <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> objects, or optionally wherever
+plain text is to be used.</p>
+<blockquote>
+<dl class="docutils">
+<dt>text</dt>
+<dd>The text of the SQL statement to be created.  use <tt class="docutils literal"><span class="pre">:&lt;param&gt;</span></tt>
+to specify bind parameters; they will be compiled to their
+engine-specific format.</dd>
+<dt>engine</dt>
+<dd>An optional engine to be used for this text query.</dd>
+<dt>bindparams</dt>
+<dd>A list of <tt class="docutils literal"><span class="pre">bindparam()</span></tt> instances which can be used to define
+the types and/or initial values for the bind parameters within
+the textual statement; the keynames of the bindparams must match
+those within the text of the statement.  The types will be used
+for pre-processing on bind values.</dd>
+<dt>typemap</dt>
+<dd>A dictionary mapping the names of columns represented in the
+<tt class="docutils literal"><span class="pre">SELECT</span></tt> clause of the textual statement to type objects,
+which will be used to perform post-processing on columns within
+the result set (for textual statements that produce result
+sets).</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_union"></a>
+    <b>def union(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">UNION</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<p>A similar <tt class="docutils literal"><span class="pre">union()</span></tt> method is available on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>
+subclasses.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_union_all"></a>
+    <b>def union_all(<i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a <tt class="docutils literal"><span class="pre">UNION</span> <span class="pre">ALL</span></tt> of multiple selectables.</p>
+<p>The returned object is an instance of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_CompoundSelect">CompoundSelect</a>.</p>
+<p>A similar <tt class="docutils literal"><span class="pre">union_all()</span></tt> method is available on all <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>
+subclasses.</p>
+<blockquote>
+<dl class="docutils">
+<dt>*selects</dt>
+<dd>a list of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Select">Select</a> instances.</dd>
+<dt>**kwargs</dt>
+<dd>available keyword arguments are the same as those of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a>.</dd>
+</dl>
+</blockquote>
+
+    </div>
+    </div>
+
+                
+    <div class="darkcell">
+    
+    <A name="docstrings_sqlalchemy.sql_modfunc_update"></a>
+    <b>def update(<i>table</i>, <i>whereclause=None</i>, <i>values=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return an <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__Update">_Update</a> clause element.</p>
+<p>Similar functionality is available via the <tt class="docutils literal"><span class="pre">update()</span></tt>
+method on <a href="sqlalchemy_schema.html#docstrings_sqlalchemy.schema_Table">Table</a>.</p>
+<blockquote>
+<dl class="docutils">
+<dt>table</dt>
+<dd>The table to be updated.</dd>
+<dt>whereclause</dt>
+<dd>A <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> describing the <tt class="docutils literal"><span class="pre">WHERE</span></tt> condition of the
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement.</dd>
+<dt>values</dt>
+<dd>A dictionary which specifies the <tt class="docutils literal"><span class="pre">SET</span></tt> conditions of the
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt>, and is optional. If left as None, the <tt class="docutils literal"><span class="pre">SET</span></tt>
+conditions are determined from the bind parameters used during
+the compile phase of the <tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement.  If the bind
+parameters also are None during the compile phase, then the
+<tt class="docutils literal"><span class="pre">SET</span></tt> conditions will be generated from the full list of table
+columns.</dd>
+</dl>
+</blockquote>
+<p>If both <cite>values</cite> and compile-time bind parameters are present, the
+compile-time bind parameters override the information specified
+within <cite>values</cite> on a per-key basis.</p>
+<p>The keys within <cite>values</cite> can be either <tt class="docutils literal"><span class="pre">Column</span></tt> objects or their
+string identifiers. Each key may reference one of:</p>
+<ul class="simple">
+<li>a literal data value (i.e. string, number, etc.);</li>
+<li>a Column object;</li>
+<li>a SELECT statement.</li>
+</ul>
+<p>If a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement is specified which references this
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement's table, the statement will be correlated
+against the <tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement.</p>
+
+    </div>
+    </div>
+
+        
+
+    </div>
+
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_AbstractDialect"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class AbstractDialect(object)</h3>
+    
+    
+    <div class="darkcell"><p>Represent the behavior of a particular database.</p>
+<p>Used by <tt class="docutils literal"><span class="pre">Compiled</span></tt> objects.</p>
+</div>
+    
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Alias"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Alias(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    <div class="darkcell"><p>represent an alias, as typically applied to any
+table or sub-select within a SQL statement using the
+<tt class="docutils literal"><span class="pre">AS</span></tt> keyword (or without the keyword on certain databases
+such as Oracle).</p>
+<p>this object is constructed from the <tt class="docutils literal"><span class="pre">alias()</span></tt> module level function
+as well as the <tt class="docutils literal"><span class="pre">alias()</span></tt> method available on all <tt class="docutils literal"><span class="pre">FromClause</span></tt>
+subclasses.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>selectable</i>, <i>alias=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>engine = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def named_with_column(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def supports_execution(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__BinaryClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _BinaryClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent two clauses with an operator in between.</p>
+<p>This class serves as the base class for <tt class="docutils literal"><span class="pre">_BinaryExpression</span></tt>
+and <tt class="docutils literal"><span class="pre">_BooleanExpression</span></tt>, both of which add additional
+semantics to the base <tt class="docutils literal"><span class="pre">_BinaryClause</span></tt> construct.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>left</i>, <i>right</i>, <i>operator</i>, <i>type=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compare(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>Compare this <tt class="docutils literal"><span class="pre">_BinaryClause</span></tt> against the given <tt class="docutils literal"><span class="pre">_BinaryClause</span></tt>.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def swap(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__BinaryExpression"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _BinaryExpression(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BinaryClause">_BinaryClause</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a binary expression, which can be in a <tt class="docutils literal"><span class="pre">WHERE</span></tt>
+criterion or in the column list of a <tt class="docutils literal"><span class="pre">SELECT</span></tt>.</p>
+<p>This class differs from <tt class="docutils literal"><span class="pre">_BinaryClause</span></tt> in that it mixes
+in <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>.  The effect is that elements of this
+type become <tt class="docutils literal"><span class="pre">Selectable</span></tt> units which can be placed in the
+column list of a <tt class="docutils literal"><span class="pre">select()</span></tt> construct.</p>
+</div>
+    
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__BindParamClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _BindParamClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a bind parameter.</p>
+<p>Public constructor is the <tt class="docutils literal"><span class="pre">bindparam()</span></tt> function.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>key</i>, <i>value</i>, <i>shortname=None</i>, <i>type=None</i>, <i>unique=False</i>)</b>
+    <div class="docstring">
+    <p>Construct a _BindParamClause.</p>
+<dl class="docutils">
+<dt>key</dt>
+<dd>the key for this bind param.  Will be used in the generated
+SQL statement for dialects that use named parameters.  This
+value may be modified when part of a compilation operation,
+if other <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> objects exist with the same
+key, or if its length is too long and truncation is
+required.</dd>
+<dt>value</dt>
+<dd>Initial value for this bind param.  This value may be
+overridden by the dictionary of parameters sent to statement
+compilation/execution.</dd>
+<dt>shortname</dt>
+<dd>Defaults to the key, a <em>short name</em> that will also identify
+this bind parameter, similar to an alias.  the bind
+parameter keys sent to a statement compilation or compiled
+execution may match either the key or the shortname of the
+corresponding <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> objects.</dd>
+<dt>type</dt>
+<dd>A <tt class="docutils literal"><span class="pre">TypeEngine</span></tt> object that will be used to pre-process the
+value corresponding to this <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> at
+execution time.</dd>
+<dt>unique</dt>
+<dd>if True, the key name of this BindParamClause will be
+modified if another <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> of the same
+name already has been located within the containing
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt>.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compare(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>Compare this <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> to the given clause.</p>
+<p>Since <tt class="docutils literal"><span class="pre">compare()</span></tt> is meant to compare statement syntax, this
+method returns True if the two <tt class="docutils literal"><span class="pre">_BindParamClauses</span></tt> have just
+the same type.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def typeprocess(<i>self</i>, <i>value</i>, <i>dialect</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__BooleanExpression"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _BooleanExpression(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BinaryExpression">_BinaryExpression</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a boolean expression.</p>
+<p><tt class="docutils literal"><span class="pre">_BooleanExpression</span></tt> is constructed as the result of compare operations
+involving <tt class="docutils literal"><span class="pre">CompareMixin</span></tt> subclasses, such as when comparing a <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>
+to a scalar value via the <tt class="docutils literal"><span class="pre">==</span></tt> operator, <tt class="docutils literal"><span class="pre">CompareMixin</span></tt>'s <tt class="docutils literal"><span class="pre">__eq__()</span></tt> method
+produces a <tt class="docutils literal"><span class="pre">_BooleanExpression</span></tt> consisting of the <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> and a
+<tt class="docutils literal"><span class="pre">_BindParamClause</span></tt>.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__CalculatedClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _CalculatedClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseList">ClauseList</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Describe a calculated SQL expression that has a type, like <tt class="docutils literal"><span class="pre">CASE</span></tt>.</p>
+<p>Extends <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> to provide column-level comparison
+operators.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name</i>, <i>*clauses</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def execute(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>key = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def scalar(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def select(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Cast"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Cast(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>clause</i>, <i>totype</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ClauseElement"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ClauseElement(object)</h3>
+    
+    
+    <div class="darkcell"><p>Base class for elements of a programmatically constructed SQL
+expression.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    <p>Accept a <tt class="docutils literal"><span class="pre">ClauseVisitor</span></tt> and call the appropriate
+<tt class="docutils literal"><span class="pre">visit_xxx</span></tt> method.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compare(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>Compare this ClauseElement to the given ClauseElement.</p>
+<p>Subclasses should override the default behavior, which is a
+straight identity comparison.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compile(<i>self</i>, <i>engine=None</i>, <i>parameters=None</i>, <i>compiler=None</i>, <i>dialect=None</i>)</b>
+    <div class="docstring">
+    <p>Compile this SQL expression.</p>
+<p>Uses the given <tt class="docutils literal"><span class="pre">Compiler</span></tt>, or the given <tt class="docutils literal"><span class="pre">AbstractDialect</span></tt>
+or <tt class="docutils literal"><span class="pre">Engine</span></tt> to create a <tt class="docutils literal"><span class="pre">Compiler</span></tt>.  If no <cite>compiler</cite>
+arguments are given, tries to use the underlying <tt class="docutils literal"><span class="pre">Engine</span></tt> this
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt> is bound to to create a <tt class="docutils literal"><span class="pre">Compiler</span></tt>, if any.</p>
+<p>Finally, if there is no bound <tt class="docutils literal"><span class="pre">Engine</span></tt>, uses an
+<tt class="docutils literal"><span class="pre">ANSIDialect</span></tt> to create a default <tt class="docutils literal"><span class="pre">Compiler</span></tt>.</p>
+<p><cite>parameters</cite> is a dictionary representing the default bind
+parameters to be used with the statement.  If <cite>parameters</cite> is
+a list, it is assumed to be a list of dictionaries and the
+first dictionary in the list is used with which to compile
+against.</p>
+<p>The bind parameters can in some cases determine the output of
+the compilation, such as for <tt class="docutils literal"><span class="pre">UPDATE</span></tt> and <tt class="docutils literal"><span class="pre">INSERT</span></tt>
+statements the bind parameters that are present determine the
+<tt class="docutils literal"><span class="pre">SET</span></tt> and <tt class="docutils literal"><span class="pre">VALUES</span></tt> clause of those statements.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    <p>Return a copy of this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>, if this
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt> contains other <tt class="docutils literal"><span class="pre">ClauseElements</span></tt>.</p>
+<p>If this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> is not a container, it should return
+self.  This is used to create copies of expression trees that
+still reference the same <em>leaf nodes</em>.  The new structure can
+then be restructured without affecting the original.</p>
+
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>engine = property()</b>
+         <div class="docstring">
+         <p>Attempts to locate a Engine within this ClauseElement
+structure, or returns None if none found.</p>
+
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def execute(<i>self</i>, <i>*multiparams</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    <p>Compile and execute this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>return immediate child elements of this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>.</p>
+<p>this is used for visit traversal.</p>
+<p>**kwargs may contain flags that change the collection
+that is returned, for example to return a subset of items
+in order to cut down on larger traversals, or to return
+child items from a different context (such as schema-level
+collections instead of clause-level).</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def scalar(<i>self</i>, <i>*multiparams</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    <p>Compile and execute this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>, returning the
+result's scalar representation.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def supports_execution(<i>self</i>)</b>
+    <div class="docstring">
+    <p>Return True if this clause element represents a complete
+executable statement.</p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ClauseList"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ClauseList(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Describe a list of clauses.</p>
+<p>By default, is comma-separated, such as a column listing.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>*clauses</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append(<i>self</i>, <i>clause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compare(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>Compare this <tt class="docutils literal"><span class="pre">ClauseList</span></tt> to the given <tt class="docutils literal"><span class="pre">ClauseList</span></tt>,
+including a comparison of all the clause items.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ClauseParameters"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ClauseParameters(object)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a dictionary/iterator of bind parameter key names/values.</p>
+<p>Tracks the original <tt class="docutils literal"><span class="pre">BindParam</span></tt> objects as well as the
+keys/position of each parameter, and can return parameters as a
+dictionary or a list.  Will process parameter values according to
+the <tt class="docutils literal"><span class="pre">TypeEngine</span></tt> objects present in the <tt class="docutils literal"><span class="pre">BindParams</span></tt>.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>dialect</i>, <i>positional=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_original(<i>self</i>, <i>key</i>)</b>
+    <div class="docstring">
+    <p>Return the given parameter as it was originally placed in
+this <tt class="docutils literal"><span class="pre">ClauseParameters</span></tt> object, without any <tt class="docutils literal"><span class="pre">Type</span></tt>
+conversion.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_original_dict(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_processed(<i>self</i>, <i>key</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_raw_dict(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_raw_list(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def keys(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def set_parameter(<i>self</i>, <i>bindparam</i>, <i>value</i>, <i>name</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def set_value(<i>self</i>, <i>key</i>, <i>value</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ClauseVisitor"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ClauseVisitor(object)</h3>
+    
+    
+    <div class="darkcell"><p>A class that knows how to traverse and visit
+<tt class="docutils literal"><span class="pre">ClauseElements</span></tt>.</p>
+<p>Each <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>'s accept_visitor() method will call a
+corresponding visit_XXXX() method here. Traversal of a
+hierarchy of <tt class="docutils literal"><span class="pre">ClauseElements</span></tt> is achieved via the
+<tt class="docutils literal"><span class="pre">traverse()</span></tt> method, which is passed the lead
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt>.</p>
+<p>By default, <tt class="docutils literal"><span class="pre">ClauseVisitor</span></tt> traverses all elements
+fully.  Options can be specified at the class level via the
+<tt class="docutils literal"><span class="pre">__traverse_options__</span></tt> dictionary which will be passed
+to the <tt class="docutils literal"><span class="pre">get_children()</span></tt> method of each <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>;
+these options can indicate modifications to the set of
+elements returned, such as to not return column collections
+(column_collections=False) or to return Schema-level items
+(schema_visitor=True).</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def traverse(<i>self</i>, <i>obj</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_alias(<i>self</i>, <i>alias</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_binary(<i>self</i>, <i>binary</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_bindparam(<i>self</i>, <i>bindparam</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_calculatedclause(<i>self</i>, <i>calcclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_cast(<i>self</i>, <i>cast</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_clauselist(<i>self</i>, <i>list</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_column(<i>self</i>, <i>column</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_compound(<i>self</i>, <i>compound</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_compound_select(<i>self</i>, <i>compound</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_fromclause(<i>self</i>, <i>fromclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_function(<i>self</i>, <i>func</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_join(<i>self</i>, <i>join</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_label(<i>self</i>, <i>label</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_null(<i>self</i>, <i>null</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_select(<i>self</i>, <i>select</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_table(<i>self</i>, <i>table</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_textclause(<i>self</i>, <i>textclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def visit_typeclause(<i>self</i>, <i>typeclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__ColumnClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _ColumnClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represents a generic column expression from any textual string.
+This includes columns associated with tables, aliases and select
+statements, but also any arbitrary text.  May or may not be bound
+to an underlying <tt class="docutils literal"><span class="pre">Selectable</span></tt>.  <tt class="docutils literal"><span class="pre">_ColumnClause</span></tt> is usually
+created publically via the <tt class="docutils literal"><span class="pre">column()</span></tt> function or the
+<tt class="docutils literal"><span class="pre">column_literal()</span></tt> function.</p>
+<blockquote>
+<dl class="docutils">
+<dt>text</dt>
+<dd>the text of the element.</dd>
+<dt>selectable</dt>
+<dd>parent selectable.</dd>
+<dt>type</dt>
+<dd><tt class="docutils literal"><span class="pre">TypeEngine</span></tt> object which can associate this <tt class="docutils literal"><span class="pre">_ColumnClause</span></tt>
+with a type.</dd>
+<dt>case_sensitive</dt>
+<dd>defines whether identifier quoting rules will be applied to the
+generated text of this <tt class="docutils literal"><span class="pre">_ColumnClause</span></tt> so that it is identified in
+a case-sensitive manner.</dd>
+<dt>is_literal</dt>
+<dd>if True, the <tt class="docutils literal"><span class="pre">_ColumnClause</span></tt> is assumed to be an exact expression
+that will be delivered to the output with no quoting rules applied
+regardless of case sensitive settings.  the <tt class="docutils literal"><span class="pre">column_literal()</span></tt> function is
+usually used to create such a <tt class="docutils literal"><span class="pre">_ColumnClause</span></tt>.</dd>
+</dl>
+</blockquote>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>text</i>, <i>selectable=None</i>, <i>type=None</i>, <i>_is_oid=False</i>, <i>case_sensitive=True</i>, <i>is_literal=False</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>is_labeled = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def label(<i>self</i>, <i>name</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ColumnCollection"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ColumnCollection(OrderedProperties)</h3>
+    
+    
+    <div class="darkcell"><p>An ordered dictionary that stores a list of ColumnElement
+instances.</p>
+<p>Overrides the <tt class="docutils literal"><span class="pre">__eq__()</span></tt> method to produce SQL clauses between
+sets of correlated columns.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>*cols</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def add(<i>self</i>, <i>column</i>)</b>
+    <div class="docstring">
+    <p>Add a column to this collection.</p>
+<p>The key attribute of the column will be used as the hash key
+for this dictionary.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def contains_column(<i>self</i>, <i>col</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def extend(<i>self</i>, <i>iter</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def remove(<i>self</i>, <i>column</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_ColumnElement"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class ColumnElement(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Selectable">Selectable</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CompareMixin">_CompareMixin</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent an element that is useable within the
+&quot;column clause&quot; portion of a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</p>
+<p>This includes columns associated with tables, aliases,
+and subqueries, expressions, function calls, SQL keywords
+such as <tt class="docutils literal"><span class="pre">NULL</span></tt>, literals, etc.  <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> is the
+ultimate base class for all such elements.</p>
+<p><tt class="docutils literal"><span class="pre">ColumnElement</span></tt> supports the ability to be a <em>proxy</em> element,
+which indicates that the <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> may be associated with
+a <tt class="docutils literal"><span class="pre">Selectable</span></tt> which was derived from another <tt class="docutils literal"><span class="pre">Selectable</span></tt>.
+An example of a &quot;derived&quot; <tt class="docutils literal"><span class="pre">Selectable</span></tt> is an <tt class="docutils literal"><span class="pre">Alias</span></tt> of
+a <tt class="docutils literal"><span class="pre">Table</span></tt>.</p>
+<p>a <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>, by subclassing the <tt class="docutils literal"><span class="pre">_CompareMixin</span></tt> mixin
+class, provides the ability to generate new <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>
+objects using Python expressions.  See the <tt class="docutils literal"><span class="pre">_CompareMixin</span></tt>
+docstring for more details.</p>
+</div>
+    
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>columns = property()</b>
+         <div class="docstring">
+         <p>Columns accessor which returns <tt class="docutils literal"><span class="pre">self</span></tt>, to provide compatibility
+with <tt class="docutils literal"><span class="pre">Selectable</span></tt> objects.</p>
+
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>foreign_key = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>foreign_keys = property()</b>
+         <div class="docstring">
+         <p>Foreign key accessor.  References a list of <tt class="docutils literal"><span class="pre">ForeignKey</span></tt> objects
+which each represent a foreign key placed on this column's ultimate
+ancestor.</p>
+
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>orig_set = property()</b>
+         <div class="docstring">
+         <p>A Set containing TableClause-bound, non-proxied ColumnElements
+for which this ColumnElement is a proxy.  In all cases except
+for a column proxied from a Union (i.e. CompoundSelect), this
+set will be just one element.</p>
+
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>primary_key = property()</b>
+         <div class="docstring">
+         <p>Primary key flag.  Indicates if this <tt class="docutils literal"><span class="pre">Column</span></tt> represents part or
+whole of a primary key for its parent table.</p>
+
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def shares_lineage(<i>self</i>, <i>othercolumn</i>)</b>
+    <div class="docstring">
+    <p>Return True if the given <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> has a common
+ancestor to this <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>.</p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__CompareMixin"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _CompareMixin(object)</h3>
+    
+    
+    <div class="darkcell"><p>Defines comparison operations for <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> instances.</p>
+<p>This is a mixin class that adds the capability to produce <tt class="docutils literal"><span class="pre">ClauseElement</span></tt>
+instances based on regular Python operators.
+These operations are achieved using Python's operator overload methods
+(i.e. <tt class="docutils literal"><span class="pre">__eq__()</span></tt>, <tt class="docutils literal"><span class="pre">__ne__()</span></tt>, etc.</p>
+<p>Overridden operators include all comparison operators (i.e. '==', '!=', '&lt;'),
+math operators ('+', '-', '*', etc), the '&amp;' and '|' operators which evaluate
+to <tt class="docutils literal"><span class="pre">AND</span></tt> and <tt class="docutils literal"><span class="pre">OR</span></tt> respectively.</p>
+<p>Other methods exist to create additional SQL clauses such as <tt class="docutils literal"><span class="pre">IN</span></tt>, <tt class="docutils literal"><span class="pre">LIKE</span></tt>,
+<tt class="docutils literal"><span class="pre">DISTINCT</span></tt>, etc.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def between(<i>self</i>, <i>cleft</i>, <i>cright</i>)</b>
+    <div class="docstring">
+    <p>produce a BETWEEN clause, i.e. <tt class="docutils literal"><span class="pre">&lt;column&gt;</span> <span class="pre">BETWEEN</span> <span class="pre">&lt;cleft&gt;</span> <span class="pre">AND</span> <span class="pre">&lt;cright&gt;</span></tt></p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def distinct(<i>self</i>)</b>
+    <div class="docstring">
+    <p>produce a DISTINCT clause, i.e. <tt class="docutils literal"><span class="pre">DISTINCT</span> <span class="pre">&lt;columnname&gt;</span></tt></p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def endswith(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>produce the clause <tt class="docutils literal"><span class="pre">LIKE</span> <span class="pre">'%&lt;other&gt;'</span></tt></p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def in_(<i>self</i>, <i>*other</i>)</b>
+    <div class="docstring">
+    <p>produce an <tt class="docutils literal"><span class="pre">IN</span></tt> clause.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def label(<i>self</i>, <i>name</i>)</b>
+    <div class="docstring">
+    <p>produce a column label, i.e. <tt class="docutils literal"><span class="pre">&lt;columnname&gt;</span> <span class="pre">AS</span> <span class="pre">&lt;name&gt;</span></tt></p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def like(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>produce a <tt class="docutils literal"><span class="pre">LIKE</span></tt> clause.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def op(<i>self</i>, <i>operator</i>)</b>
+    <div class="docstring">
+    <p>produce a generic operator function.</p>
+<p>e.g.</p>
+<blockquote>
+somecolumn.op(&quot;*&quot;)(5)</blockquote>
+<p>produces</p>
+<blockquote>
+somecolumn * 5</blockquote>
+<dl class="docutils">
+<dt>operator</dt>
+<dd>a string which will be output as the infix operator
+between this <tt class="docutils literal"><span class="pre">ClauseElement</span></tt> and the expression
+passed to the generated function.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def startswith(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>produce the clause <tt class="docutils literal"><span class="pre">LIKE</span> <span class="pre">'&lt;other&gt;%'</span></tt></p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Compiled"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Compiled(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseVisitor">ClauseVisitor</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a compiled SQL expression.</p>
+<p>The <tt class="docutils literal"><span class="pre">__str__</span></tt> method of the <tt class="docutils literal"><span class="pre">Compiled</span></tt> object should produce
+the actual text of the statement.  <tt class="docutils literal"><span class="pre">Compiled</span></tt> objects are
+specific to their underlying database dialect, and also may
+or may not be specific to the columns referenced within a
+particular set of bind parameters.  In no case should the
+<tt class="docutils literal"><span class="pre">Compiled</span></tt> object be dependent on the actual values of those
+bind parameters, even though it may reference those values as
+defaults.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>dialect</i>, <i>statement</i>, <i>parameters</i>, <i>engine=None</i>, <i>traversal=None</i>)</b>
+    <div class="docstring">
+    <p>Construct a new Compiled object.</p>
+<dl class="docutils">
+<dt>statement</dt>
+<dd><tt class="docutils literal"><span class="pre">ClauseElement</span></tt> to be compiled.</dd>
+<dt>parameters</dt>
+<dd>Optional dictionary indicating a set of bind parameters
+specified with this <tt class="docutils literal"><span class="pre">Compiled</span></tt> object.  These parameters
+are the <em>default</em> values corresponding to the
+<tt class="docutils literal"><span class="pre">ClauseElement</span></tt>'s <tt class="docutils literal"><span class="pre">_BindParamClauses</span></tt> when the
+<tt class="docutils literal"><span class="pre">Compiled</span></tt> is executed.  In the case of an <tt class="docutils literal"><span class="pre">INSERT</span></tt> or
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement, these parameters will also result in
+the creation of new <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> objects for each
+key and will also affect the generated column list in an
+<tt class="docutils literal"><span class="pre">INSERT</span></tt> statement and the <tt class="docutils literal"><span class="pre">SET</span></tt> clauses of an
+<tt class="docutils literal"><span class="pre">UPDATE</span></tt> statement.  The keys of the parameter dictionary
+can either be the string names of columns or
+<tt class="docutils literal"><span class="pre">_ColumnClause</span></tt> objects.</dd>
+<dt>engine</dt>
+<dd>Optional Engine to compile this statement against.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compile(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def construct_params(<i>self</i>, <i>params</i>)</b>
+    <div class="docstring">
+    <p>Return the bind params for this compiled object.</p>
+<p>Will start with the default parameters specified when this
+<tt class="docutils literal"><span class="pre">Compiled</span></tt> object was first constructed, and will override
+those values with those sent via <cite>**params</cite>, which are
+key/value pairs.  Each key should match one of the
+<tt class="docutils literal"><span class="pre">_BindParamClause</span></tt> objects compiled into this object; either
+the <cite>key</cite> or <cite>shortname</cite> property of the <tt class="docutils literal"><span class="pre">_BindParamClause</span></tt>.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def execute(<i>self</i>, <i>*multiparams</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    <p>Execute this compiled object.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_params(<i>self</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    <p>Deprecated.  use construct_params().  (supports unicode names)</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def scalar(<i>self</i>, <i>*multiparams</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    <p>Execute this compiled object and return the result's scalar value.</p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__CompoundClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _CompoundClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseList">ClauseList</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a list of clauses joined by an operator, such as <tt class="docutils literal"><span class="pre">AND</span></tt> or <tt class="docutils literal"><span class="pre">OR</span></tt>.</p>
+<p>Extends <tt class="docutils literal"><span class="pre">ClauseList</span></tt> to add the operator as well as a
+<cite>from_objects</cite> accessor to help determine <tt class="docutils literal"><span class="pre">FROM</span></tt> objects in a
+<tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>operator</i>, <i>*clauses</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append(<i>self</i>, <i>clause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compare(<i>self</i>, <i>other</i>)</b>
+    <div class="docstring">
+    <p>Compare this <tt class="docutils literal"><span class="pre">_CompoundClause</span></tt> to the given item.</p>
+<p>In addition to the regular comparison, has the special case
+that it returns True if this <tt class="docutils literal"><span class="pre">_CompoundClause</span></tt> has only one
+item, and that item matches the given item.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_CompoundSelect"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class CompoundSelect(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__SelectBaseMixin">_SelectBaseMixin</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>keyword</i>, <i>*selects</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>column_collections=True</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>name = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Delete"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Delete(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__UpdateBase">_UpdateBase</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>table</i>, <i>whereclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Executor"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Executor(object)</h3>
+    
+    
+    <div class="darkcell"><p>Interface representing a &quot;thing that can produce Compiled objects
+and execute them&quot;.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def compiler(<i>self</i>, <i>statement</i>, <i>parameters</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Return a Compiled object for the given statement and parameters.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def execute_compiled(<i>self</i>, <i>compiled</i>, <i>parameters</i>, <i>echo=None</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Execute a Compiled object.</p>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Exists"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Exists(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__BooleanExpression">_BooleanExpression</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_FromClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class FromClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_Selectable">Selectable</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent an element that can be used within the <tt class="docutils literal"><span class="pre">FROM</span></tt>
+clause of a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def alias(<i>self</i>, <i>name=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>c = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>columns = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def corresponding_column(<i>self</i>, <i>column</i>, <i>raiseerr=True</i>, <i>keys_ok=False</i>, <i>require_embedded=False</i>)</b>
+    <div class="docstring">
+    <p>Given a <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>, return the exported
+<tt class="docutils literal"><span class="pre">ColumnElement</span></tt> object from this <tt class="docutils literal"><span class="pre">Selectable</span></tt> which
+corresponds to that original <tt class="docutils literal"><span class="pre">Column</span></tt> via a common
+anscestor column.</p>
+<dl class="docutils">
+<dt>column</dt>
+<dd>the target <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> to be matched</dd>
+<dt>raiseerr</dt>
+<dd>if True, raise an error if the given <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>
+could not be matched. if False, non-matches will
+return None.</dd>
+<dt>keys_ok</dt>
+<dd>if the <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> cannot be matched, attempt to
+match based on the string &quot;key&quot; property of the column
+alone. This makes the search much more liberal.</dd>
+<dt>require_embedded</dt>
+<dd>only return corresponding columns for the given
+<tt class="docutils literal"><span class="pre">ColumnElement</span></tt>, if the given <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> is
+actually present within a sub-element of this
+<tt class="docutils literal"><span class="pre">FromClause</span></tt>.  Normally the column will match if
+it merely shares a common anscestor with one of
+the exported columns of this <tt class="docutils literal"><span class="pre">FromClause</span></tt>.</dd>
+</dl>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def count(<i>self</i>, <i>whereclause=None</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def default_order_by(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>foreign_keys = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def join(<i>self</i>, <i>right</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def named_with_column(<i>self</i>)</b>
+    <div class="docstring">
+    <p>True if the name of this FromClause may be prepended to a
+column in a generated SQL statement.</p>
+
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>oid_column = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>original_columns = property()</b>
+         <div class="docstring">
+         <p>A dictionary mapping an original Table-bound
+column to a proxied column in this FromClause.</p>
+
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def outerjoin(<i>self</i>, <i>right</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>primary_key = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Function"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Function(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__CalculatedClause">_CalculatedClause</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Describe a SQL function.</p>
+<p>Extends <tt class="docutils literal"><span class="pre">_CalculatedClause</span></tt>, turn the <em>clauselist</em> into function
+arguments, also adds a <cite>packagenames</cite> argument.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name</i>, <i>*clauses</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append(<i>self</i>, <i>clause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def copy_container(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>key = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__FunctionGateway"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _FunctionGateway(object)</h3>
+    
+    
+    <div class="darkcell"><p>Return a callable based on an attribute name, which then
+returns a <tt class="docutils literal"><span class="pre">_Function</span></tt> object with that name.</p>
+</div>
+    
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__FunctionGenerator"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _FunctionGenerator(object)</h3>
+    
+    
+    <div class="darkcell"><p>Generate <tt class="docutils literal"><span class="pre">_Function</span></tt> objects based on getattr calls.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>engine=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Insert"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Insert(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__UpdateBase">_UpdateBase</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>table</i>, <i>values=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Join"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Join(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    <div class="darkcell"><p>represent a <tt class="docutils literal"><span class="pre">JOIN</span></tt> construct between two <tt class="docutils literal"><span class="pre">FromClause</span></tt>
+elements.</p>
+<p>the public constructor function for <tt class="docutils literal"><span class="pre">Join</span></tt> is the module-level
+<tt class="docutils literal"><span class="pre">join()</span></tt> function, as well as the <tt class="docutils literal"><span class="pre">join()</span></tt> method available
+off all <tt class="docutils literal"><span class="pre">FromClause</span></tt> subclasses.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>left</i>, <i>right</i>, <i>onclause=None</i>, <i>isouter=False</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def alias(<i>self</i>, <i>name=None</i>)</b>
+    <div class="docstring">
+    <p>Create a <tt class="docutils literal"><span class="pre">Select</span></tt> out of this <tt class="docutils literal"><span class="pre">Join</span></tt> clause and return an <tt class="docutils literal"><span class="pre">Alias</span></tt> of it.</p>
+<p>The <tt class="docutils literal"><span class="pre">Select</span></tt> is not correlating.</p>
+
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>encodedname = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>engine = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>name = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def select(<i>self</i>, <i>whereclause=None</i>, <i>fold_equivalents=False</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    <p>Create a <tt class="docutils literal"><span class="pre">Select</span></tt> from this <tt class="docutils literal"><span class="pre">Join</span></tt>.</p>
+<dl class="docutils">
+<dt>whereclause</dt>
+<dd>the WHERE criterion that will be sent to the <tt class="docutils literal"><span class="pre">select()</span></tt> function</dd>
+<dt>fold_equivalents</dt>
+<dd>based on the join criterion of this <tt class="docutils literal"><span class="pre">Join</span></tt>, do not include repeat
+column names in the column list of the resulting select, for columns that
+are calculated to be &quot;equivalent&quot; based on the join criterion of this
+<tt class="docutils literal"><span class="pre">Join</span></tt>. this will recursively apply to any joins directly nested by
+this one as well.</dd>
+<dt>**kwargs</dt>
+<dd>all other kwargs are sent to the underlying <tt class="docutils literal"><span class="pre">select()</span></tt> function.
+See the <tt class="docutils literal"><span class="pre">select()</span></tt> module level function for details.</dd>
+</dl>
+
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Label"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Label(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>represent a label, as typically applied to any column-level element
+using the <tt class="docutils literal"><span class="pre">AS</span></tt> sql keyword.</p>
+<p>this object is constructed from the <tt class="docutils literal"><span class="pre">label()</span></tt> module level function
+as well as the <tt class="docutils literal"><span class="pre">label()</span></tt> method available on all <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>
+subclasses.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name</i>, <i>obj</i>, <i>type=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>key = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>orig_set = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_LoggingClauseVisitor"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class LoggingClauseVisitor(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseVisitor">ClauseVisitor</a>)</h3>
+    
+    
+    <div class="darkcell"><p>extends ClauseVisitor to include debug logging of all traversal.</p>
+<p>To install this visitor, set logging.DEBUG for
+'sqlalchemy.sql.ClauseVisitor' <strong>before</strong> you import the
+sqlalchemy.sql module.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def traverse(<i>self</i>, <i>obj</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_NoColumnVisitor"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class NoColumnVisitor(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseVisitor">ClauseVisitor</a>)</h3>
+    
+    
+    <div class="darkcell"><p>a ClauseVisitor that will not traverse the exported Column
+collections on Table, Alias, Select, and CompoundSelect objects
+(i.e. their 'columns' or 'c' attribute).</p>
+<p>this is useful because most traversals don't need those columns, or
+in the case of ANSICompiler it traverses them explicitly; so
+skipping their traversal here greatly cuts down on method call overhead.</p>
+</div>
+    
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Null"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Null(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent the NULL keyword in a SQL statement.</p>
+<p>Public constructor is the <tt class="docutils literal"><span class="pre">null()</span></tt> function.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Select"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Select(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__SelectBaseMixin">_SelectBaseMixin</a>,<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement, with appendable clauses, as
+well as the ability to execute itself and return a result set.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>columns=None</i>, <i>whereclause=None</i>, <i>from_obj=[]</i>, <i>order_by=None</i>, <i>group_by=None</i>, <i>having=None</i>, <i>use_labels=False</i>, <i>distinct=False</i>, <i>for_update=False</i>, <i>engine=None</i>, <i>limit=None</i>, <i>offset=None</i>, <i>scalar=False</i>, <i>correlate=True</i>)</b>
+    <div class="docstring">
+    <p>construct a Select object.</p>
+<p>The public constructor for Select is the <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_modfunc_select">select()</a> function;
+see that function for argument descriptions.</p>
+
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append_column(<i>self</i>, <i>column</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append_from(<i>self</i>, <i>fromclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append_having(<i>self</i>, <i>having</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append_whereclause(<i>self</i>, <i>whereclause</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def correlate(<i>self</i>, <i>from_obj</i>)</b>
+    <div class="docstring">
+    <p>Given a <tt class="docutils literal"><span class="pre">FROM</span></tt> object, correlate this <tt class="docutils literal"><span class="pre">SELECT</span></tt> statement to it.</p>
+<p>This basically means the given from object will not come out
+in this select statement's <tt class="docutils literal"><span class="pre">FROM</span></tt> clause when printed.</p>
+
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>froms = property()</b>
+         <div class="docstring">
+         <p>A collection containing all elements
+of the <tt class="docutils literal"><span class="pre">FROM</span></tt> clause.</p>
+
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>column_collections=True</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def label(<i>self</i>, <i>name</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def union(<i>self</i>, <i>other</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def union_all(<i>self</i>, <i>other</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__SelectBaseMixin"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _SelectBaseMixin(object)</h3>
+    
+    
+    <div class="darkcell"><p>Base class for <tt class="docutils literal"><span class="pre">Select</span></tt> and <tt class="docutils literal"><span class="pre">CompoundSelects</span></tt>.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def group_by(<i>self</i>, <i>*clauses</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def order_by(<i>self</i>, <i>*clauses</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def select(<i>self</i>, <i>whereclauses=None</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def supports_execution(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_Selectable"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class Selectable(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a column list-holding object.</p>
+<p>this is the common base class of <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnElement">ColumnElement</a>
+and <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>.  The reason <tt class="docutils literal"><span class="pre">ColumnElement</span></tt>
+is marked as a &quot;list-holding&quot; object is so that it can be treated
+similarly to <tt class="docutils literal"><span class="pre">FromClause</span></tt> in column-selection scenarios; it
+contains a list of columns consisting of itself.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>columns = property()</b>
+         <div class="docstring">
+         <p>a <a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ColumnCollection">ColumnCollection</a> containing <tt class="docutils literal"><span class="pre">ColumnElement</span></tt> instances.</p>
+
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def select(<i>self</i>, <i>whereclauses=None</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql_TableClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class TableClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_FromClause">FromClause</a>)</h3>
+    
+    
+    <div class="darkcell"><p>represents a &quot;table&quot; construct.</p>
+<p>Note that this represents tables only as another
+syntactical construct within SQL expressions; it
+does not provide schema-level functionality.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>name</i>, <i>*columns</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def alias(<i>self</i>, <i>name=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def append_column(<i>self</i>, <i>c</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def count(<i>self</i>, <i>whereclause=None</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def delete(<i>self</i>, <i>whereclause=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>column_collections=True</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def insert(<i>self</i>, <i>values=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def join(<i>self</i>, <i>right</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def named_with_column(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>original_columns = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def outerjoin(<i>self</i>, <i>right</i>, <i>*args</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def select(<i>self</i>, <i>whereclause=None</i>, <i>**params</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def update(<i>self</i>, <i>whereclause=None</i>, <i>values=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__TextClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _TextClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Represent a literal SQL text fragment.</p>
+<p>Public constructor is the <tt class="docutils literal"><span class="pre">text()</span></tt> function.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>text=''</i>, <i>engine=None</i>, <i>bindparams=None</i>, <i>typemap=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>columns = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def supports_execution(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+         <div class="darkcell">
+         <A name=""></a>
+         <b>type = property()</b>
+         <div class="docstring">
+         
+         </div> 
+         </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__TypeClause"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _TypeClause(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Handle a type keyword in a SQL statement.</p>
+<p>Used by the <tt class="docutils literal"><span class="pre">Case</span></tt> statement.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>type</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__Update"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _Update(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql__UpdateBase">_UpdateBase</a>)</h3>
+    
+    
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def __init__(<i>self</i>, <i>table</i>, <i>whereclause</i>, <i>values=None</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def accept_visitor(<i>self</i>, <i>visitor</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def get_children(<i>self</i>, <i>**kwargs</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+            
+    
+
+    
+    
+    <A name="docstrings_sqlalchemy.sql__UpdateBase"></a>
+    
+    <div class="sectionL3">
+
+    <h3>class _UpdateBase(<a href="sqlalchemy_sql.html#docstrings_sqlalchemy.sql_ClauseElement">ClauseElement</a>)</h3>
+    
+    
+    <div class="darkcell"><p>Form the base for <tt class="docutils literal"><span class="pre">INSERT</span></tt>, <tt class="docutils literal"><span class="pre">UPDATE</span></tt>, and <tt class="docutils literal"><span class="pre">DELETE</span></tt> statements.</p>
+</div>
+    
+
+                    
+    <div class="darkcell">
+    
+    <A name=""></a>
+    <b>def supports_execution(<i>self</i>)</b>
+    <div class="docstring">
+    
+    </div>
+    </div>
+
+
+    
+
+            <a href="#top">back to section top</a>
+    </div>
+
+
+
+    
+
+    </div>
+
+
+
+
+
+    <div class="bottomnav">
+        
+    <div class="prevnext">
+            Up: <a href="docstrings.html">Generated Documentation</a>
+
+
+            
+            Next: <a href="sqlalchemy_schema.html">module sqlalchemy.schema</a>
+    </div>
+
+    </div>
+
+
+
+
+
+
+
+
+</body>
+</html>
+
+
+
+
+
+

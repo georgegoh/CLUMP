@@ -10,6 +10,7 @@ SET(KUSU_3RDPARTY
   urlgrabber
   wget
   thttpd
+  sqlalchemy
   createrepo
 )
 
@@ -27,6 +28,7 @@ SET(KUSU_MODULES
   kit
   kitops
   buildkit
+  repoman
 )
 
 ## Include Kusu globals
