@@ -460,27 +460,31 @@ class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigato
         """ hotkeyCallback()
         Set callback function
         """
-        
-        self.ExitAction()
-        
+	self.finish()
+	sys.exit(0)
+
     def ExitAction(self, data=None):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
-        
-        if myNodeInfo.quitPrompt:
-            result = self.selector.popupDialogBox(self._("addhost_window_title_exit"), self._("addhost_instructions_exit"), 
-                     (self._("yes_button"), self._("no_button")))
-            if result == "no":
-                return NAV_NOTHING
-            if result == "yes":
-                self.finish()  # Destroy the screens, exit
-                sys.exit(0)
-        else:
-                self.finish()
-                if len(myNodeInfo.nodesInstalled):
-                    pluginActions.plugins_finished()
-                sys.exit(0)
+        self.finish()
+        if len(myNodeInfo.nodesInstalled):
+            pluginActions.plugins_finished()
+        sys.exit(0)
+
+        #if myNodeInfo.quitPrompt:
+        #    result = self.selector.popupDialogBox(self._("addhost_window_title_exit"), self._("addhost_instructions_exit"), 
+        #             (self._("yes_button"), self._("no_button")))
+        #    if result == "no":
+        #        return NAV_NOTHING
+        #    if result == "yes":
+        #        self.finish()  # Destroy the screens, exit
+        #        sys.exit(0)
+        #else:
+        #        self.finish()
+        #        if len(myNodeInfo.nodesInstalled):
+        #            pluginActions.plugins_finished()
+        #        sys.exit(0)
 
 class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
 
