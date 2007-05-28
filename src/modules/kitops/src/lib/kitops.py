@@ -164,8 +164,9 @@ class KitOps:
                 return 0
         return EKITLOC_FAIL
 
-    def isOSKit(self):
-        return path(self.mountpoint / 'isolinux').exists()
+    def getOSDist(self):
+        return DistroFactory(str(self.mountpoint))
+        #return path(self.mountpoint / 'isolinux').exists()
 
     def addKit(self):
         '''perform the add operation on the kit specified 
@@ -446,10 +447,10 @@ class KitOps:
             if status & key:
                 kl.error('Mount fail error: %s', errdict[key])
 
-    def prepareOSKit(self):
+    def prepareOSKit(self, osdistro):
         kit = {} #a struct to hold the kit info for the distro
         #instantiate a distro via the factory
-        osdistro = DistroFactory(str(self.mountpoint)) #distro instance
+        #osdistro = DistroFactory(str(self.mountpoint)) #distro instance
         kit['ver']    = osdistro.getVersion()          #os kit version in the db
         kit['arch']   = osdistro.getArch()             #os kit arch in the db
         kit['name'] = '%s-%s-%s' %(osdistro.ostype, kit['ver'], kit['arch'])

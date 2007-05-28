@@ -160,7 +160,8 @@ def DistroFactory(srcPath):
     for d in distros:
         if d.verifySrcPath():
             return d
-    return DistroInstallSrcBase()
+    # return None if no distro detected
+    return None
 
     
 class CentOS4InstallSrc(DistroInstallSrcBase):

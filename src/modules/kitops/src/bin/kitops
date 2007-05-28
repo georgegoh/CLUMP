@@ -19,6 +19,7 @@ kl = kusulog.getKusuLog('kitops-app')
 
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
+from kusu.boot.distro import DistroInstallSrcBase
 
 KITOP_NONE  = 0x00
 KITOP_ADD   = 0x01
@@ -124,12 +125,13 @@ class KitOpsApp(KusuApp):
         if self.koinst.addKitPrepare() != 0:
             kl.debug('FAIL add preparation; see above fore more info')
             sys.exit(1)
-        isOSKit = self.koinst.isOSKit()
 
-        if isOSKit:
-            rv = self.runAddOSKit()
-        else:
+        media_distro = self.koinst.getOSDist()
+        if not media_distro:
+            # we cannot identify the distro -- treat as ordinary kit
             rv = self.koinst.addKit()
+        else:
+            rv = self.runAddOSKit(media_distro)
 
         if not rv:
             kl.debug('SUCCESS performing add operation')
@@ -138,8 +140,8 @@ class KitOpsApp(KusuApp):
 
         self.koinst.unmountMedia()
 
-    def runAddOSKit(self):
-        rv, kit, osdistro = self.koinst.prepareOSKit()
+    def runAddOSKit(self, osdistro):
+        rv, kit, osdistro = self.koinst.prepareOSKit(osdistro)
 
         if rv:  # we have a non-zero return code
             return rv
