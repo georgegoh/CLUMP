@@ -650,10 +650,10 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
             filep.seek(myNodeInfo.syslogFilePosition, 0)
             data = filep.readlines()
 
-# Mar 26 14:49:53 rocksfe2 dhcpd: DHCPDISCOVER from 00:0c:29:0a:04:38 via eth1
-# Mar 26 14:49:53 rocksfe2 dhcpd: DHCPOFFER on 10.1.1.254 to 00:0c:29:0a:04:38 via eth1
-# Mar 26 14:49:55 rocksfe2 dhcpd: DHCPREQUEST for 10.1.1.254 (10.1.1.1) from 00:0c:29:0a:04:38 via eth1
-# Mar 26 14:49:55 rocksfe2 dhcpd: DHCPACK on 10.1.1.254 to 00:0c:29:0a:04:38 via eth1
+# Mar 26 14:49:53 host dhcpd: DHCPDISCOVER from 00:0c:29:0a:04:38 via eth1
+# Mar 26 14:49:53 host dhcpd: DHCPOFFER on 10.1.1.254 to 00:0c:29:0a:04:38 via eth1
+# Mar 26 14:49:55 host dhcpd: DHCPREQUEST for 10.1.1.254 (10.1.1.1) from 00:0c:29:0a:04:38 via eth1
+# Mar 26 14:49:55 host dhcpd: DHCPACK on 10.1.1.254 to 00:0c:29:0a:04:38 via eth1
 
         for line in data:
              if line.find("dhcpd:") >= 0:
