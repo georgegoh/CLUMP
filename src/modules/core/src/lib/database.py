@@ -8,172 +8,113 @@
 import sqlalchemy as sa
 import os
 from kusu.util.errors import *
-
 import kusu.util.log as kusulog
 import logging
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
-class AppGlobals(object): 
-    def __init__(self, kname, kvalue, ngid):
-        self.kname = kname
-        self.kvalue = kvalue
-        self.ngid = ngid
+class BaseTable(object):
+    cols = []
+    def __init__(self, **kwargs):
+         for col, value in kwargs.items():
+            if col not in self.cols:
+                raise ColummNotFoundError, '%s not found' % col 
+            else:
+                setattr(self, col, value)
 
+    # Does not work for now, since
+    # SA sets some custom stuff.
+    #def __getattr__(self, col, value):
+    #    if col not in self.cols:
+    #        raise NoSuchColumnError, '%s not found' % col 
+    #    else:
+    #        object.__getattr__(self, col, value)
+            
+    #def __setattr__(self, col, value):
+    #    if col not in self.cols:
+    #        raise NoSuchColumnError, '%s not found' % col 
+    #    else:
+    #        object.__setattr__(self, col, value)
+
+class AppGlobals(BaseTable):
+    cols = ['kname', 'kvalue', 'ngid']
     def __repr__(self):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.kname, self.kvalue, self.ngid)
 
-
-class Components(object): 
-    def __init__(self, kid, cname, desc, os):
-        self.kid = kid 
-        self.cname = cname
-        self.cdesc = desc
-        self.os = os
-
+class Components(BaseTable): 
+    cols = ['kid', 'cname', 'desc', 'os']
     def __repr__(self):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.kid, self.cname, self.os)
 
-
-class Kits(object): 
-    def __init__(self, rname, rdesc, version, \
-                 isOS, removeable, arch):
-        self.rname = rname
-        self.rdesc = rdesc
-        self.version = version
-        self.isOS = isOS
-        self.removeable = removeable
-        self.arch = arch
-
+class Kits(BaseTable): 
+    cols = ['rname', 'rdesc', 'version', \
+            'isOS', 'removable', 'arch']
     def __repr__(self):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.rname, self.version, self.arch)
 
-class Modules(object): 
-    def __init_(self, ngid, module, loadorder):
-        self.ngid = ngid
-        self.module = module
-        self.loadorder = loadorder
+class Modules(BaseTable): 
+    cols = ['ngid', 'module', 'loadorder']
 
-class Networks(object): 
-    def __init__(self, network, subnet, device, suffix, \
-                  gateway, options, netname, startip, \
-                  inc, usingdhcp):
-        self.network = network
-        self.subnet = subnet
-        self.device = device
-        self.suffix = suffix
-        self.gateway = gateway
-        self.options = options
-        self.netname = netname
-        self.startip = startip
-        self.inc = inc
-        self.usingdhcp = usingdhcp
+class Networks(BaseTable): 
+    cols = ['network', 'subnet', 'device', 'suffix', \
+            'gateway', 'options', 'netname', 'startip', \
+            'inc', 'usingdhcp']
 
-class NGHasComp(object):
-    def __init__(self, ngid, cid):
-        self.ngid = ngid
-        self.cid = cid
- 
+class NGHasComp(BaseTable):
+    cols = ['ngid', 'cid']
     def __repr__(self):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.cid)
 
-class NGHasNet(object):
-    def __init__(self, ngid, netid):
-        self.ngid = ngid
-        self.netid = netid
+class NGHasNet(BaseTable):
+    cols = ['ngid', 'netid']
 
-class Nics(object):
-    def __init__(self, nid, netid, mac, ip, boot):
-        self.nid = nid
-        self.netid = netid
-        self.mac = mac
-        self.ip = ip
-        self.boot = boot
+class Nics(BaseTable):
+    cols = ['nid', 'netid', 'mac', 'ip', 'boot']
 
-class NodeGroups(object):
-    def __init__(self, repoid, ngname, installtype, \
-                 ngdesc, nameformat, kernel, initrd, \
-                 kparams):
-        self.repoid = repoid
-        self.ngname = ngname
-        self.installtype = installtype
-        self.ngdesc = ngdesc
-        self.nameformat = nameformat
-        self.kernel = kernel
-        self.initrd = initrd
-        self.kparams = kparams
-
+class NodeGroups(BaseTable):
+    cols = ['repoid', 'ngname', 'installtype', \
+            'ngdesc', 'nameformat', 'kernel', 'initrd', \
+            'kparams']
     def __repr__(self):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.ngname, self.repoid)
 
-class Nodes(object):
-    def __init__(self, ngid, name, kernel, initrd, \
-                 kparams, state, bootfrom, lastupdate, \
-                 rack, rank):
-        self.ngid = ngid
-        self.name = name
-        self.kernel = kernel
-        self.initrd = initrd
-        self.kparams = kparamas
-        self.state = state
-        self.bootfrom = bootfrom
-        self.lastupdate = lastupdate
-        self.rack = rack
-        self.rank = rank
-
+class Nodes(BaseTable):
+    cols = ['ngid', 'name', 'kernel', 'initrd', \
+            'kparams', 'state', 'bootfrom', 'lastupdate', \
+            'rack', 'rank']
     def __repr__(self):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.name)
 
-class Packages(object):
-    def __init__(self, ngid, packaagename):
-        self.ngid = ngid
-        self.packagename = packagename
+class Packages(BaseTable):
+    cols = ['ngid', 'packaagename']
 
-class Partitions(object):
-    def __init__(self, ngid, partition, mntpnt, fstype, \
-                 size, options, preserve):
-        self.ngid = ngid
-        self.partition = partition
-        self.mntpnt = mntpnt
-        self.fstype = fstype
-        self.size = suze
-        self.options = options
-        self.preserve = perserve
+class Partitions(BaseTable):
+    cols = ['ngid', 'partition', 'mntpnt', 'fstype', \
+            'size', 'options', 'preserve']
 
-class Repos(object):
-    def __init__(self, reponame, repository, installers, \
-                 ostype):
-        self.reponame = reponame
-        self.repository  = repository 
-        self.installers = installers 
-        self.ostype = ostype
-
+class Repos(BaseTable):
+    cols = ['reponame', 'repository', 'installers', \
+            'ostype']
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.reponame, \
                 self.repository, self.installers, self.ostype)
 
-
-class ReposHaveKits(object):
-    def __init__(self, repoid, kid):
-        self.repoid = repoid
-        self.kid = kid
-
+class ReposHaveKits(BaseTable):
+    cols = ['repoid', 'kid']
     def __repr__(self):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.repoid, self.kid)
 
+class Scripts(BaseTable):
+    cols = ['ngid', 'script']
 
-class Scripts(object):
-    def __init__(self, ngid, script): 
-        self.ngid = ngid 
-        self.script = script
 
 class DB:
 
@@ -310,8 +251,10 @@ class DB:
             dtable['kits'] = sa.Table('kits', self.metadata, autoload=True)
             dmapper['kits'] = sa.mapper(Kits, dtable['kits'], \
                                         properties={'components': sa.relation(Components, entity_name=self.entity_name), \
-                                                'repos': sa.relation(Repos, secondary=dtable['repos_have_kits'], entity_name=self.entity_name)}, \
-                                    entity_name=self.entity_name)
+                                                    'repos': sa.relation(Repos, secondary=dtable['repos_have_kits'], \
+                                                                         entity_name=self.entity_name), \
+                                                    'removable' : dtable['kits'].c.removeable}, \
+                                        entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Modules, self.entity_name)):
             dmapper['modules'] = \

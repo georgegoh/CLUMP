@@ -66,7 +66,7 @@ class TemplateNotFoundError(KusuError): pass
 class CannotAddKitError(KusuError): pass
 
 # core.database
-class NoSuchDBError(Exception): pass
-class NoSuchTableError(Exception): pass
-class UnsupportedDriverError(Exception): pass
-class UsernameNotSpecifiedError(Exception): pass
+class NoSuchDBError(KusuError): pass
+class UnsupportedDriverError(KusuError): pass
+class UsernameNotSpecifiedError(KusuError): pass
+class NoSuchColumnError(KusuError): pass
