@@ -109,7 +109,7 @@ class NetEditApp(object, KusuApp):
         # Parse command options
         self.parseargs()
 
-        # Don't allow option -a -d -c to be used together. Mututually Exclusive.
+        # Don't allow option -a -d -c to be used together. Mutually Exclusive.
         if (not self.nxor(bool(self._options.add), bool(self._options.delete), bool(self._options.change))):
                     if (bool(self._options.add) == False and bool(self._options.delete) == False and bool(self._options.change) == False):
                         pass
