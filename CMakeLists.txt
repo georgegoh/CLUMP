@@ -10,6 +10,7 @@ SET(KUSU_3RDPARTY
   urlgrabber
   wget
   thttpd
+  createrepo
 )
 
 ## Add kusu modules to the build lists

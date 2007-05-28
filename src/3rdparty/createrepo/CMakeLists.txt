@@ -12,20 +12,21 @@ SET(SETUPPY_INSTALL_ARGS)
 SET(SETUPPY_SDIST_ARGS sdist)
 SET(SETUPPY_BDIST_ARGS bdist)
 
+INCLUDE(PatchSource)
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)
 
 #Custom command and targets
-ADD_CUSTOM_TARGET(patch-createrepo
-  COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/createrepo.patch
-  WORKING_DIRECTORY ${SETUPPY_PATH}/src
-)
-
-#Custom command and targets
-ADD_CUSTOM_TARGET(patch-modifyrepo
-  COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/modifyrepo.patch
-  WORKING_DIRECTORY ${SETUPPY_PATH}/src
-)
-
-
-ADD_DEPENDENCIES(build-${PROJECT_NAME} patch-createrepo patch-modifyrepo setuppy-install copy-license)
+# ADD_CUSTOM_TARGET(patch-createrepo
+#   COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/createrepo.patch
+#   WORKING_DIRECTORY ${SETUPPY_PATH}/src
+# )
+# 
+# #Custom command and targets
+# ADD_CUSTOM_TARGET(patch-modifyrepo
+#   COMMAND patch -p0 < ${CMAKE_CURRENT_BINARY_DIR}/custom/${VERSION_STR}/modifyrepo.patch
+#   WORKING_DIRECTORY ${SETUPPY_PATH}/src
+# )
+# 
+# 
+# ADD_DEPENDENCIES(build-${PROJECT_NAME} patch-createrepo patch-modifyrepo setuppy-install copy-license)
