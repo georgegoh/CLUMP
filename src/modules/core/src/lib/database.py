@@ -316,6 +316,10 @@ class DB:
             dmapper['networks'] = \
                     sa.mapper(Networks, sa.Table('networks', self.metadata, autoload=True), entity_name=self.entity_name)
 
+        if not sa.orm.mapper_registry.has_key(ClassKey(Nics, self.entity_name)):
+            dmapper['nics'] = \
+                    sa.mapper(Nics, sa.Table('nics', self.metadata, autoload=True), entity_name=self.entity_name)
+
         if not sa.orm.mapper_registry.has_key(ClassKey(NGHasComp, self.entity_name)):
             dmapper['ng_has_comp'] = \
                     sa.mapper(NGHasComp, sa.Table('ng_has_comp', self.metadata, autoload=True), entity_name=self.entity_name)
@@ -603,7 +607,7 @@ class DB:
 
         session.close()
 
-    def getSession(self):
+    def createSession(self):
         return sa.create_session()
 
     def copyTo(self, other_db):
