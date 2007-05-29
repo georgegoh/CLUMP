@@ -129,8 +129,8 @@ class DB:
                       'networks' : Networks,
                       'nics' : Nics,
                       'ng_has_net' : NGHasNet,
-                      'nodegroups ' : NodeGroups,              
-                      'nodes ' : Nodes,
+                      'nodegroups' : NodeGroups,              
+                      'nodes' : Nodes,
                       'packages' : Packages, 
                       'partitions' : Partitions,
                       'scripts' : Scripts,
@@ -243,9 +243,16 @@ class DB:
             dtable['appglobals'] = sa.Table('appglobals', self.metadata, autoload=True)
             dmapper['appglobals'] = sa.mapper(AppGlobals, dtable['appglobals'], entity_name=self.entity_name)
 
+        if not sa.orm.mapper_registry.has_key(ClassKey(NGHasComp, self.entity_name)):
+            dtable['ng_has_comp'] = sa.Table('ng_has_comp', self.metadata, autoload=True)
+            dmapper['ng_has_comp'] = \
+                    sa.mapper(NGHasComp, dtable['ng_has_comp'], entity_name=self.entity_name)
+              
         if not sa.orm.mapper_registry.has_key(ClassKey(Components, self.entity_name)):
             dtable['components'] = sa.Table('components', self.metadata, autoload=True)
-            dmapper['components'] = sa.mapper(Components, dtable['components'], entity_name=self.entity_name)
+            dmapper['components'] = sa.mapper(Components, dtable['components'], entity_name=self.entity_name, \
+                                        properties={'nodegroups': sa.relation(NodeGroups, secondary=dtable['ng_has_comp'],
+                                                                              entity_name=self.entity_name)})
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Kits, self.entity_name)):
             dtable['kits'] = sa.Table('kits', self.metadata, autoload=True)
@@ -268,17 +275,17 @@ class DB:
             dmapper['nics'] = \
                     sa.mapper(Nics, sa.Table('nics', self.metadata, autoload=True), entity_name=self.entity_name)
 
-        if not sa.orm.mapper_registry.has_key(ClassKey(NGHasComp, self.entity_name)):
-            dmapper['ng_has_comp'] = \
-                    sa.mapper(NGHasComp, sa.Table('ng_has_comp', self.metadata, autoload=True), entity_name=self.entity_name)
-              
         if not sa.orm.mapper_registry.has_key(ClassKey(NGHasNet, self.entity_name)):
             dmapper['ng_has_net'] = \
                     sa.mapper(NGHasNet, sa.Table('ng_has_net', self.metadata, autoload=True), entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(NodeGroups, self.entity_name)):
             dmapper['nodegroups'] = \
-                    sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name)
+                    sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, \
+                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'],
+                                                                    entity_name=self.entity_name)})
+                              # Currently nodegroups <-> components relationship is defined twice.
+                              # Possible to replace this with ingenious backref-fu.
 
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Nodes, self.entity_name)):
