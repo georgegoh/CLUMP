@@ -64,7 +64,7 @@ class TestBaseKit:
         self.kit_ver = '0.1'
 
         self.kusudb = kusudb
-        self.kusudb.create()
+        self.kusudb.createTables()
         self.kusudb.bootstrap()
         self.dbs = self.kusudb.createSession()
 
@@ -74,7 +74,7 @@ class TestBaseKit:
 
     def tearDown(self):
         # destroy the database
-        kusudb.destroy()
+        kusudb.dropTables()
 
         # wipe out installed files
         if self.depot_dir.exists():
