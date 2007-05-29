@@ -18,7 +18,7 @@ class BaseTable(object):
     def __init__(self, **kwargs):
          for col, value in kwargs.items():
             if col not in self.cols:
-                raise ColummNotFoundError, '%s not found' % col 
+                raise NoSuchColumnError, '%s not found' % col 
             else:
                 setattr(self, col, value)
 
@@ -43,7 +43,7 @@ class AppGlobals(BaseTable):
                (self.__class__.__name__, self.kname, self.kvalue, self.ngid)
 
 class Components(BaseTable): 
-    cols = ['kid', 'cname', 'desc', 'os']
+    cols = ['kid', 'cname', 'cdesc', 'os']
     def __repr__(self):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.kid, self.cname, self.os)

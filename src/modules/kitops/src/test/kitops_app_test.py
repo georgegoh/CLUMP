@@ -123,7 +123,7 @@ class TestBaseKit:
                'Description: %s, expected: Base Kit' % kit.rdesc
         assert kit.version == '0.1', 'Version: %s, expected: 0.1' % kit.version
         assert not kit.isOS, 'Expected isOS to be False'
-        assert not kit.removeable, 'Expected removeable to be False'
+        assert not kit.removable, 'Expected removable to be False'
         assert kit.arch == None, 'Arch: %s, expected: NULL/None' % kit.arch
 
         # the base kit has two components
@@ -161,16 +161,13 @@ class TestBaseKit:
     def testDeleteKit(self):
         # insert data into DB
         # create a new kit with removable set to True
-        newkit = db.Kits(self.kit_name, 'Base Kit', '0.1', False, True, None)
+        newkit = db.Kits(rname=self.kit_name, rdesc='Base Kit', version='0.1',
+                         isOS=False, removable=True)
+        newkit.components.append(db.Components(cname='base-node',
+                                    cdesc='Component for Kusu Node Base'))
+        newkit.components.append(db.Components(cname='base-installer',
+                                    cdesc='Component for Kusu Installer Base'))
         self.dbs.save(newkit)
-        self.dbs.flush()    # need to flush here to get newkit.kid
-
-        newcmp = db.Components(newkit.kid, 'base-node',
-                               'Component for Kusu Node Base', None)
-        self.dbs.save(newcmp)
-        newcmp = db.Components(newkit.kid, 'base-installer',
-                               'Component for Kusu Installer Base', None)
-        self.dbs.save(newcmp)
         self.dbs.flush()
 
         # copy RPM files
