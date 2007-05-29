@@ -54,7 +54,7 @@ msgid "next_button"
 msgstr "Next"
 
 msgid "previous_button"
-msgstr "Prev"
+msgstr "Previous"
 
 msgid "new_button"
 msgstr "New"
@@ -340,6 +340,7 @@ msgstr "buildimage [-h|-v| -n node_group {-i image_name} {-t type}]\n\nThe build
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
 
+# Netedit specific messages
 msgid "netedit_window_title_network"
 msgstr "Network Editor"
 
@@ -357,3 +358,151 @@ msgstr "Delete Selected Network"
 
 msgid "Do you want to delete the network '%s'?"
 msgstr "Do you want to delete the network '%s'?"
+
+msgid "netedit_window_title_new"
+msgstr "Create new network"
+
+msgid "netedit_window_title_edit"
+msgstr "Edit existing network"
+
+msgid "netedit_field_network"
+msgstr "Network:"
+
+msgid "netedit_field_subnet"
+msgstr "Subnet:"
+
+msgid "netedit_field_gateway"
+msgstr "Device:"
+
+msgid "netedit_field_startip"
+msgstr "Starting IP:"
+
+msgid "netedit_field_suffix"
+msgstr "Suffix:"
+
+msgid "netedit_field_increment"
+msgstr "Increment:"
+
+msgid "netedit_field_options"
+msgstr "Options:"
+
+msgid "netedit_field_description"
+msgstr "Description:"
+
+msgid "netedit_field_dhcp"
+msgstr "Use DHCP"
+
+msgid "netedit_validate_network"
+msgstr "The network is not valid. Please try a different network value"
+
+msgid "netedit_validate_subnet"
+msgstr "The subnet is not valid. Please try a different subnet value"
+
+msgid "netedit_validate_gateway"
+msgstr "The gateway is not valid. Please try a different gateway value"
+
+msgid "netedit_validate_startip"
+msgstr "The start ip is not valid. Please try a different start ip value"
+
+msgid "netedit_validate_inc_not_zero"
+msgstr "The incremental number cannot be 0"
+
+msgid "netedit_validate_inc_not_empty"
+msgstr "The incremental number cannot be empty"
+
+msgid "netedit_validate_inc_not_number"
+msgstr "The incremental value is not a number"
+
+msgid "netedit_validate_device"
+msgstr "The device value cannot be empty"
+
+msgid "netedit_validate_gateway_on_network"
+msgstr "The gateway specified does not reside on the network. Please try a different network value"
+
+msgid "netedit_validate_startip_on_network"
+msgstr "The starting IP specified does not reside on the network. Please try a different starting IP address"
+
+msgid "netedit_version_usage"
+msgstr "Display version of tool"
+
+msgid "netedit_listnetworks_usage"
+msgstr "Display a list of networks"
+
+msgid "netedit_delete_usage"
+msgstr "Delete a network"
+
+msgid "netedit_add_usage"
+msgstr "Add a network"
+
+msgid "netedit_change_usage"
+msgstr "Change an existing network"
+
+msgid "netedit_oldnet_usage"
+msgstr "Old network value to change"
+
+msgid "netedit_oldsubnet_usage"
+msgstr "Old subnet value to change"
+
+msgid "netedit_network_usage"
+msgstr "Network to use when adding, deleting or changing a network entry"
+
+msgid "netedit_subnet_usage"
+msgstr "Subnet to use when adding, deleting or changing a network entry"
+
+msgid "netedit_interface_usage"
+msgstr "Interface to use when adding or changing a network entry"
+
+msgid "netedit_increment_usage"
+msgstr "IP increment value. This may be a positive or negative number. If not specified defaults to 1"
+
+msgid "netedit_startip_usage"
+msgstr "Specify the starting IP value"
+
+msgid "netedit_suffix_usage"
+msgstr "Hostname suffix to use when adding or changing a network entry"
+
+msgid "netedit_gateway_usage"
+msgstr "Gateway to use when adding or changing a network entry"
+
+msgid "netedit_options_usage"
+msgstr "Options to use for this network, i.e, bonding interfaces"
+
+msgid "netedit_description_usage"
+msgstr "Description of the network entry"
+
+msgid "netedit_dhcp_usage"
+msgstr "Specify to enable or disable using DHCP. By default disabled"
+
+msgid "netedit_options_exclusive"
+msgstr "The options -a, -d and -c and -l are mutually exclusive"
+
+msgid "netedit_options_add_options_needed"
+msgstr "The -a option needs the -n, -s, -i, -t and -g options specified"
+
+msgid "netedit_options_delete_options_needed"
+msgstr "The -d option needs the -n and -s options specified"
+
+msgid "netedit_options_change_options_needed"
+msgstr "The -c option needs the -w, -u, -n, -s, -g and -t options specified"
+
+msgid "netedit_options_required_options"
+msgstr "Can only specify -a -c -l and -d as command options"
+
+msgid "netedit_list_network_field"
+msgstr "Network"
+
+msgid "netedit_list_subnet_field"
+msgstr "Subnet"
+
+msgid "netedit_list_description_field"
+msgstr "Network Description"
+
+msgid "Deleting network: %s"
+msgstr "Deleting network: %s"
+
+msgid "netedit_error_invalid_network"
+msgstr "ERROR:  The subnet or network values specified are invalid"
+
+msgid "The network '%s' is in use. If you wish to delete this, please use the node group editor"
+msgstr "The network '%s' is in use. If you wish to delete this, please use the node group editor"
+
