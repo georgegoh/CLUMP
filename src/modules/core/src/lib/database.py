@@ -11,6 +11,11 @@ from kusu.util.errors import *
 import kusu.util.log as kusulog
 import logging
 
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
 class BaseTable(object):
@@ -144,6 +149,13 @@ class DB:
         """Initialize the database with the corrrect driver and account
            details"""
 
+        self.driver = driver
+        self.db = db
+        self.username = username
+        self.password = password
+        self.host = host
+        self.port = port
+        
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
 
@@ -561,6 +573,58 @@ class DB:
         session.flush()
 
         session.close()
+
+    def createDatabase(self):
+        if self.driver == 'mysql':
+            try:
+                if self.password:
+                    cmd = 'mysql -u %s -p %s -e "create database %s;"' % \
+                          (self.username, self.password, self.db)
+                else:
+                    cmd = 'mysql -u %s -e "create database %s;"' % \
+                          (self.username, self.db)
+
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+            except:
+                raise CommandFailedToRun
+
+            if retcode:
+                raise FailedToCreateDatabase, 'Unable to create database: %s' % self.db
+
+        else:
+            raise NotSupportedDatabaseCreationError, 'Database creation not supported for %s' % self.driver
+
+
+    def dropDatabase(self):
+        if self.driver == 'mysql':
+            try:
+                if self.password:
+                    cmd = 'mysql -u %s -p %s -e "drop database %s;"' % \
+                          (self.username, self.password, self.db)
+                else:
+                    cmd = 'mysql -u %s -e "drop database %s;"' % \
+                          (self.username, self.db)
+
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+            except:
+                raise CommandFailedToRun
+
+            if retcode:
+                raise FailedToDropDatabase, 'Unable to drop database: %s' % self.db
+
+        else:
+            raise NotSupportedDatabaseCreationError, 'Database creation not supported for %s' % self.driver
+
 
     def createSession(self):
         return sa.create_session()

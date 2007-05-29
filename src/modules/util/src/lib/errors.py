@@ -70,3 +70,6 @@ class NoSuchDBError(KusuError): pass
 class UnsupportedDriverError(KusuError): pass
 class UsernameNotSpecifiedError(KusuError): pass
 class NoSuchColumnError(KusuError): pass
+class NotSupportedDatabaseCreationError(KusuError): pass
+class FailedToCreateDatabase(KusuError): pass
+class FailedToDropDatabase(KusuError): pass
