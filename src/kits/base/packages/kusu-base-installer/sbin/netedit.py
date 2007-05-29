@@ -42,25 +42,24 @@ NAV_QUIT = 2
 NOCANCEL    = 0
 ALLOWCANCEL = 1
 
-class NetworkData(object):
-    def __init__(self):
-        self.networkListbox = None
+global selectedNetwork
+selectedNetwork = None
 
-global dataGlobal
-dataGlobal = NetworkData()
-
-class NetworkRecord(object):
-    def __init__(self, network, subnet, gateway, startip, inc, device, suffix, option, description, dhcp, windowInstance):
-        self._network_field = network
-        self._subnet_field = subnet
-        self._gateway_field = gateway
-        self._startip_field = startip
-        self._inc_field = inc
-        self._device_field = device
-        self._suffix_field = suffix
-        self._option_field = option
-        self._description_field = description
-        self._dhcp_checkbox = dhcp
+class NetworkRecord(object):        
+    def __init__(self, networkentryinfo=None, windowInstance=None):
+    
+        if networkentryinfo:
+            self._network_field = networkentryinfo[0]
+            self._subnet_field = networkentryinfo[1]
+            self._gateway_field = networkentryinfo[2]
+            self._startip_field = networkentryinfo[3]
+            self._inc_field = networkentryinfo[4]
+            self._device_field = networkentryinfo[5]
+            self._suffix_field = networkentryinfo[6]
+            self._option_field = networkentryinfo[7]
+            self._description_field = networkentryinfo[8]
+            self._dhcp_checkbox = networkentryinfo[9]
+    
         self._thisWindow = windowInstance
         self._database = KusuDB()
         self._ = self._thisWindow._  # get i18n handle.
@@ -68,20 +67,22 @@ class NetworkRecord(object):
     def validateNetworkEntry(self):
         # Validate if the value is in IP format. 
         if not kusu.ipfun.validIP(self._network_field): 
-            self._thisWindow.networkEntry.setEntry('')
+            if self._thisWindow:
+                self._thisWindow.networkEntry.setEntry('')
             return False, 'The network field is not valid. Please fix the network field\n\n'
             
-        if not kusu.ipfun.validIP(self._subnet_field):    
-            self._thisWindow.subnetEntry.setEntry('')
+        if not kusu.ipfun.validIP(self._subnet_field):
+            if self._thisWindow:
+                self._thisWindow.subnetEntry.setEntry('')
             return False, 'The subnet field is not valid. Please fix the subnet field\n\n'
    
         if not kusu.ipfun.validIP(self._gateway_field):
-            if not self._network_field and not self._subnet_field:
-                self._thisWindow.gatewayEntry.setEntry('')
+            if not self._network_field and not self._subnet_field and self._thisWindow:
+                    self._thisWindow.gatewayEntry.setEntry('')
             return False, 'The gateway field is not valid. Please fix the gateway field\n\n'
    
         if not kusu.ipfun.validIP(self._startip_field):
-            if not self._network_field and not self._subnet_field:
+            if not self._network_field and not self._subnet_field and self._thisWindow:
                 self._thisWindow.startIPEntry.setEntry('')
             return False, 'The start ip field is not valid. Please fix the start ip field\n\n'
             
@@ -89,12 +90,14 @@ class NetworkRecord(object):
         try:
             result = int(self._inc_field)
             if result == 0:
-                self._thisWindow.incEntry.setEntry('')
+                if self._thisWindow:
+                    self._thisWindow.incEntry.setEntry('')
                 return False, 'The incremental field cannot be 0\n\n'
         except:
             if len(self._inc_field) == 0:
                 return False, 'The incremental field cannot be empty\n\n'
-            self._thisWindow.incEntry.setEntry('')
+            if self._thisWindow:
+                self._thisWindow.incEntry.setEntry('')
             return False, 'The incremental field is not a number\n\n'
             
         # Device field cannot be empty.
@@ -115,8 +118,9 @@ class NetworkRecord(object):
             try:
                 self._database.connect('kusudb', 'apache')
             except:
-                self._thisWindow.finish()
-                print self._("DB_Query_Error\n")
+                if self._thisWindow:
+                    self._thisWindow.finish()
+                print self._("!!!DB_Query_Error\n")
                 sys.exit(-1)
             
             # XXX: Incremental schema field is broken in database does not store negative numbers yet.
@@ -128,17 +132,19 @@ class NetworkRecord(object):
                     int(self._dhcp_checkbox), int(currentItem))
             try:
                 self._database.execute(query)
-            except: 
-                self._thisWindow.finish()
-                print self._("DB_Query_Error\n")
+            except:
+                if self._thisWindow:
+                    self._thisWindow.finish()
+                print self._("AAADB_Query_Error\n")
                 sys.exit(-1)
                 
     def insertNetworkEntry(self):
         try:
             self._database.connect('kusudb', 'apache')
         except:
-            self._thisWindow.finish()
-            print self._("DB_Query_Error\n")
+            if self._thisWindow:
+                self._thisWindow.finish()
+            print self._("GGGDB_Query_Error\n")
             sys.exit(-1)
             
         query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp) VALUES \
@@ -148,8 +154,44 @@ class NetworkRecord(object):
         try:
             self._database.execute(query)
         except:
-            self._thisWindow.finish()
-            print self._("DB_Query_Error\n")
+            if self._thisWindow:
+                self._thisWindow.finish()
+            print self._("####DB_Query_Error\n")
+            sys.exit(-1)
+            
+            
+    def checkNetworkEntry(self, currentItem):
+        self._database.connect('kusudb', 'apache')
+        # Check if the network selected is not in use.
+        netuse = 0
+        query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(currentItem[0])
+
+        try:
+            self._database.execute(query)
+            netuse = self._database.fetchone()[0]
+        except:
+            if self._thisWindow:
+                self._thisWindow.finish()
+            print self._("!!!DB_Query_Error\n")
+            sys.exit(-1)
+            
+        if int(netuse) == 0:
+                return True, 'Success'
+        else:
+            return False, self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currentItem[1])
+            
+    def getNetworkList(self):   
+        self._database.connect()
+        networkInfo = None
+        query = "SELECT netid, network, subnet, netname FROM networks ORDER BY netid"
+        try:
+            self._database.execute(query)
+            networkInfo = self._database.fetchall()
+            return networkInfo
+        except:
+            if self._thisWindow:
+                self._thisWindow.finish()
+            print self._("***DB_Query_Error\n")
             sys.exit(-1)
     
 class NetEditApp(object, KusuApp):
@@ -175,8 +217,8 @@ class NetEditApp(object, KusuApp):
 
         self.parser.add_option("-v", "--version", action="callback",
                                 callback=self.toolVersion, help=self._kusuApp._("netedit_version_usage"))
-        self.parser.add_option("-l", "--list-networks", action="store",
-                                type="string", dest="listnetworks", help=self._kusuApp._("netedit_listnetworks_usage"))
+        self.parser.add_option("-l", "--list-networks", action="store_true",
+                                dest="listnetworks", help=self._kusuApp._("netedit_listnetworks_usage"))
         self.parser.add_option("-d", "--delete", action="store_true",
                                 dest="delete", help=self._kusuApp._("netedit_delete_usage"))
         self.parser.add_option("-a", "--add", action="store_true",
@@ -209,16 +251,32 @@ class NetEditApp(object, KusuApp):
         """run()
         Run the application """
 
+        
         # Parse command options
         self.parseargs()
 
-        # Don't allow option -a -d -c to be used together. Mutually Exclusive.
-        if (not self.nxor(bool(self._options.add), bool(self._options.delete), bool(self._options.change))):
-                    if (bool(self._options.add) == False and bool(self._options.delete) == False and bool(self._options.change) == False):
+        # Don't allow option -a -d -c -l to be used together. Mutually Exclusive.
+        if (not self.nxor(bool(self._options.add), bool(self._options.delete), bool(self._options.change), bool(self._options.listnetworks))):
+                    if (bool(self._options.add) == False and bool(self._options.delete) == False and bool(self._options.change) == False \
+                    and bool(self._options.listnetworks) == False):
                         pass
                     else:
                         self.parser.error(self._kusuApp._("netedit_options_exclusive"))
 
+        # Handle -l option
+        if self._options.listnetworks:
+            netrec = NetworkRecord()
+            networkList = netrec.getNetworkList()
+            
+            print "Current defined Networks"
+            print "========================\n"
+            for nid, net,sub,netname in networkList:
+                # If string is too long, show ellipsis.
+                if len(netname) > 46: 
+                    netname = netname[:43] + "..."
+            print "%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10))
+            sys.exit(0)
+            
         # Handle -w option
         if self._options.oldnet:
             print "DEBUG: OLD NETWORK: %s" % self._options.oldnet
@@ -290,7 +348,7 @@ class NetEditApp(object, KusuApp):
         if self._options.change == True:
             if not self._options.oldnet or not self._options.oldsubnet:
                 self.parser.error(self._kusuApp._("netedit_options_change_options_needed"))
-
+        
         if len(sys.argv[1:]) > 0:
             print "Check if -a -d -c used otherwise usage()!"
             if (not bool(self._options.add) or not bool(self._options.delete) or not bool(self._options.change)):
@@ -354,12 +412,12 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
                 self.suffixEntry.setEntry("-%s" % dev)
     
     def drawImpl(self):
-        global dataGlobal
-        selectedNetwork = dataGlobal.networkListbox.current()[0]
-        self.networkRecord = None   
+        global selectedNetwork
+        self.networkRecord = None
         # Get the record to edit
+        self.database.connect()
         query = "SELECT network, subnet, gateway, device, startip, suffix, inc, options, netname, usingdhcp FROM networks WHERE netid = %d" % \
-                int(selectedNetwork)
+                int(selectedNetwork.current()[0])
 
         try:
             self.database.execute(query)
@@ -415,9 +473,19 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
     def validate(self):
 
         if self.noValidate:
-            modifiedRecord = NetworkRecord(self.networkEntry.value().strip(), self.subnetEntry.value().strip(), self.gatewayEntry.value().strip(), \
-            self.startIPEntry.value().strip(), self.incEntry.value().strip(), self.deviceEntry.value().strip(), \
-            self.suffixEntry.value().strip(), self.optionEntry.value().strip(), self.descEntry.value().strip(), self.dhcpCheck.value(), self)
+            networkEntryInfo = []
+            networkEntryInfo.append(self.networkEntry.value().strip())
+            networkEntryInfo.append(self.subnetEntry.value().strip())
+            networkEntryInfo.append(self.gatewayEntry.value().strip())
+            networkEntryInfo.append(self.startIPEntry.value().strip())
+            networkEntryInfo.append(self.incEntry.value().strip())
+            networkEntryInfo.append(self.deviceEntry.value().strip())
+            networkEntryInfo.append(self.suffixEntry.value().strip())
+            networkEntryInfo.append(self.optionEntry.value().strip())
+            networkEntryInfo.append(self.descEntry.value().strip())
+            networkEntryInfo.append(self.dhcpCheck.value())
+            
+            modifiedRecord = NetworkRecord(networkEntryInfo, self)
             
             result, errorMsg = modifiedRecord.validateNetworkEntry()
             # Validate if the value is in IP format. 
@@ -426,9 +494,8 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
                 return False, errorMsg
         
         if self.noValidate:
-            global dataGlobal
-            selectedNetwork = dataGlobal.networkListbox.current()[0]
-            modifiedRecord.updateNetworkEntry(selectedNetwork)            
+            global selectedNetwork
+            modifiedRecord.updateNetworkEntry(selectedNetwork.current()[0])            
         return True, 'Success'
         
 class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
@@ -514,10 +581,20 @@ class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navig
         self.deviceEntry.setCallback(self.guessDeviceSuffix)
         
     def validate(self):
-        if self.noValidate:            
-            modifiedRecord = NetworkRecord(self.networkEntry.value().strip(), self.subnetEntry.value().strip(), self.gatewayEntry.value().strip(), \
-            self.startIPEntry.value().strip(), self.incEntry.value().strip(), self.deviceEntry.value().strip(), \
-            self.suffixEntry.value().strip(), self.optionEntry.value().strip(), self.descEntry.value().strip(), self.dhcpCheck.value(), self)
+        if self.noValidate:
+            networkEntryInfo = []
+            networkEntryInfo.append(self.networkEntry.value().strip())
+            networkEntryInfo.append(self.subnetEntry.value().strip())
+            networkEntryInfo.append(self.gatewayEntry.value().strip())
+            networkEntryInfo.append(self.startIPEntry.value().strip())
+            networkEntryInfo.append(self.incEntry.value().strip())
+            networkEntryInfo.append(self.deviceEntry.value().strip())
+            networkEntryInfo.append(self.suffixEntry.value().strip())
+            networkEntryInfo.append(self.optionEntry.value().strip())
+            networkEntryInfo.append(self.descEntry.value().strip())
+            networkEntryInfo.append(self.dhcpCheck.value())
+            
+            modifiedRecord = NetworkRecord(networkEntryInfo, self)
             
             result, errorMsg = modifiedRecord.validateNetworkEntry()
             # Validate if the value is in IP format. 
@@ -571,33 +648,22 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         return NAV_NOTHING
     
     def deleteAction(self, data=None):
-        self.database.connect('kusudb', 'apache')
-        # Check if the network selected is not in use.
-        netuse = 0
-        global dataGlobal
-        netInfo = dataGlobal.networkListbox.current().split()
-        query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(netInfo[0])
+        networkList = NetworkRecord(windowInstance=self)
+        currNetwork = self.networkListbox.current().split()
+        result, errorMsg = networkList.checkNetworkEntry(currNetwork)
 
-        try:
-            self.database.execute(query)
-            netuse = self.database.fetchone()[0]
-        except: 
-            self.finish()
-            print self._("DB_Query_Error\n")
-            sys.exit(-1)
-
-        if int(netuse) == 0:
+        if result:
             # Prompt for delete dialog.
-            result = self.selector.popupDialogBox(self._("netedit_window_title_delete"), 
-                    self._("Do you want to delete the network '%s'?") % netInfo[1], (self._("yes_button"), self._("no_button")))
-            if result == "no":
+            prompt = self.selector.popupDialogBox(self._("netedit_window_title_delete"), 
+                    self._("Do you want to delete the network '%s'?") % currNetwork[1], (self._("yes_button"), self._("no_button")))
+            if prompt == "no":
                 return NAV_NOTHING
-            if result == "yes":
-                self.database.execute("DELETE FROM networks WHERE netid = %d" % int(netInfo[0]))
+            if prompt == "yes":
+                self.database.connect('kusudb', 'apache')
+                self.database.execute("DELETE FROM networks WHERE netid = %d" % int(currNetwork[0]))
                 return NAV_NOTHING
         else:
-            self.selector.popupMsg(self._("netedit_window_title_delete"), 
-            self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor.\n\n" % netInfo[1]))
+            self.selector.popupMsg(self._("netedit_window_title_delete"), errorMsg)
             return NAV_NOTHING
             
     def exitAction(self, data=None):
@@ -616,38 +682,25 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
-        global dataGlobal
         # Disable Navigator 'Finish' button, since it's in wrong button order.
         self.selector.disableQuitButton()
-
-        try:
-            self.database.connect()
-        except:
-            self.finish()
-            print self._("DB_Query_Error\n")
-            sys.exit(-1)
-
-        query = "SELECT netid, network, subnet, netname FROM networks ORDER BY netid"
-        try:
-            self.database.execute(query)
-            networkInfo = self.database.fetchall()
-        except:
-            self.finish()
-            print self._("DB_Query_Error\n")
-            return
-            sys.exit(-1)
+        
+        networkList = NetworkRecord(windowInstance=self)
+        networkInfo = networkList.getNetworkList()
 
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(80, 3, self._(self.msg), scroll=0, wrap=0)
-        dataGlobal.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
-        for nid, net,sub,netname in networkInfo:
+        global selectedNetwork
+        self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
+        selectedNetwork = self.networkListbox
+        for nid,net,sub,netname in networkInfo:
             # If string is too long, show ellipsis.
             if len(netname) > 46: 
                netname = netname[:43] + "..."
 
-            dataGlobal.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
+            self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
-        self.screenGrid.setField(dataGlobal.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
+        self.screenGrid.setField(self.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
