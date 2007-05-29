@@ -615,13 +615,6 @@ if __name__ == '__main__':
     session.save(ReposHaveKits(kid=myKit.kid, repoid=anotherRepo.repoid))
     session.flush()
      
-    for table in k.table_dict.keys():
-        query = session.query(getattr(k, table))
-        for row in query.select():
-            print row
-   
-    print
-    print
     # all the nodegroups of all repos
     for repo in session.query(k.repos).select():
         print repo
