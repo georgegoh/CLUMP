@@ -42,7 +42,7 @@ class Button(snack.Button):
                 return NAV_NOTHING
 
 
-class LabelledEntry(snack.Grid):
+class LabelledEntry(snack.Widget, snack.Grid):
     label = None
     entry = None
     labelTxt = ''
@@ -98,6 +98,9 @@ class LabelledEntry(snack.Grid):
         self.labelTxt = labelTxt
         self.label = snack.Label(labelTxt)
         self.entry = snack.Entry(width, text, hidden, password, scroll, returnExit)
+
+        # Add hook to use snack setCallback() for hot text events.
+        self.w = self.entry
         self.setField(self.label, col=0, row=0, anchorLeft=1)
         self.setField(self.entry, col=1, row=0, anchorRight=1)
 
