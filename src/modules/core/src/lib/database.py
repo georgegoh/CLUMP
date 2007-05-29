@@ -152,21 +152,21 @@ class DB:
 
         if driver == 'sqlite':
             if db:
-                self.engine_src = 'sqlite:///%s' % db
+                engine_src = 'sqlite:///%s' % db
             else:
-                self.engine_src = 'sqlite://'   # in-memory database
+                engine_src = 'sqlite://'   # in-memory database
 
         elif driver == 'mysql':
             if not port:
                 port = '3306'
 
-            self.engine_src = 'mysql://'
+            engine_src = 'mysql://'
 
             if username:
-                self.engine_src += username
+                engine_src += username
             else:
                 import pwd
-                self.engine_src += pwd.getpwuid(os.getuid())[0]
+                engine_src += pwd.getpwuid(os.getuid())[0]
 
             apache_password = ''
             if username == 'apache':
@@ -175,9 +175,9 @@ class DB:
                 password = apache_password
                 
             if password:
-                self.engine_src += ':%s@%s:%s/%s' % (password, host, port, db)
+                engine_src += ':%s@%s:%s/%s' % (password, host, port, db)
             else:
-                self.engine_src += '@%s:%s/%s' % (host, port, db)
+                engine_src += '@%s:%s/%s' % (host, port, db)
  
         #elif driver == 'postgres':
         #    if not port:
@@ -197,7 +197,7 @@ class DB:
         self.port = port
         self.entity_name = entity_name
         
-        self.metadata = sa.BoundMetaData(self.engine_src, \
+        self.metadata = sa.BoundMetaData(engine_src, \
                                          poolclass=sa.pool.SingletonThreadPool)
         self._defineTables()
 
@@ -658,6 +658,7 @@ class DB:
         other_db.createTables()
 
         for table in self.tables:
+            print table
             for obj in session.query(getattr(self, table)).select():
                 try:
                     session.expunge(obj)
