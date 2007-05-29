@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id:$
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #
@@ -26,6 +26,7 @@ import string
 from kusu.kusuapp import KusuApp
 from kusu.kusudb import KusuDB
 from kusu.cfms import PackBuilder
+from kusu.cfmnet import CFMNet
 
 
 class UpdateApp(KusuApp):

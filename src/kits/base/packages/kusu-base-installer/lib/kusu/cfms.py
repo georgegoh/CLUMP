@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id:$
+# $Id$
 
 # cfms.py - The Cluster File Management Server library 
 
@@ -79,6 +79,39 @@ class PackBuilder:
                 self.nodegrplst[name] = ngid
 
 
+    def getInstallers(self):
+        """getInstallers - Get a list of all of the available installer IP's"""
+        query = ('select nics.ip from nics, nodes, nodegroups where '
+                 'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid '
+                 'and nodegroups.ngname="Installer"')
+        installers = []
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+                 
+        if data:
+            for line in data:
+                installers.append(line[0])
+                
+
+    def getBroadcasts(self):
+        """getBroadcasts - Get a list of all of the available netowk broadcast addresses"""
+        query = ('select network, subnet from networks')
+
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+                 
+        if data:
+            for line in data:
+
+        
     def genFileList(self):
         """__genFileList - Generate the cfmfiles.lst file.  This file contains a list
         of all the files managed by the CFM. """

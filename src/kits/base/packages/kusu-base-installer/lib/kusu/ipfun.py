@@ -108,7 +108,13 @@ def onNetwork(network, subnet, ip):
 def getNetwork(ip, subnet):
     """getNetwork - Get the network address given and IP, and the subnet mask"""
     netnum = ip2number(ip) & ip2number(subnet)
-    return number2ip(newIPnum)
+    return number2ip(netnum)
+
+
+def getBroadcast(ip, subnet):
+    """getBroadcast- Get the broadcast address given and IP, and the subnet mask"""
+    bcnum = ip2number(ip) | (~ip2number(subnet))
+    return number2ip(bcnum)
 
     
 def unittest():
