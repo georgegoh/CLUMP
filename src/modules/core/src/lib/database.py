@@ -188,12 +188,12 @@ class DB:
             else:
                 self.engine_src += '@%s:%s/%s' % (host, port, db)
  
-        elif driver == 'postgres':
-            if not port:
-                port = '5432'
-
-            self.engine_src = 'postgres://%s:%s@%s:%s/%s' % \
-                              (username, password, host, port, db)
+        #elif driver == 'postgres':
+        #    if not port:
+        #        port = '5432'
+        #
+        #    self.engine_src = 'postgres://%s:%s@%s:%s/%s' % \
+        #                      (username, password, host, port, db)
 
         else:
             raise UnsupportedDriverError, 'Invalid driver: %s' % driver
