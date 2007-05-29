@@ -549,8 +549,8 @@ class DB:
             # Bad idea to use [0] as the kit name is not unique
         #    session.save(ReposHaveKits(aRepo.repoid, aKit[0].kid))
 
-        session.save(NodeGroups(None, 'installer', '', '', '', '', '' ,''))
-        session.save(NodeGroups(None, 'compute', '', '', '', '', '' ,''))
+        session.save(NodeGroups(ngname='installer'))
+        session.save(NodeGroups(ngname='compute'))
         session.flush()
 
         session.close()
@@ -587,29 +587,32 @@ if __name__ == '__main__':
 
     session = sa.create_session()
 
-    session.save(AppGlobals('kname1', 'kvalue1', 'ngid1'))
-    session.save(AppGlobals('kname2', 'kvalue2', 'ngid2'))
-    session.save(AppGlobals('kname3', 'kvalue3', 'ngid3'))
+    session.save(AppGlobals(kname='kname1', kvalue='kvalue1', ngid='ngid1'))
+    session.save(AppGlobals(kname='kname2', kvalue='kvalue2', ngid='ngid2'))
+    session.save(AppGlobals(kname='kname3', kvalue='kvalue3', ngid='ngid3'))
     
-    myKit = Kits('fedora-6-i386', 'OS kit for fedora 6 i386', '6', True, False, 'i386')
-    myKit.components.append(Components(None, 'A component', '', 'os'))
+    myKit = Kits(rname='fedora-6-i386', rdesc='OS kit for fedora 6 i386',
+                 version='6', isOS=True, removable=False, arch='i386')
+    myKit.components.append(Components(cname='A component', os='os'))
     session.save(myKit)
     session.flush()
 
-    myRepo = Repos('default-repo', '', 'example.com', 'fedora-6-i386')
-    anotherRepo = Repos('another-repo', '', 'example.org', 'fedora-6-x86_64')
+    myRepo = Repos(reponame='default-repo', installers='example.com',
+                   ostype='fedora-6-i386')
+    anotherRepo = Repos(reponame='another-repo', installers='example.org',
+                   ostype='fedora-6-x86_64')
     session.save(myRepo)
     session.flush()
     
-    session.save(NodeGroups(myRepo.repoid, 'myNodeGroup1', '', '', '', '', '' ,''))
-    session.save(NodeGroups(myRepo.repoid, 'myNodeGroup2', '', '', '', '', '' ,''))
+    session.save(NodeGroups(repoid=myRepo.repoid, ngname='myNodeGroup1'))
+    session.save(NodeGroups(repoid=myRepo.repoid, ngname='myNodeGroup2'))
 
-    anotherRepo.nodegroups.append(NodeGroups(None, 'myNodeGroup3', '', '', '', '', '' ,''))
+    anotherRepo.nodegroups.append(NodeGroups(ngname='myNodeGroup3'))
     session.save(anotherRepo)
     session.flush()
 
-    session.save(ReposHaveKits(myKit.kid, myRepo.repoid))
-    session.save(ReposHaveKits(myKit.kid, anotherRepo.repoid))
+    session.save(ReposHaveKits(kid=myKit.kid, repoid=myRepo.repoid))
+    session.save(ReposHaveKits(kid=myKit.kid, repoid=anotherRepo.repoid))
     session.flush()
      
     for table in k.table_dict.keys():
