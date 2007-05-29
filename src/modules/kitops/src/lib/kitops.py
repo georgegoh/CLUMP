@@ -32,7 +32,6 @@ import subprocess
 from path import path
 
 import kusu.core.database as db
-from kusu.core.db import KusuDB
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
@@ -70,18 +69,23 @@ class KitOps:
         self.medialoc = None
         self.MediaDevice = None
         self.__tmpmntdir = None
-        self.__db = KusuDB()
+        self.__db = None
+
+        if 'db' in kw:
+            self.__db = kw['db']
 
         self.prefix = path(kw.get('prefix', os.environ.get('KUSU_ROOT', '/')))
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
-        try:
-            #self.__db.connect('kusudb','apache')
-            self.__db.connect('test')
-        except Exception,msg:
-            kl.error('Connection to DB failed: %s', msg)
-            sys.exit(EDB_FAIL)
+    def setKitname(self, kitname):
+        self.kitname = kitname
+
+    def setKitmedia(self, kitmedia):
+        self.kitmedia = kitmedia
+
+    def setDB(self, db):
+        self.__db = db
 
     def setPrefix(self, prefix):
         """
@@ -221,21 +225,15 @@ class KitOps:
         dstP.communicate()
 
         # 2. populate the kit DB table with info
-        query = "insert into kits (rname,rdesc,version) values \
-            ('%s','%s','%s')" % (kit['name'], kit['sum'], kit['ver'])
-
-        try:
-            rv = self.__db.execute(query)
-            kl.debug('Kit table udpate rv: %s', rv)
-        except Exception,msg:
-            kl.debug('FAIL query: %s, message: %s', query, msg)
-            return EKITADD_FAIL
+        session = self.__db.createSession()
+        newkit = db.Kits(rname=kit['name'], rdesc=kit['sum'],
+                         version=kit['ver'])
+        session.save(newkit)
+        session.flush()
+        session.close()
 
         #extract the kit id to associate with components
-        query = "select kid from kits where rname='%s' and version='%s'" % \
-                (kit['name'], kit['ver'])
-        self.__db.execute(query)
-        kit['kid'], = self.__db.fetchone()
+        kit['kid'] = newkit.kid
         kl.debug('Addkit kid: %s', kit['kid'])
 
         # 3. install the kit RPM
@@ -249,7 +247,7 @@ class KitOps:
             return EKITADD_FAIL
 
         # 4. check/populate component table
-        self.updateComponents(kit)
+        self.updateComponents(newkit)
 
         return 0
 
@@ -258,7 +256,9 @@ class KitOps:
         Update components table with information from kit.
         """
 
-        complst = path(self.mountpoint / kit['name']).glob('component-*.rpm')
+        session = self.__db.createSession()
+
+        complst = path(self.mountpoint / kit.rname).glob('component-*.rpm')
         for comploc in complst:
             comp = {}
             comp['inst'] = PackageFactory(str(comploc))
@@ -276,27 +276,44 @@ class KitOps:
 
             comp['ver'] = comp['inst'].getVersion()
             comp['sum'] = comp['inst'].getSummary()
-            query = "select cid,kid from components where cname = '%s'" % \
-                    comp['name']
-            self.__db.execute(query)
-            #len>1 only if multi-distro explicit support
-            comp['dbcidlst'] = self.__db.fetchall() 
 
-            if not comp['dbcidlst']: 
-                #this component was not inserted in kit RPM's %post
-                #generate an entry for this component
-                query = "insert into components (kid,cname,cdesc) " + \
-                        "values (%s,'%s','%s')" % \
-                        (kit['kid'], comp['name'], comp['sum'])
-                self.__db.execute(query)
+            components = session.query(self.__db.components).select_by(
+                                                            cname=comp['name'])
+
+            if not components:
+                # this component was not inserted in kit RPM's %post
+                # generate an entry for this component
+                newcomp = db.Components(kid=kit.kid, cname=comp['name'],
+                                        cdesc=comp['sum'])
+                session.save(newcomp)
+
+                ngs = session.query(self.__db.nodegroups).select(
+                    self.__db.nodegroups.c.ngname.in_('compute', 'installer'))
+
+                for ng in ngs:
+                    # if installer component, add to installer nodegroup
+                    if ng.ngname == 'installer' \
+                        and 0 <= newcomp.cname.find('installer'):
+                        ng.components.append(newcomp)
+                        continue
+                    # else if compute node component, add to compute nodegroup
+                    elif ng.ngname == 'compute' \
+                        and 0 <= newcomp.cname.find('node'):
+                        ng.components.append(newcomp)
+                        continue
+                    # else if neither node nor installer component, add to all
+                    elif 0 > newcomp.cname.find('node') \
+                        and 0 > newcomp.cname.find('installer'):
+                        ng.components.append(newcomp)
             else:
-                for dbcid, dbkid in comp['dbcidlst']:
-                    if dbkid > 0 and dbkid != kit['kid']:
+                for component in components:
+                    if component.cid > 0 and component.kid != kit.kid:
                         kl.warning("Updating kit id for component '%s', cid=%s",
-                                   comp['name'], dbcid)
-                    query = "UPDATE components SET kid=%s where cid=%s" % \
-                            (kit['kid'],dbcid)
-                    self.__db.execute(query)
+                                   comp['name'], component.cid)
+                        component.kid = kit.kid
+
+            session.flush()
+            session.close()
 
     def parseRPMTag(self, rpmloc):
         """
@@ -372,18 +389,14 @@ class KitOps:
 
     def checkKitInstalled(self,kitname,kitver):
         '''Returns true if specified kit is already in the DB, false otherwise'''
-        query = "select * from kits where rname='%s' and version='%s'" %(kitname,kitver)
-        kl.debug('checkKitInstalled query: %s', query)
-        try:
-            self.__db.execute(query)
-            rv = self.__db.fetchone()
-        except Exception,msg:
-            sys.stderr.write('kitops: Database query=%s failed with msg=%s' %(query,msg))
-            raise
 
-        if rv != None:
-            return True
-        return False
+        session = self.__db.createSession()
+
+        kits = session.query(self.__db.kits).select_by(rname=kitname,
+                                                       version=kitver)
+
+        session.close()
+        return [] != kits
 
     def selectKit(self, mountpoint, dirlst = None):
         '''selectKit method displays kits available on the media provided and prompts to choose
@@ -459,16 +472,11 @@ class KitOps:
         kit['sum'] = 'OS kit for %s %s %s' % \
                         (osdistro.ostype, kit['ver'], kit['arch'])
 
-        query = "SELECT * from kits where rname = '%s'" %kit['name']
-        kl.debug('addOSkit query: %s', query)
-        try:
-            self.__db.execute(query)
-            rv = self.__db.fetchone()
-        except Exception,msg:
-            kl.error('FAIL query: %s, message: %s', query, msg)
-            return EKITADD_FAIL, None, None
+        session = self.__db.createSession()
+        kits = session.query(self.__db.kits).select_by(rname=kit['name'])
+        session.close()
 
-        if rv != None:
+        if kits:
             kl.info("OS kit '%s' already installed", kit['name'])
             return EKITADD_FAIL, None, None
 
@@ -519,16 +527,27 @@ class KitOps:
                 
     def finalizeOSKit(self, kit):
         #populate the database with info
-        query = "insert into kits (rname,rdesc,version,isOS,removeable,arch) values \
-            ('%s','%s','%s',1,0,'%s')" % (kit['name'], kit['sum'], kit['ver'], kit['arch'])
-        kl.debug('addOSKit query: %s', query)
+        session = self.__db.createSession()
 
-        try:
-            self.__db.execute(query)
-        except Exception,msg:
-            kl.debug('FAIL query: %s, message: %s', query, msg)
-            return EKITADD_FAIL
-        
+        kit = db.Kits(rname=kit['name'], rdesc=kit['sum'], version=kit['ver'],
+                      isOS=True, removable=False, arch=kit['arch'])
+        session.save(kit)
+        session.flush()
+
+        # add mock component to complete link from nodegroups to kits
+        comp = db.Components(cname=kit.rname, cdesc=kit.rname, os=kit.rname)
+        kit.components.append(comp)
+
+        ngs = session.query(self.__db.nodegroups).select(
+                    self.__db.nodegroups.c.ngname.in_('compute', 'installer'))
+
+        for ng in ngs:
+            if comp not in ng.components:
+                ng.components.append(comp)
+
+        session.flush()
+        session.close()
+
         return 0
 
     def deleteKit(self):
@@ -540,59 +559,42 @@ class KitOps:
             sys.stderr.write('kitops: name for kit to delete not specified\n')
             return EKITDEL_FAIL
 
-        kit = {} #data struct to hold delkit's properties
-        kit['name'] = self.kitname
+        session = self.__db.createSession()
+        kit = session.query(self.__db.kits).selectfirst_by(rname=self.kitname)
 
-        query = "select kid,removeable,version from kits  where rname='%s' " %kit['name']
-        self.__db.execute(query)
-        rv = self.__db.fetchone()
-        kl.debug('Delete kit DB record: %s', rv)
-        if not rv:
-            kl.error("Kit '%s' is not in the database", kit['name'])
-            return EKITDEL_FAIL
-        (kit['kid'], kit['removeable'], kit['ver']) = rv
-
-        if not kit['removeable']:
-            kl.error("Kit '%s' is not removable", kit['name'])
+        if not kit:
+            kl.error("Kit '%s' is not in the database", self.kitname)
             return EKITDEL_FAIL
 
-        # at this point kit is removable and in the DB
-        query = "SELECT kits.kid from kits, repos_have_kits where kits.kid = \
-                repos_have_kits.kid and kits.rname='%s'" %kit['name']
-        self.__db.execute(query)
-        rv = self.__db.fetchall()
-        if rv:  #the kit is in use by some repo
-            kl.error("Cannot delete kit '%s', it is used by a repo",
-                     kit['name'])
+        if not kit.removable:
+            kl.error("Kit '%s' is not removable", kit.rname)
             return EKITDEL_FAIL
 
+        if kit.repos:
+            kl.error("Cannot delete kit '%s', it is used by a repo", kit.rname)
+            return EKITDEL_FAIL
+            
         #the kit is NOT in use
         #1. remove the RPMS from /depot/kits/<kitname>/<kitver>
         rmP = subprocess.Popen('/bin/rm -rf %s' %
-                               (self.kits_dir / kit['name'] / kit['ver']),
+                               (self.kits_dir / kit.rname / kit.version),
                                shell=True)
 
         #2. remove kit RPM
         rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
-                               kit['name'], shell=True)
+                               kit.rname, shell=True)
         rmP.wait()
 
         #3. remove component info from DB
-        query = "DELETE from components where kid=%s" %kit['kid']
-        try:
-            self.__db.execute(query)
-        except:
-            self.stderr.write("kitops: delete operation failed to upgrade the DB for kit '%s'" %kit['name'])
-            return EKITDEL_FAIL
-        
+        for component in kit.components:
+            session.delete(component)
+
         #4. remove kit DB info
-        query = "DELETE from kits where kid=%s" %kit['kid']
-        try:
-            self.__db.execute(query)
-        except:
-            self.stderr.write("kitops: delete operation failed to upgrade the DB for kit '%s'" %kit['name'])
-            return EKITDEL_FAIL
+        session.delete(kit)
         
+        session.flush()
+        session.close()
+
         #5. done
         return 0
 
@@ -600,21 +602,15 @@ class KitOps:
         '''if the kit was specified, lists component summary for it, else prints
          kit table summary'''
 
-        kusudb = db.DB('mysql', 'test', 'nobody')
-        session = kusudb.createSession()
+        session = self.__db.createSession()
 
         kits = []
         if self.kitname:
-            kits = session.query(kusudb.kits).select_by(
-                            kusudb.kits.c.rname.like('%%%s%%' % self.kitname))
+            kits = session.query(self.__db.kits).select_by(
+                        self.__db.kits.c.rname.like('%%%s%%' % self.kitname))
         else:
-            kits = session.query(kusudb.kits).select()
+            kits = session.query(self.__db.kits).select()
 
+        session.close()
         return kits
-
-    def setKitname(self, kitname):
-        self.kitname = kitname
-
-    def setKitmedia(self, kitmedia):
-        self.kitmedia = kitmedia
 

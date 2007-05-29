@@ -20,6 +20,7 @@ kl = kusulog.getKusuLog('kitops-app')
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
 from kusu.boot.distro import DistroInstallSrcBase
+import kusu.core.database as db
 
 KITOP_NONE  = 0x00
 KITOP_ADD   = 0x01
@@ -34,6 +35,8 @@ class KitOpsApp(KusuApp):
         KusuApp.__init__(self)
 
         self.koinst = koinst
+        self.koinst.setDB(db.DB('mysql', 'test', 'nobody'))
+
         self.kitop = KITOP_NONE
 
         # setup command line parser

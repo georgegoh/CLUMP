@@ -131,7 +131,8 @@ class TestBaseKit:
         assert len(cmps) == 2, 'Components in DB: %d, expected: 2' % len(cmps)
 
         # check component data
-        cmp = cmps[0]
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='base-node')
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
         assert cmp.cname == 'base-node', \
                'Component name: %s, expected: base-node' % cmp.cname
@@ -139,8 +140,14 @@ class TestBaseKit:
                'Component name: %s, expected: Component for Kusu Node Base' % \
                cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
+        # node component associated only with compute nodegroup
+        assert len(cmp.nodegroups) == 1, \
+            'Component %s associated with more than one nodegroup' % cmp.cname
+        assert cmp.nodegroups[0].ngname == 'compute', \
+            'Component %s not associated with compute nodegroup' % cmp.cname
 
-        cmp = cmps[1]
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='base-installer')
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
         assert cmp.cname == 'base-installer', \
                'Component name: %s, expected: base-installer' % cmp.cname
@@ -148,6 +155,11 @@ class TestBaseKit:
            'Component name: %s, expected: Component for Kusu Installer Base' % \
                cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
+        # node component associated only with installer nodegroup
+        assert len(cmp.nodegroups) == 1, \
+            'Component %s associated with more than one nodegroup' % cmp.cname
+        assert cmp.nodegroups[0].ngname == 'installer', \
+            'Component %s not associated with installer nodegroup' % cmp.cname
 
         # verify the kit RPM is installed
         assert isRPMInstalled('kit-' + self.kit_name), \
@@ -168,6 +180,20 @@ class TestBaseKit:
         newkit.components.append(db.Components(cname='base-installer',
                                     cdesc='Component for Kusu Installer Base'))
         self.dbs.save(newkit)
+        self.dbs.flush()
+
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='base-node')
+        ng = self.dbs.query(self.kusudb.nodegroups).selectfirst_by(\
+                                                        ngname='compute')
+        ng.components.append(cmp)
+
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='base-installer')
+        ng = self.dbs.query(self.kusudb.nodegroups).selectfirst_by(\
+                                                        ngname='installer')
+        ng.components.append(cmp)
+
         self.dbs.flush()
 
         # copy RPM files
@@ -199,6 +225,10 @@ class TestBaseKit:
         
         cmps = self.dbs.query(self.kusudb.components).select()
         assert len(cmps) == 0, 'Components still remain in the DB'
+
+        ng_has_comps = self.dbs.query(self.kusudb.ng_has_comp).select()
+        assert len(ng_has_comps) == 0, \
+                   'Nodegroups have components still remain in DB'
 
         # assert files erased
         assert not kit_dir.exists(), 'Kit ver dir %s still exists' % kit_dir
