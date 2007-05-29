@@ -147,14 +147,6 @@ class DB:
         """Initialize the database with the corrrect driver and account
            details"""
 
-        self.driver = driver
-        self.db = db
-        self.username = username
-        self.password = password
-        self.host = host
-        self.port = port
-        self.entity_name = entity_name
-        
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
 
@@ -197,6 +189,14 @@ class DB:
         else:
             raise UnsupportedDriverError, 'Invalid driver: %s' % driver
 
+        self.driver = driver
+        self.db = db
+        self.username = username
+        self.password = password
+        self.host = host
+        self.port = port
+        self.entity_name = entity_name
+        
         self.metadata = sa.BoundMetaData(self.engine_src, \
                                          poolclass=sa.pool.SingletonThreadPool)
         self._defineTables()
@@ -308,7 +308,7 @@ class DB:
                     sa.mapper(Packages, sa.Table('packages', self.metadata, autoload=True), entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Partitions, self.entity_name)):
-            dmapper['parttions'] = \
+            dmapper['partitions'] = \
                     sa.mapper(Partitions, sa.Table('partitions', self.metadata, autoload=True), entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Scripts, self.entity_name)):
@@ -323,7 +323,7 @@ class DB:
                                           'kits':sa.relation(Kits, secondary=dtable['repos_have_kits'], entity_name=self.entity_name)}, \
                               entity_name=self.entity_name)
 
-        self.tables = dtable.keys()
+        self.tables = dmapper.keys()
 
     def dropTables(self):
         """Drops all tables in the database"""
@@ -581,8 +581,9 @@ class DB:
         if self.driver == 'mysql':
             try:
                 if self.password:
-                    cmd = 'mysql -u %s -p %s -h %s -P %s -e "create database %s;"' % \
+                    cmd = 'mysql -u %s -p%s -h %s -P %s -e "create database %s;"' % \
                           (self.username, self.password, self.host, self.port, self.db)
+                    print cmd
                 else:
                     cmd = 'mysql -u %s -h %s -P %s -e "create database %s;"' % \
                           (self.username, self.host, self.port, self.db)
@@ -609,7 +610,7 @@ class DB:
         if self.driver == 'mysql':
             try:
                 if self.password:
-                    cmd = 'mysql -u %s -p %s -h %s -P %s -e "drop database %s;"' % \
+                    cmd = 'mysql -u %s -p%s -h %s -P %s -e "drop database %s;"' % \
                           (self.username, self.password, self.host, self.port, self.db)
                 else:
                     cmd = 'mysql -u %s -h %s -P %s -e "drop database %s;"' % \
