@@ -578,11 +578,11 @@ class DB:
         if self.driver == 'mysql':
             try:
                 if self.password:
-                    cmd = 'mysql -u %s -p %s -e "create database %s;"' % \
-                          (self.username, self.password, self.db)
+                    cmd = 'mysql -u %s -p %s -h %s -P %s -e "create database %s;"' % \
+                          (self.username, self.password, self.host, self.port self.db)
                 else:
-                    cmd = 'mysql -u %s -e "create database %s;"' % \
-                          (self.username, self.db)
+                    cmd = 'mysql -u %s -h %s -P %s -e "create database %s;"' % \
+                          (self.username, self.host, self.port, self.db)
 
                 p = subprocess.Popen(cmd,
                                      shell=True,
@@ -604,11 +604,11 @@ class DB:
         if self.driver == 'mysql':
             try:
                 if self.password:
-                    cmd = 'mysql -u %s -p %s -e "drop database %s;"' % \
-                          (self.username, self.password, self.db)
+                    cmd = 'mysql -u %s -p %s -h %s -P %s -e "drop database %s;"' % \
+                          (self.username, self.password, self.host, self.port, self.db)
                 else:
-                    cmd = 'mysql -u %s -e "drop database %s;"' % \
-                          (self.username, self.db)
+                    cmd = 'mysql -u %s -h %s -P %s -e "drop database %s;"' % \
+                          (self.username, self.host, self.port, self.db)
 
                 p = subprocess.Popen(cmd,
                                      shell=True,
