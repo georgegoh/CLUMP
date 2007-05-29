@@ -323,8 +323,6 @@ class DB:
                                           'kits':sa.relation(Kits, secondary=dtable['repos_have_kits'], entity_name=self.entity_name)}, \
                               entity_name=self.entity_name)
 
-        self.tables = dmapper.keys()
-
     def dropTables(self):
         """Drops all tables in the database"""
 
@@ -657,7 +655,10 @@ class DB:
         # Creates the tables
         other_db.createTables()
 
-        for table in self.tables:
+        for table in ['appglobals', 'nodegroups', 'components', 'kits', 'repos', 'networks', \
+                      'nics', 'nodes', 'modules', \
+                      'ng_has_comp', 'repos_have_kits', 'ng_has_net', \
+                      'packages', 'partitions', 'scripts']:
             print table
             for obj in session.query(getattr(self, table)).select():
                 try:
