@@ -123,8 +123,6 @@ class Scripts(BaseTable):
 
 class DB:
 
-    entity_name = None
-
     mapTableClass = { 'repos_have_kits' : ReposHaveKits,
                       'appglobals' : AppGlobals,
                       'components' : Components,
@@ -155,6 +153,7 @@ class DB:
         self.password = password
         self.host = host
         self.port = port
+        self.entity_name = entity_name
         
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
@@ -324,12 +323,14 @@ class DB:
                                           'kits':sa.relation(Kits, secondary=dtable['repos_have_kits'], entity_name=self.entity_name)}, \
                               entity_name=self.entity_name)
 
-    def destroy(self):
+        self.tables = dtable.keys()
+
+    def dropTables(self):
         """Drops all tables in the database"""
 
         self.metadata.drop_all()
  
-    def create(self): 
+    def createTables(self): 
         """Creates all tables in the database"""
 
         self.metadata.create_all()
@@ -575,11 +576,13 @@ class DB:
         session.close()
 
     def createDatabase(self):
+        """Creates the database"""
+
         if self.driver == 'mysql':
             try:
                 if self.password:
                     cmd = 'mysql -u %s -p %s -h %s -P %s -e "create database %s;"' % \
-                          (self.username, self.password, self.host, self.port self.db)
+                          (self.username, self.password, self.host, self.port, self.db)
                 else:
                     cmd = 'mysql -u %s -h %s -P %s -e "create database %s;"' % \
                           (self.username, self.host, self.port, self.db)
@@ -601,6 +604,8 @@ class DB:
 
 
     def dropDatabase(self):
+        """Drops the database"""
+
         if self.driver == 'mysql':
             try:
                 if self.password:
@@ -625,26 +630,46 @@ class DB:
         else:
             raise NotSupportedDatabaseCreationError, 'Database creation not supported for %s' % self.driver
 
+    def destroy(self):
+        pass
 
     def createSession(self):
+        """Returns a sqlalchemy session"""
+
         return sa.create_session()
 
     def copyTo(self, other_db):
-        """Copies the content of current database to 
+        """Copies the content of current database to
            a new database
         """
         if not isinstance(other_db, DB):
             raise Exception
 
-        session = sa.create_session()    
-        other_db.create()
+        session = self.createSession()
 
-        #for table in self.table_dict.keys():
-        query = session.query(getattr(self, 'appglobals'), entity_name=self.entity_name).select()
-        for r in query:
-            other_db.metadata.engine.execute(r)
+        if other_db.driver == 'mysql':
+            try:
+                other_db.dropDatabase()
+            except: pass
+            other_db.createDatabase()
+
+        # Creates the tables
+        other_db.createTables()
+
+        for table in self.tables:
+            for obj in session.query(getattr(self, table)).select():
+                try:
+                    session.expunge(obj)
+                except: pass
+
+                # Fully detatch the object
+                if hasattr(obj, '_instance_key'):
+                    delattr(obj, '_instance_key')
+                session.save_or_update(obj, entity_name=other_db.entity_name)
+
         session.flush()
- 
+        session.close()
+
 if __name__ == '__main__':
     import os
 
