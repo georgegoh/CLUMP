@@ -79,7 +79,7 @@ class PartitionScreen(screenfactory.BaseScreen):
                       'you like to use the default schema?'
                 result = self.selector.popupDialogBox('Partitions exist',
                                                       msg,
-                                             ['Default', 'Use Existing'])
+                                             ['Use Default', 'Use Existing'])
                 if str(result) == 'default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
@@ -92,7 +92,7 @@ class PartitionScreen(screenfactory.BaseScreen):
                       'use the default schema?'
                 result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
                                                       msg,
-                                             ['Default', "Don't use defaults"])
+                                             ['Use Default', "Don't Use Default"])
                 if str(result) == 'default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
