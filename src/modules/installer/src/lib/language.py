@@ -21,8 +21,7 @@ kl = kusulog.getKusuLog('installer.language')
 class LanguageSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for language."""
     name = _('Language')
-    context = 'Language'
-    profile = context
+    profile = 'Language'
     msg = _('Please choose your language for installation:')
     buttons = []
 
@@ -50,16 +49,16 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         for language in languages:
             self.listbox.append(language, self.langMap[language])
 
-        if not self.kiprofile[self.profile]:
-            self.kiprofile[self.profile] = self.langMap['English']
-        else:
-            for k, v in self.langMap.iteritems():
-                if v[0] == self.kiprofile[self.profile]:
-                    self.kiprofile[self.profile] = v
+        for k, v in self.langMap.iteritems():
+            if v[0] == self.kiprofile[self.profile]:
+                self.kiprofile[self.profile] = v
         self.listbox.setCurrent(self.kiprofile[self.profile])
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
+
+    def setDefaults(self):
+        self.kiprofile[self.profile] = 'en'
 
     def validate(self):
         errList = []
@@ -101,43 +100,4 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
             return True
         return False
 
-    def restoreProfileFromSQLCollection(db, context, kiprofile):
-        """
-        Reads data from SQLiteCollection db according to context and fills
-        profile.
 
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the complete profile (a dictionary) which we fill in
-        """
-
-        profile = db.get(context, context)
-        if profile:
-            profile = profile[0]
-
-        kl.info('Read language from DB: %s' % profile)
-
-        kiprofile[context] = profile
-        return True
-
-    def saveProfileToSQLCollection(db, context, kiprofile):
-        """
-        Writes data from profile to SQLiteCollection db according to context.
-
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the profile (a dictionary) with data to commit
-        """
-
-        db.put(context, context, kiprofile[context])
-
-        kl.info('Set language %s' % kiprofile[context])
-
-        return True
-
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}

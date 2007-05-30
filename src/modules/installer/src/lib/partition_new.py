@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-__version__ = "$Revision: 237 $"
 
 import snack
 import partition

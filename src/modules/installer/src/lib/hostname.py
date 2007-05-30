@@ -15,20 +15,23 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
-
+from kusu.util import profile
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class FQHNScreen(screenfactory.BaseScreen):
+class FQHNScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     """Collects fully-qualified host name."""
 
     name = _('Host Name')
-    context = 'Network'
-    profile = context
+    profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
     msg = _('Please specify a fully-qualified host name for this computer:')
     buttons = [_('Clear All')]
+
+    def __init__(self, kiprofile):
+        screenfactory.BaseScreen.__init__(self, kiprofile)
+        profile.PersistantProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
         """
@@ -121,6 +124,12 @@ class FQHNScreen(screenfactory.BaseScreen):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
+    def save(self, db, profile, kiprofile):
+        pass
+
+    def restore(self, db, profile, kiprofile):
+        pass
+
     def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
@@ -188,7 +197,3 @@ class FQHNScreen(screenfactory.BaseScreen):
 
         return True
 
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}

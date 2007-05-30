@@ -27,6 +27,7 @@ from tzselect import TZSelectionScreen
 from confirm import ConfirmScreen
 from network import NetworkScreen
 from hostname import FQHNScreen
+from kusu.core import database as db
 
 class ScreenImpl(BaseScreen):
     """This class is a template for other Screen classes."""
@@ -43,8 +44,6 @@ class ScreenImpl(BaseScreen):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                  width=self.gridWidth),
                                  col=0, row=0)
-
-runtimeDict = {}
 
 # we start with a blank kusu installer profile
 kiprofile = Profile()
@@ -68,20 +67,23 @@ class ScreenFactoryImpl(ScreenFactory):
     if not kusudb_parent.exists():
         kusudb_parent.makedirs()
 
-    collection = SQLiteCollection(kusudb)
-    kiprofile.addDatabase(collection)
+    # Create db
+    db = db.DB('sqlite', db=kusudb)
+    db.createTables()
+    db.bootstrap()
+    kiprofile.addDatabase(db)
 
     ScreenFactory.screens = \
-        [WelcomeScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         LanguageSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         KeyboardSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         ClusterInfoScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         NetworkScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         GatewayDNSSetupScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         FQHNScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         RootPasswordScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         PartitionScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile),
-         KitsScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         TZSelectionScreen(collection, kusuApp=None, kiprofile=kiprofile),
-         ConfirmScreen(collection, kusuApp=runtimeDict, kiprofile=kiprofile)
+        [WelcomeScreen(kiprofile=kiprofile),
+         LanguageSelectionScreen(kiprofile=kiprofile),
+         KeyboardSelectionScreen(kiprofile=kiprofile),
+         ClusterInfoScreen(kiprofile=kiprofile),
+         NetworkScreen(kiprofile=kiprofile),
+         GatewayDNSSetupScreen(kiprofile=kiprofile),
+         FQHNScreen(kiprofile=kiprofile),
+         RootPasswordScreen(kiprofile=kiprofile),
+         PartitionScreen(kiprofile=kiprofile),
+         KitsScreen(kiprofile=kiprofile),
+         TZSelectionScreen(kiprofile=kiprofile),
+         ConfirmScreen(kiprofile=kiprofile)
         ]

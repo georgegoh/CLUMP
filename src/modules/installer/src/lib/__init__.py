@@ -19,7 +19,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-__version__ = "$Revision: 237 $"
 
 __all__ = ['welcome', 'language', 'keyboard', 'clusterinfo', 'rootpasswd',
            'partition', 'gatewaydns', 'tzselect','confirm']

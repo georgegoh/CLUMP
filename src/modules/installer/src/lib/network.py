@@ -16,22 +16,26 @@ from kusu.hardware import probe
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
-
+from kusu.util import profile
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class NetworkScreen(screenfactory.BaseScreen):
+class NetworkScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     """
     The network screen lists all available network interfaces and provides
     their configuration.
     """
 
     name = _('Network')
-    context = 'Network'
-    profile = context
+    profile = 'Network'
     msg = _('Please configure your network')
     buttons = [_('Configure')]
+
+    def __init__(self, kiprofile):
+        screenfactory.BaseScreen.__init__(self, kiprofile)
+        profile.PersistantProfile.__init__(self, kiprofile)        
+
 
     def setCallbacks(self):
         """
@@ -203,6 +207,27 @@ class NetworkScreen(screenfactory.BaseScreen):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
+    def save(self, db, profile, kiprofile):
+        pass
+
+    def restore(self, db, profile, kiprofile):
+        pass
+
+    def setDefaults(self):
+        interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
+        for intf in interfaces:
+            # default to using DHCP and active on boot
+            interfaces[intf].update({'configure': False,
+                                     'use_dhcp': True,
+                                     'hostname': '',
+                                     'ip_address': '',
+                                     'netmask': '',
+                                     'active_on_boot': True,
+                                     'first_seen': True})
+
+        self.kiprofile[self.profile] = {}
+        self.kiprofile[self.profile]['interfaces'] = interfaces
+ 
     def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
@@ -301,10 +326,6 @@ class NetworkScreen(screenfactory.BaseScreen):
 
         return True
 
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}
 
 class ConfigureIntfScreen:
     """

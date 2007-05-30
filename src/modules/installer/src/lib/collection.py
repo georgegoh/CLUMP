@@ -11,7 +11,6 @@
 #
 """This module is the data container - any user can deposit context-based key/value
    pairs into the objects here."""
-__version__ = "$Revision: 237 $"
 
 import pickle
 class SettingsContainer:

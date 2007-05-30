@@ -7,9 +7,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-__version__ = "$Revision: 237 $"
 
-#import logging
 import snack
 import partition
 from gettext import gettext as _

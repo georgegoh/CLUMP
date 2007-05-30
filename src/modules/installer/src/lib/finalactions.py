@@ -34,40 +34,15 @@ def setupNetwork():
     interface.up()
     interface = interface.setDHCP()
    
-def copyKits(prefix, database):
-    # Assume a Fedora 6 repo
-    # Assume a fedora 6 distro: /mnt/sysimage
-
-    url = str(database.get('Kits', 'FedoraURL')[0])
-    prefix = path(prefix)
-
-    try:
-        os_name = os.environ.get('KUSU_DIST', None)
-        os_version = os.environ.get('KUSU_DISTVER', None)
-
-        verifyDistro(url, os_name, os_version)
-    except KusuError, e: raise e
-
-    try:
-        util.copy(url, prefix + '/depot')
-    except HTTPError, e:
-        url, status, reason  = e.args
-        # Do something here
-        raise e
-    except FTPError, e:
-        url, status, reason  = e.args
-        # Do something here
-        raise e
-    except KusuError, e: raise e
-
     
 def makeRepo(self):
     pass
 
-def genAutoInstallScript(disk_profile, network_profile, database):
+def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart
+    from kusu.core import database as db
 
     # redhat based for now
     #kusu_dist = os.environ.get('KUSU_DIST', None)
@@ -85,14 +60,19 @@ def genAutoInstallScript(disk_profile, network_profile, database):
     # Build kickstart object
     # Retrieve all the data required
     k = Kickstart()
-    k.rootpw = database.get('RootPasswd', 'RootPasswd')[0]
-    k.networkprofile = network_profile
+    k.rootpw = kiprofile['RootPasswd'] 
+
+    if kiprofile.has_key('Network'):
+        k.networkprofile = kiprofile['Network']
+    else:
+        k.networkprofile = {}
+
     k.diskprofile = disk_profile
     k.packageprofile = ['@Base']
-    k.tz = database.get('Timezone', 'Zone')[0]
+    k.tz = kiprofile['Timezone']
     k.installsrc = 'http://127.0.0.1/'
-    k.lang = database.get('Language', 'Language')[0]
-    k.keyboard = database.get('Keyboard', 'Keyboard')[0]
+    k.lang = kiprofile['Language']
+    k.keyboard = kiprofile['Keyboard']
 
     script = Script(KickstartFactory(k))
     script.write(install_script)

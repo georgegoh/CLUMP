@@ -101,3 +101,16 @@ class Profile(dict):
             self[profile]
         except KeyError:
             self[profile] = {}
+
+class PersistantProfile:
+    def __init__(self, kiprofile):
+        kiprofile.addFunctions(self.save, self.profile)
+
+        self.restore(kiprofile.getDatabase(), self.profile, kiprofile)
+
+    def save(self, db, profile, kiprofile):
+        pass
+
+    def restore(self, db, profile, kiprofile):
+        pass
+

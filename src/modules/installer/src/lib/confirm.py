@@ -7,9 +7,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-__version__ = "$Revision: 248 $"
 
-#import logging
 import snack
 from gettext import gettext as _
 from kusu.partitiontool import partitiontool
@@ -25,7 +23,7 @@ NAV_QUIT = 2
 class ConfirmScreen(screenfactory.BaseScreen):
     """This screen confirms all settings made."""
     name = _('Finalise')
-    context = 'Finalise'
+    profile = 'Finalise'
     msg = _('Please confirm the following:')
     buttons = [_('Re-initialise')]
     # unless explicitly specified here, all contexts will be rendered in the
@@ -52,19 +50,19 @@ class ConfirmScreen(screenfactory.BaseScreen):
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(snack.Label(self.msg), col=0, row=0)
         confirmText = ''
-        for context_key in self.database.getContexts():
-            if context_key in self.render_exceptions.keys():
-                renderFunc = self.render_exceptions[context_key]
-                if renderFunc: 
-                    confirmText = confirmText + \
-                                  eval(renderFunc + '()')
-            else:
-                confirmText = confirmText + '[' + context_key + ']' + '\n'
-                settings_for_context = self.database.get(context_key)
-                for setting in settings_for_context:
-                    confirmText = confirmText + '  ' + str(setting[2]) + '=' + \
-                                  str(setting[3]) + '\n'
-                confirmText = confirmText + '\n'
+        #for context_key in self.database.getContexts():
+        #    if context_key in self.render_exceptions.keys():
+        #        renderFunc = self.render_exceptions[context_key]
+        #        if renderFunc: 
+        #            confirmText = confirmText + \
+        #                          eval(renderFunc + '()')
+        #    else:
+        #        confirmText = confirmText + '[' + context_key + ']' + '\n'
+        #        settings_for_context = self.database.get(context_key)
+        #        for setting in settings_for_context:
+        #            confirmText = confirmText + '  ' + str(setting[2]) + '=' + \
+        #                          str(setting[3]) + '\n'
+        #        confirmText = confirmText + '\n'
         textBox = snack.Textbox(40, 10, confirmText, 1)
         self.screenGrid.setField(textBox, col=0, row=1, padding=(0,0,0,-2))
 
@@ -105,9 +103,6 @@ class ConfirmScreen(screenfactory.BaseScreen):
         if result == 'ok':
             self.kiprofile.save()
 
-            self.database.commit()
-            self.logger.debug('Commited database')
-
             mntpnt = '/mnt/kusu'
 
             prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
@@ -125,23 +120,11 @@ class ConfirmScreen(screenfactory.BaseScreen):
             self.logger.debug('Kusu mount points set up')
             prog_dlg.close()
 
-            prog_dlg = self.selector.popupProgress('Copying Kits', 'Copying kits...')
-            copyKits(mntpnt, self.database)
-            self.logger.debug('Kits copied.')
-            prog_dlg.close()
-
             #self.makeRepo()
+            
             prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
-            if self.kiprofile.has_key('Network'):
-                genAutoInstallScript(disk_profile, self.kiprofile['Network'], self.database)
-            else:
-                genAutoInstallScript(disk_profile, {}, self.database)
+            genAutoInstallScript(disk_profile, self.kiprofile)
             self.logger.debug('Auto install script generated.')
-            prog_dlg.close()
-
-            prog_dlg = self.selector.popupProgress('Closing Database Connection', 'Closing database connection...')
-            self.database.close()
-            self.logger.debug('Closed database connection.')
             prog_dlg.close()
 
             prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')

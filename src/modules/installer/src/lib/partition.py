@@ -7,9 +7,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-__version__ = "$Revision: 248 $"
 
-#import logging
 import snack
 from gettext import gettext as _
 from partition_new import *
@@ -31,8 +29,7 @@ class PartitionScreen(screenfactory.BaseScreen):
        drawing) established by other classes in the kusu installer package.
     """
     name = _('Partitions')
-    context = 'Partitions'
-    profile = context
+    profile = 'Partitions'
     msg = _('Please enter the following information:')
     buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
 #    buttons = [_('New'), _('Delete')]#, _('RAID')]
@@ -171,7 +168,7 @@ class PartitionScreen(screenfactory.BaseScreen):
     def formAction(self):
         """
         
-        Store to database
+        Store to kiprofile
         
         """
         try:
@@ -187,9 +184,6 @@ class PartitionScreen(screenfactory.BaseScreen):
             return True
         return False
 
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (None, None)}
 
 
 stored_mountpoint=''

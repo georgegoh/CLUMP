@@ -19,8 +19,7 @@ kl = kusulog.getKusuLog('installer.keyboard')
 class KeyboardSelectionScreen(screenfactory.BaseScreen):
     """This screen asks for keyboard."""
     name = _('Keyboard')
-    context = 'Keyboard'
-    profile = context
+    profile = 'Keyboard'
     msg = _('Please choose your keyboard:')
     buttons = []
 
@@ -48,6 +47,9 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
 
+    def setDefaults(self):
+        self.kiprofile[self.profile] = 'us'
+
     def validate(self):
         errList = []
 
@@ -70,49 +72,6 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         if obj is self.listbox:
             return True
         return False
-
-    def restoreProfileFromSQLCollection(db, context, kiprofile):
-        """
-        Reads data from SQLiteCollection db according to context and fills
-        profile.
-
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the complete profile (a dictionary) which we fill in
-        """
-
-        profile = db.get(context, context)
-        if not profile:
-            profile = 'us'
-        else:
-            profile = profile[0]
-
-        kl.info('Read keyboard from DB: %s' % profile)
-
-        kiprofile[context] = profile
-        return True
-
-    def saveProfileToSQLCollection(db, context, kiprofile):
-        """
-        Writes data from profile to SQLiteCollection db according to context.
-
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the profile (a dictionary) with data to commit
-        """
-
-        db.put(context, context, kiprofile[context])
-
-        kl.info('Set keyboard %s' % kiprofile[context])
-
-        return True
-
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}
 
 # The following is data taken from the rhpl package 'keyboard_models.py',
 # which is licensed under GPL v2.

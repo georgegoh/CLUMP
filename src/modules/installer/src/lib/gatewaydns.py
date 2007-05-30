@@ -14,20 +14,23 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
-
+from kusu.util import profile
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class GatewayDNSSetupScreen(screenfactory.BaseScreen):
+class GatewayDNSSetupScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     """This screen asks for DNS and Gateway setups."""
 
     name = _('Gateway & DNS')
-    context = 'Network'
-    profile = context
+    profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
     msg = _('Please configure your Gateway/DNS settings')
     buttons = [_('Clear All')]
+
+    def __init__(self, kiprofile):
+        screenfactory.BaseScreen.__init__(self, kiprofile)
+        profile.PersistantProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
         """
@@ -223,6 +226,12 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
+    def save(self, db, profile, kiprofile):
+        pass
+
+    def restore(self, db, profile, kiprofile):
+        pass
+
     def restoreProfileFromSQLCollection(db, context, kiprofile):
         """
         Reads data from SQLiteCollection db according to context and fills
@@ -303,7 +312,3 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen):
 
         return True
 
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}
