@@ -536,38 +536,10 @@ class DB:
         """bootstrap the necessary tables and fields that 
            are necessary for Kusu
         """
-        import re
         session = sa.create_session()
 
-        #######################################
-        # change me. Bad to hardcode here. 
-        #######################################
-        #installer_name = 'example.com'
-        #kit_name = 'base'
-        #kit_version = '0.1'
-
-        #kusu_dist = os.environ.get('KUSU_DIST', None)
-        #kusu_distver = os.environ.get('KUSU_DISTVER', None)
-        
-        #pattern = re.compile('^i[3456]86$')        
-        #if pattern.search(os.uname()[4]):
-        #    arch = 'i386'
-        #else:
-        #    arch = os.uname()[4]
-
-        #os_str = '%s-%s-%s' % (kusu_dist, kusu_distver, arch)
-        #aRepo = Repos('The default repo for %s' % os_str, '', installer_name, os_str)
-        #session.save(aRepo)
-        #session.flush()
-
-        #akit = session.query(self.kits).get_by(rname=kit_name, arch=arch, version=kit_version)
-
-        #if akit:
-            # Bad idea to use [0] as the kit name is not unique
-        #    session.save(ReposHaveKits(aRepo.repoid, aKit[0].kid))
-
-        session.save(NodeGroups(ngname='installer'))
-        session.save(NodeGroups(ngname='compute'))
+        session.save(NodeGroups(ngname='installer'), entity_name = self.entity_name)
+        session.save(NodeGroups(ngname='compute'), entity_name = self.entity_name)
         session.flush()
 
         session.close()
