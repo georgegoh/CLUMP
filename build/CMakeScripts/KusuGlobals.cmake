@@ -44,11 +44,49 @@ IF(NOT KUSU_ROOT)
 ENDIF(NOT KUSU_ROOT)
 SET(KUSU_BIN ${KUSU_ROOT}/bin)
 SET(KUSU_LIB ${KUSU_ROOT}/lib)
+
 SET(KUSU_BUILD_DIST $ENV{KUSU_BUILD_DIST})
 SET(KUSU_BUILD_DISTVER $ENV{KUSU_BUILD_DISTVER})
+IF(NOT KUSU_BUILD_DIST OR
+   NOT KUSU_BUILD_DISTVER )
+  IF(EXISTS /etc/fedora-release)
+    FILE(READ /etc/fedora-release content)
+    SET(DISTRO fedora)
+    STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
+  ELSEIF(EXISTS /etc/redhat-release)
+    FILE(READ /etc/redhat-release content)
+    IF(${content} MATCHES "^CentOS")
+      SET(DISTRO centos)
+      STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
+    ELSEIF(${content} MATCHES "^Red Hat")
+      SET(DISTRO redhat)
+      STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
+    ENDIF(${content} MATCHES "^CentOS")
+  ELSEIF(EXISTS /etc/SuSE-release)
+    FILE(READ /etc/SuSE-release content)
+    IF(${content} MATCHES "^openSUSE")
+      SET(DISTRO opensuse)
+      STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
+    ENDIF(${content} MATCHES "^openSUSE")
+  ENDIF(EXISTS /etc/fedora-release)
+  SET(KUSU_BUILD_DIST ${DISTRO} CACHE STRING "distro" FORCE)
+  SET(KUSU_BUILD_DISTVER ${DISTRO_RELEASE} CACHE STRING "distro version" FORCE)
+ENDIF(NOT KUSU_BUILD_DIST OR
+   NOT KUSU_BUILD_DISTVER)
+SET(KUSU_BUILD_ARCH $ENV{KUSU_BUILD_ARCH})
+IF(NOT KUSU_BUILD_ARCH)
+  IF(${PLATFORM} MATCHES "^i[3-6]?86$")
+    SET(KUSU_BUILD_ARCH i386 CACHE STRING "arch" FORCE)
+  ELSEIF(${PLATFORM} MATCHES "^x86_64$")
+    SET(KUSU_BUILD_ARCH x86_64 CACHE STRING "arch" FORCE)
+  ENDIF(${PLATFORM} MATCHES "^i[3-6]?86$")
+ENDIF(NOT KUSU_BUILD_ARCH)
+
 SET(KUSU_BUILD_ISOBIN $ENV{KUSU_BUILD_ISOBIN})
 SET(KUSU_DISTRO_SRC $ENV{KUSU_DISTRO_SRC})
-SET(KUSU_BUILD_ARCH $ENV{KUSU_BUILD_ARCH})
+IF(NOT KUSU_DISTRO_SRC)
+  SET(KUSU_DISTRO_SRC $KUSU_DISTRO_SRC)
+ENDIF(NOT KUSU_DISTRO_SRC)
 SET(KUSU_TMP $ENV{KUSU_TMP})
 IF(NOT KUSU_TMP)
   SET(KUSU_TMP /tmp/kusu)
@@ -85,6 +123,7 @@ FILE(MAKE_DIRECTORY ${KUSU_LIB}/python/kusu)
 FILE(WRITE ${KUSU_LIB}/python/kusu/__init__.py "")
 
 ## Adding modules directory to top level CMakeLists.txt file
+
 FOREACH(external_module ${KUSU_3RDPARTY})
   ADD_SUBDIRECTORY(${KUSU_DEVEL_ROOT}/src/3rdparty/${external_module} ${KUSU_DEVEL_ROOT}/src/3rdparty/${external_module})
 ENDFOREACH(external_module)
@@ -94,9 +133,9 @@ FOREACH (kusu_module ${KUSU_MODULES})
 ENDFOREACH(kusu_module)
 
 ## Generating Kusu development environment
-SET(PYTHONPATH ${KUSU_LIB}/python)
+SET(PYTHONPATH $KUSU_ROOT/lib/python:$KUSU_ROOT/lib)
 IF(PLATFORM_BITS)
-  SET(PYTHONPATH ${PYTHONPATH}:${KUSU_LIB}${PLATFORM_BITS}/python)
+  SET(PYTHONPATH $KUSU_ROOT/lib${PLATFORM_BITS}/python:${PYTHONPATH}:)
 ENDIF(PLATFORM_BITS)
 
 
@@ -123,3 +162,13 @@ IF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makebasekitiso.sh
                  ${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makebasekitiso.sh)
 ENDIF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
+
+FILE(GLOB_RECURSE DOTSVN "${CMAKE_CURRENT_BINARY_DIR}/entries")
+FOREACH(dotsvn ${DOTSVN})
+  GET_FILENAME_COMPONENT(svndir ${dotsvn} PATH)
+  EXEC_PROGRAM(
+    rm
+    ARGS -rf ${svndir}
+    OUTPUT_VARIABLE /dev/null
+  )
+ENDFOREACH(dotsvn)

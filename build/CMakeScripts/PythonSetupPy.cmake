@@ -75,6 +75,7 @@ IF(PYTHONINTERP_FOUND)
           ${SETUPPY_PATH}/kusuinstall.sh)
   EXEC_PROGRAM(chmod ${SETUPPY_PATH}
     ARGS a+rx ${SETUPPY_PATH}/kusuinstall.sh
+    OUTPUT_VARIABLE /dev/null
   )
   
   ADD_DEPENDENCIES(build-${PROJECT_NAME} setuppy-install copy-license)

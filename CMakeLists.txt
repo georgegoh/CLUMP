@@ -1,8 +1,8 @@
 # $Id$
 SET(KUSU_VERSION 0.1)
 
-## Add 3rd party modules to the build lists
-SET(KUSU_3RDPARTY 
+# ## Add 3rd party modules to the build lists
+SET(KUSU_3RDPARTY
   pysqlite
   path
   md5crypt
@@ -14,8 +14,8 @@ SET(KUSU_3RDPARTY
   createrepo
 )
 
-## Add kusu modules to the build lists
-SET(KUSU_MODULES 
+# ## Add kusu modules to the build lists
+SET(KUSU_MODULES
   core
   autoinstall
   boot

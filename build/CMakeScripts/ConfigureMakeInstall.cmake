@@ -1,3 +1,4 @@
+# $Id: ConfigureMakeInstall.camke 293 2007-04-13 04:50:44Z hirwan $
 ## Run configure
 ADD_CUSTOM_COMMAND(
   OUTPUT  ${CONFIGURE_PATH}/Makefile
@@ -60,4 +61,5 @@ CONFIGURE_FILE(${CMAKE_MODULE_PATH}/kusuinstall.sh
           ${SETUPPY_PATH}/kusuinstall.sh)
 EXEC_PROGRAM(chmod ${SETUPPY_PATH}
   ARGS a+rx ${SETUPPY_PATH}/kusuinstall.sh
+  OUTPUT_VARIABLE /dev/null
 )
