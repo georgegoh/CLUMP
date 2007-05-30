@@ -77,7 +77,7 @@ class ScreenFactoryImpl(ScreenFactory):
         [WelcomeScreen(kiprofile=kiprofile),
          LanguageSelectionScreen(kiprofile=kiprofile),
          KeyboardSelectionScreen(kiprofile=kiprofile),
-         ClusterInfoScreen(kiprofile=kiprofile),
+         #ClusterInfoScreen(kiprofile=kiprofile),
          NetworkScreen(kiprofile=kiprofile),
          GatewayDNSSetupScreen(kiprofile=kiprofile),
          FQHNScreen(kiprofile=kiprofile),
