@@ -129,7 +129,7 @@ class Scripts(BaseTable):
     cols = ['ngid', 'script']
 
 
-class DB:
+class DB(object):
 
     mapTableClass = { 'repos_have_kits' : ReposHaveKits,
                       'appglobals' : AppGlobals,
@@ -635,7 +635,7 @@ class DB:
         """
 
         if not isinstance(other_db, DB):
-            raise Exception
+            raise TypeError, "Class '%s' is not a DB class" % other_db.__class__.__name__
 
         session = self.createSession()
 
