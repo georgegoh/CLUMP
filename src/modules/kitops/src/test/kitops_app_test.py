@@ -22,20 +22,26 @@ saved_kusu_root = None
 temp_root = None
 temp_mount = None
 kusudb = None
+dbinfo_str = ''
 
 def setUp():
     global saved_kusu_root
     global temp_root
     global temp_mount
     global kusudb
+    global dbinfo_str
+
+    dbinfo = ['mysql', 'kitops_test', 'root', 'root']
+    dbinfo_str = ','.join(dbinfo)
+
+    kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
+    kusudb.createDatabase()
 
     saved_kusu_root = os.environ.get('KUSU_ROOT', None)
     temp_root = path(tempfile.mkdtemp(prefix='kot'))
     temp_mount = path(tempfile.mkdtemp(prefix='kot'))
 
     os.environ['KUSU_ROOT'] = str(temp_root)
-
-    kusudb = db.DB('mysql', 'test', 'nobody')
 
 def tearDown():
     global saved_kusu_root
@@ -44,6 +50,7 @@ def tearDown():
     if saved_kusu_root is not None:
         os.environ['KUSU_ROOT'] = saved_kusu_root
 
+    kusudb.dropDatabase()
     temp_root.rmtree()
     temp_mount.rmtree()
 
@@ -73,7 +80,8 @@ class TestBaseKit:
         mountP.wait()
 
     def tearDown(self):
-        # destroy the database
+        # close session, destroy the database
+        self.dbs.close()
         kusudb.dropTables()
 
         # wipe out installed files
@@ -85,7 +93,8 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
-        addP = subprocess.Popen('kitops -a -m %s' % self.kit, shell=True)
+        addP = subprocess.Popen('kitops -a -m %s -d %s' %
+                                (self.kit, dbinfo_str), shell=True)
         rv = addP.wait()
 
         assert rv == 0, 'kitops returned error: %s' % rv
@@ -171,6 +180,116 @@ class TestBaseKit:
         self.depot_dir.rmtree()
 
     def testDeleteKit(self):
+        # perform database setup
+        self.prepareDatabase()
+
+        # copy RPM files
+        kit_dir = self.kits_dir / self.kit_name / self.kit_ver
+        if not kit_dir.exists():
+            kit_dir.makedirs()
+            
+        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % self.kit_rpm,
+                                cwd=self.temp_mount / self.kit_name,
+                                shell=True, stdout=subprocess.PIPE)
+        dstP = subprocess.Popen('tar xf -', cwd=kit_dir, shell=True,
+                                stdin=srcP.stdout)
+        dstP.communicate()
+
+        # install kit RPM
+        rpmP = subprocess.Popen('rpm --quiet -i %s' % self.kit_rpm,
+                                cwd=self.temp_mount / self.kit_name, shell=True)
+        rpmP.wait()
+
+        # remove the kit using kitops
+        addP = subprocess.Popen('kitops -e %s -d %s' %
+                                (self.kit_name, dbinfo_str), shell=True)
+        rv = addP.wait()
+
+        assert rv == 0, 'kitops returned error: %s' % rv
+
+        # assert database entries removed
+        kits = self.dbs.query(self.kusudb.kits).select()
+        assert len(kits) == 0, 'Kits still remain in the DB'
+        
+        cmps = self.dbs.query(self.kusudb.components).select()
+        assert len(cmps) == 0, 'Components still remain in the DB'
+
+        ng_has_comps = self.dbs.query(self.kusudb.ng_has_comp).select()
+        assert len(ng_has_comps) == 0, \
+                   'Nodegroups have components still remain in DB'
+
+        # assert files erased
+        assert not kit_dir.exists(), 'Kit ver dir %s still exists' % kit_dir
+
+        # assert RPM removed
+        assert not isRPMInstalled('kit-' + self.kit_name), \
+                   'RPM kit-%s is still installed' % self.kit_name
+
+    def testListKits(self):
+        # first, test listing nothing
+        title, entry, blank = listKits()
+        assert title == [], 'No listing expected, received: %s' % blank
+
+        # perform database setup
+        self.prepareDatabase()
+
+        title, entry, blank = listKits()
+        expected_title = ['Kit', 'Description', 'Version', 'Architecture', \
+                          'OS', 'Kit', 'Removable']
+        expected_entry = ['base', 'Base', 'Kit', '0.1', 'noarch', 'No', 'Yes']
+
+        assert title == expected_title, \
+                'Title mismatch: %s, expected: %s' % (title, expected_title)
+        assert entry == expected_entry, \
+                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        assert blank == [], 'Unexpected entry: %s' % blank.split()
+
+        new_arch = 'x86_64'
+        new_isOS = True
+        new_removable = False
+
+        kit = self.dbs.query(self.kusudb.kits).selectfirst_by(rname='base')
+        kit.arch = new_arch
+        kit.isOS = new_isOS
+        kit.removable = new_removable
+        self.dbs.flush()
+
+        expected_title = ['Kit', 'Description', 'Version', 'Architecture', \
+                          'OS', 'Kit', 'Removable']
+        expected_entry = ['base', 'Base', 'Kit', '0.1', 'x86_64', 'Yes', 'No']
+
+        title, entry, blank = listKits()
+        assert title == expected_title, \
+                'Title mismatch: %s, expected: %s' % (title, expected_title)
+        assert entry == expected_entry, \
+                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        assert blank == [], 'Unexpected entry: %s' % blank.split()
+
+        title, entry, blank = listKits('base')
+        assert title == expected_title, \
+                'Title mismatch: %s, expected: %s' % (title, expected_title)
+        assert entry == expected_entry, \
+                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        assert blank == [], 'Unexpected entry: %s' % blank.split()
+
+        title, entry, blank = listKits('bas')
+        assert title == expected_title, \
+                'Title mismatch: %s, expected: %s' % (title, expected_title)
+        assert entry == expected_entry, \
+                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        assert blank == [], 'Unexpected entry: %s' % blank.split()
+
+        title, entry, blank = listKits('s')
+        assert title == expected_title, \
+                'Title mismatch: %s, expected: %s' % (title, expected_title)
+        assert entry == expected_entry, \
+                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        assert blank == [], 'Unexpected entry: %s' % blank.split()
+
+        title, entry, blank = listKits('lsf')
+        assert title == [], 'No listing expected, received: %s' % blank
+
+    def prepareDatabase(self):
         # insert data into DB
         # create a new kit with removable set to True
         newkit = db.Kits(rname=self.kit_name, rdesc='Base Kit', version='0.1',
@@ -196,49 +315,21 @@ class TestBaseKit:
 
         self.dbs.flush()
 
-        # copy RPM files
-        kit_dir = self.kits_dir / self.kit_name / self.kit_ver
-        if not kit_dir.exists():
-            kit_dir.makedirs()
-            
-        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % self.kit_rpm,
-                                cwd=self.temp_mount / self.kit_name,
-                                shell=True, stdout=subprocess.PIPE)
-        dstP = subprocess.Popen('tar xf -', cwd=kit_dir, shell=True,
-                                stdin=srcP.stdout)
-        dstP.communicate()
+def listKits(name=''):
+    ls_fd, ls_fn = tempfile.mkstemp(prefix='kot')
+    lsP = subprocess.Popen('kitops -l %s -d %s' % (name, dbinfo_str),
+                           shell=True, stdout=ls_fd)
+    lsP.wait()
 
-        # install kit RPM
-        rpmP = subprocess.Popen('rpm --quiet -i %s' % self.kit_rpm,
-                                cwd=self.temp_mount / self.kit_name, shell=True)
-        rpmP.wait()
+    ls_file = os.fdopen(ls_fd)
+    ls_file.seek(0)
+    title = ls_file.readline().split()
+    entry = ls_file.readline().split()
+    blank = ls_file.readline().split()
+    ls_file.close()
+    path(ls_fn).remove()
 
-        # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e %s' % self.kit_name, shell=True)
-        rv = addP.wait()
-
-        assert rv == 0, 'kitops returned error: %s' % rv
-
-        # assert database entries removed
-        kits = self.dbs.query(self.kusudb.kits).select()
-        assert len(kits) == 0, 'Kits still remain in the DB'
-        
-        cmps = self.dbs.query(self.kusudb.components).select()
-        assert len(cmps) == 0, 'Components still remain in the DB'
-
-        ng_has_comps = self.dbs.query(self.kusudb.ng_has_comp).select()
-        assert len(ng_has_comps) == 0, \
-                   'Nodegroups have components still remain in DB'
-
-        # assert files erased
-        assert not kit_dir.exists(), 'Kit ver dir %s still exists' % kit_dir
-
-        # assert RPM removed
-        assert not isRPMInstalled('kit-' + self.kit_name), \
-                   'RPM kit-%s is still installed' % self.kit_name
-
-    def testListKits(self):
-        pass
+    return title, entry, blank
 
 def areContentsEqual(src, dest, glob_pattern, omit=[]):
     """
@@ -273,7 +364,7 @@ def isRPMInstalled(pattern):
     Return True if RPM matching pattern is currently installed.
     """
 
-    tmp_fd, tmp_fn = tempfile.mkstemp()
+    tmp_fd, tmp_fn = tempfile.mkstemp(prefix='kot')
 
     # run the command and store output in temp file
     rpmP = subprocess.Popen('rpm -qa %s' % pattern, shell=True, stdout=tmp_fd)
