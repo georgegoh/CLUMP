@@ -6,12 +6,17 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 import sqlalchemy as sa
-import os
 from kusu.util.errors import *
 import kusu.util.log as kusulog
 import logging
+import os
+import warnings
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 kl = kusulog.getKusuLog('db')
+
+# Filter out all type of warnings
+# SQ warns about outdated sqlite version
+warnings.simplefilter('ignore', Warning)
 
 try:
     import subprocess
