@@ -63,38 +63,6 @@ class NetworkScreen(screenfactory.BaseScreen):
                 else:
                     self.kiprofile[self.profile]['have_static'] = True
 
-        # decide whether to show Gateway/DNS screen next
-        self.controlDNSScreen()
-
-    def controlDNSScreen(self):
-        """
-        Dynamically insert or remove Gateway/DNS screen based on configuration
-        of network interfaces.
-        """
-
-        from gatewaydns import GatewayDNSSetupScreen
-        dnsscreen = GatewayDNSSetupScreen(self.database, None,
-                                          self.kiprofile)
-
-        dnsscreen_exists = False
-        for screen in self.selector.screens:
-            if screen.name is dnsscreen.name:
-                dnsscreen_exists = True
-                dnsscreen = screen
-                break
-
-        # if no interfaces are configured (or none exist), remove dns screen
-        if dnsscreen_exists \
-            and not self.kiprofile[self.profile]['have_static'] \
-            and not self.kiprofile[self.profile]['have_dhcp']:
-            self.selector.screens.remove(dnsscreen)
-            return
-
-        # add the screen if it does not already exists
-        if not dnsscreen_exists:
-            self.selector.screens.insert(\
-                self.selector.screens.index(self) + 1, dnsscreen)
-
     def validate(self):
         """
         Perform validity checks on received data.
@@ -564,62 +532,3 @@ def enabledByValue(args):
                     subject.setEnabled(False)
                 elif isinstance(subject, snack.Checkbox):
                     subject.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
-
-def retrieveNetworkContext(db):
-    """
-    Obtains information about system's network interfaces from the database and
-    pci.inf file via probe.getPhysicalInterfaces.
-    """
-
-    adapters = {}
-    network_entries = db.get('Network')
-    for network_entry in network_entries:
-        # properties stored in format property:adapter
-        # ie: use_dhcp:eth0
-        prop = network_entry[2].split(':')
-        if len(prop) > 1:
-            try: 
-                adapters[prop[1]][prop[0]] = network_entry[3]
-            except KeyError:
-                adapters[prop[1]] = {}
-                adapters[prop[1]][prop[0]] = network_entry[3]
-
-    kl.info('Adapters in DB: %s.' % adapters)
-    
-    interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
-    for intf in interfaces:
-        # default to using DHCP and active on boot
-        interfaces[intf].update({'configure': '',
-                                 'use_dhcp': '',
-                                 'hostname': '',
-                                 'ip_address': '',
-                                 'netmask': '',
-                                 'active_on_boot': ''})
-
-        try:
-            interfaces[intf].update(adapters[intf])
-        except KeyError:
-            interfaces[intf]['first_seen'] = True
-
-    # SQLite stores these values as unicode strings
-    for intf in interfaces.keys():
-        # if use_dhcp or configure not in the DB,
-        # leave as is for unconfigured interfaces
-        if interfaces[intf]['configure'] == u'1':
-            interfaces[intf]['configure'] = True
-        else:
-            interfaces[intf]['configure'] = False
-
-        if interfaces[intf]['use_dhcp'] == u'1':
-            interfaces[intf]['use_dhcp'] = True
-        else:
-            interfaces[intf]['use_dhcp'] = False
-
-        if interfaces[intf]['active_on_boot'] == u'1':
-            interfaces[intf]['active_on_boot'] = True
-        else:
-            interfaces[intf]['active_on_boot'] = False
-
-    return interfaces
-
-
