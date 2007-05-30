@@ -102,6 +102,9 @@ class Packages(BaseTable):
 class Partitions(BaseTable):
     cols = ['ngid', 'partition', 'mntpnt', 'fstype', \
             'size', 'options', 'preserve']
+    def __repr__(self):
+        return '%s(%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.partition)
 
 class Repos(BaseTable):
     cols = ['reponame', 'repository', 'installers', \
@@ -292,11 +295,11 @@ class DB:
         if not sa.orm.mapper_registry.has_key(ClassKey(NodeGroups, self.entity_name)):
             dmapper['nodegroups'] = \
                     sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, \
-                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'],
-                                                                    entity_name=self.entity_name)})
+                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'], \
+                                                                    entity_name=self.entity_name), \
+                                          'partitions' : sa.relation(Partitions, entity_name=self.entity_name)})
                               # Currently nodegroups <-> components relationship is defined twice.
                               # Possible to replace this with ingenious backref-fu.
-
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Nodes, self.entity_name)):
             dmapper['nodes'] = \
@@ -446,7 +449,7 @@ class DB:
         nodegroups = sa.Table('nodegroups', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('repoid', sa.Integer, sa.ForeignKey('repos.repoid'), nullable=True),
-            sa.Column('ngname', sa.String(45)),
+            sa.Column('ngname', sa.String(45), unique=True), 
             sa.Column('installtype', sa.String(20)),
             sa.Column('ngdesc', sa.String(255)),
             sa.Column('nameformat', sa.String(45)),
@@ -491,13 +494,13 @@ class DB:
 
         partitions = sa.Table('partitions', self.metadata,
             sa.Column('idpartitions', sa.Integer, primary_key=True, autoincrement=True),
-            sa.Column('ngid', sa.Integer, primary_key=True),
+            sa.Column('ngid', sa.Integer, nullable=False),
             sa.Column('partition', sa.String(255)),
             sa.Column('mntpnt', sa.String(255)),
             sa.Column('fstype', sa.String(20)),
             sa.Column('size', sa.String(45)),
             sa.Column('options', sa.String(255)),
-            sa.Column('preserve', sa.String(1)),
+            sa.Column('preserve', sa.Boolean),
             sa.ForeignKeyConstraint(['ngid'],
                                     ['nodegroups.ngid']),
             mysql_engine='InnoDB')
@@ -536,10 +539,23 @@ class DB:
         """bootstrap the necessary tables and fields that 
            are necessary for Kusu
         """
-        session = sa.create_session()
-
+        session = self.createSession()
+        
+        # nodegroups
         session.save(NodeGroups(ngname='installer'), entity_name = self.entity_name)
         session.save(NodeGroups(ngname='compute'), entity_name = self.entity_name)
+        session.flush()
+
+        # compute nodegroup partition
+        compute_ng = session.query(self.nodegroups).select_by(ngname='compute')[0]
+        part = Partitions()
+        part.partition = '/boot'
+        part.size = 100
+        part.preserve = False
+        part.mntpnt = '/boot'
+        part.fstype = 'ext3'
+        compute_ng.partitions.append(part)
+        session.save(part, entity_name = self.entity_name)
         session.flush()
 
         session.close()
@@ -668,7 +684,7 @@ if __name__ == '__main__':
     except: pass
 
     k = DB('sqlite', '/tmp/f.db')
-    k.create()
+    k.createTables()
     k.bootstrap()
 
     session = sa.create_session()
@@ -700,7 +716,7 @@ if __name__ == '__main__':
     session.save(ReposHaveKits(kid=myKit.kid, repoid=myRepo.repoid))
     session.save(ReposHaveKits(kid=myKit.kid, repoid=anotherRepo.repoid))
     session.flush()
-     
+    
     # all the nodegroups of all repos
     for repo in session.query(k.repos).select():
         print repo
