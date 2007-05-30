@@ -73,3 +73,5 @@ class NoSuchColumnError(KusuError): pass
 class NotSupportedDatabaseCreationError(KusuError): pass
 class FailedToCreateDatabase(KusuError): pass
 class FailedToDropDatabase(KusuError): pass
+class UnableToCommitDataError(KusuError): pass
+class UnableToSaveDataError(KusuError): pass

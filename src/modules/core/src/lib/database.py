@@ -639,8 +639,10 @@ class DB:
 
     def copyTo(self, other_db):
         """Copies the content of current database to
-           a new database
+           a new database. Existing tables and data on
+           the new database will be deleted.
         """
+
         if not isinstance(other_db, DB):
             raise Exception
 
@@ -650,16 +652,21 @@ class DB:
             try:
                 other_db.dropDatabase()
             except: pass
+
             other_db.createDatabase()
+
+        other_db.dropTables()
 
         # Creates the tables
         other_db.createTables()
 
-        for table in ['appglobals', 'nodegroups', 'components', 'kits', 'repos', 'networks', \
-                      'nics', 'nodes', 'modules', \
-                      'ng_has_comp', 'repos_have_kits', 'ng_has_net', \
-                      'packages', 'partitions', 'scripts']:
-            print table
+        # Copy them in order to preserve relationship
+        # Order by primary, secondary(1-M) and 
+        # junction tables(M-N)
+        for table in ['appglobals', 'repos', 'kits', 'networks', \
+                      'nics', 'components', 'nodes', 'modules', \
+                      'nodegroups', 'packages', 'partitions', 'scripts', \
+                      'ng_has_comp', 'repos_have_kits', 'ng_has_net']:
             for obj in session.query(getattr(self, table)).select():
                 try:
                     session.expunge(obj)
@@ -668,9 +675,19 @@ class DB:
                 # Fully detatch the object
                 if hasattr(obj, '_instance_key'):
                     delattr(obj, '_instance_key')
-                session.save_or_update(obj, entity_name=other_db.entity_name)
 
-        session.flush()
+                try:
+                    session.save_or_update(obj, entity_name=other_db.entity_name)
+                except:
+                    raise UnableToSaveDataError, obj
+
+            try:
+                session.flush()
+            except sa.exceptions, e: 
+                raise UnableToCommitDataError, e
+            except Exceptions, e:
+                raise KusuError, e
+
         session.close()
 
 if __name__ == '__main__':
