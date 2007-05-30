@@ -10,13 +10,13 @@ import os
 from kusu.util.errors import *
 import kusu.util.log as kusulog
 import logging
+logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
+kl = kusulog.getKusuLog('db')
 
 try:
     import subprocess
 except:
     from popen5 import subprocess
-
-logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
 class BaseTable(object):
     cols = []
@@ -209,12 +209,11 @@ class DB:
         try:
             fp = file(self.__passfile, 'r')
         except IOError, msg:
-            print "KusuDB: insufficient privileges to access password file"
-            print "optionally, the password file may be missing"
-            print msg
+            kl.error("Missing password file or insufficient privileges for " +
+                     "access: %s", msg)
             return None
         except:
-            print "KusuDB: error accessing the password file"
+            kl.error("Error accessing the password file")
             return None
 
         cipher = fp.readline().strip()
@@ -581,7 +580,6 @@ class DB:
                 if self.password:
                     cmd = 'mysql -u %s -p%s -h %s -P %s -e "create database %s;"' % \
                           (self.username, self.password, self.host, self.port, self.db)
-                    print cmd
                 else:
                     cmd = 'mysql -u %s -h %s -P %s -e "create database %s;"' % \
                           (self.username, self.host, self.port, self.db)
