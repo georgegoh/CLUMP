@@ -22,8 +22,7 @@ NAV_NOTHING = -1
 class KitsScreen(screenfactory.BaseScreen):
     """Collects kits information."""
     name = _('Kits')
-    context = 'Kits'
-    profile = context
+    profile = 'Kits'
     msg = _('Please enter a Fedora 6 URL:')
     buttons = [_('Add'), _('Remove')]
 
@@ -65,30 +64,3 @@ class KitsScreen(screenfactory.BaseScreen):
         """
         pass
 
-    def restoreProfileFromSQLCollection(db, context, kiprofile):
-        """
-        Reads data from SQLiteCollection db according to context and fills
-        profile.
-
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the complete profile (a dictionary) which we fill in
-        """
-        return True
-
-    def saveProfileToSQLCollection(db, context, kiprofile):
-        """
-        Writes data from profile to SQLiteCollection db according to context.
-
-        Arguments:
-        db -- an SQLiteCollection object ready to accept data
-        context -- the context to use to access data in db and profile
-        kiprofile -- the profile (a dictionary) with data to commit
-        """
-        return True
-
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (restoreProfileFromSQLCollection,
-                               saveProfileToSQLCollection)}
