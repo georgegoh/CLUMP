@@ -65,7 +65,7 @@ class TestBaseKit:
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
-        self.kit = test_kits / 'kit-base-0.1-0.noarch.iso'
+        self.kit = test_kits / 'mock-kit-base-0.1-0.noarch.iso'
         self.kit_rpm = 'kit-base-0.1-0.noarch.rpm'
         self.kit_name = 'base'
         self.kit_ver = '0.1'
@@ -146,7 +146,7 @@ class TestBaseKit:
         assert cmp.cname == 'base-node', \
                'Component name: %s, expected: base-node' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Node Base', \
-               'Component name: %s, expected: Component for Kusu Node Base' % \
+               'Component description: %s, expected: Component for Kusu Node Base' % \
                cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
         # node component associated only with compute nodegroup
@@ -161,7 +161,7 @@ class TestBaseKit:
         assert cmp.cname == 'base-installer', \
                'Component name: %s, expected: base-installer' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Installer Base', \
-           'Component name: %s, expected: Component for Kusu Installer Base' % \
+           'Component description: %s, expected: Component for Kusu Installer Base' % \
                cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
         # node component associated only with installer nodegroup
@@ -177,7 +177,6 @@ class TestBaseKit:
         # clean up after this test
         rpmP = subprocess.Popen('rpm --quiet -e --nodeps kit-%s' %
                                 self.kit_name, shell=True)
-        self.depot_dir.rmtree()
 
     def testDeleteKit(self):
         # perform database setup
@@ -315,6 +314,111 @@ class TestBaseKit:
 
         self.dbs.flush()
 
+class TestFedocaCore6i386:
+    def setUp(self):
+        global temp_root
+        global temp_mount
+        global kusudb
+
+        self.temp_root = temp_root
+        self.temp_mount = temp_mount
+        self.depot_dir = self.temp_root / 'depot'
+        self.kits_dir = self.depot_dir / 'kits'
+
+        self.kit = test_kits / 'mock-FC-6-i386-disc1.iso'
+        self.kit_name = 'fedora-6-i386'
+        self.kit_ver = '6'
+
+        self.kusudb = kusudb
+        self.kusudb.createTables()
+        self.kusudb.bootstrap()
+        self.dbs = self.kusudb.createSession()
+
+        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                  (self.kit, self.temp_mount), shell=True)
+        mountP.wait()
+
+    def tearDown(self):
+        # close session, destroy the database
+        self.dbs.close()
+        kusudb.dropTables()
+
+        # wipe out installed files
+        if self.depot_dir.exists():
+            self.depot_dir.rmtree()
+
+        umountP = subprocess.Popen('umount %s 2> /dev/null' % self.temp_mount,
+                                   shell=True)
+        umountP.wait()
+
+    def testAddKit(self):
+        addP = subprocess.Popen('kitops -a -m %s -d %s' %
+                                (self.kit, dbinfo_str), shell=True)
+        rv = addP.wait()
+
+        assert rv == 0, 'kitops returned error: %s' % rv
+
+        # assert all directories exist
+        assert self.depot_dir.exists(), \
+               'Depot dir %s does not exist' % self.depot_dir
+        assert self.kits_dir.exists(), \
+               'Kits dir %s does not exist' % self.kits_dir
+        assert path(self.kits_dir / self.kit_name).exists(), \
+               'Kit dir %s does not exist' % self.kits_dir / self.kit_name
+        assert path(self.kits_dir / self.kit_name / self.kit_ver).exists(), \
+               'Kit ver dir %s does not exist' % self.kits_dir /  \
+                                                 self.kit_name / self.kit_ver
+
+        # assert contents are the same
+        assert areDirTreesIdentical(self.temp_mount,
+                                self.kits_dir / self.kit_name / self.kit_ver), \
+               'Directory trees %s and %s are not equal' % \
+               (self.temp_mount / self.kit_name,
+                self.kits_dir / self.kit_name / self.kit_ver)
+
+        # check DB for information
+        kits = self.dbs.query(self.kusudb.kits).select()
+        
+        # we are expecting only one kit
+        assert len(kits) == 1, 'Kits in DB: %d, expected: 1' % len(kits)
+
+        # check the kit's data
+        kit = kits[0]
+        assert kit.rname == self.kit_name, \
+               'Kit name: %s, expected %s' % (kit.rname, self.kit_name)
+        assert kit.rdesc == 'OS kit for fedora 6 i386', \
+               'Description: %s, expected: OS kit for fedora 6 i386' % kit.rdesc
+        assert kit.version == '6', 'Version: %s, expected: 6' % kit.version
+        assert kit.isOS, 'Expected isOS to be True'
+        assert not kit.removable, 'Expected removable to be False'
+        assert kit.arch == 'i386', 'Arch: %s, expected: i386' % kit.arch
+
+        # the fedora 6 kit has one 'mock' component
+        cmps = self.dbs.query(self.kusudb.components).select()
+        assert len(cmps) == 1, 'Components in DB: %d, expected: 1' % len(cmps)
+
+        # check component data
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='fedora-6-i386')
+        assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
+        assert cmp.cname == 'fedora-6-i386', \
+               'Component name: %s, expected: fedora-6-i386' % cmp.cname
+        assert cmp.cdesc == 'fedora-6-i386', \
+               'Component description: %s, expected: fedora-6-i386' % cmp.cname
+        assert cmp.os == 'fedora-6-i386', \
+               'OS: %s, expected: fedora-6-i386' % cmp.os
+        # node component associated with both nodegroups
+        assert len(cmp.nodegroups) == 2, \
+            'Component %s not associated with two nodegroups' % cmp.cname
+        ngnames = []
+        for ng in cmp.nodegroups:
+            ngnames.append(ng.ngname)
+        ngnames.sort()
+        assert ngnames[0] == 'compute', \
+            'Component %s not associated with compute nodegroup' % cmp.cname
+        assert ngnames[1] == 'installer', \
+            'Component %s not associated with installer nodegroup' % cmp.cname
+
 def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot')
     lsP = subprocess.Popen('kitops -l %s -d %s' % (name, dbinfo_str),
@@ -331,33 +435,53 @@ def listKits(name=''):
 
     return title, entry, blank
 
-def areContentsEqual(src, dest, glob_pattern, omit=[]):
+def areDirTreesIdentical(s, d):
     """
     Compare contents of two directories and returns True if equal.
 
     Arguments:
-    src -- source directory
-    dest -- destination directory
+    s -- source directory
+    d -- destination directory
+    """
+
+    s_list = [f.abspath().replace(s.abspath() + '/', '') for f in s.walk()]
+    d_list = [f.abspath().replace(d.abspath() + '/', '') for f in d.walk()]
+
+    s_list.sort()
+    d_list.sort()
+
+    return s_list == d_list
+
+def areContentsEqual(s, d, glob_pattern, omit=[]):
+    """
+    Compare contents of two directories and returns True if equal.
+
+    Arguments:
+    s -- source directory
+    d -- destination directory
     glob_pattern -- pattern of files to look at (ie: if '*.rpm', ls *.rpm)
     omit -- files to ignore in comparison (ie: ls *.rpm | grep -v hi.rpm)
     """
 
-    src_list = [f.basename() for f in src.glob(glob_pattern)]
-    dest_list = [f.basename() for f in dest.glob(glob_pattern)]
+    s_list = [f.basename() for f in s.glob(glob_pattern)]
+    d_list = [f.basename() for f in d.glob(glob_pattern)]
 
     for item in omit:
         try:
-            src_list.remove(item)
+            s_list.remove(item)
         except ValueError:
             pass
 
-        # to ensure exception from src remove does not preempt dest remove
+        # to ensure exception from s remove does not preempt d remove
         try:
-            dest_list.remove(item)
+            d_list.remove(item)
         except ValueError:
             pass
 
-    return src_list.sort() == dest_list.sort()
+    s_list.sort()
+    d_list.sort()
+
+    return s_list == d_list
 
 def isRPMInstalled(pattern):
     """
