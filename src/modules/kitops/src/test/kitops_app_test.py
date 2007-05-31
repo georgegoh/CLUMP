@@ -352,7 +352,8 @@ class TestFedocaCore6i386:
         umountP.wait()
 
     def testAddKit(self):
-        addP = subprocess.Popen('kitops -a -m %s -d %s' %
+        # passing "N" to kitops to stop at one disc
+        addP = subprocess.Popen('echo "N" | kitops -a -m %s -d %s' %
                                 (self.kit, dbinfo_str), shell=True)
         rv = addP.wait()
 
