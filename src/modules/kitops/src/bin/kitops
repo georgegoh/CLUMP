@@ -132,7 +132,7 @@ class KitOpsApp(KusuApp):
             sys.exit(1)
 
         media_distro = self.koinst.getOSDist()
-        if not media_distro:
+        if not media_distro.ostype:
             # we cannot identify the distro -- treat as ordinary kit
             rv = self.koinst.addKit()
         else:

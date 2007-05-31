@@ -185,7 +185,6 @@ def DistroFactory(srcPath):
     for d in distros:
         if d.verifySrcPath():
             return d
-    # return None if no distro detected
     return DistroInstallSrcBase()
 
 
