@@ -55,6 +55,8 @@ class NetworkRecord(object):
         if windowInstance:
             self._thisWindow = windowInstance
             self._ = self._thisWindow._  # get i18n handle.
+        else:
+            self._thisWindow = None
         self._database = KusuDB()
         
     def validateNetworkEntry(self):
@@ -69,10 +71,11 @@ class NetworkRecord(object):
                 self._thisWindow.subnetEntry.setEntry('')
             return False, 'netedit_validate_subnet'
    
-        if not kusu.ipfun.validIP(self._gateway_field):
-            if not self._network_field and not self._subnet_field and self._thisWindow:
-                    self._thisWindow.gatewayEntry.setEntry('')
-            return False, 'netedit_validate_gateway'
+        if self._gateway_field:
+            if not kusu.ipfun.validIP(self._gateway_field):
+                if not self._network_field and not self._subnet_field and self._thisWindow:
+                        self._thisWindow.gatewayEntry.setEntry('')
+                return False, 'netedit_validate_gateway'
    
         if not kusu.ipfun.validIP(self._startip_field):
             if not self._network_field and not self._subnet_field and self._thisWindow:
@@ -98,11 +101,11 @@ class NetworkRecord(object):
             return False, 'netedit_validate_device'
             
         # Validate if IP and gateway exist on the new network entered.        
-        if not self._network_field == "":
+        if not self._network_field == "" and not self._gateway_field == "": # If no gateway specified, don't bother to validate it.
             if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
                 return False, 'netedit_validate_gateway_on_network'
 
-            if not self._subnet_field == "":
+        if not self._subnet_field == "":
                 if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
                     return False, 'netedit_validate_startip_on_network'
         return True, 'Success'
@@ -207,31 +210,26 @@ class NetEditApp(object, KusuApp):
         Parse the command line arguments. """
 
         self.parser.add_option("-v", "--version", action="callback",
-                                callback=self.toolVersion, help=self._kusuApp._("netedit_version_usage"))
+                                callback=self.toolVersion, help=self._("netedit_version_usage"))
         self.parser.add_option("-l", "--list-networks", action="store_true",
-                                dest="listnetworks", help=self._kusuApp._("netedit_listnetworks_usage"))
-        self.parser.add_option("-d", "--delete", action="store_true",
-                                dest="delete", help=self._kusuApp._("netedit_delete_usage"))
+                                dest="listnetworks", help=self._("netedit_listnetworks_usage"))
+        self.parser.add_option("-d", "--delete", action="store",
+                                type="int", dest="delete", help=self._("netedit_delete_usage"))
         self.parser.add_option("-a", "--add", action="store_true",
-                                dest="add", help=self._kusuApp._("netedit_add_usage"))
-        self.parser.add_option("-c", "--change", action="store_true",
-                                dest="change", help=self._kusuApp._("netedit_change_usage"))
+                                dest="add", help=self._("netedit_add_usage"))
+        self.parser.add_option("-c", "--change", action="store",
+                                type="int", dest="change", help=self._("netedit_change_usage"))
 
-        self.parser.add_option("-w", "--old-network", action="store",
-                                type="string", dest="oldnet", help=self._kusuApp._("netedit_oldnet_usage"))
-        self.parser.add_option("-u", "--old-subnet", action="store",
-                                type="string", dest="oldsubnet", help=self._kusuApp._("netedit_oldsubnet_usage"))
-        self.parser.add_option("-n", "--network", action="store", dest="network", help=self._kusuApp._("netedit_network_usage"))
-        self.parser.add_option("-s", "--subnet", action="store", dest="subnet", help=self._kusuApp._("netedit_subnet_usage"))
-        self.parser.add_option("-i", "--interface", action="store", dest="interface", help=self._kusuApp._("netedit_interface_usage"))
-        self.parser.add_option("-r", "--increment", action="store", type="int", dest="increment", \
-                            help=self._kusuApp._("netedit_increment_usage"))
-        self.parser.add_option("-t", "--starting-ip", action="store", dest="startip", help=self._kusuApp._("netedit_startip_usage"))
-        self.parser.add_option("-x", "--name-suffix", action="store", dest="suffix", help=self._kusuApp._("netedit_suffix_usage"))
-        self.parser.add_option("-g", "--gateway", action="store", dest="gateway", help=self._kusuApp._("netedit_gateway_usage"))
-        self.parser.add_option("-o", "--options", action="store", dest="opt", help=self._kusuApp._("netedit_options_usage"))
-        self.parser.add_option("-e", "--description", action="store", dest="desc", help=self._kusuApp._("netedit_description_usage"))
-        self.parser.add_option("-p", "--dhcp", action="store_true", dest="dhcp", help=self._kusuApp._("netedit_dhcp_usage"))
+        self.parser.add_option("-n", "--network", action="store", dest="network", help=self._("netedit_network_usage"))
+        self.parser.add_option("-s", "--subnet", action="store", dest="subnet", help=self._("netedit_subnet_usage"))
+        self.parser.add_option("-i", "--interface", action="store", dest="interface", help=self._("netedit_interface_usage"))
+        self.parser.add_option("-r", "--increment", action="store", type="int", dest="increment", help=self._("netedit_increment_usage"))
+        self.parser.add_option("-t", "--starting-ip", action="store", dest="startip", help=self._("netedit_startip_usage"))
+        self.parser.add_option("-x", "--name-suffix", action="store", dest="suffix", help=self._("netedit_suffix_usage"))
+        self.parser.add_option("-g", "--gateway", action="store", dest="gateway", help=self._("netedit_gateway_usage"))
+        self.parser.add_option("-o", "--options", action="store", dest="opt", help=self._("netedit_options_usage"))
+        self.parser.add_option("-e", "--description", action="store", dest="desc", help=self._("netedit_description_usage"))
+        self.parser.add_option("-p", "--dhcp", action="store_true", dest="dhcp", help=self._("netedit_dhcp_usage"))
 
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
@@ -254,79 +252,143 @@ class NetEditApp(object, KusuApp):
                     and bool(self._options.listnetworks) == False):
                         pass
                     else:
-                        self.parser.error(self._kusuApp._("netedit_options_exclusive"))
+                        self.parser.error(self._("netedit_options_exclusive"))
 
+        # Non required values, if not set default to these
+        if not self._options.increment:
+            self._options.increment = 1
+        
+        if not self._options.suffix:
+            self._options.suffix = ""
+                            
+        if not self._options.opt:
+            self._options.opt = ""
+            
+        if not self._options.desc:
+            self._options.desc = ""
+        
+        if not self._options.gateway:
+            self._options.gateway = ""
+            
+        if not bool(self._options.dhcp):
+                self._options.dhcp = False
+        else:
+                self._options.dhcp = True
+                    
         # Handle -l option
         if self._options.listnetworks:
             netrec = NetworkRecord()
             networkList = netrec.getNetworkList()
             print 
-            print "%s %s %s" % (self._("netedit_list_network_field").ljust(14), self._("netedit_list_subnet_field").ljust(15), \
-                    self._("netedit_list_description_field").ljust(10))
-            print "%s %s %s" % ("=======".ljust(14), "======".ljust(15), "===================".ljust(10))
-            for nid, net,sub,netname in networkList:
-                print "%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10))
+            print "%s %s %s %s" % (self._("netedit_list_networkid_field").ljust(10), self._("netedit_list_network_field").ljust(14), \
+                    self._("netedit_list_subnet_field").ljust(15), self._("netedit_list_description_field").ljust(10))
+            print "%s %s %s %s" % ("==========".ljust(10), "==============".ljust(14), "======".ljust(15), "===================".ljust(10))
+            for nid,net,sub,netname in networkList:
+                print "%s %s %s %s" % (str(nid).ljust(10), net.ljust(14), sub.ljust(15), netname.ljust(10))
             sys.exit(0)
             
         # Handle -a -n -s -g,-i,-t options - Adding network
-        if (self._options.add and self._options.network and self._options.subnet and self._options.interface and self._options.gateway \
-            and self._options.startip):
-            print "*** MODE: Adding network mode!!!!!!!!!!!!!"
-            # do something
+        if (self._options.add and self._options.network and self._options.subnet and self._options.interface and self._options.startip):
+            
+            # Next verify the record
+            networkEntryInfo = []
+            networkEntryInfo.append(self._options.network.strip())
+            networkEntryInfo.append(self._options.subnet.strip())
+            networkEntryInfo.append(self._options.gateway.strip())
+            networkEntryInfo.append(self._options.startip.strip())
+            networkEntryInfo.append(int(self._options.increment))
+            networkEntryInfo.append(self._options.interface.strip())
+            networkEntryInfo.append(self._options.suffix.strip())
+            networkEntryInfo.append(self._options.opt.strip())
+            networkEntryInfo.append(self._options.desc.strip())
+            networkEntryInfo.append(int(self._options.dhcp))
+            
+            networkrecord = NetworkRecord(networkEntryInfo, None)            
+            result, errorMsg = networkrecord.validateNetworkEntry()
+            if not result: 
+                self.parser.error(self._(errorMsg))
+
+            networkrecord.insertNetworkEntry()
             sys.exit(0)
 
         if self._options.add == True:
             if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
                 or not self._options.startip:
-                self.parser.error(self._kusuApp._("netedit_options_add_options_needed"))
+                self.parser.error(self._("netedit_options_add_options_needed"))
 
-        # Handle -d -n -s - Deleting network
-        if (self._options.delete and self._options.network and self._options.subnet):
-            currentNetwork = None
-            networkID = None
+        # Handle -d  - Deleting network
+        if (self._options.delete):
             result = None
-            errorMsg = None
-
+            invalidID = True
             networkrecord = NetworkRecord()
             networkInfo = list(networkrecord.getNetworkList())
             for network in networkInfo:
-                if network[1] == self._options.network and network[2] == self._options.subnet:
-                    networkID = network[0]
-                    currentNetwork = network[1]
-            
-            if currentNetwork:
-                result = networkrecord.checkNetworkEntry(networkID)
-
-            if result:
-                print self._("Deleting network: %s" % currentNetwork)
-                self._database.connect('kusudb', 'apache')
-                self._database.execute("DELETE FROM networks WHERE netid = %d" % int(networkID))
-            elif not currentNetwork:
-                print self._("netedit_error_invalid_network")
-            else:
-                print self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n" % currentNetwork)
+                if network[0] == self._options.delete:
+                    invalidID = False
+                    # We found this ID, let's check if it's in use or not.
+                    result = networkrecord.checkNetworkEntry(self._options.delete)
+                    if result:
+                        self._database.connect('kusudb', 'apache')
+                        print self._("Deleting network: %s\n" % network[1])
+                        self._database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
+                    else:
+                        print self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
+            if invalidID: 
+                self.parser.error(self._("netedit_error_invalid_id"))
             sys.exit(0)
 
-        if self._options.delete == True:
-            if not self._options.network or not self._options.subnet:
-                self.parser.error(self._kusuApp._("netedit_options_delete_options_needed"))
+        # Handle -c, -n, -s, -g, -t, -i - Changing network
+        if (self._options.change):
+            if (self._options.network and self._options.subnet and self._options.startip and self._options.interface):
+            
+                result = None
+                invalidID = True
+                networkrecord = NetworkRecord()
+                networkInfo = list(networkrecord.getNetworkList())
+                for network in networkInfo:
+                    if network[0] == self._options.change:
+                        invalidID = False
+                        # We found this ID, let's check if it's in use or not.
+                        result = networkrecord.checkNetworkEntry(self._options.change)
 
-        # Handle -c -w -u, -n, -s, -g, -t - Changing network
-        if (self._options.change and self._options.oldnet and self._options.oldsubnet and self._options.network and self._options.subnet \
-            and self._options.gateway and self._options.startip):
-           print "*** MODE: Changing network mode!!!!!!!!!!!!"
-           # do something
-           sys.exit(0)
-
-        if self._options.change == True: 
-            if not self._options.oldnet or not self._options.oldsubnet or not self._options.network or not self._options.subnet \
-                or not self._options.gateway or not self._options.startip:
-                self.parser.error(self._kusuApp._("netedit_options_change_options_needed"))
+                        if result: 
+                            del networkrecord
+                            # First, validate the record we want to replace.
+                            networkEntryInfo = []
+                            networkEntryInfo.append(self._options.network.strip())
+                            networkEntryInfo.append(self._options.subnet.strip())
+                            networkEntryInfo.append(self._options.gateway.strip())
+                            networkEntryInfo.append(self._options.startip.strip())
+                            networkEntryInfo.append(int(self._options.increment))
+                            networkEntryInfo.append(self._options.interface.strip())
+                            networkEntryInfo.append(self._options.suffix.strip())
+                            networkEntryInfo.append(self._options.opt.strip())
+                            networkEntryInfo.append(self._options.desc.strip())
+                            networkEntryInfo.append(int(self._options.dhcp))
+            
+                            networkrecord = NetworkRecord(networkEntryInfo, None)
+                            result, errorMsg = networkrecord.validateNetworkEntry()
+                            if not result:
+                                    self.parser.error(self._(errorMsg))
+                                    
+                        if not result: 
+                            self.parser.error(self._("The Network '%s' is in use. This can not be changed at this time") % network[1])
+                
+                        networkrecord.updateNetworkEntry(self._options.change) 
+                        sys.exit(0)
+                        
+                if invalidID:
+                        self.parser.error(self._("netedit_error_invalid_network"))
+        
+        if self._options.change: 
+            if not self._options.network or not self._options.subnet or not self._options.gateway or not self._options.startip \
+                or not self._options.interface:
+                self.parser.error(self._("netedit_options_change_options_needed"))
         
         if len(sys.argv[1:]) > 0:
-            print "Check if -a -d -c used otherwise usage()!"
-            if (not bool(self._options.add) or not bool(self._options.delete) or not bool(self._options.change)):
-                self.parser.error(self._kusuApp._("netedit_options_required_options"))
+            if (not bool(self._options.add) or not self._options.delete or not bool(self._options.change)):
+                print "%s %s %s" % (bool(self._options.add),bool(self._options.delete),bool(self._options.change))
+                self.parser.error(self._("netedit_options_required_options"))
                 
         # Screen ordering
         screenList = [ NetworkMainWindow(self._database, self._kusuApp) ]
@@ -345,6 +407,7 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
     def __init__(self, database, kusuApp=None, gridWidth=45):
         kusu.screens.screenfactory.BaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=45)
         self.noValidate = 1
+        self.hasGateway = None
     
     def hotkeyCallback(self):
         return NAV_QUIT
@@ -372,9 +435,10 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
                 xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet
                 self.startIPEntry.setEntry(kusu.ipfun.number2ip(xip))
             
-            if not self.gatewayEntry.value():
-                yip = calcnet | (( ~calcsub) -1)
-                self.gatewayEntry.setEntry(kusu.ipfun.number2ip(yip))
+            if self.hasGateway:
+                if not self.gatewayEntry.value():
+                    yip = calcnet | (( ~calcsub) -1)
+                    self.gatewayEntry.setEntry(kusu.ipfun.number2ip(yip))
                 
     def guessDeviceSuffix(self):
         # Get the value of the device name.
@@ -428,6 +492,9 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         self.dhcpCheck = snack.Checkbox("Use DHCP", isOn = int(self.networkRecord[9]))
         
         # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
+        if not self.networkRecord[2] == "":  # If there was no gateway set, don't force one on the user.
+            self.hasGateway = False
+            
         self.networkEntry.setCallback(self.guessIPandGateway)
         self.subnetEntry.setCallback(self.guessIPandGateway)
         self.deviceEntry.setCallback(self.guessDeviceSuffix)
@@ -465,7 +532,7 @@ class NetworkEditWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
             # Validate if the value is in IP format. 
             if not result:
                 self.popWindow()
-                return False, errorMsg
+                return False, self._(errorMsg)  
         
         if self.noValidate:
             global selectedNetwork
@@ -533,7 +600,7 @@ class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navig
         self.deviceEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
         self.startIPEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
         self.suffixEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.incEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), width=30, password=0, returnExit = 0)
+        self.incEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Increment: ".rjust(13), text="1", width=30, password=0, returnExit = 0)
         self.optionEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
         self.descEntry = kusu.screens.kusuwidgets.LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
         self.dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
@@ -574,7 +641,7 @@ class NetworkNewWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navig
             # Validate if the value is in IP format. 
             if not result:
                 self.popWindow()
-                return False, errorMsg
+                return False, self._(errorMsg)
         
         if self.noValidate:
             modifiedRecord.insertNetworkEntry()
@@ -614,6 +681,15 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
         return NAV_NOTHING    
     
     def editAction(self, data=None):
+
+        networkList = NetworkRecord(windowInstance=self)
+        currNetwork = self.networkListbox.current().split()
+        result = networkList.checkNetworkEntry(currNetwork[0])
+        if not result:
+            self.selector.popupMsg(self._("netedit_window_title_edit"), "%s\t\t\n\n" %
+            (self._("The Network '%s' is in use. This can not be changed at this time") % currNetwork[1]))
+            return NAV_NOTHING
+    
         kusu.screens.screenfactory.ScreenFactory.screens = \
                         [ NetworkEditWindow(self.database, self.kusuApp) ]
                         
@@ -676,10 +752,6 @@ class NetworkMainWindow(kusu.screens.screenfactory.BaseScreen, kusu.screens.navi
             self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
         self.screenGrid.setField(self.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
-
-    def validate(self):
-        """Validation code goes here. Activated when 'Next' button is pressed."""
-        return True, 'Success'
 
 class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
