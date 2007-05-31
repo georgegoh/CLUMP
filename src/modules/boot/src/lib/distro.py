@@ -27,6 +27,7 @@ class DistroInstallSrcBase(object):
         
         self.srcPath - refers to the path of the installation source. Note that it can be a remote or local path.
         self.isRemote - booleanType and should reflect that self.srcPath is a remote or not.
+        self.isAdditionalType - booleanType and should reflect that this media is a additional installation media type.
         self.ostype - Name of the OS/Distro. It should be in lowercase for consistency. May be used for comparison cases.
         self.version - Major version number of the OS/Distro.
         self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
@@ -37,6 +38,7 @@ class DistroInstallSrcBase(object):
         
         self.srcPath = None
         self.isRemote = False
+        self.isAdditionalType = False
         self.ostype = None
         self.version = None
         self.arch = None
@@ -55,16 +57,24 @@ class DistroInstallSrcBase(object):
         """Verify the path for attributes that describes a valid local installation source"""
         
         try:
-            if not self.srcPath.exists(): return False
+            if not self.srcPath.exists(): 
+                return False
         except AttributeError:
             # we could be testing on a NoneType object instead of a Path object
             return False
         
-        # Check the path for each attribute listed, return if invalid path
+        # Check the path for each attribute listed
+        invalid = 0
         for k,v in self.pathLayoutAttributes.items():
             p = self.srcPath / v
-            if not p.exists(): return False
-            
+            if not p.exists(): 
+                invalid += 1
+            elif p.exists and k == 'packagesdir':
+                self.isAdditionalType = True
+                
+        if invalid > 0 and not self.isAdditionalType:
+            return False
+        
         return True  
 
     def verifyRemoteSrcPath(self):
@@ -75,6 +85,9 @@ class DistroInstallSrcBase(object):
     def getKernelPath(self):
         """Get the kernel path object"""
         
+        # if this is an additional installation media, it would not have this asset.
+        if self.isAdditionalType: return None
+        
         if self.pathLayoutAttributes.has_key('kernel'):
             return path(self.srcPath / self.pathLayoutAttributes['kernel'])
         else:
@@ -83,6 +96,9 @@ class DistroInstallSrcBase(object):
     def getInitrdPath(self):
         """Get the initrd path object"""
 
+        # if this is an additional installation media, it would not have this asset.
+        if self.isAdditionalType: return None
+
         if self.pathLayoutAttributes.has_key('initrd'):
             return path(self.srcPath / self.pathLayoutAttributes['initrd'])
         else:
@@ -90,6 +106,9 @@ class DistroInstallSrcBase(object):
             
     def copyKernel(self, dest, overwrite=False):
         """Copy the kernel file to a destination"""
+
+        # if this is an additional installation media, it would not have this asset.
+        if self.isAdditionalType: raise CopyError
         
         if path(dest).isdir():
             if path(dest).access(os.W_OK):
@@ -119,6 +138,9 @@ class DistroInstallSrcBase(object):
         
     def copyInitrd(self, dest, overwrite=False):
         """Copy the initrd file to a destination"""
+
+        # if this is an additional installation media, it would not have this asset.
+        if self.isAdditionalType: raise CopyError
 
         if path(dest).isdir():
             if path(dest).access(os.W_OK):
@@ -156,14 +178,17 @@ class DistroInstallSrcBase(object):
 
 def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
-    distros = [CentOS5InstallSrc(srcPath), CentOS4InstallSrc(srcPath), FedoraInstallSrc(srcPath), RHELInstallSrc(srcPath)]
+    distros = [CentOS5InstallSrc(srcPath), 
+                CentOS4InstallSrc(srcPath),
+                FedoraInstallSrc(srcPath),
+                RHELInstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
             return d
     # return None if no distro detected
-    return None
+    return DistroInstallSrcBase()
 
-    
+
 class CentOS4InstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
     
