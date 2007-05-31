@@ -166,44 +166,33 @@ class TestFedoraDetection:
         """Test if the CD is a Fedora CD"""
 
         cdObj = DistroFactory(self.fedoraLocalPath)
-        try:
-            assert cdObj.ostype == "fedora"
-        except:
-            assert False
+        assert cdObj.ostype == "fedora"
+
             
     def test_IsAdditionalFedoraCD(self):
         """Test if the CD is an additional Fedora CD"""
         
         cdObj = DistroFactory(self.additionalFedoraMedia)
-        try:
-            assert cdObj.ostype == "fedora"
-        except:
-            assert False
+        assert cdObj.ostype == "fedora"
+
         
     def test_IsNotFedoraCD(self):
         """Test if the CD is not a Fedora CD"""
 
         cdObj = DistroFactory(self.invalidFedoraLocalPath)
-        try:
-            assert cdObj.ostype != "fedora"
-        except:
-            assert False
+        assert cdObj.ostype != "fedora"
 
     def test_FedoraCDPathExists(self):
         """Test if the path does indeed contain Fedora media"""
 
         fedoraObj = DistroFactory(self.fedoraLocalPath)
-        try:
-            assert fedoraObj.verifyLocalSrcPath() is True
-        except:
-            assert False
+        assert fedoraObj.verifyLocalSrcPath() is True
+
 
     def test_FedoraCDPathNotExists(self):
         """Test if the path does indeed contain Fedora media"""
 
         fedoraObj = DistroFactory(self.invalidFedoraLocalPath)
-        try:
-            assert fedoraObj.verifyLocalSrcPath() is False
-        except:
-            assert False
+        assert fedoraObj.verifyLocalSrcPath() is False
+
 

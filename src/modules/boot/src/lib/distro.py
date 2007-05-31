@@ -64,16 +64,10 @@ class DistroInstallSrcBase(object):
             return False
         
         # Check the path for each attribute listed
-        invalid = 0
         for k,v in self.pathLayoutAttributes.items():
             p = self.srcPath / v
             if not p.exists(): 
-                invalid += 1
-            elif p.exists and k == 'packagesdir':
-                self.isAdditionalType = True
-                
-        if invalid > 0 and not self.isAdditionalType:
-            return False
+                return False
         
         return True  
 
@@ -85,9 +79,6 @@ class DistroInstallSrcBase(object):
     def getKernelPath(self):
         """Get the kernel path object"""
         
-        # if this is an additional installation media, it would not have this asset.
-        if self.isAdditionalType: return None
-        
         if self.pathLayoutAttributes.has_key('kernel'):
             return path(self.srcPath / self.pathLayoutAttributes['kernel'])
         else:
@@ -96,9 +87,6 @@ class DistroInstallSrcBase(object):
     def getInitrdPath(self):
         """Get the initrd path object"""
 
-        # if this is an additional installation media, it would not have this asset.
-        if self.isAdditionalType: return None
-
         if self.pathLayoutAttributes.has_key('initrd'):
             return path(self.srcPath / self.pathLayoutAttributes['initrd'])
         else:
@@ -106,9 +94,6 @@ class DistroInstallSrcBase(object):
             
     def copyKernel(self, dest, overwrite=False):
         """Copy the kernel file to a destination"""
-
-        # if this is an additional installation media, it would not have this asset.
-        if self.isAdditionalType: raise CopyError
         
         if path(dest).isdir():
             if path(dest).access(os.W_OK):
@@ -138,9 +123,6 @@ class DistroInstallSrcBase(object):
         
     def copyInitrd(self, dest, overwrite=False):
         """Copy the initrd file to a destination"""
-
-        # if this is an additional installation media, it would not have this asset.
-        if self.isAdditionalType: raise CopyError
 
         if path(dest).isdir():
             if path(dest).access(os.W_OK):
@@ -180,7 +162,9 @@ def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
     distros = [CentOS5InstallSrc(srcPath), 
                 CentOS4InstallSrc(srcPath),
+                CentOS4AdditionalInstallSrc(srcPath),
                 FedoraInstallSrc(srcPath),
+                FedoraAdditionalInstallSrc(srcPath),
                 RHELInstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
@@ -304,6 +288,42 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
             else:
                 raise CopyError
 
+class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
+    """This class describes how a CentOS installation source should be and the operations that can work on it."""
+    
+    def __init__(self, srcPath):
+        super(CentOS4AdditionalInstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+            
+        self.ostype = 'centos'
+        self.version = '4'
+        self.isAdditionalType = True
+
+        # These should describe the key directories that identify a CentOS installation source layout.
+        self.pathLayoutAttributes = {
+            'baseosdir' : 'CentOS',
+            'packagesdir' : 'CentOS/RPMS'
+        }
+
+    def getKernelPath(self):
+        return None
+            
+    def getInitrdPath(self):
+        return None
+            
+    def copyKernel(self, dest, overwrite=False):
+        raise CopyError
+        
+    def copyInitrd(self, dest, overwrite=False):
+        raise CopyError
 
 class FedoraInstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
@@ -454,6 +474,44 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             pass
         return self.arch
 
+class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
+    """This class describes how a Fedora installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(FedoraAdditionalInstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'fedora'
+        self.version = '0'
+        self.arch = 'noarch'
+        self.isAdditionalType = True
+
+        # These should describe the key directories that identify a Fedora Core installation source layout.
+        self.pathLayoutAttributes = {
+            'baseosdir' : 'Fedora',
+            'packagesdir' : 'Fedora/RPMS'
+        }
+
+    def getKernelPath(self):
+        return None
+            
+    def getInitrdPath(self):
+        return None
+            
+    def copyKernel(self, dest, overwrite=False):
+        raise CopyError
+        
+    def copyInitrd(self, dest, overwrite=False):
+        raise CopyError
+
 
 class RHELInstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL installation source should be and the operations that can work on it."""
@@ -553,7 +611,8 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             'imagesdir' : 'images',
             'stage2' : 'images/stage2.img',
             'baseosdir' : 'CentOS',
-            'packagesdir' : 'CentOS'
+            'packagesdir' : 'CentOS',
+            'repodatadir' : 'repodata'
         }
 
         # The following determines the patchfile layout for CentOS
