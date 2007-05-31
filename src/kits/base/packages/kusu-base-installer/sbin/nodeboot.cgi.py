@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-#   Copyright 2007 Platform Computing Corporation
+#   Copyright 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -176,15 +176,20 @@ class NodeInfo:
         cfmdir = self.db.getAppglobals('CFMBaseDir')
         if not cfmdir:
             return
-        cfmfile = os.path.join(cfmdir, 'changedfiles.lst')
+        cfmfile = os.path.join(cfmdir, 'cfmfiles.lst')
         if os.path.exists(cfmfile):
-            fp = file(cfmfile, 'r')
-            while True:
-                line = fp.readline()
-                if len(line) == 0:
-                    break
-                sys.stdout.write(line)
-            print ''
+            print '<cfm>'
+            try:
+                fp = file(cfmfile, 'r')
+                while True:
+                    line = fp.readline()
+                    if len(line) == 0:
+                        break
+                    sys.stdout.write(line)
+            except:
+                pass
+            print '</cfm>'
+            fp.close()
 
 
     def getNodeName(self, nodename='', nodeip=''):
@@ -358,9 +363,11 @@ class NodeBootApp(KusuApp):
             print 'Content-type: text/html\n\n'
 
         #if self.cgi.has_key('dump'):
-        print "Dump NII: %s <p>" % dumpnii
-        print "State: %s <p>" % state
-        print "Dump CFM: %s <p>" % dumpcfm
+        print "<nii>"
+        print "<debug>"
+        print "Dump NII: %s " % dumpnii
+        print "State: %s " % state
+        print "Dump CFM: %s " % dumpcfm
             
         
         # Test to see if we need write access to the database and connect 
@@ -373,7 +380,8 @@ class NodeBootApp(KusuApp):
         if not node:
             node = nodefun.getNodeName('', ip)
 
-        print "Node: %s" % node
+        print "Node: %s " % node
+        print "</debug>"
         
         if dumpnii:
             nodefun.getNIInfo(node)
@@ -383,7 +391,10 @@ class NodeBootApp(KusuApp):
             ltime = time.localtime(time.time())
             timestamp = "%s/%s/%s %s:%s:%s" % (ltime[0], ltime[1],
                                                ltime[2], ltime[3],
-                                               ltime[4], ltime[5]) 
+                                               ltime[4], ltime[5])
+
+        print "</nii>"
+        
         # Update State, bootfrom, and timestamp  (Methods check validity)
         nodefun.setNodeInfo(node, state, bootfrom, timestamp)
         

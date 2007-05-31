@@ -26,7 +26,7 @@ import string
 from kusu.kusuapp import KusuApp
 from kusu.kusudb import KusuDB
 from kusu.cfms import PackBuilder
-from kusu.cfmnet import CFMNet
+
 
 
 class UpdateApp(KusuApp):
@@ -75,23 +75,35 @@ class UpdateApp(KusuApp):
 
         if not self.options.updatefile and not self.options.updatepackages:
             self.toolHelp()
+
+
+        type = 0
+        if self.options.updatefile:
+            type = type | 1
+        if self.options.updatepackages:
+            type = type | 2
             
         pb = PackBuilder()
-        pb.getNodegroups()
 
         if self.options.updatepackages:
             if self.options.nodegrp:
                 # Only update a given nodegroup 
-                pb.getPackageList()
+                pb.getPackageList(self.options.nodegrp)
             else:
                 # Update all node groups
-                pb.getPackageList(self.options.nodegrp)
+                pb.getPackageList()
 
         if self.options.updatefile:
-            pb.updateCFMdir()
+            size = pb.updateCFMdir()
+            print "Distributing %i KBytes to all nodes." % (size / 1024)
             
         pb.genFileList()
 
+        # Signal the nodes to start updating
+        if self.options.nodegrp:
+            pb.signalUpdate(type, self.options.nodegrp)
+        else:
+            pb.signalUpdate(type)
 
 
 if __name__ == '__main__':
