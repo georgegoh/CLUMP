@@ -28,7 +28,8 @@ import glob
 import pwd
 
 from kusu.kusudb import KusuDB
-
+from kusu.cfmnet import CFMNet
+import ipfun 
 
 class PackBuilder:
     """This class contains the code for generating the packaged files for
@@ -47,6 +48,7 @@ class PackBuilder:
         self.passwdfile  = '/opt/kusu/etc/db.passwd'   # Change this later
         self.nodegrplst  = {}    # Dictionary of the nodegroups and their ID's
         self.pkgfile     = '/opt/kusu/etc/package.lst'  # File holding package list
+        self.updatesize  = 0      # The size of the files that need to be updated
         self.db.connect(self.database, self.user)
         tmp = self.db.getAppglobals('CFMBaseDir')
         if tmp:
@@ -59,11 +61,7 @@ class PackBuilder:
         except:
             raise "Apache is not installed!  Fix this!"
 
-
-    def getNodegroups(self):
-        """getNodegroups - populate the nodegrplst with the node group names
-        and ID. """
-        
+        # Populate the list of nodegroups
         query = ('select ngname, ngid from nodegroups')
 
         try:
@@ -79,7 +77,22 @@ class PackBuilder:
                 self.nodegrplst[name] = ngid
 
 
-    def getInstallers(self):
+    def __getNumNodes(self):
+        """__getNumNodes - Returns a count of the number of nodes in the cluster."""
+        query = ('select count(*) from nodes')
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+                 
+        if data:
+            return data[0]
+        return 0
+    
+
+    def __getInstallers(self):
         """getInstallers - Get a list of all of the available installer IP's"""
         query = ('select nics.ip from nics, nodes, nodegroups where '
                  'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid '
@@ -95,12 +108,15 @@ class PackBuilder:
         if data:
             for line in data:
                 installers.append(line[0])
+
+        return installers
                 
 
-    def getBroadcasts(self):
+    def __getBroadcasts(self):
         """getBroadcasts - Get a list of all of the available netowk broadcast addresses"""
         query = ('select network, subnet from networks')
 
+        bc = []
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -110,7 +126,11 @@ class PackBuilder:
                  
         if data:
             for line in data:
+                ip, sb = line
+                bc.append(ipfun.getBroadcast(ip, sb))
 
+        return bc
+    
         
     def genFileList(self):
         """__genFileList - Generate the cfmfiles.lst file.  This file contains a list
@@ -142,7 +162,8 @@ class PackBuilder:
 
     def updateCFMdir(self):
         """updateCFMdir -  scan through the origdir looking for modified
-        files to manage.  When one is found process it for distribution."""
+        files to manage.  When one is found process it for distribution.
+        This method will return the size of the update."""
 
         pattern = os.path.join(self.origdir, '*')
         flist = glob.glob(pattern)
@@ -151,6 +172,7 @@ class PackBuilder:
             return
 
         self.updatefiles = []
+        self.updatesize  = 0
 
         # Find the directories for the node groups 
         for nodegrp in self.nodegrplst.keys():
@@ -194,20 +216,26 @@ class PackBuilder:
                         for line in os.popen(cmd).readlines():
                             if line:
                                 print "ERROR:  %s" % line
-                                
+
+                        self.updatesize = self.updatesize + os.path.getsize(cfmfqfn)
                         os.chown(cfmfqfn, self.apacheuser[2], self.apacheuser[3])
 
-
+        return self.updatesize
 
 
     def getPackageList(self, nodegroup=''):
         """__getPackageList - Update the list of packages the node groups
         should have installed."""
         grplst = []
+        
         if not nodegroup:
             grplst = self.nodegrplst.keys()
         else:
             grplst.append(nodegroup)
+            try:
+                ngid = self.nodegrplst[nodegrp]
+            except:
+                grplst = self.nodegrplst.keys()
 
         for nodegrp in grplst:
             packages = []
@@ -289,11 +317,32 @@ class PackBuilder:
             os.chown(pfile, self.apacheuser[2], self.apacheuser[3])
 
 
+    def signalUpdate(self, type, nodegroup=''):
+        """signalUpdate - Send the update message to the cluster, or node group"""
+
+        installers = self.__getInstallers()
+        broadcasts = self.__getBroadcasts()
+        if nodegroup:
+            try:
+                ngid = self.nodegrplst[nodegroup]
+            except:
+                ngid = 0
+        else:
+            ngid = 0
+
+        # Calculate waittime
+        numnodes = self.__getNumNodes()
+        wait = 10
+        if self.updatesize:
+            wait = self.updatesize * numodes * 8 / (50000000)
+
+        cfmnet = CFMNet()
+        cfmnet.sendPacket(installers, broadcasts, type, ngid, wait)
 
 
 if __name__ == '__main__':
     pb = PackBuilder()
-    pb.getNodegroups()
     pb.getPackageList()
     pb.updateCFMdir()
     pb.genFileList()
+    pb.signalUpdate(3, '')

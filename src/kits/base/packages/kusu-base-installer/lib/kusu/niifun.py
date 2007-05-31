@@ -48,12 +48,15 @@ class NodeInstInfoHandler(ContentHandler):
         self.partitions  = {}    # Dictionary of all the Partition info.  Note key is only a counter
         self.packages    = []    # List of packages to install
         self.scripts     = []    # List of scripts to run
+        self.cfm         = ''    # The CFM data
         
         # The following are for use by the handler internally
         self.partnum     = 0     # Counter used by Partition dictionary
         self.compstart   = 0     # Flag for the start of a component block
         self.packstart   = 0     # Flag for the start of a package block
         self.scrptstart  = 0     # Flag for the start of a script block
+        self.debugstart  = 0     # Flag for the start of a debug block
+        self.cfmstart    = 0     # Flag for the start of a cfm block
         self.data        = ''
 
     def startElement(self, name, attrs):
@@ -100,6 +103,12 @@ class NodeInstInfoHandler(ContentHandler):
         elif name == 'optscript':
             self.scrptstart = 1 
 
+        elif name == 'debug':
+            self.debugstart = 1
+
+        elif name == 'cfm':
+            self.cfmstart = 1
+            
         else:
             return
 
@@ -114,11 +123,18 @@ class NodeInstInfoHandler(ContentHandler):
         elif name == 'optscript':
             self.scrptstart = 0
             self.scripts.append(self.data)
+        elif name == 'debug':
+            self.debugstart = 0
+            # Ignore the data
+        elif name == 'cfm':
+            self.cfmstart = 0
+            self.cfm += (self.data)
+
         self.data = ''
 
 
     def characters (self, ch):
-        if self.compstart == 1 or self.packstart == 1 or self.scrptstart == 1:
+        if self.compstart == 1 or self.packstart == 1 or self.scrptstart == 1 or self.debugstart == 1 or self.cfmstart == 1:
             self.data += ch
 
 
@@ -174,11 +190,15 @@ class NIIFun:
         (niidata, header) = urllib.urlretrieve(options[:-1])
         return niidata
 
+
 # Run the unittest if run directly
 if __name__ == '__main__':
     # The host is is using in the URL has to be in the database
     (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1&getindex=1")
+    # (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1")
+    # (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi")
 
+    
     fp = open(niidata)
     print fp.readlines()
     fp.close()
@@ -226,4 +246,4 @@ if __name__ == '__main__':
         print "        dhcp    = %s" % (niihandler.nics[i]['dhcp'])
         print "        options = %s" % (niihandler.nics[i]['options'])
     
-
+    print "CFM Data = %s" % niihandler.cfm
