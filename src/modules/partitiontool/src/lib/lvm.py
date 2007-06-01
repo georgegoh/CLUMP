@@ -260,7 +260,7 @@ class LogicalVolumeGroup(object):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
         logger.info('Deleting volume group %s' % self.name)
         self.delete = True
-        queueCommand(lvm.removeVolumeGroup(self.name))
+        queueCommand(lvm.removeVolumeGroup, (self.name))
 
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
