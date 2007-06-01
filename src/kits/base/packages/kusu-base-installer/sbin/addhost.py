@@ -25,19 +25,14 @@ import string
 import gettext
 import time
 import popen2
-from kusu.app import KusuApp
-from kusu.db import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 import snack
-import kusu.screens.screenfactory
-import kusu.screens.navigator
-import kusu.screens.kusuwidgets
-import kusu.nodefun
+from kusu.ui.text.OCSscreenfactory import OCSBaseScreen
+from kusu.ui.text.OCSnavigator import *
+from kusu.ui.text.screenfactory import ScreenFactory
+from kusu.nodefun import NodeFun
 import kusu.ipfun
-
-NAV_NOTHING = -1
-NAV_FORWARD = 0
-NAV_BACK = 1
-NAV_QUIT = 2
 
 NOCANCEL    = 0
 ALLOWCANCEL = 1
@@ -65,12 +60,15 @@ myNode = kusu.nodefun.NodeFun()
 global pluginActions
 pluginActions = None
 
+global kusuApp
+global database
+kusuApp = KusuApp()
+database = KusuDB()
+
 class AddHostApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
-        self._database = KusuDB()
-        self._kusuApp = KusuApp()
 
     def toolVersion(self, option, opt, value, parser):
         """ 
@@ -87,20 +85,20 @@ class AddHostApp(KusuApp):
         Parse the command line arguments. """
 
         self.parser.add_option("-v", "--version", action="callback",
-                                callback=self.toolVersion, help=self._kusuApp._("addhost_version_usage"))
+                                callback=self.toolVersion, help=kusuApp._("addhost_version_usage"))
         self.parser.add_option("-n", "--nodegroup", action="store",
-                                type="string", dest="nodegroup", help=self._kusuApp._("addhost_nodegroup_usage"))
+                                type="string", dest="nodegroup", help=kusuApp._("addhost_nodegroup_usage"))
         self.parser.add_option("-i", "--interface", action="store",
-                                type="string", dest="interface", help=self._kusuApp._("addhost_interface_usage"))
+                                type="string", dest="interface", help=kusuApp._("addhost_interface_usage"))
         self.parser.add_option("-f", "--file", action="store",
-                                type="string", dest="macfile", help=self._kusuApp._("addhost_macfile_usage"))
+                                type="string", dest="macfile", help=kusuApp._("addhost_macfile_usage"))
         self.parser.add_option("-e", "--remove", action="callback",
-                                dest="remove", callback=self.varargs, help=self._kusuApp._("addhost_remove_usage"))
+                                dest="remove", callback=self.varargs, help=kusuApp._("addhost_remove_usage"))
         self.parser.add_option("-p", "--replace", action="store",
-                                type="string", dest="replace", help=self._kusuApp._("addhost_replace_usage"))
+                                type="string", dest="replace", help=kusuApp._("addhost_replace_usage"))
         self.parser.add_option("-r", "--rack", action="store",
-                                type="int", dest="rack", help=self._kusuApp._("addhost_rack_usage"))
-        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=self._kusuApp._("addhost_update_usage"))
+                                type="int", dest="rack", help=kusuApp._("addhost_rack_usage"))
+        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=kusuApp._("addhost_update_usage"))
     
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
@@ -137,7 +135,7 @@ class AddHostApp(KusuApp):
                   thisPlugin = thisModule.AddHostPlugin()
                   pluginInstances.append(thisPlugin)
              except:
-                  print self._kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule)
+                  print kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule)
         pluginActions = PluginActions(pluginInstances)
     
     def nxor(self, *args):
@@ -152,6 +150,9 @@ class AddHostApp(KusuApp):
         
         screenList = []
 
+        global kusuApp
+        
+        
         haveInterface = False
         haveNodegroup = False
         replaceMode = False
@@ -173,31 +174,31 @@ class AddHostApp(KusuApp):
                     if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False):
                         pass
                     else:
-                        self.parser.error(self._kusuApp._("addhost_options_exclusive"))
+                        self.parser.error(kusuApp._("addhost_options_exclusive"))
 
         # Handle -r option
         if self._options.rack:
             result = int(self._options.rack)
             if result < 0:
-                self.parser.error(self._kusuApp._("addhost_negative_number"))
+                self.parser.error(kusuApp._("addhost_negative_number"))
             else:
                 myNodeInfo.nodeRackNumber = self._options.rack
 
         # Handle -i option
         if self._options.interface:
             if self._options.interface[0] == '-':
-                self.parser.error(self._kusuApp._("addhost_options_interface_required"))
+                self.parser.error(kusuApp._("addhost_options_interface_required"))
             else:
                 if myNode.validateInterface(self._options.interface):
                     myNodeInfo.selectedInterface = self._options.interface
                     haveInterface = True
                 else:
-                    self.parser.error(self._kusuApp._("addhost_options_invalid_interface"))
+                    self.parser.error(kusuApp._("addhost_options_invalid_interface"))
 
         # Handle -n option
         if self._options.nodegroup:
             if self._options.nodegroup[0] == '-':
-                self.parser.error(self._kusuApp._("addhost_options_nodegroup_required"))
+                self.parser.error(kusuApp._("addhost_options_nodegroup_required"))
             else:
                 # Check for valid nodegroup. if not return an error.
                 result, ngid = myNode.validateNodegroup(self._options.nodegroup)
@@ -205,43 +206,43 @@ class AddHostApp(KusuApp):
                     myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
                 else:
-                    self.parser.error(self._kusuApp._("addhost_options_invalid_nodegroup"))
+                    self.parser.error(kusuApp._("addhost_options_invalid_nodegroup"))
 
         # Handle -f -i -n options
         if (self._options.macfile and self._options.interface and self._options.nodegroup):
             
             # Check if the file specified exists.
             if not os.path.isfile(self._options.macfile):
-                self.parser.error(self._kusuApp._("The file '%s' was not found" % self._options.macfile))
+                self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
             if haveNodegroup and not self._options.rack:
-                checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+                checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                 checkHost.getNodeFormat()
                 flag = 1
                 if checkHost.isNodenameHasRack() and haveInterface:
                   while flag:
-                      response = raw_input(self._kusuApp._("addhost_textprompt_rack"))
+                      response = raw_input(kusuApp._("addhost_textprompt_rack"))
                       try:
                           result = int(response)
                           if result < 0:
-                             print self._kusuApp._("Error: Cannot specify a negative number. Please try again")
+                             print kusuApp._("Error: Cannot specify a negative number. Please try again")
                              flag = 1
                           else:
                              myNodeInfo.nodeRackNumber = result
                              flag = 0
                       except:
-                          print self._kusuApp._("Error: The value %s is not a number. Please try again" % response)
+                          print kusuApp._("Error: The value %s is not a number. Please try again" % response)
                           flag = 1
               
             # Read in list of mac addresses
             macfileList = open(self._options.macfile,'r').readlines()
-            self.prepopulateNodes = kusu.nodefun.NodeFun(myNodeInfo.nodeRackNumber, myNodeInfo.nodeGroupSelected)
+            self.prepopulateNodes = NodeFun(myNodeInfo.nodeRackNumber, myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = self.prepopulateNodes.findMACAddress(macaddr)
                  if checkMacAddr == False:
                      nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedInterface)
-                     print self._kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
+                     print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
                      pluginActions.plugins_add(nodeName)
                      myNodeInfo.nodesInstalled.append([nodeName, macaddr])
@@ -251,15 +252,15 @@ class AddHostApp(KusuApp):
               
         if self._options.macfile:
             if not self._options.interface or not self._options.nodegroup:
-               self.parser.error(self._kusuApp._("addhost_options_macfile_options_needed"))
+               self.parser.error(kusuApp._("addhost_options_macfile_options_needed"))
 
         # Handle -p option
         if self._options.replace:
             if self._options.replace.strip().isdigit():
-                self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
+                self.parser.error(kusuApp._("addhost_options_invalid_node"))
             else:
                 if self._options.replace[0] == '-':
-                    self.parser.error(self._kusuApp._("addhost_options_replace_required"))
+                    self.parser.error(kusuApp._("addhost_options_replace_required"))
                 else:
                     if myNode.validateNode(self._options.replace):
                         replaceMode = True
@@ -268,17 +269,17 @@ class AddHostApp(KusuApp):
                         if myNode.replaceNodeEntry(self._options.replace) == False:
                             sys.exit(-1)
                     else:
-                        print self._kusuApp._("The node %s is not found. Please try again\n" % self._options.replace)
+                        print kusuApp._("The node %s is not found. Please try again\n" % self._options.replace)
                         sys.exit(-1)
 
         # Handle -e option
         if self._options.remove:
             for delnode in self._options.remove:
                  if delnode.strip().isdigit():
-                     self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
+                     self.parser.error(kusuApp._("addhost_options_invalid_node"))
                  # Disallow options next to options.
                  if delnode[0] == '-':
-                     self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
+                     self.parser.error(kusuApp._("addhost_options_invalid_node"))
 
                  # Ask all plugins to call removed() function
                  pluginActions.plugins_removed(delnode)
@@ -289,7 +290,7 @@ class AddHostApp(KusuApp):
             sys.exit(0)
 
         elif self._options.remove == []:
-              self.parser.error(self._kusuApp._("addhost_options_invalid_node"))
+              self.parser.error(kusuApp._("addhost_options_invalid_node"))
 
         # Handle -u option
         if self._options.update:
@@ -303,51 +304,56 @@ class AddHostApp(KusuApp):
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
         if haveNodegroup and not self._options.rack and not self._options.macfile:
-            checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+            checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
             checkHost.getNodeFormat()
             flag = 1
             if checkHost.isNodenameHasRack() and haveInterface:
                 while flag:
-                   response = raw_input(self._kusuApp._("addhost_textprompt_rack"))
+                   response = raw_input(kusuApp._("addhost_textprompt_rack"))
                    try:
                        result = int(response)
                        if result < 0:
-                          print self._kusuApp._("Error: Cannot specify a negative number. Please try again.")
+                          print kusuApp._("Error: Cannot specify a negative number. Please try again.")
                           flag = 1
                        else:
                           myNodeInfo.nodeRackNumber = result
                           flag = 0
                    except:
-                       print self._kusuApp._("Error: The value %s is not a number. Please try again" % response)
+                       print kusuApp._("Error: The value %s is not a number. Please try again" % response)
                        flag = 1
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
         if (haveNodegroup and self._options.rack):
-            checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+            checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
             checkHost.getNodeFormat()
             if not checkHost.isNodenameHasRack():
                 myNodeInfo.nodeRackNumber = 0
 
         # Screen ordering
+        global database
+
         if replaceMode:
-            screenList = [ WindowNodeStatus(self._database, self._kusuApp) ]
+            screenList = [ WindowNodeStatus(database=database, kusuApp=kusuApp) ]
 
         elif haveInterface and haveNodegroup:
-            screenList = [ WindowNodeStatus(self._database, self._kusuApp) ]
+            screenList = [ WindowNodeStatus(database=database, kusuApp=kusuApp) ]
 
         elif haveNodegroup and not haveInterface:
-            screenList = [ WindowSelectNode(self._database, self._kusuApp), WindowNodeStatus(self._database, self._kusuApp) ]
+            screenList = [ WindowSelectNode(database=database, kusuApp=kusuApp), \
+                            WindowNodeStatus(database=database, kusuApp=kusuApp) ]
 
         else:
-            screenList = [ NodeGroupWindow(self._database, self._kusuApp), 
-                          WindowSelectNode(self._database, self._kusuApp),
-                          WindowNodeStatus(self._database, self._kusuApp)
+            screenList = [ NodeGroupWindow(database=database, kusuApp=kusuApp), 
+                          WindowSelectNode(database=database, kusuApp=kusuApp),
+                          WindowNodeStatus(database=database, kusuApp=kusuApp)
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = kusu.screens.navigator.Navigator(screenFactory=screenFactory, screentitle="Add Hosts - Version 5.0", showTrail=False)
+        ks = OCSNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
-
+        if len(myNodeInfo.nodesInstalled):
+            pluginActions.plugins_finished()
+ 
 """ AddHostPlugin class
     This class is a virtual used to be implemented by plugins """
 
@@ -454,47 +460,46 @@ class PluginActions(object, KusuApp):
              if callable(getattr(plugin, "update", None)):
                  plugin.updated(self._dbconnection)
 
-class ScreenActions(kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
-        
-    def hotkeyCallback(self):
-        """ hotkeyCallback()
-        Set callback function
-        """
+class NodeGroupWindow(OCSBaseScreen):
 
+    name = "addhost_window_title_nodegroup"
+    msg = "addhost_instruction_nodegroup"
+    buttons = ['next_button', 'exit_button']
+    hotkeysDict = {}
+    
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+
+    def F12Action(self):
         if myNodeInfo.quitPrompt:
-            result = self.selector.popupDialogBox(self._("addhost_window_title_exit"), self._("addhost_instructions_exit"), 
-                     (self._("yes_button"), self._("no_button")))
+            result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"), 
+                    (self.kusuApp._("yes_button"), self.kusuApp._("no_button")))
             if result == "no":
                 return NAV_NOTHING
             if result == "yes":
-                self.finish()  # Destroy the screens, exit
-                sys.exit(0)
+                return NAV_QUIT
         else:
-                self.finish()
-                if len(myNodeInfo.nodesInstalled):
-                    pluginActions.plugins_finished()
-                sys.exit(0)
-
-    def ExitAction(self, data=None):
+            if len(myNodeInfo.nodesInstalled):
+                pluginActions.plugins_finished()
+        return NAV_QUIT
+ 
+    def exitAction(self, data=None):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
-        self.finish()
         if len(myNodeInfo.nodesInstalled):
             pluginActions.plugins_finished()
-        sys.exit(0)
+        return NAV_QUIT
 
-class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
-
-    title = "addhost_window_title_nodegroup"
-    #name = 'Node Group'   # used for wizardmode sidebar
-    msg = "addhost_instruction_nodegroup"
-    buttons = ['exit_button']
-    
+    def nextAction(self):
+        return NAV_FORWARD
+        
     def setCallbacks(self):
-        self.buttons = [ self._('exit_button') ]
-        self.buttonsDict[self.buttons[0]].setCallback_(self.ExitAction)
+        self.buttonsDict['exit_button'].setCallback_(self.exitAction)
+        self.buttonsDict['next_button'].setCallback_(self.nextAction)
 
+        self.hotkeysDict['F12'] = self.F12Action
+        
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
         
@@ -502,7 +507,7 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
             self.database.connect()
         except:
             self.finish()
-            print self._("DB_Query_Error\n")
+            print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
 
         query = "SELECT ngname,ngid FROM nodegroups"
@@ -511,11 +516,11 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
             nodeGroups = self.database.fetchall()
         except:
             self.finish()
-            print self._("DB_Query_Error\n")
+            print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
    
         self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(40, 2, self._(self.msg), scroll=0, wrap=1)      
+        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
         self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
         for ng,ngid in nodeGroups:
             self.listbox.append("%s" % ng, "%s" % ngid)
@@ -534,13 +539,31 @@ class NodeGroupWindow(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu
         """
         pass
 
-class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
+class WindowSelectNode(NodeGroupWindow):
 
-    title = "addhost_window_title_interface"
+    name = "addhost_window_title_interface"
     msg = "addhost_instruction_interface"
-    buttons = []
-    selectedInterface = None
+    buttons = ['next_button', 'previous_button']
+    #selectedInterface = None
 
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+
+    def backAction(self):
+        return NAV_BACK
+        
+    def nextAction(self):
+        return NAV_FORWARD
+    
+    def F5Action(self):
+        return NAV_IGNORE
+        
+    def setCallbacks(self):
+        self.buttonsDict['previous_button'].setCallback_(self.backAction)
+        self.buttonsDict['next_button'].setCallback_(self.nextAction)
+
+        self.hotkeysDict['F5'] = self.F5Action
+    
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
         
@@ -558,7 +581,7 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Label(self.msg)
-        instruction = snack.Textbox(40, 2, self._(self.msg), scroll=0, wrap=0) 
+        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0) 
         defaultFlag = 1
         for networkInfo in networks:
             itemName = "%s  (%s)" % (networkInfo[0].ljust(4), networkInfo[1])
@@ -593,42 +616,47 @@ class WindowSelectNode(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
 
         # Prompt for Rack Number if node format requires a rack number specified.
         if not myNodeInfo.nodeRackNumber:
-           checkHost = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+           checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
            checkHost.getNodeFormat()
            if checkHost.isNodenameHasRack():
                while flag:
-                 result = self.selector.popupInputBox(self._("addhost_window_title_rack"),
-                    self._("addhost_instructions_rack"), [self._("addhost_gui_text_rack")], 
-                    NOCANCEL, [self._("ok_button")], 40, 20)
-                 try:
-                     result = int(result[0])
-                     if result < 0:
-                         self.selector.popupStatus(self._("addhost_window_title_error"), 
-                         self._("Error: Cannot specify a negative number. Please try again"), 2)
-                         flag = 1
-                     else:
-                         myNodeInfo.nodeRackNumber = result
-                         flag = 0
-                 except:
-                     self.selector.popupStatus(self._("addhost_window_title_error"), 
-                            self._("Error: The value %s is not a number. Please try again" % result[0]), 2)
-                     flag = 1
+                    buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
+                    self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")], 
+                    NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
+                    try:
+                        result = int(result[0])
+                        if result < 0:
+                            self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
+                            self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                            flag = 1
+                        else:
+                            myNodeInfo.nodeRackNumber = result
+                            flag = 0
+                    except:
+                        self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
+                        self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                        flag = 1
 
         return True, 'Success'
         
-class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kusu.screens.navigator.PlatformScreen):
-    title = "addhost_window_title_installing"
-    buttons = []
+class WindowNodeStatus(NodeGroupWindow):
+    name = "addhost_window_title_installing"
+    buttons = ['quit_button']
 
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        self.setScreenTimer(500)
+
+    def setCallbacks(self):
+        self.buttonsDict['quit_button'].setCallback_(self.exitAction)
+        self.hotkeysDict['F12'] = self.F12Action
+    
     def drawImpl(self):
-        self.currentScreen = self.selector.getCurrentScreen()
+        #self.currentScreen = self.selector.getCurrentScreen()
         self.listbox = snack.Listbox(10, scroll =1, returnExit = 1, width = 60, showCursor = 0)
         
         # We can't go back after we get here
         myNodeInfo.quitPrompt = False
-        self.selector.disableBackButton()
-        self.selector.endButtonTitle(self._("quit_button"))
-        self.selector.setScreenTimer(500)
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(self.listbox, col=0, row=0, padding=(0,0,0,0))
 
@@ -668,9 +696,9 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                     # This is a new mac address to add to the database.
                     if discoveryCheck == False and (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface) \
                         and not myNodeInfo.optionReplaceMode:
-                        self.aNode = kusu.nodefun.NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+                        self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                         nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface)
-                        self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self._("addhost_installing_string")), nodeName)
+                        self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
                         pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodesInstalled.append([nodeName, macAddress])
                         del self.aNode
@@ -679,21 +707,20 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
-                           self.selector.popupStatus(self._("addhost_node_discovery"), self._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
+                           self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
                            self.myNode.replaceNICBootEntry (myNodeInfo.replaceNodeName, macAddress)
                            # Call Replace mode plugins
-                           self.finish()
                            pluginActions.plugins_replaced(myNodeInfo.replaceNodeName)
-                           pluginActions.plugins_finished()
-                           sys.exit(0)
+                           return NAV_QUIT
                     del self.myNode
         
         # Store current position of /var/log/messages
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
+        return NAV_IGNORE
 
         # We must refresh or things will draw weird.
-        self.currentScreen.refresh()
+        #self.selector.refresh()
                                 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
@@ -705,13 +732,12 @@ class WindowNodeStatus(ScreenActions, kusu.screens.screenfactory.BaseScreen, kus
         """
         pass
 
-class ScreenFactoryImpl(kusu.screens.screenfactory.ScreenFactory):
+class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
        Navigator(or it's child) class.
     """
-
     def __init__(self, screenlist):
-        kusu.screens.screenfactory.ScreenFactory.screens = screenlist
+        ScreenFactory.screens = screenlist
 
 if __name__ == '__main__':
     app = AddHostApp()
