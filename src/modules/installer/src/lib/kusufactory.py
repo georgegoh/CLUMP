@@ -70,7 +70,7 @@ class ScreenFactoryImpl(ScreenFactory):
     # Create db
     dbs = db.DB('sqlite', db=kusudb)
     dbs.bootstrap()
-    kiprofile.addDatabase(db)
+    kiprofile.addDatabase(dbs)
 
     ScreenFactory.screens = \
         [WelcomeScreen(kiprofile=kiprofile),
