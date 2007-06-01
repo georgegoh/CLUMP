@@ -72,10 +72,9 @@ CREATE TABLE networks (
 );
 
 CREATE TABLE ng_has_comp (
-  idcomp2ng INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   ngid INTEGER UNSIGNED NOT NULL,
   cid INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY(idcomp2ng, ngid, cid),
+  PRIMARY KEY(ngid, cid),
   INDEX comp2ng_FKIndex1(cid),
   INDEX comp2ng_FKIndex2(ngid)
 );
