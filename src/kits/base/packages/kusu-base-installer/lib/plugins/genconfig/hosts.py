@@ -19,10 +19,10 @@
 #
 
 
-import genconfig
+from kusu.genconfig import Report
 
 
-class thisReport(genconfig.Report):
+class thisReport(Report):
     
     def toolHelp(self):
         print self.gettext("genconfig_Hosts_Help")

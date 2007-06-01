@@ -17,10 +17,10 @@
 #
 #
 
-import genconfig
 import os
+from kusu.genconfig import Report
 
-class thisReport(genconfig.Report):
+class thisReport(Report):
 
     def toolHelp(self):
         """toolHelp - This method provides the help screen for this particular

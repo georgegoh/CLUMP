@@ -16,12 +16,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 
-import genconfig
 import sys
 import string
 import time
+from kusu.genconfig import Report
 
-class thisReport(genconfig.Report):
+class thisReport(Report):
     
     def toolHelp(self):
         """toolHelp - This method provides the help screen for this particular
