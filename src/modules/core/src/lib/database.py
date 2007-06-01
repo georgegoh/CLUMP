@@ -397,11 +397,7 @@ class DB(object):
             sa.Column('usingdhcp', sa.Boolean, sa.PassiveDefault('0')),
             mysql_engine='InnoDB')
 
-        # You don't really idcomp2ng because this is 
-        # a junction table for a M-N relantionship.
-        # (ngid | cid) is uniq  
         ng_has_comp = sa.Table('ng_has_comp', self.metadata,
-            sa.Column('idcomp2ng', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('ngid', sa.Integer, primary_key=True, nullable=False),
             sa.Column('cid', sa.Integer, primary_key=True, nullable=False),
             sa.ForeignKeyConstraint(['ngid'], ['nodegroups.ngid']),

@@ -323,7 +323,6 @@ class KitOps:
                         component.kid = kit.kid
 
         session.flush()
-
         session.close()
         return 0
 

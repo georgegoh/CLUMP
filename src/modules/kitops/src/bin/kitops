@@ -44,17 +44,21 @@ class KitOpsApp(KusuApp):
                                action='callback', callback=self.optargs)
         self.parser.add_option('-m', dest='media',
                                help=self._('kitops_usage_media'))
-#        self.parser.add_option('-l','--list', action='store_true', dest='list',default=False,\
-#            help=self._('kitops_usage_list'))
         self.parser.add_option('-l', '--list', dest='lstkit',
                                help=self._('kitops_usage_list'),
                                action='callback',callback=self.optargs )
         self.parser.add_option('-e', '--remove', dest='delkit',
                                help=self._('kitops_usage_remove'))
-        self.parser.add_option('-d', '--database', dest='dbinfo',
-                               help=self._('Comma separated list of DB params'))
         self.parser.add_option('-p', '--prefix', dest='prefix',
                                help=self._('Directory to place /depot in'))
+        self.parser.add_option('--dbdriver', dest='dbdriver',
+                               help=self._('Database driver (sqlite, mysql)'))
+        self.parser.add_option('--dbdatabase', dest='dbdatabase',
+                               help=self._('Database'))
+        self.parser.add_option('--dbuser', dest='dbuser',
+                               help=self._('Database username'))
+        self.parser.add_option('--dbpassword', dest='dbpassword',
+                               help=self._('Database password'))
 
     def nxor(*args):
         '''N-way XOR for an  arbitrary number of bool args'''
@@ -99,11 +103,21 @@ class KitOpsApp(KusuApp):
             koinst.setKitname(options.lstkit)
             self.kitop = KITOP_LST
 
-        if options.dbinfo:
-            [driver, database, username, password] = options.dbinfo.split(',')
-            self.koinst.setDB(db.DB(driver, database, username, password))
-        else:
-            self.koinst.setDB(db.DB('mysql', 'kusudp', 'apache'))
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+
+        if options.dbdriver:
+            dbdriver = options.dbdriver
+        if options.dbdatabase:
+            dbdatabase = options.dbdatabase
+        if options.dbuser:
+            dbuser = options.dbuser
+        if options.dbpassword:
+            dbpassword = options.dbpassword
+
+        self.koinst.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
 
         if options.prefix:
             kl.debug('Setting prefix to %s', options.prefix)

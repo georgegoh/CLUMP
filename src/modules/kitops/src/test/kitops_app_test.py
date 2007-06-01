@@ -36,11 +36,15 @@ def setUp():
 
     assert test_kits.exists(), 'ISO dir %s does not exist!' % test_kits
 
-    dbinfo = ['mysql', 'kitops_test', 'root', 'root']
-    dbinfo_str = ','.join(dbinfo)
+    #dbinfo = ['mysql', 'kitops_test', 'root', 'root']
+    #dbinfo_str = '--dbdriver=%s --dbdatabase=%s --dbuser=%s --dbpassword=%s' % \
+                 #(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
+    #kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
+    #kusudb.createDatabase()
 
-    kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
-    kusudb.createDatabase()
+    dbinfo = ['sqlite', '/tmp/kusu-test-kitops.db']
+    dbinfo_str = '--dbdriver=%s --dbdatabase=%s' % (dbinfo[0], dbinfo[1])
+    kusudb = db.DB(dbinfo[0], dbinfo[1])
 
     temp_root = path(tempfile.mkdtemp(prefix='kot'))
     temp_mount = path(tempfile.mkdtemp(prefix='kot'))
@@ -50,7 +54,12 @@ def tearDown():
     global temp_mount
     global kusudb
 
-    kusudb.dropDatabase()
+    #kusudb.dropDatabase()
+    try:
+        os.unlink('/tmp/kusu-test-kitops.db')
+    except:
+        pass
+
     temp_root.rmtree()
     temp_mount.rmtree()
 
@@ -95,7 +104,7 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
-        addP = subprocess.Popen('kitops -a -m %s -d %s -p %s' %
+        addP = subprocess.Popen('kitops -a -m %s %s -p %s' %
                                 (self.kit, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -204,7 +213,7 @@ class TestBaseKit:
         rpmP.wait()
 
         # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e %s -d %s -p %s' %
+        addP = subprocess.Popen('kitops -e %s %s -p %s' %
                                 (self.kit_name, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -364,7 +373,7 @@ class TestFedoraCore6i386:
         # passing "N" to kitops to stop at one disc
         add_echo = "N"
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
-                                'kitops -a -m %s -d %s -p %s &> /dev/null' %
+                                'kitops -a -m %s %s -p %s &> /dev/null' %
                                 (self.kit, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -436,7 +445,7 @@ class TestFedoraCore6i386:
         # passing disc 2 to kitops
         add_echo = "y\n%s\nN" % self.kit2
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
-                                'kitops -a -m %s -d %s -p %s &> /dev/null' %
+                                'kitops -a -m %s %s -p %s &> /dev/null' %
                                 (self.kit, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -503,7 +512,7 @@ class TestFedoraCore6i386:
 
 def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot')
-    lsP = subprocess.Popen('kitops -l %s -d %s -p %s' %
+    lsP = subprocess.Popen('kitops -l %s %s -p %s' %
                            (name, dbinfo_str, temp_root),
                            shell=True, stdout=ls_fd)
     lsP.wait()
