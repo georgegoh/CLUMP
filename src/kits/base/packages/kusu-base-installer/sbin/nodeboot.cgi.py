@@ -179,6 +179,7 @@ class NodeInfo:
         cfmfile = os.path.join(cfmdir, 'cfmfiles.lst')
         if os.path.exists(cfmfile):
             print '<cfm>'
+            print "CFMBaseDir=%s" % cfmdir
             try:
                 fp = file(cfmfile, 'r')
                 while True:
