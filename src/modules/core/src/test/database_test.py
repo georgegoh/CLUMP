@@ -15,7 +15,7 @@ class TestSQLITE:
         self.tempdir = tempfile.mkdtemp()
         self.kusudb = path(self.tempdir) / 'kusu.db'
 
-        self.dbs =  db.DB('sqlite', db=self.kusudb)
+        self.dbs = db.DB('sqlite', db=self.kusudb)
 
     def tearDown(self):
         self.dbs.dropTables()
@@ -52,3 +52,8 @@ class TestSQLITE:
         for name in ['installer', 'compute']:
             ng = session.query(self.dbs.nodegroups).select_by(ngname=name)[0]
             assert ng.ngname == name
+
+        assert len(session.query(self.dbs.nodegroups).select_by(ngname='compute')[0].partitions) > 0
+
+        session.clear()
+        session.close()
