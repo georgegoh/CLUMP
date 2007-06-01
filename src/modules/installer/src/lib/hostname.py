@@ -30,7 +30,7 @@ class FQHNScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     buttons = [_('Clear All')]
 
     def __init__(self, kiprofile):
-        screenfactory.BaseScreen.__init__(self, kiprofile)
+        screenfactory.BaseScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistantProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
@@ -57,7 +57,7 @@ class FQHNScreen(screenfactory.BaseScreen, profile.PersistantProfile):
         """
         Draw the window.
         """
-
+        if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
         self.screenGrid = snack.Grid(1, 3)

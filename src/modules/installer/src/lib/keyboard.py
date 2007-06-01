@@ -42,6 +42,7 @@ class KeyboardSelectionScreen(screenfactory.BaseScreen):
         for name in keyboardList:
             self.listbox.append(name, name)
 
+        if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.listbox.setCurrent(self.kiprofile[self.profile])
 
         self.screenGrid.setField(self.listbox, col=0, row=1,

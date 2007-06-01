@@ -49,6 +49,7 @@ class LanguageSelectionScreen(screenfactory.BaseScreen):
         for language in languages:
             self.listbox.append(language, self.langMap[language])
 
+        if not self.kiprofile.has_key(self.profile): self.setDefaults()
         for k, v in self.langMap.iteritems():
             if v[0] == self.kiprofile[self.profile]:
                 self.kiprofile[self.profile] = v

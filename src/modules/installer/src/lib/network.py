@@ -33,7 +33,7 @@ class NetworkScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     buttons = [_('Configure')]
 
     def __init__(self, kiprofile):
-        screenfactory.BaseScreen.__init__(self, kiprofile)
+        screenfactory.BaseScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistantProfile.__init__(self, kiprofile)        
 
 
@@ -164,7 +164,8 @@ class NetworkScreen(screenfactory.BaseScreen, profile.PersistantProfile):
         """
         Populate the listbox with interfaces.
         """
-
+        if not self.kiprofile.has_key(self.profile): self.setDefaults()
+        if not self.kiprofile[self.profile].has_key('interfaces'): self.setDefaults()
         interfaces = self.kiprofile[self.profile]['interfaces']
 
         # we want interfaces in alphabetical order

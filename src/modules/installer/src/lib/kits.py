@@ -14,6 +14,7 @@ from kits_add import *
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
+from kusu.kitops.kitops import KitOps
 
 kl = kusulog.getKusuLog('installer.kits')
 
@@ -51,9 +52,20 @@ class KitsScreen(screenfactory.BaseScreen):
                                  justification=[LEFT, RIGHT, RIGHT],
                                  returnExit=0)
 
+        self.detectAndDisplayKits()
+
         prog_dlg.close()
         self.screenGrid.setField(self.listbox, col=0, row=0,
                                  padding=(0,0,0,0), anchorLeft=1)
+
+    def detectAndDisplayKits(self):
+        """Detect kits already existing in the system."""
+        db = self.kiprofile.getDatabase()
+        self.kitops = KitOps()
+        self.kitops.setDB(db)
+        kit_list = self.kitops.listKit()
+        for kit in kit_list:
+            self.listbox.addRow([kit.rname, kit.version, kit.arch], kit)
 
     def validate(self):
         return True, ''

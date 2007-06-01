@@ -63,6 +63,35 @@ def vanillaSchemaLVM():
     return schema
 
 
+def scenario22():
+    """This corresponds to Scenario 2.2 of the Client Node Partitioning Report,
+       Appendix:
+          a. /boot - ext3, 100:
+          b. swap - 1000M
+          c. / - ext3, 6000M (fill)
+    """
+    # define the physical disk and partitions first
+    disk_dict = { 1: { 'partition_dict': {} } }
+    disk1_partition_dict = disk_dict[1]['partition_dict']
+    disk1_partition_dict[1] = { 'size_MB': 100,
+                                'fs': 'ext2',
+                                'mountpoint': '/boot',
+                                'fillAvailableSpace': False}
+    disk1_partition_dict[2] = { 'size_MB': 1000,
+                                'fs': 'linux-swap',
+                                'mountpoint': None,
+                                'fillAvailableSpace': False}
+    disk1_partition_dict[3] = { 'size_MB': 6000,
+                                'fs': 'ext3',
+                                'mountpoint': '/',
+                                'fillAvailableSpace': True}
+
+    schema = {'disk_dict' : disk_dict,
+              'vg_dict' : {} }
+
+    return schema
+
+
 def setupDiskProfile(disk_profile, schema=None):
     """Set up a disk profile based on a given schema."""
     # check that no partitions have been created.
