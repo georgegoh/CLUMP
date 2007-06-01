@@ -579,18 +579,6 @@ class DB(object):
 
         session.flush()
         
-        # compute nodegroup partition
-        compute_ng = session.query(self.nodegroups).select_by(ngname='compute')[0]
-        part = Partitions()
-        part.partition = '/boot'
-        part.size = 100
-        part.preserve = False
-        part.mntpnt = '/boot'
-        part.fstype = 'ext3'
-        compute_ng.partitions.append(part)
-        session.save(part, entity_name = self.entity_name)
-        session.flush()
-
         session.close()
 
     def createDatabase(self):
@@ -709,81 +697,3 @@ class DB(object):
 
         session.close()
 
-if __name__ == '__main__':
-    import os
-
-    try:
-        os.unlink('/tmp/f.db')
-    except: pass
-
-    k = DB('sqlite', '/tmp/f.db')
-    k.createTables()
-    k.bootstrap()
-
-    session = sa.create_session()
-
-    session.save(AppGlobals(kname='kname1', kvalue='kvalue1', ngid='ngid1'))
-    session.save(AppGlobals(kname='kname2', kvalue='kvalue2', ngid='ngid2'))
-    session.save(AppGlobals(kname='kname3', kvalue='kvalue3', ngid='ngid3'))
-    
-    myKit = Kits(rname='fedora-6-i386', rdesc='OS kit for fedora 6 i386',
-                 version='6', isOS=True, removable=False, arch='i386')
-    myKit.components.append(Components(cname='A component', os='os'))
-    session.save(myKit)
-    session.flush()
-
-    myRepo = Repos(reponame='default-repo', installers='example.com',
-                   ostype='fedora-6-i386')
-    anotherRepo = Repos(reponame='another-repo', installers='example.org',
-                   ostype='fedora-6-x86_64')
-    session.save(myRepo)
-    session.flush()
-    
-    session.save(NodeGroups(repoid=myRepo.repoid, ngname='myNodeGroup1'))
-    session.save(NodeGroups(repoid=myRepo.repoid, ngname='myNodeGroup2'))
-
-    anotherRepo.nodegroups.append(NodeGroups(ngname='myNodeGroup3'))
-    session.save(anotherRepo)
-    session.flush()
-
-    session.save(ReposHaveKits(kid=myKit.kid, repoid=myRepo.repoid))
-    session.save(ReposHaveKits(kid=myKit.kid, repoid=anotherRepo.repoid))
-    session.flush()
-    
-    # all the nodegroups of all repos
-    for repo in session.query(k.repos).select():
-        print repo
-        for nodegroup in repo.nodegroups:
-            print '\t', nodegroup
-    
-    print
-    print
-    # all the kits for all repos, then
-    #  all the components in a kit
-    for repo in session.query(k.repos).select():
-        print repo
-        for kit in repo.kits:
-            print '\t', kit
-            for component in kit.components:
-                print '\t\t', component
-
-    print
-    print   
-    for kit in session.query(k.kits).select():
-        print kit
-        for repo in kit.repos:
-            print '\t', repo
-
-    print
-    print
-    # Get agid=1
-    app1 = session.query(k.appglobals).get(1)
-    print app1
-    app1.kname = 'this has been changed'
-    session.save(app1)
-    session.flush
-    print session.query(k.appglobals).get(1)
-    
-    session.delete(app1) # bye bye
-    session.flush()
-    print session.query(k.appglobals).get(1) # returns None
