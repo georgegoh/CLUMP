@@ -559,15 +559,15 @@ class DB(object):
         boot = Partitions(mntpnt='/boot', fstype='ext3',
                           size='100', options='disk=1', preserve='N')
         volgrp00 = Partitions(partition='/dev/VolGroup00', size='max',
-                              options='disk=N;PartitionID=8e')
+                              options='lvmVolGrp;disk=N')
         root = Partitions(partition='/dev/VolGroup00/LogVol00', mntpnt='/',
-                          fstype='ext3', size='12000', options='logvol',
+                          fstype='ext3', size='12000', options='lvmLogVol',
                           preserve='N')
         swap = Partitions(partition='/dev/VolGroup00/LogVol01',
-                          fstype='linux-swap', size='2000', options='logvol',
+                          fstype='linux-swap', size='2000', options='lvmLogVol',
                           preserve='N')
         data = Partitions(partition='/dev/VolGroup00/LogVol02', size='max',
-                          options='logvol;label=data', preserve='Y')
+                          options='lvmLogVol;label=data', preserve='Y')
         compute.partitions.append(boot)
         compute.partitions.append(volgrp00)
         compute.partitions.append(root)
