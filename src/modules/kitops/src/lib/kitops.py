@@ -69,12 +69,14 @@ class KitOps:
         self.medialoc = None
         self.MediaDevice = None
         self.__tmpmntdir = None
+        self.__tmprd1 = None
+        self.__tmprootfs = None
         self.__db = None
 
         if 'db' in kw:
             self.__db = kw['db']
 
-        self.prefix = path(kw.get('prefix', os.environ.get('KUSU_ROOT', '/')))
+        self.prefix = path(kw.get('prefix', '/'))
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
@@ -121,7 +123,7 @@ class KitOps:
                 self.mountMedia(self.medialoc, isISO)
             except EMOUNTFAIL,inst:
                 self.__handleMountError(int(inst))
-                return EKITLOC_FAIL
+                return terminate(EKITLOC_FAIL)
             #mountpoint is defined - we're done
             return 0
                 
@@ -131,16 +133,16 @@ class KitOps:
 
         else:
             #if neither of the above - error
-            sys.stderr.write('kitops: improper kit media location specification\n')
-            return EKITLOC_FAIL
+            return terminate(EKITLOC_FAIL,
+                             'Improper kit media location specification')
 
         #at this point we have the kit mounted to self.mountpoint
         try:
             assert(self.mountpoint
                    and self.mountpoint.isdir() and self.mountpoint.ismount())
         except AssertionError,msg:
-            sys.stderr.write('kitops: mountpoint sanity assertion failed:\n%s' %msg)
-            return EKITLOC_FAIL
+            return terminate(EKITLOC_FAIL,
+                             'Mountpoint sanity assertion failed\n%s' % msg)
 
         return 0
 
@@ -154,8 +156,8 @@ class KitOps:
         try:
             assert(lst)
         except AssertionError:
-            sys.stderr.write('kitops: kit media neither specified nor found\n')
-            return EKITLOC_FAIL
+            return terminate(EKITLOC_FAIL,
+                             'Kit media neither specified nor found')
 
         for dev in lst:
             try:
@@ -168,11 +170,10 @@ class KitOps:
                 #mountpoint is defined - mount was successful
                 self.MediaDevice = '/dev/%s' % dev
                 return 0
-        return EKITLOC_FAIL
+        return terminate(EKITLOC_FAIL)
 
     def getOSDist(self):
         return DistroFactory(str(self.mountpoint))
-        #return path(self.mountpoint / 'isolinux').exists()
 
     def addKit(self):
         '''perform the add operation on the kit specified 
@@ -186,15 +187,16 @@ class KitOps:
         try:
             assert(bool(self.kitname))
         except AssertionError, msg:
-            sys.stderr.write("kitops: kitname still not defined - shouldn't happen\n%s" %msg)
-            return EKITADD_FAIL
+            return terminate(EKITADD_FAIL,
+                             "Kitname still not defined, terminating\n%s" % msg)
 
         kitRPMlst = path(self.mountpoint / self.kitname).glob('kit-%s*.rpm' %
                                                               self.kitname)
         try:
             assert(len(kitRPMlst)==1)
         except AssertionError,msg:
-            sys.stderr.write('kitops: number of kit RPMs under %s' % 
+            return terminate(EKITADD_FAIL,
+                             'Number of kit RPMs under %s' % 
                                  self.mountpoint / self.kitname + 
                              'must be exactly one\n%s' % msg)
             return EKITADD_FAIL
@@ -206,10 +208,11 @@ class KitOps:
             if self.checkKitInstalled(kit['name'], kit['ver']):
                 kl.debug("Kit '%s' version '%s' already installed",
                          kit['name'], kit['ver'])
-                return EKITADD_FAIL
+                return terminate(EKITADD_FAIL)
         except Exception,msg:
-            kl.error('DB check on kit %s failed with: %s', kit['name'], msg)
-            return EKITADD_FAIL
+            return terminate(EKITADD_FAIL,
+                             'DB check on kit %s failed\n%s' %
+                             (kit['name'], msg))
 
         # 1. copy the RPMS
         repodir = self.kits_dir / kit['name'] / kit['ver']
@@ -229,26 +232,34 @@ class KitOps:
         newkit = db.Kits(rname=kit['name'], rdesc=kit['sum'],
                          version=kit['ver'])
         session.save(newkit)
-        session.flush()
-        session.close()
-
-        #extract the kit id to associate with components
-        kit['kid'] = newkit.kid
-        kl.debug('Addkit kid: %s', kit['kid'])
-
+        
         # 3. install the kit RPM
         try:
             rpmP = subprocess.Popen('rpm --quiet -i %s' % kit['rpmloc'],
                                     shell=True)
             rpmP.wait()
         except Exception, msg:
-            sys.stderr.write('kitops: kit RPM installation failed with message %s' %msg)
-            #possible to reverse the DB transaction at this point and gracefully exit
-            return EKITADD_FAIL
+            return terminate(EKITADD_FAIL,
+                             'Kit RPM installation failed\n%s' % msg)
+
+        # RPM install successful, add kit to DB
+        session.flush()
+
+        #extract the kit id to associate with components
+        kit['kid'] = newkit.kid
+        kl.debug('Addkit kid: %s', kit['kid'])
 
         # 4. check/populate component table
-        self.updateComponents(newkit)
+        rv = self.updateComponents(newkit)
+        if 0 != rv:
+            # updateComponents returned an error, remove kit from DB
+            newkit.removable = True
+            session.flush()
+            session.close()
+            self.deleteKit()
+            return rv
 
+        session.close()
         return 0
 
     def updateComponents(self, kit):
@@ -269,10 +280,9 @@ class KitOps:
             try:
                 assert(bool(comp['name']))
             except:
-                sys.stderr.write('kitops: encountered corrupt name for ' +
+                return terminate(EKITADD_FAIL,
+                                 'Encountered corrupt name for ' +
                                  'component from %s' % comploc.basename())
-                #handleAddFailure - reverse DB Transaction, remove RPMS?
-                return EKITADD_FAIL
 
             comp['ver'] = comp['inst'].getVersion()
             comp['sum'] = comp['inst'].getSummary()
@@ -312,8 +322,10 @@ class KitOps:
                                    comp['name'], component.cid)
                         component.kid = kit.kid
 
-            session.flush()
-            session.close()
+        session.flush()
+
+        session.close()
+        return 0
 
     def parseRPMTag(self, rpmloc):
         """
@@ -345,8 +357,7 @@ class KitOps:
                 dirlst.append(dir)
 
         if not dirlst:
-            kl.error('Bad media provided, no kits found')
-            return EKIT_BAD
+            return terminate(EKIT_BAD, 'Bad media provided, no kits found')
 
         if len(dirlst) == 1:
             self.kitname = dirlst[0].basename()
@@ -355,8 +366,7 @@ class KitOps:
             #handleMetaKit - return the kit to work with (self.kitname must be set)
             rv = self.selectKit(self.mountpoint, dirlst)
             if not rv:
-                kl.error('Bad media provided, no kits found')
-                return EKIT_BAD
+                return terminate(EKIT_BAD, 'Bad media provided, no kits found')
             self.kitname = rv
 
     def findMediaDevices(self):
@@ -408,14 +418,13 @@ class KitOps:
                 if not glob.glob('%s/%s/kit-*.rpm' % (mountpoint, dirlst[i])):
                     del dirlst[i]
             if not dirlst:
-                kl.error('Bad media provided, no kits found')
-                return EKIT_BAD
+                return terminate(EKIT_BAD, 'Bad media provided, no kits found')
         #TO BE CONTINUED
         
     def mountMedia(self, media, isISO=False):
         ''' mount the specified media to a temporary dir
             PostCondition: self.__tmpmntdir & self.mountpoint are set & equal if successful'''
-        self.__tmpmntdir = path(tempfile.mkdtemp())
+        self.__tmpmntdir = path(tempfile.mkdtemp(prefix='kitops'))
 
         if isISO:
             mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
@@ -444,6 +453,14 @@ class KitOps:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
                                    shell=True)
             self.__tmpmntdir = None
+        if self.__tmprd1:
+            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprd1,
+                                   shell=True)
+            self.__tmprd1 = None
+        if self.__tmprootfs:
+            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprootfs,
+                                   shell=True)
+            self.__tmprootfs = None
 
     def __handleMountError(self,rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
@@ -477,25 +494,25 @@ class KitOps:
         session.close()
 
         if kits:
-            kl.info("OS kit '%s' already installed", kit['name'])
-            return EKITADD_FAIL, None, None
+            return terminate((EKITADD_FAIL, None, None),
+                             "OS kit '%s' already installed" % kit['name'])
 
         #copy kernel & initrd to pxedir
         if not self.pxeboot_dir.exists():
             self.pxeboot_dir.makedirs()
 
         bmt = BootMediaTool()
-        fd,tmprd1 = tempfile.mkstemp()
+        fd, self.__tmprd1 = tempfile.mkstemp(prefix='kitops')
         os.close(fd)
-        if os.path.exists(tmprd1):
-            os.remove(tmprd1)
-        tmprootfs = tempfile.mkdtemp()
+        if os.path.exists(self.__tmprd1):
+            os.remove(self.__tmprd1)
+        self.__tmprootfs = tempfile.mkdtemp(prefix='kitops')
 
-        bmt.copyInitrd(self.mountpoint, tmprd1, True)
-        bmt.unpackRootImg(tmprd1, tmprootfs)
-        #patch tmprootfs with necessary pieces HERE
+        bmt.copyInitrd(self.mountpoint, self.__tmprd1, True)
+        bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
+        #patch self.__tmprootfs with necessary pieces HERE
         #pack up the patched rootfs & put it under tftpboot
-        bmt.packRootImg(tmprootfs,
+        bmt.packRootImg(self.__tmprootfs,
                         self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
         #copy kernel to tftpboot & rename
         bmt.copyKernel(self.mountpoint,
@@ -520,8 +537,7 @@ class KitOps:
         try:
             cpio_copytree(self.mountpoint, repodir)
         except Exception,msg:
-            kl.error('Error during copy: %s', msg)
-            return EKITADD_FAIL
+            return terminate(EKITADD_FAIL, 'Error during copy\n%s', msg)
 
         return 0
                 
@@ -556,29 +572,28 @@ class KitOps:
         try:
             assert(bool(self.kitname))
         except AssertionError,msg:
-            sys.stderr.write('kitops: name for kit to delete not specified\n')
-            return EKITDEL_FAIL
+            return terminate(EKITDEL_FAIL,
+                             'Name for kit to delete not specified')
 
         session = self.__db.createSession()
         kit = session.query(self.__db.kits).selectfirst_by(rname=self.kitname)
 
         if not kit:
-            kl.error("Kit '%s' is not in the database", self.kitname)
-            return EKITDEL_FAIL
+            return terminate(EKITDEL_FAIL,
+                             "Kit '%s' is not in the database" % self.kitname)
 
         if not kit.removable:
-            kl.error("Kit '%s' is not removable", kit.rname)
-            return EKITDEL_FAIL
+            return terminate(EKITDEL_FAIL,
+                             "Kit '%s' is not removable" % kit.rname)
 
         if kit.repos:
-            kl.error("Cannot delete kit '%s', it is used by a repo", kit.rname)
-            return EKITDEL_FAIL
+            return terminate(EKITDEL_FAIL,
+                             "Cannot delete kit '%s', it is used by a repo" %
+                             kit.rname)
             
         #the kit is NOT in use
         #1. remove the RPMS from /depot/kits/<kitname>/<kitver>
-        rmP = subprocess.Popen('/bin/rm -rf %s' %
-                               (self.kits_dir / kit.rname / kit.version),
-                               shell=True)
+        path(self.kits_dir / kit.rname / kit.version).rmtree()
 
         #2. remove kit RPM
         rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
@@ -614,3 +629,14 @@ class KitOps:
         session.close()
         return kits
 
+    def terminate(self, rv, msg=''):
+        """
+        Perform some cleanup before returning rv and logging msg, if applicable.
+        """
+
+        self.unmountMedia()
+
+        if msg:
+            kl.error(msg)
+
+        return rv

@@ -53,6 +53,8 @@ class KitOpsApp(KusuApp):
                                help=self._('kitops_usage_remove'))
         self.parser.add_option('-d', '--database', dest='dbinfo',
                                help=self._('Comma separated list of DB params'))
+        self.parser.add_option('-p', '--prefix', dest='prefix',
+                               help=self._('Directory to place /depot in'))
 
     def nxor(*args):
         '''N-way XOR for an  arbitrary number of bool args'''
@@ -102,6 +104,10 @@ class KitOpsApp(KusuApp):
             self.koinst.setDB(db.DB(driver, database, username, password))
         else:
             self.koinst.setDB(db.DB('mysql', 'kusudp', 'apache'))
+
+        if options.prefix:
+            kl.debug('Setting prefix to %s', options.prefix)
+            self.koinst.setPrefix(options.prefix)
 
     def run(self):
         '''The main body of the application.  '''

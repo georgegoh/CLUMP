@@ -4,6 +4,10 @@
 # Copyright 2007 Platform Computing Corporation.
 #
 # Licensed under GPL version 2; See LICENSE for details.
+#
+# NOTE: prior to use, create directory /tmp/kitops_app_test_mock_isos
+# and place the mock ISOs used in testing there. Mock ISOs can be obtained
+# at TODO: [[[insert web address here]]]
 
 import os
 import sys
@@ -17,19 +21,20 @@ from path import path
 import kusu.core.database as db
 from kusu.kitops.kitops import KitOps
 
-test_kits = path('/home/mike/kusudev/isos')
-saved_kusu_root = None
+# download ISOs at TODO: [[[insert web address here]]]
+test_kits = path('/tmp/kitops_app_test_mock_isos')
 temp_root = None
 temp_mount = None
 kusudb = None
 dbinfo_str = ''
 
 def setUp():
-    global saved_kusu_root
     global temp_root
     global temp_mount
     global kusudb
     global dbinfo_str
+
+    assert test_kits.exists(), 'ISO dir %s does not exist!' % test_kits
 
     dbinfo = ['mysql', 'kitops_test', 'root', 'root']
     dbinfo_str = ','.join(dbinfo)
@@ -37,18 +42,13 @@ def setUp():
     kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
     kusudb.createDatabase()
 
-    saved_kusu_root = os.environ.get('KUSU_ROOT', None)
     temp_root = path(tempfile.mkdtemp(prefix='kot'))
     temp_mount = path(tempfile.mkdtemp(prefix='kot'))
 
-    os.environ['KUSU_ROOT'] = str(temp_root)
-
 def tearDown():
-    global saved_kusu_root
     global temp_root
-
-    if saved_kusu_root is not None:
-        os.environ['KUSU_ROOT'] = saved_kusu_root
+    global temp_mount
+    global kusudb
 
     kusudb.dropDatabase()
     temp_root.rmtree()
@@ -69,6 +69,8 @@ class TestBaseKit:
         self.kit_rpm = 'kit-base-0.1-0.noarch.rpm'
         self.kit_name = 'base'
         self.kit_ver = '0.1'
+
+        assert self.kit.exists(), 'Base kit ISO does not exist!'
 
         self.kusudb = kusudb
         self.kusudb.createTables()
@@ -93,11 +95,21 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
-        addP = subprocess.Popen('kitops -a -m %s -d %s' %
-                                (self.kit, dbinfo_str), shell=True)
+        addP = subprocess.Popen('kitops -a -m %s -d %s -p %s' %
+                                (self.kit, dbinfo_str, self.temp_root),
+                                shell=True)
         rv = addP.wait()
 
         assert rv == 0, 'kitops returned error: %s' % rv
+
+        # verify the kit RPM is installed
+        rpm_installed = isRPMInstalled('kit-' + self.kit_name)
+        if rpm_installed:
+            # clean up after this test
+            rpmP = subprocess.Popen('rpm --quiet -e --nodeps kit-%s' %
+                                    self.kit_name, shell=True)
+
+        assert  rpm_installed, 'RPM kit-%s is not installed' % self.kit_name
 
         # assert all directories exist
         assert self.depot_dir.exists(), \
@@ -170,14 +182,6 @@ class TestBaseKit:
         assert cmp.nodegroups[0].ngname == 'installer', \
             'Component %s not associated with installer nodegroup' % cmp.cname
 
-        # verify the kit RPM is installed
-        assert isRPMInstalled('kit-' + self.kit_name), \
-               'RPM kit-%s is not installed' % self.kit_name
-
-        # clean up after this test
-        rpmP = subprocess.Popen('rpm --quiet -e --nodeps kit-%s' %
-                                self.kit_name, shell=True)
-
     def testDeleteKit(self):
         # perform database setup
         self.prepareDatabase()
@@ -200,8 +204,9 @@ class TestBaseKit:
         rpmP.wait()
 
         # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e %s -d %s' %
-                                (self.kit_name, dbinfo_str), shell=True)
+        addP = subprocess.Popen('kitops -e %s -d %s -p %s' %
+                                (self.kit_name, dbinfo_str, self.temp_root),
+                                shell=True)
         rv = addP.wait()
 
         assert rv == 0, 'kitops returned error: %s' % rv
@@ -314,7 +319,7 @@ class TestBaseKit:
 
         self.dbs.flush()
 
-class TestFedocaCore6i386:
+class TestFedoraCore6i386:
     def setUp(self):
         global temp_root
         global temp_mount
@@ -326,8 +331,12 @@ class TestFedocaCore6i386:
         self.kits_dir = self.depot_dir / 'kits'
 
         self.kit = test_kits / 'mock-FC-6-i386-disc1.iso'
+        self.kit2 = test_kits / 'mock-FC-6-i386-disc2.iso'
         self.kit_name = 'fedora-6-i386'
         self.kit_ver = '6'
+
+        assert self.kit.exists(), 'Fedora Core 6 i386 CD1 ISO does not exist!'
+        assert self.kit2.exists(), 'Fedora Core 6 i386 CD2 ISO does not exist!'
 
         self.kusudb = kusudb
         self.kusudb.createTables()
@@ -351,10 +360,13 @@ class TestFedocaCore6i386:
                                    shell=True)
         umountP.wait()
 
-    def testAddKit(self):
+    def testAddKitOneDisc(self):
         # passing "N" to kitops to stop at one disc
-        addP = subprocess.Popen('echo "N" | kitops -a -m %s -d %s' %
-                                (self.kit, dbinfo_str), shell=True)
+        add_echo = "N"
+        addP = subprocess.Popen('echo "%s" | ' % add_echo +
+                                'kitops -a -m %s -d %s -p %s &> /dev/null' %
+                                (self.kit, dbinfo_str, self.temp_root),
+                                shell=True)
         rv = addP.wait()
 
         assert rv == 0, 'kitops returned error: %s' % rv
@@ -420,9 +432,79 @@ class TestFedocaCore6i386:
         assert ngnames[1] == 'installer', \
             'Component %s not associated with installer nodegroup' % cmp.cname
 
+    def testAddKitTwoDiscs(self):
+        # passing disc 2 to kitops
+        add_echo = "y\n%s\nN" % self.kit2
+        addP = subprocess.Popen('echo "%s" | ' % add_echo +
+                                'kitops -a -m %s -d %s -p %s &> /dev/null' %
+                                (self.kit, dbinfo_str, self.temp_root),
+                                shell=True)
+        rv = addP.wait()
+
+        assert rv == 0, 'kitops returned error: %s' % rv
+
+        # assert all directories exist
+        assert self.depot_dir.exists(), \
+               'Depot dir %s does not exist' % self.depot_dir
+        assert self.kits_dir.exists(), \
+               'Kits dir %s does not exist' % self.kits_dir
+        assert path(self.kits_dir / self.kit_name).exists(), \
+               'Kit dir %s does not exist' % self.kits_dir / self.kit_name
+        assert path(self.kits_dir / self.kit_name / self.kit_ver).exists(), \
+               'Kit ver dir %s does not exist' % self.kits_dir /  \
+                                                 self.kit_name / self.kit_ver
+
+        # the two discs contain more than 1000 files when combined
+        files = len([f for f in path(self.kits_dir / self.kit_name).walk()])
+        assert files >= 1000, 'FOund %d files, expecting more than 1000' % files
+
+        # check DB for information
+        kits = self.dbs.query(self.kusudb.kits).select()
+        
+        # we are expecting only one kit
+        assert len(kits) == 1, 'Kits in DB: %d, expected: 1' % len(kits)
+
+        # check the kit's data
+        kit = kits[0]
+        assert kit.rname == self.kit_name, \
+               'Kit name: %s, expected %s' % (kit.rname, self.kit_name)
+        assert kit.rdesc == 'OS kit for fedora 6 i386', \
+               'Description: %s, expected: OS kit for fedora 6 i386' % kit.rdesc
+        assert kit.version == '6', 'Version: %s, expected: 6' % kit.version
+        assert kit.isOS, 'Expected isOS to be True'
+        assert not kit.removable, 'Expected removable to be False'
+        assert kit.arch == 'i386', 'Arch: %s, expected: i386' % kit.arch
+
+        # the fedora 6 kit has one 'mock' component
+        cmps = self.dbs.query(self.kusudb.components).select()
+        assert len(cmps) == 1, 'Components in DB: %d, expected: 1' % len(cmps)
+
+        # check component data
+        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
+                                                        cname='fedora-6-i386')
+        assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
+        assert cmp.cname == 'fedora-6-i386', \
+               'Component name: %s, expected: fedora-6-i386' % cmp.cname
+        assert cmp.cdesc == 'fedora-6-i386', \
+               'Component description: %s, expected: fedora-6-i386' % cmp.cname
+        assert cmp.os == 'fedora-6-i386', \
+               'OS: %s, expected: fedora-6-i386' % cmp.os
+        # node component associated with both nodegroups
+        assert len(cmp.nodegroups) == 2, \
+            'Component %s not associated with two nodegroups' % cmp.cname
+        ngnames = []
+        for ng in cmp.nodegroups:
+            ngnames.append(ng.ngname)
+        ngnames.sort()
+        assert ngnames[0] == 'compute', \
+            'Component %s not associated with compute nodegroup' % cmp.cname
+        assert ngnames[1] == 'installer', \
+            'Component %s not associated with installer nodegroup' % cmp.cname
+
 def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot')
-    lsP = subprocess.Popen('kitops -l %s -d %s' % (name, dbinfo_str),
+    lsP = subprocess.Popen('kitops -l %s -d %s -p %s' %
+                           (name, dbinfo_str, temp_root),
                            shell=True, stdout=ls_fd)
     lsP.wait()
 
