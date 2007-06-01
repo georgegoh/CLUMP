@@ -28,9 +28,8 @@ import popen2
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
-from kusu.ui.text.OCSscreenfactory import OCSBaseScreen
+from kusu.ui.text.OCSscreenfactory import OCSBaseScreen, ScreenFactory
 from kusu.ui.text.OCSnavigator import *
-from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.nodefun import NodeFun
 import kusu.ipfun
 
@@ -491,12 +490,15 @@ class NodeGroupWindow(OCSBaseScreen):
             pluginActions.plugins_finished()
         return NAV_QUIT
 
+    def backAction(self):
+        return NAV_BACK
+
     def nextAction(self):
         return NAV_FORWARD
         
     def setCallbacks(self):
-        self.buttonsDict['exit_button'].setCallback_(self.exitAction)
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
+        self.buttonsDict['exit_button'].setCallback_(self.exitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         
@@ -548,22 +550,11 @@ class WindowSelectNode(NodeGroupWindow):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
-
-    def backAction(self):
-        return NAV_BACK
-        
-    def nextAction(self):
-        return NAV_FORWARD
-    
-    def F5Action(self):
-        return NAV_IGNORE
         
     def setCallbacks(self):
         self.buttonsDict['previous_button'].setCallback_(self.backAction)
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
-
-        self.hotkeysDict['F5'] = self.F5Action
-    
+        
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
         
