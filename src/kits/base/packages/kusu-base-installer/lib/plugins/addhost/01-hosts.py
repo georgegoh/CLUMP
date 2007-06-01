@@ -17,7 +17,7 @@ import os
 
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
-        os.system("/opt/kusu/bin/dbreport.py hosts > /etc/hosts")
+        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
 
     def removed(self, dbconn, nodename, info):
-        os.system("/opt/kusu/bin/dbreport.py hosts > /etc/hosts")
+        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")

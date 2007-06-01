@@ -19,8 +19,8 @@ import os
 class AddHostPlugin:
     def added(self, dbconn, nodename, info):
         dnsZone = dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/dbreport.py zone > /var/named/zone.%s" % dnsZone)
+        os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
 
     def removed(self, dbconn, nodename, info):
         dnsZone = dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/dbreport.py zone > /var/named/zone.%s" % dnsZone)
+        os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
