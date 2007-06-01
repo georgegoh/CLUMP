@@ -10,7 +10,6 @@
 import os
 import kusu.util.log as kusulog
 from kusu.util.verify import *
-from kusu.util import util
 from kusu.util.errors import *
 
 from path import path
