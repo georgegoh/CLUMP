@@ -16,11 +16,12 @@ from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
 from kusu.util import profile
+from screen import InstallerScreen
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class FQHNScreen(screenfactory.BaseScreen, profile.PersistantProfile):
+class FQHNScreen(InstallerScreen, profile.PersistantProfile):
     """Collects fully-qualified host name."""
 
     name = _('Host Name')
@@ -30,7 +31,7 @@ class FQHNScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     buttons = [_('Clear All')]
 
     def __init__(self, kiprofile):
-        screenfactory.BaseScreen.__init__(self, kiprofile=kiprofile)
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistantProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):

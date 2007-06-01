@@ -37,33 +37,13 @@ class BaseScreen(object):
     isCommitment = False # if true, then this will be the point of no return.
     screen = None
 
-    kiprofile = None
     profile = 'No Profile'
-#    dbSelected = 'SQLColl'
-#    dbFunctions = {'MySQL': (None, None),
-#                   'SQLite': (None, None),
-#                   'SQLColl': (None, None)}
 
-    def __init__(self, kusuApp=None, kiprofile=None, gridWidth=45):
-        self.kusuApp = kusuApp
+    def __init__(self, gridWidth=45):
         self.gridWidth = gridWidth
-        self.kiprofile = kiprofile
 
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
-
-#        dbFuncs = ()
-#        try:
-#            dbFuncs = self.dbFunctions[self.dbSelected]
-#        except KeyError:
-#            pass
-
-#        if dbFuncs:
-#            self.kiprofile.addFunctions(dbFuncs, self.profile)
-
-#        if not self.dbFunctions[self.dbSelected][0] is None:
-#            self.dbFunctions[self.dbSelected][0](self.kiprofile.getDatabase(),
-#                                                 self.profile, self.kiprofile)
 
 
     def setCallbacks(self): # abstract

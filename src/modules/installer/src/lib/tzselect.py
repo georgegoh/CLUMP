@@ -11,13 +11,14 @@
 import __init__
 import snack
 from gettext import gettext as _
-from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
+from screen import InstallerScreen
 
 kl = kusulog.getKusuLog('installer.kits')
 
-class TZSelectionScreen(screenfactory.BaseScreen):
+class TZSelectionScreen(InstallerScreen):
     """This screen asks for timezone."""
     name = _('Time Zone')
     profile = 'Timezone'

@@ -10,15 +10,16 @@
 
 import snack
 from gettext import gettext as _
-from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
+from screen import InstallerScreen
 
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.rootpasswd')
 
-class RootPasswordScreen(screenfactory.BaseScreen):
+class RootPasswordScreen(InstallerScreen):
     """Collects info about the cluster."""
     name = _('Root Password')
     profile = 'RootPasswd'

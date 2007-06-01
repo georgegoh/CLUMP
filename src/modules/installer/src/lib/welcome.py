@@ -14,8 +14,9 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.util.errors import *
+from screen import InstallerScreen
 
-class WelcomeScreen(screenfactory.BaseScreen):
+class WelcomeScreen(InstallerScreen):
     """This is the welcome screen."""
     name = _('Welcome')
     context = 'Welcome'

@@ -15,11 +15,12 @@ from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
 from kusu.util import profile
+from screen import InstallerScreen
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class GatewayDNSSetupScreen(screenfactory.BaseScreen, profile.PersistantProfile):
+class GatewayDNSSetupScreen(InstallerScreen, profile.PersistantProfile):
     """This screen asks for DNS and Gateway setups."""
 
     name = _('Gateway & DNS')
@@ -29,7 +30,7 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen, profile.PersistantProfile)
     buttons = [_('Clear All')]
 
     def __init__(self, kiprofile):
-        screenfactory.BaseScreen.__init__(self, kiprofile=kiprofile)
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistantProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
@@ -63,7 +64,6 @@ class GatewayDNSSetupScreen(screenfactory.BaseScreen, profile.PersistantProfile)
         """
         Draw the window.
         """
-        if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
         self.screenGrid = snack.Grid(1, 6)

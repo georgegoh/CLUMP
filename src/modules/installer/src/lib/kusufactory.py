@@ -14,7 +14,7 @@ import snack
 from path import path
 from collection import *
 from kusu.util.profile import Profile
-from kusu.ui.text.screenfactory import BaseScreen, ScreenFactory
+from kusu.ui.text.screenfactory import ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
 from keyboard import KeyboardSelectionScreen
@@ -29,21 +29,6 @@ from network import NetworkScreen
 from hostname import FQHNScreen
 from kusu.core import database as db
 
-class ScreenImpl(BaseScreen):
-    """This class is a template for other Screen classes."""
-    name = 'Welcome'
-    msg = 'Welcome to the Kusu installation program. In the ' + \
-          'following screens, you will be presented with questions ' + \
-          'that will help you configure your new Kusu cluster.\n\n' + \
-          'If you do not wish to continue, please select the Quit ' + \
-          'option. Otherwise select Next to continue.' 
-    buttons = ['Action 1']
-
-    def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 1)
-        self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
-                                                 width=self.gridWidth),
-                                 col=0, row=0)
 
 # we start with a blank kusu installer profile
 kiprofile = Profile()

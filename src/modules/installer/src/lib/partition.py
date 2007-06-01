@@ -15,14 +15,15 @@ from partition_edit import *
 from partition_delete import *
 from defaults import *
 from kusu.partitiontool import partitiontool
-from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.util.errors import *
+from screen import InstallerScreen
 
 logger = kusulog.getKusuLog('installer.partition')
 
-class PartitionScreen(screenfactory.BaseScreen):
+class PartitionScreen(InstallerScreen):
     """This screen asks for partition setups. This class is probably not the
        best class to look at if you're trying to understand the kusu-tui
        framework. It breaks some conventions(like error reporting and screen

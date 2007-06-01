@@ -11,17 +11,19 @@
 import socket
 import snack
 from gettext import gettext as _
-from kusu.ui.text import screenfactory, kusuwidgets
+from kusu.ui.text import kusuwidgets
 from kusu.hardware import probe
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from kusu.util import profile
+from screen import InstallerScreen
+
 NAV_NOTHING = -1
 
 kl = kusulog.getKusuLog('installer.network')
 
-class NetworkScreen(screenfactory.BaseScreen, profile.PersistantProfile):
+class NetworkScreen(InstallerScreen, profile.PersistantProfile):
     """
     The network screen lists all available network interfaces and provides
     their configuration.
@@ -33,7 +35,7 @@ class NetworkScreen(screenfactory.BaseScreen, profile.PersistantProfile):
     buttons = [_('Configure')]
 
     def __init__(self, kiprofile):
-        screenfactory.BaseScreen.__init__(self, kiprofile=kiprofile)
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistantProfile.__init__(self, kiprofile)        
 
 

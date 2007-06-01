@@ -13,6 +13,7 @@ from gettext import gettext as _
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory
 from kusu.installer.finalactions import *
+from screen import InstallerScreen
 
 NAV_RESTART = -2
 NAV_NOTHING = -1
@@ -20,7 +21,7 @@ NAV_FORWARD = 0
 NAV_BACK = 1
 NAV_QUIT = 2
 
-class ConfirmScreen(screenfactory.BaseScreen):
+class ConfirmScreen(InstallerScreen):
     """This screen confirms all settings made."""
     name = _('Finalise')
     profile = 'Finalise'

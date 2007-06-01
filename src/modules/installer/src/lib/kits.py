@@ -15,12 +15,13 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.kitops.kitops import KitOps
+from screen import InstallerScreen
 
 kl = kusulog.getKusuLog('installer.kits')
 
 NAV_NOTHING = -1
 
-class KitsScreen(screenfactory.BaseScreen):
+class KitsScreen(InstallerScreen):
     """Collects kits information."""
     name = _('Kits')
     profile = 'Kits'
