@@ -37,15 +37,25 @@ else
                 $1 == "disable"                        { print "        disable       = no" }
                 $1 != "disable" && $1 != "server_args" { print $0 }' < /etc/xinetd.d/tftp > /etc/xinetd.d/tftp.new
     mv /etc/xinetd.d/tftp.new /etc/xinetd.d/tftp
-
-    # Restart xinetd
-    if [ -f /etc/init.d/xinetd ] ; then
-	/etc/init.d/xinetd stop
-	/etc/init.d/xinetd start
-    else
-	echo "ERROR:  Can't find xinetd startup script"
-    fi
 fi
+
+if [ ! -f /etc/xinetd.d/rsync ] ; then
+    echo "ERROR:  Xinetd config for rsync not found"
+else
+    # Fix the tftp config file
+    awk -F' ' ' $1 == "disable"  { print "        disable       = no" }
+                $1 != "disable"  { print $0 }' < /etc/xinetd.d/rsync > /etc/xinetd.d/rsync.new
+    mv /etc/xinetd.d/rsync.new /etc/xinetd.d/rsync
+fi
+
+# Restart xinetd
+if [ -f /etc/init.d/xinetd ] ; then
+    /etc/init.d/xinetd stop
+    /etc/init.d/xinetd start
+else
+    echo "ERROR:  Can't find xinetd startup script"
+fi
+
 
 # Copy over a kernel and initrd to play with
 if [ -f /usr/lib/syslinux/pxelinux.0 ]; then
