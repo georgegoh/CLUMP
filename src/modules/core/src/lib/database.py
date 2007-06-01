@@ -271,7 +271,7 @@ class DB(object):
             dmapper['components'] = sa.mapper(Components, dtable['components'], entity_name=self.entity_name, \
                                         properties={'nodegroups': sa.relation(NodeGroups, secondary=dtable['ng_has_comp'],
                                                                               entity_name=self.entity_name), \
-                                                    'kits' : sa.relation(Kits, entity_name=self.entity_name)})
+                                                    'kit' : sa.relation(Kits, entity_name=self.entity_name)})
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Kits, self.entity_name)):
             dtable['kits'] = sa.Table('kits', self.metadata, autoload=True)
