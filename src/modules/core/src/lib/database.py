@@ -301,9 +301,9 @@ class DB(object):
         if not sa.orm.mapper_registry.has_key(ClassKey(NodeGroups, self.entity_name)):
             dmapper['nodegroups'] = \
                     sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, \
-                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'], \
-                                                                    entity_name=self.entity_name), \
-                                          'partitions' : sa.relation(Partitions, entity_name=self.entity_name)})
+                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'],
+                                                                    entity_name=self.entity_name),
+                                          'partitions': sa.relation(Partitions, entity_name=self.entity_name)})
                               # Currently nodegroups <-> components relationship is defined twice.
                               # Possible to replace this with ingenious backref-fu.
 
@@ -545,13 +545,40 @@ class DB(object):
         """bootstrap the necessary tables and fields that 
            are necessary for Kusu
         """
+        try:
+            self.dropTables()
+            self.createTables()
+        except Exception: pass
         session = self.createSession()
-        
-        # nodegroups
-        session.save(NodeGroups(ngname='installer'), entity_name = self.entity_name)
-        session.save(NodeGroups(ngname='compute'), entity_name = self.entity_name)
-        session.flush()
 
+        # nodegroups
+        # Create the nodegroups
+        installer = NodeGroups(ngname='installer')
+        compute = NodeGroups(ngname='compute')
+        # Create the partition entries for the compute node
+        boot = Partitions(mntpnt='/boot', fstype='ext3',
+                          size='100', options='disk=1', preserve='N')
+        volgrp00 = Partitions(partition='/dev/VolGroup00', size='max',
+                              options='disk=N;PartitionID=8e')
+        root = Partitions(partition='/dev/VolGroup00/LogVol00', mntpnt='/',
+                          fstype='ext3', size='12000', options='logvol',
+                          preserve='N')
+        swap = Partitions(partition='/dev/VolGroup00/LogVol01',
+                          fstype='linux-swap', size='2000', options='logvol',
+                          preserve='N')
+        data = Partitions(partition='/dev/VolGroup00/LogVol02', size='max',
+                          options='logvol;label=data', preserve='Y')
+        compute.partitions.append(boot)
+        compute.partitions.append(volgrp00)
+        compute.partitions.append(root)
+        compute.partitions.append(swap)
+        compute.partitions.append(data)
+ 
+        session.save(installer, entity_name = self.entity_name)
+        session.save(compute, entity_name = self.entity_name)
+
+        session.flush()
+        
         # compute nodegroup partition
         compute_ng = session.query(self.nodegroups).select_by(ngname='compute')[0]
         part = Partitions()
