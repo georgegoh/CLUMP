@@ -35,16 +35,36 @@ class BaseScreen(object):
     buttonsDict = {} # will be generated on init.
     backButtonDisabled = False
     isCommitment = False # if true, then this will be the point of no return.
-    database = None
-    kusuApp = None
     screen = None
 
     kiprofile = None
     profile = 'No Profile'
-    dbSelected = 'SQLColl'
-    dbFunctions = {'MySQL': (None, None),
-                   'SQLite': (None, None),
-                   'SQLColl': (None, None)}
+#    dbSelected = 'SQLColl'
+#    dbFunctions = {'MySQL': (None, None),
+#                   'SQLite': (None, None),
+#                   'SQLColl': (None, None)}
+
+    def __init__(self, kusuApp=None, kiprofile=None, gridWidth=45):
+        self.kusuApp = kusuApp
+        self.gridWidth = gridWidth
+        self.kiprofile = kiprofile
+
+        for button in self.buttons:
+            self.buttonsDict[button] = kusuwidgets.Button(button)
+
+#        dbFuncs = ()
+#        try:
+#            dbFuncs = self.dbFunctions[self.dbSelected]
+#        except KeyError:
+#            pass
+
+#        if dbFuncs:
+#            self.kiprofile.addFunctions(dbFuncs, self.profile)
+
+#        if not self.dbFunctions[self.dbSelected][0] is None:
+#            self.dbFunctions[self.dbSelected][0](self.kiprofile.getDatabase(),
+#                                                 self.profile, self.kiprofile)
+
 
     def setCallbacks(self): # abstract
         """Children should implement this if there are any buttons that
@@ -90,28 +110,6 @@ class BaseScreen(object):
         
         """
         pass
-
-    def __init__(self, database, kusuApp=None, kiprofile=None, gridWidth=45):
-        self.database = database
-        self.kusuApp = kusuApp
-        self.gridWidth = gridWidth
-        self.kiprofile = kiprofile
-
-        for button in self.buttons:
-            self.buttonsDict[button] = kusuwidgets.Button(button)
-
-        dbFuncs = ()
-        try:
-            dbFuncs = self.dbFunctions[self.dbSelected]
-        except KeyError:
-            pass
-
-        if dbFuncs:
-            self.kiprofile.addFunctions(dbFuncs, self.profile)
-
-        if not self.dbFunctions[self.dbSelected][0] is None:
-            self.dbFunctions[self.dbSelected][0](self.kiprofile.getDatabase(),
-                                                 self.profile, self.kiprofile)
 
     def eventCallback(self, obj):
         """Template method for handling events(buttons or otherwise)."""
