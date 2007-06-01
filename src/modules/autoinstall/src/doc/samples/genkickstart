@@ -11,6 +11,7 @@ from kusu.autoinstall.scriptfactory import KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.autoinstall.installprofile import Kickstart
 from kusu.partitiontool.partitiontool import DiskProfile
+from kusu.core import database as db
 
 def returnBytes(mega):
     return mega * 1000000
@@ -44,11 +45,10 @@ def kickstartProfile():
                                       'configure': True,
                                       'use_dhcp': True}}}
 
-    k = Kickstart()
+    k = Kickstart(db.DB('mysql', username='root', db='test'))
     k.rootpw = 'system'
     k.networkprofile = networkprofile
     k.diskprofile = myDiskProfile
-    k.packageprofile = ['@Base']
     k.tz = 'Asia/Singapore'
     k.installsrc = 'http://172.25.208.218/repo/fedora/6/i386/os/'
     k.lang = 'us'

@@ -59,7 +59,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     # Build kickstart object
     # Retrieve all the data required
-    k = Kickstart()
+    k = Kickstart(db=kiprofile.getDatabase())
     k.rootpw = kiprofile['RootPasswd'] 
 
     if kiprofile.has_key('Network'):
@@ -68,7 +68,6 @@ def genAutoInstallScript(disk_profile, kiprofile):
         k.networkprofile = {}
 
     k.diskprofile = disk_profile
-    k.packageprofile = ['@Base']
     k.tz = kiprofile['Timezone']
     k.installsrc = 'http://127.0.0.1/'
     k.lang = kiprofile['Language']

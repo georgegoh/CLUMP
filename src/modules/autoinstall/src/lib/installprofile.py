@@ -7,7 +7,11 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
 
+from kusu.util.errors import *
+import kusu.core.database as db
 import time
+import os
+from path import path
 
 class BaseInstall:
 
@@ -17,7 +21,21 @@ class BaseInstall:
                      'rootpw': None,
                      'tz': None,
                      'installsrc': None,
-                     'lang': None }
+                     'lang': None,
+                     'dbs': None,
+                     'prefix': None }
+
+    def __init__(self, db, prefix=None):
+        """prefix for the root directory"""
+
+        if prefix:
+            if path(prefix).exists():
+                self.prefix = prefix
+            else:
+                raise InvalidPathError, "path '%s' not found" % prefix
+
+        self.dbs = db
+        self.packageprofile = self._getPackageProfile()
 
     def __getattr__(self, name):
         if name in self.getattr_dict.keys():
@@ -39,8 +57,22 @@ class BaseInstall:
     def _makeRootPw(self, rootpw):
         pass
 
+    def _getPackageProfile(self):
+        session = self.dbs.createSession()
+
+        # There can only be 1 installer. Guaranteed by the db. 
+        installer = session.query(self.dbs.nodegroups).select_by(ngname='installer')[0]
+
+        components = [component.cname for component in installer.components \
+                      if not component.kit.isOS]
+        session.close()
+
+        return components
+
 class Kickstart(BaseInstall):
-    def __init__(self):
+    def __init__(self, db, prefix=None):
+        BaseInstall.__init__(self, db, prefix)
+
         for k in ['keyboard']:
             self.getattr_dict[k] = None
  
@@ -51,6 +83,7 @@ class Kickstart(BaseInstall):
         # Not support unicode in root password
         return md5crypt.md5crypt(str(rootpw), str(time.time()));
 
+    
 
 
     
