@@ -10,27 +10,29 @@ from path import path
 import tempfile
 import os
 
+tempdir = tempfile.mkdtemp()
+kusudb = path(tempdir) / 'kusu.db'
+
+def tearDown():
+    global kusudb
+    global tempdir
+
+    try:
+        os.unlink(kusudb)
+    except: pass
+    
+    try:
+        os.removedirs(tempdir)
+    except: pass
+
+
 class TestSQLITE:
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-        self.kusudb = path(self.tempdir) / 'kusu.db'
-
-        self.dbs = db.DB('sqlite', db=self.kusudb)
+        global kusudb
+        self.dbs = db.DB('sqlite', db=kusudb)
 
     def tearDown(self):
-        self.dbs.dropTables()
-
-        try:
-            os.unlink(self.kusudb)
-        except: pass
-        
-        try:
-            os.removedirs(self.tempdir)
-        except: pass
-
-        session = self.dbs.createSession()
-        session.clear()
-        session.close()
+        pass
 
     def testTableCreation(self):
         self.dbs.createTables()
@@ -39,6 +41,7 @@ class TestSQLITE:
             assert self.dbs.metadata.engine.has_table(table)
 
     def testTableDrop(self):
+        self.dbs.createTables()
         self.dbs.dropTables()
 
         for table in self.dbs.mapTableClass.keys():
@@ -57,3 +60,19 @@ class TestSQLITE:
 
         session.clear()
         session.close()
+
+    def testInsertSelect(self):
+
+        self.dbs.createTables()
+
+        session = self.dbs.createSession()
+        session.save(db.AppGlobals(kname='key name'))
+        session.flush()
+        
+        assert session.query(self.dbs.appglobals).get(1).kname == 'key name'
+
+        session.clear()
+        session.close()
+
+        self.dbs.dropTables()
+
