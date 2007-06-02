@@ -18,7 +18,7 @@ from kusu.ui.text.screenfactory import ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
 from keyboard import KeyboardSelectionScreen
-from clusterinfo import ClusterInfoScreen
+#from clusterinfo import ClusterInfoScreen
 from rootpasswd import RootPasswordScreen
 from partition import PartitionScreen
 from gatewaydns import GatewayDNSSetupScreen
