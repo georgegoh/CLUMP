@@ -42,7 +42,6 @@ def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart
-    from kusu.core import database as db
 
     # redhat based for now
     #kusu_dist = os.environ.get('KUSU_DIST', None)
