@@ -121,7 +121,10 @@ class ConfirmScreen(InstallerScreen):
             self.logger.debug('Kusu mount points set up')
             prog_dlg.close()
 
-            #self.makeRepo()
+            #prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
+            #self.makeRepo(self.kiprofile)
+            #self.logger.debug('installer repository is created')
+            #prog_dlg.close()
             
             prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
             genAutoInstallScript(disk_profile, self.kiprofile)

@@ -15,6 +15,7 @@ class KusuError(exceptions.Exception): pass
 class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
+class FileAlreadyExistError(KusuError): pass
 class CommandFailedToRun(KusuError): pass
 
 # partitiontool
@@ -65,7 +66,7 @@ class TemplateNotFoundError(KusuError): pass
 #kits
 class CannotAddKitError(KusuError): pass
 
-# core.database
+#core.database
 class NoSuchDBError(KusuError): pass
 class UnsupportedDriverError(KusuError): pass
 class UsernameNotSpecifiedError(KusuError): pass
@@ -75,3 +76,8 @@ class FailedToCreateDatabase(KusuError): pass
 class FailedToDropDatabase(KusuError): pass
 class UnableToCommitDataError(KusuError): pass
 class UnableToSaveDataError(KusuError): pass
+
+#repoman
+class RepoNotCreatedError(KusuError): pass
+class RepoNotFoundError(KusuError): pass
+class RepoOSKitError(KusuError): pass
