@@ -22,7 +22,7 @@ def runCommand(cmd):
                      stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE)
     out, err = p.communicate()
-    print '"%s" stdout: %s stderr: %s' %(cmd, out, err))
+    print '"%s" stdout: %s stderr: %s' %(cmd, out, err)
 
 
 class DiskProfileTestCase(unittest.TestCase):
