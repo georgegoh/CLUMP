@@ -4,7 +4,7 @@
 #
 
 from distutils.core import setup
-setup(name="createrepo",
+dist = setup(name="createrepo",
       version="0.4.8",
       platforms=["any"],
       packages=['createrepo'],
@@ -13,3 +13,13 @@ setup(name="createrepo",
                'src/bin/modifyrepo']
  
      )
+
+# Chmod 755 to genpkgmetadata.py in
+# lib/<python version>/site-packages/createrepo/
+import os
+if 'install' in dist.commands:
+    path = dist.get_command_obj('install').install_lib
+
+    for file in ['genpkgmetadata.py']:
+        os.chmod(os.path.join(path, 'createrepo/' + file), 0755)
+        print os.path.join(path, 'createrepo/' + file)
