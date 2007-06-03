@@ -17,10 +17,9 @@ from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
+from kusu.ui.text.navigator import NAV_NOTHING
 
 logger = kusulog.getKusuLog('installer.partition')
-
-NAV_NOTHING = -1
 
 def editDevice(baseScreen):
     """Determine the type of device and bring up the appropriate screen."""

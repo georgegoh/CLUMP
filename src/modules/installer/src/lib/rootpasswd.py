@@ -14,8 +14,7 @@ from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from screen import InstallerScreen
-
-NAV_NOTHING = -1
+from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.rootpasswd')
 

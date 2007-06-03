@@ -18,8 +18,7 @@ from kusu.util.verify import *
 from kusu.util.errors import *
 from kusu.util import profile
 from screen import InstallerScreen
-
-NAV_NOTHING = -1
+from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 

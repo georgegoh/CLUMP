@@ -16,10 +16,9 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.kitops.kitops import KitOps
 from screen import InstallerScreen
+from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.kits')
-
-NAV_NOTHING = -1
 
 class KitsScreen(InstallerScreen):
     """Collects kits information."""

@@ -12,9 +12,7 @@ from gettext import gettext as _
 from kusu.ui.text import kusuwidgets
 from kusu.util.errors import *
 import kits_sourcehandlers
-
-NAV_NOTHING = -1
-NAV_BACK = 1
+from kusu.ui.text.navigator import NAV_NOTHING, NAV_BACK
 
 kitsource_handler_dict = { 'CDROM': kits_sourcehandlers.addKitFromCDForm,
                            'URI': kits_sourcehandlers.addKitFromURIForm }

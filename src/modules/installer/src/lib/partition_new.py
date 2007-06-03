@@ -14,8 +14,7 @@ from gettext import gettext as _
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-
-NAV_NOTHING = -1
+from kusu.ui.text.navigator import NAV_NOTHING
 
 def createNew(baseScreen):
     """Ask if user wants to create a new partition, logical volume, or volume

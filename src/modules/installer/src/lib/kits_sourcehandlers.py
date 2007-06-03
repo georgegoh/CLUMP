@@ -9,9 +9,7 @@
 #
 from gettext import gettext as _
 from kusu.util.errors import *
-
-NAV_NOTHING = -1
-NAV_BACK = 1
+from kusu.ui.text.navigator import NAV_BACK
 
 def addKitFromCDForm(baseScreen):
     """Add kit from CD. This displays the form."""

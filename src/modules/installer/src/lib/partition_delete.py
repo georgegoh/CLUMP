@@ -16,8 +16,7 @@ from partition_new import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-
-NAV_NOTHING = -1
+from kusu.ui.text.navigator import NAV_NOTHING
 
 def deleteDevice(baseScreen):
     """Determine the type of device and bring up the appropriate screen."""
