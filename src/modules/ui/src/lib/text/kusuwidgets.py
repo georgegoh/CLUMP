@@ -15,8 +15,8 @@ import snack
 LEFT = -1
 CENTER = 0
 RIGHT = 1
-NAV_NOTHING = -1
 
+from navigator import NAV_NOTHING
 
 class Button(snack.Button):
     labelTxt = ''

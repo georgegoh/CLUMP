@@ -21,6 +21,12 @@ from path import path
 from kusuwidgets import *
 from kusu.util.errors import *
 
+NAV_NOTHING = -1
+NAV_FORWARD = -2
+NAV_BACK = 1
+NAV_QUIT = 2
+
+
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
     
@@ -42,10 +48,6 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
         snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.finish(self)
 
-NAV_NOTHING = -1
-NAV_FORWARD = 0
-NAV_BACK = 1
-NAV_QUIT = 2
 
 class Navigator(object, KusuApp):
     """Framework for displaying installation steps and screens.

@@ -13,11 +13,7 @@
 
 import snack
 import kusuwidgets
-
-NAV_NOTHING = -1
-NAV_FORWARD = 0
-NAV_BACK = 1
-NAV_QUIT = 2
+from navigator import NAV_QUIT, NAV_FORWARD, NAV_BACK, NAV_NOTHING
 
 class BaseScreen(object):
     """Abstract base class for screens.
