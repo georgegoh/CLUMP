@@ -34,9 +34,9 @@ def setupNetwork():
     interface = interface.setDHCP()
    
 def makeRepo(kiprofile):
-    db=kiprofile.getDatabase()
-    rfactory = RepoFactory(dbs, '/mnt/kusu')
-    repo = rfactory.make('fedora', '6', 'i386', 'installer', 'repo for fedora 6 i386')
+    kiprofile.getDatabase()
+    rfactory = RepoFactory(kiprofile.getDatabase(), '/mnt/kusu')
+    rfactory.make('fedora', '6', 'i386', 'installer', 'repo for fedora 6 i386')
 
 def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory
