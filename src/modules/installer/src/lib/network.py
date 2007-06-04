@@ -165,8 +165,11 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
         """
         Populate the listbox with interfaces.
         """
-        if not self.kiprofile.has_key(self.profile): self.setDefaults()
-        if not self.kiprofile[self.profile].has_key('interfaces'): self.setDefaults()
+
+        if not self.kiprofile.has_key(self.profile):
+            self.setDefaults()
+        if not self.kiprofile[self.profile].has_key('interfaces'):
+            self.setDefaults()
         interfaces = self.kiprofile[self.profile]['interfaces']
 
         # we want interfaces in alphabetical order
@@ -174,24 +177,6 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
         intfs.sort()
 
         for intf in intfs:
-            # DHCP config for first interface
-            if len(intfs) and intf == intfs[0] \
-                and interfaces[intf]['first_seen']:
-                interfaces[intf]['configure'] = True
-                interfaces[intf]['use_dhcp'] = True
-                interfaces[intf]['active_on_boot'] = True
-
-            # static IP for second interface
-            if len(intfs) > 1 and intf == intfs[1] \
-                and interfaces[intf]['first_seen']:
-                interfaces[intf]['configure'] = True
-                interfaces[intf]['use_dhcp'] = False
-                interfaces[intf]['hostname'] = 'cluster-' + intf
-                interfaces[intf]['ip_address'] = '172.20.0.1'
-                interfaces[intf]['netmask'] = '255.255.0.0'
-                interfaces[intf]['active_on_boot'] = True
-            interfaces[intf]['first_seen'] = False
-
             entrystr = '  ' + intf + ' not configured'
             if interfaces[intf]['configure']:
                 if interfaces[intf]['use_dhcp']:
@@ -217,15 +202,34 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
 
     def setDefaults(self):
         interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
-        for intf in interfaces:
+
+        # we want interfaces in alphabetical order
+        intfs = interfaces.keys()
+        intfs.sort()
+
+        for intf in intfs:
             # default to using DHCP and active on boot
             interfaces[intf].update({'configure': False,
                                      'use_dhcp': True,
                                      'hostname': '',
                                      'ip_address': '',
                                      'netmask': '',
-                                     'active_on_boot': True,
-                                     'first_seen': True})
+                                     'active_on_boot': True})
+
+            # DHCP config for first interface
+            if len(intfs) > 0 and intf == intfs[0]:
+                interfaces[intf]['configure'] = True
+                interfaces[intf]['use_dhcp'] = True
+                interfaces[intf]['active_on_boot'] = True
+
+            # static IP for second interface
+            if len(intfs) > 1 and intf == intfs[1]:
+                interfaces[intf]['configure'] = True
+                interfaces[intf]['use_dhcp'] = False
+                interfaces[intf]['hostname'] = 'cluster-' + intf
+                interfaces[intf]['ip_address'] = '172.20.0.1'
+                interfaces[intf]['netmask'] = '255.255.0.0'
+                interfaces[intf]['active_on_boot'] = True
 
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['interfaces'] = interfaces

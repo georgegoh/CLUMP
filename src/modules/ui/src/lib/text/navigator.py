@@ -9,7 +9,11 @@
 #
 """This module is the backbone of the TUI Framework. It performs the 
    presentation, navigation,and data validation tasks."""
-__version__ = "$Revision: 242 $"
+
+NAV_NOTHING = -1
+NAV_FORWARD = -2
+NAV_BACK = 1
+NAV_QUIT = 2
 
 import os
 import sys
@@ -20,11 +24,6 @@ from kusu.util.log import Logger
 from path import path
 from kusuwidgets import *
 from kusu.util.errors import *
-
-NAV_NOTHING = -1
-NAV_FORWARD = -2
-NAV_BACK = 1
-NAV_QUIT = 2
 
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
