@@ -421,8 +421,8 @@ class NetworkEditWindow(OCSBaseScreen):
         self.buttonsDict['ok_button'].setCallback_(self.okAction)
         self.buttonsDict['cancel_button'].setCallback_(self.cancelAction)
     
-        self.hotkeysDict['F5'] = self.okAction
-        self.hotkeysDict['F8'] = self.cancelAction
+        self.hotkeysDict['F5'] = self.cancelAction
+        self.hotkeysDict['F8'] = self.okAction
         
     def guessIPandGateway(self):
         # First check if the values are valid IP address notation
@@ -589,8 +589,8 @@ class NetworkNewWindow(OCSBaseScreen):
         self.buttonsDict['ok_button'].setCallback_(self.okAction)
         self.buttonsDict['cancel_button'].setCallback_(self.cancelAction)
 
-        self.hotkeysDict['F8'] = self.okAction
         self.hotkeysDict['F5'] = self.cancelAction
+        self.hotkeysDict['F8'] = self.okAction
         
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 11)
