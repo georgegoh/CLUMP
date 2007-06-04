@@ -38,14 +38,14 @@ plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
-mkdir -p $plugdir/addhost $plugdir/dbreport $plugdir/ngedit
+mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit
 
 /usr/bin/install -m 444 %{_topdir}/docs/index.html    $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/COPYING       $docdir
 
 /usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py     $plugdir/addhost
-/usr/bin/install -m 444 %{_topdir}/plugins/dbreport/*.py    $plugdir/dbreport
+/usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py    $plugdir/genconfig
 /usr/bin/install -m 444 %{_topdir}/plugins/ngedit/*.py      $plugdir/ngedit
 
 
@@ -60,10 +60,10 @@ rm -rf $RPM_BUILD_ROOT
 
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py
-/opt/kusu/lib/plugins/dbreport/*.py
+/opt/kusu/lib/plugins/genconfig/*.py
 /opt/kusu/lib/plugins/ngedit/*.py
 %exclude /opt/kusu/lib/plugins/addhost/*.py?
-%exclude /opt/kusu/lib/plugins/dbreport/*.py?
+%exclude /opt/kusu/lib/plugins/genconfig/*.py?
 %exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %pre
