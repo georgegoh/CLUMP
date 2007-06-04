@@ -21,13 +21,16 @@
 # Setup a default repo and kits
 insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer0", 'fedora-6-i386') ;
 insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'RHEL5.1') ;
+insert into repos values (3, "Fedora_7", "/depot/repos/3", "installer0", 'fedora-7-x86_64') ;
 
 insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 0, 0, "i386") ;
 insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 0, 0, "i386") ;
-insert into kits values (3, "Base", "OSC Base", "5.1", 0, 0, "i386") ;
+insert into kits values (3, "Base", "Kusu Base", "5.1", 0, 0, "i386") ;
 insert into kits values (4, "LSF", "LSF 7.0 EP2", "7.2", 1, 1, "i386") ;
 insert into kits values (5, "OFED", "OpenFabric Infiniband Drivers", "5.1", 1, 1, "i386") ;
 insert into kits values (6, "MPI", "OpenMPI and others", "5.1", 1, 1, "i386") ;
+insert into kits values (7, "Base", "Kusu Base", "5.1", 0, 0, "x86_64") ;
+insert into kits values (8, "Fedora 7", "fedora-7-x86_64", "7.0", 0, 0, "x86_64") ;
 
 insert into repos_have_kits values (1, 1) ;
 insert into repos_have_kits values (1, 3) ;
@@ -36,6 +39,7 @@ insert into repos_have_kits values (1, 5) ;
 insert into repos_have_kits values (1, 6) ;
 insert into repos_have_kits values (2, 2) ;
 insert into repos_have_kits values (2, 3) ;
+insert into repos_have_kits values (3, 8) ;
 
 # Setup some node groups
 insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
@@ -47,6 +51,10 @@ insert into nodegroups values (3,1,'Compute Diskless', 'diskless', 'Default Disk
 insert into nodegroups values (4,1,'Compute Disked', 'disked', 'Default Disked Imaged Compute Node group', 'c#RR-#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for disked Compute') ;
 
 insert into nodegroups values (5,1,'test', 'diskless', 'Test image for dependency checks', 'c#RR-#NN', 'vmlinuz', 'Fedora_6.img.i386', 'Test') ;
+
+insert into nodegroups values (6,3,'Fedora 7 Installer', 'package', 'Fedora 7 Installer Node group', 'installer#NN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
+
+insert into nodegroups values (7,3,'Fedora 7 Compute', 'diskless', 'Fedora 7 Diskless Node group', 'host-diskless-#NNNN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'Test kernel args in grub.conf for Fedora 7 diskless Compute') ;
 
 # Setup the nodes entries for the installer
 insert into nodes values (1,1,'installer0', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 0) ;
@@ -106,6 +114,9 @@ insert into ng_has_net values (5,2,3) ;
 insert into ng_has_net values (6,3,2) ;
 insert into ng_has_net values (7,4,2) ;
 insert into ng_has_net values (8,4,3) ;
+insert into ng_has_net values (9,6,1) ;
+insert into ng_has_net values (10,6,2) ;
+insert into ng_has_net values (11,7,2) ;
 
 # Setup the nics table for the Installer node
 insert into nics values (32, 1, 1, '00:11:22:33:44:55', '172.25.243.1', 0) ;
@@ -348,8 +359,10 @@ insert into scripts values (4, 1, '/depot/repos/custom_scripts/more-bogus-instal
 # Components
 insert into components values (1, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'Fedora6.0') ;
 insert into components values (2, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'RHEL5.1') ;
-insert into components values (3, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora6.0') ;
-insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'RHEL5.1') ;
+insert into components values (3, 8, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'Fedora7.0') ;
+insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora6.0') ;
+insert into components values (5, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'RHEL5.1') ;
+insert into components values (6, 8, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora7.0') ;
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1, 1) ;
@@ -357,3 +370,6 @@ insert into ng_has_comp values (2, 1, 3) ;
 insert into ng_has_comp values (3, 2, 3) ;
 insert into ng_has_comp values (4, 3, 3) ;
 insert into ng_has_comp values (5, 4, 3) ;
+insert into ng_has_comp values (6, 6, 7) ;
+insert into ng_has_comp values (7, 6, 8) ;
+insert into ng_has_comp values (8, 7, 8) ;
