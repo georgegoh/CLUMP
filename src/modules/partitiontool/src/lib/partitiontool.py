@@ -57,7 +57,6 @@ import math
 import parted
 import subprocess
 from lvm import *
-from disk import *
 from common import *
 import kusu.hardware.probe
 import kusu.util.log as kusulog
@@ -66,6 +65,55 @@ from kusu.util.errors import *
 
 logger = kusulog.getKusuLog('partitiontool')
 
+def checkAndMakeNode(devpath):
+    # temp solution, until ggoh refactor this
+    logger.info('FORMAT %s: Checking if node already exists in /dev.' % \
+                devpath)
+    import stat
+    from os import mknod, makedev, path
+    if not path.exists(devpath):
+        logger.info('FORMAT %s: %s does not exist. Creating...' % \
+                    (devpath, devpath))
+        dev_basename = basename(devpath)
+
+        if devpath[-1] in '1234567890': num = int(devpath[-1])
+        else: num = 0
+
+        if dev_basename.startswith('sd'):
+            alpha = 'abcdefghijklmnopqrstuvwxyz'
+            li = [ x for x in alpha ]
+            dev_major_num = 8
+            if num==0: dev_minor_multiplier = li.index(devpath[-1])
+            else: dev_minor_multiplier = li.index(devpath[-2])
+            part_minor_num = 16 * dev_minor_multiplier + num
+
+        elif dev_basename.startswith('hd'):
+            if dev_basename.startswith('hda'):
+                dev_major_num = 3
+                part_minor_num = num
+            elif dev_basename.startswith('hdb'):
+                dev_major_num = 3
+                part_minor_num = 31 + num
+            elif dev_basename.startswith('hdc'):
+                dev_major_num = 22
+                part_minor_num = num
+            elif dev_basename.startswith('hdd'):
+                dev_major_num = 22
+                part_minor_num = 31 + num
+            elif dev_basename.startswith('hde'):
+                dev_major_num = 33
+                part_minor_num = num
+            elif dev_basename.startswith('hdf'):
+                dev_major_num = 33
+                part_minor_num = 31 + num
+
+        logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
+                    (devpath, dev_major_num, part_minor_num, devpath))
+        raw_dev_num = makedev(dev_major_num, part_minor_num)
+        mknod(devpath, stat.S_IFBLK, raw_dev_num)
+
+
+from disk import *
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
 

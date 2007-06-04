@@ -22,41 +22,45 @@ kl = kusulog.getKusuLog('installer.kits')
 
 def addKitFromCDForm(baseScreen, kitops):
     """Add kit from CD. This displays the form."""
+    # DUMB CODE - opens the first CDROM. SHOULD ASK WHICH CDROM.
+    import kusu.hardware.probe
+    cdrom = '/dev/' + sorted(kusu.hardware.probe.getCDROM().keys())[0]
+    # DUMB CODE - opens the first CDROM. SHOULD ASK WHICH CDROM.
+
+    subprocess.call('eject %s' % cdrom, shell=True)
     title = _('Insert CD or DVD')
     msg = _('Please insert a CD or DVD containing a kit, and press OK.')
     buttons = [_('OK'), _('Cancel')]
     result = baseScreen.selector.popupDialogBox(title, msg, buttons)
     if result == buttons[1].lower():
         return NAV_BACK
-    addKitFromCDAction(baseScreen, kitops)
+    addKitFromCDAction(baseScreen, kitops, cdrom)
 
 
-def addKitFromCDAction(baseScreen, kitops):
+def addKitFromCDAction(baseScreen, kitops, cdrom):
     """Add kit from CD. This is the action."""
-    # NEED TO CHANGE THIS TO DETECT AND MOUNT MORE INTELLIGENTLY
-    # Detected CD
     # Mount cd
-    kitops.mountMedia('/dev/sr0')
+    kl.debug('CD PATH: %s' % cdrom)
+    kitops.mountMedia(cdrom)
+    kitops.setKitMedia(kitops.mountpoint)
+    kitops.setDB(baseScreen.kiprofile.getDatabase())
 
-    kl.warning('HARDCODED CD PATH')
-
-    # NEED TO CHANGE THIS TO DETECT AND MOUNT MORE INTELLIGENTLY
-
+    kl.debug('Add Kit Prepare')
     if kitops.addKitPrepare() != 0:
         kl.debug('Failed kit prepare')
         raise CannotAddKitError, 'Failed Kit Prepare'
 
+    kl.debug('Get OS Dist')
     media_distro = kitops.getOSDist()
     if media_distro.ostype:
+        kl.debug('Add OS Kit')
         kit_add_failed = addOSKit(baseScreen, kitops, media_distro)
     else:
+        kl.debug('Add regular Kit')
         kit_add_failed = kitops.addKit()
 
     if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
     # handle this error intelligently
-
-    # Unmount cd
-    kitops.unmountMedia()
 
 
 def addOSKit(baseScreen, kitops, osdistro):
@@ -76,7 +80,7 @@ def addOSKit(baseScreen, kitops, osdistro):
             # unmount and eject.
             kitops.unmountMedia()
             subprocess.call('eject %s' % kitops.mountpoint, shell=True)
-            baseScreen.selector.popupMsg('Please insert the next disk')
+            baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
             subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
 
     return kitops.finalizeOSKit(kit)

@@ -581,7 +581,7 @@ class DB(object):
 
         # nodegroups
         # Create the nodegroups
-        installer = NodeGroups(ngname='installer')
+        installer = NodeGroups(ngname='installer') # VERSION+ARCH
         compute = NodeGroups(ngname='compute')
         # Create the partition entries for the compute node
         boot = Partitions(mntpnt='/boot', fstype='ext3',

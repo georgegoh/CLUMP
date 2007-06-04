@@ -191,7 +191,7 @@ class PartitionScreen(InstallerScreen):
                          '"Yes" button.'))
 
         if proceed:
-            from finalactions import setupDisks
+            from finalactions import setupDisks, mountKusuMntPts
             prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
             setupDisks(self.disk_profile)
             mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
