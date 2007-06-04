@@ -55,23 +55,33 @@ class AppGlobals(BaseTable):
 class Components(BaseTable): 
     cols = ['kid', 'cname', 'cdesc', 'os']
     def __repr__(self):
-        return '%s(%r,%r,%r)' % \
-               (self.__class__.__name__, self.kid, self.cname, self.os)
+        return '%s(%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.kid, self.cname, self.os,
+                self.cdesc)
 
 class Kits(BaseTable): 
     cols = ['rname', 'rdesc', 'version', \
             'isOS', 'removable', 'arch']
     def __repr__(self):
-        return '%s(%r,%r,%r)' % \
-               (self.__class__.__name__, self.rname, self.version, self.arch)
+        return '%s(%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.rname, self.version, self.arch,
+                self.rdesc, self.isOS, self.removable)
 
 class Modules(BaseTable): 
     cols = ['ngid', 'module', 'loadorder']
+    def __repr__(self):
+        return '%s(%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.module, self.loadorder)
 
 class Networks(BaseTable): 
     cols = ['network', 'subnet', 'device', 'suffix', \
             'gateway', 'options', 'netname', 'startip', \
             'inc', 'usingdhcp']
+    def __repr__(self):
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.network, self.subnet,
+                self.device, self.suffix, self.gateway, self.options,
+                self.netname, self.startip, self.inc, self.usingdhcp)
 
 class NGHasComp(BaseTable):
     cols = ['ngid', 'cid']
@@ -81,35 +91,51 @@ class NGHasComp(BaseTable):
 
 class NGHasNet(BaseTable):
     cols = ['ngid', 'netid']
+    def __repr__(self):
+        return '%s(%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.netid)
 
 class Nics(BaseTable):
     cols = ['nid', 'netid', 'mac', 'ip', 'boot']
+    def __repr__(self):
+        return '%s(%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.nid, self.netid, self.mac,
+                self.ip, self.boot)
 
 class NodeGroups(BaseTable):
     cols = ['repoid', 'ngname', 'installtype', \
             'ngdesc', 'nameformat', 'kernel', 'initrd', \
             'kparams']
     def __repr__(self):
-        return '%s(%r,%r)' % \
-               (self.__class__.__name__, self.ngname, self.repoid)
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngname, self.repoid,
+                self.installtype, self.ngdesc, self.nameformat, self.kernel,
+                self.initrd, self.kparams)
 
 class Nodes(BaseTable):
     cols = ['ngid', 'name', 'kernel', 'initrd', \
             'kparams', 'state', 'bootfrom', 'lastupdate', \
             'rack', 'rank']
     def __repr__(self):
-        return '%s(%r,%r)' % \
-               (self.__class__.__name__, self.ngid, self.name)
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.name, self.kernel,
+                self.initrd, self.kparams, self.state, self.bootfrom, 
+                self.lastupdate, self.rack, self.rank)
 
 class Packages(BaseTable):
     cols = ['ngid', 'packaagename']
+    def __repr__(self):
+        return '%s(%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.packagename)
+
 
 class Partitions(BaseTable):
     cols = ['ngid', 'partition', 'mntpnt', 'fstype', \
             'size', 'options', 'preserve']
     def __repr__(self):
-        return '%s(%r,%r)' % \
-               (self.__class__.__name__, self.ngid, self.partition)
+        return '%s(%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.partition, self.mntpnt,
+                self.fstype, self.size, self.options, self.preserve)
 
 class Repos(BaseTable):
     cols = ['reponame', 'repository', 'installers', \
@@ -127,8 +153,9 @@ class ReposHaveKits(BaseTable):
 
 class Scripts(BaseTable):
     cols = ['ngid', 'script']
-
-
+    def __repr__(self):
+        return '%s(%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.script)
 class DB(object):
 
     mapTableClass = { 'repos_have_kits' : ReposHaveKits,
