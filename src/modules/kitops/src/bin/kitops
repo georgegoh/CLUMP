@@ -93,14 +93,14 @@ class KitOpsApp(KusuApp):
             sys.exit(1)
 
         if addbool:
-            koinst.setKitname(options.addkit)
-            koinst.setKitmedia(options.media)
+            koinst.setKitName(options.addkit)
+            koinst.setKitMedia(options.media)
             self.kitop = KITOP_ADD
         elif options.delkit:
-            koinst.setKitname(options.delkit)
+            koinst.setKitName(options.delkit)
             self.kitop = KITOP_DEL
         elif lstbool:
-            koinst.setKitname(options.lstkit)
+            koinst.setKitName(options.lstkit)
             self.kitop = KITOP_LST
 
         dbdriver = 'mysql'

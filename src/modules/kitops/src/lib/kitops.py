@@ -80,10 +80,10 @@ class KitOps:
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
-    def setKitname(self, kitname):
+    def setKitName(self, kitname):
         self.kitname = kitname
 
-    def setKitmedia(self, kitmedia):
+    def setKitMedia(self, kitmedia):
         self.kitmedia = kitmedia
 
     def setDB(self, db):
