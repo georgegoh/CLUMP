@@ -305,7 +305,8 @@ class DB(object):
                                                                     entity_name=self.entity_name),
                                           'partitions': sa.relation(Partitions, entity_name=self.entity_name),
                                           'networks': sa.relation(Networks, secondary=dtable['ng_has_net'],
-                                                                    entity_name=self.entity_namei)})
+                                                                    entity_name=self.entity_name), 
+                                          'nodes': sa.relation(Nodes, entity_name=self.entity_name)})
                   
                               # Currently nodegroups <-> components relationship is defined twice.
                               # Possible to replace this with ingenious backref-fu.
