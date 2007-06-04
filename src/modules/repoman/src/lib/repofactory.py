@@ -36,6 +36,11 @@ class RepoFactory(object):
 
         return r
 
+    def makeAll(self):
+        """Creates all the repositories that have not been 
+           assiocated with nodegroups"""
+        pass
+
     def refresh(self, repoid):
         """Refresh the repository"""
         name, os_name, os_version, os_arch = repo.getOS(self.db, repoid)
@@ -43,6 +48,10 @@ class RepoFactory(object):
         r.refresh(repoid)
 
         return r
+
+    def refreshAll(self):
+        """Refresh all the repositories"""
+        pass
 
     def delete(self, repoid):
         """Delete the repository from the database and local disk"""
