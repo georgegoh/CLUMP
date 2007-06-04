@@ -36,7 +36,7 @@ def setupNetwork():
 def makeRepo(kiprofile):
     kiprofile.getDatabase()
     rfactory = RepoFactory(kiprofile.getDatabase(), '/mnt/kusu')
-    rfactory.make('fedora', '6', 'i386', 'installer', 'repo for fedora 6 i386')
+    rfactory.make('installer', 'repo for fedora 6 i386')
 
 def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory

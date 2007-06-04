@@ -27,55 +27,37 @@ class RepoFactory(object):
         self.db = db
         self.prefix = path(prefix)
 
-    def make(self, os_name, os_version, os_arch, ngname, reponame):
+    def make(self, ngname, reponame):
         """Creates and make a new repository"""
         
-        repo = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
-        repo.make(ngname, reponame)
+        name, os_name, os_version, os_arch = repo.getOS(self.db, ngname)
+        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r.make(ngname, reponame)
 
-        return repo
+        return r
 
     def refresh(self, repoid):
         """Refresh the repository"""
-        os_name, os_version, os_arch = self._getOSName(repoid)
-        repo = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
-        repo.refresh(repoid)
+        name, os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r.refresh(repoid)
 
-        return repo
+        return r
 
     def delete(self, repoid):
         """Delete the repository from the database and local disk"""
         
-        os_name, os_version, os_arch = self._getOSName(repoid)
-        repo = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
-        repo.delete(repoid)
+        os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r.delete(repoid)
         
-        return repo
+        return r
 
-    def _getOSName(self, repoid):
-        """Returns OS (name, version, arch) tuple from database 
-           based on the repoid"""
-
-        # Do not depend on os type in repo
-        session = self.db.createSession()
-
-        kit = session.query(self.db.kits).select_by \
-                            (self.db.repos_have_kits.c.kid == self.db.kits.c.kid, \
-                             self.db.repos_have_kits.c.repoid == repoid, \
-                             self.db.kits.c.isOS)
-
-        # There should only 1 be os kit for a repo. 
-        if len(kit) > 1:
-            raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
-        else:
-            kit = kit[0]
-        
-        # returns (os_name, os_version, os_arch)
-        return kit.rname.split('-') 
-   
+    def getRepo(self, key):
+        pass
  
 #if __name__ == '__main__':
 #    dbs = db.DB('mysql', username='root', db='test') 
 #    rfactory = RepoFactory(dbs, '/tmp/ff')
-#    rfactory.make('fedora', '6', 'i386', 'installer', 'repo-name')
+#    rfactory.make('installer', 'repo-name')
 #    rfactory.refresh(2)

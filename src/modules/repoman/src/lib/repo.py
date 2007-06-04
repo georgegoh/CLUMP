@@ -17,6 +17,46 @@ try:
 except:
     from popen5 import subprocess
 
+
+def getOS(db, key):
+    """Returns OS (rname, name, version, arch) tuple from database 
+       based on the repoid or nodegroup name"""
+
+    # Do not depend on os type in repo
+    session = db.createSession()
+    
+    # repoid
+    if type(key) in [int, long]: # float/complex not included 
+        kit = session.query(db.kits).select_by \
+                            (db.repos_have_kits.c.kid == db.kits.c.kid, \
+                             db.repos_have_kits.c.repoid == key, \
+                             db.kits.c.isOS)
+
+    # nodegroup name
+    elif type(key) == str:
+        AND = sa.and_(db.nodegroups.c.ngid == db.ng_has_comp.c.ngid, \
+                      db.ng_has_comp.c.cid == db.components.c.cid, \
+                      db.components.c.kid == db.kits.c.kid, \
+                      db.kits.c.isOS == True, \
+                      db.nodegroups.c.ngname == key)
+
+        kit = sa.select([db.kits.c.rname], AND).execute().fetchall()
+
+    else:
+        session.close()
+        raise TypeError, 'Invalid type for key: %s' % key
+
+    session.close()
+
+    # There should only 1 be os kit for a repo. 
+    if len(kit) > 1:
+        raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
+    else:
+        kit = kit[0]
+    
+    # returns (rname, os_name, os_version, os_arch)
+    return (kit.rname,) + tuple(kit.rname.split('-'))
+
 class BaseRepo(object):
 
     ngname = None
@@ -30,24 +70,7 @@ class BaseRepo(object):
     def getOSPath(self):
         """Get the OS path for the repository"""
 
-        ###############################################
-        # This is not very clean and I don't like it
-        ###############################################
-        AND = sa.and_(self.db.nodegroups.c.ngid == self.db.ng_has_comp.c.ngid, \
-                      self.db.ng_has_comp.c.cid == self.db.components.c.cid, \
-                      self.db.components.c.kid == self.db.kits.c.kid, \
-                      self.db.kits.c.isOS == True, \
-                      self.db.nodegroups.c.ngname == '%s' % self.ngname)
-
-        names = sa.select([self.db.kits.c.rname], AND).execute().fetchall()
-
-        # There should only be 1 OS for a nodegroup
-        if len(names) > 1:
-            raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
-        else:
-            name = names[0]['rname']
-
-        os_name, os_version, os_arch = name.split('-')
+        name, os_name, os_version, os_arch = getOS(self.db, self.repoid)
         return self.getKitPath(name, os_version)
 
     def getKitPath(self, name, version):
@@ -102,12 +125,36 @@ class BaseRepo(object):
         else:
             path.rmtree(self.repo_path)
 
-    def make(self, ngname, reponame=None):
+    def make(self, ngname, reponame):
         """makes the repository"""
-        raise NotImplementedError
+
+        self.ngname = ngname
+        self.reponame = reponame
+
+        self.UpdateDatabase(reponame)
+        self.os_path = self.getOSPath()
+        self.makeRepoDirs()
+        self.copyOSKit()
+        self.copyKitsPackages()
+        self.copyRamDisk()
+        self.makeComps()
+        self.makeMetaInfo()
+        self.verify()
+
+        return self
 
     def refresh(self):
         """refresh the repository"""
+
+        #self.clean()
+        #self.makeRepoDirs()
+        #self.copyOSKit()
+        #self.copyKitsPackages()
+        #self.copyRamDisk()
+        #self.makeComps()
+        #self.makeMetaInfo()
+        #self.verify()
+
         raise NotImplementedError
 
     def delete(self):
@@ -146,35 +193,6 @@ class FedoraRepo(BaseRepo):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
-
-    def make(self, ngname, reponame=None):
-        self.ngname = ngname
-        self.os_path = self.getOSPath()
-
-        # Really fedora
-        if not reponame:
-            reponame='fedora-%s-%s' % (self.os_version, self.os_arch)
-        self.UpdateDatabase(reponame)
-        self.makeRepoDirs()
-        self.copyOSKit()
-        self.copyKitsPackages()
-        self.copyRamDisk()
-        self.makeComps()
-        self.makeMetaInfo()
-        self.verify()
-
-        return self.repo_path
-
-    def refresh(self, repoid):
-        #self.clean()
-        #self.makeRepoDirs()
-        #self.copyOSKit()
-        #self.copyKitsPackages()
-        #self.copyRamDisk()
-        #self.makeComps()
-        #self.makeMetaInfo()
-        #self.verify()
-        pass
 
     def copyKitsPackages(self):
         session = self.db.createSession()
