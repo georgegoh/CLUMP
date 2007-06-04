@@ -63,6 +63,7 @@ class EMOUNTFAIL(Exception):
 
 class KitOps:
     def __init__(self, **kw):
+        self.installer = False
         self.kitname = ''
         self.kitmedia = ''
         self.mountpoint = None
@@ -75,6 +76,8 @@ class KitOps:
 
         if 'db' in kw:
             self.__db = kw['db']
+        if 'installer' in kw:
+            self.installer = kw['installer']
 
         self.prefix = path(kw.get('prefix', '/'))
         self.kits_dir = self.prefix / 'depot/kits/'
@@ -219,8 +222,13 @@ class KitOps:
         if not repodir.exists():
             repodir.makedirs()
 
-        srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' %
-                                kit['rpmloc'].basename(),
+        #srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' %
+        #                        kit['rpmloc'].basename(),
+        #                        cwd=self.mountpoint / self.kitname,
+        #                        shell=True, stdout=subprocess.PIPE)
+        #dstP = subprocess.Popen('tar xf -',
+        #                        cwd=repodir, shell=True, stdin=srcP.stdout)
+        srcP = subprocess.Popen('tar cf - *.rpm',
                                 cwd=self.mountpoint / self.kitname,
                                 shell=True, stdout=subprocess.PIPE)
         dstP = subprocess.Popen('tar xf -',
@@ -234,13 +242,14 @@ class KitOps:
         session.save(newkit)
         
         # 3. install the kit RPM
-        try:
-            rpmP = subprocess.Popen('rpm --quiet -i %s' % kit['rpmloc'],
-                                    shell=True)
-            rpmP.wait()
-        except Exception, msg:
-            return terminate(EKITADD_FAIL,
-                             'Kit RPM installation failed\n%s' % msg)
+        if not self.installer:
+            try:
+                rpmP = subprocess.Popen('rpm --quiet -i %s' % kit['rpmloc'],
+                                        shell=True)
+                rpmP.wait()
+            except Exception, msg:
+                return terminate(EKITADD_FAIL,
+                                 'Kit RPM installation failed\n%s' % msg)
 
         # RPM install successful, add kit to DB
         session.flush()
@@ -595,9 +604,10 @@ class KitOps:
         path(self.kits_dir / kit.rname / kit.version).rmtree()
 
         #2. remove kit RPM
-        rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
-                               kit.rname, shell=True)
-        rmP.wait()
+        if not self.installer:
+            rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
+                                   kit.rname, shell=True)
+            rmP.wait()
 
         #3. remove component info from DB
         for component in kit.components:
