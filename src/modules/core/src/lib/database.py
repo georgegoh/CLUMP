@@ -295,21 +295,25 @@ class DB(object):
                     sa.mapper(Nics, sa.Table('nics', self.metadata, autoload=True), entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(NGHasNet, self.entity_name)):
-            dmapper['ng_has_net'] = \
-                    sa.mapper(NGHasNet, sa.Table('ng_has_net', self.metadata, autoload=True), entity_name=self.entity_name)
+            dtable['ng_has_net'] = sa.Table('ng_has_net', self.metadata, autoload=True)
+            dmapper['ng_has_net'] = sa.mapper(NGHasNet, dtable['ng_has_net'], entity_name=self.entity_name)
 
         if not sa.orm.mapper_registry.has_key(ClassKey(NodeGroups, self.entity_name)):
             dmapper['nodegroups'] = \
-                    sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, \
+                    sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, 
                               properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'],
                                                                     entity_name=self.entity_name),
-                                          'partitions': sa.relation(Partitions, entity_name=self.entity_name)})
+                                          'partitions': sa.relation(Partitions, entity_name=self.entity_name),
+                                          'networks': sa.relation(Networks, secondary=dtable['ng_has_net'],
+                                                                    entity_name=self.entity_namei)})
+                  
                               # Currently nodegroups <-> components relationship is defined twice.
                               # Possible to replace this with ingenious backref-fu.
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Nodes, self.entity_name)):
             dmapper['nodes'] = \
-                    sa.mapper(Nodes, sa.Table('nodes', self.metadata, autoload=True), entity_name=self.entity_name)
+                    sa.mapper(Nodes, sa.Table('nodes', self.metadata, autoload=True), entity_name=self.entity_name, \
+                              properties={'nics': sa.relation(Nics, entity_name=self.entity_name)})
 
         if not sa.orm.mapper_registry.has_key(ClassKey(Packages, self.entity_name)):
             dmapper['packages'] = \
