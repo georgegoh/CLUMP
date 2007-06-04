@@ -134,7 +134,7 @@ class TestBaseKit:
         # assert contents are the same
         assert areContentsEqual(self.temp_mount / self.kit_name,
                                 self.kits_dir / self.kit_name / self.kit_ver,
-                                '*.rpm', [self.kit_rpm]), \
+                                '*.rpm'), \
                'RPM files in %s and %s are not equal' % \
                (self.temp_mount / self.kit_name,
                 self.kits_dir / self.kit_name / self.kit_ver)
@@ -465,7 +465,7 @@ class TestFedoraCore6i386:
 
         # the two discs contain more than 1000 files when combined
         files = len([f for f in path(self.kits_dir / self.kit_name).walk()])
-        assert files >= 1000, 'FOund %d files, expecting more than 1000' % files
+        assert files >= 1000, 'Found %d files, expecting more than 1000' % files
 
         # check DB for information
         kits = self.dbs.query(self.kusudb.kits).select()
