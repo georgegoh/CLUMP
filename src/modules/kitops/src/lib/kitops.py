@@ -50,7 +50,6 @@ EKITLST_FAIL    = -6
 EDB_FAIL        = -7
 EKIT_BAD        = -8
 
-
 class EMOUNTFAIL(Exception):
     def __init__(self,rv):
         self.rv = rv
@@ -126,7 +125,7 @@ class KitOps:
                 self.mountMedia(self.medialoc, isISO)
             except EMOUNTFAIL,inst:
                 self.__handleMountError(int(inst))
-                return terminate(EKITLOC_FAIL)
+                return self.terminate(EKITLOC_FAIL)
             #mountpoint is defined - we're done
             return 0
                 
@@ -136,7 +135,7 @@ class KitOps:
 
         else:
             #if neither of the above - error
-            return terminate(EKITLOC_FAIL,
+            return self.terminate(EKITLOC_FAIL,
                              'Improper kit media location specification')
 
         #at this point we have the kit mounted to self.mountpoint
@@ -144,7 +143,7 @@ class KitOps:
             assert(self.mountpoint
                    and self.mountpoint.isdir() and self.mountpoint.ismount())
         except AssertionError,msg:
-            return terminate(EKITLOC_FAIL,
+            return self.terminate(EKITLOC_FAIL,
                              'Mountpoint sanity assertion failed\n%s' % msg)
 
         return 0
@@ -159,7 +158,7 @@ class KitOps:
         try:
             assert(lst)
         except AssertionError:
-            return terminate(EKITLOC_FAIL,
+            return self.terminate(EKITLOC_FAIL,
                              'Kit media neither specified nor found')
 
         for dev in lst:
@@ -173,7 +172,7 @@ class KitOps:
                 #mountpoint is defined - mount was successful
                 self.MediaDevice = '/dev/%s' % dev
                 return 0
-        return terminate(EKITLOC_FAIL)
+        return self.terminate(EKITLOC_FAIL)
 
     def getOSDist(self):
         return DistroFactory(str(self.mountpoint))
@@ -190,7 +189,7 @@ class KitOps:
         try:
             assert(bool(self.kitname))
         except AssertionError, msg:
-            return terminate(EKITADD_FAIL,
+            return self.terminate(EKITADD_FAIL,
                              "Kitname still not defined, terminating\n%s" % msg)
 
         kitRPMlst = path(self.mountpoint / self.kitname).glob('kit-%s*.rpm' %
@@ -198,7 +197,7 @@ class KitOps:
         try:
             assert(len(kitRPMlst)==1)
         except AssertionError,msg:
-            return terminate(EKITADD_FAIL,
+            return self.terminate(EKITADD_FAIL,
                              'Number of kit RPMs under %s' % 
                                  self.mountpoint / self.kitname + 
                              'must be exactly one\n%s' % msg)
@@ -211,9 +210,9 @@ class KitOps:
             if self.checkKitInstalled(kit['name'], kit['ver']):
                 kl.debug("Kit '%s' version '%s' already installed",
                          kit['name'], kit['ver'])
-                return terminate(EKITADD_FAIL)
+                return self.terminate(EKITADD_FAIL)
         except Exception,msg:
-            return terminate(EKITADD_FAIL,
+            return self.terminate(EKITADD_FAIL,
                              'DB check on kit %s failed\n%s' %
                              (kit['name'], msg))
 
@@ -248,7 +247,7 @@ class KitOps:
                                         shell=True)
                 rpmP.wait()
             except Exception, msg:
-                return terminate(EKITADD_FAIL,
+                return self.terminate(EKITADD_FAIL,
                                  'Kit RPM installation failed\n%s' % msg)
 
         # RPM install successful, add kit to DB
@@ -289,7 +288,7 @@ class KitOps:
             try:
                 assert(bool(comp['name']))
             except:
-                return terminate(EKITADD_FAIL,
+                return self.terminate(EKITADD_FAIL,
                                  'Encountered corrupt name for ' +
                                  'component from %s' % comploc.basename())
 
@@ -365,7 +364,7 @@ class KitOps:
                 dirlst.append(dir)
 
         if not dirlst:
-            return terminate(EKIT_BAD, 'Bad media provided, no kits found')
+            return self.terminate(EKIT_BAD, 'Bad media provided, no kits found')
 
         if len(dirlst) == 1:
             self.kitname = dirlst[0].basename()
@@ -374,7 +373,8 @@ class KitOps:
             #handleMetaKit - return the kit to work with (self.kitname must be set)
             rv = self.selectKit(self.mountpoint, dirlst)
             if not rv:
-                return terminate(EKIT_BAD, 'Bad media provided, no kits found')
+                return self.terminate(EKIT_BAD,
+                        'Bad media provided, no kits found')
             self.kitname = rv
 
     def findMediaDevices(self):
@@ -426,7 +426,8 @@ class KitOps:
                 if not glob.glob('%s/%s/kit-*.rpm' % (mountpoint, dirlst[i])):
                     del dirlst[i]
             if not dirlst:
-                return terminate(EKIT_BAD, 'Bad media provided, no kits found')
+                return self.terminate(EKIT_BAD,
+                        'Bad media provided, no kits found')
         #TO BE CONTINUED
         
     def mountMedia(self, media, isISO=False):
@@ -502,7 +503,7 @@ class KitOps:
         session.close()
 
         if kits:
-            return terminate((EKITADD_FAIL, None, None),
+            return self.terminate((EKITADD_FAIL, None, None),
                              "OS kit '%s' already installed" % kit['name'])
 
         #copy kernel & initrd to pxedir
@@ -545,7 +546,7 @@ class KitOps:
         try:
             cpio_copytree(self.mountpoint, repodir)
         except Exception,msg:
-            return terminate(EKITADD_FAIL, 'Error during copy\n%s', msg)
+            return self.terminate(EKITADD_FAIL, 'Error during copy\n%s', msg)
 
         return 0
                 
@@ -580,22 +581,23 @@ class KitOps:
         try:
             assert(bool(self.kitname))
         except AssertionError,msg:
-            return terminate(EKITDEL_FAIL,
+            return self.terminate(EKITDEL_FAIL,
                              'Name for kit to delete not specified')
 
         session = self.__db.createSession()
         kit = session.query(self.__db.kits).selectfirst_by(rname=self.kitname)
 
         if not kit:
-            return terminate(EKITDEL_FAIL,
+            return self.terminate(EKITDEL_FAIL,
                              "Kit '%s' is not in the database" % self.kitname)
 
         if not kit.removable:
-            return terminate(EKITDEL_FAIL,
+            return self.terminate(EKITDEL_FAIL,
                              "Kit '%s' is not removable" % kit.rname)
 
-        if kit.repos:
-            return terminate(EKITDEL_FAIL,
+        repos = session.query(self.__db.repos).select_by(kid=kit.kid)
+        if repos:
+            return self.terminate(EKITDEL_FAIL,
                              "Cannot delete kit '%s', it is used by a repo" %
                              kit.rname)
             
