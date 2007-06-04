@@ -9,7 +9,6 @@
 #
 """This module is the backbone of the TUI Framework. It performs the 
    presentation, navigation,and data validation tasks."""
-
 NAV_NOTHING = -1
 NAV_FORWARD = -2
 NAV_BACK = 1
@@ -24,7 +23,6 @@ from kusu.util.log import Logger
 from path import path
 from kusuwidgets import *
 from kusu.util.errors import *
-
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
@@ -86,6 +84,13 @@ class Navigator(object, KusuApp):
         """Show a popup dialog with a given title and message."""
         snack.ButtonChoiceWindow(self.mainScreen, title, msg,
                                  buttons=[self._('Ok')])
+
+    def popupYesNo(self, title, msg):
+        """Show a popup dialog with a yes/no answer. Return True on yes, False on No."""
+        buttons = [self._('Yes'), self._('No')]
+        result = self.popupDialogBox(title, msg, buttons)
+        if result == buttons[0].lower(): return True
+        else: return False
 
     def __init__(self, screenFactory, screenTitle, showTrail=False):
         """Constructor parameters:
@@ -236,6 +241,10 @@ class Navigator(object, KusuApp):
                     self.mainScreen.finish()
                     loop=False
                     return None
+        except UserExitError, e:
+            self.mainScreen.popWindow()
+            self.mainScreen.finish()
+            return False
         except KusuError, e:
             msg = str(e)
             import traceback

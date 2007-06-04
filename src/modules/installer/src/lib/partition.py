@@ -78,7 +78,7 @@ class PartitionScreen(InstallerScreen):
                 result = self.selector.popupDialogBox('Partitions exist',
                                                       msg,
                                              ['Use Default', 'Use Existing'])
-                if str(result) == 'default':
+                if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
                     schema = vanillaSchemaLVM()
@@ -91,7 +91,7 @@ class PartitionScreen(InstallerScreen):
                 result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
                                                       msg,
                                              ['Use Default', "Don't Use Default"])
-                if str(result) == 'default':
+                if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
                     schema = vanillaSchemaLVM()
@@ -179,6 +179,25 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
+
+        proceed = self.selector.popupYesNo(_('Really Proceed?'),
+                       _('Proceeding beyond this screen will cause ' + \
+                         'irreversible changes to your disk(s). If you ' + \
+                         'have any valuable data that is existing on your ' + \
+                         'current disk(s), please press "No" to cancel ' + \
+                         'installation, and then backup your data before ' + \
+                         're-attempting installation. Otherwise, if you ' + \
+                         'are sure you want to continue, then press the ' + \
+                         '"Yes" button.'))
+
+        if proceed:
+            from finalactions import setupDisks
+            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+            setupDisks(self.disk_profile)
+            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
+            prog_dlg.close()
+        else:
+            raise UserExitError
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:

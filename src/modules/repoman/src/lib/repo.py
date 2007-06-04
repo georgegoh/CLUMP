@@ -255,7 +255,7 @@ class FedoraRepo(BaseRepo):
             retcode = p.returncode
 
         except: 
-            raise CommandFailedToRun, 'createrepo failed'
+            raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
             raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path

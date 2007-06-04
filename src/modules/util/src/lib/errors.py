@@ -16,7 +16,8 @@ class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
 class FileAlreadyExistError(KusuError): pass
-class CommandFailedToRun(KusuError): pass
+class CommandFailedToRunError(KusuError): pass
+class UserExitError(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass

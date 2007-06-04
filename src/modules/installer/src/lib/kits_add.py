@@ -13,22 +13,20 @@ from kusu.ui.text import kusuwidgets
 from kusu.util.errors import *
 import kits_sourcehandlers
 from kusu.ui.text.navigator import NAV_NOTHING, NAV_BACK
+from kusu.kitops.kitops import KitOps
 
 kitsource_handler_dict = { 'CDROM': kits_sourcehandlers.addKitFromCDForm,
                            'URI': kits_sourcehandlers.addKitFromURIForm }
 
 def kitAdd(baseScreen):
     """Let the user add kits."""
-    add_kit = True
-    while add_kit:
-        try:
-            source = askForKitSource(baseScreen)
-            addKitFunc = kitsource_handler_dict[source]
-            if addKitFunc(baseScreen) == NAV_BACK:
-                break
-            add_kit = promptForMore(baseScreen)
-        except CannotAddKitError, e:
-            baseScreen.selector.popupMsg('Error Adding Kit', str(e))
+    kitops = KitOps(installer=True)
+    try:
+        source = askForKitSource(baseScreen)
+        addKitFunc = kitsource_handler_dict[source]
+        addKitFunc(baseScreen, kitops)
+    except CannotAddKitError, e:
+        baseScreen.selector.popupMsg('Error Adding Kit', str(e))
     return NAV_NOTHING
 
 

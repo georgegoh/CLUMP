@@ -101,20 +101,20 @@ class ConfirmScreen(InstallerScreen):
 
             mntpnt = '/mnt/kusu'
 
-            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-            disk_profile = self.kiprofile['Partitions']['DiskProfile']
-            setupDisks(disk_profile)
-            prog_dlg.close()
+            #prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+            #disk_profile = self.kiprofile['Partitions']['DiskProfile']
+            #setupDisks(disk_profile)
+            #prog_dlg.close()
 
             prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
             setupNetwork()
             self.logger.debug('Network set up.')
             prog_dlg.close()
 
-            prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
-            mountKusuMntPts(mntpnt, disk_profile)
-            self.logger.debug('Kusu mount points set up')
-            prog_dlg.close()
+            #prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
+            #mountKusuMntPts(mntpnt, disk_profile)
+            #self.logger.debug('Kusu mount points set up')
+            #prog_dlg.close()
 
             #prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
             #self.makeRepo(self.kiprofile)

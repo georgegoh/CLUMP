@@ -37,7 +37,7 @@ class Interface:
             out, err = p.communicate()
             retcode = p.returncode
         except:
-            raise CommandFailedToRun
+            raise CommandFailedToRunError
 
         if retcode:
             raise InterfaceNotBroughtUpError, 'interface %s cannot be brought up' % self.interface
@@ -52,7 +52,7 @@ class Interface:
             out, err = p.communicate()
             retcode = p.returncode
         except:
-            raise CommandFailedToRun
+            raise CommandFailedToRunError
 
         if retcode:
             raise InterfaceNotBroughtDownError, 'interface %s cannot be brought down' % self.interface
@@ -67,7 +67,7 @@ class Interface:
             out, err = p.communicate()
             retcode = p.returncode
         except:
-            raise CommandFailedToRun
+            raise CommandFailedToRunError
 
         if retcode:
             raise InterfaceNotFound, 'interface %s not found' % self.interface
@@ -98,7 +98,7 @@ class Interface:
             out, err = p.communicate()
             retcode = p.returncode
         except:
-            raise CommandFailedToRun
+            raise CommandFailedToRunError
 
         if not retcode:
             self._getIPNetmask()

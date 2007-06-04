@@ -54,10 +54,10 @@ def url_mirror_copy(src, dst):
             if e.errno == errno.ENOENT:
                 raise FileDoesNotExistError, 'wget not found' 
             else:
-                raise CommandFailedToRun, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
+                raise CommandFailedToRunError, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
 
         except:
-            raise CommandFailedToRun
+            raise CommandFailedToRunError
 
         if retcode:
             raise CopyFailedError, 'Failed to copy %s to %s' % (src,dst)

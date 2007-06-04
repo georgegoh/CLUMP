@@ -601,7 +601,7 @@ class DB(object):
                 out, err = p.communicate()
                 retcode = p.returncode
             except:
-                raise CommandFailedToRun
+                raise CommandFailedToRunError
 
             if retcode:
                 raise FailedToCreateDatabase, 'Unable to create database: %s' % self.db
@@ -629,7 +629,7 @@ class DB(object):
                 out, err = p.communicate()
                 retcode = p.returncode
             except:
-                raise CommandFailedToRun
+                raise CommandFailedToRunError
 
             if retcode:
                 raise FailedToDropDatabase, 'Unable to drop database: %s' % self.db
