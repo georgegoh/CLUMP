@@ -182,11 +182,11 @@ class PartitionScreen(InstallerScreen):
 
         proceed = self.selector.popupYesNo(_('Really Proceed?'),
                        _('Proceeding beyond this screen will cause ' + \
-                         'irreversible changes to your disk(s). If you ' + \
+                         'irreversible changes to your disk(s).\n\nIf you ' + \
                          'have any valuable data that is existing on your ' + \
                          'current disk(s), please press "No" to cancel ' + \
                          'installation, and then backup your data before ' + \
-                         're-attempting installation. Otherwise, if you ' + \
+                         're-attempting installation.\n\nOtherwise, if you ' + \
                          'are sure you want to continue, then press the ' + \
                          '"Yes" button.'))
 
