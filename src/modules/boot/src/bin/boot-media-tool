@@ -11,11 +11,10 @@ import os
 import subprocess
 from kusu.core.app import KusuApp
 from path import path
-from kusu.boot.distro import CopyError, SUPPORTED_ARCH, UnsupportedDistro
-from kusu.boot.distro import FileAlreadyExists, InvalidInstallSource, SUPPORTED_DISTROS
-from kusu.boot.tool import BootMediaTool, FilePathError, NotPriviledgedUser, InvalidKusuSource
-from kusu.boot.tool import FailedBuildCMake, FailedBuildMake
-from kusu.boot.image import TOOLS_DEPS
+from kusu.boot.distro import SUPPORTED_ARCH, SUPPORTED_DISTROS
+from kusu.boot.tool import BootMediaTool
+from kusu.boot.image import checkToolsDeps
+from kusu.util.errors import *
         
         
 class BootMediaApp(KusuApp):
@@ -199,14 +198,12 @@ Example operation usages:
     def checkRequirements(self):
         """ Check if the list of tools needed by BMT are indeed available. """
         
-        for tool in TOOLS_DEPS:
-            cmd = 'which %s > /dev/null 2>&1' % tool
-            whichP = subprocess.Popen(cmd,shell=True)
-            whichP.communicate()
-            if whichP.returncode <> 0:
-                msg = self._('%(toolname)s not in your PATH. Please ensure that it is installed and available.' \
+        try:
+            checkToolsDeps()
+        except ToolNotFound, tool:
+            msg = self._('%(toolname)s not in your PATH. Please ensure that it is installed and available.' \
                     % {'toolname':tool})
-                self.printMsgExit(msg)
+            self.printMsgExit(msg)
         
     def run(self):
         """ Main launcher. """

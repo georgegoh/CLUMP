@@ -9,11 +9,7 @@
 
 from path import path
 import os
-
-class CopyError(Exception): pass
-class FileAlreadyExists(Exception): pass
-class InvalidInstallSource(Exception): pass
-class UnsupportedDistro(Exception): pass
+from kusu.util.errors import *
 
 SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
 USES_ANACONDA = ['centos', 'fedora', 'rhel']

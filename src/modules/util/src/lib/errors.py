@@ -82,3 +82,17 @@ class UnableToSaveDataError(KusuError): pass
 class RepoNotCreatedError(KusuError): pass
 class RepoNotFoundError(KusuError): pass
 class RepoOSKitError(KusuError): pass
+
+# b-m-t
+class FilePathError(KusuError): pass
+class NotPriviledgedUser(KusuError): pass
+class UnsupportedPackingType(KusuError): pass
+class ToolNotFound(KusuError): pass
+class CopyError(KusuError): pass
+class FileAlreadyExists(KusuError): pass
+class InvalidInstallSource(KusuError): pass
+class UnsupportedDistro(KusuError): pass
+class InvalidKusuSource(KusuError): pass
+class FailedBuildCMake(KusuError): pass
+class FailedBuildMake(KusuError): pass
+

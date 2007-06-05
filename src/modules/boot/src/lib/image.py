@@ -10,6 +10,7 @@
 from path import path
 from kusu.boot.distro import DistroFactory, InvalidInstallSource
 from kusu.util.tools import cpio_copytree
+from kusu.util.errors import *
 import os
 import sys
 import commands
@@ -19,11 +20,22 @@ import subprocess
 
 ROOTIMG_PACKING_TYPE = ['cpio','ext2', 'gzip']
 
-TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 'mkisofs']
+TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 
+    'mkisofs', 'tar', 'gzip']
 
-class FilePathError(Exception): pass
-class NotPriviledgedUser(Exception): pass
-class UnsupportedPackingType(Exception): pass
+def checkToolsDeps():
+    """ Check if the list of tools needed by BMT are indeed available. 
+        A ToolNotFound exception will be thrown if any of the tools are
+        missing.
+    """
+    
+    for tool in TOOLS_DEPS:
+        cmd = 'which %s > /dev/null 2>&1' % tool
+        whichP = subprocess.Popen(cmd,shell=True)
+        whichP.communicate()
+        if whichP.returncode <> 0:
+            raise ToolNotFound, tool
+            
 
 def packInitramFS(dirname, rootimgpath, initscript=None):
     """Packs the directory dir into an initramfs rootimgpath. The initscript template file can be passed as well.
@@ -34,6 +46,9 @@ def packInitramFS(dirname, rootimgpath, initscript=None):
         raise FilePathError
     
     if os.getuid() <> 0: raise NotPriviledgedUser, "Operation requires root access!"
+    
+    # check tools dependencies
+    checkToolsDeps()
     
     # nuke existing rootimgpath if existing
     if path(rootimgpath).exists(): path(rootimgpath).remove()
@@ -54,6 +69,9 @@ def packExt2FS(dirname, rootimgpath, size=5000):
         raise FilePathError
 
     if os.getuid() <> 0: raise NotPriviledgedUser, "Operation requires root access!"
+
+    # check tools dependencies
+    checkToolsDeps()
 
     # nuke existing rootimgpath if existing
     if path(rootimgpath).exists(): path(rootimgpath).remove()
@@ -89,6 +107,9 @@ def unpack(rootimgpath, dirname):
     if not path(rootimgpath).exists(): raise FilePathError
     
     if os.getuid() <> 0: raise NotPriviledgedUser
+
+    # check tools dependencies
+    checkToolsDeps()    
     
     # nuke existing dirname
     if path(dirname).exists(): path(dirname).rmtree()
@@ -221,6 +242,9 @@ def makeBootISO(isodir, isoname, volname="BootKit"):
     isopath = path(isoname)
     if not tdir.exists(): raise FilePathError
     
+    # check tools dependencies
+    checkToolsDeps()
+    
     # create a clean scratch directory for mkisofs operations
     scratchdir = path(tempfile.mkdtemp(dir='/tmp'))
     cpio_copytree(tdir,scratchdir)
@@ -257,6 +281,9 @@ def makeBootArchive(isolinuxdir, archivename):
     
     if not tdir.exists(): raise FilePathError
     
+    # check tools dependencies
+    checkToolsDeps()    
+    
     # nuke existing archivename if any
     if path(archivename).exists(): path(archivename).remove()
     
@@ -272,7 +299,9 @@ def launchCmd(cmd,*args):
     """
     
     cmdstr = "%s %s" % (cmd, ' '.join(args))
-    value = commands.getstatusoutput(cmdstr)
+    cmdP = subprocess.Popen(cmdstr,shell=True,stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE)
+    value = cmdP.communicate()[0]
     
     return value
     
@@ -323,6 +352,9 @@ class OperatingEnvironment(object):
     def getRootImgFormat(self):
         """Returns the packing format of the RootImg."""
         global ROOTIMG_PACKING_TYPE
+        
+        # check tools dependencies
+        checkToolsDeps()        
         
         if not self.rootimgpath.exists(): raise FilePathError
         

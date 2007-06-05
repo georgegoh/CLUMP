@@ -9,16 +9,11 @@
 from path import path
 import subprocess
 import os
-from kusu.boot.distro import DistroFactory, InvalidInstallSource, SUPPORTED_DISTROS, USES_ANACONDA
-from kusu.boot.distro import CopyError, UnsupportedDistro
-from kusu.boot.distro import FileAlreadyExists
+from kusu.boot.distro import DistroFactory, SUPPORTED_DISTROS, USES_ANACONDA
 from kusu.boot.image import *
+from kusu.util.errors import *
 from kusu.util.tools import cpio_copytree
 import tempfile
-
-class InvalidKusuSource(Exception): pass
-class FailedBuildCMake(Exception): pass
-class FailedBuildMake(Exception): pass
 
 SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX', 
                         'KUSU_BUILD_DISTVER', 'KUSU_BUILD_ARCH',
