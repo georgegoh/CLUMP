@@ -12,6 +12,7 @@ SET(KUSU_3RDPARTY
   thttpd
   sqlalchemy
   createrepo
+  file
 )
 
 # ## Add kusu modules to the build lists
