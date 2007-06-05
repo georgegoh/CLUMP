@@ -179,7 +179,10 @@ class ColumnListbox(snack.Grid):
         return rowText
 
     def current(self):
-        return self.listbox.current()
+        if not self.length:
+            return None
+        else:
+            return self.listbox.current()
 
     def setCurrent(self, item):
         self.listbox.setCurrent(item)
