@@ -67,6 +67,18 @@ class InterfaceNotFound(KusuError): pass
 class ProfileNotCompleteError(KusuError): pass
 class TemplateNotFoundError(KusuError): pass
 
+# kitops
+class CannotMountKitMediaError(KusuError): pass
+class UnrecognizedKitMediaError(KusuError): pass
+class NoKitSpecifiedOrFoundError(KusuError): pass
+class KitAlreadyInstalledError(KusuError): pass
+class KitNotInstalledError(KusuError): pass
+class InstallKitRPMError(KusuError): pass
+class CorruptComponentNameError(KusuError): pass
+class NoKitsFoundError(KusuError): pass
+class CopyOSMediaError(KusuError): pass
+class DeleteKitsError(KusuError): pass
+
 #kits
 class CannotAddKitError(KusuError): pass
 

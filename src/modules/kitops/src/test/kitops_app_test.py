@@ -341,8 +341,14 @@ class TestFedoraCore6i386:
 
         self.kit = test_kits / 'mock-FC-6-i386-disc1.iso'
         self.kit2 = test_kits / 'mock-FC-6-i386-disc2.iso'
-        self.kit_name = 'fedora-6-i386'
+        self.kit_name = 'fedora'
         self.kit_ver = '6'
+        self.kit_arch = 'i386'
+        self.kit_longname = '%s-%s-%s' % \
+                                (self.kit_name, self.kit_ver, self.kit_arch)
+        self.kits_dir_name = self.kits_dir / self.kit_name
+        self.kits_dir_ver = self.kits_dir_name / self.kit_ver
+        self.kits_dir_arch = self.kits_dir_ver / self.kit_arch
 
         assert self.kit.exists(), 'Fedora Core 6 i386 CD1 ISO does not exist!'
         assert self.kit2.exists(), 'Fedora Core 6 i386 CD2 ISO does not exist!'
@@ -380,66 +386,14 @@ class TestFedoraCore6i386:
 
         assert rv == 0, 'kitops returned error: %s' % rv
 
-        # assert all directories exist
-        assert self.depot_dir.exists(), \
-               'Depot dir %s does not exist' % self.depot_dir
-        assert self.kits_dir.exists(), \
-               'Kits dir %s does not exist' % self.kits_dir
-        assert path(self.kits_dir / self.kit_name).exists(), \
-               'Kit dir %s does not exist' % self.kits_dir / self.kit_name
-        assert path(self.kits_dir / self.kit_name / self.kit_ver).exists(), \
-               'Kit ver dir %s does not exist' % self.kits_dir /  \
-                                                 self.kit_name / self.kit_ver
+        self.assertOSKitDirs()
 
         # assert contents are the same
-        assert areDirTreesIdentical(self.temp_mount,
-                                self.kits_dir / self.kit_name / self.kit_ver), \
+        assert areDirTreesIdentical(self.temp_mount, self.kits_dir_arch), \
                'Directory trees %s and %s are not equal' % \
-               (self.temp_mount / self.kit_name,
-                self.kits_dir / self.kit_name / self.kit_ver)
+               (self.temp_mount, self.kits_dir_arch)
 
-        # check DB for information
-        kits = self.dbs.query(self.kusudb.kits).select()
-        
-        # we are expecting only one kit
-        assert len(kits) == 1, 'Kits in DB: %d, expected: 1' % len(kits)
-
-        # check the kit's data
-        kit = kits[0]
-        assert kit.rname == self.kit_name, \
-               'Kit name: %s, expected %s' % (kit.rname, self.kit_name)
-        assert kit.rdesc == 'OS kit for fedora 6 i386', \
-               'Description: %s, expected: OS kit for fedora 6 i386' % kit.rdesc
-        assert kit.version == '6', 'Version: %s, expected: 6' % kit.version
-        assert kit.isOS, 'Expected isOS to be True'
-        assert not kit.removable, 'Expected removable to be False'
-        assert kit.arch == 'i386', 'Arch: %s, expected: i386' % kit.arch
-
-        # the fedora 6 kit has one 'mock' component
-        cmps = self.dbs.query(self.kusudb.components).select()
-        assert len(cmps) == 1, 'Components in DB: %d, expected: 1' % len(cmps)
-
-        # check component data
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='fedora-6-i386')
-        assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
-        assert cmp.cname == 'fedora-6-i386', \
-               'Component name: %s, expected: fedora-6-i386' % cmp.cname
-        assert cmp.cdesc == 'fedora-6-i386', \
-               'Component description: %s, expected: fedora-6-i386' % cmp.cname
-        assert cmp.os == 'fedora-6-i386', \
-               'OS: %s, expected: fedora-6-i386' % cmp.os
-        # node component associated with both nodegroups
-        assert len(cmp.nodegroups) == 2, \
-            'Component %s not associated with two nodegroups' % cmp.cname
-        ngnames = []
-        for ng in cmp.nodegroups:
-            ngnames.append(ng.ngname)
-        ngnames.sort()
-        assert ngnames[0] == 'compute', \
-            'Component %s not associated with compute nodegroup' % cmp.cname
-        assert ngnames[1] == 'installer', \
-            'Component %s not associated with installer nodegroup' % cmp.cname
+        self.assertOSKitDBInfo()
 
     def testAddKitTwoDiscs(self):
         # passing disc 2 to kitops
@@ -452,21 +406,28 @@ class TestFedoraCore6i386:
 
         assert rv == 0, 'kitops returned error: %s' % rv
 
-        # assert all directories exist
-        assert self.depot_dir.exists(), \
-               'Depot dir %s does not exist' % self.depot_dir
-        assert self.kits_dir.exists(), \
-               'Kits dir %s does not exist' % self.kits_dir
-        assert path(self.kits_dir / self.kit_name).exists(), \
-               'Kit dir %s does not exist' % self.kits_dir / self.kit_name
-        assert path(self.kits_dir / self.kit_name / self.kit_ver).exists(), \
-               'Kit ver dir %s does not exist' % self.kits_dir /  \
-                                                 self.kit_name / self.kit_ver
+        self.assertOSKitDirs()
 
         # the two discs contain more than 1000 files when combined
         files = len([f for f in path(self.kits_dir / self.kit_name).walk()])
         assert files >= 1000, 'Found %d files, expecting more than 1000' % files
 
+        self.assertOSKitDBInfo()
+
+    def assertOSKitDirs(self):
+        # assert all directories exist
+        assert self.depot_dir.exists(), \
+               'Depot dir %s does not exist' % self.depot_dir
+        assert self.kits_dir.exists(), \
+               'Kits dir %s does not exist' % self.kits_dir
+        assert self.kits_dir_name.exists(), \
+               'Kit dir %s does not exist' % self.kits_dir_name
+        assert self.kits_dir_ver.exists(), \
+               'Kit ver dir %s does not exist' % self.kits_dir_ver
+        assert self.kits_dir_arch.exists(), \
+               'Kit arch dir %s does not exist' % self.kits_dir_arch
+
+    def assertOSKitDBInfo(self):
         # check DB for information
         kits = self.dbs.query(self.kusudb.kits).select()
         
@@ -492,12 +453,12 @@ class TestFedoraCore6i386:
         cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
                                                         cname='fedora-6-i386')
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
-        assert cmp.cname == 'fedora-6-i386', \
-               'Component name: %s, expected: fedora-6-i386' % cmp.cname
-        assert cmp.cdesc == 'fedora-6-i386', \
-               'Component description: %s, expected: fedora-6-i386' % cmp.cname
-        assert cmp.os == 'fedora-6-i386', \
-               'OS: %s, expected: fedora-6-i386' % cmp.os
+        assert cmp.cname == self.kit_longname, \
+               'Component name: %s, expected: %s' % \
+               (cmp.cname, self.kit_longname)
+        assert cmp.cdesc == '%s mock component' % self.kit_longname, \
+               'Component description: %s, expected: %s mock component' % \
+               (cmp.cname, self.kit_longname)
         # node component associated with both nodegroups
         assert len(cmp.nodegroups) == 2, \
             'Component %s not associated with two nodegroups' % cmp.cname

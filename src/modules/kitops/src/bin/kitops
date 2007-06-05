@@ -17,10 +17,21 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
                        'kusu-kitops.log')
 kl = kusulog.getKusuLog('kitops-app')
 
+import kusu.core.database as db
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
 from kusu.boot.distro import DistroInstallSrcBase
-import kusu.core.database as db
+from kusu.util.errors import *
+
+EMOUNT_FAIL     = -1
+EKITLOC_FAIL    = -2
+EKITADD_FAIL    = -3
+EKITDEL_FAIL    = -4
+EKITUP_FAIL     = -5
+EKITLST_FAIL    = -6
+EDB_FAIL        = -7
+EKIT_BAD        = -8
+EBAD_OP         = -9
 
 KITOP_NONE  = 0x00
 KITOP_ADD   = 0x01
@@ -37,6 +48,9 @@ class KitOpsApp(KusuApp):
         self.koinst = koinst
 
         self.kitop = KITOP_NONE
+        self.kit_name = ''
+        self.kit_ver = ''
+        self.kit_arch = ''
 
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='addkit',
@@ -71,7 +85,8 @@ class KitOpsApp(KusuApp):
         kl.debug("args: %s", args)
 
         if args:
-            kl.critical("No more arguments expected. Remaining args: %s" % args)
+            sys.stderr.write("No more arguments expected. Remaining args: %s" %
+                             args)
             self.printHelp()
             sys.exit(1)
 
@@ -88,19 +103,19 @@ class KitOpsApp(KusuApp):
         #must specify exactly one of the following (want rv==true)
         rv = KitOpsApp.nxor(addbool, bool(options.delkit), lstbool)
         if not rv:
-            sys.stderr.write('kitops: Exactly one kit operation expected\n')
             self.printHelp()
-            sys.exit(1)
+            sys.exit(self.notifyAndTerminate(EBAD_OP,
+                                'kitops: Exactly one kit operation expected'))
 
         if addbool:
             koinst.setKitName(options.addkit)
             koinst.setKitMedia(options.media)
             self.kitop = KITOP_ADD
         elif options.delkit:
-            koinst.setKitName(options.delkit)
+            self.kit_name = options.delkit
             self.kitop = KITOP_DEL
         elif lstbool:
-            koinst.setKitName(options.lstkit)
+            self.kit_name = options.lstkit
             self.kitop = KITOP_LST
 
         dbdriver = 'mysql'
@@ -132,50 +147,85 @@ class KitOpsApp(KusuApp):
             self.runAdd()
 
         elif self.kitop == KITOP_DEL:
-            kl.debug('Performing delete operation')
-            rv = self.koinst.deleteKit()
-            if not rv:
-                kl.debug('SUCCESS performing delete operation')
-            else:
-                kl.debug('FAIL performing delete operation')
+            op = 'delete'
+            kl.debug('Performing %s operation', op)
+            try:
+                self.koinst.deleteKit(self.kit_name)
+            except AssertionError, msg:
+                sys.exit(self.notifyAndTerminate(EKITDEL_FAIL, msg, op))
+            except KitNotInstalledError, msg:
+                sys.exit(self.notifyAndTerminate(EKITDEL_FAIL, msg, op))
+            except DeleteKitsError:#, errors:
+                self.koinst.unmountMedia()
+                kl.debug('Encountered DeleteKitsError')
+                kl.debug('FAIL performing %s operation', op)
+                #for error in errors:
+                #    sys.stderr.write(error)
+                sys.exit(EKITDEL_FAIL)
+
+            kl.debug('SUCCESS performing %s operation', op)
 
         elif self.kitop == KITOP_LST:
             self.runListKit()
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
+            return EBAD_OP
+
+        return 0
 
     def runAdd(self):
-        kl.debug('Performing add operation')
-        if self.koinst.addKitPrepare() != 0:
-            kl.debug('FAIL add preparation; see above fore more info')
-            sys.exit(1)
+        op = 'add'
+        kl.debug('Performing %s operation', op)
+        try:
+            self.koinst.addKitPrepare()
+        except CannotMountKitMediaError:
+            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL,
+                              'FAIL add preparation; see above fore more info',
+                              op))
+        except UnrecognizedKitMediaError, msg:
+            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL, msg, op))
+        except NoKitSpecifiedOrFoundError:
+            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL,
+                                        'Kit media neither specified nor found',
+                                        op))
+        except AssertionError, msg:
+            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL, msg, op))
 
         media_distro = self.koinst.getOSDist()
         if not media_distro.ostype:
             # we cannot identify the distro -- treat as ordinary kit
-            rv = self.koinst.addKit()
+            try:
+                self.koinst.addKit()
+            except KitAlreadyInstalledError, msg:
+                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+            except InstallKitRPMError, msg:
+                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+            except NoKitsFoundError, msg:
+                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+            except AssertionError, msg:
+                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
         else:
-            rv = self.runAddOSKit(media_distro)
+            self.runAddOSKit(media_distro, op)
 
-        if not rv:
-            kl.debug('SUCCESS performing add operation')
-        else:
-            kl.debug('FAIL performing add operation')
+        kl.debug('SUCCESS performing %s operation', op)
 
         self.koinst.unmountMedia()
 
-    def runAddOSKit(self, osdistro):
-        rv, kit, osdistro = self.koinst.prepareOSKit(osdistro)
-
-        if rv:  # we have a non-zero return code
-            return rv
+    def runAddOSKit(self, osdistro, op):
+        try:
+            kit, osdistro = self.koinst.prepareOSKit(osdistro)
+        except KitAlreadyInstalledError, msg:
+            kl.debug('We caught a KITALREADYINSTALLED error')
+            sys.stderr.write(msg)
+            sys.exit(EKITADD_FAIL)
 
         res = ''
         while 1:    #loop to go through all the media disks...
-            rv = self.koinst.copyOSKitMedia(kit, osdistro, res)
-            if rv:
-                return rv
+            try:
+                self.koinst.copyOSKitMedia(kit, osdistro, res)
+            except CopyOSMediaError, msg:
+                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
 
             while not (res.lower() == 'y' or res == 'N'):
                 res = raw_input('Any more disks for this OS kit? [y/N] ')
@@ -189,43 +239,54 @@ class KitOpsApp(KusuApp):
             if res == 'N':
                 break
       
-        return self.koinst.finalizeOSKit(kit)
+        self.koinst.finalizeOSKit(kit)
 
     def runListKit(self):
-            kl.debug('Performing list operation')
+        kl.debug('Performing list operation')
 
-            kits = self.koinst.listKit()
+        kits = self.koinst.listKit(self.kit_name)
 
-            if kits:
-                print 'Kit'.ljust(16) + 'Description'.ljust(27) + \
-                      'Version'.ljust(8) + 'Architecture'.ljust(13) + \
-                      'OS Kit'.ljust(7) + 'Removable'.ljust(9)
+        if kits:
+            print 'Kit'.ljust(16) + 'Description'.ljust(27) + \
+                  'Version'.ljust(8) + 'Architecture'.ljust(13) + \
+                  'OS Kit'.ljust(7) + 'Removable'.ljust(9)
 
-                for kit in kits:
-                    kit_name = ' ' + kit.rname
-                    kit_desc = ' ' + kit.rdesc
-                    kit_version = ' ' + kit.version
+            for kit in kits:
+                kit_name = ' ' + kit.rname
+                kit_desc = ' ' + kit.rdesc
+                kit_version = ' ' + kit.version
 
-                    kit_arch = ' noarch'
-                    if kit.arch:
-                        kit_arch = kit.arch
+                kit_arch = ' noarch'
+                if kit.arch:
+                    kit_arch = kit.arch
 
-                    kit_isOS = ' No'
-                    if kit.isOS:
-                        kit_isOS = ' Yes'
+                kit_isOS = ' No'
+                if kit.isOS:
+                    kit_isOS = ' Yes'
 
-                    kit_removable = ' No'
-                    if kit.removable:
-                        kit_removable = ' Yes'
+                kit_removable = ' No'
+                if kit.removable:
+                    kit_removable = ' Yes'
 
-                    print kit_name.ljust(16) + kit_desc.ljust(27) + \
-                          kit_version.ljust(8) + kit_arch.ljust(13) + \
-                          kit_isOS.ljust(7) + kit_removable.ljust(9)
+                print kit_name.ljust(16) + kit_desc.ljust(27) + \
+                      kit_version.ljust(8) + kit_arch.ljust(13) + \
+                      kit_isOS.ljust(7) + kit_removable.ljust(9)
 
-            kl.debug('SUCCESS performing list operation')
+        kl.debug('SUCCESS performing list operation')
 
     def printHelp(self):
         self.parser.print_help()
+
+    def notifyAndTerminate(self, rv, msg='', op=''):
+        self.koinst.unmountMedia()
+
+        if op:
+            kl.debug('FAIL performing %s operation', op)
+
+        if msg:
+            sys.stderr.write(msg)
+
+        return rv
 
 if __name__ == '__main__':
     koinst = KitOps()
