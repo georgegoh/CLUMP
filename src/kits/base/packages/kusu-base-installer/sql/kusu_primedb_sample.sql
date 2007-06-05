@@ -365,11 +365,11 @@ insert into components values (5, 1, 'component-base-node', 'This component prov
 insert into components values (6, 8, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora7.0') ;
 
 # Nodegroup has Component
-insert into ng_has_comp values (1, 1, 1) ;
-insert into ng_has_comp values (2, 1, 3) ;
-insert into ng_has_comp values (3, 2, 3) ;
-insert into ng_has_comp values (4, 3, 3) ;
-insert into ng_has_comp values (5, 4, 3) ;
-insert into ng_has_comp values (6, 6, 7) ;
-insert into ng_has_comp values (7, 6, 8) ;
-insert into ng_has_comp values (8, 7, 8) ;
+insert into ng_has_comp values (1, 1) ;
+insert into ng_has_comp values (1, 4) ;
+insert into ng_has_comp values (2, 4) ;
+insert into ng_has_comp values (3, 4) ;
+insert into ng_has_comp values (4, 4) ;
+insert into ng_has_comp values (6, 3) ;
+insert into ng_has_comp values (6, 6) ;
+insert into ng_has_comp values (7, 6) ;
