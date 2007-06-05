@@ -575,21 +575,24 @@ class KitOps:
 
         return 0
 
-    def deleteKit(self):
+    def deleteKit(self, name=''):
         '''perform the delete operation on the kit specified '''
 
+        if not name:
+            name = self.kitname
+
         try:
-            assert(bool(self.kitname))
+            assert(bool(name))
         except AssertionError,msg:
             return self.terminate(EKITDEL_FAIL,
                              'Name for kit to delete not specified')
 
         session = self.__db.createSession()
-        kit = session.query(self.__db.kits).selectfirst_by(rname=self.kitname)
+        kit = session.query(self.__db.kits).selectfirst_by(rname=name)
 
         if not kit:
             return self.terminate(EKITDEL_FAIL,
-                             "Kit '%s' is not in the database" % self.kitname)
+                             "Kit '%s' is not in the database" % name)
 
         if not kit.removable:
             return self.terminate(EKITDEL_FAIL,
