@@ -518,11 +518,12 @@ class KitOps:
         self.__tmprootfs = tempfile.mkdtemp(prefix='kitops')
 
         bmt.copyInitrd(self.mountpoint, self.__tmprd1, True)
-        bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
-        #patch self.__tmprootfs with necessary pieces HERE
-        #pack up the patched rootfs & put it under tftpboot
-        bmt.packRootImg(self.__tmprootfs,
-                        self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
+        if not self.installer:
+            bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
+            #patch self.__tmprootfs with necessary pieces HERE
+            #pack up the patched rootfs & put it under tftpboot
+            bmt.packRootImg(self.__tmprootfs,
+                            self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
         #copy kernel to tftpboot & rename
         bmt.copyKernel(self.mountpoint,
                        self.pxeboot_dir / 'kernel-%s' % kit['name'], True)
@@ -546,7 +547,7 @@ class KitOps:
         try:
             cpio_copytree(self.mountpoint, repodir)
         except Exception,msg:
-            return self.terminate(EKITADD_FAIL, 'Error during copy\n%s', msg)
+            return self.terminate(EKITADD_FAIL, 'Error during copy\n%s' %  msg)
 
         return 0
                 
@@ -591,15 +592,18 @@ class KitOps:
         kit = session.query(self.__db.kits).selectfirst_by(rname=name)
 
         if not kit:
+            kl.debug('Kit %s is not in the database' % name)
             return self.terminate(EKITDEL_FAIL,
                              "Kit '%s' is not in the database" % name)
 
-        if not kit.removable:
+        if not self.installer and not kit.removable:
+            kl.debug('Kit %s is not removable' % kit.rname)
             return self.terminate(EKITDEL_FAIL,
                              "Kit '%s' is not removable" % kit.rname)
 
         repos = session.query(self.__db.repos).select_by(kid=kit.kid)
         if repos:
+            kl.debug('Cannot delete kit %s, it is used by a repo')
             return self.terminate(EKITDEL_FAIL,
                              "Cannot delete kit '%s', it is used by a repo" %
                              kit.rname)
