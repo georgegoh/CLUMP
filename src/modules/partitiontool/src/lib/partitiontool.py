@@ -79,6 +79,12 @@ def checkAndMakeNode(devpath):
         if devpath[-1] in '1234567890': num = int(devpath[-1])
         else: num = 0
 
+        # Remap /dev/sr# to /dev/scd# - /dev/sr is legacy and is replaced with
+        # /dev/scd. (http://www.lanana.org/docs/device-list/devices.txt)
+        if dev_basename.startswith('sr') or dev_basename.startswith('scd'):
+            dev_major_num = 11
+            part_minor_num = num
+
         if dev_basename.startswith('sd'):
             alpha = 'abcdefghijklmnopqrstuvwxyz'
             li = [ x for x in alpha ]
