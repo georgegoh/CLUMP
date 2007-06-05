@@ -20,7 +20,7 @@ kitsource_handler_dict = { 'CDROM': kits_sourcehandlers.addKitFromCDForm,
 
 def kitAdd(baseScreen):
     """Let the user add kits."""
-    kitops = KitOps(installer=True)
+    kitops = baseScreen.kitops
     try:
         source = askForKitSource(baseScreen)
         addKitFunc = kitsource_handler_dict[source]
@@ -45,3 +45,12 @@ def promptForMore(baseScreen):
     result = baseScreen.selector.popupDialogBox(title, msg, buttons)
     if result == buttons[0].lower(): return True
     else: return False
+
+
+def kitRemove(kitScreen):
+    """Remove the current selected kit."""
+    selected_kit = kitScreen.listbox.current()
+    if selected_kit:
+        kitops = kitScreen.kitops
+        kitops.deleteKit(selected_kit.rname)
+    return NAV_NOTHING

@@ -10,7 +10,7 @@
 
 import snack
 from gettext import gettext as _
-from kits_add import *
+from kitops import *
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
@@ -33,13 +33,7 @@ class KitsScreen(InstallerScreen):
         screenfactory.BaseScreen. Initialise button callbacks here.
         """
         self.buttonsDict[_('Add')].setCallback_(kitAdd, self)
-        self.buttonsDict[_('Remove')].setCallback_(self.removeKit)
-
-    def addKit(self):
-        return NAV_NOTHING
-
-    def removeKit(self):
-        return NAV_NOTHING
+        self.buttonsDict[_('Remove')].setCallback_(kitRemove, self)
 
     def drawImpl(self):
         prog_dlg = self.selector.popupProgress('Detecting Kits', 'Detecting kits...')
@@ -61,7 +55,7 @@ class KitsScreen(InstallerScreen):
     def detectAndDisplayKits(self):
         """Detect kits already existing in the system."""
         db = self.kiprofile.getDatabase()
-        self.kitops = KitOps()
+        self.kitops = KitOps(installer=True)
         self.kitops.setDB(db)
         kit_list = self.kitops.listKit()
         for kit in kit_list:
