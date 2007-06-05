@@ -69,19 +69,18 @@ def addOSKit(baseScreen, kitops, osdistro):
     if rv:  # we have a non-zero return code
         return rv
 
-    res = ''
-    while 1:    #loop to go through all the media disks...
-        rv = kitops.copyOSKitMedia(kit, osdistro, res)
-        if rv:
-            return rv
+    rv = kitops.copyOSKitMedia(kit, osdistro, '')
+    if rv: return rv
 
-        while baseScreen.selector.popupYesNo('Any More Disks?',
-                             'Any more disks for this OS kit?'):
-            # unmount and eject.
-            kitops.unmountMedia()
-            subprocess.call('eject %s' % kitops.mountpoint, shell=True)
-            baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
-            subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
+    while baseScreen.selector.popupYesNo('Any More Disks?',
+                         'Any more disks for this OS kit?'):
+        # unmount and eject.
+        kitops.unmountMedia()
+        subprocess.call('eject %s' % kitops.mountpoint, shell=True)
+        baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
+        rv = kitops.copyOSKitMedia(kit, osdistro, '')
+        if rv: return rv
+        subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
 
     return kitops.finalizeOSKit(kit)
 

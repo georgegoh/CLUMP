@@ -19,10 +19,12 @@ import sys
 import time
 import snack
 from kusu.core.app import KusuApp
-from kusu.util.log import Logger
+import kusu.util.log as kusulog
 from path import path
 from kusuwidgets import *
 from kusu.util.errors import *
+
+kl = kusulog.getKusuLog('navigator')
 
 class PlatformScreen(snack.SnackScreen, KusuApp):
     """Represents the display.
@@ -30,12 +32,9 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
     Inherits SnackScreen to display a custom help line at the foot of the screen.
 
     """
-    logger = None
-
     def __init__(self, title):
         snack.SnackScreen.__init__(self)
         KusuApp.__init__(self)
-        self.logger = Logger()
         helpLine=self._('Copyright(C) 2007 Platform Computing Inc.\t\t' + \
                         'Press F12 to quit')
         snack.SnackScreen.popHelpLine(self)
@@ -56,7 +55,6 @@ class Navigator(object, KusuApp):
     sidebarWidth = 22
     currentStep = 0
     timerActivated = False
-    logger = None
     currentScreen = property(lambda self : self.screens[self.currentStep],
                              None,
                              doc='The screen object that is currently displayed.')
@@ -89,8 +87,12 @@ class Navigator(object, KusuApp):
         """Show a popup dialog with a yes/no answer. Return True on yes, False on No."""
         buttons = [self._('Yes'), self._('No')]
         result = self.popupDialogBox(title, msg, buttons)
-        if result == buttons[0].lower(): return True
-        else: return False
+        if result == buttons[0].lower():
+            kl.debug('Yes chosen')
+            return True
+        else:
+            kl.debug('No chosen')
+            return False
 
     def __init__(self, screenFactory, screenTitle, showTrail=False):
         """Constructor parameters:
@@ -100,7 +102,6 @@ class Navigator(object, KusuApp):
               which is shown as a sidebar.
         """
         KusuApp.__init__(self)
-        self.logger = Logger()
         self.screenTitle = screenTitle
         self.timerActivated = False
         self.quitButtonTitle = self._('Finish')
@@ -219,9 +220,6 @@ class Navigator(object, KusuApp):
                     else:
                         loop=False
                 elif result is NAV_BACK:
-                    self.logger.debug('Back navigation from ' + \
-                                      self.currentScreen.name + \
-                                      ' number: ' + str(self.currentStep))
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
                     self.selectScreen(self.currentStep-1)

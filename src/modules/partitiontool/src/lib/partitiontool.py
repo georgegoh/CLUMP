@@ -85,7 +85,7 @@ def checkAndMakeNode(devpath):
             dev_major_num = 11
             part_minor_num = num
 
-        if dev_basename.startswith('sd'):
+        elif dev_basename.startswith('sd'):
             alpha = 'abcdefghijklmnopqrstuvwxyz'
             li = [ x for x in alpha ]
             dev_major_num = 8
@@ -112,6 +112,10 @@ def checkAndMakeNode(devpath):
             elif dev_basename.startswith('hdf'):
                 dev_major_num = 33
                 part_minor_num = 31 + num
+
+        else:
+            raise UnknownDeviceError, "Cannot create %s - don't know the " + \
+                                      "major/minor number scheme."
 
         logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
                     (devpath, dev_major_num, part_minor_num, devpath))

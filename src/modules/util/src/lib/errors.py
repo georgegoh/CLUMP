@@ -18,6 +18,7 @@ class FileDoesNotExistError(KusuError): pass
 class FileAlreadyExistError(KusuError): pass
 class CommandFailedToRunError(KusuError): pass
 class UserExitError(KusuError): pass
+class UnknownDeviceError(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass
@@ -29,6 +30,8 @@ class DuplicateMountpointError(KusuError): pass
 class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
 class PartitionSizeTooLargeError(KusuError): pass
+
+# partitiontool - LVM errors
 class PartitionIsPartOfVolumeGroupError(KusuError): pass
 class VolumeGroupMustHaveAtLeastOnePhysicalVolumeError(KusuError): pass
 class PhysicalVolumeAlreadyInLogicalGroupError(KusuError): pass
