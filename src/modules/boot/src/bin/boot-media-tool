@@ -13,7 +13,7 @@ from kusu.core.app import KusuApp
 from path import path
 from kusu.boot.distro import SUPPORTED_ARCH, SUPPORTED_DISTROS
 from kusu.boot.tool import BootMediaTool
-from kusu.boot.image import checkToolsDeps
+from kusu.boot.image import checkAllToolsDeps
 from kusu.util.errors import *
         
         
@@ -199,7 +199,7 @@ Example operation usages:
         """ Check if the list of tools needed by BMT are indeed available. """
         
         try:
-            checkToolsDeps()
+            checkAllToolsDeps()
         except ToolNotFound, tool:
             msg = self._('%(toolname)s not in your PATH. Please ensure that it is installed and available.' \
                     % {'toolname':tool})

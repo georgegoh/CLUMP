@@ -8,8 +8,7 @@
 import sys
 import os
 from kusu.boot.distro import DistroFactory
-from kusu.boot.distro import CopyError
-from kusu.boot.distro import FileAlreadyExists
+from kusu.util.errors import *
 from path import path
 from nose.tools import raises
 import tempfile
