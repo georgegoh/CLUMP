@@ -16,8 +16,6 @@
 from kusu.boot.tool import BootMediaTool
 from path import path
 import tempfile
-from kusu.util.errors import *
-from nose.tools import raises
 from nose import SkipTest
 import os
 import subprocess
