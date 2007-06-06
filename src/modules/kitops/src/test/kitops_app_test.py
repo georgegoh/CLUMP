@@ -75,6 +75,10 @@ class TestBaseKit:
         self.kit_rpm = 'kit-base-0.1-0.noarch.rpm'
         self.kit_name = 'base'
         self.kit_ver = '0.1'
+        self.kit_arch = 'noarch'
+        self.kits_dir_name = self.kits_dir / self.kit_name
+        self.kits_dir_ver = self.kits_dir_name / self.kit_ver
+        self.kits_dir_arch = self.kits_dir_ver / self.kit_arch
 
         assert self.kit.exists(), 'Base kit ISO does not exist!'
 
@@ -125,19 +129,18 @@ class TestBaseKit:
                'Depot dir %s does not exist' % self.depot_dir
         assert self.kits_dir.exists(), \
                'Kits dir %s does not exist' % self.kits_dir
-        assert path(self.kits_dir / self.kit_name).exists(), \
-               'Kit dir %s does not exist' % self.kits_dir / self.kit_name
-        assert path(self.kits_dir / self.kit_name / self.kit_ver).exists(), \
-               'Kit ver dir %s does not exist' % self.kits_dir /  \
-                                                 self.kit_name / self.kit_ver
+        assert self.kits_dir_name.exists(), \
+               'Kit dir %s does not exist' % self.kits_dir_name
+        assert self.kits_dir_ver.exists(), \
+               'Kit ver dir %s does not exist' % self.kits_dir_ver
+        assert self.kits_dir_arch.exists(), \
+               'Kit ver dir %s does not exist' % self.kits_dir_arch
 
         # assert contents are the same
         assert areContentsEqual(self.temp_mount / self.kit_name,
-                                self.kits_dir / self.kit_name / self.kit_ver,
-                                '*.rpm'), \
+                                self.kits_dir_arch, '*.rpm'), \
                'RPM files in %s and %s are not equal' % \
-               (self.temp_mount / self.kit_name,
-                self.kits_dir / self.kit_name / self.kit_ver)
+               (self.temp_mount / self.kit_name, self.kits_dir_arch)
 
         # check DB for information
         kits = self.dbs.query(self.kusudb.kits).select()
@@ -154,7 +157,8 @@ class TestBaseKit:
         assert kit.version == '0.1', 'Version: %s, expected: 0.1' % kit.version
         assert not kit.isOS, 'Expected isOS to be False'
         assert not kit.removable, 'Expected removable to be False'
-        assert kit.arch == None, 'Arch: %s, expected: NULL/None' % kit.arch
+        assert kit.arch == self.kit_arch, \
+               'Arch: %s, expected: %s' % (kit.arch, self.kit_arch)
 
         # the base kit has two components
         cmps = self.dbs.query(self.kusudb.components).select()
@@ -167,8 +171,8 @@ class TestBaseKit:
         assert cmp.cname == 'base-node', \
                'Component name: %s, expected: base-node' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Node Base', \
-               'Component description: %s, expected: Component for Kusu Node Base' % \
-               cmp.cname
+               'Component description: ' + \
+               '%s, expected: Component for Kusu Node Base' % cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
         # node component associated only with compute nodegroup
         assert len(cmp.nodegroups) == 1, \
@@ -182,8 +186,8 @@ class TestBaseKit:
         assert cmp.cname == 'base-installer', \
                'Component name: %s, expected: base-installer' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Installer Base', \
-           'Component description: %s, expected: Component for Kusu Installer Base' % \
-               cmp.cname
+           'Component description: ' + \
+           '%s, expected: Component for Kusu Installer Base' % cmp.cname
         assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
         # node component associated only with installer nodegroup
         assert len(cmp.nodegroups) == 1, \
@@ -199,14 +203,13 @@ class TestBaseKit:
         self.prepareDatabase()
 
         # copy RPM files
-        kit_dir = self.kits_dir / self.kit_name / self.kit_ver
-        if not kit_dir.exists():
-            kit_dir.makedirs()
+        if not self.kits_dir_arch.exists():
+            self.kits_dir_arch.makedirs()
             
         srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' % self.kit_rpm,
                                 cwd=self.temp_mount / self.kit_name,
                                 shell=True, stdout=subprocess.PIPE)
-        dstP = subprocess.Popen('tar xf -', cwd=kit_dir, shell=True,
+        dstP = subprocess.Popen('tar xf -', cwd=self.kits_dir_arch, shell=True,
                                 stdin=srcP.stdout)
         dstP.communicate()
 
@@ -235,7 +238,12 @@ class TestBaseKit:
                    'Nodegroups have components still remain in DB'
 
         # assert files erased
-        assert not kit_dir.exists(), 'Kit ver dir %s still exists' % kit_dir
+        assert not self.kits_dir_arch.exists(), \
+                    'Kit arch dir %s still exists' % self.kits_dir_arch
+        assert not self.kits_dir_ver.exists(), \
+                    'Kit version dir %s still exists' % self.kits_dir_ver
+        assert not self.kits_dir_name.exists(), \
+                    'Kit dir %s still exists' % self.kits_dir_name
 
         # assert RPM removed
         assert not isRPMInstalled('kit-' + self.kit_name), \

@@ -118,7 +118,7 @@ class KitOps:
             except EMOUNTFAIL,inst:
                 self.__handleMountError(int(inst))
                 self.unmountMedia()
-                raise CannotMountKitMediaError()
+                raise CannotMountKitMediaError
             #mountpoint is defined - we're done
             return
                 
@@ -128,7 +128,7 @@ class KitOps:
 
         else:
             #if neither of the above - error
-            raise UnrecognizedKitMediaError(), \
+            raise UnrecognizedKitMediaError, \
                                     'Improper kit media location specification'
 
         #at this point we have the kit mounted to self.mountpoint
@@ -136,7 +136,7 @@ class KitOps:
             assert(self.mountpoint
                    and self.mountpoint.isdir() and self.mountpoint.ismount())
         except AssertionError, msg:
-            raise AssertionError(), \
+            raise AssertionError, \
                     'Mountpoint sanity assertion failed\n%s' % msg
 
     def autoDetectMedia(self):
@@ -153,14 +153,14 @@ class KitOps:
             except EMOUNTFAIL,inst:
                 self.__handleMountError(int(inst))
                 self.unmountMedia()
-                raise CannotMountKitMediaError()
+                raise CannotMountKitMediaError
             else:
                 #mountpoint is defined - mount was successful
                 self.MediaDevice = '/dev/%s' % dev
                 return
 
         # at this point, we cannot find any kits
-        raise NoKitSpecifiedOrFoundError()
+        raise NoKitSpecifiedOrFoundError
 
     def getOSDist(self):
         return DistroFactory(str(self.mountpoint))
@@ -169,7 +169,6 @@ class KitOps:
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
 
-        #handle most common scenario
         if self.kitname == '':  #kit to install was NOT specified
             self.determineKitName()
 
@@ -192,22 +191,16 @@ class KitOps:
         kit = self.parseRPMTag(kitRPMlst[0].abspath())
 
         #check if this kit is already installed - by name and version
-        if self.checkKitInstalled(kit['name'], kit['ver']):
-            raise KitAlreadyInstalledError(), \
-                    "Kit '%s' version '%s' already installed" % \
-                    (kit['name'], kit['ver'])
+        if self.checkKitInstalled(kit['name'], kit['ver'], kit['arch']):
+            raise KitAlreadyInstalledError, \
+                    "Kit '%s-%s-%s' already installed" % \
+                    (kit['name'], kit['ver'], kit['arch'])
 
         # 1. copy the RPMS
-        repodir = self.kits_dir / kit['name'] / kit['ver']
+        repodir = self.kits_dir / kit['name'] / kit['ver'] / kit['arch']
         if not repodir.exists():
             repodir.makedirs()
 
-        #srcP = subprocess.Popen('tar cf - --exclude %s *.rpm' %
-        #                        kit['rpmloc'].basename(),
-        #                        cwd=self.mountpoint / self.kitname,
-        #                        shell=True, stdout=subprocess.PIPE)
-        #dstP = subprocess.Popen('tar xf -',
-        #                        cwd=repodir, shell=True, stdin=srcP.stdout)
         srcP = subprocess.Popen('tar cf - *.rpm',
                                 cwd=self.mountpoint / self.kitname,
                                 shell=True, stdout=subprocess.PIPE)
@@ -218,7 +211,7 @@ class KitOps:
         # 2. populate the kit DB table with info
         session = self.__db.createSession()
         newkit = db.Kits(rname=kit['name'], rdesc=kit['sum'],
-                         version=kit['ver'])
+                         version=kit['ver'], arch=kit['arch'])
         session.save(newkit)
         
         # 3. install the kit RPM
@@ -228,7 +221,7 @@ class KitOps:
                                         shell=True)
                 rpmP.wait()
             except Exception, msg:
-                raise InstallKitRPMError(), \
+                raise InstallKitRPMError, \
                         'Kit RPM installation failed\n%s' % msg
 
         # RPM install successful, add kit to DB
@@ -269,7 +262,7 @@ class KitOps:
             try:
                 assert(bool(comp['name']))
             except:
-                raise CorruptComponentNameError(), \
+                raise CorruptComponentNameError, \
                         'Encountered corrupt name for component from %s' % \
                         comploc.basename()
 
@@ -284,6 +277,7 @@ class KitOps:
                 # generate an entry for this component
                 newcomp = db.Components(kid=kit.kid, cname=comp['name'],
                                         cdesc=comp['sum'])
+                # also store the OS/ARCH -- but how to determine?
                 session.save(newcomp)
 
                 ngs = session.query(self.__db.nodegroups).select(
@@ -326,6 +320,8 @@ class KitOps:
         kit['inst'] = PackageFactory(str(kit['rpmloc']))
         kit['ver'] = kit['inst'].getVersion()
         kit['name'] = kit['inst'].getName()
+        kit['arch'] = kit['inst'].getArch()
+
         if kit['name'].startswith('kit-'):
             kit['name'] = kit['name'][len('kit-'):]
         kit['sum'] = kit['inst'].getSummary()
@@ -344,7 +340,7 @@ class KitOps:
                 dirlst.append(dir)
 
         if not dirlst:
-            raise NoKitsFoundError(), 'Bad media provided, no kits found'
+            raise NoKitsFoundError, 'Bad media provided, no kits found'
 
         if len(dirlst) == 1:
             self.kitname = dirlst[0].basename()
@@ -354,7 +350,7 @@ class KitOps:
             try:
                 self.kitname = self.selectKit(self.mountpoint, dirlst)
             except: # raise exceptions in self.selectKit and catch them here
-                raise NoKitsFoundError(), 'Bad media provided, no kits found'
+                raise NoKitsFoundError, 'Bad media provided, no kits found'
 
     def findMediaDevices(self):
         '''Check for IDE/ATAPI, SCSI CD-ROM/DVD/CDRW devices, including USB storage
@@ -383,13 +379,14 @@ class KitOps:
                     MediaDevLst.append(dev.basename())
         return MediaDevLst
 
-    def checkKitInstalled(self,kitname,kitver):
+    def checkKitInstalled(self, kitname, kitver, kitarch):
         '''Returns true if specified kit is already in the DB, false otherwise'''
 
         session = self.__db.createSession()
 
         kits = session.query(self.__db.kits).select_by(rname=kitname,
-                                                       version=kitver)
+                                                       version=kitver,
+                                                       arch=kitarch)
 
         session.close()
         return [] != kits
@@ -404,7 +401,7 @@ class KitOps:
                 if not glob.glob('%s/%s/kit-*.rpm' % (mountpoint, dirlst[i])):
                     del dirlst[i]
             if not dirlst:
-                raise NoKitsFoundError()
+                raise NoKitsFoundError
         #TO BE CONTINUED
         
     def mountMedia(self, media, isISO=False):
@@ -484,7 +481,7 @@ class KitOps:
         session.close()
 
         if kits:
-            raise KitAlreadyInstalledError(), \
+            raise KitAlreadyInstalledError, \
                     "OS kit '%s' already installed" % kit['longname']
 
         #copy kernel & initrd to pxedir
@@ -526,7 +523,7 @@ class KitOps:
         try:
             cpio_copytree(self.mountpoint, repodir)
         except Exception, msg:
-            raise CopyOSMediaError(), 'Error during copy\n%s', msg
+            raise CopyOSMediaError, 'Error during copy\n%s', msg
  
     def finalizeOSKit(self, kit):
         #populate the database with info
@@ -564,6 +561,7 @@ class KitOps:
         session = self.__db.createSession()
         kits = []
 
+        del_path = ''
         if del_arch and del_version:
             kits = session.query(self.__db.kits).select_by(rname=del_name,
                                                            version=del_version,
@@ -572,49 +570,53 @@ class KitOps:
                     (del_name, del_version, del_arch))
             del_version = '-' + del_version
             del_arch = '-' + del_arch
+            del_path = self.kits_dir / del_name / del_version / del_arch
         elif del_version:
             kits = session.query(self.__db.kits).select_by(rname=del_name,
                                                            version=del_version)
             kl.info("Removing kit '%s', version %s, all architectures" %
                     (del_name, del_version))
             del_version = '-' + del_version
+            del_path = self.kits_dir / del_name / del_version
         else:
             kits = session.query(self.__db.kits).select_by(rname=del_name)
             kl.info("Removing kit '%s', all versions and architectures" %
                     del_name)
+            del_path = self.kits_dir / del_name
 
         if not kits:
-            raise KitNotInstalledError(), \
+            raise KitNotInstalledError, \
                     "Kit '%s%s%s' is not in the database" % \
                     (del_name, del_version, del_arch)
 
         error_kits = []
         for kit in kits:
             if not self.installer and not kit.removable:
-                error_kits.append("Kit '%s' is not removable" % kit.rname)
+                error_kits.append("Kit '%s-%s-%s' is not removable" % 
+                                   (kit.rname, kit.version, kit.arch))
                 continue
 
             repos = session.query(self.__db.repos).select_by(kid=kit.kid)
             if repos:
-                error_kits.append("Can't delete kit '%s', it is used by a repo" %
-                                  kit.rname)
+                error_kits.append("Cannot delete kit " +
+                                  "'%s-%s-%s', it is used by a repo" %
+                                  (kit.rname, kit.version, kit.arch))
                 continue
                 
-            #the kit is NOT in use
-            #1. remove the RPMS from /depot/kits/<kitname>/<kitver>
-            path(self.kits_dir / kit.rname / kit.version).rmtree()
+            # 1. remove the RPMS kit contents
+            del_path.rmtree()
 
-            #2. remove kit RPM
-            if not self.installer:
+            # 2. remove kit RPM
+            if not kit.isOS and not self.installer:
                 rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
                                        kit.rname, shell=True)
                 rmP.wait()
 
-            #3. remove component info from DB
+            # 3. remove component info from DB
             for component in kit.components:
                 session.delete(component)
 
-            #4. remove kit DB info
+            # 4. remove kit DB info
             session.delete(kit)
         
         session.flush()
@@ -622,7 +624,7 @@ class KitOps:
 
         if error_kits:
             self.unmountMedia()
-            raise DeleteKitsError()#, error_kits
+            raise DeleteKitsError, error_kits
 
     def listKit(self, ls_name=''):
         '''if the kit was specified, lists component summary for it, else prints

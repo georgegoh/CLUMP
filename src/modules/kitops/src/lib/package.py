@@ -95,6 +95,8 @@ class BasePackage:
     def getRequires(self):
         pass
 
+    def getArch(self):
+        pass
 
 class RPMPackage(BasePackage):
     def __init__(self, packurl):
@@ -123,6 +125,9 @@ class RPMPackage(BasePackage):
 
     def getSummary(self):
         return self.rpm.getSummary()
+
+    def getArch(self):
+        return self.rpm.getArch()
 
 
 class DebPackage(BasePackage):
