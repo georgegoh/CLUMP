@@ -59,6 +59,12 @@ class Navigator(object, KusuApp):
                              None,
                              doc='The screen object that is currently displayed.')
 
+    def popupListBox(self, title, msg, items):
+        """Show a popup with a listbox for users to choose.
+           items can be a list of strings, or a list of tuples(string, obj).
+        """
+        return snack.ListboxChoiceWindow(self.mainScreen, title, msg, items)
+
     def popupProgress(self, title, msg):
         return ProgressDialogWindow(self.mainScreen, title, msg)
 

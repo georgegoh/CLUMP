@@ -22,10 +22,17 @@ kl = kusulog.getKusuLog('installer.kits')
 
 def addKitFromCDForm(baseScreen, kitops):
     """Add kit from CD. This displays the form."""
-    # DUMB CODE - opens the first CDROM. SHOULD ASK WHICH CDROM.
     import kusu.hardware.probe
-    cdrom = '/dev/' + sorted(kusu.hardware.probe.getCDROM().keys())[0]
-    # DUMB CODE - opens the first CDROM. SHOULD ASK WHICH CDROM.
+    cdrom_list = sorted(kusu.hardware.probe.getCDROM().keys())
+    if len(cdrom_list) > 1:
+        selected = baseScreen.selector.popupListBox('Select a CD/DVD Drive',
+                        'Choose the drive which you wish to install kits from:',
+                        cdrom_list)
+        kl.debug('Selected CDROM: %s' % str(selected))
+        choice = cdrom_list[selected[1]]
+    else:
+        choice = cdrom_list[0]
+    cdrom = '/dev/' + choice
 
     subprocess.call('eject %s' % cdrom, shell=True)
     title = _('Insert CD or DVD')
@@ -41,7 +48,17 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     """Add kit from CD. This is the action."""
     # Mount cd
     kl.debug('CD PATH: %s' % cdrom)
-    kitops.mountMedia(cdrom)
+    mountSuccess = False
+    from kusu.kitops.kitops import EMOUNTFAIL
+    while not mountSuccess:
+        try:
+            kitops.mountMedia(cdrom)
+            mountSuccess = True
+        except EMOUNTFAIL:
+            baseScreen.selector.popupMsg('CD/DVD Mount Failure',
+                                'Could not load the CD or DVD. Please ' + \
+                                'check that you have inserted the disc ' + \
+                                'correctly into the drive %s.' % cdrom)
     kitops.setKitMedia(kitops.mountpoint)
     kitops.setDB(baseScreen.kiprofile.getDatabase())
 
@@ -58,7 +75,9 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
         kit_add_failed = addOSKit(baseScreen, kitops, media_distro)
     else:
         kl.debug('Add regular Kit')
+        prog_dlg = baseScreen.selector.popupProgress('Adding kit', 'Adding a Kit...')
         kit_add_failed = kitops.addKit()
+        prog_dlg.close()
 
     if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
     # handle this error intelligently
@@ -67,7 +86,9 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 def addOSKit(baseScreen, kitops, osdistro):
     kit = kitops.prepareOSKit(osdistro)
 
-    kitops.copyOSKitMedia(kit, osdistro)
+    prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
+    kitops.copyOSKitMedia(kit)
+    prog_dlg.close()
 
     while baseScreen.selector.popupYesNo('Any More Disks?',
                          'Any more disks for this OS kit?'):
@@ -75,7 +96,9 @@ def addOSKit(baseScreen, kitops, osdistro):
         kitops.unmountMedia()
         subprocess.call('eject %s' % kitops.mountpoint, shell=True)
         baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
-        kitops.copyOSKitMedia(kit, osdistro)
+        prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
+        kitops.copyOSKitMedia(kit)
+        prog_dlg.close()
         subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
 
     return kitops.finalizeOSKit(kit)

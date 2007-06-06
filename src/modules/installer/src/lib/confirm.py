@@ -93,40 +93,40 @@ class ConfirmScreen(InstallerScreen):
         return ''
 
     def formAction(self):
-        result = snack.ButtonChoiceWindow(self.screen, title='Really continue?',
-                                          text='If you click ok, then your disks will be formatted.\n' + \
-                                               'You cannot recover data on a disk once it has been formatted.')
-        if result == 'ok':
-            self.kiprofile.save()
+#        result = snack.ButtonChoiceWindow(self.screen, title='Really continue?',
+#                                          text='If you click ok, then your disks will be formatted.\n' + \
+#                                               'You cannot recover data on a disk once it has been formatted.')
+#        if result == 'ok':
+         self.kiprofile.save()
 
-            mntpnt = '/mnt/kusu'
+         mntpnt = '/mnt/kusu'
 
-            #prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-            #disk_profile = self.kiprofile['Partitions']['DiskProfile']
-            #setupDisks(disk_profile)
-            #prog_dlg.close()
+         #prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+         #disk_profile = self.kiprofile['Partitions']['DiskProfile']
+         #setupDisks(disk_profile)
+         #prog_dlg.close()
 
-            prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
-            setupNetwork()
-            self.logger.debug('Network set up.')
-            prog_dlg.close()
+         prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
+         setupNetwork()
+         self.logger.debug('Network set up.')
+         prog_dlg.close()
 
-            #prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
-            #mountKusuMntPts(mntpnt, disk_profile)
-            #self.logger.debug('Kusu mount points set up')
-            #prog_dlg.close()
+         #prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
+         #mountKusuMntPts(mntpnt, disk_profile)
+         #self.logger.debug('Kusu mount points set up')
+         #prog_dlg.close()
 
-            #prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
-            #self.makeRepo(self.kiprofile)
-            #self.logger.debug('installer repository is created')
-            #prog_dlg.close()
+         #prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
+         #self.makeRepo(self.kiprofile)
+         #self.logger.debug('installer repository is created')
+         #prog_dlg.close()
             
-            prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
-            genAutoInstallScript(disk_profile, self.kiprofile)
-            self.logger.debug('Auto install script generated.')
-            prog_dlg.close()
+         prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
+         genAutoInstallScript(disk_profile, self.kiprofile)
+         self.logger.debug('Auto install script generated.')
+         prog_dlg.close()
 
-            prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
-            migrate(mntpnt)
-            self.logger.debug('Migrated kusu.db and kusu.log')
-            prog_dlg.close()
+         prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
+         migrate(mntpnt)
+         self.logger.debug('Migrated kusu.db and kusu.log')
+         prog_dlg.close()
