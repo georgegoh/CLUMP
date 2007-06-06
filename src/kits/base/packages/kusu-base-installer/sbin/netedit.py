@@ -389,7 +389,6 @@ class NetEditApp(object, KusuApp):
         
         if len(sys.argv[1:]) > 0:
             if (not bool(self._options.add) or not self._options.delete or not bool(self._options.change)):
-                print "%s %s %s" % (bool(self._options.add),bool(self._options.delete),bool(self._options.change))
                 self.parser.error(self._("netedit_options_required_options"))
                 
         # Screen ordering
