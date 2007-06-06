@@ -71,12 +71,12 @@ class BaseRepo(object):
         """Get the OS path for the repository"""
 
         name, os_name, os_version, os_arch = getOS(self.db, self.repoid)
-        return self.getKitPath(name, os_version)
+        return self.getKitPath(os_name, os_version, os_arch)
 
-    def getKitPath(self, name, version):
+    def getKitPath(self, name, version, arch):
         """Get the kit path given the name and version"""
 
-        return self.prefix / 'depot' / 'kits' / str(name) / str(version)
+        return self.prefix / 'depot' / 'kits' / name / version / arch
         
     def getRepoPath(self, repoid):
         """Returns the repository path"""
@@ -204,7 +204,7 @@ class FedoraRepo(BaseRepo):
                               self.db.kits.c.isOS==False)
 
         for kit in kits:
-            pkgdir = self.getKitPath(kit.rname, kit.version)
+            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
 
             if not pkgdir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir

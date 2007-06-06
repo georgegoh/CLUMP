@@ -62,6 +62,15 @@ class RepoFactory(object):
         
         return r
 
+   def snapshot(self, ngname_or_ngid):
+        """Makes a snapshot for a nodegroup or nodegroup id"""
+        pass
+
+    def snapshotAll(self):
+        """Makes snapshots for all nodegroups"""
+        pass
+
+
     def getRepo(self, key):
         pass
  
