@@ -75,7 +75,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
         k.networkprofile = {}
 
     k.diskprofile = disk_profile
-    k.tz = kiprofile['Timezone']
+    k.tz = kiprofile['Timezone']['zone']
     k.lang = kiprofile['Language']
     k.installsrc = 'http://127.0.0.1/' 
     k.keyboard = kiprofile['Keyboard']
