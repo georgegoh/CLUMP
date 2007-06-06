@@ -65,13 +65,9 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 
 
 def addOSKit(baseScreen, kitops, osdistro):
-    rv, kit, osdistro = kitops.prepareOSKit(osdistro)
+    kit = kitops.prepareOSKit(osdistro)
 
-    if rv:  # we have a non-zero return code
-        return rv
-
-    rv = kitops.copyOSKitMedia(kit, osdistro, '')
-    if rv: return rv
+    kitops.copyOSKitMedia(kit, osdistro)
 
     while baseScreen.selector.popupYesNo('Any More Disks?',
                          'Any more disks for this OS kit?'):
@@ -79,8 +75,7 @@ def addOSKit(baseScreen, kitops, osdistro):
         kitops.unmountMedia()
         subprocess.call('eject %s' % kitops.mountpoint, shell=True)
         baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
-        rv = kitops.copyOSKitMedia(kit, osdistro, '')
-        if rv: return rv
+        kitops.copyOSKitMedia(kit, osdistro)
         subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
 
     return kitops.finalizeOSKit(kit)
