@@ -11,6 +11,7 @@ from kusu.boot.distro import DistroFactory
 from kusu.util.errors import *
 from path import path
 from nose.tools import raises
+from nose import SkipTest
 import tempfile
 
 class TestCentOSExtraction:
@@ -18,11 +19,14 @@ class TestCentOSExtraction:
     
     These tests should only be run as a non-root user."""
     
-    if os.environ['USER'] == 'root': disabled = True
 
     def setUp(self):
         """Sets up mock paths"""
-        
+
+        # check if this is run non-root else skip it.
+        if os.getuid() == 0:
+            raise SkipTest
+            
         self.setupCentOS()
      
     def tearDown(self):
