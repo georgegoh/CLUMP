@@ -378,7 +378,7 @@ class OperatingEnvironment(object):
         li = []
         # check if any elements in the ROOTIMG_PACKING_TYPE exists
         for i in ROOTIMG_PACKING_TYPE:
-            if value[1].find(i) > -1:
+            if value.find(i) > -1:
                 li.append(i)
                 
         if not li: return None
