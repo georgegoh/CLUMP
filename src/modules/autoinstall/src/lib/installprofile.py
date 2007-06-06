@@ -23,10 +23,9 @@ class BaseInstall:
                      'installsrc': None,
                      'lang': None,
                      'dbs': None,
-                     'prefix': None,
-                     'ngname' : None }
+                     'prefix': None)
 
-    def __init__(self, db, prefix=None):
+    def __init__(self, db, ngname, prefix=None):
         """prefix for the root directory"""
 
         if prefix:
@@ -36,7 +35,7 @@ class BaseInstall:
                 raise InvalidPathError, "path '%s' not found" % prefix
 
         self.dbs = db
-        self.packageprofile = self._getPackageProfile()
+        self.packageprofile = self._getPackageProfile(ngname)
 
     def __getattr__(self, name):
         if name in self.getattr_dict.keys():
@@ -58,11 +57,11 @@ class BaseInstall:
     def _makeRootPw(self, rootpw):
         pass
 
-    def _getPackageProfile(self):
+    def _getPackageProfile(self, ngname):
         session = self.dbs.createSession()
 
         # There can only be 1 installer. Guaranteed by the db. 
-        installer = session.query(self.dbs.nodegroups).select_by(ngname=self.ngname)[0]
+        installer = session.query(self.dbs.nodegroups).select_by(ngname=ngname)[0]
 
         components = [component.cname for component in installer.components \
                       if not component.kit.isOS]
