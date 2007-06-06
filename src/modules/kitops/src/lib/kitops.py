@@ -472,6 +472,8 @@ class KitOps:
         kit['longname'] = '%s-%s-%s' % (kit['name'], kit['ver'], kit['arch'])
         kit['sum'] = 'OS kit for %s %s %s' % \
                         (osdistro.ostype, kit['ver'], kit['arch'])
+        kit['initrd'] = 'initrd-%s.img' % kit['longname']
+        kit['kernel'] = 'kernel-%s' % kit['longname']
 
         session = self.__db.createSession()
         #kits = session.query(self.__db.kits).select_by(rname=kit['name'])
@@ -492,7 +494,7 @@ class KitOps:
 
         if self.installer:
             bmt.copyInitrd(self.mountpoint,
-                           self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
+                           self.pxeboot_dir / kit['initrd'])
         else:
             fd, self.__tmprd1 = tempfile.mkstemp(prefix='kitops')
             os.close(fd)
@@ -505,11 +507,10 @@ class KitOps:
             #patch self.__tmprootfs with necessary pieces HERE
             #pack up the patched rootfs & put it under tftpboot
             bmt.packRootImg(self.__tmprootfs,
-                            self.pxeboot_dir / 'initrd-%s.img' % kit['name'])
+                            self.pxeboot_dir / kit['initrd'])
 
         #copy kernel to tftpboot & rename
-        bmt.copyKernel(self.mountpoint,
-                       self.pxeboot_dir / 'kernel-%s' % kit['longname'], True)
+        bmt.copyKernel(self.mountpoint, self.pxeboot_dir / kit['kernel'], True)
 
         return kit
 
@@ -546,6 +547,10 @@ class KitOps:
         for ng in ngs:
             if comp not in ng.components:
                 ng.components.append(comp)
+                #if not self.installer:
+                #    ng.ngname = '%s-%s' % (ng.ngname, kit['longname'])
+                #    ng.initrd = kit['initrd']
+                #    ng.kernel = kit['kernel']
 
         session.flush()
         session.close()
@@ -614,6 +619,14 @@ class KitOps:
 
             # 3. remove component info from DB
             for component in kit.components:
+                if kit.isOS:
+                    # remove tftpboot contents
+                    kitln = '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
+                    path(self.pxeboot_dir / 'initrd-%s.img' % kitln).remove()
+                    path(self.pxeboot_dir / 'kernel-%s' % kitln).remove()
+                    if not self.pxeboot_dir.listdir():  # directory is empty
+                        self.pxeboot_dir.rmdir()
+
                 session.delete(component)
 
             # 4. remove kit DB info

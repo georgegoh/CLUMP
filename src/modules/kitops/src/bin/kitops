@@ -157,8 +157,8 @@ class KitOpsApp(KusuApp):
                 sys.exit(self.cleanTerminate(EKITDEL_FAIL, e.args[0], op))
             except DeleteKitsError, e:
                 for error in e.args[0]:
-                    sys.stderr.write(error)
-                sys.exit(EKITDEL_FAIL, '', op)
+                    sys.stderr.write(error + '\n')
+                sys.exit(self.cleanTerminate(EKITDEL_FAIL, '', op))
 
             kl.debug('SUCCESS performing %s operation', op)
 

@@ -349,6 +349,7 @@ class TestFedoraCore6i386:
         self.temp_mount = temp_mount
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
+        self.pxe_dir = self.temp_root / 'tftpboot/pxelinux'
 
         self.kit = test_kits / 'mock-FC-6-i386-disc1.iso'
         self.kit2 = test_kits / 'mock-FC-6-i386-disc2.iso'
@@ -357,6 +358,8 @@ class TestFedoraCore6i386:
         self.kit_arch = 'i386'
         self.kit_longname = '%s-%s-%s' % \
                                 (self.kit_name, self.kit_ver, self.kit_arch)
+        self.kit_initrd = self.pxe_dir / ('initrd-%s.img' % self.kit_longname)
+        self.kit_kernel = self.pxe_dir / ('kernel-%s' % self.kit_longname)
         self.kits_dir_name = self.kits_dir / self.kit_name
         self.kits_dir_ver = self.kits_dir_name / self.kit_ver
         self.kits_dir_arch = self.kits_dir_ver / self.kit_arch
@@ -443,6 +446,14 @@ class TestFedoraCore6i386:
                'Kit ver dir %s does not exist' % self.kits_dir_ver
         assert self.kits_dir_arch.exists(), \
                'Kit arch dir %s does not exist' % self.kits_dir_arch
+        assert self.pxe_dir.exists(), \
+               'PXE boot dir %s does not exist' % self.kits_dir_arch
+
+        # also assert the initrd and kernel are copied
+        assert self.kit_initrd.exists(), \
+               'Initrd %s does not exist' % self.kit_initrd
+        assert self.kit_kernel.exists(), \
+               'Kernel %s does not exist' % self.kit_kernel
 
     def assertOSKitDBInfo(self):
         # check DB for information
