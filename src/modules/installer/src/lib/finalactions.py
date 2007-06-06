@@ -34,7 +34,7 @@ def setupNetwork():
    
 def makeRepo(kiprofile):
     db = kiprofile.getDatabase()
-    rfactory = RepoFactory(db, '/mnt/kusu')
+    rfactory = RepoFactory(db, kiprofile['Kusu Install MntPnt'])
 
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing

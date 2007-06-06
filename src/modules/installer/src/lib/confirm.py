@@ -99,8 +99,6 @@ class ConfirmScreen(InstallerScreen):
 #        if result == 'ok':
          self.kiprofile.save()
 
-         mntpnt = '/mnt/kusu'
-
          #prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
          #disk_profile = self.kiprofile['Partitions']['DiskProfile']
          #setupDisks(disk_profile)
@@ -128,6 +126,6 @@ class ConfirmScreen(InstallerScreen):
          prog_dlg.close()
 
          prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
-         migrate(mntpnt)
+         migrate((self.kiprofile['Kusu Install MntPnt'])
          self.logger.debug('Migrated kusu.db and kusu.log')
          prog_dlg.close()
