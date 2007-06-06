@@ -153,10 +153,21 @@ class PackBuilder:
         # Strip off the self.cfmbasedir, and ngid, and replace it with the
         # self.origdir, and node group name
         f = cfmfile[len(self.cfmbasedir):]
-        ngid = string.split(f, '/')[1]
+        ngid = string.atoi(string.split(f, '/')[1])
         top = "%s/%i" % (self.cfmbasedir, ngid)
         origtop = "%s/%s" % (self.origdir, self.__getNodeNameFromNGID(ngid))
-        file = "%s/%s" % (origtop, cfmfile[len(top):])
+        file = "%s%s" % (origtop, cfmfile[len(top):])
+        #print "cfmfile=>%s<, f=>%s<" % (cfmfile, f)
+        #print "top=%s" % top
+        #print "cfmfile[len(top):]=%s" % cfmfile[len(top):]
+        #print "file=%s" % file
+        #print "ngid=%s Node Group = >%s<" % (ngid, self.__getNodeNameFromNGID(ngid))
+        #print "self.origdir=%s" % self.origdir
+        #print "origtop=%s" % origtop
+        
+        if not os.path.exists(file):
+            # This is a special file.  It does not exist in the /etc/cfm dir.
+            file = cfmfile
 
         attr = os.stat(file)
         mtime = attr[ST_MTIME]
@@ -172,14 +183,14 @@ class PackBuilder:
         except:
             group = 'nobody'
 
-        cmd = '%s "%s"' % (self.md5sum, file)
+        cmd = '%s \"%s\"' % (self.md5sum, file)
         md5sum = '-none-'
         for line in os.popen(cmd).readlines():
             bits = string.split(line)
-            if bits[1] == fqfn:
+            if bits[1] == file[:len(bits[1])]:
                 md5sum = bits[0]
 
-        retval = (file, user, group, mode, mtime, md5sum)
+        retval = (cfmfile, user, group, mode, mtime, md5sum)
         return retval
 
         
@@ -198,7 +209,8 @@ class PackBuilder:
                 if not files:
                     continue
                 for file in files:
-                    fqfn, user, group, mode, mtime, md5sum = self.__getFileInfo(file)
+                    fn = "%s/%s" % (root, file)
+                    fqfn, user, group, mode, mtime, md5sum = self.__getFileInfo(fn)
                     filep.write('%s %s %s %s %i %s\n' % (fqfn, user, group, mode, mtime, md5sum))
         filep.close()
         os.chown(filename, self.apacheuser[2], self.apacheuser[3])
@@ -379,7 +391,7 @@ class PackBuilder:
         numnodes = self.__getNumNodes()
         wait = 10
         if self.updatesize:
-            wait = self.updatesize * numodes * 8 / (50000000)
+            wait = self.updatesize * numnodes * 8 / (50000000)
 
         cfmnet = CFMNet()
         cfmnet.sendPacket(installers, broadcasts, type, ngid, wait)
