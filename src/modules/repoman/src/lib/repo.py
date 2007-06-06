@@ -40,7 +40,8 @@ def getOS(db, key):
                       db.kits.c.isOS == True, \
                       db.nodegroups.c.ngname == key)
 
-        kit = sa.select([db.kits.c.rname], AND).execute().fetchall()
+        kit = sa.select([db.kits.c.rname, db.kits.c.version, db.kits.c.arch], \
+                        AND).execute().fetchall()
 
     else:
         session.close()
@@ -51,11 +52,11 @@ def getOS(db, key):
     # There should only 1 be os kit for a repo. 
     if len(kit) > 1:
         raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
-    else:
-        kit = kit[0]
-    
-    # returns (rname, os_name, os_version, os_arch)
-    return (kit.rname,) + tuple(kit.rname.split('-'))
+    kit = kit[0]
+   
+    # returns (longname, os_name, os_version, os_arch)
+    longname = '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
+    return (longname,) + tuple(longname.split('-'))
 
 class BaseRepo(object):
 
