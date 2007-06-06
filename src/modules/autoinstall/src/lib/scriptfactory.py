@@ -72,7 +72,7 @@ class KickstartFactory(BaseFactory):
         self.namespace['tz'] = self.profile.tz
         self.namespace['lang'] = self.profile.lang
         self.namespace['keybd'] = self.profile.keyboard
-        self.namespace['packages'] = self.profile.packageprofile
+        self.namespace['packages'] = self.profile.packageprofile + ['@Base']
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
 
