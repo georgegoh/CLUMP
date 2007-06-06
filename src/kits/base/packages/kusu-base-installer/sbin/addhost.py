@@ -28,8 +28,8 @@ import popen2
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
-from kusu.ui.text.OCSscreenfactory import OCSBaseScreen, ScreenFactory
-from kusu.ui.text.OCSnavigator import *
+from kusu.ui.text.USXscreenfactory import USXBaseScreen, ScreenFactory
+from kusu.ui.text.USXnavigator import *
 from kusu.nodefun import NodeFun
 import kusu.ipfun
 
@@ -348,7 +348,7 @@ class AddHostApp(KusuApp):
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = OCSNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
         if len(myNodeInfo.nodesInstalled):
             pluginActions.plugins_finished()
@@ -459,7 +459,7 @@ class PluginActions(object, KusuApp):
              if callable(getattr(plugin, "update", None)):
                  plugin.updated(self._dbconnection)
 
-class NodeGroupWindow(OCSBaseScreen):
+class NodeGroupWindow(USXBaseScreen):
 
     name = "addhost_window_title_nodegroup"
     msg = "addhost_instruction_nodegroup"
@@ -467,7 +467,7 @@ class NodeGroupWindow(OCSBaseScreen):
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
 
     def F12Action(self):
         if myNodeInfo.quitPrompt:
@@ -549,7 +549,7 @@ class WindowSelectNode(NodeGroupWindow):
     #selectedInterface = None
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         
     def setCallbacks(self):
         self.buttonsDict['previous_button'].setCallback_(self.backAction)
@@ -635,7 +635,7 @@ class WindowNodeStatus(NodeGroupWindow):
     buttons = ['quit_button']
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setScreenTimer(500)
 
     def setCallbacks(self):

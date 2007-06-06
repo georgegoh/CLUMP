@@ -24,8 +24,8 @@ import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
-from kusu.ui.text.OCSscreenfactory import OCSBaseScreen
-from kusu.ui.text.OCSnavigator import *
+from kusu.ui.text.USXscreenfactory import USXBaseScreen
+from kusu.ui.text.USXnavigator import *
 from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
@@ -395,17 +395,17 @@ class NetEditApp(object, KusuApp):
         screenList = [ NetworkMainWindow(database=database, kusuApp=kusuApp) ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = OCSNavigator(screenFactory=screenFactory, screenTitle="Network Edit - Version 5.0", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
 
-class NetworkEditWindow(OCSBaseScreen):
+class NetworkEditWindow(USXBaseScreen):
     name = "netedit_window_title_edit"
     msg = "netedit_instruction_edit"
     buttons = [ 'ok_button', 'cancel_button' ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.hasGateway = None
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
     
@@ -539,7 +539,7 @@ class NetworkEditWindow(OCSBaseScreen):
         modifiedRecord.updateNetworkEntry(selectedNetwork.current()[0])            
         return True, 'Success'
         
-class NetworkNewWindow(OCSBaseScreen):
+class NetworkNewWindow(USXBaseScreen):
 
     name = "netedit_window_title_new"
     msg = "netedit_instruction_new"
@@ -547,7 +547,7 @@ class NetworkNewWindow(OCSBaseScreen):
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
                 
     def okAction(self):
@@ -647,7 +647,7 @@ class NetworkNewWindow(OCSBaseScreen):
             
         return True, 'Success'
 
-class NetworkMainWindow(OCSBaseScreen):
+class NetworkMainWindow(USXBaseScreen):
 
     name = "netedit_window_title_network"
     msg = "netedit_instruction_network"
@@ -656,7 +656,7 @@ class NetworkMainWindow(OCSBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.kusuApp = KusuApp()
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_exit"), self.kusuApp._("netedit_instructions_exit"), 
@@ -675,7 +675,7 @@ class NetworkMainWindow(OCSBaseScreen):
         ScreenFactory.screens = \
                         [ NetworkNewWindow(database=database, kusuApp=kusuApp) ]
                         
-        ks = OCSNavigator(ScreenFactory,screenTitle="Network Edit - Version 5.0", showTrail=False)
+        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
         return NAV_NOTHING    
     
@@ -695,7 +695,7 @@ class NetworkMainWindow(OCSBaseScreen):
         ScreenFactory.screens = \
                         [ NetworkEditWindow(database=database, kusuApp=kusuApp) ]
                         
-        ks = OCSNavigator(ScreenFactory,screenTitle="Network Edit - Version 5.0", showTrail=False)
+        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
         return NAV_NOTHING
     
