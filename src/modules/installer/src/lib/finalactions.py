@@ -43,7 +43,11 @@ def makeRepo(kiprofile):
     ngname = 'installer-%s-%s-%s' % (kit.rname, kit.version, k.arch)
     session.close()
 
-    rfactory.make(ngname, 'Repo for ' + ngname)
+    repo = rfactory.make(ngname, 'Repo for ' + ngname)
+    
+    #Makes symlink in $KUSU_TMP/www
+    kusu_tmp = os.environ.get('KUSU_TMP', None)
+    repo.repo_path.symlink(path(kusu_tmp) / 'www')
 
 def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory
