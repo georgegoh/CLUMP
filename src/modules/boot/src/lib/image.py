@@ -150,7 +150,7 @@ def unpack(rootimgpath, dirname):
         if format == packType1:
             cmd = 'zcat %s > %s' % (rootimgpath,rootimg)
             launchCmd(cmd)
-            cmd = 'cd %s && cpio -I %s -id' % (tmprootdir,rootimg)
+            cmd = 'cd %s && cpio --quiet -I %s -id' % (tmprootdir,rootimg)
             launchCmd(cmd)
             cpio_copytree(tmprootdir,dirname)
             scratchdir.rmtree()
