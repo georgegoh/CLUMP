@@ -256,8 +256,8 @@ class KitOps:
             comp = {}
             comp['inst'] = PackageFactory(str(comploc))
             comp['name'] = comp['inst'].getName()
-            if comp['name'].startswith('component-'):
-                comp['name'] = comp['name'][len('component-'):]
+#            if comp['name'].startswith('component-'):
+#                comp['name'] = comp['name'][len('component-'):]
 
             try:
                 assert(bool(comp['name']))
