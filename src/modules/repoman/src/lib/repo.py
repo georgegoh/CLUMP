@@ -55,9 +55,7 @@ def getOS(db, key):
     else:
         kit = kit[0]
    
-    # returns (longname, os_name, os_version, os_arch)
-    longname = '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
-    return (longname,) + tuple(longname.split('-'))
+    return (kit.rname, kit.version, kit.arch)
 
 class BaseRepo(object):
 
@@ -72,7 +70,7 @@ class BaseRepo(object):
     def getOSPath(self):
         """Get the OS path for the repository"""
 
-        name, os_name, os_version, os_arch = getOS(self.db, self.repoid)
+        os_name, os_version, os_arch = getOS(self.db, self.repoid)
         return self.getKitPath(os_name, os_version, os_arch)
 
     def getKitPath(self, name, version, arch):
