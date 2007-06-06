@@ -17,15 +17,21 @@ import kusu.util.log as kusulog
 from kusu.kitops.kitops import KitOps
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
+from kusu.util import profile
 
 kl = kusulog.getKusuLog('installer.kits')
 
-class KitsScreen(InstallerScreen):
+class KitsScreen(InstallerScreen, profile.PersistantProfile):
     """Collects kits information."""
     name = _('Kits')
     profile = 'Kits'
     msg = _('Please enter a Fedora 6 URL:')
     buttons = [_('Add'), _('Remove')]
+
+
+    def __init__(self, kiprofile):
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
+        profile.PersistantProfile.__init__(self, kiprofile)
 
     def setCallbacks(self):
         """
@@ -61,6 +67,9 @@ class KitsScreen(InstallerScreen):
         for kit in kit_list:
             self.listbox.addRow([kit.rname, kit.version, kit.arch], kit)
 
+    def setDefaults(self):
+        self.kiprofile[self.profile] = {}
+
     def validate(self):
         return True, ''
 
@@ -70,3 +79,12 @@ class KitsScreen(InstallerScreen):
         """
         pass
 
+    def save(self, db, profile, kiprofile):
+        session = db.createSession()
+        ngs = session.query(db.nodegroups).select()
+        for ng in ngs:
+            ng.ngname = ng.ngname + '-' +  kiprofile[profile]['longname']
+            ng.initrd = kiprofile[profile]['initrd']
+            ng.kernel = kiprofile[profile]['kernel']
+        session.flush()
+        session.close()

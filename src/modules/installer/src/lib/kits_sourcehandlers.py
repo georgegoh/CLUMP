@@ -86,6 +86,10 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 def addOSKit(baseScreen, kitops, osdistro):
     kit = kitops.prepareOSKit(osdistro)
 
+    baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
+    baseScreen.kiprofile[baseScreen.profile]['kernel'] = kit['kernel']
+    baseScreen.kiprofile[baseScreen.profile]['longname'] = kit['longname']
+
     prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
     kitops.copyOSKitMedia(kit)
     prog_dlg.close()

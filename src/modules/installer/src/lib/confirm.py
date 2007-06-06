@@ -122,6 +122,7 @@ class ConfirmScreen(InstallerScreen):
          #prog_dlg.close()
             
          prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
+         disk_profile = self.kiprofile['Partitions']['DiskProfile']
          genAutoInstallScript(disk_profile, self.kiprofile)
          self.logger.debug('Auto install script generated.')
          prog_dlg.close()

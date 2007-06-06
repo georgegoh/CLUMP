@@ -32,7 +32,7 @@ class FQHNScreen(InstallerScreen, profile.PersistantProfile):
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        profile.PersistantProfile.__init__(self, kiprofile)        
+        profile.PersistantProfile.__init__(self, kiprofile)
 
     def setCallbacks(self):
         """

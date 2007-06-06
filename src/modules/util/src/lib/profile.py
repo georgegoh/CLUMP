@@ -43,10 +43,7 @@ class Profile(dict):
         """
 
         for func, profile in self.save_functions:
-            self.runFunc(func[1], profile)
-
-        kl.info('Committing database')
-        self.database.commit()
+            self.runFunc(func, profile)
 
     def runFunc(self, func, profile):
         """
