@@ -488,10 +488,13 @@ msgid "netedit_options_delete_options_needed"
 msgstr "The -d option needs the -n and -s options specified"
 
 msgid "netedit_options_change_options_needed"
-msgstr "The -c option needs the -w, -u, -n, -s, -g and -t options specified"
+msgstr "The -c option needs the options -n, -s, -g, -t and -i options specified"
 
 msgid "netedit_options_required_options"
 msgstr "Can only specify -a -c -l and -d as command options"
+
+msgid "netedit_list_networkid_field"
+msgstr "Network ID"
 
 msgid "netedit_list_network_field"
 msgstr "Network"
@@ -508,6 +511,11 @@ msgstr "Deleting network: %s"
 msgid "netedit_error_invalid_network"
 msgstr "ERROR:  The subnet or network values specified are invalid"
 
+msgid "netedit_error_invalid_id"
+msgstr "ERROR: The network specified does not exist"
+
 msgid "The network '%s' is in use. If you wish to delete this, please use the node group editor"
 msgstr "The network '%s' is in use. If you wish to delete this, please use the node group editor"
 
+msgid "The network '%s' is in use. This can not be changed at this time"
+msgstr "The network '%s' is in use. This can not be changed at this time"
