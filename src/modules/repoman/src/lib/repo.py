@@ -52,7 +52,8 @@ def getOS(db, key):
     # There should only 1 be os kit for a repo. 
     if len(kit) > 1:
         raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
-    kit = kit[0]
+    else:
+        kit = kit[0]
    
     # returns (longname, os_name, os_version, os_arch)
     longname = '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
