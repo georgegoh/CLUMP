@@ -374,14 +374,13 @@ class KitOps:
                 if int(removable) == 1:
                     MediaDevLst.append(dev.basename())
 
-            elif re.match("^sr?", dev):
+            elif re.match("^sr?", dev) or re.match("^scd?", dev):
                 #devinfo = open("/sys/block/%s/removable" % dev, 'r')
                 devinfo = open(dev / 'removable', 'r')
                 removable = devinfo.readline().strip()
                 devinfo.close()
                 if int(removable) == 1:
-                    scsidev = "scd%s" % dev.basename()[2:]
-                    MediaDevLst.append(scsidev)
+                    MediaDevLst.append(dev.basename())
         return MediaDevLst
 
     def checkKitInstalled(self,kitname,kitver):
