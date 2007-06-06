@@ -473,26 +473,26 @@ class NetworkEditWindow(OCSBaseScreen):
         
         instruction = snack.Textbox(60, 1, self.kusuApp._("Please edit any of the network information below."), scroll=0, wrap=0)
         
-        self.networkEntry = LabelledEntry(labelTxt="Network: ".rjust(13), text=self.networkRecord[0], width=30, 
+        self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), text=self.networkRecord[0], width=30, 
                 password=0, returnExit = 0)
-        self.subnetEntry = LabelledEntry(labelTxt="Subnet: ".rjust(13), text=self.networkRecord[1], width=30, 
+        self.subnetEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_subnet").rjust(13), text=self.networkRecord[1], width=30, 
                     password=0, returnExit = 0)
-        self.gatewayEntry = LabelledEntry(labelTxt="Gateway: ".rjust(13), text=self.networkRecord[2], width=30, 
+        self.gatewayEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_gateway").rjust(13), text=self.networkRecord[2], width=30, 
                     password=0, returnExit = 0)
-        self.deviceEntry = LabelledEntry(labelTxt="Device: ".rjust(13), text=self.networkRecord[3], width=30, 
+        self.deviceEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_device").rjust(13), text=self.networkRecord[3], width=30, 
                     password=0, returnExit = 0)
-        self.startIPEntry = LabelledEntry(labelTxt="Starting IP: ".rjust(10), text=self.networkRecord[4], width=30, 
+        self.startIPEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_startip").rjust(10), text=self.networkRecord[4], width=30, 
                     password=0, returnExit = 0)
-        self.suffixEntry = LabelledEntry(labelTxt="Suffix: ".rjust(13), text=self.networkRecord[5], width=30, 
+        self.suffixEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_suffix").rjust(13), text=self.networkRecord[5], width=30, 
                     password=0, returnExit = 0)
-        self.incEntry = LabelledEntry(labelTxt="Increment: ".rjust(13), text="%s" % self.networkRecord[6], width=30, 
+        self.incEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_increment").rjust(13), text="%s" % self.networkRecord[6], width=30, 
                     password=0, returnExit = 0)
-        self.optionEntry = LabelledEntry(labelTxt="Options: ".rjust(13), text=self.networkRecord[7], width=30, 
+        self.optionEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_options").rjust(13), text=self.networkRecord[7], width=30, 
                     password=0, returnExit = 0, scroll=1)
-        self.descEntry = LabelledEntry(labelTxt="Description: ".rjust(10), text=self.networkRecord[8], width=30, 
+        self.descEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_description").rjust(10), text=self.networkRecord[8], width=30, 
                     password=0, returnExit = 0)
 
-        self.dhcpCheck = snack.Checkbox("Use DHCP", isOn = int(self.networkRecord[9]))
+        self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = int(self.networkRecord[9]))
         
         # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
         if not self.networkRecord[2] == "":  # If there was no gateway set, don't force one on the user.
@@ -595,16 +595,18 @@ class NetworkNewWindow(OCSBaseScreen):
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 11)
         instruction = snack.Textbox(60, 1, self.kusuApp._("Please enter the network information below."), scroll=0, wrap=0)
-        self.networkEntry = LabelledEntry(labelTxt="Network: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.subnetEntry = LabelledEntry(labelTxt="Subnet: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.gatewayEntry= LabelledEntry(labelTxt="Gateway: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.deviceEntry = LabelledEntry(labelTxt="Device: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.startIPEntry = LabelledEntry(labelTxt="Starting IP: ".rjust(10), width=30, password=0, returnExit = 0)
-        self.suffixEntry = LabelledEntry(labelTxt="Suffix: ".rjust(13), width=30, password=0, returnExit = 0)
-        self.incEntry = LabelledEntry(labelTxt="Increment: ".rjust(13), text="1", width=30, password=0, returnExit = 0)
-        self.optionEntry = LabelledEntry(labelTxt="Options: ".rjust(13), width=30, password=0, returnExit = 0, scroll=1)
-        self.descEntry = LabelledEntry(labelTxt="Description: ".rjust(10), width=30, password=0, returnExit = 0)
-        self.dhcpCheck = snack.Checkbox("Use DHCP", isOn = 0)
+        self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), width=30, password=0, returnExit = 0)
+        self.subnetEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_subnet").rjust(13), width=30, password=0, returnExit = 0)
+        self.gatewayEntry= LabelledEntry(labelTxt=self.kusuApp._("netedit_field_gateway").rjust(13), width=30, password=0, returnExit = 0)
+        self.deviceEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_device").rjust(13), width=30, password=0, returnExit = 0)
+        self.startIPEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_startip").rjust(10), width=30, password=0, returnExit = 0)
+        self.suffixEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_suffix").rjust(13), width=30, password=0, returnExit = 0)
+        self.incEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_increment").rjust(13), text="1", width=30, password=0, \
+            returnExit = 0)
+        self.optionEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_options").rjust(13), width=30, password=0, \
+            returnExit = 0, scroll=1)
+        self.descEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_description").rjust(10), width=30, password=0, returnExit = 0)
+        self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = 0)
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1), growx=1)
         self.screenGrid.setField(self.networkEntry, 0, 1, padding=(0,0,0,0))
         self.screenGrid.setField(self.subnetEntry, 0, 2, padding=(0,0,0,0))
