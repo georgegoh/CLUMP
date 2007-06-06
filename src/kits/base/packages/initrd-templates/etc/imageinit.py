@@ -149,6 +149,7 @@ class ImagedNodeConfiger:
         """mkNewRoot - Make a new root filesystem to run from."""
         os.makedirs(newroot, mode=0777)
         os.system('mount tmpfs %s -t tmpfs' % newroot)
+        
 
 
     def getImage(self, ngid):
@@ -187,7 +188,7 @@ except:
     sys.exit(-1)
     
 niihandler = NodeInstInfoHandler()
-parser = make_parser()
+parser = make_parser() 
 parser.setContentHandler(niihandler)
 parser.parse(open(niifile)) 
 
@@ -231,7 +232,9 @@ for i in niihandler.nics.keys():
                              niihandler.nics[i]['ip'],
                              niihandler.nics[i]['subnet'])
 
-# Download the image
+# Download the image, and store the NII
 app.mkNewRoot('/newroot')
+os.makedirs('/newroot/etc', mode=0755)
+niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
 app.getImage(niihandler.nodegrpid)
 os.unlink('/tmp/%s.img.tar.bz2' % niihandler.nodegrpid)

@@ -19,6 +19,9 @@
 #
 #
 
+UPDATEFILE    = 1
+UPDATEPACKAGE = 2
+
 import os
 import sys
 import string
@@ -79,9 +82,11 @@ class UpdateApp(KusuApp):
 
         type = 0
         if self.options.updatefile:
-            type = type | 1
+            global UPDATEFILE
+            type = type | UPDATEFILE
         if self.options.updatepackages:
-            type = type | 2
+            global UPDATEPACKAGE
+            type = type | UPDATEPACKAGE
             
         pb = PackBuilder()
 

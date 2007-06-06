@@ -26,6 +26,8 @@ import sys
 import string
 import glob
 import pwd
+import grp
+from stat import *
 
 from kusu.kusudb import KusuDB
 from kusu.cfmnet import CFMNet
@@ -76,6 +78,16 @@ class PackBuilder:
                 name, ngid = line
                 self.nodegrplst[name] = ngid
 
+
+    def __getNodeNameFromNGID(self, ngid):
+        """__getNodeNameFromNGID - Get the name of the node group from the
+        NGID."""
+        for key in self.nodegrplst.keys():
+            if self.nodegrplst[key] == ngid:
+                return key
+        return ""
+    
+        
 
     def __getNumNodes(self):
         """__getNumNodes - Returns a count of the number of nodes in the cluster."""
@@ -130,7 +142,46 @@ class PackBuilder:
                 bc.append(ipfun.getBroadcast(ip, sb))
 
         return bc
-    
+
+
+    def __getFileInfo(self,cfmfile):
+        """__getFileInfo - Returns a tupple containing the filename,
+        username, groupname, mode, mtime and md5sum of the original
+        file (not the one if the cfmdir)."""
+        
+        # self.origdir
+        # Strip off the self.cfmbasedir, and ngid, and replace it with the
+        # self.origdir, and node group name
+        f = cfmfile[len(self.cfmbasedir):]
+        ngid = string.split(f, '/')[1]
+        top = "%s/%i" % (self.cfmbasedir, ngid)
+        origtop = "%s/%s" % (self.origdir, self.__getNodeNameFromNGID(ngid))
+        file = "%s/%s" % (origtop, cfmfile[len(top):])
+
+        attr = os.stat(file)
+        mtime = attr[ST_MTIME]
+        mode = S_IMODE(attr[ST_MODE])
+
+        try:
+            user = pwd.getpwuid(attr[ST_UID])[0]
+        except:
+            user = 'nobody'
+
+        try:
+            group = grp.getgrgid(attr[ST_GID])[0]
+        except:
+            group = 'nobody'
+
+        cmd = '%s "%s"' % (self.md5sum, file)
+        md5sum = '-none-'
+        for line in os.popen(cmd).readlines():
+            bits = string.split(line)
+            if bits[1] == fqfn:
+                md5sum = bits[0]
+
+        retval = (file, user, group, mode, mtime, md5sum)
+        return retval
+
         
     def genFileList(self):
         """__genFileList - Generate the cfmfiles.lst file.  This file contains a list
@@ -141,20 +192,14 @@ class PackBuilder:
         # Find the directories for the node groups 
         for nodegrp in self.nodegrplst.keys():
             ngid = self.nodegrplst[nodegrp]
-            top = os.path.join(self.cfmbasedir, '%i' % ngid)
+            # top = os.path.join(self.cfmbasedir, '%i' % ngid)
+            top = "%s/%i" % (self.cfmbasedir, ngid)
             for root, dirs, files in os.walk(top):
                 if not files:
                     continue
                 for file in files:
-                    fqfn = os.path.join(root, file)
-                    mtime = os.path.getmtime(fqfn)
-                    cmd = '%s "%s"' % (self.md5sum, fqfn)
-                    md5sum = '-none-'
-                    for line in os.popen(cmd).readlines():
-                        bits = string.split(line)
-                        if bits[1] == fqfn:
-                            md5sum = bits[0]
-                    filep.write('%s %i %s\n' % (fqfn, mtime, md5sum))
+                    fqfn, user, group, mode, mtime, md5sum = self.__getFileInfo(file)
+                    filep.write('%s %s %s %s %i %s\n' % (fqfn, user, group, mode, mtime, md5sum))
         filep.close()
         os.chown(filename, self.apacheuser[2], self.apacheuser[3])
                         

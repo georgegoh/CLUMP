@@ -21,7 +21,7 @@
 
 
 import string
-
+import os
 
 def validIP(IP):
     """validIP - Test the IP address to see if it is a valid format.
@@ -116,6 +116,44 @@ def getBroadcast(ip, subnet):
     bcnum = ip2number(ip) | (~ip2number(subnet))
     return number2ip(bcnum)
 
+
+def getMyIPs ():
+    """getMyIPs - Determine the IP address(es) and subnet masks
+    of this machine.
+    WARNING:  This uses ifconfig to find the IP's"""
+    myips = []
+    ifconfig = '/sbin/ifconfig'
+    cmd = "%s |grep inet" % ifconfig
+    for line in os.popen(cmd).readlines():
+        bits = string.split(line)
+        #print bits
+        if bits[1][:5] == 'addr:':
+            ip = bits[1][5:]
+            if string.count(ip, '.') == 3:
+                # Looks like an IP
+                try:
+                    # Find the mask
+                    if bits[3][:5] == 'Mask:':
+                        mask = bits[3][5:]
+                        myips.append([ip, mask])
+                except:
+                    pass
+    return myips
+
+
+def bestIP (myIPs, ipList):
+        """bestIP - Determine which IP's in the ipList are on the
+        same network as this machine.  The 'myIPs' is the list of
+        IPs produced by the getMyIPs function.  Returns a list of
+        IP's from the ipList that are on the same network as this
+        machine, or an enpty list."""
+        onnet = []
+        for ip in ipList:
+            for network, subnet in myIPs:
+                if onNetwork(network, subnet, ip):
+                    onnet.append(ip)
+        return onnet
+                
     
 def unittest():
     """This is a series of tests for the functions in this class to verify they work.
@@ -401,6 +439,100 @@ def unittest():
             outstr += " Fail"
         print outstr
         testnum += 1
+
+        outstr = "Test getMyIPs() #%i" % testnum
+        try:
+            m = getMyIPs()
+        except:
+            outstr += " Fail"
+        else:
+            outstr += " Pass"
+        print outstr
+        testnum += 1
+        
+        outstr = "Test getMyIPs() #%i" % testnum
+        t = 1
+        for data in m:
+            outstr = "   Subtest #%i" % t
+            ip, sm = data
+            if not ip or not sm:
+                outstr += " Fail"
+            else:
+                if validIP(ip) == 0 or validIP(sm) == 0:
+                    outstr += " Fail"
+                else:
+                    outstr += " IP=%s Subnet=%s Pass" % (ip, sm)
+            print outstr
+            t += 1
+        testnum += 1
+
+
+        outstr = "Test bestIP()  #%i" % testnum
+        myIPs = [['10.0.0.1', '255.0.0.0'], ['172.16.2.3', '255.255.0.0'], ['192.168.1.5', '255.255.255.0']]
+        ipList = ['11.0.0.1', '173.16.2.3', '199.168.1.5']
+        bestips = ['-none-']
+        try:
+            bestips = bestIP (myIPs, ipList)
+        except:
+            outstr += " Fail"
+        else:
+            outstr += " Pass"
+        print outstr
+        testnum += 1
+        
+        outstr = "Test bestIP()  (no matches)  #%i" % testnum
+        if not bestips:
+            outstr += " Pass"
+        else:
+            outstr += " Fail"
+        print outstr
+        testnum += 1
+
+        outstr = "Test bestIP()  (one match)  #%i" % testnum
+        myIPs = [['10.0.0.1', '255.0.0.0'], ['172.16.2.3', '255.255.0.0'], ['192.168.1.5', '255.255.255.0']]
+        ipList = ['10.99.99.99', '173.16.99.99', '199.168.1.99']
+        try:
+            bestips = bestIP (myIPs, ipList)
+        except:
+            outstr += " Fail"
+        else:
+            if bestips[0] == '10.99.99.99':
+                outstr += " Pass"
+            else:
+                outstr += " Fail"
+        print outstr
+        testnum += 1
+
+        outstr = "Test bestIP()  (two match)  #%i" % testnum
+        myIPs = [['10.0.0.1', '255.0.0.0'], ['172.16.2.3', '255.255.0.0'], ['192.168.1.5', '255.255.255.0']]
+        ipList = ['10.99.99.99', '172.16.99.99', '199.168.1.99']
+        try:
+            bestips = bestIP (myIPs, ipList)
+        except:
+            outstr += " Fail"
+        else:
+            if bestips[0] == '10.99.99.99' and bestips[1] == '172.16.99.99':
+                outstr += " Pass"
+            else:
+                outstr += " Fail"
+        print outstr
+        testnum += 1
+
+        outstr = "Test bestIP()  (three match)  #%i" % testnum
+        myIPs = [['10.0.0.1', '255.0.0.0'], ['172.16.2.3', '255.255.0.0'], ['192.168.1.5', '255.255.255.0']]
+        ipList = ['10.99.99.99', '172.16.99.99', '192.168.1.99']
+        try:
+            bestips = bestIP (myIPs, ipList)
+        except:
+            outstr += " Fail"
+        else:
+            if bestips[0] == '10.99.99.99' and bestips[1] == '172.16.99.99' and bestips[2] == '192.168.1.99':
+                outstr += " Pass"
+            else:
+                outstr += " Fail"
+        print outstr
+        testnum += 1
+
 
 
 # Run the unittest if run directly

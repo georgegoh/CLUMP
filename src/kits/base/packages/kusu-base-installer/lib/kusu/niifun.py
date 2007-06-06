@@ -59,6 +59,7 @@ class NodeInstInfoHandler(ContentHandler):
         self.cfmstart    = 0     # Flag for the start of a cfm block
         self.data        = ''
 
+
     def startElement(self, name, attrs):
         if name == 'nodeinfo':
             self.name        = attrs.get('name',"")
@@ -138,6 +139,35 @@ class NodeInstInfoHandler(ContentHandler):
             self.data += ch
 
 
+    def saveAppGlobalsEnv (self, filename=''):
+        """saveAppGlobalsEnv - Save the appglobals variable as a shell script which
+        exports all of them.  This file can then be sourced in other scripts.
+        It also saves useful parts of the NII"""
+        if not filename:
+            file = "/etc/profile.nii"
+        else:
+            file = filename
+
+        try:
+            fp = open(filename, 'w')
+        except:
+            return
+
+        fp.write("#!/bin/sh\n#\n")
+        fp.write("# This file is generated at install time.  It contains all\n")
+        fp.write("# of the variables that were used to install this node.\n#\n")
+        fp.write('export NII_HOSTNAME=%s\n' % self.name)
+        fp.write('export NII_NGID=%s\n' % self.nodegrpid)
+        fp.write('export NII_INSTALLERS="%s"\n' % self.installers)
+        fp.write('export NII_REPO="%s"\n' % self.repo)
+        fp.write('export NII_OSTYPE="%s"\n' % self.ostype)
+        fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
+        
+        for i in self.appglobal.keys():
+            fp.write('export %s="%s"\n' % (i, self.appglobal[i]))
+
+        fp.close()
+
 
 class NIIFun:
     """This class is responsible for retrieving the NII"""
@@ -161,6 +191,7 @@ class NIIFun:
             self.cfmflag = 1
         else:
             self.cfmflag = 0
+
 
     def wantNII(self, flag):
         """wantNII - Set the flag to request the NII data.  This needs to be used in
@@ -189,6 +220,7 @@ class NIIFun:
         print "URL: %s" % options[:-1]
         (niidata, header) = urllib.urlretrieve(options[:-1])
         return niidata
+
 
 
 # Run the unittest if run directly
@@ -247,3 +279,6 @@ if __name__ == '__main__':
         print "        options = %s" % (niihandler.nics[i]['options'])
     
     print "CFM Data = %s" % niihandler.cfm
+
+    niihandler.saveAppGlobalsEnv('/tmp/profile.nii')
+    print "Wrote:  /tmp/profile.nii"
