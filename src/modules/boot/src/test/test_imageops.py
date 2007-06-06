@@ -19,6 +19,7 @@ import tempfile
 from nose import SkipTest
 import os
 import subprocess
+import time
 
 def clearLoopDevices():
     """ Everytime a loop device is used, there's a chance it's not
@@ -74,18 +75,17 @@ class TestBootImageOps:
         mountP = subprocess.Popen(cmd,shell=True,
             stdin=subprocess.PIPE,stdout=subprocess.PIPE)
         mountP.communicate()
-            
 
     def tearDown(self):
         """ Cleanup """
-        try:
-            if self.mountpt.exists():
-                cmd = 'umount -l %s' % self.mountpt
-                umountP = subprocess.Popen(cmd,shell=True,
-                    stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-            if self.tmpdir.exists(): self.tmpdir.rmtree()
-        except:
-            pass
+
+        if self.mountpt.exists():
+            cmd = 'umount %s' % self.mountpt
+            umountP = subprocess.Popen(cmd,shell=True,
+                stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+            umountP.communicate()
+            
+        if self.tmpdir.exists(): self.tmpdir.rmtree()
         
         # clear loop devices
         clearLoopDevices()
