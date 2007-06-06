@@ -10,13 +10,10 @@
 # at TODO: [[[insert web address here]]]
 
 import os
-import sys
-if os.getuid() != 0:
-    sys.exit("Test must be run as root.")
-
 import tempfile
 import subprocess
 from path import path
+from nose import SkipTest
 
 import kusu.core.database as db
 from kusu.kitops.kitops import KitOps
@@ -104,6 +101,9 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
+        # we need to be root
+        assertRoot()
+
         addP = subprocess.Popen('kitops -a -m %s %s -p %s' %
                                 (self.kit, dbinfo_str, self.temp_root),
                                 shell=True)
@@ -192,6 +192,9 @@ class TestBaseKit:
             'Component %s not associated with installer nodegroup' % cmp.cname
 
     def testDeleteKit(self):
+        # we need to be root
+        assertRoot()
+
         # perform database setup
         self.prepareDatabase()
 
@@ -376,6 +379,9 @@ class TestFedoraCore6i386:
         umountP.wait()
 
     def testAddKitOneDisc(self):
+        # we need to be root
+        assertRoot()
+
         # passing "N" to kitops to stop at one disc
         add_echo = "N"
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
@@ -396,6 +402,9 @@ class TestFedoraCore6i386:
         self.assertOSKitDBInfo()
 
     def testAddKitTwoDiscs(self):
+        # we need to be root
+        assertRoot()
+
         # passing disc 2 to kitops
         add_echo = "y\n%s\nN" % self.kit2
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
@@ -554,3 +563,7 @@ def isRPMInstalled(pattern):
     tmp_fn.remove()
 
     return tmp_size != 0
+
+def assertRoot():
+    if os.getuid() != 0:
+        raise SkipTest
