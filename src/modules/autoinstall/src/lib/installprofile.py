@@ -75,6 +75,8 @@ class Kickstart(BaseInstall):
 
         for k in ['keyboard']:
             self.getattr_dict[k] = None
+        
+        self.packageprofile.append('@Base')
  
     def _makeRootPw(self, rootpw):
         import md5crypt
