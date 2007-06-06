@@ -104,7 +104,7 @@ class KitOpsApp(KusuApp):
         rv = KitOpsApp.nxor(addbool, bool(options.delkit), lstbool)
         if not rv:
             self.printHelp()
-            sys.exit(self.notifyAndTerminate(EBAD_OP,
+            sys.exit(self.cleanTerminate(EBAD_OP,
                                 'kitops: Exactly one kit operation expected'))
 
         if addbool:
@@ -152,9 +152,9 @@ class KitOpsApp(KusuApp):
             try:
                 self.koinst.deleteKit(self.kit_name)
             except AssertionError, msg:
-                sys.exit(self.notifyAndTerminate(EKITDEL_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITDEL_FAIL, msg, op))
             except KitNotInstalledError, msg:
-                sys.exit(self.notifyAndTerminate(EKITDEL_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITDEL_FAIL, msg, op))
             except DeleteKitsError:#, errors:
                 self.koinst.unmountMedia()
                 kl.debug('Encountered DeleteKitsError')
@@ -180,17 +180,17 @@ class KitOpsApp(KusuApp):
         try:
             self.koinst.addKitPrepare()
         except CannotMountKitMediaError:
-            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL,
+            sys.exit(self.cleanTerminate(EKITLOC_FAIL,
                               'FAIL add preparation; see above fore more info',
                               op))
         except UnrecognizedKitMediaError, msg:
-            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL, msg, op))
+            sys.exit(self.cleanTerminate(EKITLOC_FAIL, msg, op))
         except NoKitSpecifiedOrFoundError:
-            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL,
+            sys.exit(self.cleanTerminate(EKITLOC_FAIL,
                                         'Kit media neither specified nor found',
                                         op))
         except AssertionError, msg:
-            sys.exit(self.notifyAndTerminate(EKITLOC_FAIL, msg, op))
+            sys.exit(self.cleanTerminate(EKITLOC_FAIL, msg, op))
 
         media_distro = self.koinst.getOSDist()
         if not media_distro.ostype:
@@ -198,13 +198,13 @@ class KitOpsApp(KusuApp):
             try:
                 self.koinst.addKit()
             except KitAlreadyInstalledError, msg:
-                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITADD_FAIL, msg, op))
             except InstallKitRPMError, msg:
-                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITADD_FAIL, msg, op))
             except NoKitsFoundError, msg:
-                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITADD_FAIL, msg, op))
             except AssertionError, msg:
-                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITADD_FAIL, msg, op))
         else:
             self.runAddOSKit(media_distro, op)
 
@@ -214,7 +214,7 @@ class KitOpsApp(KusuApp):
 
     def runAddOSKit(self, osdistro, op):
         try:
-            kit, osdistro = self.koinst.prepareOSKit(osdistro)
+            kit = self.koinst.prepareOSKit(osdistro)
         except KitAlreadyInstalledError, msg:
             kl.debug('We caught a KITALREADYINSTALLED error')
             sys.stderr.write(msg)
@@ -222,10 +222,17 @@ class KitOpsApp(KusuApp):
 
         res = ''
         while 1:    #loop to go through all the media disks...
+            if res:
+                #unmount current, prepare for next
+                self.koinst.unmountMedia()
+                self.koinst.setKitMedia(res)
+                kl.debug('Provided additional kit media: %s', res)
+                self.koinst.addKitPrepare()
+
             try:
-                self.koinst.copyOSKitMedia(kit, osdistro, res)
+                self.koinst.copyOSKitMedia(kit)
             except CopyOSMediaError, msg:
-                sys.exit(self.notifyAndTerminate(EKITADD_FAIL, msg, op))
+                sys.exit(self.cleanTerminate(EKITADD_FAIL, msg, op))
 
             while not (res.lower() == 'y' or res == 'N'):
                 res = raw_input('Any more disks for this OS kit? [y/N] ')
@@ -277,7 +284,7 @@ class KitOpsApp(KusuApp):
     def printHelp(self):
         self.parser.print_help()
 
-    def notifyAndTerminate(self, rv, msg='', op=''):
+    def cleanTerminate(self, rv, msg='', op=''):
         self.koinst.unmountMedia()
 
         if op:

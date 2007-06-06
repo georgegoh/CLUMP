@@ -96,7 +96,8 @@ class KitOps:
            PostCondition: the kit media is mounted to self.mountpoint'''
         # 1. kit media was not specified - auto-detect
         if not self.kitmedia:
-            return self.autoDetectMedia()
+            self.autoDetectMedia()
+            return 
 
         # 2. kit media was specified - determine what to do with it
         rv = urlparse.urlparse(self.kitmedia)
@@ -312,7 +313,6 @@ class KitOps:
 
         session.flush()
         session.close()
-        return 0
 
     def parseRPMTag(self, rpmloc):
         """
@@ -514,16 +514,9 @@ class KitOps:
         bmt.copyKernel(self.mountpoint,
                        self.pxeboot_dir / 'kernel-%s' % kit['longname'], True)
 
-        return kit, osdistro
+        return kit
 
-    def copyOSKitMedia(self, kit, osdistro, media=''):
-        if media:
-            #unmount current, prepare for next
-            self.unmountMedia()
-            self.kitmedia = media
-            kl.debug('Provided kit media: %s', self.kitmedia)
-            self.addKitPrepare()
-
+    def copyOSKitMedia(self, kit):
         #copy the RPMS to repo dir
         kl.info('Copying RPMs, this may take a while...')
         repodir = self.kits_dir / kit['name'] / kit['ver'] / kit['arch']
