@@ -46,9 +46,10 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     kitops.setDB(baseScreen.kiprofile.getDatabase())
 
     kl.debug('Add Kit Prepare')
-    if kitops.addKitPrepare() != 0:
-        kl.debug('Failed kit prepare')
-        raise CannotAddKitError, 'Failed Kit Prepare'
+    try:
+        kitops.addKitPrepare()
+    except AssertionError:
+        raise CannotAddKitError, 'Cannot mount the CDROM device.'
 
     kl.debug('Get OS Dist')
     media_distro = kitops.getOSDist()
