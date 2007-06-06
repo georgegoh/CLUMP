@@ -36,13 +36,9 @@ def makeRepo(kiprofile):
     db = kiprofile.getDatabase()
     rfactory = RepoFactory(db, '/mnt/kusu')
 
-    session = db.createSession()
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing
-    kit = session.query(db.kits).select_by(isOS)[0]
-    ngname = 'installer-%s-%s-%s' % (kit.rname, kit.version, k.arch)
-    session.close()
-
+    ngname = 'installer-' + kiprofile['Kits']['longname']
     repo = rfactory.make(ngname, 'Repo for ' + ngname)
     
     #Makes symlink in $KUSU_TMP/www
@@ -83,6 +79,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
     k.lang = kiprofile['Language']
     k.installsrc = 'http://127.0.0.1/' 
     k.keyboard = kiprofile['Keyboard']
+    k.ngname = 'installer-' + kiprofile['Kits']['longname']
 
     script = Script(KickstartFactory(k))
     script.write(install_script)

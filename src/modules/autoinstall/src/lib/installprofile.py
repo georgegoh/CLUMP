@@ -23,7 +23,8 @@ class BaseInstall:
                      'installsrc': None,
                      'lang': None,
                      'dbs': None,
-                     'prefix': None }
+                     'prefix': None,
+                     'ngname' : None }
 
     def __init__(self, db, prefix=None):
         """prefix for the root directory"""
@@ -61,7 +62,7 @@ class BaseInstall:
         session = self.dbs.createSession()
 
         # There can only be 1 installer. Guaranteed by the db. 
-        installer = session.query(self.dbs.nodegroups).select_by(ngname='installer')[0]
+        installer = session.query(self.dbs.nodegroups).select_by(ngname=self.ngname)[0]
 
         components = [component.cname for component in installer.components \
                       if not component.kit.isOS]
