@@ -75,9 +75,15 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
         kit_add_failed = addOSKit(baseScreen, kitops, media_distro)
     else:
         kl.debug('Add regular Kit')
-        prog_dlg = baseScreen.selector.popupProgress('Adding kit', 'Adding a Kit...')
-        kit_add_failed = kitops.addKit()
-        prog_dlg.close()
+        try:
+            prog_dlg = baseScreen.selector.popupProgress('Adding kit', 'Adding a Kit...')
+            kit_add_failed = kitops.addKit()
+            prog_dlg.close()
+        except KitAlreadyInstalledError:
+            prog_dlg.close()
+            baseScreen.selector.popupMsg('Kit Is Already Installed',
+                                        'The kit you have chosen is already installed')
+            kit_add_failed = False
 
     if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
     # handle this error intelligently

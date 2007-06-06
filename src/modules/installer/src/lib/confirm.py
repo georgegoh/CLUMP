@@ -114,10 +114,10 @@ class ConfirmScreen(InstallerScreen):
          #self.logger.debug('Kusu mount points set up')
          #prog_dlg.close()
 
-         #prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
-         #self.makeRepo(self.kiprofile)
-         #self.logger.debug('installer repository is created')
-         #prog_dlg.close()
+         prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
+         makeRepo(self.kiprofile)
+         self.logger.debug('installer repository is created')
+         prog_dlg.close()
             
          prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
          disk_profile = self.kiprofile['Partitions']['DiskProfile']
@@ -126,6 +126,6 @@ class ConfirmScreen(InstallerScreen):
          prog_dlg.close()
 
          prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
-         migrate(self.kiprofile['Kusu Install MntPnt'])
+         migrate(self.kiprofile['Kusu Install MntPt'])
          self.logger.debug('Migrated kusu.db and kusu.log')
          prog_dlg.close()

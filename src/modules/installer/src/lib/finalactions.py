@@ -33,8 +33,10 @@ def setupNetwork():
     #interface = interface.setDHCP()
    
 def makeRepo(kiprofile):
+    from kusu.repoman.repofactory import RepoFactory
+
     db = kiprofile.getDatabase()
-    rfactory = RepoFactory(db, kiprofile['Kusu Install MntPnt'])
+    rfactory = RepoFactory(db, kiprofile['Kusu Install MntPt'])
 
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing
