@@ -126,6 +126,6 @@ class ConfirmScreen(InstallerScreen):
          prog_dlg.close()
 
          prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
-         migrate((self.kiprofile['Kusu Install MntPnt'])
+         migrate(self.kiprofile['Kusu Install MntPnt'])
          self.logger.debug('Migrated kusu.db and kusu.log')
          prog_dlg.close()
