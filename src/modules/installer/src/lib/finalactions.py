@@ -11,7 +11,6 @@ import os
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
-
 from path import path
 
 logger = kusulog.getKusuLog('installer.final')
@@ -29,13 +28,17 @@ def setupNetwork():
     interface.up()
     #interface = interface.setStaticIP(('127.0.0.1', '255.0.0.0'))
 
-    interface = networktool.Interface('eth0')
-    interface.up()
-    interface = interface.setDHCP()
+    #interface = networktool.Interface('eth0')
+    #interface.up()
+    #interface = interface.setDHCP()
    
 def makeRepo(kiprofile):
     kiprofile.getDatabase()
     rfactory = RepoFactory(kiprofile.getDatabase(), '/mnt/kusu')
+
+    kusu_dist = os.environ.get('KUSU_DIST', None)
+    kusu_distver = os.evniron.get('KUSU_DISTVER', None)
+   
     rfactory.make('installer', 'repo for fedora 6 i386')
 
 def genAutoInstallScript(disk_profile, kiprofile):
@@ -58,7 +61,8 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     # Build kickstart object
     # Retrieve all the data required
-    k = Kickstart(db=kiprofile.getDatabase())
+    db=kiprofile.getDatabase()
+    k = Kickstart(db)
     k.rootpw = kiprofile['RootPasswd'] 
 
     if kiprofile.has_key('Network'):
@@ -68,8 +72,8 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     k.diskprofile = disk_profile
     k.tz = kiprofile['Timezone']
-    k.installsrc = 'http://127.0.0.1/'
     k.lang = kiprofile['Language']
+    k.installsrc = 'http://127.0.0.1/' 
     k.keyboard = kiprofile['Keyboard']
 
     script = Script(KickstartFactory(k))
