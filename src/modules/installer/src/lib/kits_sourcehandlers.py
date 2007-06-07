@@ -28,7 +28,14 @@ def eject(path):
                          stderr=subprocess.PIPE)
     return p.communicate()
  
-
+def closeTray(path):
+    """Close a CD/DVD drive. Give me a path string."""
+    p = subprocess.Popen('eject -t %s' % path,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    return p.communicate()
+ 
 def addKitFromCDForm(baseScreen, kitops):
     """Add kit from CD. This displays the form."""
     import kusu.hardware.probe
@@ -64,7 +71,7 @@ def addKitFromCDForm(baseScreen, kitops):
     result = baseScreen.selector.popupDialogBox(title, msg, buttons)
     if result == buttons[1].lower():
         return NAV_BACK
-    subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
+    closeTray(cdrom)
     addKitFromCDAction(baseScreen, kitops, cdrom)
 
 
@@ -108,7 +115,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             baseScreen.selector.popupMsg('Kit Is Already Installed',
                                         'The kit you have chosen is already installed')
             kit_add_failed = False
-
+    kitops.unmountMedia()
     if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
     # handle this error intelligently
 
@@ -135,7 +142,7 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
         kitops.copyOSKitMedia(kit)
         prog_dlg.close()
-        subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
+        closeTray(kitops.mountpoint)
 
     return kitops.finalizeOSKit(kit)
 
