@@ -112,61 +112,47 @@ class NetworkRecord(object):
         return True, 'Success'
                     
     def updateNetworkEntry(self, currentItem):
-            try:
-                self._database.connect('kusudb', 'apache')
-            except:
-                if self._thisWindow:
-                    self._thisWindow.finish()
-                print self._("DB_Query_Error\n")
-                sys.exit(-1)
-                
             query = "UPDATE networks SET network='%s',subnet='%s',device='%s',suffix='%s',gateway='%s',options='%s',netname='%s', \
                     startip='%s',inc=%d,usingdhcp=%d WHERE netid=%d" % (self._network_field, self._subnet_field, \
                     self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                     self._description_field, self._startip_field, int(self._inc_field), \
                     int(self._dhcp_checkbox), int(currentItem))
             try:
+                self._database.connect('kusudb', 'apache')
                 self._database.execute(query)
             except:
                 if self._thisWindow:
-                    self._thisWindow.finish()
+                    self._thisWindow.screen.finish()
                 print self._("DB_Query_Error\n")
                 sys.exit(-1)
                 
     def insertNetworkEntry(self):
-        try:
-            self._database.connect('kusudb', 'apache')
-        except:
-            if self._thisWindow:
-                self._thisWindow.finish()
-            print self._("DB_Query_Error\n")
-            sys.exit(-1)
-            
         query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')" % (self._network_field, \
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                 self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox))
         try:
+            self._database.connect('kusudb', 'apache')
             self._database.execute(query)
         except:
             if self._thisWindow:
-                self._thisWindow.finish()
+                self._thisWindow.screen.finish()
             print self._("DB_Query_Error\n")
             sys.exit(-1)
             
             
     def checkNetworkEntry(self, networkid):
-        self._database.connect('kusudb', 'apache')
         # Check if the network selected is not in use.
         netuse = 0
         query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(networkid)
 
         try:
+            self._database.connect('kusudb', 'apache')
             self._database.execute(query)
             netuse = self._database.fetchone()[0]
         except:
             if self._thisWindow:
-                self._thisWindow.finish()
+                self._thisWindow.screen.finish()
             print self._("DB_Query_Error\n")
             sys.exit(-1)
             
@@ -176,16 +162,16 @@ class NetworkRecord(object):
             return False
             
     def getNetworkList(self):   
-        self._database.connect()
         networkInfo = None
         query = "SELECT netid, network, subnet, netname FROM networks ORDER BY netid"
         try:
+            self._database.connect()
             self._database.execute(query)
             networkInfo = self._database.fetchall()
             return networkInfo
         except:
             if self._thisWindow:
-                self._thisWindow.finish()
+                self._thisWindow.screen.finish()
             print self._("DB_Query_Error\n")
             sys.exit(-1)
     
@@ -330,9 +316,13 @@ class NetEditApp(object, KusuApp):
                     # We found this ID, let's check if it's in use or not.
                     result = networkrecord.checkNetworkEntry(self._options.delete)
                     if result:
-                        self._database.connect('kusudb', 'apache')
-                        print self._("Deleting network: %s\n" % network[1])
-                        self._database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
+                        try:
+                            self._database.connect('kusudb', 'apache')
+                            self._database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
+                            print self._("Deleting network: %s\n" % network[1])
+                        except:
+                            print self._("DB_Query_Error\n")
+                            sys.exit(-1)
                     else:
                         print self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
             if invalidID: 
@@ -464,7 +454,7 @@ class NetworkEditWindow(USXBaseScreen):
             self.database.execute(query)
             self.networkRecord = list(self.database.fetchone())
         except:
-            self.finish()
+            self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
             
