@@ -8,6 +8,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 
+import os
 import snack
 from gettext import gettext as _
 from kitops import *
