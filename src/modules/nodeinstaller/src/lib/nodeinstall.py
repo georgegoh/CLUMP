@@ -12,6 +12,7 @@ from kusu.autoinstall.autoinstall import Script
 from kusu.autoinstall.installprofile import Kickstart
 from kusu.partitiontool import partitiontool
 from kusu.nodeinstaller import NodeInstInfoHandler
+import urllib2
 import kusu.util.log as kusulog
 from xml.sax import make_parser
 
@@ -40,6 +41,16 @@ class NodeInstaller(object):
             'scripts', 'cfm']:
             logger.debug('%s : %s' % (i,getattr(self.niidata,i)))
 
+    
+    def retrieveNII(self, niihost, node):
+        """ Downloads the NII from the niihost.
+            FIXME: currently a hardcoded url!!
+        """
+        url = 'http://%s/mirror/nii.xml' % niihost
+        f = urllib2.urlopen(url)
+        data = f.read()
+        return data
+        
         
     def setupNetworking(self):
         """ Sets the networking settings for the distro-specific auto configuration later. """
