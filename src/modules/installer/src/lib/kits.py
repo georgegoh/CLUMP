@@ -64,6 +64,7 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         self.kitops = KitOps(installer=True)
         self.kitops.setDB(db)
         self.kitops.setPrefix(self.kiprofile['Kusu Install MntPt'])
+        self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
         kit_list = self.kitops.listKit()
         for kit in kit_list:
             self.listbox.addRow([kit.rname, kit.version, kit.arch], kit)

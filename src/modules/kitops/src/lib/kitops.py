@@ -70,6 +70,7 @@ class KitOps:
             self.installer = kw['installer']
 
         self.prefix = path(kw.get('prefix', '/'))
+        self.tmpprefix = path(kw.get('tmpprefix', '/'))
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
@@ -87,9 +88,18 @@ class KitOps:
         Provide a new prefix.
         """
 
-        self.prefix = path(prefix)
-        self.kits_dir = self.prefix / 'depot/kits/'
-        self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
+        if prefix:
+            self.prefix = path(prefix)
+            self.kits_dir = self.prefix / 'depot/kits/'
+            self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
+
+    def setTmpPrefix(self, tmpprefix):
+        """
+        Provide a new tmpprefix.
+        """
+
+        if tmpprefix:
+            self.tempprefix = path(tempprefix)
 
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
@@ -407,7 +417,8 @@ class KitOps:
     def mountMedia(self, media, isISO=False):
         ''' mount the specified media to a temporary dir
             PostCondition: self.__tmpmntdir & self.mountpoint are set & equal if successful'''
-        self.__tmpmntdir = path(tempfile.mkdtemp(prefix='kitops'))
+        self.__tmpmntdir = path(tempfile.mkdtemp(prefix='kitops',
+                                                 dir=self.tmpprefix))
 
         if isISO:
             mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
@@ -496,11 +507,13 @@ class KitOps:
             bmt.copyInitrd(self.mountpoint,
                            self.pxeboot_dir / kit['initrd'])
         else:
-            fd, self.__tmprd1 = tempfile.mkstemp(prefix='kitops')
+            fd, self.__tmprd1 = tempfile.mkstemp(prefix='kitops',
+                                                 dir=self.tmpprefix)
             os.close(fd)
             if os.path.exists(self.__tmprd1):
                 os.remove(self.__tmprd1)
-            self.__tmprootfs = tempfile.mkdtemp(prefix='kitops')
+            self.__tmprootfs = tempfile.mkdtemp(prefix='kitops',
+                                                dir=self.tempprefix)
 
             bmt.copyInitrd(self.mountpoint, self.__tmprd1, True)
             bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
