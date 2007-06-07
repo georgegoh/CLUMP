@@ -35,7 +35,12 @@ class Profile(dict):
         """
 
         for func, profile in self.save_functions:
-            self.__dict__[profile].update(func(self.database))
+            rv = func(self.database)
+            
+            if isinstance(self[profile], dict) and isinstance(rv, dict):
+                self[profile].update(rv)
+            else:
+                self[profile] = rv
 
     def save(self):
         """
