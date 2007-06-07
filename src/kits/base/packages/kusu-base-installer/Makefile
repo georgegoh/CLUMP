@@ -53,7 +53,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu
-	mkdir -p $(ROOT)/opt/kusu/lib/kusu/screens
+	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/addhost 
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/genconfig
 	mkdir -p $(ROOT)/opt/kusu/lib/plugins/ngedit
@@ -84,10 +84,11 @@ install::
 	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/screens/__init__.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/USXnavigator.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/USXscreenfactory.py $(ROOT)/opt/kusu/lib/kusu/screens
+	install -m644 lib/kusu/ui/text/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
+	install -m644 lib/kusu/ui/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/ui
+	install -m644 lib/kusu/ui/text/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
+	install -m644 lib/kusu/ui/text/USXnavigator.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
+	install -m644 lib/kusu/ui/text/USXscreenfactory.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/plugins/genconfig/__init__.py $(ROOT)/opt/kusu/lib/plugins/genconfig
 	install -m644 lib/plugins/genconfig/apache_conf.py $(ROOT)/opt/kusu/lib/plugins/genconfig
 	install -m644 lib/plugins/genconfig/debug.py $(ROOT)/opt/kusu/lib/plugins/genconfig
