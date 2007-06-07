@@ -64,6 +64,7 @@ def addKitFromCDForm(baseScreen, kitops):
     result = baseScreen.selector.popupDialogBox(title, msg, buttons)
     if result == buttons[1].lower():
         return NAV_BACK
+    subprocess.call('eject -t %s' % kitops.mountpoint, shell=True)
     addKitFromCDAction(baseScreen, kitops, cdrom)
 
 

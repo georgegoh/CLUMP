@@ -66,9 +66,9 @@ class ScreenFactoryImpl(ScreenFactory):
          NetworkScreen(kiprofile=kiprofile),
          GatewayDNSSetupScreen(kiprofile=kiprofile),
          FQHNScreen(kiprofile=kiprofile),
+         TZSelectionScreen(kiprofile=kiprofile),
          RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
          KitsScreen(kiprofile=kiprofile),
-         TZSelectionScreen(kiprofile=kiprofile),
          ConfirmScreen(kiprofile=kiprofile)
         ]
