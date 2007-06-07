@@ -85,9 +85,9 @@ install::
 	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/screens/__init__.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/kusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/navigator.py $(ROOT)/opt/kusu/lib/kusu/screens
-	install -m644 lib/kusu/screens/screenfactory.py $(ROOT)/opt/kusu/lib/kusu/screens
+	install -m644 lib/kusu/screens/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/kusu/screens
+	install -m644 lib/kusu/screens/USXnavigator.py $(ROOT)/opt/kusu/lib/kusu/screens
+	install -m644 lib/kusu/screens/USXscreenfactory.py $(ROOT)/opt/kusu/lib/kusu/screens
 	install -m644 lib/plugins/genconfig/__init__.py $(ROOT)/opt/kusu/lib/plugins/genconfig
 	install -m644 lib/plugins/genconfig/apache_conf.py $(ROOT)/opt/kusu/lib/plugins/genconfig
 	install -m644 lib/plugins/genconfig/debug.py $(ROOT)/opt/kusu/lib/plugins/genconfig
