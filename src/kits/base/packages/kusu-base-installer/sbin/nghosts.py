@@ -24,8 +24,8 @@ import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
-from kusu.ui.text.OCSscreenfactory import OCSBaseScreen
-from kusu.ui.text.OCSnavigator import *
+from kusu.ui.text.USXscreenfactory import USXBaseScreen
+from kusu.ui.text.USXnavigator import *
 from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
@@ -67,8 +67,8 @@ class NodeMemberApp(object, KusuApp):
                                 type="string", dest="fromgroup", help=kusuApp._("nghosts_from_group_usage"))
         self.parser.add_option("-t", "--to-group", action="store",
                                 dest="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
-        self.parser.add_option("-n", "--copy-hosts", action="store",
-                                type="string", dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
+        self.parser.add_option("-n", "--copy-hosts", action="callback",
+                                callback=self.varargs, dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
         self.parser.add_option("-r", "--reinstall", action="store_true", dest="reinstall", help=kusuApp._("nghosts_reinstall_usage"))
 
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
@@ -85,7 +85,7 @@ class NodeMemberApp(object, KusuApp):
         
         # Parse command options
         self.parseargs()
-
+            
         # Don't allow option -l -g -t to be used together. Mutually Exclusive.
         if (not self.nxor(bool(self._options.allnodegroups), bool(self._options.listnodegroup), bool(self._options.togroup))):
                     if (bool(self._options.allnodegroups) == False and bool(self._options.listnodegroup) == False \
@@ -120,7 +120,8 @@ class NodeMemberApp(object, KusuApp):
                             print "Copy from this Nodegroup!"
             
                     if bool(self._options.copyhosts):
-                            print "Copy specific nodes only!"
+                            for nodeItem in self._options.copyhosts:
+                                print "Copying item: %s" % nodeItem
                             
             sys.exit(0)
             
@@ -134,6 +135,9 @@ class NodeMemberApp(object, KusuApp):
             print "need to specify -t"
             sys.exit(0)
             
+        elif self._options.copyhosts == []:
+            print "need to specify a node"
+            sys.exit(0)
             
         if len(sys.argv[1:]) > 0:
             if (not bool(self._options.allnodegroups) or not self._options.listnodegroup or not bool(self._options.togroup)):
@@ -143,56 +147,98 @@ class NodeMemberApp(object, KusuApp):
         screenList = [ MembershipMainWindow(database=database, kusuApp=kusuApp) ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = OCSNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
 
-class SelectNodeWindow(OCSBaseScreen):
-    name = "netedit_window_title_edit"
-    msg = "netedit_instruction_edit"
+class SelectNodeWindow(USXBaseScreen):
+    name = "nghosts_window_title_select_node"
+    msg = "nghosts_instruction_select_node"
     buttons = [ 'next_button', 'previous_button' ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.")
+        self.nodegroupDict = {}
+        self.nodeGroupNames = []
     
     def nextAction(self):
+        # Check if:
+            # 1) The nodes selected are being added BACK to the same node group. In which case, we should just ignore those nodes.name
+        
+        for nodeGroup in self.nodeGroupNames:
+            for node in self.nodegroupDict[nodeGroup]:
+                if node in self.nodeCheckbox.getSelection():
+                    if nodeGroup == self.nodegroupRadio.getSelection():
+                        self.selector.popupStatus(self.kusuApp._("Error!"), "You are trying to move node %s to the same node group!" % node, 3)
+                    else:
+                        self.selector.popupStatus(self.kusuApp._("Debug Window"), "Node Group: %s Node: %s" % (nodeGroup, node), 2)
         return NAV_FORWARD
         
     def previousButton(self):
         return NAV_BACK
             
     def setCallbacks(self):
-        
-        self.buttonsDict['ok_button'].setCallback_(self.nextAction)
+        self.buttonsDict['next_button'].setCallback_(self.nextAction)        
         self.buttonsDict['previous_button'].setCallback_(self.previousButton)
     
-        self.hotkeysDict['F5'] = self.cancelAction
-        self.hotkeysDict['F8'] = self.okAction
+        #self.hotkeysDict['F5'] = self.cancelAction
+        #self.hotkeysDict['F8'] = self.okAction
     
     def drawImpl(self):
-#        self.database.connect()
-#        query = "SELECT network, subnet, gateway, device, startip, suffix, inc, options, netname, usingdhcp FROM networks WHERE netid = %d" % \
-#                int(selectedNetwork.current()[0])
+        count = 0
+        nodegroupList = []
+        self.screenGrid  = snack.Grid(1, 4)
+        self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
+        instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
 
-#        try:
-#            self.database.execute(query)
-#            self.networkRecord = list(self.database.fetchone())
-#        except:
-#            self.finish()
-#            print self._("DB_Query_Error\n")
-#            sys.exit(-1)
-#            
-        self.screenGrid  = snack.Grid(1, 2)
+        query = "SELECT ngname FROM nodegroups ORDER BY ngname"
         
-        instruction = snack.Textbox(60, 1, self.kusuApp._("Please edit any of the network information below."), scroll=0, wrap=0)
+        try:
+            self.database.connect()
+            self.database.execute(query)
+            nodegroups = self.database.fetchall()
+        except:
+            self.screen.finish()
+            print self.kusuApp._("DB_Query_Error\n")
+            sys.exit(-1)
+    
+        for nodegroup in nodegroups:
+            query = "SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
+            nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND nodegroups.ngname = '%s'" % nodegroup[0]
+        
+            try:
+                self.database.connect()
+                self.database.execute(query)
+                nodes = self.database.fetchall()
+            except:
+                self.screen.finish()
+                print self.kusuApp._("DB_Query_Error\n")
+                sys.exit(-1)
+
+            # If the node group is empty don't display it.
+            if len(nodes) > 0:
+                self.nodeCheckbox.append(nodegroup[0])
+                self.nodeGroupNames.append(nodegroup[0])
+                self.nodegroupDict[nodegroup[0]] = []
+            
+            for node in nodes:
+                self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
+                self.nodegroupDict[nodegroup[0]].append(node[0])
+            
+            if len(nodes) > 0:
+                count += 1
+ 
+        for group in nodegroups:
+            nodegroupList.append([group[0].ljust(20), group[0], 0])
+        
+        self.nodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList) 
         
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
-    
-    def validate(self):
-        return True, 'Success'
-        
-class SelectNodeGroupWindow(OCSBaseScreen):
+        self.screenGrid.setField(self.nodeCheckbox, 0, 2, padding=(0,0,30,0))
+        self.screenGrid.setField(self.nodegroupRadio, 0, 3, padding=(33,-8,0,0))
+                
+class SelectNodeGroupWindow(USXBaseScreen):
 
     name = "netedit_window_title_new"
     msg = "netedit_instruction_new"
@@ -200,7 +246,7 @@ class SelectNodeGroupWindow(OCSBaseScreen):
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
                             
     def setCallbacks(self):
@@ -213,7 +259,7 @@ class SelectNodeGroupWindow(OCSBaseScreen):
     def validate(self):
         return True, 'Success'
 
-class FinishWindow(OCSBaseScreen):
+class FinishWindow(USXBaseScreen):
 
     name = "netedit_window_title_new"
     msg = "netedit_instruction_new"
@@ -221,7 +267,7 @@ class FinishWindow(OCSBaseScreen):
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
                             
     def setCallbacks(self):
@@ -234,7 +280,7 @@ class FinishWindow(OCSBaseScreen):
     def validate(self):
         return True, 'Success'
         
-class MembershipMainWindow(OCSBaseScreen):
+class MembershipMainWindow(USXBaseScreen):
 
     name = "nghosts_window_title_prompt"
     msg = "nghosts_instruction_prompt"
@@ -243,7 +289,7 @@ class MembershipMainWindow(OCSBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.kusuApp = KusuApp()
-        OCSBaseScreen.__init__(self, database, kusuApp, gridWidth)
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc - Instructions: Select an option. Press F12 to quit, Press F8 to go next")
 
     def F12Action(self):
@@ -278,7 +324,7 @@ class MembershipMainWindow(OCSBaseScreen):
                               FinishWindow(database=database,kusuApp=kusuApp)
                             ]
         
-        ks = OCSNavigator(ScreenFactory,screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
+        ks = USXNavigator(ScreenFactory,screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
         
     def exitAction(self, data=None):
@@ -300,12 +346,12 @@ class MembershipMainWindow(OCSBaseScreen):
         """ Get list of node groups and allow a user to choose one """
     
         self.screenGrid = snack.Grid(1, 3)
-        instruction = snack.Textbox(80, 3, self.kusuApp._("Welcome to the Node Membership Editor. Please choose one of the options below."), scroll=0, wrap=0)
+        instruction = snack.Textbox(80, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
         
         defaultFlag = 1
         selectionOption = []
-        selectionOption.append(["Copy individual nodes from a Node group", 0, 0])
-        selectionOption.append(["Copy alll nodes from a node group", 1, 0])
+        selectionOption.append(["nghosts_copy_selected_nodes", 0, 0])
+        selectionOption.append(["nghosts_copy_nodegroup", 1, 0])
         self.radioButtonList = snack.RadioBar(self.screenGrid, selectionOption)
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
         self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
