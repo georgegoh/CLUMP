@@ -28,7 +28,8 @@ class BaseScreen(object):
     msg = 'This is the base class.'
     gridWidth = 0
     buttons = []
-    buttonsDict = {} # will be generated on init.
+    buttonsDict = None # will be generated on init.
+    hotkeysDict = None
     backButtonDisabled = False
     isCommitment = False # if true, then this will be the point of no return.
     screen = None
@@ -37,10 +38,12 @@ class BaseScreen(object):
 
     def __init__(self, gridWidth=45):
         self.gridWidth = gridWidth
-
+        self.buttonsDict = {}
         for button in self.buttons:
             self.buttonsDict[button] = kusuwidgets.Button(button)
 
+    def setHotKeys(self):
+        pass
 
     def setCallbacks(self): # abstract
         """Children should implement this if there are any buttons that
@@ -67,6 +70,7 @@ class BaseScreen(object):
         self.screen=screen
         self.selector=selector
         self.setCallbacks()
+        self.setHotKeys()
         self.drawImpl()
 
     def validate(self):

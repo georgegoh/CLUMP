@@ -20,6 +20,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.util.errors import *
 from screen import InstallerScreen
+from kusu.ui.text.navigator import NAV_NOTHING
 
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -49,6 +50,15 @@ class PartitionScreen(InstallerScreen):
         self.buttonsDict[_('Delete')].setCallback_(deleteDevice, self)
 #        self.buttonsDict[_('RAID')].setCallback_(self.raidPartition)
 
+    def setHotKeys(self):
+        self.hotkeysDict = {'F5': self.displayInternalState }
+
+    def displayInternalState(self):
+        s = str(self.disk_profile) + '\n\n'
+        s = s + 'LVM Fifo:\n'
+        s = s + self.disk_profile.reprLVMFifo()
+        self.selector.popupMsg('Internal Partitiontool State', s)
+        return NAV_NOTHING
 
     def raidPartition(self):
         """Stub function"""

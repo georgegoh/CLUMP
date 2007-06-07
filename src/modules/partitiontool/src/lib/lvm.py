@@ -53,9 +53,22 @@ def execFifo():
                 func()
     cmd_fifo = None
 
+def reprFifo():
+    global cmd_fifo
+    if not cmd_fifo: return ''
+    s = '\n'
+    for func,args in cmd_fifo:
+        if type(args) is tuple:
+            s = s + func.func_name + str(args) + '\n'
+        elif args:
+            s = s + func.func_name + '(' + str(args) + ')' + '\n'
+        else:
+            s = s + func.func_name + '()' + '\n'
+    return s
+
 def printFifo():
     global cmd_fifo
-    print cmd_fifo
+    print reprFifo()
 
 def probeLVMEntities(retrieveAllEntitiesPropFunc, probeEntityFunc):
     probe_dict = {}

@@ -66,7 +66,8 @@ from kusu.util.errors import *
 logger = kusulog.getKusuLog('partitiontool')
 #from logging import *
 import logging
-kusulog.getKusuLog().addFilter(logging.Filter('kusu.partitiontool'))
+kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
+#kusulog.getKusuLog().handlers[1].addFilter(logging.Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
     """
@@ -554,8 +555,11 @@ class DiskProfile(object):
     def executeLVMFifo(self):
         execFifo()
 
+    def reprLVMFifo(self):
+        return reprFifo()
+
     def printLVMFifo(self):
-        printFifo()
+        print reprFifo()
 
     def formatAll(self):
         for disk in self.disk_dict.itervalues():

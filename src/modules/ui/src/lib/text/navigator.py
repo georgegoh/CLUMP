@@ -281,17 +281,28 @@ class Navigator(object, KusuApp):
         form.add(self.mainGrid)
         return form
 
-    def startEventLoop(self, form):     
+    def addHotKeys(self, form):
+        for key in self.currentScreen.hotkeysDict.keys():
+            form.addHotKey(key)
+
+    def startEventLoop(self, form):
+        hotkeysDict = self.currentScreen.hotkeysDict
+        if not hotkeysDict: hotkeysDict = {}
+        for key in hotkeysDict.keys():
+            form.addHotKey(key)
         form.addHotKey("F12")
         while True:
             result = form.run()
             if result is "F12":
                 return NAV_QUIT
+            if result in hotkeysDict.keys():
+                hotkeyFunc = hotkeysDict[result]
+                return hotkeyFunc()
             if result is self.nextButton:
                 return NAV_FORWARD
             if result is self.prevButton:
                 return NAV_BACK
-            callback_result = self.screens[self.currentStep].eventCallback(result)
+            callback_result = self.currentScreen.eventCallback(result)
             if callback_result is True:
                 return NAV_FORWARD
             elif callback_result is NAV_NOTHING:
