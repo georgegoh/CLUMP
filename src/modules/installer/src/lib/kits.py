@@ -21,7 +21,7 @@ from kusu.util import profile
 
 kl = kusulog.getKusuLog('installer.kits')
 
-class KitsScreen(InstallerScreen, profile.PersistantProfile):
+class KitsScreen(InstallerScreen, profile.PersistentProfile):
     """Collects kits information."""
     name = _('Kits')
     profile = 'Kits'
@@ -31,7 +31,7 @@ class KitsScreen(InstallerScreen, profile.PersistantProfile):
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        profile.PersistantProfile.__init__(self, kiprofile)
+        profile.PersistentProfile.__init__(self, kiprofile)
 
     def setCallbacks(self):
         """

@@ -99,7 +99,7 @@ class Profile(dict):
         except KeyError:
             self[profile] = {}
 
-class PersistantProfile:
+class PersistentProfile:
     def __init__(self, kiprofile):
         kiprofile.addFunctions(self.save, self.profile)
 

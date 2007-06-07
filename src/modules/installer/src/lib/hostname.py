@@ -14,6 +14,7 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.installer import network
 from kusu.util.verify import *
+import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util import profile
 from screen import InstallerScreen
@@ -21,7 +22,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-class FQHNScreen(InstallerScreen, profile.PersistantProfile):
+class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
 
     name = _('Host Name')
@@ -32,7 +33,7 @@ class FQHNScreen(InstallerScreen, profile.PersistantProfile):
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        profile.PersistantProfile.__init__(self, kiprofile)
+        profile.PersistentProfile.__init__(self, kiprofile)
 
     def setCallbacks(self):
         """
@@ -125,8 +126,18 @@ class FQHNScreen(InstallerScreen, profile.PersistantProfile):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-    def save(self, db, profile, kiprofile):
-        pass
+    def save(self, database, profile, kiprofile):
+        netProfile = kiprofile[profile]
+
+        if not netProfile['fqhn_use_dhcp'] and netProfile['fqhn_domain']:
+            s = database.createSession()
+            nets = s.query(database.networks).select()
+
+            for net in nets:
+                net.suffix = netProfile['fqhn_domain']
+
+            s.flush()
+            s.close()
 
     def restore(self, db, profile, kiprofile):
         pass

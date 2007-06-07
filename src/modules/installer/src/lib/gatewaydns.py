@@ -13,6 +13,7 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
 from kusu.util.verify import *
+import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util import profile
 from screen import InstallerScreen
@@ -20,7 +21,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-class GatewayDNSSetupScreen(InstallerScreen, profile.PersistantProfile):
+class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for DNS and Gateway setups."""
 
     name = _('Gateway & DNS')
@@ -31,7 +32,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistantProfile):
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        profile.PersistantProfile.__init__(self, kiprofile)        
+        profile.PersistentProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
         """
@@ -226,8 +227,29 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistantProfile):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-    def save(self, db, profile, kiprofile):
-        pass
+    def save(self, database, profile, kiprofile):
+        netProfile = kiprofile[profile]
+
+        if not netProfile['gw_dns_use_dhcp']:
+            import socket
+            import struct
+
+            s = database.createSession()
+
+            nets = s.query(database.networks).select()
+            for net in nets:
+                if not net.usingdhcp:
+                    gw = struct.unpack('>L',
+                                socket.inet_aton(netProfile['default_gw']))[0]
+                    nm = struct.unpack('>L', socket.inet_aton(net.subnet))[0]
+
+                    # if this gateway is reachable by this interface, assign it
+                    if net.network == \
+                                socket.inet_ntoa(struct.pack('>L', nm & gw)):
+                        net.gateway = netProfile['default_gw']
+
+            s.flush()
+            s.close()
 
     def restore(self, db, profile, kiprofile):
         pass

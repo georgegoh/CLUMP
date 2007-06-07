@@ -13,6 +13,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import kusuwidgets
 from kusu.hardware import probe
+import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
@@ -22,7 +23,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-class NetworkScreen(InstallerScreen, profile.PersistantProfile):
+class NetworkScreen(InstallerScreen, profile.PersistentProfile):
     """
     The network screen lists all available network interfaces and provides
     their configuration.
@@ -35,8 +36,7 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        profile.PersistantProfile.__init__(self, kiprofile)        
-
+        profile.PersistentProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
         """
@@ -194,8 +194,33 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
-    def save(self, db, profile, kiprofile):
-        pass
+    def save(self, database, profile, kiprofile):
+        import socket
+        import struct
+
+        s = database.createSession()
+        interfaces = kiprofile[profile]['interfaces']
+
+        for intf in interfaces:
+            if interfaces[intf]['configure']:
+                newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'])
+                
+                if not interfaces[intf]['use_dhcp']:
+                    # the network is stored as IP & netmask (& = bitwise and)
+                    ip = struct.unpack('>L',
+                            socket.inet_aton(interfaces[intf]['ip_address']))[0]
+                    nm = struct.unpack('>L',
+                            socket.inet_aton(interfaces[intf]['netmask']))[0]
+                    newnet.network = \
+                                socket.inet_ntoa(struct.pack('>L', ip & nm))
+                    newnet.subnet = interfaces[intf]['netmask']
+
+                newnet.device = intf
+                newnet.netname = 'net-%s' % intf
+                s.save(newnet)
+
+        s.flush()
+        s.close()
 
     def restore(self, db, profile, kiprofile):
         pass
@@ -233,7 +258,6 @@ class NetworkScreen(InstallerScreen, profile.PersistantProfile):
 
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['interfaces'] = interfaces
-
 
 class ConfigureIntfScreen:
     """
