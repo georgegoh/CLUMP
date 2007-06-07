@@ -95,7 +95,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     media_distro = kitops.getOSDist()
     if media_distro.ostype:
         kl.debug('Add OS Kit')
-        kit_add_failed = addOSKit(baseScreen, kitops, media_distro)
+        kit_add_failed = addOSKit(baseScreen, kitops, media_distro, cdrom)
     else:
         kl.debug('Add regular Kit')
         try:
@@ -112,7 +112,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     # handle this error intelligently
 
 
-def addOSKit(baseScreen, kitops, osdistro):
+def addOSKit(baseScreen, kitops, osdistro, cdrom):
     kit = kitops.prepareOSKit(osdistro)
 
     baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
