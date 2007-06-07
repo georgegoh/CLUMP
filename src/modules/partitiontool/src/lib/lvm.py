@@ -61,7 +61,7 @@ def reprFifo():
         if type(args) is tuple:
             s = s + func.func_name + str(args) + '\n'
         elif args:
-            s = s + func.func_name + '(' + str(args) + ')' + '\n'
+            s = s + func.func_name + "('" + str(args) + "')" + '\n'
         else:
             s = s + func.func_name + '()' + '\n'
     return s
