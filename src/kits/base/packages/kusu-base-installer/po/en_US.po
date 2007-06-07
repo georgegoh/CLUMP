@@ -371,28 +371,31 @@ msgid "netedit_window_title_edit"
 msgstr "Edit existing network"
 
 msgid "netedit_field_network"
-msgstr "Network:"
+msgstr "Network: "
 
 msgid "netedit_field_subnet"
-msgstr "Subnet:"
+msgstr "Subnet: "
 
 msgid "netedit_field_gateway"
-msgstr "Device:"
+msgstr "Gateway: "
+
+msgid "netedit_field_device"
+msgstr "Device: "
 
 msgid "netedit_field_startip"
-msgstr "Starting IP:"
+msgstr "Starting IP: "
 
 msgid "netedit_field_suffix"
-msgstr "Suffix:"
+msgstr "Suffix: "
 
 msgid "netedit_field_increment"
-msgstr "Increment:"
+msgstr "Increment: "
 
 msgid "netedit_field_options"
-msgstr "Options:"
+msgstr "Options: "
 
 msgid "netedit_field_description"
-msgstr "Description:"
+msgstr "Description: "
 
 msgid "netedit_field_dhcp"
 msgstr "Use DHCP"
@@ -519,3 +522,26 @@ msgstr "The network '%s' is in use. If you wish to delete this, please use the n
 
 msgid "The network '%s' is in use. This can not be changed at this time"
 msgstr "The network '%s' is in use. This can not be changed at this time"
+
+# nghosts
+
+msgid "nghosts_version_usage"
+msgstr "Display version of tool"
+
+msgid "nghosts_list_all_nodegroups_usage"
+msgstr "List all the node groups"
+
+msgid "nghosts_list_a_nodegroup_usage"
+msgstr "List a specific node group"
+
+msgid "nghosts_from_group_usage"
+msgstr "Specify node group to copy from"
+
+msgid "nghosts_to_group_usage"
+msgstr "Specify node group to copy to"
+
+msgid "nghosts_copy_hosts_usage"
+msgstr "Specify a list of nodes to move"
+
+msgid "nghosts_instruction_select_node"
+msgstr "Select node(s) from a node group to move to a new node group."
