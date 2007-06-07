@@ -64,8 +64,15 @@ from os.path import basename, exists
 from kusu.util.errors import *
 
 logger = kusulog.getKusuLog('partitiontool')
+from logging import *
+getLogger().addFilter(Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
+    """
+    Give me a path to a disk device and I will check if it exists. If it
+    doesn't, then I will create it according to the numbering schema
+    by lanana.
+    """
     # temp solution, until ggoh refactor this
     logger.info('FORMAT %s: Checking if node already exists in /dev.' % \
                 devpath)
@@ -76,7 +83,9 @@ def checkAndMakeNode(devpath):
                     (devpath, devpath))
         dev_basename = basename(devpath)
 
-        if devpath[-1] in '1234567890': num = int(devpath[-1])
+        if devpath[-1] in '1234567890':
+            if devpath[-2] in '1234567890': num = int(devpath[-2:])
+            else: num = int(devpath[-1])
         else: num = 0
 
         # Remap /dev/sr# to /dev/scd# - /dev/sr is legacy and is replaced with
@@ -94,24 +103,48 @@ def checkAndMakeNode(devpath):
             part_minor_num = 16 * dev_minor_multiplier + num
 
         elif dev_basename.startswith('hd'):
+            # first IDE interface
             if dev_basename.startswith('hda'):
                 dev_major_num = 3
                 part_minor_num = num
             elif dev_basename.startswith('hdb'):
                 dev_major_num = 3
-                part_minor_num = 31 + num
+                part_minor_num = 64 + num
+            # second IDE interface
             elif dev_basename.startswith('hdc'):
                 dev_major_num = 22
                 part_minor_num = num
             elif dev_basename.startswith('hdd'):
                 dev_major_num = 22
-                part_minor_num = 31 + num
+                part_minor_num = 64 + num
+            # third IDE interface
             elif dev_basename.startswith('hde'):
                 dev_major_num = 33
                 part_minor_num = num
             elif dev_basename.startswith('hdf'):
                 dev_major_num = 33
-                part_minor_num = 31 + num
+                part_minor_num = 64 + num
+            # fourth IDE interface
+            elif dev_basename.startswith('hdg'):
+                dev_major_num = 34
+                part_minor_num = num
+            elif dev_basename.startswith('hdh'):
+                dev_major_num = 34
+                part_minor_num = 64 + num
+            # fifth IDE interface
+            elif dev_basename.startswith('hdi'):
+                dev_major_num = 56
+                part_minor_num = num
+            elif dev_basename.startswith('hdj'):
+                dev_major_num = 56
+                part_minor_num = 64 + num
+            # sixth IDE interface
+            elif dev_basename.startswith('hdk'):
+                dev_major_num = 57
+                part_minor_num = num
+            elif dev_basename.startswith('hdl'):
+                dev_major_num = 57
+                part_minor_num = 64 + num
 
         else:
             raise UnknownDeviceError, "Cannot create %s - don't know the " + \
