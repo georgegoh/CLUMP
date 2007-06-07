@@ -442,6 +442,8 @@ class KitOps:
             #umountP = subprocess.Popen('umount -l %s 2> /dev/null' %
             umountP = subprocess.Popen('umount %s 2> /dev/null' %
                                        self.mountpoint, shell=True)
+            rv = umountP.wait()
+            kl.debug('unmounting pid: %d, rv: %d', umountP.pid, rv)
             self.mountpoint = None
         if self.__tmpmntdir:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
@@ -535,7 +537,8 @@ class KitOps:
             repodir.makedirs()
 
         try:
-            cpio_copytree(self.mountpoint, repodir)
+            rv = cpio_copytree(self.mountpoint, repodir)
+            kl.debug('cpio_copytree return code: %d', rv)
         except Exception, msg:
             raise CopyOSMediaError, 'Error during copy\n%s' % msg
  

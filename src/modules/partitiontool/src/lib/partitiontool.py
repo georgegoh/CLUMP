@@ -66,7 +66,7 @@ from kusu.util.errors import *
 logger = kusulog.getKusuLog('partitiontool')
 #from logging import *
 import logging
-kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
+#kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
 #kusulog.getKusuLog().handlers[1].addFilter(logging.Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
