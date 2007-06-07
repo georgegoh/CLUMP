@@ -10,7 +10,12 @@ import os
 from kusu.autoinstall.scriptfactory import KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.autoinstall.installprofile import Kickstart
+from kusu.partitiontool import partitiontool
+from kusu.nodeinstaller import NodeInstInfoHandler
+import kusu.util.log as kusulog
+from xml.sax import make_parser
 
+logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
 class NodeInstaller(object):
     """ The model for nodeinstaller. This class provides access to
@@ -18,10 +23,45 @@ class NodeInstaller(object):
         node provisioning. 
     """
 
-    def __init__(self, arg):
+    def __init__(self, niisource=None):
         super(NodeInstaller, self).__init__()
-        self.arg = arg
-        
+        self.niisource = niisource
+        self.niidata = NodeInstInfoHandler()
 
+    def parseNII(self):
+        """ Parses the NII and places the resulting data into self.niidata """
+        logger.debug('Parsing NII')
+        logger.debug('niisource : %s' % self.niisource)
+        p = make_parser()
+        p.setContentHandler(self.niidata)
+        p.parse(self.niisource)
+        for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
+            'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
+            'scripts', 'cfm']:
+            logger.debug('%s : %s' % (i,getattr(self.niidata,i)))
+
+        
+    def setupNetworking(self):
+        """ Sets the networking settings for the distro-specific auto configuration later. """
+        pass
+        
+    def adaptNIIPartitionSchema(self):
+	""" Adapts the partition schema provided by the NII into
+	    something thats more amenable to partitiontool's schema.
+	"""
+        pass
+        
+    def setupPartitioning(self):
+        """ Set the automatic partitioning. """
+        # trash the current disk and start afresh
+        diskprofile = partitiontool.DiskProfile(fresh=True)
+        # get the default schema
+        schema = self.adaptNIIPartitionSchema()
+        
+        
+    def setupAutoInstall(self):
+        pass
+        
+    
 
 
