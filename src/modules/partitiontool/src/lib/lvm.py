@@ -31,7 +31,7 @@ import lvm202 as lvm
 from kusu.util.log import getKusuLog
 from os.path import basename, exists
 
-logger = getKusuLog('lvm')
+logger = getKusuLog('partitiontool.lvm')
 
 cmd_fifo = None
 

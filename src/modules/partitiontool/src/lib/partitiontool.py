@@ -64,8 +64,9 @@ from os.path import basename, exists
 from kusu.util.errors import *
 
 logger = kusulog.getKusuLog('partitiontool')
-from logging import *
-getLogger().addFilter(Filter('kusu.partitiontool'))
+#from logging import *
+import logging
+kusulog.getKusuLog().addFilter(logging.Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
     """

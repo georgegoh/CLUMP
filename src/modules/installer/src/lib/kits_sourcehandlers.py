@@ -20,21 +20,43 @@ except:
 
 kl = kusulog.getKusuLog('installer.kits')
 
+def eject(path):
+    """Eject a CD/DVD drive. Give me a path string."""
+    p = subprocess.Popen('eject %s' % path,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if err:
+        baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
+ 
+
 def addKitFromCDForm(baseScreen, kitops):
     """Add kit from CD. This displays the form."""
     import kusu.hardware.probe
-    cdrom_list = sorted(kusu.hardware.probe.getCDROM().keys())
+    cdrom_dict = kusu.hardware.probe.getCDROM()
+    cdrom_list = sorted(cdrom_dict.keys())
+    cdrom_tulist = []
+    for key in cdrom_list:
+        device_dict = cdrom_dict[key]
+        vendor = device_dict['vendor']
+        model = device_dict['model']
+        if not vendor: vendor = ''
+        else: vendor + ' '
+        if not model: model = 'Unspecified Model'
+        display_name = key + ' - ' + vendor + model
+        cdrom_tulist.append((display_name , key))
     if len(cdrom_list) > 1:
         selected = baseScreen.selector.popupListBox('Select a CD/DVD Drive',
                         'Choose the drive which you wish to install kits from:',
-                        cdrom_list)
+                        cdrom_tulist)
         kl.debug('Selected CDROM: %s' % str(selected))
         choice = cdrom_list[selected[1]]
     else:
         choice = cdrom_list[0]
     cdrom = '/dev/' + choice
 
-    subprocess.call('eject %s' % cdrom, shell=True)
+    eject(cdrom)
     title = _('Insert CD or DVD')
     msg = _('Please insert a CD or DVD containing a kit, and press OK.')
     buttons = [_('OK'), _('Cancel')]

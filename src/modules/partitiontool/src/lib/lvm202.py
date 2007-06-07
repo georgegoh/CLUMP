@@ -7,11 +7,12 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
-import subprocess
 from kusu.util.errors import *
 from kusu.util.log import getKusuLog
-
-logger = getKusuLog('lvm202')
+try: import subprocess
+except: from popen5 import subprocess
+    
+logger = getKusuLog('partitiontool.lvm202')
 
 def retrieveLVMEntityData(command, field):
     display = subprocess.Popen(command,
@@ -55,6 +56,7 @@ def probeLVMEntity(command, probe_dict):
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
     probe_str = probe_command.stdout.read()
+    logger.debug(probe_command.stderr.read())
     probe_lines = probe_str.strip().split('\n')
     for line in probe_lines:
         for k,v in probe_dict.iteritems():

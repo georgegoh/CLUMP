@@ -17,7 +17,7 @@ from os.path import basename, exists
 from kusu.util.errors import *
 from partitiontool import checkAndMakeNode
 
-logger = kusulog.getKusuLog('partitiontool')
+logger = kusulog.getKusuLog('partitiontool.disk')
 
 class Disk(object):
     """Disk class represents a physical disk in the system.
@@ -168,7 +168,7 @@ class Disk(object):
             if partition.on_disk:
                 continue
             if partition.type != 'extended':
-                partitions_to_move.append((partition.size,
+                partitions_to_move.append((partition.size_MB,
                                            partition.fs_type,
                                            partition.mountpoint,
                                            partition.lvm_flag
@@ -387,7 +387,8 @@ class Partition(object):
                        'root_flag' : 'self.pedPartition.get_flag(parted.PARTITION_ROOT)',
                        'swap_flag' : 'self.pedPartition.get_flag(parted.PARTITION_SWAP)',
                        'raid_flag' : 'self.pedPartition.get_flag(parted.PARTITION_RAID)',
-                       'size' : 'self.disk.sector_size * self.length'
+                       'size' : 'self.disk.sector_size * self.length',
+                       'size_MB' : 'self.size / (1024 * 1024)'
                       }
     __setattr_dict = { 'start_sector' : "self.pedPartition.geom.set_start(long('%s'))",
                        'end_sector' : "self.pedPartition.geom.set_end(long('%s'))",
