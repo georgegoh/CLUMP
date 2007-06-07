@@ -465,7 +465,7 @@ class NetworkEditWindow(USXBaseScreen):
             self.networkRecord = list(self.database.fetchone())
         except:
             self.finish()
-            print self._("DB_Query_Error\n")
+            print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
             
         self.screenGrid  = snack.Grid(1, 11)
