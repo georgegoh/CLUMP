@@ -209,22 +209,23 @@ class FedoraRepo(BaseRepo):
             if not pkgdir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
    
-            for file in pkgdir.listdir('[!TRANS.TBL]*'):
+            for file in pkgdir.listdir():
+                if file.basename() != 'TRANS.TBL':
+                    dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
 
-                dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
+                    if dest.exists():
+                       raise FileAlreadyExistError, '%s already exists' % dest
 
-                if dest.exists():
-                   raise FileAlreadyExistError, '%s already exists' % dest
-
-                file.symlink(dest)
+                    file.symlink(dest)
 
         session.close()
 
     def copyOSKit(self):
         for key, dir in self.dirlayout.items():
             if key != 'repodatadir':
-                for file in (self.os_path / dir).listdir('[!TRANS.TBL]*'):
-                    file.symlink(self.repo_path / dir / file.basename())
+                for file in (self.os_path / dir).listdir():
+                    if file.basename() != 'TRANS.TBL':
+                        file.symlink(self.repo_path / dir / file.basename())
 
     def makeRepoDirs(self):
         # Need to move/use a common lib 
