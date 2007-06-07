@@ -227,10 +227,8 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-    def save(self, database, profile, kiprofile):
-        netProfile = kiprofile[profile]
-
-        if not netProfile['gw_dns_use_dhcp']:
+    def save(self, database, profile):
+        if not profile['gw_dns_use_dhcp']:
             import socket
             import struct
 
@@ -240,16 +238,13 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
             for net in nets:
                 if not net.usingdhcp:
                     gw = struct.unpack('>L',
-                                socket.inet_aton(netProfile['default_gw']))[0]
+                                socket.inet_aton(profile['default_gw']))[0]
                     nm = struct.unpack('>L', socket.inet_aton(net.subnet))[0]
 
                     # if this gateway is reachable by this interface, assign it
                     if net.network == \
                                 socket.inet_ntoa(struct.pack('>L', nm & gw)):
-                        net.gateway = netProfile['default_gw']
+                        net.gateway = profile['default_gw']
 
             s.flush()
             s.close()
-
-    def restore(self, db, profile, kiprofile):
-        pass

@@ -80,12 +80,12 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         """
         pass
 
-    def save(self, db, profile, kiprofile):
+    def save(self, database, profile):
         session = db.createSession()
         ngs = session.query(db.nodegroups).select()
         for ng in ngs:
-            ng.ngname = ng.ngname + '-' +  kiprofile[profile]['longname']
-            ng.initrd = kiprofile[profile]['initrd']
-            ng.kernel = kiprofile[profile]['kernel']
+            ng.ngname = ng.ngname + '-' +  profile['longname']
+            ng.initrd = profile['initrd']
+            ng.kernel = profile['kernel']
         session.flush()
         session.close()

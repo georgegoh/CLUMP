@@ -126,18 +126,13 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-    def save(self, database, profile, kiprofile):
-        netProfile = kiprofile[profile]
-
-        if not netProfile['fqhn_use_dhcp'] and netProfile['fqhn_domain']:
+    def save(self, database, profile):
+        if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
             s = database.createSession()
             nets = s.query(database.networks).select()
 
             for net in nets:
-                net.suffix = netProfile['fqhn_domain']
+                net.suffix = profile['fqhn_domain']
 
             s.flush()
             s.close()
-
-    def restore(self, db, profile, kiprofile):
-        pass

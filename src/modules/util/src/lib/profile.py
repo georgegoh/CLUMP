@@ -35,7 +35,7 @@ class Profile(dict):
         """
 
         for func, profile in self.save_functions:
-            self.runFunc(func[0], profile)
+            self.__dict__[profile].update(func(self.database))
 
     def save(self):
         """
@@ -43,24 +43,7 @@ class Profile(dict):
         """
 
         for func, profile in self.save_functions:
-            self.runFunc(func, profile)
-
-    def runFunc(self, func, profile):
-        """
-        Run DB operation function.
-        """
-
-        if func is None:
-            kl.debug('Attempted to execute None function')
-            return
-
-        rv = func(self.database, profile, self.copy())
-        if rv:
-            kl.debug("SUCCESS executing %s with profile '%s'" %
-                     (func.__str__(), profile))
-        else:
-            kl.debug("FAIL executing %s with profile '%s'" %
-                     (func.__str__(), profile))
+            func(self.database, self[profile])
 
     def addDatabase(self, db):
         """
@@ -91,7 +74,7 @@ class Profile(dict):
 
         if (func, profile) not in self.save_functions:
             self.save_functions.append((func, profile))
-            kl.debug("Appended %s with profile '%s'" %
+            kl.debug("Appended function %s with profile '%s'" %
                      (func.__str__(), profile))
 
         try:
@@ -103,11 +86,24 @@ class PersistentProfile:
     def __init__(self, kiprofile):
         kiprofile.addFunctions(self.save, self.profile)
 
-        self.restore(kiprofile.getDatabase(), self.profile, kiprofile)
+        self.restore(kiprofile.getDatabase())
 
-    def save(self, db, profile, kiprofile):
+    def save(self, database, profile):
+        """
+        Store profile to database.
+
+        Arguments:
+        database -- the database to which to store the profile
+        profile -- the profile belonging to this object
+        """
         pass
 
-    def restore(self, db, profile, kiprofile):
+    def restore(self, database):
+        """
+        Restore profile from db.
+
+        This function will read the database specified by db and return the
+        profile belonging to this object.
+        """
         pass
 

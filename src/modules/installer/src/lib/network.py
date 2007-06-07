@@ -194,12 +194,12 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
-    def save(self, database, profile, kiprofile):
+    def save(self, database, profile):
         import socket
         import struct
 
         s = database.createSession()
-        interfaces = kiprofile[profile]['interfaces']
+        interfaces = profile['interfaces']
 
         for intf in interfaces:
             if interfaces[intf]['configure']:
@@ -221,9 +221,6 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
         s.flush()
         s.close()
-
-    def restore(self, db, profile, kiprofile):
-        pass
 
     def setDefaults(self):
         interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
