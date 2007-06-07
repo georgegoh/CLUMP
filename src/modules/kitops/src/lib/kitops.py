@@ -99,7 +99,7 @@ class KitOps:
         """
 
         if tmpprefix:
-            self.tempprefix = path(tempprefix)
+            self.tempprefix = path(tmpprefix)
 
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
