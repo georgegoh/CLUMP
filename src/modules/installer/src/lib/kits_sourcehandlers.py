@@ -26,9 +26,7 @@ def eject(path):
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    if err:
-        baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
+    return p.communicate()
  
 
 def addKitFromCDForm(baseScreen, kitops):
@@ -51,12 +49,15 @@ def addKitFromCDForm(baseScreen, kitops):
                         'Choose the drive which you wish to install kits from:',
                         cdrom_tulist)
         kl.debug('Selected CDROM: %s' % str(selected))
-        choice = cdrom_list[selected[1]]
+        choice = selected[1]
     else:
         choice = cdrom_list[0]
     cdrom = '/dev/' + choice
 
-    eject(cdrom)
+    out, err = eject(cdrom)
+    if err:
+        baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
+        return NAV_BACK
     title = _('Insert CD or DVD')
     msg = _('Please insert a CD or DVD containing a kit, and press OK.')
     buttons = [_('OK'), _('Cancel')]
@@ -126,7 +127,9 @@ def addOSKit(baseScreen, kitops, osdistro):
                          'Any more disks for this OS kit?'):
         # unmount and eject.
         kitops.unmountMedia()
-        subprocess.call('eject %s' % kitops.mountpoint, shell=True)
+        out, err = eject(cdrom)
+        if err:
+            baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
         baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
         prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
         kitops.copyOSKitMedia(kit)

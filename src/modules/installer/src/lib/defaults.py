@@ -13,6 +13,39 @@ from path import path
 
 logger = kusulog.getKusuLog('installer.defaults')
 
+def vanillaSchema():
+    """This is a plain vanilla schema that contains 4 physical partitions:
+          a. /boot - ext2, 100:
+          b. swap - 1000M
+          c. / - 2000M
+          d. /depot - 4000M (fill)
+    """
+    # define the physical disk and partitions first
+    disk_dict = { 1: { 'partition_dict': {} } }
+    disk1_partition_dict = disk_dict[1]['partition_dict']
+    disk1_partition_dict[1] = { 'size_MB': 100,
+                                'fs': 'ext2',
+                                'mountpoint': '/boot',
+                                'fillAvailableSpace': False}
+    disk1_partition_dict[2] = { 'size_MB': 1000,
+                                'fs': 'linux-swap',
+                                'mountpoint': None,
+                                'fillAvailableSpace': False}
+    disk1_partition_dict[3] = { 'size_MB': 2000,
+                                'fs': 'ext3',
+                                'mountpoint': '/',
+                                'fillAvailableSpace': False}
+    disk1_partition_dict[4] = { 'size_MB': 4000,
+                                'fs': 'ext3',
+                                'mountpoint': '/depot',
+                                'fillAvailableSpace': True}
+
+    schema = {'disk_dict' : disk_dict,
+              'vg_dict' : None}
+
+    return schema
+
+
 def vanillaSchemaLVM():
     """This is a plain vanilla schema that contains 3 physical partitions:
           a. /boot - ext2, 100:
@@ -109,7 +142,7 @@ def setupDiskProfile(disk_profile, schema=None):
             raise PartitionSchemaError, 'Schema has no disk and/or LVM description.'
 
         createPhysicalSchema(disk_profile, schema['disk_dict'])
-        createLVMSchema(disk_profile, schema['vg_dict'])
+        if schema['vg_dict']: createLVMSchema(disk_profile, schema['vg_dict'])
     logger.debug('Disk Profile set up')
 
 

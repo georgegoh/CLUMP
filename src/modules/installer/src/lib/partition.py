@@ -88,12 +88,15 @@ class PartitionScreen(InstallerScreen):
                       'you like to use the default schema?'
                 result = self.selector.popupDialogBox('Partitions exist',
                                                       msg,
-                                             ['Use Default', 'Use Existing'])
+                                             ['Use Default', 'Use Existing', 'Clear All Partitions'])
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
-                    schema = vanillaSchemaLVM()
+                    schema = vanillaSchema()
                     setupDiskProfile(self.disk_profile, schema)
+                elif str(result) == 'clear all partitions':
+                    logger.debug('Clear all partitions')
+                    self.disk_profile = partitiontool.DiskProfile(True)
             else:
                 # tell user nothing exists and ask to proceed.
                 msg = 'The installer has detected that no disk(s) ' + \
@@ -105,7 +108,7 @@ class PartitionScreen(InstallerScreen):
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
-                    schema = vanillaSchemaLVM()
+                    schema = vanillaSchema()
                     setupDiskProfile(self.disk_profile, schema)
  
         # retrieve info about logical volumes and lv groups
