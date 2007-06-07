@@ -17,6 +17,23 @@ import kusu.util.log as kusulog
 from xml.sax import make_parser
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
+logger.addFileHandler()
+
+def retrieveNII(niihost, node):
+    """ Downloads the NII from the niihost.
+        FIXME: currently a hardcoded url!!
+    """
+    url = 'http://%s/mirror/fc6/i386/os/nii.xml' % niihost
+    try:
+        logger.debug('Fetching %s' % url)
+        f = urllib2.urlopen(url)
+        logger.debug('urlopen returned object: %r' % f)
+        data = f.read()
+        logger.debug('urlopen data: %s' % data)
+        return data
+    except urllib2.HTTPError, e:
+        logger.debug(str(e))
+        return None
 
 class NodeInstaller(object):
     """ The model for nodeinstaller. This class provides access to
@@ -40,17 +57,6 @@ class NodeInstaller(object):
             'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
             'scripts', 'cfm']:
             logger.debug('%s : %s' % (i,getattr(self.niidata,i)))
-
-    
-    def retrieveNII(self, niihost, node):
-        """ Downloads the NII from the niihost.
-            FIXME: currently a hardcoded url!!
-        """
-        url = 'http://%s/mirror/nii.xml' % niihost
-        f = urllib2.urlopen(url)
-        data = f.read()
-        return data
-        
         
     def setupNetworking(self):
         """ Sets the networking settings for the distro-specific auto configuration later. """

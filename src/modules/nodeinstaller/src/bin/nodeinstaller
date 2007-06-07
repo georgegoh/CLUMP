@@ -17,7 +17,7 @@ class NodeInstallerApp(KusuApp):
         KusuApp.__init__(self)
 
         self.actions = {'provision':['niihost'], 
-            'get-nii':['nodename','nodeip','niihost']}
+            'get-nii':['niihost','node']}
         
         self.nodeinst = NodeInstaller()
         
@@ -41,12 +41,10 @@ actions:
                   Available arguments for this action:
                     niihost=<NII Server Address>
                                         
-    get-nii     - Prints the Node Installation Information for a
-                  nodename or nodeip to standard output. Available 
-                  arguments for this action:
+    get-nii     - Prints the Node Installation Information for a node to 
+                  standard output. Available arguments for this action:
                     niihost=<NII Server Address>
-                    nodename=<Name of a Node>
-                    nodeip=<IP Address of a Node>
+                    node=<Name or IP Address of a Node>
 
 """
         self.parser.set_usage(self.usagestr)
@@ -119,19 +117,14 @@ actions:
         self.action = action
         self.actionargs = d
      
-    def setupLog(self):
-        # setting up logger
-        self.kl = kusulog.getKusuLog('nodeinstaller')
-        self.kl.addFileHandler()
-
-     
     def run(self):
         """ Main launcher. """
-        self.setupLog()
-        self.parseargs()
-
+        self.kl = kusulog.getKusuLog('nodeinstaller')
+        self.kl.addFileHandler()
         self.kl.debug('Starting nodeinstaller')
-    
+        
+        self.parseargs()
+        
         # call the correct sub-handler for the action
         m = '_' + self.action.split('-')[0] \
             + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
@@ -141,8 +134,6 @@ actions:
         handler(self.actionargs)
     
     
-        self.kl.debug('Stopping nodeinstaller')
-        kusulog.shutdown()        
         sys.exit(0)
 
     def _provision(self, args):
@@ -157,25 +148,21 @@ actions:
     def _getNii(self, args):
         """Handler for get-nii. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
-        nodename = args.get('nodename',None)
-        nodeip = args.get('nodeip',None)
+        node = args.get('node',None)
         
+        self.kl.debug('niihost : %s' % niihost)
+        self.kl.debug('node : %s' % node)        
         if not niihost:
             msg = self._('Please specify a NII Host server.')
             self.printMsgExit(msg)
             
-        if not nodename or not nodeip:
+        if not node:
             msg = self._('Please specify a node name or node ip address.')
             self.printMsgExit(msg)
+                  
+        nii = NodeInstaller.retrieveNII(niihost=niihost,node=node)
+        if nii: print nii
             
-        if nodename and nodeip:
-            msg = self._('Please specify only node name OR node ip address.')
-            self.printMsgExit(msg)
-            
-        nii = self.nodeinst.retrieveNII(niihost=niihost,nodename=nodename,nodeip=nodeip)
-        print nii
-            
-
 
 if __name__ == '__main__':
     app = NodeInstallerApp()
