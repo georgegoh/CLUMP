@@ -23,11 +23,10 @@ SET(KUSU_MODULES
   ui
   partitiontool
   installer
+  nodeinstaller
   networktool
   hardware
-  kit
   kitops
-  buildkit
   repoman
 )
 
