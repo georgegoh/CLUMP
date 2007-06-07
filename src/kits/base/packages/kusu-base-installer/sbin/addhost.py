@@ -508,7 +508,7 @@ class NodeGroupWindow(USXBaseScreen):
         try:
             self.database.connect()
         except:
-            self.finish()
+            self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
 
@@ -517,7 +517,7 @@ class NodeGroupWindow(USXBaseScreen):
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
         except:
-            self.finish()
+	    self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
    
@@ -566,8 +566,8 @@ class WindowSelectNode(NodeGroupWindow):
             self.database.execute(query)
             networks = self.database.fetchall()
         except:
-            self.finish()
-            print self._("DB_Query_Error\n")
+            self.screen.finish()
+            print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
         
         self.screenGrid = snack.Grid(1, 2)
