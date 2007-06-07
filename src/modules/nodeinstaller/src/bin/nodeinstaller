@@ -9,7 +9,7 @@ import sys
 import os
 import kusu.util.log as kusulog
 from kusu.core.app import KusuApp
-
+from kusu.nodeinstaller import NodeInstaller
 
 class NodeInstallerApp(KusuApp):
     
@@ -18,6 +18,8 @@ class NodeInstallerApp(KusuApp):
 
         self.actions = {'provision':['niihost'], 
             'get-nii':['nodename','nodeip','nodegroup']}
+        
+        self.nodeinst = NodeInstaller()
         
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
