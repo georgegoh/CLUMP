@@ -12,9 +12,10 @@ from kusu.autoinstall.autoinstall import Script
 from kusu.autoinstall.installprofile import Kickstart
 from kusu.partitiontool import partitiontool
 from kusu.nodeinstaller import NodeInstInfoHandler
+from kusu.util.errors import EmptyNIISource
 import urllib2
 import kusu.util.log as kusulog
-from xml.sax import make_parser
+from xml.sax import make_parser, SAXParseException
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 logger.addFileHandler()
@@ -41,22 +42,71 @@ class NodeInstaller(object):
         node provisioning. 
     """
 
+    _niidict = {
+    'source' : None,    # The NII source
+    'name':'',          # Name of the node
+    'installers':[],    # List of avaliable installers
+    'repo':'',          # Repo location
+    'ostype':'',        # OS type
+    'installtype': '',  # Type of install to perform
+    'nodegrpid':0 ,     # Node group ID
+    'appglobal':{},     # Dictionary of all the appglobal data
+    'nics':{},          # Dictionary of all the NIC info
+    'partitions':{},    # Dictionary of all the Partition info.  Note key is only a counter
+    'packages':[],      # List of packages to install
+    'scripts':[],       # List of scripts to run
+    'cfm': ''           # The CFM data
+    }
+
     def __init__(self, niisource=None):
         super(NodeInstaller, self).__init__()
-        self.niisource = niisource
-        self.niidata = NodeInstInfoHandler()
+        self.source = niisource
+
+
+    def __getattr__(self, name):
+	""" Convenience method for accessing attributes. Code snippet
+	    taken from autoinstall.installprofile. 
+	"""
+        
+        if name in self._niidict.keys():
+            return self._niidict[name]
+        else:
+            raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (self.__class__, name)
+
+    def __setattr__(self, item, value):
+    	""" Convenience method for setting attributes. Code snippet
+    	    taken from autoinstall.installprofile. 
+    	"""        
+        if item in self._niidict.keys():
+            self._niidict[item] = value
+        else:
+             raise AttributeError, "%s instance has no attribute '%s'" % \
+                                  (self.__class__, item)
 
     def parseNII(self):
         """ Parses the NII and places the resulting data into self.niidata """
-        logger.debug('Parsing NII')
-        logger.debug('niisource : %s' % self.niisource)
-        p = make_parser()
-        p.setContentHandler(self.niidata)
-        p.parse(self.niisource)
-        for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
-            'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
-            'scripts', 'cfm']:
-            logger.debug('%s : %s' % (i,getattr(self.niidata,i)))
+        
+        try:
+            logger.debug('Parsing NII')
+            logger.debug('niisource : %s' % self.source)
+        
+            if not self.source : raise EmptyNIISource
+        
+            niidata = NodeInstInfoHandler()
+            p = make_parser()
+            p.setContentHandler(niidata)
+            p.parse(self.source)
+            for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
+                'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
+                'scripts', 'cfm']:
+                setattr(self,i,getattr(niidata,i))
+                logger.debug('%s : %s' % (i,getattr(self,i)))
+        except SAXParseException:
+            logger.debug('Failed parsing NII!')
+        except EmptyNIISource:
+            logger.debug('NII Source is empty!')
+
         
     def setupNetworking(self):
         """ Sets the networking settings for the distro-specific auto configuration later. """

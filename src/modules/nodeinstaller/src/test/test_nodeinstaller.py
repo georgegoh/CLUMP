@@ -7,11 +7,12 @@
 #
 
 from kusu.nodeinstaller import NodeInstaller
+from cStringIO import StringIO
 
 class TestNII:
 
     def setUp(self):
-        self.niisource = """\
+        niidata = """\
 <?xml version="1.0"?>
 <nii>
 <debug>
@@ -48,81 +49,41 @@ Node: node0000
 </nii>
         """
         
+        # make niisource more file-like
+        self.niisource = StringIO(niidata)
+        
+        invalidniidata = """\
+        <nii>
+        <noodlinfo>
+        evil nii data
+        </noodleinfo>
+        </nii>
+        """
+        
+        self.invalidnii = StringIO(invalidniidata)
+        
+        
     def tearDown(self):
         pass
-        
-    def testNIIStructure(self):
-        assert True
-        
-    def testGetNII(self):
-        assert True
-        
-    def testFailGetNII(self):
-        assert True
-        
-    def testGetNodeInfoLine(self):
-        
-        # parse NII
-        # get nodeinfo
-        # validate nodeinfo
-        
-        assert True
-        
-    def testGetNodeInfoLine(self):
-        
-        # parse NII
-        # get nodeinfo
-        # validate nodeinfo
-        
-        assert True
 
-    def testGetNicInfoLine(self):
         
-        # parse NII
-        # get nicinfo
-        # validate nicinfo
+    def testValidateNII(self):
+        """ Test to parse a valid and correct NII """
+        ni = NodeInstaller(self.niisource)
+        ni.parseNII()
+        assert ni.nics['eth0']['device'] == 'eth0'
         
-        assert True
-
-    def testGetPartitionInfoLine(self):
+    def testValidateInvalidNII(self):
+        """ Test to parse invalid NII """
+        ni = NodeInstaller(self.invalidnii)
+        ni.parseNII()
+        assert ni.name == ''
         
-        # parse NII
-        # get partitioninfo
-        # validate partitioninfo
-        
-        assert True
-
-    def testGetComponentLine(self):
-        
-        # parse NII
-        # get component
-        # validate component
-        
-        assert True
-
-    def testGetPackageLine(self):
-        
-        # parse NII
-        # get package
-        # validate package
-        
-        assert True
-
-    def testGetScriptLine(self):
-        
-        # parse NII
-        # get script
-        # validate script
-        
-        assert True
-        
-    def testGetAppGlobalsLine(self):
-
-        # parse NII
-        # get appglobals
-        # validate appglobals
-        
-        assert True
+    def testValidateEmptyNII(self):
+        """ Test to parse empty NII """
+        ni = NodeInstaller()
+        ni.parseNII()
+        assert ni.name == ''
         
     
         
