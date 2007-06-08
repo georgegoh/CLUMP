@@ -20,6 +20,7 @@ class USXBaseScreen(BaseScreen):
     """
     dbSelected = 'MySQL'
     hotkeysDict = {}
+    buttonsDict  = {}
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.database = database
