@@ -11,10 +11,16 @@
 import __init__
 import snack
 from gettext import gettext as _
+from path import path
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from screen import InstallerScreen
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 kl = kusulog.getKusuLog('installer.kits')
 
@@ -63,7 +69,7 @@ class TZSelectionScreen(InstallerScreen):
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['utc'] = False
         self.kiprofile[self.profile]['ntp_server'] = 'pool.ntp.org'
-        self.kiprofile[self.profile]['zone'] = 'Asia/Singapore\n'
+        self.kiprofile[self.profile]['zone'] = 'Asia/Singapore'
 
     def getTZ(self):
         f = file('/usr/share/zoneinfo/zone.tab')
@@ -72,9 +78,9 @@ class TZSelectionScreen(InstallerScreen):
             if line.strip()[0] != '#':
                 li = line.split('\t')
                 if len(li) > 3:
-                    self.tz_dict[li[2]] = [li[0], li[1], li[3]]
+                    self.tz_dict[li[2].strip()] = [li[0], li[1], li[3]]
                 else:
-                    self.tz_dict[li[2]] = [li[0], li[1], '']
+                    self.tz_dict[li[2].strip()] = [li[0], li[1], '']
             line = f.readline()
         f.close()
 
@@ -97,6 +103,19 @@ class TZSelectionScreen(InstallerScreen):
         self.kiprofile[self.profile]['zone'] = self.listbox.current()
         self.kiprofile[self.profile]['utc'] = bool(self.utc.value())
         self.kiprofile[self.profile]['ntp_server'] = self.ntp.value()
+
+        # now we set the system time to what we just selected
+        tzfile = path('/usr/share/zoneinfo') / self.kiprofile[self.profile]['zone']
+        tzfile.copy('/etc/localtime')
+
+        hwclock_args = '--hctosys'
+        if self.kiprofile[self.profile]['utc']:
+            hwclock_args += ' -u'
+
+        hwclockP = subprocess.Popen('hwclock %s' % hwclock_args, shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+        hwclockP.communicate()
 
     def executeCallback(self, obj):
         if obj is self.listbox:
