@@ -506,10 +506,6 @@ class Partition(object):
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             tune2fs_out, status = tune2fs.communicate()
-
-            print '####################################'
-            print tune2fs_out
-            print status
         elif self.fs_type == 'linux-swap':
             logger.info('FORMAT %s: Making swap fs on %s' % \
                         (self.path, self.path))
