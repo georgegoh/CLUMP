@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 
-import __init__
 import snack
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets

@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 
-import __init__
 import os
 import snack
 import gettext
