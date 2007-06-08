@@ -111,3 +111,7 @@ class InvalidKusuSource(KusuError): pass
 class FailedBuildCMake(KusuError): pass
 class FailedBuildMake(KusuError): pass
 
+# nodeinstaller
+class EmptyNIISource(KusuError): pass
+
+
