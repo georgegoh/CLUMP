@@ -402,6 +402,12 @@ class LogicalVolume(object):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
+
+            tune2fs = subprocess.Popen('tune2fs -c0 -i0 -O dir_index -ouser_xattr,acl %s' % self.path,
+                                       shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            tune2fs_out, status = tune2fs.communicate()
         elif self.fs_type == 'linux-swap':
             logger.info('Making swap fs on %s' % self.path)
             mkfs = subprocess.Popen('mkswap %s' % self.path,
