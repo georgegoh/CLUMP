@@ -15,7 +15,7 @@ logger = kusulog.getKusuLog('installer.defaults')
 
 def vanillaSchema():
     """This is a plain vanilla schema that contains 4 physical partitions:
-          a. /boot - ext2, 100:
+          a. /boot - ext3, 100:
           b. swap - 1000M
           c. / - 2000M
           d. /depot - 4000M (fill)
@@ -24,7 +24,7 @@ def vanillaSchema():
     disk_dict = { 1: { 'partition_dict': {} } }
     disk1_partition_dict = disk_dict[1]['partition_dict']
     disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext2',
+                                'fs': 'ext3',
                                 'mountpoint': '/boot',
                                 'fillAvailableSpace': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
@@ -48,7 +48,7 @@ def vanillaSchema():
 
 def vanillaSchemaLVM():
     """This is a plain vanilla schema that contains 3 physical partitions:
-          a. /boot - ext2, 100:
+          a. /boot - ext3, 100:
           b. swap - 1000M
           c. LVM physical volume - 6000M (fill)
        The LVM pv makes up a logical volume group'VolGroup00', which contains
@@ -60,7 +60,7 @@ def vanillaSchemaLVM():
     disk_dict = { 1: { 'partition_dict': {} } }
     disk1_partition_dict = disk_dict[1]['partition_dict']
     disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext2',
+                                'fs': 'ext3',
                                 'mountpoint': '/boot',
                                 'fillAvailableSpace': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
@@ -107,7 +107,7 @@ def scenario22():
     disk_dict = { 1: { 'partition_dict': {} } }
     disk1_partition_dict = disk_dict[1]['partition_dict']
     disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext2',
+                                'fs': 'ext3',
                                 'mountpoint': '/boot',
                                 'fillAvailableSpace': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
