@@ -23,8 +23,8 @@ import os
 import string
 import popen2
 import sys
-from kusu.app import KusuApp
-from kusu.db import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 import kusu.ipfun
 
 """ class NodeFun
@@ -62,7 +62,6 @@ class NodeFun(object, KusuApp):
         flag = 0
         
         self.getNodeFormat()
-        
         # If the nodeformat is None, return False immediately.
         if not self._nodeFormat:
             return False
@@ -266,7 +265,17 @@ class NodeFun(object, KusuApp):
         
         # If there's no RANK data found in query, then the rank starts from 0.
         if not len(data):
+            # We may not be a matching node format, but the node format may have a rack and rank check the rack and rank to verify
+            # 
             self._rankCount = 0
+            while 1:
+                sqlquery = "SELECT COUNT(rack) FROM nodes WHERE rack=%d AND rank=%d AND ngid=%d" % (self._rackNumber, self._rankCount, int(self._nodeGroupType))
+                self._dbReadonly.execute(sqlquery)
+                data = int(self._dbReadonly.fetchone()[0])
+                if data == 0: 
+                   break
+                else:
+                   self._rankCount += 1  
         else:
             # Iterate though the list, increment the rack count if a previous number exists.
             for rankInfo in data:
@@ -509,6 +518,81 @@ class NodeFun(object, KusuApp):
             return data[0]
         except:
             return None
+
+    def setNodegroupByName(self, nodegroupname):
+        # Convert the name into a nodegroup id
+        query = "SELECT ngid FROM nodegroups WHERE ngname='%s'" % nodegroupname
+        try:
+            self._dbReadonly.execute(query)
+            self._nodeGroupType = self._dbReadonly.fetchone()[0]
+        except:
+            self._nodeGroupType = None
+
+    def setNodegroupByID(self, ngid):
+        self._nodeGroupType = ngid
+      
+    def findFreeNode(self, ngname, noderack, noderank=0):
+        # Check if the node format has a rack AND rank. If it doesn't set the rack to 0 always,
+        setNodegroupByName(ngname)
+
+        if self.isNodenameHasRack() == False:
+            self._rackNumber = 0
+        else:
+            self._rackNumber = noderack
+
+        # Check if node group exists by looking for the nodeformat If it's empty. Abort.
+        if self._nodeFormat == None:
+            return False
+
+        # Build SQL query based on the node groups sharing the same node format.
+        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
+
+        if ngConflicts:
+            sqlquery += " AND ("
+            for ngid in ngConflicts:
+                sqlquery += "nodegroups.ngid=%s" % ngid
+                if ngid:
+                    sqlquery += " OR "
+            sqlquery += ")"
+
+        if sqlquery[len(sqlquery)-4:].strip() == "OR )":
+            sqlquery = sqlquery[:-4].strip() + ")"
+
+        sqlquery += " ORDER BY nodes.rank"
+
+        self._dbReadonly.execute(sqlquery)
+        data = self._dbReadonly.fetchall()
+
+        # If there's no RANK data found in query, then the rank starts from 0.
+        if not len(data):
+            self._rankCount = 0
+        else:
+            # Iterate though the list, increment the rack count if a previous number exists.
+            for rankInfo in data:
+                 if rankInfo[0] == self._rankCount:
+                     self._rankCount += 1
+                 else:
+                     break
+
+        # If there's no node name in the list. Generate a new one.
+        if not len(self._nodeList):
+            self._hostNameParse()
+        else:
+            # Iterate though list, generate a node, check if it exists already in the list. If it does, increment the rank number
+            # Otherwise, return the new node name.
+            for nodeIdx in self._nodeList:
+                 self._hostNameParse()
+                 if self._nodeName in self._nodeList:
+                     self._rankCount += 1
+                 else:
+                     self._createNodeEntry(macaddr, selectedinterface)
+                     return self._nodeName
+
+        # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
+        self._hostNameParse()
+        self._createNodeEntry(macaddr, selectedinterface)
+        return self._nodeName
+     
         
 # Run some unittests
 if __name__ == "__main__":
