@@ -540,7 +540,8 @@ class KitOps:
             rv = cpio_copytree(self.mountpoint, repodir)
             kl.debug('cpio_copytree return code: %d', rv)
         except Exception, msg:
-            raise CopyOSMediaError, 'Error during copy\n%s' % msg
+            raise CopyOSMediaError, \
+                  'Error during copy\n%s\nmountpoint:%s, repodir:%s' % (msg, self.mountpoint, repodir)
  
     def finalizeOSKit(self, kit):
         #populate the database with info

@@ -74,11 +74,7 @@ def addKitFromCDForm(baseScreen, kitops):
     closeTray(cdrom)
     addKitFromCDAction(baseScreen, kitops, cdrom)
 
-
-def addKitFromCDAction(baseScreen, kitops, cdrom):
-    """Add kit from CD. This is the action."""
-    # Mount cd
-    kl.debug('CD PATH: %s' % cdrom)
+def mountCD(baseScreen, kitops, cdrom):
     mountSuccess = False
     from kusu.kitops.kitops import EMOUNTFAIL
     while not mountSuccess:
@@ -90,7 +86,20 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
                                 'Could not load the CD or DVD. Please ' + \
                                 'check that you have inserted the disc ' + \
                                 'correctly into the drive %s.' % cdrom)
+            return False
     kitops.setKitMedia(kitops.mountpoint)
+    return True
+
+def addKitFromCDAction(baseScreen, kitops, cdrom):
+    """Add kit from CD. This is the action."""
+    mountSuccess = False
+    for i in range(3):
+        if mountCD(baseScreen, kitops, cdrom):
+            mountSuccess = True
+            break
+    if not mountSuccess:
+        raise KusuError, 'Cannot mount CD/DVD. Aborting installation...'
+
     kitops.setDB(baseScreen.kiprofile.getDatabase())
 
     kl.debug('Add Kit Prepare')
@@ -140,6 +149,14 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
             baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
         baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
         prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
+
+        mountSuccess = False
+        for i in range(3):
+            if mountCD(baseScreen, kitops, cdrom):
+                mountSuccess = True
+                break
+        if not mountSuccess:
+            raise KusuError, 'Cannot mount CD/DVD. Aborting installation...'
         kitops.copyOSKitMedia(kit)
         prog_dlg.close()
         closeTray(kitops.mountpoint)
