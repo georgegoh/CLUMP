@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: niifun.py 1181 2007-06-06 13:44:12Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Corporation
 #
