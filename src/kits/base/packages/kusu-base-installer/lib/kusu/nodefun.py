@@ -22,6 +22,7 @@
 import os
 import string
 import popen2
+import tempfile
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
@@ -42,6 +43,7 @@ class NodeFun(object, KusuApp):
         self._rackNumber = rack
         self._rankCount = 0
         self._isMasterInstaller = False
+        self._primaryInstaller = ""
         
         # Instances of a read and write database.
         self._dbReadonly = KusuDB()
@@ -51,6 +53,8 @@ class NodeFun(object, KusuApp):
 	try:
             self._dbReadonly.connect()
             self._dbRWrite.connect('kusudb', 'apache')
+            # Get primary installer once, for caching
+            self._primaryInstaller = self._dbReadonly.getAppglobals('PrimaryInstaller')
         except:
             print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
@@ -171,7 +175,7 @@ class NodeFun(object, KusuApp):
         """_getPrimaryInstaller()
         gets and returns the primary installer name """
         
-        return self._dbReadonly.getAppglobals('PrimaryInstaller')
+        return self._primaryInstaller
     
     def nodeIsPrimaryInstaller(self, nodename):
 
@@ -268,7 +272,7 @@ class NodeFun(object, KusuApp):
             # We may not be a matching node format, but the node format may have a rack and rank check the rack and rank to verify
             # 
             self._rankCount = 0
-            while 1:
+            while True:
                 sqlquery = "SELECT COUNT(rack) FROM nodes WHERE rack=%d AND rank=%d AND ngid=%d" % (self._rackNumber, self._rankCount, int(self._nodeGroupType))
                 self._dbReadonly.execute(sqlquery)
                 data = int(self._dbReadonly.fetchone()[0])
@@ -276,6 +280,7 @@ class NodeFun(object, KusuApp):
                    break
                 else:
                    self._rankCount += 1  
+
         else:
             # Iterate though the list, increment the rack count if a previous number exists.
             for rankInfo in data:
@@ -530,70 +535,69 @@ class NodeFun(object, KusuApp):
 
     def setNodegroupByID(self, ngid):
         self._nodeGroupType = ngid
-      
-    def findFreeNode(self, ngname, noderack, noderank=0):
-        # Check if the node format has a rack AND rank. If it doesn't set the rack to 0 always,
-        setNodegroupByName(ngname)
-
-        if self.isNodenameHasRack() == False:
-            self._rackNumber = 0
-        else:
-            self._rackNumber = noderack
-
-        # Check if node group exists by looking for the nodeformat If it's empty. Abort.
-        if self._nodeFormat == None:
-            return False
-
-        # Build SQL query based on the node groups sharing the same node format.
-        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
-
-        if ngConflicts:
-            sqlquery += " AND ("
-            for ngid in ngConflicts:
-                sqlquery += "nodegroups.ngid=%s" % ngid
-                if ngid:
-                    sqlquery += " OR "
-            sqlquery += ")"
-
-        if sqlquery[len(sqlquery)-4:].strip() == "OR )":
-            sqlquery = sqlquery[:-4].strip() + ")"
-
-        sqlquery += " ORDER BY nodes.rank"
-
-        self._dbReadonly.execute(sqlquery)
-        data = self._dbReadonly.fetchall()
-
-        # If there's no RANK data found in query, then the rank starts from 0.
-        if not len(data):
-            self._rankCount = 0
-        else:
-            # Iterate though the list, increment the rack count if a previous number exists.
-            for rankInfo in data:
-                 if rankInfo[0] == self._rankCount:
-                     self._rankCount += 1
-                 else:
-                     break
-
-        # If there's no node name in the list. Generate a new one.
-        if not len(self._nodeList):
-            self._hostNameParse()
-        else:
-            # Iterate though list, generate a node, check if it exists already in the list. If it does, increment the rank number
-            # Otherwise, return the new node name.
-            for nodeIdx in self._nodeList:
-                 self._hostNameParse()
-                 if self._nodeName in self._nodeList:
-                     self._rankCount += 1
-                 else:
-                     self._createNodeEntry(macaddr, selectedinterface)
-                     return self._nodeName
-
-        # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
-        self._hostNameParse()
-        self._createNodeEntry(macaddr, selectedinterface)
-        return self._nodeName
      
-        
+    def getNodegroupNameByID(self, ngid):
+        query = "SELECT ngname FROM nodegroups WHERE ngid=%s" % ngid
+        try:
+            self._dbReadonly.execute(query)
+            return self._dbReadonly.fetchone()[0]
+        except:
+            return None
+
+    def moveNodes(self, nodeList, nodegroupname):
+        dataList = {}
+        macList = {}
+        badList = []
+        interfaceName = ""
+        badflag = 0
+        self.setNodegroupByName(nodegroupname)
+
+        # Check for valid nodegroup.
+        if not self._nodeGroupType:   
+           return None, None, None
+
+        for node in nodeList:
+           if node == self._getPrimaryInstaller():
+              nodeList.remove(node)
+           else:
+              try:
+                  self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks WHERE nodes.name='%s' AND nodes.nid=nics.nid AND nics.boot=1" % node)
+                  data = self._dbReadonly.fetchone()
+                  if data:
+                      dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
+                      macList["%s" % node] = "%s" % data[0]
+                  else:
+                      nodeList.remove(node)
+              except: 
+                  nodeList.remove(node)
+
+        # Get the new nodegroups network and device table list
+        self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
+        newngdata = list(self._dbReadonly.fetchall())
+
+        # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
+        # Have to resolve this by running add hosts  
+        for node in nodeList:
+           nodeData = dataList[node].split()
+           i = 0
+           for netinfo in newngdata:
+              device, network, subnet = netinfo
+              # Check if device matches new node group device
+              if device == nodeData[2]:
+                  interfaceName = device
+                  # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
+                  if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
+                     badflag = 0
+                     break
+              if i <= len(newngdata):
+                   badflag = 1
+              i += 1
+           if badflag:
+               badList.append(node)
+               nodeList.remove(node)
+     
+        return nodeList, macList, badList, interfaceName
+
 # Run some unittests
 if __name__ == "__main__":
     myNodeFun = NodeFun()
@@ -615,10 +619,10 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.findMACAddress(\"aa:bb:cc:dd:ee:ff\"): Result: FAIL (Found)"
     
-    if myNodeFun.findMACAddress("00:11:22:33:44:32"):
-        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:32\"): Result: PASS (Found)"
+    if myNodeFun.findMACAddress("00:11:22:33:44:56"):
+        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:56\"): Result: PASS (Found)"
     else:
-        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:32\"): Result: FAIL (Not found)"
+        print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:56\"): Result: FAIL (Not found)"
         
     # Test findBootDevice
     if myNodeFun.findBootDevice("foobar001"):
@@ -762,3 +766,114 @@ if __name__ == "__main__":
             print "\t* Testing NodeFun.addNode() PASSED. Correct node added."
     else:
             print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: FAIL (Node not created)"
+
+
+    # Test moving nodes
+    flag = 0
+    myNodeFun = NodeFun()
+    movenodes = ["c01-00", "node0000", "foobarFAKE0342-34", "installer0"]
+
+    moveList, macList, badList = myNodeFun.moveNodes(movenodes, "Foobar")
+    if (moveList, macList, badList == None):
+       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installer0]\", \"Foobar\"): Result: PASS (Invalid Nodegroup, not moving)"
+       print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+    else:
+       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installler0]\", \"Foobar\"): Result: FAIL (Invalid Nodegroup, Moving!)"
+       print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+
+    myNodeFun = NodeFun()
+    movenodes = ["node0000", "node0003", "installer2"]
+   
+    moveList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "Installer")
+    if (moveList, macList, badList):
+        print "* Testing NodeFun.moveNodes(\"[node0000, node0003, installer2]\", \"Installer\"): Result: PASS (Valid Nodegroup, Moving nodes to Installer)"
+        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+      
+        # Create Temp file
+        (fd, tmpfile) = tempfile.mkstemp()
+        tmpname = os.fdopen(fd, 'w')
+        for node in moveList:
+           tmpname.write("%s\n" % macList[node])
+        tmpname.close()
+
+        # Call addhosts to delete these nodes
+        print "COMMAND: /opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' ')
+        os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' '))
+
+        # Add these back using mac file
+        print "COMMAND: /opt/kusu/sbin/addhost --file='%s' --interface=%s --nodegroup='%s'" % (tmpfile, interface, "Installer") # Installer ngid
+        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'" % (tmpfile, interface, myNodeFun.getNodegroupNameByID(1)))
+     
+        # Remove temp file
+        os.remove(tmpfile)
+
+        # Now check if the nodes created really exist as installer03, and installer04.
+        if myNodeFun.validateNode("installer03"):
+            print "* Testing NodeFun.validateNode(\"installer03\"): Result: PASS (Found)"
+            flag = 1
+        else:
+            print "* Testing NodeFun.validateNode(\"installer03\"): Result: FAIL (Not found)"
+            flag = 0
+
+        if myNodeFun.validateNode("installer04"):
+            print "* Testing NodeFun.validateNode(\"installer04\"): Result: PASS (Found)"
+            flag = 1
+        else:
+            print "* Testing NodeFun.validateNode(\"installer04\"): Result: FAIL (Not found)"
+            flag = 0
+
+        if flag:
+            print "\t* Overall myNodeFun.moveNodes(): PASSED!"
+        else:
+            print "\t* Overall MyNodeFun.moveNodes(): FAILED!"
+    else:
+        print "* Testing NodeFun.moveNodes(\"[node0000, node0003]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
+ 
+    # Now move them back to their original place.
+    myNodeFun = NodeFun()
+    movenodes = ["installer03", "installer04"]
+  
+    moveList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "Compute")
+    if (moveList, macList, badList):
+        print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\", \"Compute\"): Result: PASS (Valid Nodegroup, Moving nodes to Compute)"
+        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+
+        # Create Temp file
+        (fd, tmpfile) = tempfile.mkstemp()
+        tmpname = os.fdopen(fd, 'w')
+        for node in moveList:
+           tmpname.write("%s\n" % macList[node])
+        tmpname.close()
+
+        # Call addhosts to delete these nodes
+        print "COMMAND: /opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' ')
+        os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' '))
+
+        # Add these back using mac file
+        print "COMMAND: /opt/kusu/sbin/addhost --file='%s' --interface=%s --nodegroup='%s'" % (tmpfile, interface, "Compute") # Installer ngid
+        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'" % (tmpfile, interface, myNodeFun.getNodegroupNameByID(2)))
+    
+        # Remove temp file
+        os.remove(tmpfile)
+
+        # Now check if the nodes created really exist as installer03, and installer04.
+        if myNodeFun.validateNode("node0000"):
+            print "* Testing NodeFun.validateNode(\"node0000\"): Result: PASS (Found)"
+            flag = 1
+        else:
+            print "* Testing NodeFun.validateNode(\"node0000\"): Result: FAIL (Not found)"
+            flag = 0
+
+        if myNodeFun.validateNode("node0003"):
+            print "* Testing NodeFun.validateNode(\"node0003\"): Result: PASS (Found)"
+            flag = 1
+        else:
+            print "* Testing NodeFun.validateNode(\"node0003\"): Result: FAIL (Not found)"
+            flag = 0
+
+        if flag:
+            print "\t* Overall myNodeFun.moveNodes(): PASSED!"
+        else:
+            print "\t* Overall MyNodeFun.moveNodes(): FAILED!"
+    else:
+        print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
