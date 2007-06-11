@@ -472,7 +472,7 @@ class NodeGroupWindow(USXBaseScreen):
     def F12Action(self):
         if myNodeInfo.quitPrompt:
             result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"), 
-                    (self.kusuApp._("yes_button"), self.kusuApp._("no_button")))
+                    (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
             if result == "no":
                 return NAV_NOTHING
             if result == "yes":
