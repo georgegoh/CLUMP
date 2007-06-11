@@ -23,6 +23,12 @@ source /opt/kusu/bin/kusuenv.sh
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
 
+# migrate stage2.img
+/usr/bin/cp /mnt/source/images/stage2.img $KUSU_TMP/stage2.img 
+python -c "import sys; sys.path.append('/usr/lib/anaconda'); \
+           import isys; isys.lochangefd('/tmp/loop0', '$KUSU_TMP/stage2.img')"
+/usr/bin/umount /mnt/source
+
 # launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/installer
 EXIT_CODE=$?

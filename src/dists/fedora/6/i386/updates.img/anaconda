@@ -23,6 +23,20 @@ source /opt/kusu/bin/kusuenv.sh
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
 
+# Migrate stage2.img 
+# Change file descriptor of loop0 to point to new stage2.img, 
+# similar to Anaconda, image.py
+#
+# We can't detach loop0 (losetup -d /tmp/loop0) because it is 
+# already been used by many libraries. 
+# 
+# umount -l /mnt/runtime and pointing /mnt/runtime to new stage2.img 
+# doesn't work. We are still unable to detach loop0. 
+/usr/bin/cp /mnt/source/images/stage2.img $KUSU_TMP/stage2.img 
+python -c "import sys; sys.path.append('/usr/lib/anaconda'); \
+           import isys; isys.lochangefd('/tmp/loop0', '$KUSU_TMP/stage2.img')"
+/usr/bin/umount /mnt/source
+
 # launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/installer
 EXIT_CODE=$?
