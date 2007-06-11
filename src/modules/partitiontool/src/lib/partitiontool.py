@@ -66,7 +66,7 @@ from kusu.util.errors import *
 logger = kusulog.getKusuLog('partitiontool')
 #from logging import *
 import logging
-#kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
+kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
 #kusulog.getKusuLog().handlers[1].addFilter(logging.Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
@@ -216,10 +216,10 @@ class DiskProfile(object):
 
     def __str__(self):
         from pprint import pformat
-        s = 'Disk Dictionary:\n' + pformat(self.disk_dict)
-        s = s + '\nPhysical Volume Dictionary:\n' + pformat(self.pv_dict)
-        s = s + '\nLogical Volume Group Dictionary:\n' + pformat(self.lvg_dict)
-        s = s + '\nLogical Volume Dictionary:\n' + pformat(self.lv_dict)
+        s = 'Disk Dictionary:\n' + pformat(self.disk_dict) + '\n'
+        s = s + '\nPhysical Volume Dictionary:\n' + pformat(self.pv_dict) + '\n'
+        s = s + '\nLogical Volume Group Dictionary:\n' + pformat(self.lvg_dict) + '\n'
+        s = s + '\nLogical Volume Dictionary:\n' + pformat(self.lv_dict) + '\n'
         s = s + '\nMountpoints:\n' + pformat(self.mountpoint_dict)
         return s
 
@@ -403,13 +403,18 @@ class DiskProfile(object):
 
     def editPartition(self, partition_obj, size_MB, fixed_size, fs_type, mountpoint):
         """Edit an existing partition."""
-        logger.debug('Edit partition')
+        logger.debug('Edit partition %s' % partition_obj.path)
+        if size_MB == partition_obj.size_MB and fs_type == partition_obj.fs_type:
+            partition_obj.mountpoint = mountpoint
+            return
+
         size = size_MB * 1024 * 1024
         backup_disk_id = basename(partition_obj.disk.path)
         backup_size = partition_obj.size
         backup_fs_type = partition_obj.fs_type
         backup_mountpoint = partition_obj.mountpoint
 
+        
         self.deletePartition(partition_obj, keep_in_place=True)
         logger.debug('Original partition deleted. Remaining partitions: ' + \
                      str(partition_obj.disk.partition_dict.keys()))

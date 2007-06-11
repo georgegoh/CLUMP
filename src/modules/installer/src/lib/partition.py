@@ -83,16 +83,16 @@ class PartitionScreen(InstallerScreen):
             if first_disk.partition_dict:
                 # tell user a schema exists and ask to proceed.
                 msg = 'The installer has detected that one of the disks  ' + \
-                      'is already partitioned. Do you want to edit the ' + \
-                      'partitions using the existing schema, or would ' + \
-                      'you like to use the default schema?'
+                      'is already partitioned. Do you want to use the ' + \
+                      'default schema, edit the existing schema, or ' + \
+                      'clear all partitions on the system?'
                 result = self.selector.popupDialogBox('Partitions exist',
                                                       msg,
                                              ['Use Default', 'Use Existing', 'Clear All Partitions'])
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
-                    schema = vanillaSchema()
+                    schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
                 elif str(result) == 'clear all partitions':
                     logger.debug('Clear all partitions')
@@ -100,7 +100,7 @@ class PartitionScreen(InstallerScreen):
             else:
                 # tell user nothing exists and ask to proceed.
                 msg = 'The installer has detected that no disk(s) ' + \
-                      'are already partitioned. Do you want to ' + \
+                      'on this system are partitioned. Do you want to ' + \
                       'use the default schema?'
                 result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
                                                       msg,
@@ -108,7 +108,7 @@ class PartitionScreen(InstallerScreen):
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(True)
-                    schema = vanillaSchema()
+                    schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
  
         # retrieve info about logical volumes and lv groups
@@ -155,7 +155,7 @@ class PartitionScreen(InstallerScreen):
                 self.listbox.addRow([part_devicename,
                                     str(partition.start_cylinder),
                                     str(partition.end_cylinder),
-                                    str(partition.size/(1024*1024)),
+                                    str(partition.size_MB),
                                     fs_type,
                                     mountpoint], partition)
 

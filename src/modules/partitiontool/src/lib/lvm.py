@@ -35,7 +35,7 @@ logger = getKusuLog('partitiontool.lvm')
 
 cmd_fifo = None
 
-def queueCommand(func, args):
+def queueCommand(func, args=None):
     global cmd_fifo
     if cmd_fifo == None:
         cmd_fifo = []
@@ -192,7 +192,7 @@ class LogicalVolumeGroup(object):
 
     def extentsUsed(self):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
-        extents = 0
+        extents = 1
         for lv in self.lv_dict.itervalues():
             extents = extents + lv.extents
         return extents
@@ -241,19 +241,33 @@ class LogicalVolumeGroup(object):
 
     def createLogicalVolume(self, name, size_MB, fs_type, mountpoint, fill=False):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
-        logger.info('Creating logical volume %s from volume group %s' % (name, self.name))
+        logger.info('Creating logical volume %s from volume group %s size %d' % (name, self.name, size_MB))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError, 'Logical volume already exists in Volume Group'
+
+        free_extents = self.extentsTotal() - self.extentsUsed()
         if fill:
-            freeExtents = self.extentsTotal() - self.extentsUsed()
-            freeSpace = freeExtents * self.extent_size
-            size_MB = freeSpace / 1024 / 1024
-        lv = LogicalVolume(name, self, size_MB, fs_type, mountpoint)
+            extents = free_extents
+        else:
+            extents_to_use = 1024.0 * 1024.0 * size_MB / self.extent_size
+            import math
+            if extents_to_use == free_extents:
+                extents = free_extents
+            elif free_extents > extents_to_use:
+                extents = int(math.ceil(extents_to_use))
+            else:
+                extents = int(math.floor(extents_to_use))
+
+        lv = LogicalVolume(name, self, extents, fs_type, mountpoint)
         self.lv_dict[name] = lv
-        size_str = str(size_MB) + 'M'
-        queueCommand(lvm.createLogicalVolume, (self.name, name, size_str))
+
+        queueCommand(lvm.createLogicalVolume, (self.name, name, extents))
         queueCommand(lvm.makeNodes, None)
         return lv
+
+    def logFreeExtents(self):
+        free = lvm.retrieveLVMEntityData('lvm vgdisplay %s' % self.name, 'Free  PE / Size')
+        logger.debug('LVM Free Extents: %s' % free)
 
     def delLogicalVolume(self, logicalVol):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
@@ -308,15 +322,14 @@ class LogicalVolume(object):
         queueCommand(lvm.removeLogicalVolume, (path))
     remove = staticmethod(remove)
 
-    def __init__(self, name, volumeGroup, size_MB, fs_type=None, mountpoint=None):
+    def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
-        size = size_MB * 1024 * 1024
-        newExtentsToAllocate = size / volumeGroup.extent_size
-        if newExtentsToAllocate > vg_extentsFree:
+        if extents > vg_extentsFree:
             raise InsufficientFreeSpaceInVolumeGroupError
+        self.size_MB = extents * volumeGroup.extent_size
         self.name = name
         self.group = volumeGroup
-        self.extents = newExtentsToAllocate
+        self.extents = extents
         self.fs_type = fs_type
         self.mountpoint = mountpoint
         self.on_disk = False
@@ -336,7 +349,7 @@ class LogicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk', 'leave_unchanged', 'do_not_format']:
+        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk', 'leave_unchanged', 'do_not_format', 'size_MB']:
             object.__setattr__(self, name, value)
         elif name == 'extents':
             object.__setattr__(self, name, long(value))

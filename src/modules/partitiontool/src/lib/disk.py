@@ -103,6 +103,8 @@ class Disk(object):
         try:
             constraint = self.pedDevice.constraint_any()
             if next_partition_type == 'PRIMARY':
+                logger.debug('Creating new primary partition size=%d, fs=%s, mntpt=%s' %
+                             (size, fs_type, mountpoint))
                 new_pedPartition = self.pedDisk.partition_new(partitionTypes['PRIMARY'],
                                                           fs_type,
                                                           start_sector,
@@ -110,6 +112,8 @@ class Disk(object):
 
             elif next_partition_type == 'EXTENDED':
                 # create and add extended partition to fill the rest of the disk.
+                logger.debug('Creating new extended partition size=%d, fs=%s, mntpt=%s' %
+                             (size, fs_type, mountpoint))
                 extended_pedPartition = self.pedDisk.partition_new(
                                             partitionTypes['EXTENDED'],
                                             None,
@@ -118,6 +122,8 @@ class Disk(object):
                 self.pedDisk.add_partition(extended_pedPartition, constraint)
                 self.__appendToPartitionDict(extended_pedPartition, None)
                 # create logical partition.
+                logger.debug('Creating new logical partition size=%d, fs=%s, mntpt=%s' %
+                             (size, fs_type, mountpoint))
                 new_pedPartition = self.pedDisk.partition_new(
                                         partitionTypes['LOGICAL'],
                                         fs_type,
@@ -126,6 +132,8 @@ class Disk(object):
 
             elif next_partition_type == 'LOGICAL':
                 # create logical partition.
+                logger.debug('Creating new logical partition size=%d, fs=%s, mntpt=%s' %
+                             (size, fs_type, mountpoint))
                 new_pedPartition = self.pedDisk.partition_new(
                                         partitionTypes['LOGICAL'],
                                         fs_type,

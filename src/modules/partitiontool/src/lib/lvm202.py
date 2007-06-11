@@ -24,18 +24,22 @@ def retrieveLVMEntityData(command, field):
                             stdin=display.stdout,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-    awk = subprocess.Popen("awk '{ print $3 }'",
-                           shell=True,
-                           stdin=grep.stdout,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-    result = awk.communicate()[0]
-    data_list = result.strip().split('\n')
+    result = grep.communicate()[0].split('\n')
+    data_list = []
+    for line in result:
+        data_list.append(getValue(line, field))
+
     while '' in data_list:
         data_list.remove('')
+
     logger.debug('Data list from %s: %s' % (command, data_list))
     return data_list
 
+def getValue(line, field):
+    i = line.find(field)
+    i = i + len(field)
+    value = line[i:].strip()
+    return value
 
 def retrievePhysicalVolumePaths():
     return retrieveLVMEntityData('lvm pvdisplay', 'PV Name')
@@ -161,8 +165,8 @@ def activateAllVolumeGroups():
     out, err = runCommand('lvm vgchange -a y')
     return (out, err)
 
-def createLogicalVolume(vg_name, lv_name, lv_size):
-    out, err = runCommand('lvm lvcreate -L%s -n%s %s' % (lv_size, lv_name, vg_name))
+def createLogicalVolume(vg_name, lv_name, lv_extents):
+    out, err = runCommand('lvm lvcreate -l%d -n%s %s' % (lv_extents, lv_name, vg_name))
     return (out, err)
 
 def extendLogicalVolume(lv_path, size_str, fs_type):
