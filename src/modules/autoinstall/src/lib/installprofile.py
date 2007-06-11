@@ -23,7 +23,8 @@ class BaseInstall:
                      'installsrc': None,
                      'lang': None,
                      'dbs': None,
-                     'prefix': None}
+                     'prefix': None, 
+                     'keyboard': None}
 
     def __init__(self, db, ngname, prefix=None):
         """prefix for the root directory"""
@@ -72,9 +73,6 @@ class BaseInstall:
 class Kickstart(BaseInstall):
     def __init__(self, db, prefix=None):
         BaseInstall.__init__(self, db, prefix)
-
-        for k in ['keyboard']:
-            self.getattr_dict[k] = None
         
         self.packageprofile.append('@Base')
  
