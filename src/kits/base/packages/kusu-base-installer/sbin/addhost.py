@@ -285,7 +285,7 @@ class AddHostApp(KusuApp):
 
                  # Handle removing node from db.
                  myNode.deleteNode(delnode)
-                 pluginActions.plugins_finished()
+            pluginActions.plugins_finished()
             sys.exit(0)
 
         elif self._options.remove == []:
