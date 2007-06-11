@@ -20,6 +20,7 @@
 # Author: Shawn Starr <sstarr@platform.com>
 
 import os
+import tempfile
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
@@ -29,12 +30,16 @@ from kusu.ui.text.USXnavigator import *
 from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
+from kusu.nodefun import NodeFun
 
 global database
 global kusuApp
 database = KusuDB()
 kusuApp = KusuApp()
         
+NOCANCEL    = 0
+ALLOWCANCEL = 1
+
 class NodeMemberApp(object, KusuApp):
 
     def __init__(self):
@@ -70,6 +75,7 @@ class NodeMemberApp(object, KusuApp):
         self.parser.add_option("-n", "--copy-hosts", action="callback",
                                 callback=self.varargs, dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
         self.parser.add_option("-r", "--reinstall", action="store_true", dest="reinstall", help=kusuApp._("nghosts_reinstall_usage"))
+        self.parser.add_option("-a", "--rack", type="int", action="store", dest="racknumber", help=kusuApp._("nghosts_rack_usage"))
 
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
@@ -99,6 +105,15 @@ class NodeMemberApp(object, KusuApp):
                 self._options.reinstall = False
         else:
                 self._options.reinstall = True
+        
+        # Handle -r option
+        if self._options.racknumber:
+            result = int(self._options.racknumber)
+            if result < 0:
+                print "Error: Cannot specify negative rack number"
+                sys.exit(-1)
+            else:
+                print "Rack Number is: %s" % self._options.racknumber
                     
         # Handle -l option
         if self._options.allnodegroups:
@@ -163,16 +178,52 @@ class SelectNodeWindow(USXBaseScreen):
         self.nodeGroupNames = []
     
     def nextAction(self):
-        # Check if:
-            # 1) The nodes selected are being added BACK to the same node group. In which case, we should just ignore those nodes.name
-        
-        for nodeGroup in self.nodeGroupNames:
-            for node in self.nodegroupDict[nodeGroup]:
-                if node in self.nodeCheckbox.getSelection():
-                    if nodeGroup == self.nodegroupRadio.getSelection():
-                        self.selector.popupStatus(self.kusuApp._("Error!"), "You are trying to move node %s to the same node group!" % node, 3)
+        flag = 1
+        rack = 0
+        nodeRecord = NodeFun()
+        nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
+        nodeRecord.getNodeFormat()
+        # Check if the selected node format has a rack if so, prompt for it.
+        if nodeRecord.isNodenameHasRack():
+            # Prompt user for Rack            
+            while flag:
+                buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
+                self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
+                NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
+                try:
+                    result = int(result[0])
+                    if result < 0:
+                        self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                        self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                        flag = 1
                     else:
-                        self.selector.popupStatus(self.kusuApp._("Debug Window"), "Node Group: %s Node: %s" % (nodeGroup, node), 2)
+                        rack = result
+                        flag = 0
+                except:
+                    self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                    self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                    flag = 1
+
+        moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
+           
+        # Create Temp file
+        (fd, tmpfile) = tempfile.mkstemp()
+        tmpname = os.fdopen(fd, 'w')
+        for node in moveList:
+           tmpname.write("%s %s\n" % (macList[node], node))
+        tmpname.close()
+
+       # for nodeGroup in self.nodeGroupNames:
+       #     for node in self.nodegroupDict[nodeGroup]:
+       #         if node in self.nodeCheckbox.getSelection():
+       #             if not nodeGroup == self.nodegroupRadio.getSelection():
+       #                 
+       #                 if nodeRecord.compareNodeFormat(nodeGroup, self.nodegroupRadio.getSelection()):
+       #                     self.selector.popupStatus(self.kusuApp._("Direct Move, No format difference"), "Moving Node %s" % node, 3)
+       #                     #nodeRecord.moveNodeToNodegroup(node, self.nodegroupRadio.getSelection())
+       #                 else:
+       #                     self.selector.popupStatus(self.kusuApp._("Format has changed, reassign node name"), "Old Name: %s, New Name: %s" %  \
+       #                     (node, nodeRecord.findNextAvailableNode(self.nodegroupRadio.getSelection(), rack)), 4)
         return NAV_FORWARD
         
     def previousButton(self):
