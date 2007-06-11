@@ -78,7 +78,7 @@ def translatePartitionOptions(niipartition, opt=None):
     li = niipartition[partnum]['options'].split(';')
     opts_dict = {}
     for l in li:
-        if l.split('=') > 1:
+        if len(l.split('=')) > 1:
             opts_dict[l] = l.split('=')[1]
         else:
             opts_dict[l] = None

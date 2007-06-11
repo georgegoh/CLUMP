@@ -41,7 +41,7 @@ Node: node0000
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options=""/>
     <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" preserve="0"/>
     <partition device="2" mntpnt="None" fstype="linux-swap" size="1000" options="None" preserve="0"/>
-    <partition device="3" mntpnt="/" fstype="ext3" size="6000" options="fillAvailableSpace" preserve="0"/>
+    <partition device="3" mntpnt="/" fstype="ext3" size="6000" options="fill" preserve="0"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
