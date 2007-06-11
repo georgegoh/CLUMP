@@ -54,9 +54,6 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/kusu
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
-	mkdir -p $(ROOT)/opt/kusu/lib/plugins/addhost 
-	mkdir -p $(ROOT)/opt/kusu/lib/plugins/genconfig
-	mkdir -p $(ROOT)/opt/kusu/lib/plugins/ngedit
 	mkdir -p $(ROOT)/opt/kusu/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
@@ -89,21 +86,6 @@ install::
 	install -m644 lib/kusu/ui/text/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/kusu/ui/text/USXnavigator.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/kusu/ui/text/USXscreenfactory.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
-	install -m644 lib/plugins/genconfig/__init__.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/apache_conf.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/debug.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/dhcpd.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/hosts.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/named.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/nodes.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/reverse.py $(ROOT)/opt/kusu/lib/plugins/genconfig
-	install -m644 lib/plugins/genconfig/zone.py $(ROOT)/opt/kusu/lib/plugins/genconfig	
-	install	-m644 lib/plugins/addhost/00-boothost.py $(ROOT)/opt/kusu/lib/plugins/addhost
-	install	-m644 lib/plugins/addhost/01-hosts.py $(ROOT)/opt/kusu/lib/plugins/addhost
-	install	-m644 lib/plugins/addhost/02-dnsreverse.py $(ROOT)/opt/kusu/lib/plugins/addhost
-	install	-m644 lib/plugins/addhost/03-dnszone.py $(ROOT)/opt/kusu/lib/plugins/addhost
-	install	-m644 lib/plugins/addhost/04-dhcp.py $(ROOT)/opt/kusu/lib/plugins/addhost
-	install -m644 lib/plugins/ngedit/__init__.py $(ROOT)/opt/kusu/lib/plugins/ngedit
 	install -m644 sql/kusu_createdb.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_dbperms.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_alterdb.sql $(ROOT)/opt/kusu/sql

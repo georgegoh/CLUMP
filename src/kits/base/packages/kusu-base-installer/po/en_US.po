@@ -545,3 +545,6 @@ msgstr "Specify a list of nodes to move"
 
 msgid "nghosts_instruction_select_node"
 msgstr "Select node(s) from a node group to move to a new node group."
+
+msgid "Node Group Editor"
+msgstr "Node Group Editor"
