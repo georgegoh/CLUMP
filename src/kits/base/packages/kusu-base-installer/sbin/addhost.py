@@ -215,23 +215,26 @@ class AddHostApp(KusuApp):
                 self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
             if haveNodegroup and not self._options.rack:
-                checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-                checkHost.getNodeFormat()
-                flag = 1
-                if checkHost.isNodenameHasRack() and haveInterface:
-                  while flag:
-                      response = raw_input(kusuApp._("addhost_textprompt_rack"))
-                      try:
-                          result = int(response)
-                          if result < 0:
-                             print kusuApp._("Error: Cannot specify a negative number. Please try again")
-                             flag = 1
-                          else:
-                             myNodeInfo.nodeRackNumber = result
-                             flag = 0
-                      except:
-                          print kusuApp._("Error: The value %s is not a number. Please try again" % response)
-                          flag = 1
+                if self._options.rack == 0:
+                    myNodeInfo.nodeRackNumber = self._options.rack
+                else:
+                    checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+                    checkHost.getNodeFormat()
+                    flag = 1
+                    if checkHost.isNodenameHasRack() and haveInterface:
+                         while flag:
+                            response = raw_input(kusuApp._("addhost_textprompt_rack"))
+                            try:
+                               result = int(response)
+                               if result < 0:
+                                  print kusuApp._("Error: Cannot specify a negative number. Please try again")
+                                  flag = 1
+                               else:
+                                  myNodeInfo.nodeRackNumber = result
+                                  flag = 0
+                            except:
+                               print kusuApp._("Error: The value %s is not a number. Please try again" % response)
+                               flag = 1
               
             # Read in list of mac addresses
             macfileList = open(self._options.macfile,'r').readlines()
@@ -303,23 +306,26 @@ class AddHostApp(KusuApp):
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
         if haveNodegroup and not self._options.rack and not self._options.macfile:
-            checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-            checkHost.getNodeFormat()
-            flag = 1
-            if checkHost.isNodenameHasRack() and haveInterface:
-                while flag:
-                   response = raw_input(kusuApp._("addhost_textprompt_rack"))
-                   try:
-                       result = int(response)
-                       if result < 0:
-                          print kusuApp._("Error: Cannot specify a negative number. Please try again.")
+            if self._options.rack == 0:
+               myNodeInfo.nodeRackNumber = self._options.rack
+            else:
+               checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
+               checkHost.getNodeFormat()
+               flag = 1
+               if checkHost.isNodenameHasRack() and haveInterface:
+                   while flag:
+                      response = raw_input(kusuApp._("addhost_textprompt_rack"))
+                      try:
+                          result = int(response)
+                          if result < 0:
+                             print kusuApp._("Error: Cannot specify a negative number. Please try again.")
+                             flag = 1
+                          else:
+                             myNodeInfo.nodeRackNumber = result
+                             flag = 0
+                      except:
+                          print kusuApp._("Error: The value %s is not a number. Please try again" % response)
                           flag = 1
-                       else:
-                          myNodeInfo.nodeRackNumber = result
-                          flag = 0
-                   except:
-                       print kusuApp._("Error: The value %s is not a number. Please try again" % response)
-                       flag = 1
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
         if (haveNodegroup and self._options.rack):
