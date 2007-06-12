@@ -9,6 +9,8 @@
 
 import snack
 from gettext import gettext as _
+import kusu.core.database as db
+from kusu.util import profile
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
@@ -16,12 +18,16 @@ from screen import InstallerScreen
 
 kl = kusulog.getKusuLog('installer.keyboard')
 
-class KeyboardSelectionScreen(InstallerScreen):
+class KeyboardSelectionScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for keyboard."""
     name = _('Keyboard')
     profile = 'Keyboard'
     msg = _('Please choose your keyboard:')
     buttons = []
+
+    def __init__(self, kiprofile):
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
+        profile.PersistentProfile.__init__(self, kiprofile)        
 
     def setCallbacks(self):
         """
@@ -73,6 +79,13 @@ class KeyboardSelectionScreen(InstallerScreen):
         if obj is self.listbox:
             return True
         return False
+
+    def save(self, database, profile):
+        s = database.createSession()
+        newag = db.AppGlobals(kname=self.profile, kvalue=profile)
+        s.save(newag)
+        s.flush()
+        s.close()
 
 # The following is data taken from the rhpl package 'keyboard_models.py',
 # which is licensed under GPL v2.

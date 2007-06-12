@@ -10,6 +10,8 @@
 
 import snack
 from gettext import gettext as _
+import kusu.core.database as db
+from kusu.util import profile
 from path import path
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
@@ -23,13 +25,25 @@ except:
 
 kl = kusulog.getKusuLog('installer.kits')
 
-class TZSelectionScreen(InstallerScreen):
+class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for timezone."""
     name = _('Time Zone')
     profile = 'Timezone'
     msg = _('Please choose your time zone:')
     buttons = []
     tz_dict = {} # key=Location, value=[CC, Lat-long, Comments]
+
+    def __init__(self, kiprofile):
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
+        profile.PersistentProfile.__init__(self, kiprofile)        
+
+    def setCallbacks(self):
+        """
+        
+        Implementation of the setCallbacks interface defined in parent class
+        screenfactory.BaseScreen. Initialise button callbacks here.
+        
+        """
 
     def setCallbacks(self):
         """
@@ -121,3 +135,16 @@ class TZSelectionScreen(InstallerScreen):
             return True
         return False
 
+    def save(self, database, profile):
+        s = database.createSession()
+        newag_zone = db.AppGlobals(kname=self.profile + '_zone',
+                                   kvalue=profile['zone'])
+        newag_utc = db.AppGlobals(kname=self.profile + '_utc',
+                                  kvalue=profile['utc'])
+        newag_ntp = db.AppGlobals(kname=self.profile + '_ntp_server',
+                                  kvalue=profile['ntp_server'])
+        s.save(newag_zone)
+        s.save(newag_utc)
+        s.save(newag_ntp)
+        s.flush()
+        s.close()

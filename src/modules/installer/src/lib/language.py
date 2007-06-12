@@ -11,6 +11,8 @@ import os
 import snack
 import gettext
 from gettext import gettext as _
+import kusu.core.database as db
+from kusu.util import profile
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
@@ -18,12 +20,16 @@ from screen import InstallerScreen
 
 kl = kusulog.getKusuLog('installer.language')
 
-class LanguageSelectionScreen(InstallerScreen):
+class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for language."""
     name = _('Language')
     profile = 'Language'
     msg = _('Please choose your language for installation:')
     buttons = []
+
+    def __init__(self, kiprofile):
+        InstallerScreen.__init__(self, kiprofile=kiprofile)
+        profile.PersistentProfile.__init__(self, kiprofile)        
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 2)
@@ -101,4 +107,9 @@ class LanguageSelectionScreen(InstallerScreen):
             return True
         return False
 
-
+    def save(self, database, profile):
+        s = database.createSession()
+        newag = db.AppGlobals(kname=self.profile, kvalue=profile)
+        s.save(newag)
+        s.flush()
+        s.close()
