@@ -119,6 +119,10 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             prog_dlg = baseScreen.selector.popupProgress('Adding kit', 'Adding a Kit...')
             kit_add_failed = kitops.addKit()
             prog_dlg.close()
+        except NoKitsFoundError, e:
+            prog_dlg.close()
+            baseScreen.selector.popupMsg('Kit Error', e.args[0])
+            kit_add_failed = False
         except KitAlreadyInstalledError:
             prog_dlg.close()
             baseScreen.selector.popupMsg('Kit Is Already Installed',
