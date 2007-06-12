@@ -193,8 +193,7 @@ Node: node0000
         except ImportError:
             raise SkipTest
         warnings.filterwarnings('error')
-        #ksfile = self.tmpdir / 'ks.cfg'
-        ksfile = '/tmp/ks.cfg'
+        ksfile = self.tmpdir / 'ks.cfg'
         ni = NodeInstaller(self.niisource)
         ni.setup(ksfile)
         ksdata = KickstartData()
