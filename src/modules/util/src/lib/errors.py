@@ -113,5 +113,6 @@ class FailedBuildMake(KusuError): pass
 
 # nodeinstaller
 class EmptyNIISource(KusuError): pass
+class InvalidPartitionSchema(KusuError): pass
 
 

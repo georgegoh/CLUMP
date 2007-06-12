@@ -141,6 +141,7 @@ CREATE TABLE packages (
 CREATE TABLE partitions (
   idpartitions INTEGER UNSIGNED NOT NULL,
   ngid INTEGER UNSIGNED NOT NULL,
+  device VARCHAR(255) NULL,
   partition VARCHAR(255) NULL,
   mntpnt VARCHAR(255) NULL,
   fstype VARCHAR(20) NULL,

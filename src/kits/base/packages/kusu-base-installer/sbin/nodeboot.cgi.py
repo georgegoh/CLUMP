@@ -91,7 +91,7 @@ class NodeInfo:
             print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s"></nicinfo>' % (dev, ip, subnet, network, suffix, gw, dhcp, opt)
 
         # Partition Info
-        query = ('select partition, mntpnt, fstype, size, options, preserve '
+        query = ('select device, partition, mntpnt, fstype, size, options, preserve '
                  'from partitions where ngid="%i"' % ngid )
         try:
             self.db.execute(query)
@@ -102,8 +102,8 @@ class NodeInfo:
             sys.exit(-1)
         if data:
             for row in data:
-                partition, mntpnt, fstype, size, options, preserve = row
-                print '    <partition device="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (partition, mntpnt, fstype, size, options, preserve)
+                device, partition, mntpnt, fstype, size, options, preserve = row
+                print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device, partition, mntpnt, fstype, size, options, preserve)
 
         # Component Info
         query = ('select components.cname from components, ng_has_comp '

@@ -201,12 +201,13 @@ app.log("nodegrpid   = %s\n" % niihandler.nodegrpid)
 
 for i in niihandler.partitions.keys():
     app.log("------------------------------ Partitions: Key = %s\n" % i)
-    app.log("        Device   = %s\n" % (niihandler.partitions[i]['device']))
-    app.log("        Mntpnt   = %s\n" % (niihandler.partitions[i]['mntpnt']))
-    app.log("        fstype   = %s\n" % (niihandler.partitions[i]['fstype']))
-    app.log("        size     = %s\n" % (niihandler.partitions[i]['size']))
-    app.log("        options  = %s\n" % (niihandler.partitions[i]['options']))
-    app.log("        preserve = %s\n" % (niihandler.partitions[i]['preserve']))
+    app.log("        Device    = %s\n" % (niihandler.partitions[i]['device']))
+    app.log("        Partition = %s\n" % (niihandler.partitions[i]['partition']))    
+    app.log("        Mntpnt    = %s\n" % (niihandler.partitions[i]['mntpnt']))
+    app.log("        fstype    = %s\n" % (niihandler.partitions[i]['fstype']))
+    app.log("        size      = %s\n" % (niihandler.partitions[i]['size']))
+    app.log("        options   = %s\n" % (niihandler.partitions[i]['options']))
+    app.log("        preserve  = %s\n" % (niihandler.partitions[i]['preserve']))
     
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)

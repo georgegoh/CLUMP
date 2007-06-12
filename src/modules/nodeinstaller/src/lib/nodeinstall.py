@@ -10,7 +10,7 @@ from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, NotPriviledgedUser
+from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
 import urllib2
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
@@ -32,6 +32,21 @@ def translateBoolean(value):
     except ValueError:
         return False
         
+def translatePartitionNumber(value):
+    """ Translate NII partition number which is a string into
+        partitiontool partition number which is an integer
+    """
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+    
+def translatePartitionSize(value):
+    """ Translate NII partition size which is a string into
+        partitiontool partition size which is an integer
+    """
+    return int(value)
+        
 
 def translateFSTypes(fstype):
     """ Translates fstype to something partitiontool can understand. Right now
@@ -42,10 +57,12 @@ def translateFSTypes(fstype):
         return 'linux-swap'
     else:
         return fstype
-
-def translatePartitionOptions(niipartition, opt=None):
-    """ Translate niipartition to something that the 
-        partitiontool's schema expects.
+        
+def translatePartitionOptions(options, opt):
+    """ Translate the options line for the opt value. This method returns
+        a tuple (x,y). The first tuple element is a boolean, True if the 
+        opt value exists, False if otherwise. The second element is data 
+        that is specific to the opt value.
 
         PARTITION_OPTIONS = [ 'fill', 'pv', 'vg', 'lv', 'label', 
                             'preserve', 'extent']
@@ -56,7 +73,7 @@ def translatePartitionOptions(niipartition, opt=None):
         An example partitionopts line for a LVM Volume Group can be defined
         as follows, note that the name of the Volume Group should be defined
         in the device column in the partitions table:
-            vg;example=32M
+            vg;extent=32M
 
         An example partitionopts for a LVM Logical Volume can be defined 
         as follows, it needs to belong to a Volume Group, note that the name 
@@ -67,97 +84,154 @@ def translatePartitionOptions(niipartition, opt=None):
         An example partitionopts for a LVM Physical Volume can be defined 
         as follows, note that the name  of the Volume Group will be matched 
         against the device name of an existing Volume Group definition:
-            pv;vg=VolGroup00
-
-
+            pv;vg=VolGroup00    
     """
-    PARTITION_OPTIONS = [ 'fill', 'pv', 'vg', 'lv', 'label', 
-                        'preserve', 'extent']
-
-    logger.debug('Translating niipartition: %r' % niipartition)
-    if opt: logger.debug('Looking for %r' % opt)
-
-    partnum = niipartition.keys()[0]
-    device = niipartition[partnum]['device']
-    # is this a disk number?
-    try:
-        disknum = int(device)
-    except ValueError:
-        disknum = None
-    mountpoint = niipartition[partnum]['mntpnt']
-
-    # set up the disk_dict if this has a disknum if no opt is provided
-    if not opt and disknum:
-        d = {'size_MB' : niipartition[partnum]['size'],
-            'fs' : translateFSTypes(niipartition[partnum]['fstype']),
-            'mountpoint' : niipartition[partnum]['mntpnt'],
-            'fill' : translatePartitionOptions(niipartition,'fill') or False}
-        return {disknum:{partnum:d}}        
-
-
-    # convert niipartition options into a dict
-    logger.debug('Converting niipartition options into dict')
-    options = niipartition[partnum]['options']
-    if options:
-        li = niipartition[partnum]['options'].split(';')
-        logger.debug('niipartition options list : %r' % li)
-        opts_dict = {}
-        for l in li:
-            if l == 'None': continue
-            logger.debug('Converting option : %r' % l)
-            if len(l.split('=')) > 1:
-                opts_dict[l] = l.split('=')[:-1]
-            else:
-                opts_dict[l] = {}
-        logger.debug('opts_dict : %r' % opts_dict)
-
-    # Volume Group definition
-    if opt == 'vg':
-        vg = {}
-        vg[device]['extent_size'] = translatePartitionOptions(niipartition,'extent')
-        vg[device]['pv_dict'] = translatePartitionOptions(niipartition,'pv')
-        vg[device]['lv_dict'] = translatePartitionOptions(niipartition,'lv')
-        return {device:vg}
-
-    if opt == 'pv':
-        try:
-            # a device can be a disk number
-            devname = int(device)
-        except ValueError:
-            # or a pvname/vgname
-            devname = device
-        return {'disk':devname,'partition':partnum}
-
-    if opt == 'lv':
-        d = {'size_MB' : niipartition[partnum]['size'],
-            'fs' : translateFSTypes(niipartition[partnum]['fstype']),
-            'mountpoint' : niipartition[partnum]['mntpnt'],
-            'fill' : translatePartitionOptions(niipartition,'fill') or False}
-        if d['mountpoint'] == '/':
-            return {'ROOT':d}
-        else:
-            lvroot = d['mountpoint'][1:].upper()
-            return {lvroot:d}
+    optionlist = options.split(';')
+    opt_dict = {}
+    if optionlist:
+        for i in optionlist:
+            try:
+                opt_dict[i.split('=')[0]] = i.split('=')[1]
+            except IndexError:
+                opt_dict[i.split('=')[0]] = None
 
     # fill
-    if opt == 'fill':
-        return True
-    else:
-        return False
+    if opt == 'fill' and opt not in opt_dict.keys():
+        return (False,None)
+        
+    if opt == 'fill' and opt in opt_dict.keys():
+        return (True,None)
 
     # preserve
-    if opt == 'preserve':
-        return True
+    if opt == 'preserve' and opt not in opt_dict.keys():
+        return (False,None)
 
-    # label
-    if opt == 'label':
-        return opts_dict[opt]
-
+    if opt == 'preserve' and opt in opt_dict.keys():
+        return (True,None)
+        
     # extent
-    if opt == 'extent':
-        return opts_dict[opt]
+    if opt == 'extent' and opt not in opt_dict.keys():
+        return (False,None)
+        
+    if opt == 'extent' and opt in opt_dict.keys():
+        return (True,opt_dict[opt])
+        
+    # label
+    if opt == 'label' and opt not in opt_dict.keys():
+        return (False,None)
+
+    if opt == 'label' and opt in opt_dict.keys():
+        return (True,opt_dict[opt])
+        
+    # vg
+    if opt == 'vg' and 'extent' not in opt_dict.keys():
+        return (False,None)
+
+    if opt == 'vg' and 'extent' in opt_dict.keys():
+        return (True,opt_dict['extent'])
+        
+    # pv
+    if opt == 'pv' and 'vg' not in opt_dict.keys():
+        return (False,None)
+        
+    if opt == 'pv' and 'vg' in opt_dict.keys():
+        return (True,opt_dict['vg'])
+        
+    # lv
+    if opt == 'lv' and 'vg' not in opt_dict.keys():
+        return (False,None)
+
+    if opt == 'lv' and 'vg' in opt_dict.keys():
+        return (True,opt_dict['vg'])
 
 
+
+def adaptNIIPartition(niipartition):
+    """ Adapt niipartition into a partitiontool schema. This schema can
+        be passed along with a partitiontool diskprofile to setupDiskProfile
+        method.
+
+    """
+
+    schema = {'disk_dict':{},'vg_dict':{}}
+    disk_dict = {}
+    partition_dict = {}
+    vg_dict = {}
+    vg_extent_size = ''
+    vgname = None
+    pv_dict = {}
+    lv_dict = {}
+    for partnum, partinfo in niipartition.items():
+        # check device
+        try:
+            disknum = int(partinfo['device'])
+        except ValueError:
+            disknum = 0
+        # handling physical partitioning
+        if disknum:
+            try:
+                size = translatePartitionSize(partinfo['size'])
+                fs = translateFSTypes(partinfo['fstype'])
+                mountpoint = partinfo['mntpnt']
+                fill = translatePartitionOptions(partinfo['options'],'fill')[0]
+
+                # also check if this is a physical volume
+                pv = translatePartitionOptions(partinfo['options'],'pv')
+                partition = translatePartitionNumber(partinfo['partition'])
+                if pv[0] and partition > 0:
+                    pv_dict.update({disknum:{'disk':disknum,
+                                            'partition':partition}})
+                disk_part_dict = {'size_MB':size,'fs':fs,
+                                'mountpoint':mountpoint,'fill' : fill}
+            except ValueError:
+                raise InvalidPartitionSchema
+                
+            partition_dict.update({partition:disk_part_dict})
+            disk_dict.update({disknum:{'partition_dict':partition_dict}})
+            schema['disk_dict'].update(disk_dict)
+        else:
+            # handle LVM
+            try:
+                # FIXME: we are only supporting a single volume group for now!
+                if partinfo['device']: vgname = partinfo['device']
+                size = translatePartitionSize(partinfo['size'])
+                fs = translateFSTypes(partinfo['fstype'])
+                mountpoint = partinfo['mntpnt']
+                fill = translatePartitionOptions(partinfo['options'],'fill')[0]
+                
+                # is this a volume group?
+                vg = translatePartitionOptions(partinfo['options'],'vg')
+                if vg[0]:
+                    # get the extent size
+                    vg_extent_size = vg[1]
+                    vg_dict.update({vgname:{'pv_dict':pv_dict,
+                                        'lv_dict':lv_dict,
+                                        'extent_size':vg_extent_size}})
+                                    
+                # or it could be a logical volume
+                lv = translatePartitionOptions(partinfo['options'],'lv')
+                if lv[0]:
+                    # please ensure that the vgname defined here corresponds to the devname!
+                    size = translatePartitionSize(partinfo['size'])
+                    fs = translateFSTypes(partinfo['fstype'])
+                    mountpoint = partinfo['mntpnt']
+                    if mountpoint == '/':
+                        lvroot = 'ROOT'
+                    else:
+                        lvroot = mountpoint[1:].upper()
+                    fill = translatePartitionOptions(partinfo['options'],'fill')[0]                
+                
+                    disk_part_dict = {'size_MB':size,'fs':fs,
+                                    'mountpoint':mountpoint,'fill' : fill}
+                    if lvroot: lv_dict.update({lvroot:disk_part_dict})
+                    vg_dict.update({vgname:{'pv_dict':pv_dict,
+                                        'lv_dict':lv_dict,
+                                        'extent_size':vg_extent_size}})
+            except ValueError:
+                raise InvalidPartitionSchema
+            
+            schema['vg_dict'].update(vg_dict)
+    return schema
 
 
 def retrieveNII(niihost, node):
@@ -192,14 +266,17 @@ class KickstartFromNIIProfile(object):
     def __init__(self):
         """ ni is an instance of the NodeInstaller class. """
         super(KickstartFromNIIProfile, self).__init__()
-                      
-        self.packageprofile.append('@Base')
+        
+        if '@Base' not in self.packageprofile: self.packageprofile.append('@Base')
         
     def prepareKickstartSiteProfile(self,ni):
         """ Reads in the NII instance and fills up the site-specific
             profile.
         """
-        self.rootpw = ni.appglobal['RootPassword']
+        
+        # rootpw should be a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
+        # FIXME: for now, we hardcode it to 'system'. Please fix this!
+        self.rootpw = 'system'
         self.tz = ni.appglobal['TimeZone']
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
@@ -221,12 +298,17 @@ class KickstartFromNIIProfile(object):
             logger.debug('ni.nics[%s]["subnet"]: %s' % (nic,ni.nics[nic]['subnet']))            
             nicinfo = {'configure': True,
                     'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
-                    'hostname': ni.name + ni.nics[nic]['suffix'],
                     'ip_address': ni.nics[nic]['ip'],
                     'netmask': ni.nics[nic]['subnet'],
-                    'active_on_boot': True}
+                    'active_on_boot': True, # FIXME: this needs to be figured out from somewhere!
+                    }
                     
             nw['interfaces'][nic] = nicinfo
+            nw['default_gw'] = ''
+            nw['dns1'] = ''
+            nw['gw_dns_use_dhcp'] = True # FIXME: this needs to be figured out from somewhere!
+            nw['fqhn_use_dhcp'] = False # FIXME: this needs to be figured out from somewhere!
+            nw['fqhn'] = ni.name + ni.nics[nic]['suffix'] # FIXME: suffix may be empty and there may be multiple fqhn with same names!
         logger.debug('network profile constructed: %r' % nw)
         
         self.networkprofile = nw
@@ -236,57 +318,29 @@ class KickstartFromNIIProfile(object):
 
         logger.debug('Preparing disk profile')
         
-        # create disk_dict structure
-        disks = []
-        partitionlist = []
-        for k,v in ni.partitions.items():
-            try:
-                # we only want the physical disks
-                d = int(v['device'])
-                if d not in disks:  
-                    disks.append({d:{'partition_dict':{}}})
-            except ValueError:
-                    pass
-            partitionlist.append({k:v})
-                    
-        logger.debug('disks structure : %r' % disks)
-           
-        # create schema structure
-        schema = {'disk_dict':{},'vg_dict':{}}
-
-        # handle the physical disks
-        for p in partitionlist:
-            # get the schema from the partitionline
-            d = translatePartitionOptions(p)
-            if d:
-                for disknum, part_dict in d.items():
-                    if disknum in disks:
-                        for partnum,v in part_dict.items():
-                            disks[disknum]['partition_dict'][partnum] = v
-                    
-        
-        # handle LVM
-        vg = {}
-        for p in partitionlist:
-            d = translatePartitionOptions(p,'vg')
-            if d: vg.update(d)
-            
-        schema['disk_dict'] = disks
-        schema['vg_dict'] = vg
-        
-        logger.debug('diskprofile schema : %r' % schema)
-        print 'schema : %r' % schema
-        if testmode:
-            self.diskprofile = DiskProfile(True,diskimg)
-        else:
-            self.diskprofile = DiskProfile(True)        
-        setupDiskProfile(self.diskprofile, schema)
-
-        
+        try:
+            # adapt the NII into a schema
+            logger.debug('Adapting ni.partitions: %r' % ni.partitions)
+            schema = adaptNIIPartition(ni.partitions)
+            logger.debug('Adapted schema from the ni.partitions: %r' % schema)
+            if testmode:
+                self.diskprofile = DiskProfile(True,diskimg)
+            else:
+                self.diskprofile = DiskProfile(True)
+            logger.debug('Calling setupDiskProfile to apply schema to the diskprofile..')    
+            setupDiskProfile(self.diskprofile, schema)
+        except InvalidPartitionSchema, e:
+            logger.debug('Invalid partition schema! schema: %r' % schema)
+            raise e
+       
     def prepareKickstartPackageProfile(self,ni):
         """ Reads in the NII instance and fills up the packageprofile. """
         
-        self.packageprofile = ni.packages
+        logger.debug('Preparing package profile')
+        for p in ni.packages:
+            logger.debug('Adding package %s to packageprofile..' % p)
+            if p not in self.packageprofile:
+                self.packageprofile.append(p)
        
     def _makeRootPw(self, rootpw):
         import md5crypt
@@ -419,11 +473,12 @@ class NodeInstaller(object):
         """
         self.parseNII()
         self.autoinstallfile = autoinstallfile
-        self.ksprofile = KickstartFromNIIProfile(self)
-        self.ksprofile.prepareKickstartSiteProfile()
-        self.ksprofile.prepareKickstartNetworkProfile()
-        self.ksprofile.prepareKickstartDiskProfile()
-        self.ksprofile.prepareKickstartPackageProfile()
+        self.ksprofile = KickstartFromNIIProfile()
+        self.ksprofile.prepareKickstartSiteProfile(self)
+        self.ksprofile.prepareKickstartNetworkProfile(self)
+        self.ksprofile.prepareKickstartDiskProfile(self)
+        self.ksprofile.prepareKickstartPackageProfile(self)
+        self.generateAutoinstall()
         
     def generateAutoinstall(self):
         """ Generates a distro-specific autoinstallation configuration file.
@@ -431,7 +486,7 @@ class NodeInstaller(object):
             distro-specific!
         """
         autoscript = Script(KickstartFactory(self.ksprofile))
-        autoscript.write(autoscript)
+        autoscript.write(self.autoinstallfile)
         
     def commit(self):
         """ This starts the automatic provisioning """
@@ -439,7 +494,7 @@ class NodeInstaller(object):
         logger.debug('Committing changes and formatting disk..')
         self.diskprofile.commit()
         self.diskprofile.format()
-        self.generateAutoinstall()
+
     
 
 

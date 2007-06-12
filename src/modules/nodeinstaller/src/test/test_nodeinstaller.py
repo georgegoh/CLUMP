@@ -9,13 +9,16 @@
 # package for the full test run.
 #
 
-from kusu.nodeinstaller import NodeInstaller, KickstartFromNIIProfile
+from kusu.nodeinstaller import NodeInstaller, KickstartFromNIIProfile, adaptNIIPartition, translatePartitionOptions
 from cStringIO import StringIO
 from nose import SkipTest
 import subprocess
+import tempfile
+from path import path
+import os
 
 def checkToolExists(tool):
-    " Check if the current tool exists in the system path. "
+    """ Check if the current tool exists in the system path. """
     cmd = 'which %s > /dev/null 2>&1' % tool
     whichP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
     whichP.communicate()
@@ -25,9 +28,21 @@ def checkToolExists(tool):
     else:
         return False
 
+def ksvalidator(ksfile):
+    """ Wrapper around pykickstart's ksvalidator """
+    cmd = 'ksvalidator %s' % ksfile
+    ksP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
+    out,err = ksP.communicate()
+    
+    print 'output: ', out
+    print 'error: ', err
+
 class TestNII:
 
     def setUp(self):
+        
+        self.tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
+        
         niidata = """\
 <?xml version="1.0"?>
 <nii>
@@ -39,9 +54,9 @@ Node: node0000
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options=""/>
-    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" preserve="0"/>
-    <partition device="2" mntpnt="None" fstype="linux-swap" size="1000" options="None" preserve="0"/>
-    <partition device="3" mntpnt="/" fstype="ext3" size="6000" options="fill" preserve="0"/>
+    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
+    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
+    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
@@ -81,9 +96,67 @@ Node: node0000
         
         self.invalidnii = StringIO(invalidniidata)
         
+        # additional partitioing profiles from nii
+        self.niipartition1 = {0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'}, 
+                1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'}, 
+                2: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/', 'options': u'fill', 'size': u'6000', 'partition':'3'}}
+
+        self.niipartition2 = {0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 
+                'size': u'100', 'partition':'1'}, 
+                1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 
+                'size': u'1000','partition':'2'}, 
+                2: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'1', 'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup00', 
+                'size': u'6000', 'partition':'3'},
+                3: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup00', 'mntpnt': u'', 'options': u'vg;extent=32M', 
+                'size': u'0', 'partition':''},
+                4: {'preserve': u'0', 'fstype': u'ext3', 'device': u'', 'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 
+                'size': u'2000', 'partition':''},
+                5: {'preserve': u'0', 'fstype': u'ext3', 'device': u'', 'mntpnt': u'/depot', 'options': u'lv;vg=VolGroup00;fill', 
+                'size': u'4000', 'partition':''},    
+                }
+        
+        # additional partitioning schemas
+        self.expectedSchema1 = {'disk_dict': {1: {'partition_dict': {1: {'fill': False,
+                                                  'fs': u'ext3',
+                                                  'mountpoint': u'/boot',
+                                                  'size_MB': 100},
+                                              2: {'fill': False,
+                                                  'fs': u'linux-swap',
+                                                  'mountpoint': u'',
+                                                  'size_MB': 1000},
+                                              3: {'fill': True,
+                                                  'fs': u'ext3',
+                                                  'mountpoint': u'/',
+                                                  'size_MB': 6000}}}},
+                                'vg_dict': {}}
+                                
+        self.expectedSchema2 = {'disk_dict': {1: {'partition_dict': {1: {'fill': False,
+                                                  'fs': u'ext3',
+                                                  'mountpoint': u'/boot',
+                                                  'size_MB': 100},
+                                              2: {'fill': False,
+                                                  'fs': u'linux-swap',
+                                                  'mountpoint': u'',
+                                                  'size_MB': 1000},
+                                              3: {'fill': True,
+                                                  'fs': u'physical volume',
+                                                  'mountpoint': u'',
+                                                  'size_MB': 6000}}}},
+                                'vg_dict': {u'VolGroup00': {'extent_size': u'32M',
+                                                         'lv_dict': {u'DEPOT': {'fill': True,
+                                                                                'fs': u'ext3',
+                                                                                'mountpoint': u'/depot',
+                                                                                'size_MB': 4000},
+                                                                     'ROOT': {'fill': False,
+                                                                              'fs': u'ext3',
+                                                                              'mountpoint': u'/',
+                                                                              'size_MB': 2000}},
+                                                         'pv_dict': {1: {'disk': 1, 'partition': 3}}}}}
+        
         
     def tearDown(self):
         self.niisource = None
+        if self.tmpdir.exists(): self.tmpdir.rmtree()
 
         
     def testValidateNII(self):
@@ -109,16 +182,78 @@ Node: node0000
         
     def testValidateKSFile(self):
         """ Test to validate generated kickstart file. """
-           
-        # if the ksvalidator tool is not available, skip this test
-        if not checkToolExists('ksvalidator'):
+        # if not root, skip this test
+        if os.getuid() <> 0:
             raise SkipTest
-            
-        assert True
+        # if pykickstart is not available, skip this test
+        try:
+            from pykickstart.data import KickstartData
+            from pykickstart.parser import KickstartParser, KickstartHandlers, KickstartParseError, KickstartValueError, KickstartError
+            import warnings
+        except ImportError:
+            raise SkipTest
+        warnings.filterwarnings('error')
+        #ksfile = self.tmpdir / 'ks.cfg'
+        ksfile = '/tmp/ks.cfg'
+        ni = NodeInstaller(self.niisource)
+        ni.setup(ksfile)
+        ksdata = KickstartData()
+        kshandlers = KickstartHandlers(ksdata)
+        ksparser = KickstartParser(ksdata, kshandlers)
+        try:
+            ksparser.readKickstart(ksfile)
+            assert True
+        except (KickstartParseError, KickstartValueError, KickstartError):
+            assert False
+        except DeprecationWarning:
+            assert False
+
+        
+    def testTranslatePartitionOptions(self):
+        """ Test to validate translatePartitionOptions. """
+        
+        options0 = ''
+        options1 = 'fill;label=My Volume;preserve'
+        options2 = 'fill'
+        options3 = 'vg;extent=32M'
+        options4 = 'pv;vg=VolGroup00'
+        options5 = 'lv;vg=VolGroup00'
+        
+        # blank options
+        assert translatePartitionOptions(options0,'fill')[0] is False
+        
+        # check for preserve option
+        assert translatePartitionOptions(options0,'preserve')[0] is False
+        assert translatePartitionOptions(options1,'preserve')[0] is True        
+        
+        # check for fill is true
+        assert translatePartitionOptions(options1,'fill')[0] is True
+        assert translatePartitionOptions(options2,'fill')[0] is True
+        
+        # check for label
+        assert translatePartitionOptions(options1,'label')[0] is True
+        assert translatePartitionOptions(options1,'label')[1] == 'My Volume'
+        assert translatePartitionOptions(options2,'label')[0] is False
+        
+        # check for vg
+        assert translatePartitionOptions(options3,'extent')[0] is True
+        assert translatePartitionOptions(options3,'extent')[1] == '32M'        
+        assert translatePartitionOptions(options1,'extent')[0] is False
+        
+        # check for pv
+        assert translatePartitionOptions(options4,'pv')[0] is True
+        assert translatePartitionOptions(options4,'pv')[1] == 'VolGroup00'
+        assert translatePartitionOptions(options1,'pv')[0] is False
+        
+        # check for lv
+        assert translatePartitionOptions(options4,'lv')[0] is True
+        assert translatePartitionOptions(options4,'lv')[1] == 'VolGroup00'
+        assert translatePartitionOptions(options1,'lv')[0] is False      
         
     
     def testKickstartFromNIIProfile(self):
-        """ Test to validate ksprofile. """
+        """ Test to validate ksprofile.  
+        """
         
         ni = NodeInstaller(self.niisource)
         ni.parseNII()
@@ -135,14 +270,45 @@ Node: node0000
         ksprofile.prepareKickstartNetworkProfile(ni)
         assert ksprofile.networkprofile['interfaces']['eth0']['configure'] == True
         assert ksprofile.networkprofile['interfaces']['eth0']['use_dhcp'] == False
-        assert ksprofile.networkprofile['interfaces']['eth0']['hostname'] == 'node0000'
+        assert ksprofile.networkprofile['fqhn'] == 'node0000'
         assert ksprofile.networkprofile['interfaces']['eth0']['ip_address'] == '10.1.10.10'            
         assert ksprofile.networkprofile['interfaces']['eth0']['netmask'] == '255.255.255.0'                
         assert ksprofile.networkprofile['interfaces']['eth0']['active_on_boot'] == True
         
+        # validate package profile
+        ksprofile.prepareKickstartPackageProfile(ni)
+        packages = ['component-base-node','@Base']
+        for p in packages:
+            assert p in ksprofile.packageprofile
+        
         # validate disk schema
-        #ksprofile.prepareKickstartDiskProfile(ni)
-        #assert True
+        
+        adaptedSchema = adaptNIIPartition(ni.partitions)
+        schema = {'disk_dict': {1: {'partition_dict': {1: {'fill': False,
+                                                  'fs': u'ext3',
+                                                  'mountpoint': u'/boot',
+                                                  'size_MB': 100},
+                                              2: {'fill': False,
+                                                  'fs': u'linux-swap',
+                                                  'mountpoint': u'',
+                                                  'size_MB': 1000},
+                                              3: {'fill': True,
+                                                  'fs': u'ext3',
+                                                  'mountpoint': u'/',
+                                                  'size_MB': 6000}}}},
+                                'vg_dict': {}}
+        assert schema == adaptedSchema
+        
+        # check a couple of other schemas
+        adaptedSchema = adaptNIIPartition(self.niipartition1)
+        assert self.expectedSchema1 == adaptedSchema
+         
+        adaptedSchema = adaptNIIPartition(self.niipartition2)
+        assert self.expectedSchema2 == adaptedSchema
+        
+
+        
+
 
 
 

@@ -83,22 +83,28 @@ insert into nodes values (17,1,'installer01', NULL, NULL, NULL, 'Installed', 1, 
 insert into nodes values (18,1,'installer02', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 2) ;
 
 # Setup the default partitioning scheme for default installer nodes
-insert into partitions values (1,1,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
-insert into partitions values (2,1,'/dev/VolGroup00/LogVol00', '/', 'ext3', '10G', NULL, 0) ;
-insert into partitions values (3,1,'/dev/VolGroup00/LogVol01', '', 'swap', '1G', NULL, 0) ;
-insert into partitions values (4,1,'/dev/VolGroup00/LogVol02', '/export', 'ext3', '20G', NULL, 0) ;
-insert into partitions values (5,1,'/dev/VolGroup00/LogVol03', '/depot', 'ext3', 'rest', NULL, 0) ;
+insert into partitions values (1,1,'1', '1', '/boot', 'ext3', '100', '', 0) ;
+insert into partitions values (2,1,'1', '2', '', 'physical volume', '200000', 'fill;pv;vg=VolGroup00', 0) ;		
+insert into partitions values (3,1,'VolGroup00', '', '', '', '', 'vg;extent=32M', 0) ;
+insert into partitions values (4,1,'', '', '', 'linux-swap', '1000', 'lv;vg=VolGroup00', 0) ;
+insert into partitions values (5,1,'', '', '/export', 'ext3', '20000', 'lv;vg=VolGroup00', 0) ;
+insert into partitions values (6,1,'', '', '/depot', 'ext3', '40000', 'fill;lv;vg=VolGroup00', 0) ;
 
 # Setup the default partitioning scheme for default package based compute nodes
-insert into partitions values (6,2,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
-insert into partitions values (7,2,'/dev/VolGroup00/LogVol00', '/', 'ext3', '10G', NULL, 0) ;
-insert into partitions values (8,2,'/dev/VolGroup00/LogVol01', '', 'swap', '1G', NULL, 0) ;
-insert into partitions values (9,2,'/dev/VolGroup00/LogVol02', '/scratch', 'ext3', 'rest', NULL, 0) ;
+insert into partitions values (7,2,'1', '1', '/boot', 'ext3', '100', '', 0) ;
+insert into partitions values (8,2,'1', '2', '', 'physical volume', '10000', 'fill;pv;vg=VolGroup00', 0) ;	
+insert into partitions values (9,2,'VolGroup00', '', '', '', '', 'vg;extent=32M', 0) ;	
+insert into partitions values (10,2,'',  '',  '/', 'ext3', '5000',  'lv;vg=VolGroup00', 0) ;
+insert into partitions values (11,2,'',  '', '', 'linux-swap', '1000',  'lv;vg=VolGroup00', 0) ;
+insert into partitions values (12,2,'',  '',  '/scratch', 'ext3', '4000',  'fill;lv;vg=VolGroup00', 0) ;
 
 # Setup the default partitioning scheme for default package based compute nodes
-insert into partitions values (10,4,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
-insert into partitions values (11,4,'/dev/VolGroup00/LogVol00', '/', 'ext3', 'rest', NULL, 0) ;
-insert into partitions values (12,4,'/dev/VolGroup00/LogVol01', '', 'swap', '4G', NULL, 0) ;
+insert into partitions values (13,4,'1', '1', '/boot', 'ext3', '100', '', 0) ;
+insert into partitions values (14,4,'1', '2', '', 'physical volume', '10000', 'fill;pv;vg=VolGroup00', 0) ;	
+insert into partitions values (15,4,'VolGroup00', '', '', '', '', 'vg;extent=32M', 0) ;	
+insert into partitions values (16,4,'',  '',  '/', 'ext3', '9000',  'fill;lv;vg=VolGroup00', 0) ;
+insert into partitions values (17,4,'',  '', '', 'linux-swap', '1000',  'lv;vg=VolGroup00', 0) ;
+
 
 # Setup a few default networks.  This would be set by the Kusu installer.
 insert into networks values (1, '172.25.243.0', '255.255.255.0', 'eth0', '', '172.25.243.2','','Installer public network.  Set by Installer', '172.25.243.200', 1,0) ;

@@ -6,4 +6,4 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.nodeinstaller.niifun import NodeInstInfoHandler
-from kusu.nodeinstaller.nodeinstall import NodeInstaller, retrieveNII, KickstartFromNIIProfile
+from kusu.nodeinstaller.nodeinstall import NodeInstaller, retrieveNII, KickstartFromNIIProfile, adaptNIIPartition, translatePartitionOptions

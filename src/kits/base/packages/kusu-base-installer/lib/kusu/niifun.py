@@ -78,6 +78,7 @@ class NodeInstInfoHandler(ContentHandler):
         elif name == 'partition':
             device   = attrs.get('device',"")
             self.partitions[self.partnum] = { 'device'   : device,
+                                              'partition'   : attrs.get('partition',""),
                                               'mntpnt'   : attrs.get('mntpnt',""),
                                               'fstype'   : attrs.get('fstype',""),
                                               'size'     : attrs.get('size',""),
