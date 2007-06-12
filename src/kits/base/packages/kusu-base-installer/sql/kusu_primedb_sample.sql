@@ -57,7 +57,7 @@ insert into nodegroups values (6,3,'Fedora 7 Installer', 'package', 'Fedora 7 In
 insert into nodegroups values (7,3,'Fedora 7 Compute', 'diskless', 'Fedora 7 Diskless Node group', 'host-diskless-#NNNN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'Test kernel args in grub.conf for Fedora 7 diskless Compute') ;
 
 # Setup the nodes entries for the installer
-insert into nodes values (1,1,'installer0', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 0) ;
+insert into nodes values (1,1,'installer00', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 0) ;
 
 # Setup the nodes entries for some compute nodes
 insert into nodes values (2,2,'node0000', NULL, NULL, 'ro root=LABEL=/1 rhgb quiet', 'Installed', 1, '2007/1/1 11:11:11', 0, 0) ;
@@ -79,8 +79,8 @@ insert into nodes values (15,4,'c02-01', NULL, NULL, NULL, 'Expired', 0, '2007/1
 insert into nodes values (16,4,'c02-02', NULL, NULL, NULL, 'Expired', 0, '2007/1/1 11:11:11', 2, 2) ;
 
 # Setup the nodes entries for the secondary installers
-insert into nodes values (17,1,'installer1', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 1) ;
-insert into nodes values (18,1,'installer2', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 2) ;
+insert into nodes values (17,1,'installer01', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 1) ;
+insert into nodes values (18,1,'installer02', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 2) ;
 
 # Setup the default partitioning scheme for default installer nodes
 insert into partitions values (1,1,'', '/boot', 'ext2', '100M', 'NoLVM', 0) ;
@@ -117,14 +117,18 @@ insert into ng_has_net values (8,4,3) ;
 insert into ng_has_net values (9,6,1) ;
 insert into ng_has_net values (10,6,2) ;
 insert into ng_has_net values (11,7,2) ;
+insert into ng_has_net values (12,17,1) ;
+insert into ng_has_net values (13,17,2) ;
+insert into ng_has_net values (14,18,1) ;
+insert into ng_has_net values (15,18,2) ;
 
 # Setup the nics table for the Installer node
-insert into nics values (32, 1, 1, '00:11:22:33:44:55', '172.25.243.1', 0) ;
+insert into nics values (32, 1, 1, '00:11:22:33:44:55', '172.25.243.1', 1) ;
 insert into nics values (1, 1, 2, '00:11:22:33:44:56', '10.1.0.1', 0) ;
 # Setup the nics table for the other Installer nodes
-insert into nics values (33, 17, 1, '10:11:22:33:44:55', '172.25.243.2', 0) ;
+insert into nics values (33, 17, 1, '10:11:22:33:44:55', '172.25.243.2', 1) ;
 insert into nics values (34, 17, 2, '10:11:22:33:44:56', '10.1.0.2', 0) ;
-insert into nics values (35, 18, 1, '20:11:22:33:44:55', '172.25.243.3', 0) ;
+insert into nics values (35, 18, 1, '20:11:22:33:44:55', '172.25.243.3', 1) ;
 insert into nics values (36, 18, 2, '20:11:22:33:44:56', '10.1.0.3', 0) ;
 # For the nodes in the Compute node group.  Each has 3 NICs
 insert into nics values (2, 2, 1, '00:11:22:33:44:00', '172.25.243.200', 1) ;
