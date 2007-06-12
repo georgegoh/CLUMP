@@ -2,8 +2,11 @@
 
 mkdir -m 755 -p ${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}
 cd ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
-cp kit-base.spec kit-base.spec.orig
-sed -e '/^\%exclude/d' kit-base.spec.orig > kit-base.spec
+for i in `find ./ -name '*.spec'`
+do
+  cp $i $i.orig
+  sed -e '/^\%exclude/d' $i.orig > $i
+done
 make
 ec=$?
 if [ $ec != "0" ]
