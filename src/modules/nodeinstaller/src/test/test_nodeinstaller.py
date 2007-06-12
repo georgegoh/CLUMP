@@ -122,9 +122,28 @@ Node: node0000
         
         ni = NodeInstaller(self.niisource)
         ni.parseNII()
-        ksprofile = KickstartFromNIIProfile(ni)
+        ksprofile = KickstartFromNIIProfile()
+
+        # validate site-specific profile
+        ksprofile.prepareKickstartSiteProfile(ni)
+        assert ksprofile.tz == 'Asia/Singapore'
+        assert ksprofile.lang == 'en_US.UTF-8'
+        assert ksprofile.keyboard == 'us'
+        assert ksprofile.installsrc == 'http://10.1.10.1/mirror/fc6/i386/os'
         
-        assert True
+        # validate network profile
+        ksprofile.prepareKickstartNetworkProfile(ni)
+        assert ksprofile.networkprofile['interfaces']['eth0']['configure'] == True
+        assert ksprofile.networkprofile['interfaces']['eth0']['use_dhcp'] == False
+        assert ksprofile.networkprofile['interfaces']['eth0']['hostname'] == 'node0000'
+        assert ksprofile.networkprofile['interfaces']['eth0']['ip_address'] == '10.1.10.10'            
+        assert ksprofile.networkprofile['interfaces']['eth0']['netmask'] == '255.255.255.0'                
+        assert ksprofile.networkprofile['interfaces']['eth0']['active_on_boot'] == True
+        
+        # validate disk schema
+        #ksprofile.prepareKickstartDiskProfile(ni)
+        #assert True
+
 
 
     
