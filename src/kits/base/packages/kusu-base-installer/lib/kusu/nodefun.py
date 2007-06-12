@@ -548,6 +548,7 @@ class NodeFun(object, KusuApp):
         dataList = {}
         macList = {}
         badList = []
+        dupeList = []
         interfaceName = ""
         badflag = 0
         self.setNodegroupByName(nodegroupname)
@@ -556,32 +557,45 @@ class NodeFun(object, KusuApp):
         if not self._nodeGroupType:   
            return None, None, None
 
+        if self._getPrimaryInstaller() in nodeList:
+           nodeList.remove(self._getPrimaryInstaller())
+
+        # Check if the item being moved already exists in the same node group, delete from list if it is.
+        for node in nodeList: 
+            try: 
+               self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes WHERE nodes.name='%s' AND nodes.ngid='%s'" % (node, self._nodeGroupType))
+               data = int(self._dbReadonly.fetchone()[0])
+               if data:
+                  dupeList.append(node)
+            except:
+               pass
+
+        for dupenode in dupeList:
+           nodeList.remove(dupenode)
+
         for node in nodeList:
-           if node == self._getPrimaryInstaller():
-              nodeList.remove(node)
-           else:
-              try:
-                  self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks WHERE nodes.name='%s' AND nodes.nid=nics.nid AND nics.boot=1" % node)
-                  data = self._dbReadonly.fetchone()
-                  if data:
-                      dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
-                      macList["%s" % node] = "%s" % data[0]
-                  else:
-                      nodeList.remove(node)
-              except: 
-                  nodeList.remove(node)
+           try:
+               self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=1" % node)
+               data = self._dbReadonly.fetchone()
+               if data:
+                   dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
+                   macList["%s" % node] = "%s" % data[0]
+               else:
+                   nodeList.remove(node)
+           except: 
+               nodeList.remove(node)
 
         # Get the new nodegroups network and device table list
         self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
         newngdata = list(self._dbReadonly.fetchall())
 
         # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
-        # Have to resolve this by running add hosts  
+        # Have to resolve this by running add hosts
         for node in nodeList:
            nodeData = dataList[node].split()
-           i = 0
            for netinfo in newngdata:
               device, network, subnet = netinfo
+              #print "NODE: %s, IP = %s, Destination network/subnet: %s, %s: Source Dev: %s, Destination Device: %s" % (node, nodeData[1], network, subnet, nodeData[2], device)
               # Check if device matches new node group device
               if device == nodeData[2]:
                   interfaceName = device
@@ -589,12 +603,16 @@ class NodeFun(object, KusuApp):
                   if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
                      badflag = 0
                      break
-              if i <= len(newngdata):
+                  else:
+                     badflag = 1
+              else:
                    badflag = 1
-              i += 1
            if badflag:
                badList.append(node)
-               nodeList.remove(node)
+               badflag = 0
+
+        for badnode in badList:
+           nodeList.remove(badnode)
      
         return nodeList, macList, badList, interfaceName
 
@@ -619,7 +637,7 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.findMACAddress(\"aa:bb:cc:dd:ee:ff\"): Result: FAIL (Found)"
     
-    if myNodeFun.findMACAddress("00:11:22:33:44:56"):
+    if myNodeFun.findMACAddress("50:11:ff:33:44:41"):
         print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:56\"): Result: PASS (Found)"
     else:
         print "* Testing NodeFun.findMACAddress(\"00:11:22:33:44:56\"): Result: FAIL (Not found)"
@@ -771,22 +789,22 @@ if __name__ == "__main__":
     # Test moving nodes
     flag = 0
     myNodeFun = NodeFun()
-    movenodes = ["c01-00", "node0000", "foobarFAKE0342-34", "installer0"]
+    movenodes = ["c01-00", "node0000", "foobarFAKE0342-34", "installer00", "host000"]
 
     moveList, macList, badList = myNodeFun.moveNodes(movenodes, "Foobar")
     if (moveList, macList, badList == None):
-       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installer0]\", \"Foobar\"): Result: PASS (Invalid Nodegroup, not moving)"
+       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installer00, host000]\", \"Foobar\"): Result: PASS (Invalid Nodegroup, not moving)"
        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
     else:
-       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installler0]\", \"Foobar\"): Result: FAIL (Invalid Nodegroup, Moving!)"
+       print "* Testing NodeFun.moveNodes(\"[c01-00, node0000, foobarFAKE0342-34, installler00, host000]\", \"Foobar\"): Result: FAIL (Invalid Nodegroup, Moving!)"
        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
 
     myNodeFun = NodeFun()
-    movenodes = ["node0000", "node0003", "installer2"]
+    movenodes = ["node0000", "node0003", "installer02", "host003", "host004", "installer00", "c01-01"]
    
     moveList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "Installer")
     if (moveList, macList, badList):
-        print "* Testing NodeFun.moveNodes(\"[node0000, node0003, installer2]\", \"Installer\"): Result: PASS (Valid Nodegroup, Moving nodes to Installer)"
+        print "* Testing NodeFun.moveNodes(\"[node0000, node0003, installer00, installer02, c01-01]\", \"Installer\"): Result: PASS (Valid Nodegroup, Moving nodes to Installer)"
         print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
       
         # Create Temp file
@@ -827,7 +845,7 @@ if __name__ == "__main__":
         else:
             print "\t* Overall MyNodeFun.moveNodes(): FAILED!"
     else:
-        print "* Testing NodeFun.moveNodes(\"[node0000, node0003]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
+        print "* Testing NodeFun.moveNodes(\"[node0000, node0003, installer00, installer02, c01-01]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
  
     # Now move them back to their original place.
     myNodeFun = NodeFun()
@@ -877,3 +895,13 @@ if __name__ == "__main__":
             print "\t* Overall MyNodeFun.moveNodes(): FAILED!"
     else:
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
+
+#if __name__ == "__main__":
+#    myNodeFun = NodeFun()
+#
+#    movenodes = ["installer01", "installer02"]
+#    moveList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "Compute Diskless")
+#    if (moveList, macList, badList):
+#        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+#        print "\t* badList = %s" % badList
+#        print "Interface = %s" % interface
