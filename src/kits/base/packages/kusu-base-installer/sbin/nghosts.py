@@ -335,27 +335,6 @@ class SelectNodeGroupWindow(USXBaseScreen):
     def validate(self):
         return True, 'Success'
 
-class FinishWindow(USXBaseScreen):
-
-    name = "netedit_window_title_new"
-    msg = "netedit_instruction_new"
-    buttons = [ 'ok_button', 'cancel_button' ]
-    hotkeysDict = {}
-    
-    def __init__(self, database, kusuApp=None, gridWidth=45):
-        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
-                            
-    def setCallbacks(self):
-        pass
-        
-    def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(60, 1, self.kusuApp._("Please enter the network information below."), scroll=0, wrap=0)
-    
-    def validate(self):
-        return True, 'Success'
-        
 class MembershipMainWindow(USXBaseScreen):
 
     name = "nghosts_window_title_prompt"
@@ -390,14 +369,13 @@ class MembershipMainWindow(USXBaseScreen):
         if self.radioButtonList.getSelection() == 0:
             ScreenFactory.screens = \
                             [ SelectNodeWindow(database=database, kusuApp=kusuApp),
-                              SelectNodeGroupWindow(database=database,kusuApp=kusuApp),
-                              FinishWindow(database=database,kusuApp=kusuApp)
+                              SelectNodeGroupWindow(database=database,kusuApp=kusuApp)
                             ]
                             
         else:
             ScreenFactory.screens = \
                             [ SelectNodeGroupWindow(database=database, kusuApp=kusuApp),
-                              FinishWindow(database=database,kusuApp=kusuApp)
+                              MoveNodegroupWindow(database=database, kusuApp=kusuApp)
                             ]
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
