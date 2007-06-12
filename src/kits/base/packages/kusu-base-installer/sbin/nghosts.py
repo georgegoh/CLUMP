@@ -21,6 +21,7 @@
 
 import os
 import tempfile
+import string
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
@@ -168,7 +169,7 @@ class NodeMemberApp(object, KusuApp):
 class SelectNodeWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
     msg = "nghosts_instruction_select_node"
-    buttons = [ 'next_button', 'previous_button' ]
+    buttons = [ 'next_button', 'previous_button', "cancel_button" ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
@@ -180,12 +181,14 @@ class SelectNodeWindow(USXBaseScreen):
     def nextAction(self):
         flag = 1
         rack = 0
+        needRack = False
         nodeRecord = NodeFun()
         nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
         nodeRecord.getNodeFormat()
         # Check if the selected node format has a rack if so, prompt for it.
         if nodeRecord.isNodenameHasRack():
-            # Prompt user for Rack            
+            # Prompt user for Rack
+            needRack = True
             while flag:
                 buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
                 self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
@@ -204,37 +207,59 @@ class SelectNodeWindow(USXBaseScreen):
                     self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                     flag = 1
 
-        moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
-           
-        # Create Temp file
-        (fd, tmpfile) = tempfile.mkstemp()
-        tmpname = os.fdopen(fd, 'w')
-        for node in moveList:
-           tmpname.write("%s %s\n" % (macList[node], node))
-        tmpname.close()
+        if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
+            self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
+            return NAV_NOTHING
 
-       # for nodeGroup in self.nodeGroupNames:
-       #     for node in self.nodegroupDict[nodeGroup]:
-       #         if node in self.nodeCheckbox.getSelection():
-       #             if not nodeGroup == self.nodegroupRadio.getSelection():
-       #                 
-       #                 if nodeRecord.compareNodeFormat(nodeGroup, self.nodegroupRadio.getSelection()):
-       #                     self.selector.popupStatus(self.kusuApp._("Direct Move, No format difference"), "Moving Node %s" % node, 3)
-       #                     #nodeRecord.moveNodeToNodegroup(node, self.nodegroupRadio.getSelection())
-       #                 else:
-       #                     self.selector.popupStatus(self.kusuApp._("Format has changed, reassign node name"), "Old Name: %s, New Name: %s" %  \
-       #                     (node, nodeRecord.findNextAvailableNode(self.nodegroupRadio.getSelection(), rack)), 4)
-        return NAV_FORWARD
+        moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
+         
+        # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
+        # to the new destination node group.
+        if not moveList:
+           self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.nodegroupRadio.getSelection())
+        else:
+           if badList:
+              self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
+
+           # Create Temp file
+           (fd, tmpfile) = tempfile.mkstemp()
+           tmpname = os.fdopen(fd, 'w')
+           for node in moveList:
+              tmpname.write("%s\n" % macList[node])
+           tmpname.close()
+
+           # Call addhosts to delete these nodes
+           progDialog = ProgressDialogWindow(self.screen, "Moving Nodes", "Moving nodes, please wait...")
+
+           os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
+
+           # Add these back using mac file
+           if needRack:
+              os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
+           else:
+              os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
+
+           # Remove temp file
+           os.remove(tmpfile)
+           progDialog.close()
+           self.screen.refresh()
         
-    def previousButton(self):
-        return NAV_BACK
-            
+        return NAV_NOTHING
+        
+    def previousAction(self):
+        return NAV_QUIT
+
+    def quitAction(self):
+        self.screen.finish()
+        sys.exit(0)
+
     def setCallbacks(self):
         self.buttonsDict['next_button'].setCallback_(self.nextAction)        
-        self.buttonsDict['previous_button'].setCallback_(self.previousButton)
-    
-        #self.hotkeysDict['F5'] = self.cancelAction
-        #self.hotkeysDict['F8'] = self.okAction
+        self.buttonsDict['previous_button'].setCallback_(self.previousAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.previousAction)
+        self.hotkeysDict['F5'] = self.previousAction
+        self.hotkeysDict['F8'] = self.nextAction
+        self.hotkeysDict['F12'] = self.quitAction
     
     def drawImpl(self):
         count = 0
@@ -256,7 +281,7 @@ class SelectNodeWindow(USXBaseScreen):
     
         for nodegroup in nodegroups:
             query = "SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
-            nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND nodegroups.ngname = '%s'" % nodegroup[0]
+            nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND nodegroups.ngname = '%s' ORDER BY nodes.name" % nodegroup[0]
         
             try:
                 self.database.connect()
@@ -375,8 +400,9 @@ class MembershipMainWindow(USXBaseScreen):
                               FinishWindow(database=database,kusuApp=kusuApp)
                             ]
         
-        ks = USXNavigator(ScreenFactory,screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
+        return NAV_NOTHING
         
     def exitAction(self, data=None):
         """ExitAction()
@@ -385,7 +411,6 @@ class MembershipMainWindow(USXBaseScreen):
         return NAV_QUIT
         
     def setCallbacks(self):
-        pass
         # Button actions
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
         self.buttonsDict['quit_button'].setCallback_(self.exitAction)
