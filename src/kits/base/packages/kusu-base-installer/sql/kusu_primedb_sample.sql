@@ -120,38 +120,40 @@ insert into ng_has_net values (5,2,3) ;
 insert into ng_has_net values (6,3,2) ;
 insert into ng_has_net values (7,4,2) ;
 insert into ng_has_net values (8,4,3) ;
-insert into ng_has_net values (9,6,1) ;
-insert into ng_has_net values (10,6,2) ;
-insert into ng_has_net values (11,7,2) ;
-insert into ng_has_net values (12,17,1) ;
-insert into ng_has_net values (13,17,2) ;
-insert into ng_has_net values (14,18,1) ;
-insert into ng_has_net values (15,18,2) ;
+insert into ng_has_net values (9,5,2) ;
+insert into ng_has_net values (10,5,3) ;
+insert into ng_has_net values (11,6,1) ;
+insert into ng_has_net values (12,6,2) ;
+insert into ng_has_net values (13,7,2) ;
+insert into ng_has_net values (14,17,1) ;
+insert into ng_has_net values (15,17,2) ;
+insert into ng_has_net values (16,18,1) ;
+insert into ng_has_net values (17,18,2) ;
 
 # Setup the nics table for the Installer node
 insert into nics values (32, 1, 1, '00:11:22:33:44:55', '172.25.243.1', 1) ;
-insert into nics values (1, 1, 2, '00:11:22:33:44:56', '10.1.0.1', 0) ;
+insert into nics values (1, 1, 2, NULL, '10.1.0.1', 0) ;
 # Setup the nics table for the other Installer nodes
 insert into nics values (33, 17, 1, '10:11:22:33:44:55', '172.25.243.2', 1) ;
-insert into nics values (34, 17, 2, '10:11:22:33:44:56', '10.1.0.2', 0) ;
+insert into nics values (34, 17, 2, NULL, '10.1.0.2', 0) ;
 insert into nics values (35, 18, 1, '20:11:22:33:44:55', '172.25.243.3', 1) ;
-insert into nics values (36, 18, 2, '20:11:22:33:44:56', '10.1.0.3', 0) ;
+insert into nics values (36, 18, 2, NULL, '10.1.0.3', 0) ;
 # For the nodes in the Compute node group.  Each has 3 NICs
 insert into nics values (2, 2, 1, '00:11:22:33:44:00', '172.25.243.200', 1) ;
-insert into nics values (3, 2, 2, '00:11:22:33:44:01', '10.1.2.0', 0) ;
-insert into nics values (4, 2, 3, '00:11:22:33:44:02', '10.2.2.0', 0) ;
+insert into nics values (3, 2, 2, NULL, '10.1.2.0', 0) ;
+insert into nics values (4, 2, 3, NULL, '10.2.2.0', 0) ;
 insert into nics values (5, 3, 1, '00:11:22:33:44:10', '172.25.243.201', 1) ;
-insert into nics values (6, 3, 2, '00:11:22:33:44:11', '10.1.2.1', 0) ;
-insert into nics values (7, 3, 3, '00:11:22:33:44:12', '10.2.2.1', 0) ;
+insert into nics values (6, 3, 2, NULL, '10.1.2.1', 0) ;
+insert into nics values (7, 3, 3, NULL, '10.2.2.1', 0) ;
 insert into nics values (8, 4, 1, '00:11:22:33:44:20', '172.25.243.202', 1) ;
-insert into nics values (9, 4, 2, '00:11:22:33:44:21', '10.1.2.2', 0) ;
-insert into nics values (10, 4, 3, '00:11:22:33:44:22', '10.2.2.2', 0) ;
+insert into nics values (9, 4, 2, NULL, '10.1.2.2', 0) ;
+insert into nics values (10, 4, 3, NULL, '10.2.2.2', 0) ;
 insert into nics values (11, 5, 1, '00:11:22:33:44:30', '172.25.243.203', 1) ;
-insert into nics values (12, 5, 2, '00:11:22:33:44:31', '10.1.2.3', 0) ;
-insert into nics values (13, 5, 3, '00:11:22:33:44:32', '10.2.2.3', 0) ;
+insert into nics values (12, 5, 2, NULL, '10.1.2.3', 0) ;
+insert into nics values (13, 5, 3, NULL, '10.2.2.3', 0) ;
 insert into nics values (14, 6, 1, '00:11:22:33:44:40', '172.25.243.204', 1) ;
-insert into nics values (15, 6, 2, '00:11:22:33:44:41', '10.1.2.4', 0) ;
-insert into nics values (16, 6, 3, '00:11:22:33:44:42', '10.2.2.4', 0) ;
+insert into nics values (15, 6, 2, NULL, '10.1.2.4', 0) ;
+insert into nics values (16, 6, 3, NULL, '10.2.2.4', 0) ;
 # For the nodes in the Compute Diskless node group.  Each has 1 NICs
 insert into nics values (17, 7, 2, '10:11:ff:33:44:41', '10.1.2.5', 1) ;
 insert into nics values (18, 8, 2, '20:11:ff:33:44:41', '10.1.2.6', 1) ;
@@ -160,15 +162,15 @@ insert into nics values (20, 10, 2, '40:11:ff:33:44:41', '10.1.2.8', 1) ;
 insert into nics values (21, 11, 2, '50:11:ff:33:44:41', '10.1.2.9', 1) ;
 # For the nodes in the Compute Disked node group.  Each has 2 NICs
 insert into nics values (22, 12, 2, '10:31:aa:33:44:40', '10.1.2.10', 1) ;
-insert into nics values (23, 12, 3, '10:31:aa:33:44:41', '10.2.2.5', 0) ;
+insert into nics values (23, 12, 3, NULL, '10.2.2.5', 0) ;
 insert into nics values (24, 13, 2, '10:31:aa:33:44:40', '10.1.2.11', 1) ;
-insert into nics values (25, 13, 3, '10:31:aa:33:44:41', '10.2.2.6', 0) ;
+insert into nics values (25, 13, 3, NULL, '10.2.2.6', 0) ;
 insert into nics values (26, 14, 2, '10:31:aa:33:44:40', '10.1.2.12', 1) ;
-insert into nics values (27, 14, 3, '10:31:aa:33:44:41', '10.2.2.7', 0) ;
+insert into nics values (27, 14, 3, NULL, '10.2.2.7', 0) ;
 insert into nics values (28, 15, 2, '10:31:aa:33:44:40', '10.1.2.13', 1) ;
-insert into nics values (29, 15, 3, '10:31:aa:33:44:41', '10.2.2.8', 0) ;
+insert into nics values (29, 15, 3, NULL, '10.2.2.8', 0) ;
 insert into nics values (30, 16, 2, '10:31:aa:33:44:40', '10.1.2.14', 1) ;
-insert into nics values (31, 16, 3, '10:31:aa:33:44:41', '10.2.2.9', 0) ;
+insert into nics values (31, 16, 3, NULL, '10.2.2.9', 0) ;
 
 # Setup the packages for the diskless compute nodes
 insert into packages values (1,3,'SysVinit') ;
