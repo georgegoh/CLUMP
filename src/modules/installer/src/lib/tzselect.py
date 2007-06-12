@@ -37,20 +37,6 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistentProfile.__init__(self, kiprofile)        
 
-    def setCallbacks(self):
-        """
-        
-        Implementation of the setCallbacks interface defined in parent class
-        screenfactory.BaseScreen. Initialise button callbacks here.
-        
-        """
-
-    def setCallbacks(self):
-        """
-        Implementation of the setCallbacks interface defined in parent class
-        screenfactory.BaseScreen. Initialise button callbacks here.
-        """
-
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 4)
         
