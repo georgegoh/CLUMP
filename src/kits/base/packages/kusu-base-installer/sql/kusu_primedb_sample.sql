@@ -19,9 +19,9 @@
 
 
 # Setup a default repo and kits
-insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer0", 'fedora-6-i386') ;
+insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer00", 'fedora-6-i386') ;
 insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'RHEL5.1') ;
-insert into repos values (3, "Fedora_7", "/depot/repos/3", "installer0", 'fedora-7-x86_64') ;
+insert into repos values (3, "Fedora_7", "/depot/repos/3", "installer00", 'fedora-7-x86_64') ;
 
 insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 0, 0, "i386") ;
 insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 0, 0, "i386") ;
@@ -347,7 +347,7 @@ insert into appglobals values (12, 'InstallerServeDNS', 'True', NULL) ;
 insert into appglobals values (13, 'InstallerServeNIS', 'True', NULL) ;
 insert into appglobals values (14, 'InstallerServeNFS', 'True', NULL) ;
 insert into appglobals values (15, 'InstallerServeNTP', 'True', NULL) ;
-insert into appglobals values (16, 'PrimaryInstaller', 'installer0', NULL) ;
+insert into appglobals values (16, 'PrimaryInstaller', 'installer00', NULL) ;
 insert into appglobals values (17, 'DHCPLeaseTime', '2400', NULL) ;
 insert into appglobals values (18, 'InstallerServeSMTP', 'False', NULL) ;
 insert into appglobals values (19, 'SMTPServer', 'mailserver.myzone.company.com', NULL) ;
