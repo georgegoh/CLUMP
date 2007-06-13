@@ -14,6 +14,25 @@ import logging
 import os
 import warnings
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
+
+# it seems these must be told to be quiet individually...
+logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.attributes').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.attributes.InstrumentedAttribute').           setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.mapper').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.mapper.Mapper').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.properties').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.properties.PropertyLoader').setLevel(logging. WARNING)
+logging.getLogger('sqlalchemy.orm.query').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.query.Query').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.strategies').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.strategies.ColumnLoader').setLevel(logging.   WARNING)
+logging.getLogger('sqlalchemy.orm.strategies.LazyLoader').setLevel(logging.     WARNING)
+logging.getLogger('sqlalchemy.orm.sync').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.sync.SyncRule').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.sql').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.sql.ClauseVisitor').setLevel(logging.WARNING)
 kl = kusulog.getKusuLog('db')
 
 # Filter out all type of warnings
