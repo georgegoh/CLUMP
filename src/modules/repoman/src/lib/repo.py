@@ -8,6 +8,7 @@
 #
 
 from kusu.util.errors import *
+from kusu.core import database as db
 from path import path
 import sqlalchemy as sa
 
@@ -43,7 +44,7 @@ def getOS(db, key):
         raise TypeError, 'Invalid type for key: %s' % key
 
     # There should only 1 be os kit for a repo. 
-    if len(kit) > 1:
+    if len(kit) != 1:
         raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
     else:
         kit = kit[0]
@@ -53,6 +54,7 @@ def getOS(db, key):
 class BaseRepo(object):
 
     ngname = None
+    dirlayout = {}
 
     def __init__(self, os_version, os_arch, prefix, db):
         self.os_version = os_version
@@ -114,21 +116,7 @@ class BaseRepo(object):
 
     def make(self, ngname, reponame):
         """makes the repository"""
-
-        self.ngname = ngname
-        self.reponame = reponame
-
-        self.UpdateDatabase(reponame)
-        self.os_path = self.getOSPath()
-        self.makeRepoDirs()
-        self.copyOSKit()
-        self.copyKitsPackages()
-        self.copyRamDisk()
-        self.makeComps()
-        self.makeMetaInfo()
-        self.verify()
-
-        return self
+        raise NotImplementedError
 
     def refresh(self):
         """refresh the repository"""
@@ -155,6 +143,10 @@ class BaseRepo(object):
     def copyKitsPackages(self):
         """copy the kits packages to the repository"""
         raise NotImplementedError
+    
+    def copyOSKit(self):
+        """copy the OS kits packages to the repository"""
+        raise NotImplementedError
 
     def copyRamDisk(self):
         """copy the initrd/kernel/stage2.img/etc to the repository"""
@@ -164,11 +156,81 @@ class BaseRepo(object):
         """creates the necessary repository directories"""
         raise NotImplementedError
 
-class RedhatRepo(object):
+class RedhatYumRepo(BaseRepo):
     """Base Redhat repository class"""
 
-    def __init__(self):
+    def __init__(self, os_version, os_arch, prefix, db):
+        BaseRepo.__init__(self, os_version, os_arch, prefix, db)
+    
+    def copyKitsPackages(self):
+        # Need a better method for this
+        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
+                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
+                                      self.db.kits.c.isOS==False)
+
+        for kit in kits:
+            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
+
+            if not pkgdir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
+   
+            for file in pkgdir.listdir():
+                if file.basename() != 'TRANS.TBL':
+                    dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
+
+                    if dest.exists():
+                       raise FileAlreadyExistError, '%s already exists' % dest
+
+                    file.symlink(dest)
+
+    def copyOSKit(self):
+
+        # Validate OS layout
+        for dir in self.dirlayout.values():
+            dir = self.os_path / dir
+            if not dir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % dir
+             
+        for key, dir in self.dirlayout.items():
+            if key != 'repodatadir':
+               for file in (self.os_path / dir).listdir():
+                    if file.basename() != 'TRANS.TBL':
+                        file.symlink(self.repo_path / dir / file.basename())
+
+        (self.os_path / '.discinfo').symlink(self.repo_path / '.discinfo')
+
+    def makeRepoDirs(self):
+        # Need to move/use a common lib 
+        for dir in self.dirlayout.values():
+            (self.repo_path / dir).makedirs()
+
+    def copyRamDisk(self):
         pass
+        
+    def verify(self):
+        pass
+
+    def make(self, ngname, reponame):
+        """makes the repository"""
+
+        self.ngname = ngname
+        self.reponame = reponame
+
+        try:
+            self.UpdateDatabase(reponame)
+            self.os_path = self.getOSPath()
+            self.makeRepoDirs()
+            self.copyOSKit()
+            self.copyKitsPackages()
+            self.copyRamDisk()
+            self.makeComps()
+            self.makeMetaInfo()
+            self.verify()
+        except:
+            #FIXME: self.delete() # Clean up myself
+            raise CannotCreateRepoError, 'cannot create repo: \'%s\'' % reponame
+
+        return self
 
     def makeComps(self):
         """Makes the necessary comps xml file"""
@@ -199,113 +261,24 @@ class RedhatRepo(object):
         if retcode:
             raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
-class FedoraRepo(BaseRepo, RedhatRepo):
+class FedoraRepo(RedhatYumRepo):
     def __init__(self, os_version, os_arch, prefix, db):
-        BaseRepo.__init__(self, os_version, os_arch, prefix, db)
-        RedhatRepo.__init__(self)
+        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
         
-        # Need to use a common lib later, maybe boot-media-tool
-        self.dirlayout = {}
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
 
-    def copyKitsPackages(self):
-        # Need a better method for this
-        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
-                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
-                                      self.db.kits.c.isOS==False)
-
-        for kit in kits:
-            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
-
-            if not pkgdir.exists():
-                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
-   
-            for file in pkgdir.listdir():
-                if file.basename() != 'TRANS.TBL':
-                    dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
-
-                    if dest.exists():
-                       raise FileAlreadyExistError, '%s already exists' % dest
-
-                    file.symlink(dest)
-
-    def copyOSKit(self):
-        for key, dir in self.dirlayout.items():
-            if key != 'repodatadir':
-                for file in (self.os_path / dir).listdir():
-                    if file.basename() != 'TRANS.TBL':
-                        file.symlink(self.repo_path / dir / file.basename())
-
-    def makeRepoDirs(self):
-        # Need to move/use a common lib 
-        for dir in self.dirlayout.values():
-            (self.repo_path / dir).makedirs()
-
-    def copyRamDisk(self):
-        pass
-        
-    def verify(self):
-        pass
-
-class CentosRepo(BaseRepo, RedhatRepo):
+class CentosRepo(RedhatYumRepo):
     def __init__(self, os_version, os_arch, prefix, db):
-        BaseRepo.__init__(self, os_version, os_arch, prefix, db)
-        RedhatRepo.__init__(self)
+        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
         
-        # Need to use a common lib later, maybe boot-media-tool
-        self.dirlayout = {}
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Centos/RPMS'
         self.dirlayout['basedir'] = 'Centos/base'
-
-    def copyKitsPackages(self):
-        session = self.db.createSession()
-
-        # Need a better method for this
-        kits = session.query(self.db.kits).select_by \
-                             (self.db.repos_have_kits.c.repoid==self.repoid, \
-                              self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
-                              self.db.kits.c.isOS==False)
-
-        for kit in kits:
-            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
-
-            if not pkgdir.exists():
-                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
-   
-            for file in pkgdir.listdir():
-                if file.basename() != 'TRANS.TBL':
-                    dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
-
-                    if dest.exists():
-                       raise FileAlreadyExistError, '%s already exists' % dest
-
-                    file.symlink(dest)
-
-        session.close()
-
-    def copyOSKit(self):
-        for key, dir in self.dirlayout.items():
-            if key != 'repodatadir':
-                for file in (self.os_path / dir).listdir():
-                    if file.basename() != 'TRANS.TBL':
-                        file.symlink(self.repo_path / dir / file.basename())
-
-    def makeRepoDirs(self):
-        # Need to move/use a common lib 
-        for dir in self.dirlayout.values():
-            (self.repo_path / dir).makedirs()
-
-    def copyRamDisk(self):
-        pass
-        
-    def verify(self):
-        pass
-
-
