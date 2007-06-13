@@ -49,7 +49,7 @@ class PackBuilder:
         self.md5sum      = '/usr/bin/md5sum'
         self.passwdfile  = '/opt/kusu/etc/db.passwd'   # Change this later
         self.nodegrplst  = {}    # Dictionary of the nodegroups and their ID's
-        self.pkgfile     = '/opt/kusu/etc/package.lst'  # File holding package list
+        self.pkgfile     = 'package.lst'  # File holding package list
         self.updatesize  = 0      # The size of the files that need to be updated
         self.db.connect(self.database, self.user)
         tmp = self.db.getAppglobals('CFMBaseDir')
@@ -211,7 +211,7 @@ class PackBuilder:
                 for file in files:
                     fn = "%s/%s" % (root, file)
                     fqfn, user, group, mode, mtime, md5sum = self.__getFileInfo(fn)
-                    filep.write('%s %s %s %s %i %s\n' % (fqfn, user, group, mode, mtime, md5sum))
+                    filep.write('%s %s %s %o %i %s\n' % (fqfn, user, group, mode, mtime, md5sum))
         filep.close()
         os.chown(filename, self.apacheuser[2], self.apacheuser[3])
                         
@@ -334,7 +334,7 @@ class PackBuilder:
 
             # Now check the file to see if there are actually any changes needed
             # pfile = os.path.join(self.cfmbasedir, "%i" % ngid, self.pkgfile)  # DOES NOT WORK!
-            pfile = "%s/%i/%s" % (self.cfmbasedir, ngid, self.pkgfile)
+            pfile = "%s/%i.%s" % (self.cfmbasedir, ngid, self.pkgfile)
 
             if not packages:
                 if os.path.exists(pfile):
