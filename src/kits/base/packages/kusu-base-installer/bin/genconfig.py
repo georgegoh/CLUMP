@@ -23,8 +23,8 @@ import os
 import sys
 import string
 
-from kusu.kusuapp import KusuApp
-from kusu.kusudb import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 from kusu.genconfig import Report
 
 PLUGINS='/opt/kusu/lib/plugins/genconfig'
