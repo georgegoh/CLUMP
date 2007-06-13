@@ -54,7 +54,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
-	mkdir -p $(ROOT)/opt/kusu/locale/en/LC_MESSAGES
+	mkdir -p $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
 	mkdir -p $(ROOT)/depot/repos/custom_scripts
@@ -89,7 +89,7 @@ install::
 	install -m644 sql/kusu_createdb.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_dbperms.sql $(ROOT)/opt/kusu/sql
 	install -m644 sql/kusu_alterdb.sql $(ROOT)/opt/kusu/sql
-	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/locale/en/LC_MESSAGES/
+	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES/
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
 	echo "# CFM changed file list.  Generated automatically" > $(ROOT)/opt/kusu/cfm/changedfiles.lst
 	chown -R apache $(ROOT)/opt/kusu/cfm
