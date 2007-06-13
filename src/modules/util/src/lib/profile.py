@@ -93,7 +93,7 @@ class PersistentProfile:
 
         self.restore(kiprofile.getDatabase())
 
-    def save(self, database, profile):
+    def save(self, db, profile):
         """
         Store profile to database.
 
@@ -103,7 +103,7 @@ class PersistentProfile:
         """
         pass
 
-    def restore(self, database):
+    def restore(self, db):
         """
         Restore profile from db.
 

@@ -22,31 +22,25 @@ def getOS(db, key):
        based on the repoid or nodegroup name"""
 
     # Do not depend on os type in repo
-    session = db.createSession()
-    
     # repoid
     if type(key) in [int, long]: # float/complex not included 
-        kit = session.query(db.kits).select_by \
-                            (db.repos_have_kits.c.kid == db.kits.c.kid, \
-                             db.repos_have_kits.c.repoid == key, \
-                             db.kits.c.isOS)
+        kit = db.Kits.select_by(db.ReposHaveKits.c.kid == db.Kits.c.kid,
+                                db.ReposHaveKits.c.repoid == key,
+                                db.Kits.c.isOS)
 
     # nodegroup name
     elif type(key) == str:
-        AND = sa.and_(db.nodegroups.c.ngid == db.ng_has_comp.c.ngid, \
-                      db.ng_has_comp.c.cid == db.components.c.cid, \
-                      db.components.c.kid == db.kits.c.kid, \
-                      db.kits.c.isOS == True, \
-                      db.nodegroups.c.ngname == key)
+        AND = sa.and_(db.NodeGroups.c.ngid == db.NGHasComp.c.ngid, \
+                      db.NGHasComp.c.cid == db.Components.c.cid, \
+                      db.Components.c.kid == db.Kits.c.kid, \
+                      db.Kits.c.isOS == True, \
+                      db.NodeGroups.c.ngname == key)
 
-        kit = sa.select([db.kits.c.rname, db.kits.c.version, db.kits.c.arch], \
+        kit = sa.select([db.Kits.c.rname, db.Kits.c.version, db.Kits.c.arch], \
                         AND).execute().fetchall()
 
     else:
-        session.close()
         raise TypeError, 'Invalid type for key: %s' % key
-
-    session.close()
 
     # There should only 1 be os kit for a repo. 
     if len(kit) > 1:
@@ -85,9 +79,7 @@ class BaseRepo(object):
     def UpdateDatabase(self, reponame):
         """Update the database with the new repository""" 
 
-        session = self.db.createSession()
-
-        ng = session.query(self.db.nodegroups).select_by(ngname=self.ngname)[0]
+        ng = self.db.NodeGroups.select_by(ngname=self.ngname)[0]
 
         kits = {} 
         for component in ng.components:
@@ -95,17 +87,15 @@ class BaseRepo(object):
             kits[component.kit.kid] = component.kit
 
         # Add new repo into table      
-        repo = db.Repos(reponame=reponame)
+        repo = self.db.Repos(reponame=reponame)
         repo.kits = kits.values()
-        session.save(repo)
-        session.flush()
+        repo.save()
+        self.db.flush()
         
         # Update nodegroup with the new repoid
         ng.repoid = repo.repoid
-        session.save_or_update(ng)
-        session.flush()
-
-        session.close()
+        ng.save_or_update()
+        self.db.flush()
 
         self.repoid = repo.repoid
         self.repo_path = self.getRepoPath(self.repoid)
@@ -223,13 +213,10 @@ class FedoraRepo(BaseRepo, RedhatRepo):
         self.dirlayout['basedir'] = 'Fedora/base'
 
     def copyKitsPackages(self):
-        session = self.db.createSession()
-
         # Need a better method for this
-        kits = session.query(self.db.kits).select_by \
-                             (self.db.repos_have_kits.c.repoid==self.repoid, \
-                              self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
-                              self.db.kits.c.isOS==False)
+        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
+                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
+                                      self.db.kits.c.isOS==False)
 
         for kit in kits:
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
@@ -245,8 +232,6 @@ class FedoraRepo(BaseRepo, RedhatRepo):
                        raise FileAlreadyExistError, '%s already exists' % dest
 
                     file.symlink(dest)
-
-        session.close()
 
     def copyOSKit(self):
         for key, dir in self.dirlayout.items():

@@ -14,7 +14,6 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.installer import network
 from kusu.util.verify import *
-import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util import profile
 from screen import InstallerScreen
@@ -126,13 +125,11 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-    def save(self, database, profile):
+    def save(self, db, profile):
         if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
-            s = database.createSession()
-            nets = s.query(database.networks).select()
+            nets = db.Networks.select()
 
             for net in nets:
                 net.suffix = profile['fqhn_domain']
 
-            s.flush()
-            s.close()
+            db.flush()

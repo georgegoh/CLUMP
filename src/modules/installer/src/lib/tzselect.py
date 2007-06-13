@@ -10,7 +10,6 @@
 
 import snack
 from gettext import gettext as _
-import kusu.core.database as db
 from kusu.util import profile
 from path import path
 from kusu.ui.text import kusuwidgets
@@ -121,16 +120,17 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
             return True
         return False
 
-    def save(self, database, profile):
-        s = database.createSession()
+    def save(self, db, profile):
         newag_zone = db.AppGlobals(kname=self.profile + '_zone',
                                    kvalue=profile['zone'])
+        newag_zone.save()
+
         newag_utc = db.AppGlobals(kname=self.profile + '_utc',
                                   kvalue=profile['utc'])
+        newag_utc.save()
+
         newag_ntp = db.AppGlobals(kname=self.profile + '_ntp_server',
                                   kvalue=profile['ntp_server'])
-        s.save(newag_zone)
-        s.save(newag_utc)
-        s.save(newag_ntp)
-        s.flush()
-        s.close()
+        newag_ntp.save()
+
+        db.flush()

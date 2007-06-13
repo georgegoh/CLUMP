@@ -31,7 +31,6 @@ import re
 import subprocess
 from path import path
 
-import kusu.core.database as db
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
@@ -70,7 +69,7 @@ class KitOps:
             self.installer = kw['installer']
 
         self.prefix = path(kw.get('prefix', '/'))
-        self.tmpprefix = path(kw.get('tmpprefix', '/'))
+        self.tmpprefix = path(kw.get('tmpprefix', '/tmp'))
         self.kits_dir = self.prefix / 'depot/kits/'
         self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
 
@@ -100,6 +99,9 @@ class KitOps:
 
         if tmpprefix:
             self.tmpprefix = path(tmpprefix)
+
+    def getOSDist(self):
+        return DistroFactory(str(self.mountpoint))
 
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
@@ -172,9 +174,6 @@ class KitOps:
         # at this point, we cannot find any kits
         raise NoKitSpecifiedOrFoundError
 
-    def getOSDist(self):
-        return DistroFactory(str(self.mountpoint))
-
     def addKit(self):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
@@ -219,10 +218,9 @@ class KitOps:
         dstP.communicate()
 
         # 2. populate the kit DB table with info
-        session = self.__db.createSession()
-        newkit = db.Kits(rname=kit['name'], rdesc=kit['sum'],
-                         version=kit['ver'], arch=kit['arch'])
-        session.save(newkit)
+        newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['sum'],
+                                version=kit['ver'], arch=kit['arch'])
+        newkit.save()
         
         # 3. install the kit RPM
         if not self.installer:
@@ -235,7 +233,7 @@ class KitOps:
                         'Kit RPM installation failed\n%s' % msg
 
         # RPM install successful, add kit to DB
-        session.flush()
+        self.__db.flush()
 
         #extract the kit id to associate with components
         kit['kid'] = newkit.kid
@@ -247,27 +245,20 @@ class KitOps:
         except CorruptComponentNameError, msg:
             # updateComponents encountered an error, remove kit from DB
             newkit.removable = True
-            session.flush()
-            session.close()
+            newkit.flush()
             self.deleteKit()
             raise CorruptComponentNameError, msg
-
-        session.close()
 
     def updateComponents(self, kit):
         """
         Update components table with information from kit.
         """
 
-        session = self.__db.createSession()
-
         complst = path(self.mountpoint / kit.rname).glob('component-*.rpm')
         for comploc in complst:
             comp = {}
             comp['inst'] = PackageFactory(str(comploc))
             comp['name'] = comp['inst'].getName()
-#            if comp['name'].startswith('component-'):
-#                comp['name'] = comp['name'][len('component-'):]
 
             try:
                 assert(bool(comp['name']))
@@ -279,19 +270,18 @@ class KitOps:
             comp['ver'] = comp['inst'].getVersion()
             comp['sum'] = comp['inst'].getSummary()
 
-            components = session.query(self.__db.components).select_by(
-                                                            cname=comp['name'])
+            components = self.__db.Components.select_by(cname=comp['name'])
 
             if not components:
                 # this component was not inserted in kit RPM's %post
                 # generate an entry for this component
-                newcomp = db.Components(kid=kit.kid, cname=comp['name'],
-                                        cdesc=comp['sum'])
+                newcomp = self.__db.Components(kid=kit.kid, cname=comp['name'],
+                                               cdesc=comp['sum'])
                 # also store the OS/ARCH -- but how to determine?
-                session.save(newcomp)
+                newcomp.save()
 
-                ngs = session.query(self.__db.nodegroups).select(
-                    self.__db.nodegroups.c.ngname.in_('compute', 'installer'))
+                ngs = self.__db.NodeGroups.select(
+                    self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
 
                 for ng in ngs:
                     # if installer component, add to installer nodegroup
@@ -315,8 +305,7 @@ class KitOps:
                                    comp['name'], component.cid)
                         component.kid = kit.kid
 
-        session.flush()
-        session.close()
+        self.__db.flush()
 
     def parseRPMTag(self, rpmloc):
         """
@@ -392,14 +381,8 @@ class KitOps:
     def checkKitInstalled(self, kitname, kitver, kitarch):
         '''Returns true if specified kit is already in the DB, false otherwise'''
 
-        session = self.__db.createSession()
-
-        kits = session.query(self.__db.kits).select_by(rname=kitname,
-                                                       version=kitver,
-                                                       arch=kitarch)
-
-        session.close()
-        return [] != kits
+        return [] != self.__db.Kits.select_by(rname=kitname, version=kitver,
+                                              arch=kitarch)
 
     def selectKit(self, mountpoint, dirlst = None):
         '''selectKit method displays kits available on the media provided and prompts to choose
@@ -445,14 +428,17 @@ class KitOps:
             rv = umountP.wait()
             kl.debug('unmounting pid: %d, rv: %d', umountP.pid, rv)
             self.mountpoint = None
+
         if self.__tmpmntdir:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
                                    shell=True)
             self.__tmpmntdir = None
+
         if self.__tmprd1:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprd1,
                                    shell=True)
             self.__tmprd1 = None
+
         if self.__tmprootfs:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprootfs,
                                    shell=True)
@@ -488,12 +474,8 @@ class KitOps:
         kit['initrd'] = 'initrd-%s.img' % kit['longname']
         kit['kernel'] = 'kernel-%s' % kit['longname']
 
-        session = self.__db.createSession()
-        #kits = session.query(self.__db.kits).select_by(rname=kit['name'])
-        kits = session.query(self.__db.kits).select_by(rname=kit['name'],
-                                                       version=kit['ver'],
-                                                       arch=kit['arch'])
-        session.close()
+        kits = self.__db.Kits.select_by(rname=kit['name'], version=kit['ver'],
+                                        arch=kit['arch'])
 
         if kits:
             raise KitAlreadyInstalledError, \
@@ -515,7 +497,7 @@ class KitOps:
             if os.path.exists(self.__tmprd1):
                 os.remove(self.__tmprd1)
             self.__tmprootfs = tempfile.mkdtemp(prefix='kitops',
-                                                dir=self.tempprefix)
+                                                dir=self.tmpprefix)
 
             bmt.copyInitrd(self.mountpoint, self.__tmprd1, True)
             bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
@@ -545,32 +527,25 @@ class KitOps:
  
     def finalizeOSKit(self, kit):
         #populate the database with info
-        session = self.__db.createSession()
-
-        newkit = db.Kits(rname=kit['name'], rdesc=kit['sum'],
-                         version=kit['ver'], isOS=True,
-                         removable=False, arch=kit['arch'])
-        session.save(newkit)
-        session.flush()
+        newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['sum'],
+                                version=kit['ver'], isOS=True,
+                                removable=False, arch=kit['arch'])
+        newkit.save()
+        self.__db.flush()
 
         # add mock component to complete link from nodegroups to kits
-        comp = db.Components(cname=kit['longname'],
-                             cdesc='%s mock component' % kit['longname'])
+        comp = self.__db.Components(cname=kit['longname'],
+                                    cdesc='%s mock component' % kit['longname'])
         newkit.components.append(comp)
 
-        ngs = session.query(self.__db.nodegroups).select(
-                    self.__db.nodegroups.c.ngname.in_('compute', 'installer'))
+        ngs = self.__db.NodeGroups.select(
+                    self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
 
         for ng in ngs:
             if comp not in ng.components:
                 ng.components.append(comp)
-                #if not self.installer:
-                #    ng.ngname = '%s-%s' % (ng.ngname, kit['longname'])
-                #    ng.initrd = kit['initrd']
-                #    ng.kernel = kit['kernel']
 
-        session.flush()
-        session.close()
+        self.__db.flush()
 
     def deleteKit(self, del_name='', del_version='', del_arch=''):
         '''perform the delete operation on the kit specified '''
@@ -580,28 +555,25 @@ class KitOps:
         except AssertionError,msg:
             raise AssertionError, 'Name for kit to delete not specified'
 
-        session = self.__db.createSession()
         kits = []
 
         del_path = ''
         if del_arch and del_version:
-            kits = session.query(self.__db.kits).select_by(rname=del_name,
-                                                           version=del_version,
-                                                           arch=del_arch)
+            kits = self.__db.Kits.select_by(rname=del_name,
+                                            version=del_version, arch=del_arch)
             kl.info("Removing kit '%s', version %s, arch %s" %
                     (del_name, del_version, del_arch))
             del_version = '-' + del_version
             del_arch = '-' + del_arch
             del_path = self.kits_dir / del_name / del_version / del_arch
         elif del_version:
-            kits = session.query(self.__db.kits).select_by(rname=del_name,
-                                                           version=del_version)
+            kits = self.__db.Kits.select_by(rname=del_name, version=del_version)
             kl.info("Removing kit '%s', version %s, all architectures" %
                     (del_name, del_version))
             del_version = '-' + del_version
             del_path = self.kits_dir / del_name / del_version
         else:
-            kits = session.query(self.__db.kits).select_by(rname=del_name)
+            kits = self.__db.Kits.select_by(rname=del_name)
             kl.info("Removing kit '%s', all versions and architectures" %
                     del_name)
             del_path = self.kits_dir / del_name
@@ -618,7 +590,7 @@ class KitOps:
                                    (kit.rname, kit.version, kit.arch))
                 continue
 
-            repos = session.query(self.__db.repos).select_by(kid=kit.kid)
+            repos = self.__db.Repos.select_by(kid=kit.kid)
             if repos:
                 error_kits.append("Cannot delete kit " +
                                   "'%s-%s-%s', it is used by a repo" %
@@ -644,13 +616,12 @@ class KitOps:
                     if not self.pxeboot_dir.listdir():  # directory is empty
                         self.pxeboot_dir.rmdir()
 
-                session.delete(component)
+                component.delete()
 
             # 4. remove kit DB info
-            session.delete(kit)
+            kit.delete()
         
-        session.flush()
-        session.close()
+        self.__db.flush()
 
         if error_kits:
             self.unmountMedia()
@@ -660,14 +631,8 @@ class KitOps:
         '''if the kit was specified, lists component summary for it, else prints
          kit table summary'''
 
-        session = self.__db.createSession()
-
-        kits = []
         if ls_name:
-            kits = session.query(self.__db.kits).select_by(
+            return self.__db.Kits.select_by(
                         self.__db.kits.c.rname.like('%%%s%%' % ls_name))
         else:
-            kits = session.query(self.__db.kits).select()
-
-        session.close()
-        return kits
+            return self.__db.Kits.select()

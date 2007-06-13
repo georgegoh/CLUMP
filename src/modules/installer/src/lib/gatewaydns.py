@@ -13,7 +13,6 @@ from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
 from kusu.util.verify import *
-import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util import profile
 from screen import InstallerScreen
@@ -227,14 +226,12 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
-    def save(self, database, profile):
+    def save(self, db, profile):
         if not profile['gw_dns_use_dhcp']:
             import socket
             import struct
 
-            s = database.createSession()
-
-            nets = s.query(database.networks).select()
+            nets = db.Networks.select()
             for net in nets:
                 if not net.usingdhcp:
                     gw = struct.unpack('>L',
@@ -246,5 +243,4 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
                                 socket.inet_ntoa(struct.pack('>L', nm & gw)):
                         net.gateway = profile['default_gw']
 
-            s.flush()
-            s.close()
+            db.flush()

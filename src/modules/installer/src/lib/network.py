@@ -13,7 +13,6 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import kusuwidgets
 from kusu.hardware import probe
-import kusu.core.database as db
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
@@ -194,11 +193,10 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
-    def save(self, database, profile):
+    def save(self, db, profile):
         import socket
         import struct
 
-        s = database.createSession()
         interfaces = profile['interfaces']
 
         for intf in interfaces:
@@ -217,10 +215,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
                 newnet.device = intf
                 newnet.netname = 'net-%s' % intf
-                s.save(newnet)
+                newnet.save()
 
-        s.flush()
-        s.close()
+        db.flush()
 
     def setDefaults(self):
         interfaces = probe.getPhysicalInterfaces()    # we get a dictionary

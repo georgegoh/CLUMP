@@ -23,25 +23,16 @@ test_kits = path('/tmp/kitops_app_test_mock_isos')
 temp_root = None
 temp_mount = None
 kusudb = None
+db_driver = 'mysql' # set to one of 'mysql' 'sqlite'
 dbinfo_str = ''
 
 def setUp():
     global temp_root
     global temp_mount
-    global kusudb
-    global dbinfo_str
 
     assert test_kits.exists(), 'ISO dir %s does not exist!' % test_kits
 
-    #dbinfo = ['mysql', 'kitops_test', 'root', 'root']
-    #dbinfo_str = '--dbdriver=%s --dbdatabase=%s --dbuser=%s --dbpassword=%s' % \
-                 #(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
-    #kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
-    #kusudb.createDatabase()
-
-    dbinfo = ['sqlite', '/tmp/kusu-test-kitops.db']
-    dbinfo_str = '--dbdriver=%s --dbdatabase=%s' % (dbinfo[0], dbinfo[1])
-    kusudb = db.DB(dbinfo[0], dbinfo[1])
+    databasePrep()
 
     temp_root = path(tempfile.mkdtemp(prefix='kot'))
     temp_mount = path(tempfile.mkdtemp(prefix='kot'))
@@ -49,13 +40,8 @@ def setUp():
 def tearDown():
     global temp_root
     global temp_mount
-    global kusudb
 
-    #kusudb.dropDatabase()
-    try:
-        os.unlink('/tmp/kusu-test-kitops.db')
-    except:
-        pass
+    databaseCleanup()
 
     temp_root.rmtree()
     temp_mount.rmtree()
@@ -85,16 +71,14 @@ class TestBaseKit:
         self.kusudb = kusudb
         self.kusudb.createTables()
         self.kusudb.bootstrap()
-        self.dbs = self.kusudb.createSession()
 
         mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
                                   (self.kit, self.temp_mount), shell=True)
         mountP.wait()
 
     def tearDown(self):
-        # close session, destroy the database
-        self.dbs.close()
-        kusudb.dropTables()
+        self.kusudb.flush()
+        self.kusudb.dropTables()
 
         # wipe out installed files
         if self.depot_dir.exists():
@@ -143,7 +127,7 @@ class TestBaseKit:
                (self.temp_mount / self.kit_name, self.kits_dir_arch)
 
         # check DB for information
-        kits = self.dbs.query(self.kusudb.kits).select()
+        kits = self.kusudb.Kits.select()
         
         # we are expecting only one kit
         assert len(kits) == 1, 'Kits in DB: %d, expected: 1' % len(kits)
@@ -161,15 +145,14 @@ class TestBaseKit:
                'Arch: %s, expected: %s' % (kit.arch, self.kit_arch)
 
         # the base kit has two components
-        cmps = self.dbs.query(self.kusudb.components).select()
+        cmps = self.kusudb.Components.select()
         assert len(cmps) == 2, 'Components in DB: %d, expected: 2' % len(cmps)
 
         # check component data
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='base-node')
+        cmp = self.kusudb.Components.selectfirst_by(cname='component-base-node')
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
-        assert cmp.cname == 'base-node', \
-               'Component name: %s, expected: base-node' % cmp.cname
+        assert cmp.cname == 'component-base-node', \
+               'Component name: %s, expected: component-base-node' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Node Base', \
                'Component description: ' + \
                '%s, expected: Component for Kusu Node Base' % cmp.cname
@@ -180,11 +163,12 @@ class TestBaseKit:
         assert cmp.nodegroups[0].ngname == 'compute', \
             'Component %s not associated with compute nodegroup' % cmp.cname
 
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='base-installer')
+        cmp = self.kusudb.Components.selectfirst_by(
+                                            cname='component-base-installer')
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
-        assert cmp.cname == 'base-installer', \
-               'Component name: %s, expected: base-installer' % cmp.cname
+        assert cmp.cname == 'component-base-installer', \
+               'Component name: %s, ' % cmp.cname + \
+               'expected: component-base-installer'
         assert cmp.cdesc == 'Component for Kusu Installer Base', \
            'Component description: ' + \
            '%s, expected: Component for Kusu Installer Base' % cmp.cname
@@ -227,13 +211,13 @@ class TestBaseKit:
         assert rv == 0, 'kitops returned error: %s' % rv
 
         # assert database entries removed
-        kits = self.dbs.query(self.kusudb.kits).select()
+        kits = self.kusudb.Kits.select()
         assert len(kits) == 0, 'Kits still remain in the DB'
         
-        cmps = self.dbs.query(self.kusudb.components).select()
+        cmps = self.kusudb.Components.select()
         assert len(cmps) == 0, 'Components still remain in the DB'
 
-        ng_has_comps = self.dbs.query(self.kusudb.ng_has_comp).select()
+        ng_has_comps = self.kusudb.NGHasComp.select()
         assert len(ng_has_comps) == 0, \
                    'Nodegroups have components still remain in DB'
 
@@ -272,11 +256,11 @@ class TestBaseKit:
         new_isOS = True
         new_removable = False
 
-        kit = self.dbs.query(self.kusudb.kits).selectfirst_by(rname='base')
+        kit = self.kusudb.Kits.selectfirst_by(rname='base')
         kit.arch = new_arch
         kit.isOS = new_isOS
         kit.removable = new_removable
-        self.dbs.flush()
+        self.kusudb.flush()
 
         expected_title = ['Kit', 'Description', 'Version', 'Architecture', \
                           'OS', 'Kit', 'Removable']
@@ -316,28 +300,27 @@ class TestBaseKit:
     def prepareDatabase(self):
         # insert data into DB
         # create a new kit with removable set to True
-        newkit = db.Kits(rname=self.kit_name, rdesc='Base Kit', version='0.1',
-                         isOS=False, removable=True)
-        newkit.components.append(db.Components(cname='base-node',
+        newkit = self.kusudb.Kits(rname=self.kit_name, rdesc='Base Kit',
+                                  version='0.1', isOS=False, removable=True)
+        newkit.components.append(self.kusudb.Components(
+                                    cname='component-base-node',
                                     cdesc='Component for Kusu Node Base'))
-        newkit.components.append(db.Components(cname='base-installer',
+        newkit.components.append(self.kusudb.Components(
+                                    cname='component-base-installer',
                                     cdesc='Component for Kusu Installer Base'))
-        self.dbs.save(newkit)
-        self.dbs.flush()
+        newkit.save()
+        self.kusudb.flush()
 
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='base-node')
-        ng = self.dbs.query(self.kusudb.nodegroups).selectfirst_by(\
-                                                        ngname='compute')
+        cmp = self.kusudb.Components.selectfirst_by(cname='component-base-node')
+        ng = self.kusudb.NodeGroups.selectfirst_by(ngname='compute')
         ng.components.append(cmp)
 
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='base-installer')
-        ng = self.dbs.query(self.kusudb.nodegroups).selectfirst_by(\
-                                                        ngname='installer')
+        cmp = self.kusudb.Components.selectfirst_by(
+                                            cname='component-base-installer')
+        ng = self.kusudb.NodeGroups.selectfirst_by(ngname='installer')
         ng.components.append(cmp)
 
-        self.dbs.flush()
+        self.kusudb.flush()
 
 class TestFedoraCore6i386:
     def setUp(self):
@@ -370,15 +353,13 @@ class TestFedoraCore6i386:
         self.kusudb = kusudb
         self.kusudb.createTables()
         self.kusudb.bootstrap()
-        self.dbs = self.kusudb.createSession()
 
         mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
                                   (self.kit, self.temp_mount), shell=True)
         mountP.wait()
 
     def tearDown(self):
-        # close session, destroy the database
-        self.dbs.close()
+        # destroy the database
         kusudb.dropTables()
 
         # wipe out installed files
@@ -457,7 +438,7 @@ class TestFedoraCore6i386:
 
     def assertOSKitDBInfo(self):
         # check DB for information
-        kits = self.dbs.query(self.kusudb.kits).select()
+        kits = self.kusudb.Kits.select()
         
         # we are expecting only one kit
         assert len(kits) == 1, 'Kits in DB: %d, expected: 1' % len(kits)
@@ -474,12 +455,11 @@ class TestFedoraCore6i386:
         assert kit.arch == 'i386', 'Arch: %s, expected: i386' % kit.arch
 
         # the fedora 6 kit has one 'mock' component
-        cmps = self.dbs.query(self.kusudb.components).select()
+        cmps = self.kusudb.Components.select()
         assert len(cmps) == 1, 'Components in DB: %d, expected: 1' % len(cmps)
 
         # check component data
-        cmp = self.dbs.query(self.kusudb.components).selectfirst_by(\
-                                                        cname='fedora-6-i386')
+        cmp = self.kusudb.Components.selectfirst_by(cname=self.kit_longname)
         assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
         assert cmp.cname == self.kit_longname, \
                'Component name: %s, expected: %s' % \
@@ -586,3 +566,30 @@ def isRPMInstalled(pattern):
 def assertRoot():
     if os.getuid() != 0:
         raise SkipTest
+
+def databasePrep():
+    global dbinfo_str
+    global kusudb
+
+    if db_driver == 'mysql':
+        dbinfo = ['mysql', 'kitops_test', 'root', 'root']
+        dbinfo_str = \
+                '--dbdriver=%s --dbdatabase=%s --dbuser=%s --dbpassword=%s' % \
+                (dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
+        kusudb = db.DB(dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
+        kusudb.createDatabase()
+    elif db_driver == 'sqlite':
+        dbinfo = ['sqlite', '/tmp/kusu-test-kitops.db']
+        dbinfo_str = '--dbdriver=%s --dbdatabase=%s' % (dbinfo[0], dbinfo[1])
+        kusudb = db.DB(dbinfo[0], dbinfo[1])
+
+def databaseCleanup():
+    global kusudb
+
+    if db_driver == 'mysql':
+        kusudb.dropDatabase()
+    elif db_driver == 'sqlite':
+        try:
+            os.unlink('/tmp/kusu-test-kitops.db')
+        except:
+            pass

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id:$
+# $Id$
 
 # cfmsnet.py - The Cluster File Management network library 
 

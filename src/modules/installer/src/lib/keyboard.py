@@ -9,7 +9,6 @@
 
 import snack
 from gettext import gettext as _
-import kusu.core.database as db
 from kusu.util import profile
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
@@ -72,12 +71,10 @@ class KeyboardSelectionScreen(InstallerScreen, profile.PersistentProfile):
             return True
         return False
 
-    def save(self, database, profile):
-        s = database.createSession()
+    def save(self, db, profile):
         newag = db.AppGlobals(kname=self.profile, kvalue=profile)
-        s.save(newag)
-        s.flush()
-        s.close()
+        newag.save()
+        db.flush()
 
 # The following is data taken from the rhpl package 'keyboard_models.py',
 # which is licensed under GPL v2.

@@ -8,7 +8,6 @@
 # 
 
 from kusu.util.errors import *
-import kusu.core.database as db
 import time
 import os
 from path import path
@@ -59,14 +58,11 @@ class BaseInstall:
         pass
 
     def _getPackageProfile(self, ngname):
-        session = self.dbs.createSession()
-
         # There can only be 1 installer. Guaranteed by the db. 
-        installer = session.query(self.dbs.nodegroups).select_by(ngname=ngname)[0]
+        installer = self.dbs.NodeGroups.select_by(ngname=ngname)[0]
 
         components = [component.cname for component in installer.components \
                       if not component.kit.isOS]
-        session.close()
 
         return components
 
