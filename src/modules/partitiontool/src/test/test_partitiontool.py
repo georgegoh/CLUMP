@@ -32,20 +32,25 @@ class DiskProfileTestCase(unittest.TestCase):
     def setUp(self):
         print 'Making loopback device /dev/loop0 of 1GB'
         size = 1024 * 1024 * 1024
-        tmpfile = tempfile.mktemp
-        cmd = 'head -c %d < /dev/zero > %s' % (size, tmpfile)
+        self.tmpfile = tempfile.mktemp
+        cmd = 'head -c %d < /dev/zero > %s' % (size, self.tmpfile)
         runCommand(cmd)
-        cmd = 'losetup /dev/loop0 %s' % tmpfile
+        cmd = 'losetup /dev/loop0 %s' % self.tmpfile
         runCommand(cmd)
         self.dp = DiskProfile(True, 'loop0')
 
     def tearDown(self):
+        cmd = 'losetup -d /dev/loop0'
+        runCommand(cmd)
         pass
 
     def testRead(self):
         keys = sorted(self.dp.disk_dict.keys())
-        assert keys[0] == 'sda', "Didn't detect disks correctly."
-        assert keys[1] == 'sdb', "Didn't detect disks correctly."
+        assert keys[0] == 'loop0', "Didn't detect disks correctly."
+
+    def testMakePart(self):
+        self.dp.newPartition
+        pass
 
 class DiskTestCase(unittest.TestCase):
     """"""
