@@ -26,19 +26,19 @@ def vanillaSchema():
     disk1_partition_dict[1] = { 'size_MB': 100,
                                 'fs': 'ext3',
                                 'mountpoint': '/boot',
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
                                 'fs': 'linux-swap',
                                 'mountpoint': None,
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[3] = { 'size_MB': 2000,
                                 'fs': 'ext3',
                                 'mountpoint': '/',
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[4] = { 'size_MB': 4000,
                                 'fs': 'ext3',
                                 'mountpoint': '/depot',
-                                'fillAvailableSpace': True}
+                                'fill': True}
 
     schema = {'disk_dict' : disk_dict,
               'vg_dict' : None}
@@ -62,15 +62,15 @@ def vanillaSchemaLVM():
     disk1_partition_dict[1] = { 'size_MB': 100,
                                 'fs': 'ext3',
                                 'mountpoint': '/boot',
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
                                 'fs': 'linux-swap',
                                 'mountpoint': None,
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[3] = { 'size_MB': 6000,
                                 'fs': 'physical volume',
                                 'mountpoint': None,
-                                'fillAvailableSpace': True}
+                                'fill': True}
 
     # define the lvm schema
     vg_dict = { 'VolGroup00': { 'pv_dict': {},
@@ -84,11 +84,11 @@ def vanillaSchemaLVM():
     volgroup00['lv_dict']['ROOT'] = { 'size_MB': 2000,
                                       'fs': 'ext3',
                                       'mountpoint': '/',
-                                      'fillAvailableSpace': False}
+                                      'fill': False}
     volgroup00['lv_dict']['DEPOT'] = { 'size_MB': 4000,
                                        'fs': 'ext3',
                                        'mountpoint': '/depot',
-                                       'fillAvailableSpace': True}
+                                       'fill': True}
 
     schema = {'disk_dict' : disk_dict,
               'vg_dict' : vg_dict}
@@ -109,15 +109,15 @@ def scenario22():
     disk1_partition_dict[1] = { 'size_MB': 100,
                                 'fs': 'ext3',
                                 'mountpoint': '/boot',
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[2] = { 'size_MB': 1000,
                                 'fs': 'linux-swap',
                                 'mountpoint': None,
-                                'fillAvailableSpace': False}
+                                'fill': False}
     disk1_partition_dict[3] = { 'size_MB': 6000,
                                 'fs': 'ext3',
                                 'mountpoint': '/',
-                                'fillAvailableSpace': True}
+                                'fill': True}
 
     schema = {'disk_dict' : disk_dict,
               'vg_dict' : {} }
@@ -167,13 +167,13 @@ def createPhysicalSchema(disk_profile, disk_schemata):
                     logger.debug('Creating new partition of size: %d' % size_MB)
                     fs = schema_partition['fs']
                     mountpoint = schema_partition['mountpoint']
-                    fillAvailableSpace = schema_partition['fillAvailableSpace']
+                    fill = schema_partition['fill']
                     disk_profile.newPartition(disk_key,
                                               size_MB,
                                               False,
                                               fs,
                                               mountpoint,
-                                              fillAvailableSpace)
+                                              fill)
             except IndexError:
                 raise PartitionSchemaError, 'Run out of disks.'
 
@@ -200,7 +200,7 @@ def createLVMSchema(disk_profile, lvm_schemata):
         lv_schema = vg_schema['lv_dict']
         last_lv = []
         for lv_name, lv_schema in lv_schema.iteritems():
-            if lv_schema['fillAvailableSpace']:
+            if lv_schema['fill']:
                 last_lv.append(lv_name)
                 last_lv.append(lv_schema)
                 continue
@@ -210,7 +210,7 @@ def createLVMSchema(disk_profile, lvm_schemata):
                                           lv_schema['size_MB'],
                                           lv_schema['fs'],
                                           lv_schema['mountpoint'],
-                                          lv_schema['fillAvailableSpace'])
+                                          lv_schema['fill'])
             logger.debug('Finished creating %s' % lv_name)
         if last_lv:
             disk_profile.newLogicalVolume(last_lv[0],
@@ -218,5 +218,5 @@ def createLVMSchema(disk_profile, lvm_schemata):
                                           last_lv[1]['size_MB'],
                                           last_lv[1]['fs'],
                                           last_lv[1]['mountpoint'],
-                                          last_lv[1]['fillAvailableSpace'])
+                                          last_lv[1]['fill'])
     logger.debug('Create LVM Schema finished')
