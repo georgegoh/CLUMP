@@ -15,7 +15,8 @@ import sqlalchemy as sa
 
 class RepoFactory(object):
 
-    class_dict = { 'fedora' : repo.FedoraRepo }
+    class_dict = { 'fedora' : repo.FedoraRepo,
+                   'centos' : repo.CentosRepo }
 
     def __init__(self, db, prefix='/'):
         """Creates a RepoFactory.

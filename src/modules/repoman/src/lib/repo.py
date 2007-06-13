@@ -8,7 +8,6 @@
 #
 
 from kusu.util.errors import *
-from kusu.core import database as db
 from path import path
 import sqlalchemy as sa
 
@@ -82,8 +81,6 @@ class BaseRepo(object):
         """Returns the repository path"""
 
         return self.prefix / 'depot' / 'repos' / str(repoid)
-
-        session.close()
 
     def UpdateDatabase(self, reponame):
         """Update the database with the new repository""" 
@@ -173,18 +170,49 @@ class BaseRepo(object):
         """copy the initrd/kernel/stage2.img/etc to the repository"""
         raise NotImplementedError
 
-    def makeMetaInfo(self):
-        """makes the meta data for the repository"""
-        raise NotImplementedError
-
     def makeRepoDirs(self):
         """creates the necessary repository directories"""
         raise NotImplementedError
 
+class RedhatRepo(object):
+    """Base Redhat repository class"""
+
+    def __init__(self):
+        pass
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        repodatadir = self.repo_path / self.dirlayout['repodatadir']
+        self.comps_file = repodatadir / 'comps.xml'
+
+        (self.os_path / self.dirlayout['repodatadir'] / 'comps.xml').symlink \
+         (self.comps_file)
         
-class FedoraRepo(BaseRepo):
+    def makeMetaInfo(self):
+        """Creates a yum repoistory"""
+
+        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except: 
+            raise CommandFailedToRunError, 'createrepo failed'
+
+        if retcode:
+            raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+class FedoraRepo(BaseRepo, RedhatRepo):
     def __init__(self, os_version, os_arch, prefix, db):
         BaseRepo.__init__(self, os_version, os_arch, prefix, db)
+        RedhatRepo.__init__(self)
         
         # Need to use a common lib later, maybe boot-media-tool
         self.dirlayout = {}
@@ -235,32 +263,64 @@ class FedoraRepo(BaseRepo):
     def copyRamDisk(self):
         pass
         
-    def makeComps(self):
-        # symlink comps.xml
-        repodatadir = self.repo_path / self.dirlayout['repodatadir']
-        self.comps_file = repodatadir / 'comps.xml'
-
-        (self.os_path / self.dirlayout['repodatadir'] / 'comps.xml').symlink \
-         (self.comps_file)
-
-        
-    def makeMetaInfo(self):
-        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
-
-        try:
-            p = subprocess.Popen(cmd,
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            retcode = p.returncode
-
-        except: 
-            raise CommandFailedToRunError, 'createrepo failed'
-
-        if retcode:
-            raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
-
     def verify(self):
         pass
+
+class CentosRepo(BaseRepo, RedhatRepo):
+    def __init__(self, os_version, os_arch, prefix, db):
+        BaseRepo.__init__(self, os_version, os_arch, prefix, db)
+        RedhatRepo.__init__(self)
+        
+        # Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout = {}
+        self.dirlayout['repodatadir'] = 'repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'Centos/RPMS'
+        self.dirlayout['basedir'] = 'Centos/base'
+
+    def copyKitsPackages(self):
+        session = self.db.createSession()
+
+        # Need a better method for this
+        kits = session.query(self.db.kits).select_by \
+                             (self.db.repos_have_kits.c.repoid==self.repoid, \
+                              self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
+                              self.db.kits.c.isOS==False)
+
+        for kit in kits:
+            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
+
+            if not pkgdir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
+   
+            for file in pkgdir.listdir():
+                if file.basename() != 'TRANS.TBL':
+                    dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
+
+                    if dest.exists():
+                       raise FileAlreadyExistError, '%s already exists' % dest
+
+                    file.symlink(dest)
+
+        session.close()
+
+    def copyOSKit(self):
+        for key, dir in self.dirlayout.items():
+            if key != 'repodatadir':
+                for file in (self.os_path / dir).listdir():
+                    if file.basename() != 'TRANS.TBL':
+                        file.symlink(self.repo_path / dir / file.basename())
+
+    def makeRepoDirs(self):
+        # Need to move/use a common lib 
+        for dir in self.dirlayout.values():
+            (self.repo_path / dir).makedirs()
+
+    def copyRamDisk(self):
+        pass
+        
+    def verify(self):
+        pass
+
 
