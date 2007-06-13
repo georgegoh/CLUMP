@@ -183,41 +183,43 @@ class SelectNodeWindow(USXBaseScreen):
         rack = 0
         needRack = False
         nodeRecord = NodeFun()
-        nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
-        nodeRecord.getNodeFormat()
-        # Check if the selected node format has a rack if so, prompt for it.
-        if nodeRecord.isNodenameHasRack():
-            # Prompt user for Rack
-            needRack = True
-            while flag:
-                buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
-                self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
-                NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
-                try:
-                    result = int(result[0])
-                    if result < 0:
-                        self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
-                        self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
-                        flag = 1
-                    else:
-                        rack = result
-                        flag = 0
-                except:
-                    self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
-                    self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
-                    flag = 1
-
-        if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
-            self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
-            return NAV_NOTHING
 
         moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
-         
+
         # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
         # to the new destination node group.
         if not moveList:
            self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.nodegroupRadio.getSelection())
+
         else:
+           nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
+           nodeRecord.getNodeFormat()
+           # Check if the selected node format has a rack if so, prompt for it.
+           if nodeRecord.isNodenameHasRack():
+               # Prompt user for Rack
+               needRack = True
+               while flag:
+                   buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
+                   self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
+                   NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
+                   try:
+                       result = int(result[0])
+                       if result < 0:
+                           self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                           self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                           flag = 1
+                       else:
+                           rack = result
+                           flag = 0
+                   except:
+                       self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                       self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                       flag = 1
+
+           if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
+               self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
+               return NAV_NOTHING
+
            if badList:
               self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
 
