@@ -1,0 +1,452 @@
+#!/usr/bin/env python
+# $Id$
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+# Author: Najib Ninaba <najib@osgdc.org>
+#
+
+import sys
+import os
+from optparse import OptionParser
+import tempfile
+import subprocess
+import shutil
+import gettext
+
+# exceptions
+class CopyError(Exception): pass
+class FilePathError(Exception): pass
+class FileAlreadyExists(Exception): pass
+class FailedBuildCMake(Exception): pass
+class FailedBuildMake(Exception): pass
+
+# constants
+SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
+USES_ANACONDA = ['centos', 'fedora', 'rhel']
+SUPPORTED_ARCH = ['i386', 'x86_64']
+
+KUSU_MODULES = ['autoinstall','boot','core','util','ui',
+    'partitiontool','installer','nodeinstaller','networktool',
+    'hardware','kitops','repoman']
+
+KUSU_3RDPARTY = ['pysqlite','path','md5crypt','cheetah','urlgrabber',
+    'wget','thttpd','sqlalchemy','createrepo',]
+
+def cpio_copytree(src,dst):
+    """A cpio-based copytree functionality. Only use this when shutil.copytree don't cut
+       it.
+    """
+
+    # Taken from <unistd.h>, for file/dirs access modes
+    # These can be OR'd together
+    R_OK = 4   # Test for read permission.
+    W_OK = 2   # Test for write permission.
+    X_OK = 1   # Test for execute permission.
+    
+    # convert paths to be absolute
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
+    cwd = src
+
+    if not os.path.exists(cwd): raise IOError, "Source directory does not exist!"
+
+    # create the dst directory if it doesn't exist initially
+    if not os.path.exists(dst):
+        parentdir = os.path.join(dst,os.path.pardir)
+        if os.access(parentdir,R_OK|W_OK):
+            os.path.mkdir(dst)
+        else:
+            raise IOError, "No read/write permissions in parent directory!"
+    else:
+        if not os.access(dst,R_OK|W_OK): raise IOError, "No read/write permissions in destination directory!"
+
+
+    findP = subprocess.Popen('find .',cwd=cwd,shell=True,stdout=subprocess.PIPE)
+    cpioP = subprocess.Popen('cpio -mpdu --quiet %s' % dst,cwd=cwd,stdin=findP.stdout,shell=True)
+    cpioP.communicate()
+    return cpioP.returncode
+    
+
+class KusuSVNSource:
+    """ This class contains data and operations that work with the Kusu SVN source. """
+    
+    def __init__(self, source, env=None):
+        """ source refers to the Kusu SVN trunk source. env refers to a dict containing KUSU_* environment variables
+            that can be used to control the build.
+        """
+        self.srcpath = os.path.abspath(source)
+        self.isRemote = False
+        self.develroot = None
+        self.kusuroot = None
+        self.scratchdir = None
+        self.env = env
+        
+
+        # These should describe the key directories/files that identify a Kusu SVN source layout.
+        self.srcpathLayoutAttributes = {
+            'bin' : 'bin',
+            'build' : 'build',
+            'CMakeLists' : 'CMakeLists.txt',
+            'docs' : 'docs',
+            'etc' : 'etc',
+            'src' : 'src',
+            'dists' : 'src/dists'
+        }
+
+    def verifySrcPath(self):
+        """Call the correct verify*SrcPath method."""
+
+        if self.isRemote:
+            return self.verifyRemoteSrcPath()
+        else:
+            return self.verifyLocalSrcPath()
+
+    def verifyLocalSrcPath(self):
+        """Verify the path for attributes that describes a valid Kusu SVN source"""
+
+        try:
+            if not os.path.exists(self.srcpath): return False
+        except AttributeError:
+            # we could be testing on a NoneType object instead of a Path object
+            return False
+
+        # Check the path for each attribute listed, return if invalid path
+        for k,v in self.srcpathLayoutAttributes.items():
+            p = os.path.join(self.srcpath,v)
+            if not os.path.exists(p): return False
+
+        return True
+        
+    def setup(self,develroot=None,kusuroot=None):
+        """ General setup for Kusu develroot"""
+        
+        if not develroot:
+            self.scratchdir = os.path.abspath(tempfile.mkdtemp(dir='/tmp'))
+            self.develroot = os.path.abspath(tempfile.mkdtemp(dir=self.scratchdir))
+        else:
+            if os.path.exists(develroot):
+                self.develroot = os.path.abspath(develroot)
+            else:
+                raise FilePathError, "Please ensure that the develroot %s exists!" \
+                    % develroot
+            
+        if not kusuroot:
+            self.kusuroot = os.path.join(self.develroot,'kusuroot')
+        else:
+            if os.path.exists(kusuroot):
+                self.kusuroot = os.path.abspath(kusuroot)
+            else:
+                raise FilePathError, "Please ensure that the kusuroot %s exists!" \
+                    % kusuroot
+            
+                
+    def runCMake(self):
+        """ Run CMake within the Kusu develroot. This is a blocking call. """
+        env = os.environ
+        env['KUSU_ROOT'] = self.kusuroot
+        cmakeP = subprocess.Popen('cmake %s > /dev/null 2>&1' % os.path.abspath(self.srcpath),shell=True,
+                    cwd=self.develroot,env=env)
+        result = cmakeP.communicate()
+        
+        return cmakeP.returncode
+
+        
+    def runMake(self,target=None):
+        """ Run make within the Kusu develroot. This is a blocking call. """
+
+        if not target:
+            makeP = subprocess.Popen('make > /dev/null 2>&1',shell=True,
+                        cwd=self.develroot)
+        else:
+            makeP = subprocess.Popen('make build-%s > /dev/null 2>&1' % target,shell=True,
+                        cwd=self.develroot)
+            
+        result = makeP.communicate()
+
+        return makeP.returncode
+        
+    def cleanup(self):
+        """ Housecleaning for Kusu develroot. """
+        
+        # remove the scratchtree when done
+        if os.path.exists(self.kusuroot): shutil.rmtree(self.kusuroot)
+        if os.path.exists(self.develroot): shutil.rmtree(self.develroot)
+        if os.path.exists(self.scratchdir): shutil.rmtree(self.scratchdir)
+        
+    def run(self,target=None):
+        """ Main launcher. """
+        
+        retcode = self.runCMake()
+        if retcode <> 0:
+            self.cleanup()
+            raise FailedBuildCMake, "Failed CMake build for Kusu"
+
+        if not target:
+            retcode = self.runMake()
+            if retcode <> 0:
+                self.cleanup()
+                raise FailedBuildMake, "Failed Make build for Kusu"
+        else:
+            retcode = self.runMake(target)
+            if retcode <> 0:
+                self.cleanup()
+                raise FailedBuildMake, "Failed Make build for Kusu"                
+        
+    def copyKusuroot(self, dest, overwrite=False):
+        """Copy the kusuroot file to a destination"""
+        parentdir = os.path.abspath(os.path.join(dest,os.pardir))
+        if os.access(parentdir,os.W_OK):
+            # make sure that the existing destpath is accessible and writable
+            cpio_copytree(self.kusuroot,dest)
+        else:
+            raise CopyError
+
+class BuildKitApp(object):
+    """ Application Class """
+    def __init__(self):
+        super(BuildKitApp, self).__init__()
+        self._ = self.i18ninit()
+        # actions list
+        self.actions = {'build':['kususrc','os','version','arch','modules'],
+                        'list': []}
+        
+        # action and actionargs will hold the current action and its arguments           
+        self.action = None
+        self.actionargs = None
+        
+        self.usagestr ="""\
+build-kusu-modules <action> arg1=val1 arg2=val2 ...
+
+build-kusu-modules will build the Kusu modules and place the built
+kusu module artefacts in the current directory.
+
+actions:
+
+    build       - Build and place the built kusu module artefacts in the 
+                  current directory. Available arguments for this action:
+                    kususrc=<directory containing Kusu Trunk>
+                    os=<name of OS>
+                    version=<version of OS>
+                    arch=<architechure of OS>
+                    modules=<list of comma-separated module names 
+                            or all to build all modules>
+                            
+    list        - List the Kusu Runtime and dependencies modules that can
+                  be built.
+
+"""
+
+        self.parser = OptionParser(self.usagestr)
+
+    def i18ninit(self):
+        """ i18n and l10n """
+        langdomain = 'kusuapps'
+        localedir  = ''
+
+        # check if KUSU_ROOT environment exists
+        kusuroot = os.environ.get('KUSU_ROOT',None)
+
+        # Locate the Internationalization stuff
+        if kusuroot and \
+            os.path.exists('%s/share/locale' % kusuroot): 
+            localedir = '%s/share/locale' % kusuroot 
+        elif os.path.exists('../locale'):
+            localedir = '../locale'
+        else:
+            # Try the system path
+            if os.path.exists('/usr/share/locale'):
+                localedir = '/usr/share/locale'
+
+        gettext.bindtextdomain(langdomain, localedir)
+        gettext.textdomain(langdomain)
+        self.gettext = gettext.gettext
+        return self.gettext
+        
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        print self.usagestr
+        sys.stdout.write(os.linesep)
+        sys.exit(0)
+
+    def printMsgExit(self, msg):
+        """ Print msg and exit. """
+        print msg
+        sys.stdout.write(os.linesep)
+        sys.exit(1)
+
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+
+        li = []
+        d = {}
+
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+
+        return d
+
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+
+        self.options, self.args = self.parser.parse_args()
+        
+        if len(self.args) < 1: self.printUsageExit()
+
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
+
+        if action not in self.actions.keys():
+            self.printUsageExit()
+            
+        if len(self.args) > 1:
+            d = self.handleArgPairs(self.args[1:])
+
+            # iterate keys in d and validate against the commands'
+            # list of keys
+            for k in d.keys():
+                if k not in self.actions[action]:
+                    self.printUsageExit()
+        else:
+            d = {}
+
+        self.action = action
+        self.actionargs = d
+
+    def run(self):
+        """ Main launcher. """
+        
+        self.parseargs()
+
+        # call the correct sub-handler for the action
+        m = '_' + self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
+
+        handler = getattr(self,m)
+        handler(self.actionargs)
+
+        sys.exit(0)
+
+    def _build(self,args):
+        """ Handler for build. args is a dict of supported key-value pairs for this action. """
+        kususrc = args.get('kususrc',None)
+        osname = args.get('os',None)
+        version = args.get('version',None)
+        osarch = args.get('arch',None)
+        m = args.get('modules',None)
+        
+        if not m:
+            modules = ['all']
+        else:
+            li = m.split(',')
+            modules = []
+            for l in li:
+                mod = l.strip()
+                if mod not in modules: modules.append(mod)
+            
+        if not kususrc:
+            msg = self._('Please provide the kususrc!')
+            print msg
+            self.printUsageExit()
+            
+        if not osname:
+            msg = self._('Please provide the os!')
+            print msg
+            self.printUsageExit()
+
+        if not version:
+            msg = self._('Please provide the version!')
+            print msg
+            self.printUsageExit()
+
+        if not osarch:
+            msg = self._('Please provide the arch!')
+            print msg
+            self.printUsageExit()
+        
+            
+        if 'all' not in modules:
+            # loop each of the supplied modules and check against our two lists
+            # FIXME: this could be refactored using list comprehensions
+            for mod in modules:
+                if mod not in KUSU_MODULES and mod not in KUSU_3RDPARTY:
+                    msg = self._('%(modname)s is not in the list of the Kusu modules or 3rdparty modules!' \
+                        % {'modname':mod})
+                    self.printMsgExit(msg)        
+
+        if osname not in SUPPORTED_DISTROS:
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
+                % {'osname':osname, 'distros':distros})
+            self.printMsgExit(msg)
+        
+        # we're only interested in the major version
+        osver = version.split('.')[0]
+        
+        try:
+            svnsrc = KusuSVNSource(kususrc)
+            msg = self._('Setting up build sources..')
+            print msg
+            svnsrc.setup()
+
+            if 'all' in modules:
+                msg = self._('Building all modules..')
+                print msg        
+                svnsrc.run()
+            else:
+                retcode = svnsrc.runCMake()
+                if retcode <> 0:
+                    svnsrc.cleanup()
+                    raise FailedBuildCMake, "Failed CMake build for Kusu"
+                
+                for mod in modules:
+                    msg = self._('Building %(modname)s..' % {'modname':mod})
+                    print msg
+                    retcode = svnsrc.runMake(mod)
+                    if retcode <> 0:
+                        svnsrc.cleanup()
+                        raise FailedBuildMake, "Failed Make build for Kusu"                    
+
+            msg = self._('Copying Kusu Runtime contents to current directory.')
+            print msg
+            svnsrc.copyKusuroot(os.getcwd())
+            msg = self._('Cleaning up build sources..')
+            print msg
+            svnsrc.cleanup()
+            msg = self._('Done.')
+            print msg
+        except CopyError:
+            svnsrc.cleanup()
+            msg = self._('Error copying Kusu Runtime contents!')
+            print msg
+            sys.exit(2)
+        except (FailedBuildCMake,FailedBuildMake):
+            svnsrc.cleanup()
+            msg = self._('Error building Kusu Runtime!')
+            sys.exit(2)
+        
+    def _list(self,args):
+        """ Handler for list. args is a dict of supported key-value pairs for this action. """
+
+        modulelist = ', '.join(KUSU_MODULES)
+        msg = self._('Available Kusu modules: %(modulelist)s' % {'modulelist':modulelist})
+        print msg
+        thirdparty = ', '.join(KUSU_3RDPARTY)
+        msg = self._('Available Kusu 3rdparty modules : %(thirdparty)s' % {'thirdparty':thirdparty})
+        print msg
+
+if __name__ == '__main__':
+    app = BuildKitApp()
+    app.run()
+
