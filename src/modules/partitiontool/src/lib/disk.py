@@ -155,6 +155,12 @@ class Disk(object):
         """Remove a partition from this disk. Argument is the Partition object
            itself.
         """
+        if partition_obj.type == 'extended':
+            last_part_num = len(self.partition_dict)
+            logger.debug('Delete extended partition - total partitions: %d' % last_part_num)
+            if self.__getPartitionType(last_part_num) == 'LOGICAL':
+                raise CannotDeleteExtendedPartitionError, 'Logical Partition still exists.'
+
         # get ordered list of partition keys.
         partition_nums = sorted(self.partition_dict.keys())
 
