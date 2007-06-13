@@ -20,9 +20,9 @@ class USXBaseScreen(BaseScreen):
     """
     dbSelected = 'MySQL'
     hotkeysDict = {}
-    buttonsDict  = {}
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
+        self.buttonsDict  = {}
         self.database = database
         self.kusuApp = kusuApp
         self.gridWidth = gridWidth
@@ -38,11 +38,6 @@ class USXBaseScreen(BaseScreen):
         for button in self.buttons:
             self.buttonsDict[button] = kusu.ui.text.USXkusuwidgets.USXButton(self.kusuApp._(button))
 
-#        dbFuncs = ()
-#        try:
-#            dbFuncs = self.dbFunctions[self.dbSelected]
-#        except KeyError:
-#            pass
 
     def draw(self, screen, selector):
         """Template pattern method for drawing a screen
