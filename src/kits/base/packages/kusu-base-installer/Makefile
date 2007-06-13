@@ -52,7 +52,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/bin
 	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
-	mkdir -p $(ROOT)/opt/kusu/lib/kusu
+	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	mkdir -p $(ROOT)/opt/kusu/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
@@ -72,15 +72,15 @@ install::
 	install -m755 sbin/netedit.py $(ROOT)/opt/kusu/sbin/netedit
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 bin/genconfig.py $(ROOT)/opt/kusu/bin/genconfig
-	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/kusudb.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/kusuapp.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/kusu
-	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/kusu
+	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/core/db.py $(ROOT)/opt/kusu/lib/python/kusu/core
+	install -m644 lib/kusu/core/app.py $(ROOT)/opt/kusu/lib/python/kusu/core
+	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/ui/text/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/kusu/ui/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/ui
 	install -m644 lib/kusu/ui/text/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
