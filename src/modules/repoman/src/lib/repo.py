@@ -197,7 +197,9 @@ class RedhatYumRepo(BaseRepo):
                     if file.basename() != 'TRANS.TBL':
                         file.symlink(self.repo_path / dir / file.basename())
 
-        (self.os_path / '.discinfo').symlink(self.repo_path / '.discinfo')
+        discinfo = self.os_path / '.discinfo'
+        if discinfo.exists():
+            discinfo.symlink(self.repo_path / '.discinfo')
 
     def makeRepoDirs(self):
         # Need to move/use a common lib 
