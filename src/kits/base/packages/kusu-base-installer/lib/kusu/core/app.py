@@ -49,12 +49,12 @@ class KusuApp:
         localedir  = ''
         
         # Locate the Internationalization stuff
-        if os.path.exists('../locale'):
-            localedir = '../locale'
+        if os.path.exists('../share/locale'):
+            localedir = '../share/locale'
         else:
-            # Try the system path
-            if os.path.exists('/usr/share/locale'):
-                localedir = '/usr/share/locale'
+            # Try the system path 
+            if os.path.exists('/opt/kusu/share/locale'):
+                localedir = '/opt/kusu/share/locale'
     
         gettext.bindtextdomain(langdomain, localedir)
         gettext.textdomain(langdomain)
