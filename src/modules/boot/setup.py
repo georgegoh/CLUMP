@@ -11,6 +11,20 @@
 __version__ = "$Revision$"
 
 from distutils.core import setup
+
+def boot_data_files():
+    distros = { 'centos': [4,5],
+                'rhel': [4,5],
+                'fedora': [6]}
+            
+    datafiles = []
+    datafile = ()
+    for k,v in distros.items():
+        for version in v:
+            datafile = ('lib/nodeinstaller/%s/%s' % (k,version), ['src/nodeinstaller/README'])
+            datafiles.append(datafile)   
+    return datafiles
+
 setup(name="kusu-boot",
     version="0.2",
     author="Najib Ninaba",
@@ -19,7 +33,6 @@ setup(name="kusu-boot",
     platforms=["any"],
     packages=['boot'],
     package_dir={'boot':'src/lib'},
-    data_files=[('share/po',['src/po/kusuapps.po']),
-                ('share/doc',['src/doc/LICENSE'])],
+    data_files=boot_data_files(),                          
     scripts=['src/bin/boot-media-tool']
      )
