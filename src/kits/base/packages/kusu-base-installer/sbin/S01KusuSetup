@@ -19,7 +19,7 @@
 #
 # 
 
-export PYTHONPATH=/opt/kusu/lib
+export PYTHONPATH=/opt/kusu/lib/python
 
 echo "Configuring this node as an Installer"
 
