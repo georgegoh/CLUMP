@@ -728,8 +728,9 @@ class NetworkMainWindow(USXBaseScreen):
         networkList = NetworkRecord(windowInstance=self)
         networkInfo = networkList.getNetworkList()
 
-        self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(80, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
+        self.screenGrid = snack.Grid(1, 3)
+        instruction = snack.Textbox(60, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
+        listboxlabel = snack.Label(self.kusuApp._("netedit_item_labels"))
         global selectedNetwork
         self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
         selectedNetwork = self.networkListbox
@@ -739,8 +740,9 @@ class NetworkMainWindow(USXBaseScreen):
                netname = netname[:43] + "..."
 
             self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
-        self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
-        self.screenGrid.setField(self.networkListbox, col=0, row=1, padding=(0, 0, 0, 0), growx=1)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, -1), anchorLeft=1)
+        self.screenGrid.setField(listboxlabel, col=0, row=1, padding=(0, 0, 0, 0), anchorLeft=1)
+        self.screenGrid.setField(self.networkListbox, col=0, row=2, padding=(0, 0, 0, 0), growx=1)
 
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
