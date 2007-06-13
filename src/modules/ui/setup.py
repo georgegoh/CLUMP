@@ -11,7 +11,7 @@ __version__ = "$Revision$"
 
 from distutils.core import setup
 setup(name="kusu-ui",
-      version="0.1",
+      version="0.2",
       author="George Goh",
       author_email="ggoh@osgdc.org",
       url="http://www.osgdc.org/project/kusu",

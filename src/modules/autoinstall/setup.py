@@ -12,7 +12,7 @@ __version__ = "$Revision$"
 
 from distutils.core import setup
 setup(name="kusu-autoinstall",
-      version="0.1",
+      version="0.2",
       author="Tsai Li Ming",
       author_email="ltsai@osgdc.org",
       url="http://www.osgdc.org/project/kusu",

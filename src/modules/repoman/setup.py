@@ -9,7 +9,7 @@
 
 from distutils.core import setup
 setup(name="kusu-repoman",
-      version="0.1",
+      version="0.2",
       author="Tsai Li Ming",
       author_email="ggoh@osgdc.org",
       url="http://www.osgdc.org/project/kusu",
