@@ -76,7 +76,7 @@ install::
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/python/kusu
-        install -m644 lib/kusu/core/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/core
+	install -m644 lib/kusu/core/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/core
 	install -m644 lib/kusu/core/db.py $(ROOT)/opt/kusu/lib/python/kusu/core
 	install -m644 lib/kusu/core/app.py $(ROOT)/opt/kusu/lib/python/kusu/core
 	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/python/kusu
