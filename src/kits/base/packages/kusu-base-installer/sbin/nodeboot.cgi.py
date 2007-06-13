@@ -29,11 +29,11 @@ import string
 import cgi
 import time
 
-sys.path.append("/opt/kusu/bin:/opt/kusu/lib")
+sys.path.append("/opt/kusu/bin:/opt/kusu/lib:/opt/kusu/lib/python")
 
 from optparse import OptionParser
-from kusu.kusuapp import KusuApp
-from kusu.kusudb import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 
 
 class NodeInfo:

@@ -24,8 +24,8 @@ import pwd
 import string
 import sys
 
-from kusu.kusuapp import KusuApp
-from kusu.kusudb import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun
 
 

@@ -30,8 +30,8 @@ KUSUPOSTSCRIPT='/etc/rc.kusu.sh'
 import os
 import sys
 from optparse import OptionParser
-from kusu.kusuapp import KusuApp
-from kusu.kusudb import KusuDB
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
 
 
 
