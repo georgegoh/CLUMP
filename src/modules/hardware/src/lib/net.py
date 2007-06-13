@@ -24,6 +24,7 @@ def getAllInterfaces():
         d[intf]['device'] = n.device
         d[intf]['module'] = n.module
         d[intf]['isPhysical'] = n.isPhysical()
+        d[intf]['hwaddr'] = n.mac
         
     return d
 
@@ -46,6 +47,7 @@ class Net:
     vendor = None
     device = None
     module = None
+    mac = None
 
     def __init__(self, interface):
         if interface not in self._getInterfaces():
@@ -57,6 +59,7 @@ class Net:
         if self.isPhysical():
             self._getVendorDevice()
             self._getModule()
+            self._getMAC()
 
     def _getInterfaces(self):
         sys_net = path('/sys/class/net/')
@@ -112,4 +115,11 @@ class Net:
             if driver_path.exists(): 
                 self.module = driver_path.realpath().basename()
 
+    def _getMAC(self):
+        address = '/sys/class/net/%s/address' % self.interface
+        
+        f = open(address, 'r')
+        self.mac = f.read().strip()
+        f.close()
 
+        
