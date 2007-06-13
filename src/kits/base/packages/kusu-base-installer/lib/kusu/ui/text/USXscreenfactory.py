@@ -19,10 +19,10 @@ class USXBaseScreen(BaseScreen):
     screen.
     """
     dbSelected = 'MySQL'
-    hotkeysDict = {}
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
-        self.buttonsDict  = {}
+        self.buttonsDict = {}
+        self.hotkeysDict = {}
         self.database = database
         self.kusuApp = kusuApp
         self.gridWidth = gridWidth
