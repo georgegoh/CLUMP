@@ -52,7 +52,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/bin
 	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
-	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu
+	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/core
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	mkdir -p $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
