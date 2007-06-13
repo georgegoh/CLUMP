@@ -379,7 +379,7 @@ class DiskProfile(object):
         disk = self.disk_dict[disk_id]
         logger.debug('Add New Partition to Disk ID: ' + disk_id)
         if fs_type:
-            logger.debug('FS type specified')
+            logger.debug('FS type specified: %s' % fs_type)
             new_partition = disk.createPartition(size,
                                                  self.fsType_dict[fs_type],
                                                  mountpoint,
@@ -402,8 +402,9 @@ class DiskProfile(object):
     def editPartition(self, partition_obj, size_MB, fixed_size, fs_type, mountpoint):
         """Edit an existing partition."""
         logger.debug('Edit partition %s' % partition_obj.path)
-        if size_MB == partition_obj.size_MB and fs_type == partition_obj.fs_type:
+        if size_MB == partition_obj.size_MB:
             partition_obj.mountpoint = mountpoint
+            partition_obj.fs_type = fs_type
             return
 
         size = size_MB * 1024 * 1024

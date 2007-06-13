@@ -239,20 +239,39 @@ class Disk(object):
                 while pedPartition.num < last_part_num:
                     logger.debug('Iterating partition num: ' + \
                                  str(pedPartition.num))
+                    # is this an unused partition?
                     if pedPartition.num == -1:
                         start_sector = pedPartition.geom.start
                         end_sector = start_sector + (size / \
                                      self.pedDisk.dev.sector_size) - 1
                         end_sector = self.__alignEndSector(end_sector)
+                        logger.debug('Checking if the current partition is big enough.')
                         if end_sector <= pedPartition.geom.end:
                             if fill:
                                 end_sector = pedPartition.geom.end
-                                end_sector = self.alignEndSector(end_sector)
+                                end_sector = self.__alignEndSector(end_sector)
                             return (start_sector, end_sector,
                                     self.__getPartitionType(selected_partition_num))
+                        logger.debug('Current partition is not big enough for proposed size.')
+                    # check for space between this and the next partition
+                    logger.debug('Checking between partition %d and %d' % \
+                                 (selected_partition_num, selected_partition_num+1))
+                    this_end_sector = pedPartition.geom.end + 1
+                    next_start_sector = self.pedDisk.next_partition(pedPartition).geom.start
+                    start_sector = self.__alignStartSector(this_end_sector)
+                    end_sector = start_sector + (size / \
+                                 self.pedDisk.dev.sector_size) - 1
+                    end_sector = self.__alignEndSector(end_sector)
+                    if end_sector < next_start_sector:
+                        if fill:
+                            end_sector = self.__alignEndSector(next_start_sector - 1)
+                        return (start_sector, end_sector,
+                                self.__getPartitionType(selected_partition_num + 1))
+                    
                     pedPartition = self.pedDisk.next_partition(pedPartition)
                     selected_partition_num = selected_partition_num + 1
 
+            # is the last partition unused?
             lastPart = self.pedDisk.get_partition(last_part_num)
             if lastPart.type == parted.PARTITION_FREESPACE:
                 start_sector = lastPart.geom.start
@@ -410,7 +429,8 @@ class Partition(object):
                        'lvm_flag' : "self.pedPartition.set_flag(parted.PARTITION_LVM, int('%s'))",
                        'root_flag' : "self.pedPartition.set_flag(parted.PARTITION_ROOT, int('%s'))",
                        'swap_flag' : "self.pedPartition.set_flag(parted.PARTITION_SWAP, int('%s'))",
-                       'raid_flag' : "self.pedPartition.set_flag(parted.PARTITION_RAID, int('%s'))"
+                       'raid_flag' : "self.pedPartition.set_flag(parted.PARTITION_RAID, int('%s'))",
+                       'fs_type' : "self.pedPartition.set_system(fsTypes['%s'])"
                      }
 
     def __init__(self, disk, pedPartition, mountpoint=None):
