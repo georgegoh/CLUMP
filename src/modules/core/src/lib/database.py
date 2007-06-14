@@ -551,11 +551,11 @@ class DB(object):
         Assign default mappers to respective class.
         """
 
+        self.ctx = SessionContext(sa.create_session)
+        
         # mappers have been created, do nothing
         if len(sa.orm.mapper_registry) > 0: 
             return 
-
-        self.ctx = SessionContext(sa.create_session)
 
         repos_have_kits = sa.Table('repos_have_kits', self.metadata,
                                    autoload=True)
