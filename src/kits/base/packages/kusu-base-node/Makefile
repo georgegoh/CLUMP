@@ -46,10 +46,11 @@ install::
 	mkdir -p $(ROOT)/etc
 	mkdir -p $(ROOT)/etc/rc.kusu.d
 	mkdir -p $(ROOT)/etc/rc.kusu.custom.d
-	mkdir -p $(ROOT)/opt/kusu/lib/kusu
+	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu
 	mkdir -p $(ROOT)/opt/kusu/sbin
 	mkdir -p $(ROOT)/opt/kusu/etc
 	install -m755 sbin/rc.kusu.sh $(ROOT)/etc
-	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu/
-	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/kusu/
+	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/python/kusu/
+	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/
+	install -m755 sbin/cfmclient.py $(ROOT)/opt/kusu/sbin/cfmclient
 
