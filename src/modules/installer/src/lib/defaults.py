@@ -67,20 +67,21 @@ def vanillaSchemaLVM():
                                 'fs': 'linux-swap',
                                 'mountpoint': None,
                                 'fill': False}
-    disk1_partition_dict[3] = { 'size_MB': 6000,
-                                'fs': 'physical volume',
-                                'mountpoint': None,
-                                'fill': True}
+#    disk1_partition_dict[3] = { 'size_MB': 6000,
+#                                'fs': 'physical volume',
+#                                'mountpoint': None,
+#                                'fill': True}
 
     # define the lvm schema
-    vg_dict = { 'VolGroup00': { 'pv_dict': {},
+    vg_dict = { 'VolGroup00': { 'pv_list': [],
                                 'lv_dict': {},
-                                'extent_size': '32M'
+                                'extent_size': '32M',
+                                'pv_span': True
                               }
               }
 
     volgroup00 = vg_dict['VolGroup00']
-    volgroup00['pv_dict'][1] = { 'disk': 1, 'partition': 3 }
+    volgroup00['pv_list'].append({'disk': 'N', 'partition': 'N' })
     volgroup00['lv_dict']['ROOT'] = { 'size_MB': 2000,
                                       'fs': 'ext3',
                                       'mountpoint': '/',
@@ -142,7 +143,10 @@ def setupDiskProfile(disk_profile, schema=None):
             raise PartitionSchemaError, 'Schema has no disk and/or LVM description.'
 
         createPhysicalSchema(disk_profile, schema['disk_dict'])
-        if schema['vg_dict']: createLVMSchema(disk_profile, schema['vg_dict'])
+        if schema['vg_dict']:
+            if schema['vg_dict']['pv_span']:
+                createSpanningPV(disk_profile)
+            createLVMSchema(disk_profile, schema['vg_dict'])
     logger.debug('Disk Profile set up')
 
 
@@ -182,11 +186,14 @@ def createLVMSchema(disk_profile, lvm_schemata):
     for vg_key, vg_schema in lvm_schemata.iteritems():
         sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
         # create the Volume Group first.
-        pv_schemata = vg_schema['pv_dict']
+        pv_schemata = vg_schema['pv_list']
         pv_list = []
-        for pv_schema in pv_schemata.itervalues():
+        for pv_schema in pv_schemata:
             disk_id = pv_schema['disk']
             part_id = pv_schema['partition']
+            if disk_id.__str__().lower() == 'n' or part_id.__str__().lower() == 'n':
+                pv_list.extend(getAllFreePVs(disk_profile))
+                break
             disk_key = sorted_disk_keys[disk_id-1]
             disk = disk_profile.disk_dict[disk_key]
             partition = disk.partition_dict[part_id]
@@ -220,3 +227,11 @@ def createLVMSchema(disk_profile, lvm_schemata):
                                           last_lv[1]['mountpoint'],
                                           last_lv[1]['fill'])
     logger.debug('Create LVM Schema finished')
+
+
+def getAllFreePVs(disk_profile):
+    pv_list = []
+    for pv in disk_profile.pv_dict.values():
+        if pv.group is None:
+            pv_list.append(pv)
+    return pv_list

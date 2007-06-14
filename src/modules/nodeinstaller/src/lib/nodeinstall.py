@@ -33,7 +33,7 @@ def translateBoolean(value):
             return False
     except ValueError:
         return False
-        
+ 
 def translatePartitionNumber(value):
     """ Translate NII partition number which is a string into
         partitiontool partition number which is an integer
@@ -41,13 +41,22 @@ def translatePartitionNumber(value):
     try:
         return int(value)
     except ValueError:
+        if value.strip().lower() == 'n':
+            return 'N'
         return 0
-    
+
 def translatePartitionSize(value):
     """ Translate NII partition size which is a string into
         partitiontool partition size which is an integer
     """
     return int(value)
+
+def translateMntPnt(value):
+    """ Check if mountpoint is an empty string - translate into None if yes. """
+    if value.strip():
+        return value
+    else:
+        return None
 
 def translateFSTypes(fstype):
     """ Translates fstype to something partitiontool can understand. Right now
@@ -56,9 +65,11 @@ def translateFSTypes(fstype):
 
     if fstype == 'swap':
         return 'linux-swap'
+    elif fstype.strip() == '':
+        return None
     else:
         return fstype
-        
+
 def translatePartitionOptions(options, opt):
     """ Translate the options line for the opt value. This method returns
         a tuple (x,y). The first tuple element is a boolean, True if the 
@@ -125,25 +136,26 @@ def translatePartitionOptions(options, opt):
         return (True,opt_dict[opt])
         
     # vg
-    if opt == 'vg' and 'extent' not in opt_dict.keys():
-        return (False,None)
+    if opt == 'vg':
+        if 'vg' in opt_dict.keys()  and 'extent' in opt_dict.keys():
+            return (True, opt_dict['extent'])
+        else:
+            return (False, None)
 
-    if opt == 'vg' and 'extent' in opt_dict.keys():
-        return (True,opt_dict['extent'])
-        
     # pv
-    if opt == 'pv' and 'vg' not in opt_dict.keys():
-        return (False,None)
-        
-    if opt == 'pv' and 'vg' in opt_dict.keys():
-        return (True,opt_dict['vg'])
+    if opt == 'pv':
+        if 'pv' in opt_dict.keys() and 'vg' in opt_dict.keys():
+            return (True, opt_dict['vg'])
+        else:
+            return (False,None)
         
     # lv
-    if opt == 'lv' and 'vg' not in opt_dict.keys():
-        return (False,None)
+    if opt == 'lv':
+        if 'lv' in opt_dict.keys() and 'vg' in opt_dict.keys():
+            return (True, opt_dict['vg'])
+        else:
+            return (False, None)
 
-    if opt == 'lv' and 'vg' in opt_dict.keys():
-        return (True,opt_dict['vg'])
 
 def adaptNIIPartition(niipartition):
     """ Adapt niipartition into a partitiontool schema. This schema can
@@ -152,85 +164,113 @@ def adaptNIIPartition(niipartition):
 
     """
 
-    schema = {'disk_dict':{},'vg_dict':{}}
-    disk_dict = {}
-    partition_dict = {}
-    vg_dict = {}
-    vg_extent_size = ''
-    vgname = None
-    pv_dict = {}
-    lv_dict = {}
-    for partnum, partinfo in niipartition.items():
-        # check device
+    schema = {'disk_dict':{},'vg_dict':None}
+
+    # filter out the values into normal volumes and volume groups and logical volumes.
+    part_list, vg_list, lv_list = filterPartitionEntries(niipartition.values())
+
+    if vg_list:
+        schema['vg_dict'] = {}
+    # create the volume groups first.
+    try:
+        for vginfo in vg_list:
+            vgname = vginfo['device']
+            vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
+            schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
+                                         'extent_size':vg_extent_size}
+
+        # create the normal volumes.
+        for partinfo in part_list:
+            createPartition(partinfo, schema['disk_dict'])
+            pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+            if pv: handlePV(partinfo, vg_name, schema['vg_dict'])
+
+        # create the logical volumes.
+        for lvinfo in lv_list:
+            lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
+            if lv: handleLV(lvinfo, vg_name, schema['vg_dict'])
+
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the Volume Group fields."
+
+    return schema
+
+
+def filterPartitionEntries(partition_entries):
+    """ Filter out the values into normal volumes and volume
+        groups and logical volumes.
+    """
+    part_list = []
+    vg_list = []
+    lv_list = []
+    for partinfo in partition_entries:
         try:
             disknum = int(partinfo['device'])
+            part_list.append(partinfo)
         except ValueError:
-            disknum = 0
-        # handling physical partitioning
-        if disknum:
-            try:
-                size = translatePartitionSize(partinfo['size'])
-                fs = translateFSTypes(partinfo['fstype'])
-                mountpoint = partinfo['mntpnt']
-                fill = translatePartitionOptions(partinfo['options'],'fill')[0]
+            if translatePartitionOptions(partinfo['options'],'lv')[0]:
+                lv_list.append(partinfo)
+            elif translatePartitionOptions(partinfo['options'],'vg')[0]:
+                vg_list.append(partinfo)
+            elif partinfo['device'].lower() == 'n':
+                part_list.append(partinfo)
+            else:
+                raise InvalidPartitionSchema, \
+                 "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
+    return part_list, vg_list, lv_list
 
-                # also check if this is a physical volume
-                pv = translatePartitionOptions(partinfo['options'],'pv')
-                partition = translatePartitionNumber(partinfo['partition'])
-                if pv[0] and partition > 0:
-                    pv_dict.update({disknum:{'disk':disknum,
-                                            'partition':partition}})
-                disk_part_dict = {'size_MB':size,'fs':fs,
-                                'mountpoint':mountpoint,'fill' : fill}
-            except ValueError:
-                raise InvalidPartitionSchema
-                
-            partition_dict.update({partition:disk_part_dict})
-            disk_dict.update({disknum:{'partition_dict':partition_dict}})
-            schema['disk_dict'].update(disk_dict)
-        else:
-            # handle LVM
-            try:
-                # FIXME: we are only supporting a single volume group for now!
-                if partinfo['device']: vgname = partinfo['device']
-                size = translatePartitionSize(partinfo['size'])
-                fs = translateFSTypes(partinfo['fstype'])
-                mountpoint = partinfo['mntpnt']
-                fill = translatePartitionOptions(partinfo['options'],'fill')[0]
-                
-                # is this a volume group?
-                vg = translatePartitionOptions(partinfo['options'],'vg')
-                if vg[0]:
-                    # get the extent size
-                    vg_extent_size = vg[1]
-                    vg_dict.update({vgname:{'pv_dict':pv_dict,
-                                        'lv_dict':lv_dict,
-                                        'extent_size':vg_extent_size}})
-                                    
-                # or it could be a logical volume
-                lv = translatePartitionOptions(partinfo['options'],'lv')
-                if lv[0]:
-                    # FIXME: please ensure that the vgname defined here corresponds to the devname!
-                    size = translatePartitionSize(partinfo['size'])
-                    fs = translateFSTypes(partinfo['fstype'])
-                    mountpoint = partinfo['mntpnt']
-                    if mountpoint == '/':
-                        lvroot = 'ROOT'
-                    else:
-                        lvroot = mountpoint[1:].upper()
-                    fill = translatePartitionOptions(partinfo['options'],'fill')[0]                
-                
-                    disk_part_dict = {'size_MB':size,'fs':fs,
-                                    'mountpoint':mountpoint,'fill' : fill}
-                    if lvroot: lv_dict.update({lvroot:disk_part_dict})
-                    vg_dict.update({vgname:{'pv_dict':pv_dict,
-                                        'lv_dict':lv_dict,
-                                        'extent_size':vg_extent_size}})
-            except ValueError:
-                raise InvalidPartitionSchema
-            
-            schema['vg_dict'].update(vg_dict)
-    return schema
+
+def createPartition(partinfo, disk_dict):
+    """ Create a new partition and add it to the supplied disk dictionary."""
+    try:
+        disknum = int(partinfo['device'])
+        size = translatePartitionSize(partinfo['size'])
+        fs = translateFSTypes(partinfo['fstype'])
+        mountpoint = translateMntPnt(partinfo['mntpnt'])
+        fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
+        part_no = translatePartitionNumber(partinfo['partition'])
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields."
+ 
+    if part_no <= 0: raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+    partition = {'size_MB': size, 'fill': fill,
+                 'fs': fs, 'mountpoint': mountpoint}
+
+    if disk_dict.has_key(disknum): disk = disk_dict[disknum]
+    else: disk = {'partition_dict': {}}
+    disk['partition_dict'][part_no] = partition
+    disk_dict[disknum] = disk
+
+
+def handlePV(partinfo, vg_name, vg_dict):
+    if not vg_name.strip(): raise InvalidPartitionSchema, 'No Volume Group given for Physical Volume.'
+    if vg_dict.has_key(vg_name): vg = vg_dict[vg_name]
+    else: raise InvalidPartitionSchema, 'Physical Volume belongs to an unspecified Volume Group.'
+    try:
+        disknum = int(partinfo['device'])
+        part_no = translatePartitionNumber(partinfo['partition'])
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the LVM physical volume fields."
+
+    vg['pv_list'].append({'disk': disknum, 'partition': part_no})
+
+
+def handleLV(lvinfo, vg_name, vg_dict):
+    if not vg_name.strip(): raise InvalidPartitionSchema, 'No Volume Group given for Logical Volume.'
+    if vg_dict.has_key(vg_name): vg = vg_dict[vg_name]
+    else: raise InvalidPartitionSchema, 'Logical Volume belongs to an unspecified Volume Group.'
+    try:
+        name = lvinfo['device']
+        size_MB = translatePartitionSize(lvinfo['size'])
+        fill = translatePartitionOptions(lvinfo['options'], 'fill')[0]
+        fs = translateFSTypes(lvinfo['fstype'])
+        mountpoint = translateMntPnt(lvinfo['mntpnt'])
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the LVM logical volume fields."
+
+    vg['lv_dict'][name] = {'size_MB': size_MB, 'fill': fill,
+                           'fs': fs, 'mountpoint': mountpoint}
+
 
 def retrieveNII(niihost, node):
     """ Downloads the NII from the niihost.

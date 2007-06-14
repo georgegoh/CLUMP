@@ -128,25 +128,25 @@ Node: node0000
 
         self.niipartition3 = {# /boot - 100M, ext3, disk 1 part 1
                               0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1',
-                                  'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'}
+                                  'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'},
                               # swap - 1000M, linux-swap, disk 1 part 2
-                              1: {'preserve': u'0', 'fstype': u'linux-swap' 'device': u'1',
-                                  'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'}
+                              1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1',
+                                  'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'},
                               # pv - 2000M, vg=VolGroup00, disk 1 part 3
                               2: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'1',
-                                  'mntpnt': u'', 'options': u'pv;vg=VolGroup00', 'size': u'2000', 'partition':'3'}
+                                  'mntpnt': u'', 'options': u'pv;vg=VolGroup00', 'size': u'2000', 'partition':'3'},
                               # pv - 4000M(fill), vg=VolGroup01, multi-disk
                               3: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'N',
-                                  'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup01', 'size': u'4000', 'partition':'N'}
+                                  'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup01', 'size': u'4000', 'partition':'N'},
                               # VolGroup00 - extent=32M
                               4: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup00',
-                                  'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''}
+                                  'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''},
                               # VolGroup01 - extent=32M
                               5: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup01',
-                                  'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''}
+                                  'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''},
                               # ROOT lv - 2000M, ext3, vg=VolGroup00
                               6: {'preserve': u'0', 'fstype': u'ext3', 'device': u'ROOT',
-                                  'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 'size': u'2000', 'partition': u''}
+                                  'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 'size': u'2000', 'partition': u''},
                               # DEPOT lv - 4000M(fill), ext3, vg=VolGroup01
                               7: {'preserve': u'0', 'fstype': u'ext3', 'device': u'DEPOT',
                                   'mntpnt': u'/depot', 'options': u'lv;vg=VolGroup01;fill', 'size':u'4000', 'partition': u''}
@@ -188,36 +188,40 @@ Node: node0000
                                                                                   'fs': u'ext3',
                                                                                   'mountpoint': u'/',
                                                                                   'size_MB': 2000}},
-                                                            'pv_dict': {1: {'disk': 1, 'partition': 3}}}}}
-        self.expectedSchema3 = {'disk_dict': {1: {'partition_dict': {1: {'fill': False,
-                                                                         'fs': u'ext3'
-                                                                         'mountpoint': u'/boot',
-                                                                         'size_MB': 100},
-                                                                     2: {'fill': False,
-                                                                         'fs': u'linux-swap',
-                                                                         'mountpoint': None,
-                                                                         'size_MB': 1000},
-                                                                     3: {'fill': False,
-                                                                         'fs': u'physical volume',
-                                                                         'mountpoint': None,
-                                                                         'size_MB': 2000},
-                                                                     4: {'fill': True,
-                                                                         'fs': u'physical volume',
-                                                                         'mountpoint': None,
-                                                                         'size_MB': 4000}}}},
-                                'vg_dict': {u'VolGroup00': {'extent_size': u'32M',
-                                                            'pv_dict': {1: {'disk': 1, 'partition':3}},
-                                                            'lv_dict': {u'ROOT': {'fill': True,
-                                                                                  'fs': u'ext3',
-                                                                                  'mountpoint': u'/',
-                                                                                  'size_MB': 2000}}},
-                                            u'VolGroup01': {'extent_size': u'32M',
-                                                            'pv_dict': {1: {'disk': 'N', 'partition': 'N'}},
-                                                            'lv_dict': {u'DEPOT': {'fill': True,
-                                                                                   'fs': u'ext3',
-                                                                                   'mountpoint': u'/depot',
-                                                                                   'size_MB': 4000}}}}}
-        
+                                                            'pv_list': [{'disk': 1, 'partition': 3}]}}}
+
+
+        self.expectedSchema3 = {'disk_dict': {}, 'vg_dict': {}}
+        self.expectedSchema3['disk_dict'][1] = {'fill': False,
+                                                'fs': u'ext3',
+                                                'mountpoint': u'/boot',
+                                                'size_MB': 100}
+
+        self.expectedSchema3['disk_dict'][2] = {'fill': False,
+                                                'fs': u'linux-swap',
+                                                'mountpoint': None,
+                                                'size_MB': 1000}
+
+        self.expectedSchema3['disk_dict'][3] = {'fill': False,
+                                                'fs': u'physical volume',
+                                                'mountpoint': None,
+                                                'size_MB': 2000}
+
+        self.expectedSchema3['disk_dict'][4] = {'fill': True,
+                                                'fs': u'physical volume',
+                                                'mountpoint': None,
+                                                'size_MB': 4000}
+
+        self.expectedSchema3['vg_dict'][u'VolGroup00'] = {'extent_size': u'32M'}
+        self.expectedSchema3['vg_dict'][u'VolGroup00']['pv_list'] = [{'disk': 1, 'partition': 3}]
+        root_lv = {'fill': True, 'fs': u'ext3', 'mountpoint': u'/', 'size_MB': 2000}
+        self.expectedSchema3['vg_dict'][u'VolGroup00']['vg_dict'] = {u'ROOT': root_lv}
+
+        self.expectedSchema3['vg_dict'][u'VolGroup01'] = {'extent_size': u'32M'}
+        self.expectedSchema3['vg_dict'][u'VolGroup01']['pv_list'] = [{'disk': 'N', 'partition': 'N'}]
+        depot_lv = {'fill': True, 'fs': u'ext3', 'mountpoint': u'/depot', 'size_MB': 4000}
+        self.expectedSchema3['vg_dict'][u'VolGroup01']['vg_dict'] = {u'DEPOT': depot_lv}
+       
         
     def tearDown(self):
         self.niisource = None
@@ -310,8 +314,8 @@ Node: node0000
         assert translatePartitionOptions(options1,'pv')[0] is False
         
         # check for lv
-        assert translatePartitionOptions(options4,'lv')[0] is True
-        assert translatePartitionOptions(options4,'lv')[1] == 'VolGroup00'
+        assert translatePartitionOptions(options5,'lv')[0] is True
+        assert translatePartitionOptions(options5,'lv')[1] == 'VolGroup00'
         assert translatePartitionOptions(options1,'lv')[0] is False      
         
     
@@ -354,13 +358,13 @@ Node: node0000
                                                   'size_MB': 100},
                                               2: {'fill': False,
                                                   'fs': u'linux-swap',
-                                                  'mountpoint': u'',
+                                                  'mountpoint': None,
                                                   'size_MB': 1000},
                                               3: {'fill': True,
                                                   'fs': u'ext3',
                                                   'mountpoint': u'/',
                                                   'size_MB': 6000}}}},
-                                'vg_dict': {}}
+                                'vg_dict': None}
         assert schema == adaptedSchema
         
         # check a couple of other schemas
@@ -369,11 +373,6 @@ Node: node0000
          
         adaptedSchema = adaptNIIPartition(self.niipartition2)
         assert self.expectedSchema2 == adaptedSchema
-        
 
-        
-
-
-
-
-    
+#        adaptedSchema = adaptNIIPartition(self.niipartition3)
+#        assert self.expectedSchema3 == adaptedSchema
