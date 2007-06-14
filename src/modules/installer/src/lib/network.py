@@ -203,10 +203,10 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interfaces = profile['interfaces']
 
         for intf in interfaces:
-            newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
-            master_node.nics.append(newnic)
-
             if interfaces[intf]['configure']:
+                newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
+                master_node.nics.append(newnic)
+
                 newnic.boot = interfaces[intf]['active_on_boot']
                 newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
                                      device=intf, netname='net-%s' % intf)
