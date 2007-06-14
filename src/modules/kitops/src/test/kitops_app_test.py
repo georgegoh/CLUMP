@@ -146,7 +146,7 @@ class TestBaseKit:
 
         # the base kit has two components
         cmps = self.kusudb.Components.select()
-        assert len(cmps) == 2, 'Components in DB: %d, expected: 2' % len(cmps)
+        assert len(cmps) == 3, 'Components in DB: %d, expected: 3' % len(cmps)
 
         # check component data
         cmp = self.kusudb.Components.selectfirst_by(cname='component-base-node')
@@ -177,6 +177,21 @@ class TestBaseKit:
         assert len(cmp.nodegroups) == 1, \
             'Component %s associated with more than one nodegroup' % cmp.cname
         assert cmp.nodegroups[0].ngname == 'installer', \
+            'Component %s not associated with installer nodegroup' % cmp.cname
+
+        cmp = self.kusudb.Components.selectfirst_by(cname='kit-base')
+        assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
+        assert cmp.cname == 'kit-base', \
+               'Component name: %s, ' % cmp.cname + \
+               'expected: kit-base'
+        assert cmp.cdesc == 'Mock component for kit RPM', \
+           'Component description: ' + \
+           '%s, expected: Mock component for kit RPM' % cmp.cname
+        assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
+        # node component associated only with installer nodegroup
+        assert len(cmp.nodegroups) == 1, \
+            'Component %s associated with more than one nodegroup' % cmp.cname
+        assert cmp.nodegroups[0].ngname == 'master', \
             'Component %s not associated with installer nodegroup' % cmp.cname
 
     def testDeleteKit(self):
@@ -302,24 +317,28 @@ class TestBaseKit:
         # create a new kit with removable set to True
         newkit = self.kusudb.Kits(rname=self.kit_name, rdesc='Base Kit',
                                   version='0.1', isOS=False, removable=True)
-        newkit.components.append(self.kusudb.Components(
-                                    cname='component-base-node',
-                                    cdesc='Component for Kusu Node Base'))
-        newkit.components.append(self.kusudb.Components(
+        component_node = self.kusudb.Components(cname='component-base-node',
+                                        cdesc='Component for Kusu Node Base')
+        component_installer = self.kusudb.Components(
                                     cname='component-base-installer',
-                                    cdesc='Component for Kusu Installer Base'))
-        newkit.save()
-        self.kusudb.flush()
+                                    cdesc='Component for Kusu Installer Base')
+        component_mock = self.kusudb.Components(cname='kit-base',
+                                        cdesc='Mock component for kit RPM')
 
-        cmp = self.kusudb.Components.selectfirst_by(cname='component-base-node')
+        newkit.components.append(component_node)
+        newkit.components.append(component_installer)
+        newkit.components.append(component_mock)
+
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='compute')
-        ng.components.append(cmp)
+        ng.components.append(component_node)
 
-        cmp = self.kusudb.Components.selectfirst_by(
-                                            cname='component-base-installer')
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='installer')
-        ng.components.append(cmp)
+        ng.components.append(component_installer)
 
+        ng = self.kusudb.NodeGroups.selectfirst_by(ngname='master')
+        ng.components.append(component_mock)
+
+        newkit.save()
         self.kusudb.flush()
 
 class TestFedoraCore6i386:
