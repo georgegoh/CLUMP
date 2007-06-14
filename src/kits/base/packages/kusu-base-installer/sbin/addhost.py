@@ -344,8 +344,9 @@ class AddHostApp(KusuApp):
             screenList = [ WindowNodeStatus(database=database, kusuApp=kusuApp) ]
 
         elif haveNodegroup and not haveInterface:
-            screenList = [ WindowSelectNode(database=database, kusuApp=kusuApp), \
-                            WindowNodeStatus(database=database, kusuApp=kusuApp) ]
+            screenList = [ WindowSelectNode(database=database, kusuApp=kusuApp),
+                           WindowNodeStatus(database=database, kusuApp=kusuApp) 
+                         ]
 
         else:
             screenList = [ NodeGroupWindow(database=database, kusuApp=kusuApp), 

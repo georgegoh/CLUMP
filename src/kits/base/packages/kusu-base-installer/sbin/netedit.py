@@ -324,7 +324,7 @@ class NetEditApp(object, KusuApp):
                             print self._("DB_Query_Error\n")
                             sys.exit(-1)
                     else:
-                        print self._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
+                        print self._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
             if invalidID: 
                 self.parser.error(self._("netedit_error_invalid_id"))
             sys.exit(0)
@@ -364,7 +364,7 @@ class NetEditApp(object, KusuApp):
                                     self.parser.error(self._(errorMsg))
                                     
                         if not result: 
-                            self.parser.error(self._("The Network '%s' is in use. This can not be changed at this time") % network[1])
+                            self.parser.error(self._("The network '%s' is in use. This can not be changed at this time") % network[1])
                 
                         networkrecord.updateNetworkEntry(self._options.change) 
                         sys.exit(0)
@@ -397,7 +397,7 @@ class NetworkEditWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.hasGateway = None
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("netedit_helpline_instructions"))
     
     def okAction(self):
         return NAV_FORWARD
@@ -460,7 +460,7 @@ class NetworkEditWindow(USXBaseScreen):
             
         self.screenGrid  = snack.Grid(1, 11)
         
-        instruction = snack.Textbox(60, 1, self.kusuApp._("Please edit any of the network information below."), scroll=0, wrap=0)
+        instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_edit"), scroll=0, wrap=0)
         
         self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), text=self.networkRecord[0], width=30, 
                 password=0, returnExit = 0)
@@ -538,7 +538,7 @@ class NetworkNewWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("netedit_helpline_instructions"))
                 
     def okAction(self):
         return NAV_FORWARD
@@ -583,7 +583,7 @@ class NetworkNewWindow(USXBaseScreen):
         
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 11)
-        instruction = snack.Textbox(60, 1, self.kusuApp._("Please enter the network information below."), scroll=0, wrap=0)
+        instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_new"), scroll=0, wrap=0)
         self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), width=30, password=0, returnExit = 0)
         self.subnetEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_subnet").rjust(13), width=30, password=0, returnExit = 0)
         self.gatewayEntry= LabelledEntry(labelTxt=self.kusuApp._("netedit_field_gateway").rjust(13), width=30, password=0, returnExit = 0)
@@ -679,7 +679,7 @@ class NetworkMainWindow(USXBaseScreen):
         result = networkList.checkNetworkEntry(currNetwork[0])
         if not result:
             self.selector.popupMsg(self.kusuApp._("netedit_window_title_edit"), "%s\t\t\n\n" %
-            (self.kusuApp._("The Network '%s' is in use. This can not be changed at this time") % currNetwork[1]))
+            (self.kusuApp._("The network '%s' is in use. This can not be changed at this time") % currNetwork[1]))
             return NAV_NOTHING
     
         ScreenFactory.screens = \
@@ -695,8 +695,8 @@ class NetworkMainWindow(USXBaseScreen):
         result = networkList.checkNetworkEntry(currNetwork[0])
         if result:
             prompt = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_delete"), 
-                    self.kusuApp._("Do you want to delete the network '%s'?") % currNetwork[1], (self.kusuApp._("yes_button"), \
-                    self.kusuApp._("no_button")))
+                    self.kusuApp._("Do you want to delete the network '%s'?") % currNetwork[1], (self.kusuApp._("no_button"), \
+                    self.kusuApp._("yes_button")))
             if prompt == "no":
                 flag = 0                    
             elif prompt == "yes":
@@ -704,7 +704,7 @@ class NetworkMainWindow(USXBaseScreen):
                 self.database.execute("DELETE FROM networks WHERE netid = %d" % int(currNetwork[0]))
         else:
             self.selector.popupMsg(self.kusuApp._("netedit_window_title_delete"), \
-            self.kusuApp._("The Network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currNetwork[1]))
+            self.kusuApp._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currNetwork[1]))
         return NAV_NOTHING
             
     def exitAction(self, data=None):
