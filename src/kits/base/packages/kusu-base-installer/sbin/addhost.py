@@ -179,7 +179,7 @@ class AddHostApp(KusuApp):
         if self._options.rack:
             result = int(self._options.rack)
             if result < 0:
-                self.parser.error(kusuApp._("addhost_negative_number"))
+                self.parser.error(kusuApp._("rack_negative_number"))
             else:
                 myNodeInfo.nodeRackNumber = self._options.rack
 
@@ -227,7 +227,7 @@ class AddHostApp(KusuApp):
                             try:
                                result = int(response)
                                if result < 0:
-                                  print kusuApp._("Error: Cannot specify a negative number. Please try again")
+                                  print "Error: %s" % kusuApp._("rack_negative_number")
                                   flag = 1
                                else:
                                   myNodeInfo.nodeRackNumber = result
@@ -318,7 +318,7 @@ class AddHostApp(KusuApp):
                       try:
                           result = int(response)
                           if result < 0:
-                             print kusuApp._("Error: Cannot specify a negative number. Please try again.")
+                             print "Error: %s" % kusuApp._("rack_negative_number")
                              flag = 1
                           else:
                              myNodeInfo.nodeRackNumber = result
@@ -624,7 +624,7 @@ class WindowSelectNode(NodeGroupWindow):
                         result = int(result[0])
                         if result < 0:
                             self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
-                            self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                            "Error: %s\n" % self.kusuApp._("rack_negative_number"), 2)
                             flag = 1
                         else:
                             myNodeInfo.nodeRackNumber = result
