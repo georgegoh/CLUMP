@@ -16,22 +16,7 @@
 # $Id$
 #
 
-
-TOPDIR = $(PWD)/..
-ARCH=$(shell arch)
-
-SRCDIRS = `find . -maxdepth 1 -type d -not -name .svn -not -name CVS \
-	    -not -name .`
-
-default: rpm
-
-rpm:
-	@for i in $(SRCDIRS) ; do \
-		(cd $$i; make $@) ; \
-	done
-
-clean:
-	find $(TOPDIR)/RPMS -type f -name "*.rpm" -exec rm -f {} \;
-	@for i in $(SRCDIRS) ; do \
-		(cd $$i; make clean) ; \
-	done
+# OS/Version/Arch specific settings goes here
+OS = fedora
+OSVER = 6
+ARCH = $(shell arch)

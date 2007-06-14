@@ -27,6 +27,16 @@ Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
 Requires: kusu-base-installer = 1.0
 Requires: kusu-base-node = 1.0
+Requires: kusu-boot >= 0.2
+Requires: kusu-core >= 0.2
+Requires: kusu-hardware >= 0.2
+Requires: kusu-kitops >= 0.2
+Requires: kusu-networktool >= 0.2
+Requires: kusu-path >= 0.2
+Requires: kusu-repoman >= 0.2
+Requires: kusu-sqlalchemy >= 0.2
+Requires: kusu-ui >= 0.2
+Requires: kusu-util >= 0.2
 Requires: mysql >= 5.0
 Requires: mysql-server >= 5.0
 Requires: dhcp >= 3.0

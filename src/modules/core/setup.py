@@ -18,5 +18,6 @@ setup(name="kusu-core",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
     packages=['core'],
-    package_dir={'core':'src/lib'}
+    package_dir={'core':'src/lib'},
+    scripts=['src/bin/kusuenv.sh']
      )
