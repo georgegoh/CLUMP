@@ -650,7 +650,7 @@ class NetworkMainWindow(USXBaseScreen):
 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_exit"), self.kusuApp._("netedit_instructions_exit"), 
-                (self.kusuApp._("yes_button"), self.kusuApp._("no_button")))
+                (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
