@@ -72,7 +72,6 @@ install::
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 bin/genconfig.py $(ROOT)/opt/kusu/bin/genconfig
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu
-	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/python/kusu
