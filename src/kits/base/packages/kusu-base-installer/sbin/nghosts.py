@@ -111,10 +111,8 @@ class NodeMemberApp(object, KusuApp):
         if self._options.racknumber:
             result = int(self._options.racknumber)
             if result < 0:
-                print "Error: Cannot specify negative rack number"
+                print self.kusuApp._("rack_negative_number")
                 sys.exit(-1)
-            else:
-                print "Rack Number is: %s" % self._options.racknumber
                     
         # Handle -l option
         if self._options.allnodegroups:
@@ -166,23 +164,38 @@ class NodeMemberApp(object, KusuApp):
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
 
-class SelectNodeWindow(USXBaseScreen):
+class SelectNodesWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
     msg = "nghosts_instruction_select_node"
-    buttons = [ 'next_button', 'previous_button', "cancel_button" ]
+    buttons = [ 'move_button', 'previous_button', "quit_button" ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
         self.nodegroupDict = {}
         self.nodeGroupNames = []
-    
-    def nextAction(self):
+   
+    def F12Action(self):
+        result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
+                (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            self.screen.finish()
+            sys.exit(0)
+        else:
+            return NAV_NOTHING
+ 
+    def moveAction(self):
         flag = 1
         rack = 0
         needRack = False
         nodeRecord = NodeFun()
+
+        if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
+            self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
+            return NAV_NOTHING
 
         moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
 
@@ -215,10 +228,6 @@ class SelectNodeWindow(USXBaseScreen):
                        self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
                        self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                        flag = 1
-
-           if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
-               self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
-               return NAV_NOTHING
 
            if badList:
               self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
@@ -256,20 +265,20 @@ class SelectNodeWindow(USXBaseScreen):
         sys.exit(0)
 
     def setCallbacks(self):
-        self.buttonsDict['next_button'].setCallback_(self.nextAction)        
+        self.buttonsDict['move_button'].setCallback_(self.moveAction)        
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
-        self.buttonsDict['cancel_button'].setCallback_(self.previousAction)
+        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
         self.hotkeysDict['F5'] = self.previousAction
-        self.hotkeysDict['F8'] = self.nextAction
-        self.hotkeysDict['F12'] = self.quitAction
+        self.hotkeysDict['F8'] = self.moveAction
+        self.hotkeysDict['F12'] = self.F12Action
     
     def drawImpl(self):
         count = 0
         nodegroupList = []
-        self.screenGrid  = snack.Grid(1, 4)
+        self.screenGrid  = snack.Grid(1, 5)
         self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-
+        label = snack.Label(self.kusuApp._("Source Nodes\t\t\t  Destination Nodegroup"))
         query = "SELECT ngname FROM nodegroups ORDER BY ngname"
         
         try:
@@ -313,27 +322,54 @@ class SelectNodeWindow(USXBaseScreen):
         self.nodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList) 
         
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
+        self.screenGrid.setField(label, 0, 1, padding=(6,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.nodeCheckbox, 0, 2, padding=(0,0,30,0))
         self.screenGrid.setField(self.nodegroupRadio, 0, 3, padding=(33,-8,0,0))
                 
-class SelectNodeGroupWindow(USXBaseScreen):
+class SelectNodegroupsWindow(USXBaseScreen):
+    name = "nghosts_window_title_select_nodegroup"
+    msg = "nghosts_instruction_select_nodegroup"
 
-    name = "netedit_window_title_new"
-    msg = "netedit_instruction_new"
     buttons = [ 'ok_button', 'cancel_button' ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\tInstructions: Press F5 to cancel screen, Press F8 to accept changes")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
                             
     def setCallbacks(self):
         pass
         
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(60, 1, self.kusuApp._("Please enter the network information below."), scroll=0, wrap=0)
-    
+        count = 0
+        nodegroupList = []
+        self.screenGrid  = snack.Grid(1, 6)
+        instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
+        label = snack.Label(self.kusuApp._("Source Nodegroups\t\tDestination Nodegroup"))
+        self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
+        query = "SELECT ngname FROM nodegroups ORDER BY ngname"
+
+        try:
+            self.database.connect()
+            self.database.execute(query)
+            nodegroups = self.database.fetchall()
+        except:
+            self.screen.finish()
+            print self.kusuApp._("DB_Query_Error\n")
+            sys.exit(-1)
+
+        for group in nodegroups:
+           nodegroupList.append([group[0].ljust(20), group[0], 0])
+           self.srcNodegroupsCheckbox.append(group[0])
+
+        self.destNodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList)
+
+        self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
+        self.screenGrid.setField(label, 0, 1, padding=(13,0,0,0), anchorLeft=1)
+        self.screenGrid.setField(self.srcNodegroupsCheckbox, 0, 2, padding=(3,0,0,0), anchorLeft=1)
+        self.screenGrid.setField(self.destNodegroupRadio, 0, 3, padding=(0,-8,3,0), anchorRight=1)
+
+
     def validate(self):
         return True, 'Success'
 
@@ -350,8 +386,8 @@ class MembershipMainWindow(USXBaseScreen):
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc - Instructions: Select an option. Press F12 to quit, Press F8 to go next")
 
     def F12Action(self):
-        result = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_exit"), self.kusuApp._("netedit_instructions_exit"), 
-                (self.kusuApp._("yes_button"), self.kusuApp._("no_button")))
+        result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
+                (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
@@ -370,15 +406,10 @@ class MembershipMainWindow(USXBaseScreen):
         
         if self.radioButtonList.getSelection() == 0:
             ScreenFactory.screens = \
-                            [ SelectNodeWindow(database=database, kusuApp=kusuApp),
-                              SelectNodeGroupWindow(database=database,kusuApp=kusuApp)
-                            ]
-                            
+                            [ SelectNodesWindow(database=database, kusuApp=kusuApp) ]
         else:
             ScreenFactory.screens = \
-                            [ SelectNodeGroupWindow(database=database, kusuApp=kusuApp),
-                              MoveNodegroupWindow(database=database, kusuApp=kusuApp)
-                            ]
+                            [ SelectNodegroupsWindow(database=database, kusuApp=kusuApp) ]
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
@@ -406,8 +437,8 @@ class MembershipMainWindow(USXBaseScreen):
         
         defaultFlag = 1
         selectionOption = []
-        selectionOption.append(["nghosts_copy_selected_nodes", 0, 0])
-        selectionOption.append(["nghosts_copy_nodegroup", 1, 0])
+        selectionOption.append([self.kusuApp._("nghosts_copy_selected_nodes"), 0, 0])
+        selectionOption.append([self.kusuApp._("nghosts_copy_nodegroup"), 1, 0])
         self.radioButtonList = snack.RadioBar(self.screenGrid, selectionOption)
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
         self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
