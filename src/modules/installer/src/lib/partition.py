@@ -194,24 +194,24 @@ class PartitionScreen(InstallerScreen):
 
         profile['DiskProfile'] = self.disk_profile
 
-#        proceed = self.selector.popupYesNo(_('Really Proceed?'),
-#                       _('Proceeding beyond this screen will cause ' + \
-#                         'irreversible changes to your disk(s).\n\nIf you ' + \
-#                         'have any valuable data that is existing on your ' + \
-#                         'current disk(s), please press "No" to cancel ' + \
-#                         'installation, and then backup your data before ' + \
-#                         're-attempting installation.\n\nOtherwise, if you ' + \
-#                         'are sure you want to continue, then press the ' + \
-#                         '"Yes" button.'))
-#
-#        if proceed:
-#            from finalactions import setupDisks, mountKusuMntPts
-#            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-#            setupDisks(self.disk_profile)
-#            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
-#            prog_dlg.close()
-#        else:
-#            raise UserExitError
+        proceed = self.selector.popupYesNo(_('Really Proceed?'),
+                       _('Proceeding beyond this screen will cause ' + \
+                         'irreversible changes to your disk(s).\n\nIf you ' + \
+                         'have any valuable data that is existing on your ' + \
+                         'current disk(s), please press "No" to cancel ' + \
+                         'installation, and then backup your data before ' + \
+                         're-attempting installation.\n\nOtherwise, if you ' + \
+                         'are sure you want to continue, then press the ' + \
+                         '"Yes" button.'))
+
+        if proceed:
+            from finalactions import setupDisks, mountKusuMntPts
+            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+            setupDisks(self.disk_profile)
+            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
+            prog_dlg.close()
+        else:
+            raise UserExitError
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:
