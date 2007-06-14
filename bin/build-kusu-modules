@@ -15,6 +15,7 @@ import tempfile
 import subprocess
 import shutil
 import gettext
+from distutils.sysconfig import parse_makefile
 
 # exceptions
 class CopyError(Exception): pass
@@ -83,6 +84,7 @@ class KusuSVNSource:
         self.kusuroot = None
         self.scratchdir = None
         self.env = env
+        self.verbose = False
         
 
         # These should describe the key directories/files that identify a Kusu SVN source layout.
@@ -94,6 +96,12 @@ class KusuSVNSource:
             'etc' : 'etc',
             'src' : 'src',
             'dists' : 'src/dists'
+        }
+        
+        self.cmakebinarydirLayoutAttributes = {
+            'cmakecache' : 'CMakeCache.txt',
+            'cmakeinstall' : 'cmake_install.cmake',
+            'Makefile'  : 'Makefile'
         }
 
     def verifySrcPath(self):
@@ -120,6 +128,32 @@ class KusuSVNSource:
 
         return True
         
+    def verifyCMakeBinaryDir(self):
+        """ Verify the path for attributes that describes a CMAKE_BINARY_DIR """
+        try:
+            if not os.path.exists(self.srcpath): return False
+        except AttributeError:
+            # we could be testing on a NoneType object instead of a Path object
+            return False
+
+        # Check the path for each attribute listed, return if invalid path
+        for k,v in self.cmakebinarydirLayoutAttributes.items():
+            p = os.path.join(self.srcpath,v)
+            if not os.path.exists(p): return False
+
+        return True
+        
+    def getCmakeSourceDir(self,makefile):
+        """ Get the CMAKE_SOURCE_DIR which would point to a valid Kusu SVN Trunk """
+        if not os.path.exists(makefile):
+            return None
+            
+        d = parse_makefile(makefile)
+        if 'CMAKE_SOURCE_DIR' in d:
+            return d['CMAKE_SOURCE_DIR']
+        else:
+            return None
+        
     def setup(self,develroot=None,kusuroot=None):
         """ General setup for Kusu develroot"""
         
@@ -143,11 +177,24 @@ class KusuSVNSource:
                     % kusuroot
             
                 
-    def runCMake(self):
+    def runCMake(self,kususrc=None):
         """ Run CMake within the Kusu develroot. This is a blocking call. """
+        
+        if not kususrc: kususrc = self.srcpath
+        
+        # increase verbosity
         env = os.environ
-        env['KUSU_ROOT'] = self.kusuroot
-        cmakeP = subprocess.Popen('cmake %s > /dev/null 2>&1' % os.path.abspath(self.srcpath),shell=True,
+        if 'KUSU_VERBOSE' in env and env['KUSU_VERBOSE'] == '1':
+            self.verbose = True
+        else:
+            self.verbose = False
+            
+        if self.verbose:
+            cmd = 'cmake %s' % os.path.abspath(kususrc)
+        else:
+            cmd = 'cmake %s > /dev/null 2>&1' % os.path.abspath(kususrc)
+            
+        cmakeP = subprocess.Popen(cmd,shell=True,
                     cwd=self.develroot,env=env)
         result = cmakeP.communicate()
         
@@ -156,12 +203,26 @@ class KusuSVNSource:
         
     def runMake(self,target=None):
         """ Run make within the Kusu develroot. This is a blocking call. """
+        
+        # increase verbosity        
+        env = os.environ
+        if 'KUSU_VERBOSE' in env and env['KUSU_VERBOSE'] == '1':
+            self.verbose = True
+        else:
+            self.verbose = False        
+            
+        if self.verbose:
+            cmd = 'make'
+            cmdtarget = 'make build-%s' % target
+        else:
+            cmd = 'make > /dev/null 2>&1'
+            cmdtarget = 'make build-%s > /dev/null 2>&1' % target
 
         if not target:
-            makeP = subprocess.Popen('make > /dev/null 2>&1',shell=True,
+            makeP = subprocess.Popen(cmd,shell=True,
                         cwd=self.develroot)
         else:
-            makeP = subprocess.Popen('make build-%s > /dev/null 2>&1' % target,shell=True,
+            makeP = subprocess.Popen(cmdtarget,shell=True,
                         cwd=self.develroot)
             
         result = makeP.communicate()
@@ -389,6 +450,8 @@ actions:
             msg = self._('Please provide the arch!')
             print msg
             self.printUsageExit()
+            
+
         
             
         if 'all' not in modules:
@@ -411,6 +474,34 @@ actions:
         
         try:
             svnsrc = KusuSVNSource(kususrc)
+            # validate kususrc
+            if not svnsrc.verifySrcPath():
+                msg = self._('Please provide a valid kususrc!')
+                self.printMsgExit(msg)
+                
+            # check if kususrc is a CMAKE_BINARY_DIR
+            if svnsrc.verifyCMakeBinaryDir():
+                msg = self._('Detected that kususrc points to CMAKE_BINARY_DIR.')
+                print msg
+                msg = self._('Trying to identify a valid Kusu SVN Source..')
+                print msg
+                
+                makefile = os.path.join(kususrc,'Makefile')
+                kususrc = svnsrc.getCmakeSourceDir(makefile)
+                if not kususrc:
+                    msg = self._('Cannot identify a valid SVN Source! Aborting!')
+                    self.printMsgExit(msg)
+                    
+                svnsrc = KusuSVNSource(kususrc)
+                
+                if not svnsrc.verifySrcPath():
+                    msg = self._('Cannot identify a valid SVN Source! Aborting!')
+                    self.printMsgExit(msg)
+
+                msg = self._('Found valid Kusu SVN Source at %(kususrc)s.' % {'kususrc':kususrc})
+                print msg
+
+                
             msg = self._('Setting up build sources..')
             print msg
             svnsrc.setup()
