@@ -21,8 +21,9 @@ def boot_data_files():
     datafile = ()
     for k,v in distros.items():
         for version in v:
-            datafile = ('lib/nodeinstaller/%s/%s' % (k,version), ['src/nodeinstaller/README'])
-            datafiles.append(datafile)   
+            for arch in ('i386','x86_64'):
+                datafile = ('lib/nodeinstaller/%s/%s/%s' % (k,version,arch), ['src/nodeinstaller/README'])
+                datafiles.append(datafile)   
     return datafiles
 
 setup(name="kusu-boot",

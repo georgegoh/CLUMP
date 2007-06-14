@@ -211,7 +211,7 @@ def adaptNIIPartition(niipartition):
                 # or it could be a logical volume
                 lv = translatePartitionOptions(partinfo['options'],'lv')
                 if lv[0]:
-                    # please ensure that the vgname defined here corresponds to the devname!
+                    # FIXME: please ensure that the vgname defined here corresponds to the devname!
                     size = translatePartitionSize(partinfo['size'])
                     fs = translateFSTypes(partinfo['fstype'])
                     mountpoint = partinfo['mntpnt']
@@ -376,7 +376,7 @@ class NodeInstaller(object):
     _niidict = {
     'source' : None,    # The NII source
     'name':'',          # Name of the node
-    'installers':[],    # List of avaliable installers
+    'installers':[],    # List of available installers
     'repo':'',          # Repo location
     'ostype':'',        # OS type
     'installtype': '',  # Type of install to perform

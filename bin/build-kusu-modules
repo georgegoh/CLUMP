@@ -168,6 +168,13 @@ class KusuSVNSource:
 
         return makeP.returncode
         
+    def cleanupPyc(self):
+        """ Clean up any .pyc or .pyo in the develroot"""
+        cmd = "find %s -name '*py?' | xargs rm -f" % self.develroot
+        cleanupP = subprocess.Popen(cmd,shell=True)
+        result = cleanupP.communicate()
+        return cleanupP.returncode
+        
     def cleanup(self):
         """ Housecleaning for Kusu develroot. """
         
@@ -193,7 +200,9 @@ class KusuSVNSource:
             retcode = self.runMake(target)
             if retcode <> 0:
                 self.cleanup()
-                raise FailedBuildMake, "Failed Make build for Kusu"                
+                raise FailedBuildMake, "Failed Make build for Kusu"
+                
+        retcode = self.cleanupPyc()              
         
     def copyKusuroot(self, dest, overwrite=False):
         """Copy the kusuroot file to a destination"""
@@ -416,7 +425,11 @@ actions:
                     retcode = svnsrc.runMake(mod)
                     if retcode <> 0:
                         svnsrc.cleanup()
-                        raise FailedBuildMake, "Failed Make build for Kusu"                    
+                        raise FailedBuildMake, "Failed Make build for Kusu"
+                        
+            msg = self._('Cleaning up *.pyo and *.pyc artefacts..')
+            print msg
+            svnsrc.cleanupPyc()                 
 
             msg = self._('Copying Kusu Runtime contents to current directory.')
             print msg
