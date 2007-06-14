@@ -90,6 +90,7 @@ make ROOT=$RPM_BUILD_ROOT install
 %defattr(-,root,root)
 /etc/rc.kusu.sh
 /etc/rc.kusu.d/
+/opt/kusu/*
 /etc/rc.kusu.custom.d/
 
 
