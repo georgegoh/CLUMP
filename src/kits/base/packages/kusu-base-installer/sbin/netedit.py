@@ -397,7 +397,7 @@ class NetworkEditWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.hasGateway = None
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("netedit_helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
     
     def okAction(self):
         return NAV_FORWARD
@@ -538,7 +538,7 @@ class NetworkNewWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("netedit_helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
                 
     def okAction(self):
         return NAV_FORWARD
