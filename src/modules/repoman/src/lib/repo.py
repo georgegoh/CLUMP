@@ -132,10 +132,28 @@ class BaseRepo(object):
 
         raise NotImplementedError
 
-    def delete(self):
+    def delete(self, repoid_or_reponame):
         """delete the repository from disk and database"""
-        raise NotImplementedError
 
+        if type(repoid_or_reponame) in [int, long]:
+            repo_path = self.getRepoPath(repoid_or_reponame)
+            repoid = repoid_or_reponame
+        elif type(repoid_or_reponame) == str:
+            #FIXME
+            pass
+
+        # Removes files
+        repo_path.rmtree()
+
+        # clean up database: repos and repos_have_kit table
+        repos_have_kits = self.db.ReposHaveKits.select_by(repoid=repoid)
+        repo = self.db.Repos.get(repoid)
+        for obj in repos_have_kits + [repo]:
+            obj.delete()
+            obj.flush()         
+
+        return True
+ 
     def verify(self):
         """verify the repository"""
         raise NotImplementedError
@@ -185,6 +203,8 @@ class RedhatYumRepo(BaseRepo):
 
     def copyOSKit(self):
 
+        self.os_path = self.getOSPath()
+        
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
@@ -220,7 +240,6 @@ class RedhatYumRepo(BaseRepo):
 
         try:
             self.UpdateDatabase(reponame)
-            self.os_path = self.getOSPath()
             self.makeRepoDirs()
             self.copyOSKit()
             self.copyKitsPackages()
@@ -233,6 +252,8 @@ class RedhatYumRepo(BaseRepo):
             raise e 
 
         return self
+
+        
 
     def makeComps(self):
         """Makes the necessary comps xml file"""
