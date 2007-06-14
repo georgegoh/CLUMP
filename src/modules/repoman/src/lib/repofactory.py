@@ -72,7 +72,7 @@ class RepoFactory(object):
         pass
 
 
-    def getRepo(self, key):
+    def getRepo(self, repoid_or_reponame):
         pass
  
 #if __name__ == '__main__':

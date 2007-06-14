@@ -55,12 +55,30 @@ class BaseRepo(object):
 
     ngname = None
     dirlayout = {}
+    repo_path = None
+    os_path = None
+    repoid = None
 
     def __init__(self, os_version, os_arch, prefix, db):
         self.os_version = os_version
         self.os_arch = os_arch
         self.prefix = prefix
         self.db = db
+
+    def getRepoID(self, repoid_or_reponame):
+        """Get the repoid for the repository"""
+
+        if type(repoid_or_reponame) in [int, long]:
+            repo = self.db.Repos.get(repoid_or_reponame)
+    
+        elif type(repoid_or_reponame) == str:
+            repo = self.db.Repos.select_by(reponame=repoid_or_reponame)[0]
+
+        if repo:
+            self.repoid = repo.repoid
+            return self.repoid
+        else:
+            return None
 
     def getOSPath(self):
         """Get the OS path for the repository"""
@@ -102,48 +120,42 @@ class BaseRepo(object):
         self.repoid = repo.repoid
         self.repo_path = self.getRepoPath(self.repoid)
 
-    def clean(self):
+    def clean(self, repoid_or_reponame):
         """Remove the repository from local disk"""
+        
+        if not self.repo_path:
+            repoid = self.getRepoID(repoid_or_reponame)
 
-        if not hasattr(self, repo_path):
-            raise RepoNotCreatedError
-
-        elif not self.repo_path.exists():
-            raise RepoNotFoundError
-
+            if not repoid:
+                raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+            else:
+                self.repo_path = self.getRepoPath(repoid)
+         
+        if not self.repo_path.exists():
+            raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
         else:
-            path.rmtree(self.repo_path)
+            self.repo_path.rmtree()
 
     def make(self, ngname, reponame):
         """makes the repository"""
         raise NotImplementedError
 
-    def refresh(self):
+    def refresh(self, repoid_or_reponame):
         """refresh the repository"""
-
-        #self.clean()
-        #self.makeRepoDirs()
-        #self.copyOSKit()
-        #self.copyKitsPackages()
-        #self.copyRamDisk()
-        #self.makeComps()
-        #self.makeMetaInfo()
-        #self.verify()
-
         raise NotImplementedError
 
     def delete(self, repoid_or_reponame):
         """delete the repository from disk and database"""
 
-        if type(repoid_or_reponame) in [int, long]:
-            repo_path = self.getRepoPath(repoid_or_reponame)
-            repoid = repoid_or_reponame
-        elif type(repoid_or_reponame) == str:
-            #FIXME
-            pass
+        repoid = self.getRepoID(repoid_or_reponame)
+        if not repoid:
+            raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+
+        repo_path = self.getRepoPath(repoid)
 
         # Removes files
-        repo_path.rmtree()
+        if repo_path.exists():
+            repo_path.rmtree()
 
         # clean up database: repos and repos_have_kit table
         repos_have_kits = self.db.ReposHaveKits.select_by(repoid=repoid)
@@ -152,8 +164,6 @@ class BaseRepo(object):
             obj.delete()
             obj.flush()         
 
-        return True
- 
     def verify(self):
         """verify the repository"""
         raise NotImplementedError
@@ -247,13 +257,32 @@ class RedhatYumRepo(BaseRepo):
             self.makeComps()
             self.makeMetaInfo()
             self.verify()
-        except KusuError, e:
-            #FIXME: self.delete() # Clean up myself
+        except:
+            self.delete() # Clean up myself
             raise e 
 
         return self
 
-        
+    def refresh(self, repoid_or_reponame):
+        """refresh the repository"""
+
+        try:
+            self.repoid = self.getRepoID(repoid_or_reponame)
+            if not self.repoid:
+                raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+
+            self.clean(self.repoid)
+            self.makeRepoDirs()
+            self.copyOSKit()
+            self.copyKitsPackages()
+            self.copyRamDisk()
+            self.makeComps()
+            self.makeMetaInfo()
+            self.verify()
+        except KusuError, e:
+            raise e
+
+        return self
 
     def makeComps(self):
         """Makes the necessary comps xml file"""

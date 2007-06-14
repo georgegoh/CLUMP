@@ -117,6 +117,7 @@ class TestFedoraRepo:
  
         r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
+
         repoid = str(r.repoid)
         depot = prefix / 'depot'
         assert (depot / 'repos' / repoid / 'repodata' / 'comps.xml').exists()
@@ -153,3 +154,40 @@ class TestFedoraRepo:
 
         assert not self.dbs.Repos.get(repoid)
         assert not len(self.dbs.ReposHaveKits.select_by(repoid=repoid))
+
+    def testCleanRepo(self):
+        global prefix
+
+        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r.make('installer nodegroup', 'a repo during testing')
+        repoid = r.repoid
+ 
+        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r.clean(repoid)
+ 
+        depot = prefix / 'depot'    
+        assert not (depot / 'repos' / str(repoid)).exists() 
+
+    def testRefreshRepo(self):
+        global prefix
+
+        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r.make('installer nodegroup', 'a repo during testing')
+        repoid = r.repoid
+ 
+        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r.refresh(repoid)
+
+        repoid = str(r.repoid)
+        depot = prefix / 'depot'
+        assert (depot / 'repos' / repoid / 'repodata' / 'comps.xml').exists()
+        assert (depot / 'repos' / repoid / 'repodata' / 'other.xml.gz').exists()
+        assert (depot / 'repos' / repoid / 'repodata' / 'filelists.xml.gz').exists()
+        assert (depot / 'repos' / repoid / 'repodata' / 'repomd.xml').exists()
+        assert (depot / 'repos' / repoid / 'repodata' / 'primary.xml.gz').exists()
+        assert (depot / 'repos' / repoid / 'Fedora' / 'RPMS').exists()
+        assert (depot / 'repos' / repoid / 'isolinux' / 'initrd').exists()
+        assert (depot / 'repos' / repoid / 'isolinux' / 'vmlinuz').exists()
+        assert (depot / 'repos' / repoid / 'images' / 'stage2.img').exists()
+
+
