@@ -42,7 +42,6 @@ class KusuApp:
         usage = self._(tmpstr)
         self.parser = OptionParser(usage)
         
-
     def langinit(self):
         """langinit - Initialize the Internationalization """
         langdomain = 'kusuapps'
@@ -50,23 +49,22 @@ class KusuApp:
 
         # check if KUSU_ROOT environment exists
         kusuroot = os.environ.get('KUSU_ROOT',None)
-        
+
         # Locate the Internationalization stuff
         if kusuroot and \
-            os.path.exists('%s/share/locale' % kusuroot): 
-            localedir = '%s/share/locale' % kusuroot 
-        elif os.path.exists('../locale'):
-            localedir = '../locale'
+            os.path.exists('%s/share/locale' % kusuroot):
+            localedir = '%s/share/locale' % kusuroot
+        elif os.path.exists('../share/locale'):
+            localedir = '../share/locale'
         else:
             # Try the system path
             if os.path.exists('/usr/share/locale'):
                 localedir = '/usr/share/locale'
-    
+
         gettext.bindtextdomain(langdomain, localedir)
         gettext.textdomain(langdomain)
         self.gettext = gettext.gettext
         return self.gettext
-
 
     def errorMessage(self, message, *args):
         """errorMessage - Output messages to STDERR with Internationalization.
