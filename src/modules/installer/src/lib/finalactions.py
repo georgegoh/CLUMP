@@ -40,7 +40,7 @@ def makeRepo(kiprofile):
 
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing
-    ngname = 'installer-' + kiprofile['Kits']['longname']
+    ngname = 'master' + '-' + kiprofile['Kits']['longname']
     repo = rfactory.make(ngname, 'Repo for ' + ngname)
     
     #Makes symlink in $KUSU_TMP/www
