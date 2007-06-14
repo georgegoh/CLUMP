@@ -98,6 +98,8 @@ class UnableToSaveDataError(KusuError): pass
 class RepoNotCreatedError(KusuError): pass
 class RepoNotFoundError(KusuError): pass
 class RepoOSKitError(KusuError): pass
+class CannotCreateRepoError(KusuError): pass
+class YumRepoNotCreatedError(KusuError): pass
 
 # b-m-t
 class FilePathError(KusuError): pass

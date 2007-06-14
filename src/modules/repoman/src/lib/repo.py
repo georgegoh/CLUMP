@@ -92,12 +92,12 @@ class BaseRepo(object):
         repo = self.db.Repos(reponame=reponame)
         repo.kits = kits.values()
         repo.save()
-        self.db.flush()
+        repo.flush()
         
         # Update nodegroup with the new repoid
         ng.repoid = repo.repoid
         ng.save_or_update()
-        self.db.flush()
+        ng.flush()
 
         self.repoid = repo.repoid
         self.repo_path = self.getRepoPath(self.repoid)
@@ -228,9 +228,9 @@ class RedhatYumRepo(BaseRepo):
             self.makeComps()
             self.makeMetaInfo()
             self.verify()
-        except:
+        except KusuError, e:
             #FIXME: self.delete() # Clean up myself
-            raise CannotCreateRepoError, 'cannot create repo: \'%s\'' % reponame
+            raise e 
 
         return self
 
@@ -261,7 +261,7 @@ class RedhatYumRepo(BaseRepo):
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
-            raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+            raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
 class FedoraRepo(RedhatYumRepo):
     def __init__(self, os_version, os_arch, prefix, db):
