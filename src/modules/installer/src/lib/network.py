@@ -46,27 +46,6 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         self.buttonsDict[_('Configure')].setCallback_(\
             ConfigureIntfScreen.configureIntf, (ConfigureIntfScreen(self), ))
 
-    def formAction(self):
-        """
-        Store the configurations options in the network profile.
-        """
-
-        try:
-            self.kiprofile[self.profile]
-        except KeyError:
-            self.kiprofile[self.profile] = {}
-
-        self.kiprofile[self.profile]['have_dhcp'] = False
-        self.kiprofile[self.profile]['have_static'] = False
-
-        interfaces = self.kiprofile[self.profile]['interfaces']
-        for intf in interfaces:
-            if interfaces[intf]['configure']:
-                if interfaces[intf]['use_dhcp']:
-                    self.kiprofile[self.profile]['have_dhcp'] = True
-                else:
-                    self.kiprofile[self.profile]['have_static'] = True
-
     def validate(self):
         """
         Perform validity checks on received data.
@@ -193,17 +172,48 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             kl.debug('Adding interface %s: %s.' % (intf, interfaces[intf]))
             listbox.append(entrystr[:50], intf)
 
+    def formAction(self):
+        """
+        Store the configurations options in the network profile.
+        """
+
+        try:
+            self.kiprofile[self.profile]
+        except KeyError:
+            self.kiprofile[self.profile] = {}
+
+        self.kiprofile[self.profile]['have_dhcp'] = False
+        self.kiprofile[self.profile]['have_static'] = False
+
+        interfaces = self.kiprofile[self.profile]['interfaces']
+        for intf in interfaces:
+            if interfaces[intf]['configure']:
+                if interfaces[intf]['use_dhcp']:
+                    self.kiprofile[self.profile]['have_dhcp'] = True
+                else:
+                    self.kiprofile[self.profile]['have_static'] = True
+
     def save(self, db, profile):
         import socket
         import struct
 
+        master = db.NodeGroups.selectfirst_by(ngname='master')
+        master_node = db.Nodes.selectfirst_by(name='master-0')
+
         interfaces = profile['interfaces']
 
         for intf in interfaces:
+            newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
+            master_node.nics.append(newnic)
+
             if interfaces[intf]['configure']:
-                newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'])
+                newnic.boot = interfaces[intf]['active_on_boot']
+                newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
+                                     device=intf, netname='net-%s' % intf)
                 
                 if not interfaces[intf]['use_dhcp']:
+                    newnic.ip = interfaces[intf]['ip_address']
+
                     # the network is stored as IP & netmask (& = bitwise and)
                     ip = struct.unpack('>L',
                             socket.inet_aton(interfaces[intf]['ip_address']))[0]
@@ -213,9 +223,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                                 socket.inet_ntoa(struct.pack('>L', ip & nm))
                     newnet.subnet = interfaces[intf]['netmask']
 
-                newnet.device = intf
-                newnet.netname = 'net-%s' % intf
-                newnet.save()
+                master.networks.append(newnet)
+                newnic.network = newnet
 
         db.flush()
 

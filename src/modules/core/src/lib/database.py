@@ -5,14 +5,15 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
+import os
+import time
+import warnings
+import logging
 import sqlalchemy as sa
 from sqlalchemy.ext.sessioncontext import SessionContext
 from sqlalchemy.ext.assignmapper import assign_mapper
 from kusu.util.errors import *
 import kusu.util.log as kusulog
-import logging
-import os
-import warnings
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
 # it seems these must be told to be quiet individually...
@@ -416,7 +417,6 @@ class DB(object):
        
         # Again, this is a M-N table. 
         ng_has_net = sa.Table('ng_has_net', self.metadata,
-            sa.Column('idnet2ng', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('ngid', sa.Integer, primary_key=True, nullable=False),
             sa.Column('netid', sa.Integer, primary_key=True, nullable=False),
             sa.ForeignKeyConstraint(['ngid'], ['nodegroups.ngid']),
@@ -434,13 +434,13 @@ class DB(object):
         # as a PK because it should be uniq enough
         nics = sa.Table('nics', self.metadata,
             sa.Column('nicsid', sa.Integer, primary_key=True, autoincrement=True),
-            sa.Column('nid', sa.Integer, primary_key=True, nullable=False),
-            sa.Column('netid', sa.Integer, primary_key=True, nullable=False),
+            sa.Column('nid', sa.Integer, sa.ForeignKey('nodes.nid'),
+                      nullable=False),
+            sa.Column('netid', sa.Integer, sa.ForeignKey('networks.netid'),
+                      nullable=True),
             sa.Column('mac', sa.String(45)),
             sa.Column('ip', sa.String(20)),
             sa.Column('boot', sa.Boolean, sa.PassiveDefault('0')),
-            sa.ForeignKeyConstraint(['nid'], ['nodes.nid']),
-            sa.ForeignKeyConstraint(['netid'], ['networks.netid']),
             mysql_engine='InnoDB')
         sa.Index('nics_FKIndex1', nics.c.nid)
         sa.Index('nics_FKIndex2', nics.c.netid)
@@ -594,7 +594,10 @@ class DB(object):
                       entity_name=self.entity_name)
 
         nics = sa.Table('nics', self.metadata, autoload=True)
-        assign_mapper(self.ctx, Nics, nics, entity_name=self.entity_name)
+        assign_mapper(self.ctx, Nics, nics,
+          properties={'network': sa.relation(Networks,
+                                             entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         ng_has_net = sa.Table('ng_has_net', self.metadata, autoload=True)
         assign_mapper(self.ctx, NGHasNet, ng_has_net,
@@ -736,18 +739,25 @@ class DB(object):
                               entity_name=self.entity_name)
 
     def bootstrap(self):
-        """bootstrap the necessary tables and fields that 
-           are necessary for Kusu
-        """
+        """bootstrap the necessary tables and fields"""
+
         try:
             self.dropTables()
             self.createTables()
         except Exception: pass
 
-        # nodegroups
         # Create the nodegroups
-        installer = NodeGroups(ngname='installer') # VERSION+ARCH
-        compute = NodeGroups(ngname='compute')
+        # #R - rack, #N - rank
+        master = NodeGroups(ngname='master', nameformat='master-#N')
+        installer = NodeGroups(ngname='installer',
+                               nameformat='installer-#RR-#NN') # VERSION+ARCH
+        compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN')
+
+        # Create the master installer node
+        now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        master_node = Nodes(name='master-0', state='installed', lastupdate=now)
+        master.nodes.append(master_node)
+
         # Create the partition entries for the compute node
         boot = Partitions(mntpnt='/boot', fstype='ext3',
                           size='100', options='disk=1', preserve='N')

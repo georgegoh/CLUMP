@@ -80,10 +80,9 @@ CREATE TABLE ng_has_comp (
 );
 
 CREATE TABLE ng_has_net (
-  idnet2ng INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   ngid INTEGER UNSIGNED NOT NULL,
   netid INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY(idnet2ng, ngid, netid),
+  PRIMARY KEY(ngid, netid),
   INDEX net2ng_FKIndex1(netid),
   INDEX net2ng_FKIndex2(ngid)
 );
@@ -91,11 +90,11 @@ CREATE TABLE ng_has_net (
 CREATE TABLE nics (
   nicsid INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   nid INTEGER UNSIGNED NOT NULL,
-  netid INTEGER UNSIGNED NOT NULL,
+  netid INTEGER UNSIGNED NULL,
   mac VARCHAR(45) NULL,
   ip VARCHAR(20) NULL,
   boot BOOL NULL DEFAULT 0,
-  PRIMARY KEY(nicsid, nid, netid),
+  PRIMARY KEY(nicsid),
   INDEX nics_FKIndex1(nid),
   INDEX nics_FKIndex2(netid)
 );

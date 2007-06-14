@@ -463,8 +463,6 @@ class KitOps:
 
     def prepareOSKit(self, osdistro):
         kit = {} #a struct to hold the kit info for the distro
-        #instantiate a distro via the factory
-        #osdistro = DistroFactory(str(self.mountpoint)) #distro instance
         kit['ver'] = osdistro.getVersion()          #os kit version in the db
         kit['arch'] = osdistro.getArch()            #os kit arch in the db
         kit['name'] = osdistro.ostype.lower()
@@ -515,6 +513,7 @@ class KitOps:
         #copy the RPMS to repo dir
         kl.info('Copying RPMs, this may take a while...')
         repodir = self.kits_dir / kit['name'] / kit['ver'] / kit['arch']
+
         if not repodir.exists():
             repodir.makedirs()
 
@@ -523,7 +522,8 @@ class KitOps:
             kl.debug('cpio_copytree return code: %d', rv)
         except Exception, msg:
             raise CopyOSMediaError, \
-                  'Error during copy\n%s\nmountpoint:%s, repodir:%s' % (msg, self.mountpoint, repodir)
+                  'Error during copy\n%s\nmountpoint:%s, repodir:%s' % \
+                  (msg, self.mountpoint, repodir)
  
     def finalizeOSKit(self, kit):
         #populate the database with info
@@ -538,7 +538,12 @@ class KitOps:
                                     cdesc='%s mock component' % kit['longname'])
         newkit.components.append(comp)
 
-        ngs = self.__db.NodeGroups.select(
+        if self.installer:
+            ngs = self.__db.NodeGroups.select(
+                    self.__db.NodeGroups.c.ngname.in_('master', 'compute',
+                                                      'installer'))
+        else:
+            ngs = self.__db.NodeGroups.select(
                     self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
 
         for ng in ngs:

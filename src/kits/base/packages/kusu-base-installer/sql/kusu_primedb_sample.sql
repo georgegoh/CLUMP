@@ -112,23 +112,23 @@ insert into networks values (2, '10.1.0.0', '255.255.0.0', 'eth1', '-eth1', '10.
 insert into networks values (3, '10.2.0.0', '255.255.0.0', 'ib0', '-ib0', '10.2.1.1','','Installer private network.  Set by Installer', '10.2.2.0', 1,0) ;
 
 # Setup the relationship between the networks and the node groups.  (idnet, ngid, netid)
-insert into ng_has_net values (1,1,1) ;
-insert into ng_has_net values (2,1,2) ;
-insert into ng_has_net values (3,2,1) ;
-insert into ng_has_net values (4,2,2) ;
-insert into ng_has_net values (5,2,3) ;
-insert into ng_has_net values (6,3,2) ;
-insert into ng_has_net values (7,4,2) ;
-insert into ng_has_net values (8,4,3) ;
-insert into ng_has_net values (9,5,2) ;
-insert into ng_has_net values (10,5,3) ;
-insert into ng_has_net values (11,6,1) ;
-insert into ng_has_net values (12,6,2) ;
-insert into ng_has_net values (13,7,2) ;
-insert into ng_has_net values (14,17,1) ;
-insert into ng_has_net values (15,17,2) ;
-insert into ng_has_net values (16,18,1) ;
-insert into ng_has_net values (17,18,2) ;
+insert into ng_has_net values (1,1) ;
+insert into ng_has_net values (1,2) ;
+insert into ng_has_net values (2,1) ;
+insert into ng_has_net values (2,2) ;
+insert into ng_has_net values (2,3) ;
+insert into ng_has_net values (3,2) ;
+insert into ng_has_net values (4,2) ;
+insert into ng_has_net values (4,3) ;
+insert into ng_has_net values (5,2) ;
+insert into ng_has_net values (5,3) ;
+insert into ng_has_net values (6,1) ;
+insert into ng_has_net values (6,2) ;
+insert into ng_has_net values (7,2) ;
+insert into ng_has_net values (17,1) ;
+insert into ng_has_net values (17,2) ;
+insert into ng_has_net values (18,1) ;
+insert into ng_has_net values (18,2) ;
 
 # Setup the nics table for the Installer node
 insert into nics values (32, 1, 1, '00:11:22:33:44:55', '172.25.243.1', 1) ;
