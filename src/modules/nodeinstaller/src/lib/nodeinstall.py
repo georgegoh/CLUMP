@@ -11,6 +11,8 @@ from kusu.partitiontool.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
+from whrandom import choice
+import string
 import urllib2
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
@@ -46,7 +48,6 @@ def translatePartitionSize(value):
         partitiontool partition size which is an integer
     """
     return int(value)
-        
 
 def translateFSTypes(fstype):
     """ Translates fstype to something partitiontool can understand. Right now
@@ -144,8 +145,6 @@ def translatePartitionOptions(options, opt):
     if opt == 'lv' and 'vg' in opt_dict.keys():
         return (True,opt_dict['vg'])
 
-
-
 def adaptNIIPartition(niipartition):
     """ Adapt niipartition into a partitiontool schema. This schema can
         be passed along with a partitiontool diskprofile to setupDiskProfile
@@ -233,7 +232,6 @@ def adaptNIIPartition(niipartition):
             schema['vg_dict'].update(vg_dict)
     return schema
 
-
 def retrieveNII(niihost, node):
     """ Downloads the NII from the niihost.
         FIXME: currently a hardcoded url!!
@@ -249,6 +247,11 @@ def retrieveNII(niihost, node):
     except urllib2.HTTPError, e:
         logger.debug(str(e))
         return None
+
+def getRandomSeq(length=8, chars=string.letters + string.digits):
+    """Return a random sequence length chars long."""
+
+    return ''.join([choice(chars) for i in range(length)])
 
 class KickstartFromNIIProfile(object):
     """ NII-specific profile class for generating Kickstart objects. """
@@ -274,9 +277,8 @@ class KickstartFromNIIProfile(object):
             profile.
         """
         
-        # rootpw should be a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
-        # FIXME: for now, we hardcode it to 'system'. Please fix this!
-        self.rootpw = 'system'
+        # rootpw is a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
+        self.rootpw = getRandomSeq()
         self.tz = ni.appglobal['TimeZone']
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
@@ -366,7 +368,6 @@ class KickstartFromNIIProfile(object):
              raise AttributeError, "%s instance has no attribute '%s'" % \
                                   (self.__class__, item)
 
-
 class NodeInstaller(object):
     """ The model for nodeinstaller. This class provides access to
         the data and methods to perform the operations for automatic
@@ -395,7 +396,6 @@ class NodeInstaller(object):
     def __init__(self, niisource=None):
         super(NodeInstaller, self).__init__()
         self.source = niisource
-
 
     def __getattr__(self, name):
 	""" Convenience method for accessing attributes. Code snippet
@@ -437,7 +437,6 @@ class NodeInstaller(object):
         self.ksprofile = None
         self.partitionschema = {}
         self.autoinstallfile = None
-        
         
     def parseNII(self):
         """ Parses the NII and places the resulting data into self.niidata """
@@ -494,7 +493,3 @@ class NodeInstaller(object):
         logger.debug('Committing changes and formatting disk..')
         self.diskprofile.commit()
         self.diskprofile.format()
-
-    
-
-
