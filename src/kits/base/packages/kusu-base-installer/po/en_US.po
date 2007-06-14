@@ -230,7 +230,7 @@ msgstr "The -p option requires a valid node name"
 msgid "The file '%s' was not found"
 msgstr "The file '%s' was not found"
 
-msgid "addhost_negative_number"
+msgid "rack_negative_number"
 msgstr "Cannot specify a negative number. Please try again."
 
 msgid "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
@@ -526,6 +526,15 @@ msgstr "The network '%s' is in use. If you wish to delete this, please use the n
 msgid "The network '%s' is in use. This can not be changed at this time"
 msgstr "The network '%s' is in use. This can not be changed at this time"
 
+msgid "netedit_instruction_edit"
+msgstr "Please edit any of the network information below."
+
+msgid "netedit_instruction_new"
+msgstr "Please enter the network information below."
+
+msgid "netedit_helpline_instructions"
+msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
+
 # nghosts
 
 msgid "nghosts_version_usage"
@@ -545,6 +554,21 @@ msgstr "Specify node group to copy to"
 
 msgid "nghosts_copy_hosts_usage"
 msgstr "Specify a list of nodes to move"
+
+msgid "nghosts_window_title_prompt"
+msgstr "Node Membership Editor"
+
+msgid "nghosts_instruction_prompt"
+msgstr "Welcome to the Kusu membership editor! Please choose an option then click next."
+
+msgid "nghosts_copy_selected_nodes"
+msgstr "Copy selected nodes to a node group"
+
+msgid "nghosts_copy_nodegroup"
+msgstr "Copy all nodes from a node group to a new node group"
+
+msgid "nghosts_window_title_select_node"
+msgstr "Node Selection"
 
 msgid "nghosts_instruction_select_node"
 msgstr "Select node(s) from a node group to move to a new node group."
