@@ -65,6 +65,9 @@ msgstr "Edit"
 msgid "delete_button"
 msgstr "Delete"
 
+msgid "move_button"
+msgstr "Move"
+
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
 
@@ -351,10 +354,10 @@ msgid "netedit_item_labels"
 msgstr "Network\t     Subnet\t     Description"
 
 msgid "netedit_window_title_exit"
-msgstr "Exit netedit"
+msgstr "Exit netedit?"
 
 msgid "netedit_instructions_exit"
-msgstr "Do you want to quit the Network Editor?"
+msgstr "Do you want to quit the Network editor?"
 
 msgid "netedit_window_title_delete"
 msgstr "Delete Selected Network"
@@ -532,7 +535,7 @@ msgstr "Please edit any of the network information below."
 msgid "netedit_instruction_new"
 msgstr "Please enter the network information below."
 
-msgid "netedit_helpline_instructions"
+msgid "helpline_instructions"
 msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
 
 # nghosts
@@ -572,6 +575,14 @@ msgstr "Node Selection"
 
 msgid "nghosts_instruction_select_node"
 msgstr "Select node(s) from a node group to move to a new node group."
+
+msgid "nghosts_window_title_exit"
+msgstr "Exit nghosts?"
+
+msgid "nghosts_instructions_exit"
+msgstr "Do you want to quit the Network membership editor?"
+
+# ngedit
 
 msgid "Node Group Editor"
 msgstr "Node Group Editor"
