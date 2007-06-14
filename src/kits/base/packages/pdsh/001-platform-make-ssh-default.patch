@@ -1,0 +1,11 @@
+--- pdsh-2.10/src/pdsh/rcmd.c	2006-03-22 15:36:00.000000000 -0500
++++ pdsh-2.10/src/pdsh/rcmd.c.make_ssh_default	2006-11-06 16:46:41.583355000 -0500
+@@ -45,7 +45,7 @@
+  *   Warning: If none of these modules are loaded, there will be no default.
+  */
+ static char * rcmd_rank[] = 
+-    { "mrsh", "rsh", "ssh", "krb4", "qsh", "mqsh", "xcpu", NULL };
++    { "ssh", "mrsh", "rsh", "krb4", "qsh", "mqsh", "xcpu", NULL };
+ 
+ struct rcmd_module {
+     char *              name;
