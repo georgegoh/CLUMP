@@ -345,6 +345,13 @@ class NodeFun(object, KusuApp):
         
         nodeID = self.getNodeID(self._nodeName)
         interfaces = self._findInterfaces()
+
+        # Get the installer's subnet and network information.
+        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND \
+                                  ng_has_net.ngid = 1 AND networks.device='%s'" % selectedinterface)
+     
+        installer_network, installer_subnet = self._dbReadonly.fetchone()
+       
         # Iterate though list of interface devices.
         for nicdev in interfaces:
              NICInfo = interfaces[nicdev].split()
@@ -360,7 +367,7 @@ class NodeFun(object, KusuApp):
                     break
                 
              # We're a DHCP/boot interface
-             if nicdev == selectedinterface:
+             if kusu.ipfun.onNetwork(installer_network, installer_subnet, self._newIPAddress):
                  self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
                  self._writeDHCPLease(self._newIPAddress, macaddr)
              else:
@@ -543,6 +550,31 @@ class NodeFun(object, KusuApp):
             return self._dbReadonly.fetchone()[0]
         except:
             return None
+
+    def moveNodegroups(self, groupList, destGroup):
+         dataList = {}
+         macList = {}
+         badList = []
+         dupeList = []
+         interfaceName = ""
+         badflag = 0
+         
+         self.setNodegroupByName(destGroup)
+         # Check for valid nodegroup.
+         if not self._nodeGroupType:
+            return None, None, None
+         
+         # Check if the group being moved is not the destination node group, delete from the list if it is.
+         if destGroup in groupList:
+            dupeList.append(destGroup)
+      
+         for dupegroup in dupeList:
+             groupList.remove(dupegroup)
+    
+         # Go thouch
+         #for group in groupList:
+     
+         return groupList, macList, badList, interfaceName
 
     def moveNodes(self, nodeList, nodegroupname):
         dataList = {}
