@@ -506,6 +506,7 @@ class KitOps:
 
             bmt.copyInitrd(self.mountpoint, tmprd1, True)
             bmt.unpackRootImg(tmprd1, tmprootfs)
+            tmprd1.remove()
             #patch tmprootfs with necessary pieces HERE
             #pack up the patched rootfs & put it under tftpboot
             bmt.packRootImg(tmprootfs, self.pxeboot_dir / kit['initrd'])
