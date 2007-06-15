@@ -67,10 +67,10 @@ def vanillaSchemaLVM():
                                 'fs': 'linux-swap',
                                 'mountpoint': None,
                                 'fill': False}
-#    disk1_partition_dict[3] = { 'size_MB': 6000,
-#                                'fs': 'physical volume',
-#                                'mountpoint': None,
-#                                'fill': True}
+    disk1_partition_dict[3] = { 'size_MB': 6000,
+                                'fs': 'physical volume',
+                                'mountpoint': None,
+                                'fill': True}
 
     # define the lvm schema
     vg_dict = { 'VolGroup00': { 'pv_list': [],
@@ -81,7 +81,7 @@ def vanillaSchemaLVM():
               }
 
     volgroup00 = vg_dict['VolGroup00']
-    volgroup00['pv_list'].append({'disk': 'N', 'partition': 'N' })
+    volgroup00['pv_list'].append({'disk': '1', 'partition': '3' })
     volgroup00['lv_dict']['ROOT'] = { 'size_MB': 2000,
                                       'fs': 'ext3',
                                       'mountpoint': '/',
@@ -121,7 +121,7 @@ def scenario22():
                                 'fill': True}
 
     schema = {'disk_dict' : disk_dict,
-              'vg_dict' : {} }
+              'vg_dict' : None }
 
     return schema
 
@@ -144,8 +144,8 @@ def setupDiskProfile(disk_profile, schema=None):
 
         createPhysicalSchema(disk_profile, schema['disk_dict'])
         if schema['vg_dict']:
-            if schema['vg_dict']['pv_span']:
-                createSpanningPV(disk_profile)
+#            if schema['vg_dict']['pv_span']:
+#                createSpanningPV(disk_profile)
             createLVMSchema(disk_profile, schema['vg_dict'])
     logger.debug('Disk Profile set up')
 
@@ -168,7 +168,7 @@ def createPhysicalSchema(disk_profile, disk_schemata):
                     schema_partition = schema_partition_dict[j+1]
                     disk_key = sorted_disk_keys[i]
                     size_MB = schema_partition['size_MB']
-                    logger.debug('Creating new partition of size: %d' % size_MB)
+                    logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
                     fs = schema_partition['fs']
                     mountpoint = schema_partition['mountpoint']
                     fill = schema_partition['fill']
@@ -194,8 +194,11 @@ def createLVMSchema(disk_profile, lvm_schemata):
             if disk_id.__str__().lower() == 'n' or part_id.__str__().lower() == 'n':
                 pv_list.extend(getAllFreePVs(disk_profile))
                 break
+            disk_id = int(disk_id)
+            part_id = int(part_id)
             disk_key = sorted_disk_keys[disk_id-1]
             disk = disk_profile.disk_dict[disk_key]
+            logger.debug('selected disk: %s partitions: %d' % (disk_key, len(disk.partition_dict)))
             partition = disk.partition_dict[part_id]
             pv = disk_profile.pv_dict[partition.path]
             pv_list.append(pv)
