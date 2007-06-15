@@ -89,11 +89,12 @@ class Navigator(object, KusuApp):
         snack.ButtonChoiceWindow(self.mainScreen, title, msg,
                                  buttons=[self._('Ok')])
 
-    def popupYesNo(self, title, msg):
+    def popupYesNo(self, title, msg, defaultNo=False):
         """Show a popup dialog with a yes/no answer. Return True on yes, False on No."""
         buttons = [self._('Yes'), self._('No')]
+        if defaultNo: buttons.reverse()
         result = self.popupDialogBox(title, msg, buttons)
-        if result == buttons[0].lower():
+        if result == self._('Yes').lower():
             kl.debug('Yes chosen')
             return True
         else:

@@ -202,7 +202,7 @@ class PartitionScreen(InstallerScreen):
                          'installation, and then backup your data before ' + \
                          're-attempting installation.\n\nOtherwise, if you ' + \
                          'are sure you want to continue, then press the ' + \
-                         '"Yes" button.'))
+                         '"Yes" button.'), defaultNo=True)
 
         if proceed:
             from finalactions import setupDisks, mountKusuMntPts

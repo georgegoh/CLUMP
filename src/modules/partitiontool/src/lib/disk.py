@@ -203,7 +203,9 @@ class Disk(object):
             new_partition.lvm_flag = part_details[3]
 
     def __getPartitionType(self, num):
-        """Get the type of partition for a given partition number."""
+        """Get the type of partition for a given partition number. This applies
+           to MSDOS-type partition tables.
+        """
         if num < 4:
             return 'PRIMARY'
         elif num == 4:
@@ -442,6 +444,10 @@ class Partition(object):
         self.do_not_format = False
 
     def getpath(self):
+        """Get this partition's path by appending it's number to the disk's path.
+           If the disk's path ends with a digit, then append a 'p' to the disk's
+           path before appending the number.
+        """
         if self.disk.path[-1].isdigit():
             return self.disk.path + 'p' + str(self.num)
         else:
