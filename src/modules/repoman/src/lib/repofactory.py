@@ -15,8 +15,9 @@ import sqlalchemy as sa
 
 class RepoFactory(object):
 
-    class_dict = { 'fedora' : repo.FedoraRepo,
-                   'centos' : repo.CentosRepo }
+    class_dict = { 'fedora' : {'6': repo.Fedora6Repo},
+                   'centos' : {'5': repo.Centos5Repo},
+                   'rhel'   : {'5': repo.Redhat5Repo} }
 
     def __init__(self, db, prefix='/'):
         """Creates a RepoFactory.
@@ -32,7 +33,7 @@ class RepoFactory(object):
         """Creates and make a new repository"""
         
         os_name, os_version, os_arch = repo.getOS(self.db, ngname)
-        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
         r.make(ngname, reponame)
 
         return r
@@ -45,7 +46,7 @@ class RepoFactory(object):
     def refresh(self, repoid):
         """Refresh the repository"""
         os_name, os_version, os_arch = repo.getOS(self.db, repoid)
-        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
         r.refresh(repoid)
 
         return r
@@ -58,7 +59,7 @@ class RepoFactory(object):
         """Delete the repository from the database and local disk"""
         
         os_name, os_version, os_arch = repo.getOS(self.db, repoid)
-        r = self.class_dict[os_name](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
         r.delete(repoid)
         
         return r
@@ -75,7 +76,3 @@ class RepoFactory(object):
     def getRepo(self, repoid_or_reponame):
         pass
  
-#if __name__ == '__main__':
-#    dbs = db.DB('mysql', username='root', db='test') 
-#    rfactory = RepoFactory(dbs, '/tmp/ff')
-#    rfactory.make('installer', 'repo-name')

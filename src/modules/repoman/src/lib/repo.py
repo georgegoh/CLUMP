@@ -224,7 +224,7 @@ class RedhatYumRepo(BaseRepo):
         for key, dir in self.dirlayout.items():
             if key != 'repodatadir':
                for file in (self.os_path / dir).listdir():
-                    if file.basename() != 'TRANS.TBL':
+                    if not file.isdir() and file.basename() != 'TRANS.TBL':
                         file.symlink(self.repo_path / dir / file.basename())
 
         discinfo = self.os_path / '.discinfo'
@@ -232,9 +232,10 @@ class RedhatYumRepo(BaseRepo):
             discinfo.symlink(self.repo_path / '.discinfo')
 
     def makeRepoDirs(self):
-        # Need to move/use a common lib 
         for dir in self.dirlayout.values():
-            (self.repo_path / dir).makedirs()
+            try:
+                (self.repo_path / dir).makedirs()
+            except: pass
 
     def copyRamDisk(self):
         pass
@@ -248,6 +249,15 @@ class RedhatYumRepo(BaseRepo):
         self.ngname = ngname
         self.reponame = reponame
 
+        self.UpdateDatabase(reponame)
+        self.makeRepoDirs()
+        self.copyOSKit()
+        self.copyKitsPackages()
+        self.copyRamDisk()
+        self.makeComps()
+        self.makeMetaInfo()
+        self.verify()
+
         try:
             self.UpdateDatabase(reponame)
             self.makeRepoDirs()
@@ -257,7 +267,7 @@ class RedhatYumRepo(BaseRepo):
             self.makeComps()
             self.makeMetaInfo()
             self.verify()
-        except KusuError, e:
+        except Exception, e:
             # Don't use self.delete(), since is unsure state
 
             if self.repoid: #repo have been inserted into database
@@ -325,7 +335,7 @@ class RedhatYumRepo(BaseRepo):
         if retcode:
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
-class FedoraRepo(RedhatYumRepo):
+class Fedora6Repo(RedhatYumRepo):
     def __init__(self, os_version, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
         
@@ -335,8 +345,8 @@ class FedoraRepo(RedhatYumRepo):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
-
-class CentosRepo(RedhatYumRepo):
+       
+class Centos5Repo(RedhatYumRepo):
     def __init__(self, os_version, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
         
@@ -345,3 +355,92 @@ class CentosRepo(RedhatYumRepo):
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'CentOS'
+ 
+class Redhat5Repo(RedhatYumRepo):
+    def __init__(self, os_version, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
+        
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['server.rpmsdir'] = 'Server'
+        self.dirlayout['cluster.rpmsdir'] = 'Cluster'
+        self.dirlayout['clusterstorage.rpmsdir'] = 'ClusterStorage'
+        self.dirlayout['vt.rpmsdir'] = 'VT'
+        self.dirlayout['server.repodatadir'] = 'Server/repodata'
+        self.dirlayout['cluster.repodatadir'] = 'Cluster/repodata'
+        self.dirlayout['clusterstorage.repodatadir'] = 'ClusterStorage/repodata'
+        self.dirlayout['vt.repodatadir'] = 'VT/repodata'
+
+    def copyKitsPackages(self):
+        # Need a better method for this
+        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
+                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
+                                      self.db.kits.c.isOS==False)
+
+        for kit in kits:
+            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
+
+            if not pkgdir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
+   
+            for file in pkgdir.listdir():
+                if file.basename() != 'TRANS.TBL':
+                    dest = self.repo_path / self.dirlayout['server.rpmsdir'] / file.basename()
+
+                    if dest.exists():
+                       raise FileAlreadyExistError, '%s already exists' % dest
+
+                    file.symlink(dest)
+
+    def copyOSKit(self):
+
+        self.os_path = self.getOSPath()
+        
+        # Validate OS layout
+        for dir in self.dirlayout.values():
+            dir = self.os_path / dir
+            if not dir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % dir
+             
+        for key, dir in self.dirlayout.items():
+            if key != 'server.repodatadir':
+                for file in (self.os_path / dir).listdir():
+                    if not file.isdir() and file.basename() != 'TRANS.TBL':
+                        file.symlink(self.repo_path / dir / file.basename())
+
+        discinfo = self.os_path / '.discinfo'
+        if discinfo.exists():
+            discinfo.symlink(self.repo_path / '.discinfo')
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        repodatadir = self.repo_path / self.dirlayout['server.repodatadir']
+        self.comps_file = repodatadir / 'comps-rhel5-server-core.xml'
+
+        (self.os_path / self.dirlayout['server.repodatadir'] / \
+         'comps-rhel5-server-core.xml').symlink(self.comps_file)
+
+    def makeMetaInfo(self):
+        """Creates a yum repoistory"""
+
+        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path / 'Server')
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except: 
+            raise CommandFailedToRunError, 'createrepo failed'
+
+        if retcode:
+            raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+
+  

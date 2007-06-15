@@ -49,7 +49,7 @@ def tearDown():
     kusudb.parent.rmtree()
     cachedir.rmtree()
 
-class TestCentosRepo:
+class TestCentos5Repo:
 
     def setUp(self):
         global prefix
@@ -90,46 +90,53 @@ class TestCentosRepo:
         installer.flush()
 
         dirs = []
-        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386')
-        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'CentOS')
-        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'images')
-        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'repodata')
-        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux')
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
        
         for dir in dirs:
             dir.makedirs()
 
+        for p in self.getPath():
+            new_path = prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / p
+            try:
+                new_path.parent.makedirs()
+            except: pass
+
+            if not new_path.isdir():    
+                new_path.touch()
+
         download('comps.xml', \
                  prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'repodata' / 'comps.xml')
-
-        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux' / 'initrd').touch()
-        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux' / 'vmlinuz').touch()
-        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'images' / 'stage2.img').touch()
 
     def tearDown(self):
         global prefix
         
         self.dbs.dropTables()
         prefix.rmtree()
-        
+
+    def getPath(self):
+        paths = ['CentOS/',\
+                 'repodata/comps.xml', \
+                 'repodata/other.xml.gz', \
+                 'repodata/filelists.xml.gz', \
+                 'repodata/repomd.xml', \
+                 'repodata/primary.xml.gz', \
+                 'isolinux/initrd', \
+                 'isolinux/vmlinuz', \
+                 'images/stage2.img']
+        return paths
+
+    def checkLayout(self, prefix):
+        for p in self.getPath():
+            assert (prefix / p).exists()
+
     def testMake(self):
         global prefix
  
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
-        depot = prefix / 'depot'
-        assert (depot / 'repos' / repoid / 'repodata' / 'comps.xml').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'other.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'filelists.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'repomd.xml').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'primary.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'CentOS').exists()
-        assert (depot / 'repos' / repoid / 'isolinux' / 'initrd').exists()
-        assert (depot / 'repos' / repoid / 'isolinux' / 'vmlinuz').exists()
-        assert (depot / 'repos' / repoid / 'images' / 'stage2.img').exists()
+        self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
     def testGettingOS(self):
         global prefix
@@ -143,11 +150,11 @@ class TestCentosRepo:
     def testDeleteRepo(self):
         global prefix
 
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
   
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -159,11 +166,11 @@ class TestCentosRepo:
     def testCleanRepo(self):
         global prefix
 
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -172,23 +179,13 @@ class TestCentosRepo:
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
         r.refresh(repoid)
 
         repoid = str(r.repoid)
-        depot = prefix / 'depot'
-        assert (depot / 'repos' / repoid / 'repodata' / 'comps.xml').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'other.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'filelists.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'repomd.xml').exists()
-        assert (depot / 'repos' / repoid / 'repodata' / 'primary.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'CentOS').exists()
-        assert (depot / 'repos' / repoid / 'isolinux' / 'initrd').exists()
-        assert (depot / 'repos' / repoid / 'isolinux' / 'vmlinuz').exists()
-        assert (depot / 'repos' / repoid / 'images' / 'stage2.img').exists()
-
+        self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 

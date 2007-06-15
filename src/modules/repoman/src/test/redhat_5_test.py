@@ -40,15 +40,16 @@ def setUp():
 
     prefix = path(tempfile.mkdtemp())
     kusudb = path(tempfile.mkdtemp()) / 'kusudb'
+    dbs = db.DB('sqlite', kusudb)
 
 def tearDown():
     global kusudb
     global cachedir
- 
+    
     kusudb.parent.rmtree()
     cachedir.rmtree()
 
-class TestFedora6Repo:
+class TestRedhat5Repo:
 
     def setUp(self):
         global prefix
@@ -64,11 +65,11 @@ class TestFedora6Repo:
       
         # Kits + components
         osKit = db.Kits()
-        osKit.rname = 'fedora'
-        osKit.version = '6'
+        osKit.rname = 'rhel'
+        osKit.version = '5'
         osKit.arch = 'i386'
         osKit.isOS = True
-        osComp = db.Components(cname='fedora-6-i386')
+        osComp = db.Components(cname='rhel-5-i386')
         osKit.components.append(osComp)
         osKit.save()
         osKit.flush()
@@ -90,36 +91,47 @@ class TestFedora6Repo:
 
         dirs = []
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
-       
+      
         for dir in dirs:
             dir.makedirs()
 
         for p in self.getPath():
-            new_path = prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / p
             try:
-                new_path.parent.makedirs()
+                (prefix / 'depot' / 'kits' / 'rhel' / '5' / 'i386' / p).parent.makedirs()
             except: pass
-
-            if not new_path.isdir():    
-                new_path.touch()
+            (prefix / 'depot' / 'kits' / 'rhel' / '5' / 'i386' / p).touch()
 
         download('comps.xml', \
-                 prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'repodata' / 'comps.xml')
+                 prefix / 'depot' / 'kits' / 'rhel' / '5' / 'i386' / 'Server' / \
+                 'repodata' / 'comps-rhel5-server-core.xml')
 
     def tearDown(self):
         global prefix
+        
         self.dbs.dropTables()
         prefix.rmtree()
 
     def getPath(self):
-        
-        paths = ['Fedora/RPMS/',\
-                 'Fedora/base/', \
-                 'repodata/comps.xml', \
-                 'repodata/other.xml.gz', \
-                 'repodata/filelists.xml.gz', \
-                 'repodata/repomd.xml', \
-                 'repodata/primary.xml.gz', \
+        paths = ['Server/repodata/comps-rhel5-server-core.xml', \
+                 'Server/repodata/other.xml.gz', \
+                 'Server/repodata/filelists.xml.gz', \
+                 'Server/repodata/repomd.xml', \
+                 'Server/repodata/primary.xml.gz', \
+                 'Cluster/repodata/comps-rhel5-cluster.xm', \
+                 'Cluster/repodata/other.xml.gz', \
+                 'Cluster/repodata/filelists.xml.gz', \
+                 'Cluster/repodata/repomd.xml', \
+                 'Cluster/repodata/primary.xml.gz', \
+                 'ClusterStorage/repodata/comps-rhel5-cluster-st.xml', \
+                 'ClusterStorage/repodata/other.xml.gz', \
+                 'ClusterStorage/repodata/filelists.xml.gz', \
+                 'ClusterStorage/repodata/repomd.xml', \
+                 'ClusterStorage/repodata/primary.xml.gz', \
+                 'VT/repodata/comps-rhel5-vt.xml', \
+                 'VT/repodata/other.xml.gz', \
+                 'VT/repodata/filelists.xml.gz', \
+                 'VT/repodata/repomd.xml', \
+                 'VT/repodata/primary.xml.gz', \
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
                  'images/stage2.img']
@@ -131,8 +143,8 @@ class TestFedora6Repo:
 
     def testMake(self):
         global prefix
- 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
@@ -143,18 +155,18 @@ class TestFedora6Repo:
 
         os_name, os_version, os_arch = repo.getOS(self.dbs, 'installer nodegroup')
 
-        assert os_name == 'fedora'
-        assert os_version == '6'
+        assert os_name == 'rhel'
+        assert os_version == '5'
         assert os_arch == 'i386'
 
     def testDeleteRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
   
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -166,11 +178,11 @@ class TestFedora6Repo:
     def testCleanRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -179,12 +191,13 @@ class TestFedora6Repo:
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
         r.refresh(repoid)
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+
