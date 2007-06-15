@@ -107,13 +107,14 @@ insert into partitions values (17,4,'',  '', '', 'linux-swap', '1000',  'lv;vg=V
 
 
 # Setup a few default networks.  This would be set by the Kusu installer.
-insert into networks values (1, '172.25.243.0', '255.255.255.0', 'eth0', '', '172.25.243.2','','Installer public network.  Set by Installer', '172.25.243.200', 1,0) ;
-insert into networks values (2, '10.1.0.0', '255.255.0.0', 'eth1', '-eth1', '10.1.1.1','My Options','Installer private network.  Set by Installer', '10.1.2.0', 1,0) ;
-insert into networks values (3, '10.2.0.0', '255.255.0.0', 'ib0', '-ib0', '10.2.1.1','','Installer private network.  Set by Installer', '10.2.2.0', 1,0) ;
+insert into networks values (1, '172.25.243.0', '255.255.255.0', 'eth1', '', '172.25.243.2','','Installer public network.  Set by Installer', '172.25.243.200', 1,0) ;
+insert into networks values (2, '10.0.0.0', '255.0.0.0', 'eth0', '-eth0', '10.1.1.1','My Options','Installer private network.  Set by Installer', '10.1.2.0', 1,0) ;
+insert into networks values (3, '20.2.0.0', '255.255.0.0', 'ib0', '-ib0', '20.2.1.1','','Installer private network.  Set by Installer', '20.2.2.0', 1,0) ;
+insert into networks values (4, '10.0.0.0', '255.0.0.0', 'vmnet1', '-vmnet1', '10.0.0.1','','Installer private network.  Set by Installer', '10.10.2.0', 1,0) ;
 
 # Setup the relationship between the networks and the node groups.  (idnet, ngid, netid)
 insert into ng_has_net values (1,1) ;
-insert into ng_has_net values (1,2) ;
+insert into ng_has_net values (1,4) ;
 insert into ng_has_net values (2,1) ;
 insert into ng_has_net values (2,2) ;
 insert into ng_has_net values (2,3) ;
@@ -155,7 +156,7 @@ insert into nics values (14, 6, 1, '00:11:22:33:44:40', '172.25.243.204', 1) ;
 insert into nics values (15, 6, 2, NULL, '10.1.2.4', 0) ;
 insert into nics values (16, 6, 3, NULL, '10.2.2.4', 0) ;
 # For the nodes in the Compute Diskless node group.  Each has 1 NICs
-insert into nics values (17, 7, 2, '10:11:ff:33:44:41', '10.1.2.5', 1) ;
+insert into nics values (17, 7, 2, '00:0c:29:84:e9:0e', '10.1.2.5', 1) ;
 insert into nics values (18, 8, 2, '20:11:ff:33:44:41', '10.1.2.6', 1) ;
 insert into nics values (19, 9, 2, '30:11:ff:33:44:41', '10.1.2.7', 1) ;
 insert into nics values (20, 10, 2, '40:11:ff:33:44:41', '10.1.2.8', 1) ;
