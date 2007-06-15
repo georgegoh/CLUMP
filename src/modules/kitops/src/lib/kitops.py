@@ -28,7 +28,6 @@ import urlparse
 import tempfile
 import glob
 import re
-import subprocess
 from path import path
 
 from kusu.boot.tool import BootMediaTool
@@ -36,6 +35,11 @@ from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
 from kusu.util.tools import cpio_copytree
 from kusu.util.errors import *
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -212,9 +216,11 @@ class KitOps:
 
         srcP = subprocess.Popen('tar cf - *.rpm',
                                 cwd=self.mountpoint / self.kitname,
-                                shell=True, stdout=subprocess.PIPE)
+                                shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
         dstP = subprocess.Popen('tar xf -',
-                                cwd=repodir, shell=True, stdin=srcP.stdout)
+                                cwd=repodir, shell=True, stdin=srcP.stdout,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         dstP.communicate()
 
         # 2. populate the kit DB table with info
@@ -233,8 +239,9 @@ class KitOps:
         if not self.installer:
             try:
                 rpmP = subprocess.Popen('rpm --quiet -i %s' % kit['rpmloc'],
-                                        shell=True)
-                rpmP.wait()
+                                        shell=True, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                rpmP.communicate()
             except Exception, msg:
                 raise InstallKitRPMError, \
                         'Kit RPM installation failed\n%s' % msg
@@ -412,13 +419,17 @@ class KitOps:
 
         if isISO:
             mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                      (media, self.__tmpmntdir), shell=True)
+                                      (media, self.__tmpmntdir), shell=True,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
         else:
             mountP = subprocess.Popen('mount %s %s 2> /dev/null' %
-                                      (media, self.__tmpmntdir), shell=True)
+                                      (media, self.__tmpmntdir), shell=True,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
 
-        rv = mountP.wait()
-        if rv != 0:
+        mountP.communicate()
+        if mountP.returncode != 0:
             self.__tmpmntdir.rmdir()
             self.__tmpmntdir = None
             raise EMOUNTFAIL(rv)
@@ -431,24 +442,31 @@ class KitOps:
         if self.mountpoint:
             #umountP = subprocess.Popen('umount -l %s 2> /dev/null' %
             umountP = subprocess.Popen('umount %s 2> /dev/null' %
-                                       self.mountpoint, shell=True)
-            rv = umountP.wait()
-            kl.debug('unmounting pid: %d, rv: %d', umountP.pid, rv)
+                                       self.mountpoint, shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            umountP.communicate()
             self.mountpoint = None
 
         if self.__tmpmntdir:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
-                                   shell=True)
+                                   shell=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+            rmP.communicate()
             self.__tmpmntdir = None
 
         if self.__tmprd1:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprd1,
-                                   shell=True)
+                                   shell=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+            rmP.communicate()
             self.__tmprd1 = None
 
         if self.__tmprootfs:
             rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprootfs,
-                                   shell=True)
+                                   shell=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+            rmP.communicate()
             self.__tmprootfs = None
 
     def __handleMountError(self,rv):
@@ -615,8 +633,10 @@ class KitOps:
             # 2. remove kit RPM
             if not kit.isOS and not self.installer:
                 rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
-                                       kit.rname, shell=True)
-                rmP.wait()
+                                       kit.rname, shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+                rmP.communicate()
 
             # 3. remove component info from DB
             for component in kit.components:

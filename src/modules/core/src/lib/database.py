@@ -437,7 +437,7 @@ class DB(object):
             sa.Column('nid', sa.Integer, sa.ForeignKey('nodes.nid'),
                       nullable=False),
             sa.Column('netid', sa.Integer, sa.ForeignKey('networks.netid'),
-                      nullable=True),
+                      nullable=False),
             sa.Column('mac', sa.String(45)),
             sa.Column('ip', sa.String(20)),
             sa.Column('boot', sa.Boolean, sa.PassiveDefault('0')),
