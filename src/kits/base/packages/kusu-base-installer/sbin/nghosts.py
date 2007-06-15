@@ -330,22 +330,45 @@ class SelectNodegroupsWindow(USXBaseScreen):
     name = "nghosts_window_title_select_nodegroup"
     msg = "nghosts_instruction_select_nodegroup"
 
-    buttons = [ 'ok_button', 'cancel_button' ]
+    buttons = [ 'move_button', 'previous_button', 'quit_button' ]
     hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
-                            
+           
+    def F12Action(self):
+        result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
+                (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            return NAV_QUIT
+        else:
+            return NAV_NOTHING
+                
+    def moveAction(self):
+        return NAV_QUIT
+ 
+    def previousAction(self):
+        return NAV_QUIT
+
+    def quitAction(self):
+        self.screen.finish()
+        sys.exit(0)
+
     def setCallbacks(self):
-        pass
+        self.buttonsDict['move_button'].setCallback_(self.moveAction)
+        self.buttonsDict['previous_button'].setCallback_(self.previousAction)
+        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
+        self.hotkeysDict['F5'] = self.previousAction
+        self.hotkeysDict['F8'] = self.moveAction
         
     def drawImpl(self):
-        count = 0
         nodegroupList = []
         self.screenGrid  = snack.Grid(1, 6)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-        label = snack.Label(self.kusuApp._("Source Nodegroups\t\tDestination Nodegroup"))
+        label = snack.Label(self.kusuApp._("Source Nodegroups\t\t  Destination Nodegroup"))
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         query = "SELECT ngname FROM nodegroups ORDER BY ngname"
 
@@ -360,14 +383,27 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
         for group in nodegroups:
            nodegroupList.append([group[0].ljust(20), group[0], 0])
-           self.srcNodegroupsCheckbox.append(group[0])
+           query = "SELECT COUNT(*) from nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group[0]
+           try:
+               self.database.connect()
+               self.database.execute(query)
+               nodes = self.database.fetchall()[0]
+               test = nodes[0]
+           except:
+               self.screen.finish()
+               print self.kusuApp._("DB_Query_Error\n")
+               sys.exit(-1)
+ 
+           # Only display node groups that are not empty when moving.
+           if int(nodes[0]) > 0: 
+               self.srcNodegroupsCheckbox.append(group[0])
 
         self.destNodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList)
 
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
-        self.screenGrid.setField(label, 0, 1, padding=(13,0,0,0), anchorLeft=1)
+        self.screenGrid.setField(label, 0, 1, padding=(7,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.srcNodegroupsCheckbox, 0, 2, padding=(3,0,0,0), anchorLeft=1)
-        self.screenGrid.setField(self.destNodegroupRadio, 0, 3, padding=(0,-8,3,0), anchorRight=1)
+        self.screenGrid.setField(self.destNodegroupRadio, 0, 3, padding=(0,-8,4,0), anchorRight=1)
 
 
     def validate(self):
