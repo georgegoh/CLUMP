@@ -72,7 +72,7 @@ class NodeMemberApp(object, KusuApp):
         self.parser.add_option("-f", "--from-group", action="store",
                                 type="string", dest="fromgroup", help=kusuApp._("nghosts_from_group_usage"))
         self.parser.add_option("-t", "--to-group", action="store",
-                                dest="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
+                                type="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
         self.parser.add_option("-n", "--copy-hosts", action="callback",
                                 callback=self.varargs, dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
         self.parser.add_option("-r", "--reinstall", action="store_true", dest="reinstall", help=kusuApp._("nghosts_reinstall_usage"))
