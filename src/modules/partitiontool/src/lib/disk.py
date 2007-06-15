@@ -58,7 +58,7 @@ class Disk(object):
             try:
                 pedDiskType = pedDevice.disk_probe()
             except parted.error:
-                pedDiskType = parted.disk_type_get_next()
+                pedDiskType = parted.disk_type_get('msdos')
             self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
         else:
             try:
@@ -143,8 +143,8 @@ class Disk(object):
             else:
                 raise UnknownPartitionTypeError, 'Cannot create unknown partition type'
 
-        except parted.error, msg:
-            raise KusuError, msg
+        except parted.error, e:
+            raise KusuError, e
     
         self.pedDisk.add_partition(new_pedPartition, constraint)
         new_partition = self.__appendToPartitionDict(new_pedPartition,
