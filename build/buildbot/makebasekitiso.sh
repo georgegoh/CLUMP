@@ -19,7 +19,7 @@ for i in `ls kit-base-*.iso`
 do
   isoname=`echo $i | sed -e 's/noarch.iso//'`
   mv $i $isoname$BUILDDATE-$KUSUREVISION.noarch.iso
+  chmod 644 $isoname$BUILDDATE-$KUSUREVISION.noarch.iso
 done
-chmod 644 *.iso
-cp *.iso /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}/.
+cp -p *.iso /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}/.
 rsync -av --rsh=ssh --delete /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH} build@ronin:/home/osgdc/www/pub/build/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/.
