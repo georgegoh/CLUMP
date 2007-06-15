@@ -85,11 +85,7 @@ class Kits(BaseTable):
     cols = ['rname', 'rdesc', 'version', \
             'isOS', 'removable', 'arch']
 
-    # This is a prototype for self.longname and self.path attributes.
-    # It's probably the wrong way to do this...
-    def __init__(self, **kwargs):
-        BaseTable.__init__(self, **kwargs)
-
+    def prepNameVerArch(self, char):
         rname = ''
         version = ''
         arch = ''
@@ -99,17 +95,23 @@ class Kits(BaseTable):
 
         if self.version:
             if rname:
-                version = '-'
+                version = char
             version += self.version
 
         if self.arch:
             if rname or version:
-                arch = '-'
+                arch = char
             arch += self.arch
+        return rname, version, arch
 
-        self.longname = '%s%s%s' % (self.rname, version, arch)
-        self.path = '/depot/kits/%s/%s/%s' % (self.rname,
-                                              self.version, self.arch)
+    def getLongName(self):
+        return '%s%s%s' % self.prepNameVerArch('-') 
+
+    def getPath(self):
+        return '/depot/kits/%s%s%s' % self.prepNameVerArch('/')
+
+    longname = property(getLongName)
+    path = property(getPath)
 
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r)' % \
@@ -206,22 +208,6 @@ class Scripts(BaseTable):
                (self.__class__.__name__, self.ngid, self.script)
 
 class DB(object):
-
-    mapTableClass = { 'repos_have_kits' : ReposHaveKits,
-                      'appglobals' : AppGlobals,
-                      'components' : Components,
-                      'kits' : Kits,
-                      'modules' : Modules,
-                      'ng_has_comp' : NGHasComp,
-                      'networks' : Networks,
-                      'nics' : Nics,
-                      'ng_has_net' : NGHasNet,
-                      'nodegroups' : NodeGroups,              
-                      'nodes' : Nodes,
-                      'packages' : Packages, 
-                      'partitions' : Partitions,
-                      'scripts' : Scripts,
-                      'repos' : Repos}
 
     tableClasses = {'ReposHaveKits' : ReposHaveKits,
                     'AppGlobals' : AppGlobals,
@@ -323,19 +309,12 @@ class DB(object):
         fp.close()
         return self.__decrypt(cipher)
 
-    def  __decrypt(self, cipher):
+    def __decrypt(self, cipher):
         #convert cipher to decrypted text
         return cipher
 
     def __encrypt(self):
         pass
-
-    def __getattr__(self, name):
-        try:
-            # Returns mapper based on class name and entity name
-            return sa.orm.class_mapper(self.mapTableClass[name], self.entity_name)
-        except:
-            raise AttributeError, 'No mapper for table %s' % name
 
     def dropTables(self):
         """Drops all tables in the database"""
@@ -643,100 +622,6 @@ class DB(object):
                       'kits': sa.relation(Kits, secondary=repos_have_kits,
                                           entity_name=self.entity_name)},
           entity_name=self.entity_name)
-
-    def _load(self):
-        """Loads all table mappers into class attributes. 
-           Mapper names are named after table names.
-        """
-
-        dtable = {}
-        dmapper = {}
-
-        from sqlalchemy.orm.mapper import ClassKey 
- 
-        if not sa.orm.mapper_registry.has_key(ClassKey(ReposHaveKits, self.entity_name)):
-            dtable['repos_have_kits'] = sa.Table('repos_have_kits', self.metadata, autoload=True)
-            dmapper['repos_have_kits'] = sa.mapper(ReposHaveKits, dtable['repos_have_kits'], \
-                                                   entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(AppGlobals, self.entity_name)):
-            dtable['appglobals'] = sa.Table('appglobals', self.metadata, autoload=True)
-            dmapper['appglobals'] = sa.mapper(AppGlobals, dtable['appglobals'], entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(NGHasComp, self.entity_name)):
-            dtable['ng_has_comp'] = sa.Table('ng_has_comp', self.metadata, autoload=True)
-            dmapper['ng_has_comp'] = \
-                    sa.mapper(NGHasComp, dtable['ng_has_comp'], entity_name=self.entity_name)
-              
-        if not sa.orm.mapper_registry.has_key(ClassKey(Components, self.entity_name)):
-            dtable['components'] = sa.Table('components', self.metadata, autoload=True)
-            dmapper['components'] = sa.mapper(Components, dtable['components'], entity_name=self.entity_name, \
-                                        properties={'nodegroups': sa.relation(NodeGroups, secondary=dtable['ng_has_comp'],
-                                                                              entity_name=self.entity_name), \
-                                                    'kit' : sa.relation(Kits, entity_name=self.entity_name)})
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Kits, self.entity_name)):
-            dtable['kits'] = sa.Table('kits', self.metadata, autoload=True)
-            dmapper['kits'] = sa.mapper(Kits, dtable['kits'], \
-                                        properties={'components': sa.relation(Components, entity_name=self.entity_name), \
-                                                    'repos': sa.relation(Repos, secondary=dtable['repos_have_kits'], \
-                                                                         entity_name=self.entity_name), \
-                                                    'removable' : dtable['kits'].c.removeable}, \
-                                        entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Modules, self.entity_name)):
-            dmapper['modules'] = \
-                    sa.mapper(Modules, sa.Table('modules', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Networks, self.entity_name)):
-            dmapper['networks'] = \
-                    sa.mapper(Networks, sa.Table('networks', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Nics, self.entity_name)):
-            dmapper['nics'] = \
-                    sa.mapper(Nics, sa.Table('nics', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(NGHasNet, self.entity_name)):
-            dtable['ng_has_net'] = sa.Table('ng_has_net', self.metadata, autoload=True)
-            dmapper['ng_has_net'] = sa.mapper(NGHasNet, dtable['ng_has_net'], entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(NodeGroups, self.entity_name)):
-            dmapper['nodegroups'] = \
-                    sa.mapper(NodeGroups, sa.Table('nodegroups', self.metadata, autoload=True), entity_name=self.entity_name, 
-                              properties={'components': sa.relation(Components, secondary=dtable['ng_has_comp'],
-                                                                    entity_name=self.entity_name),
-                                          'partitions': sa.relation(Partitions, entity_name=self.entity_name),
-                                          'networks': sa.relation(Networks, secondary=dtable['ng_has_net'],
-                                                                    entity_name=self.entity_name), 
-                                          'nodes': sa.relation(Nodes, entity_name=self.entity_name)})
-                  
-                              # Currently nodegroups <-> components relationship is defined twice.
-                              # Possible to replace this with ingenious backref-fu.
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Nodes, self.entity_name)):
-            dmapper['nodes'] = \
-                    sa.mapper(Nodes, sa.Table('nodes', self.metadata, autoload=True), entity_name=self.entity_name, \
-                              properties={'nics': sa.relation(Nics, entity_name=self.entity_name)})
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Packages, self.entity_name)):
-            dmapper['packages'] = \
-                    sa.mapper(Packages, sa.Table('packages', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Partitions, self.entity_name)):
-            dmapper['partitions'] = \
-                    sa.mapper(Partitions, sa.Table('partitions', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        if not sa.orm.mapper_registry.has_key(ClassKey(Scripts, self.entity_name)):
-            dmapper['scripts'] = \
-                    sa.mapper(Scripts, sa.Table('scripts', self.metadata, autoload=True), entity_name=self.entity_name)
-
-        
-        if not sa.orm.mapper_registry.has_key(ClassKey(Repos, self.entity_name)):
-            dmapper['repos'] = \
-                    sa.mapper(Repos, sa.Table('repos', self.metadata, autoload=True), \
-                              properties={'nodegroups':sa.relation(NodeGroups, entity_name=self.entity_name), \
-                                          'kits':sa.relation(Kits, secondary=dtable['repos_have_kits'], entity_name=self.entity_name)}, \
-                              entity_name=self.entity_name)
 
     def bootstrap(self):
         """bootstrap the necessary tables and fields"""

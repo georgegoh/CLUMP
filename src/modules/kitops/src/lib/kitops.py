@@ -44,16 +44,6 @@ except:
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
-class EMOUNTFAIL(Exception):
-    def __init__(self,rv):
-        self.rv = rv
-
-    def __str__(self):
-        return '%s' % self.rv
-
-    def __int__(self):
-        return self.rv
-
 class KitOps:
     def __init__(self, **kw):
         self.installer = False
@@ -62,9 +52,6 @@ class KitOps:
         self.mountpoint = None
         self.medialoc = None
         self.MediaDevice = None
-        self.__tmpmntdir = None
-        self.__tmprd1 = None
-        self.__tmprootfs = None
         self.__db = None
 
         if 'db' in kw:
@@ -122,29 +109,29 @@ class KitOps:
             kl.debug('Network kit specified, retrieving')
             (tmpfname, headers) = urllib.urlretrieve(self.kitmedia)
             self.medialoc = path(tmpfname)
-        else :
+        else:
             self.medialoc = path(self.kitmedia)
 
         #at this point, media can be either an iso file or a mountpoint dir
         if self.medialoc.isfile() and self.medialoc.ext.lower() == '.iso':
             kl.debug('Media ISO file provided: %s', self.medialoc)
-            isISO = True
-            try:
-                self.mountMedia(self.medialoc, isISO)
-            except EMOUNTFAIL,inst:
-                self.__handleMountError(int(inst))
-                self.unmountMedia()
-                raise CannotMountKitMediaError
+            self.mountMedia(self.medialoc, True)
             #mountpoint is defined - we're done
             return
-                
         elif self.medialoc.isdir() and self.medialoc.ismount():
             kl.debug('Media mountpoint: %s', self.medialoc)
             self.mountpoint = self.medialoc
-
         else:
-            #if neither of the above - error
-            raise UnrecognizedKitMediaError, \
+            import kusu.hardware.probe
+            cdrom_dict = kusu.hardware.probe.getCDROM()
+            cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
+
+            if self.medialoc in cdrom_list:
+                kl.debug('CDROM provided: %s', self.medialoc)
+                self.mountMedia(self.medialoc)
+            else:
+                #if neither of the above - error
+                raise UnrecognizedKitMediaError, \
                                     'Improper kit media location specification'
 
         #at this point we have the kit mounted to self.mountpoint
@@ -152,6 +139,7 @@ class KitOps:
             assert(self.mountpoint
                    and self.mountpoint.isdir() and self.mountpoint.ismount())
         except AssertionError, msg:
+            self.unmountMedia()
             raise AssertionError, \
                     'Mountpoint sanity assertion failed\n%s' % msg
 
@@ -164,19 +152,13 @@ class KitOps:
         kl.debug('Media device list: %s', lst)
 
         for dev in lst:
-            try:
-                self.mountMedia('/dev/%s' % dev)
-            except EMOUNTFAIL,inst:
-                self.__handleMountError(int(inst))
-                self.unmountMedia()
-                raise CannotMountKitMediaError
-            else:
-                #mountpoint is defined - mount was successful
-                self.MediaDevice = '/dev/%s' % dev
-                return
+            self.mountMedia('/dev/%s' % dev)
+            self.MediaDevice = '/dev/%s' % dev
+            return
 
         # at this point, we cannot find any kits
-        raise NoKitSpecifiedOrFoundError
+        raise NoKitSpecifiedOrFoundError, \
+                    'Kit media neither specified nor found'
 
     def addKit(self):
         '''perform the add operation on the kit specified 
@@ -189,6 +171,7 @@ class KitOps:
         try:
             assert(bool(self.kitname))
         except AssertionError, msg:
+            self.unmountMedia()
             raise AssertionError, \
                     "Kitname still not defined, terminating\n%s" % msg
 
@@ -196,15 +179,18 @@ class KitOps:
                                                               self.kitname)
         try:
             assert(len(kitRPMlst)==1)
-        except AssertionError, msg:
-            raise AssertionError, \
-                    'Number of kit RPMs under %s must be exactly one\n%s' % \
-                    (self.mountpoint / self.kitname, msg)
+        except AssertionError, e:
+            msg = 'Number of kit RPMs under %s must be exactly one\n%s' % \
+                    (self.mountpoint / self.kitname, e)
+            self.unmountMedia()
+            raise AssertionError, msg
+                    
 
         kit = self.parseRPMTag(kitRPMlst[0].abspath())
 
         #check if this kit is already installed - by name and version
         if self.checkKitInstalled(kit['name'], kit['ver'], kit['arch']):
+            self.unmountMedia()
             raise KitAlreadyInstalledError, \
                     "Kit '%s-%s-%s' already installed" % \
                     (kit['name'], kit['ver'], kit['arch'])
@@ -242,9 +228,10 @@ class KitOps:
                                         shell=True, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
                 rpmP.communicate()
-            except Exception, msg:
+            except Exception, e:
+                self.unmountMedia()
                 raise InstallKitRPMError, \
-                        'Kit RPM installation failed\n%s' % msg
+                        'Kit RPM installation failed\n%s' % e
 
         # RPM install successful, add kit to DB
         self.__db.flush()
@@ -261,6 +248,7 @@ class KitOps:
             newkit.removable = True
             newkit.flush()
             self.deleteKit()
+            self.unmountMedia()
             raise CorruptComponentNameError, msg
 
     def updateComponents(self, kit):
@@ -277,6 +265,7 @@ class KitOps:
             try:
                 assert(bool(comp['name']))
             except:
+                self.unmountMedia()
                 raise CorruptComponentNameError, \
                         'Encountered corrupt name for component from %s' % \
                         comploc.basename()
@@ -319,6 +308,9 @@ class KitOps:
                                    comp['name'], component.cid)
                         component.kid = kit.kid
 
+        # no longer need mounted media
+        self.unmountMedia()
+
         self.__db.flush()
 
     def parseRPMTag(self, rpmloc):
@@ -353,6 +345,7 @@ class KitOps:
                 dirlst.append(dir)
 
         if not dirlst:
+            self.unmountMedia()
             raise NoKitsFoundError, 'Bad media provided, no kits found'
 
         if len(dirlst) == 1:
@@ -363,6 +356,7 @@ class KitOps:
             try:
                 self.kitname = self.selectKit(self.mountpoint, dirlst)
             except: # raise exceptions in self.selectKit and catch them here
+                self.unmountMedia()
                 raise NoKitsFoundError, 'Bad media provided, no kits found'
 
     def findMediaDevices(self):
@@ -393,7 +387,9 @@ class KitOps:
         return MediaDevLst
 
     def checkKitInstalled(self, kitname, kitver, kitarch):
-        '''Returns true if specified kit is already in the DB, false otherwise'''
+        """
+        Returns True if specified kit is already in the DB, False otherwise.
+        """
 
         return [] != self.__db.Kits.select_by(rname=kitname, version=kitver,
                                               arch=kitarch)
@@ -412,62 +408,41 @@ class KitOps:
         #TO BE CONTINUED
         
     def mountMedia(self, media, isISO=False):
-        ''' mount the specified media to a temporary dir
-            PostCondition: self.__tmpmntdir & self.mountpoint are set & equal if successful'''
-        self.__tmpmntdir = path(tempfile.mkdtemp(prefix='kitops',
+        """
+        Mount the specified media to a temporary directory.
+        """
+
+        tmpmntdir = path(tempfile.mkdtemp(prefix='kitops',
                                                  dir=self.tmpprefix))
 
+        cmd = 'mount %s %s' % (media, tmpmntdir)
         if isISO:
-            mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                      (media, self.__tmpmntdir), shell=True,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
-        else:
-            mountP = subprocess.Popen('mount %s %s 2> /dev/null' %
-                                      (media, self.__tmpmntdir), shell=True,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
+            cmd = 'mount -o loop %s %s' % (media, tmpmntdir)
 
+        mountP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
         mountP.communicate()
-        if mountP.returncode != 0:
-            self.__tmpmntdir.rmdir()
-            self.__tmpmntdir = None
-            raise EMOUNTFAIL(rv)
 
-        self.mountpoint = self.__tmpmntdir
+        if mountP.returncode != 0:
+            tmpmntdir.rmdir()
+            errors = self.__handleMountError(mountP.returncode)
+            raise CannotMountKitMediaError, ''.join(errors)
+
+        self.mountpoint = tmpmntdir
 
     def unmountMedia(self):
-        '''PostCondition: self.mountpoint is unmounted, self.__tmpmntdir is removed,
-            and both are set to None ''' 
+        """
+        self.mountpoint is unmounted, removed and set to None.
+        """
+
         if self.mountpoint:
-            #umountP = subprocess.Popen('umount -l %s 2> /dev/null' %
-            umountP = subprocess.Popen('umount %s 2> /dev/null' %
-                                       self.mountpoint, shell=True,
-                                       stdout=subprocess.PIPE,
+            #umountP = subprocess.Popen('umount -l %s' %
+            umountP = subprocess.Popen('umount %s' % self.mountpoint,
+                                       shell=True, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             umountP.communicate()
+            self.mountpoint.rmdir()
             self.mountpoint = None
-
-        if self.__tmpmntdir:
-            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmpmntdir,
-                                   shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            rmP.communicate()
-            self.__tmpmntdir = None
-
-        if self.__tmprd1:
-            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprd1,
-                                   shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            rmP.communicate()
-            self.__tmprd1 = None
-
-        if self.__tmprootfs:
-            rmP = subprocess.Popen('rm -rf %s 2> /dev/null' % self.__tmprootfs,
-                                   shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            rmP.communicate()
-            self.__tmprootfs = None
 
     def __handleMountError(self,rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
@@ -482,9 +457,13 @@ class KitOps:
                    64: 'some mount succeeded'
                   }
 
+        errors = []
         for key in errdict.keys():
             if status & key:
                 kl.error('Mount fail error: %s', errdict[key])
+                errors.append(errdict[key] + '\n')
+
+        return errors
 
     def prepareOSKit(self, osdistro):
         kit = {} #a struct to hold the kit info for the distro
@@ -501,6 +480,7 @@ class KitOps:
                                         arch=kit['arch'])
 
         if kits:
+            self.unmountMedia()
             raise KitAlreadyInstalledError, \
                     "OS kit '%s' already installed" % kit['longname']
 
@@ -514,20 +494,22 @@ class KitOps:
             bmt.copyInitrd(self.mountpoint,
                            self.pxeboot_dir / kit['initrd'])
         else:
-            fd, self.__tmprd1 = tempfile.mkstemp(prefix='kitops',
-                                                 dir=self.tmpprefix)
+            fd, tmprd1 = tempfile.mkstemp(prefix='kitops', dir=self.tmpprefix)
             os.close(fd)
-            if os.path.exists(self.__tmprd1):
-                os.remove(self.__tmprd1)
-            self.__tmprootfs = tempfile.mkdtemp(prefix='kitops',
-                                                dir=self.tmpprefix)
+            tmprd1 = path(tmprd1)
 
-            bmt.copyInitrd(self.mountpoint, self.__tmprd1, True)
-            bmt.unpackRootImg(self.__tmprd1, self.__tmprootfs)
-            #patch self.__tmprootfs with necessary pieces HERE
+            if tmprd1.exists():
+                tmprd1.remove()
+
+            tmprootfs = path(tempfile.mkdtemp(prefix='kitops',
+                                              dir=self.tmpprefix))
+
+            bmt.copyInitrd(self.mountpoint, tmprd1, True)
+            bmt.unpackRootImg(tmprd1, tmprootfs)
+            #patch tmprootfs with necessary pieces HERE
             #pack up the patched rootfs & put it under tftpboot
-            bmt.packRootImg(self.__tmprootfs,
-                            self.pxeboot_dir / kit['initrd'])
+            bmt.packRootImg(tmprootfs, self.pxeboot_dir / kit['initrd'])
+            tmprootfs.rmtree()
 
         #copy kernel to tftpboot & rename
         bmt.copyKernel(self.mountpoint, self.pxeboot_dir / kit['kernel'], True)
@@ -546,9 +528,13 @@ class KitOps:
             rv = cpio_copytree(self.mountpoint, repodir)
             kl.debug('cpio_copytree return code: %d', rv)
         except Exception, msg:
+            self.unmountMedia()
             raise CopyOSMediaError, \
                   'Error during copy\n%s\nmountpoint:%s, repodir:%s' % \
                   (msg, self.mountpoint, repodir)
+
+        # copy successful, don't need mounted media anymore
+        self.unmountMedia()
  
     def finalizeOSKit(self, kit):
         #populate the database with info
@@ -656,7 +642,6 @@ class KitOps:
         self.__db.flush()
 
         if error_kits:
-            self.unmountMedia()
             raise DeleteKitsError, error_kits
 
     def listKit(self, ls_name=''):
