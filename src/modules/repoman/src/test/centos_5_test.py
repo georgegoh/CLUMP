@@ -40,15 +40,16 @@ def setUp():
 
     prefix = path(tempfile.mkdtemp())
     kusudb = path(tempfile.mkdtemp()) / 'kusudb'
+    dbs = db.DB('sqlite', kusudb)
 
 def tearDown():
     global kusudb
     global cachedir
- 
+    
     kusudb.parent.rmtree()
     cachedir.rmtree()
 
-class TestFedoraRepo:
+class TestCentosRepo:
 
     def setUp(self):
         global prefix
@@ -64,11 +65,11 @@ class TestFedoraRepo:
       
         # Kits + components
         osKit = db.Kits()
-        osKit.rname = 'fedora'
-        osKit.version = '6'
+        osKit.rname = 'centos'
+        osKit.version = '5'
         osKit.arch = 'i386'
         osKit.isOS = True
-        osComp = db.Components(cname='fedora-6-i386')
+        osComp = db.Components(cname='centos-5-i386')
         osKit.components.append(osComp)
         osKit.save()
         osKit.flush()
@@ -89,33 +90,33 @@ class TestFedoraRepo:
         installer.flush()
 
         dirs = []
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386')
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'Fedora' / 'RPMS')
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'Fedora' / 'base')
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'images')
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'repodata')
-        dirs.append(prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'isolinux')
+        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386')
+        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'CentOS')
+        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'images')
+        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'repodata')
+        dirs.append(prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux')
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
        
         for dir in dirs:
             dir.makedirs()
 
         download('comps.xml', \
-                 prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'repodata' / 'comps.xml')
+                 prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'repodata' / 'comps.xml')
 
-        (prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'isolinux' / 'initrd').touch()
-        (prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'isolinux' / 'vmlinuz').touch()
-        (prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'images' / 'stage2.img').touch()
+        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux' / 'initrd').touch()
+        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'isolinux' / 'vmlinuz').touch()
+        (prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'images' / 'stage2.img').touch()
 
     def tearDown(self):
         global prefix
+        
         self.dbs.dropTables()
         prefix.rmtree()
         
     def testMake(self):
         global prefix
  
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
@@ -125,7 +126,7 @@ class TestFedoraRepo:
         assert (depot / 'repos' / repoid / 'repodata' / 'filelists.xml.gz').exists()
         assert (depot / 'repos' / repoid / 'repodata' / 'repomd.xml').exists()
         assert (depot / 'repos' / repoid / 'repodata' / 'primary.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'Fedora' / 'RPMS').exists()
+        assert (depot / 'repos' / repoid / 'CentOS').exists()
         assert (depot / 'repos' / repoid / 'isolinux' / 'initrd').exists()
         assert (depot / 'repos' / repoid / 'isolinux' / 'vmlinuz').exists()
         assert (depot / 'repos' / repoid / 'images' / 'stage2.img').exists()
@@ -135,18 +136,18 @@ class TestFedoraRepo:
 
         os_name, os_version, os_arch = repo.getOS(self.dbs, 'installer nodegroup')
 
-        assert os_name == 'fedora'
-        assert os_version == '6'
+        assert os_name == 'centos'
+        assert os_version == '5'
         assert os_arch == 'i386'
 
     def testDeleteRepo(self):
         global prefix
 
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
   
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -158,11 +159,11 @@ class TestFedoraRepo:
     def testCleanRepo(self):
         global prefix
 
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -171,11 +172,11 @@ class TestFedoraRepo:
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.FedoraRepo('6', 'i386', prefix, self.dbs)
+        r = repo.CentosRepo('5', 'i386', prefix, self.dbs)
         r.refresh(repoid)
 
         repoid = str(r.repoid)
@@ -185,7 +186,7 @@ class TestFedoraRepo:
         assert (depot / 'repos' / repoid / 'repodata' / 'filelists.xml.gz').exists()
         assert (depot / 'repos' / repoid / 'repodata' / 'repomd.xml').exists()
         assert (depot / 'repos' / repoid / 'repodata' / 'primary.xml.gz').exists()
-        assert (depot / 'repos' / repoid / 'Fedora' / 'RPMS').exists()
+        assert (depot / 'repos' / repoid / 'CentOS').exists()
         assert (depot / 'repos' / repoid / 'isolinux' / 'initrd').exists()
         assert (depot / 'repos' / repoid / 'isolinux' / 'vmlinuz').exists()
         assert (depot / 'repos' / repoid / 'images' / 'stage2.img').exists()

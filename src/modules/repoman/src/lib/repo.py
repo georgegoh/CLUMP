@@ -111,13 +111,13 @@ class BaseRepo(object):
         repo.kits = kits.values()
         repo.save()
         repo.flush()
+        self.repoid = repo.repoid
         
         # Update nodegroup with the new repoid
         ng.repoid = repo.repoid
         ng.save_or_update()
         ng.flush()
 
-        self.repoid = repo.repoid
         self.repo_path = self.getRepoPath(self.repoid)
 
     def clean(self, repoid_or_reponame):
@@ -144,7 +144,7 @@ class BaseRepo(object):
         """refresh the repository"""
         raise NotImplementedError
 
-    def delete(self, repoid_or_reponame):
+    def delete(self, repoid_or_reponame=None):
         """delete the repository from disk and database"""
 
         repoid = self.getRepoID(repoid_or_reponame)
@@ -257,9 +257,21 @@ class RedhatYumRepo(BaseRepo):
             self.makeComps()
             self.makeMetaInfo()
             self.verify()
-        except:
-            self.delete() # Clean up myself
-            raise e 
+        except KusuError, e:
+            # Don't use self.delete(), since is unsure state
+
+            if self.repoid: #repo have been inserted into database
+                repos_have_kits = self.db.ReposHaveKits.select_by(repoid = self.repoid)
+                repo = self.db.Repos.get(self.repoid)
+                
+                for obj in repos_have_kits + [repo]:
+                    obj.delete()
+                    obj.flush()         
+
+            if not self.repo_path and self.repo_path.exists():
+                self.repo_path.rmtree()
+
+            raise e
 
         return self
 
@@ -332,5 +344,4 @@ class CentosRepo(RedhatYumRepo):
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
-        self.dirlayout['rpmsdir'] = 'Centos/RPMS'
-        self.dirlayout['basedir'] = 'Centos/base'
+        self.dirlayout['rpmsdir'] = 'CentOS'
