@@ -650,6 +650,6 @@ class KitOps:
 
         if ls_name:
             return self.__db.Kits.select_by(
-                        self.__db.kits.c.rname.like('%%%s%%' % ls_name))
+                        self.__db.Kits.c.rname.like('%%%s%%' % ls_name))
         else:
             return self.__db.Kits.select()
