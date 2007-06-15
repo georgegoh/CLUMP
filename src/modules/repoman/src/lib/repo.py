@@ -249,15 +249,6 @@ class RedhatYumRepo(BaseRepo):
         self.ngname = ngname
         self.reponame = reponame
 
-        self.UpdateDatabase(reponame)
-        self.makeRepoDirs()
-        self.copyOSKit()
-        self.copyKitsPackages()
-        self.copyRamDisk()
-        self.makeComps()
-        self.makeMetaInfo()
-        self.verify()
-
         try:
             self.UpdateDatabase(reponame)
             self.makeRepoDirs()
@@ -319,10 +310,12 @@ class RedhatYumRepo(BaseRepo):
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
 
+        dotrepodata = self.repo_path / '.repodata'
         cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
 
         try:
             p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
                                  shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
@@ -330,9 +323,15 @@ class RedhatYumRepo(BaseRepo):
             retcode = p.returncode
 
         except: 
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+            
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+ 
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
 class Fedora6Repo(RedhatYumRepo):
@@ -426,20 +425,28 @@ class Redhat5Repo(RedhatYumRepo):
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
 
+        dotrepodata = self.repo_path / '.repodata'
         cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path / 'Server')
 
         try:
             p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
                                  shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
 
-        except: 
+        except:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+ 
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+ 
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
 
