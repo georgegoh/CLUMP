@@ -41,7 +41,6 @@ mkdir -p %{buildroot}%{_niroot}
 
 %install
 cd %{_builddir}/%{name}-%{version}-%{release}
-cd lib/nodeinstaller
 find . | cpio -mpdu %{buildroot}%{_niroot}
 
 %pre
