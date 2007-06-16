@@ -286,7 +286,7 @@ class BuildKitApp(object):
         super(BuildKitApp, self).__init__()
         self._ = self.i18ninit()
         # actions list
-        self.actions = {'build':['kususrc','os','version','arch','modules'],
+        self.actions = {'build':['kususrc','modules'],
                         'list': []}
         
         # action and actionargs will hold the current action and its arguments           
@@ -294,19 +294,17 @@ class BuildKitApp(object):
         self.actionargs = None
         
         self.usagestr ="""\
-build-kusu-modules <action> arg1=val1 arg2=val2 ...
+build-kusu-artefacts <action> arg1=val1 arg2=val2 ...
 
-build-kusu-modules will build the Kusu modules and place the built
-kusu module artefacts in the current directory.
+build-kusu-artefacts will build the Kusu artecfacts and place the
+built artefacts in the current directory.
+
 
 actions:
 
     build       - Build and place the built kusu module artefacts in the 
                   current directory. Available arguments for this action:
                     kususrc=<directory containing Kusu Trunk>
-                    os=<name of OS>
-                    version=<version of OS>
-                    arch=<architechure of OS>
                     modules=<list of comma-separated module names 
                             or all to build all modules>
                             
@@ -417,9 +415,6 @@ actions:
     def _build(self,args):
         """ Handler for build. args is a dict of supported key-value pairs for this action. """
         kususrc = args.get('kususrc',None)
-        osname = args.get('os',None)
-        version = args.get('version',None)
-        osarch = args.get('arch',None)
         m = args.get('modules',None)
         
         if not m:
@@ -436,24 +431,6 @@ actions:
             print msg
             self.printUsageExit()
             
-        if not osname:
-            msg = self._('Please provide the os!')
-            print msg
-            self.printUsageExit()
-
-        if not version:
-            msg = self._('Please provide the version!')
-            print msg
-            self.printUsageExit()
-
-        if not osarch:
-            msg = self._('Please provide the arch!')
-            print msg
-            self.printUsageExit()
-            
-
-        
-            
         if 'all' not in modules:
             # loop each of the supplied modules and check against our two lists
             # FIXME: this could be refactored using list comprehensions
@@ -461,17 +438,8 @@ actions:
                 if mod not in KUSU_MODULES and mod not in KUSU_3RDPARTY:
                     msg = self._('%(modname)s is not in the list of the Kusu modules or 3rdparty modules!' \
                         % {'modname':mod})
-                    self.printMsgExit(msg)        
+                    self.printMsgExit(msg)
 
-        if osname not in SUPPORTED_DISTROS:
-            distros = ', '.join(SUPPORTED_DISTROS)
-            msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
-                % {'osname':osname, 'distros':distros})
-            self.printMsgExit(msg)
-        
-        # we're only interested in the major version
-        osver = version.split('.')[0]
-        
         try:
             svnsrc = KusuSVNSource(kususrc)
             # validate kususrc
