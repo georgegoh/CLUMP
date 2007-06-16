@@ -17,8 +17,6 @@
 # $Id: Makefile 1357 2007-06-15 04:35:58Z hirwan $
 # 
 
-include ../../build.mk
-
 # The following settings can be changed accordingly to your needs
 NAME = kusu-nodeinstaller-patchfiles
 VERSION = 0.2
