@@ -419,6 +419,76 @@ class BootMediaTool:
         except UnsupportedDistro,e:
             if path(tmpdir).exists(): path(tmpdir).rmtree()
             raise e
+
+    def mkNodeInstallerPatch(self,kususrc,osname,osver,osarch,patchfile):
+        """ Creates a distro-specific Kusu NodeInstaller patchfile. """
+        try:
+            # prepares the env dict
+            env = {}
+            env['KUSU_BUILD_DIST'] = osname
+            env['KUSU_BUILD_DISTVER'] = osver
+            env['KUSU_BUILD_ARCH'] = osarch
+            # check the current environment if any KUSU_* is set
+            for k,v in os.environ.items():
+                if k.startswith('KUSU_') and k in SUPPORTED_DISTROS:
+                    env[k] = v
+
+            svnsrc = KusuSVNSource(kususrc,env)
+
+            # create a scratchdir to hold the nodeinstaller patchfile contents
+            parentdir = path(patchfile).parent
+            tmpdir = path(tempfile.mkdtemp(dir=parentdir))
+            kusuroot = tmpdir / 'opt/kusu'
+            kusuroot.makedirs()
+
+            if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
+
+            p = 'src/dists/%s/%s/%s/nodeinstaller' % (osname,osver,osarch)
+            if not (svnsrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
+
+            if svnsrc.verifySrcPath():
+                svnsrc.setup()
+                svnsrc.run()
+                svnsrc.copyKusuroot(kusuroot,overwrite=True)
+                svnsrc.cleanup()
+                # get the correct kusuenv.sh
+                if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA:
+                    # put in the kusuenv.sh
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/kusuenv.sh' % (osname,osver,osarch)
+                    kusuenv = path(p)
+
+                    if kusuenv.exists(): 
+                        kusuenv.copy(kusuroot / 'bin')
+                        # make it excutable
+                        path(kusuroot / 'bin' / 'kusuenv.sh').chmod(0755)
+
+                    # remove the kusudevenv.sh
+                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
+                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
+
+                    # put in the the faux anaconda launcher
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/nodeinstaller/updates.img/anaconda' % (osname,osver,osarch)
+                    fakeanaconda = path(p)
+                    if fakeanaconda.exists(): 
+                        fakeanaconda.copy(tmpdir)
+                        # make it excutable
+                        path(tmpdir / 'anaconda').chmod(0755)
+
+                    # pack the tmpdir into a patchfile with size of 10MB
+                    packExt2FS(tmpdir,patchfile,size=10000)
+
+                else:
+                    raise UnsupportedDistro, "Unsupported Distro!"
+
+            path(tmpdir).rmtree()
+        except (FilePathError,NotPriviledgedUser), e:
+            # do some housecleaning if possible
+            if svnsrc.verifySrcPath(): svnsrc.cleanup()
+            if path(tmpdir).exists(): path(tmpdir).rmtree()
+            raise e
+        except UnsupportedDistro,e:
+            if path(tmpdir).exists(): path(tmpdir).rmtree()
+            raise e
         
     def mkBootArchive(self, isolinuxdir, archive):
         """ Creates a BootArchive based on the isolinux directory. A 
