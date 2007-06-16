@@ -17,8 +17,6 @@
 # $Id$
 # 
 
-include ../../build.mk
-
 # Be sure to change the MODULE and VERSION to fit your needs
 MODULE = boot
 VERSION = 0.2
@@ -39,7 +37,7 @@ ROOT =
 SPECFILES = `find . -maxdepth 1 -type f -name "*.spec"`
 TOPDIR = $(PWD)/../..
 KUSUSRC = $(TOPDIR)/../../..
-KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-modules
+KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-artefacts
 
 
 
@@ -66,8 +64,7 @@ rpm: install
 
 
 install::
-	$(KUSU_BUILD_MODULES_BIN) build kususrc=$(KUSUSRC) os=$(OS) version=$(OSVER) \
-		arch=$(ARCH) modules=$(MODULE)
+	$(KUSU_BUILD_MODULES_BIN) build kususrc=$(KUSUSRC) modules=$(MODULE)
 	sed \
 		-e 's%@KUSUROOT@%$(KUSUROOT)%g' \
 		-e 's%@NAME@%$(NAME)%g' \

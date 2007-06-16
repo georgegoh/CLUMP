@@ -17,7 +17,6 @@
 # $Id$
 # 
 
-include ../../build.mk
 
 
 # Be sure to change the MODULE and VERSION to fit your needs
@@ -25,13 +24,10 @@ MODULE = networktool
 VERSION = 0.2
 
 
-
 # The following settings can be changed accordingly to your needs
 RELEASE = 0
 NAME = kusu-$(MODULE)
-OS = fedora
-OSVER = 6
-ARCH=$(shell arch)
+
 
 # Please do not modify anything beyond this line unless you know what you
 # are doing
@@ -43,7 +39,7 @@ ROOT =
 SPECFILES = `find . -maxdepth 1 -type f -name "*.spec"`
 TOPDIR = $(PWD)/../..
 KUSUSRC = $(TOPDIR)/../../..
-KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-modules
+KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-artefacts
 
 
 

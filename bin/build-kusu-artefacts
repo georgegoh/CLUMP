@@ -23,6 +23,11 @@ class FilePathError(Exception): pass
 class FileAlreadyExists(Exception): pass
 class FailedBuildCMake(Exception): pass
 class FailedBuildMake(Exception): pass
+class FailedToRun(Exception): pass
+class UnsupportedDistro(Exception): pass
+class NotPriviledgedUser(Exception): pass
+class InvalidKusuSource(Exception): pass
+class ToolNotFound(Exception): pass
 
 # constants
 SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
@@ -35,6 +40,22 @@ KUSU_MODULES = ['autoinstall','boot','core','util','ui',
 
 KUSU_3RDPARTY = ['pysqlite','path','md5crypt','cheetah','urlgrabber',
     'wget','thttpd','sqlalchemy','createrepo',]
+
+
+def checkToolDeps(tool):
+    """ Check if the tool is indeed available. Returns the path. A ToolNotFound exception 
+        will be thrown if any of the tools are missing.
+    """
+
+    cmd = 'which %s' % tool
+    whichP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out, err = whichP.communicate()
+    if whichP.returncode <> 0:
+        raise ToolNotFound, tool
+
+    return out.strip('\n')
+
+
 
 def cpio_copytree(src,dst):
     """A cpio-based copytree functionality. Only use this when shutil.copytree don't cut
@@ -70,9 +91,47 @@ def cpio_copytree(src,dst):
     cpioP.communicate()
     return cpioP.returncode
     
+class KusuRuntime(object):
+    """ This class contains data and methods for Kusu Runtime operations. """
+    def __init__(self, kusuroot, tool=None):
+        super(KusuRuntime, self).__init__()
+        self.kusuroot = kusuroot
+        self.tool = tool
+        
+    def verifyPath(self):
+        """ verify that the kusuroot exists"""
+        if not os.path.exists(self.kusuroot): return False
+        
+        if not os.path.exists(os.path.join(self.kusuroot,'bin',self.tool)):
+            return False
+            
+        return True
+        
+    def run(self, action, **kwargs):
+        """ Runs the tool with the action and arguments. """
+        
+        env = os.environ
+        p = ''.join([self.kusuroot,'/bin:',env['PATH']])
+        env['PATH'] = p
+        
+        p = '%s/lib/python' % self.kusuroot
+        env['PYTHONPATH'] = p
+        
+        li = []
+        for k,v in kwargs.items():
+            li.append(''.join([k,'=',v]))
+            
+        args = ' '.join(li)
+        cmd = '%s %s %s' % (self.tool,action,args)
+        runP = subprocess.Popen(cmd,shell=True,env=env)
+        runP.communicate()
+        
+        if runP.returncode <> 0:
+            raise FailedToRun
+
 
 class KusuSVNSource:
-    """ This class contains data and operations that work with the Kusu SVN source. """
+    """ This class contains data and operations for working with Kusu SVN source. """
     
     def __init__(self, source, env=None):
         """ source refers to the Kusu SVN trunk source. env refers to a dict containing KUSU_* environment variables
@@ -280,14 +339,15 @@ class KusuSVNSource:
         else:
             raise CopyError
 
-class BuildKitApp(object):
+class BuildKusuArtefactsApp(object):
     """ Application Class """
     def __init__(self):
-        super(BuildKitApp, self).__init__()
+        super(BuildKusuArtefactsApp, self).__init__()
         self._ = self.i18ninit()
         # actions list
-        self.actions = {'build':['kususrc','modules'],
-                        'list': []}
+        self.actions = {'build':['kususrc','modules','kusuroot'],
+                        'list': [],
+                        'make-ni-patch':['kususrc','os','version','arch','patch']}
         
         # action and actionargs will hold the current action and its arguments           
         self.action = None
@@ -302,12 +362,22 @@ built artefacts in the current directory.
 
 actions:
 
-    build       - Build and place the built kusu module artefacts in the 
-                  current directory. Available arguments for this action:
-                    kususrc=<directory containing Kusu Trunk>
-                    modules=<list of comma-separated module names 
+    build           - Build and place the built kusu module artefacts in the 
+                      current directory or in kusuroot if defined. Available 
+                      arguments for this action:
+                        kususrc=<directory containing Kusu Trunk>
+                        kusuroot=<directory to place kusu module artefacts>
+                        modules=<list of comma-separated module names 
                             or all to build all modules>
-                            
+    
+    make-ni-patch   - Make the nodeinstaller patchfile from the Kusu Trunk 
+                      SVN source. Available arguments for this action:
+                        kususrc=<directory containing Kusu Trunk>
+                        os=<name of OS>
+                        version=<version of OS>
+                        arch=<architechure of OS>
+                        patch=<name of nodeinstaller patchfile>
+    
     list        - List the Kusu Runtime and dependencies modules that can
                   be built.
 
@@ -416,6 +486,7 @@ actions:
         """ Handler for build. args is a dict of supported key-value pairs for this action. """
         kususrc = args.get('kususrc',None)
         m = args.get('modules',None)
+        kusuroot = args.get('kusuroot', None)
         
         if not m:
             modules = ['all']
@@ -425,6 +496,7 @@ actions:
             for l in li:
                 mod = l.strip()
                 if mod not in modules: modules.append(mod)
+
             
         if not kususrc:
             msg = self._('Please provide the kususrc!')
@@ -498,7 +570,10 @@ actions:
 
             msg = self._('Copying Kusu Runtime contents to current directory.')
             print msg
-            svnsrc.copyKusuroot(os.getcwd())
+            if not kusuroot:
+                svnsrc.copyKusuroot(os.getcwd())
+            else:
+                svnsrc.copyKusuroot(kusuroot)
             msg = self._('Cleaning up build sources..')
             print msg
             svnsrc.cleanup()
@@ -513,7 +588,75 @@ actions:
             svnsrc.cleanup()
             msg = self._('Error building Kusu Runtime!')
             sys.exit(2)
+
+    def _makeNiPatch(self,args):
+        """ Handler for make-ni-patch. args is a dict of supported key-value pairs for this action. """
+        kususrc = os.path.abspath(args['kususrc'])
+        osname = args.get('os',None)
+        version = args.get('version',None)
+        osarch = args.get('arch',None)
+        patchfile = args.get('patch',None)
+        kusuroot = None
+        tmproot = False
         
+        if not kususrc:
+            msg = self._('Please provide the kususrc!')
+            print msg
+            self.printUsageExit()
+
+        if not osname:
+            msg = self._('Please provide the os!')
+            print msg
+            self.printUsageExit()
+            
+        if not version:
+            msg = self._('Please provide the version!')
+            print msg
+            self.printUsageExit()
+            
+        if not osarch:
+            msg = self._('Please provide the arch!')
+            print msg
+            self.printUsageExit()
+
+        if not patchfile:
+            msg = self._('Please provide the patchfile!')
+            print msg
+            self.printUsageExit()
+
+
+        if osname not in SUPPORTED_DISTROS:
+            distros = ', '.join(SUPPORTED_DISTROS)
+            msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
+                % {'osname':osname, 'distros':distros})
+            self.printMsgExit(msg)
+
+        # we're only interested in the major version
+        osver = version.split('.')[0]
+
+        try:
+            # locate boot-media-tool
+            p = checkToolDeps('boot-media-tool')
+            kusuroot = os.path.dirname(p)
+        except ToolNotFound:
+                # create the boot-media-tool runtime
+                kusuroot = os.path.abspath(tempfile.mkdtemp(dir='/tmp'))
+                tmproot = True
+                self._build({'kususrc':kususrc,'modules':'all','kusuroot':kusuroot})
+        
+        try:
+            # load up b-m-t and make nodeinstaller patch
+            bmt = KusuRuntime(kusuroot,'boot-media-tool')
+            bmt.run('make-ni-patch',kususrc=kususrc,os=osname,version=osver,arch=osarch,patch=patchfile)
+        except FailedToRun:
+            if tmproot: shutil.rmtree(kusuroot)
+            msg = self._('Unable to make nodeinstaller patchfile!')
+            self.printMsgExit(msg)
+            
+        if tmproot: shutil.rmtree(kusuroot)
+            
+
+
     def _list(self,args):
         """ Handler for list. args is a dict of supported key-value pairs for this action. """
 
@@ -525,6 +668,6 @@ actions:
         print msg
 
 if __name__ == '__main__':
-    app = BuildKitApp()
+    app = BuildKusuArtefactsApp()
     app.run()
 

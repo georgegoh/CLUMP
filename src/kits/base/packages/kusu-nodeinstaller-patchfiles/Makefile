@@ -33,7 +33,7 @@ ROOT =
 SPECFILES = `find . -maxdepth 1 -type f -name "*.spec"`
 TOPDIR = $(PWD)/../..
 KUSUSRC = $(TOPDIR)/../../..
-KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-modules
+KUSU_BUILD_MODULES_BIN = $(KUSUSRC)/bin/build-kusu-artefacts
 
 
 
