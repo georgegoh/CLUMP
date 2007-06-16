@@ -1,24 +1,12 @@
 #!/usr/bin/env python
+# $Id$
 #
 # Kusu kitops - kit operations tool
 #
-# $Id$
+# Copyright 2007 Platform Computing Corporation.
 #
-# Copyright (C) 2007 Platform Computing
+# Licensed under GPL version 2; See LICENSE file for details.
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of version 2 of the GNU General Public License as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-
 # Author: atumanov
 
 import sys
@@ -51,7 +39,6 @@ class KitOps:
         self.kitmedia = ''
         self.mountpoint = None
         self.medialoc = None
-        self.MediaDevice = None
         self.__db = None
 
         if 'db' in kw:
@@ -97,12 +84,8 @@ class KitOps:
     def addKitPrepare(self):
         '''PreCondition:  add operation requested
            PostCondition: the kit media is mounted to self.mountpoint'''
-        # 1. kit media was not specified - auto-detect
-        if not self.kitmedia:
-            self.autoDetectMedia()
-            return 
 
-        # 2. kit media was specified - determine what to do with it
+        # determine what to do with kit media
         rv = urlparse.urlparse(self.kitmedia)
 
         if rv[0]:
@@ -122,14 +105,10 @@ class KitOps:
             kl.debug('Media mountpoint: %s', self.medialoc)
             self.mountpoint = self.medialoc
         else:
-            import kusu.hardware.probe
-            cdrom_dict = kusu.hardware.probe.getCDROM()
-            cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
-
-            if self.medialoc in cdrom_list:
-                kl.debug('CDROM provided: %s', self.medialoc)
+            try:
+                kl.debug('Trying provided CDROM: %s', self.medialoc)
                 self.mountMedia(self.medialoc)
-            else:
+            except CannotMountKitMediaError:
                 #if neither of the above - error
                 raise UnrecognizedKitMediaError, \
                                     'Improper kit media location specification'
@@ -143,29 +122,12 @@ class KitOps:
             raise AssertionError, \
                     'Mountpoint sanity assertion failed\n%s' % msg
 
-    def autoDetectMedia(self):
-        """
-        Attemp to find kit media.
-        """
-
-        lst = self.findMediaDevices()
-        kl.debug('Media device list: %s', lst)
-
-        for dev in lst:
-            self.mountMedia('/dev/%s' % dev)
-            self.MediaDevice = '/dev/%s' % dev
-            return
-
-        # at this point, we cannot find any kits
-        raise NoKitSpecifiedOrFoundError, \
-                    'Kit media neither specified nor found'
-
     def addKit(self):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
 
         if self.kitname == '':  #kit to install was NOT specified
-            self.determineKitName()
+            self.kitname = self.determineKitName()
 
         # at this point self.kitname must be defined
         try:
@@ -349,7 +311,7 @@ class KitOps:
             raise NoKitsFoundError, 'Bad media provided, no kits found'
 
         if len(dirlst) == 1:
-            self.kitname = dirlst[0].basename()
+            return dirlst[0].basename()
         elif len(dirlst) > 1:
             # TODO: Implement metakit handling.
             #handleMetaKit - return the kit to work with (self.kitname must be set)
@@ -358,33 +320,6 @@ class KitOps:
             except: # raise exceptions in self.selectKit and catch them here
                 self.unmountMedia()
                 raise NoKitsFoundError, 'Bad media provided, no kits found'
-
-    def findMediaDevices(self):
-        '''Check for IDE/ATAPI, SCSI CD-ROM/DVD/CDRW devices, including USB storage
-         devices.  Return the list of media devices to try'''
-        MediaDevLst = []
-        devdirlst = []
-
-        devdirlst = path('/sys/block').listdir()
-        devdirlst.sort()
-
-        for dev in devdirlst:
-            if re.match("^hd?", dev.basename()):
-                #devinfo = open("/sys/block/%s/removable" % dev, 'r')
-                devinfo = open(dev / 'removable', 'r')
-                removable = devinfo.readline().strip()
-                devinfo.close()
-                if int(removable) == 1:
-                    MediaDevLst.append(dev.basename())
-
-            elif re.match("^sr?", dev) or re.match("^scd?", dev):
-                #devinfo = open("/sys/block/%s/removable" % dev, 'r')
-                devinfo = open(dev / 'removable', 'r')
-                removable = devinfo.readline().strip()
-                devinfo.close()
-                if int(removable) == 1:
-                    MediaDevLst.append(dev.basename())
-        return MediaDevLst
 
     def checkKitInstalled(self, kitname, kitver, kitarch):
         """

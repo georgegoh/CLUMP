@@ -109,7 +109,19 @@ class KitOpsApp(KusuApp):
 
         if addbool:
             koinst.setKitName(options.addkit)
-            koinst.setKitMedia(options.media)
+
+            if not options.media:
+                media_choices = self.autoDetectMedia()
+                found_kits = sorted(media_choices.keys())
+
+                if len(found_kits) == 1:
+                    kit_media = media_choices[found_kits[0]]
+                else:
+                    kit_media = selectKitMedia(media_choices)
+            else:
+                kit_media = options.media
+
+            koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
         elif options.delkit:
             self.kit_name = options.delkit
@@ -176,7 +188,7 @@ class KitOpsApp(KusuApp):
         try:
             self.koinst.addKitPrepare()
         except (CannotMountKitMediaError, UnrecognizedKitMediaError,
-                NoKitSpecifiedOrFoundError, AssertionError), e:
+                AssertionError), e:
             kl.debug('FAIL performing add operation')
             sys.stderr.write(e.args[0])
             sys.exit(EKITLOC_FAIL)
@@ -264,6 +276,62 @@ class KitOpsApp(KusuApp):
                       kit_isOS.ljust(7) + kit_removable.ljust(9)
 
         kl.debug('SUCCESS performing list operation')
+
+    def autoDetectMedia(self):
+        """
+        Attemp to find kit media.
+        """
+
+        import kusu.hardware.probe
+        cdrom_dict = kusu.hardware.probe.getCDROM()
+        cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
+
+        kl.debug('Media device list: %s', cdrom_list)
+
+        available_kits = {}
+        for cd in cdrom_list:
+            try:
+                self.koinst.mountMedia(cd)
+                available_kits[self.koinst.determineKitName()] = cd
+                self.koinst.unmountMedia()
+            except CannotMountKitMediaError:
+                pass
+            except NoKitsFoundError:
+                self.koinst.unmountMedia()
+
+        if available_kits:
+            return available_kits
+
+        # at this point, we cannot find any kits
+        kl.debug('Kit media neither specified nor found')
+        sys.stderr.write('Kit media neither specified nor found')
+        sys.exit(EKITLOC_FAIL)
+
+    def selectKitMedia(self, choices):
+        """
+        Present a list of kits for the user to select from.
+        """
+
+        choice_names = sorted(choices.keys())
+        choice_list = {}
+        for i in range(len(choice_names)):
+            choice_list[i + 1] = choice_name[i]
+
+        while 1:
+            for choice in choice_list:
+                print '[%d]: %s' % (choice, choice_list[choice])
+
+            res = raw_input('Select kit to add, 0 or ENTER to quit:')
+            res = string.strip(res)
+            if res == '' or res == '0':
+                kl.debug('No kit selected, terminating')
+                sys.exit(0)
+
+            try:
+                if int(res) in choice_list:
+                    return choices[int(res)]
+            except ValueError:
+                pass
 
     def printHelp(self):
         self.parser.print_help()

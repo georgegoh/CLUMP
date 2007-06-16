@@ -71,7 +71,6 @@ class TemplateNotFoundError(KusuError): pass
 # kitops
 class CannotMountKitMediaError(KusuError): pass
 class UnrecognizedKitMediaError(KusuError): pass
-class NoKitSpecifiedOrFoundError(KusuError): pass
 class KitAlreadyInstalledError(KusuError): pass
 class KitNotInstalledError(KusuError): pass
 class InstallKitRPMError(KusuError): pass
