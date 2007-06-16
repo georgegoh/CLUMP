@@ -443,7 +443,7 @@ class BootMediaTool:
 
             if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
 
-            p = 'src/dists/%s/%s/%s/nodeinstaller' % (osname,osver,osarch)
+            p = 'src/dists/%s/%s/nodeinstaller' % (osname,osver)
             if not (svnsrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
 
             if svnsrc.verifySrcPath():
@@ -467,7 +467,7 @@ class BootMediaTool:
                         path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
 
                     # put in the the faux anaconda launcher
-                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/nodeinstaller/updates.img/anaconda' % (osname,osver,osarch)
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/nodeinstaller/updates.img/anaconda' % (osname,osver)
                     fakeanaconda = path(p)
                     if fakeanaconda.exists(): 
                         fakeanaconda.copy(tmpdir)
