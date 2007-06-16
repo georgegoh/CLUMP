@@ -32,9 +32,9 @@ source /opt/kusu/bin/kusuenv.sh
 # 
 # umount -l /mnt/runtime and pointing /mnt/runtime to new stage2.img 
 # doesn't work. We are still unable to detach loop0. 
-/usr/bin/cp /mnt/source/images/stage2.img $KUSU_TMP/stage2.img 
+/usr/bin/cp /mnt/source/images/stage2.img /tmp/ramfs/stage2.img 
 python -c "import sys; sys.path.append('/usr/lib/anaconda'); \
-           import isys; isys.lochangefd('/tmp/loop0', '$KUSU_TMP/stage2.img')"
+           import isys; isys.lochangefd('/tmp/loop0', '/tmp/ramfs/stage2.img')"
 /usr/bin/umount /mnt/source
 
 # launch the Kusu Installer
@@ -57,7 +57,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
-    /usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
+    /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu/install_script ;
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump
     echo "An internal program error has occurred."

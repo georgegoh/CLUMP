@@ -192,9 +192,9 @@ class RedhatYumRepo(BaseRepo):
     
     def copyKitsPackages(self):
         # Need a better method for this
-        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
-                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
-                                      self.db.kits.c.isOS==False)
+        kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
+                                      self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
+                                      self.db.Kits.c.isOS==False)
 
         for kit in kits:
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
@@ -373,9 +373,9 @@ class Redhat5Repo(RedhatYumRepo):
 
     def copyKitsPackages(self):
         # Need a better method for this
-        kits = self.db.Kits.select_by(self.db.repos_have_kits.c.repoid==self.repoid,
-                                      self.db.repos_have_kits.c.kid == self.db.kits.c.kid,
-                                      self.db.kits.c.isOS==False)
+        kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
+                                      self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
+                                      self.db.Kits.c.isOS==False)
 
         for kit in kits:
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)

@@ -75,4 +75,3 @@ class RepoFactory(object):
 
     def getRepo(self, repoid_or_reponame):
         pass
- 

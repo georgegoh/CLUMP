@@ -19,6 +19,7 @@ setup(name="kusu-autoinstall",
       platforms=["any"],
       packages=['autoinstall'],
       package_dir={'autoinstall':'src/lib'},
-      data_files=[('etc/templates', ['src/etc/templates/kickstart.tmpl']),
+      data_files=[('etc/templates', ['src/etc/templates/kickstart.tmpl', \
+                                     'src/etc/templates/rhel5.tmpl']),
                   ('share/doc/samples', ['src/doc/samples/genkickstart'])] 
      )
