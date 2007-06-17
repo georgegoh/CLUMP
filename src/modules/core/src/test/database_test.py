@@ -25,7 +25,6 @@ def tearDown():
         os.removedirs(tempdir)
     except: pass
 
-
 class TestSQLITE:
     def setUp(self):
         global kusudb
@@ -36,43 +35,36 @@ class TestSQLITE:
 
     def testTableCreation(self):
         self.dbs.createTables()
-
-        for table in self.dbs.mapTableClass.keys():
-            assert self.dbs.metadata.engine.has_table(table)
+        
+        for table in self.dbs.metadata.table_iterator():
+            assert self.dbs.metadata.engine.has_table(str(table))
 
     def testTableDrop(self):
         self.dbs.createTables()
         self.dbs.dropTables()
-
-        for table in self.dbs.mapTableClass.keys():
-            assert not self.dbs.metadata.engine.has_table(table)
+        
+        for table in self.dbs.metadata.table_iterator():
+            assert not self.dbs.metadata.engine.has_table(str(table))
 
     def testBootstrap(self):
         self.dbs.bootstrap()
 
-        session = self.dbs.createSession()
-
-        for name in ['installer', 'compute']:
-            ng = session.query(self.dbs.nodegroups).select_by(ngname=name)[0]
+        for name in ['master', 'installer', 'compute']:
+            ng = self.dbs.NodeGroups.select_by(ngname=name)[0]
             assert ng.ngname == name
 
-        assert len(session.query(self.dbs.nodegroups).select_by(ngname='compute')[0].partitions) > 0
+        assert len(self.dbs.NodeGroups.select_by(ngname='compute')[0].partitions) > 0
 
-        session.clear()
-        session.close()
 
     def testInsertSelect(self):
 
         self.dbs.createTables()
 
-        session = self.dbs.createSession()
-        session.save(db.AppGlobals(kname='key name'))
-        session.flush()
+        appglobals = self.dbs.AppGlobals(kname='key name')
+        appglobals.save()
+        appglobals.flush()
         
-        assert session.query(self.dbs.appglobals).get(1).kname == 'key name'
-
-        session.clear()
-        session.close()
+        assert self.dbs.AppGlobals.get(1).kname == 'key name'
 
         self.dbs.dropTables()
 
