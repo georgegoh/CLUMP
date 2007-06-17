@@ -195,4 +195,114 @@ class TestFedoraDetection:
         fedoraObj = DistroFactory(self.invalidFedoraLocalPath)
         assert fedoraObj.verifyLocalSrcPath() is False
 
+class TestRHEL5Detection:
+    """Test suite for detecting RHEL 5 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupRHEL(5)
+
+    def tearDown(self):
+        """Clean up after done"""
+
+        self.teardownRHEL(5)
+
+    def setupRHEL(self, version):
+        """RHEL-centric housekeeping"""
+
+        # Can be moved to allow all RHEL test to use the same setup
+        if version == 5:
+            self.rhelLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+            # create a directory and delete it immediately after. 
+            self.invalidRHELLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+            self.invalidRHELLocalPath.rmdir()
+
+            path(self.rhelLocalPath / 'isolinux').mkdir()
+            path(self.rhelLocalPath / 'isolinux/vmlinuz').touch()
+            path(self.rhelLocalPath / 'isolinux/initrd.img').touch()
+            path(self.rhelLocalPath / 'isolinux/isolinux.bin').touch()
+            path(self.rhelLocalPath / 'images').mkdir()
+            path(self.rhelLocalPath / 'images/stage2.img').touch()
+            path(self.rhelLocalPath / 'Server').mkdir()
+            path(self.rhelLocalPath / 'Server/repodata').mkdir()
+            path(self.rhelLocalPath / 'Cluster').mkdir()
+            path(self.rhelLocalPath / 'Cluster/repodata').mkdir()
+            path(self.rhelLocalPath / 'ClusterStorage').mkdir()
+            path(self.rhelLocalPath / 'ClusterStorage/repodata').mkdir()
+            path(self.rhelLocalPath / 'VT').mkdir()
+            path(self.rhelLocalPath / 'VT/repodata').mkdir()
+            
+            # create an additional media type 
+            # (as in the layout for disc media 2, 3, ..)
+            self.additionalRHELMedia = path(tempfile.mkdtemp(dir='/tmp'))
+            path(self.additionalRHELMedia / 'Server').mkdir()
+            path(self.additionalRHELMedia / 'Server/repodata').mkdir()
+            path(self.additionalRHELMedia / 'Cluster').mkdir()
+            path(self.additionalRHELMedia / 'Cluster/repodata').mkdir()
+            path(self.additionalRHELMedia / 'ClusterStorage').mkdir()
+            path(self.additionalRHELMedia / 'ClusterStorage/repodata').mkdir()
+            path(self.additionalRHELMedia / 'VT').mkdir()
+            path(self.additionalRHELMedia / 'VT/repodata').mkdir()
+ 
+        elif version == '4':
+            pass
+
+    def teardownRHEL(self, version):
+        """RHEL-centric housekeeping in reverse"""
+
+        if version == 5:
+            path(self.rhelLocalPath / 'isolinux/vmlinuz').remove()
+            path(self.rhelLocalPath / 'isolinux/initrd.img').remove()
+            path(self.rhelLocalPath / 'isolinux/isolinux.bin').remove()
+            path(self.rhelLocalPath / 'isolinux').rmdir()
+            path(self.rhelLocalPath / 'images/stage2.img').remove()
+            path(self.rhelLocalPath / 'images').rmdir()
+            path(self.rhelLocalPath / 'Server/repodata').rmdir()
+            path(self.rhelLocalPath / 'Server').rmdir()
+            path(self.rhelLocalPath / 'Cluster/repodata').rmdir()
+            path(self.rhelLocalPath / 'Cluster').rmdir()
+            path(self.rhelLocalPath / 'ClusterStorage/repodata').rmdir()
+            path(self.rhelLocalPath / 'ClusterStorage').rmdir()
+            path(self.rhelLocalPath / 'VT/repodata').rmdir()
+            path(self.rhelLocalPath / 'VT').rmdir()
+            self.rhelLocalPath.rmdir()
+            self.additionalRHELMedia.rmtree()
+        elif version == '4':
+            pass
+
+    def test_IsRHELCD(self):
+        """Test if the CD is a RHEL CD"""
+
+        cdObj = DistroFactory(self.rhelLocalPath)
+        assert cdObj.ostype == "rhel"
+
+            
+    def test_IsAdditionalRHELCD(self):
+        """Test if the CD is an additional RHEL CD"""
+        
+        cdObj = DistroFactory(self.additionalRHELMedia)
+        assert cdObj.ostype == "rhel"
+
+        
+    def test_IsNotRHELCD(self):
+        """Test if the CD is not a RHEL CD"""
+
+        cdObj = DistroFactory(self.invalidRHELLocalPath)
+        assert cdObj.ostype != "rhel"
+
+    def test_RHELCDPathExists(self):
+        """Test if the path does indeed contain RHEL media"""
+
+        rhelObj = DistroFactory(self.rhelLocalPath)
+        assert rhelObj.verifyLocalSrcPath() is True
+
+
+    def test_RHELCDPathNotExists(self):
+        """Test if the path does indeed contain RHEL media"""
+
+        rhelObj = DistroFactory(self.invalidRHELLocalPath)
+        assert rhelObj.verifyLocalSrcPath() is False
+
 
