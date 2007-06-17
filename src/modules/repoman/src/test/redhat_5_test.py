@@ -95,6 +95,9 @@ class TestRedhat5Repo:
         for dir in dirs:
             dir.makedirs()
 
+        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
+        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
+
         for p in self.getPath():
             try:
                 (prefix / 'depot' / 'kits' / 'rhel' / '5' / 'i386' / p).parent.makedirs()
@@ -112,7 +115,8 @@ class TestRedhat5Repo:
         prefix.rmtree()
 
     def getPath(self):
-        paths = ['Server/repodata/comps-rhel5-server-core.xml', \
+        paths = ['Server/yum-3.0.1-5.el5.noarch.rpm', \
+                 'Server/repodata/comps-rhel5-server-core.xml', \
                  'Server/repodata/other.xml.gz', \
                  'Server/repodata/filelists.xml.gz', \
                  'Server/repodata/repomd.xml', \
@@ -140,6 +144,19 @@ class TestRedhat5Repo:
     def checkLayout(self, prefix):
         for p in self.getPath():
             assert (prefix / p).exists()
+
+    def testRelativeLinks(self):
+        global prefix
+
+        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r.make('installer nodegroup', 'a repo during testing')
+
+        repoid = str(r.repoid)
+
+        for p in self.getPath():
+            p = prefix / 'depot' / 'repos' / repoid / p
+            if p.islink():
+                assert not p.readlink().isabs()
 
     def testMake(self):
         global prefix

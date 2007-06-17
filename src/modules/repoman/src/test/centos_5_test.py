@@ -95,6 +95,9 @@ class TestCentos5Repo:
         for dir in dirs:
             dir.makedirs()
 
+        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
+        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
+
         for p in self.getPath():
             new_path = prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / p
             try:
@@ -114,7 +117,7 @@ class TestCentos5Repo:
         prefix.rmtree()
 
     def getPath(self):
-        paths = ['CentOS/',\
+        paths = ['CentOS/yum-3.0.5-1.el5.centos.2.noarch.rpm',\
                  'repodata/comps.xml', \
                  'repodata/other.xml.gz', \
                  'repodata/filelists.xml.gz', \
@@ -129,6 +132,19 @@ class TestCentos5Repo:
         for p in self.getPath():
             assert (prefix / p).exists()
 
+    def testRelativeLinks(self):
+        global prefix
+
+        r = repo.Centos5Repo('5', 'i386', prefix, self.dbs)
+        r.make('installer nodegroup', 'a repo during testing')
+
+        repoid = str(r.repoid)
+
+        for p in self.getPath():
+            p = prefix / 'depot' / 'repos' / repoid / p
+            if p.islink():
+                assert not p.readlink().isabs()
+ 
     def testMake(self):
         global prefix
  

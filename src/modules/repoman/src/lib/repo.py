@@ -208,8 +208,8 @@ class RedhatYumRepo(BaseRepo):
 
                     if dest.exists():
                        raise FileAlreadyExistError, '%s already exists' % dest
-
-                    file.symlink(dest)
+    
+                    (dest.parent.relpathto(file)).symlink(dest)
 
     def copyOSKit(self):
 
@@ -225,11 +225,14 @@ class RedhatYumRepo(BaseRepo):
             if key != 'repodatadir':
                for file in (self.os_path / dir).listdir():
                     if not file.isdir() and file.basename() != 'TRANS.TBL':
-                        file.symlink(self.repo_path / dir / file.basename())
+                        dest = self.repo_path / dir / file.basename()
+                        (dest.parent.relpathto(file)).symlink(dest)
+
 
         discinfo = self.os_path / '.discinfo'
         if discinfo.exists():
-            discinfo.symlink(self.repo_path / '.discinfo')
+            dest = self.repo_path / '.discinfo' 
+            (dest.parent.relpathto(discinfo)).symlink(dest)
 
     def makeRepoDirs(self):
         for dir in self.dirlayout.values():
@@ -301,12 +304,13 @@ class RedhatYumRepo(BaseRepo):
         """Makes the necessary comps xml file"""
 
         # symlink comps.xml
-        repodatadir = self.repo_path / self.dirlayout['repodatadir']
-        self.comps_file = repodatadir / 'comps.xml'
+        src = self.os_path / self.dirlayout['repodatadir'] / 'comps.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'comps.xml'
 
-        (self.os_path / self.dirlayout['repodatadir'] / 'comps.xml').symlink \
-         (self.comps_file)
-        
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
 
@@ -390,7 +394,7 @@ class Redhat5Repo(RedhatYumRepo):
                     if dest.exists():
                        raise FileAlreadyExistError, '%s already exists' % dest
 
-                    file.symlink(dest)
+                    (dest.parent.relpathto(file)).symlink(dest)
 
     def copyOSKit(self):
 
@@ -406,21 +410,25 @@ class Redhat5Repo(RedhatYumRepo):
             if key != 'server.repodatadir':
                 for file in (self.os_path / dir).listdir():
                     if not file.isdir() and file.basename() != 'TRANS.TBL':
-                        file.symlink(self.repo_path / dir / file.basename())
+                        dest = self.repo_path / dir / file.basename()
+                        (dest.parent.relpathto(file)).symlink(dest)
 
         discinfo = self.os_path / '.discinfo'
         if discinfo.exists():
-            discinfo.symlink(self.repo_path / '.discinfo')
+            dest = self.repo_path / '.discinfo' 
+            (dest.parent.relpathto(discinfo)).symlink(dest)
+
 
     def makeComps(self):
         """Makes the necessary comps xml file"""
 
         # symlink comps.xml
-        repodatadir = self.repo_path / self.dirlayout['server.repodatadir']
-        self.comps_file = repodatadir / 'comps-rhel5-server-core.xml'
+        src = self.os_path / self.dirlayout['server.repodatadir'] / 'comps-rhel5-server-core.xml'
+        dest = self.repo_path / self.dirlayout['server.repodatadir'] / 'comps-rhel5-server-core.xml'
 
-        (self.os_path / self.dirlayout['server.repodatadir'] / \
-         'comps-rhel5-server-core.xml').symlink(self.comps_file)
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
 
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
