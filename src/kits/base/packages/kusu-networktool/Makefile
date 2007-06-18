@@ -66,8 +66,7 @@ rpm: install
 
 
 install::
-	$(KUSU_BUILD_MODULES_BIN) build kususrc=$(KUSUSRC) os=$(OS) version=$(OSVER) \
-		arch=$(ARCH) modules=$(MODULE)
+	$(KUSU_BUILD_MODULES_BIN) build kususrc=$(KUSUSRC) modules=$(MODULE)
 	sed \
 		-e 's%@KUSUROOT@%$(KUSUROOT)%g' \
 		-e 's%@NAME@%$(NAME)%g' \

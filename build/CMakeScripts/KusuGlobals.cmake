@@ -156,6 +156,10 @@ IF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
 ${CMAKE_CURRENT_BINARY_DIR}/src/modules/core/src/bin/kusuenv.sh)
 
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/bin/makeiso.sh ${CMAKE_CURRENT_BINARY_DIR}/bin/makeiso.sh)
+  CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/bin/makebasekit.sh                
+                 ${CMAKE_CURRENT_BINARY_DIR}/bin/makebasekit.sh)  
+  CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/bin/makepatchfiles.sh                
+                 ${CMAKE_CURRENT_BINARY_DIR}/bin/makepatchfiles.sh)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makeiso.sh
                  ${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/makeiso.sh)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/build/buildbot/syncstatus.sh

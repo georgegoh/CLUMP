@@ -332,7 +332,7 @@ class KusuSVNSource:
         
     def copyKusuroot(self, dest, overwrite=False):
         """Copy the kusuroot file to a destination"""
-        parentdir = os.path.abspath(os.path.join(dest,os.pardir))
+        parentdir = os.path.abspath(os.path.join(dest,os.path.pardir))
         if os.access(parentdir,os.W_OK):
             # make sure that the existing destpath is accessible and writable
             cpio_copytree(self.kusuroot,dest)
@@ -568,11 +568,15 @@ actions:
             print msg
             svnsrc.cleanupTransient()                 
 
-            msg = self._('Copying Kusu Runtime contents to current directory.')
-            print msg
+
             if not kusuroot:
+                msg = self._('Copying Kusu Runtime contents to current directory.')
+                print msg
                 svnsrc.copyKusuroot(os.getcwd())
             else:
+                msg = self._('Copying Kusu Runtime contents to %(kusuroot)s.' \
+                    % {'kusuroot':kusuroot})
+                print msg
                 svnsrc.copyKusuroot(kusuroot)
             msg = self._('Cleaning up build sources..')
             print msg
@@ -637,7 +641,7 @@ actions:
         try:
             # locate boot-media-tool
             p = checkToolDeps('boot-media-tool')
-            kusuroot = os.path.dirname(p)
+            kusuroot = os.path.dirname(os.path.join(p,os.path.pardir))
         except ToolNotFound:
                 # create the boot-media-tool runtime
                 kusuroot = os.path.abspath(tempfile.mkdtemp(dir='/tmp'))

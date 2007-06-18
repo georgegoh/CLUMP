@@ -45,6 +45,9 @@ rpm: install
 	-mkdir -p $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE)
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE) ; tar xf - )
+	rm -f $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE)/spec.tmpl
+	rm -f $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE)/$(NAME).spec
+	rm -f $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE)/Makefile
 	@if [ -f $(HOME)/.rpmmacros ] ; then \
 		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
 	fi
