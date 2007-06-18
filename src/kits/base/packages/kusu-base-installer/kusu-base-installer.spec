@@ -18,7 +18,7 @@
 # 
 
 
-Summary: Platform Rocks rolls documentation
+Summary: Kusu Base Installer
 Name: kusu-base-installer
 Version: 1.0
 Release: 0
