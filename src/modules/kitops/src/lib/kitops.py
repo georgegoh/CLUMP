@@ -34,17 +34,13 @@ kl = kusulog.getKusuLog('kitops')
 
 class KitOps:
     def __init__(self, **kw):
-        self.installer = False
+        self.installer = kw.get('installer', False)
         self.kitname = ''
         self.kitmedia = ''
+        self.dlkitiso = None
         self.mountpoint = None
         self.medialoc = None
-        self.__db = None
-
-        if 'db' in kw:
-            self.__db = kw['db']
-        if 'installer' in kw:
-            self.installer = kw['installer']
+        self.__db = kw.get('db', None)
 
         self.prefix = path(kw.get('prefix', '/'))
         self.tmpprefix = path(kw.get('tmpprefix', '/tmp'))
@@ -90,8 +86,9 @@ class KitOps:
 
         if rv[0]:
             kl.debug('Network kit specified, retrieving')
-            (tmpfname, headers) = urllib.urlretrieve(self.kitmedia)
-            self.medialoc = path(tmpfname)
+            (self.dlkitiso, headers) = urllib.urlretrieve(self.kitmedia)
+            self.dlkitiso = path(self.dlkitiso)
+            self.medialoc = self.dlkitiso
         else:
             self.medialoc = path(self.kitmedia)
 
@@ -99,8 +96,6 @@ class KitOps:
         if self.medialoc.isfile() and self.medialoc.ext.lower() == '.iso':
             kl.debug('Media ISO file provided: %s', self.medialoc)
             self.mountMedia(self.medialoc, True)
-            #mountpoint is defined - we're done
-            return
         elif self.medialoc.isdir() and self.medialoc.ismount():
             kl.debug('Media mountpoint: %s', self.medialoc)
             self.mountpoint = self.medialoc
@@ -379,6 +374,10 @@ class KitOps:
             self.mountpoint.rmdir()
             self.mountpoint = None
 
+        if self.dlkitiso and self.dlkitiso.exists():
+            self.dlkitiso.remove()
+            self.dlkitiso = None
+
     def __handleMountError(self,rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
         status = os.WEXITSTATUS(rv)
@@ -426,8 +425,7 @@ class KitOps:
         bmt = BootMediaTool()
 
         if self.installer:
-            bmt.copyInitrd(self.mountpoint,
-                           self.pxeboot_dir / kit['initrd'])
+            bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'])
         else:
             fd, tmprd1 = tempfile.mkstemp(prefix='kitops', dir=self.tmpprefix)
             os.close(fd)

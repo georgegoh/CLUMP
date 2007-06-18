@@ -5,21 +5,25 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 #
-# NOTE: prior to use, create directory /tmp/kitops_app_test_mock_isos
-# and place the mock ISOs used in testing there. Mock ISOs can be obtained
-# at TODO: [[[insert web address here]]]
 
 import os
 import tempfile
-import subprocess
+import urllib
 from path import path
 from nose import SkipTest
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 import kusu.core.database as db
 from kusu.kitops.kitops import KitOps
 
-# download ISOs at TODO: [[[insert web address here]]]
-test_kits = path('/tmp/kitops_app_test_mock_isos')
+# NOTE: test_kits_url NEEDS a trailing slash
+test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
+test_kits_path = path('/tmp/kitops_test_mock_isos')
+
 temp_root = None
 temp_mount = None
 kusudb = None
@@ -29,8 +33,6 @@ dbinfo_str = ''
 def setUp():
     global temp_root
     global temp_mount
-
-    assert test_kits.exists(), 'ISO dir %s does not exist!' % test_kits
 
     databasePrep()
 
@@ -57,7 +59,10 @@ class TestBaseKit:
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
-        self.kit = test_kits / 'mock-kit-base-0.1-0.noarch.iso'
+        self.kit_iso = 'mock-kit-base-0.1-0.noarch.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
         self.kit_rpm = 'kit-base-0.1-0.noarch.rpm'
         self.kit_name = 'base'
         self.kit_ver = '0.1'
@@ -353,8 +358,15 @@ class TestFedoraCore6i386:
         self.kits_dir = self.depot_dir / 'kits'
         self.pxe_dir = self.temp_root / 'tftpboot/pxelinux'
 
-        self.kit = test_kits / 'mock-FC-6-i386-disc1.iso'
-        self.kit2 = test_kits / 'mock-FC-6-i386-disc2.iso'
+        self.kit_iso1 = 'mock-FC-6-i386-disc1.iso' 
+        self.kit_iso2 = 'mock-FC-6-i386-disc2.iso' 
+        self.kit1 = test_kits_path / self.kit_iso1
+        self.kit2 = test_kits_path / self.kit_iso2
+        if not self.kit1.exists():
+            downloadFiles(self.kit_iso1)
+        if not self.kit2.exists():
+            downloadFiles(self.kit_iso2)
+
         self.kit_name = 'fedora'
         self.kit_ver = '6'
         self.kit_arch = 'i386'
@@ -366,7 +378,7 @@ class TestFedoraCore6i386:
         self.kits_dir_ver = self.kits_dir_name / self.kit_ver
         self.kits_dir_arch = self.kits_dir_ver / self.kit_arch
 
-        assert self.kit.exists(), 'Fedora Core 6 i386 CD1 ISO does not exist!'
+        assert self.kit1.exists(), 'Fedora Core 6 i386 CD1 ISO does not exist!'
         assert self.kit2.exists(), 'Fedora Core 6 i386 CD2 ISO does not exist!'
 
         self.kusudb = kusudb
@@ -374,7 +386,7 @@ class TestFedoraCore6i386:
         self.kusudb.bootstrap()
 
         mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                  (self.kit, self.temp_mount), shell=True)
+                                  (self.kit1, self.temp_mount), shell=True)
         mountP.wait()
 
     def tearDown(self):
@@ -397,7 +409,7 @@ class TestFedoraCore6i386:
         add_echo = "N"
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
                                 'kitops -a -m %s %s -p %s &> /dev/null' %
-                                (self.kit, dbinfo_str, self.temp_root),
+                                (self.kit1, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
 
@@ -420,7 +432,7 @@ class TestFedoraCore6i386:
         add_echo = "y\n%s\nN" % self.kit2
         addP = subprocess.Popen('echo "%s" | ' % add_echo +
                                 'kitops -a -m %s %s -p %s &> /dev/null' %
-                                (self.kit, dbinfo_str, self.temp_root),
+                                (self.kit1, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
 
@@ -612,3 +624,9 @@ def databaseCleanup():
             os.unlink('/tmp/kusu-test-kitops.db')
         except:
             pass
+
+def downloadFiles(fn):
+    if not test_kits_path.exists():
+        test_kits_path.makedirs()
+
+    urllib.urlretrieve(test_kits_url + fn, test_kits_path / fn)
