@@ -183,7 +183,7 @@ msgid "addhost_update_usage"
 msgstr "Updates configurations on the installer node the tool is run from"
 
 msgid "addhost_window_title_nodegroup"
-msgstr "Select Node Group"
+msgstr "Select node group"
 
 msgid "addhost_instruction_nodegroup"
 msgstr "Select the node group to use for the installation of new nodes."
@@ -585,11 +585,32 @@ msgstr "Node Selection"
 msgid "nghosts_instruction_select_node"
 msgstr "Select node(s) from a node group to move to a new node group."
 
+msgid "nghosts_window_title_select_nodegroup"
+msgstr "Node group selection"
+
+msgid "nghosts_instruction_select_nodegroup"
+msgstr "Select node group(s) to move all it's nodes to a new node group."
+
 msgid "nghosts_window_title_exit"
 msgstr "Exit nghosts?"
 
 msgid "nghosts_instructions_exit"
 msgstr "Do you want to quit the Network membership editor?"
+
+msgid "nghosts_window_title_move_prompt"
+msgstr "Move nodes prompt"
+
+msgid "nghosts_instructions_move_nodes"
+msgstr "Do you wish to move the selected node(s) to the new node group?"
+
+msgid "nghosts_instructions_move_nodegroups"
+msgstr "Do you wish to move the nodes in the selected node group(s) to the new node group?"
+
+msgid "nghosts_moving_nodes"
+msgstr "Moving nodes"
+
+msgid "nghosts_moving_nodes_progress"
+msgstr "Moving nodes, please wait..."
 
 # ngedit
 
