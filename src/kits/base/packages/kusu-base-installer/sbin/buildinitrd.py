@@ -336,7 +336,7 @@ class BuildInitrd:
                                % (self.imagedir, pattern) )
                 sys.exit(-1)
         pythondir = "%s" % flist[0]
-        os.system('cp -r /opt/kusu/lib/kusu/* \"%s\"' % pythondir)
+        os.system('cp -r /opt/kusu/lib/python/kusu/* \"%s\"' % pythondir)
         os.system('cp /opt/kusu/etc/imageinit.py \"%s\"' % self.imagedir)
         file = '%s/imageinit.py' % self.imagedir
         # print 'Running:  cp /opt/kusu/etc/imageinit.py %s' % file

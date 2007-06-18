@@ -20,6 +20,7 @@
 
 import sys
 from kusu.genconfig import Report
+from kusu.ipfun import *
 
 class thisReport(Report):
 
@@ -47,6 +48,10 @@ class thisReport(Report):
         leasetime = self.db.getAppglobals('DHCPLeaseTime')
         if not leasetime:
             leasetime = 2400
+
+        # Get the DNS
+        dnsdomain = self.db.getAppglobals('DNSZone')
+        
 
         # Now get the networks
         query = ('select networks.network, networks.subnet, '
@@ -80,10 +85,16 @@ class thisReport(Report):
                 print '\toption routers %s;' % gateway
                 print '\toption subnet-mask %s;' % subnet
                 
-
+                if dnsdomain:
+                    print '\toption domain-name %s;' % dnsdomain
+                    
                 #option domain-name "local";
                 #option domain-name-servers 10.101.1.1;
+<<<<<<< .mine
+                #option nis-domain "socks";
+=======
                 #option nis-domain "kusu";
+>>>>>>> .r1407
                 #option broadcast-address 10.255.255.255;
                 print '\tif substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {'
                 print '\t\tfilename  "pxelinux.0";'
@@ -97,8 +108,7 @@ class thisReport(Report):
                 # Now cycle through the nodes on for this
                 query = ('select nodes.name, nics.ip, nics.mac, networks.suffix '
                          'from networks,nics,nodes where nodes.nid=nics.nid and '
-                         'nics.netid=networks.netid and nics.boot=1 '
-                         'and networks.netid="%s"' % netid)
+                         'nics.netid=networks.netid and nics.boot=1 ')
 
                 try:
                     self.db.execute(query)
@@ -110,11 +120,14 @@ class thisReport(Report):
                 dhcpdata = self.db.fetchall()
                 if dhcpdata:
                     for row in dhcpdata:
-                        print '\thost %s {' % row[0]
-                        print '\t\thardware ethernet %s;' % row[2]
-                        print '\t\toption host-name "%s";' % row[0]
-                        print '\t\tfixed-address %s;' % row[1]
-                        print '\t}'
+                        # Test to see if this nodes IP lies on the same network
+                        # as this DHCP section
+                        if onNetwork(netmask, subnet, row[1]):
+                            print '\thost %s {' % row[0]
+                            print '\t\thardware ethernet %s;' % row[2]
+                            print '\t\toption host-name "%s";' % row[0]
+                            print '\t\tfixed-address %s;' % row[1]
+                            print '\t}'
 
                 print '}'
         else:

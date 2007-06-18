@@ -79,6 +79,9 @@ verbose_kmsg
 
 /imageinit.py
 
+if [ -f /tmp/imageinit.log ] ; then
+    cp /tmp/imageinit.log ${NEW_ROOT}/tmp/imageinit.log
+fi
 
 # Install symlinks to all the busybox applets
 # busybox --install -s
@@ -92,4 +95,4 @@ verbose_kmsg
 exec switch_root ${NEW_ROOT} ${NEW_INIT}
 
 echo "exec switch_root failed, debugging time again..."
-/bin/ash
+/bin/bash

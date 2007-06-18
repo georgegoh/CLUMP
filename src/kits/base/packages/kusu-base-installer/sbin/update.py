@@ -100,7 +100,8 @@ class UpdateApp(KusuApp):
 
         if self.options.updatefile:
             size = pb.updateCFMdir()
-            print "Distributing %i KBytes to all nodes." % (size / 1024)
+            if size:
+                print "Distributing %i KBytes to all nodes." % (size / 1024)
             
         pb.genFileList()
 

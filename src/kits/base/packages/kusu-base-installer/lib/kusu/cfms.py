@@ -29,7 +29,7 @@ import pwd
 import grp
 from stat import *
 
-from kusu.kusudb import KusuDB
+from kusu.core.db import KusuDB
 from kusu.cfmnet import CFMNet
 import ipfun 
 

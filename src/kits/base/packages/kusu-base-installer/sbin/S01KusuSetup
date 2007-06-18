@@ -19,6 +19,9 @@
 #
 # 
 
+VERSION=5.0
+
+
 export PYTHONPATH=/opt/kusu/lib/python
 
 echo "Configuring this node as an Installer"
@@ -42,7 +45,7 @@ fi
 if [ ! -f /etc/xinetd.d/rsync ] ; then
     echo "ERROR:  Xinetd config for rsync not found"
 else
-    # Fix the tftp config file
+    # Fix the rsync config file
     awk -F' ' ' $1 == "disable"  { print "        disable       = no" }
                 $1 != "disable"  { print $0 }' < /etc/xinetd.d/rsync > /etc/xinetd.d/rsync.new
     mv /etc/xinetd.d/rsync.new /etc/xinetd.d/rsync
@@ -55,6 +58,8 @@ if [ -f /etc/init.d/xinetd ] ; then
 else
     echo "ERROR:  Can't find xinetd startup script"
 fi
+chkconfig xinetd on
+
 
 
 # Copy over a kernel and initrd to play with
@@ -92,5 +97,35 @@ else
     else
 	echo "ERROR:  Cannot find genconfig"
     fi
+    chkconfig httpd on
+fi
+
+
+# Prepare Mysql
+if [ -f /etc/init.d/mysqld ]; then
+    chkconfig mysqld on
+
+    /etc/init.d/mysqld stop
+    /etc/init.d/mysqld start
+    chkconfig mysqld on
+    
+    # Create default database
+    /usr/bin/mysqladmin create kusudb
+    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_createdb.sql
+    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_alterdb.sql
+
+    # Set some sample values in the database table
+    # /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_primedb_sample.sql
+
+    # Set user permissions
+    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
+else
+    echo "ERROR:  Could not find mysqld"
 
 fi
+
+# Add entry to motd
+echo "Kusu $VERSION Installer Node" >> /etc/motd
+
+# Remove this file so it does not run again.
+rm -rf /etc/rc.kusu.d/S01KusuSetup

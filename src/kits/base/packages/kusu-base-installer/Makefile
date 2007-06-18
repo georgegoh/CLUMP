@@ -46,6 +46,7 @@ lang:
         cp kusuapps.mo ../locale/en/LC_MESSAGES/`
 
 install::
+	mkdir -p $(ROOT)/etc/cfm
 	mkdir -p $(ROOT)/etc/rc.kusu.d
 	mkdir -p $(ROOT)/tftpboot/kusu/pxelinux.cfg
 	mkdir -p $(ROOT)/opt/kusu/sbin
@@ -75,6 +76,7 @@ install::
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/cfmnet.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/ui/text/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text

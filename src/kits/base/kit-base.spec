@@ -54,9 +54,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/repo/www/kits/%{name}/%{version}/index.html
-/repo/www/kits/%{name}/%{version}/readme.html
-/repo/www/kits/%{name}/%{version}/COPYING
+/depot/www/kits/%{name}/%{version}/index.html
+/depot/www/kits/%{name}/%{version}/readme.html
+/depot/www/kits/%{name}/%{version}/COPYING
 
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py

@@ -89,7 +89,7 @@ class thisReport(Report):
         #print '\tAddHandler mod_python .py'
         #print '\tPythonHandler mod_python.publisher'
         #print '\tPythonDebug On'
-        print '\tSetEnv PYTHONPATH /opt/kusu/lib'
+        print '\tSetEnv PYTHONPATH /opt/kusu/lib/python'
         print '\tAddHandler cgi-script cgi'
         print '\tAllowOverride None'
         print '\tOrder deny,allow'

@@ -1,4 +1,6 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# $Id$
+#
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -14,9 +16,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
-# 
-
 
 Summary: Base Kit for Nodes
 Name: kusu-base-node
@@ -62,6 +61,13 @@ This package contains the Kusu Base kit part for nodes.
 ## POST
 ##
 %post
+if [ -e /etc/rc.local ]; then
+	echo "# Kusu post install script runner" >> /etc/rc.local
+        echo "if [ -x /etc/rc.kusu.sh ]; then" >> /etc/rc.local
+	echo "    /etc/rc.kusu.sh" >> /etc/rc.local
+	echo "fi" >> /etc/rc.local
+fi
+	
 
 ##
 ## PREUN
