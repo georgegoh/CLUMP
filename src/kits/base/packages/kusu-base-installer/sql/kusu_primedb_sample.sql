@@ -20,7 +20,7 @@
 
 # Setup a default repo and kits
 insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer00", 'fedora-6-i386') ;
-insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'RHEL5.1') ;
+insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'rhel-5.1-i386') ;
 insert into repos values (3, "Fedora_7", "/depot/repos/3", "installer00", 'fedora-7-x86_64') ;
 
 insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 0, 0, "i386") ;
@@ -373,12 +373,12 @@ insert into scripts values (3, 1, '/depot/repos/custom_scripts/bogus-installer.s
 insert into scripts values (4, 1, '/depot/repos/custom_scripts/more-bogus-installer.sh') ;
 
 # Components
-insert into components values (1, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'Fedora6.0') ;
-insert into components values (2, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'RHEL5.1') ;
-insert into components values (3, 8, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'Fedora7.0') ;
-insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora6.0') ;
-insert into components values (5, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'RHEL5.1') ;
-insert into components values (6, 8, 'component-base-node', 'This component provides the bits needed for all nodes', 'Fedora7.0') ;
+insert into components values (1, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'fedora-6-i386') ;
+insert into components values (2, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'rhel-5.1-i386') ;
+insert into components values (3, 8, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'fedora-7-x86_64') ;
+insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'fedora-6-i386') ;
+insert into components values (5, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'rhel-5.1-i386') ;
+insert into components values (6, 8, 'component-base-node', 'This component provides the bits needed for all nodes', 'fedora-7-x86_64') ;
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1) ;
