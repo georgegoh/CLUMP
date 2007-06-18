@@ -56,11 +56,20 @@ msgstr "Next"
 msgid "previous_button"
 msgstr "Previous"
 
+msgid "prev_button"
+msgstr "Previous"
+
+msgid "back_button"
+msgstr "Back"
+
 msgid "new_button"
 msgstr "New"
 
 msgid "edit_button"
 msgstr "Edit"
+
+msgid "copy_button"
+msgstr "Copy"
 
 msgid "delete_button"
 msgstr "Delete"
