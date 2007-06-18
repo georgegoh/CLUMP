@@ -552,12 +552,10 @@ class NodeFun(object, KusuApp):
             return None
 
     def moveNodegroups(self, groupList, destGroup):
-         dataList = {}
          macList = {}
-         badList = []
          dupeList = []
+         nodeList = []
          interfaceName = ""
-         badflag = 0
          
          self.setNodegroupByName(destGroup)
          # Check for valid nodegroup.
@@ -571,10 +569,14 @@ class NodeFun(object, KusuApp):
          for dupegroup in dupeList:
              groupList.remove(dupegroup)
     
-         # Go thouch
-         #for group in groupList:
-     
-         return groupList, macList, badList, interfaceName
+         # Get a list of nodes for all the nodegroups.
+         for group in groupList:
+             self._dbReadonly.execute("SELECT nodes.name FROM nodes, nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group)
+             nodes = self._dbReadonly.fetchall()
+             for node in nodes:
+                 nodeList.append(node[0])
+         
+         return self.moveNodes(nodeList, destGroup)
 
     def moveNodes(self, nodeList, nodegroupname):
         dataList = {}
@@ -928,12 +930,3 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
 
-#if __name__ == "__main__":
-#    myNodeFun = NodeFun()
-#
-#    movenodes = ["installer01", "installer02"]
-#    moveList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "Compute Diskless")
-#    if (moveList, macList, badList):
-#        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
-#        print "\t* badList = %s" % badList
-#        print "Interface = %s" % interface
