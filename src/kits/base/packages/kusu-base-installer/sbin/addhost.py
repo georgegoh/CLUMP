@@ -487,7 +487,7 @@ class NodeGroupWindow(USXBaseScreen):
         else:
             if len(myNodeInfo.nodesInstalled):
                 pluginActions.plugins_finished()
-        return NAV_NOTHING
+            return NAV_QUIT
  
     def exitAction(self, data=None):
         """ExitAction()
