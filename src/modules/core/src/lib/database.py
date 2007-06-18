@@ -338,7 +338,7 @@ class DB(object):
         appglobals = sa.Table('appglobals', self.metadata,
             sa.Column('agid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('kname', sa.String(20)),
-            sa.Column('kvalue', sa.String(255)),
+            sa.Column('kvalue', sa.String(255), unique=True),
             sa.Column('ngid', sa.Integer),
             mysql_engine='InnoDB')
 
@@ -379,7 +379,7 @@ class DB(object):
             sa.Column('suffix', sa.String(20)),
             sa.Column('gateway', sa.String(45)),
             sa.Column('options', sa.String(255)),
-            sa.Column('netname', sa.String(255)),
+            sa.Column('netname', sa.String(255), unique=True),
             sa.Column('startip', sa.String(45)),
             sa.Column('inc', sa.Integer, sa.PassiveDefault('1')),
             sa.Column('usingdhcp', sa.Boolean, sa.PassiveDefault('0')),
@@ -451,7 +451,7 @@ class DB(object):
         nodes = sa.Table('nodes', self.metadata,
             sa.Column('nid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('ngid', sa.Integer, sa.ForeignKey('nodegroups.ngid'), nullable=False),
-            sa.Column('name', sa.String(45)),
+            sa.Column('name', sa.String(45), unique=True),
             sa.Column('kernel', sa.String(255)),
             sa.Column('initrd', sa.String(255)),
             sa.Column('kparams', sa.String(255)),
