@@ -199,6 +199,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
         master = db.NodeGroups.selectfirst_by(ngname='master')
         master_node = db.Nodes.selectfirst_by(name='master-0')
+        primary_installer = db.AppGlobals(kname='PrimaryInstaller',
+                                          kvalue='master-0')
 
         interfaces = profile['interfaces']
 
