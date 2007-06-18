@@ -191,36 +191,38 @@ Node: node0000
                                                             'pv_list': [{'disk': 1, 'partition': 3}]}}}
 
 
-        self.expectedSchema3 = {'disk_dict': {}, 'vg_dict': {}}
-        self.expectedSchema3['disk_dict'][1] = {'fill': False,
-                                                'fs': u'ext3',
-                                                'mountpoint': u'/boot',
-                                                'size_MB': 100}
+        self.expectedSchema3 = {'disk_dict': {1:{'partition_dict': {}}}, 'vg_dict': {}}
+        disk1part_dict = self.expectedSchema3['disk_dict'][1]['partition_dict']
+        disk1part_dict[1] = {'fill': False,
+                             'fs': u'ext3',
+                             'mountpoint': u'/boot',
+                             'size_MB': 100}
 
-        self.expectedSchema3['disk_dict'][2] = {'fill': False,
-                                                'fs': u'linux-swap',
-                                                'mountpoint': None,
-                                                'size_MB': 1000}
+        disk1part_dict[2] = {'fill': False,
+                             'fs': u'linux-swap',
+                             'mountpoint': None,
+                             'size_MB': 1000}
 
-        self.expectedSchema3['disk_dict'][3] = {'fill': False,
-                                                'fs': u'physical volume',
-                                                'mountpoint': None,
-                                                'size_MB': 2000}
+        disk1part_dict[3] = {'fill': False,
+                             'fs': u'physical volume',
+                             'mountpoint': None,
+                             'size_MB': 2000}
 
-        self.expectedSchema3['disk_dict'][4] = {'fill': True,
-                                                'fs': u'physical volume',
-                                                'mountpoint': None,
-                                                'size_MB': 4000}
+        disk1part_dict[4] = {'fill': True,
+                             'fs': u'physical volume',
+                             'mountpoint': None,
+                             'size_MB': 4000}
 
         self.expectedSchema3['vg_dict'][u'VolGroup00'] = {'extent_size': u'32M'}
         self.expectedSchema3['vg_dict'][u'VolGroup00']['pv_list'] = [{'disk': 1, 'partition': 3}]
-        root_lv = {'fill': True, 'fs': u'ext3', 'mountpoint': u'/', 'size_MB': 2000}
-        self.expectedSchema3['vg_dict'][u'VolGroup00']['vg_dict'] = {u'ROOT': root_lv}
+        root_lv = {'fill': False, 'fs': u'ext3', 'mountpoint': u'/', 'size_MB': 2000}
+        self.expectedSchema3['vg_dict'][u'VolGroup00']['lv_dict'] = {u'ROOT': root_lv}
 
         self.expectedSchema3['vg_dict'][u'VolGroup01'] = {'extent_size': u'32M'}
         self.expectedSchema3['vg_dict'][u'VolGroup01']['pv_list'] = [{'disk': 'N', 'partition': 'N'}]
+        self.expectedSchema3['vg_dict'][u'VolGroup01']['pv_span'] = True
         depot_lv = {'fill': True, 'fs': u'ext3', 'mountpoint': u'/depot', 'size_MB': 4000}
-        self.expectedSchema3['vg_dict'][u'VolGroup01']['vg_dict'] = {u'DEPOT': depot_lv}
+        self.expectedSchema3['vg_dict'][u'VolGroup01']['lv_dict'] = {u'DEPOT': depot_lv}
        
         
     def tearDown(self):
@@ -374,5 +376,5 @@ Node: node0000
         adaptedSchema = adaptNIIPartition(self.niipartition2)
         assert self.expectedSchema2 == adaptedSchema
 
-#        adaptedSchema = adaptNIIPartition(self.niipartition3)
-#        assert self.expectedSchema3 == adaptedSchema
+        adaptedSchema = adaptNIIPartition(self.niipartition3)
+        assert self.expectedSchema3 == adaptedSchema

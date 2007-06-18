@@ -7,11 +7,9 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
-import exceptions
-
 
 # General
-class KusuError(exceptions.Exception): pass
+class KusuError(Exception): pass
 class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
@@ -116,5 +114,3 @@ class FailedBuildMake(KusuError): pass
 # nodeinstaller
 class EmptyNIISource(KusuError): pass
 class InvalidPartitionSchema(KusuError): pass
-
-

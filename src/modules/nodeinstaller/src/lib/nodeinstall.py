@@ -39,11 +39,12 @@ def translatePartitionNumber(value):
         partitiontool partition number which is an integer
     """
     try:
-        return int(value)
+        retVal = int(value)
     except ValueError:
         if value.strip().lower() == 'n':
-            return 'N'
-        return 0
+            retVal = 'N'
+        retVal = 0
+    return retVal
 
 def translatePartitionSize(value):
     """ Translate NII partition size which is a string into
@@ -181,9 +182,16 @@ def adaptNIIPartition(niipartition):
 
         # create the normal volumes.
         for partinfo in part_list:
-            createPartition(partinfo, schema['disk_dict'])
+            createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
             pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
             if pv: handlePV(partinfo, vg_name, schema['vg_dict'])
+        # renumber spanning partitions
+        for disk in schema['disk_dict'].itervalues():
+            part_dict = disk['partition_dict']
+            if part_dict.has_key('N'):
+                partition = part_dict['N']
+                part_dict[len(part_dict)] = partition
+                del part_dict['N']
 
         # create the logical volumes.
         for lvinfo in lv_list:
@@ -220,19 +228,32 @@ def filterPartitionEntries(partition_entries):
     return part_list, vg_list, lv_list
 
 
-def createPartition(partinfo, disk_dict):
+def createPartition(partinfo, disk_dict, vg_dict):
     """ Create a new partition and add it to the supplied disk dictionary."""
     try:
         disknum = int(partinfo['device'])
+        part_no = translatePartitionNumber(partinfo['partition'])
+    except ValueError:
+        if partinfo['device'].lower() == 'n':
+            handleSpanningPartition(partinfo, disk_dict, vg_dict)
+            disknum = 1
+            part_no = 'N'
+        else:
+            raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
+    try:
         size = translatePartitionSize(partinfo['size'])
         fs = translateFSTypes(partinfo['fstype'])
         mountpoint = translateMntPnt(partinfo['mntpnt'])
         fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
-        part_no = translatePartitionNumber(partinfo['partition'])
     except ValueError:
-        raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields."
+        raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
+                                      "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
+                                      "part_no=%s" % (partinfo['device'], partinfo['size'], \
+                                      partinfo['fstype'], partinfo['mntpnt'], \
+                                      partinfo['options'], partinfo['partition'])
  
-    if part_no <= 0: raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+    if part_no != 'N' and part_no <= 0:
+        raise InvalidPartitionSchema, "Partition number cannot be less than 1."
     partition = {'size_MB': size, 'fill': fill,
                  'fs': fs, 'mountpoint': mountpoint}
 
@@ -240,6 +261,12 @@ def createPartition(partinfo, disk_dict):
     else: disk = {'partition_dict': {}}
     disk['partition_dict'][part_no] = partition
     disk_dict[disknum] = disk
+
+def handleSpanningPartition(partinfo, disk_dict, vg_dict):
+    is_pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+    if not is_pv:
+        raise InvalidPartitionSchema, "Partition marked as spanning multiple disks, but not as physical volumes."
+    vg_dict[vg_name]['pv_span'] = True
 
 
 def handlePV(partinfo, vg_name, vg_dict):
@@ -250,7 +277,13 @@ def handlePV(partinfo, vg_name, vg_dict):
         disknum = int(partinfo['device'])
         part_no = translatePartitionNumber(partinfo['partition'])
     except ValueError:
-        raise InvalidPartitionSchema, "Couldn't parse one of the LVM physical volume fields."
+        if partinfo['device'].lower() == 'n':
+            disknum = 'N'
+            part_no = 'N'
+        else:
+            raise InvalidPartitionSchema, "Couldn't parse one of the LVM physical volume fields. " + \
+                                          "disknum=%s, part_no=%s" % \
+                                          (partinfo['device'], partinfo['partition'])
 
     vg['pv_list'].append({'disk': disknum, 'partition': part_no})
 
