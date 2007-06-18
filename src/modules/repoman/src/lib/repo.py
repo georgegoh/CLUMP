@@ -10,6 +10,7 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
+from Cheetah.Template import Template
 import sqlalchemy as sa
 import os
 
@@ -267,7 +268,6 @@ class RedhatYumRepo(BaseRepo):
             # during testing and updates.img will not be present.
             src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
-
         else:
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
@@ -275,6 +275,42 @@ class RedhatYumRepo(BaseRepo):
         if src.exists():
             dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
             (dest.parent.relpathto(src)).symlink(dest)
+
+    def makeKickstart(self):
+        kusu_root = os.environ.get('KUSU_ROOT', None)
+
+        if not kusu_root:
+            kusu_root = 'opt/kusu' 
+
+        # Testing mode
+        if self.debug:
+            src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
+        else:
+            src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
+ 
+        if src.exists():
+            dest = self.repo_path / 'ks.cfg'
+
+            row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
+            row = row[0]
+            masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+            niihost = 'http://' + masterNode.nics[0].ip
+
+            # web server root is different: /repos/<repoid>
+            index = self.repo_path.splitall().index('repos')
+            repodir = os.path.sep.join(self.repo_path.splitall()[index:])
+
+            f = open(dest, 'w')
+            try:
+                t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': repodir}])  
+            except:
+                f.close()
+                raise UnableToGenerateFileFromTemplateError, 'Cannot create \'%s\'' % dest
+
+            f.write(str(t))
+            f.close()
 
     def verify(self):
         return True
@@ -294,6 +330,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyKusuNodeInstaller()
             self.makeComps()
             self.makeMetaInfo()
+            self.makeKickstart()
             self.verify()
         except Exception, e:
             # Don't use self.delete(), since is unsure state
@@ -326,8 +363,10 @@ class RedhatYumRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyRamDisk()
+            self.copyKusuNodeInstaller()
             self.makeComps()
             self.makeMetaInfo()
+            self.makeKickstart()
             self.verify()
         except KusuError, e:
             raise e

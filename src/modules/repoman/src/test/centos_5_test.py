@@ -58,11 +58,24 @@ class TestCentos5Repo:
         self.dbs = db.DB('sqlite', kusudb)
         self.dbs.createTables()
     
+        # Network
+        network = db.Networks()
+        network.network = '10.0.0.0'
+        network.subnet = '255.0.0.0'
+        network.device = 'eth0'
+        network.save()
+        network.flush()
+
         # nodegroup
+        node = db.Nodes(name='master-0')
+        self.masterIP = '10.1.1.1'
+        node.nics.append(db.Nics(ip=self.masterIP, netid=network.netid))
+
         installer = db.NodeGroups(ngname='installer nodegroup') 
+        installer.nodes.append(node)
         installer.save()
         installer.flush()
-      
+
         # Kits + components
         osKit = db.Kits()
         osKit.rname = 'centos'
@@ -89,6 +102,10 @@ class TestCentos5Repo:
         installer.save() 
         installer.flush()
 
+        appglobals = db.AppGlobals(kname='PrimaryInstaller', kvalue='master-0')
+        appglobals.save()
+        appglobals.flush()
+
         dirs = []
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
         dirs.append(prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'centos' / '5' / 'i386')
@@ -111,6 +128,10 @@ class TestCentos5Repo:
 
         download('comps.xml', \
                  prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'repodata' / 'comps.xml')
+
+        download('ks.cfg.tmpl', \
+                 prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'centos' / '5' / 'i386' / 'ks.cfg.tmpl')
+
 
     def tearDown(self):
         global prefix
@@ -158,6 +179,21 @@ class TestCentos5Repo:
 
         assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
 
+    def testKickstartGeneration(self):
+        global prefix
+
+        r = repo.Centos5Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup', 'a repo during testing')
+        repoid = str(r.repoid)
+
+        assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg').exists()
+      
+        f = open(prefix / 'depot' / 'repos' / repoid / 'ks.cfg', 'r')
+        assert f.readlines()[1].strip()  == 'url --url http://%s/repos/%s' % (self.masterIP, repoid)
+
+        f.close() 
+ 
     def testMake(self):
         global prefix
  
