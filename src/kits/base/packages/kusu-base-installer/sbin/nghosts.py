@@ -197,63 +197,68 @@ class SelectNodesWindow(USXBaseScreen):
             self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
             return NAV_NOTHING
 
-        moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
+        result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
+                 self.kusuApp._("nghosts_instructions_move_nodes"), (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
 
-        # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
-        # to the new destination node group.
-        if not moveList:
-           self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.nodegroupRadio.getSelection())
+            # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
+            # to the new destination node group.
+            if not moveList:
+               self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.nodegroupRadio.getSelection())
 
-        else:
-           nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
-           nodeRecord.getNodeFormat()
-           # Check if the selected node format has a rack if so, prompt for it.
-           if nodeRecord.isNodenameHasRack():
-               # Prompt user for Rack
-               needRack = True
-               while flag:
-                   buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
-                   self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
-                   NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
-                   try:
-                       result = int(result[0])
-                       if result < 0:
-                           self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
-                           self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
-                           flag = 1
-                       else:
-                           rack = result
-                           flag = 0
-                   except:
-                       self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
-                       self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
-                       flag = 1
+            else:
+               nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
+               nodeRecord.getNodeFormat()
+               # Check if the selected node format has a rack if so, prompt for it.
+               if nodeRecord.isNodenameHasRack():
+                   # Prompt user for Rack
+                   needRack = True
+                   while flag:
+                      buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
+                      self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
+                      NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
+                      try:
+                          result = int(result[0])
+                          if result < 0:
+                              self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                              self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                              flag = 1
+                          else:
+                              rack = result
+                              flag = 0
+                      except:
+                          self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                          self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                          flag = 1
 
-           if badList:
-              self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
+            if badList:
+                self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
 
-           # Create Temp file
-           (fd, tmpfile) = tempfile.mkstemp()
-           tmpname = os.fdopen(fd, 'w')
-           for node in moveList:
-              tmpname.write("%s\n" % macList[node])
-           tmpname.close()
+            # Create Temp file
+            (fd, tmpfile) = tempfile.mkstemp()
+            tmpname = os.fdopen(fd, 'w')
+            for node in moveList:
+               tmpname.write("%s\n" % macList[node])
+            tmpname.close()
 
-           # Call addhosts to delete these nodes
-           progDialog = ProgressDialogWindow(self.screen, "Moving Nodes", "Moving nodes, please wait...")
+            # Call addhosts to delete these nodes
+            progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
 
-           os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
+            os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
-           # Add these back using mac file
-           if needRack:
-              os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
-           else:
-              os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
+            # Add these back using mac file
+            if needRack:
+                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
+            else:
+                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
 
-           # Remove temp file
-           os.remove(tmpfile)
-           progDialog.close()
-           self.screen.refresh()
+            # Remove temp file
+            os.remove(tmpfile)
+            progDialog.close()
+            self.screen.refresh()
         
         return NAV_NOTHING
         
@@ -292,7 +297,8 @@ class SelectNodesWindow(USXBaseScreen):
     
         for nodegroup in nodegroups:
             query = "SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
-            nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND nodegroups.ngname = '%s' ORDER BY nodes.name" % nodegroup[0]
+            nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND \
+            nodegroups.ngname = '%s' ORDER BY nodes.name" % nodegroup[0]
         
             try:
                 self.database.connect()
@@ -312,7 +318,7 @@ class SelectNodesWindow(USXBaseScreen):
             for node in nodes:
                 self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
                 self.nodegroupDict[nodegroup[0]].append(node[0])
-            
+
             if len(nodes) > 0:
                 count += 1
  
@@ -343,12 +349,84 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            return NAV_QUIT
+            self.screen.finish()
+            sys.exit(0)
         else:
             return NAV_NOTHING
-                
+ 
     def moveAction(self):
-        return NAV_QUIT
+        flag = 1
+        rack = 0
+        needRack = False
+        nodeRecord = NodeFun()
+
+        if self.srcNodegroupsCheckbox.getSelection() == None or self.destNodegroupRadio.getSelection() == None:
+            self.selector.popupMsg(self.kusuApp._("Error"), "No node groups selected or destination node group selected.")
+            return NAV_NOTHING
+
+        result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
+                 self.kusuApp._("nghosts_instructions_move_nodegroups"), (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            moveList, macList, badList, interface = nodeRecord.moveNodegroups(self.srcNodegroupsCheckbox.getSelection(), self.destNodegroupRadio.getSelection())
+
+            # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
+            # to the new destination node group.
+            if not moveList:
+                self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.destNodegroupRadio.getSelection())
+
+            else:
+                nodeRecord.setNodegroupByName(self.destNodegroupRadio.getSelection())
+                nodeRecord.getNodeFormat()
+                # Check if the selected node format has a rack if so, prompt for it.
+                if nodeRecord.isNodenameHasRack():
+                    # Prompt user for Rack
+                    needRack = True
+                    while flag:
+                       buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
+                       self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
+                       NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
+                       try:
+                          result = int(result[0])
+                          if result < 0:
+                              self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                              self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
+                              flag = 1
+                          else:
+                              rack = result
+                              flag = 0
+                       except:
+                          self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                          self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
+                          flag = 1
+
+            if badList:
+                self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupRadio.getSelection()))
+
+            # Create Temp file
+            (fd, tmpfile) = tempfile.mkstemp()
+            tmpname = os.fdopen(fd, 'w')
+            for node in moveList:
+                 tmpname.write("%s\n" % macList[node])
+            tmpname.close()
+
+            # Call addhosts to delete these nodes
+            progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
+            os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
+
+            # Add these back using mac file
+            if needRack:
+                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
+            else:
+                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
+
+            # Remove temp file
+            os.remove(tmpfile)
+            progDialog.close()
+            self.screen.refresh()
+
+        return NAV_NOTHING
  
     def previousAction(self):
         return NAV_QUIT
@@ -361,8 +439,11 @@ class SelectNodegroupsWindow(USXBaseScreen):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
         self.buttonsDict['quit_button'].setCallback_(self.quitAction)
-        self.hotkeysDict['F5'] = self.previousAction
+
+        self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.moveAction
+        self.hotkeysDict['F5'] = self.previousAction
+
         
     def drawImpl(self):
         nodegroupList = []
@@ -464,6 +545,7 @@ class MembershipMainWindow(USXBaseScreen):
         
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.nextAction
+
         
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
