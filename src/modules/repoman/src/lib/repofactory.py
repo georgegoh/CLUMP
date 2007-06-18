@@ -33,7 +33,7 @@ class RepoFactory(object):
         """Creates and make a new repository"""
         
         os_name, os_version, os_arch = repo.getOS(self.db, ngname)
-        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.make(ngname, reponame)
 
         return r
@@ -46,7 +46,7 @@ class RepoFactory(object):
     def refresh(self, repoid):
         """Refresh the repository"""
         os_name, os_version, os_arch = repo.getOS(self.db, repoid)
-        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.refresh(repoid)
 
         return r
@@ -59,7 +59,7 @@ class RepoFactory(object):
         """Delete the repository from the database and local disk"""
         
         os_name, os_version, os_arch = repo.getOS(self.db, repoid)
-        r = self.class_dict[os_name][os_version](os_version, os_arch, self.prefix, self.db)
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.delete(repoid)
         
         return r

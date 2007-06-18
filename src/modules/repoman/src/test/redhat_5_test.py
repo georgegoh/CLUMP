@@ -91,12 +91,14 @@ class TestRedhat5Repo:
 
         dirs = []
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
+        dirs.append(prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'rhel' / '5' / 'i386')
       
         for dir in dirs:
             dir.makedirs()
 
         (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
         (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
+        (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'rhel' / '5' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
             try:
@@ -148,7 +150,8 @@ class TestRedhat5Repo:
     def testRelativeLinks(self):
         global prefix
 
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
@@ -158,10 +161,21 @@ class TestRedhat5Repo:
             if p.islink():
                 assert not p.readlink().isabs()
 
+    def testNodeInstallerImg(self):
+        global prefix
+
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup', 'a repo during testing')
+        repoid = str(r.repoid)
+
+        assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
+
     def testMake(self):
         global prefix
 
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
@@ -179,11 +193,13 @@ class TestRedhat5Repo:
     def testDeleteRepo(self):
         global prefix
 
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
   
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -195,11 +211,13 @@ class TestRedhat5Repo:
     def testCleanRepo(self):
         global prefix
 
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -208,11 +226,13 @@ class TestRedhat5Repo:
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.Redhat5Repo('5', 'i386', prefix, self.dbs)
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.refresh(repoid)
 
         repoid = str(r.repoid)

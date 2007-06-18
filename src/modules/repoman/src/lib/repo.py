@@ -11,6 +11,7 @@ from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
 import sqlalchemy as sa
+import os
 
 try:
     import subprocess
@@ -58,10 +59,9 @@ class BaseRepo(object):
     repo_path = None
     os_path = None
     repoid = None
+    debug = False
 
-    def __init__(self, os_version, os_arch, prefix, db):
-        self.os_version = os_version
-        self.os_arch = os_arch
+    def __init__(self, prefix, db):
         self.prefix = prefix
         self.db = db
 
@@ -180,6 +180,10 @@ class BaseRepo(object):
         """copy the initrd/kernel/stage2.img/etc to the repository"""
         raise NotImplementedError
 
+    def copyKusuNodeInstaller(self):
+        """copy the kusu installer to the repository"""
+        NotImplementedError
+
     def makeRepoDirs(self):
         """creates the necessary repository directories"""
         raise NotImplementedError
@@ -187,9 +191,13 @@ class BaseRepo(object):
 class RedhatYumRepo(BaseRepo):
     """Base Redhat repository class"""
 
-    def __init__(self, os_version, os_arch, prefix, db):
-        BaseRepo.__init__(self, os_version, os_arch, prefix, db)
+    def __init__(self, os_name, os_version, os_arch, prefix, db):
+        BaseRepo.__init__(self, prefix, db)
     
+        self.os_name = os_name
+        self.os_version = os_version
+        self.os_arch = os_arch
+ 
     def copyKitsPackages(self):
         # Need a better method for this
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
@@ -243,8 +251,33 @@ class RedhatYumRepo(BaseRepo):
     def copyRamDisk(self):
         pass
         
+    def copyKusuNodeInstaller(self):
+        """copy the kusu installer to the repository"""
+
+        kusu_root = os.environ.get('KUSU_ROOT', None)
+
+        if not kusu_root:
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # since /opt/kusu is absolute
+            kusu_root = 'opt/kusu' 
+
+        # Testing mode
+        if self.debug:
+            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # during testing and updates.img will not be present.
+            src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+
+        else:
+            src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+    
+        if src.exists():
+            dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
+            (dest.parent.relpathto(src)).symlink(dest)
+
     def verify(self):
-        pass
+        return True
 
     def make(self, ngname, reponame):
         """makes the repository"""
@@ -258,6 +291,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyRamDisk()
+            self.copyKusuNodeInstaller()
             self.makeComps()
             self.makeMetaInfo()
             self.verify()
@@ -339,8 +373,8 @@ class RedhatYumRepo(BaseRepo):
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
 class Fedora6Repo(RedhatYumRepo):
-    def __init__(self, os_version, os_arch, prefix, db):
-        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
@@ -348,10 +382,11 @@ class Fedora6Repo(RedhatYumRepo):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
-       
+      
+
 class Centos5Repo(RedhatYumRepo):
-    def __init__(self, os_version, os_arch, prefix, db):
-        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
@@ -360,8 +395,8 @@ class Centos5Repo(RedhatYumRepo):
         self.dirlayout['rpmsdir'] = 'CentOS'
  
 class Redhat5Repo(RedhatYumRepo):
-    def __init__(self, os_version, os_arch, prefix, db):
-        RedhatYumRepo.__init__(self, os_version, os_arch, prefix, db)
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'rhel', '5', os_arch, prefix, db)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['imagesdir'] = 'images'

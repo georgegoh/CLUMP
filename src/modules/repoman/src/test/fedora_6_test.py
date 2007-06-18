@@ -90,12 +90,14 @@ class TestFedora6Repo:
 
         dirs = []
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
+        dirs.append(prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '6' / 'i386')
        
         for dir in dirs:
             dir.makedirs()
 
         (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
         (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
+        (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '6' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
             new_path = prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / p
@@ -135,9 +137,9 @@ class TestFedora6Repo:
     def testRelativeLinks(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
-
         repoid = str(r.repoid)
 
         for p in self.getPath():
@@ -148,12 +150,24 @@ class TestFedora6Repo:
     def testMake(self):
         global prefix
  
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
+    def testNodeInstallerImg(self):
+        global prefix
+
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup', 'a repo during testing')
+        repoid = str(r.repoid)
+
+        assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
+
+        
     def testGettingOS(self):
         global prefix
 
@@ -166,11 +180,13 @@ class TestFedora6Repo:
     def testDeleteRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
+        r.debug = True
         repoid = r.repoid
   
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -182,11 +198,13 @@ class TestFedora6Repo:
     def testCleanRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.make('installer nodegroup', 'a repo during testing')
+        r.debug = True
         repoid = r.repoid
  
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -195,11 +213,13 @@ class TestFedora6Repo:
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.make('installer nodegroup', 'a repo during testing')
         repoid = r.repoid
  
-        r = repo.Fedora6Repo('6', 'i386', prefix, self.dbs)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
         r.refresh(repoid)
 
         repoid = str(r.repoid)
