@@ -110,6 +110,7 @@ class UnsupportedDistro(KusuError): pass
 class InvalidKusuSource(KusuError): pass
 class FailedBuildCMake(KusuError): pass
 class FailedBuildMake(KusuError): pass
+class KitCopyError(KusuError): pass
 
 # nodeinstaller
 class EmptyNIISource(KusuError): pass

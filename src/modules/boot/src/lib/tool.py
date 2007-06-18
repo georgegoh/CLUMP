@@ -45,6 +45,44 @@ def makeDev(devtype,major,minor,devpath):
     
     os.system('mknod %s %s %s %s' % (dp,devtype,major,minor))
 
+def copyKitContents(kit,dst):
+    """ Copy kit contents into dst. Raises KitCopyError except if fails. """
+    
+    kit = path(kit).abspath()
+    dst = path(dst).abspath()
+    
+    if not kit.exists(): raise KitCopyError, 'Kit not found!'
+    if not dst.exists(): raise KitCopyError, 'Destination directory does not exist!'
+    
+    # handle the kit iso
+    if kit.exists():
+        cmd = 'losetup -f'
+        loopP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        v = loopP.communicate()[0]
+        if not v.startswith('/dev/loop'):
+            raise KitCopyError, 'No available loop devices!'
+            
+        # create mntpnt to hold kit
+        mountpt = path(tempfile.mkdtemp(dir='/tmp'))
+        cmd = 'mount -o loop %s %s' % (kit,mountpt)
+        mountP = subprocess.Popen(cmd,shell=True)
+        mountP.communicate()
+        
+        # copy the contents
+        cpio_copytree(mountpt,dst)
+        
+        cmd = 'umount %s' % mountpt
+        umountP = subprocess.Popen(cmd,shell=True)
+        umountP.communicate()
+        
+        # remove TRANS.TBL
+        for f in dst.walkfiles('TRANS.TBL'):
+            f.remove()
+        
+        if mountpt.exists(): mountpt.rmtree()
+
+    
+
 class KusuSVNSource:
     """ This class contains data and operations that work with the Kusu SVN source. """
     
@@ -270,9 +308,9 @@ class BootMediaTool:
         except FilePathError, e:
             raise e
             
-    def mkISOFromSource(self,srcpath,patchfile,kususrc,arch):
-        """ Creates Kusu Boot ISO based on installation source. This method
-            returns the isodir.
+    def mkISOFromSource(self,srcpath,patchfile,kususrc,arch,kit=None):
+        """ Creates Kusu Boot ISO based on installation source. If kit is available, add it into
+            the iso, This method returns the isodir.
         """
         d = DistroFactory(srcpath)
         kususrc = KusuSVNSource(kususrc)
@@ -323,12 +361,15 @@ class BootMediaTool:
                 # finally, add the .discinfo stub
                 discinfo = path(tmpdir / '.discinfo')
                 discinfo.touch()
-                
+
+                # copy the kit contents into tmpdir if kit is given
+                if kit: copyKitContents(kit,tmpdir)
+
                 return tmpdir
 
             else:
                 raise InvalidInstallSource, "Installation source not supported!"
-        except (FilePathError,InvalidInstallSource,InvalidKusuSource, UnsupportedDistro), e:
+        except (FilePathError,InvalidInstallSource,InvalidKusuSource, UnsupportedDistro, KitCopyError), e:
             raise e
         
     def mkImagesDir(self, srcpath, destdir, patchfile=None,overwrite=False):

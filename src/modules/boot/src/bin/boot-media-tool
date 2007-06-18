@@ -8,7 +8,6 @@
 
 import sys
 import os
-import subprocess
 from kusu.core.app import KusuApp
 from path import path
 from kusu.boot.distro import SUPPORTED_ARCH, SUPPORTED_DISTROS
@@ -25,7 +24,7 @@ class BootMediaApp(KusuApp):
         KusuApp.__init__(self)
         
         self.actions = {'query':['source'], 
-            'make-iso':['patch','iso','source','kususrc','arch'],
+            'make-iso':['patch','iso','source','kususrc','arch','kit'],
             'make-patch':['os','version','patch','kususrc','arch'],
             'make-ni-patch':['os','version','patch','kususrc','arch']}
         
@@ -49,13 +48,15 @@ actions:
                       this action: 
                         source=<path of installation source>
 
-    make-iso        - Make the Kusu Boot Media iso. Available arguments 
-                      for this action:
+    make-iso        - Make the Kusu Boot Media iso. If a kit is provided, it
+                      will be included in the Kusu Boot Media. Available 
+                      arguments for this action:
                         patch=<path of installer patchfile>
                         iso=<name of iso file>
                         arch=<architechure of OS>
                         source=<path of installation source>
                         kususrc=<directory containing Kusu Trunk>
+                        kit=<path of kit>
                         
     make-patch      - Make the installer patchfile from the Kusu Trunk SVN 
                       source. Available arguments for this action:
@@ -250,6 +251,7 @@ Example operation usages:
     def _makeIso(self,args):
         """Handler for make-iso. args is a dict of supported key-value pairs for this action. """
         patchfile = args.get('patch',None)
+        kit = args.get('kit',None)
         iso = path(args['iso']).abspath()
         arch = args.get('arch',None)
         srcpath = path(args['source']).abspath()
@@ -267,11 +269,26 @@ Example operation usages:
             self.printMsgExit(msg)
         
         if patchfile: patchfile = path(patchfile).abspath()
+        if patchfile.exists():
+            msg = self._('Detected %(patchfile)s. Including it into the Kusu Boot Media.' % {'patchfile':patchfile})
+            print msg
+        else:
+            msg = self._('Patch %(patchfile)s not found!' % {'patchfile':patchfile.basename()})
+            self.printMsgExit(msg)
+            
+        if kit: 
+            kit = path(kit).abspath()
+            if kit.exists():
+                msg = self._('Detected %(kit)s. Including it into the Kusu Boot Media.' % {'kit':kit})
+                print msg
+            else:
+                msg = self._('Kit %(kit)s not found!' % {'kit':kit.basename()})
+                self.printMsgExit(msg)
                   
         try:
             print self._('Creating temporary iso contents based on installation source and Kusu SVN source tree.')
             print self._('This may take awhile...')
-            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc,arch)
+            tmpdir = self.bminst.mkISOFromSource(srcpath,patchfile,kususrc,arch,kit)
             print self._('Generating Kusu Boot Media ISO.')
             self.bminst.mkBootISO(tmpdir, iso, volname="Kusu Boot Media")
             print self._('Generated %(iso)s') % {'iso':iso}
