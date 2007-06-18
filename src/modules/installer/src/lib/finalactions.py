@@ -67,7 +67,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     # Build kickstart object
     # Retrieve all the data required
-    ngname = 'installer-' + kiprofile['Kits']['longname']
+    ngname = 'master-' + kiprofile['Kits']['longname']
     k = Kickstart(kiprofile.getDatabase(), ngname)
     k.rootpw = kiprofile['RootPasswd'] 
 
