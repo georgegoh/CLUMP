@@ -240,10 +240,14 @@ class KitOps:
                 # also store the OS/ARCH -- but how to determine?
                 newcomp.save()
 
-                ngs = self.__db.NodeGroups.select(
-                    self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
+                ngs = self.__db.NodeGroups.select()
 
                 for ng in ngs:
+                    # if installing master node, add to that nodegroup
+                    if self.installer and ng.ngname == 'master' \
+                        and 0 <= newcomp.cname.find('installer'):
+                        ng.components.append(newcomp)
+
                     # if installer component, add to installer nodegroup
                     if ng.ngname == 'installer' \
                         and 0 <= newcomp.cname.find('installer'):
