@@ -23,6 +23,7 @@ import os
 import tempfile
 import string
 import sys
+import time
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
@@ -89,7 +90,10 @@ class NodeMemberApp(object, KusuApp):
     def run(self):
         """run()
         Run the application """
-        
+       
+        global database
+        global kusuApp
+ 
         # Parse command options
         self.parseargs()
             
@@ -107,7 +111,7 @@ class NodeMemberApp(object, KusuApp):
         else:
                 self._options.reinstall = True
         
-        # Handle -r option
+        # Handle -a option
         if self._options.racknumber:
             result = int(self._options.racknumber)
             if result < 0:
@@ -116,7 +120,22 @@ class NodeMemberApp(object, KusuApp):
                     
         # Handle -l option
         if self._options.allnodegroups:
-            print "List all Nodes in each node group!"
+            print kusuApp._("Node Group Names")
+            print kusuApp._("================\n")
+            # Get a list of all node groups to iterate though:
+            database.connect()
+            database.execute("SELECT ngid,ngname FROM nodegroups")
+            ng = database.fetchall()
+            for groupid, groupname in ng:
+                database.execute("select nodes.name from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
+                                  WHERE kname='PrimaryInstaller' AND nodes.ngid=%s ORDER BY name)" % groupid)
+                nodes = database.fetchall()
+                if len(nodes):
+                    print "%s" % groupname
+                    print "%s" % "-" * len(groupname)
+                    for node in nodes:
+                        print "%s" % node
+                    print "\n"
             sys.exit(0)
             
         # Handle -g options - List specific nodegroup
@@ -258,6 +277,15 @@ class SelectNodesWindow(USXBaseScreen):
             # Remove temp file
             os.remove(tmpfile)
             progDialog.close()
+
+            # If the user wants to reinstall the nodes check if the option is selected or not.
+            if self.reinstcheckbox.value():
+               progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
+                            self.kusuApp._("nghosts_reinstall_nodes_progress"))
+               # Call PSDH here
+               time.sleep(5)
+               progDialog.close()
+
             self.screen.refresh()
         
         return NAV_NOTHING
@@ -273,17 +301,19 @@ class SelectNodesWindow(USXBaseScreen):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)        
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
         self.buttonsDict['quit_button'].setCallback_(self.quitAction)
-        self.hotkeysDict['F5'] = self.previousAction
-        self.hotkeysDict['F8'] = self.moveAction
+
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.moveAction
+        self.hotkeysDict['F5'] = self.previousAction
     
     def drawImpl(self):
         count = 0
         nodegroupList = []
-        self.screenGrid  = snack.Grid(1, 5)
+        self.screenGrid  = snack.Grid(1, 6)
         self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
         label = snack.Label(self.kusuApp._("Source Nodes\t\t\t  Destination Nodegroup"))
+        self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         query = "SELECT ngname FROM nodegroups ORDER BY ngname"
         
         try:
@@ -324,13 +354,14 @@ class SelectNodesWindow(USXBaseScreen):
  
         for group in nodegroups:
             nodegroupList.append([group[0].ljust(20), group[0], 0])
-        
+       
         self.nodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList) 
         
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(label, 0, 1, padding=(6,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.nodeCheckbox, 0, 2, padding=(0,0,30,0))
         self.screenGrid.setField(self.nodegroupRadio, 0, 3, padding=(33,-8,0,0))
+        self.screenGrid.setField(self.reinstcheckbox, 0, 4, padding=(0,1,0,0), anchorLeft=1)
                 
 class SelectNodegroupsWindow(USXBaseScreen):
     name = "nghosts_window_title_select_nodegroup"
@@ -424,6 +455,14 @@ class SelectNodegroupsWindow(USXBaseScreen):
             # Remove temp file
             os.remove(tmpfile)
             progDialog.close()
+ 
+            # If the user wants to reinstall the nodes check if the option is selected or not.
+            if self.reinstcheckbox.value():
+               progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
+                            self.kusuApp._("nghosts_reinstall_nodes_progress"))
+               # Call PSDH here
+               time.sleep(5)
+               progDialog.close()
             self.screen.refresh()
 
         return NAV_NOTHING
@@ -447,9 +486,10 @@ class SelectNodegroupsWindow(USXBaseScreen):
         
     def drawImpl(self):
         nodegroupList = []
-        self.screenGrid  = snack.Grid(1, 6)
+        self.screenGrid  = snack.Grid(1, 7)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
         label = snack.Label(self.kusuApp._("Source Nodegroups\t\t  Destination Nodegroup"))
+        self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         query = "SELECT ngname FROM nodegroups ORDER BY ngname"
 
@@ -485,6 +525,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         self.screenGrid.setField(label, 0, 1, padding=(7,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.srcNodegroupsCheckbox, 0, 2, padding=(3,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.destNodegroupRadio, 0, 3, padding=(0,-8,4,0), anchorRight=1)
+        self.screenGrid.setField(self.reinstcheckbox, 0, 4, padding=(0,1,0,0), anchorLeft=1)
 
 
     def validate(self):
