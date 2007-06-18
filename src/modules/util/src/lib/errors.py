@@ -67,6 +67,7 @@ class InterfaceNotFound(KusuError): pass
 #autoinstall
 class ProfileNotCompleteError(KusuError): pass
 class TemplateNotFoundError(KusuError): pass
+class UnableToGenerateFileFromTemplateError(KusuError): pass
 
 # kitops
 class CannotMountKitMediaError(KusuError): pass
@@ -95,7 +96,6 @@ class UnableToSaveDataError(KusuError): pass
 
 #repoman
 class RepoNotCreatedError(KusuError): pass
-class RepoNotFoundError(KusuError): pass
 class RepoOSKitError(KusuError): pass
 class CannotCreateRepoError(KusuError): pass
 class YumRepoNotCreatedError(KusuError): pass
