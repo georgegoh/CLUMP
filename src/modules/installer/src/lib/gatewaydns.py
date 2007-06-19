@@ -3,7 +3,7 @@
 #
 # Kusu Text Installer Gateway and DNS Setup Screen.
 #
-# Copyright 2007 Platform Computing Corporation.
+# Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 

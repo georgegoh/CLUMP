@@ -4,7 +4,7 @@
 #
 # Kusu Screen.
 #
-# Copyright 2007 Platform Computing Corporation.
+# Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 from kusu.ui.text.screenfactory import BaseScreen
