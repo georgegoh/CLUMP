@@ -33,7 +33,7 @@ information container for the database.
 %prep
 
 %install
-docdir=$RPM_BUILD_ROOT/repo/www/kits/%{name}/%{version}
+docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
 rm -rf $RPM_BUILD_ROOT
