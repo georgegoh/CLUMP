@@ -211,7 +211,7 @@ class PartitionScreen(InstallerScreen):
             mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
             prog_dlg.close()
         else:
-            raise UserExitError
+            self.selector.currentStep = self.selector.currentStep - 1
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:
