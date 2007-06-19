@@ -24,6 +24,7 @@ import tempfile
 import string
 import sys
 import time
+from sets import Set
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
@@ -62,7 +63,6 @@ class NodeMemberApp(object, KusuApp):
         Parse the command line arguments. """
 
         global database
-        global kusuApp
 
         self.parser.add_option("-v", "--version", action="callback",
                                 callback=self.toolVersion, help=kusuApp._("nghosts_version_usage"))
@@ -70,8 +70,8 @@ class NodeMemberApp(object, KusuApp):
                                 dest="allnodegroups", help=kusuApp._("nghosts_list_all_nodegroups_usage"))
         self.parser.add_option("-g", "--list-nodegroup", action="store", 
                                 type="string", dest="listnodegroup", help=kusuApp._("nghosts_list_a_nodegroup_usage"))
-        self.parser.add_option("-f", "--from-group", action="store",
-                                type="string", dest="fromgroup", help=kusuApp._("nghosts_from_group_usage"))
+        self.parser.add_option("-f", "--from-group", action="callback",
+                                callback=self.varargs, dest="movegroups", help=self._("nghosts_from_group_usage"))
         self.parser.add_option("-t", "--to-group", action="store",
                                 type="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
         self.parser.add_option("-n", "--copy-hosts", action="callback",
@@ -92,7 +92,6 @@ class NodeMemberApp(object, KusuApp):
         Run the application """
        
         global database
-        global kusuApp
  
         # Parse command options
         self.parseargs()
@@ -115,13 +114,18 @@ class NodeMemberApp(object, KusuApp):
         if self._options.racknumber:
             result = int(self._options.racknumber)
             if result < 0:
-                print self.kusuApp._("rack_negative_number")
-                sys.exit(-1)
-                    
+                self.parser.error(self._("rack_negative_number"))
+
+        # Handle -r option
+        if not bool(self._options.reinstall):
+                self._options.reinstall = False
+        else:
+                self._options.reinstall = True
+          
         # Handle -l option
         if self._options.allnodegroups:
-            print kusuApp._("Node Group Names")
-            print kusuApp._("================\n")
+            print self._("Node Group Names")
+            print self._("================\n")
             # Get a list of all node groups to iterate though:
             database.connect()
             database.execute("SELECT ngid,ngname FROM nodegroups")
@@ -140,23 +144,114 @@ class NodeMemberApp(object, KusuApp):
             
         # Handle -g options - List specific nodegroup
         if self._options.listnodegroup:
-            print "List specific node group"
+            database.connect()
+            database.execute("SELECT ngid FROM nodegroups WHERE ngname='%s'" % self._options.listnodegroup)
+            try:
+                ngid = database.fetchall()[0][0]
+                print self._("Node Group")
+                print self._("==========\n")
+                database.execute("select nodes.name from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
+                                  WHERE kname='PrimaryInstaller' AND nodes.ngid=%s ORDER BY name)" % ngid)
+                nodes = database.fetchall()
+                if len(nodes):
+                    print "%s" % self._options.listnodegroup
+                    print "%s" % "-" * len(self._options.listnodegroup)
+                    for node in nodes:
+                       print "%s" % node
+                    print "\n"
+            except:
+                print "Error: Not a valid node group.\n"
             sys.exit(0)
 
         # Handle -t option - Copy to this node group.
         if bool(self._options.togroup):
-            if not bool(self._options.fromgroup) and not bool(self._options.copyhosts):
+            if not bool(self._options.movegroups) and not bool(self._options.copyhosts):
                     print "Not enough options, use -f or -n only."
                     sys.exit(0)
             else:
-                    if bool(self._options.fromgroup):
-                            print "Copy from this Nodegroup!"
-            
-                    if bool(self._options.copyhosts):
-                            for nodeItem in self._options.copyhosts:
-                                print "Copying item: %s" % nodeItem
-                            
-            sys.exit(0)
+                    flag = 1
+                    badnodes = []
+                    nodesList = []
+                    macsList = {}
+                    myinterface = ""
+                    nodeRecord = NodeFun()
+                    nodeRecord.setNodegroupByName(self._options.togroup)
+                    nodeRecord.getNodeFormat()
+                    # Check if the selected node format has a rack if so, prompt for it.
+                    if nodeRecord.isNodenameHasRack() and not bool(self._options.racknumber):
+                       # Prompt user for Rack
+                       while flag:
+                          response = raw_input(kusuApp._("prompt_for_rack"))
+                          try:
+                              result = int(response)
+                              if result < 0:
+                                  print "Error: %s" % self._("rack_negative_number")
+                                  flag = 1
+                              else:
+                                  self._options.racknumber = result
+                                  flag = 0
+                          except:
+                              print self._("Error: The value %s is not a number. Please try again" % response)
+                              flag = 1
+
+                    if bool(self._options.movegroups):
+                        moveList, macList, badList, interface = nodeRecord.moveNodegroups(self._options.movegroups, self._options.togroup)
+                        nodesList += moveList 
+                        myinterface = interface
+                        macsList.update(macList)
+           
+		    if bool(self._options.copyhosts):
+                        for node in self._options.copyhosts:
+                            if not nodeRecord.validateNode(node):
+                               print "Node not found: %s" % node
+                               badnodes.append(node)
+
+                        for node in badnodes:
+                               self._options.copyhosts.remove(node)
+
+                        if not self._options.copyhosts:
+                           print "Error: There are no valid nodes to move to the node group '%s'" % self._options.togroup
+                           sys.exit(-1)
+                        else:
+                           moveList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup)
+                           nodesList += moveList
+                           if interface:
+                              myinterface = interface
+                           macsList.update(macList)
+
+                    if nodesList:
+                        print "Will move the following hosts: [%s] to the node group '%s'" % (string.join(Set(nodesList), ", "), self._options.togroup)
+
+                    if not nodesList:
+                       print self._("Could not move the requested nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self._options.togroup)
+                       sys.exit(0)
+                    else:
+                       if badList:
+                          print self._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(nodesList), len(badList), string.join(badList, " "), self._options.togroup))
+
+                    # Create Temp file
+                    (fd, tmpfile) = tempfile.mkstemp()
+                    tmpname = os.fdopen(fd, 'w')
+                    for node in Set(nodesList):
+                       tmpname.write("%s\n" % macsList[node])
+                    tmpname.close()
+
+                    print self._("nghosts_moving_nodes_progress")
+                    os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(Set(nodesList), ' '))
+               
+                    # Add these back using mac file
+                    if bool(self._options.racknumber):
+                        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
+                    else:
+                        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup))
+
+                    # If the user wants to reinstall the nodes check if the option is selected or not.
+                    if bool(self._options.reinstall):
+                        print self._("nghosts_reinstall_nodes_progress")
+                        # Call PSDH here
+
+                    os.remove(tmpfile)
+                    sys.exit(0)
             
         # Handle -n without -t
         if bool(self._options.copyhosts) and not bool(self._options.togroup):
@@ -164,12 +259,16 @@ class NodeMemberApp(object, KusuApp):
             sys.exit(0)
         
         # Handle -f without -t
-        if bool(self._options.fromgroup) and not bool(self._options.togroup):
+        if bool(self._options.movegroups) and not bool(self._options.togroup):
             print "need to specify -t"
             sys.exit(0)
             
         elif self._options.copyhosts == []:
             print "need to specify a node"
+            sys.exit(0)
+
+        elif self._options.movegroups == []:
+            print "need to specify a node group"
             sys.exit(0)
             
         if len(sys.argv[1:]) > 0:
@@ -191,7 +290,7 @@ class SelectNodesWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
         self.nodegroupDict = {}
         self.nodeGroupNames = []
    
@@ -253,41 +352,40 @@ class SelectNodesWindow(USXBaseScreen):
                           self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                           flag = 1
 
-            if badList:
-                self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
+               if badList:
+                  self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
 
-            # Create Temp file
-            (fd, tmpfile) = tempfile.mkstemp()
-            tmpname = os.fdopen(fd, 'w')
-            for node in moveList:
-               tmpname.write("%s\n" % macList[node])
-            tmpname.close()
+               # Create Temp file
+               (fd, tmpfile) = tempfile.mkstemp()
+               tmpname = os.fdopen(fd, 'w')
+               for node in moveList:
+                  tmpname.write("%s\n" % macList[node])
+               tmpname.close()
 
-            # Call addhosts to delete these nodes
-            progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
+               # Call addhosts to delete these nodes
+               progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
 
-            os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
+               os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
-            # Add these back using mac file
-            if needRack:
-                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
-            else:
-                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
+               # Add these back using mac file
+               if needRack:
+                  os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
+               else:
+                  os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
 
-            # Remove temp file
-            os.remove(tmpfile)
-            progDialog.close()
-
-            # If the user wants to reinstall the nodes check if the option is selected or not.
-            if self.reinstcheckbox.value():
-               progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
-                            self.kusuApp._("nghosts_reinstall_nodes_progress"))
-               # Call PSDH here
-               time.sleep(5)
+               # Remove temp file
+               os.remove(tmpfile)
                progDialog.close()
 
+               # If the user wants to reinstall the nodes check if the option is selected or not.
+               if self.reinstcheckbox.value():
+                  progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
+                               self.kusuApp._("nghosts_reinstall_nodes_progress"))
+                  # Call PSDH here
+                  time.sleep(5)
+                  progDialog.close()
+
             self.screen.refresh()
-        
         return NAV_NOTHING
         
     def previousAction(self):
@@ -372,7 +470,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
            
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
@@ -541,7 +639,7 @@ class MembershipMainWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.kusuApp = KusuApp()
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc - Instructions: Select an option. Press F12 to quit, Press F8 to go next")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\tInstructions: Select an option. Press F12 to quit, Press F8 to go next")
 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),

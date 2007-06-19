@@ -84,20 +84,20 @@ class AddHostApp(KusuApp):
         Parse the command line arguments. """
 
         self.parser.add_option("-v", "--version", action="callback",
-                                callback=self.toolVersion, help=kusuApp._("addhost_version_usage"))
+                                callback=self.toolVersion, help=self._("addhost_version_usage"))
         self.parser.add_option("-n", "--nodegroup", action="store",
-                                type="string", dest="nodegroup", help=kusuApp._("addhost_nodegroup_usage"))
+                                type="string", dest="nodegroup", help=self._("addhost_nodegroup_usage"))
         self.parser.add_option("-i", "--interface", action="store",
-                                type="string", dest="interface", help=kusuApp._("addhost_interface_usage"))
+                                type="string", dest="interface", help=self._("addhost_interface_usage"))
         self.parser.add_option("-f", "--file", action="store",
-                                type="string", dest="macfile", help=kusuApp._("addhost_macfile_usage"))
+                                type="string", dest="macfile", help=self._("addhost_macfile_usage"))
         self.parser.add_option("-e", "--remove", action="callback",
-                                dest="remove", callback=self.varargs, help=kusuApp._("addhost_remove_usage"))
+                                dest="remove", callback=self.varargs, help=self._("addhost_remove_usage"))
         self.parser.add_option("-p", "--replace", action="store",
-                                type="string", dest="replace", help=kusuApp._("addhost_replace_usage"))
+                                type="string", dest="replace", help=self._("addhost_replace_usage"))
         self.parser.add_option("-r", "--rack", action="store",
-                                type="int", dest="rack", help=kusuApp._("addhost_rack_usage"))
-        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=kusuApp._("addhost_update_usage"))
+                                type="int", dest="rack", help=self._("addhost_rack_usage"))
+        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=self._("addhost_update_usage"))
     
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
@@ -223,7 +223,7 @@ class AddHostApp(KusuApp):
                     flag = 1
                     if checkHost.isNodenameHasRack() and haveInterface:
                          while flag:
-                            response = raw_input(kusuApp._("addhost_textprompt_rack"))
+                            response = raw_input(kusuApp._("prompt_for_rack"))
                             try:
                                result = int(response)
                                if result < 0:
@@ -314,7 +314,7 @@ class AddHostApp(KusuApp):
                flag = 1
                if checkHost.isNodenameHasRack() and haveInterface:
                    while flag:
-                      response = raw_input(kusuApp._("addhost_textprompt_rack"))
+                      response = raw_input(kusuApp._("prompt_for_rack"))
                       try:
                           result = int(response)
                           if result < 0:

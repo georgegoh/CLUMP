@@ -195,29 +195,28 @@ class NetEditApp(object, KusuApp):
         Parse the command line arguments. """
 
         global database
-        global kusuApp
 
         self.parser.add_option("-v", "--version", action="callback",
-                                callback=self.toolVersion, help=kusuApp._("netedit_version_usage"))
+                                callback=self.toolVersion, help=self._("netedit_version_usage"))
         self.parser.add_option("-l", "--list-networks", action="store_true",
-                                dest="listnetworks", help=kusuApp._("netedit_listnetworks_usage"))
+                                dest="listnetworks", help=self._("netedit_listnetworks_usage"))
         self.parser.add_option("-d", "--delete", action="store",
-                                type="int", dest="delete", help=kusuApp._("netedit_delete_usage"))
+                                type="int", dest="delete", help=self._("netedit_delete_usage"))
         self.parser.add_option("-a", "--add", action="store_true",
-                                dest="add", help=kusuApp._("netedit_add_usage"))
+                                dest="add", help=self._("netedit_add_usage"))
         self.parser.add_option("-c", "--change", action="store",
-                                type="int", dest="change", help=kusuApp._("netedit_change_usage"))
+                                type="int", dest="change", help=self._("netedit_change_usage"))
 
-        self.parser.add_option("-n", "--network", action="store", dest="network", help=kusuApp._("netedit_network_usage"))
-        self.parser.add_option("-s", "--subnet", action="store", dest="subnet", help=kusuApp._("netedit_subnet_usage"))
-        self.parser.add_option("-i", "--interface", action="store", dest="interface", help=kusuApp._("netedit_interface_usage"))
-        self.parser.add_option("-r", "--increment", action="store", type="int", dest="increment", help=kusuApp._("netedit_increment_usage"))
-        self.parser.add_option("-t", "--starting-ip", action="store", dest="startip", help=kusuApp._("netedit_startip_usage"))
-        self.parser.add_option("-x", "--name-suffix", action="store", dest="suffix", help=kusuApp._("netedit_suffix_usage"))
-        self.parser.add_option("-g", "--gateway", action="store", dest="gateway", help=kusuApp._("netedit_gateway_usage"))
-        self.parser.add_option("-o", "--options", action="store", dest="opt", help=kusuApp._("netedit_options_usage"))
-        self.parser.add_option("-e", "--description", action="store", dest="desc", help=kusuApp._("netedit_description_usage"))
-        self.parser.add_option("-p", "--dhcp", action="store_true", dest="dhcp", help=kusuApp._("netedit_dhcp_usage"))
+        self.parser.add_option("-n", "--network", action="store", dest="network", help=self._("netedit_network_usage"))
+        self.parser.add_option("-s", "--subnet", action="store", dest="subnet", help=self._("netedit_subnet_usage"))
+        self.parser.add_option("-i", "--interface", action="store", dest="interface", help=self._("netedit_interface_usage"))
+        self.parser.add_option("-r", "--increment", action="store", type="int", dest="increment", help=self._("netedit_increment_usage"))
+        self.parser.add_option("-t", "--starting-ip", action="store", dest="startip", help=self._("netedit_startip_usage"))
+        self.parser.add_option("-x", "--name-suffix", action="store", dest="suffix", help=self._("netedit_suffix_usage"))
+        self.parser.add_option("-g", "--gateway", action="store", dest="gateway", help=self._("netedit_gateway_usage"))
+        self.parser.add_option("-o", "--options", action="store", dest="opt", help=self._("netedit_options_usage"))
+        self.parser.add_option("-e", "--description", action="store", dest="desc", help=self._("netedit_description_usage"))
+        self.parser.add_option("-p", "--dhcp", action="store_true", dest="dhcp", help=self._("netedit_dhcp_usage"))
 
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
@@ -397,7 +396,7 @@ class NetworkEditWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.hasGateway = None
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
     
     def okAction(self):
         return NAV_FORWARD
@@ -538,7 +537,7 @@ class NetworkNewWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
                 
     def okAction(self):
         return NAV_FORWARD
