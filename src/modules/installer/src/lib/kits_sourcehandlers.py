@@ -112,6 +112,13 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 
 def addOSKit(baseScreen, kitops, osdistro, cdrom):
     kit = kitops.prepareOSKit(osdistro)
+    if kit['name'] != baseScreen.kiprofile['OS']:
+        out, err = eject(cdrom)
+        baseScreen.selector.popupMsg('Wrong OS disk', 'Inserted OS disk does ' + \
+                                     'not match selected operating system: %s.' + \
+                                     ' Please insert the correct disc.' % \
+                                     baseScreen.kiprofile['OS'])
+        return
 
     baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
     baseScreen.kiprofile[baseScreen.profile]['kernel'] = kit['kernel']

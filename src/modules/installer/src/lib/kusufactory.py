@@ -33,6 +33,7 @@ from kusu.core import database as db
 # we start with a blank kusu installer profile
 kiprofile = Profile()
 kiprofile['Kusu Install MntPt'] = '/mnt/kusu'
+kiprofile['OS'] = os.environ['KUSU_DIST']
 
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the 

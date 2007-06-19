@@ -118,7 +118,21 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         """
         Store
         """
-        pass
+        kit_list = self.kitops.listKit()
+        names = [kit.rname for kit in kit_list]
+        os = [kit.rname for kit in kit_list if kit.isOS]
+        missing = []
+        if 'base' not in names:
+            missing.append('base')
+        if not os:
+            missing.append(self.kiprofile['OS'])
+        if missing:
+            errMsg = 'Cannot continue installation unless the following ' + \
+                     'kits are added:'
+            for name in missing: errMsg += '\n\t%s' % name
+            self.selector.currentStep -= 1
+            self.selector.popupMsg('Missing Kits', errMsg)
+
 
     def save(self, db, profile):
         ngs = db.NodeGroups.select()
