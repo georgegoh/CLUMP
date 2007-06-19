@@ -80,6 +80,11 @@ IF(PYTHONINTERP_FOUND)
   
   ADD_DEPENDENCIES(build-${PROJECT_NAME} setuppy-install copy-license)
 
+  ADD_CUSTOM_TARGET(clean-${PROJECT_NAME}
+    COMMAND rm -rf ${SETUPPY_PATH}/installdir
+    COMMENT "Removing installdir from ${SETUPPY_PATH}"
+  )
+
 ELSE(PYTHONINTERP_FOUND)
   MESSAGE("python executable not found. Skip building ${PROJECT_NAME}.")
 ENDIF(PYTHONINTERP_FOUND)

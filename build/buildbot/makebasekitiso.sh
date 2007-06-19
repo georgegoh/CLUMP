@@ -1,11 +1,16 @@
 #!${BASH_EXE}
 
 mkdir -m 755 -p ${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}
+
+${CMAKE_CURRENT_BINARY_DIR}/bin/makepatchfiles.sh ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
+
 cd ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
 for i in `find ./ -name '*.spec'`
 do
   cp $i $i.orig
-  sed -e '/^\%exclude/d' $i.orig > $i
+  sed -e '/^\%exclude/d' \
+      -e 's%RPM_BUILD_ROOT/repo%RPM_BUILD_ROOT/depot%g' \
+      $i.orig > $i
 done
 make
 ec=$?
@@ -22,4 +27,4 @@ do
   chmod 644 $isoname$BUILDDATE-$KUSUREVISION.noarch.iso
 done
 cp -p *.iso /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}/.
-rsync -av --rsh=ssh --delete /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH} build@ronin:/home/osgdc/www/pub/build/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/.
+#rsync -av --rsh=ssh --delete /data/scratch/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH} build@ronin:/home/osgdc/www/pub/build/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/.

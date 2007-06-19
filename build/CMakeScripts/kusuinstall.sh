@@ -43,4 +43,4 @@ then
   mv ${SETUPPY_PATH}/installdir/share/etc ${SETUPPY_PATH}/installdir/.
 fi
 cp -rf ${SETUPPY_PATH}/installdir/* ${KUSU_ROOT}/. ;
-rm -rf ${SETUPPY_PATH}/installdir ;
+#rm -rf ${SETUPPY_PATH}/installdir ;

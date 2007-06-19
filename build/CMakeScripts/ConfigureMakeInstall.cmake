@@ -63,3 +63,8 @@ EXEC_PROGRAM(chmod ${SETUPPY_PATH}
   ARGS a+rx ${SETUPPY_PATH}/kusuinstall.sh
   OUTPUT_VARIABLE /dev/null
 )
+
+ADD_CUSTOM_TARGET(clean-${PROJECT_NAME}
+  COMMAND rm -rf ${SETUPPY_PATH}/installdir
+  COMMENT "Removing installdir from ${SETUPPY_PATH}"
+)
