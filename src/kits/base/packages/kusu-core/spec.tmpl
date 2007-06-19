@@ -17,10 +17,6 @@
 #
 
 %define _approot @KUSUROOT@
-%define brp-python-bytecompile /bin/true
-
-
-
 
 Summary: @NAME@ module runtime
 Name: @NAME@
@@ -51,8 +47,15 @@ find share/ | cpio -mpdu %{buildroot}%{_approot}
 %pre
 
 %post
+if [ -f %{_approot}/bin/kusuenv.sh ]; then
+    ln -sf %{_approot}/bin/kusuenv.sh /etc/profile.d/kusuenv.sh
+fi
+
 
 %preun
+if [ -f /etc/profile.d/kusuenv.sh ]; then
+    rm -f /etc/profile.d/kusuenv.sh
+fi
 
 %postun
 
