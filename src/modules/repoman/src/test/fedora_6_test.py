@@ -13,7 +13,7 @@ import os
 
 prefix = None
 kusudb = None
-cachedir = path(tempfile.mkdtemp())
+cachedir = path(tempfile.mkdtemp(prefix='repoman'))
 
 def download(filename, dest, cache=cachedir):
     global cachedir
@@ -177,6 +177,20 @@ class TestFedora6Repo:
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
+    def testNodeGroupHasRepoID(self):
+        global prefix
+
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup', 'a repo during testing')
+
+        repoid = str(r.repoid)
+ 
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')
+
+        assert len(ng) == 1
+        assert ng[0].repoid == r.repoid
+        
     def testNodeInstallerImg(self):
         global prefix
 
