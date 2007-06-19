@@ -40,7 +40,62 @@ KUSU_MODULES = ['autoinstall','boot','core','util','ui',
 
 KUSU_3RDPARTY = ['pysqlite','path','md5crypt','cheetah','urlgrabber',
     'wget','thttpd','sqlalchemy','createrepo',]
+    
+SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX', 
+                        'KUSU_BUILD_DISTVER', 'KUSU_BUILD_ARCH',
+                        'KUSU_ROOT', 'KUSU_DEVEL_ROOT',
+                        'KUSU_BUILD_ISOBIN', 'KUSU_DISTRO_SRC',
+                        'KUSU_CACHE_DIR', 'KUSU_DIST',
+                        'KUSU_DISTVER', 'KUSU_TMP',
+                        'KUSU_LOGLEVEL', 'KUSU_LOGFILE']
 
+def prepareEnv():
+    """ Creates an clean environment stripped out of any KUSU references.
+        Returns an environment dict.
+    """
+    env = os.environ.copy()
+
+    # get the kusuroot for stripping PATH and PYTHONPATH later
+    kusuroot = None
+    kusurootbin = kusurootsbin = None
+    kusupypath = None
+    if 'KUSU_ROOT' in env.keys():
+        kusuroot = env['KUSU_ROOT']
+        kusurootbin = '%s/bin' % kusuroot
+        kusurootsbin = '%s/sbin' % kusuroot
+        kusupypath = '%s/lib/python' % kusuroot
+
+
+    # remove each KUSU reference from the environment if it exists.
+    for key in SUPPORTED_KUSU_ENVARS:
+        if key in env:
+            del env[key]
+
+    # strip out PATH
+    li = env['PATH'].split(':')
+    p = []
+    if kusuroot:
+        for l in li:
+            if l.find(kusurootbin) == -1 and l.find(kusurootsbin) == -1:
+                p.append(l)
+
+        del env['PATH']
+        env['PATH'] = ':'.join(p)
+
+
+        # strip out PYTHONPATH
+        if 'PYTHONPATH' in env:
+            li = env['PYTHONPATH'].split(':')
+            p = []
+            for l in li:
+                if l.find(kusupypath) == -1 and l:
+                    p.append(l)
+
+            del env['PYTHONPATH']
+            if p: env['PYTHONPATH'] = ':'.join(p)
+
+
+    return env    
 
 def checkToolDeps(tool):
     """ Check if the tool is indeed available. Returns the path. A ToolNotFound exception 
@@ -48,7 +103,8 @@ def checkToolDeps(tool):
     """
 
     cmd = 'which %s' % tool
-    whichP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    env = prepareEnv()
+    whichP = subprocess.Popen(cmd,shell=True,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out, err = whichP.communicate()
     if whichP.returncode <> 0:
         raise ToolNotFound, tool
@@ -61,13 +117,7 @@ def cpio_copytree(src,dst):
     """A cpio-based copytree functionality. Only use this when shutil.copytree don't cut
        it.
     """
-
-    # Taken from <unistd.h>, for file/dirs access modes
-    # These can be OR'd together
-    R_OK = 4   # Test for read permission.
-    W_OK = 2   # Test for write permission.
-    X_OK = 1   # Test for execute permission.
-    
+        
     # convert paths to be absolute
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
@@ -78,12 +128,12 @@ def cpio_copytree(src,dst):
     # create the dst directory if it doesn't exist initially
     if not os.path.exists(dst):
         parentdir = os.path.join(dst,os.path.pardir)
-        if os.access(parentdir,R_OK|W_OK):
+        if os.access(parentdir,os.R_OK|os.W_OK):
             os.path.mkdir(dst)
         else:
             raise IOError, "No read/write permissions in parent directory!"
     else:
-        if not os.access(dst,R_OK|W_OK): raise IOError, "No read/write permissions in destination directory!"
+        if not os.access(dst,os.R_OK|os.W_OK): raise IOError, "No read/write permissions in destination directory!"
 
 
     findP = subprocess.Popen('find .',cwd=cwd,shell=True,stdout=subprocess.PIPE)
@@ -110,7 +160,7 @@ class KusuRuntime(object):
     def run(self, action, **kwargs):
         """ Runs the tool with the action and arguments. """
         
-        env = os.environ
+        env = prepareEnv()
         p = ''.join([self.kusuroot,'/bin:',env['PATH']])
         env['PATH'] = p
         
@@ -217,7 +267,7 @@ class KusuSVNSource:
         """ General setup for Kusu develroot"""
         
         if not develroot:
-            self.scratchdir = os.path.abspath(tempfile.mkdtemp(dir='/tmp'))
+            self.scratchdir = os.path.abspath(tempfile.mkdtemp(dir='/tmp',prefix='kusu-build'))
             self.develroot = os.path.abspath(tempfile.mkdtemp(dir=self.scratchdir))
         else:
             if os.path.exists(develroot):
@@ -252,7 +302,8 @@ class KusuSVNSource:
             cmd = 'cmake %s' % os.path.abspath(kususrc)
         else:
             cmd = 'cmake %s > /dev/null 2>&1' % os.path.abspath(kususrc)
-            
+        
+        env = prepareEnv()
         cmakeP = subprocess.Popen(cmd,shell=True,
                     cwd=self.develroot,env=env)
         result = cmakeP.communicate()
@@ -278,11 +329,13 @@ class KusuSVNSource:
             cmdtarget = 'make build-%s > /dev/null 2>&1' % target
 
         if not target:
+            env = prepareEnv()
             makeP = subprocess.Popen(cmd,shell=True,
-                        cwd=self.develroot)
+                        cwd=self.develroot,env=env)
         else:
+            env = prepareEnv()
             makeP = subprocess.Popen(cmdtarget,shell=True,
-                        cwd=self.develroot)
+                        cwd=self.develroot,env=env)
             
         result = makeP.communicate()
 
@@ -627,6 +680,13 @@ actions:
             msg = self._('Please provide the patchfile!')
             print msg
             self.printUsageExit()
+        else:
+            # validate patchfile parentdir
+            parentdir = os.path.join(patchfile,os.path.pardir)
+            if not os.access(parentdir,os.R_OK|os.W_OK):
+                msg = self._('Please ensure that the patchfile can be written into %(parentdir)s!' \
+                    % {'parentdir':os.path.abspath(parentdir)})
+                self.printMsgExit(msg)
 
 
         if osname not in SUPPORTED_DISTROS:
@@ -644,7 +704,7 @@ actions:
             kusuroot = os.path.dirname(os.path.join(p,os.path.pardir))
         except ToolNotFound:
                 # create the boot-media-tool runtime
-                kusuroot = os.path.abspath(tempfile.mkdtemp(dir='/tmp'))
+                kusuroot = os.path.abspath(tempfile.mkdtemp(dir='/tmp',prefix='build-artefacts'))
                 tmproot = True
                 self._build({'kususrc':kususrc,'modules':'all','kusuroot':kusuroot})
         
