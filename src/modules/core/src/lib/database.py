@@ -183,8 +183,8 @@ class Partitions(BaseTable):
     cols = ['ngid', 'device', 'partition', 'mntpnt', \
             'fstype', 'size', 'options', 'preserve']
     def __repr__(self):
-        return '%s(%r,%r,%r,%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.ngid, self.partition, self.mntpnt,
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngid, self.device, self.partition, self.mntpnt,
                 self.fstype, self.size, self.options, self.preserve)
 
 class Repos(BaseTable):
@@ -644,20 +644,15 @@ class DB(object):
         master.nodes.append(master_node)
 
         # Create the partition entries for the compute node
-        boot = Partitions(mntpnt='/boot', fstype='ext3',
-                          size='100', options='disk=1', preserve='N')
-        volgrp00 = Partitions(partition='/dev/VolGroup00', size='max',
-                              options='lvmVolGrp;disk=N')
-        root = Partitions(partition='/dev/VolGroup00/LogVol00', mntpnt='/',
-                          fstype='ext3', size='12000', options='lvmLogVol',
-                          preserve='N')
-        swap = Partitions(partition='/dev/VolGroup00/LogVol01',
-                          fstype='linux-swap', size='2000', options='lvmLogVol',
-                          preserve='N')
-        data = Partitions(partition='/dev/VolGroup00/LogVol02', size='max',
-                          options='lvmLogVol;label=data', preserve='Y')
+        boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
+                          size='100', device='1', preserve='N')
+        root = Partitions(mntpnt='/', fstype='ext3', partition='2',
+                          size='4000', device='1', preserve='N')
+        swap = Partitions(partition='3', fstype='linux-swap',
+                          size='2000', device='1', preserve='N')
+        data = Partitions(partition='4', size='4000',
+                          options='fill', device='1', preserve='N')
         compute.partitions.append(boot)
-        compute.partitions.append(volgrp00)
         compute.partitions.append(root)
         compute.partitions.append(swap)
         compute.partitions.append(data)
