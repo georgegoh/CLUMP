@@ -248,7 +248,7 @@ msgstr "Cannot specify a negative number. Please try again."
 msgid "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
 msgstr "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
 
-msgid "addhost_textprompt_rack"
+msgid "prompt_for_rack"
 msgstr "Please enter a rack number: "
 
 msgid "Adding Node: %s, %s"
@@ -567,6 +567,12 @@ msgstr "Specify node group to copy to"
 msgid "nghosts_copy_hosts_usage"
 msgstr "Specify a list of nodes to move"
 
+msgid "nghosts_reinstall_usage"
+msgstr "Specify to mark the nodes as expired for reinstallation"
+
+msgid "nghosts_rack_usage"
+msgstr "The rack number to use (if applicable)"
+
 msgid "nghosts_window_title_prompt"
 msgstr "Node Membership Editor"
 
@@ -612,6 +618,11 @@ msgstr "Moving nodes"
 msgid "nghosts_moving_nodes_progress"
 msgstr "Moving nodes, please wait..."
 
+msgid "nghosts_reinstalling_nodes"
+msgstr "Reinstalling nodes"
+
+msgid "nghosts_reinstall_nodes_progress"
+msgstr "Initiating nodes to reinstall, please wait..."
 # ngedit
 
 msgid "Node Group Editor"
