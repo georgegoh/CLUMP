@@ -656,6 +656,10 @@ actions:
         kusuroot = None
         tmproot = False
         
+        if os.getuid() <> 0:
+            msg = self._('Need root access!')
+            self.printMsgExit(msg)
+        
         if not kususrc:
             msg = self._('Please provide the kususrc!')
             print msg
