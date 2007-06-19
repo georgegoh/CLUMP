@@ -88,14 +88,6 @@ class thisReport(Report):
                 if dnsdomain:
                     print '\toption domain-name %s;' % dnsdomain
                     
-                #option domain-name "local";
-                #option domain-name-servers 10.101.1.1;
-<<<<<<< .mine
-                #option nis-domain "socks";
-=======
-                #option nis-domain "kusu";
->>>>>>> .r1407
-                #option broadcast-address 10.255.255.255;
                 print '\tif substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {'
                 print '\t\tfilename  "pxelinux.0";'
                 print '\t\toption vendor-class-identifier  "PXEClient";'
