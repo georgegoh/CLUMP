@@ -211,7 +211,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
                 newnic.boot = interfaces[intf]['active_on_boot']
                 newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
-                                     device=intf, netname='net-%s' % intf)
+                                     device=intf, netname='net-%s' % intf,
+                                     suffix=intf)
                 
                 if not interfaces[intf]['use_dhcp']:
                     newnic.ip = interfaces[intf]['ip_address']

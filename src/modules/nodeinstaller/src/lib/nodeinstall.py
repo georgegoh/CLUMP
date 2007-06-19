@@ -360,10 +360,11 @@ class KickstartFromNIIProfile(object):
     def prepareKickstartNetworkProfile(self,ni):
         """ Reads in the NII instance and fills up the networkprofile. """
         
-        # network profile dict
         logger.debug('Preparing network profile')
         nw = {}
+        # network profile dict
         nw['interfaces'] = {}
+        default_gateway = ''
         for nic in ni.nics:
             logger.debug('ni.nics info for device: %s' % nic)
             logger.debug('ni.hostname: %s' % ni.name)         
@@ -375,15 +376,27 @@ class KickstartFromNIIProfile(object):
                     'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
                     'ip_address': ni.nics[nic]['ip'],
                     'netmask': ni.nics[nic]['subnet'],
-                    'active_on_boot': True, # FIXME: this needs to be figured out from somewhere!
+                    'active_on_boot': ni.nics[nic]['boot']
                     }
                     
+            if ni.nics[nic]['gateway']:
+                default_gateway = ni.nics[nic]['gateway']
+
             nw['interfaces'][nic] = nicinfo
-            nw['default_gw'] = ''
-            nw['dns1'] = ''
-            nw['gw_dns_use_dhcp'] = True # FIXME: this needs to be figured out from somewhere!
-            nw['fqhn_use_dhcp'] = False # FIXME: this needs to be figured out from somewhere!
-            nw['fqhn'] = ni.name + ni.nics[nic]['suffix'] # FIXME: suffix may be empty and there may be multiple fqhn with same names!
+
+        nw['fqhn_use_dhcp'] = False     # always static hostnames
+        nw['fqhn'] = '.'.join([ni.name, ni.appglobals['DNSDomain']])
+
+        if default_gateway:
+            nw['gw_dns_use_dhcp'] = False
+            nw['default_gw'] = default_gateway
+        else:
+            nw['gw_dns_use_dhcp'] = True
+
+        nw['dns1'] = ni.appglobals.get('dns1', '')
+        nw['dns2'] = ni.appglobals.get('dns2', '')
+        nw['dns3'] = ni.appglobals.get('dns3', '')
+
         logger.debug('network profile constructed: %r' % nw)
         
         self.networkprofile = nw

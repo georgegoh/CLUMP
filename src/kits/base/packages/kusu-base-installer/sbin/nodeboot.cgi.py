@@ -72,7 +72,7 @@ class NodeInfo:
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '
                  'networks.subnet, networks.device, networks.suffix, '
-                 'networks.gateway, networks.options '
+                 'networks.gateway, networks.options, nics.boot '
                  'from nics,networks where networks.netid=nics.netid '
                  'and nics.nid="%i"' % nid)
         try:
@@ -87,8 +87,8 @@ class NodeInfo:
             print "Oops!"
             sys.exit(-1)
         for row in data:
-            ip, dhcp, network, subnet, dev, suffix, gw, opt = row
-            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s"></nicinfo>' % (dev, ip, subnet, network, suffix, gw, dhcp, opt)
+            ip, dhcp, network, subnet, dev, suffix, gw, opt, boot = row
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip, subnet, network, suffix, gw, dhcp, opt, boot)
 
         # Partition Info
         query = ('select device, partition, mntpnt, fstype, size, options, preserve '

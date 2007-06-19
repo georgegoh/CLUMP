@@ -95,7 +95,8 @@ class NodeInstInfoHandler(ContentHandler):
                                   'suffix'  : attrs.get('suffix',""),
                                   'gateway' : attrs.get('gateway',""),
                                   'dhcp'    : attrs.get('dhcp',""),
-                                  'options' : attrs.get('options',"") }
+                                  'options' : attrs.get('options',""),
+                                  'boot'    : attrs.get('boot',"") }
         elif name == 'component':
             self.compstart = 1
 
