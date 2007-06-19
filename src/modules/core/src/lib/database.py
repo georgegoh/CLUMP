@@ -531,10 +531,12 @@ class DB(object):
         """
 
         self.ctx = SessionContext(sa.create_session)
-        
         # mappers have been created, do nothing
-        if len(sa.orm.mapper_registry) > 0: 
-            return 
+        from sqlalchemy.orm.mapper import ClassKey 
+        if sa.orm.mapper_registry.has_key(ClassKey(ReposHaveKits, self.entity_name)):
+            self.ctx.set_current(sa.orm.mapper_registry.get(ClassKey(ReposHaveKits, self.entity_name)).get_session())
+            return
+        #else:
 
         repos_have_kits = sa.Table('repos_have_kits', self.metadata,
                                    autoload=True)
@@ -735,8 +737,6 @@ class DB(object):
         if not isinstance(other_db, DB):
             raise TypeError, "Class '%s' is not a DB class" % other_db.__class__.__name__
 
-        session = self.createSession()
-
         if other_db.driver == 'mysql':
             try:
                 other_db.dropDatabase()
@@ -752,13 +752,13 @@ class DB(object):
         # Copy them in order to preserve relationship
         # Order by primary, secondary(1-M) and 
         # junction tables(M-N)
-        for table in ['appglobals', 'repos', 'kits', 'networks', \
-                      'nics', 'components', 'nodes', 'modules', \
-                      'nodegroups', 'packages', 'partitions', 'scripts', \
-                      'ng_has_comp', 'repos_have_kits', 'ng_has_net']:
-            for obj in session.query(getattr(self, table)).select():
+        for table in ['AppGlobals', 'Repos', 'Kits', 'Networks', \
+                      'Nics', 'Components', 'NodeGroups', 'Modules', \
+                      'Nodes', 'Packages', 'Partitions', 'Scripts', \
+                      'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
+            for obj in getattr(self, table).select():
                 try:
-                    session.expunge(obj)
+                    obj.expunge()
                 except: pass
 
                 # Fully detatch the object
@@ -766,16 +766,13 @@ class DB(object):
                     delattr(obj, '_instance_key')
 
                 try:
-                    session.save_or_update(obj, entity_name=other_db.entity_name)
+                    obj.save_or_update(entity_name=other_db.entity_name)
                 except:
                     raise UnableToSaveDataError, obj
 
             try:
-                session.flush()
+                other_db.flush()
             except sa.exceptions, e: 
                 raise UnableToCommitDataError, e
-            except Exceptions, e:
+            except Exception, e:
                 raise KusuError, e
-
-        session.close()
-
