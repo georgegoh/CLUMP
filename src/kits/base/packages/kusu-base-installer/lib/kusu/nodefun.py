@@ -616,13 +616,21 @@ class NodeFun(object, KusuApp):
                    macList["%s" % node] = "%s" % data[0]
                else:
                    nodeList.remove(node)
+                   badList.append(node)
            except: 
                nodeList.remove(node)
+               badList.append(node)
 
         # Get the new nodegroups network and device table list
         self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
         newngdata = list(self._dbReadonly.fetchall())
-
+    
+        # Delete nodes that don't exist in db.
+        for node in nodeList:
+            if not node in dataList:
+               nodeList.remove(node)
+               badList.append(node)
+ 
         # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
         # Have to resolve this by running add hosts
         for node in nodeList:
@@ -646,7 +654,7 @@ class NodeFun(object, KusuApp):
                badflag = 0
 
         for badnode in badList:
-           nodeList.remove(badnode)
+              nodeList.remove(badnode)
      
         return nodeList, macList, badList, interfaceName
 
@@ -930,3 +938,12 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
 
+if __name__ == "OFF__main__":
+    myNodeFun = NodeFun()
+
+    movegroups = ["Compute", "Compute Disked", "Compute Diskless"]
+    moveList, macList, badList, interface = myNodeFun.moveNodegroups(movegroups, "Installer")
+    if (moveList, macList, badList):
+        print "\t* Testing NodeFun.moveNodegroups: Returns: %s" % moveList
+        print "\t* badList = %s" % badList
+        print "Interface = %s" % interface
