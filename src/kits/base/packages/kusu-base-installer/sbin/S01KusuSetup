@@ -21,8 +21,8 @@
 
 VERSION=5.0
 
-
-export PYTHONPATH=/opt/kusu/lib/python
+source /etc/profile.d/kusuenv.sh 
+TMPDIR=`/bin/mktemp -d`
 
 echo "Configuring this node as an Installer"
 
@@ -38,8 +38,8 @@ else
     # Fix the tftp config file
     awk -F' ' ' $1 == "server_args"                    { print "        server_args   = -s /tftpboot/kusu" }
                 $1 == "disable"                        { print "        disable       = no" }
-                $1 != "disable" && $1 != "server_args" { print $0 }' < /etc/xinetd.d/tftp > /etc/xinetd.d/tftp.new
-    mv /etc/xinetd.d/tftp.new /etc/xinetd.d/tftp
+                $1 != "disable" && $1 != "server_args" { print $0 }' < /etc/xinetd.d/tftp > $TMPDIR/tftp.new
+    mv -f $TMPDIR/tftp.new /etc/xinetd.d/tftp
 fi
 
 if [ ! -f /etc/xinetd.d/rsync ] ; then
@@ -47,8 +47,8 @@ if [ ! -f /etc/xinetd.d/rsync ] ; then
 else
     # Fix the rsync config file
     awk -F' ' ' $1 == "disable"  { print "        disable       = no" }
-                $1 != "disable"  { print $0 }' < /etc/xinetd.d/rsync > /etc/xinetd.d/rsync.new
-    mv /etc/xinetd.d/rsync.new /etc/xinetd.d/rsync
+                $1 != "disable"  { print $0 }' < /etc/xinetd.d/rsync > $TMPDIR/rsync.new
+    mv -f $TMPDIR/rsync.new /etc/xinetd.d/rsync
 fi
 
 # Restart xinetd
@@ -58,7 +58,7 @@ if [ -f /etc/init.d/xinetd ] ; then
 else
     echo "ERROR:  Can't find xinetd startup script"
 fi
-chkconfig xinetd on
+/sbin/chkconfig xinetd on
 
 
 
@@ -78,36 +78,12 @@ chmod 644  /tftpboot/kusu/vmlinuz-${REV}
 chgrp -R apache /depot/
 chgrp -R apache /opt/kusu/cfm
 
-# Setup Apache
-if [ ! -d /var/www/html ]; then
-    echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
-else
-    cd /var/www/html
-    ln -s /opt/kusu/cfm cfm
-    ln -s /depot/repos repos
-    ln -s /depot/images images
-
-    # Generate Kusu.conf
-    if [ -f /opt/kusu/bin/genconfig ]; then
-	/opt/kusu/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
-	if [ -x /etc/init.d/httpd ]; then
-	    /etc/init.d/httpd stop
-	    /etc/init.d/httpd start
-	fi
-    else
-	echo "ERROR:  Cannot find genconfig"
-    fi
-    chkconfig httpd on
-fi
-
-
 # Prepare Mysql
 if [ -f /etc/init.d/mysqld ]; then
-    chkconfig mysqld on
+    /sbin/chkconfig mysqld on
 
     /etc/init.d/mysqld stop
     /etc/init.d/mysqld start
-    chkconfig mysqld on
     
     # Create default database
     /usr/bin/mysqladmin create kusudb
@@ -115,7 +91,7 @@ if [ -f /etc/init.d/mysqld ]; then
     /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_alterdb.sql
 
     # Set some sample values in the database table
-    # /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_primedb_sample.sql
+    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_primedb_sample.sql
 
     # Set user permissions
     /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
@@ -123,6 +99,28 @@ else
     echo "ERROR:  Could not find mysqld"
 
 fi
+
+# Setup Apache
+if [ ! -d /var/www/html ]; then
+    echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
+else
+    ln -sf /opt/kusu/cfm /var/www/htm//cfm
+    ln -sf /depot/repos /var/www/html/repos
+    ln -sf /depot/images /var/www/html/images
+
+    # Generate Kusu.conf
+    if [ -f /opt/kusu/bin/genconfig ]; then
+	genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
+	if [ -x /etc/init.d/httpd ]; then
+	    /etc/init.d/httpd stop
+	    /etc/init.d/httpd start
+	fi
+    else
+	echo "ERROR:  Cannot find genconfig"
+    fi
+    /sbin/chkconfig httpd on
+fi
+
 
 # Add entry to motd
 echo "Kusu $VERSION Installer Node" >> /etc/motd

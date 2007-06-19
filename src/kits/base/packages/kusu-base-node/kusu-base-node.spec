@@ -17,6 +17,8 @@
 #
 # 
 
+%define _approot /opt/kusu
+
 Summary: Base Kit for Nodes
 Name: kusu-base-node
 Version: 1.0
@@ -27,6 +29,8 @@ Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot
+Requires: coreutils 
+Requires: chkconfig
 
 %description
 This package contains the Kusu Base kit part for nodes.
@@ -61,18 +65,17 @@ This package contains the Kusu Base kit part for nodes.
 ## POST
 ##
 %post
-if [ -e /etc/rc.local ]; then
-	echo "# Kusu post install script runner" >> /etc/rc.local
-        echo "if [ -x /etc/rc.kusu.sh ]; then" >> /etc/rc.local
-	echo "    /etc/rc.kusu.sh" >> /etc/rc.local
-	echo "fi" >> /etc/rc.local
-fi
-	
-
+/sbin/chkconfig --add kusu > /dev/null 2>&1
+/sbin/chkconfig kusu on > /dev/null 2>&1
+ 
+%preun
 ##
 ## PREUN
 ##
-%preun
+if [ $1 = 0 ]; then # during removal of a pkg
+    /sbin/chkconfig --del kusu > /dev/null 2>&1
+fi
+
 
 ##
 ## POSTUN
@@ -94,7 +97,7 @@ make ROOT=$RPM_BUILD_ROOT install
 ##
 %files
 %defattr(-,root,root)
-/etc/rc.kusu.sh
+/etc/init.d/kusu
 /etc/rc.kusu.d/
 /opt/kusu/*
 %exclude /opt/kusu/lib/python/kusu/*.py?

@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-#   Copyright 2007 Platform Computing Corporation
+#   Copyright 2007 Platform Computing Corporation Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -24,19 +24,40 @@
 # It will also deal with running any custom user scripts.
 # This scripts will also be used when new packages are installed.
 
+# chkconfig: 2345 99 99
+# description: RC scripts for Kusu
+
+. /etc/init.d/functions
+
 KUSURCDIR=/etc/rc.kusu.d
 KUSUUSCRIPTS=/etc/rc.kusu.custom.d
 
-# Run any Kit configuration script.
-for i in $KUSURCDIR/S* ; do
-    echo $i
-    #$i start
-done
+prog='kusu'
 
-# Now run any user provided custom scripts
-for i in $KUSUUSCRIPTS/* ; do
-    if [ -x $i ] ; then
-	$i start
-	rm -rf $i
-    fi
-done
+start() {
+	echo -n $"Starting $prog: "	
+    
+    # Run any Kit configuration script.
+    for i in $KUSURCDIR/S* ; do
+        $i start
+        #rm -rf $i
+    done
+
+    # Now run any user provided custom scripts
+    for i in $KUSUUSCRIPTS/* ; do
+        if [ -x $i ] ; then
+            $i start
+            #rm -rf $i
+        fi
+    done
+}
+
+
+case "$1" in
+  start)
+  	start
+	;;
+  *)
+	echo $"Usage: $0 {start}"
+	exit 1
+esac
