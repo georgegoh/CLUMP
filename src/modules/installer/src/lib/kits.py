@@ -34,6 +34,14 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistentProfile.__init__(self, kiprofile)
 
+        db = self.kiprofile.getDatabase()
+        self.kitops = KitOps(installer=True)
+        self.kitops.setDB(db)
+        self.kitops.setPrefix(self.kiprofile['Kusu Install MntPt'])
+        self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
+
+        self.installedBootMediaKits = False
+
     def setCallbacks(self):
         """
         Implementation of the setCallbacks interface defined in parent class
@@ -53,6 +61,9 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
                                  justification=[LEFT, RIGHT, RIGHT],
                                  returnExit=0)
 
+        if self.installedBootMediaKits:
+            self.installKitsOnBootMedia()
+
         self.detectAndDisplayKits()
 
         prog_dlg.close()
@@ -61,14 +72,41 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
 
     def detectAndDisplayKits(self):
         """Detect kits already existing in the system."""
-        db = self.kiprofile.getDatabase()
-        self.kitops = KitOps(installer=True)
-        self.kitops.setDB(db)
-        self.kitops.setPrefix(self.kiprofile['Kusu Install MntPt'])
-        self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
+
         kit_list = self.kitops.listKit()
         for kit in kit_list:
             self.listbox.addRow([kit.rname, kit.version, kit.arch], kit)
+
+    def installKitsOnBootMedia(self):
+        """Install the kits on boot media (most likely base kit only)."""
+
+        import kusu.hardware.probe
+        cdrom_dict = kusu.hardware.probe.getCDROM()
+        cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
+
+        kl.debug('Media device list: %s', cdrom_list)
+
+        boot_cd = ''
+        for cd in cdrom_list:
+            try:
+                self.kitops.mountMedia(cd)
+                boot_kit = self.kitops.determineKitName()
+                self.kitops.unmountMedia()
+
+                if boot_kit == 'base':
+                    boot_cd = cd
+                    break
+            except CannotMountKitMediaError:
+                pass
+            except NoKitsFoundError:
+                self.kitops.unmountMedia()
+
+        if boot_cd:
+            from kusu.installer.kits_sourcehandlers import addKitFromCDAction
+            kl.debug('About to install base kit before showing kit screen')
+            addKitFromCDAction(self, self.kitops, boot_cd)
+
+        self.installedBootMediaKits = True
 
     def setDefaults(self):
         self.kiprofile[self.profile] = {}

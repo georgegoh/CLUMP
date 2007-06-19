@@ -231,6 +231,13 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
             import socket
             import struct
 
+            db.AppGlobals(kname='dns1', kvalue=profile['dns1'])
+
+            if profile['dns2']:
+                db.AppGlobals(kname='dns2', kvalue=profile['dns2'])
+            if profile['dns3']:
+                db.AppGlobals(kname='dns3', kvalue=profile['dns3'])
+
             nets = db.Networks.select()
             for net in nets:
                 if not net.usingdhcp:
