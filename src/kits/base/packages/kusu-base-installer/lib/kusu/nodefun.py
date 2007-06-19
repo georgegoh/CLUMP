@@ -552,10 +552,8 @@ class NodeFun(object, KusuApp):
             return None
 
     def moveNodegroups(self, groupList, destGroup):
-         macList = {}
          dupeList = []
          nodeList = []
-         interfaceName = ""
          
          self.setNodegroupByName(destGroup)
          # Check for valid nodegroup.
@@ -655,11 +653,11 @@ class NodeFun(object, KusuApp):
 
         for badnode in badList:
               nodeList.remove(badnode)
-     
+    
         return nodeList, macList, badList, interfaceName
 
 # Run some unittests
-if __name__ == "__main__":
+if __name__ == "__amain__":
     myNodeFun = NodeFun()
 
     # Test validateNode
@@ -938,7 +936,7 @@ if __name__ == "__main__":
     else:
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
 
-if __name__ == "OFF__main__":
+if __name__ == "__main__":
     myNodeFun = NodeFun()
 
     movegroups = ["Compute", "Compute Disked", "Compute Diskless"]
