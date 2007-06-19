@@ -146,9 +146,15 @@ def checkAndMakeNode(devpath):
                 dev_major_num = 57
                 part_minor_num = 64 + num
 
+        # dummy data put here for test. Note that this
+        # will break hdk(which is the 11th ide interface).
+        elif dev_basename.startswith('loop'):
+            dev_major_num = 57
+            part_minor_num = num
+
         else:
             raise UnknownDeviceError, "Cannot create %s - don't know the " + \
-                                      "major/minor number scheme."
+                                      "major/minor number scheme." % basepath
 
         logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
                     (devpath, dev_major_num, part_minor_num, devpath))

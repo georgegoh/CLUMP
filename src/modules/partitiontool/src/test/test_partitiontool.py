@@ -12,41 +12,15 @@ import subprocess
 from kusu.partitiontool.partitiontool import DiskProfile
 from os import stat
 from os.path import basename
-
-def runCommand(cmd):
-    p = subprocess.Popen(cmd,
-                     shell=True,
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    print '"%s" stdout: %s stderr: %s' %(cmd, out, err)
-    return out, err
+from kusu.util.testing import *
 
 class TestDiskProfile:
     """Test cases for the DiskProfile class.
        Create an empty loopback device.
     """
     def setUp(self):
-        out, err = runCommand('losetup -f')
-        self.loopback = out.strip()
-        print 'free loopback device: %s' % self.loopback
-        assert self.loopback, "No free loopback device."
-
-        print 'Creating 1GB tempfile. This may take a while...'
         size = 1024 * 1024 * 1024
-        self.tmpfile = tempfile.mktemp()
-        cmd = 'head -c %d < /dev/zero > %s' % (size, self.tmpfile)
-        runCommand(cmd)
-        assert stat(self.tmpfile).st_size == size, "Didn't create tempfile of right size."
-
-        cmd = 'losetup %s %s' % (self.loopback, self.tmpfile)
-        runCommand(cmd)
-
-        cmd = 'losetup %s' % self.loopback
-        out, err = runCommand(cmd)
-        loopback_file = out.split()[-1].strip('()')
-        assert loopback_file == self.tmpfile, "loopback file doesn't match tempfile."
-
+        self.loopback, self.tmpfile = createLoopbackDevice(size)
         self.dp = DiskProfile(True, basename(self.loopback))
 
     def tearDown(self):
