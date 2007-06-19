@@ -61,7 +61,7 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
                                  justification=[LEFT, RIGHT, RIGHT],
                                  returnExit=0)
 
-        if self.installedBootMediaKits:
+        if not self.installedBootMediaKits:
             self.installKitsOnBootMedia()
 
         self.detectAndDisplayKits()
