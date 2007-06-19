@@ -35,21 +35,35 @@ KUSUUSCRIPTS=/etc/rc.kusu.custom.d
 prog='kusu'
 
 start() {
-	echo -n $"Starting $prog: "	
-    
+	echo -n $"Starting $prog. This may take awhile: "	
+  
+    # start with success first, if any fails,
+    # it will be a failure
+    RETVAL=1
+ 
     # Run any Kit configuration script.
-    for i in $KUSURCDIR/S* ; do
-        $i start
-        #rm -rf $i
-    done
+    if [ -d "$KUSURCDIR" ]; then
+        for i in $KUSURCDIR/S* ; do
+            if [ -x "$i" ]; then
+                $i start > /dev/null 2>&1
+                RETVAL=$(($? && $RETVAL))
+                #rm -rf $i
+            fi
+        done
+    fi
 
     # Now run any user provided custom scripts
-    for i in $KUSUUSCRIPTS/* ; do
-        if [ -x $i ] ; then
-            $i start
-            #rm -rf $i
-        fi
-    done
+    if [ -d "$KUSUUSCRIPTS" ]; then
+        for i in $KUSUUSCRIPTS/ ; do
+            if [ ! -d "$i" ] && [ -x "$i" ] ; then
+                $i start > /dev/null 2>&1
+                RETVAL=$(($? && $RETVAL))
+                #rm -rf $i
+            fi
+        done
+    fi
+
+    [ $RETVAL = 0 ] && success || failure
 }
 
 
