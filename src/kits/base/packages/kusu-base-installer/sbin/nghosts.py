@@ -23,7 +23,6 @@ import os
 import tempfile
 import string
 import sys
-import time
 from sets import Set
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
@@ -388,7 +387,6 @@ class SelectNodesWindow(USXBaseScreen):
                                self.kusuApp._("nghosts_reinstall_nodes_progress"))
                   # Call PDSH here
                   rn = syncfun()
-                  time.sleep(5)
                   rn.runPdsh(moveIPList, "reboot")
                   progDialog.close()
 
@@ -568,7 +566,6 @@ class SelectNodegroupsWindow(USXBaseScreen):
                                  self.kusuApp._("nghosts_reinstall_nodes_progress"))
                     # Call PDSH here
                     rn = syncfun()
-                    time.sleep(5)
                     rn.runPdsh(moveIPList, "reboot")
                     progDialog.close()
             self.screen.refresh()
