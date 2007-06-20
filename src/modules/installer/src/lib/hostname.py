@@ -21,7 +21,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-DEFAULT_DNSDOMAIN = 'kusu'
+DEFAULT_DNSZONE = 'kusu'
 
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
@@ -128,7 +128,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
     def save(self, db, profile):
-        dnsdomain = db.AppGlobals(kname='DNSDomain', kvalue=DEFAULT_DNSDOMAIN)
+        dnsdomain = db.AppGlobals(kname='DNSZone', kvalue=DEFAULT_DNSZONE)
 
         if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
             dnsdomain.kvalue = profile['fqhn_domain']
