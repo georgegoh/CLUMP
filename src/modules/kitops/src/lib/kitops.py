@@ -45,7 +45,7 @@ class KitOps:
         self.prefix = path(kw.get('prefix', '/'))
         self.tmpprefix = path(kw.get('tmpprefix', '/tmp'))
         self.kits_dir = self.prefix / 'depot/kits/'
-        self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
+        self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
 
     def setKitName(self, kitname):
         self.kitname = kitname
@@ -64,7 +64,7 @@ class KitOps:
         if prefix:
             self.prefix = path(prefix)
             self.kits_dir = self.prefix / 'depot/kits/'
-            self.pxeboot_dir = self.prefix / 'tftpboot/pxelinux/'
+            self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
 
     def setTmpPrefix(self, tmpprefix):
         """
