@@ -350,7 +350,7 @@ class NodeFun(object, KusuApp):
         self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND \
                                   ng_has_net.ngid = 1 AND networks.device='%s'" % selectedinterface)
      
-        installer_network, installer_subnet = self._dbReadonly.fetchone()
+        installer_subnet, installer_network = self._dbReadonly.fetchone()
        
         # Iterate though list of interface devices.
         for nicdev in interfaces:
