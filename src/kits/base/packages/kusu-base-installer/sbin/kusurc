@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# $Id: kusurc.py 1436 2007-06-19 11:56:44Z ltsai $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+
+from kusu.core import database as db
+import os
+import re
+
+class App:
+
+    def __init__(self):
+        self.db = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
+        self.os_name = os.environ.get('KUSU_DIST', None)
+        self.os_version = os.environ.get('KUSU_DIST_VER', None)
+        #self.os_arch = os.environ.get('KUSU_DIST_ARCH', None)
+        
+        arch = os.uname()[4]
+        if re.compile('i[3456]86').match(arch):
+            arch = 'i386'
+        self.os_arch = arch
+
+    def run(self):
+        self.migrateDB()
+        self.makeRepos()
+
+    def migrateDB(self):
+        """Set up MySQL connection and SQLite collection, then migrate."""
+
+        sqliteDB = db.DB('sqlite', '/root/kusu.db')
+        sqliteDB.copyTo(self.db)
+        os.unlink('/root/kusu.db')
+
+    def makeRepos(self):
+        """Makes the repoistory for compute and installer nodes."""
+
+        from kusu.repoman.repofactory import RepoFactory
+
+        rfactory = RepoFactory(self.db)
+        longname = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
+
+        ngname = 'installer' + '-' + longname
+        rfactory.make(ngname, 'Repo for ' + ngname)
+    
+        ngname = 'compute' + '-' + longname
+        rfactory.make(ngname, 'Repo for ' + ngname)
+        
+if __name__ == "__main__":
+    app = App()
+    app.run()
+
+    # delete myself once I'm finished
+    os.remove(sys.argv[0])
