@@ -534,7 +534,7 @@ class DB(object):
         # mappers have been created, do nothing
         from sqlalchemy.orm.mapper import ClassKey 
         if sa.orm.mapper_registry.has_key(ClassKey(ReposHaveKits, self.entity_name)):
-            self.ctx.set_current(sa.orm.mapper_registry.get(ClassKey(ReposHaveKits, self.entity_name)).get_session())
+#            self.ctx.set_current(sa.orm.mapper_registry.get(ClassKey(ReposHaveKits, self.entity_name)).get_session())
             return
         #else:
 
@@ -758,7 +758,7 @@ class DB(object):
                       'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
             for obj in getattr(self, table).select():
                 try:
-                    obj.expunge()
+                    obj.expunge(entity_name=self.entity_name)
                 except: pass
 
                 # Fully detatch the object

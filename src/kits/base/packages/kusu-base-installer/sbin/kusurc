@@ -13,6 +13,7 @@ import re
 class App:
 
     def __init__(self):
+        self.sqliteDB = db.DB('sqlite', '/root/kusu.db')
         self.db = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
         self.os_name = os.environ.get('KUSU_DIST', None)
         self.os_version = os.environ.get('KUSU_DIST_VER', None)
@@ -30,8 +31,7 @@ class App:
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
 
-        sqliteDB = db.DB('sqlite', '/root/kusu.db')
-        sqliteDB.copyTo(self.db)
+        self.sqliteDB.copyTo(self.db)
         os.unlink('/root/kusu.db')
 
     def makeRepos(self):
