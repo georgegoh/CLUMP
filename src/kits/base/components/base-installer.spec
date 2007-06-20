@@ -55,7 +55,8 @@ Requires: pdsh-mod-machines >= 2.10
 Requires: pdsh-rcmd-rsh >= 2.10
 Requires: pdsh-rcmd-ssh >= 2.10
 Requires: pdsh-mod-dshgroup >= 2.10
-
+Requires: kusu-cheetah >= 0.2
+Requires: kusu-pysqlite >= 0.2
 
 %description
 This component provides the node with the Kusu management tools for the 
