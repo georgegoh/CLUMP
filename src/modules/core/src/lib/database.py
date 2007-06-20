@@ -753,9 +753,9 @@ class DB(object):
         # Order by primary, secondary(1-M) and 
         # junction tables(M-N)
         for table in ['AppGlobals', 'Repos', 'Kits', 'Networks', \
-                      'Nics', 'Components', 'NodeGroups', 'Modules', \
+                      'Components', 'NodeGroups', 'Modules', \
                       'Nodes', 'Packages', 'Partitions', 'Scripts', \
-                      'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
+                      'Nics', 'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
             for obj in getattr(self, table).select():
                 try:
                     obj.expunge(entity_name=self.entity_name)
