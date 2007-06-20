@@ -10,17 +10,18 @@ if [ ! $? -eq 0 ]; then
 fi
 
 cd ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
-for i in `find ./ -name '*.spec'`
-do
-  cp $i $i.orig
-  sed -e '/^\%exclude/d' \
-      -e 's%RPM_BUILD_ROOT/repo%RPM_BUILD_ROOT/depot%g' \
-      $i.orig > $i
-done
 
-cp packages/pdsh/Makefile packages/pdsh/Makefile.orig
-sed -e 's%rpmbuild --rebuild%rpmbuild --rebuild --without readline%' \
-packages/pdsh/Makefile.orig > packages/pdsh/Makefile
+# for i in `find ./ -name '*.spec'`
+# do
+#   cp $i $i.orig
+#   sed -e '/^\%exclude/d' \
+#       -e 's%RPM_BUILD_ROOT/repo%RPM_BUILD_ROOT/depot%g' \
+#       $i.orig > $i
+# done
+# 
+# cp packages/pdsh/Makefile packages/pdsh/Makefile.orig
+# sed -e 's%rpmbuild --rebuild%rpmbuild --rebuild --without readline%' \
+# packages/pdsh/Makefile.orig > packages/pdsh/Makefile
 
 make
 ec=$?
