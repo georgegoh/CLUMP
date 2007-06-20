@@ -622,7 +622,7 @@ actions:
 
             else:
                 # use existing kusu devel workspace
-                msg = self._('Found existing kusu devel workspace at %(devel)..' \
+                msg = self._('Found existing kusu devel workspace at %(devel)s..' \
                     % {'devel':kusudevelroot})
                 print msg
                 svnsrc.setup(develroot=kusudevelroot,kusuroot=kusuroot)
