@@ -47,7 +47,7 @@ def getOS(db, key):
 
     # There should only 1 be os kit for a repo. 
     if len(kit) != 1:
-        raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % repoid 
+        raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % key
     else:
         kit = kit[0]
    
