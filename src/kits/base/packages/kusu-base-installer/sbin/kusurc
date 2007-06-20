@@ -9,6 +9,7 @@
 from kusu.core import database as db
 import os
 import re
+import sys
 
 class App:
 
@@ -27,7 +28,7 @@ class App:
     def run(self):
         self.migrateDB()
         self.makeRepos()
-
+       
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
 
