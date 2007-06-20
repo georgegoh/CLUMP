@@ -69,10 +69,9 @@ installers.
 %pre
 
 %post
-#equivalent of the roll's XML post section
-echo "Running base-installer post"
+#equivalent of post section
 
 %preun
 
 %postun
-#equivalent of the roll's XML uninstall section
+#equivalent of uninstall section

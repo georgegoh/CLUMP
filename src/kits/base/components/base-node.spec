@@ -40,9 +40,9 @@ nodes (not the installer components).
 %pre
 
 %post
-#equivalent of the roll's XML post section for the client
+#equivalent of post section for the client
 
 %preun
 
 %postun
-#equivalent of the roll's XML uninstall section for the client
+#equivalent of uninstall section for the client
