@@ -685,8 +685,8 @@ actions:
             print msg
             self.printUsageExit()
         else:
-            # validate patchfile parentdir
-            parentdir = os.path.join(patchfile,os.path.pardir)
+            # validate patchfile dir
+            parentdir = os.path.dirname(patchfile)
             if not os.access(parentdir,os.R_OK|os.W_OK):
                 msg = self._('Please ensure that the patchfile can be written into %(parentdir)s!' \
                     % {'parentdir':os.path.abspath(parentdir)})
