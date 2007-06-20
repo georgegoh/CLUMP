@@ -4,6 +4,14 @@ if [ $# != 0 ]; then
 	BASEKITSRC="$1"
 	NIPATCHFILESDIR="$BASEKITSRC/packages/kusu-nodeinstaller-patchfiles"
 	KUSU_BUILD_ARTEFACTS=${CMAKE_CURRENT_BINARY_DIR}/bin/build-kusu-artefacts
+	KUSU_DEPS_CHECK=${CMAKE_CURRENT_BINARY_DIR}/bin/kusu-deps-check
+	
+	# check tool dependencies
+	$KUSU_DEPS_CHECK
+	if [ ! $? -eq 0 ]; then
+		echo "There are dependencies missing. Please fix before running this again!"
+		exit 2
+	fi
 	
 	if [ ! -d "$NIPATCHFILESDIR" ]; then
 		echo "Please specify the location of the Base Kit source directory!"
@@ -52,6 +60,7 @@ if [ $# != 0 ]; then
 	
 else
 	echo "$0 <BASEKITSRC>"
+	exit 1
 fi
 
 

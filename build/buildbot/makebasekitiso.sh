@@ -4,6 +4,11 @@ mkdir -m 755 -p ${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}
 
 ${CMAKE_CURRENT_BINARY_DIR}/bin/makepatchfiles.sh ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
 
+if [ ! $? -eq 0 ]; then
+	echo "Failure making the NodeInstaller patchfiles!"
+	exit 2
+fi
+
 cd ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
 for i in `find ./ -name '*.spec'`
 do
