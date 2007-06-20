@@ -124,8 +124,10 @@ class NodeMemberApp(object, KusuApp):
           
         # Handle -l option
         if self._options.allnodegroups:
-            print self._("Node Group Names")
-            print self._("================\n")
+            str= self._("Node Group Names")
+            print str
+            print "=" * len(str)
+            print "\n"
             # Get a list of all node groups to iterate though:
             database.connect()
             database.execute("SELECT ngid,ngname FROM nodegroups")
@@ -148,8 +150,10 @@ class NodeMemberApp(object, KusuApp):
             database.execute("SELECT ngid FROM nodegroups WHERE ngname='%s'" % self._options.listnodegroup)
             try:
                 ngid = database.fetchall()[0][0]
-                print self._("Node Group")
-                print self._("==========\n")
+                str= self._("Node Group")
+                print str
+                print "-" * len(str)
+                print "\n"
                 database.execute("select nodes.name from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
                                   WHERE kname='PrimaryInstaller' AND nodes.ngid=%s ORDER BY name)" % ngid)
                 nodes = database.fetchall()
@@ -160,14 +164,12 @@ class NodeMemberApp(object, KusuApp):
                        print "%s" % node
                     print "\n"
             except:
-                print "Error: Not a valid node group.\n"
-            sys.exit(0)
+                self.parser.error("%s\n" % self._("options_invalid_nodegroup"))
 
         # Handle -t option - Copy to this node group.
         if bool(self._options.togroup):
             if not bool(self._options.movegroups) and not bool(self._options.copyhosts):
-                    print "Not enough options, use -f or -n only."
-                    sys.exit(0)
+                    self.parser.error("%s\n" % self._("nghosts_options_togroup_options_needed"))
             else:
                     flag = 1
                     badnodes = []
@@ -186,7 +188,7 @@ class NodeMemberApp(object, KusuApp):
                           try:
                               result = int(response)
                               if result < 0:
-                                  print "Error: %s" % self._("rack_negative_number")
+                                  print self._("rack_negative_number")
                                   flag = 1
                               else:
                                   self._options.racknumber = result
@@ -205,14 +207,14 @@ class NodeMemberApp(object, KusuApp):
 		    if bool(self._options.copyhosts):
                         for node in self._options.copyhosts:
                             if not nodeRecord.validateNode(node):
-                               print "Node not found: %s" % node
+                               print self._("Node not found: %s" % node)
                                badnodes.append(node)
 
                         for node in badnodes:
                                self._options.copyhosts.remove(node)
 
                         if not self._options.copyhosts:
-                           print "Error: There are no valid nodes to move to the node group '%s'" % self._options.togroup
+                           print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
                            sys.exit(-1)
                         else:
                            moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup)
@@ -223,7 +225,7 @@ class NodeMemberApp(object, KusuApp):
                            macsList.update(macList)
 
                     if nodesList:
-                        print "Will move the following hosts: [%s] to the node group '%s'" % (string.join(Set(nodesList), ", "), self._options.togroup)
+                        print self._("Will move the following hosts: [%s] to the node group '%s'" % (string.join(Set(nodesList), ", "), self._options.togroup))
 
                     if not nodesList:
                        print self._("Could not move the requested nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self._options.togroup)
@@ -259,21 +261,17 @@ class NodeMemberApp(object, KusuApp):
             
         # Handle -n without -t
         if bool(self._options.copyhosts) and not bool(self._options.togroup):
-            print "need to specify -t"
-            sys.exit(0)
+            self.parser.error(self._("nghosts_options_missing_togroup"))
         
         # Handle -f without -t
         if bool(self._options.movegroups) and not bool(self._options.togroup):
-            print "need to specify -t"
-            sys.exit(0)
+            self.parser.error(self._("nghosts_options_missing_togroup"))
             
         elif self._options.copyhosts == []:
-            print "need to specify a node"
-            sys.exit(0)
+            self.parser.error(self._("nghosts_options_nodes_missing"))
 
         elif self._options.movegroups == []:
-            print "need to specify a node group"
-            sys.exit(0)
+            self.parser.error(self._("nghosts_options_groups_missing"))
             
         if len(sys.argv[1:]) > 0:
             if (not bool(self._options.allnodegroups) or not self._options.listnodegroup or not bool(self._options.togroup)):
@@ -316,7 +314,7 @@ class SelectNodesWindow(USXBaseScreen):
         nodeRecord = NodeFun()
 
         if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
-            self.selector.popupMsg(self.kusuApp._("Error"), "No nodes selected or destination node group selected.")
+            self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected"))
             return NAV_NOTHING
 
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
@@ -329,7 +327,7 @@ class SelectNodesWindow(USXBaseScreen):
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
             if not moveList:
-               self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.nodegroupRadio.getSelection())
+               self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.nodegroupRadio.getSelection())
 
             else:
                nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
@@ -345,19 +343,19 @@ class SelectNodesWindow(USXBaseScreen):
                       try:
                           result = int(result[0])
                           if result < 0:
-                              self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                              self.selector.popupStatus(self.kusuApp._("Error"),
                               self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
                               flag = 1
                           else:
                               rack = result
                               flag = 0
                       except:
-                          self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                          self.selector.popupStatus(self.kusuApp._("Error"),
                           self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                           flag = 1
 
                if badList and len(moveList) > 0:
-                  self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
+                  self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
 
                # Create Temp file
                (fd, tmpfile) = tempfile.mkstemp()
@@ -495,7 +493,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         nodeRecord = NodeFun()
 
         if self.srcNodegroupsCheckbox.getSelection() == None or self.destNodegroupRadio.getSelection() == None:
-            self.selector.popupMsg(self.kusuApp._("Error"), "No node groups selected or destination node group selected.")
+            self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected_groups"))
             return NAV_NOTHING
 
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
@@ -524,19 +522,19 @@ class SelectNodegroupsWindow(USXBaseScreen):
                        try:
                           result = int(result[0])
                           if result < 0:
-                              self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                              self.selector.popupStatus(self.kusuApp._("Error"),
                               self.kusuApp._("Error: Cannot specify a negative number. Please try again"), 2)
                               flag = 1
                           else:
                               rack = result
                               flag = 0
                        except:
-                          self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"),
+                          self.selector.popupStatus(self.kusuApp._("Error"),
                           self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                           flag = 1
 
             if badList and len(moveList) > 0:
-                self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupRadio.getSelection()))
+                self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupRadio.getSelection()))
 
             if len(moveList) > 0:
                 # Create Temp file
@@ -650,7 +648,7 @@ class MembershipMainWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.kusuApp = KusuApp()
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\tInstructions: Select an option. Press F12 to quit, Press F8 to go next")
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("nghosts_helpline_intro"))
 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
@@ -668,7 +666,7 @@ class MembershipMainWindow(USXBaseScreen):
         
         # Check if the user selected no option. Pop up a msgbox with an error.
         if self.radioButtonList.getSelection() == None:
-            self.selector.popupMsg(self.kusuApp._("No option selected"), "Please select an option to continue.")
+            self.selector.popupMsg(self.kusuApp._("No option selected"), self.kusuApp._("nghosts_window_select_option"))
             return NAV_NOTHING
         
         if self.radioButtonList.getSelection() == 0:
@@ -711,9 +709,6 @@ class MembershipMainWindow(USXBaseScreen):
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
         self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
 
-    def validate(self):
-        self.selector.popupStatus(self._("Debug Window"), "Debug: %s" % radioButtonList.getselection(), 3)
-        
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the
        Navigator(or it's child) class.

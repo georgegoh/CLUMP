@@ -205,7 +205,7 @@ class AddHostApp(KusuApp):
                     myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
                 else:
-                    self.parser.error(kusuApp._("addhost_options_invalid_nodegroup"))
+                    self.parser.error(kusuApp._("options_invalid_nodegroup"))
 
         # Handle -f -i -n options
         if (self._options.macfile and self._options.interface and self._options.nodegroup):
@@ -227,7 +227,7 @@ class AddHostApp(KusuApp):
                             try:
                                result = int(response)
                                if result < 0:
-                                  print "Error: %s" % kusuApp._("rack_negative_number")
+                                  print kusuApp._("rack_negative_number")
                                   flag = 1
                                else:
                                   myNodeInfo.nodeRackNumber = result
@@ -318,7 +318,7 @@ class AddHostApp(KusuApp):
                       try:
                           result = int(response)
                           if result < 0:
-                             print "Error: %s" % kusuApp._("rack_negative_number")
+                             print kusuApp._("rack_negative_number")
                              flag = 1
                           else:
                              myNodeInfo.nodeRackNumber = result
@@ -628,14 +628,14 @@ class WindowSelectNode(NodeGroupWindow):
                     try:
                         result = int(result[0])
                         if result < 0:
-                            self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
-                            "Error: %s\n" % self.kusuApp._("rack_negative_number"), 2)
+                            self.selector.popupStatus(self.kusuApp._("Error"), 
+                            "%s\n" % self.kusuApp._("rack_negative_number"), 2)
                             flag = 1
                         else:
                             myNodeInfo.nodeRackNumber = result
                             flag = 0
                     except:
-                        self.selector.popupStatus(self.kusuApp._("addhost_window_title_error"), 
+                        self.selector.popupStatus(self.kusuApp._("Error"), 
                         self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                         flag = 1
 
