@@ -98,7 +98,7 @@ class thisReport(Report):
         # The Primary Installer is the DNS master, strip it out of the
         # serverIPs, so the serverIPs only contains the Secondary DNS Masters
         for ip in primaryIPs:
-            serverIPs.remove(ip)
+            if ip in serverIPs: serverIPs.remove(ip)
 
         dnsslaves = ''
         dnsslaves = string.join(serverIPs, ';')
