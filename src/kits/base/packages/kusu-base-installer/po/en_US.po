@@ -203,8 +203,11 @@ msgstr "Please enter a rack number"
 msgid "addhost_gui_text_rack"
 msgstr "Rack Number"
 
-msgid "addhost_window_title_error"
+msgid "Error"
 msgstr "Error"
+
+msgid "Notice"
+msgstr "Notice"
 
 msgid "addhost_window_title_interface"
 msgstr "Select Network Interface"
@@ -230,7 +233,7 @@ msgstr "The -f option requires the -i and -n options"
 msgid "addhost_options_nodegroup_required"
 msgstr "The -n option requires a Node group name"
 
-msgid "addhost_options_invalid_nodegroup"
+msgid "options_invalid_nodegroup"
 msgstr "Not a valid node group. Please try again"
 
 msgid "The node %s is not found. Please try again\n"
@@ -243,7 +246,7 @@ msgid "The file '%s' was not found"
 msgstr "The file '%s' was not found"
 
 msgid "rack_negative_number"
-msgstr "Cannot specify a negative number. Please try again."
+msgstr "Error: Cannot specify a negative number. Please try again."
 
 msgid "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
 msgstr "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED."
@@ -576,8 +579,17 @@ msgstr "The rack number to use (if applicable)"
 msgid "nghosts_window_title_prompt"
 msgstr "Node Membership Editor"
 
+msgid "nghosts_window_title_no_option"
+msgstr "No option selected"
+
+msgid "nghosts_window_select_option"
+msgstr "Please select an option to continue."
+
 msgid "nghosts_instruction_prompt"
 msgstr "Welcome to the Kusu membership editor! Please choose an option then click next."
+
+msgid "nghosts_helpline_intro"
+msgstr "Instructions: Select an option. Press F12 to quit, Press F8 to go next"
 
 msgid "nghosts_copy_selected_nodes"
 msgstr "Copy selected nodes to a node group"
@@ -612,6 +624,12 @@ msgstr "Do you wish to move the selected node(s) to the new node group?"
 msgid "nghosts_instructions_move_nodegroups"
 msgstr "Do you wish to move the nodes in the selected node group(s) to the new node group?"
 
+msgid "nghosts_nothing_selected"
+msgstr "Error: No nodes selected or destination node group selected."
+
+msgid "nghosts_nothing_selected_groups"
+msgstr "Error: No node groups selected or destination node group selected."
+
 msgid "nghosts_moving_nodes"
 msgstr "Moving nodes"
 
@@ -622,8 +640,60 @@ msgid "nghosts_reinstalling_nodes"
 msgstr "Reinstalling nodes"
 
 msgid "nghosts_reinstall_nodes_progress"
-msgstr "Initiating nodes to reinstall, please wait..."
-# ngedit
+msgstr "Initiating nodes to reinstall, please wait. This may take time if nodes are unreachable..."
+
+msgid "Source Nodes\t\t\t  Destination Nodegroup"
+msgstr "Source Nodes\t\t\t  Destination Nodegroup"
+
+msgid "Source Nodegroups\t\t  Destination Nodegroup"
+msgstr "Source Nodegroups\t\t  Destination Nodegroup"
 
 msgid "Node Group Editor"
 msgstr "Node Group Editor"
+
+msgid "Node Group Names"
+msgstr "Node Group Names"
+
+msgid "Reinstall Nodes"
+msgstr "Reinstall Nodes"
+
+msgid "Node Group"
+msgstr "Node Group"
+
+msgid "nghosts_options_togroup_options_needed"
+msgstr "The -t option needs the -n or -f options specified"
+
+msgid "nghosts_options_missing_togroup"
+msgstr "The -t option is required"
+
+msgid "nghosts_options_nodes_missing"
+msgstr "The -n option requires node(s) to be specified"
+
+msgid "nghosts_options_groups_missing"
+msgstr "The -f option requires node group(s) to be specified"
+
+msgid "nghosts_options_required_options"
+msgstr "Can only specify -l -g -t as command options"
+
+msgid "Node not found: %s"
+msgstr "Node not found: %s"
+
+msgid "There are no valid nodes to move to the node group '%s'"
+msgstr "There are no valid nodes to move to the node group '%s'"
+
+msgid "Will move the following hosts: [%s] to the node group '%s'"
+msgstr "Will move the following hosts: [%s] to the node group '%s'"
+
+msgid "Could not move the requested nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
+
+msgstr "Could not move the requested nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
+
+msgid "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'."
+
+msgstr "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'."
+
+msgid "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
+
+msgstr "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
+
+
