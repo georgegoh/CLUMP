@@ -34,6 +34,13 @@ class App:
         self.sqliteDB.copyTo(self.db)
         os.unlink('/root/kusu.db')
 
+        # FIXME: Work around for SA syntax problem
+        import sqlalchemy as sa
+
+        for key in sa.orm.mapper_registry.keys():
+            sa.orm.mapper_registry.pop(key)
+        self.db = db.DB('mysql', 'kusudb', 'root')
+
     def makeRepos(self):
         """Makes the repoistory for compute and installer nodes."""
 
