@@ -50,6 +50,8 @@ Requires: python-devel >= 2.4.3
 Requires: MySQL-python >= 1.2.1
 Requires: createrepo >= 0.4.4
 Requires: rsync >= 2.6.6
+Requires: bind
+Requires: caching-nameserver
 Requires: pdsh >= 2.10
 Requires: pdsh-mod-machines >= 2.10
 Requires: pdsh-rcmd-rsh >= 2.10
