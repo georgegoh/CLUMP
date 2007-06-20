@@ -373,12 +373,15 @@ insert into scripts values (3, 1, '/depot/repos/custom_scripts/bogus-installer.s
 insert into scripts values (4, 1, '/depot/repos/custom_scripts/more-bogus-installer.sh') ;
 
 # Components
-insert into components values (1, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'fedora-6-i386') ;
-insert into components values (2, 1, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'rhel-5.1-i386') ;
-insert into components values (3, 8, 'component-base-installer', 'This component provides the bits needed for installer nodes', 'fedora-7-x86_64') ;
-insert into components values (4, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'fedora-6-i386') ;
-insert into components values (5, 1, 'component-base-node', 'This component provides the bits needed for all nodes', 'rhel-5.1-i386') ;
-insert into components values (6, 8, 'component-base-node', 'This component provides the bits needed for all nodes', 'fedora-7-x86_64') ;
+insert into components values (1, 3, 'base-installer', 'This component provides the bits needed for installer nodes', 'fedora-6-i386') ;
+insert into components values (2, 3, 'base-installer', 'This component provides the bits needed for installer nodes', 'rhel-5.1-i386') ;
+insert into components values (3, 7, 'base-installer', 'This component provides the bits needed for installer nodes', 'fedora-7-x86_64') ;
+insert into components values (4, 3, 'base-node', 'This component provides the bits needed for all nodes', 'fedora-6-i386') ;
+insert into components values (5, 3, 'base-node', 'This component provides the bits needed for all nodes', 'rhel-5.1-i386') ;
+insert into components values (6, 7, 'base-node', 'This component provides the bits needed for all nodes', 'fedora-7-x86_64') ;
+insert into components values (7, 4, 'lsf-base', 'LSF BASE component for both FE & compute - runs on any fedora', 'fedora') ;
+insert into components values (8, 4, 'lsf-server', 'LSF Server component - requires version 6 of fedora', 'fedora-6') ;
+insert into components values (9, 4, 'lsf-compute', 'LSF compute component - doesnt care about the distro', NULL) ;
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1) ;
