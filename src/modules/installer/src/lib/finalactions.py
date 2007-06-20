@@ -105,6 +105,11 @@ def migrate(prefix):
             logger.debug('Moved %s -> %s' % (f, dest))
             f.move(dest)
 
+    for f in [kusu_tmp / 'install_script']:
+        if f.exists():
+            logger.debug('Copied %s -> %s' % (f, dest))
+            f.copy(dest)
+
 def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
 
