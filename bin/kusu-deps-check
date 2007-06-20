@@ -26,7 +26,7 @@ SITE_URL = 'http://www.osgdc.org/project/kusu/wiki/DevelopersCorner'
 
 def checkPyLibDeps(lib):
     """ Check if the specified python library is installed and accessible.
-        Raises DepsNotFound exception if fail.
+        Returns False if fail.
     """
     
     c = 'python -c "import %s"' % lib
@@ -34,41 +34,36 @@ def checkPyLibDeps(lib):
     libP.communicate()
     
     if libP.returncode <> 0:
-        raise DepsNotFound, lib
+        return False
         
     return True
     
-def checkNonPyLibDeps(lib, searchpath=None):
+def checkNonPyLibDeps(lib, searchpath='/usr/lib'):
     """ Check if the specified library is installed and accessible.
         A searchpath can be specified for alternative locations.
-        Raises DepsNotFound exception if fail.        
+        Returns False if fail.      
     """
-    
-    if not searchpath: 
-        c = 'find /usr/lib -name "%s*"' % lib
-    else:
-        c = 'find %s -name "%s*"' % lib
-        
+
+    c = 'find %s -name "%s*"' % (searchpath,lib)
     libP = subprocess.Popen(c,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = libP.communicate()
     
     if not out:
-        raise DepsNotFound, lib
+        return False
     
     return True
     
 
 def checkToolDeps(tool):
-    """ Check if the tool is indeed available. A ToolNotFound exception 
-        will be thrown if any of the tools are missing.
-        Raises DepsNotFound exception if fail.        
+    """ Check if the tool is indeed available.
+        Returns False if fail.        
     """
 
     cmd = 'which %s > /dev/null 2>&1' % tool
     whichP = subprocess.Popen(cmd,shell=True)
     whichP.communicate()
     if whichP.returncode <> 0:
-        raise DepsNotFound, tool
+        return False
 
     return True
 
@@ -78,42 +73,56 @@ class KusuDepsCheckApp(object):
     def __init__(self):
         super(KusuDepsCheckApp, self).__init__()
         
-    def printMsgExit(self,msg):
-        print msg
-        sys.exit(2)
-
     def run(self):
         """Main launcher"""
         
-        try:
-            # check the list of tools
-            print "Checking tools' dependencies:"
-            for tool in TOOLS_DEPS:
-                msg = "checking %s..." % tool
-                print msg,
-                if checkToolDeps(tool):
-                    print "yes"
-            
-            # check the list of non-python libs
-            print "Checking non-python libraries' dependencies:"
-            for lib in NONPY_LIBS_DEPS:
-                msg = "checking %s..." % lib
-                print msg,
-                if checkNonPyLibDeps(lib):
-                    print "yes"
-                            
-            # check the list of tools
-            print "Checking python dependencies:"
-            for lib in PY_LIBS_DEPS:
-                msg = "checking %s..." % lib
-                print msg,
-                if checkPyLibDeps(lib):
-                    print "yes"
+        print "Checking dependencies for Project Kusu"
+        print "--------------------------------------"
+        
+        missingTools = []
 
-        except DepsNotFound, e:
-            print "%s not found! Please ensure that it is available!", e
+        # check the list of tools        
+        print "Checking tools' dependencies:"
+        for tool in TOOLS_DEPS:
+            msg = "checking %s..." % tool
+            print msg,
+            if checkToolDeps(tool):
+                print "yes"
+            else:
+                missingTools.append(tool)
+                print 'no'
         
-        
+        # check the list of non-python libs
+        print    
+        print "Checking non-python libraries' dependencies:"
+        for lib in NONPY_LIBS_DEPS:
+            msg = "checking %s..." % lib
+            print msg,
+            if checkNonPyLibDeps(lib):
+                print "yes"
+            else:
+                missingTools.append(lib)
+                print 'no'
+                        
+        # check the list of tools
+        print
+        print "Checking python dependencies:"
+        for lib in PY_LIBS_DEPS:
+            msg = "checking %s..." % lib
+            print msg,
+            if checkPyLibDeps(lib):
+                print "yes"
+            else:
+                missingTools.append(lib)
+
+        if missingTools:
+            print
+            print 'The following tool(s) are not available:'
+            print ','.join(missingTools)
+            print 'For more information, please browse to', SITE_URL
+            print
+            sys.exit(2)
+
         sys.exit(0)
 
 if __name__ == '__main__':
