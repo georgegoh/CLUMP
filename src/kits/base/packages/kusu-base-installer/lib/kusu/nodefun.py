@@ -580,6 +580,7 @@ class NodeFun(object, KusuApp):
         dataList = {}
         macList = {}
         badList = []
+        ipList = []
         dupeList = []
         interfaceName = ""
         badflag = 0
@@ -642,6 +643,7 @@ class NodeFun(object, KusuApp):
                   # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
                   if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
                      badflag = 0
+                     ipList.append(nodeData[1])
                      break
                   else:
                      badflag = 1
@@ -654,7 +656,7 @@ class NodeFun(object, KusuApp):
         for badnode in badList:
               nodeList.remove(badnode)
     
-        return nodeList, macList, badList, interfaceName
+        return nodeList, ipList, macList, badList, interfaceName
 
 # Run some unittests
 if __name__ == "__amain__":
