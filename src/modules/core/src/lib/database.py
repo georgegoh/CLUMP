@@ -659,6 +659,7 @@ class DB(object):
         compute.partitions.append(swap)
         compute.partitions.append(data)
  
+        db.AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
         self.flush()
 
     def createDatabase(self):
