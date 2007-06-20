@@ -60,20 +60,15 @@ else
 fi
 /sbin/chkconfig xinetd on
 
-
-
-# Copy over a kernel and initrd to play with
+# Copy pxelinux
 if [ -f /usr/lib/syslinux/pxelinux.0 ]; then
     echo "Copying over pxelinux.0"
     cp /usr/lib/syslinux/pxelinux.0 /tftpboot/kusu/pxelinux.0
 else
     echo "ERROR:  Can't find /usr/lib/syslinux/pxelinux.0"
 fi
-echo "Copying over a kernel"
-REV=`uname -r`
-cp /boot/vmlinuz-${REV} /tftpboot/kusu/vmlinuz-${REV}
-chmod 644  /tftpboot/kusu/vmlinuz-${REV}
 
+# FIXME
 # Setting up permissions
 chgrp -R apache /depot/
 chgrp -R apache /opt/kusu/cfm
@@ -86,38 +81,33 @@ if [ -f /etc/init.d/mysqld ]; then
     /etc/init.d/mysqld start
     
     /opt/kusu/sbin/kusurc
-
-    # Set user permissions
-    #/usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
+    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
 else
     echo "ERROR:  Could not find mysqld"
-
 fi
 
 # Setup Apache
 if [ ! -d /var/www/html ]; then
     echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
 else
-    ln -sf /opt/kusu/cfm /var/www/htm//cfm
-    ln -sf /depot/repos /var/www/html/repos
-    ln -sf /depot/images /var/www/html/images
+	if [ -x /etc/init.d/httpd ] && [ -f /opt/kusu/bin/genconfig ]; then
+        ln -sf /opt/kusu/cfm /var/www/htm//cfm
+        ln -sf /depot/repos /var/www/html/repos
+        ln -sf /depot/images /var/www/html/images
 
-    # Generate Kusu.conf
-    if [ -f /opt/kusu/bin/genconfig ]; then
-	genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
-	if [ -x /etc/init.d/httpd ]; then
+	    genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
+
 	    /etc/init.d/httpd stop
 	    /etc/init.d/httpd start
-	fi
+        /sbin/chkconfig httpd on
     else
-	echo "ERROR:  Cannot find genconfig"
+	    echo "ERROR:  Cannot find genconfig"
     fi
-    /sbin/chkconfig httpd on
 fi
-
 
 # Add entry to motd
 echo "Kusu $VERSION Installer Node" >> /etc/motd
 
 # Remove this file so it does not run again.
+rm -rf $TMPDIR
 rm -rf /etc/rc.kusu.d/S01KusuSetup
