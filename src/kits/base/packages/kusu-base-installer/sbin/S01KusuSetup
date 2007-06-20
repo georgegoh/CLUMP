@@ -85,16 +85,10 @@ if [ -f /etc/init.d/mysqld ]; then
     /etc/init.d/mysqld stop
     /etc/init.d/mysqld start
     
-    # Create default database
-    /usr/bin/mysqladmin create kusudb
-    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_createdb.sql
-    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_alterdb.sql
-
-    # Set some sample values in the database table
-    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_primedb_sample.sql
+    /opt/kusu/sbin/kusurc
 
     # Set user permissions
-    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
+    #/usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
 else
     echo "ERROR:  Could not find mysqld"
 
