@@ -24,12 +24,14 @@ if [ $# != 0 ]; then
 	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=fedora \
 	version=6 arch=i386 \
 	patch=$NIPATCHFILESDIR/fedora/6/i386/updates.img
+	ec=`expr $ec + $?`
 
 	mkdir -p $NIPATCHFILESDIR/fedora/6/x86_64
 	$KUSU_BUILD_ARTEFACTS make-ni-patch \
 	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=fedora \
 	version=6 arch=x86_64 \
 	patch=$NIPATCHFILESDIR/fedora/6/x86_64/updates.img
+	ec=`expr $ec + $?`
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/fedora/6/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/fedora/6/i386
@@ -43,18 +45,27 @@ if [ $# != 0 ]; then
 	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=centos \
 	version=5 arch=i386 \
 	patch=$NIPATCHFILESDIR/centos/5/i386/updates.img
+	ec=`expr $ec + $?`
 
 	mkdir -p $NIPATCHFILESDIR/centos/5/x86_64
 	$KUSU_BUILD_ARTEFACTS make-ni-patch \
 	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=centos \
 	version=5 arch=x86_64 \
 	patch=$NIPATCHFILESDIR/centos/5/x86_64/updates.img
+	ec=`expr $ec + $?`
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/centos/5/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/centos/5/i386
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/centos/5/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/centos/5/x86_64
+	
+	if [ ! $ec -eq 0 ]; then
+		echo "Failure building NodeInstaller patchfiles!"
+		rm -rf $NIPATCHFILESDIR/fedora
+		rm -rf $NIPATCHFILESDIR/centos
+		exit 2
+	fi
 	
 	exit 0
 	
