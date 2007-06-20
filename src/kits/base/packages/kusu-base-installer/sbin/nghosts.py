@@ -33,6 +33,7 @@ from kusu.ui.text.USXnavigator import *
 from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
+from kusu.syncfun import syncfun
 from kusu.nodefun import NodeFun
 
 global database
@@ -172,6 +173,7 @@ class NodeMemberApp(object, KusuApp):
                     flag = 1
                     badnodes = []
                     nodesList = []
+                    moveIPList = []
                     macsList = {}
                     myinterface = ""
                     nodeRecord = NodeFun()
@@ -195,8 +197,9 @@ class NodeMemberApp(object, KusuApp):
                               flag = 1
 
                     if bool(self._options.movegroups):
-                        moveList, macList, badList, interface = nodeRecord.moveNodegroups(self._options.movegroups, self._options.togroup)
+                        moveList, ipList, macList, badList, interface = nodeRecord.moveNodegroups(self._options.movegroups, self._options.togroup)
                         nodesList += moveList 
+                        moveIPList += ipList
                         myinterface = interface
                         macsList.update(macList)
            
@@ -213,8 +216,9 @@ class NodeMemberApp(object, KusuApp):
                            print "Error: There are no valid nodes to move to the node group '%s'" % self._options.togroup
                            sys.exit(-1)
                         else:
-                           moveList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup)
+                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup)
                            nodesList += moveList
+                           moveIPList += ipList
                            if interface:
                               myinterface = interface
                            macsList.update(macList)
@@ -248,8 +252,9 @@ class NodeMemberApp(object, KusuApp):
                     # If the user wants to reinstall the nodes check if the option is selected or not.
                     if bool(self._options.reinstall):
                         print self._("nghosts_reinstall_nodes_progress")
-                        # Call PSDH here
-
+                        # Call PDSH here
+                        rn = syncfun()
+                        rn.runPdsh(list(Set(moveIPList)), "reboot")
                     os.remove(tmpfile)
                     sys.exit(0)
             
@@ -320,7 +325,7 @@ class SelectNodesWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            moveList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
+            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
 
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
@@ -352,7 +357,7 @@ class SelectNodesWindow(USXBaseScreen):
                           self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                           flag = 1
 
-               if badList:
+               if badList and len(moveList) > 0:
                   self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
 
                # Create Temp file
@@ -381,8 +386,10 @@ class SelectNodesWindow(USXBaseScreen):
                if self.reinstcheckbox.value():
                   progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                                self.kusuApp._("nghosts_reinstall_nodes_progress"))
-                  # Call PSDH here
+                  # Call PDSH here
+                  rn = syncfun()
                   time.sleep(5)
+                  rn.runPdsh(moveIPList, "reboot")
                   progDialog.close()
 
             self.screen.refresh()
@@ -498,7 +505,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            moveList, macList, badList, interface = nodeRecord.moveNodegroups(self.srcNodegroupsCheckbox.getSelection(), self.destNodegroupRadio.getSelection())
+            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodegroups(self.srcNodegroupsCheckbox.getSelection(), self.destNodegroupRadio.getSelection())
 
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
@@ -530,37 +537,40 @@ class SelectNodegroupsWindow(USXBaseScreen):
                           self.kusuApp._("Error: The value %s is not a number. Please try again" % result[0]), 2)
                           flag = 1
 
-            if badList:
+            if badList and len(moveList) > 0:
                 self.selector.popupMsg(self.kusuApp._("Notice"), "Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupRadio.getSelection()))
 
-            # Create Temp file
-            (fd, tmpfile) = tempfile.mkstemp()
-            tmpname = os.fdopen(fd, 'w')
-            for node in moveList:
-                 tmpname.write("%s\n" % macList[node])
-            tmpname.close()
+            if len(moveList) > 0:
+                # Create Temp file
+                (fd, tmpfile) = tempfile.mkstemp()
+                tmpname = os.fdopen(fd, 'w')
+                for node in moveList:
+                   tmpname.write("%s\n" % macList[node])
+                tmpname.close()
 
-            # Call addhosts to delete these nodes
-            progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
-            os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
+                # Call addhosts to delete these nodes
+                progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
+                os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
-            # Add these back using mac file
-            if needRack:
-                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
-            else:
-                os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
+                # Add these back using mac file
+                if needRack:
+                   os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
+                else:
+                   os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
 
-            # Remove temp file
-            os.remove(tmpfile)
-            progDialog.close()
+                # Remove temp file
+                os.remove(tmpfile)
+                progDialog.close()
  
-            # If the user wants to reinstall the nodes check if the option is selected or not.
-            if self.reinstcheckbox.value():
-               progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
-                            self.kusuApp._("nghosts_reinstall_nodes_progress"))
-               # Call PSDH here
-               time.sleep(5)
-               progDialog.close()
+                # If the user wants to reinstall the nodes check if the option is selected or not.
+                if self.reinstcheckbox.value():
+                    progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
+                                 self.kusuApp._("nghosts_reinstall_nodes_progress"))
+                    # Call PDSH here
+                    rn = syncfun()
+                    time.sleep(5)
+                    rn.runPdsh(moveIPList, "reboot")
+                    progDialog.close()
             self.screen.refresh()
 
         return NAV_NOTHING
@@ -614,8 +624,12 @@ class SelectNodegroupsWindow(USXBaseScreen):
                sys.exit(-1)
  
            # Only display node groups that are not empty when moving.
-           if int(nodes[0]) > 0: 
-               self.srcNodegroupsCheckbox.append(group[0])
+           if group[0] == "Installer":
+              if not int(nodes[0]) == 1:
+                  self.srcNodegroupsCheckbox.append(group[0])
+           else:     
+               if int(nodes[0]) > 0: 
+                  self.srcNodegroupsCheckbox.append(group[0])
 
         self.destNodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList)
 
