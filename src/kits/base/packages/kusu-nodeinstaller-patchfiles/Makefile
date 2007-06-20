@@ -71,5 +71,5 @@ install::
 		spec.tmpl > $(NAME).spec
 
 clean::
-	-@rm -rf *.spec
+	-@rm -rf *.spec centos fedora
 	-@rm -rf $(TOPDIR)/BUILD/$(NAME)-$(VERSION)-$(RELEASE)
