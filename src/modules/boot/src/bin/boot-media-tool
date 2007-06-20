@@ -25,8 +25,8 @@ class BootMediaApp(KusuApp):
         
         self.actions = {'query':['source'], 
             'make-iso':['patch','iso','source','kususrc','arch','kit'],
-            'make-patch':['os','version','patch','kususrc','arch'],
-            'make-ni-patch':['os','version','patch','kususrc','arch']}
+            'make-patch':['os','version','patch','kususrc','arch','kusuroot'],
+            'make-ni-patch':['os','version','patch','kususrc','arch','kusuroot']}
         
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -65,7 +65,8 @@ actions:
                         version=<version of OS>
                         arch=<architechure of OS>
                         patch=<name of installer patchfile>
-
+                        kusuroot<existing kusuroot dir to reuse>
+                        
     make-ni-patch   - Make the nodeinstaller patchfile from the Kusu Trunk 
                       SVN source. Available arguments for this action:
                         kususrc=<directory containing Kusu Trunk>
@@ -73,6 +74,7 @@ actions:
                         version=<version of OS>
                         arch=<architechure of OS>
                         patch=<name of nodeinstaller patchfile>
+                        kusuroot<existing kusuroot dir to reuse>
                         
 """)
         self.examples = self._("""\
@@ -268,6 +270,7 @@ Example operation usages:
                 % {'arch':arch,'arches':arches})
             self.printMsgExit(msg)
         
+        
         if patchfile: patchfile = path(patchfile).abspath()
         if patchfile.exists():
             msg = self._('Detected %(patchfile)s. Including it into the Kusu Boot Media.' % {'patchfile':patchfile})
@@ -330,7 +333,12 @@ Example operation usages:
         version = args['version']
         osarch = args['arch']
         patchfile = args['patch']
-        
+        kusuroot = args.get('kusuroot',None)        
+
+        if kusuroot and path(kusuroot).exists():
+            kusuroot = path(kusuroot).abspath()    
+    
+
         if osname not in SUPPORTED_DISTROS:
             distros = ', '.join(SUPPORTED_DISTROS)
             msg = self._('%(osname)s is not one of the supported distros. Supported distros are %(distros)s.' \
@@ -343,7 +351,7 @@ Example operation usages:
         try:
             print self._('Creating Kusu Installer patchfile for %(osname)s %(osver)s %(osarch)s. This may take awhile.' \
                 % {'osname':osname,'osver':osver,'osarch':osarch})
-            self.bminst.mkPatch(kususrc,osname,osver,osarch,patchfile)
+            self.bminst.mkPatch(kususrc,osname,osver,osarch,patchfile,kusuroot)
             print self._('Finished creating %(patchfile)s' % {'patchfile':patchfile})
         except (FilePathError,InvalidKusuSource):
             msg = self._('File path error. Please ensure the paths for the kususrc and patchfile are valid.')
@@ -365,6 +373,11 @@ Example operation usages:
         version = args['version']
         osarch = args['arch']
         patchfile = args['patch']
+        kusuroot = args.get('kusuroot',None)        
+
+        if kusuroot and path(kusuroot).exists():
+            kusuroot = path(kusuroot).abspath()    
+
 
         if osname not in SUPPORTED_DISTROS:
             distros = ', '.join(SUPPORTED_DISTROS)
@@ -378,7 +391,7 @@ Example operation usages:
         try:
             print self._('Creating Kusu NodeInstaller patchfile for %(osname)s %(osver)s %(osarch)s. This may take awhile.' \
                 % {'osname':osname,'osver':osver,'osarch':osarch})
-            self.bminst.mkNodeInstallerPatch(kususrc,osname,osver,osarch,patchfile)
+            self.bminst.mkNodeInstallerPatch(kususrc,osname,osver,osarch,patchfile,kusuroot)
             print self._('Finished creating %(patchfile)s' % {'patchfile':patchfile})
         except (FilePathError,InvalidKusuSource):
             msg = self._('File path error. Please ensure the paths for the kususrc and patchfile are valid.')

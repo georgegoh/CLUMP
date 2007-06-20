@@ -97,13 +97,18 @@ def prepareEnv():
 
     return env    
 
-def checkToolDeps(tool):
+def checkToolDeps(tool,rootbin=None):
     """ Check if the tool is indeed available. Returns the path. A ToolNotFound exception 
         will be thrown if any of the tools are missing.
     """
 
     cmd = 'which %s' % tool
     env = prepareEnv()
+    if rootbin:
+        li = env['PATH'].split(':')
+        li.insert(0,rootbin)
+        del env['PATH']
+        env['PATH'] = ':'.join(li)
     whichP = subprocess.Popen(cmd,shell=True,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out, err = whichP.communicate()
     if whichP.returncode <> 0:
@@ -141,6 +146,19 @@ def cpio_copytree(src,dst):
     cpioP.communicate()
     return cpioP.returncode
     
+def cleanupTransient(rootpath):
+    """ Clean up any transient artefacts not needed in the rootpath"""
+    
+    # remove *.pyc and *.pyo
+    cmd = "find %s -name '*py?' | xargs rm -f" % rootpath
+    cleanupP = subprocess.Popen(cmd,shell=True)
+    cleanupP.communicate()
+            
+    # remove the kusudevenv.sh script
+    cmd = "find %s -name 'kusudevenv.sh' | xargs rm -f" % rootpath
+    cleanupP = subprocess.Popen(cmd,shell=True)
+    cleanupP.communicate()
+
 class KusuRuntime(object):
     """ This class contains data and methods for Kusu Runtime operations. """
     def __init__(self, kusuroot, tool=None):
@@ -344,15 +362,7 @@ class KusuSVNSource:
     def cleanupTransient(self):
         """ Clean up any transient artefacts not needed in the develroot"""
         
-        # remove *.pyc and *.pyo
-        cmd = "find %s -name '*py?' | xargs rm -f" % self.develroot
-        cleanupP = subprocess.Popen(cmd,shell=True)
-        cleanupP.communicate()
-                
-        # remove the kusudevenv.sh script
-        cmd = "find %s -name 'kusudevenv.sh' | xargs rm -f" % self.develroot
-        cleanupP = subprocess.Popen(cmd,shell=True)
-        cleanupP.communicate()
+        cleanupTransient(self.develroot)
         
     def cleanup(self):
         """ Housecleaning for Kusu develroot. """
@@ -398,9 +408,9 @@ class BuildKusuArtefactsApp(object):
         super(BuildKusuArtefactsApp, self).__init__()
         self._ = self.i18ninit()
         # actions list
-        self.actions = {'build':['kususrc','modules','kusuroot'],
+        self.actions = {'build':['kususrc','modules','kusuroot','dir'],
                         'list': [],
-                        'make-ni-patch':['kususrc','os','version','arch','patch']}
+                        'make-ni-patch':['kususrc','os','version','arch','patch','kusuroot']}
         
         # action and actionargs will hold the current action and its arguments           
         self.action = None
@@ -416,10 +426,11 @@ built artefacts in the current directory.
 actions:
 
     build           - Build and place the built kusu module artefacts in the 
-                      current directory or in kusuroot if defined. Available 
-                      arguments for this action:
+                      current directory or an alternative dir if defined. 
+                      Available arguments for this action:
                         kususrc=<directory containing Kusu Trunk>
-                        kusuroot=<directory to place kusu module artefacts>
+                        dir=<directory to place kusu module artefacts>
+                        kusuroot=<existing kusuroot dir to reuse>
                         modules=<list of comma-separated module names 
                             or all to build all modules>
     
@@ -430,6 +441,7 @@ actions:
                         version=<version of OS>
                         arch=<architechure of OS>
                         patch=<name of nodeinstaller patchfile>
+                        kusuroot=<existing kusuroot dir to reuse>                        
     
     list        - List the Kusu Runtime and dependencies modules that can
                   be built.
@@ -539,7 +551,9 @@ actions:
         """ Handler for build. args is a dict of supported key-value pairs for this action. """
         kususrc = args.get('kususrc',None)
         m = args.get('modules',None)
+        rootdir = args.get('dir', None)        
         kusuroot = args.get('kusuroot', None)
+        kusudevelroot = None
         
         if not m:
             modules = ['all']
@@ -550,7 +564,6 @@ actions:
                 mod = l.strip()
                 if mod not in modules: modules.append(mod)
 
-            
         if not kususrc:
             msg = self._('Please provide the kususrc!')
             print msg
@@ -567,46 +580,70 @@ actions:
 
         try:
             svnsrc = KusuSVNSource(kususrc)
-            # validate kususrc
-            if not svnsrc.verifySrcPath():
-                msg = self._('Please provide a valid kususrc!')
-                self.printMsgExit(msg)
+            # override kusuroot with KUSU_ROOT if exists
+            env = os.environ
+            if 'KUSU_ROOT' in env:
+                kusuroot = env['KUSU_ROOT']   
+
+            if 'KUSU_DEVEL_ROOT' in env:
+                kusudevelroot = env['KUSU_DEVEL_ROOT']            
                 
-            # check if kususrc is a CMAKE_BINARY_DIR
-            if svnsrc.verifyCMakeBinaryDir():
-                msg = self._('Detected that kususrc points to CMAKE_BINARY_DIR.')
-                print msg
-                msg = self._('Trying to identify a valid Kusu SVN Source..')
-                print msg
-                
-                makefile = os.path.join(kususrc,'Makefile')
-                kususrc = svnsrc.getCmakeSourceDir(makefile)
-                if not kususrc:
-                    msg = self._('Cannot identify a valid SVN Source! Aborting!')
-                    self.printMsgExit(msg)
-                    
-                svnsrc = KusuSVNSource(kususrc)
-                
+            if not kusuroot and not kusudevelroot:
+                # validate kususrc
                 if not svnsrc.verifySrcPath():
-                    msg = self._('Cannot identify a valid SVN Source! Aborting!')
+                    msg = self._('Please provide a valid kususrc!')
                     self.printMsgExit(msg)
-
-                msg = self._('Found valid Kusu SVN Source at %(kususrc)s.' % {'kususrc':kususrc})
-                print msg
-
                 
-            msg = self._('Setting up build sources..')
-            print msg
-            svnsrc.setup()
+                # check if kususrc is a CMAKE_BINARY_DIR
+                if svnsrc.verifyCMakeBinaryDir():
+                    msg = self._('Detected that kususrc points to CMAKE_BINARY_DIR.')
+                    print msg
+                    msg = self._('Trying to identify a valid Kusu SVN Source..')
+                    print msg
+                
+                    makefile = os.path.join(kususrc,'Makefile')
+                    kususrc = svnsrc.getCmakeSourceDir(makefile)
+                    if not kususrc:
+                        msg = self._('Cannot identify a valid SVN Source! Aborting!')
+                        self.printMsgExit(msg)
+                    
+                    svnsrc = KusuSVNSource(kususrc)
+                
+                    if not svnsrc.verifySrcPath():
+                        msg = self._('Cannot identify a valid SVN Source! Aborting!')
+                        self.printMsgExit(msg)
+
+                    msg = self._('Found valid Kusu SVN Source at %(kususrc)s.' % {'kususrc':kususrc})
+                    print msg
+
+                msg = self._('Setting up build sources..')
+                print msg
+                svnsrc.setup()
+
+            else:
+                # use existing kusu devel workspace
+                msg = self._('Found existing kusu devel workspace at %(devel)..' \
+                    % {'devel':kusudevelroot})
+                print msg
+                svnsrc.setup(develroot=kusudevelroot,kusuroot=kusuroot)
 
             if 'all' in modules:
                 msg = self._('Building all modules..')
                 print msg        
-                svnsrc.run()
+                retcode = svnsrc.runCMake()
+                if retcode <> 0:
+                    if not kusudevelroot: svnsrc.cleanup()
+                    raise FailedBuildCMake, "Failed CMake build for Kusu"
+                
+                retcode = svnsrc.runMake()
+                if retcode <> 0:
+                    if not kusudevelroot: svnsrc.cleanup()
+                    raise FailedBuildMake, "Failed Make build for Kusu"
+                    
             else:
                 retcode = svnsrc.runCMake()
                 if retcode <> 0:
-                    svnsrc.cleanup()
+                    if not kusudevelroot: svnsrc.cleanup()
                     raise FailedBuildCMake, "Failed CMake build for Kusu"
                 
                 for mod in modules:
@@ -614,7 +651,7 @@ actions:
                     print msg
                     retcode = svnsrc.runMake(mod)
                     if retcode <> 0:
-                        svnsrc.cleanup()
+                        if not kusudevelroot: svnsrc.cleanup()
                         raise FailedBuildMake, "Failed Make build for Kusu"
                         
             msg = self._('Cleaning up transient artefacts..')
@@ -622,39 +659,46 @@ actions:
             svnsrc.cleanupTransient()                 
 
 
-            if not kusuroot:
+            if not rootdir:
                 msg = self._('Copying Kusu Runtime contents to current directory.')
                 print msg
                 svnsrc.copyKusuroot(os.getcwd())
             else:
-                msg = self._('Copying Kusu Runtime contents to %(kusuroot)s.' \
-                    % {'kusuroot':kusuroot})
+                msg = self._('Copying Kusu Runtime contents to %(rootdir)s.' \
+                    % {'rootdir':rootdir})
                 print msg
-                svnsrc.copyKusuroot(kusuroot)
-            msg = self._('Cleaning up build sources..')
-            print msg
-            svnsrc.cleanup()
+                svnsrc.copyKusuroot(rootdir)
+            if not kusudevelroot: 
+                msg = self._('Cleaning up build sources..')
+                print msg
+                
+            if not kusudevelroot: svnsrc.cleanup()
             msg = self._('Done.')
             print msg
         except CopyError:
-            svnsrc.cleanup()
+            if not kusudevelroot: svnsrc.cleanup()
             msg = self._('Error copying Kusu Runtime contents!')
             print msg
             sys.exit(2)
         except (FailedBuildCMake,FailedBuildMake):
-            svnsrc.cleanup()
+            if not kusudevelroot: svnsrc.cleanup()
             msg = self._('Error building Kusu Runtime!')
             sys.exit(2)
 
     def _makeNiPatch(self,args):
         """ Handler for make-ni-patch. args is a dict of supported key-value pairs for this action. """
-        kususrc = os.path.abspath(args['kususrc'])
+        kususrc = args.get('kususrc',None)
         osname = args.get('os',None)
         version = args.get('version',None)
         osarch = args.get('arch',None)
         patchfile = args.get('patch',None)
-        kusuroot = None
+        kusuroot = args.get('kusuroot', None)
         tmproot = False
+        
+        # override kusuroot with KUSU_ROOT if exists
+        env = os.environ
+        if 'KUSU_ROOT' in env:
+            kusuroot = env['KUSU_ROOT']
         
         if os.getuid() <> 0:
             msg = self._('Need root access!')
@@ -686,7 +730,7 @@ actions:
             self.printUsageExit()
         else:
             # validate patchfile dir
-            parentdir = os.path.dirname(patchfile)
+            parentdir = os.path.dirname(os.path.abspath(patchfile))
             if not os.access(parentdir,os.R_OK|os.W_OK):
                 msg = self._('Please ensure that the patchfile can be written into %(parentdir)s!' \
                     % {'parentdir':os.path.abspath(parentdir)})
@@ -704,24 +748,35 @@ actions:
 
         try:
             # locate boot-media-tool
-            p = checkToolDeps('boot-media-tool')
-            kusuroot = os.path.dirname(os.path.join(p,os.path.pardir))
+            if kusuroot:
+                print 'searching for boot-media-tool'
+                p = checkToolDeps('boot-media-tool','%s/bin' % kusuroot)
+                print 'found it in %s/bin' % kusuroot
+            else:
+                p = checkToolDeps('boot-media-tool')
+                kusuroot = os.path.dirname(os.path.join(os.path.dirname(p),os.path.pardir))
+                
         except ToolNotFound:
                 # create the boot-media-tool runtime
-                kusuroot = os.path.abspath(tempfile.mkdtemp(dir='/tmp',prefix='build-artefacts'))
+                print 'Hmm.. did not find boot-media-tool in the PATH.'
+                rootdir = os.path.abspath(tempfile.mkdtemp(dir='/tmp',prefix='kusu-build-artefacts-'))
                 tmproot = True
-                self._build({'kususrc':kususrc,'modules':'all','kusuroot':kusuroot})
-        
+                self._build({'kususrc':kususrc,'modules':'all','dir':rootdir})
+                cleanupTransient(rootdir)
+                kusuroot = rootdir
+        print 'kusuroot:', kusuroot
         try:
             # load up b-m-t and make nodeinstaller patch
             bmt = KusuRuntime(kusuroot,'boot-media-tool')
-            bmt.run('make-ni-patch',kususrc=kususrc,os=osname,version=osver,arch=osarch,patch=patchfile)
+            bmt.run('make-ni-patch',kususrc=kususrc,os=osname,
+                version=osver,arch=osarch,patch=patchfile,
+                kusuroot=kusuroot)
         except FailedToRun:
             if tmproot: shutil.rmtree(kusuroot)
             msg = self._('Unable to make nodeinstaller patchfile!')
             self.printMsgExit(msg)
             
-        if tmproot: shutil.rmtree(kusuroot)
+        if tmproot: shutil.rmtree(rootdir)
             
 
 

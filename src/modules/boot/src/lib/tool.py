@@ -45,6 +45,19 @@ def makeDev(devtype,major,minor,devpath):
     
     os.system('mknod %s %s %s %s' % (dp,devtype,major,minor))
 
+def cleanupTransient(rootpath):
+    """ Clean up any transient artefacts not needed in the rootpath"""
+
+    # remove *.pyc and *.pyo
+    cmd = "find %s -name '*py?' | xargs rm -f" % rootpath
+    cleanupP = subprocess.Popen(cmd,shell=True)
+    cleanupP.communicate()
+
+    # remove the kusudevenv.sh script
+    cmd = "find %s -name 'kusudevenv.sh' | xargs rm -f" % rootpath
+    cleanupP = subprocess.Popen(cmd,shell=True)
+    cleanupP.communicate()
+
 def copyKitContents(kit,dst):
     """ Copy kit contents into dst. Raises KitCopyError except if fails. """
     
@@ -391,7 +404,7 @@ class BootMediaTool:
         except FilePathError, e:
             raise e
             
-    def mkPatch(self,kususrc,osname,osver,osarch,patchfile):
+    def mkPatch(self,kususrc,osname,osver,osarch,patchfile,kusuroot=None):
         """ Creates a distro-specific Kusu Installer patchfile. """
         try:
             # prepares the env dict
@@ -409,8 +422,8 @@ class BootMediaTool:
             # create a scratchdir to hold the patchfile contents
             parentdir = path(patchfile).parent
             tmpdir = path(tempfile.mkdtemp(dir=parentdir))
-            kusuroot = tmpdir / 'opt/kusu'
-            kusuroot.makedirs()
+            destroot = tmpdir / 'opt/kusu'
+            destroot.makedirs()
             
             if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
             
@@ -418,10 +431,14 @@ class BootMediaTool:
             if not (svnsrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
             
             if svnsrc.verifySrcPath():
-                svnsrc.setup()
-                svnsrc.run()
-                svnsrc.copyKusuroot(kusuroot,overwrite=True)
-                svnsrc.cleanup()
+                if not kusuroot:
+                    svnsrc.setup()
+                    svnsrc.run()
+                    svnsrc.copyKusuroot(destroot,overwrite=True)
+                    svnsrc.cleanup()
+                else:
+                    # FIXME: verify kusuroot else there's going to be trouble!
+                    cpio_copytree(kusuroot,destroot)
                 # get the correct kusuenv.sh
                 if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA:
                     # put in the kusuenv.sh
@@ -429,13 +446,13 @@ class BootMediaTool:
                     kusuenv = path(p)
                         
                     if kusuenv.exists(): 
-                        kusuenv.copy(kusuroot / 'bin')
-                        # make it excutable
-                        path(kusuroot / 'bin' / 'kusuenv.sh').chmod(0755)
+                        kusuenv.copy(destroot / 'bin')
+                        # make it executable
+                        path(destroot / 'bin' / 'kusuenv.sh').chmod(0755)
                     
                     # remove the kusudevenv.sh
-                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
-                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
+                    if path(destroot / 'bin' / 'kusudevenv.sh').exists():
+                        path(destroot / 'bin' / 'kusudevenv.sh').remove()
                         
                     # put in the the faux anaconda launcher
                     p = svnsrc.srcpath / 'src/dists/%s/%s/%s/updates.img/anaconda' % (osname,osver,osarch)
@@ -444,7 +461,9 @@ class BootMediaTool:
                         fakeanaconda.copy(tmpdir)
                         # make it excutable
                         path(tmpdir / 'anaconda').chmod(0755)
-                        
+                    
+                    # clean out any unwanted stuff
+                    cleanupTransient(destroot)
                     # pack the tmpdir into a patchfile with size of 10MB
                     packExt2FS(tmpdir,patchfile,size=10000)
                     
@@ -461,7 +480,7 @@ class BootMediaTool:
             if path(tmpdir).exists(): path(tmpdir).rmtree()
             raise e
 
-    def mkNodeInstallerPatch(self,kususrc,osname,osver,osarch,patchfile):
+    def mkNodeInstallerPatch(self,kususrc,osname,osver,osarch,patchfile,kusuroot=None):
         """ Creates a distro-specific Kusu NodeInstaller patchfile. """
         try:
             # prepares the env dict
@@ -479,8 +498,8 @@ class BootMediaTool:
             # create a scratchdir to hold the nodeinstaller patchfile contents
             parentdir = path(patchfile).parent
             tmpdir = path(tempfile.mkdtemp(dir=parentdir))
-            kusuroot = tmpdir / 'opt/kusu'
-            kusuroot.makedirs()
+            destroot = tmpdir / 'opt/kusu'
+            destroot.makedirs()
 
             if not svnsrc.verifySrcPath(): raise FilePathError, "Invalid Kusu SVN Source!"
 
@@ -488,10 +507,14 @@ class BootMediaTool:
             if not (svnsrc.srcpath / p).exists(): raise UnsupportedDistro, "Distro-specific assets not in source tree!"
 
             if svnsrc.verifySrcPath():
-                svnsrc.setup()
-                svnsrc.run()
-                svnsrc.copyKusuroot(kusuroot,overwrite=True)
-                svnsrc.cleanup()
+                if not kusuroot:
+                    svnsrc.setup()
+                    svnsrc.run()
+                    svnsrc.copyKusuroot(destroot,overwrite=True)
+                    svnsrc.cleanup()
+                else:
+                    # FIXME: verify kusuroot else there's going to be trouble!
+                    cpio_copytree(kusuroot,destroot)
                 # get the correct kusuenv.sh
                 if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA:
                     # put in the kusuenv.sh
@@ -499,13 +522,13 @@ class BootMediaTool:
                     kusuenv = path(p)
 
                     if kusuenv.exists(): 
-                        kusuenv.copy(kusuroot / 'bin')
-                        # make it excutable
-                        path(kusuroot / 'bin' / 'kusuenv.sh').chmod(0755)
+                        kusuenv.copy(destroot / 'bin')
+                        # make it executable
+                        path(destroot / 'bin' / 'kusuenv.sh').chmod(0755)
 
                     # remove the kusudevenv.sh
-                    if path(kusuroot / 'bin' / 'kusudevenv.sh').exists():
-                        path(kusuroot / 'bin' / 'kusudevenv.sh').remove()
+                    if path(destroot / 'bin' / 'kusudevenv.sh').exists():
+                        path(destroot / 'bin' / 'kusudevenv.sh').remove()
 
                     # put in the the faux anaconda launcher
                     p = svnsrc.srcpath / 'src/dists/%s/%s/nodeinstaller/updates.img/anaconda' % (osname,osver)
@@ -514,6 +537,9 @@ class BootMediaTool:
                         fakeanaconda.copy(tmpdir)
                         # make it excutable
                         path(tmpdir / 'anaconda').chmod(0755)
+
+                    # clean out any unwanted stuff
+                    cleanupTransient(destroot)
 
                     # pack the tmpdir into a patchfile with size of 10MB
                     packExt2FS(tmpdir,patchfile,size=10000)
