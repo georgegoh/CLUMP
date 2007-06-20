@@ -115,7 +115,10 @@ class thisReport(Report):
                         # Test to see if this nodes IP lies on the same network
                         # as this DHCP section
                         if onNetwork(netmask, subnet, row[1]):
-                            print '\thost %s-%s {' % (row[0], row[3])
+                            if row[3] and row[3] != '':
+                                print '\thost %s%s {' % (row[0], row[3])
+                            else:
+                                print '\thost %s {' % row[0]
                             print '\t\thardware ethernet %s;' % row[2]
                             print '\t\toption host-name "%s";' % row[0]
                             print '\t\tfixed-address %s;' % row[1]
