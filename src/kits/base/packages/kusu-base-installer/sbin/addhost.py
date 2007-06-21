@@ -302,7 +302,7 @@ class AddHostApp(KusuApp):
             # Ask all plugins to call updated() function
             pluginActions.plugins_updated()
             pluginActions.plugins_finished()
-            sys.exit(-1)
+            sys.exit(0)
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
         if haveNodegroup and not self._options.rack and not self._options.macfile:
