@@ -46,7 +46,7 @@ class NodeInfo:
         self.db.connect('kusudb', user)
 
         
-    def getNIInfo(self, nodename):
+    def getNIInfo(self, nodename, nodeip):
         """getNII - Generates the Node Installation Information for a given
         node."""
         if not nodename:
@@ -67,7 +67,28 @@ class NodeInfo:
             # Need to trigger a 500 error
             sys.exit(-1)
         installer, repo, os, ngid, type, nid = data
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os, type, ngid)
+
+        #FIXME: WORK IN PROGRESS
+        # Currently just use the ip from the master installer, where the 
+        # network request from the node is hitting. 
+        # We will use multiple installers next time when
+        # we have other installers up and running. 
+        query = ('select ip from nics,nodes where nics.nid=nodes.nid ' + 
+                 'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' + 
+                 'and netid = (select netid from nodes,nics where nodes.nid=nics.nid and nodes.name="%s" and nics.ip="%s")' % (nodename,nodeip))
+
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            # Return 500
+            sys.exit(-1)
+        if not data:
+            # Need to trigger a 500 error
+            sys.exit(-1)
+ 
+        installer = data[0]        
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os or = '', type, ngid)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '
@@ -385,7 +406,7 @@ class NodeBootApp(KusuApp):
         print "</debug>"
         
         if dumpnii:
-            nodefun.getNIInfo(node)
+            nodefun.getNIInfo(node, ip)
 
         if dumpcfm:
             nodefun.getCFMfile()
