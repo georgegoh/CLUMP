@@ -64,7 +64,9 @@ class BaseInstall:
         components = [component.cname for component in installer.components \
                       if not component.kit.isOS]
 
-        return components
+        pkgs = [pkg.packagename for pkg in installer.packages]
+
+        return components + pkgs
 
 class Kickstart(BaseInstall):
     def __init__(self, db, prefix=None):
