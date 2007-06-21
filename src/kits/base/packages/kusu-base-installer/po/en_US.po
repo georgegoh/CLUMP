@@ -523,6 +523,9 @@ msgstr "Network"
 msgid "netedit_list_subnet_field"
 msgstr "Subnet"
 
+msgid "netedit_list_device_field"
+msgstr "Device"
+
 msgid "netedit_list_description_field"
 msgstr "Network Description"
 
