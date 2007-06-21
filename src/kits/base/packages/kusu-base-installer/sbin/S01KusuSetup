@@ -21,7 +21,8 @@
 
 VERSION=5.0
 
-source /etc/profile.d/kusuenv.sh 
+source /etc/profile.d/kusuenv.sh
+mkdir -p $KUSU_TMP
 TMPDIR=`/bin/mktemp -d`
 
 echo "Configuring this node as an Installer"
