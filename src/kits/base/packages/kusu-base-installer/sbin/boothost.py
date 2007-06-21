@@ -100,10 +100,35 @@ class boothost:
         else:
             fp.write("default Reinstall\n")
 
+        query = ("SELECT nics.ip FROM nics, nodes, networks WHERE nodes.nid=nics.nid " +
+                 "AND networks.netid=nics.netid " +
+                 "AND networks.netid=(SELECT netid FROM nics WHERE mac='%s') " % mac +
+                 "AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')")
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+
+        http_ip = data[0]
+
+        query = ("SELECT nodes.ngid, networks.device FROM nics, nodes, networks WHERE nodes.nid=nics.nid AND nics.netid=networks.netid AND nodes.nid=(SELECT nid FROM nics WHERE mac='%s')" % mac)
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+
+        #FIXME: Not the best way to do it to serve out the ks.cfg. 
+        # The content of ks.cfg is not dynamic enough
+        kickstart_file = 'http://%s/repos/%s/ks.cfg' % (http_ip, data[0])
+        ksdevice = data[1]
         fp.write("prompt 0\n")
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
-        fp.write("        append initrd=%s %s niihost=%s\n" % (initrd, kparams, niihost))
+        fp.write("        append initrd=%s %s niihost=%s ks=%s text noipv6 kssendmac ksdevice=%s\n" % (initrd, kparams or '', niihost, kickstart_file, ksdevice))
 
         if localboot == True :
             fp.write("\nlabel localdisk\n")
