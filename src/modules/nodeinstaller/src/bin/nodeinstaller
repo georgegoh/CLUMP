@@ -147,8 +147,8 @@ actions:
         print 'Downloading NII..'
         niisource = NodeInstaller.retrieveNII(niihost)
         ni = NodeInstaller(niisource)
-        self.kl.debug('Writing profile into kickstart file /tmp/ks.cfg..')
-        print 'Writing profile into kickstart file /tmp/ks.cfg..'
+        self.kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
+        print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
         ni.setup(ksfile)
         self.kl.debug('Committing disk profile')
         print 'Committing disk profile'
