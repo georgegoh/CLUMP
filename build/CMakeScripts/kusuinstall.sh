@@ -49,5 +49,6 @@ if [ -d ${SETUPPY_PATH}/installdir/share/etc ] ;
 then
   mv ${SETUPPY_PATH}/installdir/share/etc ${SETUPPY_PATH}/installdir/.
 fi
+(cd ${SETUPPY_PATH}/installdir && find ./ -name "*" > ${SETUPPY_PATH}/install.lst)
 cp -rf ${SETUPPY_PATH}/installdir/* ${KUSU_ROOT}/. ;
 rm -rf ${SETUPPY_PATH}/installdir ;
