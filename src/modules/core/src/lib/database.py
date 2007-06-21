@@ -474,10 +474,9 @@ class DB(object):
         packages = sa.Table('packages', self.metadata,
             sa.Column('idpackages', sa.Integer, primary_key=True, 
                       autoincrement=True),
-            sa.Column('ngid', sa.Integer, primary_key=True),
+            sa.Column('ngid', sa.Integer, sa.ForeignKey('nodegroups.ngid'),
+                      nullable=False),
             sa.Column('packagename', sa.String(255)),
-            sa.ForeignKeyConstraint(['ngid'],
-                                    ['nodegroups.ngid']),
             mysql_engine='InnoDB')
         sa.Index('packages_FKIndex1', packages.c.ngid)
 

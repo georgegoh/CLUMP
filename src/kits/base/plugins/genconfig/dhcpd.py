@@ -98,7 +98,7 @@ class thisReport(Report):
 
 
                 # Now cycle through the nodes on for this
-                query = ('select nodes.name, nics.ip, nics.mac, networks.suffix '
+                query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
                          'from networks,nics,nodes where nodes.nid=nics.nid and '
                          'nics.netid=networks.netid and nics.boot=1 ')
 
@@ -115,10 +115,10 @@ class thisReport(Report):
                         # Test to see if this nodes IP lies on the same network
                         # as this DHCP section
                         if onNetwork(netmask, subnet, row[1]):
-                            if row[3] and row[3] != '':
+                            if row[3]:
                                 print '\thost %s%s {' % (row[0], row[3])
                             else:
-                                print '\thost %s {' % row[0]
+                                print '\thost %s-%s {' % (row[0], row[4])
                             print '\t\thardware ethernet %s;' % row[2]
                             print '\t\toption host-name "%s";' % row[0]
                             print '\t\tfixed-address %s;' % row[1]
