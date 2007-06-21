@@ -171,12 +171,12 @@ class KitOps:
                                 version=kit['ver'], arch=kit['arch'])
         newkit.save()
         
-        # Create mock kit component to install the kit RPM
-        mockcomp = self.__db.Components(cname=kit['inst'].getName(),
-                                        cdesc='Mock component for kit RPM')
-        newkit.components.append(mockcomp)
+        # Add kit to packages table for master and installer nodegroups
+        kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
         masterng = self.__db.NodeGroups.selectfirst_by(ngname='master')
-        masterng.components.append(mockcomp)
+        masterng.packages.append(kitpgk)
+        installng = self.__db.NodeGroups.selectfirst_by(ngname='installer')
+        installng.packages.append(kitpgk)
 
         # 3. install the kit RPM
         if not self.installer:

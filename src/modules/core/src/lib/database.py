@@ -594,6 +594,8 @@ class DB(object):
                       'networks': sa.relation(Networks, secondary=ng_has_net,
                                               entity_name=self.entity_name),
                       'nodes': sa.relation(Nodes,
+                                           entity_name=self.entity_name),
+                      'packages': sa.relation(Packages,
                                            entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
