@@ -112,8 +112,13 @@ class BaseRepo(object):
         repo.kits = kits.values()
         repo.save()
         repo.flush()
-        self.repoid = repo.repoid
         
+        repo.repository='/repos/%s' % repo.repoid
+        repo.save()
+        repo.flush()
+ 
+        self.repoid = repo.repoid
+
         # Update nodegroup with the new repoid
         ng.repoid = repo.repoid
         ng.save_or_update()
@@ -296,6 +301,8 @@ class RedhatYumRepo(BaseRepo):
             row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
             row = row[0]
             masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+            
+            #FIXME: Have to check for correct ip to use
             niihost = 'http://' + masterNode.nics[0].ip
 
             # web server root is different: /repos/<repoid>
