@@ -566,11 +566,11 @@ class WindowSelectNode(NodeGroupWindow):
         """" Get list of network interfaces and allow user to choose one"""
         
         networkList = []
-        #query = "SELECT networks.device, nics.ip FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-        #         nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
+        query = "SELECT networks.device, nics.ip FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                 nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
         
         # FIXME: Problem: Which SQL query do I use?
-        query = "SELECT networks.device, networks.network FROM nodes,networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid AND ng_has_net.ngid = (SELECT ngid FROM nodegroups WHERE ngname='Installer') AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
+        #query = "SELECT networks.device, networks.network FROM nodes,networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid AND ng_has_net.ngid = (SELECT ngid FROM nodegroups WHERE ngname='Installer') AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
  
         try:
             self.database.connect()
