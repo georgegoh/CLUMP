@@ -1,4 +1,9 @@
 # $Id: CMakeLists.txt 275 2007-04-12 11:56:52Z hirwan $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 # Configure
 PROJECT(pyparted)
 SET(LICENSE_FILE COPYING)

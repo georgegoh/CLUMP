@@ -1,4 +1,9 @@
-# $Id$
+# $Id: CMakeLists.txt 1201 2007-06-07 05:30:31Z najib $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 # Configure
 PROJECT(md5crypt)
 SET(LICENSE_FILE COPYING)

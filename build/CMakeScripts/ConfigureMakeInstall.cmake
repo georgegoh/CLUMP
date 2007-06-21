@@ -1,7 +1,5 @@
 # $Id: ConfigureMakeInstall.camke 293 2007-04-13 04:50:44Z hirwan $
 #
-# Kusu specific environment script
-#
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.

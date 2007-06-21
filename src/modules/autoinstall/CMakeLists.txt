@@ -1,4 +1,9 @@
 # $Id$
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 PROJECT(autoinstall)
 SET(LICENSE_FILE LICENSE)
 SET(VERSION_STR ${KUSU_VERSION})

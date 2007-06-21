@@ -1,4 +1,9 @@
 # $Id$
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 SET(KUSU_VERSION 0.2)
 
 # ## Add 3rd party modules to the build lists

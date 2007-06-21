@@ -1,4 +1,9 @@
 # $Id$
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 # Configure
 PROJECT(thttpd)
 SET(LICENSE_FILE COPYING)

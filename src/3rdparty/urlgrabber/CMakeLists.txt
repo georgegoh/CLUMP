@@ -1,4 +1,9 @@
 # $Id: CMakeLists.txt 270 2007-04-12 04:14:43Z ltsai $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
 # Configure
 PROJECT(urlgrabber)
 SET(LICENSE_FILE LICENSE)
