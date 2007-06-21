@@ -347,8 +347,8 @@ class NodeFun(object, KusuApp):
         interfaces = self._findInterfaces()
 
         # Get the installer's subnet and network information.
-        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND \
-                                  ng_has_net.ngid = 1 AND networks.device='%s'" % selectedinterface)
+        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks,nodes WHERE nodes.name=(SELECT kvalue FROM appglobals \
+                                  WHERE kname='PrimaryInstaller') AND networks.device='%s'" % selectedinterface)
      
         installer_subnet, installer_network = self._dbReadonly.fetchone()
        
