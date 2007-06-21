@@ -163,7 +163,7 @@ class NetworkRecord(object):
             
     def getNetworkList(self):   
         networkInfo = None
-        query = "SELECT netid, network, subnet, netname FROM networks ORDER BY netid"
+        query = "SELECT netid, network, subnet, netname, device FROM networks ORDER BY netid"
         try:
             self._database.connect()
             self._database.execute(query)
@@ -272,13 +272,14 @@ class NetEditApp(object, KusuApp):
             network_field = self._("netedit_list_network_field")
             subnet_field = self._("netedit_list_subnet_field")
             desc_field = self._("netedit_list_description_field")
-            print "%s %s %s %s" % (netid_field.ljust(10), network_field.ljust(14), subnet_field.ljust(15), desc_field.ljust(10))
+            dev_field = self._("netedit_list_device_field")
+            print "%s %s %s %s %s" % (netid_field.ljust(10), dev_field.ljust(12), network_field.ljust(13), subnet_field.ljust(15),desc_field)
 
-            print "%s".ljust(3) % (("=") * len(netid_field)) + "%s".ljust(10) % (("=") * len(network_field)) + "%s".ljust(12) % (("=") * \
-                  len(subnet_field)) + "%s" % (("=") * len(desc_field))
+            print "%s".ljust(3) % (("=") * len(netid_field)) + "%s".ljust(9) % (("=") * len(dev_field)) + "%s".ljust(9) % (("=") * \
+                  len(network_field)) + "%s".ljust(12) % (("=") * len(subnet_field)) + "%s" % (("=") * len(desc_field))
 
-            for nid,net,sub,netname in networkList:
-                print "%s %s %s %s" % (str(nid).ljust(10), net.ljust(14), sub.ljust(15), netname.ljust(10))
+            for nid,net,sub,netname,devname in networkList:
+                print "%s %s %s %s %s" % (str(nid).ljust(10), devname.ljust(12), net.ljust(13), sub.ljust(15), netname)
             sys.exit(0)
             
         # Handle -a -n -s -g,-i,-t options - Adding network
