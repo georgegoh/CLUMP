@@ -82,11 +82,11 @@ class thisReport(Report):
                 print 'subnet %s netmask %s {' % (netmask, subnet)
                 print '\tdefault-lease-time %s;' % leasetime
                 print '\tmax-lease-time %s;' % leasetime
-                print '\toption routers "%s";' % gateway
+                print '\toption routers %s;' % gateway
                 print '\toption subnet-mask %s;' % subnet
                 
                 if dnsdomain:
-                    print '\toption domain-name %s;' % dnsdomain
+                    print '\toption domain-name "%s";' % dnsdomain
                     
                 print '\tif substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {'
                 print '\t\tfilename  "pxelinux.0";'
