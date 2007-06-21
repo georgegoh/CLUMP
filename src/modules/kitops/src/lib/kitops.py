@@ -173,6 +173,8 @@ class KitOps:
         
         # Add kit to packages table for master and installer nodegroups
         kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
+        kitpkg.save()
+        kitpkg.flush()
         masterng = self.__db.NodeGroups.selectfirst_by(ngname='master')
         masterng.packages.append(kitpkg)
         installng = self.__db.NodeGroups.selectfirst_by(ngname='installer')
