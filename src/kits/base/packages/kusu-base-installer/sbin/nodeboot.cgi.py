@@ -103,7 +103,7 @@ class NodeInfo:
         if data:
             for row in data:
                 device, partition, mntpnt, fstype, size, options, preserve = row
-                print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device, partition, mntpnt, fstype, size, options, preserve)
+                print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device, partition, mntpnt, fstype or '', size, options or '', preserve)
 
         # Component Info
         query = ('select components.cname from components, ng_has_comp '
