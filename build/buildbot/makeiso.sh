@@ -1,4 +1,12 @@
 #!${BASH_EXE}
+# $Id$
+#
+# Kusu specific environment script
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
 
 mkdir -m 755 -p ${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}
 source ${KUSU_ROOT}/bin/kusudevenv.sh

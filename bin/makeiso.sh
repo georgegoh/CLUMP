@@ -1,4 +1,12 @@
 #!${BASH_EXE}
+# $Id$
+#
+# Kusu specific environment script
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
 
 source ${KUSU_ROOT}/bin/kusudevenv.sh
 BUILDDATE=`date +"%Y%m%d%H%m%S"`

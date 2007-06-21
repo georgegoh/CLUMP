@@ -1,4 +1,11 @@
 # $Id: KusuGlobals.cmake 293 2007-04-13 04:50:44Z hirwan $
+#
+# Kusu specific environment script
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
 ## Assert out-of-source build
 IF(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
   MESSAGE(FATAL_ERROR "Please build out of source directory.")
