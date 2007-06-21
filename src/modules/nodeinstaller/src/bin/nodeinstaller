@@ -140,9 +140,19 @@ actions:
         """Handler for provision. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
 
-        if not niihost: return
-        
+        if not niihost: sys.exit(2)
         self.kl.debug('niihost: %s' % niihost)
+        ksfile = '/tmp/kusu/ks.cfg'
+        self.kl.debug('Downloading NII..')
+        print 'Downloading NII..'
+        niisource = NodeInstaller.retrieveNII(niihost)
+        ni = NodeInstaller(niisource)
+        self.kl.debug('Writing profile into kickstart file /tmp/ks.cfg..')
+        print 'Writing profile into kickstart file /tmp/ks.cfg..'
+        ni.setup(ksfile)
+        self.kl.debug('Committing disk profile')
+        print 'Committing disk profile'
+        ni.commit()
 
 
     def _getNii(self, args):

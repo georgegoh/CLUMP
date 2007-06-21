@@ -305,11 +305,10 @@ def handleLV(lvinfo, vg_name, vg_dict):
                            'fs': fs, 'mountpoint': mountpoint}
 
 
-def retrieveNII(niihost, node):
+def retrieveNII(niihost):
     """ Downloads the NII from the niihost.
-        FIXME: currently a hardcoded url!!
     """
-    url = 'http://%s/mirror/fc6/i386/os/nii.xml' % niihost
+    url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1' % niihost
     try:
         logger.debug('Fetching %s' % url)
         f = urllib2.urlopen(url)
