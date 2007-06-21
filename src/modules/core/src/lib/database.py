@@ -653,7 +653,7 @@ class DB(object):
                           size='4000', device='1', preserve='N')
         swap = Partitions(partition='3', fstype='linux-swap',
                           size='2000', device='1', preserve='N')
-        data = Partitions(partition='4', size='4000',
+        data = Partitions(mntpnt='/data', fstype='ext3', partition='4', size='4000',
                           options='fill', device='1', preserve='N')
         compute.partitions.append(boot)
         compute.partitions.append(root)
