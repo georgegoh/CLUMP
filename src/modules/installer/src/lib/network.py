@@ -202,6 +202,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         primary_installer = db.AppGlobals(kname='PrimaryInstaller',
                                           kvalue='master-0')
 
+        all_ngs = db.NodeGroups.select()
+
         interfaces = profile['interfaces']
 
         for intf in interfaces:
@@ -226,7 +228,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                                 socket.inet_ntoa(struct.pack('>L', ip & nm))
                     newnet.subnet = interfaces[intf]['netmask']
 
-                master.networks.append(newnet)
+                for ng in all_ngs:
+                    ng.networks.append(newnet)
+
                 newnic.network = newnet
 
         db.flush()

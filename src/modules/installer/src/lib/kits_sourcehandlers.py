@@ -88,9 +88,13 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 
     kl.debug('Get OS Dist')
     media_distro = kitops.getOSDist()
+    kit_add_failed = False
     if media_distro.ostype:
         kl.debug('Add OS Kit')
-        kit_add_failed = addOSKit(baseScreen, kitops, media_distro, cdrom)
+        try:
+            kit_add_failed = addOSKit(baseScreen, kitops, media_distro, cdrom)
+        except KitAlreadyInstalledError, e:
+            baseScreen.selector.popupMsg('Kit already installed', str(e))
     else:
         kl.debug('Add regular Kit')
         try:
