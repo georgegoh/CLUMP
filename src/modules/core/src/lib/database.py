@@ -174,7 +174,7 @@ class Nodes(BaseTable):
                 self.lastupdate, self.rack, self.rank)
 
 class Packages(BaseTable):
-    cols = ['ngid', 'packaagename']
+    cols = ['ngid', 'packagename']
     def __repr__(self):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.packagename)
