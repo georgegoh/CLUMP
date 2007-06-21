@@ -105,7 +105,7 @@ else
 fi
 
 if [ -f /etc/dhcpd.conf ]; then
-    $KUSU_ROOT/bin/genconfig apache_con > /etc/dhcpd.conf
+    $KUSU_ROOT/bin/genconfig dhcpd > /etc/dhcpd.conf
 
     /etc/init.d/dhcpd start
     /sbin/chkconfig dhcpd on
