@@ -313,7 +313,7 @@ class SelectNodesWindow(USXBaseScreen):
         needRack = False
         nodeRecord = NodeFun()
 
-        if self.nodeCheckbox.getSelection() == None or self.nodegroupRadio.getSelection() == None:
+        if self.nodeCheckbox.getSelection() == [] or self.nodegroupRadio.getSelection() == None:
             self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected"))
             return NAV_NOTHING
 
@@ -492,7 +492,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         needRack = False
         nodeRecord = NodeFun()
 
-        if self.srcNodegroupsCheckbox.getSelection() == None or self.destNodegroupRadio.getSelection() == None:
+        if self.srcNodegroupsCheckbox.getSelection() == [] or self.destNodegroupRadio.getSelection() == None:
             self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected_groups"))
             return NAV_NOTHING
 
@@ -506,7 +506,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
             if not moveList:
-                self.selector.popupMsg(self.kusuApp._("Error"), "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self.destNodegroupRadio.getSelection())
+                self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.destNodegroupRadio.getSelection())
 
             else:
                 nodeRecord.setNodegroupByName(self.destNodegroupRadio.getSelection())
