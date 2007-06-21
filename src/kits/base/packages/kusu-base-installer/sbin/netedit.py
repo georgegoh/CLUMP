@@ -267,9 +267,16 @@ class NetEditApp(object, KusuApp):
             netrec = NetworkRecord()
             networkList = netrec.getNetworkList()
             print 
-            print "%s %s %s %s" % (self._("netedit_list_networkid_field").ljust(10), self._("netedit_list_network_field").ljust(14), \
-                    self._("netedit_list_subnet_field").ljust(15), self._("netedit_list_description_field").ljust(10))
-            print "%s %s %s %s" % ("==========".ljust(10), "==============".ljust(14), "======".ljust(15), "===================".ljust(10))
+
+            netid_field = self._("netedit_list_networkid_field")
+            network_field = self._("netedit_list_network_field")
+            subnet_field = self._("netedit_list_subnet_field")
+            desc_field = self._("netedit_list_description_field")
+            print "%s %s %s %s" % (netid_field.ljust(10), network_field.ljust(14), subnet_field.ljust(15), desc_field.ljust(10))
+
+            print "%s".ljust(3) % (("=") * len(netid_field)) + "%s".ljust(10) % (("=") * len(network_field)) + "%s".ljust(12) % (("=") * \
+                  len(subnet_field)) + "%s" % (("=") * len(desc_field))
+
             for nid,net,sub,netname in networkList:
                 print "%s %s %s %s" % (str(nid).ljust(10), net.ljust(14), sub.ljust(15), netname.ljust(10))
             sys.exit(0)
