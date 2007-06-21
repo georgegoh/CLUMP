@@ -164,13 +164,13 @@ insert into nics values (21, 11, 2, '50:11:ff:33:44:41', '10.1.2.9', 1) ;
 # For the nodes in the Compute Disked node group.  Each has 2 NICs
 insert into nics values (22, 12, 2, '10:31:aa:33:44:40', '10.1.2.10', 1) ;
 insert into nics values (23, 12, 3, NULL, '10.2.2.5', 0) ;
-insert into nics values (24, 13, 2, '10:31:aa:33:44:40', '10.1.2.11', 1) ;
+insert into nics values (24, 13, 2, '10:31:aa:33:44:41', '10.1.2.11', 1) ;
 insert into nics values (25, 13, 3, NULL, '10.2.2.6', 0) ;
-insert into nics values (26, 14, 2, '10:31:aa:33:44:40', '10.1.2.12', 1) ;
+insert into nics values (26, 14, 2, '10:31:aa:33:44:42', '10.1.2.12', 1) ;
 insert into nics values (27, 14, 3, NULL, '10.2.2.7', 0) ;
-insert into nics values (28, 15, 2, '10:31:aa:33:44:40', '10.1.2.13', 1) ;
+insert into nics values (28, 15, 2, '10:31:aa:33:44:43', '10.1.2.13', 1) ;
 insert into nics values (29, 15, 3, NULL, '10.2.2.8', 0) ;
-insert into nics values (30, 16, 2, '10:31:aa:33:44:40', '10.1.2.14', 1) ;
+insert into nics values (30, 16, 2, '10:31:aa:33:44:44', '10.1.2.14', 1) ;
 insert into nics values (31, 16, 3, NULL, '10.2.2.9', 0) ;
 
 # Setup the packages for the diskless compute nodes
