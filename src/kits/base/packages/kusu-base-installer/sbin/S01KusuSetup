@@ -76,13 +76,12 @@ chgrp -R apache /opt/kusu/cfm
 
 # Prepare Mysql
 if [ -f /etc/init.d/mysqld ]; then
-    /sbin/chkconfig mysqld on
-
-    /etc/init.d/mysqld stop
     /etc/init.d/mysqld start
     
-    /opt/kusu/sbin/kusurc
-    /usr/bin/mysql kusudb < /opt/kusu/sql/kusu_dbperms.sql
+    $KUSU_ROOT/sbin/kusurc
+    /usr/bin/mysql kusudb < $KUSU_ROOT/sql/kusu_dbperms.sql
+    
+    /sbin/chkconfig mysqld on
 else
     echo "ERROR:  Could not find mysqld"
 fi
@@ -91,19 +90,25 @@ fi
 if [ ! -d /var/www/html ]; then
     echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
 else
-	if [ -x /etc/init.d/httpd ] && [ -f /opt/kusu/bin/genconfig ]; then
-        ln -sf /opt/kusu/cfm /var/www/htm//cfm
+	if [ -x /etc/init.d/httpd ] && [ -f $KUSU_ROOT/bin/genconfig ]; then
+        ln -sf $KUSU_ROOT/cfm /var/www/htm/cfm
         ln -sf /depot/repos /var/www/html/repos
         ln -sf /depot/images /var/www/html/images
 
-	    genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
+	    $KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
 
-	    /etc/init.d/httpd stop
 	    /etc/init.d/httpd start
         /sbin/chkconfig httpd on
     else
 	    echo "ERROR:  Cannot find genconfig"
     fi
+fi
+
+if [ -f /etc/dhcpd.conf ]; then
+    $KUSU_ROOT/bin/genconfig apache_con > /etc/dhcpd.conf
+
+    /etc/init.d/dhcpd start
+    /sbin/chkconfig dhcpd on
 fi
 
 # Add entry to motd
