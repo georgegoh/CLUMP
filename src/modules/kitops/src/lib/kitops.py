@@ -174,9 +174,9 @@ class KitOps:
         # Add kit to packages table for master and installer nodegroups
         kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
         masterng = self.__db.NodeGroups.selectfirst_by(ngname='master')
-        masterng.packages.append(kitpgk)
+        masterng.packages.append(kitpkg)
         installng = self.__db.NodeGroups.selectfirst_by(ngname='installer')
-        installng.packages.append(kitpgk)
+        installng.packages.append(kitpkg)
 
         # 3. install the kit RPM
         if not self.installer:
