@@ -349,7 +349,7 @@ class NodeFun(object, KusuApp):
         # Get the installer's subnet and network information.
         self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                                   nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
-                                  AND networks.device='%s'% selectedinterface)
+                                  AND networks.device='%s'" % selectedinterface)
      
         installer_subnet, installer_network = self._dbReadonly.fetchone()
        
