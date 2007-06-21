@@ -72,24 +72,24 @@ class boothost:
         generated will attempt to boot from the local disk first."""
         
         # Get the IP of the primary installer
-        query = ('select nics.ip from nics,nodes where nodes.nid=nics.nid '
-                 'and nodes.name=(select kvalue from appglobals where '
-                 'kname="PrimaryInstaller")')
+        #query = ('select nics.ip from nics,nodes where nodes.nid=nics.nid '
+        #         'and nodes.name=(select kvalue from appglobals where '
+        #         'kname="PrimaryInstaller")')
+        #
+        #try:
+        #    self.db.execute(query)
+        #    data = self.db.fetchall()
+        #except:
+        #    self.errorMessage('DB_Query_Error\n')
+        #    sys.exit(-1)
+        #         
+        #niihost = ''
+        #if data:
+        #    for line in data:
+        #        niihost = niihost + "%s," % line[0]
+        #    niihost = niihost[:-1]
 
-        try:
-            self.db.execute(query)
-            data = self.db.fetchall()
-        except:
-            self.errorMessage('DB_Query_Error\n')
-            sys.exit(-1)
-                 
-        niihost = ''
-        if data:
-            for line in data:
-                niihost = niihost + "%s," % line[0]
-            niihost = niihost[:-1]
-
-        newmac = '01-%s' % string.replace(mac, ':', '-')
+        newmac = '01-%s' % mac.replace(':', '-')
         filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',newmac)
         fp = file(filename, 'w')
         if hostname != '':
@@ -113,7 +113,12 @@ class boothost:
 
         http_ip = data[0]
 
-        query = ("SELECT nodes.ngid, networks.device FROM nics, nodes, networks WHERE nodes.nid=nics.nid AND nics.netid=networks.netid AND nodes.nid=(SELECT nid FROM nics WHERE mac='%s')" % mac)
+        query = ("SELECT nodegroups.repoid, networks.device " + 
+                 "FROM nics, nodes, networks, nodegroups " + 
+                 "WHERE nodes.nid=nics.nid " + 
+                 "AND nics.netid=networks.netid " +
+                 "AND nodegroups.ngid=nodes.ngid " +
+                 "AND nics.mac ='%s'" % mac)
         try:
             self.db.execute(query)
             data = self.db.fetchone()
@@ -121,14 +126,16 @@ class boothost:
             self.errorMessage('DB_Query_Error\n')
             sys.exit(-1)
 
+        repoid = data[0]
+        ksdevice = data[1]
+
         #FIXME: Not the best way to do it to serve out the ks.cfg. 
         # The content of ks.cfg is not dynamic enough
-        kickstart_file = 'http://%s/repos/%s/ks.cfg' % (http_ip, data[0])
-        ksdevice = data[1]
+        kickstart_file = 'http://%s/repos/%s/ks.cfg' % (http_ip, repoid)
         fp.write("prompt 0\n")
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
-        fp.write("        append initrd=%s %s niihost=%s ks=%s text noipv6 kssendmac ksdevice=%s\n" % (initrd, kparams or '', niihost, kickstart_file, ksdevice))
+        fp.write("        append initrd=%s niihost=%s ks=%s text noipv6 kssendmac ksdevice=%s %s\n" % (initrd, http_ip, kickstart_file, ksdevice, kparams or ''))
 
         if localboot == True :
             fp.write("\nlabel localdisk\n")
