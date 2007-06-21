@@ -1,4 +1,11 @@
 #!${BASH}
+# $Id: kusuinstall.sh 293 2007-04-13 04:50:44Z hirwan $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+
 KUSU_MODULE="${KUSU_MODULE}"
 if [ $KUSU_MODULE == "ON" ]
 then
@@ -43,4 +50,4 @@ then
   mv ${SETUPPY_PATH}/installdir/share/etc ${SETUPPY_PATH}/installdir/.
 fi
 cp -rf ${SETUPPY_PATH}/installdir/* ${KUSU_ROOT}/. ;
-#rm -rf ${SETUPPY_PATH}/installdir ;
+rm -rf ${SETUPPY_PATH}/installdir ;
