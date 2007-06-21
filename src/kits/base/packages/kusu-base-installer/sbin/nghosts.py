@@ -133,14 +133,14 @@ class NodeMemberApp(object, KusuApp):
             database.execute("SELECT ngid,ngname FROM nodegroups")
             ng = database.fetchall()
             for groupid, groupname in ng:
-                database.execute("select nodes.name from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
+                database.execute("select nodes.name, nodes.state from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
                                   WHERE kname='PrimaryInstaller' AND nodes.ngid=%s ORDER BY name)" % groupid)
                 nodes = database.fetchall()
                 if len(nodes):
-                    print "%s" % groupname
-                    print "%s" % "-" * len(groupname)
-                    for node in nodes:
-                        print "%s" % node
+                    print "%s".ljust(10) % groupname
+                    print "%s".ljust(10) % ("-" * len(groupname))
+                    for node,state in nodes:
+                        print "%s".ljust(5) % node + "%s".rjust(1) % state
                     print "\n"
             sys.exit(0)
             
