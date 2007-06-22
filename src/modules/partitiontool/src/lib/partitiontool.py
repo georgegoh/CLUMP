@@ -543,7 +543,9 @@ class DiskProfile(object):
             lv.do_not_format = True
         lv.fs_type = fs_type
         lv.mountpoint = mountpoint
-
+        if mountpoint:
+            self.mountpoint_dict[mountpoint] = lv
+        return lv
 
     def deleteLogicalVolume(self, lv):
         """Delete an existing logical volume."""

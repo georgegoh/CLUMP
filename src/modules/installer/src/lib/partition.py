@@ -194,6 +194,28 @@ class PartitionScreen(InstallerScreen):
 
         profile['DiskProfile'] = self.disk_profile
 
+        # check if we have a swap partition and a root partition.
+        missing_partitions = ''
+        if not self.disk_profile.mountpoint_dict.has_key('/'):
+            missing_partitions += '\troot (/)\n'
+        # start by assuming we don't have a swap partition,
+        # but clear the error if we do find one after all.
+        noswap = '\tswap\n'
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for partition in disk.partition_dict.itervalues():
+                if partition.fs_type == 'linux-swap':
+                    noswap = ''
+                    break;
+        missing_partitions += noswap
+
+        if missing_partitions:
+            self.selector.popupMsg(_('Partitions Not Defined'),
+                                   _('The installation cannot proceed until ' + \
+                                     'you define the following partitions:\n' + \
+                                      missing_partitions))
+            self.selector.currentStep = self.selector.currentStep - 1
+            return
+        
         proceed = self.selector.popupYesNo(_('Really Proceed?'),
                        _('Proceeding beyond this screen will cause ' + \
                          'irreversible changes to your disk(s).\n\nIf you ' + \
