@@ -52,7 +52,7 @@ find . | cpio -mpdu %{buildroot}%{_niroot}
 %postun
 
 %clean
-rm -rf %{buildroot}%{_approot}
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)

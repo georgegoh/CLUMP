@@ -57,7 +57,7 @@ find share/ | cpio -mpdu %{buildroot}%{_approot}
 %postun
 
 %clean
-rm -rf %{buildroot}%{_approot}
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
