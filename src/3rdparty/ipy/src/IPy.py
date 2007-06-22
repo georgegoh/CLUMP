@@ -6,11 +6,11 @@ Further Information might be available at:
 http://software.inl.fr/trac/trac.cgi/wiki/IPy
 """
 
-# $HeadURL$
+# $HeadURL: https://svn.inl.fr/inl-svn/src/tools/ipy/tags/IPy-0.54/IPy.py $
 # $Id$
 
 __rcsid__ = '$Id$'
-__version__ = '0.53'
+__version__ = '0.54'
 
 import types
 

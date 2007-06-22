@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: IPy
-Version: 0.53
+Version: 0.54
 Summary: Class and tools for handling of IPv4 and IPv6 addresses and networks
 Home-page: http://software.inl.fr/trac/trac.cgi/wiki/IPy
 Author: Victor Stinner
@@ -81,6 +81,19 @@ Description: IPy - class and tools for handling of IPv4 and IPv6 addresses and n
         >>> print IP('127.0.0.0/255.0.0.0')
         127.0.0.0/8
         >>> print IP('127.0.0.0-127.255.255.255')
+        127.0.0.0/8
+        
+        
+        Derive network address
+        ===========================
+        
+        IPy can transform an IP address into a network address by applying the given
+        netmask:
+        >>> print IP('127.0.0.1/255.0.0.0', make_net=True)
+        127.0.0.0/8
+        
+        This can also be done for existing IP instances:
+        >>> print IP('127.0.0.1').make_net('255.0.0.0')
         127.0.0.0/8
         
         
@@ -205,6 +218,11 @@ Description: IPy - class and tools for handling of IPv4 and IPv6 addresses and n
         
         What's new
         ==========
+        
+        2007-06-22
+        * Release IPy 0.54
+        * make_net() match from James Teh: transform an IP address into a network
+        address by applying the given netmask
         
         2007-02-28
         * Release IPy 0.53
