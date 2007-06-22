@@ -7,8 +7,8 @@
 # Configure
 PROJECT(ipy)
 SET(LICENSE_FILE COPYING)
-SET(VERSION_STR 20070622)
-SET(SRC_URL http://software.inl.fr/trac/trac.cgi/browser/mirror/tools/ipy/trunk)
+SET(VERSION_STR 0.54)
+SET(SRC_URL http://cheeseshop.python.org/packages/source/I/IPy/IPy-0.54.tar.gz)
 SET(KUSU_MODULE OFF) #Set to ON if this is a Kusu module else set to OFF.
 
 SET(SETUPPY_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
