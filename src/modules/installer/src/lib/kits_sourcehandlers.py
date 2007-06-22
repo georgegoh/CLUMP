@@ -91,6 +91,14 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     kit_add_failed = False
     if media_distro.ostype:
         kl.debug('Add OS Kit')
+        kl.debug('Check that OS is the right distro, arch, version')
+        verified, err_list = verifyDistroVersionAndArch(baseScreen.kiprofile, media_distro)
+        if not verified:
+            baseScreen.selector.popupMsg('Cannot Add OS Kit', 'Cannot add OS kit ' + \
+                                         'because the media does not match the ' + \
+                                         'following criteria:\n\t' + '\n\t'.join(err_list))
+            return
+
         try:
             kit_add_failed = addOSKit(baseScreen, kitops, media_distro, cdrom)
         except KitAlreadyInstalledError, e:
@@ -108,11 +116,41 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
         except KitAlreadyInstalledError:
             prog_dlg.close()
             baseScreen.selector.popupMsg('Kit Is Already Installed',
-                                        'The kit you have chosen is already installed')
+                                        'The kit you have chosen is already installed.')
+        except AssertionError:
+            prog_dlg.close()
+            baseScreen.selector.popupMsg('Cannot Identify Disk',
+                                         'The inserted disk cannot be identified.')
             kit_add_failed = False
     kitops.unmountMedia()
     if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
     # handle this error intelligently
+
+
+def verifyDistroVersionAndArch(kiprofile, distro):
+    """
+    Verify that a distro matches the version and architecture defined in
+    the given kiprofile object.
+    """
+    verified = True
+    err_list = []
+    if kiprofile['OS'] != distro.ostype:
+        err_list.append('OS:%s\tMedia OS:%s' % (kiprofile['OS'],
+                                               distro.ostype or 'Unknown'))
+        verified = False
+    if kiprofile['OS_VERSION'] != distro.getVersion():
+        err_list.append('Version:%s\tMedia Version:%s' % (kiprofile['OS_VERSION'],
+                                                         distro.getVersion() or 'Unknown'))
+        verified = False 
+    if kiprofile['OS_ARCH'] != distro.getArch():
+        # FIXME: not sure if this check belongs here. See FedoraInstallSrc
+        # in distro.py:343.
+        if distro.getArch() != 'noarch':
+            err_list.append('Arch:%s\tMedia Arch:%s' % (kiprofile['OS_ARCH'],
+                                                       distro.getArch() or 'Unknown'))
+            verified = False
+    return verified, err_list
+
 
 def addOSKit(baseScreen, kitops, osdistro, cdrom):
     kit = kitops.prepareOSKit(osdistro)

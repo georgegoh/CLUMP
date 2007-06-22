@@ -34,6 +34,8 @@ from kusu.core import database as db
 kiprofile = Profile()
 kiprofile['Kusu Install MntPt'] = '/mnt/kusu'
 kiprofile['OS'] = os.environ['KUSU_DIST']
+kiprofile['OS_VERSION'] = os.environ['KUSU_DISTVER']
+kiprofile['OS_ARCH'] = os.environ['KUSU_DIST_ARCH']
 
 class ScreenFactoryImpl(ScreenFactory):
     """The ScreenFactory is defined by the programmer, and passed on to the 
