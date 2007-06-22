@@ -9,7 +9,7 @@ import sys
 import os
 import kusu.util.log as kusulog
 from kusu.core.app import KusuApp
-from kusu.nodeinstaller import NodeInstaller
+from kusu.nodeinstaller import NodeInstaller, retrieveNII
 
 class NodeInstallerApp(KusuApp):
     
@@ -139,20 +139,23 @@ actions:
     def _provision(self, args):
         """Handler for provision. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
-
-        if not niihost: sys.exit(2)
-        self.kl.debug('niihost: %s' % niihost)
-        ksfile = '/tmp/kusu/ks.cfg'
-        self.kl.debug('Downloading NII..')
-        print 'Downloading NII..'
-        niisource = NodeInstaller.retrieveNII(niihost)
-        ni = NodeInstaller(niisource)
-        self.kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
-        print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
-        ni.setup(ksfile)
-        self.kl.debug('Committing disk profile')
-        print 'Committing disk profile'
-        ni.commit()
+        try:
+            if not niihost: sys.exit(2)
+            self.kl.debug('niihost: %s' % niihost)
+            ksfile = '/tmp/kusu/ks.cfg'
+            self.kl.debug('Downloading NII..')
+            print 'Downloading NII..'
+            niisource = retrieveNII(niihost)
+            ni = NodeInstaller(niisource)
+            self.kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
+            print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
+            ni.setup(ksfile)
+            self.kl.debug('Committing disk profile')
+            print 'Committing disk profile'
+            ni.commit()
+        except:
+            raw_input('Press Enter to continue...')
+            sys.exit(2)
 
 
     def _getNii(self, args):
