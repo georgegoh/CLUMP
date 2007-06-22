@@ -88,7 +88,7 @@ class NodeInfo:
             sys.exit(-1)
  
         installer = data[0]        
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os or = '', type, ngid)
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os or '', type, ngid)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '
@@ -124,11 +124,12 @@ class NodeInfo:
         if data:
             for row in data:
                 device, partition, mntpnt, fstype, size, options, preserve = row
-                print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device, partition, mntpnt, fstype or '', size, options or '', preserve)
+                print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device, partition, mntpnt or '', fstype or '', size, options or '', preserve)
 
         # Component Info
-        query = ('select components.cname from components, ng_has_comp '
+        query = ('select components.cname from components, kits, ng_has_comp '
                  'where components.cid=ng_has_comp.cid and '
+                 'kits.kid=components.kid and kits.isOS=0 and '
                  'ng_has_comp.ngid="%i"' % ngid )
         try:
             self.db.execute(query)
@@ -382,9 +383,10 @@ class NodeBootApp(KusuApp):
 
         # The data should now be ready to call the methods
         if runascgi:
-            print 'Content-type: text/html\n\n'
+            print 'Content-type: text/html\n'
 
         #if self.cgi.has_key('dump'):
+        print '<?xml version="1.0"?>'
         print "<nii>"
         print "<debug>"
         print "Dump NII: %s " % dumpnii

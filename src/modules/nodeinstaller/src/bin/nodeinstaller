@@ -7,9 +7,15 @@
 
 import sys
 import os
+import re
 import kusu.util.log as kusulog
+# Sets up kusu logging
+kl = kusulog.getKusuLog()
+kl.addFileHandler()
+
 from kusu.core.app import KusuApp
 from kusu.nodeinstaller import NodeInstaller, retrieveNII
+from kusu.boot.tool import getPartitionMap, makeDev
 
 class NodeInstallerApp(KusuApp):
     
@@ -88,7 +94,7 @@ actions:
 
         if not self.args :
             # run in provision mode
-            self.kl.debug('Running in automatic provision mode')
+            kl.debug('Running in automatic provision mode')
             self.args.append('provision')
             
             # grab the /proc/cmdline and look for niihost
@@ -119,9 +125,7 @@ actions:
      
     def run(self):
         """ Main launcher. """
-        self.kl = kusulog.getKusuLog('nodeinstaller')
-        self.kl.addFileHandler()
-        self.kl.debug('Starting nodeinstaller')
+        kl.debug('Starting nodeinstaller')
         
         self.parseargs()
         
@@ -139,23 +143,34 @@ actions:
     def _provision(self, args):
         """Handler for provision. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
-        try:
-            if not niihost: sys.exit(2)
-            self.kl.debug('niihost: %s' % niihost)
-            ksfile = '/tmp/kusu/ks.cfg'
-            self.kl.debug('Downloading NII..')
-            print 'Downloading NII..'
-            niisource = retrieveNII(niihost)
-            ni = NodeInstaller(niisource)
-            self.kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
-            print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
-            ni.setup(ksfile)
-            self.kl.debug('Committing disk profile')
-            print 'Committing disk profile'
-            ni.commit()
-        except:
-            raw_input('Press Enter to continue...')
-            sys.exit(2)
+        #try:
+        # get the map of the available partitions
+        devmap = getPartitionMap()
+        devices = devmap.keys()
+
+        # set up a pattern of the devices we are interested in
+        pat = re.compile('[hs]d\d*')
+        for dev in devices:
+            m = pat.match(dev)
+            if m:
+                makeDev('b', devmap[dev]['major'], devmap[dev]['minor'], dev)
+
+        if not niihost: sys.exit(2)
+        kl.debug('niihost: %s' % niihost)
+        ksfile = '/tmp/kusu/ks.cfg'
+        kl.debug('Downloading NII..')
+        print 'Downloading NII..'
+        niisource = retrieveNII(niihost)
+        ni = NodeInstaller(niisource)
+        kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
+        print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
+        ni.setup(ksfile)
+        kl.debug('Committing disk profile')
+        print 'Committing disk profile'
+        ni.commit()
+        #except:
+        #    raw_input('Press Enter to continue...')
+        #    sys.exit(2)
 
 
     def _getNii(self, args):
@@ -163,8 +178,8 @@ actions:
         niihost = args.get('niihost',None)
         node = args.get('node',None)
         
-        self.kl.debug('niihost : %s' % niihost)
-        self.kl.debug('node : %s' % node)        
+        kl.debug('niihost : %s' % niihost)
+        kl.debug('node : %s' % node)        
         if not niihost:
             msg = self._('Please specify a NII Host server.')
             self.printMsgExit(msg)
@@ -178,6 +193,10 @@ actions:
             
 
 if __name__ == '__main__':
+    # set up tty3 for logging output
+    if os.access("/dev/tty3", os.W_OK):
+        kl.addFileHandler('/dev/tty3')
+
     app = NodeInstallerApp()
     app.run()
 

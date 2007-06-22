@@ -12,13 +12,13 @@ from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
 from whrandom import choice
+from cStringIO import StringIO
 import string
 import urllib2
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
-logger.addFileHandler()
 
 def translateBoolean(value):
     """ Tries to translate value into boolean"""
@@ -157,7 +157,6 @@ def translatePartitionOptions(options, opt):
         else:
             return (False, None)
 
-
 def adaptNIIPartition(niipartition):
     """ Adapt niipartition into a partitiontool schema. This schema can
         be passed along with a partitiontool diskprofile to setupDiskProfile
@@ -203,7 +202,6 @@ def adaptNIIPartition(niipartition):
 
     return schema
 
-
 def filterPartitionEntries(partition_entries):
     """ Filter out the values into normal volumes and volume
         groups and logical volumes.
@@ -226,7 +224,6 @@ def filterPartitionEntries(partition_entries):
                 raise InvalidPartitionSchema, \
                  "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
     return part_list, vg_list, lv_list
-
 
 def createPartition(partinfo, disk_dict, vg_dict):
     """ Create a new partition and add it to the supplied disk dictionary."""
@@ -268,7 +265,6 @@ def handleSpanningPartition(partinfo, disk_dict, vg_dict):
         raise InvalidPartitionSchema, "Partition marked as spanning multiple disks, but not as physical volumes."
     vg_dict[vg_name]['pv_span'] = True
 
-
 def handlePV(partinfo, vg_name, vg_dict):
     if not vg_name.strip(): raise InvalidPartitionSchema, 'No Volume Group given for Physical Volume.'
     if vg_dict.has_key(vg_name): vg = vg_dict[vg_name]
@@ -287,7 +283,6 @@ def handlePV(partinfo, vg_name, vg_dict):
 
     vg['pv_list'].append({'disk': disknum, 'partition': part_no})
 
-
 def handleLV(lvinfo, vg_name, vg_dict):
     if not vg_name.strip(): raise InvalidPartitionSchema, 'No Volume Group given for Logical Volume.'
     if vg_dict.has_key(vg_name): vg = vg_dict[vg_name]
@@ -303,7 +298,6 @@ def handleLV(lvinfo, vg_name, vg_dict):
 
     vg['lv_dict'][name] = {'size_MB': size_MB, 'fill': fill,
                            'fs': fs, 'mountpoint': mountpoint}
-
 
 def retrieveNII(niihost):
     """ Downloads the NII from the niihost.
@@ -351,7 +345,7 @@ class KickstartFromNIIProfile(object):
         
         # rootpw is a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
         self.rootpw = getRandomSeq()
-        self.tz = ni.appglobal['TimeZone']
+        self.tz = ni.appglobal['Timezone_zone']
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
         self.installsrc = 'http://' + ni.installers + ni.repo
@@ -384,7 +378,7 @@ class KickstartFromNIIProfile(object):
             nw['interfaces'][nic] = nicinfo
 
         nw['fqhn_use_dhcp'] = False     # always static hostnames
-        nw['fqhn'] = '.'.join([ni.name, ni.appglobals['DNSDomain']])
+        nw['fqhn'] = '.'.join([ni.name, ni.appglobal['DNSZone']])
 
         if default_gateway:
             nw['gw_dns_use_dhcp'] = False
@@ -392,9 +386,9 @@ class KickstartFromNIIProfile(object):
         else:
             nw['gw_dns_use_dhcp'] = True
 
-        nw['dns1'] = ni.appglobals.get('dns1', '')
-        nw['dns2'] = ni.appglobals.get('dns2', '')
-        nw['dns3'] = ni.appglobals.get('dns3', '')
+        nw['dns1'] = ni.appglobal.get('dns1', '')
+        nw['dns2'] = ni.appglobal.get('dns2', '')
+        nw['dns3'] = ni.appglobal.get('dns3', '')
 
         logger.debug('network profile constructed: %r' % nw)
         
@@ -536,7 +530,8 @@ class NodeInstaller(object):
             niidata = NodeInstInfoHandler()
             p = make_parser()
             p.setContentHandler(niidata)
-            p.parse(self.source)
+            sourceStringIO = StringIO(self.source)
+            p.parse(sourceStringIO)
             for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
                 'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
                 'scripts', 'cfm']:
@@ -576,5 +571,5 @@ class NodeInstaller(object):
         """ This starts the automatic provisioning """
 
         logger.debug('Committing changes and formatting disk..')
-        self.diskprofile.commit()
-        self.diskprofile.format()
+        self.ksprofile.diskprofile.commit()
+        self.ksprofile.diskprofile.formatAll()
