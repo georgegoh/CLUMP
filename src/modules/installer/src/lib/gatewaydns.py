@@ -10,11 +10,13 @@
 import socket
 import snack
 from gettext import gettext as _
+from IPy import IP
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
 from kusu.util import profile
+from kusu.util.net import nextIP
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 
@@ -208,9 +210,9 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
         for intf in interfaces.keys():
             if interfaces[intf]['configure']:
-                if isHostRoutable(interfaces[intf]['ip_address'],
-                                          interfaces[intf]['netmask'],
-                                          self.gateway.value()):
+                if self.gateway.value() in \
+                    IP(interfaces[intf]['ip_address'] + '/' +
+                       interfaces[intf]['netmask'], make_net=True):
                     return True, ''
 
         return False, _('Not routable by any configured device.')
@@ -228,9 +230,6 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
     def save(self, db, profile):
         if not profile['gw_dns_use_dhcp']:
-            import socket
-            import struct
-
             db.AppGlobals(kname='dns1', kvalue=profile['dns1'])
 
             if profile['dns2']:
@@ -240,14 +239,17 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
             nets = db.Networks.select()
             for net in nets:
-                if not net.usingdhcp:
-                    gw = struct.unpack('>L',
-                                socket.inet_aton(profile['default_gw']))[0]
-                    nm = struct.unpack('>L', socket.inet_aton(net.subnet))[0]
+                nw = IP(net.network + '/' + net.subnet)
 
+                if not net.usingdhcp:
                     # if this gateway is reachable by this interface, assign it
-                    if net.network == \
-                                socket.inet_ntoa(struct.pack('>L', nm & gw)):
+                    if profile['default_gw'] in nw:
                         net.gateway = profile['default_gw']
+
+                    # assign the starting IP
+                    exclude = [profile['default_gw'], profile['dns1'],
+                               profile['dns2'], profile['dns3']]
+                    net.startip = nextIP(net.network, net.subnet,
+                                         net.inc, exclude)
 
             db.flush()

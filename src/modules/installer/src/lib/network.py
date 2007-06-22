@@ -11,6 +11,7 @@
 import socket
 import snack
 from gettext import gettext as _
+from IPy import IP
 from kusu.ui.text import kusuwidgets
 from kusu.hardware import probe
 import kusu.util.log as kusulog
@@ -194,9 +195,6 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     self.kiprofile[self.profile]['have_static'] = True
 
     def save(self, db, profile):
-        import socket
-        import struct
-
         master = db.NodeGroups.selectfirst_by(ngname='master')
         master_node = db.Nodes.selectfirst_by(name='master-0')
         primary_installer = db.AppGlobals(kname='PrimaryInstaller',
@@ -220,12 +218,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     newnic.ip = interfaces[intf]['ip_address']
 
                     # the network is stored as IP & netmask (& = bitwise and)
-                    ip = struct.unpack('>L',
-                            socket.inet_aton(interfaces[intf]['ip_address']))[0]
-                    nm = struct.unpack('>L',
-                            socket.inet_aton(interfaces[intf]['netmask']))[0]
-                    newnet.network = \
-                                socket.inet_ntoa(struct.pack('>L', ip & nm))
+                    ip = interfaces[intf]['ip_address']
+                    nm = interfaces[intf]['netmask']
+                    newnet.network = IP(ip).make_net(nm).strNormal(0)
                     newnet.subnet = interfaces[intf]['netmask']
 
                 for ng in all_ngs:

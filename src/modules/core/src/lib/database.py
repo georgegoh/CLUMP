@@ -636,10 +636,13 @@ class DB(object):
 
         # Create the nodegroups
         # #R - rack, #N - rank
-        master = NodeGroups(ngname='master', nameformat='master-#N')
+        master = NodeGroups(ngname='master', nameformat='master-#N',
+                            installtype='package')
         installer = NodeGroups(ngname='installer',
-                               nameformat='installer-#RR-#NN') # VERSION+ARCH
-        compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN')
+                               nameformat='installer-#RR-#NN',
+                               installtype='package') # VERSION+ARCH
+        compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN',
+                             installtype='package')
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
