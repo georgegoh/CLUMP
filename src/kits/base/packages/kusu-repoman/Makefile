@@ -20,7 +20,7 @@
 
 # Be sure to change the MODULE and VERSION to fit your needs
 MODULE = repoman
-VERISON = 0.3
+VERSION = 0.3
 
 
 # The following settings can be changed accordingly to your needs
