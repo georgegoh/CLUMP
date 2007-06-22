@@ -13,6 +13,7 @@ export PYTHONPATH=$KUSU_ROOT/lib/python:$PYTHONPATH
 export PATH=$KUSU_ROOT/bin:$KUSU_ROOT/sbin:$PATH
 export KUSU_DIST=rhel
 export KUSU_DISTVER=5
+export KUSU_DIST_ARCH=i386
 export KUSU_TMP=/tmp/kusu
 export KUSU_LOGLEVEL=DEBUG
 export KUSU_LOGFILE=$KUSU_TMP/kusu.log
