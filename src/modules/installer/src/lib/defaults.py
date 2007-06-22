@@ -158,12 +158,12 @@ def createPhysicalSchema(disk_profile, disk_schemata):
 
         # do the physical disk and partitions first.
         sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
-        for i in range(len(disk_schemata)):
+        for i in xrange(len(disk_schemata)):
             # for each disk in the schema.
             schema_disk = disk_schemata[i+1]
             schema_partition_dict = schema_disk['partition_dict']
             try:
-                for j in range(len(schema_partition_dict)):
+                for j in xrange(len(schema_partition_dict)):
                     # for each partition in the current disk.
                     schema_partition = schema_partition_dict[j+1]
                     disk_key = sorted_disk_keys[i]

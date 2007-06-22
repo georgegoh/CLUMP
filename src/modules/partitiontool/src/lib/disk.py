@@ -63,7 +63,7 @@ class Disk(object):
         else:
             try:
                 self.pedDisk = parted.PedDisk.new(pedDevice)
-                for i in range(self.pedDisk.get_last_partition_num()):
+                for i in xrange(self.pedDisk.get_last_partition_num()):
                     pedPartition = self.pedDisk.get_partition(i+1)
                     new_partition = self.__appendToPartitionDict(pedPartition)
                     new_partition.on_disk = True
