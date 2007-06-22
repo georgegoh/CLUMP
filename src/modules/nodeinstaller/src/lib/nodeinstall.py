@@ -344,7 +344,8 @@ class KickstartFromNIIProfile(object):
         """
         
         # rootpw is a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
-        self.rootpw = getRandomSeq()
+        #self.rootpw = getRandomSeq()
+        self.rootpw = 'system'
         self.tz = ni.appglobal['Timezone_zone']
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
