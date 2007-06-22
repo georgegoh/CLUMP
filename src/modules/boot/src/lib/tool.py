@@ -21,7 +21,7 @@ SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX',
                         'KUSU_BUILD_ISOBIN', 'KUSU_DISTRO_SRC',
                         'KUSU_CACHE_DIR', 'KUSU_DIST',
                         'KUSU_DISTVER', 'KUSU_TMP',
-                        'KUSU_LOGLEVEL', 'KUSU_LOGFILE']
+                        'KUSU_LOGLEVEL', 'KUSU_LOGFILE', 'KUSU_DIST_ARCH']
 
 def getPartitionMap(src='/proc/partitions'):
     """ This function returns a list of dicts containing the entries of /proc/partitions. """
