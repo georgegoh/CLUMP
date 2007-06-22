@@ -188,7 +188,7 @@ class Partitions(BaseTable):
                 self.fstype, self.size, self.options, self.preserve)
 
 class Repos(BaseTable):
-    cols = ['reponame', 'repository', 'installers', \
+    cols = ['repoid', 'reponame', 'repository', 'installers', \
             'ostype']
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
@@ -496,7 +496,8 @@ class DB(object):
         sa.Index('partitions_FKIndex1', partitions.c.ngid)
 
         repos = sa.Table('repos', self.metadata,
-            sa.Column('repoid', sa.Integer, primary_key=True, autoincrement=True),
+            sa.Column('repoid', sa.Integer, primary_key=True,
+                      autoincrement=True),
             sa.Column('reponame', sa.String(45)),
             sa.Column('repository', sa.String(255)),
             sa.Column('installers', sa.String(255)),
@@ -664,6 +665,7 @@ class DB(object):
         compute.partitions.append(data)
  
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
+        Repos(repoid=999, reponame="DELETEME")
         self.flush()
 
     def createDatabase(self):

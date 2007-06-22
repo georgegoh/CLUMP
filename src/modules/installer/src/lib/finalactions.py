@@ -47,6 +47,10 @@ def makeRepo(kiprofile):
     kusu_tmp = os.environ.get('KUSU_TMP', None)
     repo.repo_path.symlink(path(kusu_tmp) / 'www')
 
+    # workaround for starting repoIDs at 1000
+    db.Repos.selectfirst_by(repoid=999).delete()
+    db.flush()
+
 def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.scriptfactory import KickstartFactory
     from kusu.autoinstall.autoinstall import Script
