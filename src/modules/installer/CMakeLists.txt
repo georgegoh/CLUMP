@@ -28,7 +28,7 @@ SET(SVN ${SVN_EXE})
 
 SET(KUSU_REVISION)
 EXEC_PROGRAM(${SVN} ${CMAKE_CURRENT_SOURCE_DIR}
-             ARGS "info | grep Revision | awk '{print $2}'"
+             ARGS "info | grep \"Last Changed Rev\" | awk '{print $4}'"
              OUTPUT_VARIABLE KUSU_REVISION
 )
 

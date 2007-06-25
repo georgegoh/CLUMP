@@ -10,7 +10,7 @@
 
 source ${KUSU_ROOT}/bin/kusudevenv.sh
 BUILDDATE=`date +"%Y%m%d%H%m%S"`
-KUSUREVISION=`svn info ${CMAKE_CURRENT_SOURCE_DIR} | grep Revision | awk '{print $2}'`
+KUSUREVISION=`svn info ${CMAKE_CURRENT_SOURCE_DIR} | grep "Last Changed Rev" | awk '{print $4}'`
 boot-media-tool make-patch kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=${KUSU_BUILD_DIST} version=${KUSU_BUILD_DISTVER} arch=${KUSU_BUILD_ARCH} patch=updates.img
 #BASEKITISO=`ls ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base/kit-base*.iso`
 if [ -f ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base/kit-base*.iso ]
