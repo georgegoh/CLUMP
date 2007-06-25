@@ -18,10 +18,10 @@ import os
 import sys
 import time
 import snack
+from kusuwidgets import *
 from kusu.core.app import KusuApp
 import kusu.util.log as kusulog
 from path import path
-from kusuwidgets import *
 from kusu.util.errors import *
 
 kl = kusulog.getKusuLog('navigator')
@@ -66,7 +66,8 @@ class Navigator(object, KusuApp):
         return snack.ListboxChoiceWindow(self.mainScreen, title, msg, items)
 
     def popupProgress(self, title, msg):
-        return ProgressDialogWindow(self.mainScreen, title, msg)
+        import kusuwidgets
+        return kusuwidgets.ProgressDialogWindow(self.mainScreen, title, msg)
 
     def popupStatus(self, title, msg, timeout):
         """ Show a status dialog that disappears after a timeout."""

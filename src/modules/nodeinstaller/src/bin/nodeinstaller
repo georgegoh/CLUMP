@@ -16,6 +16,8 @@ kl.addFileHandler()
 from kusu.core.app import KusuApp
 from kusu.nodeinstaller import NodeInstaller, retrieveNII
 from kusu.boot.tool import getPartitionMap, makeDev
+from kusu.ui.text.screenfactory import *
+from kusu.ui.text.navigator import Navigator
 
 class NodeInstallerApp(KusuApp):
     
@@ -156,6 +158,20 @@ actions:
                 makeDev('b', devmap[dev]['major'], devmap[dev]['minor'], dev)
 
         if not niihost: sys.exit(2)
+#        ksfile = '/tmp/kusu/ks.cfg'
+#        class NIIScreenFactory(ScreenFactory):
+#            name = 'nodeinstaller'
+#            ScreenFactory.screens = [ProgressScreen(niihost, ksfile)]
+#        feedback = Navigator(screenFactory=NIIScreenFactory, screenTitle='Installing Node',
+#                             showTrail=True, showNavButtons=False)
+#        try:
+#            return_code = feedback.run()
+#        except KusuError, e:
+#            pass
+#        except Exception, e:
+#            exceptionHandler(e)
+
+
         kl.debug('niihost: %s' % niihost)
         ksfile = '/tmp/kusu/ks.cfg'
         kl.debug('Downloading NII..')
@@ -190,7 +206,38 @@ actions:
                   
         nii = NodeInstaller.retrieveNII(niihost=niihost,node=node)
         if nii: print nii
-            
+
+def exceptionHandler(error):
+    sys.exit(2)
+
+import snack
+from kusu.util.errors import UserExitError
+class ProgressScreen(BaseScreen):
+
+    def __init__(self, niihost, ksfile):
+        BaseScreen.__init__(self)
+        kl.debug('niihost: %s' % niihost)
+        self.niihost = niihost
+        self.ksfile = ksfile
+
+    def drawImpl(self):
+        kl.debug('Downloading NII..')
+        dlg = self.selector.popupProgress('Node Install Info', 'Downloading Node install info...')
+        self.niisource = retrieveNII(self.niihost)
+        self.nodeinst = NodeInstaller(self.niisource)
+        dlg.close()
+
+        kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg.')
+        dlg = self.selector.popupProgress('Preparing Kickstart', 'Preparing Kickstart files...')
+        self.nodeinst.setup(self.ksfile)
+        dlg.close()
+
+        kl.debug('Committing disk profile')
+        dlg = self.selector.popupProgress('Partitioning Disks', 'Initializing disks...')
+        self.nodeinst.commit()
+        dlg.close()
+
+        raise UserExitError
 
 if __name__ == '__main__':
     # set up tty3 for logging output
