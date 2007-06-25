@@ -101,7 +101,7 @@ class Navigator(object, KusuApp):
             kl.debug('No chosen')
             return False
 
-    def __init__(self, screenFactory, screenTitle, showTrail=False):
+    def __init__(self, screenFactory, screenTitle, showTrail=False, showNavButtons=True):
         """Constructor parameters:
               screenFactory - instance of the ScreenFactory class
               screenTitle - title of the Application Screen
@@ -114,7 +114,7 @@ class Navigator(object, KusuApp):
         self.quitButtonTitle = self._('Finish')
         self.screens = screenFactory.createAllScreens()
         self.showTrail = showTrail
-
+        self.showNavButtons = showNavButtons
 
     def selectScreen(self, step):
         """Select(by number) the screen to be displayed. Will neither go below
@@ -168,15 +168,16 @@ class Navigator(object, KusuApp):
 
     def setupButtonPanel(self, buttons=[]):
         """Set up the buttons that navigate the screens."""
-        self.prevButton = snack.Button(self._('Prev'))
-        if self.hasPrevScreen():
-            buttons.insert(0, self.prevButton)
+        if self.showNavButtons:
+            self.prevButton = snack.Button(self._('Prev'))
+            if self.hasPrevScreen():
+                buttons.insert(0, self.prevButton)
 
-        if self.hasNextScreen():
-            self.nextButton = snack.Button(self._('Next'))
-        else:
-            self.nextButton = snack.Button(self.quitButtonTitle)
-        buttons.insert(0, self.nextButton)
+            if self.hasNextScreen():
+                self.nextButton = snack.Button(self._('Next'))
+            else:
+                self.nextButton = snack.Button(self.quitButtonTitle)
+            buttons.insert(0, self.nextButton)
 
         buttonGrid = snack.Grid(len(buttons), 1)
         for i, button in enumerate(buttons):
@@ -299,9 +300,9 @@ class Navigator(object, KusuApp):
             if result in hotkeysDict.keys():
                 hotkeyFunc = hotkeysDict[result]
                 return hotkeyFunc()
-            if result is self.nextButton:
+            if self.showNavButtons and result is self.nextButton:
                 return NAV_FORWARD
-            if result is self.prevButton:
+            if self.showNavButtons and result is self.prevButton:
                 return NAV_BACK
             callback_result = self.currentScreen.eventCallback(result)
             if callback_result is True:
