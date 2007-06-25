@@ -14,8 +14,6 @@ import sys
 class App:
 
     def __init__(self):
-        self.sqliteDB = db.DB('sqlite', '/root/kusu.db')
-        self.db = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
         self.os_name = os.environ.get('KUSU_DIST', None)
         self.os_version = os.environ.get('KUSU_DISTVER', None)
         #self.os_arch = os.environ.get('KUSU_DIST_ARCH', None)
@@ -31,9 +29,13 @@ class App:
        
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
+             
+        if path('/root/kusudb').exists():
+            self.sqliteDB = db.DB('sqlite', '/root/kusu.db')
+            self.db = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
 
-        self.sqliteDB.copyTo(self.db)
-        os.unlink('/root/kusu.db')
+            self.sqliteDB.copyTo(self.db)
+            os.unlink('/root/kusu.db')
 
         # FIXME: Work around for SA syntax problem
         import sqlalchemy as sa
