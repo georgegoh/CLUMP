@@ -181,10 +181,12 @@ actions:
         kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg..')
         print 'Writing profile into kickstart file /tmp/kusu/ks.cfg..'
         ni.setup(ksfile)
+        kl.debug('Setting timezone')
+        print 'Setting timezone'
+        ni.setTimezone()
         kl.debug('Committing disk profile')
         print 'Committing disk profile'
         ni.commit()
-        ni.setTimezone()
         #except:
         #    raw_input('Press Enter to continue...')
         #    sys.exit(2)
