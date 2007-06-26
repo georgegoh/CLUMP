@@ -54,6 +54,10 @@ class LoadDistroConfFailedError(KusuError): pass
 class HTTPError(KusuError): pass
 class FTPError(KusuError): pass
 
+# util.net
+class StartIPNotInNetError(KusuError): pass
+class NoFreeIPError(KusuError): pass
+
 # networktool
 class InterfaceNotBroughtUpError(KusuError): pass
 class InterfaceNotBroughtDownError(KusuError): pass
