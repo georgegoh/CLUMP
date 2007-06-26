@@ -155,6 +155,27 @@ class TestFedora6Repo:
         for p in self.getPath():
             assert (prefix / p).exists()
 
+    def testDeleteRepo(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid 
+
+        installer = self.dbs.NodeGroups.select_by(ngname='installer nodegroup')[0]
+        installer.repoid = None
+        installer.save()
+        installer.flush()
+
+        rfactory.delete(repoid)
+
+        depot = prefix / 'depot'    
+        assert not (depot / 'repos' / str(repoid)).exists() 
+
+        assert not self.dbs.Repos.get(repoid)
+        assert not len(self.dbs.ReposHaveKits.select_by(repoid=repoid))
+
+
     def testMakeUseSameRepo(self):
         global prefix
 

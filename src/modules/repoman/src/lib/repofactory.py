@@ -118,14 +118,19 @@ class RepoFactory(object):
         """Refresh all the repositories"""
         pass
 
-    #def delete(self, repoid):
-    #    """Delete the repository from the database and local disk"""
-    #    
-    #    os_name, os_version, os_arch = repo.getOS(self.db, repoid)
-    #    r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-    #    r.delete(repoid)
-    #    
-    #    return r
+    def delete(self, repoid):
+        """Delete the repository from the database and local disk"""
+    
+        ngs = self.db.NodeGroups.select_by(repoid = repoid)    
+
+        if ngs:
+            raise RepoCannotDeleteError
+ 
+        os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+        r.delete(repoid)
+        
+        return r
 
     def snapshot(self, ngname_or_ngid):
         """Makes a snapshot for a nodegroup or nodegroup id"""

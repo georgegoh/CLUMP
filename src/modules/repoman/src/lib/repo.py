@@ -191,6 +191,9 @@ class BaseRepo(object):
             obj.delete()
             obj.flush()         
 
+        self.repoid = None
+        self.repo_path = None
+
     def verify(self):
         """verify the repository"""
         raise NotImplementedError
