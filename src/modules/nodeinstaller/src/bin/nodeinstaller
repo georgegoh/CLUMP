@@ -184,6 +184,7 @@ actions:
         kl.debug('Committing disk profile')
         print 'Committing disk profile'
         ni.commit()
+        ni.setTimezone()
         #except:
         #    raw_input('Press Enter to continue...')
         #    sys.exit(2)

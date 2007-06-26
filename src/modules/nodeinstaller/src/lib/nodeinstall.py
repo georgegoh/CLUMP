@@ -17,6 +17,12 @@ import string
 import urllib2
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
+from path import path
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
@@ -327,6 +333,7 @@ class KickstartFromNIIProfile(object):
                      'packageprofile' : [],
                      'rootpw': None,
                      'tz': None,
+                     'tz_utc': None,
                      'installsrc': None,
                      'lang': None,
                      'keyboard' : None}
@@ -347,6 +354,7 @@ class KickstartFromNIIProfile(object):
         #self.rootpw = getRandomSeq()
         self.rootpw = 'system'
         self.tz = ni.appglobal['Timezone_zone']
+        self.tz_utc = translateBoolean(ni.appglobal['Timezone_utc'])
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
         self.installsrc = 'http://' + ni.installers + ni.repo
@@ -574,3 +582,19 @@ class NodeInstaller(object):
         logger.debug('Committing changes and formatting disk..')
         self.ksprofile.diskprofile.commit()
         self.ksprofile.diskprofile.formatAll()
+
+    def setTimezone(self):
+        tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz
+        tzfile.copy('/etc/localtime')
+
+        hwclock_args = '--hctosys'
+        if self.ksprofile.tz_utc:
+            hwclock_args += ' -u'
+
+        hwclockP = subprocess.Popen('hwclock %s' % hwclock_args, shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+        hwclockP.communicate()
+        logger.debug('Setting timezone hwclock args: %s, return code: %s',
+                     hwclock_args, hwclockP.returncode)
+
