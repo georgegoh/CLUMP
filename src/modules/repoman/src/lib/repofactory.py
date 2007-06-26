@@ -72,7 +72,7 @@ class RepoFactory(object):
         oldRepoID = repoid
 
         if not repoid:
-            raise Exception
+            raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
 
         ngs = self.db.NodeGroups.select_by(repoid = repoid)
 
@@ -159,9 +159,9 @@ class RepoFactory(object):
 
             if repos.has_key(repoid):
                 if len(kits) != len(repos[repoid]):
-                    raise Exception
+                    raise ReposIntegrityError
                 elif kits != repos[repoid]:
-                    raise Exception
+                    raise ReposIntegrityError
                 else:
                     pass # Do nothing, same
             else:

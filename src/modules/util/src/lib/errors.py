@@ -101,6 +101,9 @@ class RepoNotCreatedError(KusuError): pass
 class RepoOSKitError(KusuError): pass
 class CannotCreateRepoError(KusuError): pass
 class YumRepoNotCreatedError(KusuError): pass
+class NodeGroupNotFoundError(KusuError): pass
+class RepoNotFoundError(KusuError): pass
+class ReposIntegrityError(KusuError): pass
 
 # b-m-t
 class FilePathError(KusuError): pass

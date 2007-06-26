@@ -65,7 +65,7 @@ def getKits(db, ngname):
     if ng:
         ng = ng[0]
     else:
-        raise Exception, 'Nodegroup: \'%s\' not found' % ngname
+        raise NodeGroupNotFoundError, 'Nodegroup: \'%s\' not found' % ngname
 
     kits = {} 
     for component in ng.components:
@@ -393,7 +393,7 @@ class RedhatYumRepo(BaseRepo):
             self.makeMetaInfo()
             self.makeKickstart()
             self.verify()
-        except KusuError, e:
+        except Exception, e:
             raise e
 
         return self
