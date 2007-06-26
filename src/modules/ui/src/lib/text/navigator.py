@@ -116,6 +116,7 @@ class Navigator(object, KusuApp):
         self.screens = screenFactory.createAllScreens()
         self.showTrail = showTrail
         self.showNavButtons = showNavButtons
+        self.drawn = False
 
     def selectScreen(self, step):
         """Select(by number) the screen to be displayed. Will neither go below
@@ -249,8 +250,10 @@ class Navigator(object, KusuApp):
                     loop=False
                     return None
         except UserExitError, e:
-            self.mainScreen.popWindow()
+            kl.debug('Caught UserExitError')
+            if self.drawn: self.mainScreen.popWindow()
             self.mainScreen.finish()
+            kl.debug('Returning False')
             return False
         except KusuError, e:
             msg = str(e)
@@ -272,16 +275,18 @@ class Navigator(object, KusuApp):
             exception_log.write(tb)
             exception_log.close()
             self.popupMsg(self._('Unresolved exception'), tb)
-            self.mainScreen.popWindow()
+            if self.drawn: self.mainScreen.popWindow()
             self.mainScreen.finish()
             raise e
         return True
 
     def draw(self):
+        self.drawn = False
         self.mainScreen.drawRootText(0,0, self.screenTitle)
         self.mainScreen.gridWrappedWindow(self.mainGrid, self.currentScreen.name)
         form = snack.Form(self._("This is the help statement"))
         form.add(self.mainGrid)
+        self.drawn = True
         return form
 
     def addHotKeys(self, form):
