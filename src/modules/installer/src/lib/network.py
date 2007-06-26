@@ -422,6 +422,14 @@ class ConfigureIntfScreen:
         elif not rv:
             errList.append(_('Netmask: ') + msg)
 
+        # check for valid ip/netmask combination
+        try:
+            IP(self.ip_address.value() + '/' + self.netmask.value(),
+               make_net=True)
+        except ValueError:
+            errList.append(_('The address %s/%s is invalid.' %
+                             (self.ip_address.value(), self.netmask.value())))
+
         if errList:
             errMsg = _('Please correct the following errors:')
             for i, string in enumerate(errList):
