@@ -20,9 +20,11 @@ except:
     from popen5 import subprocess
 
 
-def getOS(db, key):
+def getOS(db, repoid_or_ngname):
     """Returns OS (rname, name, version, arch) tuple from database 
        based on the repoid or nodegroup name"""
+
+    key = repoid_or_ngname
 
     # Do not depend on os type in repo
     # repoid
@@ -46,12 +48,31 @@ def getOS(db, key):
         raise TypeError, 'Invalid type for key: %s' % key
 
     # There should only 1 be os kit for a repo. 
-    if len(kit) != 1:
-        raise RepoOSKitError, 'repoid \'%s\' has more than 1 OS Kit' % key
+    if len(kit) == 0:
+        raise RepoOSKitError, '\'%s\' has no OS Kit' % key
+    elif len(kit) != 1:
+        raise RepoOSKitError, '\'%s\' has more than 1 OS Kit' % key
     else:
         kit = kit[0]
    
     return (kit.rname, kit.version, kit.arch)
+
+
+def getKits(db, ngname):
+    """Returns a list of kits for a nodegroup"""
+    ng = db.NodeGroups.select_by(ngname=ngname)
+
+    if ng:
+        ng = ng[0]
+    else:
+        raise Exception, 'Nodegroup: \'%s\' not found' % ngname
+
+    kits = {} 
+    for component in ng.components:
+        # Store all the kits, uniq them via dictionary
+        kits[component.kit.kid] = component.kit
+
+    return kits.values()
 
 class BaseRepo(object):
 
@@ -81,6 +102,10 @@ class BaseRepo(object):
         else:
             return None
 
+    def getKits(self, ngname):
+        """Returns a list of kits for a nodegroup"""
+        return getKits(self.db, ngname)
+
     def getOSPath(self):
         """Get the OS path for the repository"""
 
@@ -97,19 +122,15 @@ class BaseRepo(object):
 
         return self.prefix / 'depot' / 'repos' / str(repoid)
 
-    def UpdateDatabase(self, reponame):
+    def UpdateDatabase(self, ngname):
+
         """Update the database with the new repository""" 
-
-        ng = self.db.NodeGroups.select_by(ngname=self.ngname)[0]
-
-        kits = {} 
-        for component in ng.components:
-            # Store all the kits, uniq them via dictionary
-            kits[component.kit.kid] = component.kit
-
+       
+        ng = self.db.NodeGroups.select_by(ngname=ngname)[0]
+ 
         # Add new repo into table      
-        repo = self.db.Repos(reponame=reponame)
-        repo.kits = kits.values()
+        repo = self.db.Repos()
+        repo.kits = self.getKits(ngname)
         repo.save()
         repo.flush()
         
@@ -322,14 +343,11 @@ class RedhatYumRepo(BaseRepo):
     def verify(self):
         return True
 
-    def make(self, ngname, reponame):
+    def make(self, ngname):
         """makes the repository"""
 
-        self.ngname = ngname
-        self.reponame = reponame
-
         try:
-            self.UpdateDatabase(reponame)
+            self.UpdateDatabase(ngname)
             self.makeRepoDirs()
             self.copyOSKit()
             self.copyKitsPackages()
@@ -360,11 +378,11 @@ class RedhatYumRepo(BaseRepo):
     def refresh(self, repoid_or_reponame):
         """refresh the repository"""
 
+        self.repoid = self.getRepoID(repoid_or_reponame)
+        if not self.repoid:
+            raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+       
         try:
-            self.repoid = self.getRepoID(repoid_or_reponame)
-            if not self.repoid:
-                raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
-
             self.clean(self.repoid)
             self.makeRepoDirs()
             self.copyOSKit()

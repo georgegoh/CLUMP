@@ -7,6 +7,7 @@
 
 from kusu.core import database as db
 from kusu.repoman import repo
+from kusu.repoman.repofactory import RepoFactory
 from path import path
 import tempfile
 import os
@@ -168,123 +169,115 @@ class TestRedhat5Repo:
         for p in self.getPath():
             assert (prefix / p).exists()
 
-    def testNodeGroupHasRepoID(self):
+    def testMakeUseSameRepo(self):
         global prefix
 
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer.components = self.dbs.Components.select()
+        installer.save()
+        installer.flush()
 
-        repoid = str(r.repoid)
- 
-        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        repo1 = rfactory.make('installer nodegroup')
 
-        assert len(ng) == 1
-        assert ng[0].repoid == r.repoid
- 
-    def testRelativeLinks(self):
-        global prefix
+        repo2 = rfactory.make('installer nodegroup 2')
+        assert repo1.repoid == repo2.repoid 
 
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-
-        repoid = str(r.repoid)
-
-        for p in self.getPath():
-            p = prefix / 'depot' / 'repos' / repoid / p
-            if p.islink():
-                assert not p.readlink().isabs()
-
-    def testNodeInstallerImg(self):
-        global prefix
-
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = str(r.repoid)
-
-        assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
-
-    def testKickstartGeneration(self):
-        global prefix
-
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = str(r.repoid)
-
-        assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg').exists()
-      
-        f = open(prefix / 'depot' / 'repos' / repoid / 'ks.cfg', 'r')
-        assert f.readlines()[1].strip()  == 'url --url http://%s/repos/%s' % (self.masterIP, repoid)
-
-        f.close() 
- 
     def testMake(self):
         global prefix
 
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
-
-    def testGettingOS(self):
-        global prefix
-
-        os_name, os_version, os_arch = repo.getOS(self.dbs, 'installer nodegroup')
-
-        assert os_name == 'rhel'
-        assert os_version == '5'
-        assert os_arch == 'i386'
-
-    def testDeleteRepo(self):
-        global prefix
-
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = r.repoid
-  
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.delete(repoid)
-        
-        depot = prefix / 'depot'    
-        assert not (depot / 'repos' / str(repoid)).exists() 
-
-        assert not self.dbs.Repos.get(repoid)
-        assert not len(self.dbs.ReposHaveKits.select_by(repoid=repoid))
-
-    def testCleanRepo(self):
-        global prefix
-
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = r.repoid
- 
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.clean(repoid)
- 
-        depot = prefix / 'depot'    
-        assert not (depot / 'repos' / str(repoid)).exists() 
 
     def testRefreshRepo(self):
         global prefix
 
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
         repoid = r.repoid
  
-        r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.refresh(repoid)
+        r = rfactory.refresh('installer nodegroup')
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+
+    def testRefreshUseSameRepo(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid
+ 
+        r = rfactory.refresh('installer nodegroup')
+
+        assert repoid == r.repoid
+        
+    def testRefreshUseSameRepo2(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid
+
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        r = rfactory.refresh('installer nodegroup')
+
+        # Only 1 nodegroup uses the same repoid
+        assert repoid == r.repoid
+  
+    def testRefreshUseDifferentRepo(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer.components = self.dbs.Components.select()
+        installer.save()
+        installer.flush()
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup 2')
+        repoid = r.repoid
+
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup 2')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        r = rfactory.refresh('installer nodegroup 2')
+
+        assert repoid != r.repoid
+     
+
+
 

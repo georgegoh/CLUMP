@@ -159,7 +159,7 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         repoid = str(r.repoid)
 
         for p in self.getPath():
@@ -172,7 +172,7 @@ class TestFedora6Repo:
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
@@ -182,7 +182,7 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
 
         repoid = str(r.repoid)
  
@@ -196,7 +196,7 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         repoid = str(r.repoid)
 
         assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
@@ -206,7 +206,7 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         repoid = str(r.repoid)
 
         assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg').exists()
@@ -229,7 +229,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         r.debug = True
         repoid = r.repoid
   
@@ -247,7 +247,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         r.debug = True
         repoid = r.repoid
  
@@ -263,7 +263,7 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
-        r.make('installer nodegroup', 'a repo during testing')
+        r.make('installer nodegroup')
         repoid = r.repoid
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
