@@ -255,9 +255,9 @@ class KitOpsApp(KusuApp):
                   'OS Kit'.ljust(7) + 'Removable'.ljust(9)
 
             for kit in kits:
-                kit_name = ' ' + kit.rname
-                kit_desc = ' ' + kit.rdesc
-                kit_version = ' ' + kit.version
+                kit_name = ' ' + (kit.rname or '')
+                kit_desc = ' ' + (kit.rdesc or '')
+                kit_version = ' ' + (kit.version or '')
 
                 kit_arch = ' noarch'
                 if kit.arch:

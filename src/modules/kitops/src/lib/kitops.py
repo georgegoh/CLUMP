@@ -552,10 +552,10 @@ class KitOps:
                                   (kit.rname, kit.version, kit.arch))
                 continue
                 
-            # 1. remove the RPMS kit contents
+            # remove the RPMS kit contents
             del_path.rmtree()
 
-            # 2. remove kit RPM
+            # uninstall kit RPM
             if not kit.isOS and not self.installer:
                 rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
                                        kit.rname, shell=True,
@@ -563,19 +563,24 @@ class KitOps:
                                        stderr=subprocess.PIPE)
                 rmP.communicate()
 
-            # 3. remove component info from DB
+            # remove component info from DB
             for component in kit.components:
-                if kit.isOS:
-                    # remove tftpboot contents
-                    kitln = '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
-                    path(self.pxeboot_dir / 'initrd-%s.img' % kitln).remove()
-                    path(self.pxeboot_dir / 'kernel-%s' % kitln).remove()
-                    if not self.pxeboot_dir.listdir():  # directory is empty
-                        self.pxeboot_dir.rmdir()
-
                 component.delete()
 
-            # 4. remove kit DB info
+            if kit.isOS:
+                # remove tftpboot contents
+                path(self.pxeboot_dir / 'initrd-%s.img' % kit.longname).remove()
+                path(self.pxeboot_dir / 'kernel-%s' % kit.longname).remove()
+                if not self.pxeboot_dir.listdir():  # directory is empty
+                    self.pxeboot_dir.rmdir()
+
+            # remove packages
+            pkgs = self.__db.Packages.select_by(packagename='kit-%s' %
+                                                kit.rname)
+            for pkg in pkgs:
+                pkg.delete()
+
+            # remove kit DB info
             kit.delete()
         
         self.__db.flush()

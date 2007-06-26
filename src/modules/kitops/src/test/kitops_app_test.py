@@ -151,7 +151,7 @@ class TestBaseKit:
 
         # the base kit has two components
         cmps = self.kusudb.Components.select()
-        assert len(cmps) == 3, 'Components in DB: %d, expected: 3' % len(cmps)
+        assert len(cmps) == 2, 'Components in DB: %d, expected: 2' % len(cmps)
 
         # check component data
         cmp = self.kusudb.Components.selectfirst_by(cname='component-base-node')
@@ -184,20 +184,19 @@ class TestBaseKit:
         assert cmp.nodegroups[0].ngname == 'installer', \
             'Component %s not associated with installer nodegroup' % cmp.cname
 
-        cmp = self.kusudb.Components.selectfirst_by(cname='kit-base')
-        assert cmp.kid == kit.kid, 'Component not linked to kit by kid'
-        assert cmp.cname == 'kit-base', \
-               'Component name: %s, ' % cmp.cname + \
-               'expected: kit-base'
-        assert cmp.cdesc == 'Mock component for kit RPM', \
-           'Component description: ' + \
-           '%s, expected: Mock component for kit RPM' % cmp.cname
-        assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
-        # node component associated only with installer nodegroup
-        assert len(cmp.nodegroups) == 1, \
-            'Component %s associated with more than one nodegroup' % cmp.cname
-        assert cmp.nodegroups[0].ngname == 'master', \
-            'Component %s not associated with installer nodegroup' % cmp.cname
+        # kit stored in packages table
+        ngs = self.kusudb.NodeGroups.select()
+        for ng in ngs:
+            if ng.ngname in ['master', 'installer']:
+                for pkg in ng.packages:
+                    assert pkg.packagename == 'kit-base', \
+                                'kit-base package not associated ' \
+                                'with %s nodegroup' % ng.ngname
+            else:
+                for pkg in ng.packages:
+                    assert pkg.packagename != 'kit-base', \
+                                   'kit-base package associated ' \
+                                   'with %s nodegroup' % ng.ngname
 
     def testDeleteKit(self):
         # we need to be root
@@ -237,9 +236,21 @@ class TestBaseKit:
         cmps = self.kusudb.Components.select()
         assert len(cmps) == 0, 'Components still remain in the DB'
 
+        pkgs = self.kusudb.Packages.select()
+        assert len(pkgs) == 0, 'Packages still remain in the DB'
+
         ng_has_comps = self.kusudb.NGHasComp.select()
         assert len(ng_has_comps) == 0, \
                    'Nodegroups have components still remain in DB'
+
+        ngs = self.kusudb.NodeGroups.select()
+        for ng in ngs:
+            assert len(ng.components) == 0, \
+                'Nodegroup %s still has %s component(s)' % (ng.ngname,
+                                                            len(ng.components))
+            assert len(ng.packages) == 0, \
+                'Nodegroup %s still has %s package(s)' % (ng.ngname,
+                                                          len(ng.packages))
 
         # assert files erased
         assert not self.kits_dir_arch.exists(), \
@@ -327,24 +338,26 @@ class TestBaseKit:
         component_installer = self.kusudb.Components(
                                     cname='component-base-installer',
                                     cdesc='Component for Kusu Installer Base')
-        component_mock = self.kusudb.Components(cname='kit-base',
-                                        cdesc='Mock component for kit RPM')
 
         newkit.components.append(component_node)
         newkit.components.append(component_installer)
-        newkit.components.append(component_mock)
 
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='compute')
         ng.components.append(component_node)
 
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='installer')
         ng.components.append(component_installer)
+        ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
 
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='master')
-        ng.components.append(component_mock)
+        ng.components.append(component_installer)
+        ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
 
         newkit.save()
         self.kusudb.flush()
+
+        # drop this session, start with new untainted session when asserting
+        self.kusudb.ctx.del_current()
 
 class TestFedoraCore6i386:
     def setUp(self):
@@ -356,7 +369,7 @@ class TestFedoraCore6i386:
         self.temp_mount = temp_mount
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
-        self.pxe_dir = self.temp_root / 'tftpboot/pxelinux'
+        self.pxe_dir = self.temp_root / 'tftpboot/kusu'
 
         self.kit_iso1 = 'mock-FC-6-i386-disc1.iso' 
         self.kit_iso2 = 'mock-FC-6-i386-disc2.iso' 
@@ -459,7 +472,7 @@ class TestFedoraCore6i386:
         assert self.kits_dir_arch.exists(), \
                'Kit arch dir %s does not exist' % self.kits_dir_arch
         assert self.pxe_dir.exists(), \
-               'PXE boot dir %s does not exist' % self.kits_dir_arch
+               'PXE boot dir %s does not exist' % self.pxe_dir
 
         # also assert the initrd and kernel are copied
         assert self.kit_initrd.exists(), \
