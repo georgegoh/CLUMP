@@ -53,18 +53,26 @@ class KitOpsApp(KusuApp):
         self.kit_arch = ''
 
         # setup command line parser
-        self.parser.add_option('-a', '--add', dest='addkit',
+        self.parser.add_option('-a', '--add', dest='action',
                                help=self._('kitops_usage_add'), 
-                               action='callback', callback=self.optargs)
+                               action='store_const', const='add')
+        self.parser.add_option('-l', '--list', dest='action',
+                               help=self._('kitops_usage_list'),
+                               action='store_const', const='list')
+        self.parser.add_option('-e', '--remove', dest='action',
+                               help=self._('kitops_usage_remove'),
+                               action='store_const', const='delete')
+
         self.parser.add_option('-m', dest='media',
                                help=self._('kitops_usage_media'))
-        self.parser.add_option('-l', '--list', dest='lstkit',
-                               help=self._('kitops_usage_list'),
-                               action='callback',callback=self.optargs )
-        self.parser.add_option('-e', '--remove', dest='delkit',
-                               help=self._('kitops_usage_remove'))
-        self.parser.add_option('-p', '--prefix', dest='prefix',
-                               help=SUPPRESS_HELP)
+
+        self.parser.add_option('--kitname', dest='kitname',
+                               help=self._('kitname'))
+        self.parser.add_option('--kitversion', dest='kitversion',
+                               help=self._('kitversion'))
+        self.parser.add_option('--kitarch', dest='kitarch',
+                               help=self._('kitarch'))
+
         self.parser.add_option('--dbdriver', dest='dbdriver',
                                help=self._('Database driver (sqlite, mysql)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
@@ -74,11 +82,9 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
 
-    def nxor(*args):
-        '''N-way XOR for an  arbitrary number of bool args'''
-        return len([x for x in args if x]) == 1
-    nxor = staticmethod(nxor)
-        
+        self.parser.add_option('-p', '--prefix', dest='prefix',
+                               help=SUPPRESS_HELP)
+
     def parseArgs(self):
         (options, args) = self.parser.parse_args()
         kl.debug("options: %s", options)
@@ -90,26 +96,7 @@ class KitOpsApp(KusuApp):
             self.printHelp()
             sys.exit(1)
 
-        if options.addkit == '':
-            addbool = True  #want to resolve '' to true
-        else:
-            addbool = bool(options.addkit)
-
-        if options.lstkit == '':
-            lstbool = True  #want to resolve '' to true
-        else:
-            lstbool = bool(options.lstkit)
-
-        #must specify exactly one of the following (want rv==true)
-        rv = KitOpsApp.nxor(addbool, bool(options.delkit), lstbool)
-        if not rv:
-            self.printHelp()
-            sys.stderr.write('Exactly one kit operation expected\n')
-            sys.exit(EBAD_OP)
-
-        if addbool:
-            koinst.setKitName(options.addkit)
-
+        if options.action == 'add':
             if not options.media:
                 media_choices = self.autoDetectMedia()
                 found_kits = sorted(media_choices.keys())
@@ -123,11 +110,15 @@ class KitOpsApp(KusuApp):
 
             koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
-        elif options.delkit:
-            self.kit_name = options.delkit
+        elif options.action == 'delete':
+            self.kit_name = options.kitname
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
             self.kitop = KITOP_DEL
-        elif lstbool:
-            self.kit_name = options.lstkit
+        elif options.action == 'list':
+            self.kit_name = options.kitname
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
 
         dbdriver = 'mysql'
@@ -161,7 +152,8 @@ class KitOpsApp(KusuApp):
         elif self.kitop == KITOP_DEL:
             kl.debug('Performing delete operation')
             try:
-                self.koinst.deleteKit(self.kit_name)
+                self.koinst.deleteKit(self.kit_name, self.kit_ver,
+                                      self.kit_arch)
             except (AssertionError, KitNotInstalledError), e:
                 kl.debug('FAIL performing delete operation')
                 sys.stderr.write(e.args[0] + '\n')
@@ -247,7 +239,7 @@ class KitOpsApp(KusuApp):
     def runListKit(self):
         kl.debug('Performing list operation')
 
-        kits = self.koinst.listKit(self.kit_name)
+        kits = self.koinst.listKit(self.kit_name, self.kit_ver, self.kit_arch)
 
         if kits:
             print 'Kit'.ljust(16) + 'Description'.ljust(27) + \

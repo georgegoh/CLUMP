@@ -502,7 +502,7 @@ class KitOps:
 
         self.__db.flush()
 
-    def deleteKit(self, del_name='', del_version='', del_arch=''):
+    def deleteKit(self, del_name, del_version='', del_arch=''):
         '''perform the delete operation on the kit specified '''
 
         try:
@@ -510,25 +510,21 @@ class KitOps:
         except AssertionError,msg:
             raise AssertionError, 'Name for kit to delete not specified'
 
-        kits = []
+        kits = self.findKits(del_name, del_version, del_arch)
 
         del_path = ''
         if del_arch and del_version:
-            kits = self.__db.Kits.select_by(rname=del_name,
-                                            version=del_version, arch=del_arch)
             kl.info("Removing kit '%s', version %s, arch %s" %
                     (del_name, del_version, del_arch))
+            del_path = self.kits_dir / del_name / del_version / del_arch
             del_version = '-' + del_version
             del_arch = '-' + del_arch
-            del_path = self.kits_dir / del_name / del_version / del_arch
         elif del_version:
-            kits = self.__db.Kits.select_by(rname=del_name, version=del_version)
             kl.info("Removing kit '%s', version %s, all architectures" %
                     (del_name, del_version))
-            del_version = '-' + del_version
             del_path = self.kits_dir / del_name / del_version
+            del_version = '-' + del_version
         else:
-            kits = self.__db.Kits.select_by(rname=del_name)
             kl.info("Removing kit '%s', all versions and architectures" %
                     del_name)
             del_path = self.kits_dir / del_name
@@ -588,12 +584,26 @@ class KitOps:
         if error_kits:
             raise DeleteKitsError, error_kits
 
-    def listKit(self, ls_name=''):
+    def listKit(self, kitname=None, kitver=None, kitarch=None, wildcard=''):
         '''if the kit was specified, lists component summary for it, else prints
          kit table summary'''
 
-        if ls_name:
+        if kitname or kitver or kitarch:
+            return self.findKits(kitname, kitver, kitarch)
+        elif wildcard:
             return self.__db.Kits.select_by(
-                        self.__db.Kits.c.rname.like('%%%s%%' % ls_name))
+                        self.__db.Kits.c.rname.like('%%%s%%' % wildcard))
         else:
             return self.__db.Kits.select()
+
+    def findKits(self, name, version, arch):
+        kits = []
+        if arch and version:
+            kits = self.__db.Kits.select_by(rname=name,
+                                            version=version, arch=arch)
+        elif version:
+            kits = self.__db.Kits.select_by(rname=name, version=version)
+        else:
+            kits = self.__db.Kits.select_by(rname=name)
+ 
+        return kits
