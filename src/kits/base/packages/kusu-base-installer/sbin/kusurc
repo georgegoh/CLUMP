@@ -26,7 +26,7 @@ class App:
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
              
-        if path('/root/kusudb').exists():
+        if path('/root/kusu.db').exists():
             self.sqliteDB = db.DB('sqlite', '/root/kusu.db')
             self.db = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
 
