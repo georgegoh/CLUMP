@@ -52,16 +52,28 @@ class KitOpsApp(KusuApp):
         self.kit_ver = ''
         self.kit_arch = ''
 
+        def mutexAction(option, opt_str, value, parser):
+            if parser.values.action is not None:
+                self.printHelp()
+                sys.stderr.write('Exactly one kit operation expected\n')
+                sys.exit(EBAD_OP)
+            elif '-a' in option._short_opts:
+                setattr(parser.values, option.dest, 'add')
+            elif '-e' in option._short_opts:
+                setattr(parser.values, option.dest, 'delete')
+            elif '-l' in option._short_opts:
+                setattr(parser.values, option.dest, 'list')
+ 
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='action',
                                help=self._('kitops_usage_add'), 
-                               action='store_const', const='add')
+                               action='callback', callback=mutexAction)
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
-                               action='store_const', const='list')
+                               action='callback', callback=mutexAction)
         self.parser.add_option('-e', '--remove', dest='action',
                                help=self._('kitops_usage_remove'),
-                               action='store_const', const='delete')
+                               action='callback', callback=mutexAction)
 
         self.parser.add_option('-m', dest='media',
                                help=self._('kitops_usage_media'))
