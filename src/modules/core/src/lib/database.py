@@ -651,19 +651,39 @@ class DB(object):
         master.nodes.append(master_node)
 
         # Create the partition entries for the compute node
+# REGULAR PARTITIONING
+#        boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
+#                          size='100', device='1', preserve='N')
+#        root = Partitions(mntpnt='/', fstype='ext3', partition='2',
+#                          size='4000', device='1', preserve='N')
+#        swap = Partitions(partition='3', fstype='linux-swap',
+#                          size='2000', device='1', preserve='N')
+#        data = Partitions(mntpnt='/data', fstype='ext3', partition='4', size='4000',
+#                          options='fill', device='1', preserve='N')
+#        compute.partitions.append(boot)
+#        compute.partitions.append(root)
+#        compute.partitions.append(swap)
+#        compute.partitions.append(data)
+# LVM PARTITIONING
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
                           size='100', device='1', preserve='N')
-        root = Partitions(mntpnt='/', fstype='ext3', partition='2',
-                          size='4000', device='1', preserve='N')
-        swap = Partitions(partition='3', fstype='linux-swap',
+        swap = Partitions(fstype='linux-swap', partition='2',
                           size='2000', device='1', preserve='N')
-        data = Partitions(mntpnt='/data', fstype='ext3', partition='4', size='4000',
-                          options='fill', device='1', preserve='N')
+        pv = Partitions(fstype='physical volume', partition='N',
+                        size='6000', device='N', preserve='N',
+                        options='fill;pv;vg=VolGroup00')
+        vg = Partitions(device='VolGroup00', options='vg;extent=32M')
+        root = Partitions(mntpnt='/', fstype='ext3', size='2000',
+                          device='ROOT', options='lv;vg=VolGroup00')
+        data = Partitions(mntpnt='/data', fstype='ext3', size='4000',
+                          device='DATA', options='lv;vg=VolGroup00;fill')
         compute.partitions.append(boot)
-        compute.partitions.append(root)
         compute.partitions.append(swap)
+        compute.partitions.append(pv)
+        compute.partitions.append(vg)
+        compute.partitions.append(root)
         compute.partitions.append(data)
- 
+
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
         Repos(repoid=999, reponame="DELETEME")
         self.flush()

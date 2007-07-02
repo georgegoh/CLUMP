@@ -208,6 +208,20 @@ for i in niihandler.partitions.keys():
     app.log("        size      = %s\n" % (niihandler.partitions[i]['size']))
     app.log("        options   = %s\n" % (niihandler.partitions[i]['options']))
     app.log("        preserve  = %s\n" % (niihandler.partitions[i]['preserve']))
+
+# Bring up the partitions according to the NII
+# TODO
+#
+from nodeinstaller import adaptNIIPartition
+from kusu.partitiontool import DiskProfile
+from kusu.installer.defaults import setupDiskProfile
+schema = adaptNIIPartition(niihandler)
+disk_profile = DiskProfile(True) # Start with blank disk.
+setupDiskProfile(disk_profile, schema)
+# UNCOMMENT THE FOLLOWING TO COMMIT THE PARTITION SCHEMA AND START FORMATTING.
+#disk_profile.commit()
+#disk_profile.formatAll()
+#
     
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)

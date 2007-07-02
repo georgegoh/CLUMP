@@ -7,7 +7,7 @@
 
 from kusu.autoinstall.scriptfactory import KickstartFactory
 from kusu.autoinstall.autoinstall import Script
-from kusu.partitiontool.partitiontool import DiskProfile
+from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema

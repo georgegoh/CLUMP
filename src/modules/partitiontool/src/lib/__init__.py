@@ -1,1 +1,2 @@
 # $Id$
+from partitiontool import *
