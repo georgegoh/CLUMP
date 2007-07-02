@@ -20,7 +20,7 @@ TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat',
     
 NONPY_LIBS_DEPS = ['libsqlite','libnewt','libparted']
 
-PY_LIBS_DEPS = ['parted']
+PY_LIBS_DEPS = {'pyparted':'parted'}
 
 SITE_URL = 'http://www.osgdc.org/project/kusu/wiki/DevelopersCorner'
 
@@ -110,7 +110,7 @@ class KusuDepsCheckApp(object):
         for lib in PY_LIBS_DEPS:
             msg = "checking %s..." % lib
             print msg,
-            if checkPyLibDeps(lib):
+            if checkPyLibDeps(PY_LIBS_DEPS[lib]):
                 print "yes"
             else:
                 missingTools.append(lib)
@@ -118,7 +118,7 @@ class KusuDepsCheckApp(object):
         if missingTools:
             print
             print 'The following tool(s) are not available:'
-            print ','.join(missingTools)
+            print ', '.join(missingTools)
             print 'For more information, please browse to', SITE_URL
             print
             sys.exit(2)
