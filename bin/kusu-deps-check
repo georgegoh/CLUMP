@@ -16,7 +16,7 @@ class DepsNotFound(Exception): pass
 
 # constants
 TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 
-    'mkisofs', 'tar', 'gzip', 'rpmbuild', 'cmake', 'make', 'rpm', 'python']
+    'mkisofs', 'tar', 'gzip', 'rpmbuild', 'cmake', 'make', 'rpm', 'python', 'gcc']
     
 NONPY_LIBS_DEPS = ['libsqlite','libnewt','libparted']
 
