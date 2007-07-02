@@ -194,6 +194,10 @@ class BaseRepo(object):
         self.repoid = None
         self.repo_path = None
 
+    def makeAutoInstallScript(self):
+        """Make the autoinstall script for the repository"""
+        raise NotImplementedError
+ 
     def verify(self):
         """verify the repository"""
         raise NotImplementedError
@@ -301,11 +305,13 @@ class RedhatYumRepo(BaseRepo):
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
     
-        if src.exists():
-            dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
+        dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
+
+        if src.exists() and not dest.exists():
             (dest.parent.relpathto(src)).symlink(dest)
 
-    def makeKickstart(self):
+    def makeAutoInstallScript(self):
+        # kickstart
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
@@ -319,8 +325,8 @@ class RedhatYumRepo(BaseRepo):
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
  
-        if src.exists():
-            dest = self.repo_path / 'ks.cfg'
+        dest = self.repo_path / 'ks.cfg'
+        if src.exists() and not dest.exists():
 
             row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
             row = row[0]
@@ -358,7 +364,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyKusuNodeInstaller()
             self.makeComps()
             self.makeMetaInfo()
-            self.makeKickstart()
+            self.makeAutoInstallScript()
             self.verify()
         except Exception, e:
             # Don't use self.delete(), since is unsure state
@@ -394,7 +400,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyKusuNodeInstaller()
             self.makeComps()
             self.makeMetaInfo()
-            self.makeKickstart()
+            self.makeAutoInstallScript()
             self.verify()
         except Exception, e:
             raise e

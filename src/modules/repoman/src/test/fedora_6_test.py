@@ -147,7 +147,9 @@ class TestFedora6Repo:
                  'repodata/primary.xml.gz', \
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
-                 'images/stage2.img']
+                 'images/stage2.img', \
+                 'images/updates.img', \
+                 'ks.cfg']
         return paths
 
     def checkLayout(self, prefix):

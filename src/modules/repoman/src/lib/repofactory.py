@@ -44,10 +44,19 @@ class RepoFactory(object):
 
             os_name, os_version, os_arch = repo.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-        
+            r.debug = self.debug
+
             r.repo_path = r.getRepoPath(repoid)
             r.repoid = repoid     
-
+ 
+            # Ensure patch files and autoinstall script is generated.
+            #
+            # This is in the case when the master installer
+            # has prepared the repository but the tempaltes are not 
+            # available then. This autoinstsall script is needed
+            # for compute nodes that are using the same repository
+            r.copyKusuNodeInstaller()
+            r.makeAutoInstallScript()
         else:
             # Make a new repo
             os_name, os_version, os_arch = repo.getOS(self.db, ngname)
@@ -69,7 +78,6 @@ class RepoFactory(object):
         """Refresh the repository"""
 
         repoid = self.getRepo(ngname)
-        oldRepoID = repoid
 
         if not repoid:
             raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
@@ -88,6 +96,7 @@ class RepoFactory(object):
             
             os_name, os_version, os_arch = repo.getOS(self.db, repoid)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+            r.debug = self.debug
             r = r.refresh(repoid)
 
         else:
@@ -106,6 +115,7 @@ class RepoFactory(object):
 
                 os_name, os_version, os_arch = repo.getOS(self.db, repoid)
                 r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                r.debug = self.debug
                 r = r.refresh(repoid)
 
             else:

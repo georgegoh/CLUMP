@@ -148,7 +148,9 @@ class TestCentos5Repo:
                  'repodata/primary.xml.gz', \
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
-                 'images/stage2.img']
+                 'images/stage2.img', \
+                 'images/updates.img', \
+                 'images/ks.cfg']
         return paths
 
     def checkLayout(self, prefix):

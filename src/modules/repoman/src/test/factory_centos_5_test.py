@@ -149,7 +149,9 @@ class TestCentos5Repo:
                  'repodata/primary.xml.gz', \
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
-                 'images/stage2.img']
+                 'images/stage2.img', \
+                 'images/updates.img', \
+                 'ks.cfg']
         return paths
 
     def checkLayout(self, prefix):
@@ -190,6 +192,23 @@ class TestCentos5Repo:
         repo2 = rfactory.make('installer nodegroup 2')
         assert repo1.repoid == repo2.repoid 
 
+    def testMakeUseSameRepoMissingScript(self):
+        global prefix
+
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer.components = self.dbs.Components.select()
+        installer.save()
+        installer.flush()
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        repo1 = rfactory.make('installer nodegroup')
+        (prefix /  'depot' / 'repos' / str(repo1.repoid) / 'ks.cfg').unlink()
+        (prefix /  'depot' / 'repos' / str(repo1.repoid) / 'images' / 'updates.img').unlink()
+
+        repo2 = rfactory.make('installer nodegroup 2')
+        assert repo1.repoid == repo2.repoid 
+        self.checkLayout(prefix / 'depot' / 'repos' / str(repo2.repoid))
+ 
     def testMake(self):
         global prefix
 
@@ -223,6 +242,8 @@ class TestCentos5Repo:
         assert repoid == r.repoid
         
     def testRefreshUseSameRepo2(self):
+        # New component added to the existing nodegrouip. Since
+        # only 1 nodegroup is affected, repo will be refreshed
         global prefix
 
         rfactory = RepoFactory(self.dbs, prefix, True)
