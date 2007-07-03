@@ -243,7 +243,7 @@ class CFMClient:
                     
             elif args[i] == '-i':
                 if len(args) > (i+1):
-                    self.installers = string.split(args[i+1])
+                    self.installers = string.split(args[i+1], ',')
                     i += 1
                 else:
                     print "ERROR:  Installers not specified"
@@ -328,7 +328,7 @@ class CFMClient:
             uid = pwd.getpwnam('nobody')[2]
 
         try:
-            gid = grp.getgrnam(username)[2]
+            gid = grp.getgrnam(grpname)[2]
         except:
             gid = grp.getgrnam('nobody')[2]
 
@@ -360,7 +360,6 @@ class CFMClient:
         tmpfile = "%s.CFMtmpFile" % deststruct[0]
         
         if self.__haveLocalAccess():
-            print "++  Have local access"
             # Copy the file from a directory
             if cfmfile:
                 cfmpath = "%s/%s" % (self.CFMBaseDir, source)
@@ -368,29 +367,28 @@ class CFMClient:
                 cfmpath = "%s/%i/%s" % (self.CFMBaseDir, self.ngid, source)
             if not os.path.exists(cfmpath):
                 print "ERROR: Unable to locate: %s" % cfmpath
-                return
+                return -1
 
             os.system('cp \"%s\" \"%s\" > /tmp/m3 2>&1' % (cfmpath, tmpfile))
 
         else:
-            print "++  No local access"
             # Copy the file from one of the installers.  Make the URL
             if cfmfile:
                 url = "http://%s/cfm/%s" % (self.bestinstaller, source)
             else:
                 url = "http://%s/cfm/%s/%s" % (self.bestinstaller, self.ngid, source)
             datafile = ''
-            print "URL = %s" % url
             try:
                 (datafile, header) = urllib.urlretrieve(url, tmpfile)
             except:
-                print "Download 1 Failed!"
+                print "WARNING: Download from %s Failed!" % self.bestinstaller
                 # Download failed.  Try the other IP's
                 for ip in self.installers:
                     if cfmfile:
                         url = "http://%s/cfm/%s" % (ip, source)
                     else:
                         url = "http://%s/cfm/%s/%s" % (ip, self.ngid, source)
+                    print "Trying: %s" % url
                     try:
                         (datafile, header) = urllib.urlretrieve(url, tmpfile)
                         # This one worked.  Switch to it
@@ -400,14 +398,13 @@ class CFMClient:
                         pass
                 if not datafile:
                     print "ERROR:  Failed to download: %s" % url
-                    return
+                    return -1
 
         # Decrypt and decompress the file (if needed)
         if not cfmfile:
             tmpfile2 = "%s.decrypted.CFMtmpFile" % deststruct[0]
             # *** Really need a better shared secret
             cmd = 'openssl bf -d -a -salt -pass file:/opt/kusu/etc/db.passwd -in %s |gunzip > "%s"' % (tmpfile, tmpfile2)
-            print "Running: %s" % cmd
             for line in os.popen(cmd).readlines():
                 if line:
                     print "ERROR:  %s" % line
@@ -415,12 +412,10 @@ class CFMClient:
                         os.unlink(tmpfile2)
                     if os.path.exists(tmpfile):
                         os.unlink(tmpfile)
-                    return
-            print "tmpfile2=%s  tmpfile=%s" % (tmpfile2, tmpfile)
+                    return -1
             os.rename(tmpfile2, tmpfile)
 
         # Set the file permissions
-        # print "Calling __setFilePerms('%s', '%s', '%s', '%s')" % (tmpfile, deststruct[1], deststruct[2], deststruct[3])
         self.__setFilePerms(tmpfile, deststruct[1], deststruct[2], deststruct[3])
 
         # If an md5sum is provided test the file.
@@ -436,13 +431,14 @@ class CFMClient:
                     print "Filename = %s" % tmpfile
                     print "origmd5sum= %s   md5sum= %s" % (origmd5sum, md5sum)
                     os.unlink(tmpfile)
-                    return
+                    return -1
 
         except:
             # No md5sum provided
             pass
         
         os.rename(tmpfile, deststruct[0])
+        return 0
 
 
     def __setupForYum(self):
@@ -481,13 +477,13 @@ class CFMClient:
         
         if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             self.__setupForYum()
-            cmd = "/usr/bin/yum -y install "
+            cmd = "/usr/bin/yum -y -c /tmp/yum.conf install "
             for i in self.newpackages:
                 cmd += "%s " % i
 
             print "Running:  %s" % cmd
-            #for line in os.popen(cmd).readlines():
-            #    print line
+            for line in os.popen(cmd).readlines():
+                sys.stdout.write(line)
 
 
     def __removePackages(self):
@@ -501,11 +497,11 @@ class CFMClient:
             self.__setupForYum()
             cmd = "/usr/bin/yum -y remove "
             for i in self.oldpackages:
-                cmd = "/usr/bin/yum -y remove %s" % i
+                cmd = "/usr/bin/yum -y -c /tmp/yum.conf remove %s" % i
 
                 print "Running:  %s" % cmd
-                #for line in os.popen(cmd).readlines():
-                #    print line
+                for line in os.popen(cmd).readlines():
+                    sys.stdout.write(line)
 
 
     def __getFileEntries(self, filename):
@@ -560,7 +556,7 @@ class CFMClient:
     def __processFileName(self, filename):
         """__processFileName - The filename from the cfmfile list contains
         additional information on how the file should be treated.  This
-        function returns a tupple with:  "proper filename", "action"
+        function returns a tupple with:  "filename.action", "action"
         The action will be ignore if it is from another node group."""
 
         # Determine is any special processing is needed
@@ -571,10 +567,10 @@ class CFMClient:
             action = 'merge'
 
         fn = filename
-        if action:
-            fn = filename[:-(len(action) + 1)]
-        else:
-            fn = filename
+        #if action:
+        #    fn = filename[:-(len(action) + 1)]
+        #else:
+        #    fn = filename
 
         # Test to see if this is in the same node group
         ng = string.atoi(string.split(fn[(len(self.CFMBaseDir)):], '/')[1])
@@ -603,20 +599,17 @@ class CFMClient:
             if line[0] == '#':
                 continue
             if line:
-                # /opt/kusu/cfm/5/opt/kusu/etc/package.lst apache apache 420 1181168668 8c1a2bb5be7c8a4c8279484772fccf01
+                # e.g.  /opt/kusu/cfm/5/opt/kusu/etc/package.lst apache apache
+                #              420 1181168668 8c1a2bb5be7c8a4c8279484772fccf01
                 chunks = string.split(line)
                 md5sum = chunks[-1:][0]
-                time   = chunks[-2:-1][0]
+                time   = string.atoi(chunks[-2:-1][0])
                 tmode  = chunks[-3:-2][0]
                 group  = chunks[-4:-3][0]
                 user   = chunks[-5:-4][0]
                 filen  = string.join(chunks[:-5], ' ')
                 filename, action = self.__processFileName(filen)
 
-                # print "__findOlderFiles:  filen=%s, filename=%s" % (filen, filename)
-                # print "__findOlderFiles:  user=%s, group=%s, mode=%s" % (user, group, mode)
-                # print "__findOlderFiles:  md5sum=%s" % md5sum
-                
                 if action == 'ignore':
                     continue
 
@@ -626,15 +619,15 @@ class CFMClient:
                 # Test to see if it's newer
                 if os.path.exists(filename):
                     mtime = os.path.getmtime(filename)
-
+                    if mtime < time:
+                        # print "Going to get: %s" % filename
+                        # print "local file time=%i, remote file time=%i" % (mtime, time)
+                        # File needs to be updated
+                        self.newfiles.append([filename, user, group, mode, action, md5sum])
                 else:
                     print "NOTICE:  File: %s does not exist!" % filename
-                    mtime = 0
-
-                if mtime < time:
-                    # File needs to be updated
                     self.newfiles.append([filename, user, group, mode, action, md5sum])
-                    
+
         filep.close()
                                          
 
@@ -643,8 +636,10 @@ class CFMClient:
         for filename, user, group, mode, action, md5sum in self.newfiles:
 
             attr = (filename, user, group, mode, md5sum)
-            print "Getting file: %s" % filename
-            self.__getFile(filename, attr, 0)
+            print "Updating file: %s" % filename
+            retval = self.__getFile(filename, attr, 0)
+            if retval:
+                continue
             
             # Determine what to do based on the action
             if action == '':
@@ -659,6 +654,7 @@ class CFMClient:
                 os.unlink(filename)
             elif action == 'merge':
                 # This is for the group passwd, and shadow files.
+                realfile = filename[:-(len(action) + 1)]
                 merger = Merger()
                 merger.mergeFile(realfile)
             else:
@@ -675,7 +671,7 @@ class CFMClient:
 
         # Test the package file to see if it is valid
         testdata = self.__getFileEntries(self.packagelst)
-        if testdata[0][0] == '<':
+        if len(testdata) != 0 and testdata[0][0] == '<':
             # This is not proper content
             print "ERROR:  Failed to get the package.lst."
             if os.path.exists('%s.ORIG' % self.packagelst):
@@ -704,8 +700,6 @@ class CFMClient:
         self.setupNIIVars()
         global UPDATEFILE
         global UPDATEPACKAGE
-        print "Update type: %i" % self.type
-        print "Installers: %s" % self.installers
         if not self.installers or not self.type:
             print "Usage:  {cmd} -t [1|2|3] -i {Installer list}"
             sys.exit(-1)
@@ -720,11 +714,7 @@ class CFMClient:
         sys.exit(0)
 
 
-    def tester(self):
-        """tester - Just an entry point for testing the methods"""
-        print "Testing"
 
-        
             
 if __name__ == '__main__':
     app = CFMClient(sys.argv)

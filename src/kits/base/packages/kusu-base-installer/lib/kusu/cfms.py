@@ -31,7 +31,7 @@ from stat import *
 
 from kusu.core.db import KusuDB
 from kusu.cfmnet import CFMNet
-import ipfun 
+from kusu.ipfun import *
 
 class PackBuilder:
     """This class contains the code for generating the packaged files for
@@ -139,7 +139,7 @@ class PackBuilder:
         if data:
             for line in data:
                 ip, sb = line
-                bc.append(ipfun.getBroadcast(ip, sb))
+                bc.append(getBroadcast(ip, sb))
 
         return bc
 

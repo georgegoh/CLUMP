@@ -43,7 +43,7 @@ class CFMNet:
         self.type       = 0      # The type of update to perform (Numeric)
         self.waittime   = 30     # Maximum random time to wait before client downloads
         self.ngid       = 0      # The node group ID to update  (0=all)
-        self.version    = 0      # Packet version number
+        self.version    = 1      # Packet version number
         self.installers = []     # List of installer IP's capable of providing files
         self.broadcasts = []     # List of broadcast IP's to send to
         self.resends    = 5      # Number of times to resend the broadcast
