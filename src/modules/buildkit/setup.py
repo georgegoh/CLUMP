@@ -13,6 +13,7 @@ setup(name="kusu-buildkit",
     author_email="najib@osgdc.org",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
-#    data_files=[('share/po',['src/po/kusuapps.po'])],
+    packages = ['buildkit'],
+    package_dir = {'buildkit' : 'src/lib'},
     scripts=['src/bin/buildkit']
      )

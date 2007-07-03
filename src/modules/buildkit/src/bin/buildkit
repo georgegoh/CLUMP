@@ -9,11 +9,11 @@ import sys
 import os
 import optparse
 from kusu.core.app import KusuApp
-from kusu.kit.devel import KitSrcFactory, KitSrcAlreadyExists
+from kusu.buildkit.devel import KitSrcFactory, KitSrcAlreadyExists
 from path import path
 
 class BuildKit:
-    """This class is the model class for the buildkit app."""
+    """This class is the model for the buildkit app."""
     
     def newKitSrc(self,srcpath):
         """prepare the Kit source directory"""
@@ -21,7 +21,7 @@ class BuildKit:
         newkit.prepareSrcPath()
         
 class App(KusuApp):
-    """ Application class for boot-media-tool. """
+    """ Application class for buildkit. """
 
     def __init__(self, bminst):
         """ App-specific initialization. """

@@ -34,6 +34,7 @@ SET(KUSU_MODULES
   hardware
   kitops
   repoman
+  buildkit
 )
 
 ## Include Kusu globals
