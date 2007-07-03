@@ -698,6 +698,22 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             else:
                 raise CopyError
 
+    def getArch(self):
+        '''Centos specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
+
 class RHEL5InstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL 5 installation source should be and the operations that can work on it."""
 

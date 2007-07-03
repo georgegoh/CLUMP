@@ -11,7 +11,7 @@ from kusu.boot.distro import DistroFactory
 from path import path
 import tempfile
 
-class TestCentOSDetection:
+class TestCentOS4Detection:
     """Test suite for detecting CentOS installation sources"""
     
     def setUp(self):
@@ -42,7 +42,6 @@ class TestCentOSDetection:
         path(self.centOSLocalPath / 'CentOS').mkdir()
         path(self.centOSLocalPath / 'CentOS/RPMS').mkdir()
         path(self.centOSLocalPath / 'CentOS/base').mkdir()
-
 
         # create an additional media type 
         # (as in the layout for disc media 2, 3, ..)
@@ -113,7 +112,8 @@ class TestCentOSDetection:
             assert False
 
 
-class TestFedoraDetection:
+
+class TestFedora6Detection:
     """Test suite for detecting Fedora installation sources"""
 
     def setUp(self):
@@ -136,12 +136,24 @@ class TestFedoraDetection:
         self.invalidFedoraLocalPath.rmdir()
 
         path(self.fedoraLocalPath / 'isolinux').mkdir()
+        path(self.fedoraLocalPath / 'isolinux/isolinux.bin').touch()
         path(self.fedoraLocalPath / 'isolinux/vmlinuz').touch()
         path(self.fedoraLocalPath / 'isolinux/initrd.img').touch()
         path(self.fedoraLocalPath / 'images').mkdir()
+        path(self.fedoraLocalPath / 'images/stage2.img').touch()
         path(self.fedoraLocalPath / 'Fedora').mkdir()
         path(self.fedoraLocalPath / 'Fedora/RPMS').mkdir()
         path(self.fedoraLocalPath / 'Fedora/base').mkdir()
+
+        f = open(path(self.fedoraLocalPath / '.discinfo'), 'w')
+        f.write('1161131669.029329\n')
+        f.write('Fedora Core 6\n')
+        f.write('i386\n')
+        f.write('1,2,3,4,5\n')
+        f.write('Fedora/base\n')
+        f.write('Fedora/RPMS\n')
+        f.write('Fedora/pixmaps\n')
+        f.close()
         
         # create an additional media type 
         # (as in the layout for disc media 2, 3, ..)
@@ -154,11 +166,14 @@ class TestFedoraDetection:
 
         path(self.fedoraLocalPath / 'isolinux/vmlinuz').remove()
         path(self.fedoraLocalPath / 'isolinux/initrd.img').remove()
+        path(self.fedoraLocalPath / 'isolinux/isolinux.bin').remove()
         path(self.fedoraLocalPath / 'isolinux').rmdir()
+        path(self.fedoraLocalPath / 'images/stage2.img').remove()
         path(self.fedoraLocalPath / 'images').rmdir()
         path(self.fedoraLocalPath / 'Fedora/RPMS').rmdir()
         path(self.fedoraLocalPath / 'Fedora/base').rmdir()
         path(self.fedoraLocalPath / 'Fedora').rmdir()
+        path(self.fedoraLocalPath / '.discinfo').remove()
         self.fedoraLocalPath.rmdir()
         self.additionalFedoraMedia.rmtree()
 
@@ -194,6 +209,14 @@ class TestFedoraDetection:
 
         fedoraObj = DistroFactory(self.invalidFedoraLocalPath)
         assert fedoraObj.verifyLocalSrcPath() is False
+
+    def test_FedoraCDArch(self):
+        """Test if the arch is correct for the Fedora media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getArch() == 'i386'
+
+        
 
 class TestRHEL5Detection:
     """Test suite for detecting RHEL 5 installation sources"""
@@ -233,7 +256,17 @@ class TestRHEL5Detection:
             path(self.rhelLocalPath / 'ClusterStorage/repodata').mkdir()
             path(self.rhelLocalPath / 'VT').mkdir()
             path(self.rhelLocalPath / 'VT/repodata').mkdir()
-            
+    
+            f = open(path(self.rhelLocalPath / '.discinfo'), 'w')
+            f.write('1170972069.396645\n')
+            f.write('Red Hat Enterprise Linux Server 5\n')
+            f.write('i386\n')
+            f.write('1\n')
+            f.write('Server/base\n')
+            f.write('Server/RPMS\n')
+            f.write('Server/pixmaps\n')
+            f.close()
+
             # create an additional media type 
             # (as in the layout for disc media 2, 3, ..)
             self.additionalRHELMedia = path(tempfile.mkdtemp(dir='/tmp'))
@@ -267,6 +300,7 @@ class TestRHEL5Detection:
             path(self.rhelLocalPath / 'ClusterStorage').rmdir()
             path(self.rhelLocalPath / 'VT/repodata').rmdir()
             path(self.rhelLocalPath / 'VT').rmdir()
+            path(self.rhelLocalPath / '.discinfo').remove()
             self.rhelLocalPath.rmdir()
             self.additionalRHELMedia.rmtree()
         elif version == '4':
@@ -304,5 +338,11 @@ class TestRHEL5Detection:
 
         rhelObj = DistroFactory(self.invalidRHELLocalPath)
         assert rhelObj.verifyLocalSrcPath() is False
+
+    def test_RHELCDArch(self):
+        """Test if the arch is correct for the RHEL media"""
+        
+        rhelObj = DistroFactory(self.rhelLocalPath)
+        assert rhelObj.getArch() == 'i386'
 
 
