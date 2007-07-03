@@ -7,9 +7,8 @@
 
 import sys
 import os
-import optparse
 from kusu.core.app import KusuApp
-from kusu.buildkit.devel import KitSrcFactory, KitSrcAlreadyExists
+from kusu.buildkit import KitSrcFactory
 from path import path
 
 class BuildKit:

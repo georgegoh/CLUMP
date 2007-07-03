@@ -4,13 +4,10 @@
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-""" This module contains the development framework for Kusu Kits"""
+""" This module contains the kitsource methods and classes for Kusu Kits"""
 
-import sys
-import os
 from path import path
-
-class KitSrcAlreadyExists(Exception): pass
+from kusu.util.errors import KitSrcAlreadyExists
 
 class KitSrcBase(object):
     """ Base class for a Kit source and the operations that can work on it. """

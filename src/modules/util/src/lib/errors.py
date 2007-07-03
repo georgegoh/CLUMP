@@ -123,3 +123,7 @@ class KitCopyError(KusuError): pass
 # nodeinstaller
 class EmptyNIISource(KusuError): pass
 class InvalidPartitionSchema(KusuError): pass
+
+# buildkit
+class KitSrcAlreadyExists(KusuError): pass
+
