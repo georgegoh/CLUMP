@@ -16,12 +16,11 @@ import kusu.util.log as kusulog
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_FORWARD
 
-kl = kusulog.getKusuLog('installer.license')
+kl = kusulog.getKusuLog('installer.instnum')
 
 class LicenseScreen(InstallerScreen):
-    """Collects info about the cluster."""
-    name = _('License Key')
-    profile = 'LicenseKey'
+    name = _('Installation Number')
+    profile = 'InstNum'
     msg = _('Please enter the Installation number')
     buttons = [_('Skip')]
 
