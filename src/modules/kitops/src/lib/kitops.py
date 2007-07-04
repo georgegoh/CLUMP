@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-# Author: atumanov
 
 import sys
 import os
