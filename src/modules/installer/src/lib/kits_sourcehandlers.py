@@ -83,7 +83,8 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
     kl.debug('Add Kit Prepare')
     try:
         kitops.addKitPrepare()
-    except (AssertionError, CannotMountKitMediaError):
+    except (AssertionError, CannotMountKitMediaError,
+            UnrecognizedKitMediaError):
         raise CannotAddKitError, 'Cannot mount the CDROM device.'
 
     kl.debug('Get OS Dist')
