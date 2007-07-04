@@ -18,7 +18,6 @@ from kusu.ui.text.screenfactory import ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
 from keyboard import KeyboardSelectionScreen
-from license import LicenseScreen
 from rootpasswd import RootPasswordScreen
 from partition import PartitionScreen
 from gatewaydns import GatewayDNSSetupScreen
@@ -76,4 +75,5 @@ class ScreenFactoryImpl(ScreenFactory):
         ]
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
+        from rhel_instnum import LicenseScreen
         ScreenFactory.screens.insert(7, LicenseScreen(kiprofile=kiprofile))

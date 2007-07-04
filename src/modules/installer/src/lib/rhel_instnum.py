@@ -71,7 +71,9 @@ class LicenseScreen(InstallerScreen):
 
                 if inum.get_product_string().lower() != productPath.lower():
                     return False, "Installation number incompatible with media"
-     
+    
+        return True, ''
+ 
     def formAction(self):
         """
         Store
