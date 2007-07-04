@@ -57,17 +57,13 @@ def genAutoInstallScript(disk_profile, kiprofile):
     from kusu.autoinstall.installprofile import Kickstart
 
     # redhat based for now
-    #kusu_dist = os.environ.get('KUSU_DIST', None)
-    #kusu_distver = os.environ.get('KUSU_DISTVER', None)
+    kusu_dist = os.environ.get('KUSU_DIST', None)
+    kusu_tmp = os.environ.get('KUSU_TMP', '/tmp')
 
-    kusu_tmp = os.environ.get('KUSU_TMP', None)
-
-    # is None
-    if not kusu_tmp: 
-        install_script = '/tmp/install_script'
+    if kusu_dist in ['fedora', 'centos', 'rhel']:
+        install_script = path(kusu_tmp) / 'kusu-ks.cfg'
     else:
         install_script = path(kusu_tmp) / 'install_script'
-
 
     # Build kickstart object
     # Retrieve all the data required
@@ -92,26 +88,24 @@ def genAutoInstallScript(disk_profile, kiprofile):
 def migrate(prefix):
     dest = path(prefix) + '/root'
     
-    kusu_tmp = os.environ.get('KUSU_TMP', None)
-    kusu_log = os.environ.get('KUSU_LOGFILE', None)
-
-    if not kusu_tmp or not kusu_log:
-        kusu_tmp = '/tmp/kusu'
-        kusu_log = '/tmp/kusu/kusu.log'
+    kusu_tmp = os.environ.get('KUSU_TMP', '/tmp/kusu')
+    kusu_log = os.environ.get('KUSU_LOGFILE', '/tmp/kusu/kusu.log')
 
     kusu_tmp = path(kusu_tmp)
     kusu_log = path(kusu_log)
 
-    files = [kusu_tmp / 'kusu.db', kusu_log]
-
+    files = ['kusu.db']
+    files = [ kusu_tmp / f for f in files] + [kusu_log]
     for f in files:
         if f.exists():
-            logger.debug('Moved %s -> %s' % (f, dest))
+            logger.info('Moved %s -> %s' % (f, dest))
             f.move(dest)
 
-    for f in [kusu_tmp / 'install_script']:
+    files = ['kusu-ks.cfg', 'install_script']
+    files = [ kusu_tmp / f for f in files] 
+    for f in files:
         if f.exists():
-            logger.debug('Copied %s -> %s' % (f, dest))
+            logger.info('Copied %s -> %s' % (f, dest))
             f.copy(dest)
 
 def mountKusuMntPts(prefix, disk_profile):
