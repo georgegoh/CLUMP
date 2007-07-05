@@ -72,8 +72,6 @@ class Kickstart(BaseInstall):
     def __init__(self, db, prefix=None):
         BaseInstall.__init__(self, db, prefix)
         
-        self.packageprofile.append('@Base')
- 
     def _makeRootPw(self, rootpw):
         import md5crypt
         import time
@@ -81,8 +79,8 @@ class Kickstart(BaseInstall):
         # Not support unicode in root password
         return md5crypt.md5crypt(str(rootpw), str(time.time()));
 
-    
-
-
-    
+class RHEL5Kickstart(Kickstart):
+    def __init__(self, db, prefix=None):
+        Kickstart.__init__(self, db, prefix)
+        self.getattr_dict['instnum'] = None        
 

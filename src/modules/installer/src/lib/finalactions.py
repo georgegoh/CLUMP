@@ -52,9 +52,9 @@ def makeRepo(kiprofile):
     db.flush()
 
 def genAutoInstallScript(disk_profile, kiprofile):
-    from kusu.autoinstall.scriptfactory import KickstartFactory
+    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
     from kusu.autoinstall.autoinstall import Script
-    from kusu.autoinstall.installprofile import Kickstart
+    from kusu.autoinstall.installprofile import Kickstart, RHEL5Kickstart
 
     # redhat based for now
     kusu_dist = os.environ.get('KUSU_DIST', None)
@@ -68,7 +68,13 @@ def genAutoInstallScript(disk_profile, kiprofile):
     # Build kickstart object
     # Retrieve all the data required
     ngname = 'master-' + kiprofile['Kits']['longname']
-    k = Kickstart(kiprofile.getDatabase(), ngname)
+
+    if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
+        k = RHEL5Kickstart(kiprofile.getDatabase(), ngname)
+        k.instnum = kiprofile['InstNum']
+    else:
+        k = Kickstart(kiprofile.getDatabase(), ngname)
+
     k.rootpw = kiprofile['RootPasswd'] 
 
     if kiprofile.has_key('Network'):
@@ -82,7 +88,11 @@ def genAutoInstallScript(disk_profile, kiprofile):
     k.installsrc = 'http://127.0.0.1/' 
     k.keyboard = kiprofile['Keyboard']
 
-    script = Script(KickstartFactory(k))
+    if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
+        script = Script(RHEL5KickstartFactory(k))
+    else:
+        script = Script(KickstartFactory(k))
+
     script.write(install_script)
 
 def migrate(prefix):

@@ -27,7 +27,16 @@ class BaseFactory:
         return True
 
 class KickstartFactory(BaseFactory):
- 
+
+    keys = ['diskprofile', \
+            'networkprofile', \
+            'packageprofile', \
+            'rootpw', \
+            'tz', \
+            'installsrc', \
+            'lang', \
+            'keyboard']
+    
     def __init__(self, profile, template=None):
     
         if template:
@@ -53,17 +62,7 @@ class KickstartFactory(BaseFactory):
             self.profile = profile
 
     def _validateProfile(self, profile):
-        
-        keys = ['diskprofile', \
-                'networkprofile', \
-                'packageprofile', \
-                'rootpw', \
-                'tz', \
-                'installsrc', \
-                'lang', \
-                'keyboard']
-         
-        for key in keys:
+        for key in self.keys:
             if not getattr(profile, key):
                 raise ProfileNotCompleteError, '%s attribute not found' % key
 
@@ -200,5 +199,24 @@ class KickstartFactory(BaseFactory):
                   (lv.mountpoint, lv.group.name, lv.name)
             part_lines.append(str)
 
-
         return part_lines
+
+class RHEL5KickstartFactory(KickstartFactory):
+    def __init__(self, profile, template=None):
+        KickstartFactory.__init__(self, profile, template) 
+        self.keys.append('instnum')
+
+    def getNameSpace(self):
+        self.namespace['url'] = self.profile.installsrc
+        self.namespace['rootpw'] = self.profile.rootpw
+        self.namespace['tz'] = self.profile.tz
+        self.namespace['lang'] = self.profile.lang
+        self.namespace['keybd'] = self.profile.keyboard
+        self.namespace['packages'] = self.profile.packageprofile 
+        self.namespace['partitions'] = self._getPartitions()
+        self.namespace['networks'] = self._getNetworks()
+        self.namespace['instnum'] = self.profile.instnum
+
+        return self.namespace
+
+
