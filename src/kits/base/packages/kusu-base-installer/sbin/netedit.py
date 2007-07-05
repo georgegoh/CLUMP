@@ -741,7 +741,7 @@ class NetworkMainWindow(USXBaseScreen):
         global selectedNetwork
         self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
         selectedNetwork = self.networkListbox
-        for nid,net,sub,netname in networkInfo:
+        for nid,net,sub,netname,device in networkInfo:
             # If string is too long, show ellipsis.
             if len(netname) > 46: 
                netname = netname[:43] + "..."
