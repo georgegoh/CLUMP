@@ -13,7 +13,7 @@
 
 import snack
 import kusuwidgets
-from navigator import NAV_QUIT, NAV_FORWARD, NAV_BACK, NAV_NOTHING
+from navigator import NAV_QUIT, NAV_FORWARD, NAV_BACK, NAV_NOTHING, NAV_FORWARD_NO_VALIDATION
 
 class BaseScreen(object):
     """Abstract base class for screens.
@@ -97,14 +97,21 @@ class BaseScreen(object):
         callbackSuccess = self.executeCallback(obj)
         if buttonSuccess == NAV_NOTHING or callbackSuccess == NAV_NOTHING:
             return NAV_NOTHING
+        if buttonSuccess == NAV_FORWARD or callbackSuccess == NAV_FORWARD:
+            return NAV_FORWARD
+        if buttonSuccess == NAV_FORWARD_NO_VALIDATION or \
+           callbackSuccess == NAV_FORWARD_NO_VALIDATION:
+            return NAV_FORWARD_NO_VALIDATION
         return buttonSuccess or callbackSuccess
 
     def executeCallbackForButton(self, button):
         """Callback lookup and activation for buttons."""
         for key in self.buttons:
             if button is self.buttonsDict[key]:
-                if button.activateCallback_() == NAV_NOTHING:
-                    return NAV_NOTHING
+                result = button.activateCallback_()
+                if result in [NAV_QUIT, NAV_FORWARD, NAV_BACK,\
+                              NAV_NOTHING, NAV_FORWARD_NO_VALIDATION]:
+                    return result
                 return True
         return False
 

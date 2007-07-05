@@ -16,7 +16,7 @@ LEFT = -1
 CENTER = 0
 RIGHT = 1
 
-from navigator import NAV_NOTHING
+from navigator import NAV_QUIT, NAV_FORWARD, NAV_BACK, NAV_NOTHING, NAV_FORWARD_NO_VALIDATION
 
 class Button(snack.Button):
     labelTxt = ''
@@ -38,8 +38,9 @@ class Button(snack.Button):
                 result = self.callback_(*self.args)
             else:
                 result = self.callback_(self.args)
-            if result == NAV_NOTHING:
-                return NAV_NOTHING
+            if result in [NAV_QUIT, NAV_FORWARD, NAV_BACK,\
+                          NAV_NOTHING, NAV_FORWARD_NO_VALIDATION]:
+                return result
 
 
 class LabelledEntry(snack.Widget, snack.Grid):

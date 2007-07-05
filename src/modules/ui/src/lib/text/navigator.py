@@ -11,6 +11,7 @@
    presentation, navigation,and data validation tasks."""
 NAV_NOTHING = -1
 NAV_FORWARD = -2
+NAV_FORWARD_NO_VALIDATION = -3
 NAV_BACK = 1
 NAV_QUIT = 2
 
@@ -229,6 +230,16 @@ class Navigator(object, KusuApp):
                         loop=True
                     else:
                         loop=False
+                elif result is NAV_FORWARD_NO_VALIDATION:
+                    self.currentScreen.formAction()
+                    self.mainScreen.popWindow()
+                    self.mainScreen.finish()
+                    if self.hasNextScreen():                
+                        self.mainScreen = PlatformScreen(self.screenTitle)
+                        self.selectScreen(self.currentStep+1)
+                        loop=True
+                    else:
+                        loop=False
                 elif result is NAV_BACK:
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
@@ -301,6 +312,7 @@ class Navigator(object, KusuApp):
         form.addHotKey("F12")
         while True:
             result = form.run()
+            kl.debug('Result: %s' % result)
             if result is "F12":
                 return NAV_QUIT
             if result in hotkeysDict.keys():
@@ -311,7 +323,7 @@ class Navigator(object, KusuApp):
             if self.showNavButtons and result is self.prevButton:
                 return NAV_BACK
             callback_result = self.currentScreen.eventCallback(result)
-            if callback_result is True:
+            kl.debug('Callback: %s' % callback_result)
+            if callback_result == True:
                 return NAV_FORWARD
-            elif callback_result is NAV_NOTHING:
-                return NAV_NOTHING
+            else: return callback_result

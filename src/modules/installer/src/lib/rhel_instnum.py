@@ -15,7 +15,7 @@ from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from screen import InstallerScreen
-from kusu.ui.text.navigator import NAV_FORWARD
+from kusu.ui.text.navigator import NAV_FORWARD_NO_VALIDATION
 from path import path
 import instnum
 
@@ -41,7 +41,8 @@ class LicenseScreen(InstallerScreen, profile.PersistentProfile):
         self.buttonsDict[_('Skip')].setCallback_(self.skip)
 
     def skip(self):
-        return NAV_FORWARD
+        kl.debug('Skipping')
+        return NAV_FORWARD_NO_VALIDATION
 
     def drawImpl(self):
         
@@ -57,10 +58,10 @@ class LicenseScreen(InstallerScreen, profile.PersistentProfile):
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
         self.screenGrid.setField(self.license, col=0, row=1, anchorLeft=1,
-                                 padding=(0,1,0,0))
+                                 padding=(0,1,0,1))
 
     def validate(self):
-
+        kl.debug('validate instnum')
         key = self.license.value()
 
         # Reference from anaconda, installclasses/rhel.py
