@@ -743,10 +743,10 @@ class NetworkMainWindow(USXBaseScreen):
         selectedNetwork = self.networkListbox
         for nid,net,sub,netname,device in networkInfo:
             # If string is too long, show ellipsis.
-            if len(netname) > 46: 
-               netname = netname[:43] + "..."
+            if len(netname) > 32: 
+               netname = netname[:32] + "..."
 
-            self.networkListbox.append("%s %s %s" % (net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
+            self.networkListbox.append("%s %s %s %s" % (device.ljust(10), net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, -1), anchorLeft=1)
         self.screenGrid.setField(listboxlabel, col=0, row=1, padding=(0, 0, 0, 0), anchorLeft=1)
         self.screenGrid.setField(self.networkListbox, col=0, row=2, padding=(0, 0, 0, 0), growx=1)
