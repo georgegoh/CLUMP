@@ -162,7 +162,7 @@ def removeVolumeGroup(vg_name):
     return (out, err)
 
 def activateAllVolumeGroups():
-    out, err = runCommand('lvm vgchange -a y')
+    out, err = runCommand('lvm vgchange -ay')
     return (out, err)
 
 def createLogicalVolume(vg_name, lv_name, lv_extents):

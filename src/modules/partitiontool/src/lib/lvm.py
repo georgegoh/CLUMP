@@ -44,6 +44,7 @@ def queueCommand(func, args=None):
 def execFifo():
     global cmd_fifo
     if cmd_fifo:
+        queueCommand(lvm.activateAllVolumeGroups, None)
         for func,args in cmd_fifo:
             if type(args) is tuple:
                 apply(func, args)
@@ -181,7 +182,6 @@ class LogicalVolumeGroup(object):
         if createNew or not self.on_disk:
             pv_paths = [pv.partition.path for pv in pv_list]
             queueCommand(lvm.createVolumeGroup, (name, extent_size, pv_paths))
-            queueCommand(lvm.activateAllVolumeGroups, None)
 
     def extentsTotal(self):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
