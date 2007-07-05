@@ -53,7 +53,7 @@ Dump CFM: 0
 Node: node0000 
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
-    <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options=""/>
+    <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
     <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
     <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
     <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
@@ -63,7 +63,8 @@ Node: node0000
     <appglobals name="DNSForwarders" value="172.16.1.5,172.16.1.8"/>
     <appglobals name="DNSSearch" value="myzone.company.com company.com corp.company.com"/>
     <appglobals name="NASServer" value="172.25.243.2"/>
-    <appglobals name="TimeZone" value="Asia/Singapore"/>
+    <appglobals name="Timezone_zone" value="Asia/Singapore"/>
+    <appglobals name="Timezone_utc" value="1"/>
     <appglobals name="NISDomain" value="engineering"/>
     <appglobals name="NISServers" value="172.25.243.4,172.25.243.14"/>
     <appglobals name="CFMSecret" value="GF5SEVTHJ589TNT45NTEYST78GYBG5GVYGT84NTV578TEB46"/>
@@ -340,7 +341,7 @@ Node: node0000
         ksprofile.prepareKickstartNetworkProfile(ni)
         assert ksprofile.networkprofile['interfaces']['eth0']['configure'] == True
         assert ksprofile.networkprofile['interfaces']['eth0']['use_dhcp'] == False
-        assert ksprofile.networkprofile['fqhn'] == 'node0000'
+        assert ksprofile.networkprofile['fqhn'] == 'node0000.myzone.company.com'
         assert ksprofile.networkprofile['interfaces']['eth0']['ip_address'] == '10.1.10.10'            
         assert ksprofile.networkprofile['interfaces']['eth0']['netmask'] == '255.255.255.0'                
         assert ksprofile.networkprofile['interfaces']['eth0']['active_on_boot'] == True

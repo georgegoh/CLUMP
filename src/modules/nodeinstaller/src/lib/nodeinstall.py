@@ -315,7 +315,7 @@ def retrieveNII(niihost):
         logger.debug('urlopen returned object: %r' % f)
         data = f.read()
         logger.debug('urlopen data: %s' % data)
-        return data
+        return StringIO(data)
     except urllib2.HTTPError, e:
         logger.debug(str(e))
         return None
@@ -378,7 +378,7 @@ class KickstartFromNIIProfile(object):
                     'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
                     'ip_address': ni.nics[nic]['ip'],
                     'netmask': ni.nics[nic]['subnet'],
-                    'active_on_boot': ni.nics[nic]['boot']
+                    'active_on_boot': translateBoolean(ni.nics[nic]['boot'])
                     }
                     
             if ni.nics[nic]['gateway']:
@@ -539,8 +539,7 @@ class NodeInstaller(object):
             niidata = NodeInstInfoHandler()
             p = make_parser()
             p.setContentHandler(niidata)
-            sourceStringIO = StringIO(self.source)
-            p.parse(sourceStringIO)
+            p.parse(self.source)
             for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
                 'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
                 'scripts', 'cfm']:
