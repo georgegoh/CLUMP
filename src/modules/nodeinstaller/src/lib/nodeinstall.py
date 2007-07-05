@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.autoinstall.scriptfactory import KickstartFactory
+from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
@@ -15,6 +15,7 @@ from whrandom import choice
 from cStringIO import StringIO
 import string
 import urllib2
+import os
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
 from path import path
@@ -343,8 +344,7 @@ class KickstartFromNIIProfile(object):
         """ ni is an instance of the NodeInstaller class. """
         super(KickstartFromNIIProfile, self).__init__()
         
-        if '@Base' not in self.packageprofile: self.packageprofile.append('@Base')
-        
+
     def prepareKickstartSiteProfile(self,ni):
         """ Reads in the NII instance and fills up the site-specific
             profile.
@@ -358,6 +358,15 @@ class KickstartFromNIIProfile(object):
         self.lang = ni.appglobal['Language']
         self.keyboard = ni.appglobal['Keyboard']
         self.installsrc = 'http://' + ni.installers + ni.repo
+
+        kusu_dist = os.environ['KUSU_DIST']
+        kusu_distver = os.environ['KUSU_DISTVER']
+
+        if kusu_dist == 'rhel' and kusu_distver == '5':
+            self.getattr_dict['instnum'] = None
+
+            if ni.appglobal.has_key('InstNum'):
+                self.instnum = ni.appglobal['InstNum']
 
     def prepareKickstartNetworkProfile(self,ni):
         """ Reads in the NII instance and fills up the networkprofile. """
@@ -431,7 +440,7 @@ class KickstartFromNIIProfile(object):
             logger.debug('Adding package %s to packageprofile..' % p)
             if p not in self.packageprofile:
                 self.packageprofile.append(p)
-       
+
     def _makeRootPw(self, rootpw):
         import md5crypt
         import time
@@ -572,7 +581,15 @@ class NodeInstaller(object):
             FIXME: Except that it doesnt.. this needs to be handled per
             distro-specific!
         """
-        autoscript = Script(KickstartFactory(self.ksprofile))
+
+        kusu_dist = os.environ['KUSU_DIST']
+        kusu_distver = os.environ['KUSU_DISTVER']
+
+        if kusu_dist == 'rhel' and kusu_distver == '5':
+            autoscript = Script(RHEL5KickstartFactory(self.ksprofile))
+        else:
+            autoscript = Script(KickstartFactory(self.ksprofile))
+
         autoscript.write(self.autoinstallfile)
         
     def commit(self):

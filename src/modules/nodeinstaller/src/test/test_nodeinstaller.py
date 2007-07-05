@@ -348,7 +348,7 @@ Node: node0000
         
         # validate package profile
         ksprofile.prepareKickstartPackageProfile(ni)
-        packages = ['component-base-node','@Base']
+        packages = ['component-base-node']
         for p in packages:
             assert p in ksprofile.packageprofile
         
