@@ -91,9 +91,9 @@ if [ ! -d /var/www/html ]; then
     echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
 else
 	if [ -x /etc/init.d/httpd ] && [ -f $KUSU_ROOT/bin/genconfig ]; then
-        ln -sf $KUSU_ROOT/cfm /var/www/htm/cfm
-        ln -sf /depot/repos /var/www/html/repos
-        ln -sf /depot/images /var/www/html/images
+        ln -snf $KUSU_ROOT/cfm /var/www/htm/cfm
+        ln -snf /depot/repos /var/www/html/repos
+        ln -snf /depot/images /var/www/html/images
 
 	    $KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
 
