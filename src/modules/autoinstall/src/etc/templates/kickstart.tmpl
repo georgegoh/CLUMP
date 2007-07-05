@@ -8,6 +8,13 @@
 # 
 
 install
+#if $varExists('instnum')
+#if $instnum 
+key $instnum
+#else
+key --skip
+#end if
+#end if
 url --url $url
 rootpw --iscrypted $rootpw
 lang $lang

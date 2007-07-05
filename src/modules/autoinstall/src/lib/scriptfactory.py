@@ -41,17 +41,11 @@ class KickstartFactory(BaseFactory):
             kusu_dist = os.environ.get('KUSU_DIST', None)
             kusu_distver = os.environ.get('KUSU_DISTVER', None)
 
-            if kusu_dist == 'rhel' and kusu_distver == '5':
-                self.template = path(kusu_root) / \
-                                'etc' / \
-                                'templates' / \
-                                'rhel5.tmpl'
-            else:
-                self.template = path(kusu_root) / \
-                                'etc' / \
-                                'templates' / \
-                                'kickstart.tmpl'
-           
+            self.template = path(kusu_root) / \
+                            'etc' / \
+                            'templates' / \
+                            'kickstart.tmpl'
+       
         if not self.template.exists():
             raise TemplateNotFoundError, '%s not found' % self.template
 
