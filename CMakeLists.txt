@@ -40,6 +40,8 @@ SET(KUSU_MODULES
 ## Include Kusu globals
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/CMakeScripts)
 INCLUDE(KusuGlobals)
+SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/buildbot)
+INCLUDE(prepBuildScripts)
 
 MESSAGE(STATUS "Please run make and source ${KUSU_ROOT}/bin/kusudevenv.sh.")
 

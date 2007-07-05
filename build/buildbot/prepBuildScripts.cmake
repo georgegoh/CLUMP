@@ -1,0 +1,1 @@
+CONFIGURE_FILE(${CMAKE_BINARY_DIR}/build/buildbot/runtests.sh ${CMAKE_BINARY_DIR}/build/buildbot/runtests.sh)
