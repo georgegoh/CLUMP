@@ -158,7 +158,9 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/bin/kusudevenv.sh
 
 IF(KUSU_BUILD_DIST AND KUSU_BUILD_DISTVER)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/src/modules/core/src/bin/kusuenv.sh 
-${CMAKE_CURRENT_BINARY_DIR}/src/modules/core/src/bin/kusuenv.sh)
+  ${CMAKE_CURRENT_BINARY_DIR}/src/dists/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH}/kusuenv.sh)
+  CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/src/modules/core/src/bin/kusuenv.sh 
+  ${CMAKE_CURRENT_BINARY_DIR}/src/modules/core/src/bin/kusuenv.sh)
 
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/bin/makeiso.sh ${CMAKE_CURRENT_BINARY_DIR}/bin/makeiso.sh)
   CONFIGURE_FILE(${CMAKE_CURRENT_BINARY_DIR}/bin/makebasekit.sh                
