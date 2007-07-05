@@ -594,7 +594,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         label = snack.Label(self.kusuApp._("Source Nodegroups\t\t  Destination Nodegroup"))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
-        query = "SELECT ngname FROM nodegroups ORDER BY ngname"
+        query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngname"
 
         try:
             self.database.connect()
@@ -619,7 +619,8 @@ class SelectNodegroupsWindow(USXBaseScreen):
                sys.exit(-1)
  
            # Only display node groups that are not empty when moving.
-           if group[0] == "Installer":
+           # Installer is special case, we can't move the installer group if there's only the master installer left.
+           if group[1] == 1:  
               if not int(nodes[0]) == 1:
                   self.srcNodegroupsCheckbox.append(group[0])
            else:     
