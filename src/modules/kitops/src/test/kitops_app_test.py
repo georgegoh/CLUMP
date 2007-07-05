@@ -616,7 +616,7 @@ def databasePrep():
     global kusudb
 
     if db_driver == 'mysql':
-        dbinfo = ['mysql', 'kitops_test', 'root', 'root']
+        dbinfo = ['mysql', 'kitops_test', 'root', '']
         dbinfo_str = \
                 '--dbdriver=%s --dbdatabase=%s --dbuser=%s --dbpassword=%s' % \
                 (dbinfo[0], dbinfo[1], dbinfo[2], dbinfo[3])
