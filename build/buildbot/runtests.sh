@@ -27,4 +27,7 @@ for i in `find $SOURCE_PATH/src/modules -name CMakeLists.txt`; do
    done
   fi
 done
+rm -rf /tmp/*tmp*
+rm -rf /tmp/kitops*
+rm -f /tmp/*
 exit $ec
