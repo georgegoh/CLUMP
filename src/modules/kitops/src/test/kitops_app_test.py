@@ -22,7 +22,8 @@ from kusu.kitops.kitops import KitOps
 
 # NOTE: test_kits_url NEEDS a trailing slash
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
-test_kits_path = path('/tmp/kitops_test_mock_isos')
+tmp_prefix = path(os.environt.get('KUSU_TMP', '/tmp'))
+test_kits_path = tmp_prefix / 'kitops_test_isos'
 
 temp_root = None
 temp_mount = None
@@ -36,8 +37,8 @@ def setUp():
 
     databasePrep()
 
-    temp_root = path(tempfile.mkdtemp(prefix='kot'))
-    temp_mount = path(tempfile.mkdtemp(prefix='kot'))
+    temp_root = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
+    temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
 
 def tearDown():
     global temp_root
@@ -524,7 +525,7 @@ class TestFedoraCore6i386:
             'Component %s not associated with installer nodegroup' % cmp.cname
 
 def listKits(name=''):
-    ls_fd, ls_fn = tempfile.mkstemp(prefix='kot')
+    ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
     lsP = subprocess.Popen('kitops -l %s %s -p %s' %
                            (name, dbinfo_str, temp_root),
                            shell=True, stdout=ls_fd)
@@ -593,7 +594,7 @@ def isRPMInstalled(pattern):
     Return True if RPM matching pattern is currently installed.
     """
 
-    tmp_fd, tmp_fn = tempfile.mkstemp(prefix='kot')
+    tmp_fd, tmp_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
 
     # run the command and store output in temp file
     rpmP = subprocess.Popen('rpm -qa %s' % pattern, shell=True, stdout=tmp_fd)
