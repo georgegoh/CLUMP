@@ -186,7 +186,7 @@ class NodeInfo:
         if data:
             for row in data:
                 kname, kvalue = row
-                print '    <appglobals name="%s" value="%s"></appglobals>' % (kname, kvalue)
+                print '    <appglobals name="%s" value="%s"></appglobals>' % (kname, kvalue or '') 
 
         print '</nodeinfo>'
 
