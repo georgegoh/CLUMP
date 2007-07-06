@@ -22,13 +22,13 @@ from kusu.kitops.kitops import KitOps
 
 # NOTE: test_kits_url NEEDS a trailing slash
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
-tmp_prefix = path(os.environt.get('KUSU_TMP', '/tmp'))
+tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
 test_kits_path = tmp_prefix / 'kitops_test_isos'
 
 temp_root = None
 temp_mount = None
 kusudb = None
-db_driver = 'mysql' # set to one of 'mysql' 'sqlite'
+db_driver = 'sqlite' # set to one of 'mysql' 'sqlite'
 dbinfo_str = ''
 
 def setUp():
@@ -223,7 +223,7 @@ class TestBaseKit:
         rpmP.wait()
 
         # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e %s %s -p %s' %
+        addP = subprocess.Popen('kitops -e --kitname %s %s -p %s' %
                                 (self.kit_name, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -268,7 +268,7 @@ class TestBaseKit:
     def testListKits(self):
         # first, test listing nothing
         title, entry, blank = listKits()
-        assert title == [], 'No listing expected, received: %s' % blank
+        assert title == [], 'No listing expected, received: %s' % title
 
         # perform database setup
         self.prepareDatabase()
@@ -312,19 +312,20 @@ class TestBaseKit:
                 'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
         assert blank == [], 'Unexpected entry: %s' % blank.split()
 
-        title, entry, blank = listKits('bas')
-        assert title == expected_title, \
-                'Title mismatch: %s, expected: %s' % (title, expected_title)
-        assert entry == expected_entry, \
-                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        assert blank == [], 'Unexpected entry: %s' % blank.split()
+        # disable wildcard kit listing for now...
+        #title, entry, blank = listKits('bas')
+        #assert title == expected_title, \
+        #        'Title mismatch: %s, expected: %s' % (title, expected_title)
+        #assert entry == expected_entry, \
+        #        'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        #assert blank == [], 'Unexpected entry: %s' % blank.split()
 
-        title, entry, blank = listKits('s')
-        assert title == expected_title, \
-                'Title mismatch: %s, expected: %s' % (title, expected_title)
-        assert entry == expected_entry, \
-                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        assert blank == [], 'Unexpected entry: %s' % blank.split()
+        #title, entry, blank = listKits('s')
+        #assert title == expected_title, \
+        #        'Title mismatch: %s, expected: %s' % (title, expected_title)
+        #assert entry == expected_entry, \
+        #        'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
+        #assert blank == [], 'Unexpected entry: %s' % blank.split()
 
         title, entry, blank = listKits('lsf')
         assert title == [], 'No listing expected, received: %s' % blank
@@ -526,6 +527,9 @@ class TestFedoraCore6i386:
 
 def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
+
+    if name:
+        name = '--kitname %s' % name
     lsP = subprocess.Popen('kitops -l %s %s -p %s' %
                            (name, dbinfo_str, temp_root),
                            shell=True, stdout=ls_fd)
