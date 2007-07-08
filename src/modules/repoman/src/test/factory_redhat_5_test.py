@@ -14,7 +14,7 @@ import os
 
 prefix = None
 kusudb = None
-cachedir = path(tempfile.mkdtemp(prefix='repoman'))
+cachedir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
 
 def download(filename, dest, cache=cachedir):
     global cachedir
@@ -39,8 +39,8 @@ def setUp():
     global prefix
     global kusudb
 
-    prefix = path(tempfile.mkdtemp())
-    kusudb = path(tempfile.mkdtemp()) / 'kusudb'
+    prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
+    kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
     dbs = db.DB('sqlite', kusudb)
 
 def tearDown():
