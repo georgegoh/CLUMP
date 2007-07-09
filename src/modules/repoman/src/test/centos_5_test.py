@@ -196,6 +196,15 @@ class TestCentos5Repo:
 
         f.close() 
  
+    def testMakeOSType(self):
+        global prefix
+ 
+        r = repo.Centos5Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        assert r.ostype == 'centos-5-i386'
+ 
     def testMake(self):
         global prefix
  

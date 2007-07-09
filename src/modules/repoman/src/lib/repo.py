@@ -82,6 +82,7 @@ class BaseRepo(object):
     os_path = None
     repoid = None
     debug = False
+    ostype = None
 
     def __init__(self, prefix, db):
         self.prefix = prefix
@@ -131,6 +132,7 @@ class BaseRepo(object):
         # Add new repo into table      
         repo = self.db.Repos()
         repo.kits = self.getKits(ngname)
+        repo.ostype = self.ostype
         repo.save()
         repo.flush()
         
@@ -232,6 +234,8 @@ class RedhatYumRepo(BaseRepo):
         self.os_version = os_version
         self.os_arch = os_arch
  
+        self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
+
     def copyKitsPackages(self):
         # Need a better method for this
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
@@ -455,8 +459,7 @@ class Fedora6Repo(RedhatYumRepo):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
-      
-
+     
 class Centos5Repo(RedhatYumRepo):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)

@@ -223,6 +223,15 @@ class TestRedhat5Repo:
 
         f.close() 
  
+    def testMakeOSType(self):
+        global prefix
+ 
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        assert r.ostype == 'rhel-5-i386'
+ 
     def testMake(self):
         global prefix
 

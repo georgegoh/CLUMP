@@ -168,6 +168,15 @@ class TestFedora6Repo:
             p = prefix / 'depot' / 'repos' / repoid / p
             if p.islink():
                 assert not p.readlink().isabs()
+
+    def testMakeOSType(self):
+        global prefix
+ 
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        assert r.ostype == 'fedora-6-i386'
  
     def testMake(self):
         global prefix
@@ -274,3 +283,4 @@ class TestFedora6Repo:
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+
