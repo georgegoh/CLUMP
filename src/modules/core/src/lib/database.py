@@ -337,8 +337,8 @@ class DB(object):
         # Blame me for for typos
         appglobals = sa.Table('appglobals', self.metadata,
             sa.Column('agid', sa.Integer, primary_key=True, autoincrement=True),
-            sa.Column('kname', sa.String(20)),
-            sa.Column('kvalue', sa.String(255), unique=True),
+            sa.Column('kname', sa.String(20), unique=True),
+            sa.Column('kvalue', sa.String(255)),
             sa.Column('ngid', sa.Integer),
             mysql_engine='InnoDB')
 
