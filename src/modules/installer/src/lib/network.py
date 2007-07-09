@@ -200,7 +200,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         primary_installer = db.AppGlobals(kname='PrimaryInstaller',
                                           kvalue='master-0')
 
-        all_ngs = db.NodeGroups.select()
+        other_ngs = \
+            db.NodeGroups.select_by(db.NodeGroups.c.ngname.in_('compute-disked',
+                   'compute-diskless', 'installer', 'compute', 'unmanaged'))
 
         interfaces = profile['interfaces']
 
@@ -210,8 +212,15 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 master_node.nics.append(newnic)
 
                 newnic.boot = interfaces[intf]['active_on_boot']
+ 
+                # DANGER!!!! HARDCODING OCS-STYLE NETWORKS
+                if intf == 'eth1':
+                    netname = 'public-%s' % intf
+                else:
+                    netname = 'net-%s' % intf
+
                 newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
-                                     device=intf, netname='net-%s' % intf,
+                                     device=intf, netname=netname,
                                      suffix='-' + intf)
                 
                 if not interfaces[intf]['use_dhcp']:
@@ -223,8 +232,12 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     newnet.network = IP(ip).make_net(nm).strNormal(0)
                     newnet.subnet = interfaces[intf]['netmask']
 
-                for ng in all_ngs:
-                    ng.networks.append(newnet)
+                master.networks.append(newnet)
+ 
+                # DANGER!!!! HARDCODING OCS-STYLE NETWORKS
+                if intf == 'eth0':
+                    for ng in other_ngs:
+                        ng.networks.append(newnet)
 
                 newnic.network = newnet
 
@@ -249,16 +262,16 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             # DHCP config for first interface
             if len(intfs) > 0 and intf == intfs[0]:
                 interfaces[intf]['configure'] = True
-                interfaces[intf]['use_dhcp'] = True
+                interfaces[intf]['use_dhcp'] = False
+                interfaces[intf]['hostname'] = 'cluster-' + intf
+                interfaces[intf]['ip_address'] = '172.20.0.1'
+                interfaces[intf]['netmask'] = '255.255.0.0'
                 interfaces[intf]['active_on_boot'] = True
 
             # static IP for second interface
             if len(intfs) > 1 and intf == intfs[1]:
                 interfaces[intf]['configure'] = True
-                interfaces[intf]['use_dhcp'] = False
-                interfaces[intf]['hostname'] = 'cluster-' + intf
-                interfaces[intf]['ip_address'] = '172.20.0.1'
-                interfaces[intf]['netmask'] = '255.255.0.0'
+                interfaces[intf]['use_dhcp'] = True
                 interfaces[intf]['active_on_boot'] = True
 
         self.kiprofile[self.profile] = {}

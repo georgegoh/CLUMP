@@ -645,6 +645,14 @@ class DB(object):
         compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN',
                              installtype='package')
 
+        # more nodegroups
+        NodeGroups(ngname='compute-disked', nameformat='c#RR-#NN',
+                   installtype='disked')
+        NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
+                   installtype='diskless')
+        NodeGroups(ngname='unmanaged', nameformat='c#RR-#NN',
+                   installtype='unmanaged')
+
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         master_node = Nodes(name='master-0', state='installed', lastupdate=now)
@@ -684,7 +692,13 @@ class DB(object):
         compute.partitions.append(root)
         compute.partitions.append(data)
 
+        # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
+        AppGlobals(kname='InstallerServeDNS', kvalue='1')
+        AppGlobals(kname='InstallerServeNIS', kvalue='0')
+        AppGlobals(kname='InstallerServeNTP', kvalue='0')
+        AppGlobals(kname='InstallerServeNFS', kvalue='0')
+
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
 
