@@ -123,6 +123,14 @@ class BaseRepo(object):
 
         return self.prefix / 'depot' / 'repos' / str(repoid)
 
+    def getInstallerIP(self):
+        """Returns a list of installer ips"""
+
+        row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
+        masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+
+        return [nic.ip for nic in masterNode.nics if nic.ip]
+    
     def UpdateDatabase(self, ngname):
 
         """Update the database with the new repository""" 
@@ -133,6 +141,7 @@ class BaseRepo(object):
         repo = self.db.Repos()
         repo.kits = self.getKits(ngname)
         repo.ostype = self.ostype
+        repo.installers = ';'.join(self.getInstallerIP())
         repo.save()
         repo.flush()
         
