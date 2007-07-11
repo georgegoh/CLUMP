@@ -11,6 +11,7 @@ import os
 from path import path
 import kusu.util.log as kusulog
 from kusu.util.errors import *
+import tempfile
 
 try:
     import subprocess
@@ -100,5 +101,16 @@ def cpio_copytree(src,dst):
     cpioP = subprocess.Popen('cpio -mpdu --quiet %s' % dst,cwd=cwd,stdin=findP.stdout,shell=True)
     cpioP.communicate()
     return cpioP.returncode
+    
+def mkdtemp(**kwargs):
+    """ Creates a temp directory based on KUSU_TMP if available or 
+        defaults to tempfile.mkdtemp behavior. The keyword arguments 
+        will be passed to tempfile.mkdtemp function.
+    """
+    if 'KUSU_TMP' in os.environ and 'dir' not in kwargs:
+        kwargs['dir'] = os.environ['KUSU_TMP']
+    tempfile.mkdtemp(**kwargs)
+        
+        
 
 

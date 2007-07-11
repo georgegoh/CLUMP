@@ -17,6 +17,7 @@ class FileAlreadyExistError(KusuError): pass
 class CommandFailedToRunError(KusuError): pass
 class UserExitError(KusuError): pass
 class UnknownDeviceError(KusuError): pass
+class NotImplementedError(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass
