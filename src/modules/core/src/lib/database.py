@@ -645,6 +645,13 @@ class DB(object):
         compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN',
                              installtype='package')
 
+        kusu_dist = os.environ.get('KUSU_DIST', None)
+
+        if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel']:
+            master.kparamas = 'text noipv6 kssendmac'
+            installer.kparams = 'text noipv6 kssendmac'
+            compute.kparams = 'text noipv6 kssendmac'
+            
         # more nodegroups
         NodeGroups(ngname='compute-disked', nameformat='c#RR-#NN',
                    installtype='disked')

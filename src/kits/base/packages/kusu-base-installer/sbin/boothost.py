@@ -113,11 +113,12 @@ class boothost:
 
         http_ip = data[0]
 
-        query = ("SELECT nodegroups.repoid, networks.device " + 
-                 "FROM nics, nodes, networks, nodegroups " + 
+        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype " + 
+                 "FROM nics, nodes, networks, nodegroups, repos " + 
                  "WHERE nodes.nid=nics.nid " + 
                  "AND nics.netid=networks.netid " +
                  "AND nodegroups.ngid=nodes.ngid " +
+                 "AND nodegroups.repoid=repos.repoid " +
                  "AND nics.mac ='%s'" % mac)
         try:
             self.db.execute(query)
@@ -128,14 +129,17 @@ class boothost:
 
         repoid = data[0]
         ksdevice = data[1]
-
-        #FIXME: Not the best way to do it to serve out the ks.cfg. 
-        # The content of ks.cfg is not dynamic enough
-        kickstart_file = 'http://%s/repos/%s/ks.cfg' % (http_ip, repoid)
+        ostype = data[2].split('-')[0]
+        
         fp.write("prompt 0\n")
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
-        fp.write("        append initrd=%s niihost=%s ks=%s text noipv6 kssendmac ksdevice=%s %s\n" % (initrd, http_ip, kickstart_file, ksdevice, kparams or ''))
+
+        if ostype in ['fedora', 'centos' 'rhel']:
+            kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (http_ip, repoid, http_ip)
+            fp.write("        append initrd=%s niihost=%s ks=%s ksdevice=%s %s\n" % (initrd, http_ip, kickstart_file, ksdevice, kparams or ''))
+        else:
+            fp.write("        append initrd=%s niihost=%s %s\n" % (initrd, http_ip, kparams or ''))
 
         if localboot == True :
             fp.write("\nlabel localdisk\n")
