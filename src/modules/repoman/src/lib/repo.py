@@ -338,29 +338,36 @@ class RedhatYumRepo(BaseRepo):
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
  
-        dest = self.repo_path / 'ks.cfg'
-        if src.exists() and not dest.exists():
+        if not src.exists():
+            return
 
-            row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
-            row = row[0]
-            masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
-            
-            #FIXME: Have to check for correct ip to use
-            niihost = 'http://' + masterNode.nics[0].ip
+        row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
+        row = row[0]
+        masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+        
+        for nic in masterNode.nics:
+            # Ignore any unconfigured nic
+            if not nic.ip:
+                continue
 
-            # web server root is different: /repos/<repoid>
-            index = self.repo_path.splitall().index('repos')
-            repodir = os.path.sep.join(self.repo_path.splitall()[index:])
+            dest = self.repo_path / 'ks.cfg.' + nic.ip
+            if not dest.exists():
 
-            f = open(dest, 'w')
-            try:
-                t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': repodir}])  
-            except:
+                niihost = 'http://' + nic.ip
+
+                # web server root is different: /repos/<repoid>
+                index = self.repo_path.splitall().index('repos')
+                repodir = os.path.sep.join(self.repo_path.splitall()[index:])
+
+                f = open(dest, 'w')
+                try:
+                    t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': repodir}])  
+                except:
+                    f.close()
+                    raise UnableToGenerateFileFromTemplateError, 'Cannot create \'%s\'' % dest
+
+                f.write(str(t))
                 f.close()
-                raise UnableToGenerateFileFromTemplateError, 'Cannot create \'%s\'' % dest
-
-            f.write(str(t))
-            f.close()
 
     def verify(self):
         return True

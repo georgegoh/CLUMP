@@ -158,8 +158,7 @@ class TestCentos5Repo:
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
                  'images/stage2.img', \
-                 'images/updates.img', \
-                 'images/ks.cfg']
+                 'images/updates.img']
         return paths
 
     def checkLayout(self, prefix):
@@ -198,12 +197,18 @@ class TestCentos5Repo:
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
-        assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg').exists()
-      
-        f = open(prefix / 'depot' / 'repos' / repoid / 'ks.cfg', 'r')
-        assert f.readlines()[1].strip()  == 'url --url http://%s/repos/%s' % (self.masterIP1, repoid)
+        row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')
+        row = row[0]
+        masterNode = self.dbs.Nodes.select_by(name=row.kvalue)[0]
 
-        f.close() 
+        for nic in masterNode.nics:
+            if nic.ip: 
+                ip = nic.ip
+                assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg.' + ip).exists()
+      
+                f = open(prefix / 'depot' / 'repos' / repoid / 'ks.cfg.' + ip, 'r')
+                assert f.readlines()[1].strip()  == 'url --url http://%s/repos/%s' % (ip, repoid)
+                f.close() 
  
     def testMakeOSType(self):
         global prefix
