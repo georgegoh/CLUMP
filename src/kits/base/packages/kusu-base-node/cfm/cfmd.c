@@ -28,12 +28,10 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <time.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <setjmp.h>
 #include <math.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -150,6 +148,12 @@ int main(int argc, char* argv[])
   ngid = getNGID() ;
   cfmLog(LOG_DEBUG, "NGID = %i\n", ngid) ;
 
+  if(!ngid)
+    {
+      cfmLog(LOG_FATAL, "Unable to determine the NGID. The /etc/profile.nii is damaged\n") ;
+      exit(-1) ;
+    }
+
   if(mkdaemon) 
     daemonize() ;
 
@@ -240,6 +244,7 @@ static int getSequence()
   FILE* fd = NULL ;
   char buff[16] ;
 
+  memset(buff, 0, sizeof(buff)) ;
   if ((fd = fopen(CFM_SEQUENCE, "r")) == NULL ) 
     return(0) ;
 
@@ -252,27 +257,25 @@ static int getSequence()
   return(0) ;
 }
 
-
 /* setSequence - Write the current sequence number to file */
 static int setSequence(int seq)
 {
   FILE* fd = NULL ;
   char buff[512] ;
 
-  memset(buff, 0, 512) ;
   if ((fd = fopen(CFM_SEQUENCE, "r")) == NULL ) 
     return(0) ;
 
   fgets(buff, sizeof(buff), fd) ;  /* Read in the sequence number */
-  fread(buff, 1, 512, fd) ;
+  memset(buff, 0, sizeof(buff)) ;
+  fread(buff, 1, sizeof(buff)-2, fd) ;
   fclose(fd) ;
 
   if ((fd = fopen(CFM_SEQUENCE, "w")) == NULL ) 
     return(0) ;
 
-  buff[511] = 0 ;
   fprintf(fd, "%i\n", seq) ;
-  fwrite(buff, 1, strlen(buff+1), fd) ;
+  fwrite(buff, 1, strlen(buff), fd) ;
   fclose(fd) ;
 
   return(seq) ;
@@ -423,6 +426,9 @@ int listen4packet(int sd, struct dataPack *dpack)
   memset(rbuff, 0, sizeof(rbuff)) ;
 
   read = recvfrom(sd, rbuff, sizeof(rbuff), 0, NULL, NULL) ;
+  if(read <= 0)
+    return(0) ;
+
   rbuff[read] = 0 ;
 
   if(strncmp(rbuff, "MaRkScFm", strlen("MaRkScFm")))
