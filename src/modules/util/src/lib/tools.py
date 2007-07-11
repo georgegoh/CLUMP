@@ -109,7 +109,7 @@ def mkdtemp(**kwargs):
     """
     if 'KUSU_TMP' in os.environ and 'dir' not in kwargs:
         kwargs['dir'] = os.environ['KUSU_TMP']
-    tempfile.mkdtemp(**kwargs)
+    return tempfile.mkdtemp(**kwargs)
         
         
 
