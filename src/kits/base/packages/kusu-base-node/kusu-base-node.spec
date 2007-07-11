@@ -26,7 +26,7 @@ Release: 0
 License: Copyright 2007 Platform Computing Corporation
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-BuildArchitectures: noarch
+# BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot
 Requires: coreutils 
@@ -51,8 +51,11 @@ This package contains the Kusu Base kit part for nodes.
 ##
 ## BUILD
 ##
-## %build
-## Skipping this because we are not starting with a tar file
+%build
+cd %{name}
+echo "Root = $RPM_BUILD_ROOT"
+make ROOT=$RPM_BUILD_ROOT cfmd
+
 
 ##
 ## PRE

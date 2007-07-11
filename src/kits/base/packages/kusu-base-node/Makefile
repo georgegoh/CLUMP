@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -41,6 +41,8 @@ rpm:
 	# @rm -rf $(HOME)/.rpmmacros
 
 
+cfmd:	
+	cd cfm ;make cfmd
 
 install::
 	mkdir -p $(ROOT)/etc
@@ -54,4 +56,4 @@ install::
 	install -m644 lib/kusu/ipfun.py $(ROOT)/opt/kusu/lib/python/kusu/
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/
 	install -m755 sbin/cfmclient.py $(ROOT)/opt/kusu/sbin/cfmclient
-
+	install -m755 cfm/cfmd $(ROOT)/opt/kusu/sbin/cfmd
