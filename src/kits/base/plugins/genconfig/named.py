@@ -80,9 +80,9 @@ class thisReport(Report):
 
         print primaryIPs
         serverIPs = []
-        query = ('select nics.ip from nics,nodes,nodegroups where '
-                 'nics.nid=nodes.nid and nodegroups.ngname="Installer" '
-                 'and nodegroups.ngid=nodes.ngid')
+        query = ('select nics.ip from nics,nodes where '
+                 'nics.nid=nodes.nid and '
+                 'and nodes.ngid=1')
         try:
             self.db.execute(query)
 

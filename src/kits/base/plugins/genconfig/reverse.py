@@ -102,9 +102,9 @@ class thisReport(Report):
 
         # Print out all the NS entries
         query = ('select nodes.name, nics.ip, networks.suffix from '
-                 'nodes, nodegroups, nics, networks where '
-                 'nodegroups.ngid=nodes.ngid and nics.nid=nodes.nid and '
-                 'nodegroups.ngname="Installer" and networks.netid=nics.netid')
+                 'nodes, nics, networks where '
+                 'nodes.ngid=1 and nics.nid=nodes.nid and '
+                 'networks.netid=nics.netid')
         try:
             self.db.execute(query)
 
