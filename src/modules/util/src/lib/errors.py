@@ -14,6 +14,8 @@ class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
 class FileAlreadyExistError(KusuError): pass
+class DirDoesNotExistError(KusuError): pass
+class DirAlreadyExistError(KusuError): pass
 class CommandFailedToRunError(KusuError): pass
 class UserExitError(KusuError): pass
 class UnknownDeviceError(KusuError): pass
@@ -127,4 +129,6 @@ class InvalidPartitionSchema(KusuError): pass
 
 # buildkit
 class KitSrcAlreadyExists(KusuError): pass
+class PackageBuildError(KusuError): pass
+class KitBuildError(KusuError): pass
 
