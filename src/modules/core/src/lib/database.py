@@ -156,7 +156,7 @@ class Nics(BaseTable):
 class NodeGroups(BaseTable):
     cols = ['repoid', 'ngname', 'installtype', \
             'ngdesc', 'nameformat', 'kernel', 'initrd', \
-            'kparams']
+            'kparams', 'type']
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.ngname, self.repoid,
@@ -445,6 +445,7 @@ class DB(object):
             sa.Column('kernel', sa.String(255)),
             sa.Column('initrd', sa.String(255)),
             sa.Column('kparams', sa.String(255)),
+            sa.Column('type', sa.String(20), nullable=False),
             mysql_engine='InnoDB')
         sa.Index('nodegroups_FKIndex1', nodegroups.c.repoid)
 
@@ -638,12 +639,12 @@ class DB(object):
         # Create the nodegroups
         # #R - rack, #N - rank
         master = NodeGroups(ngname='master', nameformat='master-#N',
-                            installtype='package')
-        installer = NodeGroups(ngname='installer',
+                            installtype='package', type='installer')
+        installer = NodeGroups(ngname='installer', # VERSION+ARCH
                                nameformat='installer-#RR-#NN',
-                               installtype='package') # VERSION+ARCH
+                               installtype='package', type='installer')
         compute = NodeGroups(ngname='compute', nameformat='compute-#RR-#NN',
-                             installtype='package')
+                             installtype='package', type='compute')
 
         kusu_dist = os.environ.get('KUSU_DIST', None)
 
@@ -654,11 +655,11 @@ class DB(object):
             
         # more nodegroups
         NodeGroups(ngname='compute-disked', nameformat='c#RR-#NN',
-                   installtype='disked')
+                   installtype='disked', type='compute')
         NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
-                   installtype='diskless')
+                   installtype='diskless', type='compute')
         NodeGroups(ngname='unmanaged', nameformat='c#RR-#NN',
-                   installtype='unmanaged')
+                   installtype='unmanaged', type='other')
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))

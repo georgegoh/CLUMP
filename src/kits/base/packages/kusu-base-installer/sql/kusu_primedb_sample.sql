@@ -42,19 +42,19 @@ insert into repos_have_kits values (2, 3) ;
 insert into repos_have_kits values (3, 8) ;
 
 # Setup some node groups
-insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
+insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet', 'installer') ;
 
-insert into nodegroups values (2,1,'Compute', 'package', 'Default Compute Node group', 'node#NNNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'Test kernel args in grub.conf for Compute') ;
+insert into nodegroups values (2,1,'Compute', 'package', 'Default Compute Node group', 'node#NNNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'Test kernel args in grub.conf for Compute', 'compute') ;
 
-insert into nodegroups values (3,1,'Compute Diskless', 'diskless', 'Default Diskless Compute Node group', 'host#NNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for diskless Compute') ;
+insert into nodegroups values (3,1,'Compute Diskless', 'diskless', 'Default Diskless Compute Node group', 'host#NNN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for diskless Compute', 'compute') ;
 
-insert into nodegroups values (4,1,'Compute Disked', 'disked', 'Default Disked Imaged Compute Node group', 'c#RR-#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for disked Compute') ;
+insert into nodegroups values (4,1,'Compute Disked', 'disked', 'Default Disked Imaged Compute Node group', 'c#RR-#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'Fedora_6.img.i386', 'Test kernel args in grub.conf for disked Compute', 'compute') ;
 
-insert into nodegroups values (5,1,'test', 'diskless', 'Test image for dependency checks', 'c#RR-#NN', 'vmlinuz', 'Fedora_6.img.i386', 'Test') ;
+insert into nodegroups values (5,1,'test', 'diskless', 'Test image for dependency checks', 'c#RR-#NN', 'vmlinuz', 'Fedora_6.img.i386', 'Test', 'compute') ;
 
-insert into nodegroups values (6,3,'Fedora 7 Installer', 'package', 'Fedora 7 Installer Node group', 'installer#NN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet') ;
+insert into nodegroups values (6,3,'Fedora 7 Installer', 'package', 'Fedora 7 Installer Node group', 'installer#NN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet', 'installer') ;
 
-insert into nodegroups values (7,3,'Fedora 7 Compute', 'diskless', 'Fedora 7 Diskless Node group', 'host-diskless-#NNNN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'Test kernel args in grub.conf for Fedora 7 diskless Compute') ;
+insert into nodegroups values (7,3,'Fedora 7 Compute', 'diskless', 'Fedora 7 Diskless Node group', 'host-diskless-#NNNN', 'vmlinuz-2.6.20-1.3003.fc7', 'Fedora_7.img.x86_64', 'Test kernel args in grub.conf for Fedora 7 diskless Compute', 'compute') ;
 
 # Setup the nodes entries for the installer
 insert into nodes values (1,1,'installer00', NULL, NULL, NULL, 'Installed', 1, '2007/1/1 2:22:22', 0, 0) ;

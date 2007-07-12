@@ -109,6 +109,7 @@ CREATE TABLE nodegroups (
   kernel VARCHAR(255) NULL,
   initrd VARCHAR(255) NULL,
   kparams VARCHAR(255) NULL,
+  type VARCHAR(20) NOT NULL,
   PRIMARY KEY(ngid),
   INDEX nodegroups_FKIndex1(repoid)
 );
