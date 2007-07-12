@@ -136,10 +136,12 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
 
     def save(self, db, profile):
         ngs = db.NodeGroups.select()
+        ngids = [row.ngid for row in db.NGHasComp.select()]
 
         for ng in ngs:
-            ng.ngname = ng.ngname + '-' +  profile['longname']
-            ng.initrd = profile['initrd']
-            ng.kernel = profile['kernel']
+            if ng.ngid in ngids:
+                ng.ngname = ng.ngname + '-' +  profile['longname']
+                ng.initrd = profile['initrd']
+                ng.kernel = profile['kernel']
 
         db.flush()

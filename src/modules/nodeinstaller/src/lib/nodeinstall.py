@@ -11,6 +11,7 @@ from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
+from kusu.hardware import probe
 from whrandom import choice
 from cStringIO import StringIO
 import string
@@ -374,9 +375,16 @@ class KickstartFromNIIProfile(object):
         logger.debug('Preparing network profile')
         nw = {}
         # network profile dict
-        nw['interfaces'] = {}
+        nw['interfaces'] = probe.getPhysicalInterfaces()
+        unused_nics = []
         default_gateway = ''
-        for nic in ni.nics:
+        for nic in nw['interfaces']:
+            if nic not in ni.nics:
+                logger.debug('ni.nics does not contain nic %s', nic)
+                # remember this nic for removal outside this for-loop
+                unused_nics.append(nic)
+                continue
+
             logger.debug('ni.nics info for device: %s' % nic)
             logger.debug('ni.hostname: %s' % ni.name)         
             logger.debug('ni.nics[%s]["suffix"]: %s' % (nic,ni.nics[nic]['suffix']))               
@@ -384,16 +392,21 @@ class KickstartFromNIIProfile(object):
             logger.debug('ni.nics[%s]["ip"]: %s' % (nic,ni.nics[nic]['ip']))
             logger.debug('ni.nics[%s]["subnet"]: %s' % (nic,ni.nics[nic]['subnet']))            
             nicinfo = {'configure': True,
-                    'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
-                    'ip_address': ni.nics[nic]['ip'],
-                    'netmask': ni.nics[nic]['subnet'],
-                    'active_on_boot': translateBoolean(ni.nics[nic]['boot'])
-                    }
+                       'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
+                       'ip_address': ni.nics[nic]['ip'],
+                       'netmask': ni.nics[nic]['subnet'],
+                       'active_on_boot': translateBoolean(ni.nics[nic]['boot'])
+                       }
                     
             if ni.nics[nic]['gateway']:
                 default_gateway = ni.nics[nic]['gateway']
 
-            nw['interfaces'][nic] = nicinfo
+            nw['interfaces'][nic].update(nicinfo)
+
+
+        for nic in unused_nics:
+            # remove unused nics, configuring these will raise KeyErrors
+            nw['interfaces'].pop(nic)
 
         nw['fqhn_use_dhcp'] = False     # always static hostnames
         nw['fqhn'] = '.'.join([ni.name, ni.appglobal['DNSZone']])

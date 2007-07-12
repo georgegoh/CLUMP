@@ -247,9 +247,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
 
         # we want interfaces in alphabetical order
-        intfs = interfaces.keys()
-        intfs.sort()
-
+        intfs = sorted(interfaces.keys())
         for intf in intfs:
             # default to using DHCP and active on boot
             interfaces[intf].update({'configure': False,

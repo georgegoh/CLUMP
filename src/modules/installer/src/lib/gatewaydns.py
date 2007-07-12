@@ -237,13 +237,6 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
             if profile['dns3']:
                 db.AppGlobals(kname='dns3', kvalue=profile['dns3'])
 
-            # required for startip assignment
-            exclude = [profile['default_gw'], profile['dns1']]
-            if profile['dns2']:
-                exclude.append(profile['dns2'])
-            if profile['dns3']:
-                exclude.append(profile['dns3'])
-
             nets = db.Networks.select()
             for net in nets:
                 nw = IP(net.network + '/' + net.subnet)
@@ -255,6 +248,6 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
                     # assign the starting IP
                     net.startip = nextIP(net.network, net.subnet, net.startip,
-                                         net.inc, exclude)
+                                         net.inc)
 
             db.flush()
