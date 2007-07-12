@@ -60,7 +60,7 @@ Requires: pdsh-mod-dshgroup >= 2.10
 Requires: kusu-cheetah >= 0.3
 Requires: kusu-pysqlite >= 0.3
 Requires: kusu-ipy >= 0.3
-
+Requires: initrd-templates
 %description
 This component provides the node with the Kusu management tools for the 
 installers.
