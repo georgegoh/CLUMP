@@ -64,7 +64,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             else:
                 errList.append(msg % ('address', dups[0]))
 
-        rv, dups = self.checkDuplicates('hostname')
+        rv, dups = self.checkDuplicates('netname')
         if not rv:
             msg = _('Identical %s %s assigned to more than one interface.')
             if len(dups) > 1:
@@ -163,7 +163,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 else:
                     entrystr = interfaces[intf]['ip_address'] + '/' + \
                                interfaces[intf]['netmask'] + ' ' + \
-                               interfaces[intf]['hostname']
+                               interfaces[intf]['netname']
 
                 if interfaces[intf]['active_on_boot']:
                     entrystr = '* ' + intf + ' ' + entrystr
@@ -213,14 +213,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
                 newnic.boot = interfaces[intf]['active_on_boot']
  
-                # DANGER!!!! HARDCODING OCS-STYLE NETWORKS
-                if intf == 'eth1':
-                    netname = 'public-%s' % intf
-                else:
-                    netname = 'net-%s' % intf
-
                 newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
-                                     device=intf, netname=netname,
+                                     device=intf,
+                                     netname=interfaces[intf]['netname'],
                                      suffix='-' + intf)
                 
                 if not interfaces[intf]['use_dhcp']:
@@ -251,8 +246,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         for intf in intfs:
             # default to using DHCP and active on boot
             interfaces[intf].update({'configure': False,
-                                     'use_dhcp': True,
-                                     'hostname': '',
+                                     'use_dhcp': False,
+                                     'netname': '',
                                      'ip_address': '',
                                      'netmask': '',
                                      'active_on_boot': True})
@@ -261,7 +256,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             if len(intfs) > 0 and intf == intfs[0]:
                 interfaces[intf]['configure'] = True
                 interfaces[intf]['use_dhcp'] = False
-                interfaces[intf]['hostname'] = 'cluster-' + intf
+                interfaces[intf]['netname'] = 'cluster'
                 interfaces[intf]['ip_address'] = '172.20.0.1'
                 interfaces[intf]['netmask'] = '255.255.0.0'
                 interfaces[intf]['active_on_boot'] = True
@@ -269,7 +264,10 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             # static IP for second interface
             if len(intfs) > 1 and intf == intfs[1]:
                 interfaces[intf]['configure'] = True
-                interfaces[intf]['use_dhcp'] = True
+                interfaces[intf]['use_dhcp'] = False
+                interfaces[intf]['netname'] = 'public'
+                interfaces[intf]['ip_address'] = '192.168.0.100'
+                interfaces[intf]['netmask'] = '255.255.255.0'
                 interfaces[intf]['active_on_boot'] = True
 
         self.kiprofile[self.profile] = {}
@@ -335,27 +333,35 @@ class ConfigureIntfScreen:
 
         # IP address/netmask text fields
         entryWidth = 22
-        self.ip_address = kusuwidgets.LabelledEntry(labelTxt=_('IP Address '),
-                                                    width=entryWidth)
+        self.ip_address = \
+            kusuwidgets.LabelledEntry(labelTxt=_('IP Address '.rjust(13)),
+                                      width=entryWidth)
         self.ip_address.addCheck(verifyIP)
         self.netmask = \
-            kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(11)),
+            kusuwidgets.LabelledEntry(labelTxt=_('Netmask '.rjust(13)),
                                       width=entryWidth)
         self.netmask.addCheck(verifyIP)
-        self.hostname = \
-            kusuwidgets.LabelledEntry(labelTxt=_('Host name '.rjust(11)),
+        self.netname = \
+            kusuwidgets.LabelledEntry(labelTxt=_('Network name '.rjust(13)),
                                                   width=entryWidth)
-        self.hostname.addCheck(verifyHostname)
+        self.netname.addCheck(verifyHostname)
 
         # initialize fields
         self.populateIPs()
 
-        subgrid = snack.Grid(1, 5)
-        subgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
-        subgrid.setField(self.hostname, 0, 1, anchorLeft=1)
-        subgrid.setField(self.ip_address, 0, 2, anchorLeft=1)
-        subgrid.setField(self.netmask, 0, 3, anchorLeft=1)
-        subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 0), anchorLeft=1)
+        ### Removing DHCP temporarily, fix in KUSU-207
+        subgrid = snack.Grid(1, 4)
+        subgrid.setField(self.netname, 0, 0, (0, 1, 0, 0), anchorLeft=1)
+        subgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
+        subgrid.setField(self.netmask, 0, 2, anchorLeft=1)
+        subgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
+        #subgrid = snack.Grid(1, 5)
+        #subgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
+        #subgrid.setField(self.netname, 0, 1, anchorLeft=1)
+        #subgrid.setField(self.ip_address, 0, 2, anchorLeft=1)
+        #subgrid.setField(self.netmask, 0, 3, anchorLeft=1)
+        #subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 0), anchorLeft=1)
+        ###
         gridForm.add(subgrid, 0, 2)
 
         # add OK and Cancel buttons
@@ -392,12 +398,12 @@ class ConfigureIntfScreen:
         # add callback for toggling static IP fields
         configd = {'control': self.configdevice,
                    'disable': (self.use_dhcp, self.active_on_boot,
-                                self.hostname, self.ip_address, self.netmask),
+                                self.netname, self.ip_address, self.netmask),
                    'enable': (self.use_dhcp, self.active_on_boot),
                    'invert': False}
         dhcpd = {'control': self.use_dhcp,
-                 'disable': (self.hostname, self.ip_address, self.netmask),
-                 'enable': (self.hostname, self.ip_address, self.netmask),
+                 'disable': (self.netname, self.ip_address, self.netmask),
+                 'enable': (self.netname, self.ip_address, self.netmask),
                  'invert': True}
 
         self.configdevice.setCallback(enabledByValue, [dhcpd, configd])
@@ -415,9 +421,9 @@ class ConfigureIntfScreen:
 
         errList = []
 
-        rv, msg = self.hostname.verify()
+        rv, msg = self.netname.verify()
         if rv is None:
-            errList.append(_('Host name is empty.'))
+            errList.append(_('Network name is empty.'))
         elif not rv:
             errList.append(msg)
 
@@ -459,7 +465,7 @@ class ConfigureIntfScreen:
         self.interface['use_dhcp'] = bool(self.use_dhcp.value())
         self.interface['active_on_boot'] = bool(self.active_on_boot.value())
 
-        self.interface['hostname'] = self.hostname.value()
+        self.interface['netname'] = self.netname.value()
         self.interface['ip_address'] = self.ip_address.value()
         self.interface['netmask'] = self.netmask.value()
 
@@ -483,7 +489,7 @@ class ConfigureIntfScreen:
         else:
             self.active_on_boot.setValue(' ')
 
-        self.hostname.setEntry(self.interface['hostname'])
+        self.netname.setEntry(self.interface['netname'])
         self.ip_address.setEntry(self.interface['ip_address'])
         self.netmask.setEntry(self.interface['netmask'])
 

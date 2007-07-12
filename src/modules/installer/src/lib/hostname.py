@@ -63,7 +63,10 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
-        self.screenGrid = snack.Grid(1, 3)
+        ### Removing DHCP temporarily, fix in KUSU-207
+        #self.screenGrid = snack.Grid(1, 3)
+        self.screenGrid = snack.Grid(1, 2)
+        ###
         entryWidth = 33
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
@@ -97,10 +100,14 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        self.screenGrid.setField(self.use_dhcp, col=0, row=1,
-                                 padding=(0, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.hostname, col=0, row=2,
-                                 padding=(3, 0, 0, 1), anchorLeft=1)
+        ### Removing DHCP temporarily, fix in KUSU-207
+        self.screenGrid.setField(self.hostname, col=0, row=1,
+                                 padding=(3, 1, 0, 3), anchorLeft=1)
+        #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
+        #                         padding=(0, 1, 0, 0), anchorLeft=1)
+        #self.screenGrid.setField(self.hostname, col=0, row=2,
+        #                         padding=(3, 0, 0, 1), anchorLeft=1)
+        ###
 
     def validate(self):
         """
