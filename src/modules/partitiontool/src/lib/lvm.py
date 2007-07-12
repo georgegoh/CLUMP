@@ -167,7 +167,8 @@ class LogicalVolumeGroup(object):
     def __init__(self, name, extent_size='32M', pv_list=[], createNew=False):
         logger.info('Creating new logical volume group %s' % name)
         if not pv_list:
-           raise VolumeGroupMustHaveAtLeastOnePhysicalVolumeError
+            raise VolumeGroupMustHaveAtLeastOnePhysicalVolumeError, \
+                'Volume group must have at least one physical volume'
         self.name = name
         self.pv_dict = {}
         self.lv_dict = {}
@@ -223,7 +224,8 @@ class LogicalVolumeGroup(object):
         """Add a physical volume(i.e., partition) into this group."""
         logger.info('Adding physical volume %s to volume group %s' % (physicalVol.name, self.name))
         if physicalVol.name in self.pv_dict.keys():
-            raise PhysicalVolumeAlreadyInLogicalGroupError
+            raise PhysicalVolumeAlreadyInLogicalGroupError, \
+                'Physical volume already in logical group'
         self.pv_dict[physicalVol.name] = physicalVol
         physicalVol.group = self
         queueCommand(lvm.extendVolumeGroup, (self.name, physicalVol.partition.path))
@@ -325,7 +327,8 @@ class LogicalVolume(object):
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
         if extents > vg_extentsFree:
-            raise InsufficientFreeSpaceInVolumeGroupError
+            raise InsufficientFreeSpaceInVolumeGroupError, \
+                'Insufficient free space in volume group'
         self.size_MB = extents * volumeGroup.extent_size
         self.name = name
         self.group = volumeGroup
