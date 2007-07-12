@@ -54,6 +54,13 @@ class App:
         ngname = 'compute' + '-' + longname
         rfactory.make(ngname, 'Repo for ' + ngname)
         
+        ngname = 'compute-diskless' + '-' + longname
+        rfactory.make(ngname, 'Repo for ' + ngname)
+        
+        ngname = 'compute-disked' + '-' + longname
+        rfactory.make(ngname, 'Repo for ' + ngname)
+        
+
 if __name__ == "__main__":
     app = App()
     app.run()
