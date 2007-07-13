@@ -116,12 +116,12 @@ class KickstartFactory(BaseFactory):
                 pass
 
         if not networks['gw_dns_use_dhcp']: # manual gw and dns
-            str = '--gateway=%s --nameserver=%s' % \
+            str = 'network --gateway=%s --nameserver=%s' % \
                   (networks['default_gw'], networks['dns1']) # Only 1 dns allowed
             network_lines.append(str)
 
         if not networks['fqhn_use_dhcp']: # manual hostname
-            str = '--hostname=%s' % networks['fqhn']
+            str = 'network --hostname=%s' % networks['fqhn']
             network_lines.append(str)
  
         return network_lines
