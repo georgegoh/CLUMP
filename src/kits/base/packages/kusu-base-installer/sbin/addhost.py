@@ -246,7 +246,8 @@ class AddHostApp(KusuApp):
                      nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedInterface)
                      print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
-                     pluginActions.plugins_add(nodeName)
+                     if pluginActions:
+                         pluginActions.plugins_add(nodeName)
                      myNodeInfo.nodesInstalled.append([nodeName, macaddr])
                  #else:
                      #print "Duplicate: %s, Ignoring" % macaddr
@@ -284,11 +285,13 @@ class AddHostApp(KusuApp):
                      self.parser.error(kusuApp._("addhost_options_invalid_node"))
 
                  # Ask all plugins to call removed() function
-                 pluginActions.plugins_removed(delnode)
+                 if pluginActions:
+                    pluginActions.plugins_removed(delnode)
 
                  # Handle removing node from db.
                  myNode.deleteNode(delnode)
-            pluginActions.plugins_finished()
+            if pluginActions:
+               pluginActions.plugins_finished()
             sys.exit(0)
 
         elif self._options.remove == []:
@@ -300,8 +303,9 @@ class AddHostApp(KusuApp):
             #myNode.doUpdates()
 
             # Ask all plugins to call updated() function
-            pluginActions.plugins_updated()
-            pluginActions.plugins_finished()
+            if pluginActions:
+               pluginActions.plugins_updated()
+               pluginActions.plugins_finished()
             sys.exit(0)
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
@@ -358,7 +362,8 @@ class AddHostApp(KusuApp):
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
         if len(myNodeInfo.nodesInstalled):
-            pluginActions.plugins_finished()
+            if pluginActions:
+               pluginActions.plugins_finished()
  
 """ AddHostPlugin class
     This class is a virtual used to be implemented by plugins """
@@ -486,7 +491,8 @@ class NodeGroupWindow(USXBaseScreen):
                 return NAV_QUIT
         else:
             if len(myNodeInfo.nodesInstalled):
-                pluginActions.plugins_finished()
+                if pluginActions:
+                   pluginActions.plugins_finished()
             return NAV_QUIT
  
     def exitAction(self, data=None):
@@ -494,7 +500,8 @@ class NodeGroupWindow(USXBaseScreen):
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
         if len(myNodeInfo.nodesInstalled):
-            pluginActions.plugins_finished()
+            if pluginActions:
+               pluginActions.plugins_finished()
         return NAV_QUIT
 
     def backAction(self):
@@ -701,7 +708,8 @@ class WindowNodeStatus(NodeGroupWindow):
                         self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                         nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface)
                         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
-                        pluginActions.plugins_add(nodeName)
+                        if pluginActions:
+                           pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodesInstalled.append([nodeName, macAddress])
                         del self.aNode
                     
@@ -712,7 +720,8 @@ class WindowNodeStatus(NodeGroupWindow):
                            self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
                            self.myNode.replaceNICBootEntry (myNodeInfo.replaceNodeName, macAddress)
                            # Call Replace mode plugins
-                           pluginActions.plugins_replaced(myNodeInfo.replaceNodeName)
+                           if pluginActions:
+                              pluginActions.plugins_replaced(myNodeInfo.replaceNodeName)
                            return NAV_QUIT
                     del self.myNode
         
