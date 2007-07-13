@@ -98,11 +98,6 @@ class PhysicalVolume(object):
           a. size
           b. extents
     """
-    name = None
-    partition = None
-    group = None
-    on_disk = None
-    delete_flag = None
 
     def remove(path):
         """Static method to remove a physical volume."""
@@ -151,13 +146,6 @@ class LogicalVolumeGroup(object):
     """A logical volume group consists of physical volumes that are combined
        to form a shared pool of disk space. Subsequently, it can be divided
        into several logical volumes."""
-    name = None
-    pv_dict = None
-    lv_dict = None
-    extent_size_humanreadable = None
-    extent_size = 0
-    on_disk = None
-    deleted = None
 
     def remove(name):
         """Static method used on a path."""
@@ -172,6 +160,7 @@ class LogicalVolumeGroup(object):
         self.name = name
         self.pv_dict = {}
         self.lv_dict = {}
+        self.deleted = False
         self.extent_size_humanreadable = extent_size
         self.extent_size = self.parsesize(extent_size)
         self.on_disk = False
@@ -310,14 +299,6 @@ class LogicalVolume(object):
           b. extents
           c. path
     """
-    name = None
-    group = None
-    extents = 0
-    fs_type = None
-    mountpoint = None
-    on_disk = None
-    leave_unchanged = None
-    do_not_format = None
 
     def remove(path):
         """Static method used on a path."""
@@ -352,7 +333,7 @@ class LogicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'group', 'fs_type', 'mountpoint', 'on_disk', 'leave_unchanged', 'do_not_format', 'size_MB']:
+        if name in ['name', 'group', 'fs_type', 'mountpoint', 'mountedpoint', 'on_disk', 'leave_unchanged', 'do_not_format', 'size_MB']:
             object.__setattr__(self, name, value)
         elif name == 'extents':
             object.__setattr__(self, name, long(value))
@@ -385,20 +366,39 @@ class LogicalVolume(object):
         args = ''
         if readonly:
             args = args + '-r'
-        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type, self.path, mountpoint, args),
+        fs_arg = ''
+        if self.fs_type: fs_arg = '-t %s' % self.fs_type
+        p = subprocess.Popen('mount %s %s %s %s' % (fs_arg, self.path, mountpoint, args),
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        logger.debug('Mount stdout: %s, stderr: %s' % (out, err))
+        returncode = p.returncode
+        self.mountedpoint = mountpoint
+
+        if returncode:
+            err_msg =  'Unable to mount %s on %s'  % (self.path, mountpoint)
+            logger.error(err_msg + err)
+            raise MountFailedError, err_msg
+        else:
+            logger.info('Mounted %s on %s' % (self.path, mountpoint))
+
 
     def unmount(self):
         """Unmounts this partition."""
-        p = subprocess.Popen('umount %s' % self.path,
+        p = subprocess.Popen('umount %s' % self.mountedpoint,
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
+        returncode = p.returncode
+        if returncode:
+            err_msg =  'Unable to unmount %s from %s'  % (self.path, self.mountedpoint)
+            logger.error(err_msg + err)
+            raise MountFailedError, err_msg
+        else:
+            logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
+
 
     def format(self):
         if self.leave_unchanged or self.do_not_format:

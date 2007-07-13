@@ -468,7 +468,7 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
-        elif name in ['disk', 'pedPartition', 'mountpoint', 'leave_unchanged',
+        elif name in ['disk', 'pedPartition', 'mountpoint', 'mountedpoint', 'leave_unchanged',
                       'on_disk', 'do_not_format']:
             object.__setattr__(self, name, value)
         else:
@@ -487,10 +487,12 @@ class Partition(object):
             args = args + '-r'
 
         if not exists(mountpoint):
-            err_msg = 'Mount point: %s does not exists' % mountpoint
+            err_msg = 'Mount point: %s does not exist' % mountpoint
             raise MountFailedError, err_msg
-            
-        p = subprocess.Popen('mount -t %s %s %s %s' % (self.fs_type,
+
+        fs_arg = ''
+        if self.fs_type: fs_arg = '-t %s' % self.fs_type            
+        p = subprocess.Popen('mount %s %s %s %s' % (fs_arg,
                                                        self.path,
                                                        mountpoint,
                                                        args),
@@ -499,22 +501,30 @@ class Partition(object):
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
         returncode = p.returncode
-        
+        self.mountedpoint = mountpoint
 
         if returncode:
             err_msg =  'Unable to mount %s on %s'  % (self.path, mountpoint)
-            logger.error(err_msg)
+            logger.error(err_msg + err)
             raise MountFailedError, err_msg
         else:
             logger.info('Mounted %s on %s' % (self.path, mountpoint))
 
     def unmount(self):
         """Unmounts this partition."""
-        p = subprocess.Popen('umount %s' % self.path,
+        p = subprocess.Popen('umount %s' % self.mountedpoint,
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
+        returncode = p.returncode
+        if returncode:
+            err_msg =  'Unable to unmount %s from %s'  % (self.path, self.mountedpoint)
+            logger.error(err_msg + err)
+            raise MountFailedError, err_msg
+        else:
+            logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
+
 
     def format(self):
         """Format this partition with the FS type defined."""

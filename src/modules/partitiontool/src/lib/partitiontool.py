@@ -58,10 +58,13 @@ import parted
 import subprocess
 from lvm import *
 from common import *
+from path import path
 import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
 from kusu.util.errors import *
+from kusu.util.tools import mkdtemp
+from kusu.util.testing import runCommand
 
 logger = kusulog.getKusuLog('partitiontool')
 #import logging
@@ -307,6 +310,108 @@ class DiskProfile(object):
                                     lvg_probe_dict,
                                     lv_probe_dict)
 
+        if not fresh:
+            runCommand('lvm vgchange -ay')
+            self.populateMountPoints()
+
+    def populateMountPoints(self):
+        """Look through the partitions and LV's to determine mountpoints."""
+        logger.debug('Populate mount points.')
+        # Check the partitions and logical volumes
+        m_parts = self.getMountablePartitions()
+        m_lvs = self.getMountableLVs()
+        m_list = m_parts + m_lvs
+        for p in m_list:
+            found, loc = self.lookForFstab(p)
+            if found:
+                self.__extractFstabToMountpoints(p, loc)
+                return
+
+    def __extractFstabToMountpoints(self, device, loc):
+        """For linux-type systems"""
+        # get the temp directory to mount the device.
+        mntpnt = mkdtemp()
+
+        # mount the device.
+        device.mount(mountpoint=mntpnt, readonly=True)
+        fstab_loc = str(path(mntpnt) / path(loc))
+        # open fstab file and filter out comments.
+        fstab = open(fstab_loc)
+        f_lines = [l for l in fstab.readlines() if l[0] != '#']
+        fstab.close()
+        device.unmount()
+
+        for l in f_lines:
+            # look for a mountable entry and append it to our dict.
+            dev, mntpnt, fs_type = l.split()[:3]
+            if fs_type in self.mountable_fsType.keys() or \
+               fs_type == 'swap':
+                vol = self.findDevice(dev)
+                if vol:
+                    self.mountpoint_dict[mntpnt] = vol
+                    vol.mountpoint = mntpnt
+
+    def findDevice(self, dev):
+        """Find a device."""
+        logger.debug('find device')
+        if dev.startswith('UUID='):
+            # TODO find device with matching UUID.
+            logger.warning('fstab file uses UUID signatures. This is not yet supported.')
+
+        if dev.startswith('LABEL='):
+            # TODO find device with matching label.
+            logger.warning('Encountered label, but is not yet supported.')
+
+        # Check physical partitions.
+        for d in self.disk_dict.itervalues():
+            if dev.startswith(d.path):
+                for p in d.partition_dict.itervalues():
+                    if dev == p.path:
+                        return p
+
+        # Check logical volumes.
+        for lv in self.lv_dict.itervalues():
+            if dev == lv.path:
+                return lv
+
+        return None
+
+    def getMountablePartitions(self):
+        logger.debug('get mountable partitions')
+        mountable_parts = []
+        for disk in self.disk_dict.itervalues():
+            for p in disk.partition_dict.itervalues():
+                if self.mountable_fsType.has_key(p.fs_type) and \
+                   self.mountable_fsType[p.fs_type]:
+                    mountable_parts.append(p)
+        return mountable_parts
+
+    def getMountableLVs(self):
+        logger.debug('get mountable LVs')
+        mountable_lvs = []
+        mntpnt = mkdtemp()
+        for lv in self.lv_dict.itervalues():
+            try:
+                lv.mount(mountpoint=mntpnt, readonly=True)
+                lv.unmount()
+                mountable_lvs.append(lv)
+            except MountFailedError:
+                continue
+        return mountable_lvs
+
+    def lookForFstab(self, partition):
+        """If found, returns a tuple (True, <location>),
+           Else, returns (False, None)
+        """
+        mntpnt = mkdtemp()
+        partition.mount(mountpoint=mntpnt, readonly=True)
+        loc = path(mntpnt) / path('etc/fstab')
+        loc_exists = loc.exists()
+        partition.unmount()
+        if loc_exists:
+            return True, 'etc/fstab'
+        return False, None
+
     def __wipeLVMObjects(self, pv_probe_dict, lvg_probe_dict, lv_probe_dict):
         logger.debug('Wiping LVs.')
         for lv_path in lv_probe_dict.iterkeys():
@@ -334,6 +439,7 @@ class DiskProfile(object):
                               if pv.group == lvg_name]
             lvg = LogicalVolumeGroup(lvg_name, lvg_prop_dict['extent_size'],
                                      pv_list)
+            lvg.on_disk = True
             self.lvg_dict[lvg_name] = lvg
 
         logger.debug('Creating LV objects.')
@@ -342,6 +448,7 @@ class DiskProfile(object):
             lvg = self.lvg_dict[lvg_name]
             lv_name = basename(lv_path)
             lv = LogicalVolume(lv_name, lvg, 0)
+            lv.on_disk = True
             lv.extents = lv_prop_dict['extents']
             lvg.lv_dict[lv_name] = lv
             self.lv_dict[lv_name] = lv

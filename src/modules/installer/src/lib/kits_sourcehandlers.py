@@ -136,11 +136,11 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     verified = True
     err_list = []
     if kiprofile['OS'] != distro.ostype:
-        err_list.append('OS:%s\tMedia OS:%s' % (kiprofile['OS'],
+        err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
                                                distro.ostype or 'Unknown'))
         verified = False
     if kiprofile['OS_VERSION'] != distro.getVersion():
-        err_list.append('Version:%s\tMedia Version:%s' % (kiprofile['OS_VERSION'],
+        err_list.append('Version:%s Media Version:%s' % (kiprofile['OS_VERSION'].ljust(5),
                                                          distro.getVersion() or 'Unknown'))
         verified = False 
     if kiprofile['OS_ARCH'] != distro.getArch():

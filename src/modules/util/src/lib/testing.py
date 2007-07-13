@@ -25,7 +25,6 @@ def runCommand(cmd):
                      stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE)
     out, err = p.communicate()
-    print '"%s" stdout: %s stderr: %s' %(cmd, out, err)
     return out, err
 
 def createLoopbackDevice(size):
