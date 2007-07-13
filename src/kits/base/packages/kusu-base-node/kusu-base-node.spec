@@ -23,9 +23,9 @@ Summary: Base Kit for Nodes
 Name: kusu-base-node
 Version: 1.0
 Release: 0
-License: Copyright 2007 Platform Computing Corporation
+License: Copyright 2007 Platform Computing Inc
 Group: System Environment/Base
-Vendor: Platform Computing Corporation
+Vendor: Platform Computing Inc
 # BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot

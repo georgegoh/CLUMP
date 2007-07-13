@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -22,9 +22,9 @@ Summary: Template Initial RAM disks for Image based installs
 Name: initrd-templates
 Version: 1.0
 Release: 0
-License: Copyright 2007 Platform Computing Corporation
+License: Copyright 2007 Platform Computing Inc
 Group: System Environment/Base
-Vendor: Platform Computing Corporation
+Vendor: Platform Computing Inc
 BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot

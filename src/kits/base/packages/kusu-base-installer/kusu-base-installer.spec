@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -24,7 +24,7 @@ Version: 1.0
 Release: 0
 License: GPLv2
 Group: System Environment/Base
-Vendor: Platform Computing Corporation
+Vendor: Platform Computing Inc
 BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot

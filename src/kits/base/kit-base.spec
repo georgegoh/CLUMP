@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -13,7 +13,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
 #
 Summary: Base Kit
 Name: kit-base
@@ -21,7 +20,7 @@ Version: 0.1
 Release: 0
 License: GPLv2
 Group: System Environment/Base
-Vendor: Platform Computing Corporation
+Vendor: Platform Computing Inc
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
 AutoReq: no

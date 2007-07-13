@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Corporation
+# Copyright (C) 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -22,7 +22,7 @@ Version: 0.1
 Release: 0
 License: GPLv2
 Group: System Environment/Base
-Vendor: Platform Computing Corporation
+Vendor: Platform Computing Inc
 Requires: kusu-base-node >= 1.0
 
 BuildArchitectures: noarch
