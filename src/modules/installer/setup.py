@@ -24,7 +24,8 @@ setup(name="kusu-installer-text",
       data_files=[('share/po', ['src/po/kusuapps.po']),
                   ('share/doc', ['src/doc/LICENSE']),
                   ('etc', ['src/etc/lang-names']),
-                  ('etc', ['src/etc/lang-table'])],
+                  ('etc', ['src/etc/lang-table']),
+                  ('etc/templates', ['src/etc/templates/ntp.conf.tmpl'])],
       scripts=['src/bin/installer',
                'src/bin/test']
      )

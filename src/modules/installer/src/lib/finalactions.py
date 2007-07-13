@@ -12,6 +12,7 @@ import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
+from Cheetah.Template import Template
 
 logger = kusulog.getKusuLog('installer.final')
 
@@ -142,3 +143,33 @@ def mountKusuMntPts(prefix, disk_profile):
         if d.has_key(m):
             d[m].mount(mntpnt)
 
+def writeNTP(prefix, kiprofile):
+    prefix = path(prefix)
+    
+    ntp = path(prefix / 'etc' / 'ntp.conf')
+    ntp.parent.makedirs()
+
+    kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+    src = kusu_root / 'etc' / 'templates' / 'ntp.conf.tmpl'
+
+    servers = []
+    servers.append(kiprofile['Timezone']['ntp_server'])
+    
+    restrictIPs = {}
+    for intf, v in kiprofile['Network']['interfaces'].items():
+        # interface is being configured, use static ip and activated on boot
+        if v['configure'] and not v['use_dhcp'] and v['active_on_boot']:
+            restrictIPs[v['ip_address']] = v['netmask']
+    
+    try:
+        t = Template(file=str(src), searchList=[{'restrictIPs':restrictIPs,'servers':servers}])
+        f = open(ntp, 'w')
+        f.write(str(t))
+        f.close()
+        logger.info('Created ntp.conf')
+    except:
+        if ntp.exists():
+            ntp.remove()
+        logger.warn('Unable to create ntp.conf')
+
+    

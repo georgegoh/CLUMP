@@ -111,6 +111,11 @@ if [ -f /etc/dhcpd.conf ]; then
     /sbin/chkconfig dhcpd on
 fi
 
+if [ -f /etc/ntp.conf ]; then
+    /etc/init.d/ntpd start
+    /sbin/chkconfig ntpd on
+fi
+
 # Add entry to motd
 echo "Kusu $VERSION Installer Node" >> /etc/motd
 

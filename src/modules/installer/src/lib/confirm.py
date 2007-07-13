@@ -109,10 +109,10 @@ class ConfirmScreen(InstallerScreen):
          self.logger.debug('Network set up.')
          prog_dlg.close()
 
-         #prog_dlg = self.selector.popupProgress('Setting Up Mountpoints', 'Setting up mountpoints...')
-         #mountKusuMntPts(mntpnt, disk_profile)
-         #self.logger.debug('Kusu mount points set up')
-         #prog_dlg.close()
+         prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
+         writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+         self.logger.debug('Network time set up.')
+         prog_dlg.close()
 
          prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
          makeRepo(self.kiprofile)
