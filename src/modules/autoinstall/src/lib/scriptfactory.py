@@ -111,10 +111,15 @@ class KickstartFactory(BaseFactory):
                           (intf, v['ip_address'], v['netmask'], v['active_on_boot'])
 
                 if not networks['gw_dns_use_dhcp']: # manual gw and dns
-                    str = str + ' --gateway=%s --nameserver=%s' % \
-                          (networks['default_gw'], ','.join(dns))
+                    if networks.has_key('default_gw') and networks['default_gw']:
+                        str = str + ' --gateway=%s'% networks['default_gw']
+                    
+                    if dns:
+                        str = str + ' --nameserver=%s' % ','.join(dns)
                    
-                if not networks['fqhn_use_dhcp']: # manual hostname
+                if not networks['fqhn_use_dhcp'] \
+                   and networks.has_key('fqhn') and networks['fqhn']: 
+                    # manual hostname
                     str = str + ' --hostname %s' % networks['fqhn']
                 
                 network_lines.append(str)
