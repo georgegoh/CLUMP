@@ -226,6 +226,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     nm = interfaces[intf]['netmask']
                     newnet.network = IP(ip).make_net(nm).strNormal(0)
                     newnet.subnet = interfaces[intf]['netmask']
+                    newnet.gateway = interfaces[intf]['ip_address']
 
                 master.networks.append(newnet)
  

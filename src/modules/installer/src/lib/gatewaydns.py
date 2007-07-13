@@ -252,7 +252,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
             nets = db.Networks.select()
             for net in nets:
-                nw = IP(net.network + '/' + net.subnet)
+                nw = IP('/'.join((net.network, net.subnet)))
 
                 if not net.usingdhcp:
                     # if this gateway is reachable by this interface, assign it
