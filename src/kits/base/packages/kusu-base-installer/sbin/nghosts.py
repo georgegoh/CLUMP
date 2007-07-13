@@ -700,7 +700,7 @@ class MembershipMainWindow(USXBaseScreen):
         """ Get list of node groups and allow a user to choose one """
     
         self.screenGrid = snack.Grid(1, 3)
-        instruction = snack.Textbox(80, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
+        instruction = snack.Textbox(70, 3, self.kusuApp._(self.msg), scroll=0, wrap=1)
         
         defaultFlag = 1
         selectionOption = []

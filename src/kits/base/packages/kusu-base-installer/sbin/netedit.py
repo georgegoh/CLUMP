@@ -508,7 +508,7 @@ class NetworkEditWindow(USXBaseScreen):
         self.screenGrid.setField(self.incEntry, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
-        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 1), anchorLeft=1)
+        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
     
     def validate(self):
 
@@ -613,7 +613,7 @@ class NetworkNewWindow(USXBaseScreen):
         self.screenGrid.setField(self.incEntry, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
-        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 1), anchorLeft=1)
+        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
         
         # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
         self.networkEntry.setCallback(self.guessIPandGateway)
@@ -739,14 +739,14 @@ class NetworkMainWindow(USXBaseScreen):
         instruction = snack.Textbox(60, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
         listboxlabel = snack.Label(self.kusuApp._("netedit_item_labels"))
         global selectedNetwork
-        self.networkListbox = snack.Listbox(height=8, scroll=1, width=80, returnExit=1, showCursor=0)
+        self.networkListbox = snack.Listbox(height=8, scroll=1, width=70, returnExit=1, showCursor=0)
         selectedNetwork = self.networkListbox
         for nid,net,sub,netname,device in networkInfo:
             # If string is too long, show ellipsis.
-            if len(netname) > 32: 
-               netname = netname[:32] + "..."
+            if len(netname) > 43: 
+               netname = netname[:22] + "..."
 
-            self.networkListbox.append("%s %s %s %s" % (device.ljust(10), net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
+            self.networkListbox.append("%s %s %s %s" % (device.ljust(11), net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, -1), anchorLeft=1)
         self.screenGrid.setField(listboxlabel, col=0, row=1, padding=(0, 0, 0, 0), anchorLeft=1)
         self.screenGrid.setField(self.networkListbox, col=0, row=2, padding=(0, 0, 0, 0), growx=1)
