@@ -75,8 +75,8 @@ CREATE TABLE ng_has_comp (
   ngid INTEGER UNSIGNED NOT NULL,
   cid INTEGER UNSIGNED NOT NULL,
   PRIMARY KEY(ngid, cid),
-  INDEX comp2ng_FKIndex1(cid),
-  INDEX comp2ng_FKIndex2(ngid)
+  INDEX ng_has_comp_FKIndex1(cid),
+  INDEX ng_has_comp_FKIndex2(ngid)
 );
 
 CREATE TABLE ng_has_net (
@@ -135,7 +135,7 @@ CREATE TABLE packages (
   ngid INTEGER UNSIGNED NOT NULL,
   packagename VARCHAR(255) NULL,
   PRIMARY KEY(idpackages, ngid),
-  INDEX Packages_FKIndex1(ngid)
+  INDEX packages_FKIndex1(ngid)
 );
 
 CREATE TABLE partitions (
@@ -165,16 +165,23 @@ CREATE TABLE repos_have_kits (
   repoid INTEGER UNSIGNED NOT NULL,
   kid INTEGER UNSIGNED NOT NULL,
   PRIMARY KEY(repoid, kid),
-  INDEX repos_has_rolls_FKIndex1(repoid),
-  INDEX repos_has_kits_FKIndex2(kid)
+  INDEX repos_have_kits_FKIndex1(repoid),
+  INDEX repos_have_kits_FKIndex2(kid)
 );
 
 CREATE TABLE scripts (
   idscripts INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   ngid INTEGER UNSIGNED NOT NULL,
-  script VARCHAR(255) NULL,
+  script VARCHAR(255) NOT NULL,
   PRIMARY KEY(idscripts, ngid),
   INDEX scripts_FKIndex1(ngid)
 );
 
-
+CREATE TABLE driverpacks (
+  dpid INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  cid  INTEGER UNSIGNED NOT NULL,
+  dpname VARCHAR(255) NOT NULL,
+  dpdesc VARCHAR(255) NULL,
+  PRIMARY KEY(dpid),
+  INDEX driverpacks_FKIndex1(cid)
+);
