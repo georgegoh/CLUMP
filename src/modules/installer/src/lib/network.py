@@ -152,9 +152,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interfaces = self.kiprofile[self.profile]['interfaces']
 
         # we want interfaces in alphabetical order
-        intfs = interfaces.keys()
-        intfs.sort()
-
+        intfs = sorted(interfaces)
         for intf in intfs:
             entrystr = '  ' + intf + ' not configured'
             if interfaces[intf]['configure']:
@@ -162,8 +160,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     entrystr = 'DHCP'
                 else:
                     entrystr = interfaces[intf]['ip_address'] + '/' + \
-                               interfaces[intf]['netmask'] + ' ' + \
-                               interfaces[intf]['netname']
+                               interfaces[intf]['netmask']
+
+                entrystr += ' ' + interfaces[intf]['netname']
 
                 if interfaces[intf]['active_on_boot']:
                     entrystr = '* ' + intf + ' ' + entrystr
@@ -243,7 +242,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
 
         # we want interfaces in alphabetical order
-        intfs = sorted(interfaces.keys())
+        intfs = sorted(interfaces)
         for intf in intfs:
             # default to using DHCP and active on boot
             interfaces[intf].update({'configure': False,
@@ -352,13 +351,13 @@ class ConfigureIntfScreen:
 
         ### Removing DHCP temporarily, fix in KUSU-207
         subgrid = snack.Grid(1, 4)
-        subgrid.setField(self.netname, 0, 0, (0, 1, 0, 0), anchorLeft=1)
+        subgrid.setField(self.netname, 0, 0, (0, 1, 0, 1), anchorLeft=1)
         subgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
         subgrid.setField(self.netmask, 0, 2, anchorLeft=1)
         subgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
         #subgrid = snack.Grid(1, 5)
-        #subgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
-        #subgrid.setField(self.netname, 0, 1, anchorLeft=1)
+        #subgrid.setField(self.netname, 0, 0, (0, 1, 0, 1), anchorLeft=1)
+        #subgrid.setField(self.use_dhcp, 0, 1, anchorLeft=1)
         #subgrid.setField(self.ip_address, 0, 2, anchorLeft=1)
         #subgrid.setField(self.netmask, 0, 3, anchorLeft=1)
         #subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 0), anchorLeft=1)
@@ -399,12 +398,12 @@ class ConfigureIntfScreen:
         # add callback for toggling static IP fields
         configd = {'control': self.configdevice,
                    'disable': (self.use_dhcp, self.active_on_boot,
-                                self.netname, self.ip_address, self.netmask),
-                   'enable': (self.use_dhcp, self.active_on_boot),
+                               self.netname, self.ip_address, self.netmask),
+                   'enable': (self.netname, self.use_dhcp, self.active_on_boot),
                    'invert': False}
         dhcpd = {'control': self.use_dhcp,
-                 'disable': (self.netname, self.ip_address, self.netmask),
-                 'enable': (self.netname, self.ip_address, self.netmask),
+                 'disable': (self.ip_address, self.netmask),
+                 'enable': (self.ip_address, self.netmask),
                  'invert': True}
 
         self.configdevice.setCallback(enabledByValue, [dhcpd, configd])
