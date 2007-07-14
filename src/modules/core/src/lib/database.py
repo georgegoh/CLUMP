@@ -706,6 +706,7 @@ class DB(object):
         AppGlobals(kname='InstallerServeNIS', kvalue='0')
         AppGlobals(kname='InstallerServeNTP', kvalue='0')
         AppGlobals(kname='InstallerServeNFS', kvalue='0')
+        AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
 
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
