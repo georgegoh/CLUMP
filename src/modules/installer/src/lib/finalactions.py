@@ -12,6 +12,7 @@ import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
+from IPy import IP
 from Cheetah.Template import Template
 
 logger = kusulog.getKusuLog('installer.final')
@@ -155,14 +156,15 @@ def writeNTP(prefix, kiprofile):
     servers = []
     servers.append(kiprofile['Timezone']['ntp_server'])
     
-    restrictIPs = {}
+    restrictNets = {}
     for intf, v in kiprofile['Network']['interfaces'].items():
         # interface is being configured, use static ip and activated on boot
         if v['configure'] and not v['use_dhcp'] and v['active_on_boot']:
-            restrictIPs[v['ip_address']] = v['netmask']
+            network = IP(v['ip_address']).make_net(v['netmask']).strNormal(0)
+            restrictNets[network] = v['netmask']
     
     try:
-        t = Template(file=str(src), searchList=[{'restrictIPs':restrictIPs,'servers':servers}])
+        t = Template(file=str(src), searchList=[{'restrictNets':restrictNets,'servers':servers}])
         f = open(ntp, 'w')
         f.write(str(t))
         f.close()
