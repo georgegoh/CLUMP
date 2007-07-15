@@ -314,7 +314,7 @@ class DiskProfile(object):
             runCommand('lvm vgchange -ay')
             self.populateMountPoints()
 
-    def populateMountPoints(self):
+    def populateMountPoints(self, fstab_path='etc/fstab'):
         """Look through the partitions and LV's to determine mountpoints."""
         logger.debug('Populate mount points.')
         # Check the partitions and logical volumes
@@ -322,13 +322,19 @@ class DiskProfile(object):
         m_lvs = self.getMountableLVs()
         m_list = m_parts + m_lvs
         for p in m_list:
-            found, loc = self.lookForFstab(p)
+            found, loc = self.lookForFstab(p, fstab_path)
             if found:
-                self.__extractFstabToMountpoints(p, loc)
+                dev_map = self.extractFstabToDevices(p, loc)
+                for dev, mntpnt in dev_map.iteritems():
+                    vol = self.findDevice(dev)
+                    if vol:
+                        self.mountpoint_dict[mntpnt] = vol
+                        vol.mountpoint = mntpnt
+                # Ok, we've parsed the first fstab we found, job done.
                 return
 
-    def __extractFstabToMountpoints(self, device, loc):
-        """For linux-type systems"""
+    def extractFstabToDevices(self, device, loc):
+        """For linux-type systems."""
         # get the temp directory to mount the device.
         mntpnt = mkdtemp()
 
@@ -341,19 +347,18 @@ class DiskProfile(object):
         fstab.close()
         device.unmount()
 
+        device_map = {}
         for l in f_lines:
             # look for a mountable entry and append it to our dict.
             dev, mntpnt, fs_type = l.split()[:3]
-            if fs_type in self.mountable_fsType.keys() or \
-               fs_type == 'swap':
-                vol = self.findDevice(dev)
-                if vol:
-                    self.mountpoint_dict[mntpnt] = vol
-                    vol.mountpoint = mntpnt
+            if fs_type in self.mountable_fsType.keys():
+                device_map[dev] = mntpnt
+
+        return device_map
 
     def findDevice(self, dev):
         """Find a device."""
-        logger.debug('find device')
+        logger.debug('find device %s', dev)
         if dev.startswith('UUID='):
             # TODO find device with matching UUID.
             logger.warning('fstab file uses UUID signatures. This is not yet supported.')
@@ -399,17 +404,19 @@ class DiskProfile(object):
                 continue
         return mountable_lvs
 
-    def lookForFstab(self, partition):
+    def lookForFstab(self, partition, fstab_path='etc/fstab'):
         """If found, returns a tuple (True, <location>),
            Else, returns (False, None)
         """
         mntpnt = mkdtemp()
         partition.mount(mountpoint=mntpnt, readonly=True)
-        loc = path(mntpnt) / path('etc/fstab')
+        loc = path(mntpnt) / path(fstab_path)
+        logger.debug('Looking for fstab in %s' % loc)
         loc_exists = loc.exists()
         partition.unmount()
         if loc_exists:
-            return True, 'etc/fstab'
+            logger.debug('Fstab found')
+            return True, fstab_path
         return False, None
 
     def __wipeLVMObjects(self, pv_probe_dict, lvg_probe_dict, lv_probe_dict):
