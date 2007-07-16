@@ -31,6 +31,7 @@ insert into kits values (5, "OFED", "OpenFabric Infiniband Drivers", "5.1", 0, 1
 insert into kits values (6, "MPI", "OpenMPI and others", "5.1", 0, 1, "i386") ;
 insert into kits values (7, "Base", "Kusu Base", "5.1", 0, 0, "x86_64") ;
 insert into kits values (8, "Fedora 7", "fedora-7-x86_64", "7.0", 1, 0, "x86_64") ;
+insert into kits values (9, 'DVendor', 'dvendor', "5.1", 0, 0, "x86_64") ;
 
 insert into repos_have_kits values (1, 1) ;
 insert into repos_have_kits values (1, 3) ;
@@ -40,6 +41,7 @@ insert into repos_have_kits values (1, 6) ;
 insert into repos_have_kits values (2, 2) ;
 insert into repos_have_kits values (2, 3) ;
 insert into repos_have_kits values (3, 8) ;
+insert into repos_have_kits values (3, 9) ;
 
 # Setup some node groups
 insert into nodegroups values (1,1,'Installer', 'package', 'Default Installer Node group', 'installer#NN', 'vmlinuz-2.1.18-1.2798.fc6.i386', 'initrd-2.6.18-1.2798.fc6.img.i386', 'ro root=/dev/VolGroup00/LogVol00 rhgb quiet', 'installer') ;
@@ -344,6 +346,9 @@ insert into modules values (36,4,'sunrpc',17) ;
 insert into modules values (37,4,'mii', 18) ;
 insert into modules values (38,4,'pcnet32', 19) ;
 
+# Test for Fedora 7 installer (Replace e1000)
+insert into modules values (39, 6, 'e1000', 1) ;
+
 insert into appglobals values (1, 'ClusterName', 'BadBoy', NULL) ;
 insert into appglobals values (2, 'DNSZone', 'myzone.company.com', NULL) ;
 insert into appglobals values (3, 'DNSForwarders', '172.16.1.5,172.16.1.8', NULL) ;
@@ -384,9 +389,12 @@ insert into components values (8, 4, 'lsf-server', 'LSF Server component - requi
 insert into components values (9, 4, 'lsf-compute', 'LSF compute component - doesnt care about the distro', NULL) ;
 insert into components values (10, 1, 'fedora-6-i386', 'Component for FC6 x86 OS kit', 'fedora-6-i386') ;
 insert into components values (11, 8, 'fedora-7-x86_64', 'Component for FC7 x86_64 OS kit', 'fedora-7-x86_64') ;
+insert into components values (12, 9, 'vendor-drivers', 'Component for FC7 Drivers for D Vendor', 'fedora-7-x86_64') ;
 
 # Driver packages
 insert into driverpacks values (1, 11, 'kernel-2.6.21-1.3116.fc7.x86_64.rpm', 'Fedora 7 Kernel Package') ;
+insert into driverpacks values (2, 12, 'e1000-7.3.15.3-sb_dkms.noarch.rpm', 'D Vendor e1000 Driver update') ;
+
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1) ;
@@ -397,4 +405,5 @@ insert into ng_has_comp values (4, 4) ;
 insert into ng_has_comp values (6, 3) ;
 insert into ng_has_comp values (6, 6) ;
 insert into ng_has_comp values (6, 11) ;
+insert into ng_has_comp values (6, 12) ;
 insert into ng_has_comp values (7, 6) ;
