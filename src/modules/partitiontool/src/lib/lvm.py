@@ -114,6 +114,7 @@ class PhysicalVolume(object):
         self.partition = partition
         self.on_disk = False
         self.delete_flag = False
+        self.group = None
         if createNew:
             queueCommand(lvm.createPhysicalVolume, (partition.path))
 
