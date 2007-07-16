@@ -48,17 +48,25 @@ class App:
         rfactory = RepoFactory(self.db)
         longname = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
 
-        ngname = 'installer' + '-' + longname
-        rfactory.make(ngname, 'Repo for ' + ngname)
+        try:
+            ngname = 'installer' + '-' + longname
+            rfactory.make(ngname, 'Repo for ' + ngname)
+        except: pass
     
-        ngname = 'compute' + '-' + longname
-        rfactory.make(ngname, 'Repo for ' + ngname)
+        try:
+            ngname = 'compute' + '-' + longname
+            rfactory.make(ngname, 'Repo for ' + ngname)
+        except: pass
+
+        try:
+            ngname = 'compute-diskless' 
+            rfactory.make(ngname, 'Repo for ' + ngname)
+        except: pass
         
-        ngname = 'compute-diskless' 
-        rfactory.make(ngname, 'Repo for ' + ngname)
-        
-        ngname = 'compute-disked' 
-        rfactory.make(ngname, 'Repo for ' + ngname)
+        try:
+            ngname = 'compute-disked' 
+            rfactory.make(ngname, 'Repo for ' + ngname)
+        except: pass
         
 
 if __name__ == "__main__":
