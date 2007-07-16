@@ -385,6 +385,9 @@ insert into components values (9, 4, 'lsf-compute', 'LSF compute component - doe
 insert into components values (10, 1, 'fedora-6-i386', 'Component for FC6 x86 OS kit', 'fedora-6-i386') ;
 insert into components values (11, 8, 'fedora-7-x86_64', 'Component for FC7 x86_64 OS kit', 'fedora-7-x86_64') ;
 
+# Driver packages
+insert into driverpacks values (1, 11, 'kernel-2.6.21-1.3116.fc7.x86_64.rpm', 'Fedora 7 Kernel Package') ;
+
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1) ;
 insert into ng_has_comp values (1, 4) ;
