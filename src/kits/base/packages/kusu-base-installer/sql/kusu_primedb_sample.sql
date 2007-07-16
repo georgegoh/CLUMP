@@ -23,14 +23,14 @@ insert into repos values (1, "Fedora_6", "/depot/repos/1", "installer00", 'fedor
 insert into repos values (2, "Special RHEL 5 for Diskless nodes", "/depot/repos/2", "installer0", 'rhel-5.1-i386') ;
 insert into repos values (3, "Fedora_7", "/depot/repos/3", "installer00", 'fedora-7-x86_64') ;
 
-insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 0, 0, "i386") ;
-insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 0, 0, "i386") ;
+insert into kits values (1, "Fedora 6", "fedora-6-i386", "6.0", 1, 0, "i386") ;
+insert into kits values (2, "RHEL 5.1", "Redhat Enterprise Linux 5", "5.1", 1, 0, "i386") ;
 insert into kits values (3, "Base", "Kusu Base", "5.1", 0, 0, "i386") ;
-insert into kits values (4, "LSF", "LSF 7.0 EP2", "7.2", 1, 1, "i386") ;
-insert into kits values (5, "OFED", "OpenFabric Infiniband Drivers", "5.1", 1, 1, "i386") ;
-insert into kits values (6, "MPI", "OpenMPI and others", "5.1", 1, 1, "i386") ;
+insert into kits values (4, "LSF", "LSF 7.0 EP2", "7.2", 0, 1, "i386") ;
+insert into kits values (5, "OFED", "OpenFabric Infiniband Drivers", "5.1", 0, 1, "i386") ;
+insert into kits values (6, "MPI", "OpenMPI and others", "5.1", 0, 1, "i386") ;
 insert into kits values (7, "Base", "Kusu Base", "5.1", 0, 0, "x86_64") ;
-insert into kits values (8, "Fedora 7", "fedora-7-x86_64", "7.0", 0, 0, "x86_64") ;
+insert into kits values (8, "Fedora 7", "fedora-7-x86_64", "7.0", 1, 0, "x86_64") ;
 
 insert into repos_have_kits values (1, 1) ;
 insert into repos_have_kits values (1, 3) ;
@@ -382,6 +382,8 @@ insert into components values (6, 7, 'base-node', 'This component provides the b
 insert into components values (7, 4, 'lsf-base', 'LSF BASE component for both FE & compute - runs on any fedora', 'fedora') ;
 insert into components values (8, 4, 'lsf-server', 'LSF Server component - requires version 6 of fedora', 'fedora-6') ;
 insert into components values (9, 4, 'lsf-compute', 'LSF compute component - doesnt care about the distro', NULL) ;
+insert into components values (10, 1, 'fedora-6-i386', 'Component for FC6 x86 OS kit', 'fedora-6-i386') ;
+insert into components values (11, 8, 'fedora-7-x86_64', 'Component for FC7 x86_64 OS kit', 'fedora-7-x86_64') ;
 
 # Nodegroup has Component
 insert into ng_has_comp values (1, 1) ;
