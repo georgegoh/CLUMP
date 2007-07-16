@@ -396,4 +396,5 @@ insert into ng_has_comp values (3, 4) ;
 insert into ng_has_comp values (4, 4) ;
 insert into ng_has_comp values (6, 3) ;
 insert into ng_has_comp values (6, 6) ;
+insert into ng_has_comp values (6, 11) ;
 insert into ng_has_comp values (7, 6) ;
