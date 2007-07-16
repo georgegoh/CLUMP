@@ -22,7 +22,8 @@ class App:
     def run(self):
         self.migrateDB()
         self.makeRepos()
-       
+        self.enableSyslog()
+
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
              
@@ -68,6 +69,19 @@ class App:
             rfactory.make(ngname, 'Repo for ' + ngname)
         except: pass
         
+    def enableSyslog(self):
+        """Enable remote syslog logging"""
+        
+        f = open('/etc/sysconfig/syslog', 'r')
+        syslog = f.read()
+        f.close()
+
+        line = 'SYSLOGD_OPTIONS="-m 0"'
+        index = syslog.find(line)
+        
+        f = open('/etc/sysconfig/syslog', 'w')
+        f.write(syslog[:index] + 'SYSLOGD_OPTIONS="-m 0 -r"' + syslog[index+len(line)]
+        f.close()
 
 if __name__ == "__main__":
     app = App()
