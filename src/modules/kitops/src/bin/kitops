@@ -257,33 +257,53 @@ class KitOpsApp(KusuApp):
     def runListKit(self):
         kl.debug('Performing list operation')
 
+        headers = ['Kit', 'Description', 'Version', 'Architecture', 'OS Kit',
+                   'Removable', 'Node Groups']
+
+        max_lengths = []
+        for x in xrange(len(headers)):
+            max_lengths.append(len(headers[x]))
+
         kits = self.koinst.listKit(self.kit_name, self.kit_ver, self.kit_arch)
 
-        if kits:
-            print 'Kit'.ljust(16) + 'Description'.ljust(27) + \
-                  'Version'.ljust(8) + 'Architecture'.ljust(13) + \
-                  'OS Kit'.ljust(7) + 'Removable'.ljust(9)
+        kitlines = []
+        for kit in kits:
+            kitline = []
 
-            for kit in kits:
-                kit_name = ' ' + (kit.rname or '')
-                kit_desc = ' ' + (kit.rdesc or '')
-                kit_version = ' ' + (kit.version or '')
+            kitline.append(kit.rname)
+            kitline.append(kit.rdesc)
+            kitline.append(kit.version)
 
-                kit_arch = ' noarch'
-                if kit.arch:
-                    kit_arch = kit.arch
+            kitline.append('noarch')
+            if kit.arch:
+                kitline[-1] = kit.arch
 
-                kit_isOS = ' No'
-                if kit.isOS:
-                    kit_isOS = ' Yes'
+            kitline.append('No')
+            if kit.isOS:
+                kitline[-1] = 'Yes'
 
-                kit_removable = ' No'
-                if kit.removable:
-                    kit_removable = ' Yes'
+            kitline.append('No')
+            if kit.removable:
+                kitline[-1] = 'Yes'
 
-                print kit_name.ljust(16) + kit_desc.ljust(27) + \
-                      kit_version.ljust(8) + kit_arch.ljust(13) + \
-                      kit_isOS.ljust(7) + kit_removable.ljust(9)
+            # update maximum lengths
+            for x in xrange(len(kitline)):
+                linelengths = [len(l) for l in kitline[x].split('\n')]
+                if max(linelengths) > max_lengths[x]:
+                    max_lengths[x] = max(linelengths)
+
+            ngnames = [ng.ngname for ng in
+                       self.koinst.getNodeGroups(kit.rname, kit.version,
+                                                 kit.arch)]
+            kitline.append('\n'.join(ngnames))
+
+            nglengths = [len(ngname) for ngname in ngnames]
+            if max(nglengths) > max_lengths[-1]:
+                max_lengths[-1] = max(nglengths)
+
+            kitlines.append(kitline)
+
+        printTable(headers, kitlines, max_lengths)
 
         kl.debug('SUCCESS performing list operation')
 
@@ -345,6 +365,43 @@ class KitOpsApp(KusuApp):
 
     def printHelp(self):
         self.parser.print_help()
+
+def printTable(titles, entries, widths):
+    horline = '+'
+    for width in widths:
+        horline += '-' * (width + 2) + '+'
+
+    print horline
+
+    line = '|'
+    for x in xrange(len(titles)):
+        line += ' ' + titles[x].ljust(widths[x]) + ' |'
+
+    print line
+    print horline
+
+    for entry in entries:
+        newlines = True
+        while newlines:
+            newlines = False
+
+            line = '|'
+            for x in xrange(len(entry)):
+                newline = entry[x].find('\n')
+                if newline == -1:
+                    thisentry = entry[x]
+                    nextentry = ''
+                else:
+                    newlines = True
+                    thisentry = entry[x][:newline]
+                    nextentry = entry[x][newline + 1:]
+
+                line += ' ' + thisentry.ljust(widths[x]) + ' |'
+                entry[x] = nextentry
+
+            print line
+
+    print horline
 
 if __name__ == '__main__':
     koinst = KitOps()

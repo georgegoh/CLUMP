@@ -267,22 +267,41 @@ class TestBaseKit:
 
     def testListKits(self):
         # first, test listing nothing
-        title, entry, blank = listKits()
-        assert title == [], 'No listing expected, received: %s' % title
+        lines = listKits()
+        wantlines = ['+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+',
+                     '| Kit | Description | Version | Architecture | OS Kit' + \
+                     ' | Removable | Node Groups |',
+                     '+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+',
+                     '+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+']
+        assert lines == wantlines, 'List error! ' + \
+            'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                '\n'.join(wantlines))
 
         # perform database setup
         self.prepareDatabase()
 
-        title, entry, blank = listKits()
-        expected_title = ['Kit', 'Description', 'Version', 'Architecture', \
-                          'OS', 'Kit', 'Removable']
-        expected_entry = ['base', 'Base', 'Kit', '0.1', 'noarch', 'No', 'Yes']
+        lines = listKits()
+        wantlines = ['+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+',
+                     '| Kit  | Description | Version | Architecture | OS Ki' + \
+                     't | Removable | Node Groups |',
+                     '+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+',
+                     '| base | Base Kit    | 0.1     | noarch       | No   ' + \
+                     '  | Yes       | master      |',
+                     '|      |             |         |              |      ' + \
+                     '  |           | installer   |',
+                     '|      |             |         |              |      ' + \
+                     '  |           | compute     |',
+                     '+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+']
 
-        assert title == expected_title, \
-                'Title mismatch: %s, expected: %s' % (title, expected_title)
-        assert entry == expected_entry, \
-                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        assert blank == [], 'Unexpected entry: %s' % blank.split()
+        assert lines == wantlines, 'List error! ' + \
+            'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                '\n'.join(wantlines))
 
         new_arch = 'x86_64'
         new_isOS = True
@@ -294,41 +313,38 @@ class TestBaseKit:
         kit.removable = new_removable
         self.kusudb.flush()
 
-        expected_title = ['Kit', 'Description', 'Version', 'Architecture', \
-                          'OS', 'Kit', 'Removable']
-        expected_entry = ['base', 'Base', 'Kit', '0.1', 'x86_64', 'Yes', 'No']
+        lines = listKits()
+        wantlines = ['+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+',
+                     '| Kit  | Description | Version | Architecture | OS Ki' + \
+                     't | Removable | Node Groups |',
+                     '+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+',
+                     '| base | Base Kit    | 0.1     | x86_64       | Yes  ' + \
+                     '  | No        | master      |',
+                     '|      |             |         |              |      ' + \
+                     '  |           | installer   |',
+                     '|      |             |         |              |      ' + \
+                     '  |           | compute     |',
+                     '+------+-------------+---------+--------------+------' + \
+                     '--+-----------+-------------+']
 
-        title, entry, blank = listKits()
-        assert title == expected_title, \
-                'Title mismatch: %s, expected: %s' % (title, expected_title)
-        assert entry == expected_entry, \
-                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        assert blank == [], 'Unexpected entry: %s' % blank.split()
+        assert lines == wantlines, 'List error! ' + \
+            'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                '\n'.join(wantlines))
 
-        title, entry, blank = listKits('base')
-        assert title == expected_title, \
-                'Title mismatch: %s, expected: %s' % (title, expected_title)
-        assert entry == expected_entry, \
-                'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        assert blank == [], 'Unexpected entry: %s' % blank.split()
-
-        # disable wildcard kit listing for now...
-        #title, entry, blank = listKits('bas')
-        #assert title == expected_title, \
-        #        'Title mismatch: %s, expected: %s' % (title, expected_title)
-        #assert entry == expected_entry, \
-        #        'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        #assert blank == [], 'Unexpected entry: %s' % blank.split()
-
-        #title, entry, blank = listKits('s')
-        #assert title == expected_title, \
-        #        'Title mismatch: %s, expected: %s' % (title, expected_title)
-        #assert entry == expected_entry, \
-        #        'Entry mismatch: %s, expected: %s' % (entry, expected_entry)
-        #assert blank == [], 'Unexpected entry: %s' % blank.split()
-
-        title, entry, blank = listKits('lsf')
-        assert title == [], 'No listing expected, received: %s' % blank
+        lines = listKits('lsf')
+        wantlines = ['+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+',
+                     '| Kit | Description | Version | Architecture | OS Kit' + \
+                     ' | Removable | Node Groups |',
+                     '+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+',
+                     '+-----+-------------+---------+--------------+-------' + \
+                     '-+-----------+-------------+']
+        assert lines == wantlines, 'List error! ' + \
+            'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                '\n'.join(wantlines))
 
     def prepareDatabase(self):
         # insert data into DB
@@ -537,13 +553,11 @@ def listKits(name=''):
 
     ls_file = os.fdopen(ls_fd)
     ls_file.seek(0)
-    title = ls_file.readline().split()
-    entry = ls_file.readline().split()
-    blank = ls_file.readline().split()
+    lines = [line.strip() for line in ls_file.readlines()]
     ls_file.close()
     path(ls_fn).remove()
 
-    return title, entry, blank
+    return lines
 
 def areDirTreesIdentical(s, d):
     """

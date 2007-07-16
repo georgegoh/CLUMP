@@ -583,17 +583,17 @@ class KitOps:
         if error_kits:
             raise DeleteKitsError, error_kits
 
-    def listKit(self, kitname=None, kitver=None, kitarch=None, wildcard=''):
-        '''if the kit was specified, lists component summary for it, else prints
-         kit table summary'''
-
+    def listKit(self, kitname=None, kitver=None, kitarch=None):
         if kitname or kitver or kitarch:
             return self.findKits(kitname, kitver, kitarch)
-        elif wildcard:
-            return self.__db.Kits.select_by(
-                        self.__db.Kits.c.rname.like('%%%s%%' % wildcard))
         else:
             return self.__db.Kits.select()
+
+    def getNodeGroups(self, kitname, kitver=None, kitarch=None):
+        import kusu.core.database as db
+        return db.findNodeGroupsFromKit(self.__db, kitargs={'rname': kitname,
+                                                            'version': kitver,
+                                                            'arch': kitarch})
 
     def findKits(self, name, version, arch):
         kits = []
