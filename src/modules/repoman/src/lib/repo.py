@@ -20,8 +20,8 @@ except:
     from popen5 import subprocess
 
 
-def getOS(db, repoid_or_ngname):
-    """Returns OS (rname, name, version, arch) tuple from database 
+def getOS(dbs, repoid_or_ngname):
+    """Returns OS (rname, version, arch) tuple from database 
        based on the repoid or nodegroup name"""
 
     key = repoid_or_ngname
@@ -29,21 +29,15 @@ def getOS(db, repoid_or_ngname):
     # Do not depend on os type in repo
     # repoid
     if type(key) in [int, long]: # float/complex not included 
-        kit = db.Kits.select_by(db.ReposHaveKits.c.kid == db.Kits.c.kid,
-                                db.ReposHaveKits.c.repoid == key,
-                                db.Kits.c.isOS)
+        kit = dbs.Kits.select_by(dbs.ReposHaveKits.c.kid == dbs.Kits.c.kid,
+                                dbs.ReposHaveKits.c.repoid == key,
+                                dbs.Kits.c.isOS)
 
     # nodegroup name
     elif type(key) == str:
-        AND = sa.and_(db.NodeGroups.c.ngid == db.NGHasComp.c.ngid, \
-                      db.NGHasComp.c.cid == db.Components.c.cid, \
-                      db.Components.c.kid == db.Kits.c.kid, \
-                      db.Kits.c.isOS == True, \
-                      db.NodeGroups.c.ngname == key)
-
-        kit = sa.select([db.Kits.c.rname, db.Kits.c.version, db.Kits.c.arch], \
-                        AND).execute().fetchall()
-
+        kit = db.findKitsFromNodeGroup(dbs,
+                                       columns=['rname', 'version', 'arch'],
+                                       {'isOS': True}, {'ngname': key})
     else:
         raise TypeError, 'Invalid type for key: %s' % key
 
@@ -58,9 +52,9 @@ def getOS(db, repoid_or_ngname):
     return (kit.rname, kit.version, kit.arch)
 
 
-def getKits(db, ngname):
+def getKits(dbs, ngname):
     """Returns a list of kits for a nodegroup"""
-    ng = db.NodeGroups.select_by(ngname=ngname)
+    ng = dbs.NodeGroups.select_by(ngname=ngname)
 
     if ng:
         ng = ng[0]

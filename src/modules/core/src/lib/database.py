@@ -341,6 +341,7 @@ class DB(object):
             sa.Column('kvalue', sa.String(255)),
             sa.Column('ngid', sa.Integer),
             mysql_engine='InnoDB')
+        self.__dict__['appglobals'] = appglobals
 
         components = sa.Table('components', self.metadata,
             sa.Column('cid', sa.Integer, primary_key=True, autoincrement=True),
@@ -350,6 +351,7 @@ class DB(object):
             sa.Column('os', sa.String(20)),
             mysql_engine='InnoDB')
         sa.Index('components_FKIndex1', components.c.kid)
+        self.__dict__['components'] = components
 
         kits = sa.Table('kits', self.metadata,
             sa.Column('kid', sa.Integer, primary_key=True, autoincrement=True),
@@ -360,6 +362,7 @@ class DB(object):
             sa.Column('removeable', sa.Boolean, sa.PassiveDefault('0')),
             sa.Column('arch', sa.String(20)),
             mysql_engine='InnoDB')
+        self.__dict__['kits'] = kits
 
         modules = sa.Table('modules', self.metadata,
             sa.Column('mid', sa.Integer, primary_key=True, autoincrement=True),
@@ -370,6 +373,7 @@ class DB(object):
                                     ['nodegroups.ngid']),
             mysql_engine='InnoDB')
         sa.Index('modules_FKIndex1', modules.c.ngid)
+        self.__dict__['modules'] = modules
 
         networks = sa.Table('networks', self.metadata,
             sa.Column('netid', sa.Integer, primary_key=True, autoincrement=True),
@@ -384,6 +388,7 @@ class DB(object):
             sa.Column('inc', sa.Integer, sa.PassiveDefault('1')),
             sa.Column('usingdhcp', sa.Boolean, sa.PassiveDefault('0')),
             mysql_engine='InnoDB')
+        self.__dict__['networks'] = networks
 
         ng_has_comp = sa.Table('ng_has_comp', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, nullable=False),
@@ -393,6 +398,7 @@ class DB(object):
             mysql_engine='InnoDB')
         sa.Index('comp2ng_FKIndex1', ng_has_comp.c.cid)
         sa.Index('comp2ng_FKIndex2', ng_has_comp.c.ngid)
+        self.__dict__['ng_has_comp'] = ng_has_comp
        
         # Again, this is a M-N table. 
         ng_has_net = sa.Table('ng_has_net', self.metadata,
@@ -403,6 +409,7 @@ class DB(object):
             mysql_engine='InnoDB')
         sa.Index('net2ng_FKIndex1', ng_has_net.c.netid)
         sa.Index('net2ng_FKIndex2', ng_has_net.c.ngid)
+        self.__dict__['ng_has_net'] = ng_has_net
 
         # Since nicsid is a PK, it is uniq.
         # It is reduntant to create a composite key of 
@@ -417,12 +424,13 @@ class DB(object):
                       nullable=False),
             sa.Column('netid', sa.Integer, sa.ForeignKey('networks.netid'),
                       nullable=False),
-            sa.Column('mac', sa.String(45)),
+            sa.Column('mac', sa.String(45), unique=True),
             sa.Column('ip', sa.String(20)),
             sa.Column('boot', sa.Boolean, sa.PassiveDefault('0')),
             mysql_engine='InnoDB')
         sa.Index('nics_FKIndex1', nics.c.nid)
         sa.Index('nics_FKIndex2', nics.c.netid)
+        self.__dict__['nics'] = nics
 
         # If repoid is not nullable(nullable=False), a repo 
         # has to be created (at least inserted into the table) 
@@ -448,6 +456,7 @@ class DB(object):
             sa.Column('type', sa.String(20), nullable=False),
             mysql_engine='InnoDB')
         sa.Index('nodegroups_FKIndex1', nodegroups.c.repoid)
+        self.__dict__['nodegroups'] = nodegroups
 
         nodes = sa.Table('nodes', self.metadata,
             sa.Column('nid', sa.Integer, primary_key=True, autoincrement=True),
@@ -463,6 +472,7 @@ class DB(object):
             sa.Column('rank', sa.Integer, sa.PassiveDefault('0')),
             mysql_engine='InnoDB')
         sa.Index('nodes_FKIndex1', nodes.c.ngid)
+        self.__dict__['nodes'] = nodes
 
         # Not sure what is this used for.
         #
@@ -480,6 +490,7 @@ class DB(object):
             sa.Column('packagename', sa.String(255)),
             mysql_engine='InnoDB')
         sa.Index('packages_FKIndex1', packages.c.ngid)
+        self.__dict__['packages'] = packages
 
         partitions = sa.Table('partitions', self.metadata,
             sa.Column('idpartitions', sa.Integer, primary_key=True, autoincrement=True),
@@ -495,6 +506,7 @@ class DB(object):
                                     ['nodegroups.ngid']),
             mysql_engine='InnoDB')
         sa.Index('partitions_FKIndex1', partitions.c.ngid)
+        self.__dict__['partitions'] = partitions
 
         repos = sa.Table('repos', self.metadata,
             sa.Column('repoid', sa.Integer, primary_key=True,
@@ -504,6 +516,7 @@ class DB(object):
             sa.Column('installers', sa.String(255)),
             sa.Column('ostype', sa.String(20)),
             mysql_engine='InnoDB')
+        self.__dict__['repos'] = repos
 
         # A junction table. M-N relationship
         repos_have_kits = sa.Table('repos_have_kits', self.metadata,
@@ -514,6 +527,7 @@ class DB(object):
             mysql_engine='InnoDB')
         sa.Index('repos_has_rolls_FKIndex1', repos_have_kits.c.repoid)
         sa.Index('repos_has_kits_FKIndex2', repos_have_kits.c.kid)
+        self.__dict__['repos_have_kits'] = repos_have_kits
 
         scripts = sa.Table('scripts', self.metadata,
             sa.Column('idscripts', sa.Integer, primary_key=True),
@@ -523,6 +537,7 @@ class DB(object):
                                     ['nodegroups.ngid']),
             mysql_engine='InnoDB')
         sa.Index('scripts_FKIndex1', scripts.c.ngid)
+        self.__dict__['scripts'] = scripts
 
         self._assignMappers()
 
@@ -826,3 +841,84 @@ class DB(object):
                 raise UnableToCommitDataError, e
             except Exception, e:
                 raise KusuError, e
+
+def findNodeGroupsFromKit(db, columns=[], ngargs={}, kitargs={}):
+    """
+    Selects nodegroups to which a specified kit is assigned:
+    SELECT cols FROM nodegroups WHERE ng <-> ng_has_comp <-> components <-> kits
+
+    columns -- a list of nodegroups columns to select; set to [] to select all.
+    ngargs -- a dictionary of nodegroups columns to match in WHERE clause
+    kitargs -- a dictionary of kits columns to match in WHERE clause
+    """
+
+    if not columns:
+        stmt = db.nodegroups.select()
+    else:
+        stmt = sa.select([getattr(db.nodegroups.c, col) for col in columns])
+
+    stmt.distinct = True
+    stmt.append_from(
+        db.nodegroups.join(db.ng_has_comp,
+                           db.nodegroups.c.ngid == db.ng_has_comp.c.ngid).join(
+                           db.components,
+                           db.ng_has_comp.c.cid == db.components.c.cid).join(
+                           db.kits, db.components.c.kid == db.kits.c.kid))
+
+    for arg in ngargs:
+        if db.nodegroups.c.has_key(arg) and ngargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.nodegroups.c, arg) == \
+                                    ngargs[arg])
+        elif not db.nodegroups.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.nodegroups.name)
+
+    for arg in kitargs:
+        if db.kits.c.has_key(arg) and kitargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.kits.c, arg) == kitargs[arg])
+        elif not db.kits.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.kits.name)
+
+    return stmt.execute().fetchall()
+
+def findKitsFromNodeGroup(db, columns=[], kitargs={}, ngargs={}):
+    """
+    Selects kits which belong the a specific nodegroup
+    SELECT cols FROM kits
+    WHERE kits <-> components <-> ng_has_comp <-> nodegroups
+
+    columns -- a list of kits columns to select; set to [] to select all.
+    kitargs -- a dictionary of kits columns to match in WHERE clause
+    ngargs -- a dictionary of nodegroups columns to match in WHERE clause
+    """
+
+    if not columns:
+        stmt = db.kits.select()
+    else:
+        stmt = sa.select([getattr(db.kits.c, col) for col in columns])
+
+    stmt.distinct = True
+    stmt.append_from(
+        db.kits.join(db.components, db.kits.c.kid == db.components.c.kid).join(
+                     db.ng_has_comp,
+                     db.components.c.cid == db.ng_has_comp.c.cid).join(
+                     db.nodegroups,
+                     db.ng_has_comp.c.ngid == db.nodegroups.c.ngid))
+
+    for arg in ngargs:
+        if db.nodegroups.c.has_key(arg) and ngargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.nodegroups.c, arg) == \
+                                    ngargs[arg])
+        elif not db.nodegroups.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.nodegroups.name)
+
+    for arg in kitargs:
+        if db.kits.c.has_key(arg) and kitargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.kits.c, arg) == kitargs[arg])
+        elif not db.kits.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.kits.name)
+
+    return stmt.execute().fetchall()
