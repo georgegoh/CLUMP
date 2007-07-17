@@ -12,6 +12,11 @@ import os
 import re
 import sys
 
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 class App:
 
     def __init__(self):
@@ -80,8 +85,16 @@ class App:
         index = syslog.find(line)
         
         f = open('/etc/sysconfig/syslog', 'w')
-        f.write(syslog[:index] + 'SYSLOGD_OPTIONS="-m 0 -r"' + syslog[index+len(line)]
+        f.write(syslog[:index] + 'SYSLOGD_OPTIONS="-m 0 -r"' + syslog[index+len(line):])
         f.close()
+
+        p = subprocess.Popen('/etc/init.d/syslog restart',
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        retcode = p.returncode
+
 
 if __name__ == "__main__":
     app = App()
