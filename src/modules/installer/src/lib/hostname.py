@@ -60,6 +60,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
         Draw the window.
         """
+
         if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
@@ -88,7 +89,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         try:
             self.hostname.setEntry(self.netProfile['fqhn'])
         except KeyError:
-            pass
+            self.hostname.setEntry(self.defaultFQHN)
 
         dhcpd = {'control': self.use_dhcp,
                  'disable': (self.hostname, ),
@@ -134,10 +135,19 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn_domain'] = \
                                 '.'.join(self.netProfile['fqhn'].split('.')[1:])
 
-    def save(self, db, profile):
+    def setDefaults(self):
+        db = self.kiprofile.getDatabase()
+
         dnsdomain = db.AppGlobals(kname='DNSZone', kvalue=DEFAULT_DNSZONE)
-
-        if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
-            dnsdomain.kvalue = profile['fqhn_domain']
-
         db.flush()
+
+        installerng = db.NodeGroups.selectfirst_by(type='installer')
+        mastername = db.Nodes.selectfirst_by(ngid=installerng.ngid).name
+
+        self.defaultFQHN = '.'.join((mastername, dnsdomain.kvalue))
+
+    def save(self, db, profile):
+        if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
+            dnsdomain = db.AppGlobals.select_by(kname='DNSZone')
+            dnsdomain.kvalue = profile['fqhn_domain']
+            db.flush()
