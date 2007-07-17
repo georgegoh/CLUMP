@@ -151,8 +151,7 @@ class TestCentos5Repo:
                  'isolinux/initrd', \
                  'isolinux/vmlinuz', \
                  'images/stage2.img', \
-                 'images/updates.img', \
-                 'ks.cfg']
+                 'images/updates.img']
         return paths
 
     def checkLayout(self, prefix):
@@ -205,12 +204,24 @@ class TestCentos5Repo:
 
         rfactory = RepoFactory(self.dbs, prefix, True)
         repo1 = rfactory.make('installer nodegroup')
-        (prefix /  'depot' / 'repos' / str(repo1.repoid) / 'ks.cfg').unlink()
-        (prefix /  'depot' / 'repos' / str(repo1.repoid) / 'images' / 'updates.img').unlink()
+
+        row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')
+        row = row[0]
+        masterNode = self.dbs.Nodes.select_by(name=row.kvalue)[0]
+
+        for nic in masterNode.nics:
+            if nic.ip: 
+                ip = nic.ip
+                (prefix / 'depot' / 'repos' / str(repo1.repoid) / 'ks.cfg.' + ip).unlink()
 
         repo2 = rfactory.make('installer nodegroup 2')
         assert repo1.repoid == repo2.repoid 
         self.checkLayout(prefix / 'depot' / 'repos' / str(repo2.repoid))
+
+        for nic in masterNode.nics:
+            if nic.ip: 
+                ip = nic.ip
+                assert (prefix / 'depot' / 'repos' / str(repo2.repoid) / 'ks.cfg.' + ip).exists()
  
     def testMake(self):
         global prefix
