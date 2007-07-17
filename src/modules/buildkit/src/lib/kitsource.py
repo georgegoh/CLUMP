@@ -4,24 +4,20 @@
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-""" This module contains the kitsource methods and classes for Kusu Kits"""
 
 from path import path
-from kusu.util.errors import KitSrcAlreadyExists, FileDoesNotExistError
-from kusu.util.errors import NotImplementedError, DirDoesNotExistError
-from kusu.util.errors import PackageBuildError, KitBuildError
-import tempfile
-import tarfile
-from kusu.util import tools
-import subprocess
+from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType
 
-SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
 
-def getDirName(p):
-    """ Returns the unpacked directory name of a tarfile. """
-    li = [ext for ext in SUPPORTED_TARFILES_EXT if ext in p]
-    if li:
-        return p.split(li[0])[0]
+PACKAGE_SRC_TYPES = ['autotools','srpm','binarydist','distro','rpm']
+NODEGROUP_TYPES = ['installer','compute']
+
+
+def KitSrcFactory(srcPath):
+    """ Factory function that returns a KitSrcBase instance. """
+    # right now, we only return GeneralKitSrc
+    return GeneralKitSrc(srcPath)
+
 
 class KitSrcBase(object):
     """ Base class for a Kit source and the operations that can work on it. """
@@ -126,152 +122,81 @@ class GeneralKitSrc(KitSrcBase):
         
 class BinaryKitSrc(KitSrcBase): pass
 
-def KitSrcFactory(srcPath):
-    """ Factory function that returns a KitSrcBase instance. """
-    # right now, we only return GeneralKitSrc
-    return GeneralKitSrc(srcPath)
+
+
+
+class KusuComponent(object):
+    """ Component for Kits. """
+
+    dependencies = []
+    scripts = []
+    ngtypes = []
     
-class SourcePkg(object):
-    """ This class describes how a tarball archive (archives created with tar and gzip/bzip2) should be and
-        the operations that can work on it.
-    """
+    def __init__(self,**kwargs):
+        self.dependencies = kwargs.get('dependencies',[])
+        self.scripts = kwargs.get('scripts',[])
+        self.ngtypes = kwargs.get('ngtypes',[])
     
-    def __init__(self, packageprofile):
-        """ packageprofile refers to the build-specific information regarding
-            package. 
+    def associateWith(self, ngtype):
+        """ Add ngtype for this component to belong to. """
+        if ngtype not in NODEGROUP_TYPES: raise UnsupportedNGType
+        if ngtype not in self.ngtypes: self.ngtypes.append(ngtype)
+        
+    def addDep(self, package):
+        """ Add package as a dependency. """
+        if package not in self.dependencies:
+            self.dependencies.append(package)
+
+    def addScripts(self, script, mode='post'):
+        """ Add script for this component. Available modes are
+            post, pre, postun and preun. 
         """
-        self.packageprofile = packageprofile
-                    
-    def unpack(self,destdir=None):
-        """ Unpacks the source package to the current directory if 
-            the destdir is not defined.
+        if not script in self.scripts:
+            self.scripts.append((script,mode))
+            
+    def _packRPM(self):
+        """ RPM packaging stage for this class. """
+        pass
+        
+    def pack(self, pkgtype='rpm'):
+        """ Packaging stage. This is what the user would call. """
+        
+        if pkgtype == 'rpm':
+            return self._packRPM()
+            
+class KusuKit(object):
+    """ Kit class. """
+    
+    dependencies = []
+    scripts = []
+    components = []
+
+    def addComponent(self, component):
+        """ Add component to this kit. """
+        if not component in self.components:
+            self.components.append(component)
+
+    def addDep(self, package):
+        """ Add package as a dependency. """
+        if not package in self.dependencies:
+            self.dependencies.append(package)
+
+    def addScripts(self, script, mode='post'):
+        """ Add script for this component. Available modes are
+            post, pre, postun and preun. 
         """
-        raise NotImplementedError
-        
+        if not script in self.scripts:
+            self.scripts.append((script,mode))
 
-class GNUBuildTarballPkg(SourcePkg):
-    """ GNU build tarballs refers to tarballs that uses the GNU Autoconf/Automake/Autogen build system. """
+    def _packRPM(self):
+        """ RPM packaging stage for this class. """
+        pass
 
-    def __init__(self,packageprofile):
-        SourcePkg.__init__(self,packageprofile)
-        # assets that make up a GNUBuildTarballPkg goes here
-        self._assets = ['configure', 
-                        'configure.ac']
-        self.alreadyBuilt = False
-        
-    def unpack(self,destdir=None):
-        if not destdir:
-            destdir = path.getcwd()
-        else:
-            destdir = path(destdir)
+    def pack(self, pkgtype='rpm'):
+        """ Packaging stage. This is what the user would call. """
+
+        if pkgtype == 'rpm':
+            return self._packRPM()
+
+
             
-        pkg = tarfile.open(self.packageprofile.filepath)
-        for f in pkg:
-            pkg.extract(f,destdir)
-
-        
-    def verify(self):
-        """ Verify that it is indeed a GNU build tarball"""
-        if not tarfile.is_tarfile(self.packageprofile.filepath): return False
-        tmppath = path(tools.mkdtemp(prefix='kitsrc-'))
-        self.unpack(tmppath)
-        
-        if not tmppath.dirs():
-            # definitely not a standard GNUBuildTarballPkg
-            if tmppath.exists(): tmppath.rmtree
-            return False
-        srcdir = tmppath.dirs()[0]
-
-        assetsMissing = [ f for f in self._assets if not path(srcdir / f).exists() ]
-        if tmppath.exists(): tmppath.rmtree()
-        if assetsMissing: return False
-
-        return True
-        
-    def build(self):
-        """ Build the source package based on the packageprofile"""
-        
-        prefix = self.packageprofile.installroot
-            
-        if not self.packageprofile.builddir: raise DirDoesNotExistError
-        builddir = path(self.packageprofile.builddir)
-        if not builddir.exists(): raise DirDoesNotExistError
-        srcdir = builddir / self.packageprofile.dirname
-        if srcdir.exists(): srcdir.rmtree()        
-        self.unpack(builddir)
-        if not srcdir.exists(): raise PackageBuildError, "Unpacked Dir not found!"
-        
-        configure_args = []
-        make_args = []
-        if prefix:
-            configure_args.append('--prefix=%s' % prefix)
-     
-        cmd = ' '.join(['./configure'] + configure_args)
-        configP = subprocess.Popen(cmd,shell=True,cwd=srcdir)
-        configP.wait()
-
-        cmd = ' '.join(['make'] + make_args)
-        makeP = subprocess.Popen(cmd,shell=True,cwd=srcdir)
-        makeP.wait()
-        
-        self.alreadyBuilt = True
-        self.srcdir = srcdir
-        
-
-    def install(self):
-        """ Installs the artefacts created during build """
-        buildroot = self.packageprofile.buildroot
-
-        makeinstall_args = []
-        if buildroot:
-            makeinstall_args.append('prefix=%s' % buildroot)        
-        
-        if not self.alreadyBuilt: self.build()
-        cmd = ' '.join(['make'] + makeinstall_args + ['install'])
-        makeinstallP = subprocess.Popen(cmd,shell=True,cwd=self.srcdir)
-        makeinstallP.wait()
-        
-    def cleanup(self):
-        """ Housekeeping """
-        if self.srcdir.exists(): self.srcdir.rmtree()
-        self.alreadyBuilt = False
-        self.srcdir = None
-        
-        
-class BinaryDistTarballPkg(SourcePkg):
-    """ Binary distribution tarball packages refers to packages that contain already built artefacts such
-        as subdirectories (bin,etc,lib) and files.    
-    """
-    
-    def __init__(self,packageprofile):
-        SourcePkg.__init__(self,packageprofile)
-        
-    def install(self):
-        """ Installs the artefacts created during build """
-        pass
-
-        
-class SRPMPkg(SourcePkg):
-    """ This class describes how a Source RPM package should be and the operations that work on it. """
-    
-    def __init__(self, packageprofile):
-        SourcePkg.__init__(self, packageprofile)
-
-    def verify(self):
-        """ Verify that it is indeed a SRPM package. """
-        return False 
-        
-    def unpack(self):
-        """ Unpack the SRPM package. """
-        pass
-        
-    def build(self,prefix=None):
-        """ Build the SRPM package. """
-        pass
-        
-    def install(self):
-        """ Installs the artefacts created during build. """
-        pass
-
-
-        

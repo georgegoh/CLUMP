@@ -131,4 +131,9 @@ class InvalidPartitionSchema(KusuError): pass
 class KitSrcAlreadyExists(KusuError): pass
 class PackageBuildError(KusuError): pass
 class KitBuildError(KusuError): pass
+class UnknownPackageType(KusuError): pass
+class UndefinedOSType(KusuError): pass
+class UnsupportedNGType(KusuError): pass
+
+
 
