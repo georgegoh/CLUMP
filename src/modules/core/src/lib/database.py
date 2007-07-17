@@ -648,6 +648,9 @@ class DB(object):
 
         try:
             self.dropTables()
+        except Exception: pass
+
+        try:
             self.createTables()
         except Exception: pass
 
