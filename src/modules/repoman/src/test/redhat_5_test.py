@@ -40,7 +40,7 @@ def setUp():
 
     prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
-    dbs = db.DB('sqlite', kusudb)
+    #dbs = db.DB('sqlite', kusudb)
 
 def tearDown():
     global kusudb
@@ -80,7 +80,8 @@ class TestRedhat5Repo:
         node.nics.append(db.Nics(ip=self.masterIP1, netid=network1.netid))
         node.nics.append(db.Nics(ip=self.masterIP2, netid=network2.netid))
 
-        installer = db.NodeGroups(ngname='installer nodegroup') 
+        installer = db.NodeGroups(ngname='installer nodegroup',
+                                  type='installer')
         installer.nodes.append(node)
         installer.save()
         installer.flush()

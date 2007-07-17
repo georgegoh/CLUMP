@@ -79,7 +79,8 @@ class TestFedora6Repo:
         node.nics.append(db.Nics(ip=self.masterIP1, netid=network1.netid))
         node.nics.append(db.Nics(ip=self.masterIP2, netid=network2.netid))
 
-        installer = db.NodeGroups(ngname='installer nodegroup') 
+        installer = db.NodeGroups(ngname='installer nodegroup',
+                                  type='installer') 
         installer.nodes.append(node)
         installer.save()
         installer.flush()

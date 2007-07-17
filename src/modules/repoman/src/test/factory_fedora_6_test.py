@@ -71,7 +71,8 @@ class TestFedora6Repo:
         self.masterIP = '10.1.1.1'
         node.nics.append(db.Nics(ip=self.masterIP, netid=network.netid))
 
-        installer = db.NodeGroups(ngname='installer nodegroup') 
+        installer = db.NodeGroups(ngname='installer nodegroup',
+                                  type='installer') 
         installer.nodes.append(node)
         installer.save()
         installer.flush()
@@ -181,7 +182,8 @@ class TestFedora6Repo:
     def testMakeUseSameRepo(self):
         global prefix
 
-        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
         installer.components = self.dbs.Components.select()
         installer.save()
         installer.flush()
@@ -195,7 +197,8 @@ class TestFedora6Repo:
     def testMakeUseSameRepoMissingScript(self):
         global prefix
 
-        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
         installer.components = self.dbs.Components.select()
         installer.save()
         installer.flush()
@@ -277,7 +280,8 @@ class TestFedora6Repo:
         rfactory = RepoFactory(self.dbs, prefix, True)
         r = rfactory.make('installer nodegroup')
 
-        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2') 
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
         installer.components = self.dbs.Components.select()
         installer.save()
         installer.flush()

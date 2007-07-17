@@ -36,9 +36,9 @@ def getOS(dbs, repoid_or_ngname):
     # nodegroup name
     elif type(key) == str:
         kit = db.findKitsFromNodeGroup(dbs,
-                                       ['rname', 'version', 'arch'],
-                                       {'isOS': True}, 
-                                       {'ngname': key})
+                                       columns=['rname', 'version', 'arch'],
+                                       kitargs={'isOS': True}, 
+                                       ngargs={'ngname': key})
     else:
         raise TypeError, 'Invalid type for key: %s' % key
 
