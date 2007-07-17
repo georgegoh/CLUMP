@@ -146,6 +146,8 @@ actions:
     def _provision(self, args):
         """Handler for provision. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
+        kl.addSysLogHandler(host=niihost)
+
         #try:
         # get the map of the available partitions
         devmap = getPartitionMap()
