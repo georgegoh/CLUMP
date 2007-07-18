@@ -338,22 +338,24 @@ class DiskProfile(object):
         # get the temp directory to mount the device.
         mntpnt = mkdtemp()
 
-        # mount the device.
-        device.mount(mountpoint=mntpnt, readonly=True)
-        fstab_loc = str(path(mntpnt) / path(loc))
-        # open fstab file and filter out comments.
-        fstab = open(fstab_loc)
-        f_lines = [l for l in fstab.readlines() if l[0] != '#']
-        fstab.close()
-        device.unmount()
+        try:
+            # mount the device.
+            device.mount(mountpoint=mntpnt, readonly=True)
+            fstab_loc = str(path(mntpnt) / path(loc))
+            # open fstab file and filter out comments.
+            fstab = open(fstab_loc)
+            f_lines = [l for l in fstab.readlines() if l[0] != '#']
+            fstab.close()
+            device.unmount()
 
-        device_map = {}
-        for l in f_lines:
-            # look for a mountable entry and append it to our dict.
-            dev, mntpnt, fs_type = l.split()[:3]
-            if fs_type in self.mountable_fsType.keys():
-                device_map[dev] = mntpnt
-
+            device_map = {}
+            for l in f_lines:
+                # look for a mountable entry and append it to our dict.
+                dev, mntpnt, fs_type = l.split()[:3]
+                if fs_type in self.mountable_fsType.keys():
+                    device_map[dev] = mntpnt
+        except MountFailedError:
+            pass
         return device_map
 
     def findDevice(self, dev):
@@ -397,7 +399,9 @@ class DiskProfile(object):
         mntpnt = mkdtemp()
         for lv in self.lv_dict.itervalues():
             try:
+                logger.debug('Mounting %s' % lv.path)
                 lv.mount(mountpoint=mntpnt, readonly=True)
+                logger.debug('Unmounting %s' % lv.path)
                 lv.unmount()
                 mountable_lvs.append(lv)
             except MountFailedError:
@@ -408,10 +412,10 @@ class DiskProfile(object):
         """If found, returns a tuple (True, <location>),
            Else, returns (False, None)
         """
+        logger.debug('Looking for fstab in %s' % partition.path)
         mntpnt = mkdtemp()
         partition.mount(mountpoint=mntpnt, readonly=True)
         loc = path(mntpnt) / path(fstab_path)
-        logger.debug('Looking for fstab in %s' % loc)
         loc_exists = loc.exists()
         partition.unmount()
         if loc_exists:
