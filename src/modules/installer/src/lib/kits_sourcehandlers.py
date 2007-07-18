@@ -155,7 +155,9 @@ def verifyDistroVersionAndArch(kiprofile, distro):
 
 def addOSKit(baseScreen, kitops, osdistro, cdrom):
     kit = kitops.prepareOSKit(osdistro)
-    if kit['name'] != baseScreen.kiprofile['OS']:
+    if kit['name'] != baseScreen.kiprofile['OS'] or \
+       kit['ver'] != baseScreen.kiprofile['OS_VERSION'] or \
+       kit['arch'] != baseScreen.kiprofile['OS_ARCH']:
         out, err = eject(cdrom)
         baseScreen.selector.popupMsg('Wrong OS disk', 'Inserted OS disk does ' + \
                                      'not match selected operating system: %s.' + \
@@ -183,6 +185,15 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
 
         kitops.setKitMedia(cdrom)
         kitops.addKitPrepare()
+        d = kitops.getOSDist()
+        if not d.ostype or not d.getVersion() or not d.getArch() or \
+           d.ostype.lower() != baseScreen.kiprofile['OS'] or \
+           d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
+           d.getArch() != baseScreen.kiprofile['OS_ARCH']:
+            prog_dlg.close()
+            baseScreen.selector.popupMsg('Wrong OS Disk', 'Disk does not ' + \
+                                         'match selected OS.')
+            continue
         kitops.copyOSKitMedia(kit)
         prog_dlg.close()
 
