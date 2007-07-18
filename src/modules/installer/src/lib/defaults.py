@@ -8,10 +8,117 @@
 #
 import kusu.util.log as kusulog
 from kusu.util.errors import *
-
+from kusu.util.structure import Struct
 from path import path
 
 logger = kusulog.getKusuLog('installer.defaults')
+
+class DiskCollection(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+        self.no_of_disks = 0
+
+    def addDisk(self, disk):
+        self.no_of_disks += 1
+        self[self.no_of_disks] = disk
+
+    def __len__(self):
+        return self.no_of_disks
+
+class Disk(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+        self.no_of_partitions = 0
+        self.partition_dict = {}
+
+    def addPartition(self, partition):
+        self.no_of_partitions += 1
+        self.partition_dict[self.no_of_partitions] = partition
+
+
+class Partition(Struct): pass
+
+class LVMGroup(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+        self.pv_list = []
+        self.lv_dict = {}
+
+    def addPV(self, disk, partition):
+        self.pv_list.append(Struct(disk=1, partition=3))
+
+    def addLV(self, lv):
+        self.lv_dict[lv.name] = lv
+
+
+class LVMLogicalVolume(Struct): pass
+
+class LVMCollection(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+
+    def addVG(self, vg):
+        self[vg.name] = vg
+
+
+class PartitionSchema(Struct):
+    def __init__(self, disks, lvm=None):
+        Struct(self)
+        self.disk_dict=disks
+        self.vg_dict=lvm
+
+def percentSchema():
+    d1 = Disk()
+
+    d1p1 = Partition()
+    d1p1.size_MB = 12000
+    d1p1.fs = 'ext3'
+    d1p1.mountpoint = '/'
+    d1p1.fill = False
+    d1.addPartition(d1p1)
+
+    d1p2 = Partition()
+    d1p2.size_MB = 4000
+    d1p2.fs = 'ext3'
+    d1p2.mountpoint = '/var'
+    d1p2.fill = False
+    d1.addPartition(d1p2)
+
+    d1p3 = Partition()
+    d1p3.size_MB = 10000
+#
+    d1p3.percent = 25
+#
+    d1p3.fs = 'ext3'
+    d1p3.mountpoint = '/depot'
+    d1p3.fill = False
+    d1.addPartition(d1p3)
+
+    d1p4 = Partition()
+    d1p4.size_MB = 100
+    d1p4.fs = 'ext3'
+    d1p4.mountpoint = '/boot'
+    d1p4.fill = False
+    d1.addPartition(d1p4)
+
+    d1p5 = Partition()
+    d1p5.size_MB = 2000
+    d1p5.fs = 'linux-swap'
+    d1p5.mountpoint = None
+    d1p5.fill = False
+    d1.addPartition(d1p5)
+
+    d1p6 = Partition()
+    d1p6.size_MB = 5000
+    d1p6.fs = 'ext3'
+    d1p6.mountpoint = '/home'
+    d1p6.fill = True
+    d1.addPartition(d1p6)
+
+    disks = DiskCollection()
+    disks.addDisk(d1)
+    return PartitionSchema(disks=disks)
+
 
 def vanillaSchema():
     """This is a plain vanilla schema that contains 4 physical partitions:
@@ -20,31 +127,43 @@ def vanillaSchema():
           c. / - 2000M
           d. /depot - 4000M (fill)
     """
-    # define the physical disk and partitions first
-    disk_dict = { 1: { 'partition_dict': {} } }
-    disk1_partition_dict = disk_dict[1]['partition_dict']
-    disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext3',
-                                'mountpoint': '/boot',
-                                'fill': False}
-    disk1_partition_dict[2] = { 'size_MB': 1000,
-                                'fs': 'linux-swap',
-                                'mountpoint': None,
-                                'fill': False}
-    disk1_partition_dict[3] = { 'size_MB': 2000,
-                                'fs': 'ext3',
-                                'mountpoint': '/',
-                                'fill': False}
-    disk1_partition_dict[4] = { 'size_MB': 4000,
-                                'fs': 'ext3',
-                                'mountpoint': '/depot',
-                                'fill': True}
+    d1 = Disk()
 
-    schema = {'disk_dict' : disk_dict,
-              'vg_dict' : None}
+    # Disk 1 Partition 1.
+    d1p1 = Partition()
+    d1p1.size_MB = 100
+    d1p1.fs = 'ext3'
+    d1p1.mountpoint = '/boot'
+    d1p1.fill = False
+    d1.addPartition(d1p1)
 
-    return schema
+    # Disk 1 Partition 2.
+    d1p2 = Partition()
+    d1p2.size_MB = 1000
+    d1p2.fs = 'linux-swap'
+    d1p2.mountpoint = None
+    d1p2.fill = False
+    d1.addPartition(d1p2)
 
+    # Disk 1 Partition 3.
+    d1p3 = Partition()
+    d1p3.size_MB = 2000
+    d1p3.fs = 'ext3'
+    d1p3.mountpoint = '/'
+    d1p3.fill = False
+    d1.addPartition(d1p3)
+
+    # Disk 1 Partition 4.
+    d1p4 = Partition()
+    d1p4.size_MB = 4000
+    d1p4.fs = 'ext3'
+    d1p4.mountpoint = '/depot'
+    d1p4.fill = True
+    d1.addPartition(d1p4)
+
+    disks = DiskCollection()
+    disks.addDisk(d1)
+    return PartitionSchema(disks=disks)
 
 def vanillaSchemaLVM():
     """This is a plain vanilla schema that contains 3 physical partitions:
@@ -56,45 +175,66 @@ def vanillaSchemaLVM():
           a. ROOT - ext3, 2000M, mounted on /
           b. DEPOT - ext3, 4000M, mounted on /depot (fill)
     """
-    # define the physical disk and partitions first
-    disk_dict = { 1: { 'partition_dict': {} } }
-    disk1_partition_dict = disk_dict[1]['partition_dict']
-    disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext3',
-                                'mountpoint': '/boot',
-                                'fill': False}
-    disk1_partition_dict[2] = { 'size_MB': 1000,
-                                'fs': 'linux-swap',
-                                'mountpoint': None,
-                                'fill': False}
-    disk1_partition_dict[3] = { 'size_MB': 6000,
-                                'fs': 'physical volume',
-                                'mountpoint': None,
-                                'fill': True}
+    # Physical Disks.
+    d1 = Disk()
 
-    # define the lvm schema
-    vg_dict = { 'VolGroup00': { 'pv_list': [],
-                                'lv_dict': {},
-                                'extent_size': '32M',
-                                'pv_span': True
-                              }
-              }
+    # Disk 1 Partition 1.
+    d1p1 = Partition()
+    d1p1.size_MB = 100
+    d1p1.fs = 'ext3'
+    d1p1.mountpoint = '/boot'
+    d1p1.fill = False
+    d1.addPartition(d1p1)
 
-    volgroup00 = vg_dict['VolGroup00']
-    volgroup00['pv_list'].append({'disk': '1', 'partition': '3' })
-    volgroup00['lv_dict']['ROOT'] = { 'size_MB': 2000,
-                                      'fs': 'ext3',
-                                      'mountpoint': '/',
-                                      'fill': False}
-    volgroup00['lv_dict']['DEPOT'] = { 'size_MB': 4000,
-                                       'fs': 'ext3',
-                                       'mountpoint': '/depot',
-                                       'fill': True}
+    # Disk 1 Partition 2.
+    d1p2 = Partition()
+    d1p2.size_MB = 1000
+    d1p2.fs = 'linux-swap'
+    d1p2.mountpoint = None
+    d1p2.fill = False
+    d1.addPartition(d1p2)
 
-    schema = {'disk_dict' : disk_dict,
-              'vg_dict' : vg_dict}
+    # Disk 1 Partition 3.
+    d1p3 = Partition()
+    d1p3.size_MB = 6000
+    d1p3.fs = 'physical volume'
+    d1p3.mountpoint = None
+    d1p3.fill = True
+    d1.addPartition(d1p3)
 
-    return schema
+    # Create disk collection and add disk 1 to it.
+    disks = DiskCollection()
+    disks.addDisk(d1)
+
+    # LVM disks.
+    volgroup00 = LVMGroup()
+    volgroup00.name = 'VolGroup00'
+    volgroup00.extent_size = '32M'
+    volgroup00.pv_span = True
+    volgroup00.addPV(disk=1, partition=3)
+
+    # Root Logical Volume.
+    root = LVMLogicalVolume()
+    root.name = 'ROOT'
+    root.size_MB = 2000
+    root.fs = 'ext3'
+    root.mountpoint = '/'
+    root.fill = False
+    volgroup00.addLV(root)
+
+    # Depot Logical Volume.
+    depot = LVMLogicalVolume()
+    depot.name = 'DEPOT'
+    depot.size_MB = 4000
+    depot.fs = 'ext3'
+    depot.mountpoint = '/depot'
+    depot.fill = True
+    volgroup00.addLV(depot)
+
+    lvm = LVMCollection()
+    lvm.addVG(volgroup00)
+
+    return PartitionSchema(disks=disks, lvm=lvm)
 
 
 def scenario22():
@@ -132,6 +272,13 @@ def setupDiskProfile(disk_profile, schema=None):
     for disk in disk_profile.disk_dict.itervalues():
         if disk.partition_dict:
             raise DiskProfileNotEmptyError, 'Disk Profile is not empty.'
+            preserve_fs = []
+            preserve_types = []
+            if schema.has_key('preserve_dict'):
+                preserve_fs = schema['preserve_dict']['fs_type']
+                preserve_types = schema['preserve_dict']['part_types']
+
+
     # check for consistency in LVM dicts.
     if disk_profile.pv_dict or disk_profile.lvg_dict or disk_profile.lv_dict:
         raise DiskProfileNotEmptyError, 'LVM entities still exist.'
