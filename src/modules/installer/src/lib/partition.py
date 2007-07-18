@@ -77,7 +77,7 @@ class PartitionScreen(InstallerScreen):
                                  returnExit=0)
 
         if not self.disk_profile:
-            self.disk_profile = partitiontool.DiskProfile(False)
+            self.disk_profile = partitiontool.DiskProfile(fresh=False)
             first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
             first_disk = self.disk_profile.disk_dict[first_disk_key]
             if first_disk.partition_dict:
@@ -91,12 +91,12 @@ class PartitionScreen(InstallerScreen):
                                                  ['Use Default', 'Use Existing', 'Clear All Partitions'])
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
-                    self.disk_profile = partitiontool.DiskProfile(True)
+                    self.disk_profile = partitiontool.DiskProfile(fresh=True)
                     schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
                 elif str(result) == 'clear all partitions':
                     logger.debug('Clear all partitions')
-                    self.disk_profile = partitiontool.DiskProfile(True)
+                    self.disk_profile = partitiontool.DiskProfile(fresh=True)
             else:
                 # tell user nothing exists and ask to proceed.
                 msg = 'The installer has detected that no disk(s) ' + \
@@ -107,7 +107,7 @@ class PartitionScreen(InstallerScreen):
                                                  ['Use Default', "Don't Use Default"])
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
-                    self.disk_profile = partitiontool.DiskProfile(True)
+                    self.disk_profile = partitiontool.DiskProfile(fresh=True)
                     schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
  
@@ -171,7 +171,20 @@ class PartitionScreen(InstallerScreen):
 
     def validate(self):
         errList = []
-
+        # verify that /, swap, and /depot exist.
+        mntpnts = self.disk_profile.mountpoint_dict.keys()
+        if '/' not in mntpnts:
+            errList.append("'/' partition is required.")
+        if '/depot' not in  mntpnts:
+            errList.append("'/depot' partition is required.")
+        has_swap = False
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for part in disk.partition_dict.itervalues():
+                if part.fs_type == 'linux-swap':
+                    has_swap = True
+                    break
+        if not has_swap:
+            errList.append("swap partition is required.")
         if errList:
             errMsg = _('Please correct the following errors:')
             for i, string in enumerate(errList):
