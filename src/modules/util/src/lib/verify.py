@@ -22,6 +22,12 @@ logger = kusulog.getKusuLog('util.verify')
 def verifyFQDN(fqdn):
     """Verifies that text is a valid FQDN(.a-zA-Z0-9)"""
 
+    oc = re.compile('[a-zA-Z]')
+    li = oc.findall(fqdn)
+    if not li:
+        return False, 'Fully-qualified host name must contain at least ' + \
+                      'one letter'
+
     p = re.compile('[^.\-a-zA-Z0-9]')
     li = p.findall(fqdn)
     if li:

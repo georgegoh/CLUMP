@@ -14,6 +14,7 @@ from kusu.util import profile
 from path import path
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.util.verify import verifyFQDN, verifyIP
 import kusu.util.log as kusulog
 from screen import InstallerScreen
 
@@ -83,15 +84,19 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
         f.close()
 
     def validate(self):
-        errList = []
+        if not self.ntp.value():
+            return False, _('NTP server field cannot be empty.')
 
-        if errList:
-            errMsg = _('Please correct the following errors:')
-            for i, string in enumerate(errList):
-                errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
-            return False, errMsg
-        else:
-            return True, ''
+        # this check for IP is currently moot since any IP-like string
+        # (ie 192.168.333.1234) will still pass our loose FQDN checks
+        rv, msg = verifyIP(self.ntp.value())
+        if not rv:
+            rv, msg = verifyFQDN(self.ntp.value())
+            if not rv:
+                return False, _('NTP server field must be valid fully ' +
+                                'qualified domain name or IP address.')
+
+        return True, ''
 
     def formAction(self):
         """

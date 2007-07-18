@@ -12,7 +12,7 @@ from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
 from kusu.hardware import probe
-from whrandom import choice
+from random import choice
 from cStringIO import StringIO
 import string
 import urllib2

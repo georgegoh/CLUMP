@@ -83,7 +83,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
             pass
 
         self.hostname = kusuwidgets.LabelledEntry(
-                    labelTxt=_('Host name '), width=entryWidth)
+                    labelTxt=_('Host Name '), width=entryWidth)
         self.hostname.addCheck(verifyFQDN)
 
         try:
