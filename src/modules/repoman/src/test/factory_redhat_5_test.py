@@ -64,6 +64,7 @@ class TestRedhat5Repo:
         network.network = '10.0.0.0'
         network.subnet = '255.0.0.0'
         network.device = 'eth0'
+        network.type = 'provision'
         network.save()
         network.flush()
 

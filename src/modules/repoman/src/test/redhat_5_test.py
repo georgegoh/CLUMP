@@ -63,6 +63,7 @@ class TestRedhat5Repo:
         network1.network = '10.0.0.0'
         network1.subnet = '255.0.0.0'
         network1.device = 'eth0'
+        network1.type = 'public'
         network1.save()
         network1.flush()
 
@@ -70,6 +71,7 @@ class TestRedhat5Repo:
         network2.network = '10.0.0.0'
         network2.subnet = '255.0.0.0'
         network2.device = 'eth0'
+        network2.type = 'provision'
         network2.save()
         network2.flush()
 

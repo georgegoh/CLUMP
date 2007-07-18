@@ -62,6 +62,7 @@ class TestFedora6Repo:
         network1.network = '10.0.0.0'
         network1.subnet = '255.0.0.0'
         network1.device = 'eth0'
+        network1.type = 'public'
         network1.save()
         network1.flush()
 
@@ -69,6 +70,7 @@ class TestFedora6Repo:
         network2.network = '192.168.1.0'
         network2.subnet = '255.255.255.0'
         network2.device = 'eth1'
+        network2.type = 'provision'
         network2.save()
         network2.flush()
 
