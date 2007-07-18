@@ -23,7 +23,7 @@ class Struct(dict):
         return dict.__getitem__(self, key)
 
     def __setattr__(self, key, value):
-        dict.__setattr__(self, key, value)
+        self[key] = value
 
     def __repr__(self):
         return 'Struct(' + dict.__repr__(self) + ')'
