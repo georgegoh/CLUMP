@@ -29,7 +29,9 @@ import string
 import cgi
 import time
 
-sys.path.append("/opt/kusu/bin:/opt/kusu/lib:/opt/kusu/lib/python")
+sys.path.append("/opt/kusu/bin")
+sys.path.append("/opt/kusu/lib")
+sys.path.append("/opt/kusu/lib/python")
 
 from optparse import OptionParser
 from kusu.core.app import KusuApp
