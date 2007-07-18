@@ -61,7 +61,7 @@ class TestSQLITE:
     def testBootstrap(self):
         self.dbs.bootstrap()
 
-        for name in ['master', 'installer', 'compute']:
+        for name in ['installer', 'compute']:
             ng = self.dbs.NodeGroups.select_by(ngname=name)[0]
             assert ng.ngname == name
 
@@ -134,7 +134,7 @@ class TestSQLITE:
                                        columns=[],
                                        ngargs={},
                                        kitargs={})
-        wantngnames = ['master', 'installer', 'compute']
+        wantngnames = ['installer', 'compute']
 
         # we are expecting three nodegroups
         assert len(ngs) == 3, 'Got %d nodegroup(s), expecting 3' % len(ngs)
@@ -174,7 +174,7 @@ class TestSQLITE:
                                        columns=['ngname', 'ngid'],
                                        ngargs={'type': 'installer'},
                                        kitargs={'isOS': True})
-        wantngs = [{'ngname': 'master', 'ngid': 1}]
+        wantngs = [{'ngname': 'installer', 'ngid': 1}]
 
         # only one nodegroup here
         assert len(ngs) == 1, 'Got %d nodegroup(s), expecting 1' % len(ngs)
@@ -294,11 +294,6 @@ class TestSQLITE:
         ng.components.append(component_os)
 
         ng = self.dbs.NodeGroups.selectfirst_by(ngname='installer')
-        ng.components.append(component_installer)
-        # no os component here, just for kicks :)
-        ng.packages.append(self.dbs.Packages(packagename='kit-base'))
-
-        ng = self.dbs.NodeGroups.selectfirst_by(ngname='master')
         ng.components.append(component_installer)
         ng.components.append(component_os)
         ng.packages.append(self.dbs.Packages(packagename='kit-base'))

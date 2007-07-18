@@ -66,6 +66,7 @@ CREATE TABLE networks (
   options VARCHAR(255) NULL,
   netname VARCHAR(255) NULL,
   startip VARCHAR(45) NULL,
+  type VARCHAR(20) NOT NULL,
   inc INTEGER NULL DEFAULT 1,
   usingdhcp BOOL NULL DEFAULT 0,
   PRIMARY KEY(netid)

@@ -127,8 +127,8 @@ class NetworkRecord(object):
                 sys.exit(-1)
                 
     def insertNetworkEntry(self):
-        query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp) VALUES \
-                ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')" % (self._network_field, \
+        query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, type, inc, usingdhcp) VALUES \
+                ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', 'provision', '%d', '%d')" % (self._network_field, \
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                 self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox))
         try:

@@ -147,7 +147,17 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.defaultFQHN = '.'.join((mastername, dnsdomain.kvalue))
 
     def save(self, db, profile):
-        if not profile['fqhn_use_dhcp'] and profile['fqhn_domain']:
-            dnsdomain = db.AppGlobals.select_by(kname='DNSZone')
-            dnsdomain.kvalue = profile['fqhn_domain']
+        if not profile['fqhn_use_dhcp']:
+            if profile['fqhn_domain']:
+                dnsdomain = db.AppGlobals.selectfirst_by(kname='DNSZone')
+                dnsdomain.kvalue = profile['fqhn_domain']
+
+            primaryinstaller = \
+                db.AppGlobals.selectfirst_by(kname='PrimaryInstaller')
+            primaryinstaller.kvalue = self.netProfile['fqhn_host']
+
+            installerng = db.NodeGroups.selectfirst_by(type='installer')
+            master = db.Nodes.selectfirst_by(ngid=installerng.ngid)
+            master.name = self.netProfile['fqhn_host']
+
             db.flush()

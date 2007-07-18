@@ -42,7 +42,7 @@ def makeRepo(kiprofile):
 
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing
-    ngname = 'master' + '-' + kiprofile['Kits']['longname']
+    ngname = 'installer' + '-' + kiprofile['Kits']['longname']
     repo = rfactory.make(ngname, 'Repo for ' + ngname)
     
     #Makes symlink in $KUSU_TMP/www
@@ -69,7 +69,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     # Build kickstart object
     # Retrieve all the data required
-    ngname = 'master-' + kiprofile['Kits']['longname']
+    ngname = 'installer-' + kiprofile['Kits']['longname']
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
         k = RHEL5Kickstart(kiprofile.getDatabase(), ngname)

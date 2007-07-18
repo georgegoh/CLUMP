@@ -9,6 +9,7 @@ import tempfile
 import urllib
 import os
 from path import path
+from nose import SkipTest
 
 try:
     import subprocess
@@ -26,17 +27,26 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 
 # NOTE: test_kits_url NEEDS a trailing slash
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
-test_kits_path = path('/tmp/kitops_test_mock_isos')
+tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
+test_kits_path = tmp_prefix / 'kitops_test_isos'
 test_kits_base = 'mock-kit-base-0.1-0.noarch.iso'
 test_kits_fc6i386_1 = 'mock-FC-6-i386-disc1.iso'
 test_kits_fc6i386_2 = 'mock-FC-6-i386-disc2.iso'
 
 temp_mount = None
 
+def assertRoot():
+    if os.getuid() != 0:
+        raise SkipTest
+
 def setUp():
     global temp_mount
+    global tmp_prefix
 
-    temp_mount = path(tempfile.mkdtemp(prefix='kot'))
+    if not tmp_prefix.exists():
+        tmp_prefix.mkdirs()
+
+    temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
 
 def tearDown():
     global temp_mount
@@ -102,6 +112,8 @@ class TestKitOps:
             'kitops.getOSDist() does not check out for kit %s' % kit
 
     def testAddKitPrepareISO(self):
+        assertRoot()
+
         needKit(test_kits_base)
 
         self.koinst.kitmedia = test_kits_path / test_kits_base
@@ -119,6 +131,8 @@ class TestKitOps:
                 'Mount point %s is not a mount point' % koinst_mountpoint
 
     def testAddKitPrepareMountPoint(self):
+        assertRoot()
+
         needKit(test_kits_base)
 
         mountKit(test_kits_path / test_kits_base, self.temp_mount)
@@ -137,6 +151,8 @@ class TestKitOps:
                 'Mount point %s is not a mount point' % koinst_mountpoint
 
     def testAddKitPrepareNetISO(self):
+        assertRoot()
+
         self.koinst.kitmedia = test_kits_url + test_kits_base
 
         self.koinst.addKitPrepare()

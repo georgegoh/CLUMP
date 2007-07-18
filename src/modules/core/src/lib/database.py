@@ -127,7 +127,8 @@ class Modules(BaseTable):
 class Networks(BaseTable): 
     cols = ['network', 'subnet', 'device', 'suffix', \
             'gateway', 'options', 'netname', 'startip', \
-            'inc', 'usingdhcp']
+            'inc', 'type', 'usingdhcp']
+    types = ['public', 'provision', 'other']
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.network, self.subnet,
@@ -157,6 +158,7 @@ class NodeGroups(BaseTable):
     cols = ['repoid', 'ngname', 'installtype', \
             'ngdesc', 'nameformat', 'kernel', 'initrd', \
             'kparams', 'type']
+    types = ['installer', 'compute', 'other']
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.ngname, self.repoid,
@@ -386,6 +388,7 @@ class DB(object):
             sa.Column('netname', sa.String(255), unique=True),
             sa.Column('startip', sa.String(45)),
             sa.Column('inc', sa.Integer, sa.PassiveDefault('1')),
+            sa.Column('type', sa.String(20), nullable=False),
             sa.Column('usingdhcp', sa.Boolean, sa.PassiveDefault('0')),
             mysql_engine='InnoDB')
         self.__dict__['networks'] = networks
@@ -656,8 +659,6 @@ class DB(object):
 
         # Create the nodegroups
         # #R - rack, #N - rank
-        master = NodeGroups(ngname='master', nameformat='master-#N',
-                            installtype='package', type='installer')
         installer = NodeGroups(ngname='installer', # VERSION+ARCH
                                nameformat='installer-#RR-#NN',
                                installtype='package', type='installer')
@@ -667,7 +668,6 @@ class DB(object):
         kusu_dist = os.environ.get('KUSU_DIST', None)
 
         if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel']:
-            master.kparamas = 'text noipv6 kssendmac'
             installer.kparams = 'text noipv6 kssendmac'
             compute.kparams = 'text noipv6 kssendmac'
             
@@ -681,8 +681,8 @@ class DB(object):
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        master_node = Nodes(name='master-0', state='installed', lastupdate=now)
-        master.nodes.append(master_node)
+        master_node = Nodes(name='master', state='installed', lastupdate=now)
+        installer.nodes.append(master_node)
 
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING

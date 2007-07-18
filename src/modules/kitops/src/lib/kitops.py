@@ -171,9 +171,9 @@ class KitOps:
         newkit.save()
         
         # Add kit to packages table for master and installer nodegroups
-        kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
-        masterng = self.__db.NodeGroups.selectfirst_by(ngname='master')
-        masterng.packages.append(kitpkg)
+        #kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
+        #masterng = self.__db.NodeGroups.selectfirst_by(ngname='master')
+        #masterng.packages.append(kitpkg)
         kitpkg = self.__db.Packages(packagename=kit['inst'].getName())
         installng = self.__db.NodeGroups.selectfirst_by(ngname='installer')
         installng.packages.append(kitpkg)
@@ -244,9 +244,9 @@ class KitOps:
 
                 for ng in ngs:
                     # if installing master node, add to that nodegroup
-                    if self.installer and ng.ngname == 'master' \
-                        and 0 <= newcomp.cname.find('installer'):
-                        ng.components.append(newcomp)
+                    #if self.installer and ng.ngname == 'master' \
+                    #    and 0 <= newcomp.cname.find('installer'):
+                    #    ng.components.append(newcomp)
 
                     # if installer component, add to installer nodegroup
                     if ng.ngname == 'installer' \
@@ -487,13 +487,8 @@ class KitOps:
                                     cdesc='%s mock component' % kit['longname'])
         newkit.components.append(comp)
 
-        if self.installer:
-            ngs = self.__db.NodeGroups.select(
-                    self.__db.NodeGroups.c.ngname.in_('master', 'compute',
-                                                      'installer'))
-        else:
-            ngs = self.__db.NodeGroups.select(
-                    self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
+        ngs = self.__db.NodeGroups.select(
+                self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
 
         for ng in ngs:
             if comp not in ng.components:

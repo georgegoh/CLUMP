@@ -124,7 +124,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         instruction = snack.Label(self.msg)
         self.screenGrid.setField(instruction, col=0, row=0)
 
-        self.listbox = snack.Listbox(6, scroll=1, returnExit=1, width=55)
+        self.listbox = snack.Listbox(6, scroll=1, returnExit=0, width=55)
         self.populateListbox(self.listbox)
         if len(self.listbox.key2item) < 1:
             raise KusuError, 'The setup cannot continue because no network ' + \
@@ -194,14 +194,15 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     self.kiprofile[self.profile]['have_static'] = True
 
     def save(self, db, profile):
-        master = db.NodeGroups.selectfirst_by(ngname='master')
-        master_node = db.Nodes.selectfirst_by(name='master-0')
+        master = db.NodeGroups.selectfirst_by(type='installer')
+        master_node = db.Nodes.selectfirst_by(ngid=master.ngid)
         primary_installer = db.AppGlobals(kname='PrimaryInstaller',
-                                          kvalue='master-0')
+                                          kvalue=master_node.name)
 
+        # this needs to be made node name agnostic
         other_ngs = \
             db.NodeGroups.select_by(db.NodeGroups.c.ngname.in_('compute-disked',
-                   'compute-diskless', 'installer', 'compute', 'unmanaged'))
+                   'compute-diskless', 'compute', 'unmanaged'))
 
         interfaces = profile['interfaces']
 
@@ -215,6 +216,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 newnet = db.Networks(usingdhcp=interfaces[intf]['use_dhcp'],
                                      device=intf,
                                      netname=interfaces[intf]['netname'],
+                                     type=interfaces[intf]['nettype'],
                                      suffix='-' + intf)
                 
                 if not interfaces[intf]['use_dhcp']:
@@ -250,7 +252,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                                      'netname': '',
                                      'ip_address': '',
                                      'netmask': '',
-                                     'active_on_boot': True})
+                                     'active_on_boot': True,
+                                     'nettype': 'provision'})
 
             # DHCP config for first interface
             if len(intfs) > 0 and intf == intfs[0]:
@@ -260,6 +263,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 interfaces[intf]['ip_address'] = '172.20.0.1'
                 interfaces[intf]['netmask'] = '255.255.0.0'
                 interfaces[intf]['active_on_boot'] = True
+                interfaces[intf]['nettype'] = 'provision'
 
             # static IP for second interface
             if len(intfs) > 1 and intf == intfs[1]:
@@ -269,6 +273,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 interfaces[intf]['ip_address'] = '192.168.0.100'
                 interfaces[intf]['netmask'] = '255.255.255.0'
                 interfaces[intf]['active_on_boot'] = True
+                interfaces[intf]['nettype'] = 'public'
 
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['interfaces'] = interfaces
@@ -342,26 +347,37 @@ class ConfigureIntfScreen:
                                       width=entryWidth)
         self.netmask.addCheck(verifyIP)
         self.netname = \
-            kusuwidgets.LabelledEntry(labelTxt=_('Network name '.rjust(13)),
+            kusuwidgets.LabelledEntry(labelTxt=_('Network Name '.rjust(13)),
                                                   width=entryWidth)
         self.netname.addCheck(verifyHostname)
+        self.nettype = snack.Label(_('Network Type '.rjust(13)))
+        self.nettypes = snack.Listbox(3, scroll=1, returnExit=0,
+                                      width=entryWidth)
+
+        for type in self.baseScreen.kiprofile.getDatabase().Networks.types:
+            self.nettypes.append(type, type)
 
         # initialize fields
         self.populateIPs()
 
+        subgrid = snack.Grid(2, 1)
+
+        namegrid = snack.Grid(1, 2)
+        namegrid.setField(self.netname, 0, 0, (0, 0, 0, 0), anchorLeft=1)
+        namesubgrid = snack.Grid(2, 1)
+        namesubgrid.setField(self.nettype, 0, 0, anchorLeft=1, anchorTop=1)
+        namesubgrid.setField(self.nettypes, 1, 0, anchorLeft=1)
+        namegrid.setField(namesubgrid, 0, 1)
+
+        ipgrid = snack.Grid(1, 4)
         ### Removing DHCP temporarily, fix in KUSU-207
-        subgrid = snack.Grid(1, 4)
-        subgrid.setField(self.netname, 0, 0, (0, 1, 0, 1), anchorLeft=1)
-        subgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
-        subgrid.setField(self.netmask, 0, 2, anchorLeft=1)
-        subgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
-        #subgrid = snack.Grid(1, 5)
-        #subgrid.setField(self.netname, 0, 0, (0, 1, 0, 1), anchorLeft=1)
-        #subgrid.setField(self.use_dhcp, 0, 1, anchorLeft=1)
-        #subgrid.setField(self.ip_address, 0, 2, anchorLeft=1)
-        #subgrid.setField(self.netmask, 0, 3, anchorLeft=1)
-        #subgrid.setField(self.active_on_boot, 0, 4, (0, 1, 0, 0), anchorLeft=1)
+        #ipgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
         ###
+        ipgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
+        ipgrid.setField(self.netmask, 0, 2, anchorLeft=1)
+        ipgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
+        subgrid.setField(ipgrid, 0, 0, (0, 1, 0, 0), anchorTop=1)
+        subgrid.setField(namegrid, 1, 0, (1, 1, 0, 0), anchorTop=1)
         gridForm.add(subgrid, 0, 2)
 
         # add OK and Cancel buttons
@@ -370,7 +386,7 @@ class ConfigureIntfScreen:
         subgrid = snack.Grid(2, 1)
         subgrid.setField(ok_button, 0, 0, (0, 1, 1, 0))
         subgrid.setField(cancel_button, 1, 0, (0, 1, 0, 0))
-        gridForm.add(subgrid, 0, 3)
+        gridForm.add(subgrid, 0, 3, (0, 0, 0, -1))
 
         self.addCheckboxCallbacks()
 
@@ -398,8 +414,10 @@ class ConfigureIntfScreen:
         # add callback for toggling static IP fields
         configd = {'control': self.configdevice,
                    'disable': (self.use_dhcp, self.active_on_boot,
-                               self.netname, self.ip_address, self.netmask),
-                   'enable': (self.netname, self.use_dhcp, self.active_on_boot),
+                               self.netname, self.ip_address, self.netmask,
+                               self.nettypes),
+                   'enable': (self.netname, self.use_dhcp, self.active_on_boot,
+                              self.nettypes),
                    'invert': False}
         dhcpd = {'control': self.use_dhcp,
                  'disable': (self.ip_address, self.netmask),
@@ -466,6 +484,7 @@ class ConfigureIntfScreen:
         self.interface['active_on_boot'] = bool(self.active_on_boot.value())
 
         self.interface['netname'] = self.netname.value()
+        self.interface['nettype'] = self.nettypes.current()
         self.interface['ip_address'] = self.ip_address.value()
         self.interface['netmask'] = self.netmask.value()
 
@@ -490,6 +509,7 @@ class ConfigureIntfScreen:
             self.active_on_boot.setValue(' ')
 
         self.netname.setEntry(self.interface['netname'])
+        self.nettypes.setCurrent(self.interface['nettype'])
         self.ip_address.setEntry(self.interface['ip_address'])
         self.netmask.setEntry(self.interface['netmask'])
 

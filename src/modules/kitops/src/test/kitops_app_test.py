@@ -34,8 +34,12 @@ dbinfo_str = ''
 def setUp():
     global temp_root
     global temp_mount
+    global tmp_prefix
 
     databasePrep()
+
+    if not tmp_prefix.exists():
+        tmp_prefix.mkdirs()
 
     temp_root = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
     temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
@@ -188,7 +192,7 @@ class TestBaseKit:
         # kit stored in packages table
         ngs = self.kusudb.NodeGroups.select()
         for ng in ngs:
-            if ng.ngname in ['master', 'installer']:
+            if ng.ngname == 'installer':
                 for pkg in ng.packages:
                     assert pkg.packagename == 'kit-base', \
                                 'kit-base package not associated ' \
@@ -266,6 +270,8 @@ class TestBaseKit:
                    'RPM kit-%s is still installed' % self.kit_name
 
     def testListKits(self):
+        assertRoot()
+
         # first, test listing nothing
         lines = listKits()
         wantlines = ['+-----+-------------+---------+--------------+-------' + \
@@ -290,8 +296,6 @@ class TestBaseKit:
                      't | Removable | Node Groups |',
                      '+------+-------------+---------+--------------+------' + \
                      '--+-----------+-------------+',
-                     '| base | Base Kit    | 0.1     | noarch       | No   ' + \
-                     '  | Yes       | master      |',
                      '|      |             |         |              |      ' + \
                      '  |           | installer   |',
                      '|      |             |         |              |      ' + \
@@ -321,8 +325,6 @@ class TestBaseKit:
                      '+------+-------------+---------+--------------+------' + \
                      '--+-----------+-------------+',
                      '| base | Base Kit    | 0.1     | x86_64       | Yes  ' + \
-                     '  | No        | master      |',
-                     '|      |             |         |              |      ' + \
                      '  |           | installer   |',
                      '|      |             |         |              |      ' + \
                      '  |           | compute     |',
@@ -364,10 +366,6 @@ class TestBaseKit:
         ng.components.append(component_node)
 
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='installer')
-        ng.components.append(component_installer)
-        ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
-
-        ng = self.kusudb.NodeGroups.selectfirst_by(ngname='master')
         ng.components.append(component_installer)
         ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
 
