@@ -13,6 +13,7 @@ from random import choice
 import string
 import os
 import pwd
+from kusu.buildkit.kitsource import KitSrcFactory
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
 
@@ -34,12 +35,14 @@ def setupRPMMacrofile(buildprofile):
         oldrpmmacros = '.'.join([rpmmacros,ext])
         rpmmacros.rename(oldrpmmacros)
 
-    rpmtopdir = path(buildprofile.builddir / 'redhat')
+    rpmtopdir = path(buildprofile.builddir / 'packages')
     if not rpmtopdir.exists(): 
         rpmtopdir.mkdir()
         path(rpmtopdir / 'BUILD').mkdir()
         path(rpmtopdir / 'RPMS').mkdir()
-    rpmmacroTmpl = path('./templates/rpmmacros.tmpl')
+    kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
+    tmpldir = kusuroot / 'etc/buildkit-templates'
+    rpmmacroTmpl = path(tmpldir / 'rpmmacros.tmpl')
 
     d = {}
     d['topdir'] = rpmtopdir
@@ -59,6 +62,7 @@ def prepareNS(packageprofile):
     d['approot'] = packageprofile.installroot
     d['pkgversion'] = packageprofile.version
     d['pkgrelease'] = packageprofile.release
+    
     return d
 
 
@@ -66,7 +70,22 @@ def getPackageSpecTmpl(templatesdir):
     """ Gets the specfile template for package. """
     root = path(templatesdir)
     spectmpl = root.files('package.spec.tmpl')[0]
+    
     return spectmpl
+    
+def getComponentSpecTmpl(templatesdir):
+    """ Gets the specfile template for package. """
+    root = path(templatesdir)
+    spectmpl = root.files('component.spec.tmpl')[0]
+    
+    return spectmpl
+    
+def getKitSpecTmpl(templatesdir):
+    """ Gets the specfile template for package. """
+    root = path(templatesdir)
+    spectmpl = root.files('kit.spec.tmpl')[0]
+    
+    return spectmpl    
 
 def getDirName(p):
     """ Returns the unpacked directory name of a tarfile. """
@@ -89,22 +108,25 @@ def setupprofile(**kwargs):
     """ Convenience method to setup buildprofile. """
     if not kwargs:
         # check if the current directory looks like a build environment
-        cwd = path.getcwd()
-        if path(cwd / 'sources').exists() and \
-            path(cwd / 'packages').exists():
-            builddir = cwd
-            tmpdir = builddir / 'tmp'
+        _basedir = path.getcwd()
+        _kitsrc = KitSrcFactory(_basedir)
+        if _kitsrc.verifyLocalSrcPath():
+            builddir = _basedir / 'artifacts'
+            tmpdir = _basedir / 'tmp'
             return BuildProfile(builddir=builddir,tmpdir=tmpdir)
-    builddir = kwargs.get('builddir', None)
-    tmpdir = kwargs.get('tmpdir', None)
+    builddir = kwargs.get('builddir', '')
+    tmpdir = kwargs.get('tmpdir', '')
     return BuildProfile(builddir=builddir,tmpdir=tmpdir)
 
 class BuildProfile(object):
     """ Profile used to store build site configuration. """
     
     def __init__(self, **kwargs):
-        self.builddir = kwargs.get('builddir',None)
-        self.tmpdir = kwargs.get('tmpdir',None)
+        self.builddir = kwargs.get('builddir','')
+        self.tmpdir = kwargs.get('tmpdir','')
+        kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
+        tmpldir = kusuroot / 'etc/buildkit-templates'
+        self.templatesdir = kwargs.get('templatesdir', tmpldir)
 
 class PackageProfile(object):
     """ Package-specific profile used to build packages. """
@@ -131,6 +153,7 @@ class GNUBuildTools(object):
         """
         self.builddir = path(buildprofile.builddir)
         self.tmpdir = path(buildprofile.tmpdir)
+        self.templatesdir = path(buildprofile.templatesdir)
         self.filepath = path(filepath)
         self.namespace = packageNS
         self.fullname = getDirName(self.filepath.basename())
@@ -190,16 +213,15 @@ class GNUBuildTools(object):
         
     def _packRPM(self):
         """ RPM packaging stage for this class. """
-        buildroot = 'redhat/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
+        buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
             
-        destroot = self.builddir / buildroot
+        destroot = self.tmpdir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
         self.install(prefix=destroot)
-        tmpldir = get
-        tmpl = getPackageSpecTmpl()
+        tmpl = getPackageSpecTmpl(self.templatesdir)
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
         

@@ -75,17 +75,7 @@ class KitSrcBase(object):
         
         # create the paths for each attribute listed
         for k,v in self.pathLayoutAttributes.items():
-            if k.endswith('comp'):
-                if 'dir' in v.keys():
-                    path(self.srcPath / v['dir']).makedirs()
-                elif 'file' in v.keys():
-                    path(self.srcPath / v['file']).touch()
-            if k.endswith('comprc'):
-                if 'dir' in v.keys():
-                    path(self.srcPath / v['dir']).makedirs()
-                    for i in ['pre', 'preun', 'post', 'postun']: 
-                        path(self.srcPath / v['dir'] / i).mkdir()
-                elif 'file' in v.keys():
+            if 'file' in v.keys():
                     path(self.srcPath / v['file']).touch()
             if k.endswith('dir'):
                 if 'dir' in v.keys():
@@ -103,21 +93,11 @@ class GeneralKitSrc(KitSrcBase):
 
         # These should describe the key directories that identify a kit source layout.
         self.pathLayoutAttributes = {
-            'rhelcomp' : {'dir':'components/rhel'},
-            'rhelcomprc' : {'dir':'components/rhel/rc'},
-            'centoscomp' : {'dir':'components/centos'},
-            'centoscomprc' : {'dir':'components/centos/rc'},
-            'fedoracomp' : {'dir':'components/fedora'},
-            'fedoracomprc' : {'dir':'components/fedora/rc'},            
-            'susecomp' : {'dir':'components/suse'},
-            'susecomprc' : {'dir':'components/suse/rc'},            
-            'ubuntucomp' : {'dir':'components/ubuntu'},
-            'ubuntucomprc' : {'dir':'components/ubuntu/rc'},
-            'scriptsdir' : {'dir':'scripts'},
-            'pkgsdir' : {'dir':'packages'},
-            'srcdir' : {'dir':'sources'},
+            'artifactsdir' : {'dir':'artifacts'},
+            'binpkgsdir' : {'dir':'packages'},
+            'srcpkgsdir' : {'dir':'sources'},
             'tmpdir' : {'dir':'tmp'},
-            'kitinfo' : {'file':'dotkitinfo'}
+            'kitinfo' : {'file':'kitinfo'}
         }
         
 class BinaryKitSrc(KitSrcBase): pass
