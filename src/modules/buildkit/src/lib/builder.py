@@ -62,6 +62,12 @@ def prepareNS(packageprofile):
     d['approot'] = packageprofile.installroot
     d['pkgversion'] = packageprofile.version
     d['pkgrelease'] = packageprofile.release
+    if packageprofile.license:
+        d['license'] = packageprofile.license
+    if packageprofile.author:
+        d['author'] = packageprofile.author
+    if packageprofile.vendor:
+        d['vendor'] = packageprofile.vendor
     
     return d
 
@@ -138,6 +144,9 @@ class PackageProfile(object):
         self.release = kwargs.get('release','0')
         self.filepath = kwargs.get('filepath',None)
         self.installroot = kwargs.get('installroot',None)
+        self.author = kwargs.get('author','')
+        self.vendor = kwargs.get('vendor','')
+        self.license = kwargs.get('license','')
         self.buildprofile = kwargs.get('buildprofile',setupprofile())
 
 
