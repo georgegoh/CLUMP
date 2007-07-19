@@ -234,7 +234,7 @@ class GNUBuildTools(object):
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
         
-        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,specfile=specfile,verbose=self.verbose)
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
         rpmbuilder.write()
         rpmbuilder.build()
         
@@ -245,17 +245,80 @@ class GNUBuildTools(object):
         if pkgtype == 'rpm':
             return self._packRPM()
 
+class SRPMBuildTools(object):
+    """ Wrapper around SRPM build system. """
+
+    verbose = False
+
+    def setup(self, filepath, buildprofile, packageNS):
+        """ Setups the tool. filepath refers to the path of the srpm file.
+            buildprofile refers to the profile that will be used for building.
+            packageNS is the namespace used for generating files from templates.
+        """
+        self.builddir = path(buildprofile.builddir)
+        self.tmpdir = path(buildprofile.tmpdir)
+        self.templatesdir = path(buildprofile.templatesdir)
+        self.filepath = path(filepath)
+        self.namespace = packageNS
+        self.fullname = getDirName(self.filepath.basename())
+        self.buildsrc = self.tmpdir / self.fullname
+
+    def cleanup(self):
+        if self.buildsrc.exists(): self.buildsrc.rmtree()
+
+    def configure(self, **kwargs):
+        """ Configuration stage for this class. """
+        # not needed for SRPM packages.
+        pass
+
+    def build(self, **kwargs):
+        """ Build stage for this class. """
+
+        # not needed for SRPM packages.
+        pass      
+
+    def install(self, **kwargs):
+        """ Installation stage for this class. """
+
+        # not needed for SRPM packages.
+        pass
+
+    def _packRPM(self):
+        """ RPM packaging stage for this class. """
+        buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
+            self.namespace['pkgversion'],
+            self.namespace['pkgrelease'])
+
+        destroot = self.tmpdir / buildroot
+        if destroot.exists(): destroot.rmtree()
+        destroot.makedirs()
+        self.install(prefix=destroot)
+        tmpl = getPackageSpecTmpl(self.templatesdir)
+        srpmfile = self.filepath
+
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=srpmfile,verbose=self.verbose)
+        rpmbuilder.write()
+        rpmbuilder.build()
+
+
+    def pack(self, pkgtype='rpm'):
+        """ Packaging stage. """
+
+        if pkgtype == 'rpm':
+            return self._packRPM()
+
+
 class RPMBuilder:
 
     ns = {}
     template = ''
-    specfile = ''
+    sourcefile = ''
     verbose = False
 
-    def __init__(self, ns, template, specfile, verbose=False):
+    def __init__(self, ns, template, sourcefile, verbose=False):
         self.ns = ns
         self.template = template
-        self.specfile = specfile
+        self.sourcefile = sourcefile
         self.verbose = verbose
 
     def write(self):
@@ -267,10 +330,24 @@ class RPMBuilder:
 
     def build(self):
 
-        if self.verbose:
-            cmd = 'rpmbuild -bb %s' % (self.specfile)
-        else:
-            cmd = 'rpmbuild -bb %s > /dev/null 2>&1' % (self.specfile)
+        if self.sourcefile.endswith('.spec'):
+            # spec file
+            if self.verbose:
+                cmd = 'rpmbuild -bb %s' % (self.sourcefile)
+            else:
+                cmd = 'rpmbuild -bb %s > /dev/null 2>&1' % (self.sourcefile)
+
+        if self.sourcefile.endswith('.src.rpm') or self.sourcefile.endswith('.srpm'):
+            # srpm file
+            if self.verbose:
+                cmd = 'rpmbuild --rebuild %s' % (self.sourcefile)
+            else:
+                cmd = 'rpmbuild --rebuild %s > /dev/null 2>&1' % (self.sourcefile)
+
+
+        
         rpmP = subprocess.Popen(cmd,shell=True,)
         rpmP.wait()
+        
+
 
