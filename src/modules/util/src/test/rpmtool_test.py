@@ -59,9 +59,38 @@ class TestRPMTool:
         # rpm -qp --qf="%{epoch}\n}" openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm
         assert r.getEpoch() == 1
 
+        r = rpmtool.RPM(str(cachedir / 'php5-sqlite-5.2.0-14.x86_64.rpm'))
+        assert r.getEpoch() == 0
+
     def testgetArch(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
-
         assert r.getArch() == 'i386'
-   
-     
+
+        r = rpmtool.RPM(str(cachedir / 'php5-sqlite-5.2.0-14.x86_64.rpm'))
+        assert r.getArch() == 'x86_64'
+
+    def testEqual(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+
+        assert r1 == r1
+
+    def testLessThan(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r2 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.2.i386.rpm'))
+
+        assert r1 < r2
+
+    def testGreaterThan(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r2 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.2.i386.rpm'))
+
+        assert r2 > r1
+
+
+    #def testNotEqual(self):
+    #    r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+    #    r2 = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-11.el5.i386.rpm'))
+        
+    #    assert r1 != r2
+        
+
