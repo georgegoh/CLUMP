@@ -429,3 +429,107 @@ class TestRPMTool:
         assert lst[19] == r1
 
 
+
+class TestRPMToolMockRPM:
+    """Test for mock RPM object that isn't created by a rpm file"""
+    def testgetName(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+
+        assert r.getName() == 'openoffice.org-xsltfilter'
+
+    def testgetVersion(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+
+        assert r.getVersion() == '2.0.4'
+    
+    def testgetRelease(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+
+        assert r.getRelease() == '5.4.17.1'
+
+    def testgetEpoch(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+        
+        # This rpm has epoch == 1
+        # rpm -qp --qf="%{epoch}\n}" openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm
+        assert r.getEpoch() == 1
+
+        r = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-11.el5.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+        
+        assert r.getEpoch() == 0
+
+    def testgetArch(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+        assert r.getArch() == 'i386'
+
+        r = rpmtool.RPM(str(cachedir / 'php5-sqlite-5.2.0-14.x86_64.rpm'))
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch())
+        assert r.getArch() == 'x86_64'
+
+    def testEqual(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r1 = rpmtool.RPM(name=r1.getName(), version=r1.getVersion(), 
+                         release=r1.getRelease(), epoch=r1.getEpoch(),
+                         arch=r1.getArch())
+ 
+        assert r1 == r1
+
+    def testLessThan(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r1 = rpmtool.RPM(name=r1.getName(), version=r1.getVersion(), 
+                         release=r1.getRelease(), epoch=r1.getEpoch(),
+                         arch=r1.getArch())
+        r2 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.2.i386.rpm'))
+        r2 = rpmtool.RPM(name=r2.getName(), version=r2.getVersion(), 
+                        release=r2.getRelease(), epoch=r2.getEpoch(),
+                        arch=r2.getArch())
+        
+        assert r1 < r2
+
+    def testGreaterThan(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r1 = rpmtool.RPM(name=r1.getName(), version=r1.getVersion(), 
+                         release=r1.getRelease(), epoch=r1.getEpoch(),
+                         arch=r1.getArch())
+        r2 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.2.i386.rpm'))
+        r2 = rpmtool.RPM(name=r2.getName(), version=r2.getVersion(), 
+                        release=r2.getRelease(), epoch=r2.getEpoch(),
+                        arch=r2.getArch())
+ 
+        assert r2 > r1
+
+    def testNotEqual(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r1 = rpmtool.RPM(name=r1.getName(), version=r1.getVersion(), 
+                         release=r1.getRelease(), epoch=r1.getEpoch(),
+                         arch=r1.getArch())
+        r2 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.2.i386.rpm'))
+        r2 = rpmtool.RPM(name=r2.getName(), version=r2.getVersion(), 
+                        release=r2.getRelease(), epoch=r2.getEpoch(),
+                        arch=r2.getArch())
+        
+        assert r1 != r2
+
+
+
+
