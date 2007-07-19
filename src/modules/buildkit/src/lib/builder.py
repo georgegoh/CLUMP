@@ -62,9 +62,9 @@ def prepareNS(packageprofile):
     return d
 
 
-def getPackageSpecTmpl():
+def getPackageSpecTmpl(templatesdir):
     """ Gets the specfile template for package. """
-    root = path.getcwd() / 'templates'
+    root = path(templatesdir)
     spectmpl = root.files('package.spec.tmpl')[0]
     return spectmpl
 
@@ -198,7 +198,7 @@ class GNUBuildTools(object):
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
         self.install(prefix=destroot)
-
+        tmpldir = get
         tmpl = getPackageSpecTmpl()
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile

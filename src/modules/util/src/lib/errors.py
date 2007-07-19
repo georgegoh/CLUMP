@@ -134,6 +134,8 @@ class KitBuildError(KusuError): pass
 class UnknownPackageType(KusuError): pass
 class UndefinedOSType(KusuError): pass
 class UnsupportedNGType(KusuError): pass
+class UndefinedComponentInfo(KusuError): pass
+class UndefinedKitInfo(KusuError): pass
 
 
 

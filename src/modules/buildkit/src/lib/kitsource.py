@@ -122,30 +122,99 @@ class GeneralKitSrc(KitSrcBase):
         
 class BinaryKitSrc(KitSrcBase): pass
 
+class KitInfo(object):
+    """ This class contains the metadata information regarding the kit. """
+    author = ''
+    name = ''
+    vendor = ''
+    license = ''
+    arch = 'noarch'
+    version = '0.1'
+    release = '0'
 
+    def __init__(self, **kwargs):
+        self.author = kwargs.get('author','')
+        self.name = kwargs.get('name','')
+        self.vendor = kwargs.get('vendor','')
+        self.license = kwargs.get('license','')
+        self.arch = kwargs.get('arch','noarch')
+        self.version = kwargs.get('version','0.1')
+        self.release = kwargs.get('release','0')
+        
+    def generate(self):
+        """ Returns a metadata tuple containing the kitinfo and individual compinfos. """
+        
+        d = {}
+        d['name'] = self.name
+        d['license'] = self.license
+        d['vendor'] = self.vendor
+        d['author'] = self.author
+        d['arch'] = self.arch
+        d['version'] = self.version
+        d['release'] = self.release
+        
+        return d
+        
 
+class ComponentInfo(object):
+    """ This class contains the metadata information regarding the component.
+    """
 
-class KusuComponent(object):
-    """ Component for Kits. """
-
-    dependencies = []
-    scripts = []
     ngtypes = []
+    name = ''
+    ostype = ''
+    osversion = ''
+    compversion = '0.1'
+    comprelease = '0'
     
     def __init__(self,**kwargs):
-        self.dependencies = kwargs.get('dependencies',[])
-        self.scripts = kwargs.get('scripts',[])
+        self.name = kwargs.get('name','')
+        self.ostype = kwargs.get('ostype','')
+        self.osversion = kwargs.get('osversion','')
         self.ngtypes = kwargs.get('ngtypes',[])
+        self.compversion = kwargs.get('compversion','0.1')
+        self.comprelease = kwargs.get('comprelease','0')
     
     def associateWith(self, ngtype):
         """ Add ngtype for this component to belong to. """
         if ngtype not in NODEGROUP_TYPES: raise UnsupportedNGType
         if ngtype not in self.ngtypes: self.ngtypes.append(ngtype)
         
-    def addDep(self, package):
-        """ Add package as a dependency. """
+    def generate(self):
+        """ Returns a metadata dict. """
+        d = {}
+        d['ngtypes'] = self.ngtypes
+        d['name'] = self.name
+        d['ostype'] = self.ostype
+        d['osversion'] = self.osversion
+        d['compversion'] = self.compversion
+        d['comprelease'] = self.comprelease
+        
+        return d
+
+class KusuComponent(object):
+    """ Component for Kits. """
+
+    dependencies = []
+    scripts = []
+    componentinfo = None
+    
+    def __init__(self,**kwargs):
+        self.dependencies = kwargs.get('dependencies',[])
+        self.scripts = kwargs.get('scripts',[])
+        self.componentinfo = kwargs.get('componentinfo',None)
+    
+    def associateWith(self, ngtype):
+        """ Add ngtype for this component to belong to. """
+        self.componentinfo.associateWith(ngtype)
+        
+    def addDep(self, package, absoluteversion=False):
+        """ Add package as a dependency. If absoluteversion is set to True, 
+            the package version have to be exact. 
+            '=' instead of just '>='.
+        """
         if package not in self.dependencies:
-            self.dependencies.append(package)
+            self.dependencies.append((package,absoluteversion))
 
     def addScripts(self, script, mode='post'):
         """ Add script for this component. Available modes are
@@ -170,11 +239,17 @@ class KusuKit(object):
     dependencies = []
     scripts = []
     components = []
+    kitinfo = None
+    
+    def __init__(self, kitinfo):
+        self.kitinfo = kitinfo
 
     def addComponent(self, component):
         """ Add component to this kit. """
         if not component in self.components:
             self.components.append(component)
+            
+    addComp = addComponent
 
     def addDep(self, package):
         """ Add package as a dependency. """
@@ -192,6 +267,19 @@ class KusuKit(object):
         """ RPM packaging stage for this class. """
         pass
 
+    def generateKitInfo(self, filename):
+        """ Generates a .kitinfo file."""
+        li = [component.componentinfo.generate() for component in self.components]
+        compsinfo = {}
+        for l in li:
+            compsinfo.update(l)
+
+        _kitinfo  = self.kitinfo.generate()
+        f = open(filename,'w')
+        f.write('kit = %r\n' % _kitinfo)
+        f.write('components = %r\n' % compsinfo)
+        f.close()
+        
     def pack(self, pkgtype='rpm'):
         """ Packaging stage. This is what the user would call. """
 

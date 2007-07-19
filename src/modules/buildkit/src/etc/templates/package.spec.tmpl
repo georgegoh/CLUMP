@@ -1,0 +1,58 @@
+# Copyright (C) 2007 Platform Computing Inc
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+
+%define _approot $approot
+
+Summary: $pkgname module runtime
+Name: $pkgname
+Version: $pkgversion
+Release: $pkgrelease
+License: GPLv2
+Group: System Environment/Base
+Vendor: Platform Computing Corporation
+BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
+AutoReq: no
+
+%description
+This package installs the $pkgname module runtime.
+
+%prep
+mkdir -p %{buildroot}%{_approot}
+
+%install
+cd %{_builddir}/%{name}-%{version}-%{release}
+find bin/ | cpio -mpdu %{buildroot}%{_approot}
+find etc/ | cpio -mpdu %{buildroot}%{_approot}
+find info/ | cpio -mpdu %{buildroot}%{_approot}
+find lib/ | cpio -mpdu %{buildroot}%{_approot}
+find man/ | cpio -mpdu %{buildroot}%{_approot}
+find share/ | cpio -mpdu %{buildroot}%{_approot}
+
+%pre
+
+%post
+
+%preun
+
+%postun
+
+%clean
+rm -rf %{buildroot}%{_approot}
+
+%files
+%defattr(-,root,root)
+%{_approot}
+
