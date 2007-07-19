@@ -179,7 +179,7 @@ class RPM:
     def getBuildhost(self):
         """Returns the build host"""
 
-        if self.hdr.has_key(rpm.RPMTAG_BUILDHOST):
+        if rpm.RPMTAG_BUILDHOST in self.hdr.keys():
             return self.hdr[rpm.RPMTAG_BUILDHOST]
         else:
             return None
@@ -188,6 +188,10 @@ class RPM:
         """Returns a list of provides"""
 
         lst = []
+
+        if rpm.RPMTAG_PROVIDES not in self.hdr.keys():
+            return None
+
         for i in xrange(len(self.hdr[rpm.RPMTAG_PROVIDES])):
             p = self.hdr[rpm.RPMTAG_PROVIDES][i]
             flag = ""
@@ -209,7 +213,7 @@ class RPM:
     
     def getVendor(self):
         """Returns the vendor"""
-        if self.hdr.has_key(rpm.RPMTAG_VENDOR):
+        if rpm.RPMTAG_VENDOR in self.hdr.keys():
             return self.hdr[rpm.RPMTAG_VENDOR]
         else:
             return None
@@ -217,21 +221,26 @@ class RPM:
     def getInstallTime(self):
         """Returns the installed time
            None if there's no install time"""
-        if self.hdr.has_key(rpm.RPMTAG_INSTALLTIME) and self.hdr[rpm.RPMTAG_INSTALLTIME]:
+        if rpm.RPMTAG_INSTALLTIME in self.hdr.keys():
             return self.hdr[rpm.RPMTAG_INSTALLTIME]
         else:
             return None
 
     def getFileList(self):
         """Returns the file list"""
-        if self.hdr.has_key(rpm.RPMTAG_FILENAMES):
-            return self.hdr[rpm.RPMTAG_FILENAMES]
-        else:
+        if type(self.hdr) is types.DictType and \
+            not self.hdr.has_key(rpm.RPMTAG_FILENAMES):
             return None
+        else:
+            return self.hdr[rpm.RPMTAG_FILENAMES]
 
     def getRequires(self):
         """Returns a tuple of the require tag"""
         lst = []
+
+        if rpm.RPMTAG_REQUIRENAME not in self.hdr.keys():
+            return None
+
         for i in xrange(len(self.hdr[rpm.RPMTAG_REQUIRENAME])):
             flag = ""
             if self.hdr[rpm.RPMTAG_REQUIREFLAGS][i] & rpm.RPMSENSE_LESS:
@@ -254,12 +263,12 @@ class RPM:
         
     def getChangelog(self):
         """Returns the changelog in a dictionary, sorted in reverse chronological order"""
-   
-        if self.hdr.has_key(rpm.RPMTAG_CHANGELOGNAME) and \
-           self.hdr.has_key(rpm.RPMTAG_CHANGELOGTEXT) and \
-           self.hdr.has_key(rpm.RPMTAG_CHANGELOGTEXT):
+  
+        if (rpm.RPMTAG_CHANGELOGNAME not in self.hdr.keys()) or \
+           (rpm.RPMTAG_CHANGELOGTEXT not in self.hdr.keys()) or \
+           (rpm.RPMTAG_CHANGELOGTIME not in self.hdr.keys()):
             return None
-     
+ 
         def _cmp_time(self, other):
             return self['TIME'] - other['TIME']
                             
@@ -288,17 +297,20 @@ class RPM:
     
     def getSummary(self):
         """Returns the summary."""
-        if self.hdr.has_key(rpm.RPMTAG_SUMMARY):
-            return self.hdr[rpm.RPMTAG_SUMMARY]
-        else:
+
+        if type(self.hdr) is types.DictType and \
+            not self.hdr.has_key(rpm.RPMTAG_SUMMARY):
             return None
+        else:
+            return self.hdr[rpm.RPMTAG_SUMMARY]
     
     def getConflicts(self):
         """Returns the summary."""
-        if self.hdr.has_key(rpm.RPMTAG_CONFLICTS):
-            return self.hdr[rpm.RPMTAG_CONFLICTS]
-        else:
+    
+        if rpm.RPMTAG_CONFLICTS not in self.hdr.keys():
             return None
+        else:
+            return self.hdr[rpm.RPMTAG_CONFLICTS]
     
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""
