@@ -14,6 +14,7 @@ import string
 import os
 import pwd
 from kusu.buildkit.kitsource import KitSrcFactory
+from kusu.util.tools import cpio_copytree
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
 
@@ -306,6 +307,70 @@ class SRPMBuildTools(object):
 
         if pkgtype == 'rpm':
             return self._packRPM()
+
+class BinaryPackageBuildTools(object):
+    """ Wrapper around binary distribution packages. """
+
+    verbose = False
+
+    def setup(self, filepath, buildprofile, packageNS):
+        """ Setups the tool. filepath refers to the path of the binary distribution tarfile.
+            buildprofile refers to the profile that will be used for building.
+            packageNS is the namespace used for generating files from templates.
+        """
+        self.builddir = path(buildprofile.builddir)
+        self.tmpdir = path(buildprofile.tmpdir)
+        self.templatesdir = path(buildprofile.templatesdir)
+        self.filepath = path(filepath)
+        self.namespace = packageNS
+        self.fullname = getDirName(self.filepath.basename())
+        self.buildsrc = self.tmpdir / self.fullname
+
+    def cleanup(self):
+        if self.buildsrc.exists(): self.buildsrc.rmtree()
+
+    def configure(self, **kwargs):
+        """ Configuration stage for this class. """
+
+        # unpack the tarfile
+        if not self.buildsrc.exists():
+            unpackTarfile(self.filepath,self.tmpdir)
+        
+        
+    def build(self, **kwargs):
+        """ Build stage for this class. """
+        pass      
+
+    def install(self, prefix):
+        """ Installation stage for this class. """
+        destroot = path(prefix).abspath()
+        cpio_copytree(self.buildsrc,destroot)
+
+    def _packRPM(self):
+        """ RPM packaging stage for this class. """
+        buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
+            self.namespace['pkgversion'],
+            self.namespace['pkgrelease'])
+            
+        destroot = self.tmpdir / buildroot
+        if destroot.exists(): destroot.rmtree()
+        destroot.makedirs()
+        self.install(destroot)
+        tmpl = getPackageSpecTmpl(self.templatesdir)
+        _specfile = '.'.join([self.namespace['pkgname'],'spec'])
+        specfile = self.builddir / _specfile
+        
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
+        rpmbuilder.write()
+        rpmbuilder.build()
+
+
+    def pack(self, pkgtype='rpm'):
+        """ Packaging stage. """
+
+        if pkgtype == 'rpm':
+            return self._packRPM()
+
 
 
 class RPMBuilder:
