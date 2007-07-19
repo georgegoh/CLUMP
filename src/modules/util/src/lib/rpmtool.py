@@ -51,7 +51,7 @@ class RPM:
                     self.filename = r
                     fd = os.open(self.filename, os.O_RDONLY)
                     ts = rpm.ts()
-                    ts.setVSFlags(rpm.RPMVSF_NORSA | rpm.RPMVSF_NODSA)
+                    ts.setVSFlags(-1)
                     self.hdr = ts.hdrFromFdno(fd)
                     os.close(fd)
                 elif self.ext == '.hdr':
