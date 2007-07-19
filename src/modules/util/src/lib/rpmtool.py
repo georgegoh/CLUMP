@@ -34,42 +34,50 @@ class RPM:
 
             rpmtags[attr] = val
     
-    def __init__(self, r):
+    def __init__(self, r=None, **kwargs):
         """Accepts the following:
            1. RPM header
            2. RPM header filename (foo.hdr)
            3. RPM filename (foo.rpm)"""
         
-        if type(r) == types.StringType:
-            r = path(r).realpath()
-            self.ext = r.ext
-            self.file = r
-            self.path, self.fname = r.splitpath()
+        if r:
+            if type(r) == types.StringType:
+                r = path(r).realpath()
+                self.ext = r.ext
+                self.file = r
+                self.path, self.fname = r.splitpath()
 
-            if self.ext  == '.rpm':
-                self.filename = r
-                fd = os.open(self.filename, os.O_RDONLY)
-                ts = rpm.ts()
-                ts.setVSFlags(rpm.RPMVSF_NORSA | rpm.RPMVSF_NODSA)
-                self.hdr = ts.hdrFromFdno(fd)
-                os.close(fd)
-            elif self.ext == '.hdr':
-                self._read_header(r)
+                if self.ext  == '.rpm':
+                    self.filename = r
+                    fd = os.open(self.filename, os.O_RDONLY)
+                    ts = rpm.ts()
+                    ts.setVSFlags(rpm.RPMVSF_NORSA | rpm.RPMVSF_NODSA)
+                    self.hdr = ts.hdrFromFdno(fd)
+                    os.close(fd)
+                elif self.ext == '.hdr':
+                    self._read_header(r)
+                else:
+                    raise Exception, 'Unknown filename: %s' % r
             else:
-                raise Exception, 'Unknown filename: %s' % r
+                if type(r) == rpm.hdr:
+                    self.hdr = r
+                else:
+                    raise Exception, 'Not a rpm header'
         else:
-            if type(r) == rpm.hdr:
-                self.hdr = r
-            else:
-                raise Exception, 'Not a rpm header'
-        
+            self.hdr = {}
+            self.hdr[rpm.RPMTAG_NAME] = kwargs['name']
+            self.hdr[rpm.RPMTAG_VERSION] = kwargs['version']
+            self.hdr[rpm.RPMTAG_RELEASE] = kwargs['release']
+            self.hdr[rpm.RPMTAG_EPOCH] = kwargs['epoch']
+            self.hdr[rpm.RPMTAG_ARCH] = kwargs['arch']
+
         if not self.hdr:
             raise Exception, "Invalid header"
                     
-    def writeHeader(self, dir=None, compress=True):
+    def writeHeader(self, dir='.', compress=True):
         """Write rpm header to a directory.
 
-           dir:      If dir is None, the current directoy will be used
+           dir:      Default is the current working directory
            compress: Default is True. Compress header with gzip
         """
 
@@ -170,7 +178,11 @@ class RPM:
 
     def getBuildhost(self):
         """Returns the build host"""
-        return self.hdr[rpm.RPMTAG_BUILDHOST]
+
+        if self.hdr.has_key(rpm.RPMTAG_BUILDHOST):
+            return self.hdr[rpm.RPMTAG_BUILDHOST]
+        else:
+            return None
 
     def getProvides(self):
         """Returns a list of provides"""
@@ -197,19 +209,25 @@ class RPM:
     
     def getVendor(self):
         """Returns the vendor"""
-        return self.hdr[rpm.RPMTAG_VENDOR]
+        if self.hdr.has_key(rpm.RPMTAG_VENDOR):
+            return self.hdr[rpm.RPMTAG_VENDOR]
+        else:
+            return None
 
     def getInstallTime(self):
         """Returns the installed time
            None if there's no install time"""
-        if not self.hdr[rpm.RPMTAG_INSTALLTIME]:
-            return None
-        else:
+        if self.hdr.has_key(rpm.RPMTAG_INSTALLTIME) and self.hdr[rpm.RPMTAG_INSTALLTIME]:
             return self.hdr[rpm.RPMTAG_INSTALLTIME]
-   
+        else:
+            return None
+
     def getFileList(self):
         """Returns the file list"""
-        return self.hdr[rpm.RPMTAG_FILENAMES]
+        if self.hdr.has_key(rpm.RPMTAG_FILENAMES):
+            return self.hdr[rpm.RPMTAG_FILENAMES]
+        else:
+            return None
 
     def getRequires(self):
         """Returns a tuple of the require tag"""
@@ -236,7 +254,12 @@ class RPM:
         
     def getChangelog(self):
         """Returns the changelog in a dictionary, sorted in reverse chronological order"""
-        
+   
+        if self.hdr.has_key(rpm.RPMTAG_CHANGELOGNAME) and \
+           self.hdr.has_key(rpm.RPMTAG_CHANGELOGTEXT) and \
+           self.hdr.has_key(rpm.RPMTAG_CHANGELOGTEXT):
+            return None
+     
         def _cmp_time(self, other):
             return self['TIME'] - other['TIME']
                             
@@ -265,11 +288,17 @@ class RPM:
     
     def getSummary(self):
         """Returns the summary."""
-        return self.hdr[rpm.RPMTAG_SUMMARY]
+        if self.hdr.has_key(rpm.RPMTAG_SUMMARY):
+            return self.hdr[rpm.RPMTAG_SUMMARY]
+        else:
+            return None
     
     def getConflicts(self):
         """Returns the summary."""
-        return self.hdr[rpm.RPMTAG_CONFLICTS]
+        if self.hdr.has_key(rpm.RPMTAG_CONFLICTS):
+            return self.hdr[rpm.RPMTAG_CONFLICTS]
+        else:
+            return None
     
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""

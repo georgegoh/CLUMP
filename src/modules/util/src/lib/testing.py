@@ -7,8 +7,11 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
+
 import tempfile
 import subprocess
+import os
+from path import path
 from os import stat
 from os.path import basename
 import kusu.util.log as kusulog
@@ -52,3 +55,20 @@ def createLoopbackDevice(size):
     assert loopback_file == tmpfile, "loopback file doesn't match tempfile."
 
     return loopback, tmpfile
+
+def download(url, dest=os.environ.get('KUSU_TMP', '/tmp')):
+
+    filename = path(url).basename()
+    dest = path(dest) / filename
+
+    if dest.exists():
+        return
+
+    import urllib2
+    f = urllib2.urlopen(url)
+    content = f.read()
+    f.close()
+
+    f = open(dest, 'w')
+    f.write(content)
+    f.close()
