@@ -7,10 +7,21 @@
 
 import os
 import logging
+import tempfile
 from path import path
 import kusu.util.log as kusulog
 
-tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
+def setUp():
+    global tmp_prefix
+
+    tmp_prefix = path(tempfile.mkdtemp(prefix='logtest',
+                                       dir=os.environ.get('KUSU_TMP', '/tmp')))
+
+def tearDown():
+    global tmp_prefix
+
+    if tmp_prefix.exists():
+        tmp_prefix.rmtree()
 
 class TestLogger:
     def setUp(self):
