@@ -85,7 +85,8 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
         kitops.addKitPrepare()
     except (AssertionError, CannotMountKitMediaError,
             UnrecognizedKitMediaError):
-        raise CannotAddKitError, 'Cannot mount the CDROM device.'
+        baseScreen.selector.popupMsg('Cannot Mount CD/DVD device',
+                                "Couldn't mount the CD/DVD. Please wait and try again.")
 
     kl.debug('Get OS Dist')
     media_distro = kitops.getOSDist()
@@ -124,8 +125,9 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
                                          'The inserted disk cannot be identified.')
             kit_add_failed = False
     kitops.unmountMedia()
-    if kit_add_failed: raise CannotAddKitError, 'Add kit Failed'
-    # handle this error intelligently
+    if kit_add_failed:
+        baseScreen.selector.popupMsg('Add kit failed',
+                                     "Couldn't add kit. Please check the disc for errors.")
 
 
 def verifyDistroVersionAndArch(kiprofile, distro):
