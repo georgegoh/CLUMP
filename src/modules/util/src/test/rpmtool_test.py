@@ -95,7 +95,7 @@ class TestRPMTool:
         assert r.getEpoch() == 1
 
         r = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-11.el5.i386.rpm'))
-        assert r.getEpoch() == 0
+        assert r.getEpoch() == None
 
     def testgetArch(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
@@ -471,7 +471,7 @@ class TestRPMToolMockRPM:
                         release=r.getRelease(), epoch=r.getEpoch(),
                         arch=r.getArch())
         
-        assert r.getEpoch() == 0
+        assert r.getEpoch() == None
 
     def testgetArch(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))

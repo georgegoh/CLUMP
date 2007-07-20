@@ -143,10 +143,7 @@ class RPM:
 
     def getEpoch(self):
         """Returns the epoch"""
-        if self.hdr[rpm.RPMTAG_EPOCH]:
-            return self.hdr[rpm.RPMTAG_EPOCH]
-        else:
-            return 0
+        return self.hdr[rpm.RPMTAG_EPOCH]
             
     def getNEVRA(self):
         """Returns the name,epoch,version,release,arch"""
