@@ -15,6 +15,8 @@ import types
 import gzip
 from path import path
 
+from kusu.util.errors import *
+
 class RPM:
     """A RPM abstraction class"""
     filename = None       # Filename inclduing the absolute path. For e.g.: /tmp/foo.rpm
@@ -57,12 +59,12 @@ class RPM:
                 elif self.ext == '.hdr':
                     self._read_header(r)
                 else:
-                    raise Exception, 'Unknown filename: %s' % r
+                    raise UnknownFileTypeError, 'Unknown file: %s' % r
             else:
                 if type(r) == rpm.hdr:
                     self.hdr = r
                 else:
-                    raise Exception, 'Not a rpm header'
+                    raise UnknownFileTypeError, 'Not a rpm header'
         else:
             self.hdr = {}
             self.hdr[rpm.RPMTAG_NAME] = kwargs['name']
@@ -72,7 +74,7 @@ class RPM:
             self.hdr[rpm.RPMTAG_ARCH] = kwargs['arch']
 
         if not self.hdr:
-            raise Exception, "Invalid header"
+            raise InvalidRPMHeader, "Invalid header"
                     
     def writeHeader(self, dir='.', compress=True):
         """Write rpm header to a directory.
@@ -335,18 +337,13 @@ class RPM:
         n2,e2,v2,r2,a2 = other.getNEVRA()
         x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
      
-        #if n1 == n2 and a1 == a2:
-        #    return x
-        #else:
-        #    raise Exception, "Different rpms"
-
         if n1 == n2:
             if (e1,v1,r1) == (e2,v2,r2):
                return self._compareARCH(a1, a2)
             else:
                 return x
         else:
-            raise Exception, "Different rpms"
+            raise RPMComparisonError, "Different rpms"
 
     def __repr__(self):
         str = "<%s instance at %s" % (self.__class__, hex(id(self)))
@@ -394,7 +391,7 @@ class RPM:
     def _read_header(self, f):
         """Read rpm header"""
         if not os.access(f, os.R_OK):
-            raise Exception, 'Unable to read rpm header: %s' % f
+            raise FileReadPermissionError, 'Unable to read rpm header: %s' % f
        
         # try yum headers. yum headers are gzipped
         # Can check for \037\213 too in open(f).read(2)
@@ -405,14 +402,14 @@ class RPM:
         except IOError:
             isGzip = False
         except Exception:
-            raise Exception, 'rpm unable to load header: %s' % f
+            raise InvalidRPMHeader, 'rpm unable to load header: %s' % f
            
         if not isGzip:
             try:
                 blob = open(f, "r").read()
                 self.hdr = rpm.headerLoad(blob)                 
             except Exception:
-                raise Exception, 'rpm unable to load header: %s' % f
+                raise InvalidRPMHeader, 'rpm unable to load header: %s' % f
                 
     def __getattr__(self, attr):
         if attr not in self.getAttributes():

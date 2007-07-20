@@ -12,8 +12,10 @@
 class KusuError(Exception): pass
 class InvalidPathError(KusuError): pass
 class UnknownTypeError(KusuError): pass
+class UnknownFileTypeError(KusuError): pass
 class FileDoesNotExistError(KusuError): pass
 class FileAlreadyExistError(KusuError): pass
+class FileReadPermissionError(KusuError): pass
 class DirDoesNotExistError(KusuError): pass
 class DirAlreadyExistError(KusuError): pass
 class CommandFailedToRunError(KusuError): pass
@@ -137,5 +139,8 @@ class UnsupportedNGType(KusuError): pass
 class UndefinedComponentInfo(KusuError): pass
 class UndefinedKitInfo(KusuError): pass
 
+# util.rpmtool
+class InvalidRPMHeader(KusuError): pass
+class RPMComparisonError(KusuError): pass
 
 
