@@ -124,6 +124,8 @@ def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
 
     d = {}
+    mounted = []
+
     for disk in disk_profile.disk_dict.values():
         for id, p in disk.partition_dict.items():
             d[p.mountpoint] = p
@@ -142,7 +144,16 @@ def mountKusuMntPts(prefix, disk_profile):
         # mountpoint has an associated partition,
         # and mount it at the mountpoint
         if d.has_key(m):
-            d[m].mount(mntpnt)
+            try:
+                d[m].mount(mntpnt)
+                mounted.append(m)
+            except MountFailedError:
+                raise 'Unable to mount %s on %s' % (d[m].path, m)
+
+    for m in ['/', '/depot']:
+        if m not in mounted:
+            raise KusuError, 'Mountpoint: %s not defined' % m
+
 
 def writeNTP(prefix, kiprofile):
     prefix = path(prefix)
