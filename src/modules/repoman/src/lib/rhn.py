@@ -11,6 +11,8 @@ import xmlrpclib
 import urllib2
 import re
 
+from kusu.util import rpmtool
+
 class RHN:
     headers = ['X-RHN-Server-Id',
                'X-RHN-Auth-User-Id',
@@ -21,19 +23,22 @@ class RHN:
     rhnURL = 'http://rhn.redhat.com/rpc/api'
     up2dateURL = 'http://xmlrpc.rhn.redhat.com/XMLRPC'
 
-    def __init__(self):
+    def __init__(self, username, password):
         self.rhnServer = xmlrpclib.Server(self.rhnURL)
 
         cfg = self.getRHNConfig()
         self.up2dateServer = xmlrpclib.Server(cfg['up2dateURL'])
 
+        self.username = username
+        self.password = password
+
     def getRHNConfig(self):
         #f = open('/etc/sysconfig/rhn/up2date', 'r')
         return {'up2dateURL': self.up2dateURL}
     
-    def login(self, username, password):
+    def login(self):
         """login to RHN"""
-        self.session = self.rhnServer.auth.login(username, password)
+        self.session = self.rhnServer.auth.login(self.username, self.password)
         self.loginInfo = self.up2dateServer.up2date.login(self.getSystemID())
     
     def logout(self):
@@ -49,7 +54,27 @@ class RHN:
 
     def getLatestPackages(self, channelLabel):
         """Get latest rpms from a channel"""
-        pkgs = self.rhnServer.channel.software.listLatestPackages(self.session, channelLabel)
+        rpms = self.rhnServer.channel.software.listLatestPackages(self.session, channelLabel)
+
+        pkgs = []
+        for r in rpms:
+            name = r['package_name']
+            version = r['package_version']
+            release = r['package_release']
+            epoch = r['package_epoch']
+            arch = r['package_arch_label']
+
+            # None epoch is returned as " "
+            if not epoch.strip():
+                epoch = None
+
+            r = rpmtool.RPM(name = name,
+                            version = version,
+                            release = release,
+                            epoch = epoch,
+                            arch = arch)
+
+            pkgs.append(r)
         return pkgs
        
     def getSystemID(self):
@@ -72,7 +97,7 @@ class RHN:
     
     def getPackage(self, rpm, channelLabel):
         """Get a RPM from the channel"""
-        req = urllib2.Request(url + '/$RHN/%s/getPackage/%s' % (channelLabel, rpm))
+        req = urllib2.Request(self.up2dateURL + '/$RHN/%s/getPackage/%s' % (channelLabel, rpm))
         for h in self.headers:
             if self.loginInfo.has_key(h):
                 req.add_header(h, self.loginInfo[h])
