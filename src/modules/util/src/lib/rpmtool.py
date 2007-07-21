@@ -58,6 +58,7 @@ class RPM:
                     os.close(fd)
                 elif self.ext == '.hdr':
                     self._read_header(r)
+                    self.filename = self._getFilename()
                 else:
                     raise UnknownFileTypeError, 'Unknown file: %s' % r
             else:
@@ -67,11 +68,17 @@ class RPM:
                     raise UnknownFileTypeError, 'Not a rpm header'
         else:
             self.hdr = {}
-            self.hdr[rpm.RPMTAG_NAME] = kwargs['name']
-            self.hdr[rpm.RPMTAG_VERSION] = kwargs['version']
-            self.hdr[rpm.RPMTAG_RELEASE] = kwargs['release']
+            name = kwargs['name']
+            version = kwargs['version']
+            release = kwargs['release']
+            arch = kwargs['arch']
+
+            self.hdr[rpm.RPMTAG_NAME] = name
+            self.hdr[rpm.RPMTAG_VERSION] = version
+            self.hdr[rpm.RPMTAG_RELEASE] = release
             self.hdr[rpm.RPMTAG_EPOCH] = kwargs['epoch']
-            self.hdr[rpm.RPMTAG_ARCH] = kwargs['arch']
+            self.hdr[rpm.RPMTAG_ARCH] = arch
+            self.filename = '%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
         if not self.hdr:
             raise InvalidRPMHeader, "Invalid header"
@@ -103,21 +110,14 @@ class RPM:
         return dst
         
     def getFilename(self):
-        """Returns the fileanme of the rpm"""
-
+        """Returns the filename of the rpm"""
         if self.filename:
-            return self.filename
-
-        if self.ext == '.rpm':
-            return self.filename
-        elif self.ext == '.hdr':
-            return self._getFilename()
-        else:
+            return path(self.filename)
+        else:       
             return None
         
     def getSplitfilename(self):
         """Returns the tuple (path, filename) of the rpm"""
-       
         filename = self.getFilename()
 
         if filename:
