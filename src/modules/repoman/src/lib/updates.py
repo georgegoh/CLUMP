@@ -24,8 +24,9 @@ class BaseUpdate:
 
         rpmPkgs = {}
         for dir in dirs:
+            dir = path(dir)
             for r in dir.files():
-                if r.ext == 'rpm' and r.basename() != 'TRANS.TBL':
+                if r.ext == '.rpm' and r.basename() != 'TRANS.TBL':
                     r = rpmtool.RPM(str(r))
                     name = r.getName()
                     arch = r.getArch()
