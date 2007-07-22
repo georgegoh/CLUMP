@@ -13,6 +13,8 @@ import tempfile
 from kusu.util import testing
 from kusu.util import rpmtool
 
+from nose.tools import assert_raises
+
 cachedir = path(tempfile.mkdtemp(prefix='rpmtool', dir=os.environ['KUSU_TMP']))
 
 def setUp():
@@ -61,7 +63,9 @@ def setUp():
             'kernel-2.6.9-5.0.5.EL.i386.rpm',
             'kernel-2.6.9-5.EL.i386.rpm',
             'kernel-2.6.9-55.0.2.EL.i386.rpm',
-            'kernel-2.6.9-55.EL.i386.rpm']
+            'kernel-2.6.9-55.EL.i386.rpm', 
+            'corrupt-1.0-1.i386.rpm', 
+            'invalid-1.0-1.i386.rpm']
 
     for r in rpms:
         testing.download(url + r, dest=cachedir)
@@ -71,6 +75,14 @@ def tearDown():
         cachedir.rmtree()
 
 class TestRPMTool:
+
+    def testInvalidRPMFile(self):
+        assert_raises(rpmtool.InvalidRPMHeader, \
+                      rpmtool.RPM, str(cachedir / 'invalid-1.0-1.i386.rpm'))
+
+    def testCorruputRPMFile(self):
+        assert_raises(rpmtool.InvalidRPMHeader, \
+                      rpmtool.RPM, str(cachedir / 'corrupt-1.0-1.i386.rpm'))
 
     def testgetName(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))

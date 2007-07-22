@@ -54,7 +54,10 @@ class RPM:
                     fd = os.open(self.filename, os.O_RDONLY)
                     ts = rpm.ts()
                     ts.setVSFlags(-1)
-                    self.hdr = ts.hdrFromFdno(fd)
+                    try:
+                        self.hdr = ts.hdrFromFdno(fd)
+                    except:
+                        raise InvalidRPMHeader, r
                     os.close(fd)
                 elif self.ext == '.hdr':
                     self._read_header(r)
