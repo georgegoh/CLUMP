@@ -7,11 +7,12 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+import os
 from path import path
 
 from kusu.util import rpmtool
 from kusu.repoman.rhn import RHN
-from kusu.util.errors import NotImplementedError
+from kusu.util.errors import NotImplementedError, InvalidRPMHeader
 
 class BaseUpdate:
     def __init__(self, os_name, os_version, os_arch):
@@ -27,7 +28,11 @@ class BaseUpdate:
             dir = path(dir)
             for r in dir.files():
                 if r.ext == '.rpm' and r.basename() != 'TRANS.TBL':
-                    r = rpmtool.RPM(str(r))
+                    try:
+                        r = rpmtool.RPM(str(r))
+                    except InvalidRPMHeader:
+                        continue
+
                     name = r.getName()
                     arch = r.getArch()
 
@@ -49,6 +54,10 @@ class BaseUpdate:
         """Gets the updates and writes them into the destination dir"""
         raise NotImplementedError
 
+    def getOSPath(self):
+        """Return the path of the OS"""
+        return path(os.path.join('/depot', 'kits', self.os_name, self.os_version, self.os_arch))
+
 class RHNUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, username, password):
         BaseUpdate.__init__(self, 'rhel', os_version, os_arch)
@@ -66,7 +75,14 @@ class RHNUpdate(BaseUpdate):
         else:
             dir = path(dir)
 
-        rpmPkgs = self.getLatestRPM([path('/mnt/Server/')])
+        # Check whether the OS kit has been added
+        osPath = self.getOSPath()
+        if osPath.exists():
+            # Look into the OS and updates dir
+            rpmPkgs = self.getLatestRPM([osPath, dir])
+        else:    
+            # Just look at the updates dir
+            rpmPkgs = self.getLatestRPM([dir])
         
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())
