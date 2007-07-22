@@ -6,7 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.buildkit.kitsource import KusuComponent, ComponentInfo, KusuKit, KitInfo
-from kusu.buildkit.builder import GNUBuildTools, PackageProfile
+from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile
 from kusu.util.errors import UndefinedOSType, UnknownPackageType, UndefinedComponentInfo, UndefinedKitInfo
 
 
@@ -97,14 +97,9 @@ def SourcePackage(**kwargs):
 def Package(**kwargs):
     """ Basic convenience package method. """
     if 'srctype' not in kwargs: raise UnknownPackageType
-    pkg = PackageProfile(**kwargs)
-    pkg.tools = GNUBuildTools()
-    pkg.setup = pkg.tools.setup
-    pkg.configure = pkg.tools.configure    
-    pkg.build = pkg.tools.build    
-    pkg.install = pkg.tools.install
-    pkg.pack = pkg.tools.pack
-    pkg.cleanup = pkg.tools.cleanup
-    
+    if kwargs['srctype'] == 'autotools':
+        profile = PackageProfile(**kwargs)
+        pkg = AutoToolsWrapper(profile)
+
     return pkg
 

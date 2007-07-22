@@ -8,7 +8,8 @@
 
 import urllib
 from kusu.util import tools
-from kusu.buildkit import kitsource, build
+from kusu.buildkit import KitSrcFactory, SourcePackage, setupprofile
+from kusu.buildkit.builder import getDirName
 from path import path
 from nose import SkipTest
 
@@ -45,8 +46,6 @@ class TestGNUBuildTarballPkg(object):
     """docstring for TestGNUBuildTarballPkg"""
 
     def setUp(self):
-        # disable for now
-        raise SkipTest
         
         global TMPDIR
         global GOOD_PKGS
@@ -56,46 +55,33 @@ class TestGNUBuildTarballPkg(object):
         self.GOOD_PKGS = [getAssetsPath(p) for p in GOOD_PKGS ]
         self.BAD_PKGS = [getAssetsPath(p) for p in BAD_PKGS ]
         
+        # set up kitsource directory
+        self.testkitsrc = self.scratchdir / 'testkit'
+        KitSrcFactory(self.testkitsrc).prepareSrcPath()
+        
     def tearDown(self):
         if self.scratchdir.exists(): self.scratchdir.rmtree()
+
+
+    def testSetupProfile(self):
+        """ Test for correct buildprofile. """
+        bp = setupprofile(self.testkitsrc)
+        assert bp.builddir == self.testkitsrc / 'artifacts'
+        assert bp.tmpdir == self.testkitsrc / 'tmp'
         
     def testVerifyGoodPkgs(self):
         """docstring for testVerifyGoodPkg"""
         
+        # setup a buildprofile
+        bp = setupprofile(self.testkitsrc)
+        
         for p in self.GOOD_PKGS:
-            pp = build.PackageProfile(p.split('.')[0])
-            pp.filepath = p            
-            pkg = kitsource.GNUBuildTarballPkg(pp)
+            filepath = path(p)
+            fullname = getDirName(filepath.basename())
+            print fullname
+            name, ver = fullname.split('-')
+            pkg = SourcePackage(name=name,version=ver,buildprofile=bp,filepath=filepath)
+            pkg.setup()
             assert pkg.verify() is True
             
-    def testVerifyBadPkgs(self):
-        """docstring for testVerifyBadPkg"""
-        for p in self.BAD_PKGS:
-            pp = build.PackageProfile(p.split('.')[0])
-            pp.filepath = p            
-            pkg = kitsource.GNUBuildTarballPkg(pp)
-            assert pkg.verify() is False
-            
-    def testInstallPkg(self):
-        """docstring for testInstallPkg"""
-        pp = build.PackageProfile('hello')
-        # get the hello pkg
-        li = [p for p in self.GOOD_PKGS if 'hello' in p]
-        if not li: raise SkipTest
-        pp.filepath = li[0]
-        print 'pp.filepath:', pp.filepath
-        print 'pp.dirname:', pp.dirname
-        pp.installroot = '/opt/hello'
-        pp.buildroot = self.scratchdir / 'root'
-        pp.builddir = self.scratchdir / 'tmp'
-        pp.buildroot.mkdir()
-        pp.builddir.mkdir()
 
-        pkg = kitsource.GNUBuildTarballPkg(pp)
-        pkg.install()
-        assert path(pp.buildroot / 'bin/hello').exists()
-            
-    
-            
-            
-            

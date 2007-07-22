@@ -56,8 +56,9 @@ class KitSrcBase(object):
 
         # Check the path for each attribute listed, return if invalid path
         for k,v in self.pathLayoutAttributes.items():
-            p = self.srcPath / v
-            if not p.exists(): return False
+            for _k,_v in v.items():
+                p = self.srcPath / _v
+                if not p.exists(): return False
 
         return True 
         

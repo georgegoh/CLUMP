@@ -15,6 +15,7 @@ import os
 import pwd
 from kusu.buildkit.kitsource import KitSrcFactory
 from kusu.util.tools import cpio_copytree
+from kusu.util.errors import InvalidBuildProfile
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
 
@@ -111,9 +112,10 @@ def unpackTarfile(filepath, destroot=None):
     for f in pkg:
         pkg.extract(f,destroot)
 
-def setupprofile(**kwargs):
-    """ Convenience method to setup buildprofile. """
-    if not kwargs:
+def setupprofile(basedir=''):
+    """ Convenience method to setup buildprofile. 
+    """
+    if not basedir:
         # check if the current directory looks like a build environment
         _basedir = path.getcwd()
         _kitsrc = KitSrcFactory(_basedir)
@@ -121,9 +123,16 @@ def setupprofile(**kwargs):
             builddir = _basedir / 'artifacts'
             tmpdir = _basedir / 'tmp'
             return BuildProfile(builddir=builddir,tmpdir=tmpdir)
-    builddir = kwargs.get('builddir', '')
-    tmpdir = kwargs.get('tmpdir', '')
-    return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+        else:
+            raise InvalidBuildProfile
+    _basedir = path(basedir)
+    _kitsrc = KitSrcFactory(_basedir)
+    if _kitsrc.verifyLocalSrcPath():        
+        builddir = _basedir / 'artifacts'
+        tmpdir = _basedir / 'tmp'
+        return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+    else:
+        raise InvalidBuildProfile
 
 class BuildProfile(object):
     """ Profile used to store build site configuration. """
@@ -148,27 +157,37 @@ class PackageProfile(object):
         self.author = kwargs.get('author','')
         self.vendor = kwargs.get('vendor','')
         self.license = kwargs.get('license','')
-        self.buildprofile = kwargs.get('buildprofile',setupprofile())
+        self.buildprofile = kwargs.get('buildprofile','')
 
 
-class GNUBuildTools(object):
+class AutoToolsWrapper(object):
     """ Wrapper around GNU Autotools system. """
 
     verbose = False
     
-    def setup(self, filepath, buildprofile, packageNS):
+    def __init__(self, packageprofile):
+        """ Setups the tool with the packageprofile.
+        """
+        self.packageprofile = packageprofile
+    
+    def setup(self):
         """ Setups the tool. filepath refers to the path of the tarfile.
             buildprofile refers to the profile that will be used for building.
             packageNS is the namespace used for generating files from templates.
         """
-        self.builddir = path(buildprofile.builddir)
-        self.tmpdir = path(buildprofile.tmpdir)
-        self.templatesdir = path(buildprofile.templatesdir)
-        self.filepath = path(filepath)
-        self.namespace = packageNS
+        self.builddir = path(self.packageprofile.buildprofile.builddir)
+        self.tmpdir = path(self.packageprofile.buildprofile.tmpdir)
+        self.templatesdir = path(self.packageprofile.buildprofile.templatesdir)
+        self.filepath = path(self.packageprofile.filepath)
+        self.namespace = prepareNS(self.packageprofile)
         self.fullname = getDirName(self.filepath.basename())
         self.buildsrc = self.tmpdir / self.fullname
         
+        
+    def verify(self):
+        """ Verify package is supported. """
+        if not tarfile.is_tarfile(self.filepath): return False
+        return True
     def cleanup(self):
         if self.buildsrc.exists(): self.buildsrc.rmtree()
         
@@ -246,7 +265,7 @@ class GNUBuildTools(object):
         if pkgtype == 'rpm':
             return self._packRPM()
 
-class SRPMBuildTools(object):
+class SRPMWrapper(object):
     """ Wrapper around SRPM build system. """
 
     verbose = False
@@ -308,7 +327,7 @@ class SRPMBuildTools(object):
         if pkgtype == 'rpm':
             return self._packRPM()
 
-class BinaryPackageBuildTools(object):
+class BinaryPackageWrapper(object):
     """ Wrapper around binary distribution packages. """
 
     verbose = False
