@@ -50,6 +50,10 @@
 #define CFM_NODEGROUP "/etc/profile.nii"
 #endif
 
+#define UPDATEFILE 1
+#define UPDATEPACKAGE 2
+
+
 /*
  * Severities of log messages
  */
@@ -156,6 +160,14 @@ int main(int argc, char* argv[])
 
   if(mkdaemon) 
     daemonize() ;
+
+  /* Run the update process on startup */
+  if(getInstallers(&dpack))
+    {
+      dpack.type = UPDATEFILE | UPDATEPACKAGE ;
+      cfmLog(LOG_DEBUG, "On startup update type = %i\n", dpack.type) ;
+      runUpdate(&dpack) ;
+    } 
 
   sd = setupSocket() ;
 
@@ -287,9 +299,11 @@ static int setSequence(int seq)
 static int getInstallers(struct dataPack *dpack)
 {
   FILE* fd = NULL ;
+  char *dptr = NULL ;
   char buff[20] ;
   int i ;
 
+  memset(&dpack->installers[0][0], 0, 16) ;
   if ((fd = fopen(CFM_SEQUENCE, "r")) == NULL ) 
     return(0) ;
 
@@ -302,11 +316,14 @@ static int getInstallers(struct dataPack *dpack)
 	  memset(&dpack->installers[i][0], 0, 16) ;
 	  break ;
 	}
+      if((dptr = strstr(buff, "\n")) != NULL )
+	*dptr = 0 ;
+
       strncpy(dpack->installers[i], buff, 15) ;
     }
   fclose(fd) ;
 
-  return(0) ;
+  return(i) ;
 }
 
 
@@ -619,7 +636,12 @@ static int runUpdate(struct dataPack *dpack)
 
       if(strlen(ilist) > 3)
 	ilist[strlen(ilist) -1 ] = 0 ;
-       
+      else
+	{
+	  cfmLog(LOG_ERROR, "No Installers specified!  Aborting\n") ;
+	  exit(-2) ;
+	}
+
       snprintf(utype, 14, "%i", dpack->type) ;
 
       cfmLog(LOG_DEBUG, "Running: /opt/kusu/sbin/cfmclient -t %s -i %s\n", utype, ilist) ;
