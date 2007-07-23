@@ -27,6 +27,7 @@ def printModuleInfo(module):
   exit_status,output = commands.getstatusoutput(cmd)
   svninfo = output.splitlines()
 
+  print
   print "Kusu Module Name: "+module
   print output
 
@@ -45,6 +46,7 @@ def runTest(module):
   testscripts = findTestScripts(module)
 
   if len(testscripts)==0:
+    print
     print "No test found."
 
   for script in testscripts:
@@ -68,7 +70,6 @@ def runTest(module):
       tpass = tp > 0 and tp or 0
     tran = tran - tskip
     print "Ran: %d, pass: %d, fail: %d, error: %d, skip: %d" % (tran,tpass,tfail,terror,tskip)
-    print
     result['num_tests'] = result['num_tests'] + tran
     result['num_pass'] = result['num_pass'] + tpass
     result['num_fail'] = result['num_fail'] + tfail
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     tresult['num_fail'] = tresult['num_fail'] + result['num_fail']
     tresult['num_error'] = tresult['num_error'] + result['num_error']
     tresult['num_skip'] = tresult['num_skip'] + result['num_skip']
+  print
   print "Test summary: Ran: %d, pass: %d, fail: %d, error: %d, skip: %d" % (tresult['num_tests'],tresult['num_pass'],tresult['num_fail'],tresult['num_error'],tresult['num_skip'])
   #print "Tests exit with code %d." % (exit_code)
   sys.exit(exit_code)

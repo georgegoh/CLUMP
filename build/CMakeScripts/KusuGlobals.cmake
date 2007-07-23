@@ -64,7 +64,7 @@ IF(NOT KUSU_BUILD_DIST OR
       SET(DISTRO centos)
       STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
     ELSEIF(${content} MATCHES "^Red Hat")
-      SET(DISTRO redhat)
+      SET(DISTRO rhel)
       STRING(REGEX MATCH "[0-9.]+" DISTRO_RELEASE ${content})
     ENDIF(${content} MATCHES "^CentOS")
   ELSEIF(EXISTS /etc/SuSE-release)
