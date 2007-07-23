@@ -98,8 +98,7 @@ def Package(**kwargs):
     """ Basic convenience package method. """
     if 'srctype' not in kwargs: raise UnknownPackageType
     if kwargs['srctype'] == 'autotools':
-        profile = PackageProfile(**kwargs)
-        pkg = AutoToolsWrapper(profile)
+        pkg = PackageProfile(AutoToolsWrapper(),**kwargs)
 
     return pkg
 

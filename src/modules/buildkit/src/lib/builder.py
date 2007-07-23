@@ -16,6 +16,7 @@ import pwd
 from kusu.buildkit.kitsource import KitSrcFactory
 from kusu.util.tools import cpio_copytree
 from kusu.util.errors import InvalidBuildProfile
+from kusu.util.structure import Struct
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
 
@@ -137,6 +138,10 @@ def setupprofile(basedir=''):
 class BuildProfile(object):
     """ Profile used to store build site configuration. """
     
+    builddir = ''
+    tmpdir = ''
+    templatesdir = ''
+    
     def __init__(self, **kwargs):
         self.builddir = kwargs.get('builddir','')
         self.tmpdir = kwargs.get('tmpdir','')
@@ -144,11 +149,16 @@ class BuildProfile(object):
         tmpldir = kusuroot / 'etc/buildkit-templates'
         self.templatesdir = kwargs.get('templatesdir', tmpldir)
 
-class PackageProfile(object):
-    """ Package-specific profile used to build packages. """
+class PackageProfile(Struct):
+    """ Package-specific profile used to build packages. The appropriate
+        Wrapper object will need to be associated in order to provide
+        functionality.
+    """
     
-    def __init__(self,**kwargs):
-        """docstring for __init__"""
+    def __init__(self, wrapper, **kwargs):
+        Struct.__init__(self)
+
+        self.wrapper = wrapper
         self.name = kwargs.get('name',None)
         self.version = kwargs.get('version',None)
         self.release = kwargs.get('release','0')
@@ -160,34 +170,58 @@ class PackageProfile(object):
         self.buildprofile = kwargs.get('buildprofile','')
 
 
-class AutoToolsWrapper(object):
+    def setup(self):
+        """ Preps the wrapper object with the attributes. This must be called before
+            calling other operations.
+        """
+        self.builddir = path(self.buildprofile.builddir)
+        self.tmpdir = path(self.buildprofile.tmpdir)
+        self.templatesdir = path(self.buildprofile.templatesdir)
+        self.namespace = prepareNS(self)
+        self.fullname = getDirName(self.filepath.basename())
+        self.buildsrc = self.tmpdir / self.fullname
+        
+        # expose the attributes to the wrapper object
+        self.wrapper.update(Struct(self))
+
+    def verify(self):
+        return self.wrapper.verify()
+
+    def cleanup(self):
+        return self.wrapper.cleanup()
+
+    def configure(self, **kwargs):
+        """ Configuration stage for this class. """
+        return self.wrapper.configure(**kwargs)
+
+    def build(self, **kwargs):
+        """ Build stage for this class. """
+        return self.wrapper.build(**kwargs)
+
+    def install(self, **kwargs):
+        """ Installation stage for this class. """
+        return self.wrapper.install(**kwargs)
+
+    def pack(self, pkgtype='rpm'):
+        """ Packaging stage. """
+        return self.wrapper.pack(pkgtype)
+
+
+class AutoToolsWrapper(Struct):
     """ Wrapper around GNU Autotools system. """
 
     verbose = False
     
-    def __init__(self, packageprofile):
+    def __init__(self):
         """ Setups the tool with the packageprofile.
         """
-        self.packageprofile = packageprofile
-    
-    def setup(self):
-        """ Setups the tool. filepath refers to the path of the tarfile.
-            buildprofile refers to the profile that will be used for building.
-            packageNS is the namespace used for generating files from templates.
-        """
-        self.builddir = path(self.packageprofile.buildprofile.builddir)
-        self.tmpdir = path(self.packageprofile.buildprofile.tmpdir)
-        self.templatesdir = path(self.packageprofile.buildprofile.templatesdir)
-        self.filepath = path(self.packageprofile.filepath)
-        self.namespace = prepareNS(self.packageprofile)
-        self.fullname = getDirName(self.filepath.basename())
-        self.buildsrc = self.tmpdir / self.fullname
-        
+        Struct.__init__(self)
         
     def verify(self):
         """ Verify package is supported. """
         if not tarfile.is_tarfile(self.filepath): return False
         return True
+        
     def cleanup(self):
         if self.buildsrc.exists(): self.buildsrc.rmtree()
         
@@ -265,23 +299,16 @@ class AutoToolsWrapper(object):
         if pkgtype == 'rpm':
             return self._packRPM()
 
-class SRPMWrapper(object):
+class SRPMWrapper(Struct):
     """ Wrapper around SRPM build system. """
 
     verbose = False
 
-    def setup(self, filepath, buildprofile, packageNS):
-        """ Setups the tool. filepath refers to the path of the srpm file.
-            buildprofile refers to the profile that will be used for building.
-            packageNS is the namespace used for generating files from templates.
-        """
-        self.builddir = path(buildprofile.builddir)
-        self.tmpdir = path(buildprofile.tmpdir)
-        self.templatesdir = path(buildprofile.templatesdir)
-        self.filepath = path(filepath)
-        self.namespace = packageNS
-        self.fullname = getDirName(self.filepath.basename())
-        self.buildsrc = self.tmpdir / self.fullname
+    def __init__(self):
+        Struct.__init__(self)
+        
+    def verify(self):
+        pass
 
     def cleanup(self):
         if self.buildsrc.exists(): self.buildsrc.rmtree()
@@ -327,23 +354,16 @@ class SRPMWrapper(object):
         if pkgtype == 'rpm':
             return self._packRPM()
 
-class BinaryPackageWrapper(object):
+class BinaryPackageWrapper(Struct):
     """ Wrapper around binary distribution packages. """
 
     verbose = False
-
-    def setup(self, filepath, buildprofile, packageNS):
-        """ Setups the tool. filepath refers to the path of the binary distribution tarfile.
-            buildprofile refers to the profile that will be used for building.
-            packageNS is the namespace used for generating files from templates.
-        """
-        self.builddir = path(buildprofile.builddir)
-        self.tmpdir = path(buildprofile.tmpdir)
-        self.templatesdir = path(buildprofile.templatesdir)
-        self.filepath = path(filepath)
-        self.namespace = packageNS
-        self.fullname = getDirName(self.filepath.basename())
-        self.buildsrc = self.tmpdir / self.fullname
+    
+    def __init__(self):
+        Struct.__init__(self)
+        
+    def verify(self):
+        pass
 
     def cleanup(self):
         if self.buildsrc.exists(): self.buildsrc.rmtree()
