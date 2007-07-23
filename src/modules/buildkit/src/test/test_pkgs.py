@@ -8,7 +8,7 @@
 
 import urllib
 from kusu.util import tools
-from kusu.buildkit import KitSrcFactory, SourcePackage, setupprofile
+from kusu.buildkit import KitSrcFactory, SourcePackage, setupprofile, Fedora6Component, DefaultKit
 from kusu.buildkit.builder import getDirName
 from path import path
 from nose import SkipTest
@@ -70,7 +70,7 @@ class TestGNUBuildTarballPkg(object):
         assert bp.tmpdir == self.testkitsrc / 'tmp'
         
     def testVerifyGoodPkgs(self):
-        """docstring for testVerifyGoodPkg"""
+        """ Test good packages can be setup and verified. """
         
         # setup a buildprofile
         bp = setupprofile(self.testkitsrc)
@@ -83,5 +83,32 @@ class TestGNUBuildTarballPkg(object):
             pkg = SourcePackage(name=name,version=ver,buildprofile=bp,filepath=filepath)
             pkg.setup()
             assert pkg.verify() is True
+            
+    def testFedoraComponentInfo(self):
+        """ Test that a componentinfo is defined correctly. """
+        
+        # create a fedora 6 component
+        fc = Fedora6Component(name='test')
+
+        assert fc.componentinfo.name == 'test'        
+        assert fc.componentinfo.ostype == 'fedora'
+        assert fc.componentinfo.osversion == '6'
+        assert fc.componentinfo.compversion == '0.1'
+        assert fc.componentinfo.comprelease == '0'
+        assert fc.componentinfo.ngtypes == ['installer','compute']
+        
+    def testKitInfo(self):
+        """ Test that a kitinfo is defined correctly. """
+        
+        # create a default kitinfo
+        kit = DefaultKit(name='testkit')
+        
+        assert kit.kitinfo.name == 'testkit'
+        assert kit.kitinfo.license == 'LGPL'
+        assert kit.kitinfo.version == '0.1'
+        assert kit.kitinfo.release == '0'
+        assert kit.kitinfo.arch == 'noarch'
+        
+        
             
 

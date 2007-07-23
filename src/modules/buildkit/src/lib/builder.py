@@ -24,6 +24,13 @@ def genrandomstr(length=8):
     chars = string.letters + string.digits
     return ''.join([choice(chars) for i in range(length)])
 
+def makeKitISO(kitsrc,isofile):
+    """ Creates a Kusu Kit ISO named as isofile and based on the kitsrc dir. """
+    kitsrc = path(kitsrc).abspath()
+    isofile = path(isofile).abspath()
+    
+    pass
+
 def setupRPMMacrofile(buildprofile):
     """ Creates a proper .rpmmacros file for purposes of building kits. 
         If an existing .rpmmacros exists, it will be renamed and this
