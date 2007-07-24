@@ -7,6 +7,7 @@
 
 from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType
+import pprint
 
 
 PACKAGE_SRC_TYPES = ['autotools','srpm','binarydist','distro','rpm']
@@ -250,15 +251,12 @@ class KusuKit(object):
 
     def generateKitInfo(self, filename):
         """ Generates a .kitinfo file."""
-        li = [component.componentinfo.generate() for component in self.components]
-        compsinfo = {}
-        for l in li:
-            compsinfo.update(l)
+        complist = [component.componentinfo.generate() for component in self.components]
 
         _kitinfo  = self.kitinfo.generate()
         f = open(filename,'w')
-        f.write('kit = %r\n' % _kitinfo)
-        f.write('components = %r\n' % compsinfo)
+        f.write('kit = %s\n' % pprint.pformat(_kitinfo))
+        f.write('components = %s\n' % pprint.pformat(complist))
         f.close()
         
     def pack(self, pkgtype='rpm'):

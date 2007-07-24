@@ -79,7 +79,6 @@ class TestGNUBuildTarballPkg(object):
         for p in self.GOOD_PKGS:
             filepath = path(p)
             fullname = getDirName(filepath.basename())
-            print fullname
             name, ver = fullname.split('-')
             pkg = SourcePackage(name=name,version=ver,buildprofile=bp,filepath=filepath)
             pkg.setup()
@@ -109,6 +108,44 @@ class TestGNUBuildTarballPkg(object):
         assert kit.kitinfo.version == '0.1'
         assert kit.kitinfo.release == '0'
         assert kit.kitinfo.arch == 'noarch'
+        
+    def testCorrectKitInfoFile(self):
+        """ Test that a kitinfo is generated correctly. """
+        
+        f = path(self.scratchdir / 'kitinfo')
+        
+        # define a couple of components
+        c1 = Fedora6Component(name='comp1')
+        c2 = Fedora6Component(name='comp2')
+        
+        # and kit too
+        k = DefaultKit(name='testkit')
+        
+        # add the components to the kit
+        # both addComponent and addComp means the same thing, it's just syntatic sugar
+        k.addComponent(c1)
+        k.addComp(c2)
+        
+        k.generateKitInfo(f)
+        d = {}
+        execfile(f,d)
+        
+        kit = d['kit']
+        components = d['components']
+
+        assert kit['name'] == 'testkit'
+        assert kit['license'] == 'LGPL' 
+        assert kit['version'] == '0.1'
+        assert kit['release'] == '0'
+        assert kit['arch'] == 'noarch'
+        
+        assert len(components) == 2
+        names = [comp['name'] for comp in components]
+        names.sort()
+        compnames = ['comp1','comp2']
+        compnames.sort()
+        assert names == compnames
+
         
     def testBinaryPackage(self):
         """ Test the BinaryPackage setup. Incomplete! """
