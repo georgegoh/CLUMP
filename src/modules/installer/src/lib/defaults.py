@@ -45,7 +45,7 @@ class LVMGroup(Struct):
         self.lv_dict = {}
 
     def addPV(self, disk, partition):
-        self.pv_list.append(Struct(disk=1, partition=3))
+        self.pv_list.append(Struct(disk=disk, partition=partition))
 
     def addLV(self, lv):
         self.lv_dict[lv.name] = lv
