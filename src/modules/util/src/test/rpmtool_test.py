@@ -65,7 +65,10 @@ def setUp():
             'kernel-2.6.9-55.0.2.EL.i386.rpm',
             'kernel-2.6.9-55.EL.i386.rpm', 
             'corrupt-1.0-1.i386.rpm', 
-            'invalid-1.0-1.i386.rpm']
+            'invalid-1.0-1.i386.rpm',
+            'epoch-0.0.1-1.i386.rpm',          
+            'epoch-0.1-1.i386.rpm',          
+            'epoch-1.0-1.i386.rpm']
 
     for r in rpms:
         testing.download(url + r, dest=cachedir)
@@ -330,6 +333,18 @@ class TestRPMTool:
         assert lst[18] == r19
         assert lst[19] == r20
 
+    def testEpochSort(self):
+        r1 = rpmtool.RPM(str(cachedir / 'epoch-0.0.1-1.i386.rpm')) #epoch 5
+        r2 = rpmtool.RPM(str(cachedir / 'epoch-0.1-1.i386.rpm')) #epoch 1
+        r3 = rpmtool.RPM(str(cachedir / 'epoch-1.0-1.i386.rpm')) #epoch none
+
+        lst = [r1, r2, r3]
+        lst.sort()
+
+        assert lst[0] == r3
+        assert lst[1] == r2
+        assert lst[2] == r1
+
     def testReverseSort(self):
         r1 = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-11.el5.i386.rpm'))
         r2 = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-12.el5.i386.rpm'))
@@ -444,7 +459,17 @@ class TestRPMTool:
         assert lst[18] == r2
         assert lst[19] == r1
 
+    def testEpochReverseSort(self):
+        r1 = rpmtool.RPM(str(cachedir / 'epoch-0.0.1-1.i386.rpm')) #epoch 5
+        r2 = rpmtool.RPM(str(cachedir / 'epoch-0.1-1.i386.rpm')) #epoch 1
+        r3 = rpmtool.RPM(str(cachedir / 'epoch-1.0-1.i386.rpm')) #epoch none
 
+        lst = [r1, r2, r3]
+        lst.sort(reverse=True)
+
+        assert lst[0] == r1
+        assert lst[1] == r2
+        assert lst[2] == r3
 
 class TestRPMToolMockRPM:
     """Test for mock RPM object that isn't created by a rpm file"""
