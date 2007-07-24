@@ -105,9 +105,13 @@ class RHNUpdate(BaseUpdate):
 
         for r in downloadPkgs:
             filename = r.getFilename().basename()
-            f = open(dir / filename, 'w')
-            f.write(self.rhn.getPackage(filename, channels[0]['channel_label']))
-            f.close()
+
+            content = self.rhn.getPackage(filename, channels[0]['channel_label'])
+
+            if content:
+                f = open(dir / filename, 'w')
+                f.write(content)
+                f.close()
 
         self.rhn.logout()
 
