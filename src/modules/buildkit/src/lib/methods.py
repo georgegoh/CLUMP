@@ -8,7 +8,22 @@
 from kusu.buildkit.kitsource import KusuComponent, ComponentInfo, KusuKit, KitInfo
 from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, UnknownPackageType, UndefinedComponentInfo, UndefinedKitInfo
+from path import path
 
+def processKitInfo(kitinfo):
+    """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo 
+        and a list of component metainfo contained in that file. A metainfo is a dict object.
+    """
+    kitinfo = path(kitinfo)
+    if not kitinfo.isfile(): return ({},[])
+    
+    ns = {}
+    execfile(kitinfo,ns)
+
+    kit = ns.get('kit',{})
+    components = ns.get('components',[])
+    
+    return (kit,components)
 
 def DefaultKit(**kwargs):
     """ The most basic type of kits. """

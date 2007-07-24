@@ -8,7 +8,7 @@
 
 import urllib
 from kusu.util import tools
-from kusu.buildkit import KitSrcFactory, setupprofile, Fedora6Component, DefaultKit
+from kusu.buildkit import KitSrcFactory, setupprofile, Fedora6Component, DefaultKit, processKitInfo
 from kusu.buildkit import BinaryPackage, SourcePackage, DistroPackage, RPMPackage, SRPMPackage
 from kusu.buildkit.builder import getDirName
 from path import path
@@ -127,11 +127,7 @@ class TestGNUBuildTarballPkg(object):
         k.addComp(c2)
         
         k.generateKitInfo(f)
-        d = {}
-        execfile(f,d)
-        
-        kit = d['kit']
-        components = d['components']
+        kit, components = processKitInfo(f)
 
         assert kit['name'] == 'testkit'
         assert kit['license'] == 'LGPL' 
