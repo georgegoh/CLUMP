@@ -166,6 +166,7 @@ class PackageProfile(Struct):
         Struct.__init__(self)
 
         self.wrapper = wrapper
+        self.srctype = kwargs.get('srctype','')
         self.name = kwargs.get('name',None)
         self.version = kwargs.get('version',None)
         self.release = kwargs.get('release','0')

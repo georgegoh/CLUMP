@@ -8,7 +8,8 @@
 
 import urllib
 from kusu.util import tools
-from kusu.buildkit import KitSrcFactory, SourcePackage, setupprofile, Fedora6Component, DefaultKit
+from kusu.buildkit import KitSrcFactory, setupprofile, Fedora6Component, DefaultKit
+from kusu.buildkit import BinaryPackage, SourcePackage, DistroPackage, RPMPackage, SRPMPackage
 from kusu.buildkit.builder import getDirName
 from path import path
 from nose import SkipTest
@@ -108,6 +109,24 @@ class TestGNUBuildTarballPkg(object):
         assert kit.kitinfo.version == '0.1'
         assert kit.kitinfo.release == '0'
         assert kit.kitinfo.arch == 'noarch'
+        
+    def testBinaryPackage(self):
+        """ Test the BinaryPackage setup. Incomplete! """
+        
+        pkg = BinaryPackage(name='foo')
+        
+        assert pkg.srctype == 'binarydist'
+        assert pkg.name == 'foo'
+
+        
+    def testSRPMPackage(self):
+        """ Test the BinaryPackage setup. Incomplete! """
+
+        pkg = SRPMPackage(name='foo')
+
+        assert pkg.srctype == 'srpm'
+        assert pkg.name == 'foo'
+
         
         
             

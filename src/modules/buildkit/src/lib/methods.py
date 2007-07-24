@@ -6,7 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.buildkit.kitsource import KusuComponent, ComponentInfo, KusuKit, KitInfo
-from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile
+from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, UnknownPackageType, UndefinedComponentInfo, UndefinedKitInfo
 
 
@@ -99,6 +99,15 @@ def Package(**kwargs):
     if 'srctype' not in kwargs: raise UnknownPackageType
     if kwargs['srctype'] == 'autotools':
         pkg = PackageProfile(AutoToolsWrapper(),**kwargs)
+    elif kwargs['srctype'] == 'binarydist':
+        pkg = PackageProfile(BinaryPackageWrapper(),**kwargs)
+    elif kwargs['srctype'] == 'distro':
+        pass
+    elif kwargs['srctype'] == 'rpm':
+        pass
+    elif kwargs['srctype'] == 'srpm':
+        pkg = PackageProfile(SRPMWrapper(),**kwargs)
+        
 
     return pkg
 
