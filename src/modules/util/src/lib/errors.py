@@ -111,6 +111,18 @@ class RepoNotFoundError(KusuError): pass
 class ReposIntegrityError(KusuError): pass
 class RepoCannotDeleteError(KusuError): pass
 
+#repoman.rhn
+class rhnError(KusuError): pass
+class rhnInvalidLoginError(KusuError): pass
+class rhnInvalidSystemError(KusuError): pass
+class rhnURLNotFound(KusuError): pass
+class rhnUnknownError(KusuError): pass
+class rhnServerError(KusuError): pass
+class rhnUnknownMethodError(KusuError): pass
+class rhnNoBaseChannelError(KusuError): pass
+class rhnFailedDownloadRPM(KusuError): pass
+class rhnInvalidServerID(KusuError): pass
+
 # b-m-t
 class FilePathError(KusuError): pass
 class NotPriviledgedUser(KusuError): pass

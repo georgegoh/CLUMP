@@ -16,7 +16,7 @@ from kusu.util import rpmtool
 from kusu.util.errors import rhnInvalidLoginError, rhnInvalidSystemError, \
                              rhnURLNotFound, rhnUnknownError, rhnServerError, \
                              rhnError, rhnUnknownMethodError, rhnNoBaseChannelError, \
-                             rhnFailedDownloadRPM
+                             rhnFailedDownloadRPM, rhnInvalidServerID
 
 class RHN:
     headers = ['X-RHN-Server-Id',
@@ -190,7 +190,7 @@ class RHN:
         if mt:
             return int(mt.group())
         else:
-            return None
+            raise rhnInvalidServerID
     
     def getPackage(self, rpm, channelLabel):
         """Get a RPM from the channel"""
@@ -224,6 +224,7 @@ class RHN:
         try:
             f = urllib2.urlopen(req)
             content = f.read()
+            f.close()
             code = 200
         except urllib2.HTTPError, e :
             code = e.code
