@@ -350,7 +350,7 @@ class RPM:
         
         if self.hdr:
             n,e,v,r,a = self.getNEVRA()
-            str = str + ". %s-%s-%s.%s" % (n,v,r,a)
+            str = str + ". %s:%s-%s-%s.%s" % (e,n,v,r,a)
         
         return str + ">"
    
@@ -475,42 +475,35 @@ class RPM:
             # .rpm file
             return self.filename
 
-def print_rpm(robj):
-    n,e,v,r,a = robj.getNEVRA()
+def getLatestRPM(dirs=[], ignoreErrors=False):
+    """Returns a dictionary of the latest rpms"""
 
-    print 'Filename:      ', robj.getFilename()
-    print 'Name:          ', n
-    print 'Epoch:         ', e
-    print 'Version:       ', v
-    print 'Release:       ', r
-    print 'Arch:          ', a
-    print 'Vendor:        ', robj.getVendor()
-    print 'Buildhost:     ', robj.getBuildhost()
-    print 'Provides:      ', robj.getProvides()
-    print 'Requires:      ', robj.getRequires()
-    print 'Install Time:  ', robj.getInstallTime()
-    print 'Files list:    ', robj.getFileList()
-    
-    
-if __name__ == '__main__':
+    rpmPkgs = {}
+    for dir in dirs:
+        dir = path(dir)
+        for r in dir.files():
+            if r.ext == '.rpm' and r.basename() != 'TRANS.TBL':
+                try:
+                    r = RPM(str(r))
+                except InvalidRPMHeader, e:
+                    if ignoreErrors:
+                        raise e
+                    else:     
+                        continue
 
-    import sys
+                name = r.getName()
+                arch = r.getArch()
 
-    f1 = sys.argv[1]
-    r1 = RPM(f1)
-    
-    print_rpm(r1)
-   
-    if len(sys.argv) > 2:
-        f2 = sys.argv[2]
-        r2 = RPM(f2)
+                if rpmPkgs.has_key(name):
+                    if rpmPkgs[name].has_key(arch):
+                        if r > rpmPkgs[name][arch]:
+                            rpmPkgs[name][arch] = r
+                        else:
+                            pass # Do nothing
+                    else:    
+                        rpmPkgs[name][arch] = r
+                else:
+                    rpmPkgs[name] = {}
+                    rpmPkgs[name][arch] = r
 
-        print
-        print_rpm(r2)
-       
-        print
-        print 'r1 > r2:       ', r1 > r2
-        print 'r1 == r2:      ', r1 == r2
-        print 'r1 < r2:       ', r1 < r2
-
-    
+    return rpmPkgs
