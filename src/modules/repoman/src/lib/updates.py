@@ -87,31 +87,35 @@ class RHNUpdate(BaseUpdate):
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())
 
-        downloadPkgs = [] 
-        for r in self.rhn.getLatestPackages(channels[0]['channel_label']):
-            name = r.getName()
-            arch = r.getArch()
+        for channel in channels:
+            downloadPkgs[channel['channel_label']] = []
+        
+        for channel in channels:
+            for r in self.rhn.getLatestPackages(channel):
+                name = r.getName()
+                arch = r.getArch()
 
-            # There's a newer rpm, so download it
-            if rpmPkgs.has_key(name) and \
-               rpmPkgs[name].has_key(arch) and \
-               r > rpmPkgs[name][arch]:
-                downloadPkgs.append(r)
+                # There's a newer rpm, so download it
+                if rpmPkgs.has_key(name) and \
+                   rpmPkgs[name].has_key(arch) and \
+                   r > rpmPkgs[name][arch]:
+                    downloadPkgs[channel].append(r)
 
-            # No such existing rpm, so download it
-            if not rpmPkgs.has_key(name) or \
-               (rpmPkgs.has_key(name) and not rpmPkgs[name].has_key(arch)):
-                downloadPkgs.append(r)
+                # No such existing rpm, so download it
+                if not rpmPkgs.has_key(name) or \
+                   (rpmPkgs.has_key(name) and not rpmPkgs[name].has_key(arch)):
+                    downloadPkgs[channel].append(r)
 
-        for r in downloadPkgs:
-            filename = r.getFilename().basename()
+        for channel, pkgs in downloadPkgs.items():
+            for r in pkgs:
+                filename = r.getFilename().basename()
 
-            content = self.rhn.getPackage(filename, channels[0]['channel_label'])
+                content = self.rhn.getPackage(filename, channel)
 
-            if content:
-                f = open(dir / filename, 'w')
-                f.write(content)
-                f.close()
+                if content:
+                    f = open(dir / filename, 'w')
+                    f.write(content)
+                    f.close()
 
         self.rhn.logout()
 

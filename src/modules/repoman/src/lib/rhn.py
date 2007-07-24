@@ -197,9 +197,6 @@ class RHN:
        
         code, msg, content = self._getPackage(rpm, channelLabel)
 
-        if code == 200:
-            pass # Do nothing
- 
         if code == 401:
             # Authorization required. Expired session
             # login again
