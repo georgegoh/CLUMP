@@ -230,7 +230,7 @@ class DiskProfile(object):
         s = s + '\nMountpoints:\n' + pformat(self.mountpoint_dict)
         return s
 
-    def __init__(self, fresh, test=None):
+    def __init__(self, fresh, test=None, probe_fstab=True):
         """Initialises a DiskProfile object by doing the following:
            
         """
@@ -244,7 +244,7 @@ class DiskProfile(object):
         if test:
             self.populateDiskProfileTest(fresh, test)
         else:
-            self.populateDiskProfile(fresh)
+            self.populateDiskProfile(fresh, probe_fstab)
 
     def probeLVMEntities(self):
         logger.debug('Probing PVs.')
@@ -288,7 +288,7 @@ class DiskProfile(object):
                             lvg.lv_dict[lv_name] = lv
                             self.lv_dict[lv_name] = lv
 
-    def populateDiskProfile(self, fresh):
+    def populateDiskProfile(self, fresh, probe_fstab):
         logger.debug('Finding disks.') 
         disks_str = kusu.hardware.probe.getDisks().keys()
         for disk_str in disks_str:
@@ -306,13 +306,18 @@ class DiskProfile(object):
             lvg_probe_dict = {}
             lv_probe_dict = {}
 
+            for disk in self.disk_dict.itervalues():
+                for partition in disk.partition_dict.itervalues():
+                    disk.delPartition(partition)
+
         self.__createLVMObjects(pv_probe_dict,
                                     lvg_probe_dict,
                                     lv_probe_dict)
 
         if not fresh:
             runCommand('lvm vgchange -ay')
-            self.populateMountPoints()
+            if probe_fstab:
+                self.populateMountPoints()
 
     def populateMountPoints(self, fstab_path='etc/fstab'):
         """Look through the partitions and LV's to determine mountpoints."""

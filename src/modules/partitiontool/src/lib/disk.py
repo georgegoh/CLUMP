@@ -112,8 +112,9 @@ class Disk(object):
 
             elif next_partition_type == 'EXTENDED':
                 # create and add extended partition to fill the rest of the disk.
+                ext_part_size = (self.length - 1 - start_sector) * self.sector_size
                 logger.debug('Creating new extended partition size=%d, fs=%s, mntpt=%s' %
-                             (size, fs_type, mountpoint))
+                             (ext_part_size, fs_type, mountpoint))
                 extended_pedPartition = self.pedDisk.partition_new(
                                             partitionTypes['EXTENDED'],
                                             None,
@@ -155,6 +156,9 @@ class Disk(object):
         """Remove a partition from this disk. Argument is the Partition object
            itself.
         """
+        if partition_obj.leave_unchanged:
+            raise CannotDeleteExtendedPartitionError, 'Leave unchanged flag is set.'
+
         if partition_obj.type == 'extended':
             last_part_num = len(self.partition_dict)
             logger.debug('Delete extended partition - total partitions: %d' % last_part_num)
@@ -417,6 +421,7 @@ class Partition(object):
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
                        'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)',
                        'type' : 'self.pedPartition.type_name',
+                       'native_type' : 'Partition.native_type_dict[self.pedPartition.native_type]',
                        'boot_flag' : 'self.pedPartition.get_flag(parted.PARTITION_BOOT)',
                        'lvm_flag' : 'self.pedPartition.get_flag(parted.PARTITION_LVM)',
                        'root_flag' : 'self.pedPartition.get_flag(parted.PARTITION_ROOT)',
@@ -530,6 +535,7 @@ class Partition(object):
         """Format this partition with the FS type defined."""
         logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
         if self.leave_unchanged or self.do_not_format:
+            logger.info('Not formatting %s, respecting flag' % self.path)
             return
 
         checkAndMakeNode(self.path)
@@ -568,3 +574,98 @@ class Partition(object):
             # do the lvm thing
             pass
 
+    native_type_dict = { 0 : 'Empty',
+        1 : 'FAT12',
+        2 : 'XENIX root',
+        3 : 'XENIX usr',
+        4 : 'FAT16 <32M',
+        5 : 'Extended',
+        6 : 'FAT16',
+        7 : 'HPFS/NTFS',
+        8 : 'AIX',
+        9 : 'AIX bootable',
+        10 : 'O/S 2 Boot Manager',
+        0xb : 'W95 FAT32',
+        0xc : 'W95 FAT32 (LBA)',
+        0xe : 'W95 FAT16 (LBA)',
+        0xf : "W95 Ext'd (LBA)",
+        0x10 : 'OPUS',
+        0x11 : 'Hidden FAT12',
+        0x12 : 'Compaq diagnostic',
+        0x14 : 'Hidden FAT16 < 32M',
+        0x16 : 'Hidden FAT16',
+        0x17 : 'Hidden HPFS/NTFS',
+        0x18 : 'AST SmartSleep',
+        0x1b : 'Hidden W95 FAT32',
+        0x1c : 'Hidden W95 FAT32 (LBA)',
+        0x1e : 'Hidden W95 FAT16 (LBA)',
+        0x24 : 'NEC DOS',
+        0x39 : 'Plan 9',
+        0x3c : 'PartitionMagic',
+        0x40 : 'Venix 80286',
+        0x41 : 'PPC PReP Boot',
+        0x42 : 'SFS',
+        0x4d : 'QNX4.x',
+        0x4e : 'QNX4.x 2nd part',
+        0x4f : 'QNX4.x 3rd part',
+        0x50 : 'OnTrack DM',
+        0x51 : 'OnTrack DM6 Aux',
+        0x52 : 'CP/M',
+        0x53 : 'OnTrack DM6 Aux',
+        0x54 : 'OnTrackDM6',
+        0x55 : 'EZ-Drive',
+        0x56 : 'Golden Bow',
+        0x5c : 'Priam Edisk',
+        0x61 : 'SpeedStor',
+        0x63 : 'GNU HURD',
+        0x64 : 'Novell Netware 286',
+        0x65 : 'Novell Netware 386',
+        0x70 : 'DiskSecure Multi',
+        0x75 : 'PC/IX',
+        0x80 : 'Old Minix',
+        0x81 : 'Minix',
+        0x82 : 'Linux swap',
+        0x83 : 'Linux',
+        0x84 : 'OS/2 hidden C:',
+        0x85 : 'Linux extended',
+        0x86 : 'NTFS volume set',
+        0x87 : 'NTFS volume set',
+        0x88 : 'Linux plaintext',
+        0x8e : 'Linux LVM',
+        0x93 : 'Amoeba',
+        0x94 : 'Amoeba BBT',
+        0x9f : 'BSD/OS',
+        0xa0 : 'IBM Thinkpad hibernation',
+        0xa5 : 'FreeBSD',
+        0xa6 : 'OpenBSD',
+        0xa7 : 'NeXTSTEP',
+        0xa8 : 'Darwin UFS',
+        0xa9 : 'NetBSD',
+        0xab : 'Darwin boot',
+        0xb7 : 'BSDI fs',
+        0xb8 : 'BSDI swap',
+        0xbb : 'Boot Wizard hidden',
+        0xbe : 'Solaris boot',
+        0xbf : 'Solaris',
+        0xc1 : 'DRDOS/sec (FAT-12)',
+        0xc4 : 'DRDOS/sec (FAT-16)',
+        0xc6 : 'DRDOS/sec (FAT-32)',
+        0xc7 : 'Syrinx',
+        0xda : 'Non-FS data',
+        0xdb : 'CP/M / CTOS',
+        0xde : 'Dell Utility',
+        0xdf : 'BootIt',
+        0xe1 : 'DOS access',
+        0xe3 : 'DOS R/O',
+        0xe4 : 'SpeedStor',
+        0xeb : 'BeOS fs',
+        0xee : 'EFI GPT',
+        0xef : 'EFI (FAT-12/16/32)',
+        0xf0 : 'Linux/PA-RISC boot',
+        0xf1 : 'SpeedStor',
+        0xf4 : 'SpeedStor',
+        0xf2 : 'DOS secondary',
+        0xfd : 'Linux raid auto',
+        0xfe : 'LANstep',
+        0xff : 'BBT'
+    }

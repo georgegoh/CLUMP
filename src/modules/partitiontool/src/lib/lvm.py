@@ -268,7 +268,7 @@ class LogicalVolumeGroup(object):
             raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
                   'Logical Volume ' + logicalVol.name + ' does not exist ' + \
                   'in Logical Group ' + self.name + '.'
-        if logicalVol.isInUse():
+        if logicalVol.isInUse() or logicalVol.leave_unchanged:
             raise CannotDeleteLogicalVolumeFromLogicalGroupError, \
                   'Logical Volume ' + logicalVol.name + ' is still in use.'
         del self.lv_dict[logicalVol.name]
@@ -403,6 +403,7 @@ class LogicalVolume(object):
 
     def format(self):
         if self.leave_unchanged or self.do_not_format:
+            logger.info('Not formating %s due to flag' % self.path)
             return
 
         if self.fs_type == 'ext2':
