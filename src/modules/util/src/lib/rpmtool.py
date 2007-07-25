@@ -313,6 +313,10 @@ class RPM:
             return None
         else:
             return self.hdr[rpm.RPMTAG_CONFLICTS]
+
+    def getGroup(self):
+        '''Returns the functionality group of the package '''
+        return self.hdr[rpm.RPMTAG_GROUP]
     
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""

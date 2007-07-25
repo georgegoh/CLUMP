@@ -98,6 +98,9 @@ class BasePackage:
     def getArch(self):
         pass
 
+    def getGroup(self):
+        pass
+
 class RPMPackage(BasePackage):
     def __init__(self, packurl):
         BasePackage.__init__(self, packurl)
@@ -128,6 +131,9 @@ class RPMPackage(BasePackage):
 
     def getArch(self):
         return self.rpm.getArch()
+
+    def getGroup(self):
+        return self.rpm.getGroup()
 
 
 class DebPackage(BasePackage):
