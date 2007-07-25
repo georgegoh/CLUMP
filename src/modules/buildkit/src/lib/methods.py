@@ -5,10 +5,32 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.buildkit.kitsource import KusuComponent, KusuKit
-from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper
-from kusu.util.errors import UndefinedOSType, UnknownPackageType, UndefinedComponentInfo, UndefinedKitInfo
+from kusu.buildkit.kitsource import KusuComponent, KusuKit, KitSrcFactory
+from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper, BuildProfile
+from kusu.util.errors import UndefinedOSType, InvalidBuildProfile
 from path import path
+
+def setupprofile(basedir=''):
+    """ Convenience method to setup buildprofile. 
+    """
+    if not basedir:
+        # check if the current directory looks like a build environment
+        _basedir = path.getcwd()
+        _kitsrc = KitSrcFactory(_basedir)
+        if _kitsrc.verifyLocalSrcPath():
+            builddir = _basedir / 'artifacts'
+            tmpdir = _basedir / 'tmp'
+            return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+        else:
+            raise InvalidBuildProfile
+    _basedir = path(basedir)
+    _kitsrc = KitSrcFactory(_basedir)
+    if _kitsrc.verifyLocalSrcPath():        
+        builddir = _basedir / 'artifacts'
+        tmpdir = _basedir / 'tmp'
+        return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+    else:
+        raise InvalidBuildProfile
 
 def processKitInfo(kitinfo):
     """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo 

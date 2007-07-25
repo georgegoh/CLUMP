@@ -8,6 +8,7 @@
 from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType
 from kusu.util.structure import Struct
+from kusu.buildkit.builder import RPMBuilder, getTemplateSpec
 import pprint
 
 
@@ -19,7 +20,6 @@ def KitSrcFactory(srcPath):
     """ Factory function that returns a KitSrcBase instance. """
     # right now, we only return GeneralKitSrc
     return GeneralKitSrc(srcPath)
-
 
 class KitSrcBase(object):
     """ Base class for a Kit source and the operations that can work on it. """
@@ -151,15 +151,31 @@ class KusuComponent(Struct):
         if not script in self.scripts:
             self.scripts.append((script,mode))
             
-    def _packRPM(self):
-        """ RPM packaging stage for this class. """
-        pass
+    def _generateNS(self):
+        """ Generates the namespace needed for the pack operation.
+        """
+        _ns = {}
+        _ns['pkgname'] = self.name
+        _ns['pkgversion'] = self.compversion
+        _ns['pkgrelease'] = self.comprelease
         
-    def pack(self, pkgtype='rpm'):
+        return _ns
+        
+    def _packRPM(self, verbose=False):
+        """ RPM packaging stage for this class. """
+
+        ns = self._generateNS()
+        tmpl = getTemplateSpec('component')
+        specfile = '%s.spec' % ns['pkgname']
+        rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
+        rpmbuilder.write()
+        rpmbuilder.build()
+        
+    def pack(self, pkgtype='rpm', verbose=False):
         """ Packaging stage. This is what the user would call. """
         
         if pkgtype == 'rpm':
-            return self._packRPM()
+            return self._packRPM(verbose)
             
 class KusuKit(Struct):
     """ Kit class. """
@@ -204,10 +220,26 @@ class KusuKit(Struct):
         """
         if not script in self.scripts:
             self.scripts.append((script,mode))
+            
+    def _generateNS(self):
+        """ Generates the namespace needed for the pack operation.
+        """
+        _ns = {}
+        _ns['pkgname'] = self.name
+        _ns['pkgversion'] = self.version
+        _ns['pkgrelease'] = self.release            
+        
+        return _ns
 
-    def _packRPM(self):
+    def _packRPM(self, verbose=False):
         """ RPM packaging stage for this class. """
-        pass
+        
+        ns = self._generateNS()
+        tmpl = getTemplateSpec('kit')
+        specfile = '%s.spec' % ns['pkgname']
+        rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
+        rpmbuilder.write()
+        rpmbuilder.build()
 
     def generateKitInfo(self, filename):
         """ Generates a .kitinfo file."""
@@ -219,11 +251,11 @@ class KusuKit(Struct):
         f.write('components = %s\n' % pprint.pformat(complist))
         f.close()
         
-    def pack(self, pkgtype='rpm'):
+    def pack(self, pkgtype='rpm', verbose=False):
         """ Packaging stage. This is what the user would call. """
 
         if pkgtype == 'rpm':
-            return self._packRPM()
+            return self._packRPM(verbose)
 
 
             

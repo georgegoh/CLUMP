@@ -13,9 +13,8 @@ from random import choice
 import string
 import os
 import pwd
-from kusu.buildkit.kitsource import KitSrcFactory
 from kusu.util.tools import cpio_copytree
-from kusu.util.errors import InvalidBuildProfile
+from kusu.util.errors import FileDoesNotExistError
 from kusu.util.structure import Struct
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
@@ -88,20 +87,18 @@ def getPackageSpecTmpl(templatesdir):
     spectmpl = root.files('package.spec.tmpl')[0]
     
     return spectmpl
-    
-def getComponentSpecTmpl(templatesdir):
-    """ Gets the specfile template for package. """
-    root = path(templatesdir)
-    spectmpl = root.files('component.spec.tmpl')[0]
-    
-    return spectmpl
-    
-def getKitSpecTmpl(templatesdir):
-    """ Gets the specfile template for package. """
-    root = path(templatesdir)
-    spectmpl = root.files('kit.spec.tmpl')[0]
-    
-    return spectmpl    
+  
+def getTemplateSpec(templatetype, templatedir=None):
+    """ Get the specfile for components. """
+    if not templatedir:
+        kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
+        templatedir = kusuroot / 'etc/buildkit-templates'
+    tmpldir = path(templatedir)
+    _t = '%s.spec.tmpl' % templatetype
+    tmpl = tmpldir / _t
+
+    if not tmpl.exists(): raise FileDoesNotExistError
+    return tmpl
 
 def getDirName(p):
     """ Returns the unpacked directory name of a tarfile. """
@@ -120,27 +117,6 @@ def unpackTarfile(filepath, destroot=None):
     for f in pkg:
         pkg.extract(f,destroot)
 
-def setupprofile(basedir=''):
-    """ Convenience method to setup buildprofile. 
-    """
-    if not basedir:
-        # check if the current directory looks like a build environment
-        _basedir = path.getcwd()
-        _kitsrc = KitSrcFactory(_basedir)
-        if _kitsrc.verifyLocalSrcPath():
-            builddir = _basedir / 'artifacts'
-            tmpdir = _basedir / 'tmp'
-            return BuildProfile(builddir=builddir,tmpdir=tmpdir)
-        else:
-            raise InvalidBuildProfile
-    _basedir = path(basedir)
-    _kitsrc = KitSrcFactory(_basedir)
-    if _kitsrc.verifyLocalSrcPath():        
-        builddir = _basedir / 'artifacts'
-        tmpdir = _basedir / 'tmp'
-        return BuildProfile(builddir=builddir,tmpdir=tmpdir)
-    else:
-        raise InvalidBuildProfile
 
 class BuildProfile(object):
     """ Profile used to store build site configuration. """
@@ -434,7 +410,7 @@ class RPMBuilder:
         self.verbose = verbose
 
     def write(self):
-        f = path(self.specfile)
+        f = path(self.sourcefile)
         out = open(f, 'w')
         t = Template(file=str(self.template), searchList=[self.ns])  
         out.write(str(t))
