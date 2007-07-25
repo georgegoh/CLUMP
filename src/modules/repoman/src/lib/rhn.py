@@ -111,7 +111,7 @@ class RHN:
             url = e.url
             errMsg = e.errmsg
 
-            if faultCode in self.rhnProtoErrors.keys():
+            if errCode in self.rhnProtoErrors.keys():
                 raise self.rhnProtoErrors[errCode], (errCode, url, errMsg)
             else:
                 raise rhnServerError, (errCode, url, errMsg)
