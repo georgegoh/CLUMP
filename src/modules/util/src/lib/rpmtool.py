@@ -487,9 +487,9 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
                     r = RPM(str(r))
                 except InvalidRPMHeader, e:
                     if ignoreErrors:
-                        raise e
-                    else:     
                         continue
+                    else:     
+                        raise e
 
                 name = r.getName()
                 arch = r.getArch()
