@@ -158,7 +158,9 @@ class KusuComponent(Struct):
         _ns['pkgname'] = self.name
         _ns['pkgversion'] = self.compversion
         _ns['pkgrelease'] = self.comprelease
-        
+        _ns['arch'] = self.arch
+        _ns['dependencies'] = self.dependencies
+
         return _ns
         
     def _packRPM(self, verbose=False):
@@ -227,7 +229,8 @@ class KusuKit(Struct):
         _ns = {}
         _ns['pkgname'] = self.name
         _ns['pkgversion'] = self.version
-        _ns['pkgrelease'] = self.release            
+        _ns['pkgrelease'] = self.release       
+        _ns['license'] = self.license
         
         return _ns
 

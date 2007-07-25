@@ -37,6 +37,21 @@ Vendor: Platform Computing Corporation
 #end if
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
+#if $varExists('arch')
+BuildArch: $arch
+#else
+BuildArch: noarch
+#end if
+#if $varExists('dependencies')
+#for $dep, $absolute in $dependencies
+#if $absolute
+Requires: $dep.name = $dep.version
+#else
+Requires: $dep.name >= $dep.version
+#end if
+#end for
+#end if
+
 
 %description
 $pkgname package
