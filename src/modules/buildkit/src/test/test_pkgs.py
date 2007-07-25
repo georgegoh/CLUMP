@@ -80,7 +80,11 @@ class TestGNUBuildTarballPkg(object):
             filepath = path(p)
             fullname = getDirName(filepath.basename())
             name, ver = fullname.split('-')
-            pkg = SourcePackage(name=name,version=ver,buildprofile=bp,filepath=filepath)
+            pkg = SourcePackage()
+            pkg.name = name
+            pkg.version = ver
+            pkg.buildprofile = bp
+            pkg.filepath = filepath
             pkg.setup()
             assert pkg.verify() is True
             
@@ -88,26 +92,29 @@ class TestGNUBuildTarballPkg(object):
         """ Test that a componentinfo is defined correctly. """
         
         # create a fedora 6 component
-        fc = Fedora6Component(name='test')
+        fc = Fedora6Component()
+        fc.name = 'test'
 
-        assert fc.componentinfo.name == 'test'        
-        assert fc.componentinfo.ostype == 'fedora'
-        assert fc.componentinfo.osversion == '6'
-        assert fc.componentinfo.compversion == '0.1'
-        assert fc.componentinfo.comprelease == '0'
-        assert fc.componentinfo.ngtypes == ['installer','compute']
+        assert fc.name == 'test'        
+        assert fc.ostype == 'fedora'
+        assert fc.osversion == '6'
+        assert fc.compversion == '0.1'
+        assert fc.comprelease == '0'
+        assert fc.ngtypes == ['installer','compute']
         
     def testKitInfo(self):
         """ Test that a kitinfo is defined correctly. """
         
         # create a default kitinfo
-        kit = DefaultKit(name='testkit')
+        kit = DefaultKit()
+        kit.name = 'testkit'
+        kit.setup()
         
-        assert kit.kitinfo.name == 'testkit'
-        assert kit.kitinfo.license == 'LGPL'
-        assert kit.kitinfo.version == '0.1'
-        assert kit.kitinfo.release == '0'
-        assert kit.kitinfo.arch == 'noarch'
+        assert kit.name == 'testkit'
+        assert kit.license == 'LGPL'
+        assert kit.version == '0.1'
+        assert kit.release == '0'
+        assert kit.arch == 'noarch'
         
     def testCorrectKitInfoFile(self):
         """ Test that a kitinfo is generated correctly. """
@@ -115,11 +122,15 @@ class TestGNUBuildTarballPkg(object):
         f = path(self.scratchdir / 'kitinfo')
         
         # define a couple of components
-        c1 = Fedora6Component(name='comp1')
-        c2 = Fedora6Component(name='comp2')
+        c1 = Fedora6Component()
+        c1.name = 'comp1'
+        
+        c2 = Fedora6Component()
+        c2.name = 'comp2'
         
         # and kit too
-        k = DefaultKit(name='testkit')
+        k = DefaultKit()
+        k.name = 'testkit'
         
         # add the components to the kit
         # both addComponent and addComp means the same thing, it's just syntatic sugar
@@ -146,7 +157,8 @@ class TestGNUBuildTarballPkg(object):
     def testBinaryPackage(self):
         """ Test the BinaryPackage setup. Incomplete! """
         
-        pkg = BinaryPackage(name='foo')
+        pkg = BinaryPackage()
+        pkg.name = 'foo'
         
         assert pkg.srctype == 'binarydist'
         assert pkg.name == 'foo'
@@ -155,7 +167,8 @@ class TestGNUBuildTarballPkg(object):
     def testSRPMPackage(self):
         """ Test the BinaryPackage setup. Incomplete! """
 
-        pkg = SRPMPackage(name='foo')
+        pkg = SRPMPackage()
+        pkg.name = 'foo'
 
         assert pkg.srctype == 'srpm'
         assert pkg.name == 'foo'

@@ -167,7 +167,7 @@ class PackageProfile(Struct):
 
         self.wrapper = wrapper
         self.srctype = kwargs.get('srctype','')
-        self.name = kwargs.get('name',None)
+        self.name = kwargs.get('name','')
         self.version = kwargs.get('version',None)
         self.release = kwargs.get('release','0')
         self.filepath = kwargs.get('filepath',None)

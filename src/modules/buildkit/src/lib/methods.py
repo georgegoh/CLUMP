@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.buildkit.kitsource import KusuComponent, ComponentInfo, KusuKit, KitInfo
+from kusu.buildkit.kitsource import KusuComponent, KusuKit
 from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, UnknownPackageType, UndefinedComponentInfo, UndefinedKitInfo
 from path import path
@@ -27,21 +27,20 @@ def processKitInfo(kitinfo):
 
 def DefaultKit(**kwargs):
     """ The most basic type of kits. """
-    if not 'name' in kwargs: raise UndefinedKitInfo
-    name = kwargs['name']
-    author = kwargs.get('author','')
-    vendor = kwargs.get('vendor','')
-    license = kwargs.get('license','LGPL')
-    version = kwargs.get('version','0.1')
-    release = kwargs.get('release','0')
-    arch = kwargs.get('arch','noarch')
-    kitinfo = KitInfo(name=name,author=author,vendor=vendor,
-        license=license,arch=arch,version=version,release=release)
-    return Kit(kitinfo)
 
-def Kit(kitinfo):
-    """ Convenience method to setup the KusuKit class. """
-    return KusuKit(kitinfo)
+    # set a few defaults if not set initially
+    if not 'license' in kwargs: kwargs['license'] = 'LGPL'
+    if not 'version' in kwargs: kwargs['version'] = '0.1'
+    if not 'release' in kwargs: kwargs['release'] = '0'
+    if not 'arch' in kwargs: kwargs['arch'] = 'noarch'
+    if not 'scripts' in kwargs: kwargs['scripts'] = []
+    if not 'dependencies' in kwargs: kwargs['dependencies'] = []
+    if not 'components' in kwargs: kwargs['components'] = []
+
+    kit = KusuKit(**kwargs)
+
+    return kit
+
 
 def Centos5Component(**kwargs):
     """ This is used for Centos5Component 5 components. """
@@ -65,28 +64,21 @@ def DefaultComponent(**kwargs):
     """ The default component will associate itself to both the installer and compute
         nodegroups if the ngtypes is not defined.
     """
-    if not 'name' in kwargs: raise UndefinedComponentInfo
-    name = kwargs['name']
-    ostype = kwargs.get('ostype','')
-    osversion = kwargs.get('osversion','')
-    arch = kwargs.get('arch','noarch')
-    compversion = kwargs.get('compversion','0.1')
-    comprelease = kwargs.get('comprelease','0')
-    ngtypes = kwargs.get('ngtypes',['installer','compute'])
-    compinfo = ComponentInfo(name=name,ostype=ostype,osversion=osversion,
-        arch=arch,compversion=compversion,comprelease=comprelease,ngtypes=ngtypes)
-    kwargs['componentinfo'] = compinfo
-    
-    return Component(**kwargs)
 
-def Component(**kwargs):
-    """ Convenience method to setup KusuComponent class. """
-    return KusuComponent(**kwargs)
+    # set a few defaults if not set initially
+    if not 'arch' in kwargs: kwargs['arch'] = 'noarch'
+    if not 'compversion' in kwargs: kwargs['compversion'] = '0.1'
+    if not 'comprelease' in kwargs: kwargs['comprelease'] = '0'
+    if not 'ngtypes' in kwargs: kwargs['ngtypes'] = ['installer','compute']
+    
+    component = KusuComponent(**kwargs)
+  
+    return component
+
 
 def BinaryPackage(**kwargs):
     """ This is used to handle binary distribution packages. """
-    kwargs['srctype'] = 'binarydist'
-    return Package(**kwargs)
+    return Package(srctype='binarydist')
 
 def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
@@ -111,7 +103,6 @@ def SourcePackage(**kwargs):
 
 def Package(**kwargs):
     """ Basic convenience package method. """
-    if 'srctype' not in kwargs: raise UnknownPackageType
     if kwargs['srctype'] == 'autotools':
         pkg = PackageProfile(AutoToolsWrapper(),**kwargs)
     elif kwargs['srctype'] == 'binarydist':

@@ -7,6 +7,7 @@
 
 from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType
+from kusu.util.structure import Struct
 import pprint
 
 
@@ -104,59 +105,27 @@ class GeneralKitSrc(KitSrcBase):
         
 class BinaryKitSrc(KitSrcBase): pass
 
-class KitInfo(object):
-    """ This class contains the metadata information regarding the kit. """
-    author = ''
-    name = ''
-    vendor = ''
-    license = ''
+
+class KusuComponent(Struct):
+    """ Component for Kits. """
+                            
+    dependencies = []                   # list of dependencies for this component
+    ngtypes = ['installer','compute']   # list of nodegroup types for this component
+    scripts = []                        # list of additional scripts for this component
     arch = 'noarch'
-    version = '0.1'
-    release = '0'
-
-    def __init__(self, **kwargs):
-        self.author = kwargs.get('author','')
-        self.name = kwargs.get('name','')
-        self.vendor = kwargs.get('vendor','')
-        self.license = kwargs.get('license','')
-        self.arch = kwargs.get('arch','noarch')
-        self.version = kwargs.get('version','0.1')
-        self.release = kwargs.get('release','0')
-        
-    def generate(self):
-        """ Returns a metadata tuple containing the kitinfo and individual compinfos. """
-        
-        d = {}
-        d['name'] = self.name
-        d['license'] = self.license
-        d['vendor'] = self.vendor
-        d['author'] = self.author
-        d['arch'] = self.arch
-        d['version'] = self.version
-        d['release'] = self.release
-        
-        return d
-        
-
-class ComponentInfo(object):
-    """ This class contains the metadata information regarding the component.
-    """
-
-    ngtypes = []
-    name = ''
-    ostype = ''
-    osversion = ''
     compversion = '0.1'
     comprelease = '0'
     
-    def __init__(self,**kwargs):
-        self.name = kwargs.get('name','')
-        self.ostype = kwargs.get('ostype','')
-        self.osversion = kwargs.get('osversion','')
-        self.ngtypes = kwargs.get('ngtypes',[])
-        self.compversion = kwargs.get('compversion','0.1')
-        self.comprelease = kwargs.get('comprelease','0')
     
+    def __init__(self, **kwargs):
+        Struct.__init__(self,kwargs)
+
+    def setup(self):
+        """ Prepares the attributes for this class. This method have to be called before any
+            other operation.
+        """
+        pass
+        
     def associateWith(self, ngtype):
         """ Add ngtype for this component to belong to. """
         if ngtype not in NODEGROUP_TYPES: raise UnsupportedNGType
@@ -164,31 +133,8 @@ class ComponentInfo(object):
         
     def generate(self):
         """ Returns a metadata dict. """
-        d = {}
-        d['ngtypes'] = self.ngtypes
-        d['name'] = self.name
-        d['ostype'] = self.ostype
-        d['osversion'] = self.osversion
-        d['compversion'] = self.compversion
-        d['comprelease'] = self.comprelease
-        
-        return d
 
-class KusuComponent(object):
-    """ Component for Kits. """
-
-    dependencies = []
-    scripts = []
-    componentinfo = None
-    
-    def __init__(self,**kwargs):
-        self.dependencies = kwargs.get('dependencies',[])
-        self.scripts = kwargs.get('scripts',[])
-        self.componentinfo = kwargs.get('componentinfo',None)
-    
-    def associateWith(self, ngtype):
-        """ Add ngtype for this component to belong to. """
-        self.componentinfo.associateWith(ngtype)
+        return self.copy()
         
     def addDep(self, package, absoluteversion=False):
         """ Add package as a dependency. If absoluteversion is set to True, 
@@ -215,16 +161,30 @@ class KusuComponent(object):
         if pkgtype == 'rpm':
             return self._packRPM()
             
-class KusuKit(object):
+class KusuKit(Struct):
     """ Kit class. """
     
-    dependencies = []
-    scripts = []
-    components = []
-    kitinfo = None
+    components = []     # list of KusuComponents belonging to this kit
+    scripts = []        # list of additional scripts belonging to this kit
+    dependencies = []   # list of dependencies for this kit
+    license = 'LGPL'    # license for this kit
+    version = '0.1' 
+    release = '0'
+    arch = 'noarch'
     
-    def __init__(self, kitinfo):
-        self.kitinfo = kitinfo
+    def __init__(self, **kwargs):
+        Struct.__init__(self,kwargs)
+
+    def setup(self):
+        """ Prepares the attributes for this class. This method have to be called before any
+            other operation.
+        """
+        pass
+
+    def generate(self):
+        """ Returns a metadata for this kit. """
+
+        return self.copy()
 
     def addComponent(self, component):
         """ Add component to this kit. """
@@ -251,9 +211,9 @@ class KusuKit(object):
 
     def generateKitInfo(self, filename):
         """ Generates a .kitinfo file."""
-        complist = [component.componentinfo.generate() for component in self.components]
+        complist = [component.generate() for component in self.components]
 
-        _kitinfo  = self.kitinfo.generate()
+        _kitinfo  = self.generate()
         f = open(filename,'w')
         f.write('kit = %s\n' % pprint.pformat(_kitinfo))
         f.write('components = %s\n' % pprint.pformat(complist))
