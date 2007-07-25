@@ -112,7 +112,7 @@ class RHN:
             errMsg = e.errmsg
 
             if faultCode in self.rhnProtoErrors.keys():
-                raise self.rhnProtoErrors[errCode]
+                raise self.rhnProtoErrors[errCode], (errCode, url, errMsg)
             else:
                 raise rhnServerError, (errCode, url, errMsg)
 
@@ -121,9 +121,9 @@ class RHN:
             faultStr = e.faultString
 
             if faultCode in self.rhnErrors.keys():
-                raise self.rhnErrors[faultCode]
+                raise self.rhnErrors[faultCode],  (faultCode, faultStr)
             else:
-                raise rhnError, (failtCode, faultStr)
+                raise rhnError, (faultCode, faultStr)
 
         except Exception, e:
             raise e
@@ -226,6 +226,8 @@ class RHN:
         except urllib2.HTTPError, e :
             code = e.code
             msg = e.msg
-
+        except urllib2.URLError, e:
+            raise e
+            
         return (code, msg, content)
      

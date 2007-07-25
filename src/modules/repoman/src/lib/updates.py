@@ -22,33 +22,7 @@ class BaseUpdate:
 
     def getLatestRPM(self, dirs=[]):
         """Returns a dictionary of the latest rpms"""
-
-        rpmPkgs = {}
-        for dir in dirs:
-            dir = path(dir)
-            for r in dir.files():
-                if r.ext == '.rpm' and r.basename() != 'TRANS.TBL':
-                    try:
-                        r = rpmtool.RPM(str(r))
-                    except InvalidRPMHeader:
-                        continue
-
-                    name = r.getName()
-                    arch = r.getArch()
-
-                    if rpmPkgs.has_key(name):
-                        if rpmPkgs[name].has_key(arch):
-                            if r > Pkgs[name][arch]:
-                                rpmPkgs[name][arch] = r
-                            else:
-                                pass # Do nothing
-                        else:    
-                            rpmPkgs[name][arch] = r
-                    else:
-                        rpmPkgs[name] = {}
-                        rpmPkgs[name][arch] = r
-
-        return rpmPkgs
+        return rpmtool.getLatestRPM(dirs, ignoreErrors=True)
 
     def getUpdates(self, dir):
         """Gets the updates and writes them into the destination dir"""
@@ -87,10 +61,11 @@ class RHNUpdate(BaseUpdate):
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())
 
+        downloadPkgs={}
         for channel in channels:
             downloadPkgs[channel['channel_label']] = []
         
-        for channel in channels:
+        for channel in downloadPkgs.keys():
             for r in self.rhn.getLatestPackages(channel):
                 name = r.getName()
                 arch = r.getArch()
@@ -110,13 +85,15 @@ class RHNUpdate(BaseUpdate):
             for r in pkgs:
                 filename = r.getFilename().basename()
 
-                content = self.rhn.getPackage(filename, channel)
+                if not (dir / filename).exists():
+                    content = self.rhn.getPackage(filename, channel)
 
-                if content:
-                    f = open(dir / filename, 'w')
-                    f.write(content)
-                    f.close()
-
-        self.rhn.logout()
+                    if content:
+                        f = open(dir / filename, 'w')
+                        f.write(content)
+                        f.close()
+        try:
+            self.rhn.logout()
+        except: pass
 
 
