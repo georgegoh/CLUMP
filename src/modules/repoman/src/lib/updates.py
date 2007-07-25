@@ -84,14 +84,22 @@ class RHNUpdate(BaseUpdate):
         for channel, pkgs in downloadPkgs.items():
             for r in pkgs:
                 filename = r.getFilename().basename()
+                dest = path(dir / filename)
+                
+                if dest.exists():
+                    try:
+                        rpmtool.RPM(dest)
+                        continue
+                    except:
+                        # corrupted/incomplete/etc
+                        dest.remove()
 
-                if not (dir / filename).exists():
-                    content = self.rhn.getPackage(filename, channel)
+                content = self.rhn.getPackage(filename, channel)
+                if content:
+                    f = open(dest, 'w')
+                    f.write(content)
+                    f.close()
 
-                    if content:
-                        f = open(dir / filename, 'w')
-                        f.write(content)
-                        f.close()
         try:
             self.rhn.logout()
         except: pass
