@@ -28,6 +28,7 @@ class App:
         self.migrateDB()
         self.makeRepos()
         self.enableSyslog()
+        self.restrictDHCPDToProvisionNet()
 
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
@@ -95,6 +96,35 @@ class App:
         out, err = p.communicate()
         retcode = p.returncode
 
+    def restrictDHCPDToProvisionNet(self):
+        myname = \
+            self.db.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
+        nics = self.db.Nodes.selectfirst_by(name=myname).nics
+
+        dhcpdnics = []
+        for nic in nics:
+            if nic.network.type == 'provision':
+                dhcpdnics.append(nic.network.device)
+
+        if dhcpdnics:
+            f = open('/etc/sysconfig/dhcpd', 'r')
+            dhcpd = f.read()
+            f.close()
+
+            line = 'DHCPDARGS='
+            index = dhcpd.find(line)
+
+            f = open('/etc/sysconfig/dhcpd', 'w')
+            f.write(dhcpd[:index] + 'DHCPDARGS=%s' % ' '.join(dhcpdnics) + \
+                    dhcpd[index + len(line):])
+            f.close()
+
+            p = subprocess.Popen('/etc/init.d/dhcpd restart',
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
 
 if __name__ == "__main__":
     app = App()
