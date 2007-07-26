@@ -119,6 +119,11 @@ class TestRPMTool:
         r = rpmtool.RPM(str(cachedir / 'php5-sqlite-5.2.0-14.x86_64.rpm'))
         assert r.getArch() == 'x86_64'
 
+    def testgetGroup(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+
+        assert r.getGroup() == 'Applications/Productivity'
+
     def testgetFilename(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
         assert r.getFilename() == cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
