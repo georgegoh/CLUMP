@@ -7,17 +7,137 @@
 
 import sys
 import os
+import pwd
+import subprocess
 from kusu.core.app import KusuApp
-from kusu.buildkit import KitSrcFactory
+from kusu.buildkit import *
 from path import path
+from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError
+from kusu.util.tools import mkdtemp, cpio_copytree
 
 class BuildKit:
     """This class is the model for the buildkit app."""
     
-    def newKitSrc(self,srcpath):
+    verbose = False
+    
+    def newKitSrc(self, srcpath):
         """prepare the Kit source directory"""
         newkit = KitSrcFactory(srcpath)
         newkit.prepareSrcPath()
+        
+    def getKitSrc(self, srcpath):
+        """ Builds the kit based on the kitsrc dir"""
+        return KitSrcFactory(srcpath)
+
+    def getKitScript(self, kitsrc, kitscript='build.kit'):
+        """ Sweeps the kitsrc dir and attempts to locate the kitscript.
+        """
+        _kitsrc = path(kitsrc)
+        li = _kitsrc.files(kitscript)
+        if not li: raise FileDoesNotExistError
+        
+        # TODO : only handle single kitscript
+        return li[0]
+
+    def getBuildProfile(self, kitsrc):
+        """ Returns the buildprofile based on kitsrc. """
+        return setupprofile(kitsrc)
+        
+    def loadKitScript(self, kitscript):
+        """ Loads the kitscript and get a tuple of the kit, components and packages defined in
+            that kitscript.
+        """
+        ns = {}
+        execfile(kitscript,globals(),ns)
+        
+        pkgs = [ns[key] for key in ns.keys() if isinstance(ns[key], PackageProfile)]
+        comps = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuComponent)]
+        kits = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuKit)]
+        
+        # FIXME: only a single kit is supported right now
+        if not kits:
+            kit = []
+        else:
+            kit = kits[0]
+        
+        return (kit,comps,pkgs)
+        
+    def handlePackages(self, packages, buildprofile):
+        """ Handles the configuring, building and deploying of the packages. """
+        for p in packages:
+            p.verbose = self.verbose
+            p.buildprofile = buildprofile
+            p.setup()
+            p.configure()
+            p.build()
+            p.deploy()
+            
+    def handleComponents(self, components, buildprofile=None):
+        """ Handles the configuring, building and deploying of the components. """
+        for c in components:
+            c.deploy(verbose=self.verbose)
+            
+    def handleKit(self, kit, buildprofile=None):
+        """ Handles the configuring, building and deploying of the kit. """
+        kit.deploy(verbose=self.verbose)
+        
+    def populatePackagesDir(self, buildprofile):
+        """ Populates the built or binary packages into the package directory. """
+        populatePackagesDir(buildprofile)
+        
+    def setupRPMMacros(self, buildprofile):
+        """ Sets up a proper .rpmmacros file for building purposes. """
+        curRPMMacros = setupRPMMacrofile(buildprofile)
+        
+    def restoreRPMMacros(self, oldrpmmacros):
+        """ Restores the old .rpmmacros. """
+        userhome = path(pwd.getpwuid(os.getuid())[5])
+        rpmmacros = userhome / '.rpmmacros'
+        if rpmmacros.exists():
+            rpmmacros.remove()
+        cmd = 'mv -f %s %s' % (currpmmacro,rpmmacros)
+        renP = subprocess.Popen(cmd,shell=True)
+        renP.wait()
+        
+    def generateKitInfo(self, kit, filepath):
+        """ Generates the kitinfo which contains the metadata information 
+            regarding the kit and its components.
+        """
+        kit.generateKitInfo(filepath)
+        
+    def makeKitISO(self, kitsrc):
+        """ Creates a Kusu Kit ISO based on the kitsrc dir.
+            Returns the isofile.
+        """
+        kitsrc = path(kitsrc).abspath()
+        pkgdir = path(kitsrc / 'packages')
+
+        # sweep and get the kitinfo files    
+        li = kitsrc.files('*.kitinfo')
+        kitinfo = path(li[0])
+
+        kit,comps = processKitInfo(kitinfo)
+
+        if not kit: return
+
+
+        # TODO : right now, we don't make use of the kitversion, only kitnames
+        # TODO : also, only a single kit is supported right now
+
+        tmpdir = kitsrc / 'tmp'
+        isodir = mkdtemp(dir=tmpdir,prefix='isodir-')
+        kitdir = path(isodir / kit['name'])
+        kitdir.mkdir()
+        cpio_copytree(pkgdir,kitdir)
+        kitinfo.copy(kitdir)
+        isofile = 'kit-%(name)s-%(version)s-%(release)s-%(arch)s.iso' % kit
+        cmd = 'mkisofs -quiet -V "%s" -r -T -f -o %s/%s .' % (kit['name'],kitsrc,isofile)
+        mkP = subprocess.Popen(cmd,shell=True,cwd=isodir)
+        mkP.wait()
+        isodir.rmtree()
+        isopath = kitsrc / isofile
+        return isopath
+        
         
 class App(KusuApp):
     """ Application class for buildkit. """
@@ -27,7 +147,7 @@ class App(KusuApp):
         KusuApp.__init__(self)
 
         self.actions = {'new':['kit'], 
-            'make':['dir','iso']}
+            'make':['kit']}
 
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -43,11 +163,11 @@ buildkit is used to construct new Kusu Kits.
 actions:
 
     new             - Create a new Kit directory. Available arguments for 
-                      this action: 
+                      this action:
                         kit=<name of kit directory to create>
     make            - Make a Kit iso. Available arguments for this action:
-                        dir=<path of kit directory>
-                        iso=<filepath of iso to create>                 
+                        kit=<path of kit directory>
+                 
 """)
         self.examples = self._("""\
 Example operations:
@@ -56,7 +176,7 @@ Example operations:
     # buildkit new kit=hellokit
 
     To make the hello Kit:
-    # buildkit make dir=hellokit iso=hellokit.iso
+    # buildkit make kit=hellokit
 
 """)
         self.parser.set_usage(self.usagestr)
@@ -101,8 +221,10 @@ Example operations:
     def parseargs(self):
         """ App-specific arguments goes here. """
 
-        self.parser.add_option('-f','--force', action='store_true', dest='overwrite')
+        self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
+        self.parser.add_option('-s','--kitscript', action='store', dest='kitscript')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.set_defaults(verbose=False,showexamples=False,kitscript='build.kit')
         self.options, self.args = self.parser.parse_args()
 
 
@@ -137,6 +259,9 @@ Example operations:
         """ Main launcher. """
         self.parseargs()
 
+        # set verbosity
+        self.bkinst.verbose = self.options.verbose
+
         # call the correct sub-handler for the action
         m = '_' + self.action.split('-')[0] \
             + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
@@ -161,12 +286,106 @@ Example operations:
 
     def _make(self, args):
         """ Handler for make action. args is a dict of supported key-value pairs for this action. """
-        dirname = path(args['dir'])
-        iso = path(args['iso']) 
+        kitsrc = path(args['kit']).abspath()
+        oldrpmmacros = ''
+        
+        # get the kitsrc
+        msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
+        print msg
+        _kitsrc = self.bkinst.getKitSrc(kitsrc)
+        
+        if not _kitsrc.verifySrcPath():
+            msg = self._('Unable to use %(kitsrc)s as a Kit Source directory!' % {'kitsrc':kitsrc})
+            self.printMsgExit(msg)
+            
+        bp = None
+        try:
+            msg = self._('Setting up BuildProfile for this kit..')
+            print msg
+            bp = self.bkinst.getBuildProfile(kitsrc)
+        except InvalidBuildProfile:
+            msg = self._('Unable to create a BuildProfile based on this Kit Source directory!')
+            self.printMsgExit(msg)
+            
+        if not bp.builddir or not bp.pkgdir or not bp.srcdir or not bp.tmpdir:
+            msg = self._('Unable to create a BuildProfile based on this Kit Source directory!')
+            self.printMsgExit(msg)
+
+        # set up the .rpmmacros
+        msg = self._('Setting up a proper .rpmmacros for building this kit')
+        print msg
+        oldrpmmacros = self.bkinst.setupRPMMacros(bp)
+
+
+        # get the kitscript
+        _ks = self.options.kitscript
+        kitscript = ''
+        try:
+            msg = self._('Looking for the kitscript %(kitscript)s..' % {'kitscript':_ks})
+            print msg
+            kitscript = self.bkinst.getKitScript(kitsrc,_ks)
+        except FileDoesNotExistError:
+            if oldrpmmacros:
+                msg = self._('Restoring .rpmmacros')
+                self.bkinst.restoreRPMMacros(oldrpmmacros)
+            msg = self._('kitscript %(kitscript)s not found!' % {'kitscript':_ks})
+            self.printMsgExit(msg)
+            
+        # looks like everything is down pat, now the hard stuff
+        msg = self._('Found kitscript. Loading it..')
+        print msg
+        kit, components, packages = self.bkinst.loadKitScript(kitscript)
+        
+        # lets build the packages if any:
+        if packages:
+            msg = self._('Building the package(s)..')
+            print msg
+            self.bkinst.handlePackages(packages,bp)
+            
+        if components:
+            msg = self._('Building the packages for component(s)..')
+            self.bkinst.handleComponents(components,bp)
+            print msg
+            
+        if kit:
+            msg = self._('Building the package for the kit..')
+            self.bkinst.handleKit(kit,bp)
+            print msg
+            
+        # populate the packages dir
+        msg = self._('Populating the packages directory with the Kit artifacts..')
+        print msg
+        self.bkinst.populatePackagesDir(bp)
+        
+        # generate the kitinfo file
+        msg = self._('Generating kitinfo..')
+        print msg
+        kitinfo = '%s/%s.kitinfo' % (kitsrc,kit.name)
+        self.bkinst.generateKitInfo(kit,kitinfo)
+        
+        # finally, make the kit iso
+        msg = self._('Creating the Kit iso..')
+        print msg
+        kitiso = self.bkinst.makeKitISO(kitsrc)
+        
+        if not kitiso:
+            msg = self._('Error creating Kit ISO!')
+            if oldrpmmacros:
+                msg = self._('Restoring .rpmmacros')
+                self.bkinst.restoreRPMMacros(oldrpmmacros)
+            self.printMsgExit(msg)
+                
+        msg = self._('Kit ISO created. ISO file is at %(isofile)s.' % {'isofile':kitiso})
+        print msg
+        
+        if oldrpmmacros:
+            msg = self._('Restoring .rpmmacros')
+            self.bkinst.restoreRPMMacros(oldrpmmacros)
         
         
 if __name__ == '__main__':
 	bkinst = BuildKit()
 	app = App(bkinst)
 	app.run()
+	sys.exit(0)
 

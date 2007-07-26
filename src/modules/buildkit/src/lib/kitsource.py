@@ -154,9 +154,12 @@ class KusuComponent(Struct):
         """ Generates the namespace needed for the pack operation.
         """
         _ns = {}
-        _ns['pkgname'] = self.name
+        # also create a pkgname for this kit
+        self.pkgname = 'component-%s' % self.name
+        _ns['pkgname'] = self.pkgname
         _ns['pkgversion'] = self.compversion
         _ns['pkgrelease'] = self.comprelease
+        _ns['name'] = self.name
         _ns['arch'] = self.arch
         _ns['dependencies'] = self.dependencies
 
@@ -225,7 +228,10 @@ class KusuKit(Struct):
         """ Generates the namespace needed for the pack operation.
         """
         _ns = {}
-        _ns['pkgname'] = self.name
+        # also create a pkgname for this kit
+        self.pkgname = 'kit-%s' % self.name
+        _ns['pkgname'] = self.pkgname
+        _ns['name'] = self.name
         _ns['pkgversion'] = self.version
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license
