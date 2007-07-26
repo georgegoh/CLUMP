@@ -350,7 +350,7 @@ class DiskProfile(object):
             # open fstab file and filter out comments.
             fstab = open(fstab_loc)
             f_lines = [l for l in fstab.readlines() if \
-                       l.strip()[0] != '#' and not len(l.strip())]
+                       len(l.strip()) and l.strip()[0] != '#']
             fstab.close()
             device.unmount()
 
