@@ -321,17 +321,6 @@ class RedhatYumRepo(BaseRepo):
     def make(self, ngname):
         """makes the repository"""
 
-        self.UpdateDatabase(ngname)
-        self.makeRepoDirs()
-        self.copyOSKit()
-        self.copyKitsPackages()
-        self.copyRamDisk()
-        self.copyKusuNodeInstaller()
-        self.makeComps()
-        self.makeMetaInfo()
-        self.makeAutoInstallScript()
-        self.verify()
-
         try:
             self.UpdateDatabase(ngname)
             self.makeRepoDirs()
