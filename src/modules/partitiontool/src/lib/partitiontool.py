@@ -349,16 +349,20 @@ class DiskProfile(object):
             fstab_loc = str(path(mntpnt) / path(loc))
             # open fstab file and filter out comments.
             fstab = open(fstab_loc)
-            f_lines = [l for l in fstab.readlines() if l[0] != '#']
+            f_lines = [l for l in fstab.readlines() if \
+                       l.strip()[0] != '#' and not len(l.strip())]
             fstab.close()
             device.unmount()
 
             device_map = {}
             for l in f_lines:
-                # look for a mountable entry and append it to our dict.
-                dev, mntpnt, fs_type = l.split()[:3]
-                if fs_type in self.mountable_fsType.keys():
-                    device_map[dev] = mntpnt
+                try:
+                    # look for a mountable entry and append it to our dict.
+                    dev, mntpnt, fs_type = l.split()[:3]
+                    if fs_type in self.mountable_fsType.keys():
+                        device_map[dev] = mntpnt
+                except ValueError, e:
+                    raise KusuError, str(e) + ' Offending line: \n' + l
         except MountFailedError:
             pass
         return device_map
