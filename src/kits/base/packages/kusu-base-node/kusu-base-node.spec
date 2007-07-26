@@ -70,6 +70,41 @@ make ROOT=$RPM_BUILD_ROOT cfmd
 %post
 /sbin/chkconfig --add kusu > /dev/null 2>&1
 /sbin/chkconfig kusu on > /dev/null 2>&1
+/sbin/chkconfig --add cfmd > /dev/null 2>&1
+/sbin/chkconfig cfmd on > /dev/null 2>&1
+if [ -d /etc/cfm/Installer/etc ]; then
+	ln -s /etc/passwd /etc/cfm/Installer/etc/passwd
+	ln -s /etc/shadow /etc/cfm/Installer/etc/shadow
+	ln -s /etc/group /etc/cfm/Installer/etc/group
+	ln -s /etc/hosts /etc/cfm/Installer/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/Installer/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Installer/etc/fstab.append
+fi
+if [ -d /etc/cfm/Compute/etc ]; then
+	ln -s /etc/passwd /etc/cfm/Compute/etc/passwd
+	ln -s /etc/shadow /etc/cfm/Compute/etc/shadow
+	ln -s /etc/group /etc/cfm/Compute/etc/group
+	ln -s /etc/hosts /etc/cfm/Compute/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/Compute/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute/etc/fstab.append
+fi
+if [ -d /etc/cfm/Compute-diskless/etc ]; then
+	ln -s /etc/passwd /etc/cfm/Compute-diskless/etc/passwd
+	ln -s /etc/shadow /etc/cfm/Compute-diskless/etc/shadow
+	ln -s /etc/group /etc/cfm/Compute-diskless/etc/group
+	ln -s /etc/hosts /etc/cfm/Compute-diskless/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/Compute-diskless/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute-diskless/etc/fstab.append
+fi
+if [ -d /etc/cfm/Compute-disked/etc ]; then
+	ln -s /etc/passwd /etc/cfm/Compute-disked/etc/passwd
+	ln -s /etc/shadow /etc/cfm/Compute-disked/etc/shadow
+	ln -s /etc/group /etc/cfm/Compute-disked/etc/group
+	ln -s /etc/hosts /etc/cfm/Compute-disked/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/Compute-disked/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute-disked/etc/fstab.append
+fi
+
  
 %preun
 ##
@@ -77,6 +112,7 @@ make ROOT=$RPM_BUILD_ROOT cfmd
 ##
 if [ $1 = 0 ]; then # during removal of a pkg
     /sbin/chkconfig --del kusu > /dev/null 2>&1
+    /sbin/chkconfig --del cfmd > /dev/null 2>&1
 fi
 
 
@@ -101,10 +137,12 @@ make ROOT=$RPM_BUILD_ROOT install
 %files
 %defattr(-,root,root)
 /etc/init.d/kusu
+/etc/init.d/cfmd
 /etc/rc.kusu.d/
 /opt/kusu/*
 %exclude /opt/kusu/lib/python/kusu/*.py?
 /etc/rc.kusu.custom.d/
+/etc/cfm/*
 
 
 ##

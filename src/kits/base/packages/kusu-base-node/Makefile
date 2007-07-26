@@ -45,7 +45,10 @@ cfmd:
 	cd cfm ;make cfmd
 
 install::
-	mkdir -p $(ROOT)/etc
+	mkdir -p $(ROOT)/etc/cfm/Installer/etc
+	mkdir -p $(ROOT)/etc/cfm/Compute/etc	
+	mkdir -p "$(ROOT)/etc/cfm/Compute-diskless/etc"	
+	mkdir -p "$(ROOT)/etc/cfm/Compute-disked/etc"	
 	mkdir -p $(ROOT)/etc/init.d
 	mkdir -p $(ROOT)/etc/rc.kusu.d
 	mkdir -p $(ROOT)/etc/rc.kusu.custom.d
@@ -57,3 +60,4 @@ install::
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/
 	install -m755 sbin/cfmclient.py $(ROOT)/opt/kusu/sbin/cfmclient
 	install -m755 cfm/cfmd $(ROOT)/opt/kusu/sbin/cfmd
+	install -m755 etc/cfmd $(ROOT)/etc/init.d/cfmd
