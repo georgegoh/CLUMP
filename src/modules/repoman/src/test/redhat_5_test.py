@@ -269,15 +269,6 @@ class TestRedhat5Repo:
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
-    def testGettingOS(self):
-        global prefix
-
-        os_name, os_version, os_arch = repo.getOS(self.dbs, 'installer nodegroup')
-
-        assert os_name == 'rhel'
-        assert os_version == '5'
-        assert os_arch == 'i386'
-
     def testDeleteRepo(self):
         global prefix
 

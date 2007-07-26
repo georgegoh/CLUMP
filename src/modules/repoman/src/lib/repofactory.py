@@ -7,7 +7,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-from kusu.repoman import repo
+from kusu.repoman import repo, tools
 from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
@@ -32,7 +32,13 @@ class RepoFactory(object):
 
     def make(self, ngname, reponame=None):
         """Creates and make a new repository"""
-        
+     
+        if not tools.nodeGroupExists(self.db, ngname):
+            raise NodeGroupNotFoundError, ngname
+ 
+        if tools.repoForNodeGroupExists(self.db, ngname):
+            raise NodeGroupHasRepoAlreadyError, ngname
+             
         repoid  = self.getBestRepo(ngname)
 
         if repoid:
@@ -42,7 +48,7 @@ class RepoFactory(object):
             ng.save()
             ng.flush()
 
-            os_name, os_version, os_arch = repo.getOS(self.db, ngname)
+            os_name, os_version, os_arch = tools.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
             r.debug = self.debug
 
@@ -59,7 +65,7 @@ class RepoFactory(object):
             r.makeAutoInstallScript()
         else:
             # Make a new repo
-            os_name, os_version, os_arch = repo.getOS(self.db, ngname)
+            os_name, os_version, os_arch = tools.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
             r.debug = self.debug
             r.make(ngname)
@@ -77,11 +83,13 @@ class RepoFactory(object):
     def refresh(self, ngname):
         """Refresh the repository"""
 
-        repoid = self.getRepo(ngname)
+        if not tools.nodeGroupExists(self.db, ngname):
+            raise NodeGroupNotFoundError, ngname
 
-        if not repoid:
+        if not tools.repoForNodeGroupExists(self.db, ngname):
             raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
 
+        repoid = tools.getRepoFromNodeGroup(self.db, ngname)
         ngs = self.db.NodeGroups.select_by(repoid = repoid)
 
         if ngs:
@@ -94,7 +102,7 @@ class RepoFactory(object):
             # Only 1 nodegroup uses that repo, meaning itself
             # Just do a refresh
             
-            os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+            os_name, os_version, os_arch = tools.getOS(self.db, repoid)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
             r.debug = self.debug
             r = r.refresh(repoid)
@@ -103,8 +111,8 @@ class RepoFactory(object):
             # Not the same nodegroup
             # Determine whether a new repo is needed, i.e.
             # not the same anymore
-            oldKits = repo.getKits(self.db, ng.ngname) 
-            newKits = repo.getKits(self.db, ngname)
+            oldKits = tools.getKits(self.db, ng.ngname) 
+            newKits = tools.getKits(self.db, ngname)
 
             oldKits.sort()
             newKits.sort()
@@ -113,13 +121,17 @@ class RepoFactory(object):
                oldKits == newKits:
                 # No change
 
-                os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+                os_name, os_version, os_arch = tools.getOS(self.db, repoid)
                 r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
                 r.debug = self.debug
                 r = r.refresh(repoid)
 
             else:
                 # New repo needed
+                ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
+                ng.repoid = None
+                ng.save()
+                ng.flush()
                 r = self.make(ngname)
 
         return r
@@ -131,12 +143,15 @@ class RepoFactory(object):
     def delete(self, repoid):
         """Delete the repository from the database and local disk"""
     
+        if not tools.repoExists(self.db, repoid):
+            raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
+
         ngs = self.db.NodeGroups.select_by(repoid = repoid)    
 
         if ngs:
             raise RepoCannotDeleteError
  
-        os_name, os_version, os_arch = repo.getOS(self.db, repoid)
+        os_name, os_version, os_arch = tools.getOS(self.db, repoid)
         r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.delete(repoid)
         
@@ -151,14 +166,6 @@ class RepoFactory(object):
         pass
 
 
-    def getRepo(self, ngname):
-        ng = self.db.NodeGroups.select_by(ngname = ngname)
-
-        if ng:
-            return ng[0].repoid
-        else:
-            return None
-
     def getBestRepo(self, ngname):
         """Get a repo that uses the same set of kits"""
 
@@ -169,7 +176,7 @@ class RepoFactory(object):
                 continue #Ignore the ng that you are checking against
 
             repoid = ng.repoid
-            kits = repo.getKits(self.db, ng.ngname)
+            kits = tools.getKits(self.db, ng.ngname)
             kits.sort()
 
             if repos.has_key(repoid):
@@ -182,7 +189,7 @@ class RepoFactory(object):
             else:
                 repos[repoid] = kits
         
-        ng_kits = repo.getKits(self.db, ngname)
+        ng_kits = tools.getKits(self.db, ngname)
         ng_kits.sort()
 
         for repoid, kits in repos.items():
@@ -192,5 +199,3 @@ class RepoFactory(object):
 
         return None
  
-    def checkNodeGroup(self, ngname):
-        return True

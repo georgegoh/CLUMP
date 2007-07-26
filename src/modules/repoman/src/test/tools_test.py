@@ -6,7 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.core import database as db
-from kusu.repoman import repo
+from kusu.repoman import tools, repo
 from path import path
 import tempfile
 import os
@@ -48,7 +48,7 @@ def tearDown():
     kusudb.parent.rmtree()
     cachedir.rmtree()
 
-class TestFedora6Repo:
+class TestTools:
 
     def setUp(self):
         global prefix
@@ -58,28 +58,18 @@ class TestFedora6Repo:
         self.dbs.createTables()
     
         # Network
-        network1 = db.Networks()
-        network1.network = '10.0.0.0'
-        network1.subnet = '255.0.0.0'
-        network1.device = 'eth0'
-        network1.type = 'public'
-        network1.save()
-        network1.flush()
-
-        network2 = db.Networks()
-        network2.network = '192.168.1.0'
-        network2.subnet = '255.255.255.0'
-        network2.device = 'eth1'
-        network2.type = 'provision'
-        network2.save()
-        network2.flush()
+        network = db.Networks()
+        network.network = '10.0.0.0'
+        network.subnet = '255.0.0.0'
+        network.device = 'eth0'
+        network.type = 'provision'
+        network.save()
+        network.flush()
 
         # nodegroup
         node = db.Nodes(name='master-0')
-        self.masterIP1 = '10.1.1.1'
-        self.masterIP2 = '192.168.1.1'
-        node.nics.append(db.Nics(ip=self.masterIP1, netid=network1.netid))
-        node.nics.append(db.Nics(ip=self.masterIP2, netid=network2.netid))
+        self.masterIP = '10.1.1.1'
+        node.nics.append(db.Nics(ip=self.masterIP, netid=network.netid))
 
         installer = db.NodeGroups(ngname='installer nodegroup',
                                   type='installer') 
@@ -163,141 +153,63 @@ class TestFedora6Repo:
                  'images/updates.img']
         return paths
 
-    def checkLayout(self, prefix):
-        for p in self.getPath():
-            assert (prefix / p).exists()
-
-    def testRelativeLinks(self):
-        global prefix
-
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = str(r.repoid)
-
-        for p in self.getPath():
-            p = prefix / 'depot' / 'repos' / repoid / p
-            if p.islink():
-                assert not p.readlink().isabs()
-
-    def testMakeOSType(self):
-        global prefix
- 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-
-        assert r.ostype == 'fedora-6-i386'
- 
-    def testMakeOInstallerIP(self):
-        global prefix
- 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-
-        assert self.dbs.Repos.get(r.repoid).installers == ';'.join([self.masterIP1, self.masterIP2])
- 
-    def testMake(self):
-        global prefix
- 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-
-        repoid = str(r.repoid)
-        self.checkLayout(prefix / 'depot' / 'repos' / repoid)
-
-    def testNodeGroupHasRepoID(self):
-        global prefix
+    def testRepoExistsTrue(self):
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
         r.make('installer nodegroup')
 
-        repoid = str(r.repoid)
- 
-        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')
+        assert tools.repoExists(self.dbs, 1) == True
 
-        assert len(ng) == 1
-        assert ng[0].repoid == r.repoid
+    def testRepoExistsFalse(self):
+        assert tools.repoExists(self.dbs, 'installer nodegroup') == False
+
+    def testNodeGroupExistsTrue(self):
+        assert tools.nodeGroupExists(self.dbs, 'installer nodegroup') == True
+    
+    def testNodeGroupExistsFalse(self):
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
         
-    def testNodeInstallerImg(self):
-        global prefix
+        for node in ng.nodes:
+            for nic in node.nics:
+                nic.delete()
+                nic.flush()
 
+            node.delete()
+            node.save()
+            node.flush(
+)
+        ng.delete()
+        ng.flush()
+
+        assert tools.nodeGroupExists(self.dbs, 'installer nodegroup') == False
+
+    def testGetRepoFromNodeGroupTrue(self):
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.debug = True
         r.make('installer nodegroup')
-        repoid = str(r.repoid)
+    
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.repoid = r.repoid
+        ng.save()
+        ng.flush()
 
-        assert (prefix / 'depot' / 'repos' / repoid / 'images' / 'updates.img').exists()
-
-    def testKickstartGeneration(self):
-        global prefix
-
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = str(r.repoid)
-
-        row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')
-        row = row[0]
-        masterNode = self.dbs.Nodes.select_by(name=row.kvalue)[0]
-
-        for nic in masterNode.nics:
-            if nic.ip: 
-                ip = nic.ip
-                assert (prefix / 'depot' / 'repos' / repoid / 'ks.cfg.' + ip).exists()
-      
-                f = open(prefix / 'depot' / 'repos' / repoid / 'ks.cfg.' + ip, 'r')
-                assert f.readlines()[1].strip()  == 'url --url http://%s/repos/%s' % (ip, repoid)
-                f.close() 
-
-    def testDeleteRepo(self):
-        global prefix
-
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.make('installer nodegroup')
-        r.debug = True
-        repoid = r.repoid
-  
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.delete(repoid)
+        assert tools.getRepoFromNodeGroup(self.dbs, 'installer nodegroup') == 1
         
-        depot = prefix / 'depot'    
-        assert not (depot / 'repos' / str(repoid)).exists() 
+    def testGetRepoFromNodeGroupFalse(self):
+        assert tools.getRepoFromNodeGroup(self.dbs, 'installer nodegroup') == None
 
-        assert not self.dbs.Repos.get(repoid)
-        assert not len(self.dbs.ReposHaveKits.select_by(repoid=repoid))
+    def getKits(self):
+        assert tools.getKits(self.dbs, 'installer nodegroup') == ['fedora-6-i386', 'base']
 
-    def testCleanRepo(self):
+    def testGetOS(self):
         global prefix
+    
+        os_name, os_version, os_arch = tools.getOS(self.dbs, 'installer nodegroup')
+    
+        assert os_name == 'fedora'
+        assert os_version == '6'
+        assert os_arch == 'i386'
 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.make('installer nodegroup')
-        r.debug = True
-        repoid = r.repoid
- 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.clean(repoid)
- 
-        depot = prefix / 'depot'    
-        assert not (depot / 'repos' / str(repoid)).exists() 
-
-    def testRefreshRepo(self):
-        global prefix
-
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.make('installer nodegroup')
-        repoid = r.repoid
- 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
-        r.refresh(repoid)
-
-        repoid = str(r.repoid)
-        self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+    
 

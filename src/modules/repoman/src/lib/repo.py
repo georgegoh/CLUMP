@@ -9,6 +9,7 @@
 
 from kusu.util.errors import *
 from kusu.core import database as db
+from kusu.repoman import tools
 from path import path
 from Cheetah.Template import Template
 import sqlalchemy as sa
@@ -18,56 +19,6 @@ try:
     import subprocess
 except:
     from popen5 import subprocess
-
-
-def getOS(dbs, repoid_or_ngname):
-    """Returns OS (rname, version, arch) tuple from database 
-       based on the repoid or nodegroup name"""
-
-    key = repoid_or_ngname
-
-    # Do not depend on os type in repo
-    # repoid
-    if type(key) in [int, long]: # float/complex not included 
-        kit = dbs.Kits.select_by(dbs.ReposHaveKits.c.kid == dbs.Kits.c.kid,
-                                dbs.ReposHaveKits.c.repoid == key,
-                                dbs.Kits.c.isOS)
-
-    # nodegroup name
-    elif type(key) == str:
-        kit = db.findKitsFromNodeGroup(dbs,
-                                       columns=['rname', 'version', 'arch'],
-                                       kitargs={'isOS': True}, 
-                                       ngargs={'ngname': key})
-    else:
-        raise TypeError, 'Invalid type for key: %s' % key
-
-    # There should only 1 be os kit for a repo. 
-    if len(kit) == 0:
-        raise RepoOSKitError, '\'%s\' has no OS Kit' % key
-    elif len(kit) != 1:
-        raise RepoOSKitError, '\'%s\' has more than 1 OS Kit' % key
-    else:
-        kit = kit[0]
-   
-    return (kit.rname, kit.version, kit.arch)
-
-
-def getKits(dbs, ngname):
-    """Returns a list of kits for a nodegroup"""
-    ng = dbs.NodeGroups.select_by(ngname=ngname)
-
-    if ng:
-        ng = ng[0]
-    else:
-        raise NodeGroupNotFoundError, 'Nodegroup: \'%s\' not found' % ngname
-
-    kits = {} 
-    for component in ng.components:
-        # Store all the kits, uniq them via dictionary
-        kits[component.kit.kid] = component.kit
-
-    return kits.values()
 
 class BaseRepo(object):
 
@@ -100,12 +51,12 @@ class BaseRepo(object):
 
     def getKits(self, ngname):
         """Returns a list of kits for a nodegroup"""
-        return getKits(self.db, ngname)
+        return tools.getKits(self.db, ngname)
 
     def getOSPath(self):
         """Get the OS path for the repository"""
 
-        os_name, os_version, os_arch = getOS(self.db, self.repoid)
+        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
         return self.getKitPath(os_name, os_version, os_arch)
 
     def getKitPath(self, name, version, arch):
@@ -369,6 +320,17 @@ class RedhatYumRepo(BaseRepo):
 
     def make(self, ngname):
         """makes the repository"""
+
+        self.UpdateDatabase(ngname)
+        self.makeRepoDirs()
+        self.copyOSKit()
+        self.copyKitsPackages()
+        self.copyRamDisk()
+        self.copyKusuNodeInstaller()
+        self.makeComps()
+        self.makeMetaInfo()
+        self.makeAutoInstallScript()
+        self.verify()
 
         try:
             self.UpdateDatabase(ngname)

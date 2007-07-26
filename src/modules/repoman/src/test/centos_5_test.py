@@ -255,15 +255,6 @@ class TestCentos5Repo:
         assert len(ng) == 1
         assert ng[0].repoid == r.repoid
  
-    def testGettingOS(self):
-        global prefix
-
-        os_name, os_version, os_arch = repo.getOS(self.dbs, 'installer nodegroup')
-
-        assert os_name == 'centos'
-        assert os_version == '5'
-        assert os_arch == 'i386'
-
     def testDeleteRepo(self):
         global prefix
 
