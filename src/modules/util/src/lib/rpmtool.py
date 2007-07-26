@@ -75,13 +75,18 @@ class RPM:
             version = kwargs['version']
             release = kwargs['release']
             arch = kwargs['arch']
+            epoch = kwargs['epoch']
 
             self.hdr[rpm.RPMTAG_NAME] = name
             self.hdr[rpm.RPMTAG_VERSION] = version
             self.hdr[rpm.RPMTAG_RELEASE] = release
-            self.hdr[rpm.RPMTAG_EPOCH] = kwargs['epoch']
+            self.hdr[rpm.RPMTAG_EPOCH] = epoch
             self.hdr[rpm.RPMTAG_ARCH] = arch
-            self.filename = '%s-%s-%s.%s.rpm' % (name, version, release, arch)
+
+            if kwargs.has_key('filename') and kwargs['filename']:
+                self.filename = kwargs['filename']
+            else:
+                self.filename = '%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
         if not self.hdr:
             raise InvalidRPMHeader, "Invalid header"

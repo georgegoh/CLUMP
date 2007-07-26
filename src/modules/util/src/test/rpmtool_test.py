@@ -540,6 +540,13 @@ class TestRPMToolMockRPM:
     
         assert r.getFilename() == 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
 
+        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                        release=r.getRelease(), epoch=r.getEpoch(),
+                        arch=r.getArch(), filename='/tmp/openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm')
+    
+        assert r.getFilename() == '/tmp/openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
+
+
     def testEqual(self):
         r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
         r1 = rpmtool.RPM(name=r1.getName(), version=r1.getVersion(), 
