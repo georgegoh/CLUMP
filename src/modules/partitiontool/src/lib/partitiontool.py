@@ -481,15 +481,20 @@ class DiskProfile(object):
         partition = disk.partition_dict[partition_number]
         return partition
 
-    def delete(self, deviceObj):
+    def delete(self, deviceObj, keep_in_place=False):
         """Polymorphic delete function."""
-        logger.debug('Device %s of type %s' % (str(deviceObj), 
-                     str(type(deviceObj))))
+        logger.debug('Device %s' % str(deviceObj))
         if type(deviceObj) is Partition:
-            self.deletePartition(deviceObj)
+            if deviceObj.leave_unchanged:
+                logger.info('Device has been flagged to be unchangeable')
+                return
+            self.deletePartition(deviceObj, keep_in_place)
         elif type(deviceObj) is LogicalVolumeGroup:
             self.deleteLogicalVolumeGroup(deviceObj)
         elif type(deviceObj) is LogicalVolume:
+            if deviceObj.leave_unchanged:
+                logger.info('Device has been flagged to be unchangeable')
+                return
             self.deleteLogicalVolume(deviceObj)
         elif type(deviceObj) is Disk:
             raise KusuError, 'Cannot delete the selected device because ' + \

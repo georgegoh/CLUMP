@@ -107,7 +107,8 @@ class NewPartition:
                                                 self.fixed_size)
         self.min_size_entry = snack.Entry(7)
 
-        self.primary_partition=snack.Checkbox('Force to be a primary partition')
+#        self.primary_partition=snack.Checkbox('Force to be a primary partition')
+        self.do_not_format_partition = snack.Checkbox('Do not format partition')
 
         self.ok_button = kusuwidgets.Button(_('OK'))
         self.cancel_button = kusuwidgets.Button(_('Cancel'))
@@ -146,7 +147,7 @@ class NewPartition:
         subgrid.setField(self.min_size_entry, 1,0)
         self.gridForm.add(subgrid, 0,3, anchorLeft=1)
 
-        self.gridForm.add(self.primary_partition, 0,4, padding=(0,1,0,1))
+        self.gridForm.add(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)
@@ -173,8 +174,8 @@ class NewPartition:
         disk = self.drives.current()
 
         size_MB, fixed_size = self.calculatePartitionSize(disk)
-        self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint)
-            
+        p = self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint)
+        p.do_not_format = self.do_not_format_partition.value()
 
     def calculatePartitionSize(self, disk):
         """Calculate Partition size from the form's fields. Multiply by
@@ -216,7 +217,7 @@ class NewLogicalVolume:
         self.volumegroup = kusuwidgets.ColumnListbox(2, colWidths=[20],
                                                     colLabels=['Volume Group:'],
                                                     justification=[LEFT])
-        self.format_partition = snack.Checkbox('Format partition?')
+        self.do_not_format_partition = snack.Checkbox('Do not format partition')
         self.ok_button = kusuwidgets.Button(_('OK'))
         self.cancel_button = kusuwidgets.Button(_('Cancel'))
 
@@ -249,7 +250,7 @@ class NewLogicalVolume:
         subgrid.setField(self.volumegroup, 1,0, padding=(2,0,0,0))
         self.gridForm.add(subgrid, 0,3, padding=(0,1,0,1))
 
-        self.gridForm.add(self.format_partition, 0,4, padding=(0,0,0,1))
+        self.gridForm.add(self.do_not_format_partition, 0,4, padding=(0,0,0,1))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)
@@ -282,8 +283,7 @@ class NewLogicalVolume:
                                                 size_MB=size,
                                                 fs_type=fs_type,
                                                 mountpoint=mountpoint)
-        if not self.format_partition.value():
-            lv.do_not_format = True
+        lv.do_not_format = self.do_not_format_partition.value()
 
 
 class NewVolumeGroup:

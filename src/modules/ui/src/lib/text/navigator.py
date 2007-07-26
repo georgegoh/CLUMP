@@ -312,7 +312,7 @@ class Navigator(object, KusuApp):
         form.addHotKey("F12")
         while True:
             result = form.run()
-            kl.debug('Result: %s' % result)
+            #kl.debug('Result: %s' % result)
             if result is "F12":
                 return NAV_QUIT
             if result in hotkeysDict.keys():
@@ -323,7 +323,7 @@ class Navigator(object, KusuApp):
             if self.showNavButtons and result is self.prevButton:
                 return NAV_BACK
             callback_result = self.currentScreen.eventCallback(result)
-            kl.debug('Callback: %s' % callback_result)
+            #kl.debug('Callback: %s' % callback_result)
             if callback_result == True:
                 return NAV_FORWARD
             else: return callback_result

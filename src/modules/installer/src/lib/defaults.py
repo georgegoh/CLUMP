@@ -62,32 +62,33 @@ class LVMCollection(Struct):
 
 
 class PartitionSchema(Struct):
-    def __init__(self, disks, lvm=None):
+    def __init__(self, disks, lvm=None, preserve_types=None):
         Struct(self)
         self.disk_dict=disks
         self.vg_dict=lvm
+        self.preserve_types=preserve_types
 
 def percentSchema():
     d1 = Disk()
 
     d1p1 = Partition()
-    d1p1.size_MB = 12000
+    d1p1.size_MB = 2000
     d1p1.fs = 'ext3'
     d1p1.mountpoint = '/'
     d1p1.fill = False
     d1.addPartition(d1p1)
 
-    d1p2 = Partition()
-    d1p2.size_MB = 4000
-    d1p2.fs = 'ext3'
-    d1p2.mountpoint = '/var'
-    d1p2.fill = False
-    d1.addPartition(d1p2)
+#    d1p2 = Partition()
+#    d1p2.size_MB = 100
+#    d1p2.fs = 'ext3'
+#    d1p2.mountpoint = '/var'
+#    d1p2.fill = False
+#    d1.addPartition(d1p2)
 
     d1p3 = Partition()
-    d1p3.size_MB = 10000
+    d1p3.size_MB = 2000
 #
-    d1p3.percent = 25
+    d1p3.percent = 50
 #
     d1p3.fs = 'ext3'
     d1p3.mountpoint = '/depot'
@@ -102,14 +103,14 @@ def percentSchema():
     d1.addPartition(d1p4)
 
     d1p5 = Partition()
-    d1p5.size_MB = 2000
+    d1p5.size_MB = 1000
     d1p5.fs = 'linux-swap'
     d1p5.mountpoint = None
     d1p5.fill = False
     d1.addPartition(d1p5)
 
     d1p6 = Partition()
-    d1p6.size_MB = 5000
+    d1p6.size_MB = 100
     d1p6.fs = 'ext3'
     d1p6.mountpoint = '/home'
     d1p6.fill = True
@@ -117,7 +118,7 @@ def percentSchema():
 
     disks = DiskCollection()
     disks.addDisk(d1)
-    return PartitionSchema(disks=disks)
+    return PartitionSchema(disks=disks, preserve_types=['Dell Utility'])
 
 
 def vanillaSchema():
@@ -268,20 +269,22 @@ def scenario22():
 
 def setupDiskProfile(disk_profile, schema=None):
     """Set up a disk profile based on a given schema."""
-    # check that no partitions have been created.
+   # clear LVM logical volumes and groups.
+    if disk_profile.lv_dict:
+        for lv in disk_profile.lv_dict.itervalues():
+            disk_profile.delete(lv)
+    if disk_profile.lvg_dict:
+        for lvg in disk_profile.lvg_dict.itervalues():
+            disk_profile.delete(lvg)
+
+    disk_profile.executeLVMFifo()
+
+    # clear partitions that haven't been preserved.
+    if not schema.has_key('preserve_types'): schema['preserve_types'] = []
     for disk in disk_profile.disk_dict.itervalues():
-        if disk.partition_dict:
-            raise DiskProfileNotEmptyError, 'Disk Profile is not empty.'
-            preserve_fs = []
-            preserve_types = []
-            if schema.has_key('preserve_dict'):
-                preserve_fs = schema['preserve_dict']['fs_type']
-                preserve_types = schema['preserve_dict']['part_types']
-
-
-    # check for consistency in LVM dicts.
-    if disk_profile.pv_dict or disk_profile.lvg_dict or disk_profile.lv_dict:
-        raise DiskProfileNotEmptyError, 'LVM entities still exist.'
+        clearDisk(disk_profile, disk, schema['preserve_types'])
+    for disk in disk_profile.disk_dict.itervalues():
+        logger.debug('Disk %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
 
     if not schema:
         return True
@@ -296,37 +299,73 @@ def setupDiskProfile(disk_profile, schema=None):
             createLVMSchema(disk_profile, schema['vg_dict'])
     logger.debug('Disk Profile set up')
 
+def clearDisk(disk_profile, disk, preserve_list):
+    # separate into logical, extended, and primary partitions.
+    primary = []
+    extended = None
+    logical = []
+    for partition in disk.partition_dict.values():
+        if partition.part_type == 'primary':
+            primary.append(partition)
+        elif partition.part_type == 'extended':
+            extended = partition
+        else:
+            logical.append(partition)
+
+    # remove the logical partitions first.
+    for partition in reversed(sorted(logical)):
+        if partition.native_type not in preserve_list:
+            logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
+            disk_profile.delete(partition, keep_in_place=True)
+        else:
+            partition.leave_unchanged = True
+            extended = None
+    # then remove the extended partitions.
+    if extended:
+        disk_profile.delete(extended, keep_in_place=True)
+    # finally remove the primary partitions.
+    for partition in reversed(sorted(primary)):
+        if partition.native_type not in preserve_list:
+            logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
+            disk_profile.delete(partition, keep_in_place=True)
+
 
 def createPhysicalSchema(disk_profile, disk_schemata):
-        # check if we have enough disks to fulfill the schema
-        if len(disk_profile.disk_dict) < len(disk_schemata):
-            raise PartitionSchemaError, 'Schema defines more disks than ' + \
-                                        'is physically available on this system.'
+    # check if we have enough disks to fulfill the schema
+    if len(disk_profile.disk_dict) < len(disk_schemata):
+        raise PartitionSchemaError, 'Schema defines more disks than ' + \
+                                    'is physically available on this system.'
 
-        # do the physical disk and partitions first.
-        sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
-        for i in xrange(len(disk_schemata)):
-            # for each disk in the schema.
-            schema_disk = disk_schemata[i+1]
-            schema_partition_dict = schema_disk['partition_dict']
-            try:
-                for j in xrange(len(schema_partition_dict)):
-                    # for each partition in the current disk.
-                    schema_partition = schema_partition_dict[j+1]
-                    disk_key = sorted_disk_keys[i]
-                    size_MB = schema_partition['size_MB']
-                    logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
-                    fs = schema_partition['fs']
-                    mountpoint = schema_partition['mountpoint']
-                    fill = schema_partition['fill']
-                    disk_profile.newPartition(disk_key,
-                                              size_MB,
-                                              False,
-                                              fs,
-                                              mountpoint,
-                                              fill)
-            except IndexError:
-                raise PartitionSchemaError, 'Run out of disks.'
+    # do the physical disk and partitions first.
+    sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
+    for i in xrange(len(disk_schemata)):
+        # for each disk in the schema.
+        schema_disk = disk_schemata[i+1]
+        schema_partition_dict = schema_disk['partition_dict']
+        try:
+            for j in xrange(len(schema_partition_dict)):
+                # for each partition in the current disk.
+                schema_partition = schema_partition_dict[j+1]
+                disk_key = sorted_disk_keys[i]
+                size_MB = schema_partition['size_MB']
+                fs = schema_partition['fs']
+                mountpoint = schema_partition['mountpoint']
+                fill = schema_partition['fill']
+                if schema_partition.has_key('percent'):
+                    disk = disk_profile.disk_dict[disk_key]
+                    # The percent calculation below is not precise
+                    # due to integer rounding, but should be fine.
+                    size_MB = schema_partition.percent * disk.size / 1024 / 1024 / 100
+                logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
+                disk_profile.newPartition(disk_key,
+                                          size_MB,
+                                          False,
+                                          fs,
+                                          mountpoint,
+                                          fill)
+                logger.debug('Created new partition %d for disk %d of size %d' % (j+1, i, size_MB))
+        except IndexError:
+            raise PartitionSchemaError, 'Run out of disks.'
 
 
 def createLVMSchema(disk_profile, lvm_schemata):
@@ -353,6 +392,7 @@ def createLVMSchema(disk_profile, lvm_schemata):
         vg = disk_profile.newLogicalVolumeGroup(vg_key,
                                                 vg_schema['extent_size'],
                                                 pv_list)
+
         # create the Logical Volumes.
         lv_schema = vg_schema['lv_dict']
         last_lv = []
@@ -362,9 +402,19 @@ def createLVMSchema(disk_profile, lvm_schemata):
                 last_lv.append(lv_schema)
                 continue
             logger.debug('Creating %s' % lv_name)
+            size_MB = lv_schema['size_MB']
+            if lv_schema.has_key('percent'):
+                # The percent calculation below is not precise
+                # due to integer rounding, but should be fine.
+                logger.debug('Percentage chosen for %s is %d' % (lv_name, lv_schema.percent))
+                logger.debug('VG Extents: %d' % vg.extentsTotal())
+                extents = lv_schema.percent * vg.extentsTotal() / 100
+                logger.debug('%s extents: %d' % (lv_name, extents))
+                size_MB = vg.extent_size / 1024 / 1024 * extents
+                logger.debug('%s size: %d' % (lv_name, size_MB))
             disk_profile.newLogicalVolume(lv_name,
                                           vg,
-                                          lv_schema['size_MB'],
+                                          size_MB,
                                           lv_schema['fs'],
                                           lv_schema['mountpoint'],
                                           lv_schema['fill'])

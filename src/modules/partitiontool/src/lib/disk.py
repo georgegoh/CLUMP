@@ -63,15 +63,25 @@ class Disk(object):
         else:
             try:
                 self.pedDisk = parted.PedDisk.new(pedDevice)
-                for i in xrange(self.pedDisk.get_last_partition_num()):
-                    pedPartition = self.pedDisk.get_partition(i+1)
-                    new_partition = self.__appendToPartitionDict(pedPartition)
-                    new_partition.on_disk = True
+                self.__populateInitialPartitions()
             except parted.error, e:
                 if str(e).endswith('unrecognised disk label.'):
                     pedDiskType = parted.disk_type_get('msdos')
                     self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
 
+    def __populateInitialPartitions(self):
+        for i in xrange(self.pedDisk.get_last_partition_num()):
+            try:
+                pedPartition = self.pedDisk.get_partition(i+1)
+                new_partition = self.__appendToPartitionDict(pedPartition)
+                new_partition.on_disk = True
+            except parted.error, e:
+                # partition numbers may not follow in sequence. So continue
+                # searching and populating, even if some partition nos don't
+                # exist.
+                if str(e) == 'partition not found':
+                    continue
+ 
     def __getattr__(self, name):
         if name in self.__getattr_dict.keys():
             return eval(self.__getattr_dict[name])
@@ -88,7 +98,7 @@ class Disk(object):
         self.partition_dict[pedPartition.num] = new_partition
         return new_partition
         
-    def createPartition(self, size, fs_type=None, mountpoint=None, fill=None):
+    def createPartition(self, size, fs_type=None, mountpoint=None, fill=False):
         """Add a partition to this disk.
            Parameters:
               1. size in bytes.
@@ -97,10 +107,11 @@ class Disk(object):
            Returns an instance of Partition that represents the partition just
            created.
         """
-        start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size, fill)
+        start_sector, end_sector, next_partition_type = self.__getStartEndSectors(size)
         new_pedPartition = None
 
         try:
+            
             constraint = self.pedDevice.constraint_any()
             if next_partition_type == 'PRIMARY':
                 logger.debug('Creating new primary partition size=%d, fs=%s, mntpt=%s' %
@@ -115,6 +126,7 @@ class Disk(object):
                 ext_part_size = (self.length - 1 - start_sector) * self.sector_size
                 logger.debug('Creating new extended partition size=%d, fs=%s, mntpt=%s' %
                              (ext_part_size, fs_type, mountpoint))
+                logger.debug('start sector %d end sector %d' % (start_sector, self.length-1))
                 extended_pedPartition = self.pedDisk.partition_new(
                                             partitionTypes['EXTENDED'],
                                             None,
@@ -125,6 +137,7 @@ class Disk(object):
                 # create logical partition.
                 logger.debug('Creating new logical partition size=%d, fs=%s, mntpt=%s' %
                              (size, fs_type, mountpoint))
+                logger.debug('start sector %d end sector %d' % (start_sector, end_sector))
                 new_pedPartition = self.pedDisk.partition_new(
                                         partitionTypes['LOGICAL'],
                                         fs_type,
@@ -144,13 +157,32 @@ class Disk(object):
             else:
                 raise UnknownPartitionTypeError, 'Cannot create unknown partition type'
 
+            self.pedDisk.add_partition(new_pedPartition, constraint)
+            logger.debug('Added new partition to pedDisk')
+            new_partition = self.__appendToPartitionDict(new_pedPartition,
+                                                         mountpoint)
+            if fill:
+                self.maximizePartition(new_partition)
+                self.__updatePartitionDict()
+            return new_partition
+
         except parted.error, e:
             raise KusuError, e
-    
-        self.pedDisk.add_partition(new_pedPartition, constraint)
-        new_partition = self.__appendToPartitionDict(new_pedPartition,
-                                                     mountpoint)
-        return new_partition
+
+
+    def maximizePartition(self, partition):
+        logger.debug('Maximizing partition %d of disk %s' % (partition.num, self.path))
+        constraint = self.pedDevice.constraint_any()
+        self.pedDisk.maximize_partition(partition.pedPartition, constraint)
+
+
+    def __updatePartitionDict(self):
+        """Update this object's partition dictionary."""
+        part_list = self.partition_dict.values()
+        self.partition_dict.clear()
+        for partition in part_list:
+            self.partition_dict[partition.num] = partition
+
 
     def delPartition(self, partition_obj, keep_in_place=False):
         """Remove a partition from this disk. Argument is the Partition object
@@ -169,10 +201,18 @@ class Disk(object):
         partition_nums = sorted(self.partition_dict.keys())
 
         # delete the object from the dictionary and remove from pedDisk.
+#        logger.debug('Delete partition_obj.num = %d' % partition_obj.num)
+#        logger.debug('Delete disk partition_dict keys: %s' % str(self.partition_dict.keys()))
         deleted_partition_number = partition_obj.num
+        if not self.partition_dict.has_key(deleted_partition_number): return
         deleted_partition = self.partition_dict[deleted_partition_number]
         del self.partition_dict[deleted_partition_number]
         self.pedDisk.delete_partition(deleted_partition.pedPartition)
+
+#        for key in self.partition_dict.iterkeys():
+#            logger.debug('After delete, key=%d, part.num=%d' % (key, self.partition_dict[key].num))
+
+        self.__updatePartitionDict()
 
         if keep_in_place: return
 
@@ -210,9 +250,10 @@ class Disk(object):
         """Get the type of partition for a given partition number. This applies
            to MSDOS-type partition tables.
         """
-        if num < 4:
+        max_primary_partition_cnt = self.pedDisk.max_primary_partition_count
+        if num < max_primary_partition_cnt:
             return 'PRIMARY'
-        elif num == 4:
+        elif num == max_primary_partition_cnt:
             return 'EXTENDED'
         else:
             return 'LOGICAL'
@@ -222,108 +263,99 @@ class Disk(object):
            extended partition or not.
         """
         last_partition_num = self.pedDisk.get_last_partition_num()
-        if last_partition_num == 3:
-            next_partition_num = 5
+        max_primary_partition_cnt = self.pedDisk.max_primary_partition_count
+        if last_partition_num == (max_primary_partition_cnt-1):
+            next_partition_num = max_primary_partition_cnt+1
             return 'EXTENDED'
-        elif last_partition_num > 4:
+        elif last_partition_num > max_primary_partition_cnt:
             return 'LOGICAL'
         else:
             return 'PRIMARY'
 
+    def __sortBySectors(self, part_list):
+        """Bubble sort the partitions by start_sector. A disk will not have
+           many partitions, so this algo is alright."""
+        pl = list(part_list)
+        for i in reversed(xrange(1, len(pl))):
+            for j in xrange(i):
+                if pl[j].start_sector > pl[i].start_sector:
+                    tmp = pl[j]
+                    pl[j] = pl[i]
+                    pl[i] = tmp
+        return pl
+
+    def __sectorIsUsed(self, sector):
+        """Check if sector falls in any of the existing primary or logical partitions."""
+        partition_list = self.partition_dict.values()
+        partition_list = [p for p in partition_list if not p.part_type=='extended']
+        partition_list = self.__sortBySectors(partition_list)
+        logger.debug('partition list: %s' % str([ p.num for p in partition_list ]))
+        for partition in partition_list:
+            logger.debug('check sector: %d, part.start: %d part.end: %d' % \
+                         (sector, partition.start_sector, partition.end_sector))
+            if sector >= partition.start_sector and sector <= partition.end_sector:
+                logger.debug('check sector is being used')
+                return True
+        return False
+
+    def __rangeHasUsedSectors(self, start, end):
+        """Check if any current partitions fall(wholly or partially) within
+           the given range.
+        """
+        partition_list = self.partition_dict.values()
+        partition_list = [p for p in partition_list if not p.part_type=='extended']
+        for p in partition_list:
+            if p.start_sector >= start and p.start_sector <= end or \
+               p.end_sector >= start and p.end_sector <= end:
+                return True
+        return False
+
     def __getStartEndSectors(self, size, fill=False):
         """For a given size(in bytes), return a tuple of (start_sector,
-           end_sector) that will accommodate this new partition.
+           end_sector, type) that will accommodate this new partition.
         """
-        selected_partition_num = 1
-        last_part_num = self.pedDisk.get_last_partition_num()
-        if last_part_num < 1: # no partitions found
-            start_sector = 0
-            if fill: size = disk.size - 1
-        else:
-            if last_part_num > self.pedDisk.get_primary_partition_count():
-                pedPartition = self.pedDisk.next_partition()
-                while pedPartition.num < last_part_num:
-                    logger.debug('Iterating partition num: ' + \
-                                 str(pedPartition.num))
-                    # is this an unused partition?
-                    if pedPartition.num == -1:
-                        start_sector = pedPartition.geom.start
-                        end_sector = start_sector + (size / \
-                                     self.pedDisk.dev.sector_size) - 1
-                        end_sector = self.__alignEndSector(end_sector)
-                        logger.debug('Checking if the current partition is big enough.')
-                        if end_sector <= pedPartition.geom.end:
-                            if fill:
-                                end_sector = pedPartition.geom.end
-                                end_sector = self.__alignEndSector(end_sector)
-                            return (start_sector, end_sector,
-                                    self.__getPartitionType(selected_partition_num))
-                        logger.debug('Current partition is not big enough for proposed size.')
-                    # check for space between this and the next partition
-                    logger.debug('Checking between partition %d and %d' % \
-                                 (selected_partition_num, selected_partition_num+1))
-                    this_end_sector = pedPartition.geom.end + 1
-                    next_start_sector = self.pedDisk.next_partition(pedPartition).geom.start
-                    start_sector = self.__alignStartSector(this_end_sector)
-                    end_sector = start_sector + (size / \
-                                 self.pedDisk.dev.sector_size) - 1
-                    end_sector = self.__alignEndSector(end_sector)
-                    if end_sector < next_start_sector:
-                        if fill:
-                            end_sector = self.__alignEndSector(next_start_sector - 1)
-                        return (start_sector, end_sector,
-                                self.__getPartitionType(selected_partition_num + 1))
-                    
-                    pedPartition = self.pedDisk.next_partition(pedPartition)
-                    selected_partition_num = selected_partition_num + 1
-
-            # is the last partition unused?
-            lastPart = self.pedDisk.get_partition(last_part_num)
-            if lastPart.type == parted.PARTITION_FREESPACE:
-                start_sector = lastPart.geom.start
-                selected_partition_num = last_part_num
-                if fill:
-                    end_sector = lastPart.geom.end
+        primary = []
+        extended = None
+        logical = []
+        for partition in self.partition_dict.values():
+            if partition.part_type == 'primary':
+                primary.append(partition)
+            elif partition.part_type == 'extended':
+                extended = partition
             else:
-                start_sector = lastPart.geom.end + 1
-                selected_partition_num = last_part_num + 1
-                if fill:
-                    end_sector = self.length - (self.heads * self.sectors) + 1
-        start_sector = self.__alignStartSector(start_sector)
-        if not fill:
-            end_sector = start_sector + (size / self.sector_size) - 1
+                logical.append(partition)
+
+        # No writing on the first track.
+        start_sector = self.sectors
+        end_sector = start_sector + (size / self.sector_size) - 1
         end_sector = self.__alignEndSector(end_sector)
-        # Not actually making a new partition, but using parted to catch any
-        # size errors.
-        try:
-            new_part = self.pedDisk.partition_new(parted.PARTITION_PRIMARY,
-                                                  fsTypes['ext3'],
-                                                  start_sector,
-                                                  end_sector)
-        except parted.error, msg:
-            if str(msg).startswith("Error: Can't have a partition " + \
-                                        "outside the disk!"):
-                if fill:
-                    try:
-                        end_sector = start_sector + (size / self.pedDisk.dev.sector_size) - 1
-                        end_sector = self.__alignEndSector(end_sector)
-                        new_part = self.pedDisk.partition_new(parted.PARTITION_PRIMARY,
-                                                  fsTypes['ext3'],
-                                                  start_sector,
-                                                  end_sector)
-                    except parted.error, msg:
-                        if str(msg).startswith("Error: Can't have a partition " + \
-                                               "outside the disk!"):
-                            msg = "Requested partition size is too large to fit into " + \
-                                  "the remaining space available on the disk."
-                            raise PartitionSizeTooLargeError, msg
-                else:
-                    msg = "Requested partition size is too large to fit into " + \
-                          "the remaining space available on the disk."
-                    raise PartitionSizeTooLargeError, msg
+        partition_list = [ p for p in self.partition_dict.values() if p.part_type != 'extended' ]
+        partition_list = self.__sortBySectors(partition_list)
+        nextPartition = None
+        for partition in partition_list:
+            if self.__sectorIsUsed(start_sector) or self.__sectorIsUsed(end_sector) or \
+               self.__rangeHasUsedSectors(start_sector, end_sector):
+                start_sector = self.__alignStartSector(partition.end_sector + 1)
+#                logger.debug('sector is in use... using new start %d' % start_sector)
+                end_sector = start_sector + (size / self.sector_size) - 1
+                end_sector = self.__alignEndSector(end_sector)
+                continue
+            else:
+                nextPartition = partition
+                break
+
+        logger.debug('new start: %d end: %d' % (start_sector, end_sector))
+        if end_sector > self.length:
+            msg = "Requested partition size is too large to fit into " + \
+                  "the remaining space available on the disk."
+            raise PartitionSizeTooLargeError, msg
  
-        return (start_sector, end_sector,
-                self.__getPartitionType(selected_partition_num))
+        if len(primary) < (self.pedDisk.max_primary_partition_count-1):
+            return start_sector, end_sector, 'PRIMARY'
+        elif not extended:
+            return start_sector, end_sector, 'EXTENDED'
+        else:
+            return start_sector, end_sector, 'LOGICAL'
 
     def convertStartSectorToCylinder(self, start_sector):
          cylinder = int(math.floor(
@@ -411,6 +443,7 @@ class Partition(object):
           m. root_flag
           n. swap_flag
           o. raid_flag
+          p. native_type
     """
     __getattr_dict = { 'start_sector' : 'self.pedPartition.geom.start',
                        'end_sector' : 'self.pedPartition.geom.end',
@@ -447,6 +480,24 @@ class Partition(object):
         self.leave_unchanged = False
         self.on_disk = False
         self.do_not_format = False
+
+    def __lt__(self, other):
+        return self.num < other.num
+
+    def __le__(self, other):
+        return self.num <= other.num
+
+    def __gt__(self, other):
+        return self.num > other.num
+
+    def __ge__(self, other):
+        return self.num >= other.num
+
+    def __eq__(self, other):
+        return self.num == other.num
+
+    def __ne__(self, other):
+        return self.num == other.num
 
     def getpath(self):
         """Get this partition's path by appending it's number to the disk's path.
