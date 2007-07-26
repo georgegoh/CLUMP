@@ -65,6 +65,9 @@ msgstr "Back"
 msgid "new_button"
 msgstr "New"
 
+msgid "restore_button"
+msgstr "Restore"
+
 msgid "edit_button"
 msgstr "Edit"
 

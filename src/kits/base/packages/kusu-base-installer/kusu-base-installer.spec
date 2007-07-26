@@ -99,6 +99,8 @@ make ROOT=$RPM_BUILD_ROOT install
 /depot/images
 /depot/repos/custom_scripts
 /opt/kusu/cfm/changedfiles.lst
+%defattr(400,apache,apache)
+/opt/kusu/etc/db.passwd
 
 ##
 ## CLEAN
