@@ -71,7 +71,7 @@ class FailedSetStaticIPError(KusuError): pass
 class NotSupportedOperatingSystem(KusuError): pass
 class InterfaceNotFound(KusuError): pass
 
-#autoinstall
+# autoinstall
 class ProfileNotCompleteError(KusuError): pass
 class TemplateNotFoundError(KusuError): pass
 class UnableToGenerateFileFromTemplateError(KusuError): pass
@@ -87,10 +87,10 @@ class NoKitsFoundError(KusuError): pass
 class CopyOSMediaError(KusuError): pass
 class DeleteKitsError(KusuError): pass
 
-#kits
+# kits
 class CannotAddKitError(KusuError): pass
 
-#core.database
+# core.database
 class NoSuchDBError(KusuError): pass
 class UnsupportedDriverError(KusuError): pass
 class UsernameNotSpecifiedError(KusuError): pass
@@ -101,7 +101,7 @@ class FailedToDropDatabase(KusuError): pass
 class UnableToCommitDataError(KusuError): pass
 class UnableToSaveDataError(KusuError): pass
 
-#repoman
+# repoman
 class RepoNotCreatedError(KusuError): pass
 class RepoOSKitError(KusuError): pass
 class CannotCreateRepoError(KusuError): pass
@@ -111,7 +111,7 @@ class RepoNotFoundError(KusuError): pass
 class ReposIntegrityError(KusuError): pass
 class RepoCannotDeleteError(KusuError): pass
 
-#repoman.rhn
+# repoman.rhn
 class rhnError(KusuError): pass
 class rhnInvalidLoginError(KusuError): pass
 class rhnInvalidSystemError(KusuError): pass
@@ -122,6 +122,9 @@ class rhnUnknownMethodError(KusuError): pass
 class rhnNoBaseChannelError(KusuError): pass
 class rhnFailedDownloadRPM(KusuError): pass
 class rhnInvalidServerID(KusuError): pass
+
+# repoman.yum
+class repodataChecksumError(KusuError): pass
 
 # b-m-t
 class FilePathError(KusuError): pass
