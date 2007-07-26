@@ -79,6 +79,7 @@ class YumRepo:
                                 version = elem.get('ver')
                                 release = elem.get('rel')
                                 epoch = elem.get('epoch')
+                                if epoch: epoch = int(epoch)
                             elif tag == 'arch':
                                 arch = elem.text
                             elif tag == 'location':

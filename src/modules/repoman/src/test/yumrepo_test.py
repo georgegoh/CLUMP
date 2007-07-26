@@ -45,5 +45,11 @@ class TestWorkingLocalYumRepo:
         assert primary.has_key('cyrus-sasl-ldap')
         assert primary['cyrus-sasl-ldap'].has_key('i386')
         assert len(primary['cyrus-sasl-ldap']['i386']) == 1
-        assert primary['cyrus-sasl-ldap']['i386'][0].getFilename() == \
-               cachedir / 'working/CentOS/cyrus-sasl-ldap-2.1.22-4.i386.rpm'
+
+        r = primary['cyrus-sasl-ldap']['i386'][0]
+        assert r.getName() == 'cyrus-sasl-ldap'
+        assert r.getVersion() == '2.1.22'
+        assert r.getRelease() == '4'
+        assert r.getArch() == 'i386'
+        assert r.getEpoch() == 0 #none is treated as 0 in xml
+        assert r.getFilename() == cachedir / 'working/CentOS/cyrus-sasl-ldap-2.1.22-4.i386.rpm'
