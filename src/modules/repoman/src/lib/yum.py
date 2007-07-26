@@ -16,6 +16,7 @@ import StringIO
 from path import path
 
 from kusu.util import rpmtool
+from kusu.util.errors import *
 
 class YumRepo:
 
@@ -54,6 +55,9 @@ class YumRepo:
         return self.repo
 
     def getPrimary(self):
+        if not self.repo:
+            self.getRepoMD()
+
         primaryFile = self.uri + '/' + self.repo['primary']['location']
 
         checksumType = self.repo['primary']['checksum'][0]
@@ -77,12 +81,15 @@ class YumRepo:
                                 epoch = elem.get('epoch')
                             elif tag == 'arch':
                                 arch = elem.text
+                            elif tag == 'location':
+                                filename = self.uri + '/' + elem.get('href')
 
                         r = rpmtool.RPM(name=name, 
                                         version=version,
                                         release=release,
                                         arch=arch,
-                                        epoch=epoch)
+                                        epoch=epoch,
+                                        filename=filename)
 
                         if not self.primary.has_key(name):
                             self.primary[name] = {}
