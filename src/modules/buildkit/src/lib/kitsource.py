@@ -99,8 +99,7 @@ class GeneralKitSrc(KitSrcBase):
             'artifactsdir' : {'dir':'artifacts'},
             'binpkgsdir' : {'dir':'packages'},
             'srcpkgsdir' : {'dir':'sources'},
-            'tmpdir' : {'dir':'tmp'},
-            'kitinfo' : {'file':'kitinfo'}
+            'tmpdir' : {'dir':'tmp'}
         }
         
 class BinaryKitSrc(KitSrcBase): pass
@@ -170,11 +169,10 @@ class KusuComponent(Struct):
         tmpl = getTemplateSpec('component')
         specfile = '%s.spec' % ns['pkgname']
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.write()
         rpmbuilder.build()
         
-    def pack(self, pkgtype='rpm', verbose=False):
-        """ Packaging stage. This is what the user would call. """
+    def deploy(self, pkgtype='rpm', verbose=False):
+        """ Deploying stage. This is what the user would call. """
         
         if pkgtype == 'rpm':
             return self._packRPM(verbose)
@@ -241,7 +239,6 @@ class KusuKit(Struct):
         tmpl = getTemplateSpec('kit')
         specfile = '%s.spec' % ns['pkgname']
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.write()
         rpmbuilder.build()
 
     def generateKitInfo(self, filename):
@@ -254,8 +251,8 @@ class KusuKit(Struct):
         f.write('components = %s\n' % pprint.pformat(complist))
         f.close()
         
-    def pack(self, pkgtype='rpm', verbose=False):
-        """ Packaging stage. This is what the user would call. """
+    def deploy(self, pkgtype='rpm', verbose=False):
+        """ Deploying stage. This is what the user would call. """
 
         if pkgtype == 'rpm':
             return self._packRPM(verbose)

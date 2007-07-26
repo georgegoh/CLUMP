@@ -44,7 +44,7 @@ def setupRPMMacrofile(buildprofile):
         oldrpmmacros = '.'.join([rpmmacros,ext])
         rpmmacros.rename(oldrpmmacros)
 
-    rpmtopdir = path(buildprofile.builddir / 'packages')
+    rpmtopdir = path(buildprofile.builddir) / 'packages'
     if not rpmtopdir.exists(): 
         rpmtopdir.mkdir()
         path(rpmtopdir / 'BUILD').mkdir()
@@ -106,28 +106,24 @@ def getDirName(p):
     if li:
         return p.split(li[0])[0]
 
-def unpackTarfile(filepath, destroot=None):
+def unpackTarfile(filename, destroot=None):
     """ Convenience method to unpack tarfiles. """
     if not destroot:
         destroot = path.getcwd()
     else:
         destroot = path(destroot)
 
-    pkg = tarfile.open(filepath)
+    pkg = tarfile.open(filename)
     for f in pkg:
         pkg.extract(f,destroot)
 
 
-class BuildProfile(object):
+class BuildProfile(Struct):
     """ Profile used to store build site configuration. """
     
-    builddir = ''
-    tmpdir = ''
-    templatesdir = ''
-    
     def __init__(self, **kwargs):
-        self.builddir = kwargs.get('builddir','')
-        self.tmpdir = kwargs.get('tmpdir','')
+        Struct.__init__(self,kwargs)
+
         kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
         tmpldir = kusuroot / 'etc/buildkit-templates'
         self.templatesdir = kwargs.get('templatesdir', tmpldir)
@@ -142,11 +138,12 @@ class PackageProfile(Struct):
         Struct.__init__(self)
 
         self.wrapper = wrapper
+        self.verbose = kwargs.get('verbose',False)
         self.srctype = kwargs.get('srctype','')
         self.name = kwargs.get('name','')
         self.version = kwargs.get('version',None)
         self.release = kwargs.get('release','0')
-        self.filepath = kwargs.get('filepath',None)
+        self.filename = kwargs.get('filename',None)
         self.installroot = kwargs.get('installroot',None)
         self.author = kwargs.get('author','')
         self.vendor = kwargs.get('vendor','')
@@ -159,11 +156,16 @@ class PackageProfile(Struct):
             calling other operations.
         """
         self.builddir = path(self.buildprofile.builddir)
+        self.srcdir = path(self.buildprofile.srcdir)
+        self.pkgdir = path(self.buildprofile.pkgdir)
         self.tmpdir = path(self.buildprofile.tmpdir)
         self.templatesdir = path(self.buildprofile.templatesdir)
         self.namespace = prepareNS(self)
-        self.fullname = getDirName(self.filepath.basename())
-        self.buildsrc = self.tmpdir / self.fullname
+
+        if not self.srctype in ['srpm','rpm','distro']:
+            filename = self.srcdir / self.filename
+            self.fullname = getDirName(filename.basename())
+            self.buildsrc = self.tmpdir / self.fullname
         
         # expose the attributes to the wrapper object
         self.wrapper.update(Struct(self))
@@ -186,33 +188,92 @@ class PackageProfile(Struct):
         """ Installation stage for this class. """
         return self.wrapper.install(**kwargs)
 
-    def pack(self, pkgtype='rpm'):
-        """ Packaging stage. """
-        return self.wrapper.pack(pkgtype)
+    def deploy(self, pkgtype='rpm'):
+        """ Deploying stage. This includes packing into distro-specific packages (if needed).
+        """
+        return self.wrapper.deploy(pkgtype)
 
-
-class AutoToolsWrapper(Struct):
-    """ Wrapper around GNU Autotools system. """
-
+class PackageWrapper(Struct):
+    """ Base class. PackageWrapper provides easy access to attributes and
+        its methods deal with package operations such as verification, rpm 
+        packaging and others.
+    """
+    
     verbose = False
     
     def __init__(self):
-        """ Setups the tool with the packageprofile.
+        """ Initializes the Struct class for easy access to attributes.
         """
         Struct.__init__(self)
         
     def verify(self):
-        """ Verify package is supported. """
-        if not tarfile.is_tarfile(self.filepath): return False
-        return True
-        
+        filename = self.srcdir / self.filename
+        if not filename.exists(): raise FileDoesNotExistError
+
     def cleanup(self):
+        if not hasattr(self,'buildsrc'): return
         if self.buildsrc.exists(): self.buildsrc.rmtree()
+
+    def configure(self, **kwargs):
+        """ Configuration stage for this class. Override this to customize.
+        """
+
+        pass
+
+    def build(self, **kwargs):
+        """ Build stage for this class. Override this to customize.
+        """
+
+        pass      
+
+    def install(self, **kwargs):
+        """ Installation stage for this class. Override this to customize.
+        """
+
+        pass
+
+    def _packRPM(self):
+        """ RPM handling stage for this class. This package type-specific 
+            and has to be implemented.
+        """
+        raise NotImplementedError
+        
+    def _packDEB(self):
+        """ DEB handling stage for this class. This package type-specific 
+            and has to be implemented.
+        """
+        raise NotImplementedError
+
+    def deploy(self, pkgtype='rpm'):
+        """ Deploying stage. """
+
+        if pkgtype == 'rpm':
+            return self._packRPM()
+            
+        elif pkgtype == 'deb':
+            return self._packDEB()
+            
+
+class AutoToolsWrapper(PackageWrapper):
+    """ Wrapper around GNU Autotools system. """
+    
+    def __init__(self):
+        """ Setups the tool with the packageprofile.
+        """
+        PackageWrapper.__init__(self)
+        
+    def verify(self):
+        """ Verify package is supported. """
+        filename = self.srcdir / self.filename
+        if not filename.exists(): raise FileDoesNotExistError
+        if not tarfile.is_tarfile(filename): return False
+        return True
         
     def configure(self, **kwargs):
         """ Configuration stage for this class. """
+        filename = self.srcdir / self.filename
         if not self.buildsrc.exists():
-            unpackTarfile(self.filepath,self.tmpdir)
+            unpackTarfile(filename,self.tmpdir)
         
         configure_args = []
         for k,v in kwargs.items():
@@ -259,12 +320,12 @@ class AutoToolsWrapper(Struct):
 
         
     def _packRPM(self):
-        """ RPM packaging stage for this class. """
+        """ RPM handling stage for this class. """
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
             
-        destroot = self.tmpdir / buildroot
+        destroot = self.builddir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
         self.install(prefix=destroot)
@@ -273,96 +334,59 @@ class AutoToolsWrapper(Struct):
         specfile = self.builddir / _specfile
         
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
-        rpmbuilder.write()
         rpmbuilder.build()
-        
-        
-    def pack(self, pkgtype='rpm'):
-        """ Packaging stage. """
-        
-        if pkgtype == 'rpm':
-            return self._packRPM()
 
-class SRPMWrapper(Struct):
+
+class SRPMWrapper(PackageWrapper):
     """ Wrapper around SRPM build system. """
 
-    verbose = False
-
     def __init__(self):
-        Struct.__init__(self)
+        PackageWrapper.__init__(self)
         
     def verify(self):
-        pass
-
-    def cleanup(self):
-        if self.buildsrc.exists(): self.buildsrc.rmtree()
-
-    def configure(self, **kwargs):
-        """ Configuration stage for this class. """
-        # not needed for SRPM packages.
-        pass
-
-    def build(self, **kwargs):
-        """ Build stage for this class. """
-
-        # not needed for SRPM packages.
-        pass      
-
-    def install(self, **kwargs):
-        """ Installation stage for this class. """
-
-        # not needed for SRPM packages.
-        pass
+        filename = self.srcdir / self.filename
+        if not filename.exists(): raise FileDoesNotExistError
+        if not filename.endswith('.src.rpm') or not filename.endswith('.srpm'):
+            return False
+        return True
 
     def _packRPM(self):
-        """ RPM packaging stage for this class. """
+        """ RPM handling stage for this class. """
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
 
-        destroot = self.tmpdir / buildroot
+        destroot = self.builddir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
         self.install(prefix=destroot)
         tmpl = getPackageSpecTmpl(self.templatesdir)
-        srpmfile = self.filepath
+        srpmfile = self.srcdir / self.filename
 
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=srpmfile,verbose=self.verbose)
-        rpmbuilder.write()
         rpmbuilder.build()
 
 
-    def pack(self, pkgtype='rpm'):
-        """ Packaging stage. """
 
-        if pkgtype == 'rpm':
-            return self._packRPM()
-
-class BinaryPackageWrapper(Struct):
+class BinaryPackageWrapper(PackageWrapper):
     """ Wrapper around binary distribution packages. """
-
-    verbose = False
     
     def __init__(self):
-        Struct.__init__(self)
+        PackageWrapper.__init__(self)
         
     def verify(self):
-        pass
-
-    def cleanup(self):
-        if self.buildsrc.exists(): self.buildsrc.rmtree()
+        """ Verify package is supported. """
+        filename = self.srcdir / self.filename
+        if not filename.exists(): raise FileDoesNotExistError
+        if not tarfile.is_tarfile(self.filename): return False
+        return True
 
     def configure(self, **kwargs):
         """ Configuration stage for this class. """
-
+        filename = self.srcdir / self.filename
         # unpack the tarfile
         if not self.buildsrc.exists():
-            unpackTarfile(self.filepath,self.tmpdir)
-        
-        
-    def build(self, **kwargs):
-        """ Build stage for this class. """
-        pass      
+            unpackTarfile(filename,self.tmpdir)
 
     def install(self, prefix):
         """ Installation stage for this class. """
@@ -370,12 +394,12 @@ class BinaryPackageWrapper(Struct):
         cpio_copytree(self.buildsrc,destroot)
 
     def _packRPM(self):
-        """ RPM packaging stage for this class. """
+        """ RPM handling stage for this class. """
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
             
-        destroot = self.tmpdir / buildroot
+        destroot = self.builddir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
         self.install(destroot)
@@ -384,15 +408,40 @@ class BinaryPackageWrapper(Struct):
         specfile = self.builddir / _specfile
         
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
-        rpmbuilder.write()
         rpmbuilder.build()
+        
+        
+class RPMWrapper(PackageWrapper):
+    """ Wrapper around RPM packages. """
+    
+    def __init__(self):
+        PackageWrapper.__init__(self)
+        
+    def verify(self):
+        if not path(self.srcdir / self.filename).exists() or not path(self.pkgdir / self.filename).exists():
+            return False
+        return True
+
+    def deploy(self, pkgname='rpm'):
+        """ Since we don't need rpm packaging, we just handle this specifically.
+        """
+        pass
 
 
-    def pack(self, pkgtype='rpm'):
-        """ Packaging stage. """
-
-        if pkgtype == 'rpm':
-            return self._packRPM()
+class DistroPackageWrapper(PackageWrapper):
+    """ Wrapper around packages that already exists for that distro.
+    """
+    
+    def __init__(self):
+        PackageWrapper.__init__(self)
+        
+    def verify(self):
+        # FIXME : this is fake. we should actually check the distro repository to see if this package
+        # actually exists.
+        return True
+        
+    def deploy(self, pkgname='rpm'):
+        pass
 
 
 
@@ -409,7 +458,7 @@ class RPMBuilder:
         self.sourcefile = sourcefile
         self.verbose = verbose
 
-    def write(self):
+    def _write(self):
         f = path(self.sourcefile)
         out = open(f, 'w')
         t = Template(file=str(self.template), searchList=[self.ns])  
@@ -420,6 +469,7 @@ class RPMBuilder:
 
         if self.sourcefile.endswith('.spec'):
             # spec file
+            self._write()
             if self.verbose:
                 cmd = 'rpmbuild -bb %s' % (self.sourcefile)
             else:
@@ -432,9 +482,7 @@ class RPMBuilder:
             else:
                 cmd = 'rpmbuild --rebuild %s > /dev/null 2>&1' % (self.sourcefile)
 
-
-        
-        rpmP = subprocess.Popen(cmd,shell=True,)
+        rpmP = subprocess.Popen(cmd,shell=True)
         rpmP.wait()
         
 

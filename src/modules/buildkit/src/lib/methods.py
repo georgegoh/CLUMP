@@ -6,9 +6,11 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.buildkit.kitsource import KusuComponent, KusuKit, KitSrcFactory
-from kusu.buildkit.builder import AutoToolsWrapper, PackageProfile, BinaryPackageWrapper, SRPMWrapper, BuildProfile
+from kusu.buildkit.builder import PackageProfile, BuildProfile
+from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, InvalidBuildProfile
 from path import path
+import subprocess
 
 def setupprofile(basedir=''):
     """ Convenience method to setup buildprofile. 
@@ -19,18 +21,53 @@ def setupprofile(basedir=''):
         _kitsrc = KitSrcFactory(_basedir)
         if _kitsrc.verifyLocalSrcPath():
             builddir = _basedir / 'artifacts'
+            pkgdir = _basedir / 'packages'
+            srcdir = _basedir / 'sources'
             tmpdir = _basedir / 'tmp'
-            return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+            return BuildProfile(builddir=builddir,tmpdir=tmpdir,srcdir=srcdir,pkgdir=pkgdir)
         else:
             raise InvalidBuildProfile
     _basedir = path(basedir)
     _kitsrc = KitSrcFactory(_basedir)
     if _kitsrc.verifyLocalSrcPath():        
         builddir = _basedir / 'artifacts'
+        srcdir = _basedir / 'sources'
+        pkgdir = _basedir / 'packages'
         tmpdir = _basedir / 'tmp'
-        return BuildProfile(builddir=builddir,tmpdir=tmpdir)
+        return BuildProfile(builddir=builddir,tmpdir=tmpdir,srcdir=srcdir,pkgdir=pkgdir)
     else:
         raise InvalidBuildProfile
+        
+def populatePackagesDir(buildprofile):
+    """ Sweeps through the kitsrc dir and makes the built packages
+        available in the packages dir.
+    
+    """
+    # TODO : need to handle DEBs too instead of just RPMs
+    
+    # locate the built rpms
+    builtdir = buildprofile.builddir / 'packages/RPMS'
+    for f in builtdir.walkfiles('*.rpm'):
+        _f = f.basename()
+        if not path(buildprofile.pkgdir / _f).exists(): 
+            pass
+        else:
+            path(buildprofile.pkgdir / _f).remove()
+
+        cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
+        lnP = subprocess.Popen(cmd,shell=True)
+        lnP.wait()
+
+        
+    # also locate rpms that are located in the srcdir
+    for f in buildprofile.srcdir.walkfiles('*.rpm'):
+        if f.endswith('.src.rpm'): 
+            pass
+        else:
+            cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
+            lnP = subprocess.Popen(cmd,shell=True)
+            lnP.wait()
+
 
 def processKitInfo(kitinfo):
     """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo 
@@ -130,9 +167,9 @@ def Package(**kwargs):
     elif kwargs['srctype'] == 'binarydist':
         pkg = PackageProfile(BinaryPackageWrapper(),**kwargs)
     elif kwargs['srctype'] == 'distro':
-        pass
+        pkg = PackageProfile(DistroPackageWrapper(),**kwargs)
     elif kwargs['srctype'] == 'rpm':
-        pass
+        pkg = PackageProfile(RPMWrapper(),**kwargs)
     elif kwargs['srctype'] == 'srpm':
         pkg = PackageProfile(SRPMWrapper(),**kwargs)
         

@@ -69,24 +69,6 @@ class TestGNUBuildTarballPkg(object):
         bp = setupprofile(self.testkitsrc)
         assert bp.builddir == self.testkitsrc / 'artifacts'
         assert bp.tmpdir == self.testkitsrc / 'tmp'
-        
-    def testVerifyGoodPkgs(self):
-        """ Test good packages can be setup and verified. """
-        
-        # setup a buildprofile
-        bp = setupprofile(self.testkitsrc)
-        
-        for p in self.GOOD_PKGS:
-            filepath = path(p)
-            fullname = getDirName(filepath.basename())
-            name, ver = fullname.split('-')
-            pkg = SourcePackage()
-            pkg.name = name
-            pkg.version = ver
-            pkg.buildprofile = bp
-            pkg.filepath = filepath
-            pkg.setup()
-            assert pkg.verify() is True
             
     def testFedoraComponentInfo(self):
         """ Test that a componentinfo is defined correctly. """
