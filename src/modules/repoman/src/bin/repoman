@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+#
+# $Id: repo.py 1732 2007-07-26 06:21:43Z ltsai $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+
+from kusu.util.errors import *
+from kusu.core import database as db
+from kusu.core.app import KusuApp
+from kusu.repoman import repofactory, tools
+import kusu.util.log as kusulog
+
+from path import path
+import os
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
+kl = kusulog.getKusuLog()
+kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
+                       'kusu.log')
+
+class RepoManApp(KusuApp):
+    """ Application class for repoman. """
+    
+    def __init__(self):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+    
+        # setup command line parser
+        self.parser.add_option('-n', '--new', dest='reponame')
+        self.parser.add_option('-o', '--ostype', dest='ostype')
+
+    def new(self, repo_name, os_type=None):
+
+        if os_type:
+            repo = self.dbs.Repos()
+            repo.reponame = repo_name
+            repo.ostype = os_type
+
+            row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
+            masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+            repo.installers = ';'.join([nic.ip for nic in masterNode.nics if nic.ip])
+            
+            repo.save()
+            repo.flush()
+
+            location = path('/depot/repos/%s' % repo.repoid)
+            location.makedirs()
+            repo.repository = str(location)
+            
+            repo.save()
+            repo.flush()
+        else:
+            repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
+            ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)[0]
+            self.rfinst.refresh(ng.ngname)
+
+    def run(self):
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        #dbuser = 'apache'
+        dbuser = 'root'
+        dbpassword = None
+
+        self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        self.rfinst = repofactory.RepoFactory(self.dbs)
+    
+        self.parseArgs()
+        
+    def parseArgs(self):
+        (options, args) = self.parser.parse_args()
+        kl.debug("options: %s", options)
+        kl.debug("args: %s", args)
+
+        if args:
+            sys.stderr.write("No more arguments expected. Remaining args: %s" %
+                             args)
+            sys.exit(1)
+        
+        if options.reponame:
+            if options.ostype:
+                self.new(options.reponame, options.ostype)
+            else:
+                self.new(options.reponame)
+       
+if __name__ == '__main__':
+    
+    app = RepoManApp() 
+    app.run()

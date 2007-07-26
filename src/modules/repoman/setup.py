@@ -16,5 +16,6 @@ setup(name="kusu-repoman",
       platforms=["any"],
       description="Repoman for Kusu.",
       packages = ['repoman'],
-      package_dir={'repoman': 'src/lib'}
+      package_dir={'repoman': 'src/lib'},
+      scripts=['src/bin/repoman']
      )
