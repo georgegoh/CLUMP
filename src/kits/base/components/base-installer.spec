@@ -25,8 +25,8 @@ License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
 BuildArchitectures: noarch
-Requires: kusu-base-installer = 1.0
-Requires: kusu-base-node = 1.0
+Requires: kusu-base-installer >= 0.1
+Requires: kusu-base-node >= 0.1
 Requires: kusu-boot >= 0.3
 Requires: kusu-core >= 0.3
 Requires: kusu-hardware >= 0.3
