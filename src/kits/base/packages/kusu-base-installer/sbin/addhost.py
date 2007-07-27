@@ -568,6 +568,8 @@ class WindowSelectNode(NodeGroupWindow):
     def setCallbacks(self):
         self.buttonsDict['previous_button'].setCallback_(self.backAction)
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
+
+        self.hotkeysDict['F12'] = self.F12Action
         
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
