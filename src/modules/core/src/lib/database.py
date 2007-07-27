@@ -514,7 +514,7 @@ class DB(object):
         repos = sa.Table('repos', self.metadata,
             sa.Column('repoid', sa.Integer, primary_key=True,
                       autoincrement=True),
-            sa.Column('reponame', sa.String(45)),
+            sa.Column('reponame', sa.String(45), unique=True),
             sa.Column('repository', sa.String(255)),
             sa.Column('installers', sa.String(255)),
             sa.Column('ostype', sa.String(20)),
