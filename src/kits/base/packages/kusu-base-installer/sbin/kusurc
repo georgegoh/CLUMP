@@ -30,6 +30,16 @@ class App:
         self.enableSyslog()
         self.restrictDHCPDToProvisionNet()
         self.generateSSHKey()
+        self.setDBPassword()
+
+    def setDBPassword(self):
+        apache = pwd.getpwnam('apache')
+        uid = apache[2]
+        gid = apache[3]
+
+        p = path('/opt/kusu/etc/db.passwd')
+        p.chmod(0400)
+        p.chown(uid, gid)
 
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
