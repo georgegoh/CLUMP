@@ -141,7 +141,7 @@ class BuildKit:
         pkgdir = path(kitsrc / 'packages')
 
         # sweep and get the kitinfo files    
-        li = kitsrc.files('*.kitinfo')
+        li = kitsrc.files('kitinfo')
         kitinfo = path(li[0])
 
         kit,comps = processKitInfo(kitinfo)
@@ -395,7 +395,7 @@ Example operations:
         # generate the kitinfo file
         msg = self._('Generating kitinfo..')
         print msg
-        kitinfo = '%s/%s.kitinfo' % (kitsrc,kit.name)
+        kitinfo = '%s/kitinfo' % kitsrc
         self.bkinst.generateKitInfo(kit,kitinfo)
         
         # finally, make the kit iso
