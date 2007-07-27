@@ -135,7 +135,7 @@ class boothost:
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
 
-        if ostype in ['fedora', 'centos' 'rhel']:
+        if ostype in ['fedora', 'centos', 'rhel']:
             kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (http_ip, repoid, http_ip)
             fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
                      (initrd, http_ip, http_ip, kickstart_file, ksdevice, kparams or ''))
