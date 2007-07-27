@@ -132,8 +132,10 @@ class KusuComponent(Struct):
         
     def generate(self):
         """ Returns a metadata dict. """
-
-        return self.copy()
+        d = self.copy()
+        # we don't want to return everything
+        if 'buildprofile' in d: del d['buildprofile']
+        return d
         
     def addDep(self, package, absoluteversion=False):
         """ Add package as a dependency. If absoluteversion is set to True, 
@@ -170,7 +172,9 @@ class KusuComponent(Struct):
 
         ns = self._generateNS()
         tmpl = getTemplateSpec('component')
-        specfile = '%s.spec' % ns['pkgname']
+        builddir = path(self.buildprofile.builddir)
+        _s = '%s.spec' % ns['pkgname']
+        specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         rpmbuilder.build()
         
@@ -182,16 +186,17 @@ class KusuComponent(Struct):
             
 class KusuKit(Struct):
     """ Kit class. """
-    
-    components = []     # list of KusuComponents belonging to this kit
+    components = []     # list of components belonging to this kit
     scripts = []        # list of additional scripts belonging to this kit
     dependencies = []   # list of dependencies for this kit
     license = 'LGPL'    # license for this kit
     version = '0.1' 
     release = '0'
     arch = 'noarch'
+
     
     def __init__(self, **kwargs):
+
         Struct.__init__(self,kwargs)
 
     def setup(self):
@@ -202,8 +207,11 @@ class KusuKit(Struct):
 
     def generate(self):
         """ Returns a metadata for this kit. """
-
-        return self.copy()
+        d = self.copy()
+        # we don't want to return everything
+        if 'buildprofile' in d: del d['buildprofile']
+        del d['components']
+        return d
 
     def addComponent(self, component):
         """ Add component to this kit. """
@@ -243,7 +251,9 @@ class KusuKit(Struct):
         
         ns = self._generateNS()
         tmpl = getTemplateSpec('kit')
-        specfile = '%s.spec' % ns['pkgname']
+        builddir = path(self.buildprofile.builddir)
+        _s = '%s.spec' % ns['pkgname']
+        specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         rpmbuilder.build()
 

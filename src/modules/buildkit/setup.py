@@ -19,5 +19,6 @@ setup(name="kusu-buildkit",
     data_files=[('etc/buildkit-templates', ['src/etc/templates/rpmmacros.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/package.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/component.spec.tmpl']),
+                ('etc/buildkit-templates', ['src/etc/templates/build.kit.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/kit.spec.tmpl'])]
      )

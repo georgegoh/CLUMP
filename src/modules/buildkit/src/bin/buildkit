@@ -14,6 +14,7 @@ from kusu.buildkit import *
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError
 from kusu.util.tools import mkdtemp, cpio_copytree
+from Cheetah.Template import Template
 
 class BuildKit:
     """This class is the model for the buildkit app."""
@@ -24,6 +25,14 @@ class BuildKit:
         """prepare the Kit source directory"""
         newkit = KitSrcFactory(srcpath)
         newkit.prepareSrcPath()
+        
+        # also create a sample build.kit
+        defaultname = srcpath.basename()
+        s = self.prepareBuildKitTemplate(defaultname)
+        f = open('%s/build.kit' % srcpath,'w')
+        f.write(s)
+        f.close()
+        
         
     def getKitSrc(self, srcpath):
         """ Builds the kit based on the kitsrc dir"""
@@ -72,13 +81,15 @@ class BuildKit:
             p.build()
             p.deploy()
             
-    def handleComponents(self, components, buildprofile=None):
+    def handleComponents(self, components, buildprofile):
         """ Handles the configuring, building and deploying of the components. """
         for c in components:
+            c.buildprofile = buildprofile
             c.deploy(verbose=self.verbose)
             
-    def handleKit(self, kit, buildprofile=None):
+    def handleKit(self, kit, buildprofile):
         """ Handles the configuring, building and deploying of the kit. """
+        kit.buildprofile = buildprofile
         kit.deploy(verbose=self.verbose)
         
     def populatePackagesDir(self, buildprofile):
@@ -104,6 +115,22 @@ class BuildKit:
             regarding the kit and its components.
         """
         kit.generateKitInfo(filepath)
+        
+    def prepareBuildKitTemplate(self, defaultname):
+        """ Gets the build.kit template and populate it with the correct 
+            namespace. The defaultname is just a string to set the default
+            component and kit names.
+        """
+        tmpl = getBuildKitTemplate()
+        ns = {}
+        # FIXME: currently hardcoded to fedora 6!
+        ns['compclass'] = 'Fedora6Component()'
+        ns['compname'] = defaultname
+        ns['kitclass'] = 'DefaultKit()'
+        ns['kitname'] = defaultname
+        t = Template(file=str(tmpl),searchList=[ns])
+        return str(t)
+        
         
     def makeKitISO(self, kitsrc):
         """ Creates a Kusu Kit ISO based on the kitsrc dir.

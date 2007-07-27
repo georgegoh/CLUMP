@@ -23,13 +23,6 @@ def genrandomstr(length=8):
     chars = string.letters + string.digits
     return ''.join([choice(chars) for i in range(length)])
 
-def makeKitISO(kitsrc,isofile):
-    """ Creates a Kusu Kit ISO named as isofile and based on the kitsrc dir. """
-    kitsrc = path(kitsrc).abspath()
-    isofile = path(isofile).abspath()
-    
-    pass
-
 def setupRPMMacrofile(buildprofile):
     """ Creates a proper .rpmmacros file for purposes of building kits. 
         If an existing .rpmmacros exists, it will be renamed and this
@@ -87,7 +80,20 @@ def getPackageSpecTmpl(templatesdir):
     spectmpl = root.files('package.spec.tmpl')[0]
     
     return spectmpl
-  
+    
+def getBuildKitTemplate(templatedir=None):
+    """ Get the specfile for components. """
+    if not templatedir:
+        kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
+        templatedir = kusuroot / 'etc/buildkit-templates'
+    tmpldir = path(templatedir)
+    _t = 'build.kit.tmpl'
+    tmpl = tmpldir / _t
+
+    if not tmpl.exists(): raise FileDoesNotExistError
+    return tmpl    
+    
+    
 def getTemplateSpec(templatetype, templatedir=None):
     """ Get the specfile for components. """
     if not templatedir:
