@@ -92,8 +92,8 @@ class PartitionScreen(InstallerScreen):
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(fresh=False)
-                    schema = percentSchema()
-#                    schema = vanillaSchemaLVM()
+#                    schema = percentSchema()
+                    schema = vanillaSchemaLVM()
                     setupDiskProfile(self.disk_profile, schema)
                 elif str(result) == 'clear all partitions':
                     logger.debug('Clear all partitions')
@@ -109,8 +109,8 @@ class PartitionScreen(InstallerScreen):
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
                     self.disk_profile = partitiontool.DiskProfile(fresh=True)
-#                    schema = vanillaSchemaLVM()
-                    schema = percentSchema()
+                    schema = vanillaSchemaLVM()
+#                    schema = percentSchema()
                     setupDiskProfile(self.disk_profile, schema)
  
         # retrieve info about logical volumes and lv groups

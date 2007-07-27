@@ -62,7 +62,7 @@ class LVMCollection(Struct):
 
 
 class PartitionSchema(Struct):
-    def __init__(self, disks, lvm=None, preserve_types=None):
+    def __init__(self, disks, lvm=None, preserve_types=[]):
         Struct(self)
         self.disk_dict=disks
         self.vg_dict=lvm
@@ -271,16 +271,17 @@ def setupDiskProfile(disk_profile, schema=None):
     """Set up a disk profile based on a given schema."""
    # clear LVM logical volumes and groups.
     if disk_profile.lv_dict:
-        for lv in disk_profile.lv_dict.itervalues():
+        lv_list = disk_profile.lv_dict.values()
+        for lv in lv_list:
             disk_profile.delete(lv)
     if disk_profile.lvg_dict:
-        for lvg in disk_profile.lvg_dict.itervalues():
+        lvg_list = disk_profile.lvg_dict.values()
+        for lvg in lvg_list:
             disk_profile.delete(lvg)
 
     disk_profile.executeLVMFifo()
 
     # clear partitions that haven't been preserved.
-    if not schema.has_key('preserve_types'): schema['preserve_types'] = []
     for disk in disk_profile.disk_dict.itervalues():
         clearDisk(disk_profile, disk, schema['preserve_types'])
     for disk in disk_profile.disk_dict.itervalues():
