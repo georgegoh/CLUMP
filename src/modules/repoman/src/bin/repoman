@@ -10,11 +10,16 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 from kusu.core.app import KusuApp
-from kusu.repoman import repofactory, tools
+from kusu.repoman import repofactory
+from kusu.repoman import tools as rtools
+from kusu.util import tools
 import kusu.util.log as kusulog
 
 from path import path
 import os
+import sys
+import time
+from optparse import SUPPRESS_HELP
 
 try:
     import subprocess
@@ -27,50 +32,138 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 
 class RepoManApp(KusuApp):
     """ Application class for repoman. """
-    
+
+    prefix = None
+ 
     def __init__(self):
         """ App-specific initialization. """
         KusuApp.__init__(self)
     
         # setup command line parser
-        self.parser.add_option('-n', '--new', dest='reponame')
+        self.parser.add_option('-n', '--new', dest='new')
         self.parser.add_option('-o', '--ostype', dest='ostype')
+        self.parser.add_option('-l', '--list', dest='list', action="store_true")
+        self.parser.add_option('-d', '--delete', dest='delete')
+        self.parser.add_option('-s', '--snapshot', dest='snapshot', action="store_true")
+        self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
+        self.parser.add_option('--dbdriver', dest='dbdriver',
+                               help=self._('Database driver (sqlite, mysql)'))
+        self.parser.add_option('--dbdatabase', dest='dbdatabase',
+                               help=self._('Database'))
+        self.parser.add_option('--dbuser', dest='dbuser',
+                               help=self._('Database username'))
+        self.parser.add_option('--dbpassword', dest='dbpassword',
+                               help=self._('Database password'))
 
     def new(self, repo_name, os_type=None):
 
         if os_type:
+            os_name, os_version, os_arch = os_type.split('-')
+            kit = self.dbs.Kits.select_by(rname=os_name,
+                                          version=os_version,
+                                          arch=os_arch)[0]
+            
             repo = self.dbs.Repos()
+            repo.kits.append(kit)
             repo.reponame = repo_name
             repo.ostype = os_type
 
-            row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
-            masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
+            row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
+            masterNode = self.dbs.Nodes.select_by(name=row.kvalue)[0]
             repo.installers = ';'.join([nic.ip for nic in masterNode.nics if nic.ip])
             
             repo.save()
             repo.flush()
 
-            location = path('/depot/repos/%s' % repo.repoid)
-            location.makedirs()
+            location = path('/repos/%s' % repo.repoid)
+            path(path(self.prefix or '/') / 'depot' / 'repos' / str(repo.repoid)).makedirs()
             repo.repository = str(location)
             
             repo.save()
             repo.flush()
+
         else:
             repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
-            ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)[0]
-            self.rfinst.refresh(ng.ngname)
+            ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+
+            if len(ngs) == 0:
+                return
+
+            elif len(ngs) == 1:
+                repo.kits = rtools.getKits(self.dbs, ngs[0].ngname)
+                repo.save()
+                repo.flush()
+                r = self.rfinst.refresh(ngs[0].ngname)
+
+            else:
+                for ng in ngs:
+                    kits = rtools.getKits(self.dbs, ng.ngname)
+
+                    if len(repo.kits) != len(kits):
+                        r = self.rfinst.refresh(ng.ngname)
+
+                    elif sorted(repo.kits) != sorted(kits):
+                        r = self.rfinst.refresh(ng.ngname)
+
+                    else:
+                        continue
+            
+                    if repo.repoid != r.repoid:
+                        newRepo = self.dbs.Repos.select_by(repoid=r.repoid)[0]
+                        newRepo.reponame = repo.reponame + ' (%s)' % time.asctime()
+                        newRepo.save()
+                        newRepo.flush()
+
+    def delete(self, repo_name):
+        self.repoExists(repo_name)
+        repo = self.dbs.Repos.select_by(reponame=repo_name)
+        repo = repo[0]    
+        ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+
+        if ng:
+            print self._('Cannot delete repo. In used by nodegroups.')
+            sys.exit(1)
+        else:
+            p = path(self.prefix or '/') / 'depot' / 'repos' / str(repo.repoid)
+            if p.exists(): p.rmtree()
+
+            repo.repos = None
+            repo.delete()
+            repo.flush()
+
+    def snapshot(self, repo_name):
+        self.repoExists(repo_name)
+
+        oldRepo = self.dbs.Repos.select_by(reponame=repo_name)
+        oldRepo = oldRepo[0]
+
+        newRepo = self.dbs.Repos()
+        newRepo.reponame = oldRepo.reponame + '(snapshot %s)' % time.asctime() 
+        newRepo.installers = oldRepo.installers
+        newRepo.ostype = oldRepo.ostype
+        newRepo.kits = oldRepo.kits
+        newRepo.save()
+        newRepo.flush()
+        
+        location = path('/repos/%s' % newRepo.repoid)
+        newRepo.repository = str(location)
+        newRepo.save()
+        newRepo.flush()
+
+        src = path(self.prefix or '/') / 'depot' / 'repos' / str(oldRepo.repoid)
+        dest = path(self.prefix or '/') / 'depot' / 'repos' / str(newRepo.repoid)
+        tools.cpio_copytree(src, dest)
+
+    def repoExists(self, repo_name):
+        repo = self.dbs.Repos.select_by(reponame=repo_name)
+
+        if not repo:
+            print self._('No such repo')
+            sys.exit(1)
+        else:
+            return True
 
     def run(self):
-        dbdriver = 'mysql'
-        dbdatabase = 'kusudb'
-        #dbuser = 'apache'
-        dbuser = 'root'
-        dbpassword = None
-
-        self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
-        self.rfinst = repofactory.RepoFactory(self.dbs)
-    
         self.parseArgs()
         
     def parseArgs(self):
@@ -82,13 +175,107 @@ class RepoManApp(KusuApp):
             sys.stderr.write("No more arguments expected. Remaining args: %s" %
                              args)
             sys.exit(1)
-        
-        if options.reponame:
+      
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+
+        if options.dbdriver:
+            dbdriver = options.dbdriver
+        if options.dbdatabase:
+            dbdatabase = options.dbdatabase
+        if options.dbuser:
+            dbuser = options.dbuser
+        if options.dbpassword:
+            dbpassword = options.dbpassword
+
+        self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
+        if options.prefix:
+            self.prefix = path(options.prefix)
+            self.rfinst = repofactory.RepoFactory(self.dbs, self.prefix, True)
+        else:
+            self.rfinst = repofactory.RepoFactory(self.dbs)
+
+        if options.new:
             if options.ostype:
-                self.new(options.reponame, options.ostype)
+                self.new(options.new, options.ostype)
+            elif options.snapshot:
+                self.snapshot(options.new)
             else:
-                self.new(options.reponame)
+                self.new(options.new)
+        elif options.list:
+            self.list()
+        elif options.delete:
+            self.delete(options.delete)
        
+    def list(self):
+        headers = ['Repo name', 'Repository', 'Installers', 'Ostype' ]
+
+        max_lengths = []
+        for x in xrange(len(headers)):
+            max_lengths.append(len(headers[x]))
+
+        repos = self.dbs.Repos.select()
+        repolines = []
+        for repo in repos:
+            repoline = []
+
+            repoline.append(repo.reponame)
+            repoline.append(repo.repository)
+            repoline.append(repo.installers)
+            repoline.append(repo.ostype)
+
+            # update maximum lengths
+            for x in xrange(len(repoline)):
+                linelengths = [len(l) for l in repoline[x].split('\n')]
+                if max(linelengths) > max_lengths[x]:
+                    max_lengths[x] = max(linelengths)
+
+            repolines.append(repoline)
+
+        self.printTable(headers, repolines, max_lengths)
+
+    def printTable(self, titles, entries, widths):
+        horline = '+'
+        for width in widths:
+            horline += '-' * (width + 2) + '+'
+
+        print horline
+
+        line = '|'
+        for x in xrange(len(titles)):
+            line += ' ' + titles[x].ljust(widths[x]) + ' |'
+
+        print line
+        print horline
+
+        for entry in entries:
+            newlines = True
+            while newlines:
+                newlines = False
+
+                line = '|'
+                for x in xrange(len(entry)):
+                    newline = entry[x].find('\n')
+                    if newline == -1:
+                        thisentry = entry[x]
+                        nextentry = ''
+                    else:
+                        newlines = True
+                        thisentry = entry[x][:newline]
+                        nextentry = entry[x][newline + 1:]
+
+                    line += ' ' + thisentry.ljust(widths[x]) + ' |'
+                    entry[x] = nextentry
+
+                print line
+
+        print horline
+
+
+
 if __name__ == '__main__':
     
     app = RepoManApp() 
