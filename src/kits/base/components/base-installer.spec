@@ -28,6 +28,7 @@ BuildArchitectures: noarch
 Requires: kusu-base-installer >= 0.1
 Requires: kusu-base-node >= 0.1
 Requires: kusu-boot >= 0.4
+Requires: kusu-buildkit >= 0.4
 Requires: kusu-core >= 0.4
 Requires: kusu-hardware >= 0.4
 Requires: kusu-kitops >= 0.4
