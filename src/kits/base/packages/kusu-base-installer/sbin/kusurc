@@ -29,6 +29,7 @@ class App:
         self.makeRepos()
         self.enableSyslog()
         self.restrictDHCPDToProvisionNet()
+        self.generateSSHKey()
 
     def migrateDB(self):
         """Set up MySQL connection and SQLite collection, then migrate."""
@@ -121,6 +122,30 @@ class App:
             out, err = p.communicate()
             retcode = p.returncode
 
+    def generateSSHKey(self):
+        sshdir = path('/root/.ssh')
+
+        if not sshdir.exists():
+            sshdir.makedirs()
+
+        sshdir.chmod(0700)
+
+        # RSA key, 2048 bits in size, /root/.ssh/id_rsa, no passphrase
+        cmds = ['ssh-keygen', '-t', 'rsa', '-b', '2048',
+                '-f', sshdir / 'id_rsa', '-N', '']
+        sshP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        out, err = sshP.communicate()
+
+        # place our public key in web root
+        webdir = path('/var/www/html')
+
+        if not webdir.exists():
+            webdir.makedirs()
+
+        # copy public key to webdir
+        (sshdir / 'id_rsa.pub').copy(webdir / 'public_keys')
+        
 if __name__ == "__main__":
     app = App()
     app.run()

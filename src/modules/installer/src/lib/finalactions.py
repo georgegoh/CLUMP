@@ -123,15 +123,8 @@ def migrate(prefix):
 def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
 
-    d = {}
+    d = disk_profile.mountpoint_dict
     mounted = []
-
-    for disk in disk_profile.disk_dict.values():
-        for id, p in disk.partition_dict.items():
-            d[p.mountpoint] = p
-   
-    for lv in disk_profile.lv_dict.values():
-        d[lv.mountpoint] = lv
 
     # Mount and create in order
     for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits']:

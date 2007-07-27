@@ -10,7 +10,7 @@ from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema
+from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError
 from kusu.hardware import probe
 from random import choice
 from cStringIO import StringIO
@@ -205,6 +205,8 @@ def adaptNIIPartition(niipartition):
             lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
             if lv: handleLV(lvinfo, vg_name, schema['vg_dict'])
 
+        # TODO: remove this 'hack' :D
+        schema['preserve_types'] = []
     except ValueError:
         raise InvalidPartitionSchema, "Couldn't parse one of the Volume Group fields."
 
@@ -403,7 +405,6 @@ class KickstartFromNIIProfile(object):
 
             nw['interfaces'][nic].update(nicinfo)
 
-
         for nic in unused_nics:
             # remove unused nics, configuring these will raise KeyErrors
             nw['interfaces'].pop(nic)
@@ -444,6 +445,8 @@ class KickstartFromNIIProfile(object):
         except InvalidPartitionSchema, e:
             logger.debug('Invalid partition schema! schema: %r' % schema)
             raise e
+
+        return self.diskprofile
        
     def prepareKickstartPackageProfile(self,ni):
         """ Reads in the NII instance and fills up the packageprofile. """
@@ -495,6 +498,7 @@ class NodeInstaller(object):
     'appglobal':{},     # Dictionary of all the appglobal data
     'nics':{},          # Dictionary of all the NIC info
     'partitions':{},    # Dictionary of all the Partition info.  Note key is only a counter
+    'diskprofile':{},   # Dictionary of disks and partitions
     'packages':[],      # List of packages to install
     'scripts':[],       # List of scripts to run
     'cfm': '',           # The CFM data
@@ -585,7 +589,7 @@ class NodeInstaller(object):
         self.ksprofile = KickstartFromNIIProfile()
         self.ksprofile.prepareKickstartSiteProfile(self)
         self.ksprofile.prepareKickstartNetworkProfile(self)
-        self.ksprofile.prepareKickstartDiskProfile(self)
+        self.diskprofile = self.ksprofile.prepareKickstartDiskProfile(self)
         self.ksprofile.prepareKickstartPackageProfile(self)
         self.generateAutoinstall()
         
@@ -627,3 +631,53 @@ class NodeInstaller(object):
         logger.debug('Setting timezone hwclock args: %s, return code: %s',
                      hwclock_args, hwclockP.returncode)
 
+    def setSyslogConf(self, hostip, prefix=''):
+        syslog = open(prefix + '/etc/syslog.conf', 'w')
+        syslog.writelines(['# Forward all log messages to master installer\n',
+                           '*.*' + '\t' * 7 + '@%s\n' % hostip])
+        syslog.flush()
+        syslog.close()
+
+    def getSSHPublicKeys(self, hostip, prefix=''):
+        authorized_keys = path(prefix + '/root/.ssh/authorized_keys')
+
+        if not authorized_keys.dirname().exists():
+            authorized_keys.dirname().makedirs()
+
+        # /root/.ssh needs to be 0700
+        authorized_keys.dirname().chmod(0700)
+
+        # grab public_keys file from master, save as authorized_keys
+        cmds = ['wget', 'http://%s/public_keys' % hostip, '-O', authorized_keys]
+        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        out, err = wgetP.communicate()                                 
+
+        authorized_keys.chmod(0600)
+
+    def mountKusuMntPts(self, prefix):
+        prefix = path(prefix)
+
+        d = self.diskprofile.mountpoint_dict
+        mounted = []
+
+        # Mount and create in order
+        for m in ['/', '/root', '/etc']:
+            mntpnt = prefix + m
+
+            if not mntpnt.exists():
+                mntpnt.makedirs()
+                logger.debug('Made %s dir' % mntpnt)
+            
+            # mountpoint has an associated partition,
+            # and mount it at the mountpoint
+            if d.has_key(m):
+                try:
+                    d[m].mount(mntpnt)
+                    mounted.append(m)
+                except MountFailedError:
+                    raise 'Unable to mount %s on %s' % (d[m].path, m)
+
+        for m in ['/']:
+            if m not in mounted:
+                raise KusuError, 'Mountpoint: %s not defined' % m
