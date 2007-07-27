@@ -11,6 +11,7 @@ from path import path
 import os
 import re
 import sys
+import pwd
 
 try:
     import subprocess
