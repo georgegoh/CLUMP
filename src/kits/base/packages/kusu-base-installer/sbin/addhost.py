@@ -476,7 +476,6 @@ class NodeGroupWindow(USXBaseScreen):
     name = "addhost_window_title_nodegroup"
     msg = "addhost_instruction_nodegroup"
     buttons = ['next_button', 'exit_button']
-    hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
