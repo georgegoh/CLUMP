@@ -110,6 +110,7 @@ class NodeGroupNotFoundError(KusuError): pass
 class RepoNotFoundError(KusuError): pass
 class ReposIntegrityError(KusuError): pass
 class RepoCannotDeleteError(KusuError): pass
+class NodeGroupHasRepoAlreadyError(KusuError): pass
 
 # repoman.rhn
 class rhnError(KusuError): pass
