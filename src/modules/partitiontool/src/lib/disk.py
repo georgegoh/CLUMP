@@ -494,10 +494,14 @@ class Partition(object):
         return self.num >= other.num
 
     def __eq__(self, other):
+        if not hasattr(other, 'num'):
+            return False
         return self.num == other.num
 
     def __ne__(self, other):
-        return self.num == other.num
+        if not hasattr(other, 'num'):
+            return True
+        return self.num != other.num
 
     def getpath(self):
         """Get this partition's path by appending it's number to the disk's path.

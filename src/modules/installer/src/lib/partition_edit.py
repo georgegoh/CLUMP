@@ -18,6 +18,7 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.ui.text.navigator import NAV_NOTHING
+from kusu.util.errors import *
 
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -40,7 +41,7 @@ def editDevice(baseScreen):
                 scr = EditLogicalVolume(screen, selected_device, disk_profile)
                 scr.start()
             elif selected_device in disk_profile.disk_dict.keys():
-                raise partitiontool.KusuError, 'Cannot delete the selected device because it is a physical disk in the system.'
+                raise KusuError, 'Cannot delete the selected device because it is a physical disk in the system.'
             else:
                 for disk in disk_profile.disk_dict.values():
                     if selected_device in disk.partition_dict.values():
@@ -49,7 +50,7 @@ def editDevice(baseScreen):
 
             return NAV_NOTHING
 
-        except partitiontool.KusuError, e:
+        except KusuError, e:
             msgbox = snack.GridForm(screen, 'Error', 1, 2)
             text = snack.TextboxReflowed(30, str(e))
             msgbox.add(text, 0, 0)
