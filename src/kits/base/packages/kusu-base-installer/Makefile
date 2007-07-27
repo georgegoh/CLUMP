@@ -73,6 +73,7 @@ install::
 	install -m755 sbin/netedit.py $(ROOT)/opt/kusu/sbin/netedit
 	install -m755 sbin/nghosts.py $(ROOT)/opt/kusu/sbin/nghosts
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
+	install -m755 sbin/sqlrunner.py $(ROOT)/opt/kusu/sbin/sqlrunner
 	install -m755 bin/genconfig.py $(ROOT)/opt/kusu/bin/genconfig
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
