@@ -737,7 +737,8 @@ class NetworkMainWindow(USXBaseScreen):
 
         self.screenGrid = snack.Grid(1, 3)
         instruction = snack.Textbox(60, 3, self.kusuApp._(self.msg), scroll=0, wrap=0)
-        listboxlabel = snack.Label(self.kusuApp._("netedit_item_labels"))
+        labeltokens = self.kusuApp._("netedit_item_labels").split()
+        listboxlabel = snack.Label("%s %s %s %s" % (labeltokens[0].ljust(11), labeltokens[1].ljust(14), labeltokens[2].ljust(15),labeltokens[3].ljust(10)))
         global selectedNetwork
         self.networkListbox = snack.Listbox(height=8, scroll=1, width=70, returnExit=1, showCursor=0)
         selectedNetwork = self.networkListbox
