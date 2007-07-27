@@ -648,11 +648,11 @@ msgstr "Reinstalling nodes"
 msgid "nghosts_reinstall_nodes_progress"
 msgstr "Initiating nodes to reinstall, please wait. This may take time if nodes are unreachable..."
 
-msgid "Source Nodes\t\t\t  Destination Nodegroup"
-msgstr "Source Nodes\t\t\t  Destination Nodegroup"
+msgid "nghosts_source_label"
+msgstr "Source Nodes, Destination Nodegroup"
 
-msgid "Source Nodegroups\t\t  Destination Nodegroup"
-msgstr "Source Nodegroups\t\t  Destination Nodegroup"
+msgid "nghosts_nodegroup_label"
+msgstr "Source Nodegroups, Destination Nodegroup"
 
 msgid "Node Group Editor"
 msgstr "Node Group Editor"

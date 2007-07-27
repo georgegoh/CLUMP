@@ -413,7 +413,8 @@ class SelectNodesWindow(USXBaseScreen):
         self.screenGrid  = snack.Grid(1, 6)
         self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-        label = snack.Label(self.kusuApp._("Source Nodes\t\t\t  Destination Nodegroup"))
+        labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
+        label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         query = "SELECT ngname FROM nodegroups ORDER BY ngname"
         
@@ -454,7 +455,7 @@ class SelectNodesWindow(USXBaseScreen):
                 count += 1
  
         for group in nodegroups:
-            nodegroupList.append([group[0].ljust(20), group[0], 0])
+            nodegroupList.append([group[0].ljust(27), group[0], 0])
        
         self.nodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList) 
         
@@ -590,10 +591,11 @@ class SelectNodegroupsWindow(USXBaseScreen):
     def drawImpl(self):
         nodegroupList = []
         self.screenGrid  = snack.Grid(1, 7)
-        instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-        label = snack.Label(self.kusuApp._("Source Nodegroups\t\t  Destination Nodegroup"))
-        self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
+        instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
+        labeltokens = self.kusuApp._("nghosts_source_label").split(',')
+        label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
+        self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngname"
 
         try:
@@ -606,7 +608,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
             sys.exit(-1)
 
         for group in nodegroups:
-           nodegroupList.append([group[0].ljust(20), group[0], 0])
+           nodegroupList.append([group[0].ljust(23), group[0], 0])
            query = "SELECT COUNT(*) from nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group[0]
            try:
                self.database.connect()
