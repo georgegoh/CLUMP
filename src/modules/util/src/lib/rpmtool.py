@@ -43,7 +43,7 @@ class RPM:
            3. RPM filename (foo.rpm)"""
         
         if r:
-            if type(r) == types.StringType:
+            if type(r) in [str, unicode]:
                 r = path(r).realpath()
                 self.ext = r.ext
                 self.file = r

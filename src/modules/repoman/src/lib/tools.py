@@ -68,7 +68,7 @@ def getOS(dbs, repoid_or_ngname):
                                 dbs.Kits.c.isOS)
 
     # nodegroup name
-    elif type(key) == str:
+    elif type(key) in [str, unicode]:
         kit = db.findKitsFromNodeGroup(dbs,
                                        columns=['rname', 'version', 'arch'],
                                        kitargs={'isOS': True}, 
