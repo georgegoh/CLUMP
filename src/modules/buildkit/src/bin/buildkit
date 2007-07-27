@@ -12,9 +12,10 @@ import subprocess
 from kusu.core.app import KusuApp
 from kusu.buildkit import *
 from path import path
-from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError
-from kusu.util.tools import mkdtemp, cpio_copytree
+from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound
+from kusu.util.tools import mkdtemp, cpio_copytree, checkToolDeps
 from Cheetah.Template import Template
+
 
 class BuildKit:
     """This class is the model for the buildkit app."""
@@ -316,6 +317,13 @@ Example operations:
         kitsrc = path(args['kit']).abspath()
         oldrpmmacros = ''
         
+        # first check if mkisofs is installed
+        try:
+            checkToolDeps('mkisofs')
+        except ToolNotFound:
+            msg = self._('Unable to locate mkisofs! Please ensure that it is available.')
+            self.printMsgExit(msg)
+            
         # get the kitsrc
         msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
         print msg
