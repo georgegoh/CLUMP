@@ -53,9 +53,10 @@ class BuildInitrd:
         self.initrd32    = '/opt/kusu/initrds/rootfs.i686.cpio.gz'     # 32bit image
         self.gettext     = 0
         self.imagedir    = ''     # Location of the initial ram disk image
-        self.moduledir   = ''     # Location of the tempory module directory
+        self.moduledir   = ''     # Location of the temporary module directory
         self.modlink     = ''     # Symbolic link to self.moduledir  (fix for depmod.pl bug)
         self.initlink    = ''     # Symbolic link to self.imagedir   (fix for depmod.pl bug)
+	self.packagecount = 0	  # Number of packages extracted
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
@@ -95,8 +96,11 @@ class BuildInitrd:
         # Make a directory with the template initrd in it
         self.mkInitrdDir()
 
-        # Extract the modules from the kernel package
-        self.extractModules()
+        # Extract the modules from the OS kernel package
+        self.extractModules(oskernel=1)
+
+        # Extract any vendor modules if found
+        self.extractModules(oskernel=0)
         
         # Patch in the modules
         self.addModules()
@@ -217,14 +221,28 @@ class BuildInitrd:
                 self.modules.append(row[0])
 
 
-    def extractModules(self):
+    def extractModules(self, oskernel=1):
         """extractModules - Extract the kernel package into a tempory
         directory, so that the modules can be extracted."""
 
-        # Locate the kernel package.  
+        # Locate the OS kernel package.  
         pattern = ''
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
-            pattern = os.path.join(self.repodir, '*/RPMS/kernel-[2-3].[0-9].[0-9]*')
+
+        if oskernel:
+           # First look for the OS kit kernel RPM package.
+           query = ('select repository, dpname from repos, driverpacks, nodegroups, ng_has_comp, kits, components where \
+                     components.cid=ng_has_comp.cid and kits.kid=components.kid and driverpacks.cid=components.cid \
+                     and nodegroups.repoid=repos.repoid and nodegroups.ngid="%s" and kits.isOS=1' % self.ngid)
+        else:
+           # Look for vendor kernel modules.
+           query = ('select repository, dpname from repos, driverpacks, nodegroups, ng_has_comp, kits, components where \
+                     components.cid=ng_has_comp.cid and kits.kid=components.kid and driverpacks.cid=components.cid \
+                     and nodegroups.repoid=repos.repoid and nodegroups.ngid="%s" and not kits.isOS=1' % self.ngid)
+
+	self.db.execute(query)
+      
+        tmp = self.db.fetchone()
+        pattern = os.path.join(self.repodir, '%s/*/RPMS/%s' % (tmp[0], tmp[1]))
 
         if not pattern:
             # Raise an exception so this bug is easy to find
@@ -232,12 +250,14 @@ class BuildInitrd:
             raise "Fail_Here"
 
         flist = glob.glob(pattern)
+
         if len(flist) == 0:
             if self.stderrout:
                 # Fatal error
                 self.stderrout("ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
                                % (self.repodir, pattern) )
                 sys.exit(-1)
+
         if len(flist) > 1:
             # Use the last.  Seems to be the highest rev
             kpkg = "%s" % flist[-1]
@@ -247,11 +267,16 @@ class BuildInitrd:
         # Extract the package.  This is OS specific
         if self.stdoutout:
             self.stdoutout("Extracting modules\n")
+
         if kpkg.split('.')[-1] == 'rpm':
-            os.chdir(self.moduledir)
-            os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
+            os.system('mkdir -p \'%s/%s\'' % (self.moduledir, self.packagecount))
+            self.moduledump = "%s/%s" % (self.moduledir, self.packagecount)
+            os.chdir(self.moduledump)
+            #os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
+            os.system('rpm2cpio %s |cpio -idv' % kpkg)
+
         elif kpkg.split('.')[-1] == 'deb':
-            os.chdir(self.moduledir)
+            os.chdir(self.moduledump)
             os.system('deb2cpio %s |cpio -id >/dev/null' % kpkg)  # Fix this
         else:
             print "kpkg = %s" % kpkg
@@ -260,6 +285,7 @@ class BuildInitrd:
                 # Fatal error
                 self.stderrout("ERROR: Unknown kernel package type: %s" % kpkg )
                 sys.exit(-1)
+	self.packagecount += 1
         
         
     def getRepoInfo(self):
@@ -308,7 +334,7 @@ class BuildInitrd:
                                 os.system('mkdir -p \"%s\"' % newloc)
                                 # print 'Running: mkdir -p \"%s\"' % newloc
                             os.system('cp \"%s\" \"%s\"' % (oldloc, newloc))
-                            #print 'Running: cp \"%s\" \"%s\"' % (oldloc, newloc)
+                            print 'Running: cp \"%s\" \"%s\"' % (oldloc, newloc)
         print " "
         if mlist:
             if self.stderrout:
