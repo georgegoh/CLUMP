@@ -26,6 +26,8 @@ def url_mirror_copy(src, dst):
        It will mirror everything that is under the 
        url.
     """ 
+    import urlparse
+
     if urlparse.urlsplit(src)[0] in ['http', 'ftp']:
         p = path(urlparse.urlsplit(src)[2]).splitall()
 
