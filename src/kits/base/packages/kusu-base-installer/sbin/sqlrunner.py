@@ -73,15 +73,18 @@ class SQLInjectorApp(KusuApp):
                print self._("DB_Query_Error\n")
 
            self.db.execute(self._options.querystring)
-           output = self.db.fetchall()
-           for line in output:
-               for i in xrange(len(line)):
-                   self.str += "%s|" % line[i]
-                   if i == len(line)-1:
-                      self.str = self.str[:-1]
-               sys.stdout.write("%s" % self.str)
-               print
-               self.str = ""
+           try:
+               output = self.db.fetchall()
+               for line in output:
+                    for i in xrange(len(line)):
+                        self.str += "%s|" % line[i]
+                        if i == len(line)-1:
+                           self.str = self.str[:-1]
+                    sys.stdout.write("%s" % self.str)
+                    print
+                    self.str = ""
+           except:
+               pass
             
 if __name__ == '__main__':
     app = SQLInjectorApp()
