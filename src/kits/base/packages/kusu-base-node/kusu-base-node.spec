@@ -72,37 +72,37 @@ make ROOT=$RPM_BUILD_ROOT cfmd
 /sbin/chkconfig kusu on > /dev/null 2>&1
 /sbin/chkconfig --add cfmd > /dev/null 2>&1
 /sbin/chkconfig cfmd on > /dev/null 2>&1
-if [ -d /etc/cfm/Installer/etc ]; then
-	ln -s /etc/passwd /etc/cfm/Installer/etc/passwd
-	ln -s /etc/shadow /etc/cfm/Installer/etc/shadow
-	ln -s /etc/group /etc/cfm/Installer/etc/group
-	ln -s /etc/hosts /etc/cfm/Installer/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/Installer/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Installer/etc/fstab.append
+if [ -d /etc/cfm/installer/etc ]; then
+	ln -s /etc/passwd /etc/cfm/installer/etc/passwd
+	ln -s /etc/shadow /etc/cfm/installer/etc/shadow
+	ln -s /etc/group /etc/cfm/installer/etc/group
+	ln -s /etc/hosts /etc/cfm/installer/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/installer/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/installer/etc/fstab.append
 fi
-if [ -d /etc/cfm/Compute/etc ]; then
-	ln -s /etc/passwd /etc/cfm/Compute/etc/passwd
-	ln -s /etc/shadow /etc/cfm/Compute/etc/shadow
-	ln -s /etc/group /etc/cfm/Compute/etc/group
-	ln -s /etc/hosts /etc/cfm/Compute/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/Compute/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute/etc/fstab.append
+if [ -d /etc/cfm/compute/etc ]; then
+	ln -s /etc/passwd /etc/cfm/compute/etc/passwd
+	ln -s /etc/shadow /etc/cfm/compute/etc/shadow
+	ln -s /etc/group /etc/cfm/compute/etc/group
+	ln -s /etc/hosts /etc/cfm/compute/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/compute/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute/etc/fstab.append
 fi
-if [ -d /etc/cfm/Compute-diskless/etc ]; then
-	ln -s /etc/passwd /etc/cfm/Compute-diskless/etc/passwd
-	ln -s /etc/shadow /etc/cfm/Compute-diskless/etc/shadow
-	ln -s /etc/group /etc/cfm/Compute-diskless/etc/group
-	ln -s /etc/hosts /etc/cfm/Compute-diskless/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/Compute-diskless/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute-diskless/etc/fstab.append
+if [ -d /etc/cfm/compute-diskless/etc ]; then
+	ln -s /etc/passwd /etc/cfm/compute-diskless/etc/passwd
+	ln -s /etc/shadow /etc/cfm/compute-diskless/etc/shadow
+	ln -s /etc/group /etc/cfm/compute-diskless/etc/group
+	ln -s /etc/hosts /etc/cfm/compute-diskless/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/compute-diskless/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute-diskless/etc/fstab.append
 fi
-if [ -d /etc/cfm/Compute-disked/etc ]; then
-	ln -s /etc/passwd /etc/cfm/Compute-disked/etc/passwd
-	ln -s /etc/shadow /etc/cfm/Compute-disked/etc/shadow
-	ln -s /etc/group /etc/cfm/Compute-disked/etc/group
-	ln -s /etc/hosts /etc/cfm/Compute-disked/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/Compute-disked/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/Compute-disked/etc/fstab.append
+if [ -d /etc/cfm/compute-imaged/etc ]; then
+	ln -s /etc/passwd /etc/cfm/compute-imaged/etc/passwd
+	ln -s /etc/shadow /etc/cfm/compute-imaged/etc/shadow
+	ln -s /etc/group /etc/cfm/compute-imaged/etc/group
+	ln -s /etc/hosts /etc/cfm/compute-imaged/etc/hosts
+	echo "# Appended by CFM" > /etc/cfm/compute-imaged/etc/fstab.append
+	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute-imaged/etc/fstab.append
 fi
 
  

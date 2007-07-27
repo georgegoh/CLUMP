@@ -45,10 +45,10 @@ cfmd:
 	cd cfm ;make cfmd
 
 install::
-	mkdir -p $(ROOT)/etc/cfm/Installer/etc
-	mkdir -p $(ROOT)/etc/cfm/Compute/etc	
-	mkdir -p "$(ROOT)/etc/cfm/Compute-diskless/etc"	
-	mkdir -p "$(ROOT)/etc/cfm/Compute-disked/etc"	
+	mkdir -p $(ROOT)/etc/cfm/installer/etc
+	mkdir -p $(ROOT)/etc/cfm/compute/etc	
+	mkdir -p $(ROOT)/etc/cfm/compute-diskless/etc	
+	mkdir -p $(ROOT)/etc/cfm/compute-imaged/etc
 	mkdir -p $(ROOT)/etc/init.d
 	mkdir -p $(ROOT)/etc/rc.kusu.d
 	mkdir -p $(ROOT)/etc/rc.kusu.custom.d

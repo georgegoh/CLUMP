@@ -39,6 +39,13 @@ start() {
 	return 1
     fi
 
+    if [ ! -f /etc/profile.nii ]; then
+	echo -n "The CFM should not run on the primary installer. "
+	failure
+	echo
+	return 1
+    fi
+
     if [ -x /opt/kusu/sbin/cfmd ]; then
 	/opt/kusu/sbin/cfmd
 	RETVAL=$?
