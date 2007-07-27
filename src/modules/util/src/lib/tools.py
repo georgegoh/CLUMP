@@ -21,6 +21,34 @@ except:
 logger = kusulog.getKusuLog('util.tools')
 
 
+TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 
+    'mkisofs', 'tar', 'gzip']
+
+
+def checkToolDeps(tool):
+    """ Check if the tool is indeed available. A ToolNotFound exception 
+        will be thrown if any of the tools are missing.
+    """
+    
+    cmd = 'which %s > /dev/null 2>&1' % tool
+    whichP = subprocess.Popen(cmd,shell=True)
+    whichP.communicate()
+    if whichP.returncode <> 0:
+        raise ToolNotFound, tool
+        
+    return True
+            
+def checkAllToolsDeps():
+    """ Check if the list of tools needed are indeed available. 
+        A ToolNotFound exception will be thrown if any of the tools are
+        missing.
+    """
+
+    for tool in TOOLS_DEPS:
+        checkToolDeps(tool)
+        
+    return True
+
 def url_mirror_copy(src, dst):
     """Performs a mirror copy of a http or ftp url.
        It will mirror everything that is under the 
