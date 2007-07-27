@@ -10,7 +10,7 @@ from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError
+from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
 from kusu.hardware import probe
 from random import choice
 from cStringIO import StringIO
