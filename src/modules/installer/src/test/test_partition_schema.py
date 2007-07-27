@@ -19,29 +19,43 @@ def testSchema():
           d. /depot - 300M (fill)
     """
     # define the physical disk and partitions first
-    disk_dict = { 1: { 'partition_dict': {} } }
-    disk1_partition_dict = disk_dict[1]['partition_dict']
-    disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext3',
-                                'mountpoint': '/boot',
-                                'fill': False}
-    disk1_partition_dict[2] = { 'size_MB': 200,
-                                'fs': 'linux-swap',
-                                'mountpoint': None,
-                                'fill': False}
-    disk1_partition_dict[3] = { 'size_MB': 200,
-                                'fs': 'ext3',
-                                'mountpoint': '/',
-                                'fill': False}
-    disk1_partition_dict[4] = { 'size_MB': 300,
-                                'fs': 'ext3',
-                                'mountpoint': '/depot',
-                                'fill': True}
+    d1 = Disk()
 
-    schema = {'disk_dict' : disk_dict,
-              'vg_dict' : None}
+    # /boot
+    d1p1 = Partition()
+    d1p1.size_MB = 100
+    d1p1.fs = 'ext3'
+    d1p1.mountpoint = '/boot'
+    d1p1.fill = False
+    d1.addPartition(d1p1)
 
-    return schema
+    # swap
+    d1p2 = Partition()
+    d1p2.size_MB = 200
+    d1p2.fs = 'linux-swap'
+    d1p2.mountpoint = None
+    d1p2.fill = False
+    d1.addPartition(d1p2)
+
+    # /
+    d1p3 = Partition()
+    d1p3.size_MB = 200
+    d1p3.fs = 'ext3'
+    d1p3.mountpoint = '/'
+    d1p3.fill = False
+    d1.addPartition(d1p3)
+
+    # /depot
+    d1p4 = Partition()
+    d1p4.size_MB = 300
+    d1p4.fs = 'ext3'
+    d1p4.mountpoint = '/depot'
+    d1p4.fill = True
+    d1.addPartition(d1p4)
+
+    disks = DiskCollection()
+    disks.addDisk(d1)
+    return PartitionSchema(disks=disks)
 
 
 class TestDiskProfileSchema:
@@ -68,7 +82,12 @@ class TestDiskProfileSchema:
         self.dp.formatAll()
         out, err = runCommand('parted %s print' % self.loopback)
         lines = out.splitlines()
-        parts = lines[6:-5]
+        starting_line_index = 0
+        for i,v in enumerate(lines):
+            stripped = v.strip()
+            if stripped.startswith('Number'):
+                starting_line_index = i + 1
+        parts = lines[starting_line_index:-5]
         part_schema = []
         for part in parts:
             part_schema.append(part.split())
