@@ -366,7 +366,7 @@ msgid "netedit_instruction_network"
 msgstr "Welcome to the Kusu Network Editor! Please make a choice."
 
 msgid "netedit_item_labels"
-msgstr "Device\t Network\tSubnet\t        Description"
+msgstr "DEVICE NETWORK SUBNET DESCRIPTION"
 
 msgid "netedit_window_title_exit"
 msgstr "Exit netedit?"
