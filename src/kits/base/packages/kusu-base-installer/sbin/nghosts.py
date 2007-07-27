@@ -288,22 +288,20 @@ class SelectNodesWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
     msg = "nghosts_instruction_select_node"
     buttons = [ 'move_button', 'previous_button', "quit_button" ]
-    hotkeysDict = {}
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
         self.nodegroupDict = {}
         self.nodeGroupNames = []
-   
+ 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
                 (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            self.screen.finish()
-            sys.exit(0)
+            return NAV_QUIT
         else:
             return NAV_NOTHING
  
@@ -395,8 +393,7 @@ class SelectNodesWindow(USXBaseScreen):
         return NAV_QUIT
 
     def quitAction(self):
-        self.screen.finish()
-        sys.exit(0)
+        return NAV_QUIT
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)        
@@ -475,15 +472,14 @@ class SelectNodegroupsWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
-           
+          
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
                 (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            self.screen.finish()
-            sys.exit(0)
+            return NAV_QUIT
         else:
             return NAV_NOTHING
  
@@ -575,8 +571,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         return NAV_QUIT
 
     def quitAction(self):
-        self.screen.finish()
-        sys.exit(0)
+        return NAV_QUIT
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)
@@ -681,7 +676,7 @@ class MembershipMainWindow(USXBaseScreen):
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
-        return NAV_NOTHING
+        return NAV_QUIT
         
     def exitAction(self, data=None):
         """ExitAction()
