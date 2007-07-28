@@ -526,7 +526,9 @@ class RPM:
             return self.filename
 
 def getLatestRPM(dirs=[], ignoreErrors=False):
-    """Returns a dictionary of the latest rpms"""
+    """Returns a list of the latest rpms"""
+
+    c = RPMCollection()
 
     rpmPkgs = {}
     for dir in dirs:
@@ -547,13 +549,16 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
                 if rpmPkgs.has_key(name):
                     if rpmPkgs[name].has_key(arch):
                         if r > rpmPkgs[name][arch]:
+                            c.add(r)
                             rpmPkgs[name][arch] = r
                         else:
                             pass # Do nothing
                     else:    
                         rpmPkgs[name][arch] = r
+                        c.add(r)
                 else:
                     rpmPkgs[name] = {}
                     rpmPkgs[name][arch] = r
+                    c.add(r)
 
-    return rpmPkgs
+    return c.getList()
