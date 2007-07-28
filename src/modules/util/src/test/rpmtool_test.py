@@ -645,3 +645,10 @@ class TestRPMCollection:
         assert c.RPMExists('openoffice.org-xsltfilter')
         assert c.RPMExists('openoffice.org-xsltfilter', 'i386')
         
+    def testRPMNotExists(self):
+
+        c = rpmtool.RPMCollection()
+        assert not c.RPMExists('nobody')
+        assert not c.RPMExists('nobody', 'i386')
+        assert not c.RPMExists('nobody', 'x86_64')
+        
