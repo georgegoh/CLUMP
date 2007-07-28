@@ -615,9 +615,9 @@ class TestRPMFunctions:
         r2 = rpmtool.RPM(str(tmpdir / 'segatex-3.05-1.el5.rf.i386.rpm'))
         r3 = rpmtool.RPM(str(tmpdir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
 
-        assert r1 in pkgs
-        assert r2 in pkgs
-        assert r3 in pkgs
+        assert r1 == pkgs[r1.getName()][r1.getArch()][0]
+        assert r2 == pkgs[r2.getName()][r2.getArch()][0]
+        assert r3 == pkgs[r3.getName()][r3.getArch()][0]
 
 class TestRPMCollection:
     """Test for RPM Collection object"""

@@ -530,7 +530,6 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
 
     c = RPMCollection()
 
-    rpmPkgs = {}
     for dir in dirs:
         dir = path(dir)
         for r in dir.files():
@@ -546,19 +545,10 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
                 name = r.getName()
                 arch = r.getArch()
 
-                if rpmPkgs.has_key(name):
-                    if rpmPkgs[name].has_key(arch):
-                        if r > rpmPkgs[name][arch]:
-                            c.add(r)
-                            rpmPkgs[name][arch] = r
-                        else:
-                            pass # Do nothing
-                    else:    
-                        rpmPkgs[name][arch] = r
-                        c.add(r)
+                if c.RPMExists(name, arch):
+                    if r > c[name][arch][0]:
+                        c[name][arch][0] = r 
                 else:
-                    rpmPkgs[name] = {}
-                    rpmPkgs[name][arch] = r
                     c.add(r)
 
-    return c.getList()
+    return c
