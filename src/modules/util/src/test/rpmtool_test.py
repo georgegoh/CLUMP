@@ -651,4 +651,28 @@ class TestRPMCollection:
         assert not c.RPMExists('nobody')
         assert not c.RPMExists('nobody', 'i386')
         assert not c.RPMExists('nobody', 'x86_64')
-        
+
+    def testSort(self):
+        tmpdir = path(tempfile.mkdtemp(prefix='rpmtool', dir=cachedir))
+        c = rpmtool.RPMCollection()
+
+        for r in ['php-ldap-5.1.6-11.el5.i386.rpm',
+                  'php-ldap-5.1.6-12.el5.i386.rpm',
+                  'php-ldap-5.1.6-7.el5.i386.rpm', 
+                  'segatex-3.04-1.el5.rf.i386.rpm',
+                  'segatex-3.05-1.el5.rf.i386.rpm',
+                  'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm']:
+            r = rpmtool.RPM(str(cachedir / r))
+            c.add(r)
+
+        c.sort()
+
+        r1 = rpmtool.RPM(str(cachedir / 'php-ldap-5.1.6-12.el5.i386.rpm'))
+        r2 = rpmtool.RPM(str(cachedir / 'segatex-3.05-1.el5.rf.i386.rpm'))
+        r3 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+
+        assert r1 == c[r1.getName()][r1.getArch()][-1]
+        assert r2 == c[r2.getName()][r2.getArch()][-1]
+        assert r3 == c[r3.getName()][r3.getArch()][0]
+
+

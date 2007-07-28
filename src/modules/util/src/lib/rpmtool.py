@@ -28,7 +28,7 @@ class RPMCollection(Struct):
         arch = r.getArch()
 
         if self.has_key(name):
-            if not self.has_key(arch):
+            if not self[name].has_key(arch):
                 self[name][arch] = []
         else:
             self[name] = {}
@@ -36,6 +36,12 @@ class RPMCollection(Struct):
 
         self[name][arch].append(r)
         self.rlist.append(r)
+
+    def sort(self):
+        for name, val in self.items():
+            if name not in ['rlist']:
+                for arch in val.keys():
+                    self[name][arch].sort()
 
     def getList(self):
         """Returns a list of rpms"""
@@ -400,7 +406,7 @@ class RPM:
         
         if self.hdr:
             n,e,v,r,a = self.getNEVRA()
-            str = str + ". %s:%s-%s-%s.%s" % (e,n,v,r,a)
+            str = str + ". %s:%s-%s-%s.%s" % (e or '0',n,v,r,a)
         
         return str + ">"
    
