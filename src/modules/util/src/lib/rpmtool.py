@@ -16,7 +16,48 @@ import gzip
 from path import path
 
 from kusu.util.errors import *
+from kusu.util.structure import Struct
 
+class RPMCollection(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+        self.rlist = []
+
+    def add(self, r):
+        name = r.getName()
+        arch = r.getArch()
+
+        if self.has_key(name):
+            if not self.has_key(arch):
+                self[name][arch] = []
+        else:
+            self[name] = {}
+            self[name][arch] = []
+
+        self[name][arch].append(r)
+        self.rlist.append(r)
+
+    def getList(self):
+        """Returns a list of rpms"""
+        return self.rlist
+
+    def getDictionary(self):
+        return self
+         
+    def RPMExists(self, name, arch=None):
+        """Checks whether a rpm exists"""
+
+        if not self.has_key(name):
+            return False
+        else:
+            if arch:
+                if self[name].has_key(arch):
+                    return True
+                else:
+                    return False
+            else:
+                return True 
+         
 class RPM:
     """A RPM abstraction class"""
     filename = None       # Filename inclduing the absolute path. For e.g.: /tmp/foo.rpm

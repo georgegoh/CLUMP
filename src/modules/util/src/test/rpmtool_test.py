@@ -620,3 +620,29 @@ class TestRPMFunctions:
         assert pkgs[r3.getName()][r3.getArch()] == r3
 
 
+class TestRPMCollection:
+    """Test for RPM Collection object"""
+
+    def testAdd(self):
+        c = rpmtool.RPMCollection()
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        c.add(r1)
+
+        r2 = c['openoffice.org-xsltfilter']['i386'][0]
+        assert r1 == r2
+
+    def testList(self):
+        c = rpmtool.RPMCollection()
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        c.add(r1)
+
+        assert r1 == c.getList()[0]
+
+    def testRPMExists(self):
+        c = rpmtool.RPMCollection()
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        c.add(r1)
+
+        assert c.RPMExists('openoffice.org-xsltfilter')
+        assert c.RPMExists('openoffice.org-xsltfilter', 'i386')
+        

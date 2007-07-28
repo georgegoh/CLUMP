@@ -22,6 +22,7 @@ class CommandFailedToRunError(KusuError): pass
 class UserExitError(KusuError): pass
 class UnknownDeviceError(KusuError): pass
 class NotImplementedError(KusuError): pass
+class UnsupportedURIError(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass
