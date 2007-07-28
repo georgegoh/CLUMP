@@ -21,9 +21,10 @@ from kusu.util.structure import Struct
 class RPMCollection(Struct):
     def __init__(self):
         Struct.__init__(self)
-        self.rlist = []
 
     def add(self, r):
+        """Add a rpmtool.RPM object into the collection"""
+
         name = r.getName()
         arch = r.getArch()
 
@@ -35,21 +36,23 @@ class RPMCollection(Struct):
             self[name][arch] = []
 
         self[name][arch].append(r)
-        self.rlist.append(r)
 
     def sort(self):
+        """Sort the collection"""
+
         for name, val in self.items():
-            if name not in ['rlist']:
-                for arch in val.keys():
-                    self[name][arch].sort()
+            for arch in val.keys():
+                self[name][arch].sort()
 
     def getList(self):
         """Returns a list of rpms"""
-        return self.rlist
 
-    def getDictionary(self):
-        return self
-         
+        listing = []
+        for val in self.values():
+            for r in val.values():
+                listing.extend(r)
+        return listing
+
     def RPMExists(self, name, arch=None):
         """Checks whether a rpm exists"""
 
