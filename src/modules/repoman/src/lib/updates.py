@@ -116,14 +116,8 @@ class YumUpdate(BaseUpdate):
                             c.add(r)
 
         c.sort()
+        return c.getList()
 
-        latest = []        
-        for val in c.values():
-            for listing in val.values():
-                latest.append(listing[0])
-
-        return latest
- 
 class RHNUpdate(BaseUpdate):
     def __init__(self, dbs, os_version, os_arch, username, password, prefix=None):
         BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch)

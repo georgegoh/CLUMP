@@ -17,5 +17,6 @@ setup(name="kusu-repoman",
       description="Repoman for Kusu.",
       packages = ['repoman'],
       package_dir={'repoman': 'src/lib'},
-      scripts=['src/bin/repoman']
+      scripts=['src/bin/repoman'],
+      data_files=[('etc', ['src/etc/updates.conf'])] 
      )
