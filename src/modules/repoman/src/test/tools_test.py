@@ -177,8 +177,7 @@ class TestTools:
 
             node.delete()
             node.save()
-            node.flush(
-)
+            node.flush()
         ng.delete()
         ng.flush()
 
@@ -203,13 +202,28 @@ class TestTools:
         assert tools.getKits(self.dbs, 'installer nodegroup') == ['fedora-6-i386', 'base']
 
     def testGetOS(self):
-        global prefix
-    
         os_name, os_version, os_arch = tools.getOS(self.dbs, 'installer nodegroup')
     
         assert os_name == 'fedora'
         assert os_version == '6'
         assert os_arch == 'i386'
 
-    
+    def testGetFileFromWeb(self):
+        url = 'http://www.osgdc.org/pub/build/tests/modules/repoman/comps.xml'
+        
+        content = None
+        content = tools.getFile(url)
+
+        assert content
+
+    def testGetFileFromFile(self):
+        p = prefix / 'touchme'
+        f = open(p, 'w')
+        f.write('touch me again')
+        f.close()
+                
+        content = None
+        content = tools.getFile(str(p))
+
+        assert content
 

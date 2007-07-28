@@ -10,6 +10,8 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 import sqlalchemy as sa
+import urlparse
+import urllib2
 
 def repoExists(dbs, repoid):
     """Checks whether a repo exists"""
@@ -97,4 +99,21 @@ def getKits(dbs, ngname):
 
     return kits.values()
 
+def getFile(uri):
+    schema, ignore, p, ignore, ignore = urlparse.urlsplit(uri)
 
+    if schema in ['http', 'ftp']:
+        f = urllib2.urlopen(uri) 
+        content = f.read()
+        f.close()
+
+    elif schema in ['file', '']:
+        # '' to assume just a path
+        f = open(p, 'r')
+        content = f.read()
+        f.close()
+
+    else:
+        raise UnsupportedURIError, uri
+
+    return content
