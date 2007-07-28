@@ -8,7 +8,6 @@
 #
 
 import cElementTree
-import urllib2
 import md5
 import sha
 import gzip
@@ -17,19 +16,21 @@ from path import path
 
 from kusu.util import rpmtool
 from kusu.util.errors import *
+from kusu.repoman import tools
 
 class YumRepo:
 
-    repo = {}
-    primary = {}
-
     def __init__(self, uri):
         self.uri = uri
+        self.repo = {}
+        self.primary = {}
 
     def getRepoMD(self):
+        """Get the repodata index file"""
+
         repomd = self.uri + '/repodata/repomd.xml'
 
-        f = open(repomd, 'r')
+        f = StringIO.StringIO(tools.getFile(repomd))
         for event, elem in cElementTree.iterparse(f): 
             if self.cleanNS(elem) == 'data':
                 type = elem.get('type')
@@ -55,17 +56,22 @@ class YumRepo:
         return self.repo
 
     def getPrimary(self):
+        """Get the primary list from repodata"""
+
         if not self.repo:
             self.getRepoMD()
 
         primaryFile = self.uri + '/' + self.repo['primary']['location']
-
+        
         checksumType = self.repo['primary']['checksum'][0]
         checksum = self.repo['primary']['checksum'][1]
 
         if self.getCheckSum(checksumType, primaryFile) == checksum:
-            blob = StringIO.StringIO(gzip.open(primaryFile).read())
+            blob = StringIO.StringIO(gzip.GzipFile(fileobj=StringIO.StringIO(tools.getFile(primaryFile))).read())
+
+            checksumType = self.repo['primary']['open-checksum'][0]
             checksum = self.repo['primary']['open-checksum'][1]
+
             if self.getCheckSum(checksumType, blob) == checksum:
                 blob.seek(0)
                 for event, elem in cElementTree.iterparse(blob): 
@@ -117,14 +123,17 @@ class YumRepo:
             return tag.split('}')[1]
 
     def getCheckSum(self, checksumType, file):
+        """Get the md5 or sha checksum from a file object 
+           The file param can be a regular filename, URI, a StringIO 
+           object, or any other object which simulates a file."""
+
         blksize = 1024
 
-        if type(file) == str:
-            f = open(file, 'rb', blksize)
-        elif isinstance(file, StringIO.StringIO):
-            f = file
+        if type(file) in [str, unicode]:
+            #f = open(file, 'rb', blksize)
+            f = StringIO.StringIO(tools.getFile(file))
         else:
-            raise UnknownTypeError
+            f = file
         
         if checksumType == 'md5':
             sum = md5.new()
@@ -137,3 +146,6 @@ class YumRepo:
             sum.update(block)
 
         return sum.hexdigest()
+
+
+
