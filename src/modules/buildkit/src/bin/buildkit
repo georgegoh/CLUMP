@@ -124,8 +124,20 @@ class BuildKit:
         """
         tmpl = getBuildKitTemplate()
         ns = {}
-        # FIXME: currently hardcoded to fedora 6!
-        ns['compclass'] = 'Fedora6Component()'
+
+        # get this system's distro and version
+        dist = os.environ.get('KUSU_DIST','')
+        distver = os.environ.get('KUSU_DISTVER','')
+        if dist == 'fedora' and distver == '6':
+            compclass = 'Fedora6Component()'
+        elif dist == 'centos' and distver == '5':
+            compclass = 'Centos5Component()'
+        elif dist == 'rhel' and distver == '5':
+            compclass == 'RHEL5Component()'
+        else:
+            compclass = 'DefaultComponent()'
+
+        ns['compclass'] = compclass
         ns['compname'] = defaultname
         ns['kitclass'] = 'DefaultKit()'
         ns['kitname'] = defaultname
