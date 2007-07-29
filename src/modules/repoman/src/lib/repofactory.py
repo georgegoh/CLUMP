@@ -19,7 +19,7 @@ class RepoFactory(object):
                    'centos' : {'5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo} }
 
-    def __init__(self, db, prefix='/', debug=False):
+    def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.
 
            Accepts the following arguments:
@@ -28,7 +28,7 @@ class RepoFactory(object):
         """
         self.db = db
         self.prefix = path(prefix)
-        self.debug = debug
+        self.test = test
 
     def make(self, ngname, reponame=None):
         """Creates and make a new repository"""
@@ -50,7 +50,7 @@ class RepoFactory(object):
 
             os_name, os_version, os_arch = tools.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-            r.debug = self.debug
+            r.test = self.test
 
             r.repo_path = r.getRepoPath(repoid)
             r.repoid = repoid     
@@ -67,7 +67,7 @@ class RepoFactory(object):
             # Make a new repo
             os_name, os_version, os_arch = tools.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-            r.debug = self.debug
+            r.test = self.test
             r.make(ngname)
 
         return r
@@ -104,7 +104,7 @@ class RepoFactory(object):
             
             os_name, os_version, os_arch = tools.getOS(self.db, repoid)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-            r.debug = self.debug
+            r.test = self.test
             r = r.refresh(repoid)
 
         else:
@@ -123,7 +123,7 @@ class RepoFactory(object):
 
                 os_name, os_version, os_arch = tools.getOS(self.db, repoid)
                 r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-                r.debug = self.debug
+                r.test = self.test
                 r = r.refresh(repoid)
 
             else:

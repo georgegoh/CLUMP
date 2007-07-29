@@ -9,9 +9,8 @@
 
 from kusu.util.errors import *
 from kusu.core import database as db
+from path import path
 import sqlalchemy as sa
-import urlparse
-import urllib2
 
 def repoExists(dbs, repoid):
     """Checks whether a repo exists"""
@@ -100,6 +99,9 @@ def getKits(dbs, ngname):
     return kits.values()
 
 def getFile(uri):
+    import urlparse
+    import urllib2
+
     schema, ignore, p, ignore, ignore = urlparse.urlsplit(uri)
 
     if schema in ['http', 'ftp']:
@@ -117,3 +119,27 @@ def getFile(uri):
         raise UnsupportedURIError, uri
 
     return content
+
+def getConfig(file):
+    import ConfigParser
+
+    if not path(file).exists():
+        raise FileDoesNotExistError, file
+
+    configParser = ConfigParser.ConfigParser()
+    configParser.read(file)
+    
+    cfg = {}
+    sections = configParser.sections()
+
+    for sec in sections:
+        if sec in ['fedora', 'centos', 'rhel']:
+            cfg[sec] = {}
+            for opt in configParser.items(sec):
+               key = opt[0]
+               value = opt[1]
+
+               cfg[sec][key] = value
+
+    return cfg
+ 

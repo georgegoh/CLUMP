@@ -185,7 +185,7 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         repoid = str(r.repoid)
@@ -199,7 +199,7 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         repoid = str(r.repoid)
@@ -213,7 +213,7 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
@@ -223,7 +223,7 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
@@ -245,7 +245,7 @@ class TestRedhat5Repo:
         global prefix
  
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         assert r.ostype == 'rhel-5-i386'
@@ -254,7 +254,7 @@ class TestRedhat5Repo:
         global prefix
  
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         assert self.dbs.Repos.get(r.repoid).installers == ';'.join([self.masterIP1, self.masterIP2])
@@ -263,7 +263,7 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         repoid = str(r.repoid)
@@ -273,12 +273,12 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = r.repoid
   
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -291,12 +291,12 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = r.repoid
  
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -306,12 +306,12 @@ class TestRedhat5Repo:
         global prefix
 
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = r.repoid
  
         r = repo.Redhat5Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.refresh(repoid)
 
         repoid = str(r.repoid)

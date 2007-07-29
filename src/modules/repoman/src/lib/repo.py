@@ -10,6 +10,7 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 from kusu.repoman import tools
+from kusu.repoman.updates import YumUpdate, RHNUpdate
 from path import path
 from Cheetah.Template import Template
 import sqlalchemy as sa
@@ -27,7 +28,7 @@ class BaseRepo(object):
     repo_path = None
     os_path = None
     repoid = None
-    debug = False
+    test = False
     ostype = None
 
     def __init__(self, prefix, db):
@@ -76,7 +77,7 @@ class BaseRepo(object):
         masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
 
         return [nic.ip for nic in masterNode.nics if nic.ip]
-    
+   
     def UpdateDatabase(self, ngname):
 
         """Update the database with the new repository""" 
@@ -255,7 +256,7 @@ class RedhatYumRepo(BaseRepo):
             kusu_root = 'opt/kusu' 
 
         # Testing mode
-        if self.debug:
+        if self.test:
             # ignore $KUSU_ROOT, since prefix is some random temp dir 
             # during testing and updates.img will not be present.
             src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
@@ -277,7 +278,7 @@ class RedhatYumRepo(BaseRepo):
             kusu_root = 'opt/kusu' 
 
         # Testing mode
-        if self.debug:
+        if self.test:
             src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
         else:
@@ -411,20 +412,51 @@ class RedhatYumRepo(BaseRepo):
  
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
-class Fedora6Repo(RedhatYumRepo):
-    def __init__(self, os_arch, prefix, db):
+class Fedora6Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix, db)
         
+        self.configFile=configFile
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora/RPMS'
         self.dirlayout['basedir'] = 'Fedora/base'
-     
-class Centos5Repo(RedhatYumRepo):
-    def __init__(self, os_arch, prefix, db):
+
+    def getSources(self):
+        kits = self.dbs.Kits.select_by(rname=self.os_name,
+                                       version=self.os_version,
+                                       arch=self.os_arch)
+
+        if kits:
+            return [path(os.path.join(prefix, 'depot', 'kits', \
+                                      self.os_name, self.os_version, self.os_arch, \
+                                      self.dirlayout['rpmsdir']))]
+        else:
+            return []
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['fedora']['url'])
+            else:
+                baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+
+        core = str(baseurl / 'core' / '6' / self.os_arch / 'os')
+        updates = str(baseurl / 'core' / 'updates' / '6' / self.os_arch )
+
+        return [core,updates]
+
+class Centos5Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'centos', '5', os_arch, prefix, db)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
@@ -432,8 +464,48 @@ class Centos5Repo(RedhatYumRepo):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'CentOS'
  
+    def getOSMajorVersion(self, os_version):
+        """Returns the major number"""
+        return os_version.split('.')[0]
+
+    def getSources(self):
+        kits = self.dbs.Kits.select_by(rname=self.os_name,
+                                       arch=self.os_arch)
+        
+        if not kits:
+            return []
+
+        if len(kits) == 1:
+            min_version = kits[0].version 
+        else:
+            min_version = '5.999'
+
+            for kit in kits:
+                if self.getOSMajorVersion(kit.version) == '5' and kit.version < min_version:
+                    min_version = kit.version
+
+        return [path(os.path.join(prefix, 'depot', 'kits', \
+                                  self.os_name, min_version, self.os_arch, \
+                                  self.dirlayout['rpmsdir']))]
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://mirror.centos.org/centos')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['centos']['url'])
+            else:
+                baseurl = path('http://mirror.centos.org/centos')
+
+        os = str(baseurl / '5' / 'os' / self.os_arch)
+        updates = str(baseurl / '5' / 'updates' / self.os_arch)
+        
+        return [os,updates]
+
+
 class Redhat5Repo(RedhatYumRepo):
-    def __init__(self, os_arch, prefix, db):
+    def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'rhel', '5', os_arch, prefix, db)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
@@ -447,6 +519,28 @@ class Redhat5Repo(RedhatYumRepo):
         self.dirlayout['cluster.repodatadir'] = 'Cluster/repodata'
         self.dirlayout['clusterstorage.repodatadir'] = 'ClusterStorage/repodata'
         self.dirlayout['vt.repodatadir'] = 'VT/repodata'
+
+    def getSources(self):
+        kits = self.dbs.Kits.select_by(rname=self.os_name,
+                                       arch=self.os_arch)
+
+        if not kits:
+            return []
+
+        if len(kits) == 1:
+            min_version = kits[0].version 
+        else:
+            min_version = '5.999'
+
+            for kit in kits:
+                if self.getOSMajorVersion(kit.version) == '5' and kit.version < min_version:
+                    min_version = kit.version
+
+        return [path(os.path.join(prefix / 'depot', 'kits', self.os_name, min_version, self.os_arch, p))
+                for p in [self.dirlayout['server.rpmsdir'],
+                          self.dirlayout['cluster.rpmsdir'],
+                          self.dirlayout['clusterstorage.rpmsdir'],
+                          self.dirlayout['vt.rpmsdir']]]
 
     def copyKitsPackages(self):
         # Need a better method for this

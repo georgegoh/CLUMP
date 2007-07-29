@@ -13,59 +13,57 @@ from path import path
 from kusu.util import rpmtool
 from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
-from kusu.repoman.tools import getFile
+from kusu.repoman.tools import getFile, getConfig
 from kusu.util.errors import NotImplementedError, InvalidRPMHeader
 
 class BaseUpdate:
-    def __init__(self, os_name, os_version, os_arch, debug=False):
+    def __init__(self, os_name, os_version, os_arch):
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
-        self.debug = debug
         
     def getLatestRPM(self, dirs=[]):
         """Returns a list of the latest rpms"""
         return rpmtool.getLatestRPM(dirs, ignoreErrors=True)
 
-    def getUpdates(self, dir):
+    def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
         raise NotImplementedError
 
-    def getOSPath(self):
-        """Return the path of the oldest OS"""
+    def getSources(self):
+        """Return the path of sources to compare against mirror"""
         raise NotImplementedError
+
+    def getConfig(self, configFile):
+        """Returns the configuration"""
+        return getConfig(configFile)
 
 class YumUpdate(BaseUpdate):
-    def __init__(self, dbs, os_name, os_version, os_arch, uri = [], prefix=None):
+    def __init__(self,os_name, os_version, os_arch, prefix, dbs):
         BaseUpdate.__init__(self, os_name, os_version, os_arch)
         self.dbs = dbs
-        self.uri = uri
 
-    def getOSPath(self):
-        return path(os.path.join('/depot', 'kits', self.os_name, self.os_version, self.os_arch))
-       
-    def getUpdates(self, dir):
-        """Gets the updates and writes them into the destination dir"""
-     
-        if not dir:
-            dir = path('/depot/updates') / self.os_name / self.os_version / self.os_arch
-
-            if not dir.exists():
-                dir.makedirs()
-        else:
-            dir = path(dir)
-
-        # Check whether the OS kit has been added
-        osPath = self.getOSPath()
-        if osPath.exists():
-            # Look into the OS and updates dir
-            rpmPkgs = rpmtool.getLatestRPM([osPath, dir])
-        else:    
-            # Just look at the updates dir
-            rpmPkgs = rpmtool.getLatestRPM([dir])
+    def getURI(self):
+        raise NotImplementedError
         
+    def getUpdates(self):
+        """Gets the updates and writes them into the destination dir"""
+    
+        dir = path(prefix) / 'depot' / 'updates' / self.os_name / self.os_version / self.os_arch
+        if not dir.exists():
+            dir.makedirs()
+
+        # Get the latest list of rpms from os kits and the
+        # updates dir
+        searchPaths = []
+        for p in self.getSources():
+            if path(p).exists():
+                searchPaths.append(p)
+        searchPaths.append(dir)
+        rpmPkgs = rpmtool.getLatestRPM(searchPaths)
+    
         primarys = {}
-        for u in self.uri:
+        for u in self.getURI():
             primarys[u] = YumRepo(u).getPrimary()
 
         downloadPkgs = []
@@ -119,36 +117,22 @@ class YumUpdate(BaseUpdate):
         return c.getList()
 
 class RHNUpdate(BaseUpdate):
-    def __init__(self, dbs, os_version, os_arch, username, password, prefix=None):
+    def __init__(self, dbs, os_version, os_arch, username, password, prefix):
         BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch)
         self.dbs = dbs
         self.rhn = RHN(username, password)
-
+        
+        # read config or something self.rhn =  
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
         return os_version.split('.')[0]
 
-    def getOSPath(self):
-        kits = self.dbs.Kits.select_by(rname=self.os_name,
-                                       arch=self.os_arch)
-
-        min_version = self.os_version
-        for kit in kits:
-            if self.getOSMajorVersion(kit.version) < min_version:
-                min_version = kit.version
-
-        return path(os.path.join('/depot', 'kits', self.os_name, min_version, self.os_arch))
-
-    def getUpdates(self, dir=None):
+    def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
 
-        if not dir:
-            dir = path('/depot/updates') / self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
-
-            if not dir.exists():
-                dir.makedirs()
-        else:
-            dir = path(dir)
+        dir = path(prefix) / 'depot' / 'updates' / self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
+        if not dir.exists():
+            dir.makedirs()
 
         # Check whether the OS kit has been added
         osPath = self.getOSPath()

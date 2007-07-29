@@ -171,7 +171,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
@@ -184,7 +184,7 @@ class TestFedora6Repo:
         global prefix
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         assert r.ostype == 'fedora-6-i386'
@@ -193,7 +193,7 @@ class TestFedora6Repo:
         global prefix
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         assert self.dbs.Repos.get(r.repoid).installers == ';'.join([self.masterIP1, self.masterIP2])
@@ -202,7 +202,7 @@ class TestFedora6Repo:
         global prefix
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         repoid = str(r.repoid)
@@ -212,7 +212,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
 
         repoid = str(r.repoid)
@@ -226,7 +226,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
@@ -236,7 +236,7 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = str(r.repoid)
 
@@ -258,11 +258,11 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.make('installer nodegroup')
-        r.debug = True
+        r.test = True
         repoid = r.repoid
   
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.delete(repoid)
         
         depot = prefix / 'depot'    
@@ -276,11 +276,11 @@ class TestFedora6Repo:
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.make('installer nodegroup')
-        r.debug = True
+        r.test = True
         repoid = r.repoid
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.clean(repoid)
  
         depot = prefix / 'depot'    
@@ -290,12 +290,12 @@ class TestFedora6Repo:
         global prefix
 
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.make('installer nodegroup')
         repoid = r.repoid
  
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
-        r.debug = True
+        r.test = True
         r.refresh(repoid)
 
         repoid = str(r.repoid)
