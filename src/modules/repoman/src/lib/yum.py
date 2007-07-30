@@ -66,8 +66,11 @@ class YumRepo:
         checksumType = self.repo['primary']['checksum'][0]
         checksum = self.repo['primary']['checksum'][1]
 
+        primaryFile = StringIO.StringIO(tools.getFile(primaryFile))
+
         if self.getCheckSum(checksumType, primaryFile) == checksum:
-            blob = StringIO.StringIO(gzip.GzipFile(fileobj=StringIO.StringIO(tools.getFile(primaryFile))).read())
+            primaryFile.seek(0)
+            blob = StringIO.StringIO(gzip.GzipFile(fileobj=primaryFile).read())
 
             checksumType = self.repo['primary']['open-checksum'][0]
             checksum = self.repo['primary']['open-checksum'][1]
