@@ -93,17 +93,17 @@ class RepoManApp(KusuApp):
                 repo.kits = rtools.getKits(self.dbs, ngs[0].ngname)
                 repo.save()
                 repo.flush()
-                r = self.rfinst.refresh(ngs[0].ngname)
+                r = self.rfinst.refresh(ngname = ngs[0].ngname)
 
             else:
                 for ng in ngs:
                     kits = rtools.getKits(self.dbs, ng.ngname)
 
                     if len(repo.kits) != len(kits):
-                        r = self.rfinst.refresh(ng.ngname)
+                        r = self.rfinst.refresh(ngname = ng.ngname)
 
                     elif sorted(repo.kits) != sorted(kits):
-                        r = self.rfinst.refresh(ng.ngname)
+                        r = self.rfinst.refresh(ngname = ng.ngname)
 
                     else:
                         continue

@@ -227,3 +227,23 @@ class TestTools:
 
         assert content
 
+    def testRepoInUse(self):
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.repoid = None
+        ng.save()
+        ng.flush()
+
+        assert not tools.repoInUse(self.dbs, r.repoid)
+    
+    def testRepoInUseTrue(self):
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        assert tools.repoInUse(self.dbs, r.repoid)
+    
+

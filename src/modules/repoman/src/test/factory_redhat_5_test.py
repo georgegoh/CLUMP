@@ -253,7 +253,7 @@ class TestRedhat5Repo:
         r = rfactory.make('installer nodegroup')
         repoid = r.repoid
  
-        r = rfactory.refresh('installer nodegroup')
+        r = rfactory.refresh(ngname='installer nodegroup')
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
@@ -265,7 +265,7 @@ class TestRedhat5Repo:
         r = rfactory.make('installer nodegroup')
         repoid = r.repoid
  
-        r = rfactory.refresh('installer nodegroup')
+        r = rfactory.refresh(ngname='installer nodegroup')
 
         assert repoid == r.repoid
         
@@ -294,7 +294,7 @@ class TestRedhat5Repo:
         ng.save()  
         ng.flush()
 
-        r = rfactory.refresh('installer nodegroup')
+        r = rfactory.refresh(ngname='installer nodegroup')
 
         # Only 1 nodegroup uses the same repoid
         assert repoid == r.repoid
@@ -332,10 +332,152 @@ class TestRedhat5Repo:
         ng.save()  
         ng.flush()
 
-        r = rfactory.refresh('installer nodegroup 2')
+        r = rfactory.refresh(ngname='installer nodegroup 2')
 
         assert repoid != r.repoid
      
+    def testRefreshRepoWithNGType(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid
+ 
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        for r in repos:
+            repoid = str(r.repoid)
+            self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+
+    def testRefreshUseSameRepoWithNGType(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid
+ 
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        assert repoid == repos[0].repoid
+        
+    def testRefreshUseSameRepo2WithNGType(self):
+        # New component added to the existing nodegrouip. Since
+        # only 1 nodegroup is affected, repo will be refreshed
+
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repoid = r.repoid
+
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        # Only 1 nodegroup uses the same repoid
+        assert repoid == repos[0].repoid
+  
+    def testRefreshUseDifferentRepoWithNGType(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
+        installer.components = self.dbs.Components.select()
+        installer.save()
+        installer.flush()
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup 2')
+        repoid = r.repoid
+        
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup 2')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        assert len(repos) == 2
+        assert repoid != self.dbs.NodeGroups.select_by(ngname='installer nodegroup')[0].repoid
+        assert repoid == self.dbs.NodeGroups.select_by(ngname='installer nodegroup 2')[0].repoid
+
+        for r in repos:
+            assert r.repoid in [self.dbs.NodeGroups.select_by(ngname='installer nodegroup')[0].repoid,
+                                self.dbs.NodeGroups.select_by(ngname='installer nodegroup 2')[0].repoid]
+
+    def testRefreshWithOldRepoDeletedWithNGType(self):
+        global prefix
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
+        installer.components = self.dbs.Components.select()
+        installer.save()
+        installer.flush()
+
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup 2')
+        repoid = r.repoid
+        
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup 2')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+        
+        repos = rfactory.refresh(ngtype=['installer'])
+
+        assert len(repos) == 2
+        assert repos[0].repoid == repos[1].repoid
+        assert not self.dbs.Repos.get(repoid)
 
 
 

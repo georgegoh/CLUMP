@@ -47,22 +47,14 @@ class RepoFactory(object):
             ng.repoid = repoid
             ng.save()
             ng.flush()
-
+   
             os_name, os_version, os_arch = tools.getOS(self.db, ngname)
             r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
             r.test = self.test
 
             r.repo_path = r.getRepoPath(repoid)
-            r.repoid = repoid     
- 
-            # Ensure patch files and autoinstall script is generated.
-            #
-            # This is in the case when the master installer
-            # has prepared the repository but the tempaltes are not 
-            # available then. This autoinstsall script is needed
-            # for compute nodes that are using the same repository
-            r.copyKusuNodeInstaller()
-            r.makeAutoInstallScript()
+            r.repoid = repoid
+            self.refreshScripts(r)
         else:
             # Make a new repo
             os_name, os_version, os_arch = tools.getOS(self.db, ngname)
@@ -80,62 +72,19 @@ class RepoFactory(object):
     #def clean(self, ngname):
     #    pass
 
-    def refresh(self, ngname):
+    def refresh(self, **kwargs):
         """Refresh the repository"""
 
-        if not tools.nodeGroupExists(self.db, ngname):
-            raise NodeGroupNotFoundError, ngname
-
-        if not tools.repoForNodeGroupExists(self.db, ngname):
-            raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
-
-        repoid = tools.getRepoFromNodeGroup(self.db, ngname)
-        ngs = self.db.NodeGroups.select_by(repoid = repoid)
-
-        if ngs:
-            # All nodegroups uses the same repo
-            ng = ngs[0] 
+        if len(kwargs) != 1:
+            raise InvalidArguements, 'More than 1 argument specified'
+        
+        if kwargs.has_key('ngname'):
+            return self._refreshNgname(kwargs['ngname'])
+        elif kwargs.has_key('ngtype'):
+            return self._refreshNgtype(kwargs['ngtype'])
         else:
-            raise KusuError # This should not happen at all 
+            raise InvalidArguements, 'Invalid arguments keyword'
 
-        if ng.ngname == ngname:
-            # Only 1 nodegroup uses that repo, meaning itself
-            # Just do a refresh
-            
-            os_name, os_version, os_arch = tools.getOS(self.db, repoid)
-            r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-            r.test = self.test
-            r = r.refresh(repoid)
-
-        else:
-            # Not the same nodegroup
-            # Determine whether a new repo is needed, i.e.
-            # not the same anymore
-            oldKits = tools.getKits(self.db, ng.ngname) 
-            newKits = tools.getKits(self.db, ngname)
-
-            oldKits.sort()
-            newKits.sort()
-
-            if len(oldKits) == len(newKits) and \
-               oldKits == newKits:
-                # No change
-
-                os_name, os_version, os_arch = tools.getOS(self.db, repoid)
-                r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-                r.test = self.test
-                r = r.refresh(repoid)
-
-            else:
-                # New repo needed
-                ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
-                ng.repoid = None
-                ng.save()
-                ng.flush()
-                r = self.make(ngname)
-
-        return r
-            
     def refreshAll(self):
         """Refresh all the repositories"""
         pass
@@ -144,7 +93,7 @@ class RepoFactory(object):
         """Delete the repository from the database and local disk"""
     
         if not tools.repoExists(self.db, repoid):
-            raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
+            raise RepoNotCreatedError, repoid
 
         ngs = self.db.NodeGroups.select_by(repoid = repoid)    
 
@@ -164,7 +113,6 @@ class RepoFactory(object):
     def snapshotAll(self):
         """Makes snapshots for all nodegroups"""
         pass
-
 
     def getBestRepo(self, ngname):
         """Get a repo that uses the same set of kits"""
@@ -198,4 +146,104 @@ class RepoFactory(object):
                 return repoid
 
         return None
- 
+
+    def refreshScripts(self, repoObj):
+        # Ensure patch files and autoinstall script is generated.
+        #
+        # This is in the case when the master installer
+        # has prepared the repository but the templates are not 
+        # available then. This autoinstsall script is needed
+        # for compute nodes that are using the same repository
+        repoObj.copyKusuNodeInstaller()
+        repoObj.makeAutoInstallScript()
+
+    def _refreshNgtype(self, ngtypes=[]):
+
+        repos = {}
+        for ngtype in ngtypes:
+            ngs = self.db.NodeGroups.select_by(type = ngtype)
+            for ng in ngs:
+                if ng.repoid:
+                    if not repos.has_key(ng.repoid):
+                        repos[ng.repoid] = []
+                    repos[ng.repoid].append(ng.ngname)
+
+        reposList = []
+        for repoid, val in repos.items():
+            for ngname in val:
+                r = self._refreshNgname(ngname)
+                reposList.append(r)
+
+        return reposList
+
+    def _refreshNgname(self, ngname):
+        if not tools.nodeGroupExists(self.db, ngname):
+            raise NodeGroupNotFoundError, ngname
+
+        if not tools.repoForNodeGroupExists(self.db, ngname):
+            raise RepoNotCreatedError, 'repo not created for \'%s\'' % ngname
+
+        repoid = tools.getRepoFromNodeGroup(self.db, ngname)
+        oldRepoID = repoid
+        ngs = self.db.NodeGroups.select_by(repoid = repoid)
+
+        if len(ngs) == 1:
+            ng = ngs[0]
+
+            repoid  = self.getBestRepo(ng.ngname)
+
+            if repoid:
+                ng.repoid = repoid
+                ng.save()
+                ng.flush()
+                
+                os_name, os_version, os_arch = tools.getOS(self.db, ngname)
+                r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                r.test = self.test
+
+                r.repo_path = r.getRepoPath(repoid)
+                r.repoid = repoid
+                self.refreshScripts(r)
+            else:
+                os_name, os_version, os_arch = tools.getOS(self.db, oldRepoID)
+                r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                r.test = self.test
+                r = r.refresh(oldRepoID)
+
+        else:
+            # Filter out the current ngname, other nodegroups
+            # are using the same repo
+            ngs = [ng for ng in ngs if ng.ngname != ngname]
+            ng = ngs[0] # Take the 1st one, since all using same repo 
+
+            # Determine whether a new repo is needed, i.e.
+            # not the same anymore
+            oldKits = tools.getKits(self.db, ng.ngname) 
+            newKits = tools.getKits(self.db, ngname)
+
+            oldKits.sort()
+            newKits.sort()
+
+            if len(oldKits) == len(newKits) and \
+               oldKits == newKits:
+                # No change
+
+                os_name, os_version, os_arch = tools.getOS(self.db, repoid)
+                r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                r.test = self.test
+                r = r.refresh(repoid)
+
+            else:
+                # New repo needed or can use another repo.
+                ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
+                ng.repoid = None
+                ng.save()
+                ng.flush()
+                r = self.make(ngname)
+
+        if tools.repoExists(self.db, oldRepoID) and \
+           not tools.repoInUse(self.db, oldRepoID):
+            self.delete(oldRepoID)
+
+        return r
+       

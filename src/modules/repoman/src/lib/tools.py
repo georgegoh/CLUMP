@@ -55,6 +55,14 @@ def getRepoFromNodeGroup(dbs, ngname):
     else:
         return None
 
+def repoInUse(dbs, repoid):
+    ngs = dbs.NodeGroups.select_by(repoid = repoid)
+    
+    if ngs:
+        return True
+    else:
+        return False
+         
 def getOS(dbs, repoid_or_ngname):
     """Returns OS (rname, version, arch) tuple from database 
        based on the repoid or nodegroup name"""
