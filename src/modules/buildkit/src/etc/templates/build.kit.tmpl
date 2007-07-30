@@ -13,6 +13,7 @@
 # define a default component
 comp = $compclass
 comp.name = '$compname'
+comp.description = '$compdesc'
 
 # Add any packages defined earlier by using the comp.addDep method
 #comp.addDep(pkg1)
@@ -20,6 +21,7 @@ comp.name = '$compname'
 # define a default kit
 k = $kitclass
 k.name = '$kitname'
+k.description = '$kitdesc'
 
 # Adding the component defined earlier
 k.addComponent(comp)

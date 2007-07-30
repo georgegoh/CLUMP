@@ -164,6 +164,7 @@ class KusuComponent(Struct):
         _ns['name'] = self.name
         _ns['arch'] = self.arch
         _ns['dependencies'] = self.dependencies
+        _ns['description'] = self.description
 
         return _ns
         
@@ -243,6 +244,8 @@ class KusuKit(Struct):
         _ns['pkgversion'] = self.version
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license
+        _ns['description'] = self.description
+        
         
         return _ns
 

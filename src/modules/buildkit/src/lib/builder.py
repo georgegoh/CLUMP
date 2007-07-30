@@ -14,14 +14,35 @@ import string
 import os
 import pwd
 from kusu.util.tools import cpio_copytree
-from kusu.util.errors import FileDoesNotExistError
+from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined
 from kusu.util.structure import Struct
 
-SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2']
+SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2','.zip','.tar']
+SUPPORTED_DISTROPKG_EXT = ['.src.rpm','.rpm','.srpm','.deb']
 
 def genrandomstr(length=8):
     chars = string.letters + string.digits
     return ''.join([choice(chars) for i in range(length)])
+    
+def derivePackageNVR(filenamestr):
+    """ Tries to derive the name, version and release out of the filenamestr or
+        returns tuple containing empty strings.
+    """
+    if not filenamestr: return ('','','')
+
+    # let's just get the essentials
+    EXTS = SUPPORTED_DISTROPKG_EXT + SUPPORTED_TARFILES_EXT
+
+    li = [filenamestr.split(ext) for ext in EXTS if filenamestr.endswith(ext)]
+    if not li: return ('','','')
+    nvr = li[0][0]
+    li = nvr.split('-')
+
+    if len(li) > 2: return (li[0],li[1],''.join(li[2:]))
+    if len(li) > 1: return (li[0],li[1],'')
+    if len(li) == 1: return (li[0],'','')
+
+    return ('','','')
 
 def setupRPMMacrofile(buildprofile):
     """ Creates a proper .rpmmacros file for purposes of building kits. 
@@ -146,9 +167,9 @@ class PackageProfile(Struct):
         self.wrapper = wrapper
         self.verbose = kwargs.get('verbose',False)
         self.srctype = kwargs.get('srctype','')
-        self.name = kwargs.get('name','')
-        self.version = kwargs.get('version',None)
-        self.release = kwargs.get('release','0')
+        self._name = kwargs.get('name','')
+        self._version = kwargs.get('version','')
+        self._release = kwargs.get('release','0')
         self.filename = kwargs.get('filename',None)
         self.installroot = kwargs.get('installroot',None)
         self.author = kwargs.get('author','')
@@ -166,12 +187,26 @@ class PackageProfile(Struct):
         self.pkgdir = path(self.buildprofile.pkgdir)
         self.tmpdir = path(self.buildprofile.tmpdir)
         self.templatesdir = path(self.buildprofile.templatesdir)
-        self.namespace = prepareNS(self)
+
+        if self.srctype in ['srpm','rpm','binarydist','autotools']:
+            if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
+            # get the NVR from the filename if the NVR have not already been defined.
+            name,version,release = derivePackageNVR(self.filename)
+            self.name = self._name or name
+            self.version = self._version or version
+            self.release = self._release or release
+        elif self.srctype == 'distro':
+            # ensure that the name, version are defined.
+            if not self.name: raise PackageAttributeNotDefined, 'name'
+            if not self.version: raise PackageAttributeNotDefined, 'version'
 
         if not self.srctype in ['srpm','rpm','distro']:
+            
             filename = self.srcdir / self.filename
             self.fullname = getDirName(filename.basename())
             self.buildsrc = self.tmpdir / self.fullname
+
+        self.namespace = prepareNS(self)
         
         # expose the attributes to the wrapper object
         self.wrapper.update(Struct(self))
@@ -213,8 +248,9 @@ class PackageWrapper(Struct):
         Struct.__init__(self)
         
     def verify(self):
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
-        if not filename.exists(): raise FileDoesNotExistError
+        if not filename.exists(): raise FileDoesNotExistError, filename
 
     def cleanup(self):
         if not hasattr(self,'buildsrc'): return
@@ -270,8 +306,9 @@ class AutoToolsWrapper(PackageWrapper):
         
     def verify(self):
         """ Verify package is supported. """
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
-        if not filename.exists(): raise FileDoesNotExistError
+        if not filename.exists(): raise FileDoesNotExistError, filename
         if not tarfile.is_tarfile(filename): return False
         return True
         
@@ -350,8 +387,9 @@ class SRPMWrapper(PackageWrapper):
         PackageWrapper.__init__(self)
         
     def verify(self):
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
-        if not filename.exists(): raise FileDoesNotExistError
+        if not filename.exists(): raise FileDoesNotExistError, filename
         if not filename.endswith('.src.rpm') or not filename.endswith('.srpm'):
             return False
         return True
@@ -382,8 +420,9 @@ class BinaryPackageWrapper(PackageWrapper):
         
     def verify(self):
         """ Verify package is supported. """
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
-        if not filename.exists(): raise FileDoesNotExistError
+        if not filename.exists(): raise FileDoesNotExistError, filename
         if not tarfile.is_tarfile(self.filename): return False
         return True
 
@@ -424,6 +463,7 @@ class RPMWrapper(PackageWrapper):
         PackageWrapper.__init__(self)
         
     def verify(self):
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         if not path(self.srcdir / self.filename).exists() or not path(self.pkgdir / self.filename).exists():
             return False
         return True

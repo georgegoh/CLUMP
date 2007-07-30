@@ -95,6 +95,7 @@ def DefaultKit(**kwargs):
     if not 'scripts' in kwargs: kwargs['scripts'] = []
     if not 'dependencies' in kwargs: kwargs['dependencies'] = []
     if not 'components' in kwargs: kwargs['components'] = []
+    if not 'description' in kwargs: kwargs['description'] = ''
 
     kit = KusuKit(**kwargs)
 
@@ -129,6 +130,7 @@ def DefaultComponent(**kwargs):
     if not 'compversion' in kwargs: kwargs['compversion'] = '0.1'
     if not 'comprelease' in kwargs: kwargs['comprelease'] = '0'
     if not 'ngtypes' in kwargs: kwargs['ngtypes'] = ['installer','compute']
+    if not 'description' in kwargs: kwargs['description'] = ''
     
     component = KusuComponent(**kwargs)
   

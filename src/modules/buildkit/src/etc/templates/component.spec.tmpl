@@ -54,8 +54,11 @@ Requires: $dep.name >= $dep.version
 
 
 %description
+#if $varExists('description')
+$description
+#else
 $pkgname package
-
+#end if
 %prep
 
 

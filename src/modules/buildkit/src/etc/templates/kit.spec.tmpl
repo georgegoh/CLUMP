@@ -39,7 +39,11 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
 
 %description
+#if $varExists('description')
+$description
+#else
 $pkgname package
+#end if
 
 %prep
 

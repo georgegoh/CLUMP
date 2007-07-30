@@ -156,6 +156,7 @@ class UnsupportedNGType(KusuError): pass
 class UndefinedComponentInfo(KusuError): pass
 class UndefinedKitInfo(KusuError): pass
 class InvalidBuildProfile(KusuError): pass
+class PackageAttributeNotDefined(KusuError): pass
 
 # util.rpmtool
 class InvalidRPMHeader(KusuError): pass
