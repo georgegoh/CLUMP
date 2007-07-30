@@ -43,6 +43,7 @@ kit:
 	mkdir -p $(TOPDIR)/disk1/$(NAME)
 	cd $(TOPDIR)/disk1/$(NAME) ; \
 	for i in $(RPMS); do ln -sf $$i; done 
+	ln -sf $(TOPDIR)/kitinfo $(TOPDIR)/disk1/$(NAME)/kitinfo
 	mkisofs -quiet -V "Base Kit" -r -T -f -o kit-$(NAME)-$(VERSION)-$(RELEASE).noarch.iso disk1
 
 clean:
