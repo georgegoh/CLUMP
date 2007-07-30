@@ -543,11 +543,10 @@ class DiskProfile(object):
         if size_MB == partition_obj.size_MB:
             partition_obj.mountpoint = mountpoint
             partition_obj.fs_type = fs_type
-            return
+            return partition_obj
 
-        size = size_MB * 1024 * 1024
         backup_disk_id = basename(partition_obj.disk.path)
-        backup_size = partition_obj.size
+        backup_size = partition_obj.size_MB
         backup_fs_type = partition_obj.fs_type
         backup_mountpoint = partition_obj.mountpoint
 
@@ -557,7 +556,7 @@ class DiskProfile(object):
                      str(partition_obj.disk.partition_dict.keys()))
         try:
             edited_partition = self.newPartition(backup_disk_id,
-                                                 size,
+                                                 size_MB,
                                                  fixed_size,
                                                  fs_type,
                                                  mountpoint)

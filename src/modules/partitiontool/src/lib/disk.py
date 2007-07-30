@@ -240,7 +240,7 @@ class Disk(object):
         # ... then we re-add the partitions.
         for part_details in partitions_to_move:
             new_partition = self.profile.newPartition(disk_id=basename(self.path),
-                                                      size=part_details[0],
+                                                      size_MB=part_details[0],
                                                       fixed_size=False,
                                                       fs_type=part_details[1],
                                                       mountpoint=part_details[2])
