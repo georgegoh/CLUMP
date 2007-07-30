@@ -298,7 +298,7 @@ class KitOpsApp(KusuApp):
             kitline.append('\n'.join(ngnames))
 
             nglengths = [len(ngname) for ngname in ngnames]
-            if max(nglengths) > max_lengths[-1]:
+            if nglengths and max(nglengths) > max_lengths[-1]:
                 max_lengths[-1] = max(nglengths)
 
             kitlines.append(kitline)

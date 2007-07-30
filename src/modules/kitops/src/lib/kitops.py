@@ -33,7 +33,7 @@ kl = kusulog.getKusuLog('kitops')
 
 class KitOps:
     def __init__(self, **kw):
-        self.installer = kw.get('installer', False)
+        self.installer = kw.get('installer', False) # installer environment?
         self.kitname = ''
         self.kitmedia = ''
         self.dlkitiso = None
@@ -95,7 +95,7 @@ class KitOps:
         if self.medialoc.isfile() and self.medialoc.ext.lower() == '.iso':
             kl.debug('Media ISO file provided: %s', self.medialoc)
             self.mountMedia(self.medialoc, True)
-        elif self.medialoc.isdir() and self.medialoc.ismount():
+        elif self.medialoc.isdir():
             kl.debug('Media mountpoint: %s', self.medialoc)
             self.mountpoint = self.medialoc
         else:
@@ -109,8 +109,7 @@ class KitOps:
 
         #at this point we have the kit mounted to self.mountpoint
         try:
-            assert(self.mountpoint
-                   and self.mountpoint.isdir() and self.mountpoint.ismount())
+            assert(self.mountpoint and self.mountpoint.isdir())
         except AssertionError, msg:
             self.unmountMedia()
             raise AssertionError, \
@@ -369,7 +368,7 @@ class KitOps:
         self.mountpoint is unmounted, removed and set to None.
         """
 
-        if self.mountpoint:
+        if self.mountpoint and self.mountpoint.ismount():
             #umountP = subprocess.Popen('umount -l %s' %
             umountP = subprocess.Popen('umount %s' % self.mountpoint,
                                        shell=True, stdout=subprocess.PIPE,
