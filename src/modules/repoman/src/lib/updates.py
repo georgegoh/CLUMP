@@ -17,11 +17,13 @@ from kusu.repoman.tools import getFile, getConfig
 from kusu.util.errors import NotImplementedError, InvalidRPMHeader
 
 class BaseUpdate:
-    def __init__(self, os_name, os_version, os_arch):
+    def __init__(self, os_name, os_version, os_arch, prefix):
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
         
+        self.prefix = prefix
+
     def getLatestRPM(self, dirs=[]):
         """Returns a list of the latest rpms"""
         return rpmtool.getLatestRPM(dirs, ignoreErrors=True)
@@ -39,9 +41,8 @@ class BaseUpdate:
         return getConfig(configFile)
 
 class YumUpdate(BaseUpdate):
-    def __init__(self,os_name, os_version, os_arch, prefix, dbs):
-        BaseUpdate.__init__(self, os_name, os_version, os_arch)
-        self.dbs = dbs
+    def __init__(self,os_name, os_version, os_arch, prefix):
+        BaseUpdate.__init__(self, os_name, os_version, os_arch, prefix)
 
     def getURI(self):
         raise NotImplementedError
@@ -49,7 +50,7 @@ class YumUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
     
-        dir = path(prefix) / 'depot' / 'updates' / self.os_name / self.os_version / self.os_arch
+        dir = path(self.prefix) / 'depot' / 'updates' / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
@@ -60,7 +61,7 @@ class YumUpdate(BaseUpdate):
             if path(p).exists():
                 searchPaths.append(p)
         searchPaths.append(dir)
-        rpmPkgs = rpmtool.getLatestRPM(searchPaths)
+        rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
     
         primarys = {}
         for u in self.getURI():
@@ -117,9 +118,8 @@ class YumUpdate(BaseUpdate):
         return c.getList()
 
 class RHNUpdate(BaseUpdate):
-    def __init__(self, dbs, os_version, os_arch, username, password, prefix):
-        BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch)
-        self.dbs = dbs
+    def __init__(self, os_version, os_arch, username, password, prefix):
+        BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix)
         self.rhn = RHN(username, password)
         
         # read config or something self.rhn =  
@@ -130,7 +130,7 @@ class RHNUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
 
-        dir = path(prefix) / 'depot' / 'updates' / self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
+        dir = path(self.prefix) / 'depot' / 'updates' / self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
@@ -138,10 +138,10 @@ class RHNUpdate(BaseUpdate):
         osPath = self.getOSPath()
         if osPath.exists():
             # Look into the OS and updates dir
-            rpmPkgs = rpmtool.getLatestRPM([osPath, dir])
+            rpmPkgs = rpmtool.getLatestRPM([osPath, dir], True)
         else:    
             # Just look at the updates dir
-            rpmPkgs = rpmtool.getLatestRPM([dir])
+            rpmPkgs = rpmtool.getLatestRPM([dir], True)
         
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())

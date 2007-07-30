@@ -7,6 +7,7 @@
 
 from kusu.core import database as db
 from kusu.repoman import repo
+from kusu.util import tools
 from path import path
 import tempfile
 import os
@@ -40,6 +41,10 @@ def setUp():
 
     prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
+
+    (cachedir / 'yumupdates').makedirs()
+    url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/'
+    tools.url_mirror_copy(url, cachedir / 'yumupdates') 
 
 def tearDown():
     global kusudb
@@ -300,4 +305,18 @@ class TestFedora6Repo:
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+
+    def testGetUpdates(self):
+        global prefix
+       
+        configFile = cachedir / 'yumupdates' / 'updates.conf'
+
+        r = repo.Fedora6Repo('i386', prefix, self.dbs, configFile)
+        r.test = True
+
+        r.getUpdates()
+
+        updatesDir = prefix / 'depot' / 'updates' / 'fedora' / '6' / 'i386'
+       
+        assert (updatesDir / 'yum-updatesd-3.0.6-1.fc6.noarch.rpm').exists() 
 

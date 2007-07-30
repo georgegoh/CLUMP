@@ -415,7 +415,7 @@ class RedhatYumRepo(BaseRepo):
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
-        YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix)
         
         self.configFile=configFile
 
@@ -427,12 +427,12 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         self.dirlayout['basedir'] = 'Fedora/base'
 
     def getSources(self):
-        kits = self.dbs.Kits.select_by(rname=self.os_name,
-                                       version=self.os_version,
-                                       arch=self.os_arch)
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      version=self.os_version,
+                                      arch=self.os_arch)
 
         if kits:
-            return [path(os.path.join(prefix, 'depot', 'kits', \
+            return [path(os.path.join(self.prefix, 'depot', 'kits', \
                                       self.os_name, self.os_version, self.os_arch, \
                                       self.dirlayout['rpmsdir']))]
         else:
@@ -456,7 +456,7 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
-        YumUpdate.__init__(self, 'centos', '5', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'centos', '5', os_arch, prefix)
         
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
@@ -484,7 +484,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
                 if self.getOSMajorVersion(kit.version) == '5' and kit.version < min_version:
                     min_version = kit.version
 
-        return [path(os.path.join(prefix, 'depot', 'kits', \
+        return [path(os.path.join(self.prefix, 'depot', 'kits', \
                                   self.os_name, min_version, self.os_arch, \
                                   self.dirlayout['rpmsdir']))]
 
@@ -536,7 +536,7 @@ class Redhat5Repo(RedhatYumRepo):
                 if self.getOSMajorVersion(kit.version) == '5' and kit.version < min_version:
                     min_version = kit.version
 
-        return [path(os.path.join(prefix / 'depot', 'kits', self.os_name, min_version, self.os_arch, p))
+        return [path(os.path.join(self.prefix / 'depot', 'kits', self.os_name, min_version, self.os_arch, p))
                 for p in [self.dirlayout['server.rpmsdir'],
                           self.dirlayout['cluster.rpmsdir'],
                           self.dirlayout['clusterstorage.rpmsdir'],
