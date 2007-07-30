@@ -7,6 +7,7 @@
 
 from kusu.core import database as db
 from kusu.repoman import repo
+from kusu.util import tools
 from path import path
 import tempfile
 import os
@@ -40,7 +41,6 @@ def setUp():
 
     prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
-    dbs = db.DB('sqlite', kusudb)
 
 def tearDown():
     global kusudb
@@ -303,3 +303,27 @@ class TestCentos5Repo:
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
+    def testGetUpdates(self):
+        global prefix
+  
+        (prefix / 'yumupdates').makedirs()
+        url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/'
+        tools.url_mirror_copy(url, prefix / 'yumupdates') 
+
+        configFile = prefix / 'yumupdates' / 'updates.conf'
+
+        newPath = prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'CentOS'
+        rpmsPath = prefix / 'yumupdates' / 'centos' /  '5.0' / 'os' / 'i386' / 'CentOS' 
+        for f in rpmsPath.listdir():
+            f.copy(newPath / f.basename())
+
+        r = repo.Centos5Repo('i386', prefix, self.dbs, configFile)
+        r.test = True
+        r.getUpdates()
+
+        updatesDir = prefix / 'depot' / 'updates' / 'centos' / '5' / 'i386'
+        assert (updatesDir / 'quagga-contrib-0.98.6-2.1.0.1.el5.i386.rpm').exists()
+        assert (updatesDir / 'php-ldap-5.1.6-12.el5.i386.rpm').exists()
+        assert (updatesDir / 'xorg-x11-xfs-utils-1.0.2-4.i386.rpm').exists()
+        assert not (updatesDir / 'perl-Digest-HMAC-1.01-15.noarch.rpm').exists()
+        

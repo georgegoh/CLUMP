@@ -42,10 +42,6 @@ def setUp():
     prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
 
-    (prefix / 'yumupdates').makedirs()
-    url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/'
-    tools.url_mirror_copy(url, prefix / 'yumupdates') 
-
 def tearDown():
     global kusudb
     global cachedir
@@ -309,6 +305,10 @@ class TestFedora6Repo:
     def testGetUpdates(self):
         global prefix
    
+        (prefix / 'yumupdates').makedirs()
+        url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/'
+        tools.url_mirror_copy(url, prefix / 'yumupdates') 
+
         configFile = prefix / 'yumupdates' / 'updates.conf'
 
         rpmsPath = prefix / 'yumupdates' / 'fedora' / 'core' / '6' / 'i386' / 'os' / 'Fedora' / 'RPMS'
@@ -321,8 +321,12 @@ class TestFedora6Repo:
         r.getUpdates()
 
         updatesDir = prefix / 'depot' / 'updates' / 'fedora' / '6' / 'i386'
+
+        # yum-updatesd is newer
         assert (updatesDir / 'yum-updatesd-3.0.6-1.fc6.noarch.rpm').exists() 
+        # ftp rpm no change
         assert not (updatesDir / 'ftp-0.17-33.fc6.i386.rpm').exists() 
+        # new docbook-utils-pdf rpm in updates
         assert (updatesDir / 'docbook-utils-pdf-0.6.14-8.fc6.noarch.rpm').exists() 
    
          

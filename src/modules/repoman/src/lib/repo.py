@@ -451,13 +451,15 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         core = str(baseurl / 'core' / '6' / self.os_arch / 'os')
         updates = str(baseurl / 'core' / 'updates' / '6' / self.os_arch )
 
-        return [core,updates]
+        return [updates]
 
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
         YumUpdate.__init__(self, 'centos', '5', os_arch, prefix)
         
+        self.configFile=configFile
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
@@ -469,7 +471,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         return os_version.split('.')[0]
 
     def getSources(self):
-        kits = self.dbs.Kits.select_by(rname=self.os_name,
+        kits = self.db.Kits.select_by(rname=self.os_name,
                                        arch=self.os_arch)
         
         if not kits:
@@ -502,7 +504,6 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / '5' / 'updates' / self.os_arch)
         
         return [os,updates]
-
 
 class Redhat5Repo(RedhatYumRepo):
     def __init__(self, os_arch, prefix, db, configFile=None):
