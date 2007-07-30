@@ -45,6 +45,7 @@ class YumUpdate(BaseUpdate):
         BaseUpdate.__init__(self, os_name, os_version, os_arch, prefix)
 
     def getURI(self):
+        """Returns the relavant uri of yum repos"""
         raise NotImplementedError
         
     def getUpdates(self):
@@ -62,11 +63,15 @@ class YumUpdate(BaseUpdate):
                 searchPaths.append(p)
         searchPaths.append(dir)
         rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
-    
+
+        # Merge the necessary update(s) dir
+        # into a single dictionary with all the rpms info
         primarys = {}
         for u in self.getURI():
             primarys[u] = YumRepo(u).getPrimary()
 
+        # Filter out the packages that are newer and
+        # neews to be downloaded
         downloadPkgs = []
         for r in self.getLatestRPM(primarys):
             name = r.getName()
@@ -80,6 +85,7 @@ class YumUpdate(BaseUpdate):
                 # No such existing rpm, so download it
                 downloadPkgs.append(r)
 
+        # Donwload the packages
         for r in downloadPkgs:
             filename = r.getFilename()
             dest = path(dir / filename.basename())
@@ -98,7 +104,10 @@ class YumUpdate(BaseUpdate):
                 f.write(content)
                 f.close()
 
+        return downloadPkgs
+
     def getLatestRPM(self, primarys):
+        """Return the latested rpms from yum repos"""
 
         c = rpmtool.RPMCollection()
         for uri, pri in primarys.items():
@@ -122,7 +131,6 @@ class RHNUpdate(BaseUpdate):
         BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix)
         self.rhn = RHN(username, password)
         
-        # read config or something self.rhn =  
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
         return os_version.split('.')[0]

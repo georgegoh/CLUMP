@@ -322,8 +322,12 @@ class TestCentos5Repo:
         r.getUpdates()
 
         updatesDir = prefix / 'depot' / 'updates' / 'centos' / '5' / 'i386'
+        # New rpm appeared
         assert (updatesDir / 'quagga-contrib-0.98.6-2.1.0.1.el5.i386.rpm').exists()
+        # Most updated 
         assert (updatesDir / 'php-ldap-5.1.6-12.el5.i386.rpm').exists()
+        # updated rpm appeared in 5.1 release. Not in updates dir
         assert (updatesDir / 'xorg-x11-xfs-utils-1.0.2-4.i386.rpm').exists()
+        # no change
         assert not (updatesDir / 'perl-Digest-HMAC-1.01-15.noarch.rpm').exists()
         

@@ -472,7 +472,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
 
     def getSources(self):
         kits = self.db.Kits.select_by(rname=self.os_name,
-                                       arch=self.os_arch)
+                                      arch=self.os_arch)
         
         if not kits:
             return []
