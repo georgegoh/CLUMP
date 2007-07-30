@@ -307,6 +307,8 @@ class AutoToolsWrapper(PackageWrapper):
     def verify(self):
         """ Verify package is supported. """
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
+        if not hasattr(self,'installroot'): raise PackageAttributeNotDefined, 'installroot'
+        if not self.installroot: raise PackageAttributeNotDefined, 'installroot'
         filename = self.srcdir / self.filename
         if not filename.exists(): raise FileDoesNotExistError, filename
         if not tarfile.is_tarfile(filename): return False
@@ -421,6 +423,8 @@ class BinaryPackageWrapper(PackageWrapper):
     def verify(self):
         """ Verify package is supported. """
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
+        if not hasattr(self,'installroot'): raise PackageAttributeNotDefined, 'installroot'
+        if not self.installroot: raise PackageAttributeNotDefined, 'installroot'
         filename = self.srcdir / self.filename
         if not filename.exists(): raise FileDoesNotExistError, filename
         if not tarfile.is_tarfile(self.filename): return False
