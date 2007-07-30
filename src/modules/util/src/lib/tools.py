@@ -55,6 +55,7 @@ def url_mirror_copy(src, dst):
        url.
     """ 
     import urlparse
+    import errno
 
     if urlparse.urlsplit(src)[0] in ['http', 'ftp']:
         p = path(urlparse.urlsplit(src)[2]).splitall()
@@ -83,7 +84,7 @@ def url_mirror_copy(src, dst):
 
         except OSError, e:
             if e.errno == errno.ENOENT:
-                raise FileDoesNotExistError, 'wget not found' 
+                raise FileDoesNotExistError, 'wget or destination dir not found' 
             else:
                 raise CommandFailedToRunError, 'Unable to copy. Error Message: %s' % os.strerror(e.errno)
 
