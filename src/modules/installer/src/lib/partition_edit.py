@@ -136,8 +136,7 @@ class EditLogicalVolume(NewLogicalVolume):
         size = self.size.value()
         self.disk_profile.editLogicalVolume(self.lv, size, fs_type, mountpoint)
 
-        if not self.format_partition.value():
-            self.lv.do_not_format = True
+        self.lv.do_not_format = self.do_not_format_partition.value()
 
 
 class EditVolumeGroup(NewVolumeGroup):

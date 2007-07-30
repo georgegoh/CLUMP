@@ -141,10 +141,15 @@ def verifyDistroVersionAndArch(kiprofile, distro):
         err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
                                                distro.ostype or 'Unknown'))
         verified = False
-    if kiprofile['OS_VERSION'] != distro.getVersion():
+
+    distro_ver = distro.getVersion() or 'Unknown'
+    if distro.ostype in ['rhel', 'centos'] and distro_ver != 'Unknown':
+        distro_ver = distro_ver.split('.')[0]
+    if kiprofile['OS_VERSION'] != distro_ver:
         err_list.append('Version:%s Media Version:%s' % (kiprofile['OS_VERSION'].ljust(5),
-                                                         distro.getVersion() or 'Unknown'))
-        verified = False 
+                                                         distro_ver))
+        verified = False
+
     if kiprofile['OS_ARCH'] != distro.getArch():
         # FIXME: not sure if this check belongs here. See FedoraInstallSrc
         # in distro.py:343.

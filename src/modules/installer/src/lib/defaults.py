@@ -62,11 +62,14 @@ class LVMCollection(Struct):
 
 
 class PartitionSchema(Struct):
-    def __init__(self, disks, lvm=None, preserve_types=[]):
+    def __init__(self, disks, lvm=None, preserve_types=[], preserve_fs=[], preserve_mntpnt=[]):
         Struct(self)
         self.disk_dict=disks
         self.vg_dict=lvm
         self.preserve_types=preserve_types
+        self.preserve_fs=preserve_fs
+        self.preserve_mntpnt=preserve_mntpnt
+
 
 def percentSchema():
     d1 = Disk()
@@ -283,7 +286,7 @@ def setupDiskProfile(disk_profile, schema=None):
 
     # clear partitions that haven't been preserved.
     for disk in disk_profile.disk_dict.itervalues():
-        clearDisk(disk_profile, disk, schema['preserve_types'])
+        clearDisk(disk_profile, disk, schema)
     for disk in disk_profile.disk_dict.itervalues():
         logger.debug('Disk %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
 
@@ -300,11 +303,15 @@ def setupDiskProfile(disk_profile, schema=None):
             createLVMSchema(disk_profile, schema['vg_dict'])
     logger.debug('Disk Profile set up')
 
-def clearDisk(disk_profile, disk, preserve_list):
+def clearDisk(disk_profile, disk, schema):
     # separate into logical, extended, and primary partitions.
     primary = []
     extended = None
     logical = []
+    preserve_list = schema['preserve_types']
+    preserve_fs = schema['preserve_fs']
+    preserve_mntpnt = schema['preserve_mntpnt']
+
     for partition in disk.partition_dict.values():
         if partition.part_type == 'primary':
             primary.append(partition)
@@ -315,7 +322,9 @@ def clearDisk(disk_profile, disk, preserve_list):
 
     # remove the logical partitions first.
     for partition in reversed(sorted(logical)):
-        if partition.native_type not in preserve_list:
+        if partition.native_type not in preserve_list and \
+           partition.fs_type not in preserve_fs and \
+           partition.mountpoint not in preserve_mntpnt:
             logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
             disk_profile.delete(partition, keep_in_place=True)
         else:
@@ -326,7 +335,9 @@ def clearDisk(disk_profile, disk, preserve_list):
         disk_profile.delete(extended, keep_in_place=True)
     # finally remove the primary partitions.
     for partition in reversed(sorted(primary)):
-        if partition.native_type not in preserve_list:
+        if partition.native_type not in preserve_list and \
+           partition.fs_type not in preserve_fs and \
+           partition.mountpoint not in preserve_mntpnt:
             logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
             disk_profile.delete(partition, keep_in_place=True)
 
