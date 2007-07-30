@@ -127,9 +127,18 @@ class YumUpdate(BaseUpdate):
         return c.getList()
 
 class RHNUpdate(BaseUpdate):
-    def __init__(self, os_version, os_arch, username, password, prefix):
+    def __init__(self, os_version, os_arch, cfg, prefix):
         BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix)
-        self.rhn = RHN(username, password)
+
+        if cfg.has_key('url'):
+            url = cfg['url']
+        else:
+            url = None
+
+        username = cfg['username']
+        password = cfg['password']
+
+        self.rhn = RHN(username, password, url)
         
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
@@ -138,7 +147,8 @@ class RHNUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
 
-        dir = path(self.prefix) / 'depot' / 'updates' / self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
+        dir = path(self.prefix) / 'depot' / 'updates' / \
+              self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
