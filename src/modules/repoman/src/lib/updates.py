@@ -31,6 +31,7 @@ class BaseUpdate:
         self.os_arch = os_arch
         
         self.prefix = prefix
+        self.db = db
 
     def getLatestRPM(self, dirs=[]):
         """Returns a list of the latest rpms"""
@@ -44,23 +45,8 @@ class BaseUpdate:
         """Makes the update kit"""
 
         kitName = '%s-updates' % self.os_name 
+        kitRelease = self.getNextRelease(kitName)
         kitArch = self.os_arch
-
-        # Find max version
-        kits = sorted([kit.version for kit in self.db.Kits.select_by(rname = kitName)])
-        if kits:
-            maxRelease = kits[-1]
-
-            c = re.compile('r[\d]+') 
-            matches = c.findall(maxRelease)
-            if matches:
-                # Takw away rXXX
-                kitRelease = int(matches[0][1:]) + 1
-            else:
-                kitRelease = 1
-        else:
-            kitRelease = 1
-
 
         if self.prefix:
             tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=self.prefix))
@@ -83,6 +69,25 @@ class BaseUpdate:
         self.makeKit(tempkitdir, kitdir, kitName)
 
         return kitdir
+
+    def getNextRelease(self, kitName):
+        # Find max version
+        kits = [kit.version for kit in self.db.Kits.select_by(rname = kitName)]
+        if kits:
+            maxRelease = 0
+
+            for kitversion in kits:
+                c = re.compile('r[\d]+') 
+                matches = c.findall(kitversion)
+                if matches:
+                    # Takw away rXXX
+                    release = int(matches[0][1:])
+                    if release > maxRelease:
+                        maxRelease = release
+        else:
+            maxRelease = 0
+
+        return maxRelease + 1
     
     def makeKitScript(self, tempkitdir, kitName, kitRelease):
 
