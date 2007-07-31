@@ -128,6 +128,10 @@ class rhnInvalidServerID(KusuError): pass
 # repoman.yum
 class repodataChecksumError(KusuError): pass
 
+# repoman.updates
+class UnableToPrepUpdateKit(KusuError): pass
+class UnableToMakeUpdateKit(KusuError): pass
+
 # b-m-t
 class FilePathError(KusuError): pass
 class NotPriviledgedUser(KusuError): pass
