@@ -14,7 +14,7 @@ import string
 import os
 import pwd
 from kusu.util.tools import cpio_copytree
-from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined
+from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined, UnsupportedScriptMode
 from kusu.util.structure import Struct
 from kusu.util import rpmtool
 
@@ -25,6 +25,19 @@ SUPPORTED_DISTROPKG_EXT = ['.src.rpm','.rpm','.srpm','.deb']
 def genrandomstr(length=8):
     chars = string.letters + string.digits
     return ''.join([choice(chars) for i in range(length)])
+    
+def stripShebang(script):
+    """ Strip the shebang and returns the script text.
+    """
+    li = open(script).readlines()
+    lines = []
+    if li[0].startswith('#!'):
+        lines = li[1:]
+    else:
+        lines = li
+        
+    return ''.join(lines)
+        
     
 def derivePackageNVR(filenamestr):
     """ Tries to derive the name, version and release out of the filenamestr or
@@ -93,7 +106,12 @@ def prepareNS(packageprofile):
         d['author'] = packageprofile.author
     if packageprofile.vendor:
         d['vendor'] = packageprofile.vendor
-    
+    if hasattr(packageprofile,'scripts'):
+        d['prescript'] = packageprofile.scripts['prescript']
+        d['preunscript'] = packageprofile.scripts['preunscript']
+        d['postscript'] = packageprofile.scripts['postscript']
+        d['postunscript'] = packageprofile.scripts['postunscript']
+                            
     return d
 
 
@@ -167,6 +185,7 @@ class PackageProfile(Struct):
         Struct.__init__(self)
 
         self.wrapper = wrapper
+                    
         self.verbose = kwargs.get('verbose',False)
         self.srctype = kwargs.get('srctype','')
         self._name = kwargs.get('name','')
@@ -178,6 +197,7 @@ class PackageProfile(Struct):
         self.vendor = kwargs.get('vendor','')
         self.license = kwargs.get('license','')
         self.buildprofile = kwargs.get('buildprofile','')
+        self._queuecmds = []
 
 
     def setup(self):
@@ -211,14 +231,37 @@ class PackageProfile(Struct):
             filename = self.srcdir / self.filename
             self.fullname = getDirName(filename.basename())
             self.buildsrc = self.tmpdir / self.fullname
+            
+        # add the scripts attribute for those srctypes that
+        # support them.
+        if self.srctype in ['autotools', 'binarydist']:
+            self.scripts = {}
+            self.scripts['postscript'] = ''
+            self.scripts['postunscript'] = ''
+            self.scripts['preunscript'] = ''
+            self.scripts['prescript'] = ''
 
-        self.namespace = prepareNS(self)
-        
         # expose the attributes to the wrapper object
         self.wrapper.update(Struct(self))
+        
+    def _processAddScripts(self):
+        """ Process any queued commands.
+        """
+        for cmd in self._queuecmds:
+            if len(cmd) > 1:
+                func = cmd[0]
+                args = cmd[1:]
+            else:
+                func = cmd[0]
+                args = []
+                
+            func(*args)
 
     def verify(self):
         return self.wrapper.verify()
+
+    def addScript(self, script, mode='post'):
+        self._queuecmds.append((self.wrapper.addScript,script,mode))
 
     def cleanup(self):
         return self.wrapper.cleanup()
@@ -279,6 +322,9 @@ class PackageWrapper(Struct):
         """
 
         pass
+        
+    def addScript(self, script, mode='post'):
+        pass
 
     def _packRPM(self):
         """ RPM handling stage for this class. This package type-specific 
@@ -309,6 +355,13 @@ class AutoToolsWrapper(PackageWrapper):
         """ Setups the tool with the packageprofile.
         """
         PackageWrapper.__init__(self)
+        
+    def addScript(self, script, mode='post'):
+        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
+        scriptfile = self.srcdir / script
+        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        key = '%sscript' % mode
+        self.scripts[key] = stripShebang(scriptfile)
         
     def verify(self):
         """ Verify package is supported. """
@@ -372,6 +425,8 @@ class AutoToolsWrapper(PackageWrapper):
         
     def _packRPM(self):
         """ RPM handling stage for this class. """
+        self.namespace = prepareNS(self)
+
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
@@ -404,6 +459,7 @@ class SRPMWrapper(PackageWrapper):
 
     def _packRPM(self):
         """ RPM handling stage for this class. """
+        self.namespace = prepareNS(self)
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
@@ -425,6 +481,13 @@ class BinaryPackageWrapper(PackageWrapper):
     
     def __init__(self):
         PackageWrapper.__init__(self)
+        
+    def addScript(self, script, mode='post'):
+        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
+        scriptfile = self.srcdir / script
+        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        key = '%sscript' % mode
+        self.scripts[key] = stripShebang(scriptfile)
         
     def verify(self):
         """ Verify package is supported. """
@@ -450,6 +513,7 @@ class BinaryPackageWrapper(PackageWrapper):
 
     def _packRPM(self):
         """ RPM handling stage for this class. """
+        self.namespace = prepareNS(self)
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])

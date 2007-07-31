@@ -55,12 +55,24 @@ $pkgname package
 %install
 
 %pre
+#if $varExists('prescript')
+$prescript
+#end if
 
 %post
+#if $varExists('postscript')
+$postscript
+#end if
 
 %preun
+#if $varExists('preunscript')
+$preunscript
+#end if
 
 %postun
+#if $varExists('postunscript')
+$postunscript
+#end if
 
 %clean
 

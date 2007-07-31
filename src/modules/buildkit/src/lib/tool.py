@@ -81,6 +81,7 @@ class BuildKit:
             p.buildprofile = buildprofile
             p.setup()
             p.verify()
+            p._processAddScripts()
             p.configure()
             p.build()
             p.deploy()

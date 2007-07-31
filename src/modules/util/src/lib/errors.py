@@ -162,6 +162,7 @@ class UndefinedKitInfo(KusuError): pass
 class InvalidBuildProfile(KusuError): pass
 class PackageAttributeNotDefined(KusuError): pass
 class KitDefinitionEmpty(KusuError): pass
+class UnsupportedScriptMode(KusuError):pass
 
 # util.rpmtool
 class InvalidRPMHeader(KusuError): pass
