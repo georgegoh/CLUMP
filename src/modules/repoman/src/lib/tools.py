@@ -62,7 +62,15 @@ def repoInUse(dbs, repoid):
         return True
     else:
         return False
-         
+
+def kitInUse(dbs, kid):
+    repos = dbs.ReposHaveKits.select_by(kid = kid)
+    
+    if repos:
+        return True
+    else:
+        return False
+
 def getOS(dbs, repoid_or_ngname):
     """Returns OS (rname, version, arch) tuple from database 
        based on the repoid or nodegroup name"""

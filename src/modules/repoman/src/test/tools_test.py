@@ -245,5 +245,14 @@ class TestTools:
         r.make('installer nodegroup')
 
         assert tools.repoInUse(self.dbs, r.repoid)
-    
+   
+    def testKitInUse(self):
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.debug = True
+        r.make('installer nodegroup')
+
+        kit = self.dbs.Kits.select()[0]
+        assert tools.kitInUse(self.dbs, kit.kid)
+   
+ 
 
