@@ -152,14 +152,14 @@ class RHNUpdate(BaseUpdate):
         if not dir.exists():
             dir.makedirs()
 
-        # Check whether the OS kit has been added
-        osPath = self.getOSPath()
-        if osPath.exists():
-            # Look into the OS and updates dir
-            rpmPkgs = rpmtool.getLatestRPM([osPath, dir], True)
-        else:    
-            # Just look at the updates dir
-            rpmPkgs = rpmtool.getLatestRPM([dir], True)
+        # Get the latest list of rpms from os kits and the
+        # updates dir
+        searchPaths = []
+        for p in self.getSources():
+            if path(p).exists():
+                searchPaths.append(p)
+        searchPaths.append(dir)
+        rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
         
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())

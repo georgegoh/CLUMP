@@ -89,16 +89,19 @@ class RHN:
     rhnProtoErrors = { 302: rhnURLNotFound,
                        404: rhnURLNotFound}
 
-    def __init__(self, username, password, url=None):
+    def __init__(self, username, password, rhnURL=None):
         
-        if url:
-            rhnURL = url
-            
-            schema, hostname, p, ignore, ignore = urlparse.urlsplit(url)
-            up2dateURL = urlparse.urlunparse((schema,hostname,'rpc/api','','',''))
+        if rhnURL:
+            schema, hostname, p, ignore, ignore = urlparse.urlsplit(rhnURL)
 
-            self.rhnServer = xmlrpclib.Server(rhnurl)
-            self.up2dateServer = xmlrpclib.Server(up2dateURL)
+            if hostname == 'xmlrpc.rhn.redhat.com':
+                self.rhnServer = xmlrpclib.Server(self.rhnURL)
+                self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
+            else:
+                up2dateURL = urlparse.urlunparse((schema,hostname,'rpc/api','','',''))
+
+                self.rhnServer = xmlrpclib.Server(rhnURL)
+                self.up2dateServer = xmlrpclib.Server(up2dateURL)
         else:
             self.rhnServer = xmlrpclib.Server(self.rhnURL)
             self.up2dateServer = xmlrpclib.Server(self.up2dateURL)

@@ -533,8 +533,8 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         self.dirlayout['vt.repodatadir'] = 'VT/repodata'
 
     def getSources(self):
-        kits = self.dbs.Kits.select_by(rname=self.os_name,
-                                       arch=self.os_arch)
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      arch=self.os_arch)
 
         if not kits:
             return []
