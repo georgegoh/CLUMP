@@ -158,8 +158,7 @@ class BuildKit:
         """
         kitsrc = path(kitsrc).abspath()
         kitdir = path(kitdir).abspath()
-        if kitdir.exists(): kitdir.rmtree()
-        kitdir.mkdir()
+        if not kitdir.exists(): kitdir.mkdir()
         pkgdir = path(kitsrc / 'packages')
 
         # sweep and get the kitinfo files    
@@ -169,13 +168,13 @@ class BuildKit:
         kit,comps = processKitInfo(kitinfo)
 
         if not kit: 
-            if kitdir.exists(): kitdir.rmtree
             raise KitDefinitionEmpty
 
         # TODO : right now, we don't make use of the kitversion, only kitnames
         # TODO : also, only a single kit is supported right now
 
         kitnamedir = path(kitdir / kit['name'])
+        if kitnamedir.exists(): kitnamedir.rmtree()
         kitnamedir.mkdir()
         cpio_copytree(pkgdir,kitnamedir)
         kitinfo.copy(kitnamedir)
