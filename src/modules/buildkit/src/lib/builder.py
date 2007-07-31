@@ -16,6 +16,8 @@ import pwd
 from kusu.util.tools import cpio_copytree
 from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined
 from kusu.util.structure import Struct
+from kusu.util import rpmtool
+
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2','.zip','.tar']
 SUPPORTED_DISTROPKG_EXT = ['.src.rpm','.rpm','.srpm','.deb']
@@ -188,17 +190,21 @@ class PackageProfile(Struct):
         self.tmpdir = path(self.buildprofile.tmpdir)
         self.templatesdir = path(self.buildprofile.templatesdir)
 
-        if self.srctype in ['srpm','rpm','binarydist','autotools']:
+        if self.srctype == 'rpm':
             if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
-            # get the NVR from the filename if the NVR have not already been defined.
-            name,version,release = derivePackageNVR(self.filename)
-            self.name = self._name or name
-            self.version = self._version or version
-            self.release = self._release or release
-        elif self.srctype == 'distro':
-            # ensure that the name, version are defined.
+            filename = self.srcdir / self.filename
+            if not filename.exists(): raise FileDoesNotExistError, filename
+            r = rpmtool.RPM(str(filename))
+            self.name = r.getName()
+            self.version = r.getVersion()
+            self.release = r.getRelease()
+            self.arch = r.getArch()
+            
+        elif self.srctype in  ['srpm','rpm','binarydist','autotools']:
+            # ensure that the name, version, release are defined.
             if not self.name: raise PackageAttributeNotDefined, 'name'
             if not self.version: raise PackageAttributeNotDefined, 'version'
+            if not self.release: raise PackageAttributeNotDefined, 'release'            
 
         if not self.srctype in ['srpm','rpm','distro']:
             
