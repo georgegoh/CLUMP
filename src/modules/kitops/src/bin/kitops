@@ -111,13 +111,15 @@ class KitOpsApp(KusuApp):
 
         if options.action == 'add':
             if not options.media:
-                media_choices = self.autoDetectMedia()
-                found_kits = sorted(media_choices.keys())
+                sys.stderr.write('FIXME: need to specify -m flag\n')
+                sys.exit(123)
+                #media_choices = self.autoDetectMedia()
+                #found_kits = sorted(media_choices.keys())
 
-                if len(found_kits) == 1:
-                    kit_media = media_choices[found_kits[0]]
-                else:
-                    kit_media = selectKitMedia(media_choices)
+                #if len(found_kits) == 1:
+                #    kit_media = media_choices[found_kits[0]]
+                #else:
+                #    kit_media = selectKitMedia(media_choices)
             else:
                 kit_media = options.media
 
@@ -196,27 +198,46 @@ class KitOpsApp(KusuApp):
     def runAdd(self):
         kl.debug('Performing add operation')
         try:
-            self.koinst.addKitPrepare()
+            kits = self.koinst.addKitPrepare()
         except (CannotMountKitMediaError, UnrecognizedKitMediaError,
                 AssertionError), e:
             kl.debug('FAIL performing add operation')
             sys.stderr.write(e.args[0])
             sys.exit(EKITLOC_FAIL)
 
-        media_distro = self.koinst.getOSDist()
-        if media_distro.ostype:
-            self.runAddOSKit(media_distro)
-        else:
+        ostype = None
+        try:
+            ostype = kits.ostype
+        except AttributeError:
+            pass
+
+        if ostype is not None:
+            self.runAddOSKit(kits)
+        elif kits:
             # we cannot identify the distro -- treat as ordinary kit
-            try:
-                self.koinst.addKit()
-            except (KitAlreadyInstalledError, InstallKitRPMError,
-                    NoKitsFoundError, AssertionError), e:
-                kl.debug('FAIL performing add operation')
-                sys.stderr.write(e.args[0])
+            kitError = False
+            for kit in kits:
+                try:
+                    self.koinst.addKit(kit)
+                    kl.debug('SUCCESS performing add operation: %s(%s)',
+                             kit[0], kit[1]['name'])
+                except (KitAlreadyInstalledError, InstallKitRPMError,
+                        AssertionError), e:
+                    msg = '%s(%s): %s' % (kit[0], kit[1]['name'], e.args[0])
+                    kl.debug('FAIL performing add operation: %s', msg)
+                    sys.stderr.write(msg + '\n')
+                    kitError = True
+            self.koinst.unmountMedia()
+        else:
+            msg = 'No kits found. Nothing to do.'
+            kl.debug(msg)
+            sys.stderr.write(msg + '\n')
+            sys.exit(EKITLOC_FAIL)
+            
+            if kitError:
                 sys.exit(EKITLOC_FAIL)
 
-        kl.debug('SUCCESS performing %s operation')
+        kl.debug('SUCCESS performing add operation')
 
     def runAddOSKit(self, osdistro):
         try:
@@ -326,8 +347,6 @@ class KitOpsApp(KusuApp):
                 self.koinst.unmountMedia()
             except CannotMountKitMediaError:
                 pass
-            except NoKitsFoundError:
-                self.koinst.unmountMedia()
 
         if available_kits:
             return available_kits

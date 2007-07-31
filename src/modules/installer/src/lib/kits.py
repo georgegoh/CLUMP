@@ -90,16 +90,17 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         for cd in cdrom_list:
             try:
                 self.kitops.mountMedia(cd)
-                boot_kit = self.kitops.determineKitName()
+                boot_kits = self.kitops.getAvailableKits()
                 self.kitops.unmountMedia()
 
-                if boot_kit == 'base':
-                    boot_cd = cd
+                for boot_kit in boot_kits:
+                    if boot_kit[1]['name'] == 'base':
+                        boot_cd = cd
+                        break
+                if boot_cd:
                     break
             except CannotMountKitMediaError:
                 pass
-            except NoKitsFoundError:
-                self.kitops.unmountMedia()
 
         if boot_cd:
             from kusu.installer.kits_sourcehandlers import addKitFromCDAction

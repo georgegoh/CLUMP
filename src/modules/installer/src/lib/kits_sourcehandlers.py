@@ -82,19 +82,24 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
 
     kl.debug('Add Kit Prepare')
     try:
-        kitops.addKitPrepare()
+        kits = kitops.addKitPrepare()
     except (AssertionError, CannotMountKitMediaError,
             UnrecognizedKitMediaError):
         baseScreen.selector.popupMsg('Cannot Mount CD/DVD device',
                                 "Couldn't mount the CD/DVD. Please wait and try again.")
 
     kl.debug('Get OS Dist')
-    media_distro = kitops.getOSDist()
-    kit_add_failed = False
-    if media_distro.ostype:
+
+    ostype = None
+    try:
+        ostype = kits.ostype
+    except AttributeError:
+        pass
+
+    if ostype is not None:
         kl.debug('Add OS Kit')
         kl.debug('Check that OS is the right distro, arch, version')
-        verified, err_list = verifyDistroVersionAndArch(baseScreen.kiprofile, media_distro)
+        verified, err_list = verifyDistroVersionAndArch(baseScreen.kiprofile, kits)
         if not verified:
             baseScreen.selector.popupMsg('Cannot Add OS Kit', 'Cannot add OS kit ' + \
                                          'because the media does not match the ' + \
@@ -102,32 +107,28 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             return
 
         try:
-            kit_add_failed = addOSKit(baseScreen, kitops, media_distro, cdrom)
+            addOSKit(baseScreen, kitops, kits, cdrom)
         except KitAlreadyInstalledError, e:
             baseScreen.selector.popupMsg('Kit already installed', str(e))
     else:
-        kl.debug('Add regular Kit')
-        try:
-            prog_dlg = baseScreen.selector.popupProgress('Adding kit', 'Adding a Kit...')
-            kit_add_failed = kitops.addKit()
-            prog_dlg.close()
-        except NoKitsFoundError, e:
-            prog_dlg.close()
-            baseScreen.selector.popupMsg('Kit Error', e.args[0])
-            kit_add_failed = False
-        except KitAlreadyInstalledError:
-            prog_dlg.close()
-            baseScreen.selector.popupMsg('Kit Is Already Installed',
-                                        'The kit you have chosen is already installed.')
-        except AssertionError:
-            prog_dlg.close()
-            baseScreen.selector.popupMsg('Cannot Identify Disk',
-                                         'The inserted disk cannot be identified.')
-            kit_add_failed = False
-    kitops.unmountMedia()
-    if kit_add_failed:
-        baseScreen.selector.popupMsg('Add kit failed',
-                                     "Couldn't add kit. Please check the disc for errors.")
+        kl.debug('Add regular Kit(s)')
+        for kit in kits:
+            kitname = kit[1]['name']
+            try:
+                prog_dlg = baseScreen.selector.popupProgress('Adding kit', "Adding a Kit: '%s'..." % kitname)
+                kitops.addKit(kit)
+                prog_dlg.close()
+            except KitAlreadyInstalledError:
+                prog_dlg.close()
+                baseScreen.selector.popupMsg('Kit Is Already Installed',
+                                             "The kit '%s' " % kitname + \
+                                             'is already installed.')
+            except AssertionError:
+                prog_dlg.close()
+                baseScreen.selector.popupMsg('Cannot Identify Disk',
+                                             'The inserted disk cannot be identified.')
+
+        kitops.unmountMedia()
 
 
 def verifyDistroVersionAndArch(kiprofile, distro):

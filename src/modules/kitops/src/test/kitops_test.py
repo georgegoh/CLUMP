@@ -29,7 +29,7 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
 tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
 test_kits_path = tmp_prefix / 'kitops_test_isos'
-test_kits_base = 'mock-kit-base-0.1-0.noarch.iso'
+test_kits_base = 'mock-kit-base-0.1-1.noarch.iso'
 test_kits_fc6i386_1 = 'mock-FC-6-i386-disc1.iso'
 test_kits_fc6i386_2 = 'mock-FC-6-i386-disc2.iso'
 
@@ -67,12 +67,6 @@ class TestKitOps:
         assert self.koinst.prefix == some_prefix
         assert self.koinst.kits_dir.startswith(some_prefix)
         assert self.koinst.pxeboot_dir.startswith(some_prefix)
-
-    def testSetKitName(self):
-        kitname = 'kitname'
-        self.koinst.setKitName(kitname)
-        
-        assert self.koinst.kitname == kitname
 
     def testSetKitMedia(self):
         kitmedia = '/path/to/kit/media'

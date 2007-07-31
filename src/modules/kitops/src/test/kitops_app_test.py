@@ -64,7 +64,7 @@ class TestBaseKit:
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
-        self.kit_iso = 'mock-kit-base-0.1-0.noarch.iso'
+        self.kit_iso = 'mock-kit-base-0.1-1.noarch.iso'
         downloadFiles(self.kit_iso)
 
         self.kit = test_kits_path / self.kit_iso
@@ -165,13 +165,16 @@ class TestBaseKit:
                'Component name: %s, expected: component-base-node' % cmp.cname
         assert cmp.cdesc == 'Component for Kusu Node Base', \
                'Component description: ' + \
-               '%s, expected: Component for Kusu Node Base' % cmp.cname
-        assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
+               '%s, expected: Component for Kusu Node Base' % cmp.cdesc
+        assert cmp.os == '', 'OS: %s, expected empty string' % cmp.os
         # node component associated only with compute nodegroup
-        assert len(cmp.nodegroups) == 1, \
-            'Component %s associated with more than one nodegroup' % cmp.cname
-        assert cmp.nodegroups[0].ngname == 'compute', \
-            'Component %s not associated with compute nodegroup' % cmp.cname
+        assert len(cmp.nodegroups) != 0, \
+            'Component %s not associated with any nodegroups' % cmp.cname
+        for ng in cmp.nodegroups:
+            assert ng.type == 'compute' or ng.type == 'installer', \
+                'Component %s ' % cmp.cname + \
+                'associated with nodegroup %s, ' % ng.ngname + \
+                "type %s; expecting 'installer' or 'compute' type" % ng.type
 
         cmp = self.kusudb.Components.selectfirst_by(
                                             cname='component-base-installer')
@@ -182,7 +185,7 @@ class TestBaseKit:
         assert cmp.cdesc == 'Component for Kusu Installer Base', \
            'Component description: ' + \
            '%s, expected: Component for Kusu Installer Base' % cmp.cname
-        assert cmp.os == None, 'OS: %s, expected: NULL/None' % cmp.os
+        assert cmp.os == '', 'OS: %s, expected empty string' % cmp.os
         # node component associated only with installer nodegroup
         assert len(cmp.nodegroups) == 1, \
             'Component %s associated with more than one nodegroup' % cmp.cname
@@ -192,11 +195,12 @@ class TestBaseKit:
         # kit stored in packages table
         ngs = self.kusudb.NodeGroups.select()
         for ng in ngs:
-            if ng.ngname == 'installer':
+            if ng.type == 'installer':
                 for pkg in ng.packages:
                     assert pkg.packagename == 'kit-base', \
-                                'kit-base package not associated ' \
-                                'with %s nodegroup' % ng.ngname
+                                'Package associated with %s ' % ng.ngname + \
+                                'nodegroup is %s, ' % pkg.packagename + \
+                                'expected kit-base'
             else:
                 for pkg in ng.packages:
                     assert pkg.packagename != 'kit-base', \
@@ -225,6 +229,8 @@ class TestBaseKit:
         rpmP = subprocess.Popen('rpm --quiet -i %s' % self.kit_rpm,
                                 cwd=self.temp_mount / self.kit_name, shell=True)
         rpmP.wait()
+
+        assert isRPMInstalled('kit-' + self.kit_name), 'Need RPM installed'
 
         # remove the kit using kitops
         addP = subprocess.Popen('kitops -e --kitname %s %s -p %s' %
@@ -374,6 +380,203 @@ class TestBaseKit:
 
         # drop this session, start with new untainted session when asserting
         self.kusudb.ctx.del_current()
+
+class TestMetaKit:
+    def setUp(self):
+        global temp_root
+        global temp_mount
+        global kusudb
+
+        self.temp_root = temp_root
+        self.temp_mount = temp_mount
+        self.depot_dir = self.temp_root / 'depot'
+        self.kits_dir = self.depot_dir / 'kits'
+
+        self.kit_iso = 'mock-kit-chipmunks-0.1-0.noarch.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
+        
+        self.kit_members = 3
+        self.kit_rpms = ['kit-alvin-0.1-0.i386.rpm',
+                         'kit-simon-0.1-0.i386.rpm',
+                         'kit-theodore-0.1-0.i386.rpm']
+        self.kit_names = ['alvin', 'simon', 'theodore']
+        self.kit_ver = '0.1'
+        self.kit_arch = 'noarch'
+        self.kits_dir_names = [self.kits_dir / name for name in self.kit_names]
+        self.kits_dir_vers = \
+            [dirname / self.kit_ver for dirname in self.kits_dir_names]
+        self.kits_dir_archs = \
+            [dirver / self.kit_arch for dirver in self.kits_dir_vers]
+
+        assert self.kit.exists(), 'Chipmunk kit ISO does not exist!'
+
+        self.kusudb = kusudb
+        self.kusudb.createTables()
+        self.kusudb.bootstrap()
+
+        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                  (self.kit, self.temp_mount), shell=True)
+        mountP.wait()
+
+    def tearDown(self):
+        self.kusudb.flush()
+        self.kusudb.dropTables()
+
+        # wipe out installed files
+        if self.depot_dir.exists():
+            self.depot_dir.rmtree()
+
+        umountP = subprocess.Popen('umount %s 2> /dev/null' % self.temp_mount,
+                                   shell=True)
+        umountP.wait()
+
+    def testAddMetaKit(self):
+        # we need to be root
+        assertRoot()
+
+        addP = subprocess.Popen('kitops -a -m %s %s -p %s' %
+                                (self.kit, dbinfo_str, self.temp_root),
+                                shell=True)
+        rv = addP.wait()
+
+        assert rv == 0, 'kitops returned error: %s' % rv
+
+        rpms = {}
+        for x in xrange(self.kit_members):
+            kitname = self.kit_names[x]
+            # verify the kit RPM is installed
+            rpm_installed = isRPMInstalled('kit-' + kitname)
+            rpms[self.kit_names[x]] = rpm_installed
+            if rpm_installed:
+                # clean up after this test
+                rpmP = subprocess.Popen('rpm --quiet -e --nodeps kit-%s' %
+                                        kitname, shell=True)
+
+        for x in xrange(self.kit_members):
+            assert rpms[self.kit_names[x]], \
+                'RPM kit-%s is not installed' % self.kit_names[x]
+
+        # assert all directories exist
+        assert self.depot_dir.exists(), \
+               'Depot dir %s does not exist' % self.depot_dir
+        assert self.kits_dir.exists(), \
+               'Kits dir %s does not exist' % self.kits_dir
+        for x in xrange(self.kit_members):
+            assert self.kits_dir_names[x].exists(), \
+                   'Kit dir %s does not exist' % self.kits_dir_names[x]
+            assert self.kits_dir_vers[x].exists(), \
+                   'Kit ver dir %s does not exist' % self.kits_dir_vers[x]
+            assert self.kits_dir_archs[x].exists(), \
+                   'Kit ver dir %s does not exist' % self.kits_dir_archs[x]
+
+        # assert contents are the same
+        for x in xrange(self.kit_members):
+            assert areContentsEqual(self.temp_mount / self.kit_names[x],
+                                    self.kits_dir_archs[x], '*.rpm'), \
+                   'RPM files in %s and %s are not equal' % \
+                   (self.temp_mount / self.kit_names[x], self.kits_dir_archs[x])
+
+        # check DB for information
+        kits = self.kusudb.Kits.select()
+        
+        # we are expecting only one kit
+        assert len(kits) == self.kit_members, \
+            'Kits in DB: %d, expected: %d' % (len(kits), self.kit_members)
+
+        # check the kit's data
+        for x in xrange(self.kit_members):
+            kitname = self.kit_names[x]
+            kit = kits[x]
+            assert kit.rname == kitname, \
+                   'Kit name: %s, expected %s' % (kit.rname, kitname)
+            assert kit.rdesc == '%s kit.' % kitname, \
+                   'Description: %s, expected: %s kit.' % (kit.rdesc, kitname)
+            assert kit.version == '0.1', \
+                   'Version: %s, expected: 0.1' % kit.version
+            assert not kit.isOS, \
+                   'Expected isOS to be False for kit %s' % kitname
+            assert not kit.removable, 'Expected removable to be False ' + \
+                   'for kit %s' % kitname
+            assert kit.arch == self.kit_arch, \
+                   'Arch: %s, expected: %s' % (kit.arch, self.kit_arch)
+
+        # each kit has one component
+        cmps = self.kusudb.Components.select()
+        assert len(cmps) == self.kit_members, \
+            'Components in DB: %d, expected: %d' % (len(cmps), self.kit_members)
+
+        # check component data
+        for x in xrange(self.kit_members):
+            kitname = self.kit_names[x]
+            cmp = self.kusudb.Components.selectfirst_by(
+                            cname='component-%s' % kitname)
+            assert cmp.kid == kits[x].kid, \
+                'Component component-%s ' % kitname + \
+                'not linked to kit by kid'
+            assert cmp.cname == 'component-%s' % kitname, \
+                   'Component name: %s, ' % cmp.cname + \
+                   'expected: component-%s' % kitname
+            assert cmp.cdesc == '%s component for Fedora Core 6.' % kitname, \
+                   'Component description: ' + \
+                   '%s, expected: ' % cmp.cdesc + \
+                   '%s component for Fedora Core 6.' % kitname
+            assert cmp.os == 'fedora', 'OS: %s, expected: fedora' % cmp.os
+            # node component associated only with compute nodegroup
+            assert len(cmp.nodegroups) != 0, \
+                'Component %s not associated with any nodegroups' % cmp.cname
+
+            if kitname == 'alvin':
+                gotCompute = False
+                gotInstaller = False
+
+                for ng in cmp.nodegroups:
+                    if ng.type == 'compute': gotCompute = True
+                    if ng.type == 'installer': gotInstaller = True
+
+                assert gotCompute, 'Component %s ' % cmp.cname + \
+                    'not associated with any compute type nodegroup'
+                assert gotInstaller, 'Component %s ' % cmp.cname + \
+                    'not associated with any installer type nodegroup'
+            elif kitname == 'simon':
+                gotInstaller = False
+                
+                for ng in cmp.nodegroups:
+                    if ng.type == 'installer': gotInstaller = True
+
+                assert gotInstaller, 'Component %s ' % cmp.cname + \
+                    'not associated with any installer type nodegroup'
+            elif kitname == 'theodore':
+                gotCompute = False
+                
+                for ng in cmp.nodegroups:
+                    if ng.type == 'compute': gotCompute = True
+
+                assert gotInstaller, 'Component %s ' % cmp.cname + \
+                    'not associated with any compute type nodegroup'
+
+        # kit stored in packages table
+        ngs = self.kusudb.NodeGroups.select()
+        for ng in ngs:
+            if ng.type == 'installer':
+                for pkg in ng.packages:
+                    match = False
+                    for x in xrange(self.kit_members):
+                        kitname = self.kit_names[x]
+                        if pkg.packagename == 'kit-%s' % kitname:
+                            match = True
+                            break
+                        
+                    assert match, 'Package %s not ' % pkg.packagename + \
+                            'assciated with with %s nodegroup' % ng.ngname
+            else:
+                for pkg in ng.packages:
+                    for x in xrange(self.kit_members):
+                        kitname = self.kit_names[x]
+                        assert pkg.packagename != 'kit-%s' % kitname, \
+                           'kit-%s package associated ' % kitname + \
+                           'with %s nodegroup' % ng.ngname
 
 class TestFedoraCore6i386:
     def setUp(self):
@@ -610,19 +813,11 @@ def isRPMInstalled(pattern):
     Return True if RPM matching pattern is currently installed.
     """
 
-    tmp_fd, tmp_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
+    rpmP = subprocess.Popen('rpm -qa %s' % pattern, shell=True,
+                            stdout=subprocess.PIPE)
+    out, err = rpmP.communicate()
 
-    # run the command and store output in temp file
-    rpmP = subprocess.Popen('rpm -qa %s' % pattern, shell=True, stdout=tmp_fd)
-    rpmP.wait()
-
-    tmp_fn = path(tmp_fn)
-    tmp_size = tmp_fn.getsize() # will be zero if no output from rpmP
-
-    os.close(tmp_fd)
-    tmp_fn.remove()
-
-    return tmp_size != 0
+    return out != ''
 
 def assertRoot():
     if os.getuid() != 0:
