@@ -202,9 +202,9 @@ class PackageProfile(Struct):
             
         elif self.srctype in  ['srpm','rpm','binarydist','autotools']:
             # ensure that the name, version, release are defined.
-            if not self.name: raise PackageAttributeNotDefined, 'name'
-            if not self.version: raise PackageAttributeNotDefined, 'version'
-            if not self.release: raise PackageAttributeNotDefined, 'release'            
+            if not hasattr(self,'name'): raise PackageAttributeNotDefined, 'name'
+            if not hasattr(self,'version'): raise PackageAttributeNotDefined, 'version'
+            if not hasattr(self,'release'): raise PackageAttributeNotDefined, 'release'            
 
         if not self.srctype in ['srpm','rpm','distro']:
             
