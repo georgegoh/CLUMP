@@ -39,7 +39,7 @@ class TestBuildKitApp(object):
         
         assert kitsrc.verifySrcPath() is True
         
-    def testBuildEmptyKit(self):
+    def testBuildEmptyKitISO(self):
         """ Test to create an empty kit and build it. """
         cmd1 = 'buildkit new kit=test > /dev/null 2>&1'
         cmd2 = 'buildkit make kit=test > /dev/null 2>&1'
@@ -54,6 +54,20 @@ class TestBuildKitApp(object):
         
         assert isofile.exists()
         
+    def testBuildEmptyKitDir(self):
+        """ Test to create an empty kit and build it. """
+        cmd1 = 'buildkit new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test dir=testdir > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitdir = self.scratchdir / 'testdir'
+        kitinfo = kitdir / 'test/kitinfo'
+
+        assert kitinfo.exists()
         
         
         

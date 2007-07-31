@@ -21,7 +21,7 @@ class App(KusuApp):
         KusuApp.__init__(self)
 
         self.actions = {'new':['kit'], 
-            'make':['kit']}
+            'make':['kit','dir']}
 
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -38,20 +38,33 @@ actions:
 
     new             - Create a new Kit directory. Available arguments for 
                       this action:
-                        kit=<name of kit directory to create>
-    make            - Make a Kit iso. Available arguments for this action:
-                        kit=<path of kit directory>
+
+                      REQUIRED ARGS:
+                        kit=<name of kit source directory to create>
+
+    make            - Make a Kit iso. If the dir argument is given,
+                      a kit directory will be created instead. Available 
+                      arguments for this action:
+
+                      REQUIRED ARGS:
+                        kit=<path of kit source directory>
+                        
+                      OPTIONAL ARGS:
+                        dir=<path of kit directory to make>
                  
 """)
         self.examples = self._("""\
 Example operations:
 
-    To prepare a new Kit called hellokit:
-    # buildkit new kit=hellokit
+    To prepare a new Kit called test:
+    # buildkit new kit=test
 
-    To make the hello Kit:
-    # buildkit make kit=hellokit
-
+    To make the test Kit iso:
+    # buildkit make kit=test
+    
+    To make the test Kit dir:
+    # buildkit make kit=test dir=testdir
+    
 """)
         self.parser.set_usage(self.usagestr)
 
@@ -135,6 +148,9 @@ Example operations:
 
         # set verbosity
         self.bkinst.verbose = self.options.verbose
+        
+        # flag to determine the creation of iso
+        self.makeiso = False
 
         # call the correct sub-handler for the action
         m = '_' + self.action.split('-')[0] \
@@ -161,11 +177,18 @@ Example operations:
     def _make(self, args):
         """ Handler for make action. args is a dict of supported key-value pairs for this action. """
         kitsrc = path(args['kit']).abspath()
+        _kitdir = args.get('dir','')
+
+        if not _kitdir: 
+            self.makeiso = True
+        else:
+            kitdir = path(_kitdir).abspath()
+        
         oldrpmmacros = ''
         
         # first check if mkisofs is installed
         try:
-            checkToolDeps('mkisofs')
+            if self.makeiso: checkToolDeps('mkisofs')
         except ToolNotFound:
             msg = self._('Unable to locate mkisofs! Please ensure that it is available.')
             self.printMsgExit(msg)
@@ -253,20 +276,31 @@ Example operations:
         kitinfo = '%s/kitinfo' % kitsrc
         self.bkinst.generateKitInfo(kit,kitinfo)
         
-        # finally, make the kit iso
-        msg = self._('Creating the Kit iso..')
-        print msg
-        kitiso = self.bkinst.makeKitISO(kitsrc)
+        # finally, make the kit artifact
+        if self.makeiso:
+            msg = self._('Creating the Kit iso..')
+            print msg
+            kitiso = self.bkinst.makeKitISO(kitsrc)
         
-        if not kitiso:
-            msg = self._('Error creating Kit ISO!')
-            if oldrpmmacros:
-                msg = self._('Restoring .rpmmacros')
-                self.bkinst.restoreRPMMacros(oldrpmmacros)
-            self.printMsgExit(msg)
+            if not kitiso:
+                msg = self._('Error creating Kit ISO!')
+                if oldrpmmacros:
+                    msg = self._('Restoring .rpmmacros')
+                    self.bkinst.restoreRPMMacros(oldrpmmacros)
+                self.printMsgExit(msg)
                 
-        msg = self._('Kit ISO created. ISO file is at %(isofile)s.' % {'isofile':kitiso})
-        print msg
+            msg = self._('Kit ISO created.')
+            print msg
+            msg = self._('ISO file is at %(isofile)s.' % {'isofile':kitiso})
+            print msg
+        else:
+            msg = self._('Creating the Kit dir..')
+            print msg
+            self.bkinst.makeKitDir(kitsrc,kitdir)
+            msg = self._('Kit directory created..')
+            print msg
+            msg = self._('Kit directory is at %(kitdir)s.' % {'kitdir':kitdir})
+            print msg
         
         if oldrpmmacros:
             msg = self._('Restoring .rpmmacros')
