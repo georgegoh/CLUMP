@@ -7,6 +7,9 @@
 
 from kusu.core import database as db
 from kusu.repoman.updates import BaseUpdate
+from kusu.util import rpmtool
+from kusu.util.tools import cpio_copytree
+
 from path import path
 import tempfile
 import os
@@ -93,3 +96,25 @@ class TestTool:
         assert lines.find("k.release = '100'") != -1
         assert lines.find("k.arch = 'i386'") != -1
 
+    def testMakeUpdateKit(self):
+        global prefix
+
+        bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
+
+        def prepkit(workingDir,kitName): (workingDir/kitName/'packages').makedirs()
+        def makekit(workingDir,DestDir,z): cpio_copytree(workingDir,DestDir)
+        bu.prepKit = prepkit
+        bu.makeKit = makekit
+       
+        r = rpmtool.RPM(name = 'foo',
+                        version = '1.0',
+                        release = '1',
+                        arch = 'i386',
+                        epoch = 0)
+        
+        r.filename = path(prefix / r.getFilename())
+        r.getFilename().touch()
+    
+        kitdir = bu.makeUpdateKit([r])
+   
+        assert kitdir / 'fedora-updates' / 'packages' / 'foo-1.0-1.i386.rpm'    

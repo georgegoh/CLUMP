@@ -328,5 +328,3 @@ class TestFedora6Repo:
         assert not (updatesDir / 'ftp-0.17-33.fc6.i386.rpm').exists() 
         # new docbook-utils-pdf rpm in updates
         assert (updatesDir / 'docbook-utils-pdf-0.6.14-8.fc6.noarch.rpm').exists() 
-   
-         
