@@ -18,5 +18,6 @@ setup(name="kusu-repoman",
       packages = ['repoman'],
       package_dir={'repoman': 'src/lib'},
       scripts=['src/bin/repoman'],
-      data_files=[('etc', ['src/etc/updates.conf'])] 
+      data_files=[('etc', ['src/etc/updates.conf']),
+                  ('etc/repoman-templates', ['src/etc/templates/update.kit.tmpl'])] 
      )

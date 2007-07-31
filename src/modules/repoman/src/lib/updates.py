@@ -8,16 +8,24 @@
 #
 
 import os
+import re
+import tempfile
 from path import path
+from Cheetah.Template import Template
 
 from kusu.util import rpmtool
 from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
 from kusu.repoman.tools import getFile, getConfig
-from kusu.util.errors import NotImplementedError, InvalidRPMHeader
+from kusu.util.errors import *
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 class BaseUpdate:
-    def __init__(self, os_name, os_version, os_arch, prefix):
+    def __init__(self, os_name, os_version, os_arch, prefix, db):
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
@@ -32,6 +40,99 @@ class BaseUpdate:
         """Gets the updates and writes them into the destination dir"""
         raise NotImplementedError
 
+    def makeUpdateKit(self, pkgs):
+        """Makes the update kit"""
+
+        kitName = '%s-updates' % self.os_name 
+        kitArch = self.os_arch
+
+        # Find max version
+        kits = sorted([kit.version for kit in self.db.Kits.select_by(rname = kitName)])
+        if kits:
+            maxRelease = kits[-1]
+
+            c = re.compile('r[\d]+') 
+            matches = c.findall(maxRelease)
+            if matches:
+                # Takw away rXXX
+                kitRelease = int(matches[0][1:]) + 1
+            else:
+                kitRelease = 1
+        else:
+            kitRelease = 1
+
+
+        if self.prefix:
+            tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=self.prefix))
+            kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=self.prefix))
+        else:
+            tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+            kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+
+        self.prepKit(tempkitdir, kitName)
+        self.makeKitScript(tempkitdir, kitName, kitRelease)
+
+        for p in pkgs:
+            file = p.getFilename()
+            dest = tempkitdir / kitName / 'packages' / file.basename()
+
+            # Use abs symlink. mkisofs -f doesnt really
+            # follow relative 
+            file.symlink(dest) 
+        
+        self.makeKit(tempkitdir, kitdir, kitName)
+
+        return kitdir
+    
+    def makeKitScript(self, tempkitdir, kitName, kitRelease):
+
+        dest = tempkitdir / kitName / 'build.kit'
+        out = open(dest, 'w')
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        template = kusu_root / 'etc' / 'repoman-templates' / 'update.kit.tmpl'
+
+        ns = {}
+        ns['kitname'] = kitName
+        ns['kitver'] = '%s_r%s' % (self.os_version, kitRelease)
+        ns['kitrel'] = kitRelease
+        ns['kitarch'] = self.os_arch
+        ns['kitdesc'] = ''
+        
+        t = Template(file=str(template), searchList=[ns])  
+        out.write(str(t))
+        out.close()
+    
+    def prepKit(self, workingDir, kitName):
+        cmd = 'buildkit new kit=%s' % kitName
+        p = subprocess.Popen(cmd,
+                             cwd=workingDir,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        retcode = p.returncode
+
+        if retcode == 0:
+            return True
+        else:
+            raise UnableToPrepUpdateKit, err
+
+    def makeKit(self, workingDir, destDir, kitName):
+        cmd = 'buildkit make kit=%s dir=%s' % (kitName, destDir)
+        p = subprocess.Popen(cmd,
+                             cwd=workingDir,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        retcode = p.returncode
+
+        if retcode == 0:
+            return True
+        else:
+            raise UnableToMakeUpdateKit, err
+
     def getSources(self):
         """Return the path of sources to compare against mirror"""
         raise NotImplementedError
@@ -41,8 +142,8 @@ class BaseUpdate:
         return getConfig(configFile)
 
 class YumUpdate(BaseUpdate):
-    def __init__(self,os_name, os_version, os_arch, prefix):
-        BaseUpdate.__init__(self, os_name, os_version, os_arch, prefix)
+    def __init__(self, os_name, os_version, os_arch, prefix, db):
+        BaseUpdate.__init__(self, os_name, os_version, os_arch, prefix, db)
 
     def getURI(self):
         """Returns the relavant uri of yum repos"""
@@ -104,7 +205,7 @@ class YumUpdate(BaseUpdate):
                 f.write(content)
                 f.close()
 
-        return downloadPkgs
+        return rpmtool.getLatestRPM([dir], True).getList()
 
     def getLatestRPM(self, primarys):
         """Return the latested rpms from yum repos"""
@@ -127,8 +228,8 @@ class YumUpdate(BaseUpdate):
         return c.getList()
 
 class RHNUpdate(BaseUpdate):
-    def __init__(self, os_version, os_arch, cfg, prefix):
-        BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix)
+    def __init__(self, os_version, os_arch, cfg, prefix, db):
+        BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix, db)
 
         if cfg.has_key('url'):
             url = cfg['url']
@@ -204,4 +305,4 @@ class RHNUpdate(BaseUpdate):
             self.rhn.logout()
         except: pass
 
-
+        return rpmtool.getLatestRPM([dir], True).getList()

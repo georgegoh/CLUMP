@@ -1,0 +1,21 @@
+# define a component
+comp = DefaultComponent()
+comp.ngtypes = []
+comp.name = '$kitname'
+comp.description = '$kitdesc'
+comp.version = '$kitver'
+comp.arch = '$kitarch'
+
+# define a kit
+k = DefaultKit()
+k.name = '$kitname'
+k.description = '$kitdesc'
+k.version = '$kitver'
+k.release = '$kitrel'
+k.arch = '$kitarch'
+k.description = '$kitdesc'
+
+# Adding the component defined earlier
+k.addComponent(comp)
+
+

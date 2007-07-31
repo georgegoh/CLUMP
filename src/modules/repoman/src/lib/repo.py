@@ -344,7 +344,7 @@ class RedhatYumRepo(BaseRepo):
                     obj.delete()
                     obj.flush()         
 
-            if not self.repo_path and self.repo_path.exists():
+            if self.repo_path and self.repo_path.exists():
                 self.repo_path.rmtree()
 
             raise e
@@ -415,7 +415,7 @@ class RedhatYumRepo(BaseRepo):
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
-        YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix)
+        YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix, db)
         
         self.configFile=configFile
 
@@ -456,7 +456,7 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db, configFile=None):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
-        YumUpdate.__init__(self, 'centos', '5', os_arch, prefix)
+        YumUpdate.__init__(self, 'centos', '5', os_arch, prefix, db)
         
         self.configFile=configFile
 
@@ -518,7 +518,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
             cfg['password'] = ''
             cfg['url'] = ''
         
-        RHNUpdate.__init__(self, '5', os_arch, cfg, prefix)
+        RHNUpdate.__init__(self, '5', os_arch, cfg, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['imagesdir'] = 'images'
