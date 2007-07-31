@@ -151,6 +151,8 @@ class BuildInitrd:
 
             sys.exit(-1)
 
+        arch = 'x86'
+
         if data:
             arch = data[0]
 
