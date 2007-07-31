@@ -8,6 +8,7 @@
 from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
+from kusu.partitiontool.disk import Partition
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
@@ -123,13 +124,6 @@ def translatePartitionOptions(options, opt):
     if opt == 'fill' and opt in opt_dict.keys():
         return (True,None)
 
-    # preserve
-    if opt == 'preserve' and opt not in opt_dict.keys():
-        return (False,None)
-
-    if opt == 'preserve' and opt in opt_dict.keys():
-        return (True,None)
-        
     # extent
     if opt == 'extent' and opt not in opt_dict.keys():
         return (False,None)
@@ -165,7 +159,14 @@ def translatePartitionOptions(options, opt):
         else:
             return (False, None)
 
-def adaptNIIPartition(niipartition):
+    # partition ID
+    if opt == 'partitionID' and opt not in opt_dict.keys():
+        return (False, None)
+    if opt == 'partitionID' and opt in opt_dict.keys():
+        return (True, opt_dict[opt])
+
+
+def adaptNIIPartition(niipartition, diskprofile):
     """ Adapt niipartition into a partitiontool schema. This schema can
         be passed along with a partitiontool diskprofile to setupDiskProfile
         method.
@@ -175,7 +176,7 @@ def adaptNIIPartition(niipartition):
     schema = {'disk_dict':{},'vg_dict':None}
 
     # filter out the values into normal volumes and volume groups and logical volumes.
-    part_list, vg_list, lv_list = filterPartitionEntries(niipartition.values())
+    part_list, vg_list, lv_list, del_list, del_fs, del_mntpnt = filterPartitionEntries(niipartition.values(), diskprofile)
 
     if vg_list:
         schema['vg_dict'] = {}
@@ -189,6 +190,11 @@ def adaptNIIPartition(niipartition):
 
         # create the normal volumes.
         for partinfo in part_list:
+            fs = translateFSTypes(partinfo['fstype'])
+            preserve = partinfo['preserve'].lower()
+            if preserve == 'n': preserve = False
+            else: preserve = True
+
             createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
             pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
             if pv: handlePV(partinfo, vg_name, schema['vg_dict'])
@@ -205,23 +211,48 @@ def adaptNIIPartition(niipartition):
             lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
             if lv: handleLV(lvinfo, vg_name, schema['vg_dict'])
 
-        # TODO: remove this 'hack' :D
-        schema['preserve_types'] = []
+        preserve_types = Partition.native_type_dict.values() 
+        # create the preserve list.
+        for p_type in del_list:
+            if p_type in preserve_types:
+                preserve_types.remove(p_type)
+
+        preserve_fs = DiskProfile.fsType_dict.keys() 
+        for fs in del_fs:
+            if fs in preserve_fs:
+                preserve_fs.remove(fs)
+
+        preserve_mntpnt = diskprofile.mountpoint_dict.keys()
+        for mntpnt in del_mntpnt:
+            if mntpnt in preserve_mntpnt:
+                preserve_mntpnt.remove(mntpnt)
+
+        schema['preserve_types'] = preserve_types
+        schema['preserve_fs'] = preserve_fs
+        schema['preserve_mntpnt'] = preserve_mntpnt
+
     except ValueError:
-        raise InvalidPartitionSchema, "Couldn't parse one of the Volume Group fields."
+        raise InvalidPartitionSchema, "Couldn't parse one of the lines."
 
     return schema
 
-def filterPartitionEntries(partition_entries):
+def filterPartitionEntries(partition_entries, disk_profile):
     """ Filter out the values into normal volumes and volume
         groups and logical volumes.
     """
     part_list = []
     vg_list = []
     lv_list = []
+    del_list = []
+    del_fs = []
+    del_mntpnt = []
     for partinfo in partition_entries:
         try:
             disknum = int(partinfo['device'])
+            if partinfo['preserve'].lower() == 'y':
+                mountpoint = translateMntPnt(partinfo['mntpnt'])
+                if mountpoint and mountpoint in disk_profile.mountpoint_dict.keys():
+                    continue
             part_list.append(partinfo)
         except ValueError:
             if translatePartitionOptions(partinfo['options'],'lv')[0]:
@@ -230,10 +261,21 @@ def filterPartitionEntries(partition_entries):
                 vg_list.append(partinfo)
             elif partinfo['device'].lower() == 'n':
                 part_list.append(partinfo)
+            elif not partinfo['device'] and not partinfo['partition'] and \
+                 not partinfo['size'] and partinfo['preserve'].lower() == 'n':
+                p_id, name = translatePartitionOptions(partinfo['options'], 'partitionID')
+                mountpoint = translateMntPnt(partinfo['mntpnt'])
+                fs = translateFSTypes(partinfo['fstype'])
+                if p_id:
+                    del_list.append(name)
+                elif mountpoint:
+                    del_mntpnt.append(mountpoint)
+                elif fs:
+                    del_fs.append(fs)
             else:
                 raise InvalidPartitionSchema, \
                  "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
-    return part_list, vg_list, lv_list
+    return part_list, vg_list, lv_list, del_list, del_fs, del_mntpnt
 
 def createPartition(partinfo, disk_dict, vg_dict):
     """ Create a new partition and add it to the supplied disk dictionary."""
@@ -434,12 +476,12 @@ class KickstartFromNIIProfile(object):
         try:
             # adapt the NII into a schema
             logger.debug('Adapting ni.partitions: %r' % ni.partitions)
-            schema = adaptNIIPartition(ni.partitions)
-            logger.debug('Adapted schema from the ni.partitions: %r' % schema)
             if testmode:
-                self.diskprofile = DiskProfile(True,diskimg)
+                self.diskprofile = DiskProfile(False,diskimg)
             else:
-                self.diskprofile = DiskProfile(True)
+                self.diskprofile = DiskProfile(False)
+            schema = adaptNIIPartition(ni.partitions, self.diskprofile)
+            logger.debug('Adapted schema from the ni.partitions: %r' % schema)
             logger.debug('Calling setupDiskProfile to apply schema to the diskprofile..')    
             setupDiskProfile(self.diskprofile, schema)
         except InvalidPartitionSchema, e:
