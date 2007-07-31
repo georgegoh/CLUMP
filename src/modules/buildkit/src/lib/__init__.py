@@ -7,5 +7,6 @@
 
 from kusu.buildkit.kitsource import KitSrcFactory
 from kusu.buildkit.methods  import *
+from kusu.buildkit.tool import BuildKit
 from kusu.buildkit.builder import setupRPMMacrofile, prepareNS, PackageProfile, getBuildKitTemplate
 
