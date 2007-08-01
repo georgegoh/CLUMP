@@ -202,7 +202,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         # this needs to be made node name agnostic
         other_ngs = \
             db.NodeGroups.select_by(db.NodeGroups.c.ngname.in_('compute-disked',
-                   'compute-diskless', 'compute', 'unmanaged'))
+                   'compute-imaged', 'compute', 'unmanaged'))
 
         interfaces = profile['interfaces']
 

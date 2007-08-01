@@ -672,11 +672,11 @@ class DB(object):
             compute.kparams = 'text noipv6 kssendmac selinux=0'
             
         # more nodegroups
-        NodeGroups(ngname='compute-disked', nameformat='c#RR-#NN',
+        NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
                    installtype='disked', type='compute')
         NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
                    installtype='diskless', type='compute')
-        NodeGroups(ngname='unmanaged', nameformat='c#RR-#NN',
+        NodeGroups(ngname='unmanaged', nameformat='device#NNN',
                    installtype='unmanaged', type='other')
 
         # Create the master installer node
