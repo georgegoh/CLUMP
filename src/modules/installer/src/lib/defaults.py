@@ -10,6 +10,7 @@ import kusu.util.log as kusulog
 from kusu.util.errors import *
 from kusu.util.structure import Struct
 from path import path
+from sets import Set
 
 logger = kusulog.getKusuLog('installer.defaults')
 
@@ -62,13 +63,38 @@ class LVMCollection(Struct):
 
 
 class PartitionSchema(Struct):
-    def __init__(self, disks, lvm=None, preserve_types=[], preserve_fs=[], preserve_mntpnt=[]):
+    def __init__(self, disks, lvm={}, preserve_types=[], preserve_fs=[], preserve_mntpnt=[]):
         Struct(self)
         self.disk_dict=disks
         self.vg_dict=lvm
         self.preserve_types=preserve_types
         self.preserve_fs=preserve_fs
         self.preserve_mntpnt=preserve_mntpnt
+
+    def __eq__(self, other):
+        disk_keys = self.disk_dict.keys()
+        other_disk_keys = other['disk_dict'].keys()
+        if 'no_of_disks' not in other_disk_keys:
+            other_disk_keys.append('no_of_disks')
+        if Set(disk_keys) != Set(other_disk_keys):
+            print 'a'
+            return False
+        if Set(self.vg_dict.keys()) != Set(other['vg_dict'].keys()):
+            print 'b'
+            return False
+        if Set(self.preserve_types) != Set(other['preserve_types']):
+            print 'c'
+            return False
+        if Set(self.preserve_fs) != Set(other['preserve_fs']):
+            print 'd'
+            return False
+        if Set(self.preserve_mntpnt) != Set(other['preserve_mntpnt']):
+            print 'e'
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 def percentSchema():
