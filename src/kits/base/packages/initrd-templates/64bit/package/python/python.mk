@@ -27,7 +27,7 @@ $(DL_DIR)/$(PYTHON_SOURCE):
 python-source: $(DL_DIR)/$(PYTHON_SOURCE)
 
 $(PYTHON_DIR)/.unpacked: $(DL_DIR)/$(PYTHON_SOURCE)
-	tar $(TAR_OPTIONS) $(DL_DIR)/$(PYTHON_SOURCE) -C $(BUILD_DIR)
+	tar -jxf $(DL_DIR)/$(PYTHON_SOURCE) -C $(BUILD_DIR)
 	touch $@
 
 $(PYTHON_DIR)/.patched: $(PYTHON_DIR)/.unpacked

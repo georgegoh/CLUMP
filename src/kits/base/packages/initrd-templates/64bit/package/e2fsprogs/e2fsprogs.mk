@@ -71,7 +71,7 @@ $(TARGET_DIR)/$(E2FSPROGS_TARGET_BINARY): $(E2FSPROGS_DIR)/$(E2FSPROGS_BINARY)
 	mkdir -p $(STAGING_DIR)/include/uuid
 	cp $(E2FSPROGS_DIR)/lib/lib*.so* $(STAGING_DIR)/lib
 	#$(MAKE1) PATH=$(TARGET_PATH) DESTDIR=$(STAGING_DIR) -C $(E2FSPROGS_DIR) install
-	cp $(E2FSPROGS_DIR)/lib/uuid/uuid.h $(STAGING_DIR)/usr/include/uuid
+	cp $(E2FSPROGS_DIR)/lib/uuid/uuid.h $(STAGING_DIR)/include/uuid
 	rm -rf $(TARGET_DIR)/share/locale $(TARGET_DIR)/usr/info \
 		$(TARGET_DIR)/usr/man $(TARGET_DIR)/usr/share/doc
 	touch -c $(TARGET_DIR)/$(E2FSPROGS_TARGET_BINARY)

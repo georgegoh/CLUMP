@@ -34,7 +34,7 @@ $(PYPARTED_WORKDIR)/.configured:	$(PYPARTED_DIR)/.unpacked
 
 
 $(PYPARTED_WORKDIR)/partedmodule.so:	$(PYPARTED_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/include/python2.4" -C $(PYPARTED_WORKDIR)
+	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS) -fPIC -I$(STAGING_DIR)/include/python2.4" -C $(PYPARTED_WORKDIR)
 	( \
 		cd $(PYPARTED_WORKDIR) ; \
 		$(STRIP) partedmodule.so ; \

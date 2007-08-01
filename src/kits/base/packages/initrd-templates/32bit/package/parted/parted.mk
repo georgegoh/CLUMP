@@ -5,6 +5,8 @@
 #############################################################
 
 PARTED_VERSION=1.8.7
+PARTED_LIBVER1=1.8.so.7
+PARTED_LIBVER2=1.8.so.7.0.0
 
 # Don't alter below this line unless you (think) you know
 # what you are doing! Danger, Danger!
@@ -48,8 +50,12 @@ $(PARTED_WORKDIR)/.installed: 	$(PARTED_WORKDIR)/parted/parted
 	mkdir -p $(TARGET_DIR)/usr/bin
 	mkdir -p $(STAGING_DIR)/include/parted
 	cp -v $(PARTED_WORKDIR)/include/parted/*.h $(STAGING_DIR)/include/parted
+	cp -f $(PARTED_WORKDIR)/libparted/.libs/libparted*so* $(STAGING_DIR)/lib
 	cp -f $(PARTED_WORKDIR)/parted/.libs/parted $(TARGET_DIR)/usr/bin
 	cp -f $(PARTED_WORKDIR)/partprobe/.libs/partprobe $(TARGET_DIR)/usr/bin
+	cp -f $(PARTED_WORKDIR)/libparted/.libs/libparted.so $(TARGET_DIR)/lib
+	(cd $(TARGET_DIR)/lib ;ln -s libparted.so libparted-$(PARTED_LIBVER1))
+	(cd $(TARGET_DIR)/lib ;ln -s libparted.so libparted-$(PARTED_LIBVER2))
 	$(STRIP) --strip-all $(TARGET_DIR)/usr/bin/parted
 	$(STRIP) --strip-all $(TARGET_DIR)/usr/bin/partprobe
 	touch $(PARTED_WORKDIR)/.installed

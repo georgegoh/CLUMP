@@ -50,3 +50,36 @@ install::
 	install -m755 etc/imageinit.py $(ROOT)/opt/kusu/etc/
 	install -m755 etc/imageinit.sh $(ROOT)/opt/kusu/etc/
 
+initrd-32bit:
+	@echo "*************************************************************"
+	@echo "*   WARNING:  Some parts of this build may be interactive!  *"
+	@echo "*************************************************************"
+	@if [ -d buildroot ]; then \
+		rm -rf buildroot ; \
+	fi
+	@tar jxf ../../../../3rdparty/buildroot/buildroot*.bz2
+	(cd 32bit ;cp .config* ../buildroot)
+	(cd 32bit/packages ;cp -fr * ../../buildroot/packages/ )
+	(cd buildroot ; make)
+	(cd 32bit ;cp .config.cmd-withparted ../buildroot/.config.cmd)
+	(cd 32bit ;cp .config-withparted ../buildroot/.config)
+	(cd buildroot ; make)
+	cp buildroot/rootfs.i686.cpio initrds/
+	(cd initrds ;gzip rootfs.i686.cpio)
+
+initrd-64bit:
+	@echo "*************************************************************"
+	@echo "*   WARNING:  Some parts of this build may be interactive!  *"
+	@echo "*************************************************************"
+	@if [ -d buildroot ]; then \
+		rm -rf buildroot ; \
+	fi
+	@tar jxf ../../../../3rdparty/buildroot/buildroot*.bz2
+	(cd 64bit ;cp .config* ../buildroot)
+	(cd 64bit/packages ;cp -fr * ../../buildroot/packages/ )
+	(cd buildroot ; make)
+	(cd 64bit ;cp .config.cmd-withparted ../buildroot/.config.cmd)
+	(cd 64bit ;cp .config-withparted ../buildroot/.config)
+	(cd buildroot ; make)
+	cp buildroot/rootfs.x86_64.cpio initrds/
+	(cd initrds ;gzip rootfs.x86_64.cpio)
