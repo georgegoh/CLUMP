@@ -84,7 +84,6 @@ class KitAlreadyInstalledError(KusuError): pass
 class ComponentAlreadyInstalledError(KusuError): pass
 class KitNotInstalledError(KusuError): pass
 class InstallKitRPMError(KusuError): pass
-class CorruptComponentNameError(KusuError): pass
 class CopyOSMediaError(KusuError): pass
 class DeleteKitsError(KusuError): pass
 

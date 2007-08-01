@@ -23,6 +23,8 @@ from kusu.kitops.package import PackageFactory
 from kusu.util.tools import cpio_copytree
 from kusu.buildkit import processKitInfo
 from kusu.util.errors import *
+# TODO: uncomment this to call repoman's refresh
+#from kusu.repoman.repofactory import RepoFactory
 
 try:
     import subprocess
@@ -178,14 +180,18 @@ class KitOps:
 
         # 4. check/populate component table
         try:
-            self.updateComponents(newkit.kid, kitinfo[2])
-        except CorruptComponentNameError, msg:
+            updated_ngtypes = self.updateComponents(newkit.kid, kitinfo[2])
+        except ComponentAlreadyInstalledError, msg:
             # updateComponents encountered an error, remove kit from DB
             newkit.removable = True
             newkit.flush()
             self.deleteKit()
-            self.unmountMedia()
-            raise CorruptComponentNameError, msg
+            raise ComponentAlreadyInstalledError, msg
+
+        # TODO: uncomment this to call repoman's refresh
+        #if updated_ngtypes:
+        #    rfactory = RepoFactory(self.__db, self.prefix)
+        #    rfactory.refresh(ngtype=updated_ngtypes)
 
     def updateComponents(self, kid, components):
         """
@@ -199,6 +205,7 @@ class KitOps:
         oldcomponents = self.__db.Components.select(
                 self.__db.Components.c.cname.in_(*compnames))
 
+        updated_ngtypes = []
         for comp in components:
             newcomponent = True
             for oldcomp in oldcomponents:
@@ -221,11 +228,17 @@ class KitOps:
 
                 for ng in ngs:
                     ng.components.append(newcomp)
+
+                # keep track of updated nodegroup types
+                for type in comp['ngtypes']:
+                    if type not in updated_ngtypes:
+                        updated_ngtypes.append(type)
             else:
                 raise ComponentAlreadyInstalledError, \
                     'Component %s already installed' % comp['name']
 
         self.__db.flush()
+        return updated_ngtypes
 
     def getAvailableKits(self):
         """
