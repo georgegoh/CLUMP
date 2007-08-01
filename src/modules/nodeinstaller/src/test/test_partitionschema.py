@@ -19,8 +19,9 @@ import os
 from kusu.partitiontool import DiskProfile, Disk, Partition
 from kusu.installer.defaults import Disk as SchemaDisk
 from kusu.installer.defaults import Partition as SchemaPartition
-from kusu.installer.defaults import DiskCollection, PartitionSchema
-
+from kusu.installer.defaults import LVMGroup as SchemaLVMGroup
+from kusu.installer.defaults import LVMLogicalVolume as SchemaLVMLogicalVolume
+from kusu.installer.defaults import DiskCollection, LVMCollection, PartitionSchema
 
 
 class TestNIIPartition:
@@ -288,21 +289,45 @@ class TestNIIPartitionLVM(TestNIIPartition):
 <?xml version="1.0"?>
 <nii>
 <debug>
-Dump NII: 1
-State:
-Dump CFM: 0
-Node: node0000
+Dump NII: 1 
+State:  
+Dump CFM: 0 
+Node: node0000 
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
+    <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
     <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="n"/>
     <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="n"/>
     <partition device="N" mntpnt="" fstype="physical volume" size="6000" options="fill;pv;vg=VolGroup00" partition="N" preserve="n"/>
     <partition device="VolGroup00" mntpnt="" fstype="" size="0" options="vg;extent=32M" partition="" preserve="n"/>
     <partition device="ROOT" mntpnt="/" fstype="ext3" size="2000" options="lv;vg=VolGroup00" preserve="n"/>
     <partition device="DATA" mntpnt="/data" fstype="ext3" size="6000" options="lv;vg=VolGroup00;fill" preserve="n"/>
-/nodeinfo>
+    <component>component-base-node</component>
+    <appglobals name="ClusterName" value="BadBoy"/>
+    <appglobals name="DNSZone" value="myzone.company.com"/>
+    <appglobals name="DNSForwarders" value="172.16.1.5,172.16.1.8"/>
+    <appglobals name="DNSSearch" value="myzone.company.com company.com corp.company.com"/>
+    <appglobals name="NASServer" value="172.25.243.2"/>
+    <appglobals name="Timezone_zone" value="Asia/Singapore"/>
+    <appglobals name="Timezone_utc" value="1"/>
+    <appglobals name="NISDomain" value="engineering"/>
+    <appglobals name="NISServers" value="172.25.243.4,172.25.243.14"/>
+    <appglobals name="CFMSecret" value="GF5SEVTHJ589TNT45NTEYST78GYBG5GVYGT84NTV578TEB46"/>
+    <appglobals name="InstallerServeDNS" value="True"/>
+    <appglobals name="InstallerServeNIS" value="True"/>
+    <appglobals name="InstallerServeNFS" value="True"/>
+    <appglobals name="InstallerServeNTP" value="True"/>
+    <appglobals name="PrimaryInstaller" value="installer0"/>
+    <appglobals name="DHCPLeaseTime" value="2400"/>
+    <appglobals name="InstallerServeSMTP" value="False"/>
+    <appglobals name="Language" value="en_US.UTF-8"/>
+    <appglobals name="Keyboard" value="us"/>        
+    <appglobals name="RootPassword" value="badrootpassword"/>    
+    <appglobals name="SMTPServer" value="mailserver.myzone.company.com"/>
+    <appglobals name="CFMBaseDir" value="/opt/kusu/cfm"/>
+</nodeinfo>
 </nii>
-        """
+"""
         # make niisource more file-like
         self.niisource = StringIO(niidata)
         invalidniidata = """\
@@ -332,12 +357,36 @@ Node: node0000
 
         d1p3 = SchemaPartition()
         d1p3.size_MB = 6000
-        d1p3.fs = 'ext3'
+        d1p3.fs = 'physical volume'
+        d1p3.mountpoint = None
         d1p3.fill = True
         d1.addPartition(d1p3)
 
         disks = DiskCollection()
         disks.addDisk(d1)
+
+        volgroup00 = SchemaLVMGroup()
+        volgroup00.name = 'VolGroup00'
+        volgroup00.extent_size = '32M'
+        volgroup00.pv_scan = True
+        volgroup00.addPV(disk=1, partition=3)
+
+        root = SchemaLVMLogicalVolume()
+        root.name = 'ROOT'
+        root.size_MB = 2000
+        root.fs = 'ext3'
+        root.mountpoint = '/'
+        root.fill = False
+        volgroup00.addLV(root)
+
+        depot = SchemaLVMLogicalVolume()
+        depot.name = 'DEPOT'
+        depot.size_MB = 4000
+        depot.fs = 'ext3'
+        depot.mountpoint = '/depot'
+        depot.fill = True
+        volgroup00.addLV(depot)
+
 
         preserve_types = Partition.native_type_dict.values()
         preserve_fs = DiskProfile.fsType_dict.keys()
@@ -346,4 +395,6 @@ Node: node0000
                            preserve_fs=preserve_fs, preserve_mntpnt=preserve_mntpnt)
 
     def testKickstartFromNIIProfile(self):
-        raise SkipTest
+        """ Test to validate ksprofile.  
+        """
+        raise SkipTest, 'Not Ready'

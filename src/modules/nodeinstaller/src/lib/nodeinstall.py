@@ -173,7 +173,7 @@ def adaptNIIPartition(niipartition, diskprofile):
 
     """
 
-    schema = {'disk_dict':{},'vg_dict':None}
+    schema = {'disk_dict':{},'vg_dict':{}}
 
     # filter out the values into normal volumes and volume groups and logical volumes.
     part_list, vg_list, lv_list, del_list, del_fs, del_mntpnt = filterPartitionEntries(niipartition.values(), diskprofile)
@@ -253,6 +253,10 @@ def filterPartitionEntries(partition_entries, disk_profile):
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 if mountpoint and mountpoint in disk_profile.mountpoint_dict.keys():
                     continue
+            elif partinfo['preserve'].lower() == 'n':
+                mountpoint = translateMntPnt(partinfo['mntpnt'])
+                if mountpoint:
+                    del_mntpnt.append(mountpoint)
             part_list.append(partinfo)
         except ValueError:
             if translatePartitionOptions(partinfo['options'],'lv')[0]:
@@ -266,10 +270,10 @@ def filterPartitionEntries(partition_entries, disk_profile):
                 p_id, name = translatePartitionOptions(partinfo['options'], 'partitionID')
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 fs = translateFSTypes(partinfo['fstype'])
-                if p_id:
-                    del_list.append(name)
-                elif mountpoint:
+                if mountpoint:
                     del_mntpnt.append(mountpoint)
+                elif p_id:
+                    del_list.append(name)
                 elif fs:
                     del_fs.append(fs)
             else:
@@ -717,8 +721,8 @@ class NodeInstaller(object):
                 try:
                     d[m].mount(mntpnt)
                     mounted.append(m)
-                except MountFailedError:
-                    raise 'Unable to mount %s on %s' % (d[m].path, m)
+                except MountFailedError, e:
+                    raise e, 'Unable to mount %s on %s' % (d[m].path, m)
 
         for m in ['/']:
             if m not in mounted:
