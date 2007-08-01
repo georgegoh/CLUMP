@@ -9,6 +9,7 @@ from kusu.core import database as db
 from kusu.repoman.updates import BaseUpdate
 from kusu.util import rpmtool
 from kusu.util.tools import cpio_copytree
+from kusu.util.testing import download
 
 from path import path
 import tempfile
@@ -118,3 +119,20 @@ class TestTool:
         kitdir = bu.makeUpdateKit([r])
    
         assert kitdir / 'fedora-updates' / 'packages' / 'foo-1.0-1.i386.rpm'    
+
+    def testMakeTFTP(self):
+        global prefix
+
+        (prefix / 'tftpboot' / 'kusu').makedirs()
+
+        url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/kernel-1-1.1.i386.rpm'
+        kernelRPM = prefix / 'kernel-1-1.1.i386.rpm'
+        download(url, prefix) 
+
+        rpm = rpmtool.RPM(str(kernelRPM))
+        bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
+        vmlinuz, initrd = bu.makeTFTP(rpm, 100)
+
+        assert vmlinuz == prefix / 'tftpboot' / 'kusu' / 'kernel-fedora-6-i386.100'
+        assert initrd == None
+

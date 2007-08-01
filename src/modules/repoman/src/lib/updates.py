@@ -62,8 +62,9 @@ class BaseUpdate:
             file = p.getFilename()
             dest = tempkitdir / kitName / 'packages' / file.basename()
 
-            # Use abs symlink. mkisofs -f doesnt really
-            # follow relative 
+            # Use abs symlink. Relative links does not work
+            # when buildkit prepares temp new directory for
+            # making kit
             file.symlink(dest) 
         
         self.makeKit(tempkitdir, kitdir, kitName)
@@ -88,7 +89,30 @@ class BaseUpdate:
             maxRelease = 0
 
         return maxRelease + 1
-    
+
+    def makeTFTP(self, rpm, updateRelease):
+
+        if not (self.prefix / 'tftpboot' / 'kusu').exists():
+            raise DirDoesNotExistError, '%s not found' % (self.prefix /  'tftpboot' / 'kusu')
+
+        tempdir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+             
+        if rpm.extract(tempdir):
+            raise Exception
+
+        if self.os_name in ['fedora', 'rhel', 'centos']:
+            vmlinuz = (tempdir / 'boot').listdir('vmlinuz*')[0]
+
+        newVmlinuz = self.prefix / 'tftpboot' / 'kusu' / \
+                     'kernel-%s-%s-%s.%s' % (self.os_name,self.os_version,self.os_arch,updateRelease)
+        vmlinuz.copy(newVmlinuz)
+        
+        try:
+            tempdir.rmtree()
+        except: pass
+
+        return (newVmlinuz, None)
+
     def makeKitScript(self, tempkitdir, kitName, kitRelease):
 
         dest = tempkitdir / kitName / 'build.kit'
@@ -177,7 +201,7 @@ class YumUpdate(BaseUpdate):
             primarys[u] = YumRepo(u).getPrimary()
 
         # Filter out the packages that are newer and
-        # neews to be downloaded
+        # needs to be downloaded
         downloadPkgs = []
         for r in self.getLatestRPM(primarys):
             name = r.getName()
