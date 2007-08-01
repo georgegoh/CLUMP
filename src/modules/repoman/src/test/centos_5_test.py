@@ -319,9 +319,11 @@ class TestCentos5Repo:
 
         r = repo.Centos5Repo('i386', prefix, self.dbs, configFile)
         r.test = True
-        r.getUpdates()
+        (rpmpkgs, kernel) = r.getUpdates()
 
         updatesDir = prefix / 'depot' / 'updates' / 'centos' / '5' / 'i386'
+
+        assert len(rpmpkgs) == 4
         # New rpm appeared
         assert (updatesDir / 'quagga-contrib-0.98.6-2.1.0.1.el5.i386.rpm').exists()
         # Most updated 
@@ -330,4 +332,8 @@ class TestCentos5Repo:
         assert (updatesDir / 'xorg-x11-xfs-utils-1.0.2-4.i386.rpm').exists()
         # no change
         assert not (updatesDir / 'perl-Digest-HMAC-1.01-15.noarch.rpm').exists()
-        
+        # newer kernel
+        assert (updatesDir / 'kernel-1-1.2.1.i386.rpm').exists()
+
+        assert kernel.getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
+ 

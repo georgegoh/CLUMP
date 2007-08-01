@@ -215,7 +215,9 @@ class YumUpdate(BaseUpdate):
                 # No such existing rpm, so download it
                 downloadPkgs.append(r)
 
-        # Donwload the packages
+        # Download the packages
+        # Checks whether there's a new kernel pkg
+        kernelRPM = None
         for r in downloadPkgs:
             filename = r.getFilename()
             dest = path(dir / filename.basename())
@@ -234,7 +236,14 @@ class YumUpdate(BaseUpdate):
                 f.write(content)
                 f.close()
 
-        return rpmtool.getLatestRPM([dir], True).getList()
+                if r.getName() == 'kernel':
+                    if self.os_arch == 'x86_64':
+                        kernelRPM = r
+                    elif self.os_arch == 'i386' and \
+                         r.getArch() in ['i386', 'i386', 'i586', 'i686']:
+                        kernelRPM = r
+
+        return (rpmtool.getLatestRPM([dir], True).getList(), kernelRPM)
 
     def getLatestRPM(self, primarys):
         """Return the latested rpms from yum repos"""
