@@ -15,6 +15,7 @@ from os.path import basename
 from kusu.util.testing import *
 from tempfile import mkstemp
 from sets import Set
+from nose import SkipTest
 
 class TestDiskProfile:
     """Test cases for the DiskProfile class.
@@ -81,6 +82,7 @@ class TestDiskProfile:
         assert self.p5.path == self.loopback + 'p5', "Wrong path."
 
     def testDeletePart(self):
+        raise SkipTest, 'This test causes segfaults on some machines.'
         self.makePartitions()
         self.dp.delete(self.p1)
         assert len(self.disk.partition_dict) == 3,\
