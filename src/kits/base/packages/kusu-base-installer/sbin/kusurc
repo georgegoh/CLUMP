@@ -68,7 +68,7 @@ class App:
         longname = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
 
         try:
-            ngname = 'compute' + '-' + longname
+            ngname = 'compute'
             rfactory.make(ngname, 'Repo for ' + ngname)
         except: pass
 
@@ -78,7 +78,7 @@ class App:
         except: pass
         
         try:
-            ngname = 'compute-disked' 
+            ngname = 'compute-imaged' 
             rfactory.make(ngname, 'Repo for ' + ngname)
         except: pass
         
