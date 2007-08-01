@@ -13,10 +13,16 @@ import rpm
 import os
 import types
 import gzip
+import tempfile
 from path import path
 
 from kusu.util.errors import *
 from kusu.util.structure import Struct
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 class RPMCollection(Struct):
     def __init__(self):
@@ -356,7 +362,7 @@ class RPM:
         return self.rpmtags.keys()
     
     def getSummary(self):
-        """Returns the summary."""
+        """Returns the summary"""
 
         if type(self.hdr) is types.DictType and \
             not self.hdr.has_key(rpm.RPMTAG_SUMMARY):
@@ -365,7 +371,7 @@ class RPM:
             return self.hdr[rpm.RPMTAG_SUMMARY]
     
     def getConflicts(self):
-        """Returns the summary."""
+        """Returns the summary"""
     
         if rpm.RPMTAG_CONFLICTS not in self.hdr.keys():
             return None
@@ -373,9 +379,29 @@ class RPM:
             return self.hdr[rpm.RPMTAG_CONFLICTS]
 
     def getGroup(self):
-        '''Returns the functionality group of the package '''
+        """Returns the functionality group of the RPM"""
         return self.hdr[rpm.RPMTAG_GROUP]
-    
+
+    def extract(self, dir):
+        """Extract the contents of the RPM to the dir"""
+
+        cmd = 'rpm2cpio %s' % self.getFilename()
+        rpm2cpioP = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+
+        cmd = 'cpio -id'
+        cpioP = subprocess.Popen(cmd,
+                                 cwd=dir,
+                                 shell=True,
+                                 stdin=rpm2cpioP.stdout,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        cpioP.communicate()
+
+        return cpioP.returncode
+
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""
                

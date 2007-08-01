@@ -591,7 +591,15 @@ class TestRPMToolMockRPM:
         
         assert r1 != r2
 
+    def testExtract(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        tempdir = path(tempfile.mkdtemp(prefix='rpmtool', dir=cachedir))
+        retval = r1.extract(tempdir)
 
+        assert retval == 0
+        assert (tempdir / 'usr/lib/openoffice.org2.0').exists()
+        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/export/xhtml/table.xsl').exists()
+        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/docbook/DocBookTemplate.stw').exists()
 
 
 class TestRPMFunctions:
