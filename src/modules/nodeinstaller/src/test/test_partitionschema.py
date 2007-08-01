@@ -104,8 +104,16 @@ Node: node0000
         dp.mountpoint_dict['/boot'] = 'test'
         adaptedSchema = adaptNIIPartition(ni.partitions, dp)
         expected = self.partitionSchema()
-        assert expected == adaptedSchema, 'expected mntpnt: %s, adapted mntpnt: %s' % \
-            (expected.preserve_mntpnt, adaptedSchema['preserve_mntpnt'])
+        assert expected == adaptedSchema, """
+expected disk_dict:\n%s\nadapted disk_dict:\n%s\n
+expected vg_dict:\n%s\nadapted vg_dict:\n%s\n
+expected pres_fs:\n%s\nadapted pres_fs:\n%s\n
+expected mntpnt: %s, adapted mntpnt: %s
+""" % \
+    (str(expected.disk_dict), str(adaptedSchema['disk_dict']),
+     str(expected.vg_dict), str(adaptedSchema['vg_dict']),
+     str(expected.preserve_fs), str(adaptedSchema['preserve_fs']),
+     expected.preserve_mntpnt, adaptedSchema['preserve_mntpnt'])
 
 
     def testTranslatePartitionOptions(self):
@@ -368,8 +376,8 @@ Node: node0000
         volgroup00 = SchemaLVMGroup()
         volgroup00.name = 'VolGroup00'
         volgroup00.extent_size = '32M'
-        volgroup00.pv_scan = True
-        volgroup00.addPV(disk=1, partition=3)
+        volgroup00.pv_span = True
+        volgroup00.addPV(disk='N', partition='N')
 
         root = SchemaLVMLogicalVolume()
         root.name = 'ROOT'
@@ -380,21 +388,18 @@ Node: node0000
         volgroup00.addLV(root)
 
         depot = SchemaLVMLogicalVolume()
-        depot.name = 'DEPOT'
+        depot.name = 'DATA'
         depot.size_MB = 4000
         depot.fs = 'ext3'
-        depot.mountpoint = '/depot'
+        depot.mountpoint = '/data'
         depot.fill = True
         volgroup00.addLV(depot)
 
+        lvm = LVMCollection()
+        lvm.addVG(volgroup00)
 
         preserve_types = Partition.native_type_dict.values()
         preserve_fs = DiskProfile.fsType_dict.keys()
-        preserve_mntpnt = ['/boot', '/']
-        return PartitionSchema(disks=disks, preserve_types=preserve_types,
+        preserve_mntpnt = []
+        return PartitionSchema(disks=disks, lvm=lvm, preserve_types=preserve_types,
                            preserve_fs=preserve_fs, preserve_mntpnt=preserve_mntpnt)
-
-    def testKickstartFromNIIProfile(self):
-        """ Test to validate ksprofile.  
-        """
-        raise SkipTest, 'Not Ready'

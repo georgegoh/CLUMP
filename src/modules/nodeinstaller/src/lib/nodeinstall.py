@@ -186,7 +186,8 @@ def adaptNIIPartition(niipartition, diskprofile):
             vgname = vginfo['device']
             vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
             schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
-                                         'extent_size':vg_extent_size}
+                                         'extent_size':vg_extent_size,
+                                         'name':vgname}
 
         # create the normal volumes.
         for partinfo in part_list:
@@ -265,8 +266,11 @@ def filterPartitionEntries(partition_entries, disk_profile):
                 vg_list.append(partinfo)
             elif partinfo['device'].lower() == 'n':
                 part_list.append(partinfo)
-            elif not partinfo['device'] and not partinfo['partition'] and \
-                 not partinfo['size'] and partinfo['preserve'].lower() == 'n':
+            else:
+                raise InvalidPartitionSchema, \
+                 "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
+ 
+            if partinfo['preserve'].lower() == 'n' and partinfo['device'].lower() != 'n':
                 p_id, name = translatePartitionOptions(partinfo['options'], 'partitionID')
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 fs = translateFSTypes(partinfo['fstype'])
@@ -276,9 +280,6 @@ def filterPartitionEntries(partition_entries, disk_profile):
                     del_list.append(name)
                 elif fs:
                     del_fs.append(fs)
-            else:
-                raise InvalidPartitionSchema, \
-                 "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
     return part_list, vg_list, lv_list, del_list, del_fs, del_mntpnt
 
 def createPartition(partinfo, disk_dict, vg_dict):
