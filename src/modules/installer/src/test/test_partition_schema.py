@@ -11,59 +11,60 @@ from kusu.util.testing import *
 from kusu.installer.defaults import *
 from kusu.partitiontool.partitiontool import DiskProfile
 
-def testSchema():
-    """This is a plain vanilla schema that contains 4 physical partitions:
-          a. /boot - ext3, 100:
-          b. swap - 200M
-          c. / - 200M
-          d. /depot - 300M (fill)
-    """
-    # define the physical disk and partitions first
-    d1 = Disk()
-
-    # /boot
-    d1p1 = Partition()
-    d1p1.size_MB = 100
-    d1p1.fs = 'ext3'
-    d1p1.mountpoint = '/boot'
-    d1p1.fill = False
-    d1.addPartition(d1p1)
-
-    # swap
-    d1p2 = Partition()
-    d1p2.size_MB = 200
-    d1p2.fs = 'linux-swap'
-    d1p2.mountpoint = None
-    d1p2.fill = False
-    d1.addPartition(d1p2)
-
-    # /
-    d1p3 = Partition()
-    d1p3.size_MB = 200
-    d1p3.fs = 'ext3'
-    d1p3.mountpoint = '/'
-    d1p3.fill = False
-    d1.addPartition(d1p3)
-
-    # /depot
-    d1p4 = Partition()
-    d1p4.size_MB = 300
-    d1p4.fs = 'ext3'
-    d1p4.mountpoint = '/depot'
-    d1p4.fill = True
-    d1.addPartition(d1p4)
-
-    disks = DiskCollection()
-    disks.addDisk(d1)
-    return PartitionSchema(disks=disks)
-
-
 class TestDiskProfileSchema:
     """
     Test cases for schemata.
     Limitation: can only test straightforward schemas. This means
     that LVM must still be tested by hand.
     """
+ 
+    def generateSchema(self):
+        """This is a plain vanilla schema that contains 4 physical partitions:
+              a. /boot - ext3, 100:
+              b. swap - 200M
+              c. / - 200M
+              d. /depot - 300M (fill)
+        """
+        # define the physical disk and partitions first
+        d1 = Disk()
+
+        # /boot
+        d1p1 = Partition()
+        d1p1.size_MB = 100
+        d1p1.fs = 'ext3'
+        d1p1.mountpoint = '/boot'
+        d1p1.fill = False
+        d1.addPartition(d1p1)
+
+        # swap
+        d1p2 = Partition()
+        d1p2.size_MB = 200
+        d1p2.fs = 'linux-swap'
+        d1p2.mountpoint = None
+        d1p2.fill = False
+        d1.addPartition(d1p2)
+
+        # /
+        d1p3 = Partition()
+        d1p3.size_MB = 200
+        d1p3.fs = 'ext3'
+        d1p3.mountpoint = '/'
+        d1p3.fill = False
+        d1.addPartition(d1p3)
+
+        # /depot
+        d1p4 = Partition()
+        d1p4.size_MB = 300
+        d1p4.fs = 'ext3'
+        d1p4.mountpoint = '/depot'
+        d1p4.fill = True
+        d1.addPartition(d1p4)
+
+        disks = DiskCollection()
+        disks.addDisk(d1)
+        return PartitionSchema(disks=disks)
+
+
     def setUp(self):
         size = 1024 * 1024 * 1024
         self.loopback, self.tmpfile = createLoopbackDevice(size)
@@ -75,8 +76,8 @@ class TestDiskProfileSchema:
         cmd = 'rm -f %s' % self.tmpfile
         runCommand(cmd)
 
-    def testVanillaSchema(self):
-        schema = testSchema()
+    def testSchema(self):
+        schema = self.generateSchema()
         setupDiskProfile(self.dp, schema)
         self.dp.commit()
         self.dp.formatAll()
