@@ -1,0 +1,11 @@
+config BR2_PACKAGE_PYPARTED
+	bool "pyparted"
+	default n
+	help
+	  GNU Parted is an industrial-strength package for creating, destroying
+, resizing, checking and copying partitions, and the file systems on them. 
+This is useful for creating space for new operating systems, reorganising i
+disk usage, copying data on hard disks and disk imaging.
+This package provides the python bindings for it
+
+          http://www.gnu.org/software/parted/index.shtml

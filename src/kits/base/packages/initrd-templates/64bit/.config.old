@@ -400,7 +400,7 @@ BR2_TARGET_ROOTFS_EXT2_COPYTO=""
 # BR2_TARGET_ROOTFS_JFFS2 is not set
 # BR2_TARGET_ROOTFS_SQUASHFS is not set
 # BR2_TARGET_ROOTFS_TAR is not set
-# BR2_TARGET_ROOTFS_CPIO is not set
+BR2_TARGET_ROOTFS_CPIO=y
 
 #
 # bootloader for target device

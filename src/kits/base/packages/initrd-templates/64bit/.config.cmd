@@ -83,6 +83,8 @@ deps_config := \
 	package/hotplug/Config.in \
 	package/hdparm/Config.in \
 	package/hal/Config.in \
+	package/pyparted/Config.in \
+	package/parted/Config.in \
 	package/e2fsprogs/Config.in \
 	package/dmraid/Config.in \
 	package/dm/Config.in \
