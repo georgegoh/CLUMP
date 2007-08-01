@@ -10,6 +10,7 @@
 import os
 import re
 import tempfile
+import time
 from path import path
 from Cheetah.Template import Template
 
@@ -92,8 +93,11 @@ class BaseUpdate:
 
     def makeTFTP(self, rpm, updateRelease):
 
-        if not (self.prefix / 'tftpboot' / 'kusu').exists():
-            raise DirDoesNotExistError, '%s not found' % (self.prefix /  'tftpboot' / 'kusu')
+        ostype = '%s-%s-%s' % (self.os_name,self.os_version,self.os_arch)
+
+        tftpbootDir = path(self.prefix / 'tftpboot' / 'kusu')
+        if not tftpbootDir.exists():
+            raise DirDoesNotExistError, '%s not found' % (tftpbootDir)
 
         tempdir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
              
@@ -101,22 +105,34 @@ class BaseUpdate:
             raise Exception
 
         if self.os_name in ['fedora', 'rhel', 'centos']:
-            vmlinuz = (tempdir / 'boot').listdir('vmlinuz*')[0]
+            vmlinuz = path(tempdir / 'boot').listdir('vmlinuz*')[0]
 
-        newVmlinuz = self.prefix / 'tftpboot' / 'kusu' / \
-                     'kernel-%s-%s-%s.%s' % (self.os_name,self.os_version,self.os_arch,updateRelease)
-        vmlinuz.copy(newVmlinuz)
+        newVmlinuz = None
+        if vmlinuz.exists():
+            newVmlinuz = path(tftpbootDir / 'kernel-%s.%s' % (ostype, updateRelease))
+            vmlinuz.copy(newVmlinuz)
+       
+        initrd = path(tftpbootDir / 'initrd-%s.img' % (ostype))
+        newInitrd = None
+        if initrd.exists():
+            newInitrd = path(tftpbootDir / 'initrd-%s.%s.img' % (ostype, updateRelease))
+            # pack and unpack 
+            # image.unpack() 
+            initrd.copy(newInitrd)
         
         try:
             tempdir.rmtree()
         except: pass
 
-        return (newVmlinuz, None)
+        return (newVmlinuz, newInitrd)
 
     def makeKitScript(self, tempkitdir, kitName, kitRelease):
 
+        compclass = {'rhel' : {'5': 'RHEL5Component()'},
+                     'centos' : {'5': 'Centos5Component()'},
+                     'fedora' : {'6': 'Fedora6Component()'}}
+ 
         dest = tempkitdir / kitName / 'build.kit'
-        out = open(dest, 'w')
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
         template = kusu_root / 'etc' / 'repoman-templates' / 'update.kit.tmpl'
@@ -126,11 +142,14 @@ class BaseUpdate:
         ns['kitver'] = '%s_r%s' % (self.os_version, kitRelease)
         ns['kitrel'] = kitRelease
         ns['kitarch'] = self.os_arch
-        ns['kitdesc'] = ''
+        ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
+                        (self.os_name, self.os_version, self.os_arch, time.asctime())
+        ns['compclass'] = compclass[self.os_name][self.os_version]
         
         t = Template(file=str(template), searchList=[ns])  
-        out.write(str(t))
-        out.close()
+        f = open(dest, 'w')
+        f.write(str(t))
+        f.close()
     
     def prepKit(self, workingDir, kitName):
         cmd = 'buildkit new kit=%s' % kitName

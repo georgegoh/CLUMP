@@ -96,6 +96,7 @@ class TestTool:
         assert lines.find("k.version = '6_r100'") != -1
         assert lines.find("k.release = '100'") != -1
         assert lines.find("k.arch = 'i386'") != -1
+        assert lines.find("comp = Fedora6Component") != -1
 
     def testMakeUpdateKit(self):
         global prefix
@@ -124,6 +125,7 @@ class TestTool:
         global prefix
 
         (prefix / 'tftpboot' / 'kusu').makedirs()
+        (prefix / 'tftpboot' / 'kusu' / 'initrd-fedora-6-i386.img').touch()
 
         url = 'http://www.osgdc.org/pub/build/tests/modules/yumupdates/kernel-1-1.1.i386.rpm'
         kernelRPM = prefix / 'kernel-1-1.1.i386.rpm'
@@ -134,5 +136,5 @@ class TestTool:
         vmlinuz, initrd = bu.makeTFTP(rpm, 100)
 
         assert vmlinuz == prefix / 'tftpboot' / 'kusu' / 'kernel-fedora-6-i386.100'
-        assert initrd == None
+        assert initrd == prefix / 'tftpboot' / 'kusu' / 'initrd-fedora-6-i386.100.img'
 
