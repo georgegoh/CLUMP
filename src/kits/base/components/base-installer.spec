@@ -34,6 +34,7 @@ Requires: kusu-hardware >= 0.4
 Requires: kusu-kitops >= 0.4
 Requires: kusu-networktool >= 0.4
 Requires: kusu-path >= 0.4
+Requires: kusu-partitiontool >= 0.4
 Requires: kusu-repoman >= 0.4
 Requires: kusu-sqlalchemy >= 0.4
 Requires: kusu-ui >= 0.4
