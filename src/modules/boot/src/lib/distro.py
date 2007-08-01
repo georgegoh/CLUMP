@@ -893,13 +893,9 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
         # These should describe the key directories that identify a RHEL 5 installation source layout.
         self.pathLayoutAttributes = {
             'server.packagesdir' : 'Server',
-            'server.repodatadir' : 'Server/repodata',
             'cluster.packagesdir' : 'Cluster',
-            'cluster.repodatadir' : 'Cluster/repodata',
             'clusterstorage.packagesdir' : 'ClusterStorage',
-            'clusterstorage.repodatadir' : 'ClusterStorage/repodata',
             'vt.packagesdir' : 'Server',
-            'vt.repodatadir' : 'Server/repodata',
         }
 
     def getKernelPath(self):

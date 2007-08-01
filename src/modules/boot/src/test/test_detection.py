@@ -271,13 +271,9 @@ class TestRHEL5Detection:
             # (as in the layout for disc media 2, 3, ..)
             self.additionalRHELMedia = path(tempfile.mkdtemp(dir='/tmp'))
             path(self.additionalRHELMedia / 'Server').mkdir()
-            path(self.additionalRHELMedia / 'Server/repodata').mkdir()
             path(self.additionalRHELMedia / 'Cluster').mkdir()
-            path(self.additionalRHELMedia / 'Cluster/repodata').mkdir()
             path(self.additionalRHELMedia / 'ClusterStorage').mkdir()
-            path(self.additionalRHELMedia / 'ClusterStorage/repodata').mkdir()
             path(self.additionalRHELMedia / 'VT').mkdir()
-            path(self.additionalRHELMedia / 'VT/repodata').mkdir()
  
         elif version == '4':
             pass
