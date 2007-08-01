@@ -544,12 +544,11 @@ class BootHostApp(KusuApp):
 
         # Check and reinstall if needed
         if self.reinstall == 1:
-            global _
             if os.getuid() != 0:
                 sys.stderr.write(_('boothost_root_reboot'))
                 sys.exit(-2)
 
-            print _('boothost_reboot'),
+            print self._('boothost_reboot'),
             for name in bhinst.updatednodes:
                 print "%s, " % name,
                 
