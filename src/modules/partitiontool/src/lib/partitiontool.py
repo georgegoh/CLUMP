@@ -211,14 +211,16 @@ class DiskProfile(object):
                     'physical volume' : None,
                     'software RAID' : None,
                     'linux-swap' : fsTypes['linux-swap'],
-                    'fat32' : fsTypes['fat32']
+                    'fat32' : fsTypes['fat32'],
+                    'ntfs'  : fsTypes['ntfs']
                   }
     mountable_fsType = { 'ext2' : True,
                          'ext3' : True,
                          'physical volume' : False,
                          'software RAID' : False,
                          'linux-swap' : False,
-                         'fat32' : True
+                         'fat32' : True,
+                         'ntfs' : False
                        }
 
     def __str__(self):
@@ -288,13 +290,9 @@ class DiskProfile(object):
                             lvg.lv_dict[lv_name] = lv
                             self.lv_dict[lv_name] = lv
 
-    def populateDiskProfile(self, fresh, probe_fstab):
-        logger.debug('Finding disks.') 
-        disks_str = kusu.hardware.probe.getDisks().keys()
-        for disk_str in disks_str:
-            self.disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
-        logger.debug('Found disks.')
 
+    def populateDiskProfile(self, fresh, probe_fstab):
+        self.disk_dict = self.__findDisksAndCreateDictionary()
         pv_probe_dict, lvg_probe_dict, lv_probe_dict = self.probeLVMEntities()
 
         if fresh:
@@ -311,13 +309,24 @@ class DiskProfile(object):
                     disk.delPartition(partition)
 
         self.__createLVMObjects(pv_probe_dict,
-                                    lvg_probe_dict,
-                                    lv_probe_dict)
+                                lvg_probe_dict,
+                                lv_probe_dict)
 
         if not fresh:
             runCommand('lvm vgchange -ay')
             if probe_fstab:
                 self.populateMountPoints()
+
+
+    def __findDisksAndCreateDictionary(self):
+        logger.debug('Finding disks.')
+        disk_dict = {}
+        disks_str = kusu.hardware.probe.getDisks().keys()
+        for disk_str in disks_str:
+            disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
+        logger.debug('Found disks.')
+        return disk_dict
+
 
     def populateMountPoints(self, fstab_path='etc/fstab'):
         """Look through the partitions and LV's to determine mountpoints."""
@@ -638,14 +647,11 @@ class DiskProfile(object):
         if lvg.lv_dict:
             raise PhysicalVolumeStillInUseError, 'Cannot delete Volume ' + \
                                        'Group. Delete Logical Volumes first.'
-
         pv_list = lvg.pv_dict.values()
-
         for pv in pv_list:
             lvg.delPhysicalVolume(pv)
 
         self.lvg_dict.pop(lvg.name)
-
         lvg.delete()
 
     def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None, fill=False):
@@ -709,4 +715,3 @@ class DiskProfile(object):
             disk.formatAll()
         for lvg in self.lvg_dict.itervalues():
             lvg.formatAll()
-
