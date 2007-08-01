@@ -44,7 +44,8 @@ def createLoopbackDevice(size):
     tmpfile = tempfile.mktemp(prefix='k-u-t-tmp')
     cmd = 'head -c %d < /dev/zero > %s' % (size, tmpfile)
     runCommand(cmd)
-    assert stat(tmpfile).st_size == size, "Didn't create tempfile of right size."
+    assert stat(tmpfile).st_size == size,\
+        "Didn't create tempfile of right size(%d vs %d)." % (size, stat(tmpfile).st_size)
 
     cmd = 'losetup %s %s' % (loopback, tmpfile)
     runCommand(cmd)
