@@ -205,13 +205,7 @@ class KitOpsApp(KusuApp):
             sys.stderr.write(e.args[0])
             sys.exit(EKITLOC_FAIL)
 
-        ostype = None
-        try:
-            ostype = kits.ostype
-        except AttributeError:
-            pass
-
-        if ostype is not None:
+        if getattr(kits, 'ostype', None) is not None:
             self.runAddOSKit(kits)
         elif kits:
             # we cannot identify the distro -- treat as ordinary kit
