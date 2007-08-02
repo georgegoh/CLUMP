@@ -274,11 +274,11 @@ class TestSchemaLVM(TestDiskProfileSchema):
 
 
     def schemaAssertions(self, part_schema):
-        assert part_schema[0][4] == 'primary'
-        assert part_schema[1][4] == 'primary'
-        assert part_schema[2][4] == 'primary'
-        assert part_schema[3][4] == 'extended'
-        assert part_schema[4][4] == 'logical'
+        assert part_schema[0].type == 'primary'
+        assert part_schema[1].type == 'primary'
+        assert part_schema[2].type == 'primary'
+        assert part_schema[3].type == 'extended'
+        assert part_schema[4].type == 'logical'
 
     def testSchema(self):
         if gethostname() != 'dizzy.int.osgdc.org':
