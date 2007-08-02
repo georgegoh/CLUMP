@@ -161,6 +161,16 @@ class TestFedora6Detection:
         path(self.additionalFedoraMedia / 'Fedora').mkdir()
         path(self.additionalFedoraMedia / 'Fedora/RPMS').mkdir()
 
+        f = open(path(self.additionalFedoraMedia / '.discinfo'), 'w')
+        f.write('1161131669.029329\n')
+        f.write('Fedora Core 6\n')
+        f.write('i386\n')
+        f.write('2\n')
+        f.write('Fedora/base\n')
+        f.write('Fedora/RPMS\n')
+        f.write('Fedora/pixmaps\n')
+        f.close()
+
     def teardownFedora(self):
         """Fedora-centric housekeeping in reverse"""
 
@@ -189,7 +199,8 @@ class TestFedora6Detection:
         
         cdObj = DistroFactory(self.additionalFedoraMedia)
         assert cdObj.ostype == "fedora"
-
+        assert cdObj.getVersion() == "6"
+        assert cdObj.getArch() == "i386"
         
     def test_IsNotFedoraCD(self):
         """Test if the CD is not a Fedora CD"""
@@ -275,6 +286,16 @@ class TestRHEL5Detection:
             path(self.additionalRHELMedia / 'ClusterStorage').mkdir()
             path(self.additionalRHELMedia / 'VT').mkdir()
  
+            f = open(path(self.additionalRHELMedia / '.discinfo'), 'w')
+            f.write('1170972069.396645\n')
+            f.write('Red Hat Enterprise Linux Server 5\n')
+            f.write('i386\n')
+            f.write('2\n')
+            f.write('Server/base\n')
+            f.write('Server/RPMS\n')
+            f.write('Server/pixmaps\n')
+            f.close()
+
         elif version == '4':
             pass
 
@@ -314,7 +335,8 @@ class TestRHEL5Detection:
         
         cdObj = DistroFactory(self.additionalRHELMedia)
         assert cdObj.ostype == "rhel"
-
+        assert cdObj.getVersion() == "5"
+        assert cdObj.getArch() == "i386"
         
     def test_IsNotRHELCD(self):
         """Test if the CD is not a RHEL CD"""
@@ -340,5 +362,126 @@ class TestRHEL5Detection:
         
         rhelObj = DistroFactory(self.rhelLocalPath)
         assert rhelObj.getArch() == 'i386'
+
+
+class TestCentOS5Detection:
+    """Test suite for detecting CentOS 5 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupCentOS(5)
+
+    def tearDown(self):
+        """Clean up after done"""
+
+        self.teardownCentOS(5)
+
+    def setupCentOS(self, version):
+        """CentOS-centric housekeeping"""
+
+        # Can be moved to allow all RHEL test to use the same setup
+        if version == 5:
+            self.centosLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+            # create a directory and delete it immediately after. 
+            self.invalidCentOSLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+            self.invalidCentOSLocalPath.rmdir()
+
+            path(self.centosLocalPath / 'isolinux').mkdir()
+            path(self.centosLocalPath / 'isolinux/vmlinuz').touch()
+            path(self.centosLocalPath / 'isolinux/initrd.img').touch()
+            path(self.centosLocalPath / 'isolinux/isolinux.bin').touch()
+            path(self.centosLocalPath / 'images').mkdir()
+            path(self.centosLocalPath / 'images/stage2.img').touch()
+            path(self.centosLocalPath / 'CentOS').mkdir()
+            path(self.centosLocalPath / 'repodata').mkdir()
+
+
+            f = open(path(self.centosLocalPath / '.discinfo'), 'w')
+            f.write('1170972069.396645\n')
+            f.write('Final\n')
+            f.write('i386\n')
+            f.write('1\n')
+            f.write('CentOS/base\n')
+            f.write('/home/buildcentos/CENTOS/5.0/en/i386/CentOS\n')
+            f.write('CentOS/pixmaps\n')
+            f.close()
+
+            # create an additional media type 
+            # (as in the layout for disc media 2, 3, ..)
+            self.additionalCentOSMedia = path(tempfile.mkdtemp(dir='/tmp'))
+            path(self.additionalCentOSMedia / 'CentOS').mkdir()
+ 
+            f = open(path(self.additionalCentOSMedia / '.discinfo'), 'w')
+            f.write('1170972069.396645\n')
+            f.write('Final\n')
+            f.write('i386\n')
+            f.write('2\n')
+            f.write('CentOS/base\n')
+            f.write('/home/buildcentos/CENTOS/5.0/en/i386/CentOS\n')
+            f.write('CentOS/pixmaps\n')
+            f.close()
+
+        elif version == '4':
+            pass
+
+    def teardownCentOS(self, version):
+        """RHEL-centric housekeeping in reverse"""
+
+        if version == 5:
+            path(self.centosLocalPath / 'isolinux/vmlinuz').remove()
+            path(self.centosLocalPath / 'isolinux/initrd.img').remove()
+            path(self.centosLocalPath / 'isolinux/isolinux.bin').remove()
+            path(self.centosLocalPath / 'isolinux').rmdir()
+            path(self.centosLocalPath / 'images/stage2.img').remove()
+            path(self.centosLocalPath / 'images').rmdir()
+            path(self.centosLocalPath / 'CentOS').rmdir()
+            path(self.centosLocalPath / 'repodata').rmdir()
+            path(self.centosLocalPath / '.discinfo').remove()
+            self.centosLocalPath.rmdir()
+            self.additionalCentOSMedia.rmtree()
+        elif version == '4':
+            pass
+
+    def test_IsCentOSCD(self):
+        """Test if the CD is a CentOS CD"""
+
+        cdObj = DistroFactory(self.centosLocalPath)
+        assert cdObj.ostype == "centos"
+
+            
+    def test_IsAdditionalCentOSCD(self):
+        """Test if the CD is an additional CentOS CD"""
+        
+        cdObj = DistroFactory(self.additionalCentOSMedia)
+        assert cdObj.ostype == "centos"
+        assert cdObj.getVersion() == "5"
+        assert cdObj.getArch() == "i386"
+        
+    def test_IsNotCentOSCD(self):
+        """Test if the CD is not a CentOS CD"""
+
+        cdObj = DistroFactory(self.invalidCentOSLocalPath)
+        assert cdObj.ostype != "centos"
+
+    def test_CentOSCDPathExists(self):
+        """Test if the path does indeed contain CentOS media"""
+
+        centosObj = DistroFactory(self.centosLocalPath)
+        assert centosObj.verifyLocalSrcPath() is True
+
+
+    def test_CentOSCDPathNotExists(self):
+        """Test if the path does indeed contain CentOS media"""
+
+        centosObj = DistroFactory(self.invalidCentOSLocalPath)
+        assert centosObj.verifyLocalSrcPath() is False
+
+    def test_CentOSCDArch(self):
+        """Test if the arch is correct for the CentOS media"""
+        
+        centosObj = DistroFactory(self.centosLocalPath)
+        assert centosObj.getArch() == 'i386'
 
 

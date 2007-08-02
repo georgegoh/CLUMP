@@ -157,13 +157,14 @@ class DistroInstallSrcBase(object):
 def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
     distros = [CentOS5InstallSrc(srcPath), 
-                CentOS4InstallSrc(srcPath),
-                CentOS4AdditionalInstallSrc(srcPath),
-                FedoraInstallSrc(srcPath),
-                FedoraAdditionalInstallSrc(srcPath),
-                RHELInstallSrc(srcPath),
-                RHEL5InstallSrc(srcPath),
-                RHEL5AdditionalInstallSrc(srcPath)]
+               CentOS5AdditionalInstallSrc(srcPath),
+               CentOS4InstallSrc(srcPath),
+               CentOS4AdditionalInstallSrc(srcPath),
+               FedoraInstallSrc(srcPath),
+               FedoraAdditionalInstallSrc(srcPath),
+               RHELInstallSrc(srcPath),
+               RHEL5InstallSrc(srcPath),
+               RHEL5AdditionalInstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
             return d
@@ -510,6 +511,41 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError
 
+    def getVersion(self):
+        '''Fedora specific way of getting the distro version'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] #second line is usually the name/version
+            words = line.split()
+            for i in range(0,len(words)):
+                if words[i].isdigit():
+                    break
+            self.version = words[i]
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
+            pass
+        return self.version
+
+    def getArch(self):
+        '''Fedora specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
 
 class RHELInstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL installation source should be and the operations that can work on it."""
@@ -713,6 +749,61 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             pass
         return self.arch
 
+class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
+    """This class describes how a centos 5 installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(CentOS5AdditionalInstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'centos'
+        self.version = '5'
+        self.arch = 'noarch'
+        self.isAdditionalType = True
+
+        # These should describe the key directories that identify a CentOS 5 installation source layout.
+        self.pathLayoutAttributes = {
+            'baseosdir' : 'CentOS',
+            'packagesdir' : 'CentOS'
+        }
+
+
+    def getKernelPath(self):
+        return None
+            
+    def getInitrdPath(self):
+        return None
+            
+    def copyKernel(self, dest, overwrite=False):
+        raise CopyError
+        
+    def copyInitrd(self, dest, overwrite=False):
+        raise CopyError
+
+    def getArch(self):
+        '''Redhat specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
+
 
 class RHEL5InstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL 5 installation source should be and the operations that can work on it."""
@@ -910,5 +1001,39 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError
 
+    def getVersion(self):
+        '''Redhat specific way of getting the distro version'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] #second line is usually the name/version
+            words = line.split()
+            for i in range(0,len(words)):
+                if words[i].isdigit():
+                    break
+            self.version = words[i]
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
+            pass
+        return self.version
+
+    def getArch(self):
+        '''Redhat specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
 
 
