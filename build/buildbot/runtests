@@ -57,7 +57,7 @@ def runTest(module):
     cmd = "source "+kusudevenv+" && nosetests -v -w "+scriptdir+" "+scriptname
     exit_status,output = commands.getstatusoutput(cmd)
     print output
-    tran = map(int,re.findall(r"Ran (\d+) tests in",output))[0]
+    tran = map(int,re.findall(r"Ran (\d+) test[s]? in",output))[0]
     tpass = 0
     tfail = 0
     terror = 0
