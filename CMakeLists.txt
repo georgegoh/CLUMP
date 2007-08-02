@@ -35,6 +35,7 @@ SET(KUSU_MODULES
   kitops
   repoman
   buildkit
+  driverpatch
 )
 
 ## Include Kusu globals

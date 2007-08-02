@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+# $Id$
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
+import sys
+import os
+from kusu.core.app import KusuApp
+
+class DriverPatchController(object):
+    pass
+        
+class App(KusuApp):
+    """ Application class for buildkit. """
+
+    def __init__(self):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+
+        self.actions = {'nodegroup':['name','id'], 
+            'list':['name','id']}
+
+        # self.action and self.actionargs will hold the current action and its arguments            
+        self.action = None 
+        self.actionargs = None
+
+        # an instance of the controller for managing the actions        
+        self.controller = DriverPatchController()
+        self.usagestr = self._("""\
+driverpatch [-h|-v] <action> arg1=val1 arg2=val2 ...
+
+driverpatch is used to update initrd images related to nodeinstaller
+deployments.
+
+
+actions:
+
+    nodegroup       - Refresh the initrd images with the driverpacks
+                      belonging to the specified nodegroup. Nodegroup
+                      can be specified with name OR id:
+
+                      REQUIRED ARGS:
+                        name=<nodegroup name> | id=<nodegroup id>
+    
+    list            - List the driverpacks that is associated to
+                      the specified nodegroup. Nodegroup can be
+                      specified with name OR id:
+
+                      REQUIRED ARGS:
+                        name=<nodegroup name> | id=<nodegroup id>
+
+""")
+        self.examples = self._("""\
+Example operations:
+
+    To patch initrds belonging to a nodegroup named compute
+    # driverpatch nodegroup name=compute
+    
+    To patch initrds belonging to a nodegroup id of 3
+    # driverpatch nodegroup id=3
+    
+    To list driverpacks that is associated to a nodegroup 
+    named compute:
+    # driverpatch list name=compute
+
+    To list driverpacks that is associated to a nodegroup 
+    id of 3:
+    # driverpatch list id=3
+
+""")
+        self.parser.set_usage(self.usagestr)
+
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        self.stdoutMessage(self.usagestr)
+        sys.stdout.write(os.linesep)
+        sys.exit(0)
+
+    def printExamplesExit(self):
+        """ Print examples text and exit. """
+        self.stdoutMessage(self.examples)
+        sys.exit(0)
+
+    def printMsgExit(self, msg, exitcode=1):
+        """ Print msg and exit. """
+        self.stdoutMessage(msg)
+        sys.stdout.write(os.linesep)
+        sys.exit(exitcode)
+
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+
+        li = []
+        d = {}
+
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+
+        return d
+
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+
+        self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
+        self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.set_defaults(verbose=False,showexamples=False)
+        self.options, self.args = self.parser.parse_args()
+
+
+        if self.options.showexamples:
+            self.printExamplesExit()
+
+        if len(self.args) < 2:
+            self.printUsageExit()
+
+
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
+
+
+        if action not in self.actions.keys():
+            self.printUsageExit()
+        d = self.handleArgPairs(self.args[1:])
+
+        if not d:
+            self.printUsageExit()
+
+        # iterate keys in d and validate against the commands'
+        # list of keys
+        for k in d.keys():
+            if k not in self.actions[action]:
+                self.printUsageExit()
+
+        self.action = action
+        self.actionargs = d
+
+    def run(self):
+        """ Main launcher. """
+        self.parseargs()
+
+        # set verbosity
+        self.verbose = self.options.verbose
+
+        # call the correct sub-handler for the action
+        m = '_' + self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
+
+        handler = getattr(self,m)
+
+        handler(self.actionargs)
+    
+    def _nodegroup(self, args):
+        """ Handler for nodegroup action. args is a dict of supported key-value pairs for this action. """
+        ngname = args.get('name','')
+        ngid = args.get('id','')
+        
+        pass
+
+    def _list(self, args):
+        """ Handler for list action. args is a dict of supported key-value pairs for this action. """
+        ngname = args.get('name','')
+        ngid = args.get('id','')
+
+        pass
+
+
+        
+if __name__ == '__main__':
+	app = App()
+	app.run()
+	sys.exit(0)
+
