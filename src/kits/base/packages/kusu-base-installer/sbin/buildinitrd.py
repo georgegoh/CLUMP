@@ -89,7 +89,11 @@ class BuildInitrd:
 
         # Get a list of modules to add
         self.getModules()
-
+        if len(self.modules) == 0:
+            if self.stderrout:
+                self.stderrout("No modules to add!\n")
+            return
+        
         # Get the repository information
         self.getRepoInfo()
 
@@ -99,15 +103,21 @@ class BuildInitrd:
         # Extract the modules from the OS kernel package
         self.extractModules(oskernel=1)
 
-        # Extract any vendor modules if found
-        self.extractModules(oskernel=0)
-        
-        # Patch in the modules
+        # Patch in the modules that are from the OS
         self.addModules()
+        
+        # Extract and add any vendor modules if found
+        if self.extractModules(oskernel=0):
+            self.addModules()
         
         # Compact the initrd and move it to the tftp directory
         self.compactInitrd(type)
 
+        # Clean-up directory for next run
+        self.stderrout("moduledir = %s\n" % self.moduledir)
+        os.system('rm -rf \"%s\"' % self.moduledir)
+
+        
 
     def validateNG(self, nodegroup):
         """validateNG - Test the node group name to make sure it is valid.
@@ -227,68 +237,84 @@ class BuildInitrd:
         """extractModules - Extract the kernel package into a tempory
         directory, so that the modules can be extracted."""
 
-        # Locate the OS kernel package.  
-        pattern = ''
-
         if oskernel:
-           # First look for the OS kit kernel RPM package.
-           query = ('select repository, dpname from repos, driverpacks, nodegroups, ng_has_comp, kits, components where \
-                     components.cid=ng_has_comp.cid and kits.kid=components.kid and driverpacks.cid=components.cid \
-                     and nodegroups.repoid=repos.repoid and nodegroups.ngid="%s" and kits.isOS=1' % self.ngid)
+            # First look for the OS kit kernel RPM package.
+            query = ('select dpname from '
+                     'nodegroups, repos_have_kits, kits, components, driverpacks '
+                     'where nodegroups.repoid=repos_have_kits.repoid and '
+                     'repos_have_kits.kid=components.kid and '
+                     'kits.isOS="1" and driverpacks.cid=components.cid and '
+                     'nodegroups.ngid="%s"' % self.ngid)
+
         else:
-           # Look for vendor kernel modules.
-           query = ('select repository, dpname from repos, driverpacks, nodegroups, ng_has_comp, kits, components where \
-                     components.cid=ng_has_comp.cid and kits.kid=components.kid and driverpacks.cid=components.cid \
-                     and nodegroups.repoid=repos.repoid and nodegroups.ngid="%s" and not kits.isOS=1' % self.ngid)
+            # Look for vendor kernel modules.
+            query = ('select dpname from ng_has_comp, components, driverpacks, kits '
+                     'where ng_has_comp.cid=components.cid and '
+                     'components.kid=kits.kid and kits.isOS<>"1" and '
+                     'driverpacks.cid=components.cid and '
+                     'ng_has_comp.ngid="%s"' % self.ngid)
 
-	self.db.execute(query)
-      
-        tmp = self.db.fetchone()
-        pattern = os.path.join(self.repodir, '%s/*/RPMS/%s' % (tmp[0], tmp[1]))
-
-        if not pattern:
-            # Raise an exception so this bug is easy to find
-            print "Unrecognized os type:  %s.  Fix this!" % self.ostype
-            raise "Fail_Here"
-
-        flist = glob.glob(pattern)
-
-        if len(flist) == 0:
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
             if self.stderrout:
-                # Fatal error
-                self.stderrout("ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
-                               % (self.repodir, pattern) )
+                self.stderrout("DB_Query_Error: %s\n", query)
                 sys.exit(-1)
 
-        if len(flist) > 1:
-            # Use the last.  Seems to be the highest rev
-            kpkg = "%s" % flist[-1]
-        else:
-            kpkg = "%s" % flist[0]
+        if not data:
+            if oskernel:
+                if self.stderrout:
+                    self.stderrout("ERROR: Kitops has failed to update the driverpacks table!  Fix this!\n")
+                    self.stderrout("DB_Query_Error: %s\n", query)
+                    sys.exit(-1)
+            return 0
 
-        # Extract the package.  This is OS specific
-        if self.stdoutout:
-            self.stdoutout("Extracting modules\n")
+        for row in data:
+            # There can be more than one package.  All have to be processed
+            if self.stdoutout:
+                self.stdoutout("Looking for modules in: %s\n", row[0])
 
-        if kpkg.split('.')[-1] == 'rpm':
-            os.system('mkdir -p \'%s/%s\'' % (self.moduledir, self.packagecount))
-            self.moduledump = "%s/%s" % (self.moduledir, self.packagecount)
-            os.chdir(self.moduledump)
-            #os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
-            os.system('rpm2cpio %s |cpio -idv' % kpkg)
+            pattern = '%s/*/RPMS/%s' % (self.repodir, row[0])
+            flist = glob.glob(pattern)
 
-        elif kpkg.split('.')[-1] == 'deb':
-            os.chdir(self.moduledump)
-            os.system('deb2cpio %s |cpio -id >/dev/null' % kpkg)  # Fix this
-        else:
-            print "kpkg = %s" % kpkg
-            print "len(flist) = %i" % len(flist)
-            if self.stderrout:
-                # Fatal error
-                self.stderrout("ERROR: Unknown kernel package type: %s" % kpkg )
-                sys.exit(-1)
-	self.packagecount += 1
-        
+            if len(flist) == 0:
+                if self.stderrout:
+                    # Fatal error
+                    self.stderrout("ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
+                                   % (self.repodir, pattern) )
+                    sys.exit(-1)
+
+            # If there is more than one package available use the highest rev
+            if len(flist) > 1:
+                # Use the last.  Seems to be the highest rev
+                kpkg = "%s" % flist[-1]
+            else:
+                kpkg = "%s" % flist[0]
+
+            # Extract the package.  This is OS specific
+            if self.stdoutout:
+                self.stdoutout("Extracting modules\n")
+
+            if kpkg.split('.')[-1] == 'rpm':
+                os.system('mkdir -p \'%s/%s\'' % (self.moduledir, self.packagecount))
+                self.moduledump = "%s/%s" % (self.moduledir, self.packagecount)
+                os.chdir(self.moduledump)
+                os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
+
+            elif kpkg.split('.')[-1] == 'deb':
+                os.chdir(self.moduledump)
+                os.system('deb2cpio %s |cpio -id >/dev/null' % kpkg)  # Fix this
+            else:
+                print "kpkg = %s" % kpkg
+                print "len(flist) = %i" % len(flist)
+                if self.stderrout:
+                    # Fatal error
+                    self.stderrout("ERROR: Unknown kernel package type: %s" % kpkg )
+                    sys.exit(-1)
+            self.packagecount += 1
+        return 1
+
         
     def getRepoInfo(self):
         """getRepoInfo - Gather the info for the repo we are going to use.
@@ -336,7 +362,7 @@ class BuildInitrd:
                                 os.system('mkdir -p \"%s\"' % newloc)
                                 # print 'Running: mkdir -p \"%s\"' % newloc
                             os.system('cp \"%s\" \"%s\"' % (oldloc, newloc))
-                            print 'Running: cp \"%s\" \"%s\"' % (oldloc, newloc)
+                            #print 'Running: cp \"%s\" \"%s\"' % (oldloc, newloc)
         print " "
         if mlist:
             if self.stderrout:
@@ -344,7 +370,7 @@ class BuildInitrd:
                 for mod in mlist:
                     list = list + "%s\t" % (mod)
                     
-                self.stderrout("WARNING: Unable to locate module(s): %s\n", list)
+                self.stderrout("INFO: Did not locate module(s): %s\n", list)
 
         # Add a load order list
         fp = open('%s/etc/module-load-order.lst' % self.imagedir, 'w')
