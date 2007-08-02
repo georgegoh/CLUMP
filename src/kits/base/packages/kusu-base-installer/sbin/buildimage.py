@@ -84,6 +84,11 @@ class BuildImage:
             return
 
         self.__getPackages()
+        if len(self.packages) == 0:
+            if self.stderrout:
+                self.stderrout("ERROR: No packages selected for the image!\n")
+            sys.exit(-1)
+        
         self.__mkImageDir()
         self.__getRepoInfo()
         self.__prepYum()
@@ -259,7 +264,7 @@ class BuildImage:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=RHEL-%s - Base\n'
-                'baseurl=http://%s/repos/%s/%s/RPMS/\n' % (self.ostype, yumhost, self.repoid, dirname)
+                'baseurl=http://%s/repos/%s/\n' % (self.ostype, yumhost, self.repoid)
                 )
 
         fp.write(out)
