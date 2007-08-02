@@ -14,6 +14,7 @@ from kusu.util.testing import download
 from path import path
 import tempfile
 import os
+from nose import SkipTest
 
 kusudb = None
 prefix = None
@@ -168,3 +169,43 @@ class TestTool:
         ng = self.dbs.NodeGroups.select_by(ngname = 'ng6')[0]
         assert ng.initrd == 'initrd'
         assert ng.kernel == 'kernel'
+
+    def testAddUpdateKit(self):
+        raise SkipTest
+
+        global prefix
+
+        kitdir = path(prefix / 'newUpdateKit')
+        kitdir.makedirs()
+        f = open((kitdir / 'kitinfo'), 'w')
+        f.write("""
+kit = {'arch': 'noarch',
+ 'dependencies': [],
+ 'description': 'newKit kit.',
+ 'license': 'LGPL',
+ 'name': 'newKit',
+ 'pkgname': 'kit-newKit',
+ 'release': '0',
+ 'scripts': [],
+ 'version': '0.1'}
+components = [{'arch': 'noarch',
+  'comprelease': '0',
+  'compversion': '0.1',
+  'description': 'newKit component for Fedora Core 6.',
+  'name': 'newKit',
+  'ngtypes': [],
+  'ostype': 'fedora',
+  'osversion': '6',
+  'pkgname': 'component-newKit'}]
+""")
+        f.close()
+        (kitdir / 'component-newKit-0.1-0.noarch.rpm').touch()
+        (kitdir / 'kit-newKit-0.1-0.noarch.rpm').touch()
+ 
+        bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
+        bu.addUpdateKit(kitdir)
+
+        kits = self.dbs.Kits.select_by(rname = 'newKit')
+        assert len(kits) == 1
+        assert kits[0].rname == 'newKit'
+        

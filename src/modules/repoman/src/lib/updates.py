@@ -135,6 +135,15 @@ class BaseUpdate:
             ng.save()
             ng.flush()
 
+    def addUpdateKit(self, kitdir):
+        from kusu.kitops import kitops
+
+        ko = kitops.KitOps()
+        ko.setDB(self.db) 
+        ko.setKitMedia(kitdir)
+        kits = ko.addKitPrepare()
+        ko.addKit(kits[0])
+    
     def makeKitScript(self, tempkitdir, kitName, kitRelease):
 
         compclass = {'rhel' : {'5': 'RHEL5Component()'},
