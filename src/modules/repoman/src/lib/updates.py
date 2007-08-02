@@ -126,6 +126,15 @@ class BaseUpdate:
 
         return (newVmlinuz, newInitrd)
 
+    def updateKernelInfo(self, repoid, initrd, vmlinuz):
+        ngs = self.db.NodeGroups.select_by(repoid = repoid)
+
+        for ng in ngs:
+            ng.kernel = vmlinuz
+            ng.initrd = initrd
+            ng.save()
+            ng.flush()
+
     def makeKitScript(self, tempkitdir, kitName, kitRelease):
 
         compclass = {'rhel' : {'5': 'RHEL5Component()'},

@@ -138,3 +138,33 @@ class TestTool:
         assert vmlinuz == prefix / 'tftpboot' / 'kusu' / 'kernel-fedora-6-i386.100'
         assert initrd == prefix / 'tftpboot' / 'kusu' / 'initrd-fedora-6-i386.100.img'
 
+    def testUpdateKernelInfo(self):
+  
+        repo = self.dbs.Repos(reponame = 'test repo') 
+        repo.save()
+        repo.flush()
+
+        for name in ['ng1', 'ng2', 'ng3', 'ng4', 'ng5']:
+            ng = self.dbs.NodeGroups(ngname = name, repoid = repo.repoid, type='installer')
+            ng.initrd = 'initrd'
+            ng.kernel = 'kernel'
+            ng.save()
+            ng.flush()
+            
+        ng = self.dbs.NodeGroups(ngname = 'ng6', type='compute')
+        ng.initrd = 'initrd'
+        ng.kernel = 'kernel'
+        ng.save()
+        ng.flush()
+
+        bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
+        bu.updateKernelInfo(repo.repoid, 'initrd-fedora-6-i386.100.img', 'kernel-fedora-6-i386.100')
+
+        ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+        for ng in ngs:
+            assert ng.initrd == 'initrd-fedora-6-i386.100.img'
+            assert ng.kernel == 'kernel-fedora-6-i386.100'
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'ng6')[0]
+        assert ng.initrd == 'initrd'
+        assert ng.kernel == 'kernel'
