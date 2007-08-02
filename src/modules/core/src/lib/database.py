@@ -81,6 +81,12 @@ class Components(BaseTable):
                (self.__class__.__name__, self.kid, self.cname, self.os,
                 self.cdesc)
 
+class DriverPacks(BaseTable): 
+    cols = ['dpid', 'cid', 'dpname', 'dpdesc']
+    def __repr__(self):
+        return '%s(%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.cid, self.dpname, self.dpdesc)
+
 class Kits(BaseTable): 
     cols = ['rname', 'rdesc', 'version', \
             'isOS', 'removable', 'arch']
@@ -214,6 +220,7 @@ class DB(object):
     tableClasses = {'ReposHaveKits' : ReposHaveKits,
                     'AppGlobals' : AppGlobals,
                     'Components' : Components,
+                    'DriverPacks' : DriverPacks,
                     'Kits' : Kits,
                     'Modules' : Modules,
                     'NGHasComp' : NGHasComp,
@@ -355,6 +362,15 @@ class DB(object):
         sa.Index('components_FKIndex1', components.c.kid)
         self.__dict__['components'] = components
 
+        driverpacks = sa.Table('driverpacks', self.metadata,
+            sa.Column('dpid', sa.Integer, primary_key=True, autoincrement=True),
+            sa.Column('cid', sa.Integer, sa.ForeignKey('components.cid'), autoincrement=True, nullable=False),
+            sa.Column('dpname', sa.String(255)),
+            sa.Column('dpdesc', sa.String(255)),
+            mysql_engine='InnoDB')
+        sa.Index('driverpacks_FKIndex1', driverpacks.c.dpid)
+        self.__dict__['driverpacks'] = driverpacks
+    
         kits = sa.Table('kits', self.metadata,
             sa.Column('kid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('rname', sa.String(45)),
@@ -578,6 +594,9 @@ class DB(object):
                       'kit': sa.relation(Kits,
                                          entity_name=self.entity_name)},
           entity_name=self.entity_name)
+
+        driverpacks = sa.Table('driverpacks', self.metadata, autoload=True)
+        assign_mapper(self.ctx, DriverPacks, driverpacks, entity_name=self.entity_name)
 
         kits = sa.Table('kits', self.metadata, autoload=True)
         assign_mapper(self.ctx, Kits, kits,
@@ -822,7 +841,7 @@ class DB(object):
         # junction tables(M-N)
         for table in ['AppGlobals', 'Repos', 'Kits', 'Networks', \
                       'Components', 'NodeGroups', 'Modules', \
-                      'Nodes', 'Packages', 'Partitions', 'Scripts', \
+                      'Nodes', 'Packages', 'Partitions', 'Scripts', 'DriverPacks', \
                       'Nics', 'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
             for obj in getattr(self, table).select():
                 try:
