@@ -71,40 +71,6 @@ make ROOT=$RPM_BUILD_ROOT cfmd
 /sbin/chkconfig --add kusu > /dev/null 2>&1
 /sbin/chkconfig kusu on > /dev/null 2>&1
 /sbin/chkconfig --add cfmd > /dev/null 2>&1
-/sbin/chkconfig cfmd on > /dev/null 2>&1
-if [ -d /etc/cfm/installer/etc ]; then
-	ln -s /etc/passwd /etc/cfm/installer/etc/passwd
-	ln -s /etc/shadow /etc/cfm/installer/etc/shadow
-	ln -s /etc/group /etc/cfm/installer/etc/group
-	ln -s /etc/hosts /etc/cfm/installer/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/installer/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/installer/etc/fstab.append
-fi
-if [ -d /etc/cfm/compute/etc ]; then
-	ln -s /etc/passwd /etc/cfm/compute/etc/passwd
-	ln -s /etc/shadow /etc/cfm/compute/etc/shadow
-	ln -s /etc/group /etc/cfm/compute/etc/group
-	ln -s /etc/hosts /etc/cfm/compute/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/compute/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute/etc/fstab.append
-fi
-if [ -d /etc/cfm/compute-diskless/etc ]; then
-	ln -s /etc/passwd /etc/cfm/compute-diskless/etc/passwd
-	ln -s /etc/shadow /etc/cfm/compute-diskless/etc/shadow
-	ln -s /etc/group /etc/cfm/compute-diskless/etc/group
-	ln -s /etc/hosts /etc/cfm/compute-diskless/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/compute-diskless/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute-diskless/etc/fstab.append
-fi
-if [ -d /etc/cfm/compute-imaged/etc ]; then
-	ln -s /etc/passwd /etc/cfm/compute-imaged/etc/passwd
-	ln -s /etc/shadow /etc/cfm/compute-imaged/etc/shadow
-	ln -s /etc/group /etc/cfm/compute-imaged/etc/group
-	ln -s /etc/hosts /etc/cfm/compute-imaged/etc/hosts
-	echo "# Appended by CFM" > /etc/cfm/compute-imaged/etc/fstab.append
-	echo "# Entries below this come from the CFM's fstab.append" >> /etc/cfm/compute-imaged/etc/fstab.append
-fi
-
  
 %preun
 ##
@@ -142,7 +108,6 @@ make ROOT=$RPM_BUILD_ROOT install
 /opt/kusu/*
 %exclude /opt/kusu/lib/python/kusu/*.py?
 /etc/rc.kusu.custom.d/
-/etc/cfm/*
 
 
 ##

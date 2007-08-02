@@ -32,6 +32,41 @@ class App:
         self.restrictDHCPDToProvisionNet()
         self.generateSSHKey()
         self.setDBPassword()
+        self.setCFM()
+
+    def setCFM(self):
+        files = [path('/etc/shadow'),
+                 path('/etc/passwd'),
+                 path('/etc/group'),
+                 path('/etc/hosts')]
+
+        ngs = self.db.NodeGroups.select()
+
+        for ng in ngs:
+            ngname = ng.ngname
+
+            if ngname == 'unmanaged':
+                continue
+
+            dest = path('/etc') / 'cfm' / ngname
+
+            if not dest.exists(): dest.makedirs()
+
+            for file in files:
+                newDir = dest + file.parent
+                if not newDir.exists():
+                    newDir.makedirs()
+
+                newFile = newDir / file.basename()
+                if not newFile.exists():
+                    file.symlink(newFile)
+
+            fstab = newDir / 'fstab.append'
+            if not fstab.exists():
+                f = open(fstab, 'w')
+                f.write('# Appended by CFM\n')
+                f.write('# Entries below this come from the CFM\'s fstab.append\n')
+                f.close()
 
     def setDBPassword(self):
         apache = pwd.getpwnam('apache')
