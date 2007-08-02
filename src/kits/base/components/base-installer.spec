@@ -63,6 +63,7 @@ Requires: kusu-cheetah >= 0.4
 Requires: kusu-pysqlite >= 0.4
 Requires: kusu-ipy >= 0.4
 Requires: initrd-templates
+Requires: pyparted >= 1.7.3
 %description
 This component provides the node with the Kusu management tools for the 
 installers.
