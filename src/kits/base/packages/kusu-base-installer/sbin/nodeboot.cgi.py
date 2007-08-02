@@ -69,9 +69,8 @@ class NodeInfo:
             # Need to trigger a 500 error
             sys.exit(-1)
         installer, repo, os, ngid, type, nid = data
-        index = repo.splitall().index('repos')
-        repo = os.path.sep.join(repo.splitall()[index:])
-            
+        if repo.startswith('/depot'): repo = repo[5:]
+ 
         #FIXME: WORK IN PROGRESS
         # Currently just use the ip from the master installer, where the 
         # network request from the node is hitting. 
