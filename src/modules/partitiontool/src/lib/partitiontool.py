@@ -292,7 +292,7 @@ class DiskProfile(object):
 
 
     def populateDiskProfile(self, fresh, probe_fstab):
-        self.disk_dict = self.__findDisksAndCreateDictionary()
+        self.disk_dict = self.__findDisksAndCreateDictionary(fresh)
         pv_probe_dict, lvg_probe_dict, lv_probe_dict = self.probeLVMEntities()
 
         if fresh:
@@ -318,7 +318,7 @@ class DiskProfile(object):
                 self.populateMountPoints()
 
 
-    def __findDisksAndCreateDictionary(self):
+    def __findDisksAndCreateDictionary(self, fresh):
         logger.debug('Finding disks.')
         disk_dict = {}
         disks_str = kusu.hardware.probe.getDisks().keys()
