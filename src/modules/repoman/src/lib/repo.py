@@ -96,7 +96,7 @@ class BaseRepo(object):
         repo.save()
         repo.flush()
         
-        repo.repository='/repos/%s' % repo.repoid
+        repo.repository='/depot/repos/%s' % repo.repoid
         repo.save()
         repo.flush()
  
