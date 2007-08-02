@@ -248,6 +248,11 @@ class ProgressScreen(BaseScreen):
         dlg = self.selector.popupProgress('SSH Public Keys', 'Downloading SSH public keys...')
         self.nodeinst.getSSHPublicKeys(self.niihost, kusu_prefix)
         dlg.close()
+        
+        kl.debug('Generating /etc/profile.nii')
+        dlg = self.selector.popupProgress('Setting profile.nii', 'Generating file...')
+        self.nodeinst.generateProfileNII(kusu_prefix)
+        dlg.close()
 
         raise UserExitError
 

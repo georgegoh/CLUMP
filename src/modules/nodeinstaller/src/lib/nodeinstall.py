@@ -551,7 +551,8 @@ class NodeInstaller(object):
     'cfm': '',           # The CFM data
     'ksprofile' : None,  # The kickstart profile 
     'partitionschema' : {}, # partition schema
-    'autoinstallfile' : None # distro-specific autoinstallation config file
+    'autoinstallfile' : None, # distro-specific autoinstallation config file
+    'niidata': None
     }
 
     def __init__(self, niisource=None):
@@ -598,6 +599,7 @@ class NodeInstaller(object):
         self.ksprofile = None
         self.partitionschema = {}
         self.autoinstallfile = None
+        self.niidata = None
         
     def parseNII(self):
         """ Parses the NII and places the resulting data into self.niidata """
@@ -609,17 +611,16 @@ class NodeInstaller(object):
                 self.reset()
                 raise EmptyNIISource
         
-            niidata = NodeInstInfoHandler()
+            self.niidata = NodeInstInfoHandler()
             p = make_parser()
-            p.setContentHandler(niidata)
+            p.setContentHandler(self.niidata)
             p.parse(self.source)
             for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
                 'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
                 'scripts', 'cfm']:
-                setattr(self,i,getattr(niidata,i))
+                setattr(self,i,getattr(self.niidata,i))
                 logger.debug('%s : %s' % (i,getattr(self,i)))
-                # also generate the appglobal source file
-                niidata.saveAppGlobalsEnv()
+
         except SAXParseException:
             logger.debug('Failed parsing NII!')
         except EmptyNIISource:
@@ -662,6 +663,14 @@ class NodeInstaller(object):
         logger.debug('Committing changes and formatting disk..')
         self.ksprofile.diskprofile.commit()
         self.ksprofile.diskprofile.formatAll()
+        
+    def generateProfileNII(self, prefix):
+        """ Generate the /etc/profile.nii. """
+        root = path(prefix)
+        etcdir = root / 'etc'
+        if not etcdir.exists(): etcdir.mkdir()
+        profilenii = etcdir / 'profile.nii'
+        self.niidata.saveAppGlobalsEnv(profilenii)
 
     def setTimezone(self):
         tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz
