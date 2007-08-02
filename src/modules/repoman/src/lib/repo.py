@@ -65,10 +65,14 @@ class BaseRepo(object):
 
         return self.prefix / 'depot' / 'kits' / name / version / arch
         
-    def getRepoPath(self, repoid):
+    def getRepoPath(self, repoid = None):
         """Returns the repository path"""
 
-        return self.prefix / 'depot' / 'repos' / str(repoid)
+        if repoid:
+            return self.prefix / 'depot' / 'repos' / str(repoid)
+        else:
+            return self.prefix / 'depot' / 'repos' / str(self.repoid)
+
 
     def getInstallerIP(self):
         """Returns a list of installer ips"""

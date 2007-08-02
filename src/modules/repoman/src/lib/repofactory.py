@@ -114,6 +114,17 @@ class RepoFactory(object):
         """Makes snapshots for all nodegroups"""
         pass
 
+    def getRepo(self, repoid):
+        """Returns the repo obj for that repo"""
+
+        os_name, os_version, os_arch = tools.getOS(self.db, repoid)
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+        r.repoid = repoid
+        r.os_path = r.getOSPath()
+        r.repo_path = r.getRepoPath()
+
+        return r
+ 
     def getBestRepo(self, ngname):
         """Get a repo that uses the same set of kits"""
 

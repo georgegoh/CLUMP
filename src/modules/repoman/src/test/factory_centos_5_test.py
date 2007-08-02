@@ -495,7 +495,19 @@ class TestCentos5Repo:
         assert repos[0].repoid == repos[1].repoid
         assert not self.dbs.Repos.get(repoid)
 
+    def testGetRepo(self):
+        global prefix
 
+        rfactory = RepoFactory(self.dbs, prefix, True)
+        r = rfactory.make('installer nodegroup')
+        repo = rfactory.getRepo(r.repoid)
 
+        assert repo.os_name == 'centos'
+        assert repo.os_version == '5'
+        assert repo.os_arch == 'i386'
+        assert repo.repoid == r.repoid
+        assert repo.repo_path == prefix / 'depot' / 'repos' / str(r.repoid)
+        assert repo.os_path == prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386'
 
+        
 
