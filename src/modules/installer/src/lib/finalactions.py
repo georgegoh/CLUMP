@@ -141,7 +141,7 @@ def mountKusuMntPts(prefix, disk_profile):
                 d[m].mount(mntpnt)
                 mounted.append(m)
             except MountFailedError, e:
-                raise e, 'Unable to mount %s on %s' % (d[m].path, m)
+                raise MountFailedError, 'Unable to mount %s on %s' % (d[m].path, m)
 
     for m in ['/', '/depot']:
         if m not in mounted:
