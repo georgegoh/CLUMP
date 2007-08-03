@@ -24,6 +24,7 @@ class UnknownDeviceError(KusuError): pass
 class NotImplementedError(KusuError): pass
 class UnsupportedURIError(KusuError): pass
 class UnsupportedOS(KusuError): pass
+class InvalidArguements(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass
@@ -131,6 +132,7 @@ class repodataChecksumError(KusuError): pass
 # repoman.updates
 class UnableToPrepUpdateKit(KusuError): pass
 class UnableToMakeUpdateKit(KusuError): pass
+class UnableToExtractKernel(KusuError): pass
 
 # b-m-t
 class FilePathError(KusuError): pass
