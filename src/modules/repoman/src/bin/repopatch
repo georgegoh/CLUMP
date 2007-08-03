@@ -53,34 +53,34 @@ class RepoPatchApp(KusuApp):
         self.repoExists(repo_name)
 
         repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
-        repo = self.rfinst.getRepo(repo.repoid)
+        repoObj = self.rfinst.getRepo(repo.repoid)
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kuus'))
 
         if self.prefix:
-            repo.setConfig(self.prefix / 'opt' / 'kusu' / 'etc' / 'updates.conf')
+            repoObj.setConfig(self.prefix / 'opt' / 'kusu' / 'etc' / 'updates.conf')
         else:
-            repo.setConfig(kusu_root / 'etc' / 'updates.conf')
+            repoObj.setConfig(kusu_root / 'etc' / 'updates.conf')
 
-        pkgs, kernel = repo.getUpdates()
+        pkgs, kernel = repoObj.getUpdates()
 
-        dir, kitName, kitVersion, kitRelease, kitArch = repo.makeUpdateKit(pkgs)
-        repo.addUpdateKit(dir)
+        dir, kitName, kitVersion, kitRelease, kitArch = repoObj.makeUpdateKit(pkgs)
+        repoObj.addUpdateKit(dir)
 
         if kernel:
-            vmlinuz, initrd = repo.makeTFTP(kernel, kitRelease)
-            repo.updateKernelInfo(repo.repoid, vmlinuz, initrd)
+            vmlinuz, initrd = repoObj.makeTFTP(kernel, kitRelease)
+            repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
         else:
             # no updated kernel at all
             pass
  
-        ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+        ngs = self.dbs.NodeGroups.select_by(repoid = repoObj.repoid)
 
         oldKitComp = None
         if kitRelease > 1:
             # find the previous update kit
             oldUpdateKit = self.dbs.Kits.select_by(rname = kitName, 
-                                                   version = '%s_r%s' % (repo.os_version, kitRelease-1),
+                                                   version = '%s_r%s' % (repoObj.os_version, kitRelease-1),
                                                    arch = kitArch)[0]
 
             oldKitComp = oldUpdateKit.components[0]
@@ -105,6 +105,12 @@ class RepoPatchApp(KusuApp):
                                  stderr=subprocess.PIPE)
             out, err = p.communicate()
             retcode = p.returncode
+
+        repo.kits.append(updateKit)
+        repo.save()
+        repo.flush()
+
+        repoObj.refresh(repoObj.repoid)
 
     def run(self):
         self.parseArgs()
