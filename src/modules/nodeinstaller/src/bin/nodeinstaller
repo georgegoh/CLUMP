@@ -243,7 +243,7 @@ class ProgressScreen(BaseScreen):
         kusu_prefix = '/mnt/kusu'
 
         kl.debug('Mounting filesystem')
-        dlg = self.selector.popupProgress('Mounting Filesystem', 'Mountinf filesystem...')
+        dlg = self.selector.popupProgress('Mounting Filesystem', 'Mounting filesystem...')
         self.nodeinst.mountKusuMntPts(kusu_prefix)
         dlg.close()
 
