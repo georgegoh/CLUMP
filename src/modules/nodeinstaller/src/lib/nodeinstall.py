@@ -192,10 +192,6 @@ def adaptNIIPartition(niipartition, diskprofile):
         # create the normal volumes.
         for partinfo in part_list:
             fs = translateFSTypes(partinfo['fstype'])
-            preserve = partinfo['preserve'].lower()
-            if preserve == 'n': preserve = False
-            else: preserve = True
-
             createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
             pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
             if pv: handlePV(partinfo, vg_name, schema['vg_dict'])
@@ -250,11 +246,11 @@ def filterPartitionEntries(partition_entries, disk_profile):
     for partinfo in partition_entries:
         try:
             disknum = int(partinfo['device'])
-            if partinfo['preserve'].lower() == 'y':
+            if partinfo['preserve'] == '1':
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 if mountpoint and mountpoint in disk_profile.mountpoint_dict.keys():
                     continue
-            elif partinfo['preserve'].lower() == 'n':
+            else:
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 if mountpoint:
                     del_mntpnt.append(mountpoint)
@@ -266,11 +262,8 @@ def filterPartitionEntries(partition_entries, disk_profile):
                 vg_list.append(partinfo)
             elif partinfo['device'].lower() == 'n':
                 part_list.append(partinfo)
-            else:
-                raise InvalidPartitionSchema, \
-                 "Don't know what this entry is(not a partition, pv, vg or lv):\n%s" % partinfo
- 
-            if partinfo['preserve'].lower() == 'n' and partinfo['device'].lower() != 'n':
+
+            if partinfo['preserve'] == '0' and partinfo['device'].lower() != 'n':
                 p_id, name = translatePartitionOptions(partinfo['options'], 'partitionID')
                 mountpoint = translateMntPnt(partinfo['mntpnt'])
                 fs = translateFSTypes(partinfo['fstype'])
@@ -485,6 +478,7 @@ class KickstartFromNIIProfile(object):
                 self.diskprofile = DiskProfile(False,diskimg)
             else:
                 self.diskprofile = DiskProfile(False)
+            schema = None
             schema = adaptNIIPartition(ni.partitions, self.diskprofile)
             logger.debug('Adapted schema from the ni.partitions: %r' % schema)
             logger.debug('Calling setupDiskProfile to apply schema to the diskprofile..')    

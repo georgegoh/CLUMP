@@ -719,23 +719,34 @@ class DB(object):
 #        compute.partitions.append(data)
 # LVM PARTITIONING
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-                          size='100', device='1', preserve='N')
+                          size='100', device='1', preserve='0')
         swap = Partitions(fstype='linux-swap', partition='2',
-                          size='2000', device='1', preserve='N')
-        pv = Partitions(fstype='physical volume', partition='N',
-                        size='6000', device='N', preserve='N',
+                          size='2000', device='1', preserve='0')
+        pv = Partitions(fstype='physical volume', partition='0',
+                        size='6000', device='N', preserve='0',
                         options='fill;pv;vg=VolGroup00')
         vg = Partitions(device='VolGroup00', options='vg;extent=32M')
         root = Partitions(mntpnt='/', fstype='ext3', size='2000',
                           device='ROOT', options='lv;vg=VolGroup00')
         data = Partitions(mntpnt='/data', fstype='ext3', size='4000',
                           device='DATA', options='lv;vg=VolGroup00;fill')
+        donotpreserve1 = Partitions(options='partitionID=Linux', preserve='0')
+        donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve='0')
+        donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve='0')
+        donotpreserve4 = Partitions(options='partitionID=Linux LVM', preserve='0')
+        # Otherwise, preserve everything else (weird, counter-intuitive,
+        # inverse logic - need to improve)
+ 
         compute.partitions.append(boot)
         compute.partitions.append(swap)
         compute.partitions.append(pv)
         compute.partitions.append(vg)
         compute.partitions.append(root)
         compute.partitions.append(data)
+        compute.partitions.append(donotpreserve1)
+        compute.partitions.append(donotpreserve2)
+        compute.partitions.append(donotpreserve3)
+        compute.partitions.append(donotpreserve4)
 
         # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')

@@ -209,6 +209,13 @@ class ProgressScreen(BaseScreen):
         self.niihost = niihost
         self.ksfile = ksfile
 
+    def displayDiskProfileState(self, diskprofile):
+        s = str(diskprofile) + '\n\n'
+        s = s + 'LVM Fifo:\n'
+        s = s + diskprofile.reprLVMFifo()
+        self.selector.popupMsg('Internal Partitiontool State', s)
+        return NAV_NOTHING
+
     def drawImpl(self):
         kl.debug('Downloading NII..')
         dlg = self.selector.popupProgress('Node Install Info', 'Downloading Node install info...')
@@ -228,6 +235,7 @@ class ProgressScreen(BaseScreen):
  
         kl.debug('Committing disk profile')
         dlg = self.selector.popupProgress('Partitioning Disks', 'Initializing disks...')
+        self.displayDiskProfileState(self.nodeinst.ksprofile.diskprofile)
         self.nodeinst.commit()
         dlg.close()
         kl.debug('Finished partitioning disks')

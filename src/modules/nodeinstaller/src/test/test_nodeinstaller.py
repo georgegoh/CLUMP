@@ -55,9 +55,9 @@ Node: node0000
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
-    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="n"/>
-    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="n"/>
-    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="n"/>
+    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
+    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
+    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
@@ -101,56 +101,56 @@ Node: node0000
         # additional partitioning profiles from nii
         self.niipartition1 = {
                 # /boot - 100M, ext3, disk 1 part 1
-                0: {'preserve': u'n', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'},
+                0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'},
                 # swap - 1000M, linux-swap, disk 1 part 2
-                1: {'preserve': u'n', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'},
+                1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'},
                 # / - 6000M(fill), ext3, disk 1 part 3
-                2: {'preserve': u'n', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/', 'options': u'fill', 'size': u'6000', 'partition':'3'}}
+                2: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/', 'options': u'fill', 'size': u'6000', 'partition':'3'}}
 
         self.niipartition2 = {
                 # /boot - 100M, ext3, disk 1 part 1
-                0: {'preserve': u'n', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 
+                0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1', 'mntpnt': u'/boot', 'options': u'', 
                 'size': u'100', 'partition':'1'},
                 # swap - 1000M, linux-swap, disk 1 part 2
-                1: {'preserve': u'n', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 
+                1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1', 'mntpnt': u'', 'options': u'', 
                 'size': u'1000','partition':'2'},
                 # pv - 6000M(fill), vg=VolGroup00, disk 1 part 3
-                2: {'preserve': u'n', 'fstype': u'physical volume', 'device': u'1', 'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup00', 
+                2: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'1', 'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup00', 
                 'size': u'6000', 'partition':'3'},
                 # VolGroup00 - extent=32M
-                3: {'preserve': u'n', 'fstype': u'', 'device': u'VolGroup00', 'mntpnt': u'', 'options': u'vg;extent=32M', 
+                3: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup00', 'mntpnt': u'', 'options': u'vg;extent=32M', 
                 'size': u'0', 'partition':''},
                 # ROOT lv - 2000M, ext3, vg=VolGroup00
-                4: {'preserve': u'n', 'fstype': u'ext3', 'device': u'ROOT', 'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 
+                4: {'preserve': u'0', 'fstype': u'ext3', 'device': u'ROOT', 'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 
                 'size': u'2000', 'partition':''},
                 # DEPOT lv - 4000M(fill), ext3, vg=VolGroup00
-                5: {'preserve': u'n', 'fstype': u'ext3', 'device': u'DEPOT', 'mntpnt': u'/depot', 'options': u'lv;vg=VolGroup00;fill', 
+                5: {'preserve': u'0', 'fstype': u'ext3', 'device': u'DEPOT', 'mntpnt': u'/depot', 'options': u'lv;vg=VolGroup00;fill', 
                 'size': u'4000', 'partition':''},    
                 }
 
         self.niipartition3 = {# /boot - 100M, ext3, disk 1 part 1
-                              0: {'preserve': u'n', 'fstype': u'ext3', 'device': u'1',
+                              0: {'preserve': u'0', 'fstype': u'ext3', 'device': u'1',
                                   'mntpnt': u'/boot', 'options': u'', 'size': u'100', 'partition':'1'},
                               # swap - 1000M, linux-swap, disk 1 part 2
-                              1: {'preserve': u'n', 'fstype': u'linux-swap', 'device': u'1',
+                              1: {'preserve': u'0', 'fstype': u'linux-swap', 'device': u'1',
                                   'mntpnt': u'', 'options': u'', 'size': u'1000', 'partition':'2'},
                               # pv - 2000M, vg=VolGroup00, disk 1 part 3
-                              2: {'preserve': u'n', 'fstype': u'physical volume', 'device': u'1',
+                              2: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'1',
                                   'mntpnt': u'', 'options': u'pv;vg=VolGroup00', 'size': u'2000', 'partition':'3'},
                               # pv - 4000M(fill), vg=VolGroup01, multi-disk
-                              3: {'preserve': u'n', 'fstype': u'physical volume', 'device': u'N',
+                              3: {'preserve': u'0', 'fstype': u'physical volume', 'device': u'N',
                                   'mntpnt': u'', 'options': u'fill;pv;vg=VolGroup01', 'size': u'4000', 'partition':'N'},
                               # VolGroup00 - extent=32M
-                              4: {'preserve': u'n', 'fstype': u'', 'device': u'VolGroup00',
+                              4: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup00',
                                   'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''},
                               # VolGroup01 - extent=32M
-                              5: {'preserve': u'n', 'fstype': u'', 'device': u'VolGroup01',
+                              5: {'preserve': u'0', 'fstype': u'', 'device': u'VolGroup01',
                                   'mntpnt': u'', 'options': u'vg;extent=32M', 'size': u'', 'partition': u''},
                               # ROOT lv - 2000M, ext3, vg=VolGroup00
-                              6: {'preserve': u'n', 'fstype': u'ext3', 'device': u'ROOT',
+                              6: {'preserve': u'0', 'fstype': u'ext3', 'device': u'ROOT',
                                   'mntpnt': u'/', 'options': u'lv;vg=VolGroup00', 'size': u'2000', 'partition': u''},
                               # DEPOT lv - 4000M(fill), ext3, vg=VolGroup01
-                              7: {'preserve': u'n', 'fstype': u'ext3', 'device': u'DEPOT',
+                              7: {'preserve': u'0', 'fstype': u'ext3', 'device': u'DEPOT',
                                   'mntpnt': u'/depot', 'options': u'lv;vg=VolGroup01;fill', 'size':u'4000', 'partition': u''}
                              }
 

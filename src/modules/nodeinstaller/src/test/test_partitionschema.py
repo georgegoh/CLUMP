@@ -45,9 +45,9 @@ Node: node0000
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
-    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="n"/>
-    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="n"/>
-    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="n"/>
+    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
+    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
+    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
@@ -208,9 +208,9 @@ Node: node0000
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
-    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="n"/>
-    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="n"/>
-    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="y"/>
+    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
+    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
+    <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="1"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
@@ -304,12 +304,12 @@ Node: node0000
 </debug>
 <nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
-    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="n"/>
-    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="n"/>
-    <partition device="N" mntpnt="" fstype="physical volume" size="6000" options="fill;pv;vg=VolGroup00" partition="N" preserve="n"/>
-    <partition device="VolGroup00" mntpnt="" fstype="" size="0" options="vg;extent=32M" partition="" preserve="n"/>
-    <partition device="ROOT" mntpnt="/" fstype="ext3" size="2000" options="lv;vg=VolGroup00" preserve="n"/>
-    <partition device="DATA" mntpnt="/data" fstype="ext3" size="6000" options="lv;vg=VolGroup00;fill" preserve="n"/>
+    <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
+    <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
+    <partition device="N" mntpnt="" fstype="physical volume" size="6000" options="fill;pv;vg=VolGroup00" partition="0" preserve="0"/>
+    <partition device="VolGroup00" mntpnt="" fstype="" size="0" options="vg;extent=32M" partition="" preserve="0"/>
+    <partition device="ROOT" mntpnt="/" fstype="ext3" size="2000" options="lv;vg=VolGroup00" preserve="0"/>
+    <partition device="DATA" mntpnt="/data" fstype="ext3" size="6000" options="lv;vg=VolGroup00;fill" preserve="0"/>
     <component>component-base-node</component>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
