@@ -565,7 +565,7 @@ class Partition(object):
 
         if returncode:
             err_msg =  'Unable to mount %s on %s'  % (self.path, mountpoint)
-            logger.error(err_msg + err)
+            logger.error(err_msg + ' Reason: ' + err)
             raise MountFailedError, err_msg
         else:
             logger.info('Mounted %s on %s' % (self.path, mountpoint))
