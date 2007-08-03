@@ -1,0 +1,1226 @@
+#!/usr/bin/env python
+#
+# $Id$
+#
+# Node Group Editor
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+# Author: Alexey Tumanov (atumanov)
+
+import snack
+import sys
+import os
+import glob
+import string
+import re
+from UserDict import UserDict
+from sets import Set
+from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
+from kusu.ui.text.USXnavigator import *
+from kusu.ui.text.kusuwidgets import LabelledEntry
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
+
+global curNG, origNG
+
+#emulate ternary cond. expression - only avail. in 2.5 & up :(
+def ifelse(b, x, y): return ((b and [x]) or [y])[0]
+
+
+class UnsupportedOSType(Exception):         pass
+#NGE Exception hierarchy
+class NodeGroupError(Exception):            pass
+class NGEObjectException(NodeGroupError):   pass
+class NGEDBException(NodeGroupError):       pass
+class NGEInvalidRecord(NGEObjectException): pass
+class NGEDBReadFail(NGEDBException):        pass
+class NGEDBWriteFail(NGEDBException):       pass
+
+
+class NodeGroupRec(UserDict):
+    #assume NodeGroupRec.fields[0] is always the PK
+    fields = ( 'ngid', 'repoid', 'ngname', 'installtype', 'ngdesc',
+               'nameformat', 'kernel', 'initrd', 'kparams'
+             )
+
+    def __init__(self, record=None, **kwargs):
+        '''Re-defining native constructor to narrow down the utility of the child '''
+        #initialize nodegroup record
+        self.data = {}
+        for key in self.fields:
+            self.data[key] = None
+
+        if record and (type(record) == tuple or type(record) == list):
+            self.set(self.fields, record)
+
+        if len(kwargs): #keyword args provided
+            kwdict = {}
+            for key in kwargs.keys():
+                lkey = key.lower()
+                if lkey in self.fields:
+                    kwdict[lkey] = kwargs[key]
+            self.update(kwdict)
+
+    def __setitem__(self, key, item):
+        '''NodeGroupRec:[] Allows setting exactly one field for the given record '''
+        key = key.lower()
+        if key in self.fields:
+            self.data[key] = item
+
+    def __delitem__(self, key):
+        #protect the primary key
+        key = key.lower()
+        if key != self.fields[0]:
+            del self.data[key]
+
+    def set(self, keys, values):
+        '''NodeGroupRec:set allows setting multiple fields for the given record'''
+        for i in range(0, min(len(keys), len(values))):
+            key = keys[i].lower()
+            if key in self.fields:
+                self[key] = values[i]
+
+    def values(self):
+        ''' NodeGroupRec:values returns an ordered list of values '''
+        rv = []
+        for key in self.fields:
+            if key in self.data.keys():
+                rv.append(self.data[key])
+        return rv
+
+    def keys(self):
+        ''' NodeGroupRec:keys returns an ordered list of keys '''
+        rv = []
+        for key in self.fields:
+            if key in self.data.keys():
+                rv.append(key)
+        return rv
+
+    def __sub__(self,other):
+
+        if not isinstance(other,NodeGroupRec):
+            raise TypeError, "unsupported operand types(s) for '-': '%s' and '%s'"\
+                             %(type(self),type(other))
+        result = {}
+        for key in self.fields:
+            if not other.has_key(key) or self.data[key] != other[key]:
+                result[key] = self.data[key]
+
+        return result
+
+    def syncFromDB(self,db):
+        ''' updates this instance with information from the database
+        '''
+        pk = self.data['ngid'] #primary key
+        try:
+            assert(pk)
+        except AssertionError, msg:
+            raise NGEInvalidRecord,"Invalid NodeGroup record, missing primary key?"
+
+        query = 'SELECT %s' + ', %s' * (len(self.fields[1:]) - 1) + \
+                ' from nodegroups where %s = %s' % (self.fields[0], pk)
+        query = query % self.fields[1:]
+
+        try:
+            db.execute(query)
+            rv = db.fetchone()
+        except Exception,msg:
+            raise NGEDBReadFail, msg
+
+        self.set(self.fields[1:], rv)
+
+
+    def syncToDB(self,db):
+        ''' updates DB with information in this instance
+        '''
+        mode = 'update'
+        pk = self.data['ngid']
+        try:
+            assert(pk)
+        except AssertionError, msg:
+            mode = 'insert'
+
+        dbdict = {} #construct dict of non-Null values
+        for f in self.fields[1:] : # skip PK
+            if self.data[f] != None:
+                dbdict[f] = self.data[f]
+        if not dbdict:
+            return
+
+        if mode == 'update':
+            query = "UPDATE nodegroups SET %s = '%s'" + ", %s = '%s'"*(len(dbdict)-1) +\
+                    " WHERE ngid = %s"
+            tpl = ()
+            for t in dbdict.items():
+                tpl += t #tuple concat
+            tpl += (pk,)
+            query = query % tpl
+
+        elif mode == 'insert':
+            itemlst = dbdict.items()
+            keylst = [k for k,v in itemlst]
+            vallst = ["'%s'" %str(v) for k,v in itemlst]
+            query = 'INSERT into nodegroups (%s) values (%s)' %(string.join(keylst,',') ,\
+                        string.join(vallst,','))
+
+        try:
+            db.execute(query)
+        except Exception,msg:
+            raise NGEDBWriteFail,msg
+
+        if mode == 'insert':
+            #get the PK for the record just inserted
+            try:
+                db.execute("SELECT ngid from nodegroups where ngname = '%s'" % self.data['ngname'])
+                rv = db.fetchone()
+            except Exception,msg:
+                raise NGEDBReadFail,msg
+    
+            assert(len(rv)==1)
+            self.data['ngid'] = rv[0]
+
+    def eraseFromDB(self,db):
+        ''' erase this record from the database '''
+        pk = self.data['ngid']
+        try:
+            assert(pk)
+        except AssertionError,msg:
+            raise NGEInvalidRecord,msg
+
+        try:
+            db.execute("DELETE from nodegroups where ngid = %s" %pk)
+        except Exception,msg:
+            raise NGEDBWriteFail,msg
+        
+class NodeGroup(NodeGroupRec):
+    ''' NodeGroup class extends beyond NG table record representation - it
+        captures the links of nodegroup records to other tables as well.
+        In doing so, it allows the instance to encapsulate all the information
+        pertinent to the specified NG record
+    '''
+    links =  ( 'comps', 'modules', 'nets', 'packs', 'scripts', 'parts' )
+    linksDBmap={ 'comps':   ('ng_has_comp', 'cid'),
+                 'modules': ('modules', 'module'),
+                 'nets':    ('ng_has_net', 'netid'),
+                 'packs':   ('packages', 'packagename'),
+                 'scripts': ('scripts', 'script'),
+                 'parts':   ('partitions', 'idpartitions')
+               }
+
+    def __init__(self, record=None, **kwargs):
+        NodeGroupRec.__init__(self, record, **kwargs)
+
+        for key in self.links:
+            self.data[key] = None
+
+        if len(kwargs): #keyword args provided
+            kwdict = {}
+            for key in kwargs.keys():
+                lkey = key.lower()
+                if lkey in self.links:
+                    kwdict[lkey] = kwargs[key]
+            self.update(kwdict)
+
+    def __setitem__(self, key, item):
+        '''Allows setting exactly one Nodegroup field for the given record '''
+        key = key.lower()
+        if key in self.links:
+            if type(item) == list or type(item) == tuple:
+                self.data[key] = item
+        else:
+            NodeGroupRec.__setitem__(self,key,item)
+
+    def __sub__(self, other):
+        ''' Allows diffing two objects of type NodeGroup. The result is a dict
+            of keys for values that differ. The keys will map
+            to the value from the first operand. This implies a-b != b-a
+        '''
+        if not isinstance(other,NodeGroup):
+            raise TypeError, "unsupported operand types(s) for '-': '%s' and '%s'"\
+                             %(type(self),type(other))
+
+        result = NodeGroupRec.__sub__(self,other)
+
+        for key in self.links:
+            #all links should be lists
+            try:
+                assert(self.data[key] == None or type(self.data[key]) == list)
+            except AssertionError,msg:
+                raise
+            if not other.has_key(key):
+                result[key] = self.data[key]
+            elif self.data[key] == None and other[key] == None:
+                continue
+            elif self.data[key] == None or other[key] == None:
+                result[key] = self.data[key]
+            else:
+                #both operands have non-Null value
+                l1 = self.data[key][:]
+                l2 = other[key][:]
+                l1.sort()
+                l2.sort()
+                if l1 != l2:
+                    result[key] = self.data[key]
+        return result
+
+    def __getLinkByFK(self,db,link):
+
+        pk = self.data['ngid']
+        db.execute("select %s from %s where ngid = %s" %(self.linksDBmap[link][1], \
+                    self.linksDBmap[link][0], pk))
+        rv = db.fetchall()
+        self.data[link] = [x for x, in rv]
+
+    def __putLinkByFK(self,db,link):
+        #delete all records matching pk and add new ones
+        #assume self.data[link] is non-Null
+        pk = self.data['ngid']
+
+        db.execute("DELETE from %s where ngid = %s" %(self.linksDBmap[link][0], pk))
+
+        if len(self.data[link]) < 1:
+            return
+        query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
+                    self.linksDBmap[link][1])
+        query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
+
+        tpl = ()
+        for v in self.data[link]:
+            tpl += pk,v
+        query = query % tpl
+
+        db.execute(query)
+
+
+    def syncFromDB(self,db):
+        ''' updates this instance with information from the database
+        '''
+        NodeGroupRec.syncFromDB(self,db)
+
+        for l in self.links:
+            self.__getLinkByFK(db,l)
+
+
+    def syncToDB(self,db):
+        ''' updates DB with information in this instance
+        '''
+        NodeGroupRec.syncToDB(self,db)
+        pk = self.data['ngid']
+
+        try:
+            assert(pk)
+        except AssertionError,msg:
+            raise NGEInvalidRecord,msg
+
+        for l in self.links:
+            if self.data[l] != None: #don't touch the Null links
+                self.__putLinkByFK(db,l)
+
+    def eraseFromDB(self,db):
+        ''' erase this record from the database '''
+        pk = self.data['ngid']
+        try:
+            assert(pk)
+        except AssertionError,msg:
+            raise NGEInvalidRecord,msg
+
+        for l in self.links:
+            if self.data[l] !=None:
+                try:
+                    db.execute("DELETE from %s where ngid = %s" % (self.linksDBmap[l][0], pk) )
+                except Exception,msg:
+                    raise NGEDBWriteFail,msg
+
+        NodeGroupRec.eraseFromDB(self,db)
+
+
+class scrNGEMain(USXBaseScreen):
+    name= 'Node Group Editor'
+    msg = 'Select the Node Group to operate on from the list below'
+    buttons = ['edit_button', 'copy_button', 'delete_button', 'exit_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.setHelpLine('Select the Node Group to operate on and choose desired operation')
+        self.__nglistbox = None #Listbox for Node Group Selection
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
+        self.buttonsDict['copy_button'].setCallback_(self.doCopyAction)
+        self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
+        #for hotkeys
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def doCopyAction(self):
+
+        ngid = self.__nglistbox.current()
+
+        # comment out for testing
+        #if ngid == 1:
+        #    self.selector.popupMsg('Operation Disallowed', 'Installer nodegroup'+\
+        #                           ' is not allowed to be copied')
+        #    return NAV_NOTHING
+            
+        newNG = NodeGroup(ngid = ngid)
+        newNG.syncFromDB(self.database)
+        self.selector.popupMsg('DEBUG: copyAction',str(newNG))
+        newNG['ngid'] = None    #give it new identity
+
+
+        query = "select ngname from nodegroups where ngname like '%s Copy %%'" %newNG['ngname']
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        if rv == ():
+            suffix = 1
+        else:
+            suffix = int(max(filter((lambda x: x.isdigit()), [string.split(x[0])[-1] for x in rv]))) + 1
+        ngname = '%s Copy %s' %(newNG['ngname'], suffix)
+        newNG['ngname'] = ngname
+
+        newNG.syncToDB(self.database)
+       
+        return NAV_NOTHING
+
+    def doDeleteAction(self):
+        ngid = self.__nglistbox.current()
+
+        #TODO: check if the nodegroup is in use by any nodes
+
+        tmpNG = NodeGroup(ngid = ngid)
+        tmpNG.syncFromDB(self.database) #to get all the links
+        msg = "You are about to delete the selected nodegroup. Do you wish to proceed?"
+        rv = self.selector.popupYesNo('Node Group Deletion Alert', msg, defaultNo=True)
+        if rv:
+            tmpNG.eraseFromDB(self.database)
+
+        return NAV_NOTHING
+
+    def doEditAction(self, data=None):
+        global curNG,origNG
+
+        ngid = self.__nglistbox.current()
+
+        #construct query string
+        query = 'SELECT %s' + ', %s'*(len(NodeGroup.fields)-1) + ' from nodegroups where %s = %s'
+        query = query % (NodeGroup.fields + (NodeGroup.fields[0], ngid)) #tuple concat...
+
+        self.database.execute(query)
+        rv = self.database.fetchone() #returns a tuple
+
+        rv = [ ifelse(x==None,'',x) for x in rv ] #replace all Null values
+
+        curNG = NodeGroup(rv)
+        origNG = curNG.copy()
+        assert(curNG == origNG)
+
+        #pass on the db and kusuApp handles to other screens
+        #they will all share one instance of each
+        ScreenFactory.screens = [
+                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp), #for testing
+                                ]
+
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Edit", showTrail=False)
+        ks.run()
+
+        return NAV_NOTHING
+
+    def drawImpl(self):
+        MAXWIDTH = 70
+
+        cols = [ ['NODE GROUP', 'DESCRIPTION'] ]
+        self.database.execute('''select max(char_length(ngname)), max(char_length(ngdesc))
+                                 from nodegroups''')
+        rv = self.database.fetchone()
+        rv = [ ifelse(x==None,0,x) for x in rv ] #replace all Null values
+        cols.append([int(x) for x in rv]) #justification values
+
+        headstr = ''
+        for i in xrange(len(cols[0])): #for all columns
+            cols[1][i] = max(cols[1][i], len(cols[0][i]))+1 #make room for the label
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__nglistbox = snack.Listbox(height=10, scroll=1, width=MAXWIDTH,returnExit=1, showCursor=0)
+
+        self.database.execute('select ngname,ngdesc,ngid from nodegroups')
+        rv = self.database.fetchall()
+        #Null value replacement magic
+        rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+
+        for record in rv:
+            ngid = record.pop()
+            entrystr = ''
+            for i in xrange(len(record)): #construct an entry string
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+
+            self.__nglistbox.append(entrystr, item = ngid)
+
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0), growx=1,anchorLeft=1)
+        self.screenGrid.setField(self.__nglistbox, 0,1, padding=(0,0,0,0), growx=1)
+
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        pass
+
+#end class scrNGEMain
+
+class scrNGEEdit_General(USXBaseScreen):
+    name = 'General Info'
+    msg = 'General Info about the selected node'
+    buttons = ['next_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        labeltxt1 = 'Node Group Name: '
+        labeltxt2 = 'Node Group Desc: '
+        labeltxt3 = 'Node Name Format: '
+
+        labellen = max(len(labeltxt1), len(labeltxt2), len(labeltxt3))
+
+        self.__entries = {}
+        self.__entries['ngname'] = LabelledEntry(labelTxt=labeltxt1.rjust(labellen),\
+                     text = curNG['ngname'], width=30, password=0, returnExit = 0)
+        self.__entries['ngdesc'] = LabelledEntry(labelTxt=labeltxt2.rjust(labellen),\
+                     text = curNG['ngdesc'], width=30, password=0, returnExit = 0)
+        self.__entries['nameformat'] = LabelledEntry(labelTxt=labeltxt3.rjust(labellen),\
+                     text = curNG['nameformat'], width=30, password=0, returnExit = 0)
+ 
+        self.screenGrid = snack.Grid(1, 3)
+        self.screenGrid.setField(self.__entries['ngname'], col=0,row=0)
+        self.screenGrid.setField(self.__entries['ngdesc'], col=0,row=1)
+        self.screenGrid.setField(self.__entries['nameformat'], col=0,row=2)
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        #TODO: ensure uniqueness of ngname
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        #update curNG with entry values
+        curNG['ngname'] = self.__entries['ngname'].value()
+        curNG['ngdesc'] = self.__entries['ngdesc'].value()
+        curNG['nameformat'] = self.__entries['nameformat'].value()
+        
+
+class scrNGEEdit_Repo(USXBaseScreen):
+    name = 'Repository'
+    msg = 'Repository selection for the Node Group specified'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doQuitAction)
+
+    def doQuitAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def drawImpl(self):
+        MAXWIDTH = 70
+
+        cols = [ ['RepoName','Repository','OSType'] ]
+
+        #extract all possible repos from table 'repos' and display
+        self.database.execute('''select max(char_length(reponame)),max(char_length(repository))
+                                 , max(char_length(ostype)) from repos''')
+        rv = self.database.fetchone()
+        rv = [ ifelse(x==None,0,x) for x in rv ]
+        cols.append([int(x) for x in rv]) #justification values
+
+        headstr = ''
+        for i in xrange(len(cols[0])):
+            cols[1][i] = max(cols[1][i], len(cols[0][i])) + 1
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__repolistbox = snack.Listbox(height=10,scroll=1,width=MAXWIDTH,returnExit=1,showCursor=0)
+
+        self.database.execute('select reponame,repository,ostype,repoid from repos')
+        rv = self.database.fetchall()
+        rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+
+        for record in rv:
+            repoid = record.pop()
+            entrystr = ''
+            for i in xrange(len(record)):
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+            self.__repolistbox.append(entrystr, item = repoid)
+            if repoid == curNG['repoid']:
+                self.__repolistbox.setCurrent(repoid)
+
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), growx=1, anchorLeft=1)
+        self.screenGrid.setField(self.__repolistbox, 0,1, (0,0,0,0), growx=1)
+
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        curNG['repoid'] = self.__repolistbox.current()
+
+
+
+class scrNGEEdit_Boot(USXBaseScreen):
+    name = 'Boot Time Parameters'
+    msg = 'Boot Time Parameters'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        self.selector.popupMsg('debug info','installtype = %s' %str(curNG['installtype']))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        installtype = {'package':'Package Based', 'diskless':'Diskless', 
+                       'disked': 'Imaged Disked'
+                      }
+        self.screenGrid = snack.Grid(2, 3)
+
+        lbl1 = snack.Label('Kernel: ')
+        lbl2 = snack.Label('Kernel Params: ')
+        lbl3 = snack.Label('Install Type: ')
+        w = min(max(len(curNG['kernel']), len(curNG['kparams']))+1, 60)
+        self.__entries = {}
+        self.__entries['kernel'] = snack.Entry(width=w, text=curNG['kernel'])
+        self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
+
+        rblist = []
+        for key,val in installtype.items():
+            isOn = int(curNG['installtype'] == key) #cast bool to int
+            rblist.append((val,key,isOn))
+
+        self.__InstallTypeRb = snack.RadioBar(self.screen, rblist)
+
+        self.screenGrid.setField(lbl1,0,0,anchorRight=1)
+        self.screenGrid.setField(lbl2,0,1,anchorRight=1)
+        self.screenGrid.setField(lbl3,0,2,(0,1,0,0),anchorRight=1)
+        self.screenGrid.setField(self.__entries['kernel'], 1,0,anchorLeft=1)
+        self.screenGrid.setField(self.__entries['kparams'],1,1,anchorLeft=1)
+        self.screenGrid.setField(self.__InstallTypeRb,1,2,(0,1,0,0),anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: drawImpl, Next_callback, validation, formAction
+        '''
+        curNG['kernel'] = self.__entries['kernel'].value()
+        curNG['kparams'] = self.__entries['kparams'].value()
+        curNG['installtype'] = self.__InstallTypeRb.getSelection()
+
+
+class scrNGEEdit_Components(USXBaseScreen):
+    name = 'Components'
+    msg = 'Please select components from the list below'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        self.screenGrid = snack.Grid(1, 2)
+
+        query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
+                   repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
+                   AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
+                   concat(c.os,'%%') OR isnull(c.os)) ORDER BY c.kid''' % curNG['repoid']
+        self.database.execute(query)
+        rv = self.database.fetchall()
+
+        if not rv:
+            #no components to display
+            self.msg = 'No components were found to match the selected repo'
+            self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
+                                     width=self.gridWidth),0,0)
+            return
+
+        if curNG.has_key('comps') and curNG['comps'] <> None:
+            cidlst = curNG['comps']
+        else:
+            if not origNG.has_key('comps') or origNG['comps'] == None:
+                #first time - get the component list
+                query = "select cid from ng_has_comp where ngid = %s" %curNG['ngid']
+                self.database.execute(query)
+                tplrv = self.database.fetchall()
+                origNG['comps'] = [x[0] for x in tplrv]
+            cidlst = origNG['comps']
+
+        self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
+        curkid = rv[0][0]
+        self.__ct.append(rv[0][1])
+        i = 0
+        for kid,rname,cid,cname in rv:
+            if kid <> curkid:
+                #new kid encountered - append it
+                i += 1
+                curkid = kid
+                self.__ct.append(rname)
+            if cid in cidlst:
+                isSel = 1
+            else:
+                isSel = 0
+            self.__ct.addItem(cname,(i,snack.snackArgs['append']), item=cid,selected=isSel)
+
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,width=self.gridWidth),
+                                 0,0,growx=1,growy=1)
+        self.screenGrid.setField(self.__ct,0,1,(0,1,0,0),growx=1,growy=1,anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['comps'] = [int(x) for x in self.__ct.getSelection()] #convert from long
+        if not curNG['comps']:
+            return #nothing to do
+        elif len(curNG['comps']) == 1: #special case
+            tplstr = '(%s)' % str(curNG['comps'][0])
+        else:
+            tplstr = str(tuple(curNG['comps']))
+
+        query = 'select cname from components where cid in %s' % tplstr
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        CompNameList = [x for x, in rv]
+
+        if self.__plugdir not in sys.path:
+            sys.path.append(self.__plugdir)
+
+        CompPlugList = []
+        for comp in CompNameList:
+            flist = glob.glob('%s/*-%s.py' %(self.__plugdir,comp))
+            CompPlugList.extend(flist)
+        CompPlugList.sort()
+
+        PlugInstList = []
+        for plugfile in CompPlugList:
+            plugmname = os.path.splitext(os.path.basename(plugfile))[0] #module name
+            plugminst = __import__(plugmname)           #module instance
+            plugcname = getattr(plugminst, 'NGPlugin')  #class name
+            if not issubclass(plugcname, USXBaseScreen):
+                raise Exception, 'Invalid NG Plugin Screen class encountered: %s' %plugcname
+
+            plugcinst = plugcname(self.database, self.kusuApp)  #class instance
+            PlugInstList.append(plugcinst)
+
+        if not PlugInstList: #no plugin screens to display
+            return
+
+        ScreenFactory.screens = PlugInstList
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
+        ks.run()
+
+class scrNGEEdit_Networks(USXBaseScreen):
+    name = 'Networks'
+    msg = 'Please select the networks from the list below'
+    buttons = ['next_button', 'back_button','restore_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['restore_button'].setCallback_(self.RestoreAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def RestoreAction(self):
+        curNG['nets'] = origNG['nets'][:]
+        return NAV_NOTHING
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+        MAXWIDTH = 70
+
+        if curNG.has_key('nets') and curNG['nets'] <> None:
+            netlst = curNG['nets']
+        else:
+            if not origNG.has_key('nets') or origNG['nets'] == None:
+                #first time - get the network list
+                query = "select netid from ng_has_net where ngid = %s" %curNG['ngid']
+                self.database.execute(query)
+                tplrv = self.database.fetchall()
+                origNG['nets'] = [x[0] for x in tplrv]
+            netlst = origNG['nets']
+
+        cols = [ ['DEVICE','NETWORK','SUBNET','DESCRIPTION'] ]
+        self.database.execute('''select max(char_length(device)),max(char_length(network))
+                                 , max(char_length(subnet)), max(char_length(netname))
+                                 from networks''')
+
+        rv = self.database.fetchone()
+        cols.append([int(x) for x in rv]) #justification values
+        headstr = '    ' #padding to align with checkboxtree items
+        for i in xrange(len(cols[0])): #for all columns
+            cols[1][i] = max(cols[1][i], len(cols[0][i]))+1 #make room for the label
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
+
+        query = "select device, network, subnet, netname, netid from networks"
+        self.database.execute(query)
+        rv = self.database.fetchall()
+
+        for record in rv:
+            record = list(record) #convert to list
+            netid = record.pop()
+            if netid in netlst:
+                isSel = 1
+            else:
+                isSel = 0
+            entrystr = ''
+            for i in xrange(len(record)): #construct an entry string
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+                
+            self.__ct.append(entrystr, item=netid, selected=isSel)
+
+        #render
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), anchorLeft=1)
+        self.screenGrid.setField(self.__ct, 0,1, (0,0,0,0), anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: drawImpl, Next_callback, validation, formAction
+        '''
+        curNG['nets'] = [int(x) for x in self.__ct.getSelection()] #convert from long
+
+
+class scrNGEEdit_Packages(USXBaseScreen):
+    name = 'Optional Packages'
+    msg = 'Please select optional packages to install'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+        import yum.comps
+        from kusu.kitops.package import PackageFactory
+
+        #TODO: 1. check packages already associated with this ngid - select them upon rendering
+        #      2. change derivation of repopacklst
+        #      3. if no change in repo - rebuild self.__ct only once
+
+        self.screenGrid = snack.Grid(1, 1)
+        self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
+
+        query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
+        self.database.execute(query)
+        self.__repodir, ostype  = self.database.fetchone()
+        self.__repodir = self.__repodir.strip()
+        #self.__repodir = '/depot/repos/1000' #for testing
+
+        if ostype.lower().startswith('fedora'):
+            repopackdir = self.__repodir + '/Fedora/RPMS'
+        #additional repo os types here
+        else:
+            raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+
+        repopacklst = os.listdir(repopackdir) #only basename returned
+        repopacklst = map(lambda x: re.split('-[0-9]',x, 1)[0], repopacklst)
+        repopackset = Set(repopacklst) #work with the set
+
+        #remove packages coming from kits available through the current repo
+        rmpacklst = []
+        query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+                   repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND 
+                   k.isOS = 0 AND r.repoid = %s ''' %curNG['repoid']
+        self.database.execute(query)
+        rv = self.database.fetchall()
+
+        for kitname,kitver,kitarch in rv:
+            path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
+            kitpacklst = os.listdir(path)
+            kitpacklst = map(lambda x: re.split('-[0-9]',x, 1)[0], kitpacklst)
+            rmpacklst.extend(kitpacklst)
+            
+        #instantiate comps
+        compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
+        compsinst = yum.comps.Comps()
+        compsinst.add(compsfile)
+
+        #remove core & base packages from the list
+        for g in ['core','base']:
+            ginst = compsinst.return_group(g)
+            rmpacklst.extend(ginst.packages)
+
+        repopackset -= Set(rmpacklst)
+
+        self.selector.popupMsg("DEBUG", "number of packages to display= %s" %len(repopackset))
+
+        tmpcnt = 0
+        ci = 0 #category index
+        for c in compsinst.categories:
+            self.__ct.append(c.name, item=c.categoryid)
+            gi = 0
+            for g in sorted(c.groups):
+                ginst = compsinst.return_group(g)
+                tmppackset = Set(ginst.packages)
+                set2show = repopackset & tmppackset
+                if set2show:  # do we have a non-empty intersection?
+                    self.__ct.addItem(g, path=(ci,-1), item=ginst.groupid)
+                    for p in sorted(set2show):
+                        tmpcnt+=1
+                        self.__ct.addItem(p, path=(ci,gi,-1), item=p)
+                    #done package
+                    repopackset -= set2show
+                    gi += 1
+            #done group
+            ci += 1
+        #done category
+
+        #construct group dictionary for remaining packages
+        groupdict = {}
+        self.__ct.append("Other")
+        for p in repopackset:
+            #reconstruct the full package name to pass to PackageFactory
+            pfile = glob.glob("%s/%s-[0-9]*" % (repopackdir, p))[0]
+            #get group through my package library -> RPMTAG_GROUP
+            pinst = PackageFactory(pfile)
+            group = pinst.getGroup()
+            if group not in groupdict.keys():
+                groupdict[group] = [] #initialize
+            groupdict[group].append(p)
+        
+        # display remaining packages
+        tmpcnt2 = 0
+        gi = 0
+        for g in sorted(groupdict):
+            self.__ct.addItem(g,path=(ci,-1), item=g)
+            for p in sorted(groupdict[g]):
+                tmpcnt2 += 1
+                self.__ct.addItem(p, path=(ci,gi,-1), item = p)
+            gi += 1
+        #done remaining packages
+
+        self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d" %(tmpcnt, tmpcnt2))
+
+        self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['packs'] = self.__ct.getSelection()
+        self.selector.popupMsg("DEBUG: selected packages", str(curNG['packs']))
+
+
+class scrNGEEdit_Finalize(USXBaseScreen):
+    name = 'Summary of Changes'
+    buttons = [ 'accept_button', 'back_button', 'cancel_button' ]
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.__diffNG = None
+
+    def setCallbacks(self):
+        #for the buttons
+        self.buttonsDict['accept_button'].setCallback_(self.doAcceptAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doAcceptAction(self):
+        #construct a diff NG object from dict
+        diffNGobj = NodeGroup(**self.__diffNG)
+        diffNGobj['ngid'] = curNG['ngid']
+
+        self.database.beginTransaction()
+        try:
+            self.selector.popupMsg('DEBUG: prior to DBsync', str(diffNGobj))
+            diffNGobj.syncToDB(self.database)
+        except Exception,msg:
+            self.selector.popupMsg('DB Error', 'DB Update failed with msg = %s' %msg)
+            self.database.undoTransaction()
+            raise #for testing
+            return NAV_NOTHING
+
+        #no exceptions to this point: successful
+        self.database.endTransaction()
+        self.selector.popupMsg("DB Update", "Database was successfully updated")
+        return NAV_FORWARD
+
+        # * commit everything to the database
+        # * if imaged (both disked & diskless)
+        #        if changes in (components or packages)
+        #            run buildimage (buildimage -n $ngid)
+        #            send buildimage output to log file
+
+        #  * if imaged (both disked & diskless)
+        #        if modules changes
+        #            buildinitrd -n $ngid
+
+        #  * all install types
+        #    if changes in packages or components
+        #        call update -n $ngid -p (nothing after -p)
+
+        #  * if package-based
+        #       boot-media-tool to patch initrd w/ new drivers
+
+
+    def drawImpl(self):
+        MAXWIDTH = 70
+        self.__diffNG = curNG - origNG
+        diffNG = self.__diffNG
+
+        msg = ''
+        for field in NodeGroupRec.fields[2:] : #skip the keys
+            if field in diffNG.keys():
+                msg += "%s: \t%s\n" %(field.upper(),diffNG[field])
+
+        if 'repoid' in diffNG.keys():
+            query = '''SELECT reponame,repository,ostype from repos where
+                       repoid = %s ''' % diffNG['repoid']
+            self.database.execute(query)
+            rv = self.database.fetchone()
+            rv = [ ifelse(x==None,'',x) for x in rv ]
+            msg += "REPO:\n\t| %s | %s | %s |\n" %tuple(rv)
+
+        # go through comps, nets, packs, modules, scripts, parts
+        if 'comps' in diffNG.keys():
+            compsstr = ''
+            if diffNG['comps']:
+                if len(diffNG['comps']) == 1:
+                    #tuples have a trailing comma when only one element
+                    tplstr = "(%s)" %diffNG['comps'][0]
+                else:
+                    tplstr = str(tuple(diffNG['comps']))
+                query = "select cname from components where cid in %s" %tplstr
+                self.database.execute(query)
+                rv = self.database.fetchall()
+                compslst = [x for x, in rv]
+                compsstr = '%s' + ', %s'*(len(compslst)-1)
+                compsstr = compsstr % tuple(compslst)
+            msg += "COMPONENTS SELECTED:\n\t%s\n" %compsstr
+
+        if 'nets' in diffNG.keys():
+            netsstr = ''
+            if diffNG['nets']:
+                if len(diffNG['nets']) == 1:
+                    tplstr = "(%s)" %diffNG['nets'][0]
+                else:
+                    tplstr = str(tuple(diffNG['nets']))
+                query = ''' select device,network,netname from networks where
+                            netid in %s''' %tplstr
+                self.database.execute(query)
+                rv = self.database.fetchall()
+                rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+                for record in rv:
+                    netsstr += "\t| %s | %s | %s |\n" %tuple(record)
+            msg += "NETWORKS SELECTED:\n%s\n" % netsstr
+            
+        caption = { 'packs': 'OPTIONAL PACKAGES',
+                    'scripts': 'OPTIONAL SCRIPTS',
+                    'modules': 'MODULES'
+                  }
+        for link in caption.keys():
+            if link in diffNG.keys():
+                tmpstr = ''
+                if diffNG[link]: #one or more elements
+                    if link == 'scripts':
+                        #format scripts one per line
+                        tmpstr = '%s' + '\n\t%s'*(len(diffNG[link])-1)
+                    else:
+                        tmpstr = '%s' + ', %s'*(len(diffNG[link])-1)
+                    tmpstr = tmpstr % tuple(diffNG[link])
+                msg += "%s:\n\t%s\n" %(caption[link],tmpstr)
+
+        if 'parts' in diffNG.keys():
+            msg += "PARTITIONS: schema changed\n"
+
+        self.selector.popupMsg("diffNG", str(diffNG))
+
+        self.screenGrid = snack.Grid(1, 1)
+        self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
+                text=msg), 0,0, (0,0,0,0), anchorLeft=1)
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        pass
+        
+
+class NGEApp(KusuApp):
+
+    def __init__(self):
+        KusuApp.__init__(self)
+        self.__db = KusuDB()
+        try:
+            self.__db.connect(user='apache', dbname='kusudb')
+        except Exception,msg:
+            sys.stderr.write('Problems establishing database connection. Error: %s' %msg)
+            sys.exit(1)
+        
+    def parse(self):
+        pass
+
+    def run(self):
+        ScreenFactory.screens = [
+                                    scrNGEMain(database=self.__db, kusuApp=self),
+                                ]
+
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Editor", showTrail=False)
+        ks.run()
+
+if __name__ == '__main__':
+    NGEinst = NGEApp()
+    NGEinst.parse()
+    NGEinst.run()

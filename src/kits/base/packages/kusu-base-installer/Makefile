@@ -71,6 +71,7 @@ install::
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
 	install -m755 sbin/update.py $(ROOT)/opt/kusu/sbin/update
 	install -m755 sbin/netedit.py $(ROOT)/opt/kusu/sbin/netedit
+	install -m755 sbin/ngedit $(ROOT)/opt/kusu/sbin/ngedit
 	install -m755 sbin/nghosts.py $(ROOT)/opt/kusu/sbin/nghosts
 	install -m755 sbin/nodeboot.cgi.py $(ROOT)/depot/repos/nodeboot.cgi
 	install -m755 sbin/sqlrunner.py $(ROOT)/opt/kusu/sbin/sqlrunner

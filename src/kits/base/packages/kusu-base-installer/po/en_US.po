@@ -68,6 +68,9 @@ msgstr "New"
 msgid "restore_button"
 msgstr "Restore"
 
+msgid "accept_button"
+msgstr "Accept"
+
 msgid "edit_button"
 msgstr "Edit"
 
