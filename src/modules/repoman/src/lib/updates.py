@@ -33,6 +33,7 @@ class BaseUpdate:
         
         self.prefix = prefix
         self.db = db
+        self.configFile = None
 
     def getLatestRPM(self, dirs=[]):
         """Returns a list of the latest rpms"""
@@ -47,6 +48,7 @@ class BaseUpdate:
 
         kitName = '%s-updates' % self.os_name 
         kitRelease = self.getNextRelease(kitName)
+        kitVersion = '%s_r%s' % (self.os_version, kitRelease)
         kitArch = self.os_arch
 
         if self.prefix:
@@ -57,7 +59,7 @@ class BaseUpdate:
             kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
 
         self.prepKit(tempkitdir, kitName)
-        self.makeKitScript(tempkitdir, kitName, kitRelease)
+        self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
 
         for p in pkgs:
             file = p.getFilename()
@@ -70,7 +72,7 @@ class BaseUpdate:
         
         self.makeKit(tempkitdir, kitdir, kitName)
 
-        return kitdir
+        return (kitdir, kitName, kitVersion, kitRelease, kitArch)
 
     def getNextRelease(self, kitName):
         # Find max version
@@ -102,7 +104,7 @@ class BaseUpdate:
         tempdir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
              
         if rpm.extract(tempdir):
-            raise Exception
+            raise UnableToExtractKernel, rpm.getFilename()
 
         if self.os_name in ['fedora', 'rhel', 'centos']:
             vmlinuz = path(tempdir / 'boot').listdir('vmlinuz*')[0]
@@ -124,9 +126,9 @@ class BaseUpdate:
             tempdir.rmtree()
         except: pass
 
-        return (newVmlinuz, newInitrd)
+        return (newVmlinuz.basename(), newInitrd.basename())
 
-    def updateKernelInfo(self, repoid, initrd, vmlinuz):
+    def updateKernelInfo(self, repoid, vmlinuz, initrd):
         ngs = self.db.NodeGroups.select_by(repoid = repoid)
 
         for ng in ngs:
@@ -143,8 +145,10 @@ class BaseUpdate:
         ko.setKitMedia(kitdir)
         kits = ko.addKitPrepare()
         ko.addKit(kits[0])
-    
-    def makeKitScript(self, tempkitdir, kitName, kitRelease):
+   
+        return kits[0]
+ 
+    def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
 
         compclass = {'rhel' : {'5': 'RHEL5Component()'},
                      'centos' : {'5': 'Centos5Component()'},
@@ -157,7 +161,7 @@ class BaseUpdate:
 
         ns = {}
         ns['kitname'] = kitName
-        ns['kitver'] = '%s_r%s' % (self.os_version, kitRelease)
+        ns['kitver'] = kitVersion
         ns['kitrel'] = kitRelease
         ns['kitarch'] = self.os_arch
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
@@ -207,6 +211,10 @@ class BaseUpdate:
         """Returns the configuration"""
         return getConfig(configFile)
 
+    def setConfig(self, configFile):
+        """Sets the configuration"""
+        self.configFile = configFile
+
 class YumUpdate(BaseUpdate):
     def __init__(self, os_name, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, os_name, os_version, os_arch, prefix, db)
@@ -253,8 +261,6 @@ class YumUpdate(BaseUpdate):
                 downloadPkgs.append(r)
 
         # Download the packages
-        # Checks whether there's a new kernel pkg
-        kernelRPM = None
         for r in downloadPkgs:
             filename = r.getFilename()
             dest = path(dir / filename.basename())
@@ -273,14 +279,26 @@ class YumUpdate(BaseUpdate):
                 f.write(content)
                 f.close()
 
-                if r.getName() == 'kernel':
-                    if self.os_arch == 'x86_64':
-                        kernelRPM = r
-                    elif self.os_arch == 'i386' and \
-                         r.getArch() in ['i386', 'i386', 'i586', 'i686']:
-                        kernelRPM = r
+        rpmPkgs = rpmtool.getLatestRPM([dir], True)
 
-        return (rpmtool.getLatestRPM([dir], True).getList(), kernelRPM)
+        if rpmPkgs.has_key('kernel'):
+            if self.os_arch == 'x86_64':
+                # We want to use x64 kernel
+                kernelRPM = rpmPkgs['kernel']['x86_64'][0]
+            elif self.os_arch == 'i386':
+                # Take the lowest arch
+                if rpmPkgs['kernel'].has_key('i386'):
+                    kernelRPM = rpmPkgs['kernel']['i386'][0]
+                elif rpmPkgs['kernel'].has_key('i486'):
+                    kernelRPM = rpmPkgs['kernel']['i486'][0]
+                elif rpmPkgs['kernel'].has_key('i586'):
+                    kernelRPM = rpmPkgs['kernel']['i586'][0]
+                elif rpmPkgs['kernel'].has_key('i686'):
+                    kernelRPM = rpmPkgs['kernel']['i686'][0]
+        else:
+            kernelRPM = None
+
+        return (rpmPkgs.getList(), kernelRPM)
 
     def getLatestRPM(self, primarys):
         """Return the latested rpms from yum repos"""

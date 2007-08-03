@@ -88,7 +88,7 @@ class TestTool:
         (workingDir / 'fedora-updates').makedirs()
 
         bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
-        bu.makeKitScript(workingDir, 'fedora-updates', 100)
+        bu.makeKitScript(workingDir, 'fedora-updates', '6_r100', 100)
 
         f = open(workingDir / 'fedora-updates' / 'build.kit', 'r')
         lines = f.read()
@@ -118,7 +118,7 @@ class TestTool:
         r.filename = path(prefix / r.getFilename())
         r.getFilename().touch()
     
-        kitdir = bu.makeUpdateKit([r])
+        kitdir, kitname, kitversion, kitrelease, kitarch = bu.makeUpdateKit([r])
    
         assert kitdir / 'fedora-updates' / 'packages' / 'foo-1.0-1.i386.rpm'    
 
@@ -136,8 +136,8 @@ class TestTool:
         bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
         vmlinuz, initrd = bu.makeTFTP(rpm, 100)
 
-        assert vmlinuz == prefix / 'tftpboot' / 'kusu' / 'kernel-fedora-6-i386.100'
-        assert initrd == prefix / 'tftpboot' / 'kusu' / 'initrd-fedora-6-i386.100.img'
+        assert vmlinuz == 'kernel-fedora-6-i386.100'
+        assert initrd == 'initrd-fedora-6-i386.100.img'
 
     def testUpdateKernelInfo(self):
   
@@ -159,7 +159,7 @@ class TestTool:
         ng.flush()
 
         bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
-        bu.updateKernelInfo(repo.repoid, 'initrd-fedora-6-i386.100.img', 'kernel-fedora-6-i386.100')
+        bu.updateKernelInfo(repo.repoid, 'kernel-fedora-6-i386.100', 'initrd-fedora-6-i386.100.img')
 
         ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
         for ng in ngs:

@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+#
+# $Id: repo.py 1732 2007-07-26 06:21:43Z ltsai $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+
+from kusu.util.errors import *
+from kusu.core import database as db
+from kusu.core.app import KusuApp
+from kusu.repoman import repofactory
+from kusu.repoman import tools
+import kusu.util.log as kusulog
+
+from path import path
+import os
+import sys
+import time
+from optparse import SUPPRESS_HELP
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
+kl = kusulog.getKusuLog()
+kl.addFileHandler(os.environ['KUSU_LOGFILE'])
+
+class RepoPatchApp(KusuApp):
+    """ Application class for repoman. """
+
+    prefix = None
+ 
+    def __init__(self):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+    
+        # setup command line parser
+        self.parser.add_option('-r', '--repo', dest='repo_name')
+        self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
+        self.parser.add_option('--dbdriver', dest='dbdriver',
+                               help=self._('Database driver (sqlite, mysql)'))
+        self.parser.add_option('--dbdatabase', dest='dbdatabase',
+                               help=self._('Database'))
+        self.parser.add_option('--dbuser', dest='dbuser',
+                               help=self._('Database username'))
+        self.parser.add_option('--dbpassword', dest='dbpassword',
+                               help=self._('Database password'))
+
+    def update(self, repo_name):
+        self.repoExists(repo_name)
+
+        repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
+        repo = self.rfinst.getRepo(repo.repoid)
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kuus'))
+
+        if self.prefix:
+            repo.setConfig(self.prefix / 'opt' / 'kusu' / 'etc' / 'updates.conf')
+        else:
+            repo.setConfig(kusu_root / 'etc' / 'updates.conf')
+
+        pkgs, kernel = repo.getUpdates()
+
+        dir, kitName, kitVersion, kitRelease, kitArch = repo.makeUpdateKit(pkgs)
+        repo.addUpdateKit(dir)
+
+        if kernel:
+            vmlinuz, initrd = repo.makeTFTP(kernel, kitRelease)
+            repo.updateKernelInfo(repo.repoid, vmlinuz, initrd)
+        else:
+            # no updated kernel at all
+            pass
+ 
+        ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+
+        oldKitComp = None
+        if kitRelease > 1:
+            # find the previous update kit
+            oldUpdateKit = self.dbs.Kits.select_by(rname = kitName, 
+                                                   version = '%s_r%s' % (repo.os_version, kitRelease-1),
+                                                   arch = kitArch)[0]
+
+            oldKitComp = oldUpdateKit.components[0]
+        
+        updateKit = self.dbs.Kits.select_by(rname = kitName, 
+                                            version = kitVersion,
+                                            arch = kitArch)[0]
+
+        for ng in ngs:
+            oldComponents = ng.components
+            if oldKitComp and oldKitComp in oldComponents:
+                oldComponents.remove(oldKitComp)
+            ng.components = oldComponents
+            ng.components.append(updateKit.components[0])
+            ng.save()
+            ng.flush()
+
+            cmd  = "boothost -s '%s'" % ng.ngname
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+    def run(self):
+        self.parseArgs()
+ 
+    def parseArgs(self):
+        (options, args) = self.parser.parse_args()
+        kl.debug("options: %s", options)
+        kl.debug("args: %s", args)
+
+        if args:
+            sys.stderr.write("No more arguments expected. Remaining args: %s" %
+                             args)
+            sys.exit(1)
+      
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+
+        if options.dbdriver:
+            dbdriver = options.dbdriver
+        if options.dbdatabase:
+            dbdatabase = options.dbdatabase
+        if options.dbuser:
+            dbuser = options.dbuser
+        if options.dbpassword:
+            dbpassword = options.dbpassword
+
+        self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
+        if options.prefix:
+            self.prefix = path(options.prefix)
+            self.rfinst = repofactory.RepoFactory(self.dbs, self.prefix, True)
+        else:
+            self.rfinst = repofactory.RepoFactory(self.dbs)
+
+        if options.repo_name:
+            self.update(options.repo_name)        
+
+    def repoExists(self, repo_name):
+        repo = self.dbs.Repos.select_by(reponame=repo_name)
+
+        if not repo:
+            print self._('No such repo')
+            sys.exit(1)
+        else:
+            return True
+
+
+if __name__ == '__main__':
+    
+    app = RepoPatchApp() 
+    app.run()

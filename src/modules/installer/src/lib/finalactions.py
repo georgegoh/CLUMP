@@ -45,6 +45,11 @@ def makeRepo(kiprofile):
     ngname = 'installer' + '-' + kiprofile['Kits']['longname']
     repo = rfactory.make(ngname, 'Repo for ' + ngname)
     
+    repoRow = db.Repos.get(repo.repoid)
+    repoRow.reponame = 'Repo for ' + kiprofile['Kits']['longname']
+    repoRow.save()
+    repoRow.flush()
+        
     #Makes symlink in $KUSU_TMP/www
     kusu_tmp = os.environ.get('KUSU_TMP', None)
     repo.repo_path.symlink(path(kusu_tmp) / 'www')
