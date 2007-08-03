@@ -56,7 +56,6 @@ class BuildInitrd:
         self.moduledir   = ''     # Location of the temporary module directory
         self.modlink     = ''     # Symbolic link to self.moduledir  (fix for depmod.pl bug)
         self.initlink    = ''     # Symbolic link to self.imagedir   (fix for depmod.pl bug)
-	self.packagecount = 0	  # Number of packages extracted
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
@@ -105,6 +104,9 @@ class BuildInitrd:
 
         # Patch in the modules that are from the OS
         self.addModules()
+
+        # Copy over the kernel (Required because of signed modules)
+        self.addKernel()
         
         # Extract and add any vendor modules if found
         if self.extractModules(oskernel=0):
@@ -115,7 +117,7 @@ class BuildInitrd:
 
         # Clean-up directory for next run
         self.stderrout("moduledir = %s\n" % self.moduledir)
-        os.system('rm -rf \"%s\"' % self.moduledir)
+        #os.system('rm -rf \"%s\"' % self.moduledir)
 
         
 
@@ -133,10 +135,23 @@ class BuildInitrd:
         if data:
             self.ngid, self.repoid, self.installtype, self.kernel, self.initrd = data
             self.nodegroup = nodegroup
+            if not self.initrd:
+                self.makeInitrdName()
             return True
         return False
 
 
+    def makeInitrdName(self):
+        """makeInitrdName - generate a name for the initrd."""
+        initrd = "initrd.%s.%s" % (self.installtype, self.ngid)
+        query = ('update nodegroups set initrd="%s.%s.img" where ngid="%s"'
+                 % (self.installtype, self.ngid, self.ngid) )
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            return False
+        
 
     def mkInitrdDir(self):
         """mkInitrdDir - Make a directory to store the initrd in and expand
@@ -217,7 +232,7 @@ class BuildInitrd:
 
         # Get the list of all the optional packages to add.
         self.modules = []
-        query = ('select module from modules where ngid="%s" '
+        query = ('select distinct module from modules where ngid="%s" '
                  'order by loadorder' % self.ngid )
         try:
             self.db.execute(query)
@@ -297,13 +312,13 @@ class BuildInitrd:
                 self.stdoutout("Extracting modules\n")
 
             if kpkg.split('.')[-1] == 'rpm':
-                os.system('mkdir -p \'%s/%s\'' % (self.moduledir, self.packagecount))
-                self.moduledump = "%s/%s" % (self.moduledir, self.packagecount)
-                os.chdir(self.moduledump)
+                os.system('mkdir -p \'%s\'' % self.moduledir)
+                os.chdir(self.moduledir)
                 os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
 
             elif kpkg.split('.')[-1] == 'deb':
-                os.chdir(self.moduledump)
+                os.system('mkdir -p \'%s\'' % self.moduledir)
+                os.chdir(self.moduledir)
                 os.system('deb2cpio %s |cpio -id >/dev/null' % kpkg)  # Fix this
             else:
                 print "kpkg = %s" % kpkg
@@ -312,7 +327,7 @@ class BuildInitrd:
                     # Fatal error
                     self.stderrout("ERROR: Unknown kernel package type: %s" % kpkg )
                     sys.exit(-1)
-            self.packagecount += 1
+
         return 1
 
         
@@ -333,6 +348,49 @@ class BuildInitrd:
         if data:
             self.repodir, self.ostype = data
 
+
+    def addKernel(self):
+        """addKernel - The kernel modules are signed.  This means that the
+        kernel and modules MUST match.  We then have to take the kernel from
+        the OS package and use that, otherwise the modules will not load."""
+        if self.stdoutout:
+            self.stdoutout("Copying over kernel\n")
+        else:
+            print "Copying over kernel"
+
+        pattern = '%s/boot/vmlinuz*' % self.moduledir
+        flist = glob.glob(pattern)
+
+        if len(flist) == 0:
+            if self.stderrout:
+                # Fatal error
+                self.stderrout("ERROR: Unable to locate kernel!  Try running:  ls %s\n"
+                               % (pattern) )
+                sys.exit(-1)
+
+        # If there is more than one package available use the highest rev
+        if len(flist) > 1:
+            # Use the last.  Seems to be the highest rev
+            kern = "%s" % flist[-1]
+        else:
+            kern = "%s" % flist[0]
+
+        # Fedora has kernel packages with the exact same name.  We have
+        # to use our own naming convention.
+        kernname = 'kernel.%s.%s' % (self.installtype, self.ngid)
+        if kernname != self.kernel:
+            # Update database
+            query = ('update nodegroups set kernel="%s" where ngid="%s"' % (kernname,self.ngid))
+            try:
+                self.db.execute(query)
+                data = self.db.fetchone()
+            except:       
+                if self.stderrout:
+                    self.stderrout("DB_Query_Error: %s\n", query)
+                    sys.exit(-1)
+
+        os.system('cp \"%s\" \"/tftpboot/kusu/%s\"' % (kern, kernname)) 
+        
 
     def addModules(self):
         """addModules - This method will locate the kernel package and extract
