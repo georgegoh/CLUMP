@@ -94,10 +94,10 @@ class TestTool:
         lines = f.read()
         f.close()
 
-        assert lines.find("k.version = '6_r100'") != -1
-        assert lines.find("k.release = '100'") != -1
-        assert lines.find("k.arch = 'i386'") != -1
-        assert lines.find("comp = Fedora6Component") != -1
+        assert lines.find("k.version = '6_r100'\n") != -1
+        assert lines.find("k.release = '100'\n") != -1
+        assert lines.find("k.arch = 'i386'\n") != -1
+        assert lines.find("comp = Fedora6Component()\n") != -1
 
     def testMakeUpdateKit(self):
         global prefix
