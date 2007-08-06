@@ -49,7 +49,7 @@ class KernelModulesCollection(list):
         cmd1 = 'zcat %s' % self.collectionpath
         p1 = subprocess.Popen(cmd1,shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
         cmd2 = 'cpio -t'
-        p2 = subprocess.Popen(cmd2,shell=True,stdin=p1.stdout,stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(cmd2,shell=True,stdin=p1.stdout,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         out,err = p2.communicate()
         if out:
             _li = out.split('\n')
@@ -123,5 +123,5 @@ class DriverPatchController(object):
         
     def packInitrdImage(self, initrdimg, dirpath):
         """ Packs the specified dirpath into initrdimg. """
-        return self.bnt.packRootImg(dirpath, initrdimg)
+        return self.bmt.packRootImg(dirpath, initrdimg)
         
