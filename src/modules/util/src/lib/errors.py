@@ -24,7 +24,7 @@ class UnknownDeviceError(KusuError): pass
 class NotImplementedError(KusuError): pass
 class UnsupportedURIError(KusuError): pass
 class UnsupportedOS(KusuError): pass
-class InvalidArguements(KusuError): pass
+class InvalidArguments(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass

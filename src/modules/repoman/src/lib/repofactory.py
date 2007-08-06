@@ -76,14 +76,14 @@ class RepoFactory(object):
         """Refresh the repository"""
 
         if len(kwargs) != 1:
-            raise InvalidArguements, 'More than 1 argument specified'
+            raise InvalidArguments, 'More than 1 argument specified'
         
         if kwargs.has_key('ngname'):
             return self._refreshNgname(kwargs['ngname'])
         elif kwargs.has_key('ngtype'):
             return self._refreshNgtype(kwargs['ngtype'])
         else:
-            raise InvalidArguements, 'Invalid arguments keyword'
+            raise InvalidArguments, 'Invalid arguments keyword'
 
     def refreshAll(self):
         """Refresh all the repositories"""
