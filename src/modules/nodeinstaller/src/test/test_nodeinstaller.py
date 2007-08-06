@@ -59,6 +59,7 @@ Node: node0000
     <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
     <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
     <component>component-base-node</component>
+    <optpackage>vim-enhanced</optpackage>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
     <appglobals name="DNSForwarders" value="172.16.1.5,172.16.1.8"/>
@@ -349,9 +350,10 @@ Node: node0000
         
         # validate package profile
         ksprofile.prepareKickstartPackageProfile(ni)
-        packages = ['component-base-node']
+        packages = ['component-base-node','vim-enhanced']
         for p in packages:
             assert p in ksprofile.packageprofile
+
         
         # validate disk schema
         dp = DiskProfile(fresh=True)
