@@ -69,7 +69,7 @@ class NodeInfo:
             # Need to trigger a 500 error
             sys.exit(-1)
         installer, repo, os, ngid, type, nid = data
-        if repo.startswith('/depot'): repo = repo[5:]
+        if repo.startswith('/depot'): repo = repo[6:]
  
         #FIXME: WORK IN PROGRESS
         # Currently just use the ip from the master installer, where the 
