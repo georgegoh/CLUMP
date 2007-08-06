@@ -85,7 +85,7 @@ class TestPlugin:
         pRunner = plugin.PluginRunner('KusuRC', prefix, self.dbs)
         results = pRunner.run()
 
-        assert len(results) == 4
+        assert len(results) == 3
 
         for result in results:
             if result[0] == 'hello':

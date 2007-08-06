@@ -19,5 +19,5 @@ setup(name="kusu-core",
     platforms=["any"],
     packages=['core'],
     package_dir={'core':'src/lib'},
-    scripts=['src/bin/kusuenv.sh']
+    scripts=['src/bin/kusuenv.sh', 'src/bin/kusurc']
      )

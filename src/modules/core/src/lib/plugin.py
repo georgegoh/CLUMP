@@ -33,6 +33,16 @@ class Plugin:
         self.disable = False # Whether this plugin is disabled
         self.ngtypes = ['installer', 'compute'] # types of nodegroups that this plugin should run
 
+    def runCommand(self, cmd):
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.PIPE)
+        out, err = p.communicate()
+        retval = p.returncode
+
+        return retval, out, err
+
 class PluginRunner:
     def __init__(self, classname, dirs, dbs, debug=False):
         self.classname = classname
