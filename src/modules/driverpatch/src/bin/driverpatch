@@ -8,9 +8,7 @@
 import sys
 import os
 from kusu.core.app import KusuApp
-
-class DriverPatchController(object):
-    pass
+from kusu.driverpatch import DriverPatchController
         
 class App(KusuApp):
     """ Application class for buildkit. """
