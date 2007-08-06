@@ -56,7 +56,7 @@ class NodeInfo:
 
         # Create the nodeinfo line
         query = ('select repos.installers, repos.repository, repos.ostype, '
-                 'nodegroups.ngid, nodegroups.installtype, nodes.nid from nodes, '
+                 'nodegroups.ngid, nodegroups.installtype, nodes.nid, nodegroups.type from nodes, '
                  'nodegroups, repos where nodes.ngid=nodegroups.ngid and '
                  'nodegroups.repoid=repos.repoid and nodes.name="%s"' % nodename)
         try:
@@ -68,7 +68,7 @@ class NodeInfo:
         if not data:
             # Need to trigger a 500 error
             sys.exit(-1)
-        installer, repo, os, ngid, type, nid = data
+        installer, repo, os, ngid, type, nid, ngtype = data
         if repo.startswith('/depot'): repo = repo[6:]
  
         #FIXME: WORK IN PROGRESS
@@ -91,7 +91,7 @@ class NodeInfo:
             sys.exit(-1)
  
         installer = data[0]        
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i">' % (nodename, installer, repo, os or '', type, ngid)
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '

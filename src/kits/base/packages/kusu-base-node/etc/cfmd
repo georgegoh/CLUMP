@@ -21,7 +21,7 @@
 
 # This script is responsible for starting the CFMD
 
-# chkconfig: 2345 98 98
+# chkconfig: - 98 98
 # description: Cluster File Manager for Kusu
 
 . /etc/init.d/functions

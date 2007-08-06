@@ -68,6 +68,7 @@ class NodeInstInfoHandler(ContentHandler):
             self.ostype      = attrs.get('ostype',"")
             self.installtype = attrs.get('installtype',"")
             self.nodegrpid   = attrs.get('nodegrpid',"")
+            self.ngtype      = attrs.get('ngtype',"")
 
         elif name == 'appglobals':
             name  = attrs.get('name',"")
@@ -160,6 +161,7 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write("# of the variables that were used to install this node.\n#\n")
         fp.write('export NII_HOSTNAME=%s\n' % self.name)
         fp.write('export NII_NGID=%s\n' % self.nodegrpid)
+        fp.write('export NII_NGTYPE="%s"\n' % self.ngtype)
         fp.write('export NII_INSTALLERS="%s"\n' % self.installers)
         fp.write('export NII_REPO="%s"\n' % self.repo)
         fp.write('export NII_OSTYPE="%s"\n' % self.ostype)
