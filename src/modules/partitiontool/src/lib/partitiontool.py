@@ -223,13 +223,36 @@ class DiskProfile(object):
                          'ntfs' : False
                        }
 
+    def __diskDictStr(self):
+        s = ''
+        for k in sorted(self.disk_dict.keys()):
+            disk = self.disk_dict[k]
+            s += str(disk) + '\n'
+            for p in sorted(disk.partition_dict.keys()):
+                part = disk.partition_dict[p]
+                s += str(part) + '\n'
+        return s
+
+    def __lvmStr(self, dict):
+        s = ''
+        for k in sorted(dict.keys()):
+            v = dict[k]
+            s += str(v) + '\n'
+        return s
+
+    def __mntStr(self):
+        s = ''
+        for k in self.mountpoint_dict:
+            s += k + ' - ' + self.mountpoint_dict[k].path + '\n'
+        return s
+
     def __str__(self):
         from pprint import pformat
-        s = 'Disk Dictionary:\n' + pformat(self.disk_dict) + '\n'
-        s = s + '\nPhysical Volume Dictionary:\n' + pformat(self.pv_dict) + '\n'
-        s = s + '\nLogical Volume Group Dictionary:\n' + pformat(self.lvg_dict) + '\n'
-        s = s + '\nLogical Volume Dictionary:\n' + pformat(self.lv_dict) + '\n'
-        s = s + '\nMountpoints:\n' + pformat(self.mountpoint_dict)
+        s = 'Disk Dictionary:\n' + self.__diskDictStr()
+        s = s + '\nPhysical Volume Dictionary:\n' + self.__lvmStr(self.pv_dict)
+        s = s + '\nLogical Volume Group Dictionary:\n' + self.__lvmStr(self.lvg_dict)
+        s = s + '\nLogical Volume Dictionary:\n' + self.__lvmStr(self.lv_dict)
+        s = s + '\nMountpoints:\n' + self.__mntStr()
         return s
 
     def __init__(self, fresh, test=None, probe_fstab=True):
@@ -243,6 +266,9 @@ class DiskProfile(object):
         self.lvg_dict = {}
         self.lv_dict = {}
 
+        import lvm202
+        lvm202.activateAllVolumeGroups()
+        
         if test:
             self.populateDiskProfileTest(fresh, test)
         else:
@@ -698,6 +724,8 @@ class DiskProfile(object):
     def commit(self):
         for disk in self.disk_dict.itervalues():
             disk.commit()
+            for part in disk.partition_dict.itervalues():
+                checkAndMakeNode(part.path)
         # now the partitions are actually created.
         self.executeLVMFifo()
 

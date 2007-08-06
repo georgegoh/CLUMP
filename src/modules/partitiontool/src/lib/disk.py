@@ -49,6 +49,11 @@ class Disk(object):
                        'pedDevice' : 'self.pedDisk.dev'
                      }
 
+    def __str__(self):
+        s = self.path + ' size(MB): ' + str(self.size / 1024 / 1024) + \
+            ' Total sectors: ' + str(self.length)
+        return s
+
     def __init__(self, path, profile, fresh=False):
         self.profile = profile
         self.partition_dict = {}
@@ -408,8 +413,12 @@ class Disk(object):
                 if not msg.startswith('Warning: The kernel was unable ' + \
                                       'to re-read the partition table'):
                     raise e
+                else:
+                    logger.warning(msg)
             for partition in self.partition_dict.itervalues():
                 partition.on_disk = True
+        else:
+            logger.debug('Leave Unchanged Flag set for %s' % self.path)
 
     def formatAll(self):
         if not self.leave_unchanged:
@@ -472,6 +481,12 @@ class Partition(object):
                        'raid_flag' : "self.pedPartition.set_flag(parted.PARTITION_RAID, int('%s'))",
                        'fs_type' : "self.pedPartition.set_system(fsTypes['%s'])"
                      }
+
+    def __str__(self):
+        s = '  ' + self.path + ' size(MB): ' + str(self.size_MB) + '\n'
+        s += '  start sector: ' + str(self.start_sector) + ' end sector: ' + \
+             str(self.end_sector) + ' FS: ' + str(self.fs_type)
+        return s
 
     def __init__(self, disk, pedPartition, mountpoint=None):
         self.disk = disk

@@ -44,7 +44,7 @@ def queueCommand(func, args=None):
 def execFifo():
     global cmd_fifo
     if cmd_fifo:
-        queueCommand(lvm.activateAllVolumeGroups, None)
+        lvm.activateAllVolumeGroups()
         for func,args in cmd_fifo:
             if type(args) is tuple:
                 apply(func, args)
@@ -52,6 +52,7 @@ def execFifo():
                 func(args)
             else:
                 func()
+        lvm.activateAllVolumeGroups()
     cmd_fifo = None
 
 def reprFifo():
@@ -103,7 +104,12 @@ class PhysicalVolume(object):
         """Static method to remove a physical volume."""
         queueCommand(lvm.removePhysicalVolume, (path))
     remove = staticmethod(remove)
-        
+
+    def __str__(self):
+        s = self.partition.path + ' Group: ' + self.group.name + ' Del: ' + \
+            str(self.delete_flag) + ' On Disk: ' + str(self.on_disk)
+        return s
+
     def __init__(self,  partition, createNew=False):
         """A partition may not have knowledge about it's physical volume role,
            but a physical volume must have knowledge about its beginnings
@@ -152,6 +158,13 @@ class LogicalVolumeGroup(object):
         """Static method used on a path."""
         queueCommand(lvm.removeVolumeGroup, (name))
     remove = staticmethod(remove)
+
+    def __str__(self):
+        s = self.name + ' Extent Size: ' + self.extent_size_humanreadable + \
+            ' Total Extents: ' + str(self.extentsTotal()) + '\n' + \
+            ' PVs: ' + str(self.pv_dict.keys()) + ' LVs: ' + \
+            str(self.lv_dict.keys())
+        return s
 
     def __init__(self, name, extent_size='32M', pv_list=[], createNew=False):
         logger.info('Creating new logical volume group %s' % name)
@@ -305,6 +318,11 @@ class LogicalVolume(object):
         """Static method used on a path."""
         queueCommand(lvm.removeLogicalVolume, (path))
     remove = staticmethod(remove)
+
+    def __str__(self):
+        s = self.name + ' VolGrp: ' + self.group.name + ' Extents: ' + \
+            str(self.extents) + '\nFS: ' + str(self.fs_type) + ' On Disk: ' + str(self.on_disk)
+        return s
 
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()

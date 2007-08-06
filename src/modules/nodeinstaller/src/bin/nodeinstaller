@@ -213,7 +213,7 @@ class ProgressScreen(BaseScreen):
         s = str(diskprofile) + '\n\n'
         s = s + 'LVM Fifo:\n'
         s = s + diskprofile.reprLVMFifo()
-        self.selector.popupMsg('Internal Partitiontool State', s)
+        self.selector.popupMsg('Internal Partitiontool State', s, width=60)
         return NAV_NOTHING
 
     def drawImpl(self):
@@ -235,7 +235,7 @@ class ProgressScreen(BaseScreen):
  
         kl.debug('Committing disk profile')
         dlg = self.selector.popupProgress('Partitioning Disks', 'Initializing disks...')
-        self.displayDiskProfileState(self.nodeinst.ksprofile.diskprofile)
+#        self.displayDiskProfileState(self.nodeinst.ksprofile.diskprofile)
         self.nodeinst.commit()
         dlg.close()
         kl.debug('Finished partitioning disks')

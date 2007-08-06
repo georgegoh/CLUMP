@@ -86,9 +86,9 @@ class Navigator(object, KusuApp):
         msgbox = snack.ButtonChoiceWindow(self.mainScreen, title, msg, buttonList)
         return msgbox
 
-    def popupMsg(self, title, msg):
+    def popupMsg(self, title, msg, width=40):
         """Show a popup dialog with a given title and message."""
-        snack.ButtonChoiceWindow(self.mainScreen, title, msg,
+        snack.ButtonChoiceWindow(self.mainScreen, title, msg, width=width,
                                  buttons=[self._('Ok')])
 
     def popupYesNo(self, title, msg, defaultNo=False):
