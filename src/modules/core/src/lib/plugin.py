@@ -99,7 +99,7 @@ class PluginRunner:
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
 
     def loadPlugins(self):
-        for plugin in self.dirs.listdir('*.py'): 
+        for plugin in sorted(self.dirs.listdir('*.py')): 
 
             if plugin in ['__init__.py']:
                 continue

@@ -10,9 +10,18 @@ from kusu.core import database as db
 from kusu.core.plugin import PluginRunner
 import kusu.util.log as kusulog
 
+import sys
+
 kl = kusulog.getKusuLog()
 
 if __name__ == '__main__':
+
+    args = sys.argv
+
+    if len(args) == 1:
+        dir = '/etc/rc.kusu.d'
+    else:
+        dir = args[1]
 
     dbdriver = 'mysql'
     dbdatabase = 'kusudb'
@@ -20,6 +29,6 @@ if __name__ == '__main__':
     dbpassword = None
 
     dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
-    p = PluginRunner('KusuRC', '/etc/rc.kusu.d', dbs)
+    p = PluginRunner('KusuRC', dir, dbs)
     p.run()
     
