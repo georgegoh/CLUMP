@@ -19,6 +19,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'ssh'
         self.desc = 'Setting up SSH public keys'
+        self.ngtypes = ['installer']
 
     def run(self):
         """Setup ssh public keys"""

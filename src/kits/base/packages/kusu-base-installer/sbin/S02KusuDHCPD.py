@@ -14,6 +14,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'dhcpd'
         self.desc = 'Setting up dhcpd'
+        self.ngtypes = ['installer']
 
     def run(self):
 

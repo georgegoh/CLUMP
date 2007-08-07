@@ -16,6 +16,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'httpd'
         self.desc = 'Setting up httpd'
+        self.ngtypes = ['installer']
 
     def run(self):
         """Setup Apache"""

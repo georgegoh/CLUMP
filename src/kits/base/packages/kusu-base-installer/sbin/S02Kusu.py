@@ -14,6 +14,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'kusu'
         self.desc = 'Setting up kusu infrastructure'
+        self.ngtypes = ['installer']
 
     def run(self):
         self.runCommand('sh /etc/rc.kusu.d/S01KusuSetup')

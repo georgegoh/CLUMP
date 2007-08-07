@@ -17,6 +17,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'kusu db'
         self.desc = 'Setting up Kusu db'
+        self.ngtypes = ['installer']
 
     def run(self):
         """Set up MySQL connection and SQLite collection, then migrate."""

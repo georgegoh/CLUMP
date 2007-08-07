@@ -13,6 +13,7 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'syslog'
         self.desc = 'Setting up syslog'
+        self.ngtypes = ['installer']
 
     def run(self):
         """Enable remote syslog logging"""
