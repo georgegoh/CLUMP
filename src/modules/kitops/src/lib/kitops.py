@@ -300,7 +300,12 @@ class KitOps:
                                        shell=True, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             umountP.communicate()
-            self.mountpoint.rmdir()
+
+            if umountP.returncode == 0:
+                self.mountpoint.rmdir()
+            else:
+                kl.error('Unable to umount %s' % self.mountpoint)
+
             self.mountpoint = None
 
         if self.dlkitiso and self.dlkitiso.exists():
