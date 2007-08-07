@@ -1,5 +1,5 @@
 # Copyright (C) 2007 Platform Computing Inc
-#
+:#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
@@ -64,7 +64,14 @@ install::
 	echo "Letmein" > $(ROOT)/opt/kusu/etc/db.passwd
 	touch $(ROOT)/depot/repos/custom_scripts/bogus.sh
 	install -m755 sbin/S01KusuSetup $(ROOT)/etc/rc.kusu.d/
-	install -m755 sbin/kusurc $(ROOT)/opt/kusu/sbin/kusurc
+	install -m755 sbin/S01KusuDB.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuCFM.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuDHCPD.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuRepo.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuSSH.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuSyslog.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuApache.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02Kusu.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd

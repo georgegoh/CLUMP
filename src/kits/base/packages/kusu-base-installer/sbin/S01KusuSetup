@@ -69,47 +69,6 @@ else
     echo "ERROR:  Can't find /usr/lib/syslinux/pxelinux.0"
 fi
 
-# FIXME
-# Setting up permissions
-chgrp -R apache /depot/
-chgrp -R apache /opt/kusu/cfm
-
-# Prepare Mysql
-if [ -f /etc/init.d/mysqld ]; then
-    /etc/init.d/mysqld start
-    
-    $KUSU_ROOT/sbin/kusurc
-    /usr/bin/mysql kusudb < $KUSU_ROOT/sql/kusu_dbperms.sql
-    
-    /sbin/chkconfig mysqld on
-else
-    echo "ERROR:  Could not find mysqld"
-fi
-
-# Setup Apache
-if [ ! -d /var/www/html ]; then
-    echo "ERROR: Apache is not installed.  Cannot find: /var/www/html"
-else
-	if [ -x /etc/init.d/httpd ] && [ -f $KUSU_ROOT/bin/genconfig ]; then
-        ln -snf $KUSU_ROOT/cfm /var/www/html/cfm
-        ln -snf /depot/repos /var/www/html/repos
-        ln -snf /depot/images /var/www/html/images
-
-	    $KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf
-
-	    /etc/init.d/httpd start
-        /sbin/chkconfig httpd on
-    else
-	    echo "ERROR:  Cannot find genconfig"
-    fi
-fi
-
-if [ -f /etc/dhcpd.conf ]; then
-    $KUSU_ROOT/bin/genconfig dhcpd > /etc/dhcpd.conf
-
-    /etc/init.d/dhcpd start
-    /sbin/chkconfig dhcpd on
-fi
 
 if [ -f /etc/ntp.conf ]; then
     /etc/init.d/ntpd start

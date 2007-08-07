@@ -28,6 +28,7 @@
 # description: RC scripts for Kusu
 
 . /etc/init.d/functions
+. /etc/profile.d/kusuenv.sh
 
 KUSURCDIR=/etc/rc.kusu.d
 KUSUUSCRIPTS=/etc/rc.kusu.custom.d
@@ -35,35 +36,17 @@ KUSUUSCRIPTS=/etc/rc.kusu.custom.d
 prog='kusu'
 
 start() {
-	echo -n $"Starting $prog. This may take awhile: "	
+	echo $"Starting $prog. This may take awhile: "	
   
-    # start with success first, if any fails,
-    # it will be a failure
-    RETVAL=1
- 
     # Run any Kit configuration script.
     if [ -d "$KUSURCDIR" ]; then
-        for i in $KUSURCDIR/S* ; do
-            if [ -x "$i" ]; then
-                $i start > /dev/null 2>&1
-                RETVAL=$(($? && $RETVAL))
-                #rm -rf $i
-            fi
-        done
+        /opt/kusu/bin/kusurc $KUSURCDIR
     fi
 
     # Now run any user provided custom scripts
     if [ -d "$KUSUUSCRIPTS" ]; then
-        for i in $KUSUUSCRIPTS/ ; do
-            if [ ! -d "$i" ] && [ -x "$i" ] ; then
-                $i start > /dev/null 2>&1
-                RETVAL=$(($? && $RETVAL))
-                #rm -rf $i
-            fi
-        done
+        /opt/kusu/bin/kusurc $KUSUUSCRIPTS
     fi
-
-    [ $RETVAL = 0 ] && success || failure
 }
 
 
