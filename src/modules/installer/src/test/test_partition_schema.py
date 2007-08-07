@@ -11,7 +11,7 @@ from socket import gethostname
 from kusu.util.testing import *
 from kusu.installer.defaults import *
 from kusu.partitiontool.partitiontool import DiskProfile
-import kusu.partitiontool.disk
+import kusu.partitiontool.disk as disk
 from nose import SkipTest
 
 class PartedPartition(object):
@@ -37,17 +37,21 @@ class TestDiskProfileSchema:
             self.dp = DiskProfile(True, basename(self.loopback))
 
     def tearDown(self):
-        cmd = 'losetup -d %s' % self.loopback
-        runCommand(cmd)
-        cmd = 'rm -f %s' % self.tmpfile
-        runCommand(cmd)
+        if gethostname() != 'dizzy.int.osgdc.org':
+            cmd = 'losetup -d %s' % self.loopback
+            runCommand(cmd)
+            cmd = 'rm -f %s' % self.tmpfile
+            runCommand(cmd)
 
     def readPartedOutput(self):
         schema = self.generateSchema()
         setupDiskProfile(self.dp, schema)
         self.dp.commit()
         self.dp.formatAll()
-        out, err = runCommand('parted %s print' % self.loopback)
+        if gethostname() == 'dizzy.int.osgdc.org':
+            out, err = runCommand('parted /dev/sda print')
+        else:
+            out, err = runCommand('parted %s print' % self.loopback)
         lines = out.splitlines()
         starting_line_index = 0
         for i,v in enumerate(lines):
