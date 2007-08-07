@@ -107,6 +107,7 @@ make ROOT=$RPM_BUILD_ROOT install
 /etc/rc.kusu.d/
 /opt/kusu/*
 %exclude /opt/kusu/lib/python/kusu/*.py?
+%exclude /etc/rc.kusu.d/*.py?
 /etc/rc.kusu.custom.d/
 
 

@@ -15,6 +15,7 @@ class KusuRC(Plugin):
         self.name = 'kusu'
         self.desc = 'Setting up kusu infrastructure'
         self.ngtypes = ['installer']
+        self.delete = True
 
     def run(self):
         self.runCommand('sh /etc/rc.kusu.d/S01KusuSetup')

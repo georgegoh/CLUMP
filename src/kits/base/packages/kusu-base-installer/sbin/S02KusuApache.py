@@ -17,6 +17,7 @@ class KusuRC(Plugin):
         self.name = 'httpd'
         self.desc = 'Setting up httpd'
         self.ngtypes = ['installer']
+        self.delete = True
 
     def run(self):
         """Setup Apache"""

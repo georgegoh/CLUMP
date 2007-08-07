@@ -20,6 +20,7 @@ class KusuRC(Plugin):
         self.name = 'ssh'
         self.desc = 'Setting up SSH public keys'
         self.ngtypes = ['installer']
+        self.delete = True
 
     def run(self):
         """Setup ssh public keys"""

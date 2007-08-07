@@ -15,6 +15,7 @@ class KusuRC(Plugin):
         self.name = 'cfm'
         self.desc = 'Setting up CFM'
         self.ngtypes = ['compute']
+        self.delete = True
 
     def run(self):
         """Start CFM on compute"""

@@ -14,6 +14,8 @@ class KusuRC(Plugin):
         Plugin.__init__(self)
         self.name = 'cfm'
         self.desc = 'Setting up CFM'
+        self.ngtypes = ['installer']
+        self.delete = True
 
     def run(self):
         """Setting up CFM"""

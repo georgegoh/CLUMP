@@ -15,6 +15,7 @@ class KusuRC(Plugin):
         self.name = 'repos'
         self.desc = 'Setting up additional repository'
         self.ngtypes = ['installer']
+        self.delete = True
 
     def run(self):
         """Makes the repoistory for compute and installer nodes."""

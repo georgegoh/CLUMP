@@ -31,6 +31,7 @@ class Plugin:
         self.name = None # name of the plugin
         self.desc = None # description of the plugin. Used to display during init
         self.disable = False # Whether this plugin is disabled
+        self.delete = False # Wheter to delete this plugin after running
         self.ngtypes = ['installer', 'compute'] # types of nodegroups that this plugin should run
 
     def runCommand(self, cmd):
@@ -55,7 +56,7 @@ class PluginRunner:
         self.loadPlugins()
 
     def display(self, desc):
-        print ' '*3,  desc,
+        print ' '*3,  desc or '',
 
     def failure(self):
         cmd = 'source /etc/init.d/functions && failure'
@@ -74,9 +75,9 @@ class PluginRunner:
     def run(self):
         results = []
 
-        for key in sorted(self.plugins.keys()):
+        for fname in sorted(self.plugins.keys()):
             try:
-                plugin = self.plugins[key]
+                plugin = self.plugins[fname]
                 self.display(plugin.desc)
                 retval = plugin.run()
                 if retval:
@@ -89,7 +90,10 @@ class PluginRunner:
             except Exception, e:
                 self.failure()
                 results.append( (plugin.name, False, e) )
-                    
+                   
+            if plugin.delete and (self.dir / fname).exists():
+                (self.dir / fname).remove()
+
         return results
 
     def initPlugin(self):
