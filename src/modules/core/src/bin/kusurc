@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 #
-# $Id: repo.py 1871 2007-08-02 20:23:22Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
+
 from kusu.core import database as db
 from kusu.core.plugin import PluginRunner
 import kusu.util.log as kusulog
+from path import path
 
 import sys
 
@@ -23,12 +25,19 @@ if __name__ == '__main__':
     else:
         dir = args[1]
 
-    dbdriver = 'mysql'
-    dbdatabase = 'kusudb'
-    dbuser = 'apache'
-    dbpassword = None
+    if path('/etc/profile.nii').exists():
+        dbs = None
 
-    dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+    elif path('/root/kusu.db').exists():
+        dbs = db.DB('sqlite', '/root/kusu.db')
+    
+    else:        
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+        
+        dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
     p = PluginRunner('KusuRC', dir, dbs)
     p.run()
-    

@@ -16,14 +16,14 @@ try:
 except:
     from popen5 import subprocess
 
- 
 class Plugin: 
     nodename = None
     niihost = None
     os_name = None
     os_version = None
     os_arch = None
- 
+    dbs = None
+
     def __init__(self):
         self.hostname = socket.gethostname()
       
@@ -44,9 +44,9 @@ class Plugin:
         return retval, out, err
 
 class PluginRunner:
-    def __init__(self, classname, dirs, dbs, debug=False):
+    def __init__(self, classname, dir, dbs, debug=False):
         self.classname = classname
-        self.dirs = path(dirs)
+        self.dir = path(dir)
         self.plugins = {}
         self.dbs = dbs
         self.ngtype = self.getNodeGroupInfo()
@@ -54,18 +54,17 @@ class PluginRunner:
         self.initPlugin()
         self.loadPlugins()
 
-    def failure(self, desc):
+    def display(self, desc):
         print ' '*3,  desc,
-     
+
+    def failure(self):
         cmd = 'source /etc/init.d/functions && failure'
         failureP = subprocess.Popen(cmd,
                                     shell=True)
         failureP.communicate()
         print
 
-    def success(self, desc):
-        print ' '*3, desc,
-
+    def success(self):
         cmd = 'source /etc/init.d/functions && success'
         successP = subprocess.Popen(cmd,
                                     shell=True)
@@ -75,31 +74,34 @@ class PluginRunner:
     def run(self):
         results = []
 
-        for plugin in self.plugins.values():
+        for key in sorted(self.plugins.keys()):
             try:
+                plugin = self.plugins[key]
+                self.display(plugin.desc)
                 retval = plugin.run()
                 if retval:
-                    self.success(plugin.desc)
+                    self.success()
                 else:
-                    self.failure(plugin.desc)
+                    self.failure()
             
                 results.append( (plugin.name, retval, None) )
 
             except Exception, e:
-                self.failure(plugin.desc)
+                self.failure()
                 results.append( (plugin.name, False, e) )
                     
         return results
 
     def initPlugin(self):
         from plugin import Plugin
-
+    
         Plugin.nodename = self.getNodeName()
         Plugin.niihost = self.getNIIHost()
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
+        Plugin.dbs = self.dbs
 
     def loadPlugins(self):
-        for plugin in sorted(self.dirs.listdir('*.py')): 
+        for plugin in self.dir.listdir('*.py'): 
 
             if plugin in ['__init__.py']:
                 continue
@@ -122,7 +124,7 @@ class PluginRunner:
                 if self.ngtype not in m.ngtypes:
                     continue
 
-                self.plugins[m.name] = m
+                self.plugins[plugin.basename()] = m
 
     def getNodeGroupInfo(self):
         """Returns the node name, nodegroup name, nodegroup type"""
@@ -133,7 +135,7 @@ class PluginRunner:
 
         if path('/etc/profile.nii').exists():
             # On compute node
-            nodegroup_type = None
+            nodegroup_type = self.parseNII('/etc/profile.nii', 'NII_NGTYPE')
  
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
@@ -155,7 +157,7 @@ class PluginRunner:
         os_arch = None
 
         if path('/etc/profile.nii').exists():
-            return os_name, os_version, os_arch
+            os_name, os_version, os_arch = self.parseNII('/etc/profile.nii', 'NII_OSTYPE').split('-')
         else:
             os_name = os.environ['KUSU_DIST']
             os_version = os.environ['KUSU_DISTVER']
@@ -168,8 +170,8 @@ class PluginRunner:
 
         if path('/etc/profile.nii').exists():
             # On compute node
-            nii_host = []
- 
+            nii_host = [self.parseNII('/etc/profile.nii', 'NII_INSTALLERS')]
+
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
             node_name = row.kvalue
@@ -188,7 +190,7 @@ class PluginRunner:
 
         if path('/etc/profile.nii').exists():
             # On compute node
-            node_name = None
+            node_name = self.parseNII('/etc/profile.nii', 'NII_HOSTNAME')
  
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
@@ -196,4 +198,20 @@ class PluginRunner:
 
         return node_name
 
+    def parseNII(self, nii, key):
+        f = open(nii, 'r')
+        lines = f.readlines()
+        f.close()
 
+        for line in lines:
+            lst = line.split('=')
+
+            if len(lst) >= 2:
+                value = lst[1].strip()
+
+            lst = lst[0].split()
+            if len(lst) == 2:
+                if key == lst[1].strip():
+                    return value.strip('"')
+           
+        return None 
