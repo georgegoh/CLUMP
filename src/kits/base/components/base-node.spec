@@ -27,6 +27,9 @@ Requires: kusu-base-node >= 1.0
 
 BuildArchitectures: noarch
 Requires: python >= 2.4.3
+Requires: kusu-core >= 0.4
+Requires: kusu-path >= 0.4
+Requires: kusu-util >= 0.4
 
 %description
 This component provides the nodes with the Kusu tools for the 

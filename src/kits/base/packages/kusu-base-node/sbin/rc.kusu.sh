@@ -36,7 +36,7 @@ KUSUUSCRIPTS=/etc/rc.kusu.custom.d
 prog='kusu'
 
 start() {
-	echo $"Starting $prog. This may take awhile: "	
+	echo $"Starting $prog. This may take awhile..."	
   
     # Run any Kit configuration script.
     if [ -d "$KUSURCDIR" ]; then
