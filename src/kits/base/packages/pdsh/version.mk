@@ -1,3 +1,3 @@
 NAME = pdsh
-VERSION = 2.10
+VERSION = 2.14
 RELEASE = 1

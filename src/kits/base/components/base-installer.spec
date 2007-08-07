@@ -54,11 +54,14 @@ Requires: createrepo >= 0.4.4
 Requires: rsync >= 2.6.6
 Requires: bind
 Requires: caching-nameserver
-Requires: pdsh >= 2.10
-Requires: pdsh-mod-machines >= 2.10
-Requires: pdsh-rcmd-rsh >= 2.10
-Requires: pdsh-rcmd-ssh >= 2.10
-Requires: pdsh-mod-dshgroup >= 2.10
+Requires: pdsh >= 2.14
+Requires: pdsh-rcmd-exec >= 2.14
+Requires: pdsh-rcmd-rsh >= 2.14
+Requires: pdsh-rcmd-ssh >= 2.14
+Requires: pdsh-mod-machines >= 2.14
+Requires: pdsh-mod-dshgroup >= 2.14
+Requires: pdsh-mod-netgroup >= 2.14
+Requires: pdsh-debuginfo >= 2.14
 Requires: kusu-cheetah >= 0.4
 Requires: kusu-pysqlite >= 0.4
 Requires: kusu-ipy >= 0.4

@@ -27,6 +27,10 @@ Requires: kusu-base-node >= 1.0
 
 BuildArchitectures: noarch
 Requires: python >= 2.4.3
+Requires: pdsh >= 2.14
+Requires: pdsh-rcmd-exec >= 2.14
+Requires: pdsh-rcmd-rsh >= 2.14
+Requires: pdsh-rcmd-ssh >= 2.14
 Requires: kusu-core >= 0.4
 Requires: kusu-path >= 0.4
 Requires: kusu-util >= 0.4
