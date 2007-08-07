@@ -520,7 +520,7 @@ class DB(object):
             sa.Column('fstype', sa.String(20)),
             sa.Column('size', sa.String(45)),
             sa.Column('options', sa.String(255)),
-            sa.Column('preserve', sa.Boolean),
+            sa.Column('preserve', sa.Boolean, sa.PassiveDefault('1'), nullable=False),
             sa.ForeignKeyConstraint(['ngid'],
                                     ['nodegroups.ngid']),
             mysql_engine='InnoDB')
@@ -723,13 +723,13 @@ class DB(object):
         swap = Partitions(fstype='linux-swap', partition='2',
                           size='2000', device='1', preserve='0')
         pv = Partitions(fstype='physical volume', partition='0',
-                        size='6000', device='N', preserve='0',
+                        size='6000', device='N', preserve='1',
                         options='fill;pv;vg=VolGroup00')
-        vg = Partitions(device='VolGroup00', options='vg;extent=32M')
+        vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve='1')
         root = Partitions(mntpnt='/', fstype='ext3', size='2000',
-                          device='ROOT', options='lv;vg=VolGroup00')
+                          device='ROOT', options='lv;vg=VolGroup00', preserve='0')
         data = Partitions(mntpnt='/data', fstype='ext3', size='4000',
-                          device='DATA', options='lv;vg=VolGroup00;fill')
+                          device='DATA', options='lv;vg=VolGroup00;fill', preserve='1')
         donotpreserve1 = Partitions(options='partitionID=Linux', preserve='0')
         donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve='0')
         donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve='0')

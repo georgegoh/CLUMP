@@ -298,7 +298,12 @@ def scenario22():
 
 def setupDiskProfile(disk_profile, schema=None):
     """Set up a disk profile based on a given schema."""
-   # clear LVM logical volumes and groups.
+    # clear LVM logical volumes and groups.
+    logger.debug(str(schema['preserve_types']))
+    logger.debug(str(schema['preserve_fs']))
+    logger.debug(str(schema['preserve_mntpnt']))
+    logger.debug(str(disk_profile.lv_dict))
+    logger.debug(str(disk_profile.lvg_dict))
     if disk_profile.lv_dict:
         lv_list = disk_profile.lv_dict.values()
         for lv in lv_list:
@@ -315,6 +320,8 @@ def setupDiskProfile(disk_profile, schema=None):
         clearDisk(disk_profile, disk, schema)
     for disk in disk_profile.disk_dict.itervalues():
         logger.debug('Disk %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
+        logger.debug('mntpnts: %s' % ([p.mountpoint for p in disk.partition_dict.values()]))
+    disk_profile.commit()
 
     if not schema:
         return True

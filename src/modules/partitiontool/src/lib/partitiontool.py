@@ -273,6 +273,8 @@ class DiskProfile(object):
             self.populateDiskProfileTest(fresh, test)
         else:
             self.populateDiskProfile(fresh, probe_fstab)
+        logger.debug('State after scan:\n%s' % self.__str__())
+
 
     def probeLVMEntities(self):
         logger.debug('Probing PVs.')
