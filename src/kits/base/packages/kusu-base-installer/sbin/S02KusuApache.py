@@ -24,13 +24,13 @@ class KusuRC(Plugin):
 
         if path('/var/www/html').exists():
 
-            if not path(kusu_root / 'cfm').exists():
+            if not path('/var/www/html/cfm').exists():
                 path(kusu_root / 'cfm').symlink('/var/www/html/cfm')
 
-            if not path('/depot/repos').exists():
+            if not path('/var/www/html/repos').exists():
                 path('/depot/repos').symlink('/var/www/html/repos')
 
-            if not path('/depot/images').exists():
+            if not path('/var/www/html/images').exists():
                 path('/depot/images').symlink('/var/www/html/images')
 
             self.runCommand('/sbin/chkconfig httpd on')
