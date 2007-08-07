@@ -7,7 +7,6 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-from kusu.core import database as db
 from kusu.core.plugin import PluginRunner
 import kusu.util.log as kusulog
 from path import path
@@ -29,9 +28,12 @@ if __name__ == '__main__':
         dbs = None
 
     elif path('/root/kusu.db').exists():
+        from kusu.core import database as db
         dbs = db.DB('sqlite', '/root/kusu.db')
     
     else:        
+        from kusu.core import database as db
+
         dbdriver = 'mysql'
         dbdatabase = 'kusudb'
         dbuser = 'apache'

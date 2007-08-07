@@ -57,4 +57,4 @@ install::
 	install -m755 sbin/cfmclient.py $(ROOT)/opt/kusu/sbin/cfmclient
 	install -m755 cfm/cfmd $(ROOT)/opt/kusu/sbin/cfmd
 	install -m755 etc/cfmd $(ROOT)/etc/init.d/cfmd
-	install -m755 sbin/S02KusuCFM.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuClientCFM.py $(ROOT)/etc/rc.kusu.d/
