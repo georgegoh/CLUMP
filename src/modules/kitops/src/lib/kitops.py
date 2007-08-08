@@ -418,7 +418,7 @@ class KitOps:
         newkit.components.append(comp)
 
         ngs = self.__db.NodeGroups.select(
-                self.__db.NodeGroups.c.ngname.in_('compute', 'installer'))
+                self.__db.NodeGroups.c.type.in_('compute', 'installer'))
 
         for ng in ngs:
             if comp not in ng.components:
