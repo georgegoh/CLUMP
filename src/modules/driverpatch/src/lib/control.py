@@ -7,7 +7,7 @@
 """ This module contains Controller-specific operations for driverpatch. """
 
 from kusu.boot.tool import BootMediaTool
-from kusu.util.errors import InvalidPathError, FileDoesNotExistError
+from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments
 from path import path
 import subprocess
 
@@ -140,7 +140,51 @@ class KernelModule(object):
 class DataModel(object):
     """ Convenience class for the data operations.
     """
-    pass
+    
+    def __init__(self, dbinst):
+        """ Initialize this class. dbinst is an instance of the kusu.core.database.DB class.
+        """
+        self.dbinst = dbinst
+        
+    def getDriverPacks(self, **kwargs):
+        """ Get the driverpacks entries based on ngid or ngname.
+        """
+
+        if not 'id' in kwargs and not 'name' in kwargs:
+            raise InvalidArguments, 'id or name not specified!'
+        
+        _ngid = kwargs.get('id','')
+        if _ngid:
+            try:
+                ngid = long(_ngid)
+            except ValueError:
+                raise ValueError, 'id should be a number!'
+
+        ngname = kwargs.get('name','')
+            
+        # get the list of nodegroups
+        ngs = self.dbinst.NodeGroups.select()
+        
+        if 'id' in kwargs:
+            # get the components based on ngid
+            comps = [ng.components for ng in ngs if ng.ngid == ngid]
+            
+        elif 'name' in kwargs:
+            # get the components based on ngname
+            comps = [ng.components for ng in ngs if ng.ngname.find(ngname) > -1]
+            
+        if not comps: return None
+
+        # get the list of driverpacks
+        # the first list contains the list of components associated with nodegroup
+        dpacks = []
+        for comp in comps:
+            # and the second list contains the driverpacks associated with each component list
+            li = [c.driverpacks for c in comp if c.driverpacks]
+            dpacks.extend([l for l in li])
+
+        return dpacks
+
 
 class DriverPatchController(object):
     """ This composition class will be the one typically used by users. """

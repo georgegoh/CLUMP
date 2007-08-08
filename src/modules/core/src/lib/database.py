@@ -85,7 +85,7 @@ class DriverPacks(BaseTable):
     cols = ['dpid', 'cid', 'dpname', 'dpdesc']
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.cid, self.dpname, self.dpdesc)
+               (self.__class__.__name__, self.dpid, self.cid, self.dpname, self.dpdesc)
 
 class Kits(BaseTable): 
     cols = ['rname', 'rdesc', 'version', \
@@ -368,7 +368,7 @@ class DB(object):
             sa.Column('dpname', sa.String(255)),
             sa.Column('dpdesc', sa.String(255)),
             mysql_engine='InnoDB')
-        sa.Index('driverpacks_FKIndex1', driverpacks.c.dpid)
+        sa.Index('driverpacks_FKIndex1', driverpacks.c.cid)
         self.__dict__['driverpacks'] = driverpacks
     
         kits = sa.Table('kits', self.metadata,
@@ -590,7 +590,9 @@ class DB(object):
                                                 secondary=ng_has_comp,
                                                 entity_name=self.entity_name),
                       'kit': sa.relation(Kits,
-                                         entity_name=self.entity_name)},
+                                         entity_name=self.entity_name),
+                    'driverpacks': sa.relation(DriverPacks,
+                                        entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
         driverpacks = sa.Table('driverpacks', self.metadata, autoload=True)
