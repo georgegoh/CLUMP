@@ -106,9 +106,10 @@ class PackBuilder:
 
     def __getInstallers(self):
         """getInstallers - Get a list of all of the available installer IP's"""
-        query = ('select nics.ip from nics, nodes, nodegroups where '
-                 'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid '
-                 'and nodegroups.ngname="Installer"')
+        query = ('select nics.ip from nics, nodes, nodegroups, networks where '
+                 'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid and '
+                 'networks.netid=nics.netid '
+                 'and nodegroups.type="installer" and networks.type="provision"')
         installers = []
         try:
             self.db.execute(query)
