@@ -682,7 +682,7 @@ class NodeInstaller(object):
                      hwclock_args, hwclockP.returncode)
 
     def setSyslogConf(self, hostip, prefix=''):
-        syslog = open(prefix + '/etc/syslog.conf', 'w')
+        syslog = open(prefix + '/etc/syslog.conf', 'a')
         syslog.writelines(['# Forward all log messages to master installer\n',
                            '*.*' + '\t' * 7 + '@%s\n' % hostip])
         syslog.flush()
@@ -731,3 +731,24 @@ class NodeInstaller(object):
         for m in ['/']:
             if m not in mounted:
                 raise KusuError, 'Mountpoint: %s not defined' % m
+
+    def getAutomountMaps(self, hostip, prefix=''):
+        automaster = path(prefix + '/etc/auto.master')
+        autohome = path(prefix + '/etc/auto.home')
+
+        # grab auto.master file from master
+        cmds = ['wget', 'http://%s/auto.master' % hostip, '-O', automaster]
+        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        out, err = wgetP.communicate()                                 
+
+        automaster.chmod(0644)
+
+        # grab auto.home file from master
+        cmds = ['wget', 'http://%s/auto.home' % hostip, '-O', autohome]
+        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        out, err = wgetP.communicate()                                 
+
+        automaster.chmod(0644)
+        autohome.chmod(0644)
