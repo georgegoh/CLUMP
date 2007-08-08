@@ -10,6 +10,7 @@
 from path import path
 import os
 import socket
+import sys
 
 try:
     import subprocess
@@ -57,6 +58,7 @@ class PluginRunner:
 
     def display(self, desc):
         print ' '*3,  desc or '',
+        sys.stdout.flush()
 
     def failure(self):
         cmd = 'source /etc/init.d/functions && failure'
@@ -64,6 +66,7 @@ class PluginRunner:
                                     shell=True)
         failureP.communicate()
         print
+        sys.stdout.flush()
 
     def success(self):
         cmd = 'source /etc/init.d/functions && success'
@@ -71,6 +74,7 @@ class PluginRunner:
                                     shell=True)
         successP.communicate()
         print
+        sys.stdout.flush()
 
     def run(self):
         results = []
