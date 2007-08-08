@@ -118,7 +118,7 @@ class ImagedNodeConfiger:
     def findBestInstaller(self):
         """findBestInstaller - Find the best IP address to get the NII"""
         if len(self.installer) == 1:
-            return self.installer
+            return self.installer[0]
 
         for interface in self.ifs:
             cmd = 'ifconfig %s |grep inet |grep Mask' % interface
@@ -209,20 +209,19 @@ for i in niihandler.partitions.keys():
     app.log("        options   = %s\n" % (niihandler.partitions[i]['options']))
     app.log("        preserve  = %s\n" % (niihandler.partitions[i]['preserve']))
 
-# Bring up the partitions according to the NII
-# TODO
-#
-from nodeinstaller import adaptNIIPartition
-from kusu.partitiontool import DiskProfile
-from kusu.installer.defaults import setupDiskProfile
-disk_profile = DiskProfile(True) # Start with blank disk.
-schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
-setupDiskProfile(disk_profile, schema)
-# UNCOMMENT THE FOLLOWING TO COMMIT THE PARTITION SCHEMA AND START FORMATTING.
-disk_profile.commit()
-disk_profile.formatAll()
+if len(niihandler.partitions.keys()) > 0:
+    # Bring up the partitions according to the NII
+    # TODO
+    #
+    from nodeinstaller import adaptNIIPartition
+    from kusu.partitiontool import DiskProfile
+    from kusu.installer.defaults import setupDiskProfile
+    disk_profile = DiskProfile(True) # Start with blank disk.
+    schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
+    setupDiskProfile(disk_profile, schema)
+    disk_profile.commit()
+    disk_profile.formatAll()
 
-    
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)
     app.log("        Device  = %s\n" % (niihandler.nics[i]['device']))

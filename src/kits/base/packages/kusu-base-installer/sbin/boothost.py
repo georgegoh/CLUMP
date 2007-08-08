@@ -113,7 +113,7 @@ class boothost:
 
         http_ip = data[0]
 
-        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype " + 
+        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype, nodegroups.installtype " + 
                  "FROM nics, nodes, networks, nodegroups, repos " + 
                  "WHERE nodes.nid=nics.nid " + 
                  "AND nics.netid=networks.netid " +
@@ -130,12 +130,13 @@ class boothost:
         repoid = data[0]
         ksdevice = data[1]
         ostype = data[2].split('-')[0]
-        
+        installtype = data[3]
+
         fp.write("prompt 0\n")
         fp.write("label Reinstall\n")
         fp.write("        kernel %s\n" % kernel)
 
-        if ostype in ['fedora', 'centos', 'rhel']:
+        if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel']:
             kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (http_ip, repoid, http_ip)
             fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
                      (initrd, http_ip, http_ip, kickstart_file, ksdevice, kparams or ''))

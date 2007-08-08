@@ -143,12 +143,13 @@ class BuildInitrd:
 
     def makeInitrdName(self):
         """makeInitrdName - generate a name for the initrd."""
-        initrd = "initrd.%s.%s" % (self.installtype, self.ngid)
-        query = ('update nodegroups set initrd="%s.%s.img" where ngid="%s"'
-                 % (self.installtype, self.ngid, self.ngid) )
+        initrd = "initrd.%s.%s.img" % (self.installtype, self.ngid)
+        query = ('update nodegroups set initrd="%s" where ngid="%s"'
+                 % (initrd, self.ngid) )
         try:
             self.db.execute(query)
             data = self.db.fetchone()
+            self.initrd = initrd
         except:
             return False
         

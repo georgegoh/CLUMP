@@ -264,7 +264,7 @@ class BuildImage:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=RHEL-%s - Base\n'
-                'baseurl=http://%s/repos/%s/\n' % (self.ostype, yumhost, self.repoid)
+                'baseurl=file://%s\n' % (self.ostype, self.repodir)
                 )
 
         fp.write(out)
