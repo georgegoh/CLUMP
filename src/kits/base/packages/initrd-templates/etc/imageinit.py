@@ -215,13 +215,13 @@ for i in niihandler.partitions.keys():
 from nodeinstaller import adaptNIIPartition
 from kusu.partitiontool import DiskProfile
 from kusu.installer.defaults import setupDiskProfile
-schema = adaptNIIPartition(niihandler)
 disk_profile = DiskProfile(True) # Start with blank disk.
+schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
 setupDiskProfile(disk_profile, schema)
 # UNCOMMENT THE FOLLOWING TO COMMIT THE PARTITION SCHEMA AND START FORMATTING.
-#disk_profile.commit()
-#disk_profile.formatAll()
-#
+disk_profile.commit()
+disk_profile.formatAll()
+
     
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)
