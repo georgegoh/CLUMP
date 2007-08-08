@@ -126,6 +126,9 @@ class PluginRunner:
                     continue
 
                 if self.ngtype not in m.ngtypes:
+                    if m.delete and plugin.exists():
+                        plugin.remove()
+
                     continue
 
                 self.plugins[plugin.basename()] = m
