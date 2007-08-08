@@ -39,7 +39,7 @@ class KusuRC(Plugin):
                 privatenic = nic
 
         if not privatenic == None:
-            newline = "%s %s/%s(rw,async)" % (sharedhomedir, privatenic.network.network, privatenic.network.subnet)
+            newline = "%s %s/%s(rw,async)\n" % (sharedhomedir, privatenic.network.network, privatenic.network.subnet)
 
             f = open(etcexports, 'a')
             f.writelines(newline)
