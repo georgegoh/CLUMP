@@ -58,3 +58,4 @@ install::
 	install -m755 cfm/cfmd $(ROOT)/opt/kusu/sbin/cfmd
 	install -m755 etc/cfmd $(ROOT)/etc/init.d/cfmd
 	install -m644 sbin/S02KusuClientCFM.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuNodeNTPD.py $(ROOT)/etc/rc.kusu.d/
