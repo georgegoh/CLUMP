@@ -143,10 +143,8 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
             if ng.ngid in ngids:
                 ng.ngname = ng.ngname + '-' +  profile['longname']
         
-            if ng.installtype == 'package':
-                ng.initrd = profile['initrd']
-                ng.kernel = profile['kernel']
-            else:
-                ng.initrd = profile['initrd']
+                if ng.installtype == 'package':
+                    ng.initrd = profile['initrd']
+                    ng.kernel = profile['kernel']
 
         db.flush()
