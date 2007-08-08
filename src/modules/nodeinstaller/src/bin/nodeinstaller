@@ -238,6 +238,7 @@ class ProgressScreen(BaseScreen):
 #        self.displayDiskProfileState(self.nodeinst.ksprofile.diskprofile)
         self.nodeinst.commit()
         dlg.close()
+        self.selector.popupMsg('Partitioning', 'Finished Partitioning disks.')
         kl.debug('Finished partitioning disks')
 
         kusu_prefix = '/mnt/kusu'

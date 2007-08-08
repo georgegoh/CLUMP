@@ -896,7 +896,6 @@ class DB(object):
         donotpreserve1 = Partitions(options='partitionID=Linux', preserve='0')
         donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve='0')
         donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve='0')
-        donotpreserve4 = Partitions(options='partitionID=Linux LVM', preserve='0')
         # Otherwise, preserve everything else (weird, counter-intuitive,
         # inverse logic - need to improve)
  
@@ -909,7 +908,6 @@ class DB(object):
         compute.partitions.append(donotpreserve1)
         compute.partitions.append(donotpreserve2)
         compute.partitions.append(donotpreserve3)
-        compute.partitions.append(donotpreserve4)
 
         # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')

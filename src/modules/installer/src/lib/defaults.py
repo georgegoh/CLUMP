@@ -63,13 +63,14 @@ class LVMCollection(Struct):
 
 
 class PartitionSchema(Struct):
-    def __init__(self, disks, lvm={}, preserve_types=[], preserve_fs=[], preserve_mntpnt=[]):
+    def __init__(self, disks, lvm={}, preserve_types=[], preserve_fs=[], preserve_mntpnt=[], preserve_lv=[]):
         Struct(self)
         self.disk_dict=disks
         self.vg_dict=lvm
         self.preserve_types=preserve_types
         self.preserve_fs=preserve_fs
         self.preserve_mntpnt=preserve_mntpnt
+        self.preserve_lv=preserve_lv
 
     def __eq__(self, other):
         disk_keys = self.disk_dict.keys()
@@ -90,6 +91,8 @@ class PartitionSchema(Struct):
             return False
         if Set(self.preserve_mntpnt) != Set(other['preserve_mntpnt']):
             print 'e'
+            return False
+        if Set(self.preserve_lv) != Set(other['preserve_lv']):
             return False
         return True
 
@@ -296,32 +299,32 @@ def scenario22():
     return schema
 
 
-def setupDiskProfile(disk_profile, schema=None):
+def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
     """Set up a disk profile based on a given schema."""
     # clear LVM logical volumes and groups.
-    logger.debug(str(schema['preserve_types']))
-    logger.debug(str(schema['preserve_fs']))
-    logger.debug(str(schema['preserve_mntpnt']))
+    logger.debug('PRESERVE TYPES: ' + str(schema['preserve_types']))
+    logger.debug('PRESERVE FS: ' + str(schema['preserve_fs']))
+    logger.debug('PRESERVE MNTPNT: ' + str(schema['preserve_mntpnt']))
     logger.debug(str(disk_profile.lv_dict))
     logger.debug(str(disk_profile.lvg_dict))
-    if disk_profile.lv_dict:
-        lv_list = disk_profile.lv_dict.values()
-        for lv in lv_list:
-            disk_profile.delete(lv)
-    if disk_profile.lvg_dict:
-        lvg_list = disk_profile.lvg_dict.values()
-        for lvg in lvg_list:
-            disk_profile.delete(lvg)
 
-    disk_profile.executeLVMFifo()
+    preserved_mntpnt = []
+    preserved_fs = []
+    preserved_lvg = []
+    preserved_lv = []
+    if wipe_existing_profile:
+        preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv = clearLVM(disk_profile, schema)
+        disk_profile.executeLVMFifo()
 
-    # clear partitions that haven't been preserved.
-    for disk in disk_profile.disk_dict.itervalues():
-        clearDisk(disk_profile, disk, schema)
-    for disk in disk_profile.disk_dict.itervalues():
-        logger.debug('Disk %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
-        logger.debug('mntpnts: %s' % ([p.mountpoint for p in disk.partition_dict.values()]))
-    disk_profile.commit()
+        # clear partitions that haven't been preserved.
+        for disk in disk_profile.disk_dict.itervalues():
+            preserved_mntpnt1, preserved_fs1 = clearDisk(disk_profile, disk, schema)
+            preserved_mntpnt += preserved_mntpnt1
+            preserved_fs += preserved_fs1
+        for disk in disk_profile.disk_dict.itervalues():
+            logger.debug('Disk %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
+            logger.debug('mntpnts: %s' % ([p.mountpoint for p in disk.partition_dict.values()]))
+        disk_profile.commit()
 
     if not schema:
         return True
@@ -329,12 +332,46 @@ def setupDiskProfile(disk_profile, schema=None):
         if not schema.has_key('disk_dict') or not schema.has_key('vg_dict'):
             raise PartitionSchemaError, 'Schema has no disk and/or LVM description.'
 
-        createPhysicalSchema(disk_profile, schema['disk_dict'])
+        createPhysicalSchema(disk_profile, schema['disk_dict'], preserved_mntpnt, preserved_fs)
         if schema['vg_dict']:
-#            if schema['vg_dict']['pv_span']:
-#                createSpanningPV(disk_profile)
-            createLVMSchema(disk_profile, schema['vg_dict'])
+            createLVMSchema(disk_profile, schema['vg_dict'], preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv)
     logger.debug('Disk Profile set up')
+
+
+def clearLVM(disk_profile, schema):
+    preserve_fs = schema['preserve_fs']
+    preserve_mntpnt = schema['preserve_mntpnt']
+    preserve_lv = schema['preserve_lv']
+
+    preserved_mntpnt = []
+    preserved_fs = []
+    preserved_lvg = []
+    preserved_lv = []
+
+    if disk_profile.lv_dict:
+        lv_list = disk_profile.lv_dict.values()
+        for lv in lv_list:
+            if lv.mountpoint and lv.mountpoint not in preserve_mntpnt or \
+               lv.fs_type and lv.fs_type not in preserve_fs or \
+               lv.name not in preserve_lv:
+                disk_profile.delete(lv)
+            else:
+                if lv.mountpoint in preserve_mntpnt:
+                    preserved_mntpnt.append(lv.mountpoint)
+                elif lv.fs_type in preserve_fs:
+                    preserved_fs.append(lv.fs_type)
+                preserved_lv.append(lv.name)
+                lv.leave_unchanged = True
+
+    if disk_profile.lvg_dict:
+        lvg_list = disk_profile.lvg_dict.values()
+        for lvg in lvg_list:
+            try:    
+                disk_profile.delete(lvg)
+            except PhysicalVolumeStillInUseError, e:
+                preserved_lvg.append(lvg.name)
+                logger.debug(str(e))
+    return preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv
 
 def clearDisk(disk_profile, disk, schema):
     # separate into logical, extended, and primary partitions.
@@ -344,6 +381,9 @@ def clearDisk(disk_profile, disk, schema):
     preserve_list = schema['preserve_types']
     preserve_fs = schema['preserve_fs']
     preserve_mntpnt = schema['preserve_mntpnt']
+
+    preserved_fs = []
+    preserved_mntpnt = []
 
     for partition in disk.partition_dict.values():
         if partition.part_type == 'primary':
@@ -355,11 +395,26 @@ def clearDisk(disk_profile, disk, schema):
 
     # remove the logical partitions first.
     for partition in reversed(sorted(logical)):
-        if partition.native_type not in preserve_list and \
-           partition.fs_type not in preserve_fs and \
-           partition.mountpoint not in preserve_mntpnt:
+        if partition.mountpoint and partition.mountpoint not in preserve_mntpnt:
+            logger.debug('mountpoint %s not preserved.' % partition.mountpoint)
+        if partition.fs_type and partition.fs_type not in preserve_fs:
+            logger.debug('FS type %s not preserved.' % partition.fs_type)
+        if partition.native_type and partition.native_type not in preserve_list:
+            logger.debug('partition type %s not preserved.' % partition.native_type)
+
+        if partition.mountpoint and partition.mountpoint not in preserve_mntpnt or \
+           partition.fs_type and partition.fs_type not in preserve_fs or \
+           partition.native_type and partition.native_type not in preserve_list:
             logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
-            disk_profile.delete(partition, keep_in_place=True)
+            try:
+                disk_profile.delete(partition, keep_in_place=True)
+            except PartitionIsPartOfVolumeGroupError, e:
+                if partition.mountpoint in preserve_mntpnt:
+                    preserved_mntpnt.append(partition.mountpoint)
+                else:
+                    preserved_fs.append('physical volume')
+                partition.leave_unchanged = True
+                logger.debug(str(e))
         else:
             partition.leave_unchanged = True
             extended = None
@@ -368,14 +423,31 @@ def clearDisk(disk_profile, disk, schema):
         disk_profile.delete(extended, keep_in_place=True)
     # finally remove the primary partitions.
     for partition in reversed(sorted(primary)):
-        if partition.native_type not in preserve_list and \
-           partition.fs_type not in preserve_fs and \
-           partition.mountpoint not in preserve_mntpnt:
+        if partition.mountpoint and partition.mountpoint not in preserve_mntpnt:
+            logger.debug('mountpoint %s not preserved.' % partition.mountpoint)
+        if partition.fs_type and partition.fs_type not in preserve_fs:
+            logger.debug('FS type %s not preserved.' % partition.fs_type)
+        if partition.native_type and partition.native_type not in preserve_list:
+            logger.debug('partition type %s not preserved.' % partition.native_type)
+
+        if partition.mountpoint and partition.mountpoint not in preserve_mntpnt or \
+           partition.fs_type and partition.fs_type not in preserve_fs or \
+           partition.native_type and partition.native_type not in preserve_list:
             logger.debug('Delete partition %d from %s' % (partition.num, disk.path))
-            disk_profile.delete(partition, keep_in_place=True)
+            try:
+                disk_profile.delete(partition, keep_in_place=True)
+            except PartitionIsPartOfVolumeGroupError, e:
+                if partition.mountpoint in preserve_mntpnt:
+                    preserved_mntpnt.append(partition.mountpoint)
+                else:
+                    preserved_fs.append('physical volume')
+                partition.leave_unchanged = True
+                logger.debug(str(e))
+        else:
+            partition.leave_unchanged = True
+    return preserved_mntpnt, preserved_fs
 
-
-def createPhysicalSchema(disk_profile, disk_schemata):
+def createPhysicalSchema(disk_profile, disk_schemata, preserved_mntpnt, preserved_fs):
     # check if we have enough disks to fulfill the schema
     if len(disk_profile.disk_dict) < len(disk_schemata):
         raise PartitionSchemaError, 'Schema defines more disks than ' + \
@@ -401,6 +473,9 @@ def createPhysicalSchema(disk_profile, disk_schemata):
                     # The percent calculation below is not precise
                     # due to integer rounding, but should be fine.
                     size_MB = schema_partition.percent * disk.size / 1024 / 1024 / 100
+                if mountpoint in preserved_mntpnt or fs in preserved_fs:
+                    logger.debug('Partition was preserved. Not creating')
+                    continue
                 logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
                 disk_profile.newPartition(disk_key,
                                           size_MB,
@@ -413,7 +488,8 @@ def createPhysicalSchema(disk_profile, disk_schemata):
             raise PartitionSchemaError, 'Run out of disks.'
 
 
-def createLVMSchema(disk_profile, lvm_schemata):
+def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv):
+    logger.debug('Preserved LV: %s' % str(preserved_lv))
     for vg_key, vg_schema in lvm_schemata.iteritems():
         sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
         # create the Volume Group first.
@@ -434,9 +510,13 @@ def createLVMSchema(disk_profile, lvm_schemata):
             pv = disk_profile.pv_dict[partition.path]
             pv_list.append(pv)
 
-        vg = disk_profile.newLogicalVolumeGroup(vg_key,
-                                                vg_schema['extent_size'],
-                                                pv_list)
+        if vg_key in preserved_lvg or vg_key in disk_profile.vg_dict.keys():
+            logger.debug('VG has been preserved')
+            vg = disk_profile.lvg_dict[vg_key]
+        else:
+            vg = disk_profile.newLogicalVolumeGroup(vg_key,
+                                                    vg_schema['extent_size'],
+                                                    pv_list)
 
         # create the Logical Volumes.
         lv_schema = vg_schema['lv_dict']
@@ -457,14 +537,19 @@ def createLVMSchema(disk_profile, lvm_schemata):
                 logger.debug('%s extents: %d' % (lv_name, extents))
                 size_MB = vg.extent_size / 1024 / 1024 * extents
                 logger.debug('%s size: %d' % (lv_name, size_MB))
-            disk_profile.newLogicalVolume(lv_name,
-                                          vg,
-                                          size_MB,
-                                          lv_schema['fs'],
-                                          lv_schema['mountpoint'],
-                                          lv_schema['fill'])
-            logger.debug('Finished creating %s' % lv_name)
-        if last_lv:
+            if lv_schema['mountpoint'] in preserved_mntpnt or \
+               lv_schema['fs'] in preserved_fs or lv_name in preserved_lv:
+                logger.debug('LV has been preserved')
+            else:
+                disk_profile.newLogicalVolume(lv_name,
+                                              vg,
+                                              size_MB,
+                                              lv_schema['fs'],
+                                              lv_schema['mountpoint'],
+                                              lv_schema['fill'])
+                logger.debug('Finished creating %s' % lv_name)
+        if last_lv and last_lv[1]['mountpoint'] not in preserved_mntpnt and \
+           last_lv[1]['fs'] not in preserved_fs and last_lv[0] in preserved_lv:
             disk_profile.newLogicalVolume(last_lv[0],
                                           vg,
                                           last_lv[1]['size_MB'],

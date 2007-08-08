@@ -620,8 +620,10 @@ class DiskProfile(object):
         if self.pv_dict.has_key(partition_obj.path):
             physicalVol = self.pv_dict[partition_obj.path]
             if physicalVol.group != None:
-                raise PartitionIsPartOfVolumeGroupError, 'Partition cannot ' + \
-                    'be deleted because it is part of a Logical Volume Group.'
+                raise PartitionIsPartOfVolumeGroupError, 'Partition %s cannot ' % \
+                    (partition_obj.path) + \
+                    'be deleted because it is part of Logical Volume Group %s.' % \
+                    (physicalVol.group.name)
             del self.pv_dict[partition_obj.path]
 
         if self.mountpoint_dict.has_key(partition_obj.mountpoint):
@@ -686,7 +688,7 @@ class DiskProfile(object):
         """Create a new logical volume."""
         # sanity checks
         if self.lv_dict.has_key(name):
-            raise DuplicateNameError, 'Logical Volume name already exists.'
+            raise DuplicateNameError, 'Logical Volume name %s already exists.' % name
         if self.mountpoint_dict.has_key(mountpoint):
             raise DuplicateMountpointError, 'Assigned mountpoint already exists.'
 

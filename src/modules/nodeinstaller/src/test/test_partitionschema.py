@@ -22,7 +22,11 @@ from kusu.installer.defaults import Partition as SchemaPartition
 from kusu.installer.defaults import LVMGroup as SchemaLVMGroup
 from kusu.installer.defaults import LVMLogicalVolume as SchemaLVMLogicalVolume
 from kusu.installer.defaults import DiskCollection, LVMCollection, PartitionSchema
+from kusu.util.structure import Struct
 
+class FakePartition(object):
+    def __init__(self):
+        self.path='/dev/asd'
 
 class TestNIIPartition:
     """
@@ -100,9 +104,7 @@ Node: node0000
 
         # validate disk schema
         dp = DiskProfile(fresh=True)
-        dp.mountpoint_dict['/'] = 'test'
-        dp.mountpoint_dict['/boot'] = 'test'
-        adaptedSchema = adaptNIIPartition(ni.partitions, dp)
+        adaptedSchema = adaptNIIPartition(ni.partitions, dp)[0]
         expected = self.partitionSchema()
         assert expected == adaptedSchema, """
 expected disk_dict:\n%s\nadapted disk_dict:\n%s\n
@@ -276,7 +278,7 @@ Node: node0000
 
         preserve_types = Partition.native_type_dict.values()
         preserve_fs = DiskProfile.fsType_dict.keys()
-        preserve_mntpnt = ['/']
+        preserve_mntpnt = []
         return PartitionSchema(disks=disks, preserve_types=preserve_types,
                            preserve_fs=preserve_fs, preserve_mntpnt=preserve_mntpnt)
 
