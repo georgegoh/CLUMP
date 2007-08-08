@@ -181,7 +181,8 @@ class DataModel(object):
         for comp in comps:
             # and the second list contains the driverpacks associated with each component list
             li = [c.driverpacks for c in comp if c.driverpacks]
-            dpacks.extend([l for l in li])
+            for l in li:
+                dpacks.extend(l)
 
         return dpacks
 
