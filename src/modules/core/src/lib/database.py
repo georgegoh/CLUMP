@@ -364,7 +364,7 @@ class DB(object):
 
         driverpacks = sa.Table('driverpacks', self.metadata,
             sa.Column('dpid', sa.Integer, primary_key=True, autoincrement=True),
-            sa.Column('cid', sa.Integer, sa.ForeignKey('components.cid'), autoincrement=True, nullable=False),
+            sa.Column('cid', sa.Integer, sa.ForeignKey('components.cid'), nullable=False),
             sa.Column('dpname', sa.String(255)),
             sa.Column('dpdesc', sa.String(255)),
             mysql_engine='InnoDB')
@@ -384,11 +384,9 @@ class DB(object):
 
         modules = sa.Table('modules', self.metadata,
             sa.Column('mid', sa.Integer, primary_key=True, autoincrement=True),
-            sa.Column('ngid', sa.Integer, primary_key=True),
+            sa.Column('ngid', sa.Integer, sa.ForeignKey('nodegroups.ngid'), nullable=False),
             sa.Column('module', sa.String(45)),
             sa.Column('loadorder', sa.Integer, sa.PassiveDefault('0')),
-            sa.ForeignKeyConstraint(['ngid'], 
-                                    ['nodegroups.ngid']),
             mysql_engine='InnoDB')
         sa.Index('modules_FKIndex1', modules.c.ngid)
         self.__dict__['modules'] = modules
@@ -633,8 +631,11 @@ class DB(object):
                                               entity_name=self.entity_name),
                       'nodes': sa.relation(Nodes,
                                            entity_name=self.entity_name),
+                      'modules': sa.relation(Modules,
+                                           entity_name=self.entity_name),
                       'packages': sa.relation(Packages,
                                            entity_name=self.entity_name)},
+
           entity_name=self.entity_name)
 
             # Currently nodegroups <-> components relationship is defined twice.
@@ -691,10 +692,10 @@ class DB(object):
             compute.kparams = 'text noipv6 kssendmac selinux=0'
             
         # more nodegroups
-        NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
-                   installtype='disked', type='compute')
-        NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
-                   installtype='diskless', type='compute')
+        imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
+                            installtype='disked', type='compute')
+        diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
+                              installtype='diskless', type='compute')
         NodeGroups(ngname='unmanaged', nameformat='device#NNN',
                    installtype='unmanaged', type='other')
 
@@ -702,6 +703,168 @@ class DB(object):
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         master_node = Nodes(name='master', state='installed', lastupdate=now)
         installer.nodes.append(master_node)
+
+        # creates the necessary modules for image and diskless nodes
+        diskless.modules.append(Modules(loadorder=1,module='nfs'))
+        diskless.modules.append(Modules(loadorder=2,module='ext3'))
+        diskless.modules.append(Modules(loadorder=3,module='tg3'))
+        diskless.modules.append(Modules(loadorder=4,module='bnx2'))
+        diskless.modules.append(Modules(loadorder=5,module='e1000'))
+        diskless.modules.append(Modules(loadorder=6,module='mii'))
+        diskless.modules.append(Modules(loadorder=7,module='e100'))
+        diskless.modules.append(Modules(loadorder=8,module='jbd'))
+        diskless.modules.append(Modules(loadorder=9,module='lockd'))
+        diskless.modules.append(Modules(loadorder=10,module='fscache'))
+        diskless.modules.append(Modules(loadorder=11,module='nfs_acl'))
+        diskless.modules.append(Modules(loadorder=12,module='sunrpc'))
+        diskless.modules.append(Modules(loadorder=13,module='mii'))
+        diskless.modules.append(Modules(loadorder=14,module='pcnet32'))
+ 
+        imaged.modules.append(Modules(loadorder=1,module='nfs'))
+        imaged.modules.append(Modules(loadorder=2,module='ext3'))
+        imaged.modules.append(Modules(loadorder=3,module='bonding'))
+        imaged.modules.append(Modules(loadorder=4,module='tg3'))
+        imaged.modules.append(Modules(loadorder=5,module='bnx2'))
+        imaged.modules.append(Modules(loadorder=6,module='e1000'))
+        imaged.modules.append(Modules(loadorder=6,module='mptscsih'))
+        imaged.modules.append(Modules(loadorder=7,module='mptsas'))
+        imaged.modules.append(Modules(loadorder=8,module='mptfc'))
+        imaged.modules.append(Modules(loadorder=9,module='mptspi'))
+        imaged.modules.append(Modules(loadorder=10,module='mptscsi'))
+        imaged.modules.append(Modules(loadorder=11,module='mptbase'))
+        imaged.modules.append(Modules(loadorder=12,module='jbd'))
+        imaged.modules.append(Modules(loadorder=13,module='lockd'))
+        imaged.modules.append(Modules(loadorder=14,module='fscache'))
+        imaged.modules.append(Modules(loadorder=15,module='nfs_acl'))
+        imaged.modules.append(Modules(loadorder=16,module='sunrpc'))
+        imaged.modules.append(Modules(loadorder=17,module='mii'))
+        imaged.modules.append(Modules(loadorder=18,module='e100'))
+        imaged.modules.append(Modules(loadorder=19,module='pcnet32'))
+
+        # Creates the necessary pkg list for image and diskless nodes
+        diskless.packages.append(Packages(packagename='SysVinit'))
+        diskless.packages.append(Packages(packagename='basesystem'))
+        diskless.packages.append(Packages(packagename='bash'))
+        diskless.packages.append(Packages(packagename='redhat-release'))
+        diskless.packages.append(Packages(packagename='chkconfig'))
+        diskless.packages.append(Packages(packagename='coreutils'))
+        diskless.packages.append(Packages(packagename='db4'))
+        diskless.packages.append(Packages(packagename='e2fsprogs'))
+        diskless.packages.append(Packages(packagename='filesystem'))
+        diskless.packages.append(Packages(packagename='findutils'))
+        diskless.packages.append(Packages(packagename='gawk'))
+        diskless.packages.append(Packages(packagename='cracklib-dicts'))
+        diskless.packages.append(Packages(packagename='glibc'))
+        diskless.packages.append(Packages(packagename='glibc-common'))
+        diskless.packages.append(Packages(packagename='initscripts'))
+        diskless.packages.append(Packages(packagename='iproute'))
+        diskless.packages.append(Packages(packagename='iputils'))
+        diskless.packages.append(Packages(packagename='krb5-libs'))
+        diskless.packages.append(Packages(packagename='libacl'))
+        diskless.packages.append(Packages(packagename='libattr'))
+        diskless.packages.append(Packages(packagename='libgcc'))
+        diskless.packages.append(Packages(packagename='libstdc++'))
+        diskless.packages.append(Packages(packagename='libtermcap'))
+        diskless.packages.append(Packages(packagename='mingetty'))
+        diskless.packages.append(Packages(packagename='mktemp'))
+        diskless.packages.append(Packages(packagename='ncurses'))
+        diskless.packages.append(Packages(packagename='net-tools'))
+        diskless.packages.append(Packages(packagename='nfs-utils'))
+        diskless.packages.append(Packages(packagename='pam'))
+        diskless.packages.append(Packages(packagename='pcre'))
+        diskless.packages.append(Packages(packagename='popt'))
+        diskless.packages.append(Packages(packagename='portmap'))
+        diskless.packages.append(Packages(packagename='procps'))
+        diskless.packages.append(Packages(packagename='psmisc'))
+        diskless.packages.append(Packages(packagename='rdate'))
+        diskless.packages.append(Packages(packagename='rsh'))
+        diskless.packages.append(Packages(packagename='rsh-server'))
+        diskless.packages.append(Packages(packagename='rsync'))
+        diskless.packages.append(Packages(packagename='sed'))
+        diskless.packages.append(Packages(packagename='setup'))
+        diskless.packages.append(Packages(packagename='shadow-utils'))
+        diskless.packages.append(Packages(packagename='openssh'))
+        diskless.packages.append(Packages(packagename='openssh-server'))
+        diskless.packages.append(Packages(packagename='sysklogd'))
+        diskless.packages.append(Packages(packagename='tcp_wrappers'))
+        diskless.packages.append(Packages(packagename='termcap'))
+        diskless.packages.append(Packages(packagename='tzdata'))
+        diskless.packages.append(Packages(packagename='util-linux'))
+        diskless.packages.append(Packages(packagename='words'))
+        diskless.packages.append(Packages(packagename='xinetd'))
+        diskless.packages.append(Packages(packagename='zlib'))
+        diskless.packages.append(Packages(packagename='tar'))
+        diskless.packages.append(Packages(packagename='mkinitrd'))
+        diskless.packages.append(Packages(packagename='less'))
+        diskless.packages.append(Packages(packagename='gzip'))
+        diskless.packages.append(Packages(packagename='which'))
+        diskless.packages.append(Packages(packagename='util-linux'))
+        diskless.packages.append(Packages(packagename='module-init-tools'))
+        diskless.packages.append(Packages(packagename='udev'))
+        diskless.packages.append(Packages(packagename='cracklib'))
+        diskless.packages.append(Packages(packagename='component-base-node'))
+
+        imaged.packages.append(Packages(packagename='SysVinit'))
+        imaged.packages.append(Packages(packagename='basesystem'))
+        imaged.packages.append(Packages(packagename='bash'))
+        imaged.packages.append(Packages(packagename='redhat-release'))
+        imaged.packages.append(Packages(packagename='chkconfig'))
+        imaged.packages.append(Packages(packagename='coreutils'))
+        imaged.packages.append(Packages(packagename='db4'))
+        imaged.packages.append(Packages(packagename='e2fsprogs'))
+        imaged.packages.append(Packages(packagename='filesystem'))
+        imaged.packages.append(Packages(packagename='findutils'))
+        imaged.packages.append(Packages(packagename='gawk'))
+        imaged.packages.append(Packages(packagename='cracklib-dicts'))
+        imaged.packages.append(Packages(packagename='glibc'))
+        imaged.packages.append(Packages(packagename='glibc-common'))
+        imaged.packages.append(Packages(packagename='initscripts'))
+        imaged.packages.append(Packages(packagename='iproute'))
+        imaged.packages.append(Packages(packagename='iputils'))
+        imaged.packages.append(Packages(packagename='krb5-libs'))
+        imaged.packages.append(Packages(packagename='libacl'))
+        imaged.packages.append(Packages(packagename='libattr'))
+        imaged.packages.append(Packages(packagename='libgcc'))
+        imaged.packages.append(Packages(packagename='libstdc++'))
+        imaged.packages.append(Packages(packagename='libtermcap'))
+        imaged.packages.append(Packages(packagename='mingetty'))
+        imaged.packages.append(Packages(packagename='mktemp'))
+        imaged.packages.append(Packages(packagename='ncurses'))
+        imaged.packages.append(Packages(packagename='net-tools'))
+        imaged.packages.append(Packages(packagename='nfs-utils'))
+        imaged.packages.append(Packages(packagename='pam'))
+        imaged.packages.append(Packages(packagename='pcre'))
+        imaged.packages.append(Packages(packagename='popt'))
+        imaged.packages.append(Packages(packagename='portmap'))
+        imaged.packages.append(Packages(packagename='procps'))
+        imaged.packages.append(Packages(packagename='psmisc'))
+        imaged.packages.append(Packages(packagename='rdate'))
+        imaged.packages.append(Packages(packagename='rsh'))
+        imaged.packages.append(Packages(packagename='rsh-server'))
+        imaged.packages.append(Packages(packagename='rsync'))
+        imaged.packages.append(Packages(packagename='sed'))
+        imaged.packages.append(Packages(packagename='setup'))
+        imaged.packages.append(Packages(packagename='shadow-utils'))
+        imaged.packages.append(Packages(packagename='openssh'))
+        imaged.packages.append(Packages(packagename='openssh-server'))
+        imaged.packages.append(Packages(packagename='sysklogd'))
+        imaged.packages.append(Packages(packagename='tcp_wrappers'))
+        imaged.packages.append(Packages(packagename='termcap'))
+        imaged.packages.append(Packages(packagename='tzdata'))
+        imaged.packages.append(Packages(packagename='util-linux'))
+        imaged.packages.append(Packages(packagename='words'))
+        imaged.packages.append(Packages(packagename='xinetd'))
+        imaged.packages.append(Packages(packagename='zlib'))
+        imaged.packages.append(Packages(packagename='tar'))
+        imaged.packages.append(Packages(packagename='mkinitrd'))
+        imaged.packages.append(Packages(packagename='less'))
+        imaged.packages.append(Packages(packagename='gzip'))
+        imaged.packages.append(Packages(packagename='which'))
+        imaged.packages.append(Packages(packagename='util-linux'))
+        imaged.packages.append(Packages(packagename='module-init-tools'))
+        imaged.packages.append(Packages(packagename='udev'))
+        imaged.packages.append(Packages(packagename='cracklib'))
+        imaged.packages.append(Packages(packagename='component-base-node'))
 
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING
