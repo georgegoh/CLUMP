@@ -247,7 +247,7 @@ class TestBaseKit:
         cmps = self.kusudb.Components.select()
         assert len(cmps) == 0, 'Components still remain in the DB'
 
-        pkgs = self.kusudb.Packages.select()
+        pkgs = self.kusudb.Packages.select_by(packagename = 'kit-' + self.kit_name)
         assert len(pkgs) == 0, 'Packages still remain in the DB'
 
         ng_has_comps = self.kusudb.NGHasComp.select()
@@ -259,9 +259,9 @@ class TestBaseKit:
             assert len(ng.components) == 0, \
                 'Nodegroup %s still has %s component(s)' % (ng.ngname,
                                                             len(ng.components))
-            assert len(ng.packages) == 0, \
-                'Nodegroup %s still has %s package(s)' % (ng.ngname,
-                                                          len(ng.packages))
+            #assert len(ng.packages) == 0, \
+            #    'Nodegroup %s still has %s package(s)' % (ng.ngname,
+            #                                              len(ng.packages))
 
         # assert files erased
         assert not self.kits_dir_arch.exists(), \
@@ -730,8 +730,8 @@ class TestFedoraCore6i386:
         assert cmp.cdesc == '%s mock component' % self.kit_longname, \
                'Component description: %s, expected: %s mock component' % \
                (cmp.cname, self.kit_longname)
-        # node component associated with both nodegroups
-        assert len(cmp.nodegroups) == 2, \
+        # node component associated with all nodegroups
+        assert len(cmp.nodegroups) == 4, \
             'Component %s not associated with two nodegroups' % cmp.cname
         ngnames = []
         for ng in cmp.nodegroups:
@@ -739,7 +739,11 @@ class TestFedoraCore6i386:
         ngnames.sort()
         assert ngnames[0] == 'compute', \
             'Component %s not associated with compute nodegroup' % cmp.cname
-        assert ngnames[1] == 'installer', \
+        assert ngnames[1] == 'compute-diskless', \
+            'Component %s not associated with compute nodegroup' % cmp.cname
+        assert ngnames[2] == 'compute-imaged', \
+            'Component %s not associated with compute nodegroup' % cmp.cname
+        assert ngnames[3] == 'installer', \
             'Component %s not associated with installer nodegroup' % cmp.cname
 
 def listKits(name=''):
