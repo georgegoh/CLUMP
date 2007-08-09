@@ -317,7 +317,8 @@ class TestCentos5Repo:
         for f in rpmsPath.listdir():
             f.copy(newPath / f.basename())
 
-        r = repo.Centos5Repo('i386', prefix, self.dbs, configFile)
+        r = repo.Centos5Repo('i386', prefix, self.dbs)
+        r.setConfig(configFile)
         r.test = True
         (rpmpkgs, kernel) = r.getUpdates()
 

@@ -316,7 +316,8 @@ class TestFedora6Repo:
         for f in rpmsPath.listdir():
             f.copy(newPath / f.basename())
 
-        r = repo.Fedora6Repo('i386', prefix, self.dbs, configFile)
+        r = repo.Fedora6Repo('i386', prefix, self.dbs)
+        r.setConfig(configFile)
         r.test = True
         (rpmpkgs, kernel) = r.getUpdates()
 
