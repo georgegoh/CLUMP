@@ -417,12 +417,10 @@ class RedhatYumRepo(BaseRepo):
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
-    def __init__(self, os_arch, prefix, db, configFile=None):
+    def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
         YumUpdate.__init__(self, 'fedora', '6', os_arch, prefix, db)
         
-        self.configFile=configFile
-
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
@@ -458,12 +456,10 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         return [updates]
 
 class Centos5Repo(RedhatYumRepo, YumUpdate):
-    def __init__(self, os_arch, prefix, db, configFile=None):
+    def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
         YumUpdate.__init__(self, 'centos', '5', os_arch, prefix, db)
         
-        self.configFile=configFile
-
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
@@ -510,19 +506,9 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         return [os,updates]
 
 class Redhat5Repo(RedhatYumRepo, RHNUpdate):
-    def __init__(self, os_arch, prefix, db, configFile=None):
+    def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'rhel', '5', os_arch, prefix, db)
-      
-        if configFile: 
-            self.configFile=configFile
-            cfg = self.getConfig(self.configFile)['rhel']
-        else:
-            cfg = {}
-            cfg['username'] = ''
-            cfg['password'] = ''
-            cfg['url'] = ''
-        
-        RHNUpdate.__init__(self, '5', os_arch, cfg, prefix, db)
+        RHNUpdate.__init__(self, '5', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['imagesdir'] = 'images'

@@ -125,6 +125,7 @@ class rhnUnknownMethodError(KusuError): pass
 class rhnNoBaseChannelError(KusuError): pass
 class rhnFailedDownloadRPM(KusuError): pass
 class rhnInvalidServerID(KusuError): pass
+class rhnNoAccountInformationProvidedError(KusuError): pass
 
 # repoman.yum
 class repodataChecksumError(KusuError): pass

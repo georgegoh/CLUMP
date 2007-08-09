@@ -321,22 +321,24 @@ class YumUpdate(BaseUpdate):
         return c.getList()
 
 class RHNUpdate(BaseUpdate):
-    def __init__(self, os_version, os_arch, cfg, prefix, db):
+    def __init__(self, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix, db)
+        self.rhn = None
 
-        if cfg.has_key('url'):
-            url = cfg['url']
-        else:
-            url = None
-
-        username = cfg['username']
-        password = cfg['password']
-
-        self.rhn = RHN(username, password, url)
-        
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
         return os_version.split('.')[0]
+
+    def getRHN(self):
+        if self.configFile:
+            cfg = self.getConfig(self.configFile)['rhel']
+            username = cfg['username']
+            password = cfg['password']
+            url = cfg['url']
+            return RHN(username, password, url)
+
+        else:
+            raise rhnNoAccountInformationProvidedError
 
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
@@ -354,6 +356,9 @@ class RHNUpdate(BaseUpdate):
                 searchPaths.append(p)
         searchPaths.append(dir)
         rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
+      
+        if not self.rhn: 
+            self.rhn = self.getRHN()
         
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())
@@ -398,4 +403,23 @@ class RHNUpdate(BaseUpdate):
             self.rhn.logout()
         except: pass
 
-        return rpmtool.getLatestRPM([dir], True).getList()
+        rpmPkgs = rpmtool.getLatestRPM([dir], True)
+
+        if rpmPkgs.has_key('kernel'):
+            if self.os_arch == 'x86_64':
+                # We want to use x64 kernel
+                kernelRPM = rpmPkgs['kernel']['x86_64'][0]
+            elif self.os_arch == 'i386':
+                # Take the lowest arch
+                if rpmPkgs['kernel'].has_key('i386'):
+                    kernelRPM = rpmPkgs['kernel']['i386'][0]
+                elif rpmPkgs['kernel'].has_key('i486'):
+                    kernelRPM = rpmPkgs['kernel']['i486'][0]
+                elif rpmPkgs['kernel'].has_key('i586'):
+                    kernelRPM = rpmPkgs['kernel']['i586'][0]
+                elif rpmPkgs['kernel'].has_key('i686'):
+                    kernelRPM = rpmPkgs['kernel']['i686'][0]
+        else:
+            kernelRPM = None
+
+        return (rpmPkgs.getList(), kernelRPM)
