@@ -77,6 +77,7 @@ class RepoPatchApp(KusuApp):
         ngs = self.dbs.NodeGroups.select_by(repoid = repoObj.repoid)
 
         oldKitComp = None
+        oldUpdateKit = None
         if kitRelease > 1:
             # find the previous update kit
             oldUpdateKit = self.dbs.Kits.select_by(rname = kitName, 
@@ -106,6 +107,8 @@ class RepoPatchApp(KusuApp):
             out, err = p.communicate()
             retcode = p.returncode
 
+        if oldUpdateKit and oldUpdateKit in repo.kits:
+            repo.kits.remove(oldUpdateKit)
         repo.kits.append(updateKit)
         repo.save()
         repo.flush()
