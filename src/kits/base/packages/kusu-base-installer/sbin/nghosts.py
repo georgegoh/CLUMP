@@ -294,6 +294,7 @@ class SelectNodesWindow(USXBaseScreen):
         self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
         self.nodegroupDict = {}
         self.nodeGroupNames = []
+
  
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
@@ -301,7 +302,8 @@ class SelectNodesWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            return NAV_QUIT
+            self.screen.finish()
+	    sys.exit(0)
         else:
             return NAV_NOTHING
  
@@ -385,20 +387,20 @@ class SelectNodesWindow(USXBaseScreen):
                   rn = syncfun()
                   rn.runPdsh(moveIPList, "reboot")
                   progDialog.close()
-
             self.screen.refresh()
         return NAV_NOTHING
         
     def previousAction(self):
         return NAV_QUIT
 
-    def quitAction(self):
-        return NAV_QUIT
+    def exitAction(self):
+        self.screen.finish()
+        sys.exit(0)
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)        
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
-        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
+	self.buttonsDict['quit_button'].setCallback_(self.exitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.moveAction
@@ -479,7 +481,8 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            return NAV_QUIT
+            self.screen.finish()
+	    sys.exit(0)
         else:
             return NAV_NOTHING
  
@@ -564,19 +567,19 @@ class SelectNodegroupsWindow(USXBaseScreen):
                     rn.runPdsh(moveIPList, "reboot")
                     progDialog.close()
             self.screen.refresh()
-
         return NAV_NOTHING
  
     def previousAction(self):
         return NAV_QUIT
 
-    def quitAction(self):
-        return NAV_QUIT
+    def exitAction(self):
+	self.screen.finish()
+	sys.exit(0)
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
-        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
+	self.buttonsDict['quit_button'].setCallback_(self.exitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.moveAction
@@ -676,12 +679,9 @@ class MembershipMainWindow(USXBaseScreen):
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
-        return NAV_QUIT
+        return NAV_NOTHING
         
     def exitAction(self, data=None):
-        """ExitAction()
-        Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
-        """
         return NAV_QUIT
         
     def setCallbacks(self):
