@@ -41,10 +41,8 @@ class PCI:
                      path('/etc/pci.ids'), \
                      path('./pci_ids')]
 
-        kusu_root = os.environ.get('KUSU_ROOT', None)
-        if kusu_root:
-            # Use our own pci.ids file first. It's more updated
-            ids_files.insert(0, path(kusu_root) / 'etc' / 'pci.ids')
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        ids_files.append(kusu_root / 'etc' / 'pci.ids')
         
         for file in ids_files:
             if file.exists():
