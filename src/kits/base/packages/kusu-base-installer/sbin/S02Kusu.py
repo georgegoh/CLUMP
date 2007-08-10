@@ -13,7 +13,7 @@ class KusuRC(Plugin):
     def __init__(self):
         Plugin.__init__(self)
         self.name = 'kusu'
-        self.desc = 'Setting up kusu infrastructure'
+        self.desc = 'Setting up Kusu infrastructure'
         self.ngtypes = ['installer']
         self.delete = True
 
