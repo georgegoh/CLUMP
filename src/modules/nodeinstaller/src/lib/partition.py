@@ -164,6 +164,7 @@ def adaptNIIPartition(niipartition, diskprofile):
     pefc.filter_list.append(FilterOnPartitionType())
     pefc.filter_list.append(FilterOnLogicalVolume())
     pefc.filter_list.append(FilterOnMountpoints())
+    pefc.filter_list.append(AssignMntPntForLV())
     disk_profile = pefc.apply(part_rules, diskprofile)
     cleanDiskProfile(disk_profile)
 

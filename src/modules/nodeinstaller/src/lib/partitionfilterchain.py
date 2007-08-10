@@ -205,14 +205,15 @@ class FilterOnMountpoints(PartitionEntriesFilter):
 
 class FilterOnLogicalVolume(PartitionEntriesFilter):
     def apply(self, partition_entries, disk_profile):
-        lv_entries = self.__getLVEntries(partition_entries)
+        lv_entries = self.getLVEntries(partition_entries)
         for lv in lv_entries:
             name = lv['device']
             preserve = lv['preserve']
-            disk_profile = self.__applyPreservation(name, preserve, disk_profile)
+            disk_profile = self.__applyPreservation(name, 
+                                                    preserve, disk_profile)
         return disk_profile
 
-    def __getLVEntries(self, partition_entries):
+    def getLVEntries(self, partition_entries):
         lv_entries = []
         for p in partition_entries:
             if translatePartitionOptions(p['options'], 'lv')[0]:
@@ -228,6 +229,24 @@ class FilterOnLogicalVolume(PartitionEntriesFilter):
         else:
             vol.leave_unchanged = True        
         return disk_profile
+
+
+class AssignMntPntForLV(FilterOnLogicalVolume):
+    def apply(self, partition_entries, disk_profile):
+        lv_entries = self.getLVEntries(partition_entries)
+        for lv in lv_entries:
+            name = lv['device']
+            mntpnt = translateMntPnt(lv['mntpnt'])
+            self.applyMountPoint(name, mntpnt, disk_profile)
+        return disk_profile
+
+    def applyMountPoint(self, lv_name, mntpnt, disk_profile):
+        if not disk_profile.lv_dict.has_key(lv_name): return disk_profile
+
+        lv = disk_profile.lv_dict[lv_name]
+        lv.mountpoint = mntpnt
+        disk_profile.mountpoint_dict[mntpnt] = lv
+
 
 class FilterOnFileSystem(PartitionEntriesFilter):
     def __getValidEntries(self, partition_entries):
