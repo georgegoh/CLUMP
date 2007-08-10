@@ -43,6 +43,12 @@ class TestCentOS4Detection:
         path(self.centOSLocalPath / 'CentOS/RPMS').mkdir()
         path(self.centOSLocalPath / 'CentOS/base').mkdir()
 
+        # set up some kernel packages
+        path(self.centOSLocalPath / 'CentOS/RPMS/kernel-2.6.9-99.i586.rpm').touch()
+        path(self.centOSLocalPath / 'CentOS/RPMS/kernel-devel-2.6.9-99.noarch.rpm').touch()
+        path(self.centOSLocalPath / 'CentOS/RPMS/kernel-docs-2.6.9-99.noarch.rpm').touch()
+
+
         # create an additional media type 
         # (as in the layout for disc media 2, 3, ..)
         self.additionalCentOSMedia = path(tempfile.mkdtemp(dir='/tmp'))
@@ -58,7 +64,7 @@ class TestCentOS4Detection:
         path(self.centOSLocalPath / 'isolinux').rmdir()
         path(self.centOSLocalPath / 'images/stage2.img').remove()
         path(self.centOSLocalPath / 'images').rmdir()
-        path(self.centOSLocalPath / 'CentOS/RPMS').rmdir()
+        path(self.centOSLocalPath / 'CentOS/RPMS').rmtree()
         path(self.centOSLocalPath / 'CentOS/base').rmdir()
         path(self.centOSLocalPath / 'CentOS').rmdir()
         self.centOSLocalPath.rmdir()
@@ -110,7 +116,15 @@ class TestCentOS4Detection:
             assert centosObj.verifyLocalSrcPath() is False
         except:
             assert False
-
+            
+    def test_CentosGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+        
+        centosObj = DistroFactory(self.centOSLocalPath)
+        li = [path(self.centOSLocalPath / 'CentOS/RPMS/kernel-2.6.9-99.i586.rpm')]
+        
+        assert centosObj.getKernelPackages() == li
+        assert centosObj.getKernelRpms() == li
 
 
 class TestFedora6Detection:
@@ -155,6 +169,11 @@ class TestFedora6Detection:
         f.write('Fedora/pixmaps\n')
         f.close()
         
+        # set up some kernel packages
+        path(self.fedoraLocalPath / 'Fedora/RPMS/kernel-2.6.9-99.i586.rpm').touch()
+        path(self.fedoraLocalPath / 'Fedora/RPMS/kernel-devel-2.6.9-99.noarch.rpm').touch()
+        path(self.fedoraLocalPath / 'Fedora/RPMS/kernel-docs-2.6.9-99.noarch.rpm').touch()
+        
         # create an additional media type 
         # (as in the layout for disc media 2, 3, ..)
         self.additionalFedoraMedia = path(tempfile.mkdtemp(dir='/tmp'))
@@ -180,7 +199,7 @@ class TestFedora6Detection:
         path(self.fedoraLocalPath / 'isolinux').rmdir()
         path(self.fedoraLocalPath / 'images/stage2.img').remove()
         path(self.fedoraLocalPath / 'images').rmdir()
-        path(self.fedoraLocalPath / 'Fedora/RPMS').rmdir()
+        path(self.fedoraLocalPath / 'Fedora/RPMS').rmtree()
         path(self.fedoraLocalPath / 'Fedora/base').rmdir()
         path(self.fedoraLocalPath / 'Fedora').rmdir()
         path(self.fedoraLocalPath / '.discinfo').remove()
@@ -227,6 +246,14 @@ class TestFedora6Detection:
         fedoraObj = DistroFactory(self.fedoraLocalPath)
         assert fedoraObj.getArch() == 'i386'
 
+    def test_FedoraGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        li = [path(self.fedoraLocalPath / 'Fedora/RPMS/kernel-2.6.9-99.i586.rpm')]
+
+        assert fedoraObj.getKernelPackages() == li
+        assert fedoraObj.getKernelRpms() == li
         
 
 class TestRHEL5Detection:
@@ -277,6 +304,11 @@ class TestRHEL5Detection:
             f.write('Server/RPMS\n')
             f.write('Server/pixmaps\n')
             f.close()
+            
+            # set up some kernel packages
+            path(self.rhelLocalPath / 'Server/kernel-2.6.9-99.i586.rpm').touch()
+            path(self.rhelLocalPath / 'Server/kernel-devel-2.6.9-99.noarch.rpm').touch()
+            path(self.rhelLocalPath / 'Server/kernel-docs-2.6.9-99.noarch.rpm').touch()
 
             # create an additional media type 
             # (as in the layout for disc media 2, 3, ..)
@@ -310,7 +342,7 @@ class TestRHEL5Detection:
             path(self.rhelLocalPath / 'images/stage2.img').remove()
             path(self.rhelLocalPath / 'images').rmdir()
             path(self.rhelLocalPath / 'Server/repodata').rmdir()
-            path(self.rhelLocalPath / 'Server').rmdir()
+            path(self.rhelLocalPath / 'Server').rmtree()
             path(self.rhelLocalPath / 'Cluster/repodata').rmdir()
             path(self.rhelLocalPath / 'Cluster').rmdir()
             path(self.rhelLocalPath / 'ClusterStorage/repodata').rmdir()
@@ -363,6 +395,14 @@ class TestRHEL5Detection:
         rhelObj = DistroFactory(self.rhelLocalPath)
         assert rhelObj.getArch() == 'i386'
 
+    def test_RHELGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+
+        rhelObj = DistroFactory(self.rhelLocalPath)
+        li = [path(self.rhelLocalPath / 'Server/kernel-2.6.9-99.i586.rpm')]
+
+        assert rhelObj.getKernelPackages() == li
+        assert rhelObj.getKernelRpms() == li
 
 class TestCentOS5Detection:
     """Test suite for detecting CentOS 5 installation sources"""
@@ -407,6 +447,11 @@ class TestCentOS5Detection:
             f.write('/home/buildcentos/CENTOS/5.0/en/i386/CentOS\n')
             f.write('CentOS/pixmaps\n')
             f.close()
+            
+            # set up some kernel packages
+            path(self.centosLocalPath / 'CentOS/kernel-2.6.9-99.i586.rpm').touch()
+            path(self.centosLocalPath / 'CentOS/kernel-devel-2.6.9-99.noarch.rpm').touch()
+            path(self.centosLocalPath / 'CentOS/kernel-docs-2.6.9-99.noarch.rpm').touch()
 
             # create an additional media type 
             # (as in the layout for disc media 2, 3, ..)
@@ -436,7 +481,7 @@ class TestCentOS5Detection:
             path(self.centosLocalPath / 'isolinux').rmdir()
             path(self.centosLocalPath / 'images/stage2.img').remove()
             path(self.centosLocalPath / 'images').rmdir()
-            path(self.centosLocalPath / 'CentOS').rmdir()
+            path(self.centosLocalPath / 'CentOS').rmtree()
             path(self.centosLocalPath / 'repodata').rmdir()
             path(self.centosLocalPath / '.discinfo').remove()
             self.centosLocalPath.rmdir()
@@ -483,5 +528,14 @@ class TestCentOS5Detection:
         
         centosObj = DistroFactory(self.centosLocalPath)
         assert centosObj.getArch() == 'i386'
+        
+    def test_CentOSGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+
+        centosObj = DistroFactory(self.centosLocalPath)
+        li = [path(self.centosLocalPath / 'CentOS/kernel-2.6.9-99.i586.rpm')]
+
+        assert centosObj.getKernelPackages() == li
+        assert centosObj.getKernelRpms() == li
 
 

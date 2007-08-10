@@ -9,7 +9,9 @@
 
 from path import path
 import os
-from kusu.util.errors import *
+import re
+from kusu.util.errors import FileAlreadyExists, CopyError
+
 
 SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
 USES_ANACONDA = ['centos', 'fedora', 'rhel']
@@ -152,6 +154,10 @@ class DistroInstallSrcBase(object):
 
     def getArch(self):
         return self.arch
+        
+    def getKernelPackages(self):
+        """ Returns any distribution-specific kernel packages. """
+        raise NotImplemented
 
 
 def DistroFactory(srcPath):
@@ -286,6 +292,27 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                     raise FileAlreadyExists
             else:
                 raise CopyError
+                
+    def getKernelPackages(self):
+        # set up pattern to match centos kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        kpkgs = []
+
+        try:
+            for k in keys:
+                root = path(self.srcPath) / self.pathLayoutAttributes[k]
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
@@ -323,6 +350,27 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
         
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError
+        
+    def getKernelPackages(self):
+        # set up pattern to match centos kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        kpkgs = []
+
+        try:
+            for k in keys:
+                root = path(self.srcPath) / self.pathLayoutAttributes[k]
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class FedoraInstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
@@ -472,6 +520,27 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
+        
+    def getKernelPackages(self):
+        # set up pattern to match fedora kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        kpkgs = []
+
+        try:
+            for k in keys:
+                root = path(self.srcPath) / self.pathLayoutAttributes[k]
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
@@ -545,6 +614,28 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
+        
+
+    def getKernelPackages(self):
+        # set up pattern to match fedora kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        kpkgs = []
+
+        try:
+            for k in keys:
+                root = path(self.srcPath) / self.pathLayoutAttributes[k]
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 
 class RHELInstallSrc(DistroInstallSrcBase):
@@ -617,6 +708,27 @@ class RHELInstallSrc(DistroInstallSrcBase):
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
         return self.version     #for now
+        
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        kpkgs = []
+
+        try:
+            for k in keys:
+                root = path(self.srcPath) / self.pathLayoutAttributes[k]
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class CentOS5InstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
@@ -748,6 +860,35 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
+        
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a centos 5 installation source should be and the operations that can work on it."""
@@ -803,6 +944,34 @@ class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
             pass
         return self.arch
 
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 
 class RHEL5InstallSrc(DistroInstallSrcBase):
@@ -846,11 +1015,6 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             'patchdir' : 'images',
             'patchimage' : 'images/updates.img'
         }
-
-
-    def getVersion(self):
-        '''CentOS specific way of getting the distro version'''
-        return self.version
 
     def getIsolinuxbinPath(self):
         """Get the isolinux.bin path object"""
@@ -960,6 +1124,35 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
+        
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
 class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL 5 installation source should be and the operations that can work on it."""
@@ -1036,4 +1229,32 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
             pass
         return self.arch
 
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
 
