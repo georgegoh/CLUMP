@@ -415,13 +415,9 @@ class NodeBootApp(KusuApp):
 
         if dumpcfm:
             nodefun.getCFMfile()
-            ltime = time.localtime(time.time())
-            timestamp = "%s/%s/%s %s:%s:%s" % (ltime[0], ltime[1],
-                                               ltime[2], ltime[3],
-                                               ltime[4], ltime[5])
-
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         print "</nii>"
-        
+ 
         # Update State, bootfrom, and timestamp  (Methods check validity)
         nodefun.setNodeInfo(node, state, bootfrom, timestamp)
         
