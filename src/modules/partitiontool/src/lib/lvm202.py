@@ -169,17 +169,21 @@ def createLogicalVolume(vg_name, lv_name, lv_extents):
     out, err = runCommand('lvm lvcreate -l%d -n%s %s' % (lv_extents, lv_name, vg_name))
     return (out, err)
 
-def extendLogicalVolume(lv_path, size_str, fs_type):
-    out, err = runCommand('lvm lvextend -L%s %s' % (size_str, lv_path))
+def extendLogicalVolume(lv_path, new_extents, extent_size, fs_type):
+    out, err = runCommand('lvm lvextend -l%d %s' % (new_extents, lv_path))
     if fs_type == 'ext2' or fs_type == 'ext3':
+        size_MB = new_extents * extent_size / 1024 / 1024
+        size_str = str(size_MB) + 'M'
         out, err = runCommand('e2fsck -f %s' % lv_path)
         out, err = runCommand('resize2fs %s' % lv_path)
     return (out, err)
 
-def reduceLogicalVolume(lv_path, size_str, fs_type):
+def reduceLogicalVolume(lv_path, new_extents, extent_size, fs_type):
     if fs_type == 'ext2' or fs_type == 'ext3':
+        size_MB = new_extents * extent_size / 1024 / 1024
+        size_str = str(size_MB) + 'M'
         out, err = runCommand('resize2fs %s %s' % (lv_path, size_str))
-    out, err = runCommand('lvm lvreduce -L%s %s' % (size_str, lv_path))
+    out, err = runCommand('lvm lvreduce -l%d %s' % (new_extents, lv_path))
 
 def removeLogicalVolume(lv_path):
     out, err = runCommand('lvm lvremove -f %s' % lv_path)

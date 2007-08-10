@@ -15,6 +15,7 @@ import kusu.partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING
+from kusu.util.errors import *
 
 def createNew(baseScreen):
     """Ask if user wants to create a new partition, logical volume, or volume
@@ -66,7 +67,7 @@ def createNew(baseScreen):
 
             return NAV_NOTHING
 
-        except partitiontool.KusuError, e:
+        except KusuError, e:
             msgbox = snack.GridForm(screen, 'Error', 1, 2)
             text = snack.TextboxReflowed(30, str(e))
             msgbox.add(text, 0, 0)

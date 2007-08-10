@@ -159,7 +159,8 @@ class PartitionEntriesFilterChain(object):
         """Set the leave_unchanged flag to true for all volumes."""
         for disk in disk_profile.disk_dict.values():
             for partition in disk.partition_dict.values():
-                partition.leave_unchanged = True
+                if partition.type != 'extended':
+                    partition.leave_unchanged = True
 
         for lv in disk_profile.lv_dict.values():
             lv.leave_unchanged = True

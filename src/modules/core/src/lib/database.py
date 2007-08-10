@@ -899,8 +899,6 @@ class DB(object):
             donotpreserve1 = Partitions(options='partitionID=Linux', preserve='0')
             donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve='0')
             donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve='0')
-            # Otherwise, preserve everything else (weird, counter-intuitive,
-            # inverse logic - need to improve)
 
             ng.partitions.append(boot)
             ng.partitions.append(swap)

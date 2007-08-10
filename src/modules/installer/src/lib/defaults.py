@@ -490,6 +490,7 @@ def createPhysicalSchema(disk_profile, disk_schemata, preserved_mntpnt, preserve
 
 def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv):
     logger.debug('Preserved LV: %s' % str(preserved_lv))
+    logger.debug('LVM schema: %s' % str(lvm_schemata))
     for vg_key, vg_schema in lvm_schemata.iteritems():
         sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
         # create the Volume Group first.
@@ -510,7 +511,7 @@ def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, 
             pv = disk_profile.pv_dict[partition.path]
             pv_list.append(pv)
 
-        if vg_key in preserved_lvg or vg_key in disk_profile.vg_dict.keys():
+        if vg_key in preserved_lvg or vg_key in disk_profile.lvg_dict.keys():
             logger.debug('VG has been preserved')
             vg = disk_profile.lvg_dict[vg_key]
         else:
@@ -549,7 +550,7 @@ def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, 
                                               lv_schema['fill'])
                 logger.debug('Finished creating %s' % lv_name)
         if last_lv and last_lv[1]['mountpoint'] not in preserved_mntpnt and \
-           last_lv[1]['fs'] not in preserved_fs and last_lv[0] in preserved_lv:
+           last_lv[1]['fs'] not in preserved_fs and last_lv[0] not in preserved_lv:
             disk_profile.newLogicalVolume(last_lv[0],
                                           vg,
                                           last_lv[1]['size_MB'],

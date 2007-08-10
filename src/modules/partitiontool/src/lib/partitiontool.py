@@ -361,7 +361,8 @@ class DiskProfile(object):
         logger.debug('Populate mount points.')
         # Check the partitions and logical volumes
         m_parts = self.getMountablePartitions()
-        m_lvs = self.getMountableLVs()
+#        m_lvs = self.getMountableLVs()
+        m_lvs = []
         m_list = m_parts + m_lvs
         for p in m_list:
             found, loc = self.lookForFstab(p, fstab_path)
@@ -451,7 +452,7 @@ class DiskProfile(object):
                 lv.unmount()
                 mountable_lvs.append(lv)
             except MountFailedError:
-                continue
+                break
         return mountable_lvs
 
     def lookForFstab(self, partition, fstab_path='etc/fstab'):
@@ -575,10 +576,19 @@ class DiskProfile(object):
         return new_partition
 
     def editPartition(self, partition_obj, size_MB, fixed_size, fs_type, mountpoint):
-        """Edit an existing partition."""
+        """
+             Edit an existing partition. The mountpoint dictionary needs to
+             be updated as well.
+        """
         logger.debug('Edit partition %s' % partition_obj.path)
-        if size_MB == partition_obj.size_MB:
+        if size_MB == partition_obj.size_MB and \
+           (partition_obj.fs_type == fs_type or \
+           fs_type in fsTypes.keys()):
+            if partition_obj.mountpoint in self.mountpoint_dict:
+                del(self.mountpoint_dict[partition_obj.mountpoint])
             partition_obj.mountpoint = mountpoint
+            if mountpoint:
+                self.mountpoint_dict[mountpoint] = partition_obj
             partition_obj.fs_type = fs_type
             return partition_obj
 
@@ -587,8 +597,13 @@ class DiskProfile(object):
         backup_fs_type = partition_obj.fs_type
         backup_mountpoint = partition_obj.mountpoint
 
-        
-        self.deletePartition(partition_obj, keep_in_place=True)
+        try:        
+            self.deletePartition(partition_obj, keep_in_place=True)
+        except PartitionIsPartOfVolumeGroupError:
+            raise PartitionIsPartOfVolumeGroupError, 'Partition %s cannot ' % \
+                (partition_obj.path) + \
+                'be edited because it is part of Logical Volume Group %s.' % \
+                (partition_obj.group.name)
         logger.debug('Original partition deleted. Remaining partitions: ' + \
                      str(partition_obj.disk.partition_dict.keys()))
         try:
@@ -597,6 +612,9 @@ class DiskProfile(object):
                                                  fixed_size,
                                                  fs_type,
                                                  mountpoint)
+            if backup_mountpoint in self.mountpoint_dict and \
+               backup_mountpoint != mountpoint:
+                del(self.mountpoint_dict[backup_mountpoint])
             logger.debug('New partition created')
 
         except PartitionSizeTooLargeError, e:
@@ -629,8 +647,22 @@ class DiskProfile(object):
         if self.mountpoint_dict.has_key(partition_obj.mountpoint):
             del self.mountpoint_dict[partition_obj.mountpoint]
 
-        partition_obj.disk.delPartition(partition_obj, keep_in_place)
+        partition_is_logical = (partition_obj.type == 'logical')
+        disk = partition_obj.disk
+        disk.delPartition(partition_obj, keep_in_place)
+        logger.debug('Deleted partition')
 
+        if partition_is_logical:
+            if not disk.hasLogicalPartitions():
+                self.__deleteExtendedPartition(disk)
+
+
+    def __deleteExtendedPartition(self, disk):
+        for p in disk.partition_dict.values():
+            if p.type == 'extended':
+                self.deletePartition(p)
+        
+            
 
     def newLogicalVolumeGroup(self, name, extent_size, pv_list):
         """Create a new logical volume group."""
@@ -709,9 +741,11 @@ class DiskProfile(object):
         if lv.fs_type == fs_type:
             lv.do_not_format = True
         lv.fs_type = fs_type
-        lv.mountpoint = mountpoint
-        if mountpoint:
-            self.mountpoint_dict[mountpoint] = lv
+        if lv.mountpoint != mountpoint:
+            del(self.mountpoint_dict[lv.mountpoint])
+            lv.mountpoint = mountpoint
+            if mountpoint:
+                self.mountpoint_dict[mountpoint] = lv
         return lv
 
     def deleteLogicalVolume(self, lv):

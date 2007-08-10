@@ -7,6 +7,7 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 # 
+import sys
 import math
 import parted
 import subprocess
@@ -196,11 +197,14 @@ class Disk(object):
         if partition_obj.leave_unchanged:
             raise CannotDeleteExtendedPartitionError, 'Leave unchanged flag is set.'
 
-        if partition_obj.type == 'extended':
-            last_part_num = len(self.partition_dict)
-            logger.debug('Delete extended partition - total partitions: %d' % last_part_num)
-            if self.__getPartitionType(last_part_num) == 'LOGICAL':
-                raise CannotDeleteExtendedPartitionError, 'Logical Partition still exists.'
+        if partition_obj.type == 'extended' and self.hasLogicalPartitions():
+            f = sys._getframe()
+            try:
+                logger.debug('Deleting extended partition with existing logical by %s' % \
+                         (f.f_back.f_code.co_name))
+            finally:
+                del f
+            raise CannotDeleteExtendedPartitionError, 'Logical Partition still exists.'
 
         # get ordered list of partition keys.
         partition_nums = sorted(self.partition_dict.keys())
@@ -250,6 +254,13 @@ class Disk(object):
                                                       fs_type=part_details[1],
                                                       mountpoint=part_details[2])
             new_partition.lvm_flag = part_details[3]
+
+    def hasLogicalPartitions(self):
+        for p in self.partition_dict.values():
+            if p.type == 'logical':
+                return True
+        return False
+
 
     def __getPartitionType(self, num):
         """Get the type of partition for a given partition number. This applies
@@ -543,6 +554,14 @@ class Partition(object):
     def __setattr__(self, name, value):
         if name in self.__setattr_dict.keys():
             eval(self.__setattr_dict[name] % str(value))
+        elif name=='leave_unchanged':
+            object.__setattr__(self, name, value)
+            f = sys._getframe()
+            try:
+                logger.debug('partition.type: %s, set leave_unchanged to %s by %s' % \
+                         (self.type, value, f.f_back.f_code.co_name))
+            finally:
+                del f
         elif name in ['disk', 'pedPartition', 'mountpoint', 'mountedpoint', 'leave_unchanged',
                       'on_disk', 'do_not_format']:
             object.__setattr__(self, name, value)

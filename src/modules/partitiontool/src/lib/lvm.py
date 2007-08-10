@@ -329,7 +329,6 @@ class LogicalVolume(object):
         if extents > vg_extentsFree:
             raise InsufficientFreeSpaceInVolumeGroupError, \
                 'Insufficient free space in volume group'
-        self.size_MB = extents * volumeGroup.extent_size
         self.name = name
         self.group = volumeGroup
         self.extents = extents
@@ -352,7 +351,7 @@ class LogicalVolume(object):
                                   (self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name in ['name', 'group', 'fs_type', 'mountpoint', 'mountedpoint', 'on_disk', 'leave_unchanged', 'do_not_format', 'size_MB']:
+        if name in ['name', 'group', 'fs_type', 'mountpoint', 'mountedpoint', 'on_disk', 'leave_unchanged', 'do_not_format']:
             object.__setattr__(self, name, value)
         elif name == 'extents':
             object.__setattr__(self, name, long(value))
@@ -364,18 +363,19 @@ class LogicalVolume(object):
         return (self.extents * self.group.extent_size)
 
     def resize(self, size_MB, force=False):
-        size = size_MB * 1024 * 1024
-        if size == self.size:
+        extents = int(size_MB) * 1024 * 1024 / self.group.extent_size
+        if extents == self.extents:
             return
-        elif size < self.size:
-            if (self.size - size) < (self.group.extent_size * 1024 * 1024):
-                # don't bother reducing if the change is less than an extent.
-                return
-            else:
-                queueCommand(lvm.reduceLogicalVolume, (self.path, str(size_MB) + 'M', self.fs_type))
+        if extents < self.extents:
+            queueCommand(lvm.reduceLogicalVolume, \
+                         (self.path, extents, self.group.extent_size, self.fs_type))
         else:
-            queueCommand(lvm.extendLogicalVolume, (self.path, str(size_MB) + 'M', self.fs_type))
-        
+            queueCommand(lvm.extendLogicalVolume, \
+                         (self.path, extents, self.group.extent_size, self.fs_type))
+        self.extents = extents
+        logger.debug('LV %s resized to %d extents' % (self.name, self.extents))
+        logger.debug('LV %s new size=%d' % (self.name, self.size/1024/1024))
+       
     def mount(self, mountpoint=None, readonly=False):
         """Mounts this partition. If no mountpoint is given, then the
            default mountpoint is used.

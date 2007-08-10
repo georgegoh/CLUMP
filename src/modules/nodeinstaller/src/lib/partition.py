@@ -172,13 +172,20 @@ def adaptNIIPartition(niipartition, diskprofile):
  
 def cleanDiskProfile(disk_profile):
     all_vols = disk_profile.lv_dict.values()
+    extended_partition = None
     for disk in disk_profile.disk_dict.values():
         for p in disk.partition_dict.values():
-            all_vols.append(p)
+            if p.type == 'extended':
+                extended_partition = p
+            else:
+                all_vols.append(p)
 
     for vol in all_vols:
         if not vol.leave_unchanged:
             disk_profile.delete(vol)
+
+    if extended_partition and not extended_partition.leave_unchanged:
+        disk_profile.delete(extended_partition)
 
     disk_profile.executeLVMFifo()
     disk_profile.commit()
