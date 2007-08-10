@@ -8,6 +8,7 @@
 
 from path import path
 from kusu.core.plugin import Plugin
+import sys
 
 class KusuRC(Plugin):
     def __init__(self):
