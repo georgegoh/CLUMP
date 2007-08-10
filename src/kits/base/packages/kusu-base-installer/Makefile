@@ -61,7 +61,7 @@ install::
 	mkdir -p $(ROOT)/depot/kits
 	mkdir -p $(ROOT)/depot/images
 	# Just for development
-	echo "Letmein" > $(ROOT)/opt/kusu/etc/db.passwd
+	#echo "Letmein" > $(ROOT)/opt/kusu/etc/db.passwd
 	touch $(ROOT)/depot/repos/custom_scripts/bogus.sh
 	install -m755 sbin/S01KusuSetup $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S01KusuDB.py $(ROOT)/etc/rc.kusu.d/
