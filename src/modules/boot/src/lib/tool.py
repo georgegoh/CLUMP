@@ -254,6 +254,13 @@ class BootMediaTool:
         self._initSrc(srcpath)
         return self.installsrc.getKernelPath()
         
+    def getKernelPackages(self, srcpath):
+        """ Returns the list of distro-specific kernel packages. """
+        self._initSrc(srcpath)
+        return self.installsrc.getKernelPackages()
+        
+    getKernelRpms = getKernelPackages
+        
     def getIsolinuxbinPath(self, srcpath):
         """ Query the srcpath and returns the path of the isolinux.bin. """
         self._initSrc(srcpath)

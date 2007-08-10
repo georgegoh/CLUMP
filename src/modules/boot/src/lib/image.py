@@ -8,12 +8,11 @@
 """This module handles operations relating to booting up nodes."""
 
 from path import path
-from kusu.boot.distro import DistroFactory, InvalidInstallSource
+from kusu.boot.distro import DistroFactory
 from kusu.util.tools import cpio_copytree
-from kusu.util.errors import *
+from kusu.util.errors import FilePathError, InvalidInstallSource, ToolNotFound, \
+                            UnsupportedPackingType, NotPriviledgedUser
 import os
-import sys
-import commands
 import re
 import tempfile
 import subprocess

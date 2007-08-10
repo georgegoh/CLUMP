@@ -157,7 +157,7 @@ class DistroInstallSrcBase(object):
         
     def getKernelPackages(self):
         """ Returns any distribution-specific kernel packages. """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def DistroFactory(srcPath):
