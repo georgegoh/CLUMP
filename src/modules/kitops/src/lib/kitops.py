@@ -21,6 +21,7 @@ from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
 from kusu.util.tools import cpio_copytree
+from kusu.util import rpmtool
 from kusu.buildkit import processKitInfo
 from kusu.util.errors import *
 # TODO: uncomment this to call repoman's refresh
@@ -187,6 +188,8 @@ class KitOps:
             newkit.flush()
             self.deleteKit()
             raise ComponentAlreadyInstalledError, msg
+            
+        # TODO: handle driverpacks entry here, get BMT to return driver/module RPM
 
         # TODO: uncomment this to call repoman's refresh
         #if updated_ngtypes:
@@ -411,10 +414,28 @@ class KitOps:
                                 removable=False, arch=kit['arch'])
         newkit.save()
         self.__db.flush()
+        
+        # get the kernel packages
+        oskitdir = self.kits_dir / kit['name'] / kit['ver'] / kit['arch']
+        bmt = BootMediaTool()
+        _kpkgs = bmt.getKernelPackages(oskitdir)
+        kpkgs = []
+        if _kpkgs:
+            # change the kernel packages paths into rpmtool objects
+            kpkgs = [rpmtool.RPM(str(k)) for k in _kpkgs]
 
         # add mock component to complete link from nodegroups to kits
         comp = self.__db.Components(cname=kit['longname'],
                                     cdesc='%s mock component' % kit['longname'])
+        
+        # setup driverpacks entry and associate it with the mock component
+        for kpkg in kpkgs:
+            dpack = self.__db.DriverPacks()
+            dpack.dpname = kpkg.getFilename().basename() 
+            desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
+            dpack.dpdesc = desc        
+            comp.driverpacks.append(dpack)
+
         newkit.components.append(comp)
 
         ngs = self.__db.NodeGroups.select(
