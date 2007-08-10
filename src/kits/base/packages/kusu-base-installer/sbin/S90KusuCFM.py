@@ -54,10 +54,22 @@ class KusuRC(Plugin):
                 f.close()
 
         
+
+        # Redirect all stdout, stderr
+        oldOut = sys.stdout
+        oldErr = sys.stderr
+        f = open('/dev/null', 'w')
+        sys.stdout = f
+        sys.stderr = f
+
         # Update the cfm files
         from kusu.cfms import PackBuilder
         pb = PackBuilder()
         size = pb.updateCFMdir()
         pb.genFileList()
- 
+
+        # Restore stdout and stderr
+        sys.stdout = oldOut
+        sys.stderr = oldErr 
+
         return True
