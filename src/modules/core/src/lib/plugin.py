@@ -57,7 +57,7 @@ class PluginRunner:
         self.loadPlugins()
 
     def display(self, desc):
-        print ' '*3,  desc or '', ':', 
+        print '%s%s:' % (' '*3, desc or ''),
         sys.stdout.flush()
 
     def failure(self):

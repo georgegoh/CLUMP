@@ -47,7 +47,7 @@ def translateBoolean(value):
 def retrieveNII(niihost):
     """ Downloads the NII from the niihost.
     """
-    url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1' % niihost
+    url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1&state=installing' % niihost
     try:
         logger.debug('Fetching %s' % url)
         f = urllib2.urlopen(url)

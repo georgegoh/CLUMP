@@ -46,6 +46,10 @@ if [ $EXIT_CODE -eq 0 ]; then
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
 
+    if [ "$?" -eq 0 ]; then
+        /opt/kusu/bin/updatestate /mnt/kusu/etc/profile.nii
+    fi
+
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump
     echo "An internal program error has occurred."
