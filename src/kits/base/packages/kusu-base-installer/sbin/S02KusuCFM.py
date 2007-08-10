@@ -53,4 +53,11 @@ class KusuRC(Plugin):
                 f.write('# Entries below this come from the CFM\'s fstab.append\n')
                 f.close()
 
+        
+        # Update the cfm files
+        from kusu.cfms import PackBuilder
+        pb = PackBuilder()
+        size = pb.updateCFMdir()
+        pb.genFileList()
+ 
         return True
