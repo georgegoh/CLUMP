@@ -742,7 +742,8 @@ class DiskProfile(object):
             lv.do_not_format = True
         lv.fs_type = fs_type
         if lv.mountpoint != mountpoint:
-            del(self.mountpoint_dict[lv.mountpoint])
+            if lv.mountpoint in self.mountpoint_dict:
+                del(self.mountpoint_dict[lv.mountpoint])
             lv.mountpoint = mountpoint
             if mountpoint:
                 self.mountpoint_dict[mountpoint] = lv
