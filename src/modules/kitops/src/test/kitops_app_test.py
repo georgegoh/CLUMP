@@ -39,7 +39,7 @@ def setUp():
     databasePrep()
 
     if not tmp_prefix.exists():
-        tmp_prefix.mkdirs()
+        tmp_prefix.mkdir()
 
     temp_root = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
     temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
