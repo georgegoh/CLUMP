@@ -272,8 +272,8 @@ class NodeInfo:
         regenerated.
         NOTE:  This forces the database connection to close! """
         self.db.disconnect()
-        if os.path.exists('/opt/kusu/sbin/boothost.py'):
-            os.system('/opt/kusu/sbin/boothost.py -n %s' % nodename)
+        if os.path.exists('/opt/kusu/sbin/boothost'):
+            os.system('/opt/kusu/sbin/boothost -n %s' % nodename)
 
 
 

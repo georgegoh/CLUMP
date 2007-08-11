@@ -16,5 +16,6 @@ setup(name="kusu-nodeinstaller",
       platforms=["any"],
       packages = ['nodeinstaller'],
       package_dir={'nodeinstaller': 'src/lib'},
-      scripts=['src/bin/nodeinstaller']
+      scripts=['src/bin/nodeinstaller',
+               'src/bin/updatestate']
      )

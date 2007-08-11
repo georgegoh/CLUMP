@@ -32,6 +32,7 @@ if [ ! -d /tftpboot/kusu/pxelinux.cfg ] ; then
     mkdir -p /tftpboot/kusu/pxelinux.cfg
 fi
 chgrp -R apache /tftpboot/kusu/pxelinux.cfg
+chmod 775 /tftpboot/kusu/pxelinux.cfg
 
 if [ ! -f /etc/xinetd.d/tftp ] ; then
     echo "ERROR:  Xinetd config for tftp not found"

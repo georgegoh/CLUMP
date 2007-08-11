@@ -47,7 +47,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
 
     if [ "$?" -eq 0 ]; then
-        /opt/kusu/bin/updatestate /mnt/kusu/etc/profile.nii
+        /opt/kusu/bin/updatestate /mnt/kusu/etc/profile.nii > /dev/null 2>&1
     fi
 
 elif [ $EXIT_CODE -eq 1 ]; then
