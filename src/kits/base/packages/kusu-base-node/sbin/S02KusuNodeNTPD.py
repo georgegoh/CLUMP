@@ -28,7 +28,7 @@ class KusuRC(Plugin):
                 '\nfudge\t\t127.127.1.0 stratum 10',
                 '\ndriftfile\t/var/lib/ntp/drift',
                 '\ndisable\t\tmonitor',
-                '\nrestrict\t127.0.0.1 mask 255.255.255.255'
+                '\nrestrict\t127.0.0.1 mask 255.255.255.255\n'
                 ]
 
         f = open(etcntpconf, 'w')
