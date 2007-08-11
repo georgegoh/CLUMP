@@ -59,6 +59,7 @@ import subprocess
 from lvm import *
 from common import *
 from path import path
+from struct import unpack
 import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
@@ -361,8 +362,7 @@ class DiskProfile(object):
         logger.debug('Populate mount points.')
         # Check the partitions and logical volumes
         m_parts = self.getMountablePartitions()
-#        m_lvs = self.getMountableLVs()
-        m_lvs = []
+        m_lvs = self.getMountableLVs()
         m_list = m_parts + m_lvs
         for p in m_list:
             found, loc = self.lookForFstab(p, fstab_path)
@@ -446,13 +446,14 @@ class DiskProfile(object):
         mntpnt = mkdtemp()
         for lv in self.lv_dict.itervalues():
             try:
-                logger.debug('Mounting %s' % lv.path)
-                lv.mount(mountpoint=mntpnt, readonly=True)
-                logger.debug('Unmounting %s' % lv.path)
-                lv.unmount()
-                mountable_lvs.append(lv)
-            except MountFailedError:
-                break
+                f = open(lv.path, 'r')
+                sb = f.read(1082)
+                magic_str = sb[-2:]
+                magic = unpack('H', magic_str)
+                if hex(magic[0]) == hex(0xef53):
+                    mountable_lvs.append(lv)
+            finally:
+                f.close()
         return mountable_lvs
 
     def lookForFstab(self, partition, fstab_path='etc/fstab'):
