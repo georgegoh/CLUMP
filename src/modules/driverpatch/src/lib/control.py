@@ -154,6 +154,7 @@ class DataModel(object):
             raise InvalidArguments, 'id or name not specified!'
         
         _ngid = kwargs.get('id','')
+        ngid = None
         if _ngid:
             try:
                 ngid = long(_ngid)
@@ -165,11 +166,11 @@ class DataModel(object):
         # get the list of nodegroups
         ngs = self.dbinst.NodeGroups.select()
         
-        if 'id' in kwargs:
+        if 'id' in kwargs and ngid:
             # get the components based on ngid
             comps = [ng.components for ng in ngs if ng.ngid == ngid]
             
-        elif 'name' in kwargs:
+        elif 'name' in kwargs and ngname:
             # get the components based on ngname
             comps = [ng.components for ng in ngs if ng.ngname.find(ngname) > -1]
             
@@ -190,8 +191,12 @@ class DataModel(object):
 class DriverPatchController(object):
     """ This composition class will be the one typically used by users. """
     
-    def __init__(self):
+    def __init__(self, dbinst):
+        """ Initialize this class. dbinst is an instance of the kusu.core.database.DB class.
+        """
         self.bmt = BootMediaTool()  # the unpack/repack routines come from bmt
+        self.dm = DataModel(dbinst)
+        
         
     def unpackInitrdImage(self, initrdimg, dirpath):
         """ Unpacks the specified initrdimg into dirpath. """
@@ -225,6 +230,11 @@ class DriverPatchController(object):
             d[asset] = v
             
         return d
+        
+    def getDriverPacks(self, **kwargs):
+        return self.dm.getDriverPacks(**kwargs)
+        
+
         
 
         

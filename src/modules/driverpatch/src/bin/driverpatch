@@ -7,8 +7,16 @@
 
 import sys
 import os
+from path import path
 from kusu.core.app import KusuApp
+from kusu.core import database as db
 from kusu.driverpatch import DriverPatchController
+
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog()
+kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
+                       'kusu-driverpatch.log')
+kl = kusulog.getKusuLog('driverpatch-app')
         
 class App(KusuApp):
     """ Application class for buildkit. """
@@ -23,9 +31,8 @@ class App(KusuApp):
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
         self.actionargs = None
+        
 
-        # an instance of the controller for managing the actions        
-        self.controller = DriverPatchController()
         self.usagestr = self._("""\
 driverpatch [-h|-v] <action> arg1=val1 arg2=val2 ...
 
@@ -106,12 +113,26 @@ Example operations:
                 del li[0:2]
 
         return d
+        
+    def decryptDBPasswd(self):
+        """ Returns the db password. """
+        dbpasswd = open('/opt/kusu/etc/db.passwd','r').read()
+        
+        return dbpasswd
 
     def parseargs(self):
         """ App-specific arguments goes here. """
 
         self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.add_option('--dbdriver', dest='dbdriver',
+                                help=self._('Database driver (sqlite, mysql)'))
+        self.parser.add_option('--dbdatabase', dest='dbdatabase',
+                                help=self._('Database'))
+        self.parser.add_option('--dbuser', dest='dbuser',
+                                help=self._('Database username'))
+        self.parser.add_option('--dbpassword', dest='dbpassword',
+                                help=self._('Database password'))
         self.parser.set_defaults(verbose=False,showexamples=False)
         self.options, self.args = self.parser.parse_args()
 
@@ -147,6 +168,27 @@ Example operations:
         """ Main launcher. """
         self.parseargs()
 
+        # get the db instance
+        dbdriver = 'mysql'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+        if self.options.dbdriver:
+            dbdriver = self.options.dbdriver
+        if self.options.dbdatabase:
+            dbdatabase = self.options.dbdatabase
+        if self.options.dbuser:
+            dbuser = self.options.dbuser
+        if self.options.dbpassword:
+            dbpassword = self.options.dbpassword
+        else:
+            dbpassword = self.decryptDBPasswd()
+
+        self.db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
+        # an instance of the controller for managing the actions        
+        self.controller = DriverPatchController(self.db)
+
         # set verbosity
         self.verbose = self.options.verbose
 
@@ -170,8 +212,24 @@ Example operations:
         ngname = args.get('name','')
         ngid = args.get('id','')
 
-        pass
-
+        if not ngid and not ngname:
+            self.printUsageExit()
+        
+        if ngname:
+            ngkey = 'name'
+        elif ngid:
+            ngkey = 'id'
+        dpacks = self.controller.getDriverPacks(id=ngid,name=ngname)
+        if dpacks:
+            msg = self._("Driverpacks belonging to nodegroup(s) matching '%(ngkey)s=%(ngval)s':" % 
+                {'ngkey':ngkey,
+                'ngval':ngid or ngname})
+            print msg
+            i = 1
+            for dpack in dpacks:
+                print '%02d.\tdriverpack name: %s' % (i,dpack.dpname)
+                print '\tdriverpack desc: %s' % dpack.dpdesc
+                i += 1
 
         
 if __name__ == '__main__':
