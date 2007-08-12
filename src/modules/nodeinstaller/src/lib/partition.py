@@ -7,7 +7,6 @@
 
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
-from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
 import kusu.util.log as kusulog

@@ -251,11 +251,13 @@ class LogicalVolumeGroup(object):
             raise LogicalVolumeAlreadyInLogicalGroupError, 'Logical volume already exists in Volume Group'
 
         free_extents = self.extentsTotal() - self.extentsUsed()
+        extents_to_use = 1024.0 * 1024.0 * size_MB / self.extent_size
+        import math
         if fill:
+            if extents_to_use > free_extents:
+                raise OutOfSpaceError, 'Cannot fulfill minimum size requirements for LV %s.' % name
             extents = free_extents
         else:
-            extents_to_use = 1024.0 * 1024.0 * size_MB / self.extent_size
-            import math
             if extents_to_use == free_extents:
                 extents = free_extents
             elif free_extents > extents_to_use:
@@ -321,7 +323,8 @@ class LogicalVolume(object):
 
     def __str__(self):
         s = self.name + ' VolGrp: ' + self.group.name + ' Extents: ' + \
-            str(self.extents) + '\nFS: ' + str(self.fs_type) + ' On Disk: ' + str(self.on_disk)
+            str(self.extents) + '\nFS: ' + str(self.fs_type) + ' On Disk: ' + str(self.on_disk) + \
+            ' MntPnt: ' + str(self.mountpoint)
         return s
 
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):

@@ -11,7 +11,7 @@ from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
 from kusu.installer.defaults import setupDiskProfile
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
+from kusu.util.errors import *
 from kusu.hardware import probe
 from random import choice
 from cStringIO import StringIO
@@ -182,6 +182,11 @@ class KickstartFromNIIProfile(object):
         except InvalidPartitionSchema, e:
             logger.debug('Invalid partition schema! schema: %r' % schema)
             raise e
+        except OutOfSpaceError, e:
+            s = str(e) + '\nPlease remove unwanted partitions/logical volumes, or ' + \
+                'modify the partition schema for this nodegroup to reduce the size ' + \
+                'of this Logical Volume.'
+            raise OutOfSpaceError, s
 
         return self.diskprofile
        

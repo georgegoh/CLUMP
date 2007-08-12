@@ -241,7 +241,10 @@ class AssignMntPntForLV(FilterOnLogicalVolume):
         return disk_profile
 
     def applyMountPoint(self, lv_name, mntpnt, disk_profile):
-        if not disk_profile.lv_dict.has_key(lv_name): return disk_profile
+        logger.debug('Applying mntpnt: %s for log vol: %s' % (mntpnt, lv_name))
+        if not disk_profile.lv_dict.has_key(lv_name):
+            logger.debug('Disk Profile object does not contain the LV: %s' % lv_name)
+            return disk_profile
 
         lv = disk_profile.lv_dict[lv_name]
         lv.mountpoint = mntpnt

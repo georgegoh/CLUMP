@@ -202,7 +202,8 @@ class KickstartFactory(BaseFactory):
             part_lines.append(str)
        
         #LV
-        for lv in disk_profile.lv_dict.values(): 
+        for lv in disk_profile.lv_dict.values():
+            if not lv.mountpoint: continue 
             str = 'logvol %s --vgname=%s --name=%s --noformat' % \
                   (lv.mountpoint, lv.group.name, lv.name)
             part_lines.append(str)
