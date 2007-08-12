@@ -887,7 +887,7 @@ class DB(object):
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
                               size='100', device='1', preserve=0)
             swap = Partitions(fstype='linux-swap', partition='2',
-                              size='2000', device='1', preserve=0)
+                              size='1000', device='1', preserve=0)
             pv = Partitions(fstype='physical volume', partition='0',
                             size='6000', device='N', preserve=1,
                             options='fill;pv;vg=VolGroup00')
