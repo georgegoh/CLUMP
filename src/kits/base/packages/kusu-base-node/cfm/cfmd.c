@@ -47,7 +47,7 @@
 
 #ifdef UNIX
 #define CFM_SEQUENCE  "/opt/kusu/etc/.sequence.client"
-#define CFM_NODEGROUP "/etc/profile.nii"
+#define CFM_PROFILE_NII "/etc/profile.nii"
 #endif
 
 #define UPDATEFILE 1
@@ -98,6 +98,7 @@ static int setSequence(int seq) ;
 static int getNGID() ;
 static int setInstallers(struct dataPack *dpack) ;
 static int getInstallers(struct dataPack *dpack) ;
+static int getNiiInstallers(struct dataPack *dpack) ;
 static int cfmLog(LOG_LEVEL level, const char* format, ...) ;
 static int runUpdate(struct dataPack *dpack) ;
 
@@ -168,6 +169,21 @@ int main(int argc, char* argv[])
       cfmLog(LOG_DEBUG, "On startup update type = %i\n", dpack.type) ;
       runUpdate(&dpack) ;
     } 
+  else
+    {
+      /* No installer list available!  Revert to the NII installer */
+      if(getNiiInstallers(&dpack))
+	{
+	  dpack.type = UPDATEFILE | UPDATEPACKAGE ;
+	  cfmLog(LOG_DEBUG, "Using NII host: %s\n", dpack.installers[0]) ;
+	  cfmLog(LOG_DEBUG, "On startup update type = %i\n", dpack.type) ;
+	  runUpdate(&dpack) ;
+	}
+      else
+	{
+	  cfmLog(LOG_WARNING, "Unable to determine the NII host!  Cannot synchronize now.\n") ;
+	}
+    }
 
   sd = setupSocket() ;
 
@@ -361,7 +377,7 @@ static int getNGID()
   char buff[256] ;
   int retval = 0 ;
 
-  if ((fd = fopen(CFM_NODEGROUP, "r")) == NULL ) 
+  if ((fd = fopen(CFM_PROFILE_NII, "r")) == NULL ) 
     return(0) ;
 
   while (fgets(buff, sizeof(buff), fd) != NULL)
@@ -374,6 +390,40 @@ static int getNGID()
   fclose(fd) ;
   
   return(retval) ;
+}
+
+
+/* getNiiInstallers - Get the name of the Installer(s) from the profile.nii
+             This function will have to change if the nodeboot.cgi.py changes.
+	     NOTE:  An IP address is expected!
+*/
+static int getNiiInstallers(struct dataPack *dpack)
+{
+  FILE* fd = NULL ;
+  char buff[256] ;
+  char *startptr = NULL ;
+  char *endptr   = NULL ;
+
+  memset(&dpack->installers[0][0], 0, 16) ;
+  if ((fd = fopen(CFM_PROFILE_NII, "r")) == NULL ) 
+    return(0) ;
+
+  while (fgets(buff, sizeof(buff), fd) != NULL)
+    {
+      if ( ! strncmp(buff, "export NII_INSTALLERS=", strlen("export NII_INSTALLERS=")) )
+	{
+	  startptr = &buff[strlen("export NII_INSTALLERS=") + 1 ] ;
+	  if ((endptr = strstr(startptr, "\"")) == NULL)
+	    {
+	      return(0) ;
+	    }
+	  *endptr = 0 ;
+	  strncpy(dpack->installers[0], startptr, 15) ;
+	}
+    }
+  fclose(fd) ;
+  
+  return(1) ;
 }
 
 
