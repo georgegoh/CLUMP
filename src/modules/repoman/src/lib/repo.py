@@ -212,8 +212,7 @@ class RedhatYumRepo(BaseRepo):
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
    
             for file in pkgdir.listdir():
-                if file.basename() != 'TRANS.TBL':
-
+                if file.basename() not in ['TRANS.TBL', 'kitinfo']:
                     rpm = rpmtool.RPM(str(file))
 
                     name = rpm.getName()
@@ -252,7 +251,7 @@ class RedhatYumRepo(BaseRepo):
         for key, dir in self.dirlayout.items():
             if key != 'repodatadir':
                for file in (self.os_path / dir).listdir():
-                    if not file.isdir() and file.basename() != 'TRANS.TBL':
+                    if not file.isdir() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
                         dest = self.repo_path / dir / file.basename()
                         (dest.parent.relpathto(file)).symlink(dest)
 
@@ -584,7 +583,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
    
             for file in pkgdir.listdir():
-                if file.basename() != 'TRANS.TBL':
+                if file.basename() not in ['TRANS.TBL', 'kitinfo']:
 
                     rpm = rpmtool.RPM(str(file))
 
@@ -625,7 +624,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         for key, dir in self.dirlayout.items():
             if key != 'server.repodatadir':
                 for file in (self.os_path / dir).listdir():
-                    if not file.isdir() and file.basename() != 'TRANS.TBL':
+                    if not file.isdir() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
                         dest = self.repo_path / dir / file.basename()
                         (dest.parent.relpathto(file)).symlink(dest)
 

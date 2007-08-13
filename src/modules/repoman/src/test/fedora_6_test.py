@@ -125,6 +125,7 @@ class TestFedora6Repo:
         for dir in dirs:
             dir.makedirs()
 
+        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'kitinfo').touch()
         (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '6' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
