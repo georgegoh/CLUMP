@@ -40,7 +40,7 @@ class thisReport(Report):
             sys.stderr.write(_("genconfig_cannot_determine_DNS_zone\n"))
             sys.exit(0)
 
-        query = ('select nics.ip,nodes.name,networks.suffix '
+        query = ('select nics.ip,nodes.name,networks.suffix,nics.boot '
                  'from nics,nodes,networks where nics.nid = nodes.nid '
                  'and nics.netid = networks.netid order by nics.ip')
 
@@ -53,9 +53,12 @@ class thisReport(Report):
         else:            
             data = self.db.fetchall()
             for row in data:
-                ip, name, suffix = row
+                ip, name, suffix, boot = row
                 if suffix and suffix != '':
-                    print "%s\t%s%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, suffix )
+                    if boot == 1:
+                        print "%s\t%s%s.%s \t%s%s \t%s" % (ip, name, suffix ,dnszone, name, suffix, name)
+                    else:
+                        print "%s\t%s%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, suffix )
                 else:
                     print "%s\t%s.%s \t%s" % (ip, name, dnszone, name)
         
