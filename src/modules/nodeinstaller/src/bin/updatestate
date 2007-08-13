@@ -50,4 +50,4 @@ if __name__ == '__main__':
     niihost = getNIIHost(profileNII, 'NII_INSTALLERS')
 
     if niihost:
-        update(niihost, 'installed', 'disk')
+        update(niihost, 'Installed', 'disk')
