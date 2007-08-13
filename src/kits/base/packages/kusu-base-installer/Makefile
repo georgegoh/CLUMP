@@ -74,6 +74,7 @@ install::
 	install -m644 sbin/S02Kusu.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuNfsExport.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S03KusuImage.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuIptables.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
