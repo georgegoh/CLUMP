@@ -106,7 +106,9 @@ class PhysicalVolume(object):
     remove = staticmethod(remove)
 
     def __str__(self):
-        s = self.partition.path + ' Group: ' + self.group.name + ' Del: ' + \
+        groupname = 'Not defined'
+        if self.group: groupname = self.group.name
+        s = self.partition.path + ' Group: ' + groupname + ' Del: ' + \
             str(self.delete_flag) + ' On Disk: ' + str(self.on_disk)
         return s
 
