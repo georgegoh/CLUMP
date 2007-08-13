@@ -703,7 +703,7 @@ class DB(object):
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        master_node = Nodes(name='master', state='installed', lastupdate=now, bootfrom=1)
+        master_node = Nodes(name='master', state='Installed', lastupdate=now, bootfrom=1)
         installer.nodes.append(master_node)
 
         # creates the necessary modules for image and diskless nodes
