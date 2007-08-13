@@ -79,6 +79,10 @@ fi
 # Add entry to motd
 echo "Kusu $VERSION Installer Node" >> /etc/motd
 
+# Fix nodeboot.cgi permission
+chown root.apache /depot/repos/nodeboot.cgi
+chmod 770 /depot/repos/nodeboot.cgi
+
 # Remove this file so it does not run again.
 rm -rf $TMPDIR
 rm -rf /etc/rc.kusu.d/S01KusuSetup
