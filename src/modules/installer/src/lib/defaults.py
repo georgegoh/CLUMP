@@ -371,6 +371,9 @@ def clearLVM(disk_profile, schema):
             except PhysicalVolumeStillInUseError, e:
                 preserved_lvg.append(lvg.name)
                 logger.debug(str(e))
+            except CannotDeleteVolumeGroupError, e:
+                preserved_lvg.append(lvg.name)
+                logger.debug(str(e))
     return preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv
 
 def clearDisk(disk_profile, disk, schema):
@@ -501,6 +504,7 @@ def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, 
             part_id = pv_schema['partition']
             if disk_id.__str__().lower() == 'n' or part_id.__str__().lower() == 'n':
                 pv_list.extend(getAllFreePVs(disk_profile))
+#                pv_list.extend(getPVsForVG(disk_profile))
                 break
             disk_id = int(disk_id)
             part_id = int(part_id)
@@ -515,6 +519,12 @@ def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, 
             logger.debug('VG has been preserved')
             vg = disk_profile.lvg_dict[vg_key]
         else:
+            if not pv_list:
+                s = "No space left to create Volume Group %s, please " % vg_key + \
+                    "review and remove some of your current partitions and/or " + \
+                    "modify the partition schema for this node group.\n\n" + \
+                    "This installation will stop and your system will reboot."
+                raise VolumeGroupMustHaveAtLeastOnePhysicalVolumeError, s
             vg = disk_profile.newLogicalVolumeGroup(vg_key,
                                                     vg_schema['extent_size'],
                                                     pv_list)
@@ -566,3 +576,6 @@ def getAllFreePVs(disk_profile):
         if pv.group is None:
             pv_list.append(pv)
     return pv_list
+
+#def getPVsForVG(disk_profile):
+    

@@ -52,6 +52,7 @@ class PhysicalVolumeStillInUseError(KusuError): pass
 class LogicalVolumeStillInUseError(KusuError): pass
 class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
+class CannotDeleteVolumeGroupError(KusuError): pass
 
 # util.tools
 class CopyFailedError(KusuError): pass

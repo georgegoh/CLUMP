@@ -175,7 +175,9 @@ class NewPartition:
         disk = self.drives.current()
 
         size_MB, fixed_size = self.calculatePartitionSize(disk)
-        p = self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint)
+        logger.debug('Fixed: %s Size: %d' % (fixed_size, size_MB))
+        fill = self.min_size.selected()
+        p = self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint, fill)
         p.do_not_format = self.do_not_format_partition.value()
 
     def calculatePartitionSize(self, disk):

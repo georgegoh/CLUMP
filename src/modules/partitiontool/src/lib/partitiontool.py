@@ -662,8 +662,7 @@ class DiskProfile(object):
         for p in disk.partition_dict.values():
             if p.type == 'extended':
                 self.deletePartition(p)
-        
-            
+
 
     def newLogicalVolumeGroup(self, name, extent_size, pv_list):
         """Create a new logical volume group."""
@@ -714,8 +713,8 @@ class DiskProfile(object):
         for pv in pv_list:
             lvg.delPhysicalVolume(pv)
 
-        self.lvg_dict.pop(lvg.name)
         lvg.delete()
+        self.lvg_dict.pop(lvg.name)
 
     def newLogicalVolume(self, name, lvg, size_MB, fs_type=None, mountpoint=None, fill=False):
         """Create a new logical volume."""

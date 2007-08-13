@@ -151,19 +151,28 @@ def translatePartitionOptions(options, opt):
         return (True, opt_dict[opt])
 
 
-def adaptNIIPartition(niipartition, diskprofile):
+def adaptNIIPartition(niipartition, diskprofile, default_preserve=True):
     """ Adapt niipartition into a partitiontool schema. This schema can
         be passed along with a partitiontool diskprofile to setupDiskProfile
         method.
 
     """
+    if default_preserve:
+        pefc = PartitionEntriesFilterChainDefaultPreserve()
+        pefc.filter_list.append(FilterOnFileSystem())
+        pefc.filter_list.append(FilterOnPartitionType())
+        pefc.filter_list.append(FilterOnLogicalVolume())
+        pefc.filter_list.append(FilterOnMountpoints())
+        pefc.filter_list.append(AssignMntPntForLV())
+    else:
+        pefc = PartitionEntriesFilterChainDefaultNoPreserve()
+        pefc.filter_list.append(AssignMntPntForLV())
+        pefc.filter_list.append(FilterOnMountpointsNoPreserve())
+        pefc.filter_list.append(FilterOnLogicalVolumeNoPreserve())
+        pefc.filter_list.append(FilterOnPartitionTypeNoPreserve())
+        pefc.filter_list.append(FilterOnFileSystemNoPreserve())
+
     part_rules = niipartition.values()
-    pefc = PartitionEntriesFilterChain()
-    pefc.filter_list.append(FilterOnFileSystem())
-    pefc.filter_list.append(FilterOnPartitionType())
-    pefc.filter_list.append(FilterOnLogicalVolume())
-    pefc.filter_list.append(FilterOnMountpoints())
-    pefc.filter_list.append(AssignMntPntForLV())
     disk_profile = pefc.apply(part_rules, diskprofile)
     cleanDiskProfile(disk_profile)
 
@@ -200,6 +209,7 @@ def getVGList(part_rules, diskprofile):
     return vg_list
 
 def getPartList(part_rules, diskprofile):
+    """Get the list of partition entries that don't already exist."""
     part_list = []
     for p in part_rules:
         dev = p['device']
@@ -272,6 +282,9 @@ def createSchema(part_rules, diskprofile):
             lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
             if lv: handleLV(lvinfo, vg_name, schema['vg_dict'])
 
+        attachPVsToVGs(diskprofile, schema['vg_dict'])
+        logger.debug('VG dict: %s' % str(schema['vg_dict']))
+
         preserve_types = Partition.native_type_dict.values() 
         preserve_fs = DiskProfile.fsType_dict.keys() 
         preserve_mntpnt = diskprofile.mountpoint_dict.keys()
@@ -285,6 +298,26 @@ def createSchema(part_rules, diskprofile):
         raise InvalidPartitionSchema, "Couldn't parse one of the lines."
 
     return schema
+
+def attachPVsToVGs(disk_profile, vg_dict):
+    for vg_name,vg in vg_dict.iteritems():
+        logger.debug('VG Name: %s' % vg_name)
+        for pv in disk_profile.pv_dict.values():
+            logger.debug('PV, group: %s' % pv.group.name)
+            if pv.group.name == vg_name:
+                disk_no = getDiskNumber(pv.partition, disk_profile.disk_dict)
+                part_no = pv.partition.num
+                if not disk_no: continue
+                vg['pv_list'].append({ disk: disk_no, partition: part_no })
+                logger.debug('VG PV list: %s' % str(vg['pv_list']))
+
+def getDiskNumber(partition, disk_dict):
+    l = sorted(disk_dict.keys())
+    for i in xrange(len(disk_dict)):
+        k = l[i]
+        disk = disk_dict[k]
+        if partition.disk is disk:
+            return i
 
 
 def createPartition(partinfo, disk_dict, vg_dict):

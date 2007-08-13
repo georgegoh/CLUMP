@@ -237,6 +237,8 @@ class LogicalVolumeGroup(object):
 
     def delPhysicalVolume(self, physicalVol):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
+        if physicalVol.partition.leave_unchanged:
+            raise CannotDeleteVolumeGroupError, 'Physical Volume flagged to be unchanged.' 
         logger.info('Deleting physical volume')
         if physicalVol.name not in self.pv_dict.keys():
             raise CannotDeletePhysicalVolumeFromLogicalGroupError, \
@@ -293,7 +295,8 @@ class LogicalVolumeGroup(object):
         logicalVol.group = None
 
     def delete(self):
-        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
+        if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted.'
+        if self.leaveUnchanged(): raise CannotDeleteVolumeGroupError, 'Volume Group flagged to be unchanged.' 
         logger.info('Deleting volume group %s' % self.name)
         self.delete = True
         queueCommand(lvm.removeVolumeGroup, (self.name))

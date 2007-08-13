@@ -107,7 +107,9 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             return
 
         try:
+            kl.debug('e')
             addOSKit(baseScreen, kitops, kits, cdrom)
+            kl.debug('f')
         except KitAlreadyInstalledError, e:
             baseScreen.selector.popupMsg('Kit already installed', str(e))
     else:
@@ -136,6 +138,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     Verify that a distro matches the version and architecture defined in
     the given kiprofile object.
     """
+    kl.debug('a')
     verified = True
     err_list = []
     if kiprofile['OS'] != distro.ostype:
@@ -143,6 +146,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
                                                distro.ostype or 'Unknown'))
         verified = False
 
+    kl.debug('b')
     distro_ver = distro.getVersion() or 'Unknown'
     if distro.ostype in ['rhel', 'centos'] and distro_ver != 'Unknown':
         distro_ver = distro_ver.split('.')[0]
@@ -151,6 +155,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
                                                          distro_ver))
         verified = False
 
+    kl.debug('c')
     if kiprofile['OS_ARCH'] != distro.getArch():
         # FIXME: not sure if this check belongs here. See FedoraInstallSrc
         # in distro.py:343.
@@ -158,6 +163,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
             err_list.append('Arch:%s\tMedia Arch:%s' % (kiprofile['OS_ARCH'],
                                                        distro.getArch() or 'Unknown'))
             verified = False
+    kl.debug('d')
     return verified, err_list
 
 
@@ -204,8 +210,9 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
             continue
         kitops.copyOSKitMedia(kit)
         prog_dlg.close()
-
+    kl.debug('g')
     kitops.finalizeOSKit(kit)
+    kl.debug('h')
 
 def addKitFromURIForm(baseScreen):
     """Add kit from URI. This is the form."""

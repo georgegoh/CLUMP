@@ -198,6 +198,7 @@ def exceptionHandler(error):
     import traceback
     tb = traceback.format_exc()
     kl.debug(tb)
+    sys.exit(1)
 
 import snack
 from kusu.util.errors import UserExitError

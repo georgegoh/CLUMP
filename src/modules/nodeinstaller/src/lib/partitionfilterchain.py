@@ -155,6 +155,15 @@ class PartitionEntriesFilterChain(object):
     def __init__(self, filter_list=[]):
         self.filter_list = filter_list
 
+    def apply(self, partition_entries, disk_profile):
+        disk_profile = self.prefilter(partition_entries, disk_profile)
+        for filter in self.filter_list:
+            disk_profile = filter.apply(partition_entries, disk_profile)
+        disk_profile = self.postfilter(partition_entries, disk_profile)
+        return disk_profile
+
+
+class PartitionEntriesFilterChainDefaultPreserve(PartitionEntriesFilterChain):
     def prefilter(self, partition_entries, disk_profile):
         """Set the leave_unchanged flag to true for all volumes."""
         for disk in disk_profile.disk_dict.values():
@@ -170,12 +179,6 @@ class PartitionEntriesFilterChain(object):
     def postfilter(self, partition_entries, disk_profile):
         return disk_profile
 
-    def apply(self, partition_entries, disk_profile):
-        disk_profile = self.prefilter(partition_entries, disk_profile)
-        for filter in self.filter_list:
-            disk_profile = filter.apply(partition_entries, disk_profile)
-        disk_profile = self.postfilter(partition_entries, disk_profile)
-        return disk_profile
 
 
 class PartitionEntriesFilter(object):
@@ -188,10 +191,10 @@ class FilterOnMountpoints(PartitionEntriesFilter):
         for partinfo in partition_entries:
             mountpoint = translateMntPnt(partinfo['mntpnt'])
             preserve = partinfo['preserve']
-            disk_profile = self.__applyPreservation(mountpoint, preserve, disk_profile)
+            disk_profile = self.applyPreservation(mountpoint, preserve, disk_profile)
         return disk_profile
 
-    def __applyPreservation(self, mountpoint, preserve, disk_profile):
+    def applyPreservation(self, mountpoint, preserve, disk_profile):
         if mountpoint and mountpoint in disk_profile.mountpoint_dict.keys():
             vol = disk_profile.mountpoint_dict[mountpoint]
             if preserve == '0':
@@ -209,8 +212,8 @@ class FilterOnLogicalVolume(PartitionEntriesFilter):
         for lv in lv_entries:
             name = lv['device']
             preserve = lv['preserve']
-            disk_profile = self.__applyPreservation(name, 
-                                                    preserve, disk_profile)
+            disk_profile = self.applyPreservation(name, 
+                                                  preserve, disk_profile)
         return disk_profile
 
     def getLVEntries(self, partition_entries):
@@ -220,7 +223,7 @@ class FilterOnLogicalVolume(PartitionEntriesFilter):
                 lv_entries.append(p)
         return lv_entries
 
-    def __applyPreservation(self, lv_name, preserve, disk_profile):
+    def applyPreservation(self, lv_name, preserve, disk_profile):
         if not disk_profile.lv_dict.has_key(lv_name): return disk_profile
 
         vol = disk_profile.lv_dict[lv_name]
@@ -252,7 +255,7 @@ class AssignMntPntForLV(FilterOnLogicalVolume):
 
 
 class FilterOnFileSystem(PartitionEntriesFilter):
-    def __getValidEntries(self, partition_entries):
+    def getValidEntries(self, partition_entries):
         retVal = []
         for p in partition_entries:
             if p['device'] in 'nN' and translateFSTypes(p['fstype']):
@@ -260,15 +263,15 @@ class FilterOnFileSystem(PartitionEntriesFilter):
         return retVal
 
     def apply(self, partition_entries, disk_profile):
-        valid_entries = self.__getValidEntries(partition_entries)
+        valid_entries = self.getValidEntries(partition_entries)
         for partinfo in valid_entries:
             fs = translateFSTypes(partinfo['fstype'])
             preserve = partinfo['preserve']
-            disk_profile = self.__applyPreservation(fs, preserve, disk_profile)
+            disk_profile = self.applyPreservation(fs, preserve, disk_profile)
         return disk_profile
 
-    def __applyPreservation(self, fs, preserve, disk_profile):
-        vol_list = self.__filterOnFS(fs, disk_profile)
+    def applyPreservation(self, fs, preserve, disk_profile):
+        vol_list = self.filterOnFS(fs, disk_profile)
         for vol in vol_list:
             if preserve == '0':
                 vol.leave_unchanged = False
@@ -278,31 +281,39 @@ class FilterOnFileSystem(PartitionEntriesFilter):
                 logger.debug('Preserve %s' % vol.path)
         return disk_profile
 
-    def __filterOnFS(self, fs, disk_profile):
-        all_vols = self.__getAllVolumes(disk_profile)
-        if not all_vols: return []
+    def filterOnFS(self, fs, disk_profile):
+        all_vols = self.getAllVolumes(disk_profile)
+        if not all_vols:
+            logger.debug('No Volumes')
+            return []
         retVal = []
+        logger.debug('filtering on FS...')
         for vol in all_vols:
+            logger.debug('vol: %s type: %s' % (vol.path, str(type(vol))))
+            if fs == 'physical volume' and type(vol) == Partition and vol.lvm_flag:
+                retVal.append(vol)
             if vol.fs_type == fs:
                 retVal.append(vol)
         return retVal
 
-    def __getAllVolumes(self, disk_profile):
+    def getAllVolumes(self, disk_profile):
         all_vols = disk_profile.lv_dict.values()
         for disk in disk_profile.disk_dict.values():
             all_vols += disk.partition_dict.values()
-
+            logger.debug('Disk: %s has partitions %s' % (disk.path, str(disk.partition_dict.keys())))
+        logger.debug('All Volumes: %s' % all_vols)
+        return all_vols
 
 class FilterOnPartitionType(PartitionEntriesFilter):
     def apply(self, partition_entries, disk_profile):
-        p_list = self.__getAffectedPartitions(partition_entries)
+        p_list = self.getAffectedPartitions(partition_entries)
         for p in p_list:
             p_id, p_type = translatePartitionOptions(p['options'], 'partitionID')
             preserve = p['preserve']
-            disk_profile = self.__applyPreservation(p_type, preserve, disk_profile)
+            disk_profile = self.applyPreservation(p_type, preserve, disk_profile)
         return disk_profile
 
-    def __getAffectedPartitions(self, partition_entries):
+    def getAffectedPartitions(self, partition_entries):
         retVal = []
         for p in partition_entries:
             p_id_flag, name = translatePartitionOptions(p['options'], 'partitionID')
@@ -310,8 +321,8 @@ class FilterOnPartitionType(PartitionEntriesFilter):
                 retVal.append(p)
         return retVal
 
-    def __applyPreservation(self, p_type, preserve, disk_profile):
-        p_list = self.__getPartitionsOfType(p_type, disk_profile)
+    def applyPreservation(self, p_type, preserve, disk_profile):
+        p_list = self.getPartitionsOfType(p_type, disk_profile)
         for p in p_list:
             if preserve == '0':
                 p.leave_unchanged = False
@@ -321,7 +332,7 @@ class FilterOnPartitionType(PartitionEntriesFilter):
                 logger.debug('Preserve %s' % p.path)
         return disk_profile
 
-    def __getPartitionsOfType(self, p_type, disk_profile):
+    def getPartitionsOfType(self, p_type, disk_profile):
         retVal = []
         for disk in disk_profile.disk_dict.values():
             for partition in disk.partition_dict.values():
@@ -329,3 +340,70 @@ class FilterOnPartitionType(PartitionEntriesFilter):
                     logger.debug('PType: %s, fs: %s, partition: %s' % (p_type, partition.fs_type, partition.path))
                     retVal.append(partition)
         return retVal
+
+
+class PartitionEntriesFilterChainDefaultNoPreserve(PartitionEntriesFilterChain):
+    def prefilter(self, partition_entries, disk_profile):
+        """Set the leave_unchanged flag to False for all volumes."""
+        for disk in disk_profile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                partition.leave_unchanged = False
+
+        for lv in disk_profile.lv_dict.values():
+            lv.leave_unchanged = False
+ 
+        return disk_profile
+
+    def postfilter(self, partition_entries, disk_profile):
+        return disk_profile
+
+
+class FilterOnMountpointsNoPreserve(FilterOnMountpoints):
+    def applyPreservation(self, mountpoint, preserve, disk_profile):
+        if mountpoint and mountpoint in disk_profile.mountpoint_dict.keys():
+            vol = disk_profile.mountpoint_dict[mountpoint]
+            if preserve == '1':
+                vol.leave_unchanged = True
+                logger.debug('Unpreserve %s' % vol.path)
+            else:
+                vol.leave_unchanged = False
+                logger.debug('Preserve %s' % vol.path)
+        return disk_profile
+
+
+class FilterOnLogicalVolumeNoPreserve(FilterOnLogicalVolume):
+    def applyPreservation(self, lv_name, preserve, disk_profile):
+        if not disk_profile.lv_dict.has_key(lv_name): return disk_profile
+
+        vol = disk_profile.lv_dict[lv_name]
+        if preserve == '1':
+            vol.leave_unchanged = True
+        else:
+            vol.leave_unchanged = False        
+        return disk_profile
+
+
+class FilterOnFileSystemNoPreserve(FilterOnFileSystem):
+    def applyPreservation(self, fs, preserve, disk_profile):
+        vol_list = self.filterOnFS(fs, disk_profile)
+        for vol in vol_list:
+            if preserve == '1':
+                vol.leave_unchanged = True
+                logger.debug('Preserve %s' % vol.path)
+            else:
+                vol.leave_unchanged = False
+                logger.debug('Unpreserve %s' % vol.path)
+        return disk_profile
+
+
+class FilterOnPartitionTypeNoPreserve(FilterOnPartitionType):
+    def applyPreservation(self, p_type, preserve, disk_profile):
+        p_list = self.getPartitionsOfType(p_type, disk_profile)
+        for p in p_list:
+            if preserve == '1':
+                p.leave_unchanged = True
+                logger.debug('Preserve %s' % p.path)
+            else:
+                p.leave_unchanged = False
+                logger.debug('Unpreserve %s' % p.path)
+        return disk_profile
