@@ -96,23 +96,39 @@ class RepoManApp(KusuApp):
                 r = self.rfinst.refresh(ngname = ngs[0].ngname)
 
             else:
+                simpleRefresh = True
                 for ng in ngs:
                     kits = rtools.getKits(self.dbs, ng.ngname)
 
-                    if len(repo.kits) != len(kits):
-                        r = self.rfinst.refresh(ngname = ng.ngname)
+                    if len(repo.kits) != len(kits) or \
+                       sorted(repo.kits) != sorted(kits):
+                        simpleRefresh = False
+                        break
 
-                    elif sorted(repo.kits) != sorted(kits):
-                        r = self.rfinst.refresh(ngname = ng.ngname)
+                if simpleRefresh:
+                    r = self.rfinst.getRepo(repo.repoid)
+                    r.refresh(repo.repoid)
 
-                    else:
-                        continue
-            
-                    if repo.repoid != r.repoid:
-                        newRepo = self.dbs.Repos.select_by(repoid=r.repoid)[0]
-                        newRepo.reponame = repo.reponame + ' (%s)' % time.asctime()
-                        newRepo.save()
-                        newRepo.flush()
+                else:
+                    for ng in ngs:
+                        kits = rtools.getKits(self.dbs, ng.ngname)
+
+                        if len(repo.kits) != len(kits):
+                            r = self.rfinst.refresh(ngname = ng.ngname)
+
+                        elif sorted(repo.kits) != sorted(kits):
+                            r = self.rfinst.refresh(ngname = ng.ngname)
+
+                        else:
+                            r = self.rfinst.getRepo(repo.repoid)
+                            r.refresh(repo.repoid)
+                            continue
+
+                        if repo.repoid != r.repoid:
+                            newRepo = self.dbs.Repos.select_by(repoid=r.repoid)[0]
+                            newRepo.reponame = repo.reponame + ' (%s)' % time.asctime()
+                            newRepo.save()
+                            newRepo.flush()
 
     def delete(self, repo_name):
         self.repoExists(repo_name)
