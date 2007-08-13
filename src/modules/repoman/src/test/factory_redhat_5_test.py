@@ -116,8 +116,6 @@ class TestRedhat5Repo:
         for dir in dirs:
             dir.makedirs()
 
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
         (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'rhel' / '5' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
@@ -133,6 +131,11 @@ class TestRedhat5Repo:
         download('ks.cfg.tmpl', \
                  prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'rhel' / '5' / 'i386' / 'ks.cfg.tmpl')
 
+        download('kernel-2.6.9-22.0.1.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'rhel' / '5' / 'i386' / 'Server' / 'kernel-2.6.9-22.0.1.EL.i386.rpm')
+
+        download('kernel-2.6.9-11.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'kernel-2.6.9-11.EL.i386.rpm')
 
     def tearDown(self):
         global prefix
@@ -141,8 +144,7 @@ class TestRedhat5Repo:
         prefix.rmtree()
 
     def getPath(self):
-        paths = ['Server/yum-3.0.1-5.el5.noarch.rpm', \
-                 'Server/repodata/comps-rhel5-server-core.xml', \
+        paths = ['Server/repodata/comps-rhel5-server-core.xml', \
                  'Server/repodata/other.xml.gz', \
                  'Server/repodata/filelists.xml.gz', \
                  'Server/repodata/repomd.xml', \

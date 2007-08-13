@@ -115,8 +115,6 @@ class TestFedora6Repo:
         for dir in dirs:
             dir.makedirs()
 
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
         (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '6' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
@@ -134,6 +132,12 @@ class TestFedora6Repo:
         download('ks.cfg.tmpl', \
                  prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '6' / 'i386' / 'ks.cfg.tmpl')
 
+        download('kernel-2.6.9-22.0.1.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'fedora' / '6' / 'i386' / 'Fedora' / 'RPMS' / 'kernel-2.6.9-22.0.1.EL.i386.rpm')
+
+        download('kernel-2.6.9-11.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'kernel-2.6.9-11.EL.i386.rpm')
+
     def tearDown(self):
         global prefix
         self.dbs.dropTables()
@@ -141,7 +145,7 @@ class TestFedora6Repo:
 
     def getPath(self):
         
-        paths = ['Fedora/RPMS/yum-3.0-6.noarch.rpm',\
+        paths = ['Fedora/RPMS/',\
                  'Fedora/base/', \
                  'repodata/comps.xml', \
                  'repodata/other.xml.gz', \

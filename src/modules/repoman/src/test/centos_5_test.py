@@ -125,8 +125,6 @@ class TestCentos5Repo:
         for dir in dirs:
             dir.makedirs()
 
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-installer.rpm').touch()
-        (prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'base-node.rpm').touch()
         (prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'centos' / '5' / 'i386' / 'updates.img').touch()
 
         for p in self.getPath():
@@ -144,6 +142,11 @@ class TestCentos5Repo:
         download('ks.cfg.tmpl', \
                  prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'centos' / '5' / 'i386' / 'ks.cfg.tmpl')
 
+        download('kernel-2.6.9-22.0.1.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'kernel-2.6.9-22.0.1.EL.i386.rpm')
+
+        download('kernel-2.6.9-11.EL.i386.rpm', \
+                 prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'kernel-2.6.9-11.EL.i386.rpm')
 
     def tearDown(self):
         global prefix
@@ -152,7 +155,7 @@ class TestCentos5Repo:
         prefix.rmtree()
 
     def getPath(self):
-        paths = ['CentOS/yum-3.0.5-1.el5.centos.2.noarch.rpm',\
+        paths = ['CentOS/',\
                  'repodata/comps.xml', \
                  'repodata/other.xml.gz', \
                  'repodata/filelists.xml.gz', \
@@ -241,6 +244,9 @@ class TestCentos5Repo:
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
 
+        assert (prefix / 'depot' / 'repos' / repoid / 'CentOS' / 'kernel-2.6.9-11.EL.i386.rpm').exists()
+        assert not (prefix / 'depot' / 'repos' / repoid / 'CentOS' / 'kernel-2.6.9-22.0.1.EL.i386.rpm').exists()
+
     def testNodeGroupHasRepoID(self):
         global prefix
 
@@ -314,6 +320,7 @@ class TestCentos5Repo:
 
         newPath = prefix / 'depot' / 'kits' / 'centos' / '5' / 'i386' / 'CentOS'
         rpmsPath = prefix / 'yumupdates' / 'centos' /  '5.0' / 'os' / 'i386' / 'CentOS' 
+        [f.remove() for f in newPath.listdir()]
         for f in rpmsPath.listdir():
             f.copy(newPath / f.basename())
 

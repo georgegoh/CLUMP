@@ -11,6 +11,7 @@ from kusu.util.errors import *
 from kusu.core import database as db
 from kusu.repoman import tools
 from kusu.repoman.updates import YumUpdate, RHNUpdate
+from kusu.util import rpmtool
 from path import path
 from Cheetah.Template import Template
 import sqlalchemy as sa
@@ -202,6 +203,8 @@ class RedhatYumRepo(BaseRepo):
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
 
+        rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
+
         for kit in kits:
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
 
@@ -210,10 +213,29 @@ class RedhatYumRepo(BaseRepo):
    
             for file in pkgdir.listdir():
                 if file.basename() != 'TRANS.TBL':
+
+                    rpm = rpmtool.RPM(str(file))
+
+                    name = rpm.getName()
+                    arch = rpm.getArch()
+
+                    # We will be replacing the package from the os kit when 
+                    # it is provided by a kit
+                    if rpmPkgs.has_key(name):
+                        if arch in ['i386', 'i486', 'i586', 'i686']:
+                            for arch in ['i386', 'i486', 'i586', 'i686']:
+                                if rpmPkgs[name].has_key(arch):
+                                    osFile = rpmPkgs[name][arch][0].getFilename()
+                                    if osFile.exists(): osFile.remove()
+
+                        else:
+                            if rpmPkgs[name].has_key(arch):
+                                osFile = rpmPkgs[name][arch][0].getFilename()
+                                if osFile.exists(): osFile.remove()
+                        
                     dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
 
-                    if dest.exists():
-                       raise FileAlreadyExistError, '%s already exists' % dest
+                    if dest.exists(): dest.remove()
     
                     (dest.parent.relpathto(file)).symlink(dest)
 
@@ -550,6 +572,11 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
 
+        rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
+                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
+                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['clusterstorage.rpmsdir']]),
+                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['vt.rpmsdir']])]
+
         for kit in kits:
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
 
@@ -558,10 +585,30 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
    
             for file in pkgdir.listdir():
                 if file.basename() != 'TRANS.TBL':
+
+                    rpm = rpmtool.RPM(str(file))
+
+                    name = rpm.getName()
+                    arch = rpm.getArch()
+
+                    # We will be replacing the package from the os kit when 
+                    # it is provided by a kit
+                    for rpmPkg in rpmPkgs:
+                        if rpmPkg.has_key(name):
+                            if arch in ['i386', 'i486', 'i586', 'i686']:
+                                for arch in ['i386', 'i486', 'i586', 'i686']:
+                                    if rpmPkg[name].has_key(arch):
+                                        osFile = rpmPkg[name][arch][0].getFilename()
+                                        if osFile.exists(): osFile.remove()
+
+                            else:
+                                if rpmPkg[name].has_key(arch):
+                                    osFile = rpmPkg[name][arch][0].getFilename()
+                                    if osFile.exists(): osFile.remove()
+
                     dest = self.repo_path / self.dirlayout['server.rpmsdir'] / file.basename()
 
-                    if dest.exists():
-                       raise FileAlreadyExistError, '%s already exists' % dest
+                    if dest.exists(): dest.remove()
 
                     (dest.parent.relpathto(file)).symlink(dest)
 
