@@ -200,7 +200,7 @@ class BaseUpdate:
 
         if retcode == 0:
             # Do not use symlink for component
-            comp = (destdir / kitName).listdir('component-%s.*.rpm' % kitName)
+            comp = (destDir / kitName).listdir('component-%s-*.rpm' % kitName)
             if comp and comp[0].islink():
                 comp = comp[0]
                 realComp = comp.realpath()
