@@ -69,7 +69,7 @@ class RepoPatchApp(KusuApp):
 
         if kernel:
             vmlinuz, initrd = repoObj.makeTFTP(kernel, kitRelease)
-            repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
+            #repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
         else:
             # no updated kernel at all
             pass
