@@ -42,7 +42,7 @@ class Report:
     def toolHelp(self):
         """toolHelp - This method will provide the help for each of the
         plugins.  Each plugin must override this method."""
-        msg = self.gettext("dbreport_Help")
+        msg = self.gettext("genconfig_Help")
         print msg
         global PLUGINS
         dirlist = os.listdir(PLUGINS)

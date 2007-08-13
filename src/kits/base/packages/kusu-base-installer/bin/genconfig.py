@@ -103,13 +103,13 @@ class DbReportApp(KusuApp):
             pname = os.path.join(PLUGINS, '%s.py' % self.plugin)
         
             if os.access(pname, os.R_OK) == 0:
-                self.errorMessage("dbreport_cannot_find_plugin: %s\n", self.plugin)
+                self.errorMessage("genconfig_cannot_find_plugin: %s\n", self.plugin)
                 sys.exit(-1)
 
         # Do we need a new database connection?
         if self.database != '' or self.user != '' or self.password != '':
             if self.database == '' or self.user == '' or self.password == '':
-                self.errorMessage("dbreport_provide_database_user_password\n")
+                self.errorMessage("genconfig_provide_database_user_password\n")
                 sys.exit(-1)
                 
             dbrinst.altDb(self.database, self.user, self.password)

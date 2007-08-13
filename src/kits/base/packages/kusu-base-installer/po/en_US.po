@@ -119,47 +119,47 @@ msgstr "ERROR:  No such host: %s\n"
 msgid "boothost_no_such_nodegroup %s\n"
 msgstr "ERROR:  No such nodegroup: %s\n"
 
-msgid "dbreport_cannot_find_plugin: %s\n"
+msgid "genconfig_cannot_find_plugin: %s\n"
 msgstr "ERROR:  Cannot find plugin: %s\n"
 
-msgid "dbreport_provide_database_user_password\n"
+msgid "genconfig_provide_database_user_password\n"
 msgstr "ERROR:  The database, user, and password must all be specified\n"
 
-msgid "dbreport_Help"
-msgstr "dbreport [-h|-v| -d database -u user -p password ] plugin plugin_args\n\nThe dbreport tool will run various plugins to generate configuration\nfiles for various applications.  It may also be used to gather\ninformation about the cluster.  See below for a list of plugins.\n\nWhen run with no arguments it will generate a list of all available\nplugins.  The following arguments are supported by the tool:\n  -h           - Provide help on this tool.  If a plugin is specified\n                 then the help for that tool will be displayed\n  -v           - Print the tool version.\n  -d database  - (optional) name of the database to connect to.\n                 Defaults to ocsdb.\n  -u user      - (optional) user of to connect to the database as.\n                 Defaults to guest.\n  -p password  - (optional) The password to use in connecting to the\n                 database.  Defaults to guest.\n\nAvailable plugins include:"
+msgid "genconfig_Help"
+msgstr "genconfig [-h|-v| -d database -u user -p password ] plugin plugin_args\n\nThe genconfig tool will run various plugins to generate configuration\nfiles for various applications.  It may also be used to gather\ninformation about the cluster.  See below for a list of plugins.\n\nWhen run with no arguments it will generate a list of all available\nplugins.  The following arguments are supported by the tool:\n  -h           - Provide help on this tool.  If a plugin is specified\n                 then the help for that tool will be displayed\n  -v           - Print the tool version.\n  -d database  - (optional) name of the database to connect to.\n                 Defaults to ocsdb.\n  -u user      - (optional) user of to connect to the database as.\n                 Defaults to guest.\n  -p password  - (optional) The password to use in connecting to the\n                 database.  Defaults to guest.\n\nAvailable plugins include:"
 
-msgid "dbreport_Nodes_Help"
+msgid "genconfig_Nodes_Help"
 msgstr "This plugin generates a list of all nodes installed by the installer.\nIf the plugin is provided with a node group name it will generate\na list of nodes in node group."
 
-msgid "dbreport_Hosts_Help"
+msgid "genconfig_Hosts_Help"
 msgstr "This plugin generates the contents of the /etc/hosts file."
 
-msgid "dbreport_cannot_determine_DNS_zone\n"
+msgid "genconfig_cannot_determine_DNS_zone\n"
 msgstr "ERROR:  Cannot determine DNS Zone from the database!\n"
 
-msgid "dbreport_cannot_determine_primary_installer\n"
+msgid "genconfig_cannot_determine_primary_installer\n"
 msgstr "ERROR:  Database query failed!  Unable to determine the primary installer.\n"
 
-msgid "dbreport_cannot_determine_DNS_forwarders\n"
+msgid "genconfig_cannot_determine_DNS_forwarders\n"
 msgstr "ERROR:  Cannot determine DNS forwarders from the database!\n"
 
-msgid "dbreport_Debug_Help"
+msgid "genconfig_Debug_Help"
 msgstr "This plugin provides debugging information for support.\nCurrently it provides a dump of the database."
 
-msgid "dbreport_Dhcpd_Help"
+msgid "genconfig_Dhcpd_Help"
 msgstr "This plugin generates the DHCP daemon configuration file.\nNo arguments are needed for the plugin."
 
-msgid "dbreport_Zone_Help"
-msgstr "This plugin generates the DNS zone file.\nUSE:  dbreport zone\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table."
+msgid "genconfig_Zone_Help"
+msgstr "This plugin generates the DNS zone file.\nUSE:  genconfig zone\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table."
 
-msgid "dbreport_Named_Help"
-msgstr "This plugin generates the named.conf.\nUSE:  dbreport named [master|slave]   (defaults to master)\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table."
+msgid "genconfig_Named_Help"
+msgstr "This plugin generates the named.conf.\nUSE:  genconfig named [master|slave]   (defaults to master)\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table."
 
-msgid "dbreport_Reverse_Help"
-msgstr "This plugin generates the DNS zone file.\nUSE:  dbreport reverse {network}\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table.  The network is one of the\nnetworks defined in the networks table in the database."
+msgid "genconfig_Reverse_Help"
+msgstr "This plugin generates the DNS zone file.\nUSE:  genconfig reverse {network}\nNo output will be generated if InstallerServeDNS=False\nin the appglobals database table.  The network is one of the\nnetworks defined in the networks table in the database."
 
-msgid "dbreport_Apache_Help"
-msgstr "This plugin generates the Apache configuration file.\nUSE:  dbreport apache_conf\nThe resulting file should be placed in /etc/httpd/conf.d"
+msgid "genconfig_Apache_Help"
+msgstr "This plugin generates the Apache configuration file.\nUSE:  genconfig apache_conf\nThe resulting file should be placed in /etc/httpd/conf.d"
 
 msgid "repoman_Help"
 msgstr "Repoman help goes here"
