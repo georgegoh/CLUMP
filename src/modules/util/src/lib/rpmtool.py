@@ -100,7 +100,7 @@ class RPM:
         
         if r:
             if type(r) in [str, unicode]:
-                r = path(r).realpath()
+                r = path(r)
                 self.ext = r.ext
                 self.file = r
                 self.path, self.fname = r.splitpath()
