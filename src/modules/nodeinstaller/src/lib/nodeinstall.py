@@ -234,6 +234,8 @@ class NodeInstaller(object):
     'name':'',          # Name of the node
     'installers':[],    # List of available installers
     'repo':'',          # Repo location
+    'repoid':'',        # Repo ID
+    'ngtype':'',        # Nodegroup type
     'ostype':'',        # OS type
     'installtype': '',  # Type of install to perform
     'nodegrpid':0 ,     # Node group ID
@@ -312,7 +314,7 @@ class NodeInstaller(object):
             p.parse(self.source)
             for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
                 'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
-                'scripts', 'cfm']:
+                'scripts', 'cfm', 'ngtype', 'repoid']:
                 setattr(self,i,getattr(self.niidata,i))
                 logger.debug('%s : %s' % (i,getattr(self,i)))
 

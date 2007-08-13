@@ -53,7 +53,7 @@ State:
 Dump CFM: 0 
 Node: node0000 
 </debug>
-<nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2">
+<nodeinfo name="node0000" installers="10.1.10.1" repo="/mirror/fc6/i386/os" ostype="fedora" installtype="package" nodegrpid="2" ngtype="installer" repoid="1000">
     <nicinfo device="eth0" ip="10.1.10.10" subnet="255.255.255.0" network="10.1.10.0" suffix="" gateway="10.1.10.1" dhcp="0" options="" boot="1"/>
     <partition device="1" mntpnt="/boot" fstype="ext3" size="100" options="" partition="1" preserve="0"/>
     <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>

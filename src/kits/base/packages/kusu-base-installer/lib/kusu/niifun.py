@@ -49,7 +49,9 @@ class NodeInstInfoHandler(ContentHandler):
         self.packages    = []    # List of packages to install
         self.scripts     = []    # List of scripts to run
         self.cfm         = ''    # The CFM data
-        
+        self.ngtype      = ''    # Nodegroup Type
+        self.repoid      = ''    # Repo ID
+ 
         # The following are for use by the handler internally
         self.partnum     = 0     # Counter used by Partition dictionary
         self.compstart   = 0     # Flag for the start of a component block
@@ -69,6 +71,7 @@ class NodeInstInfoHandler(ContentHandler):
             self.installtype = attrs.get('installtype',"")
             self.nodegrpid   = attrs.get('nodegrpid',"")
             self.ngtype      = attrs.get('ngtype',"")
+            self.repoid      = attrs.get('repoid', "")
 
         elif name == 'appglobals':
             name  = attrs.get('name',"")
@@ -164,6 +167,7 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write('export NII_NGTYPE="%s"\n' % self.ngtype)
         fp.write('export NII_INSTALLERS="%s"\n' % self.installers)
         fp.write('export NII_REPO="%s"\n' % self.repo)
+        fp.write('export NII_REPOID="%s"\n' % self.repoid)
         fp.write('export NII_OSTYPE="%s"\n' % self.ostype)
         fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
         
