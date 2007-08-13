@@ -24,6 +24,7 @@ class Plugin:
     os_version = None
     os_arch = None
     dbs = None
+    repoid = None
 
     def __init__(self):
         self.hostname = socket.gethostname()
@@ -106,6 +107,7 @@ class PluginRunner:
         Plugin.nodename = self.getNodeName()
         Plugin.niihost = self.getNIIHost()
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
+        Plugin.repoid = self.getRepoID()
         Plugin.dbs = self.dbs
 
     def loadPlugins(self):
@@ -208,6 +210,24 @@ class PluginRunner:
             node_name = row.kvalue
 
         return node_name
+
+    def getRepoID(self):
+        repoid = None
+
+        if path('/etc/profile.nii').exists():
+            # On compute node
+            repoid = int(self.parseNII('/etc/profile.nii', 'NII_REPOID'))
+ 
+        else:
+            row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
+            node_name = row.kvalue
+
+            ng = self.dbs.NodeGroups.select_by(self.dbs.NodeGroups.c.ngid == self.dbs.Nodes.c.ngid,
+                                               self.dbs.Nodes.c.name == node_name)
+            if ng:
+                repoid = ng[0].repoid
+
+        return repoid
 
     def parseNII(self, nii, key):
         f = open(nii, 'r')
