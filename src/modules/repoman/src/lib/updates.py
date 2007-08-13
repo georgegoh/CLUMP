@@ -199,6 +199,14 @@ class BaseUpdate:
         retcode = p.returncode
 
         if retcode == 0:
+            # Do not use symlink for component
+            comp = (destdir / kitName).listdir('component-%s.*.rpm' % kitName)
+            if comp and comp[0].islink():
+                comp = comp[0]
+                realComp = comp.realpath()
+                comp.remove()
+                realComp.copy(comp)
+
             return True
         else:
             raise UnableToMakeUpdateKit, err
