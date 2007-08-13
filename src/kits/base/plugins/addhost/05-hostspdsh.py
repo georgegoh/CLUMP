@@ -21,3 +21,6 @@ class AddHostPlugin:
 
     def removed(self, dbconn, nodename, info):
         os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts-pdsh")
+
+    def updated(self, dbconn, nodename, info):
+        os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts-pdsh")
