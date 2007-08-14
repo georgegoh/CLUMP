@@ -8,13 +8,12 @@
 #
 
 import os
-import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
 from IPy import IP
 from Cheetah.Template import Template
-
+import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.final')
 
 def setupDisks(disk_profile):
@@ -42,18 +41,22 @@ def makeRepo(kiprofile):
 
     #Guaranteed by installer screens. Only 1 OS kit for the platform
     #we are installing
+    logger.debug('Making repo using rfactory.')
     ngname = 'installer' + '-' + kiprofile['Kits']['longname']
     repo = rfactory.make(ngname, 'Repo for ' + ngname)
-    
+
+    logger.debug('Save repo.')
     repoRow = db.Repos.get(repo.repoid)
     repoRow.reponame = 'Repo for ' + kiprofile['Kits']['longname']
     repoRow.save()
     repoRow.flush()
-        
+
+    logger.debug('Making symlink to $KUSU_TMP/www.')
     #Makes symlink in $KUSU_TMP/www
     kusu_tmp = os.environ.get('KUSU_TMP', None)
     repo.repo_path.symlink(path(kusu_tmp) / 'www')
 
+    logger.debug('Finalising repo.')
     # workaround for starting repoIDs at 1000
     db.Repos.selectfirst_by(repoid=999).delete()
     db.flush()
