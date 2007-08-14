@@ -101,7 +101,7 @@ class PluginRunner:
             except Exception, e:
                 self.failure()
                 results.append( (plugin.name, False, e) )
-                kl.error('Plugin: %s failed to run successfully. Reason: %s' (plugin.name,e))
+                kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
                    
             if plugin.delete and (self.dir / fname).exists():
                 (self.dir / fname).remove()
