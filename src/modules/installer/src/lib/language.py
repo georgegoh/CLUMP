@@ -19,6 +19,22 @@ from screen import InstallerScreen
 
 kl = kusulog.getKusuLog('installer.language')
 
+def getLangMap():
+    kusuroot = os.environ.get('KUSU_ROOT', None)
+    if kusuroot and os.path.exists('%s/etc/lang-table' % kusuroot):     
+        langTable = open('%s/etc/lang-table' % kusuroot)
+
+    rows = langTable.readlines()
+    langTable.close()
+    langMap = {}
+    for row in rows:
+        attr = row.split('\t')
+        if len(attr) < 6:
+            raise Exception, "Row in lang-table has < 6 elements\n"+ \
+                             row
+        langMap[attr[0]] = (attr[1], attr[2], attr[3], attr[4], attr[5])
+    return langMap
+ 
 class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for language."""
     name = _('Language')
@@ -29,6 +45,7 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
         profile.PersistentProfile.__init__(self, kiprofile)        
+        self.langMap = getLangMap()
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 2)
@@ -37,18 +54,6 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(instruction, col=0, row=0)
         self.listbox = snack.Listbox(8, scroll=1, returnExit=1)
 
-        kusuroot = os.environ.get('KUSU_ROOT', None)
-        if kusuroot and os.path.exists('%s/etc/lang-table' % kusuroot):     
-            langTable = open('%s/etc/lang-table' % kusuroot)
-
-        rows = langTable.readlines()
-        self.langMap = {}
-        for row in rows:
-            attr = row.split('\t')
-            if len(attr) < 6:
-                raise Exception, "Row in lang-table has < 6 elements\n"+ \
-                                 row
-            self.langMap[attr[0]] = (attr[1], attr[2], attr[3], attr[4], attr[5])
         languages = self.langMap.keys()
         languages.sort()
         for language in languages:
