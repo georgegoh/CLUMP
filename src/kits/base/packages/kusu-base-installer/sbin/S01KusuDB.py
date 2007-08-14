@@ -26,68 +26,65 @@ class KusuRC(Plugin):
         from kusu.core import database as db
         import sqlalchemy as sa
 
-        retcode = self.runCommand('/etc/init.d/mysqld status')[0]
-        if retcode != 0:
-            retcode, out, err = self.runCommand('/etc/init.d/mysqld start')
-            if retcode != 0:
-                return False
+        if not path('/root/kusu.db').exists():
+            continue
 
-            # Migrate db
-            if path('/root/kusu.db').exists():
-                # Clear all mappers and init them
-                for key in sa.orm.mapper_registry.keys():
-                    sa.orm.mapper_registry.pop(key)
+        self.runCommand('/etc/init.d/mysqld start')
 
-                sqliteDB = db.DB('sqlite', '/root/kusu.db')
-                dbs = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
+        # Clear all mappers and init them
+        for key in sa.orm.mapper_registry.keys():
+            sa.orm.mapper_registry.pop(key)
 
-                sqliteDB.copyTo(dbs)
-                os.unlink('/root/kusu.db')
-            
-                # Set db.passwd permission correctly
-                apache = pwd.getpwnam('apache')
-                uid = apache[2]
-                gid = apache[3]
+        sqliteDB = db.DB('sqlite', '/root/kusu.db')
+        dbs = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
 
-                # Write new db.passwd
-                import random
-                import time
-                r = random.Random(time.time())
-                chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                password =  ''.join([r.choice(chars) for i in xrange(8)])
+        sqliteDB.copyTo(dbs)
+        os.unlink('/root/kusu.db')
+    
+        # Set db.passwd permission correctly
+        apache = pwd.getpwnam('apache')
+        uid = apache[2]
+        gid = apache[3]
 
-                p = path(os.environ.get('KUSU_ROOT', '/opt/kusu')) / 'etc' /  'db.passwd'
-                f = open(p, 'w')
-                f.write(password)
-                f.close()
+        # Write new db.passwd
+        import random
+        import time
+        r = random.Random(time.time())
+        chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        password =  ''.join([r.choice(chars) for i in xrange(8)])
 
-                p.chmod(0400)
-                p.chown(uid, gid)
+        p = path(os.environ.get('KUSU_ROOT', '/opt/kusu')) / 'etc' /  'db.passwd'
+        f = open(p, 'w')
+        f.write(password)
+        f.close()
 
-                # setup permission 
-                permission = """
+        p.chmod(0400)
+        p.chown(uid, gid)
+
+        # setup permission 
+        permission = """
 grant select,update,insert,delete,lock tables on kusudb.* to apache@localhost;
 grant select,update,insert,delete,lock tables on kusudb.* to apache@'';
 update mysql.user set password=password('%s') where user='apache';
 grant select on kusudb.* to ''@localhost;
 FLUSH PRIVILEGES;""" % password
-                import tempfile
-                tmpfile = tempfile.mkstemp()[1]
-                os.chmod(tmpfile, 0600)
-                os.chown(tmpfile, 0, 0)
-                
-                f = open(tmpfile, 'w')
-                f.write(permission)
-                f.close()
-                self.runCommand('/usr/bin/mysql kusudb < ' + tmpfile)
-                os.unlink(tmpfile)
+        import tempfile
+        tmpfile = tempfile.mkstemp()[1]
+        os.chmod(tmpfile, 0600)
+        os.chown(tmpfile, 0, 0)
+        
+        f = open(tmpfile, 'w')
+        f.write(permission)
+        f.close()
+        self.runCommand('/usr/bin/mysql kusudb < ' + tmpfile)
+        os.unlink(tmpfile)
 
-                # chkconfig
-                self.runCommand('/sbin/chkconfig mysqld on')
+        # chkconfig
+        self.runCommand('/sbin/chkconfig mysqld on')
 
-                # Clear all mappers and init them
-                for key in sa.orm.mapper_registry.keys():
-                    sa.orm.mapper_registry.pop(key)
-                self.dbs = db.DB('mysql', 'kusudb', 'apache', password)
+        # Clear all mappers and init them
+        for key in sa.orm.mapper_registry.keys():
+            sa.orm.mapper_registry.pop(key)
+        self.dbs = db.DB('mysql', 'kusudb', 'apache', password)
 
         return True
