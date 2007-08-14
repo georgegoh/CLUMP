@@ -9,16 +9,20 @@
 from path import path
 from kusu.core import rcplugin
 
+import os
+import pwd
+
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
-        self.name = 'kusu'
-        self.desc = 'Setting up Kusu infrastructure'
+        self.name = 'ntpd'
+        self.desc = 'Setting up ntpd'
         self.ngtypes = ['installer']
         self.delete = True
 
     def run(self):
-        self.runCommand('sh /etc/rc.kusu.d/S01KusuSetup')
-
+        if path('/etc/ntp.conf').exists():
+            self.runCommand('/etc/init.d/ntpd start')
+            self.runCommand('/sbin/chkconfig ntpd on')
+        
         return True
-

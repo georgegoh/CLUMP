@@ -10,6 +10,7 @@ from path import path
 from kusu.core import rcplugin
 
 import os
+import pwd
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -21,6 +22,14 @@ class KusuRC(rcplugin.Plugin):
 
     def run(self):
         """Setup Apache"""
+
+        apache = pwd.getpwnam('apache')
+        uid = apache[2]
+        gid = apache[3]
+
+        nodeboot = path('/depot/repos/nodeboot.cgi')
+        nodeboot.chown(uid, gid)
+        nodeboot.chmod(0770)
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
 

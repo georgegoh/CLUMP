@@ -93,7 +93,6 @@ make ROOT=$RPM_BUILD_ROOT install
 %exclude /opt/kusu/lib/python/kusu/ui/text/*.py?
 %exclude /etc/rc.kusu.d/*.py?
 #%exclude /opt/kusu/lib/python/kusu/ui/*.py?
-/etc/rc.kusu.d/S01KusuSetup
 /etc/rc.kusu.d/*.py
 %defattr(-,apache,apache)
 /depot/repos/nodeboot.cgi

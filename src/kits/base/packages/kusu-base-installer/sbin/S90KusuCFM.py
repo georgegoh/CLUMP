@@ -7,7 +7,7 @@
 #
 
 from path import path
-from kusu.corr import rcplugin
+from kusu.core import rcplugin
 import sys
 
 class KusuRC(rcplugin.Plugin):
