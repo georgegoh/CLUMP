@@ -6,7 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from kusu.core import database as db
-from kusu.core import plugin
+from kusu.core import rcplugin
 
 from kusu.util import tools
 from path import path
@@ -82,7 +82,7 @@ class TestPlugin:
     def testScriptPass(self):
         global prefix
 
-        pRunner = plugin.PluginRunner('KusuRC', prefix, self.dbs)
+        pRunner = rcplugin.PluginRunner('KusuRC', prefix, self.dbs)
         results = pRunner.run()
 
         assert len(results) == 3
