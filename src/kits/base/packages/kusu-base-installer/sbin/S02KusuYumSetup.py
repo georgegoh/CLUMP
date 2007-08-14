@@ -7,9 +7,9 @@
 #
 
 from path import path
-from kusu.core.plugin import Plugin
+from kusu.core.plugin import rcplugin
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
     def __init__(self):
         Plugin.__init__(self)
         self.name = 'yumrepo'
