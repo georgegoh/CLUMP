@@ -9,7 +9,7 @@
 from path import path
 from kusu.core import rcplugin
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'ntpd'
