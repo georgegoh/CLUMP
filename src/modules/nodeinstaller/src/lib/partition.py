@@ -252,8 +252,11 @@ def createSchema(part_rules, diskprofile):
     schema = {'disk_dict':{},'vg_dict':{}}
 
     vg_list = getVGList(part_rules, diskprofile)
+    logger.debug('VG List after filtering: %s' % str(vg_list))
     part_list = getPartList(part_rules, diskprofile)
+    logger.debug('Partitions List after filtering: %s' % str(part_list))
     lv_list = getLVList(part_rules, diskprofile)
+    logger.debug('LV List after filtering: %s' % str(lv_list))
     # create the volume groups first.
     try:
         for vginfo in vg_list:
