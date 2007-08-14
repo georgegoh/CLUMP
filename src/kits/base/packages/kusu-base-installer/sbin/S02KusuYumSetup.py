@@ -7,7 +7,7 @@
 #
 
 from path import path
-from kusu.core.plugin import rcplugin
+from kusu.core import rcplugin
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
