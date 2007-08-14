@@ -70,8 +70,8 @@ class ScreenFactoryImpl(ScreenFactory):
          TZSelectionScreen(kiprofile=kiprofile),
          RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
-         KitsScreen(kiprofile=kiprofile),
-         ConfirmScreen(kiprofile=kiprofile)
+         ConfirmScreen(kiprofile=kiprofile),
+         KitsScreen(kiprofile=kiprofile)
         ]
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':

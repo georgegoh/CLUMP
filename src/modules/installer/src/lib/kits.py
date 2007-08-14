@@ -19,6 +19,7 @@ from kusu.kitops.kitops import KitOps
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util import profile
+from kusu.installer.finalactions import *
 
 kl = kusulog.getKusuLog('installer.kits')
 
@@ -28,7 +29,7 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
     profile = 'Kits'
     msg = _('Please enter a Fedora 6 URL:')
     buttons = [_('Add'), _('Remove')]
-
+    backButtonDisabled = True
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
@@ -119,6 +120,7 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         """
         Store
         """
+        kl.debug('Store the kits.')
         kit_list = self.kitops.listKit()
         names = [kit.rname for kit in kit_list]
         os = [kit.rname for kit in kit_list if kit.isOS]
@@ -133,6 +135,44 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
             for name in missing: errMsg += '\n\t%s' % name
             self.selector.currentStep -= 1
             self.selector.popupMsg('Missing Kits', errMsg)
+            return
+
+        self.kiprofile.save()
+
+        prog_dlg = self.selector.popupProgress('Setting Up Network', 'Setting up networking...')
+        setupNetwork()
+        kl.debug('Network set up.')
+        prog_dlg.close()
+
+        prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
+        writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        kl.debug('Network time set up.')
+        prog_dlg.close()
+
+        kl.debug('Making repository')
+        prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
+        try:
+            makeRepo(self.kiprofile)
+        except NodeGroupNotFoundError, e:
+            raise NodeGroupNotFoundError, 'Node Group %s not found.' % str(e)
+        except NodeGroupHasRepoAlreadyError, e:
+            raise NodeGroupHasRepoAlreadyError, \
+                  'Repo already exists for % node group.' % str(e)
+ 
+        kl.debug('installer repository is created')
+        prog_dlg.close()
+
+        kl.debug('Creating Auto-install script')
+        prog_dlg = self.selector.popupProgress('Creating Auto-install Script', 'Creating Auto-install script...')
+        disk_profile = self.kiprofile['Partitions']['DiskProfile']
+        genAutoInstallScript(disk_profile, self.kiprofile)
+        kl.debug('Auto install script generated.')
+        prog_dlg.close()
+
+        prog_dlg = self.selector.popupProgress('Migrating Kusu Logs', 'Migrating kusu logs...')
+        migrate(self.kiprofile['Kusu Install MntPt'])
+        kl.debug('Migrated kusu.db and kusu.log')
+        prog_dlg.close()
 
 
     def save(self, db, profile):

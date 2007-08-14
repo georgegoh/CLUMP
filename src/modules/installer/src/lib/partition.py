@@ -17,11 +17,10 @@ from defaults import *
 from kusu.partitiontool import partitiontool
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-import kusu.util.log as kusulog
 from kusu.util.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
-
+import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
 class PartitionScreen(InstallerScreen):
@@ -195,6 +194,16 @@ class PartitionScreen(InstallerScreen):
         else:
             return True, ''
 
+    def swapPartitionExists(self):
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for partition in disk.partition_dict.itervalues():
+                if partition.fs_type == 'linux-swap':
+                    return True
+        for lv in self.disk_profile.lv_dict.itervalues():
+            if lv.fs_type == 'linux-swap':
+                return True
+        return False
+ 
     def formAction(self):
         """
         
@@ -213,15 +222,9 @@ class PartitionScreen(InstallerScreen):
         missing_partitions = ''
         if not self.disk_profile.mountpoint_dict.has_key('/'):
             missing_partitions += '\troot (/)\n'
-        # start by assuming we don't have a swap partition,
-        # but clear the error if we do find one after all.
-        noswap = '\tswap\n'
-        for disk in self.disk_profile.disk_dict.itervalues():
-            for partition in disk.partition_dict.itervalues():
-                if partition.fs_type == 'linux-swap':
-                    noswap = ''
-                    break;
-        missing_partitions += noswap
+
+        if not self.swapPartitionExists():
+            missing_partitions += '\tswap\n'
 
         if missing_partitions:
             self.selector.popupMsg(_('Partitions Not Defined'),
@@ -231,24 +234,29 @@ class PartitionScreen(InstallerScreen):
             self.selector.currentStep = self.selector.currentStep - 1
             return
         
-        proceed = self.selector.popupYesNo(_('Really Proceed?'),
-                       _('Proceeding beyond this screen will cause ' + \
-                         'irreversible changes to your disk(s).\n\nIf you ' + \
-                         'have any valuable data that is existing on your ' + \
-                         'current disk(s), please press "No" to cancel ' + \
-                         'installation, and then backup your data before ' + \
-                         're-attempting installation.\n\nOtherwise, if you ' + \
-                         'are sure you want to continue, then press the ' + \
-                         '"Yes" button.'), defaultNo=True)
-
-        if proceed:
-            from finalactions import setupDisks, mountKusuMntPts
-            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-            setupDisks(self.disk_profile)
-            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
-            prog_dlg.close()
-        else:
-            self.selector.currentStep = self.selector.currentStep - 1
+#        proceed = self.selector.popupYesNo(_('Really Proceed?'),
+#                       _('Proceeding beyond this screen will cause ' + \
+#                         'irreversible changes to your disk(s).\n\nIf you ' + \
+#                         'have any valuable data that is existing on your ' + \
+#                         'current disk(s), please press "No" to cancel ' + \
+#                         'installation, and then backup your data before ' + \
+#                         're-attempting installation.\n\nOtherwise, if you ' + \
+#                         'are sure you want to continue, then press the ' + \
+#                         '"Yes" button.'), defaultNo=True)
+#
+#        if proceed:
+#            from finalactions import setupDisks, mountKusuMntPts
+#            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+#            setupDisks(self.disk_profile)
+#            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
+#            prog_dlg.close()
+#        else:
+#            self.selector.currentStep = self.selector.currentStep - 1
+#         from finalactions import setupDisks, mountKusuMntPts
+#         prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
+#         setupDisks(self.disk_profile)
+#         mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
+#         prog_dlg.close()
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:
