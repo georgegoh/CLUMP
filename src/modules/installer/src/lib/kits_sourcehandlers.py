@@ -47,7 +47,7 @@ def addKitFromCDForm(baseScreen, kitops):
         vendor = device_dict['vendor']
         model = device_dict['model']
         if not vendor: vendor = ''
-        else: vendor + ' '
+        else: vendor += ' '
         if not model: model = 'Unspecified Model'
         display_name = key + ' - ' + vendor + model
         cdrom_tulist.append((display_name , key))
@@ -73,6 +73,7 @@ def addKitFromCDForm(baseScreen, kitops):
         return NAV_BACK
     closeTray(cdrom)
     addKitFromCDAction(baseScreen, kitops, cdrom)
+    kl.debug('Kit added from CD')
 
 def addKitFromCDAction(baseScreen, kitops, cdrom):
     """Add kit from CD. This is the action."""
@@ -107,9 +108,8 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             return
 
         try:
-            kl.debug('e')
             addOSKit(baseScreen, kitops, kits, cdrom)
-            kl.debug('f')
+            kl.debug('Added OS kit.')
         except KitAlreadyInstalledError, e:
             baseScreen.selector.popupMsg('Kit already installed', str(e))
     else:
