@@ -19,7 +19,7 @@
 #
 # 
 
-VERSION=5.0
+VERSION=1.0
 
 source /etc/profile.d/kusuenv.sh
 mkdir -p $KUSU_TMP
