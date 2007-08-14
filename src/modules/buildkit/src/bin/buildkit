@@ -186,13 +186,15 @@ Example operations:
         
         oldrpmmacros = ''
         
-        # first check if mkisofs is installed
-        try:
-            if self.makeiso: checkToolDeps('mkisofs')
-        except ToolNotFound:
-            msg = self._('Unable to locate mkisofs! Please ensure that it is available.')
-            self.printMsgExit(msg)
-            
+        # first check if mkisofs and rpmbuild is installed
+        for tool in ['mkisofs','rpmbuild']:            
+            try:
+                if self.makeiso: checkToolDeps(tool)
+            except ToolNotFound:
+                msg = self._('Unable to locate %(toolname)s! Please ensure that it is available.' \
+                            % {'toolname':tool})
+                self.printMsgExit(msg)
+
         # get the kitsrc
         msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
         print msg
