@@ -6,15 +6,15 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-from kusu.core.plugin import Plugin
+from kusu.core import rcplugin 
 from path import path
 import os
 import pwd
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
 
     def __init__(self):
-        Plugin.__init__(self)
+        rcplugin.Plugin.__init__(self)
         self.name = 'kusu db'
         self.desc = 'Setting up Kusu db'
         self.ngtypes = ['installer']
@@ -27,7 +27,7 @@ class KusuRC(Plugin):
         import sqlalchemy as sa
 
         if not path('/root/kusu.db').exists():
-            continue
+            return True
 
         self.runCommand('/etc/init.d/mysqld start')
 

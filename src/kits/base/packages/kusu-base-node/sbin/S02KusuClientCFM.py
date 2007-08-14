@@ -7,11 +7,11 @@
 #
 
 from path import path
-from kusu.core.plugin import Plugin
+from kusu.core import rcplugin
 
 class KusuRC(Plugin):
     def __init__(self):
-        Plugin.__init__(self)
+        rcplugin.Plugin.__init__(self)
         self.name = 'cfm'
         self.desc = 'Setting up CFM'
         self.ngtypes = ['compute']

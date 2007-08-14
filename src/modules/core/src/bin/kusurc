@@ -7,7 +7,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-from kusu.core.plugin import PluginRunner
+from kusu.core.rcplugin import PluginRunner
 import kusu.util.log as kusulog
 from path import path
 

@@ -7,11 +7,11 @@
 #
 
 from path import path
-from kusu.core.plugin import Plugin
+from kusu.core import rcplugin
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
     def __init__(self):
-        Plugin.__init__(self)
+        rcplugin.Plugin.__init__(self)
         self.name = 'dhcpd'
         self.desc = 'Setting up dhcpd'
         self.ngtypes = ['installer']

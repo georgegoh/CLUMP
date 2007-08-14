@@ -34,6 +34,8 @@ Requires: pdsh-rcmd-ssh >= 2.14
 Requires: kusu-core >= 0.4
 Requires: kusu-path >= 0.4
 Requires: kusu-util >= 0.4
+Requires: rsh-server
+Requires: rsh
 
 %description
 This component provides the nodes with the Kusu tools for the 

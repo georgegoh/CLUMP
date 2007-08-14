@@ -6,12 +6,12 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-from kusu.core.plugin import Plugin
+from kusu.core import rcplugin 
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
 
     def __init__(self):
-        Plugin.__init__(self)
+        rcplugin.Plugin.__init__(self)
         self.name = 'image'
         self.desc = 'Creating images for imaged and diskless nodes'
         self.ngtypes = ['installer']

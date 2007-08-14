@@ -109,7 +109,7 @@ class PluginRunner:
         return results
 
     def initPlugin(self):
-        from plugin import Plugin
+        from rcplugin import Plugin
     
         Plugin.nodename = self.getNodeName()
         Plugin.niihost = self.getNIIHost()
@@ -135,14 +135,14 @@ class PluginRunner:
             try:
                 execfile(plugin, ns)
             except Exception, e:   
-                kl.error('Unable to load plugin: %s Reason: ' % (plugin.basename(), e))
+                kl.error('Unable to load plugin: %s Reason: %s' % (plugin.basename(), e))
                 continue
 
             if ns.has_key(self.classname):
                 try:
                     m = ns[self.classname]()
                 except Exception, e:   
-                    kl.error('Unable to instatiate plugin: %s Reason: ' % (plugin.basename(), e))
+                    kl.error('Unable to instatiate plugin: %s Reason: %s' % (plugin.basename(), e))
                     continue
             
                 if m.disable:

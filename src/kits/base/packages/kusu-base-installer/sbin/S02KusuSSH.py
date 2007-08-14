@@ -7,16 +7,16 @@
 #
 
 from path import path
-from kusu.core.plugin import Plugin
+from kusu.core import rcplugin
 
 try:
     import subprocess
 except:
     from popen5 import subprocess
 
-class KusuRC(Plugin):
+class KusuRC(rcplugin.Plugin):
     def __init__(self):
-        Plugin.__init__(self)
+        rcplugin.Plugin.__init__(self)
         self.name = 'ssh'
         self.desc = 'Setting up SSH public keys'
         self.ngtypes = ['installer']

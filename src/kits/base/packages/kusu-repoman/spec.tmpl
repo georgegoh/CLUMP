@@ -61,5 +61,8 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%{_approot}
-
+%{_approot}/bin/*
+%{_approot}/lib/*
+%{_approot}/etc/repoman-templates
+%{_approot}/share/*
+%config(noreplace) %{_approot}/etc/updates.conf
