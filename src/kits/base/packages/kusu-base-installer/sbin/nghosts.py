@@ -303,7 +303,7 @@ class SelectNodesWindow(USXBaseScreen):
             return NAV_NOTHING
         if result == "yes":
             self.screen.finish()
-	    sys.exit(0)
+	    return NAV_QUIT
         else:
             return NAV_NOTHING
  
@@ -395,7 +395,6 @@ class SelectNodesWindow(USXBaseScreen):
 
     def exitAction(self):
         self.screen.finish()
-        sys.exit(0)
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)        
@@ -482,7 +481,8 @@ class SelectNodegroupsWindow(USXBaseScreen):
             return NAV_NOTHING
         if result == "yes":
             self.screen.finish()
-	    sys.exit(0)
+	    return NAV_QUIT
+
         else:
             return NAV_NOTHING
  
@@ -574,7 +574,6 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
     def exitAction(self):
 	self.screen.finish()
-	sys.exit(0)
 
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)
@@ -657,6 +656,7 @@ class MembershipMainWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
+	    self.screen.finish()
             return NAV_QUIT
         else:
             return NAV_NOTHING
@@ -679,7 +679,7 @@ class MembershipMainWindow(USXBaseScreen):
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
-        return NAV_NOTHING
+        return NAV_QUIT
         
     def exitAction(self, data=None):
         return NAV_QUIT
