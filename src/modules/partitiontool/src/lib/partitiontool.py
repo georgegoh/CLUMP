@@ -61,15 +61,13 @@ from common import *
 from path import path
 from struct import unpack
 import kusu.hardware.probe
-import kusu.util.log as kusulog
 from os.path import basename, exists
 from kusu.util.errors import *
 from kusu.util.tools import mkdtemp
 from kusu.util.testing import runCommand
 
+import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool')
-#import logging
-#kusulog.getKusuLog().handlers[0].addFilter(logging.Filter('kusu.partitiontool'))
 
 def checkAndMakeNode(devpath):
     """
@@ -273,7 +271,13 @@ class DiskProfile(object):
         if test:
             self.populateDiskProfileTest(fresh, test)
         else:
-            self.populateDiskProfile(fresh, probe_fstab)
+            try:
+                self.populateDiskProfile(fresh, probe_fstab)
+            except:
+                logger.debug("Encountered an unrecoverable error while " + \
+                             "scanning the disks/LVM. Clearing the disk " + \
+                             "profile and starting fresh.")
+                self.populateDiskProfile(fresh=True, probe_fstab=False)
         logger.debug('State after scan:\n%s' % self.__str__())
 
 
@@ -340,7 +344,6 @@ class DiskProfile(object):
         self.__createLVMObjects(pv_probe_dict,
                                 lvg_probe_dict,
                                 lv_probe_dict)
-
         if not fresh:
             runCommand('lvm vgchange -ay')
             if probe_fstab:

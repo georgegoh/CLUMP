@@ -223,6 +223,8 @@ class Disk(object):
 
         self.__updatePartitionDict()
 
+        # Work around for KUSU-291.
+        return
         if keep_in_place: return
 
         partitions_to_move = []
@@ -234,7 +236,8 @@ class Disk(object):
             partition = self.partition_dict[part_key]
             if partition.on_disk:
                 continue
-            if partition.type != 'extended':
+            if partition.type != 'extended' and not partition.lvm_flag:
+                logger.debug('Moving partition %s' % partition.path)
                 partitions_to_move.append((partition.size_MB,
                                            partition.fs_type,
                                            partition.mountpoint,
