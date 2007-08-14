@@ -11,7 +11,8 @@ from kusu.core.app import KusuApp
 from kusu.buildkit import BuildKit
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined
-from kusu.util.tools import checkToolDeps
+from kusu.util.tools import checkToolDeps, mkdtemp
+import subprocess
         
 class App(KusuApp):
     """ Application class for buildkit. """
@@ -21,7 +22,8 @@ class App(KusuApp):
         KusuApp.__init__(self)
 
         self.actions = {'new':['kit'], 
-            'make':['kit','dir']}
+            'make':['kit','dir'],
+            'make-meta':['dir','iso']}
 
         # self.action and self.actionargs will hold the current action and its arguments            
         self.action = None 
@@ -51,6 +53,19 @@ actions:
                         
                       OPTIONAL ARGS:
                         dir=<path of kit directory to make>
+                        
+    make-meta       - Make a meta Kit iso in the current working 
+                      directory. The dir argument should point to 
+                      a directory containing already-built kit 
+                      directories or isos. Available arguments for
+                      this action:
+                      
+                      REQUIRED ARGS:
+                        dir=<path of the directory containing kits>
+                        
+                      OPTIONAL ARGS:
+                        iso=<path of iso file to make>
+
                  
 """)
         self.examples = self._("""\
@@ -64,6 +79,9 @@ Example operations:
     
     To make the test Kit dir:
     # buildkit make kit=test dir=testdir
+    
+    To make a meta Kit iso:
+    # buildkit make-meta dir=testdir
     
 """)
         self.parser.set_usage(self.usagestr)
@@ -151,6 +169,15 @@ Example operations:
         
         # flag to determine the creation of iso
         self.makeiso = False
+        
+        # first check if mkisofs and rpmbuild is installed
+        for tool in ['mkisofs','rpmbuild']:            
+            try:
+                checkToolDeps(tool)
+            except ToolNotFound:
+                msg = self._('Unable to locate %(toolname)s! Please ensure that it is available.' \
+                            % {'toolname':tool})
+                self.printMsgExit(msg)
 
         # call the correct sub-handler for the action
         m = '_' + self.action.split('-')[0] \
@@ -185,15 +212,6 @@ Example operations:
             kitdir = path(_kitdir).abspath()
         
         oldrpmmacros = ''
-        
-        # first check if mkisofs and rpmbuild is installed
-        for tool in ['mkisofs','rpmbuild']:            
-            try:
-                if self.makeiso: checkToolDeps(tool)
-            except ToolNotFound:
-                msg = self._('Unable to locate %(toolname)s! Please ensure that it is available.' \
-                            % {'toolname':tool})
-                self.printMsgExit(msg)
 
         # get the kitsrc
         msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
@@ -307,6 +325,77 @@ Example operations:
         if oldrpmmacros:
             msg = self._('Restoring .rpmmacros')
             self.bkinst.restoreRPMMacros(oldrpmmacros)
+            
+    def _makeMeta(self, args):
+        """ Handler for make-meta action. args is a dict of supported key-value pairs for this action. """
+
+        _dirname = args.get('dir','')
+        _isofile = args.get('iso','')
+
+        if os.getuid() <> 0:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+
+        if not _dirname: self.printUsageExit()
+        dirname = path(_dirname).abspath()
+        
+        if not dirname.exists():
+            msg = self._('Unable to locate %(dirname)s!')
+            self.printMsgExit(msg)
+            
+        msg = self._('Locating kits in %(dirname)s..' % {'dirname':dirname})
+        li = dirname.files('*.iso')
+        kdirs = [f.dirname() for f in dirname.walkfiles('kitinfo')]
+        
+        isoroot = path(mkdtemp(prefix='buildkit-isoroot-'))
+        
+        # handle the isos
+        tmpdir = path(mkdtemp(prefix='buildkit-meta-'))
+        mntlist = []
+        for l in li:
+            mntpnt = path(tmpdir / l.namebase)
+            mntpnt.mkdir()
+            mntlist.append(mntpnt)
+            cmd = 'mount -o loop,ro %s %s' % (l,mntpnt)
+            mountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+            mountP.wait()
+            kdirs.extend([f.dirname() for f in mntpnt.walkfiles('kitinfo')])
+            
+        for kdir in kdirs:
+            msg = self._('Found %(kit)s. Including it..' % {'kit':kdir.basename()})
+            print msg
+
+        # create the symlinks
+        cmd = 'ln -sf %s .'
+        for kdir in kdirs:
+            symlinkP = subprocess.Popen(cmd % kdir,shell=True,cwd=isoroot)
+            symlinkP.wait()
+            
+        # make the iso
+        if not _isofile:
+            _isofile = '%s.iso' % '+'.join([kdir.basename() for kdir in kdirs])
+        isofile = path(_isofile).abspath()
+
+        msg = self._('Creating iso..')
+        print msg
+        cmd = 'mkisofs -quiet -V "Meta Kit" -r -T -f -o %s . > /dev/null 2>&1' % isofile
+        mkisofsP = subprocess.Popen(cmd,shell=True,cwd=isoroot)
+        mkisofsP.wait()
+
+        # clean up
+        msg = self._('Cleaning up artifacts..')
+        for mntpnt in mntlist:
+            cmd = 'umount %s' % mntpnt
+            umountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+            umountP.wait()
+
+        if tmpdir.exists(): tmpdir.rmtree()
+        if isoroot.exists(): isoroot.rmtree()
+        
+        msg = self._('Created meta Kit at %(isofile)s' % {'isofile':isofile})
+        print msg
+        
+
         
         
 if __name__ == '__main__':
