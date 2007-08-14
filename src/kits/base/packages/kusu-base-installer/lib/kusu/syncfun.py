@@ -59,7 +59,7 @@ class syncfun:
 
             hostlist = hostlist[:-1]
 
-            cmd = "/usr/bin/pdsh -w " + hostlist + " -- " + command
+            cmd = "/usr/bin/pdsh -R ssh -w " + hostlist + " -- " + command
             try:
                 for retline in os.popen(cmd).readlines():
                     # Insert the results into the list
