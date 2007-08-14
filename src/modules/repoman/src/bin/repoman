@@ -90,9 +90,6 @@ class RepoManApp(KusuApp):
                 return
 
             elif len(ngs) == 1:
-                repo.kits = rtools.getKits(self.dbs, ngs[0].ngname)
-                repo.save()
-                repo.flush()
                 r = self.rfinst.refresh(ngname = ngs[0].ngname)
 
             else:

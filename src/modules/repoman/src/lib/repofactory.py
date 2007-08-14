@@ -216,6 +216,12 @@ class RepoFactory(object):
                 r.repoid = repoid
                 self.refreshScripts(r)
             else:
+                repo = self.db.Repos.select_by(repoid = oldRepoID)[0]
+                kits = tools.getKits(self.db, ng.ngname) 
+                repo.kits = kits
+                repo.save()
+                repo.flush()
+                
                 os_name, os_version, os_arch = tools.getOS(self.db, oldRepoID)
                 r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
                 r.test = self.test

@@ -197,6 +197,7 @@ class TestCentos5Repo:
 
         repo2 = rfactory.make('installer nodegroup 2')
         assert repo1.repoid == repo2.repoid 
+        assert len(self.dbs.Repos.select()) == 1
 
     def testMakeUseSameRepoMissingScript(self):
         global prefix
@@ -236,6 +237,7 @@ class TestCentos5Repo:
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+        assert len(self.dbs.Repos.select()) == 1
 
     def testRefreshRepo(self):
         global prefix
@@ -248,6 +250,7 @@ class TestCentos5Repo:
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+        assert len(self.dbs.Repos.select()) == 1
 
     def testRefreshRepoWithNGType(self):
         global prefix
@@ -261,6 +264,7 @@ class TestCentos5Repo:
         for r in repos:
             repoid = str(r.repoid)
             self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+        assert len(self.dbs.Repos.select()) == 1
 
     def testRefreshUseSameRepo(self):
         global prefix
@@ -272,6 +276,7 @@ class TestCentos5Repo:
         r = rfactory.refresh(ngname='installer nodegroup')
 
         assert repoid == r.repoid
+        assert len(self.dbs.Repos.select()) == 1
      
     def testRefreshUseSameRepoWithNGType(self):
         global prefix
@@ -283,6 +288,7 @@ class TestCentos5Repo:
         repos = rfactory.refresh(ngtype=['installer'])
 
         assert repoid == repos[0].repoid
+        assert len(self.dbs.Repos.select()) == 1
         
     def testRefreshUseSameRepo2(self):
         # New component added to the existing nodegrouip. Since
@@ -303,6 +309,8 @@ class TestCentos5Repo:
         kit.save()
         kit.flush()
 
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
         ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
         ng.components.append(comp)
         ng.save()  
@@ -312,6 +320,8 @@ class TestCentos5Repo:
 
         # Only 1 nodegroup uses the same repoid
         assert repoid == r.repoid
+        assert len(self.dbs.Repos.select()) == 1
+        assert len(self.dbs.Repos.select()[0].kits) == 3
   
     def testRefreshUseSameRepo2WithNGType(self):
         # New component added to the existing nodegrouip. Since
@@ -333,6 +343,8 @@ class TestCentos5Repo:
         kit.save()
         kit.flush()
 
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
         ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
         ng.components.append(comp)
         ng.save()  
@@ -341,6 +353,8 @@ class TestCentos5Repo:
         repos = rfactory.refresh(ngtype=['installer'])
 
         # Only 1 nodegroup uses the same repoid
+        assert len(self.dbs.Repos.select()) == 1
+        assert len(self.dbs.Repos.select()[0].kits) == 3
         assert repoid == repos[0].repoid
 
     def testRefreshUseDifferentRepo(self):
@@ -366,6 +380,22 @@ class TestCentos5Repo:
         kit.isOS = False
         comp = db.Components(cname='component-opengl')
         kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup 2')[0]
+        ng.components.append(comp)
+        ng.save()  
+        ng.flush()
+
+        r = rfactory.refresh(ngname='installer nodegroup 2')
+
+        assert repoid != r.repoid
+        assert len(self.dbs.Repos.select()) == 2
+        assert len(self.dbs.Repos.select_by(repoid = repoid)[0].kits) == 2
+        assert len(self.dbs.Repos.select_by(repoid = r.repoid)[0].kits) == 3
 
     def testRefreshUseDifferentRepoWithNGType(self):
         global prefix
@@ -409,7 +439,10 @@ class TestCentos5Repo:
         for r in repos:
             assert r.repoid in [self.dbs.NodeGroups.select_by(ngname='installer nodegroup')[0].repoid,
                                 self.dbs.NodeGroups.select_by(ngname='installer nodegroup 2')[0].repoid]
-
+        assert len(self.dbs.Repos.select()) == 2
+        assert len(self.dbs.Repos.select()[1].kits) == 2
+        assert len(self.dbs.Repos.select()[0].kits) == 3
+ 
     def testRefreshWithOldRepoDeleted(self):
         global prefix
 
@@ -452,6 +485,7 @@ class TestCentos5Repo:
 
         assert r1.repoid == r2.repoid
         assert not self.dbs.Repos.get(repoid)
+        assert len(self.dbs.Repos.select()) == 1
 
     def testRefreshWithOldRepoDeletedWithNGType(self):
         global prefix
@@ -498,6 +532,7 @@ class TestCentos5Repo:
         assert len(repos) == 2
         assert repos[0].repoid == repos[1].repoid
         assert not self.dbs.Repos.get(repoid)
+        assert len(self.dbs.Repos.select()) == 1
 
     def testGetRepo(self):
         global prefix
