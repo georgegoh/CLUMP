@@ -7,6 +7,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+import kusu.util.log as kusulog
 from path import path
 import os
 import socket
@@ -16,6 +17,9 @@ try:
     import subprocess
 except:
     from popen5 import subprocess
+
+kl = kusulog.getKusuLog()
+kl.addFileHandler()
 
 class Plugin: 
     nodename = None
@@ -87,14 +91,17 @@ class PluginRunner:
                 retval = plugin.run()
                 if retval:
                     self.success()
+                    kl.info('Plugin: %s ran successfully' % plugin.name)
                 else:
                     self.failure()
+                    kl.error('Plugin: %s failed to run successfully' % plugin.name)
             
                 results.append( (plugin.name, retval, None) )
 
             except Exception, e:
                 self.failure()
                 results.append( (plugin.name, False, e) )
+                kl.error('Plugin: %s failed to run successfully. Reason: %s' (plugin.name,e))
                    
             if plugin.delete and (self.dir / fname).exists():
                 (self.dir / fname).remove()
@@ -109,6 +116,14 @@ class PluginRunner:
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
         Plugin.repoid = self.getRepoID()
         Plugin.dbs = self.dbs
+       
+        logstr = 'Init plugin wth variables: nodename=%s, niihost=%s, '\
+                 'os_name=%s, os_version=%s, os_arch=%s, '\
+                 'repoid=%s' % (Plugin.nodename, Plugin.niihost, \
+                  Plugin.os_name, Plugin.os_version, Plugin.os_arch,\
+                  Plugin.repoid)
+
+        kl.debug(logstr)
 
     def loadPlugins(self):
         for plugin in self.dir.listdir('*.py'): 
@@ -120,15 +135,18 @@ class PluginRunner:
             try:
                 execfile(plugin, ns)
             except Exception, e:   
+                kl.error('Unable to load plugin: %s Reason: ' % (plugin.basename(), e))
                 continue
 
             if ns.has_key(self.classname):
                 try:
                     m = ns[self.classname]()
                 except Exception, e:   
+                    kl.error('Unable to instatiate plugin: %s Reason: ' % (plugin.basename(), e))
                     continue
             
                 if m.disable:
+                    kl.info('Ignoring plugin: ' + m.name)
                     continue
 
                 if self.ngtype not in m.ngtypes:
@@ -138,6 +156,7 @@ class PluginRunner:
                     continue
 
                 self.plugins[plugin.basename()] = m
+                kl.info('Loaded plugin: ' + m.name)
 
     def getNodeGroupInfo(self):
         """Returns the node name, nodegroup name, nodegroup type"""
