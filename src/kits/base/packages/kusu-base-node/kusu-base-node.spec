@@ -71,6 +71,7 @@ make ROOT=$RPM_BUILD_ROOT cfmd
 /sbin/chkconfig --add kusu > /dev/null 2>&1
 /sbin/chkconfig kusu on > /dev/null 2>&1
 /sbin/chkconfig --add cfmd > /dev/null 2>&1
+/sbin/chkconfig cfmd on > /dev/null 2>&1
  
 %preun
 ##
