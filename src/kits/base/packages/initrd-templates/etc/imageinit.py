@@ -95,7 +95,7 @@ class ImagedNodeConfiger:
     def upInterfaces(self):
         """upInterfaces - Try to bring up the interfaces using DHCP"""
         for i in range(0,3):
-            status = os.system('udhcpc -i eth%i > /dev/null 2>&1' % i)
+            status = os.system('udhcpc -n -i eth%i > /dev/null 2>&1' % i)
             if os.WEXITSTATUS(status) == 0:
                 self.ifs.append('eth%i' % i)
 
