@@ -18,6 +18,8 @@ import kusu.partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING
+import kusu.util.log as kusulog
+logger = kusulog.getKusuLog('installer.partition')
 
 def deleteDevice(baseScreen):
     """Determine the type of device and bring up the appropriate screen."""
@@ -27,6 +29,7 @@ def deleteDevice(baseScreen):
 
     try:
         selected_device = listbox.current()
+        logger.debug('Selected to delete: %s' % str(selected_device))
         diskProfile.delete(selected_device)
     except CannotDeleteExtendedPartitionError, e:
         baseScreen.selector.popupMsg('Delete Logical Partitions First',
