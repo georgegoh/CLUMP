@@ -25,6 +25,7 @@ import gettext
 import os
 import sys
 from optparse import OptionParser
+from path import path
 
 class KusuApp:
     """ This is the class for all OCS applications to inherit from """
@@ -121,3 +122,14 @@ class KusuApp:
                 del rargs[0]
         setattr(parser.values, option.dest, value)
 
+    def lock(self):
+        if len(sys.argv) >= 1:
+            prog = path(sys.argv[0]).stripext().basename()
+            lock = path('/var/lock/subsys/') / prog
+            lock.touch()
+
+    def unlock(self):
+        if len(sys.argv) >= 1:
+            prog = path(sys.argv[0]).stripext().basename()
+            lock = path('/var/lock/subsys/') / prog
+            if lock.exists(): lock.remove()
