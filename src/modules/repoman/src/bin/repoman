@@ -103,6 +103,11 @@ class RepoManApp(KusuApp):
                         break
 
                 if simpleRefresh:
+                    print rtools.getKits(self.dbs, ngs[0].ngname)
+                    repo.kits = rtools.getKits(self.dbs, ngs[0].ngname)
+                    repo.save()
+                    repo.flush()
+
                     r = self.rfinst.getRepo(repo.repoid)
                     r.refresh(repo.repoid)
 

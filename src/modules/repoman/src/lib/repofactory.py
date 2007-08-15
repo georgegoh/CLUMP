@@ -128,34 +128,14 @@ class RepoFactory(object):
     def getBestRepo(self, ngname):
         """Get a repo that uses the same set of kits"""
 
-        ngs = self.db.NodeGroups.select_by(sa.not_(self.db.NodeGroups.c.repoid == None))
-        repos = {}
-        for ng in ngs:
-            if ng.ngname == ngname:
-                continue #Ignore the ng that you are checking against
-
-            repoid = ng.repoid
-            kits = tools.getKits(self.db, ng.ngname)
-            kits.sort()
-
-            if repos.has_key(repoid):
-                if len(kits) != len(repos[repoid]):
-                    raise ReposIntegrityError
-                elif kits != repos[repoid]:
-                    raise ReposIntegrityError
-                else:
-                    pass # Do nothing, same
-            else:
-                repos[repoid] = kits
-        
         ng_kits = tools.getKits(self.db, ngname)
         ng_kits.sort()
 
-        for repoid, kits in repos.items():
-            if len(kits) == len(ng_kits) and \
-               kits == ng_kits:
-                return repoid
-
+        repos = self.db.Repos.select()
+        for repo in repos:
+            if len(repo.kits) == len(ng_kits) and \
+               sorted(repo.kits) == ng_kits:
+                return repo.repoid
         return None
 
     def refreshScripts(self, repoObj):
@@ -203,11 +183,13 @@ class RepoFactory(object):
 
             repoid  = self.getBestRepo(ng.ngname)
 
-            if repoid:
+            # An existing repo can be used
+            if repoid: 
                 ng.repoid = repoid
                 ng.save()
                 ng.flush()
-                
+               
+ 
                 os_name, os_version, os_arch = tools.getOS(self.db, ngname)
                 r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
                 r.test = self.test
@@ -215,6 +197,10 @@ class RepoFactory(object):
                 r.repo_path = r.getRepoPath(repoid)
                 r.repoid = repoid
                 self.refreshScripts(r)
+            
+            # No existing repo can be used 
+            # But since only 1 ng, the repo belongs
+            # to the ng
             else:
                 repo = self.db.Repos.select_by(repoid = oldRepoID)[0]
                 kits = tools.getKits(self.db, ng.ngname) 
@@ -228,35 +214,52 @@ class RepoFactory(object):
                 r = r.refresh(oldRepoID)
 
         else:
-            # Filter out the current ngname, other nodegroups
-            # are using the same repo
+
             ngs = [ng for ng in ngs if ng.ngname != ngname]
-            ng = ngs[0] # Take the 1st one, since all using same repo 
 
-            # Determine whether a new repo is needed, i.e.
-            # not the same anymore
-            oldKits = tools.getKits(self.db, ng.ngname) 
-            newKits = tools.getKits(self.db, ngname)
+            # If all nodegroups with this repoid uses the same kits, we 
+            # can simply update the repo with the kits and refresh
+            ngKits = sorted(tools.getKits(self.db, ngname))
+            simpleRefresh = True
+            for ng in ngs:
+                kits = sorted(tools.getKits(self.db, ng.ngname))
 
-            oldKits.sort()
-            newKits.sort()
+                if len(kits) != len(ngKits) or \
+                   kits != ngKits:
+                    simpleRefresh = False
+                    break
+             
+            if simpleRefresh:
+                    repo = self.db.Repos.select_by(repoid = oldRepoID)[0]
+                    repo.kits = ngKits
+                    repo.save()
+                    repo.flush()
 
-            if len(oldKits) == len(newKits) and \
-               oldKits == newKits:
-                # No change
-
-                os_name, os_version, os_arch = tools.getOS(self.db, repoid)
-                r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
-                r.test = self.test
-                r = r.refresh(repoid)
+                    os_name, os_version, os_arch = tools.getOS(self.db, oldRepoID)
+                    r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                    r.test = self.test
+                    r = r.refresh(oldRepoID)
 
             else:
-                # New repo needed or can use another repo.
-                ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
-                ng.repoid = None
-                ng.save()
-                ng.flush()
-                r = self.make(ngname)
+                repoid = self.getBestRepo(ngname)
+                
+                if repoid:
+                    ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
+                    ng.repoid = repoid
+                    ng.save()
+                    ng.flush()
+                    
+                    os_name, os_version, os_arch = tools.getOS(self.db, repoid)
+                    r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
+                    r.test = self.test
+                    r = r.refresh(repoid)
+
+                else:
+                    ng = self.db.NodeGroups.select_by(ngname = ngname)[0]
+                    ng.repoid = None
+                    ng.save()
+                    ng.flush()
+                    r = self.make(ngname)
 
         if tools.repoExists(self.db, oldRepoID) and \
            not tools.repoInUse(self.db, oldRepoID):

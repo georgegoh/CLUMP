@@ -61,7 +61,6 @@ def tearDown():
     kusudb.parent.rmtree()
     cachedir.rmtree()
 
-
 class TestRepoman:
     def setUp(self):
         global prefix
@@ -214,6 +213,7 @@ class TestRepoman:
         
         repo = self.dbs.Repos.select_by(reponame = 'testing')
         assert len(repo) == 1
+        repo[0].refresh()
         assert len(repo[0].kits) == 2
 
         installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
@@ -265,6 +265,7 @@ class TestRepoman:
         
         repo = self.dbs.Repos.select_by(reponame = 'testing')
         assert len(repo) == 1
+        repo[0].refresh()
         assert len(repo[0].kits) == 2
 
         installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
@@ -282,6 +283,59 @@ class TestRepoman:
         assert len(repos[0].kits) == 2
         assert path(prefix / 'depot' / 'repos' / str(repos[0].repoid)).exists()
 
+    def testNewWithNodeGroupChangeKitsSameRepo(self):
+        cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        assert runCommand(cmd)[2] == 0
+        
+        repo = self.dbs.Repos.select_by(reponame = 'testing')[0]
+        ng = self.dbs.NodeGroups.select_by(ngname = 'installer nodegroup')[0]
+        ng.repoid = repo.repoid
+        ng.save()
+        ng.flush()
+
+        cmd = 'repoman -n testing --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        assert runCommand(cmd)[2] == 0
+        
+        repo = self.dbs.Repos.select_by(reponame = 'testing')
+        assert len(repo) == 1
+        assert len(repo[0].kits) == 2
+
+        installer = self.dbs.NodeGroups(ngname='installer nodegroup 2',
+                                        type='installer') 
+        installer.components = self.dbs.Components.select()
+        installer.repoid = repo[0].repoid
+        installer.save()
+        installer.flush()
+ 
+        kit = db.Kits()
+        kit.rname = 'opengl'
+        kit.version = '2.5'
+        kit.arch = 'i386'
+        kit.isOS = False
+        comp = db.Components(cname='component-opengl')
+        kit.components.append(comp)
+        kit.save()
+        kit.flush()
+
+        (prefix / 'depot' / 'kits' / 'opengl' /  '2.5' / 'i386').makedirs()
+
+        installers = self.dbs.NodeGroups.select()
+        for installer in installers:
+            installer.components = self.dbs.Components.select()
+            installer.save()
+            installer.flush()
+
+        cmd = 'repoman -n testing --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        assert runCommand(cmd)[2] == 0
+
+        assert str(kusudb) == self.dbs.metadata.engine.url.database
+        
+        repos = self.dbs.Repos.select()
+        assert len(repos) == 1
+        repos[0].refresh()
+        assert len(repos[0].kits) == 3
+        assert path(prefix / 'depot' / 'repos' / str(repos[0].repoid)).exists()
+ 
     def testSnapshost(self):
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
