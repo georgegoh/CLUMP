@@ -377,6 +377,12 @@ class NodeInstaller(object):
         if not etcdir.exists(): etcdir.makedirs()
         dbpasswd = etcdir / 'db.passwd'
         self.niidata.saveDbPasswd(dbpasswd)
+        # May not want dbpasswd on all nodes!
+        # Want the cfm secret though
+        cfmdir = root / 'etc' / 'cfm'
+	if not cfmdir.exists(): cfmdir.makedirs()
+	cfmfile = cfmdir / '.cfmsecret'
+        self.niidata.saveCFMSecret(cfmfile)
 
     def setTimezone(self):
         tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz

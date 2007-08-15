@@ -30,7 +30,8 @@ import urllib
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
-from path import path
+# ** The initrd's have basic Python installs.  Be careful what you import!
+#from path import path
 
 class NodeInstInfoHandler(ContentHandler):
     """This class provides the content handler for parsing the Node
@@ -53,7 +54,8 @@ class NodeInstInfoHandler(ContentHandler):
         self.ngtype      = ''    # Nodegroup Type
         self.repoid      = ''    # Repo ID
         self.dbpasswd    = ''    # DB Passwd
- 
+        self.cfmsecret   = ''    # CFM Secret
+
         # The following are for use by the handler internally
         self.partnum     = 0     # Counter used by Partition dictionary
         self.compstart   = 0     # Flag for the start of a component block
@@ -75,6 +77,7 @@ class NodeInstInfoHandler(ContentHandler):
             self.ngtype      = attrs.get('ngtype',"")
             self.repoid      = attrs.get('repoid', "")
             self.dbpasswd    = attrs.get('dbpasswd',"")
+            self.cfmsecret   = attrs.get('cfmsecret',"")
 
         elif name == 'appglobals':
             name  = attrs.get('name',"")
@@ -179,21 +182,36 @@ class NodeInstInfoHandler(ContentHandler):
 
         fp.close()
 
-    def saveDbPasswd (self, filename=''):
-        """saveAppGlobalsEnv - Save the appglobals variable as a shell script which
-        exports all of them.  This file can then be sourced in other scripts.
-        It also saves useful parts of the NII"""
-        if not filename:
-            file = path('/mnt/opt/kusu/etc/db.passwd')
-        else:
-            file = path(filename)
 
-        if not file.parent.exists():
-            file.parent.makedirs()
-            file.parent.chmod(0755)
+    def saveCFMSecret (self, filename=''):
+        """saveCFMSecret - Save the CFM secret variable to the given file."""
+        if not filename:
+            file = '/mnt/etc/cfm/.cfmsecret'
+        else:
+            file = filename
+
+        if not os.path.exists(os.path.dirname(file)):
+            os.system('mkdir -p %s' % (os.path.dirname(file)))
         
-        if not file.exists():
-            file.touch()
+        try:
+            fp = open(file, 'w')
+        except:
+            return
+
+        fp.write('%s' % self.cfmsecret.strip())
+        fp.close()
+        file.chmod(0400)
+
+
+    def saveDbPasswd (self, filename=''):
+        """saveDbPasswd - Save the db password file.  This is probably a misunderstanding"""
+        if not filename:
+            file = '/mnt/opt/kusu/etc/db.passwd'
+        else:
+            file = filename
+
+        if not os.path.exists(os.path.dirname(file)):
+            os.system('mkdir -p %s' % (os.path.dirname(file)))
 
         try:
             fp = open(file, 'w')
@@ -263,10 +281,7 @@ class NIIFun:
 if __name__ == '__main__':
     # The host is is using in the URL has to be in the database
     #(niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1&getindex=1")
-    # (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1")
-    # (niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi")
     (niidata, header) = urllib.urlretrieve("http://172.20.0.1/repos/nodeboot.cgi?dump=1&getindex=1")
-
     
     fp = open(niidata)
     print fp.readlines()
@@ -322,3 +337,6 @@ if __name__ == '__main__':
 
     niihandler.saveDbPasswd('/tmp/opt/kusu/etc/db.passwd')
     print "Wrote:  /tmp/opt/kusu/etc/db.passwd"
+
+    # niihandler.saveCFMSecret('/tmp/etc/cfm/.cfmsecret')
+    # print "Wrote:  /tmp/etc/cfm/.cfmsecret"
