@@ -27,8 +27,8 @@ class RHN:
                'X-RHN-Auth-Server-Time',
                'X-RHN-Auth-Expire-Offset']
 
-    rhnURL = 'http://rhn.redhat.com/rpc/api'
-    up2dateURL = 'http://xmlrpc.rhn.redhat.com/XMLRPC'
+    rhnURL = 'https://rhn.redhat.com/rpc/api'
+    up2dateURL = 'https://xmlrpc.rhn.redhat.com/XMLRPC'
 
     # From rhnserver.py:
     #if fault.faultCode == -3:
