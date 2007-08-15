@@ -14,6 +14,7 @@ kit = {'arch': 'noarch',
  'name': 'base',
  'description': 'Base Kit',
  'pkgname': 'kit-base',
+ 'removable': False,
  'release': '0',
  'scripts': [],
  'version': '0.1'}

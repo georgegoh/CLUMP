@@ -150,10 +150,15 @@ class KitOps:
                                 cwd=repodir, shell=True, stdin=srcP.stdout,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         dstP.communicate()
+        
+        # also copy the kitinfo file
+        kifile = kitpath / 'kitinfo'
+        if kifile.exists(): kifile.copy(repodir)
 
         # 2. populate the kit DB table with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['description'],
-                                version=kit['version'], arch=kit['arch'])
+                                version=kit['version'], arch=kit['arch'],
+                                removable=kit['removable'])
         newkit.save()
         
         # Add kit to packages table for installer nodegroup
