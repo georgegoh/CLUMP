@@ -85,7 +85,7 @@ class TestPlugin:
         pRunner = rcplugin.PluginRunner('KusuRC', prefix, self.dbs)
         results = pRunner.run()
 
-        assert len(results) == 3
+        assert len(results) == 5
 
         for result in results:
             if result[0] == 'hello':
@@ -97,7 +97,12 @@ class TestPlugin:
             elif result[0] == 'except':
                 assert result[1] == False
                 assert result[2] != None
-
+            elif result[0] == 'ok.sh':
+                assert result[1] == True
+                assert result[2] == None
+            elif result[0] == 'fail.sh':
+                assert result[1] == False
+                assert result[2] == None
             assert result[0] != 'norun'
 
 
