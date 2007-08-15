@@ -896,9 +896,11 @@ class DB(object):
                               device='ROOT', options='lv;vg=VolGroup00', preserve=0)
             data = Partitions(mntpnt='/data', fstype='ext3', size='4000',
                               device='DATA', options='lv;vg=VolGroup00;fill', preserve=1)
-            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
-            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
-            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=0)
+            dell = Partitions(options='partitionID=Dell Utility', preserve=1)
+#            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
+#            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
+#            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=0)
+            donotpreserve4 = Partitions(options='partitionID=*', preserve=0)
 
             ng.partitions.append(boot)
             ng.partitions.append(swap)
@@ -906,9 +908,11 @@ class DB(object):
             ng.partitions.append(vg)
             ng.partitions.append(root)
             ng.partitions.append(data)
-            ng.partitions.append(donotpreserve1)
-            ng.partitions.append(donotpreserve2)
-            ng.partitions.append(donotpreserve3)
+            ng.partitions.append(dell)
+#            ng.partitions.append(donotpreserve1)
+#            ng.partitions.append(donotpreserve2)
+#            ng.partitions.append(donotpreserve3)
+            ng.partitions.append(donotpreserve4)
 
         # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')

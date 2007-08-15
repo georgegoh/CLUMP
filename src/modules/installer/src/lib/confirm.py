@@ -23,12 +23,12 @@ class ConfirmScreen(InstallerScreen):
     name = _('Confirm')
     profile = 'Confirm'
     msg = _('Please confirm the following:')
-    buttons = [_('Re-initialise')]
+    buttons = [_('Restart Installation')]
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
-        # unless explicitly specified here, all contexts will be rendered in the
-        # minimal "key=value" form
+        # Unless specified in render_exceptions, all keys in the kiprofile
+        # will be rendered as strings.
         self.render_exceptions = {'Partitions':self.renderPartition,
                                   'RootPasswd':None,
                                   'Kusu Install MntPt':None,
@@ -48,7 +48,7 @@ class ConfirmScreen(InstallerScreen):
         screenfactory.BaseScreen. Initialise button callbacks here.
         
         """
-        self.buttonsDict[_('Re-initialise')].setCallback_(self.reinit)
+        self.buttonsDict[_('Restart Installation')].setCallback_(self.reinit)
 
     def reinit(self):
         self.selector.selectScreen(0)
@@ -103,7 +103,7 @@ class ConfirmScreen(InstallerScreen):
         dispTxt += 'DNS 3: %s\n\n' % network_profile['dns3']
 
         interfaces = network_profile['interfaces']
-        for name,intf in interfaces.iteritems():
+        for name,intf in sorted(interfaces.iteritems()):
             if intf['configure']:
                 dispTxt += name + '\n'
                 for i in xrange(len(name)): dispTxt += '-'
@@ -130,10 +130,10 @@ class ConfirmScreen(InstallerScreen):
         for vg_name, vg in sorted(disk_profile.lvg_dict.iteritems()):
             dispTxt = dispTxt + vg_name[0:15] + '\n'
             for lv in vg.lv_dict.values():
-                dispTxt = dispTxt + '  ' + lv.name[0:13].ljust(13) + ' ' + \
-                          str(lv.size)[0:8].ljust(8) + ' ' + \
-                          lv.fs_type[0:9].ljust(9) + \
-                          ' ' + lv.mountpoint[0:12].ljust(12) + '\n'
+                dispTxt += '  ' + lv.name[0:13].ljust(13)
+                dispTxt += ' ' + str(lv.size)[0:8].ljust(8)
+                dispTxt += ' ' + str(lv.fs_type)[0:9].ljust(9)
+                dispTxt += ' ' + lv.mountpoint[0:12].ljust(12) + '\n'
             
         for disk_name, disk in sorted(disk_profile.disk_dict.iteritems()):
             dispTxt = dispTxt + disk_name[0:15] + '\n'

@@ -151,12 +151,27 @@ def translatePartitionOptions(options, opt):
         return (True, opt_dict[opt])
 
 
-def adaptNIIPartition(niipartition, diskprofile, default_preserve=True):
+def partitionRulesDefaultIsPreserve(rules):
+    preserve = True
+    for p in rules:
+        logger.debug('Checking part_rule for partitionID=*')
+        p_id, value = translatePartitionOptions(p['options'], 'partitionID')
+        if p_id and value=='*':
+            if p['preserve'] == '0':
+                logger.debug('Default Preserve set to False(User defined).')
+                preserve = False
+    return preserve
+
+
+def adaptNIIPartition(niipartition, diskprofile):
     """ Adapt niipartition into a partitiontool schema. This schema can
         be passed along with a partitiontool diskprofile to setupDiskProfile
         method.
 
     """
+    part_rules = niipartition.values()
+    default_preserve = partitionRulesDefaultIsPreserve(part_rules)
+
     if default_preserve:
         pefc = PartitionEntriesFilterChainDefaultPreserve()
         pefc.filter_list.append(FilterOnFileSystem())
@@ -172,7 +187,6 @@ def adaptNIIPartition(niipartition, diskprofile, default_preserve=True):
         pefc.filter_list.append(FilterOnPartitionTypeNoPreserve())
         pefc.filter_list.append(FilterOnFileSystemNoPreserve())
 
-    part_rules = niipartition.values()
     disk_profile = pefc.apply(part_rules, diskprofile)
     cleanDiskProfile(disk_profile)
 
@@ -334,6 +348,7 @@ def createPartition(partinfo, disk_dict, vg_dict):
             disknum = 1
             part_no = 'N'
         else:
+            logger.debug('Failed to translate disknum: %s, partition: %s' % (partinfo['device'], partinfo['partition']))
             raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
     try:
         size = translatePartitionSize(partinfo['size'])
