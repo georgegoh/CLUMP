@@ -96,6 +96,11 @@ def DefaultKit(**kwargs):
     if not 'dependencies' in kwargs: kwargs['dependencies'] = []
     if not 'components' in kwargs: kwargs['components'] = []
     if not 'description' in kwargs: kwargs['description'] = ''
+    if 'removeable' in kwargs:
+        kwargs['removable'] = kwargs['removeable']
+        del kwargs['removeable']
+    if not 'removable' in kwargs and not 'removeable' in kwargs:
+        kwargs['removable'] = True
 
     kit = KusuKit(**kwargs)
 

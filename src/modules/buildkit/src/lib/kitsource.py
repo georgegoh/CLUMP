@@ -194,6 +194,7 @@ class KusuKit(Struct):
     version = '0.1' 
     release = '0'
     arch = 'noarch'
+    removable = True
 
     
     def __init__(self, **kwargs):
@@ -209,6 +210,7 @@ class KusuKit(Struct):
     def generate(self):
         """ Returns a metadata for this kit. """
         d = self.copy()
+        if 'removeable' in d: del d['removeable']
         # we don't want to return everything
         if 'buildprofile' in d: del d['buildprofile']
         del d['components']
