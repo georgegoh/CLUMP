@@ -37,6 +37,7 @@ from optparse import OptionParser
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 
+from path import path
 
 class NodeInfo:
     """This class will provide the functions for getting the Node Installation
@@ -90,8 +91,18 @@ class NodeInfo:
             # Need to trigger a 500 error
             sys.exit(-1)
  
-        installer = data[0]        
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid)
+        installer = data[0]
+
+        etcdbpasswd = path('/opt/kusu/etc/db.passwd')
+        dbpasswd = ''
+        if not etcdbpasswd.exists():
+            print "Oops!"
+        else:
+            f = open(etcdbpasswd, 'r')
+            dbpasswd = f.read().strip()
+            f.close()
+        
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '

@@ -236,6 +236,7 @@ class NodeInstaller(object):
     'repo':'',          # Repo location
     'repoid':'',        # Repo ID
     'ngtype':'',        # Nodegroup type
+    'dbpasswd':'',      # dbpasswd
     'ostype':'',        # OS type
     'installtype': '',  # Type of install to perform
     'nodegrpid':0 ,     # Node group ID
@@ -368,6 +369,14 @@ class NodeInstaller(object):
         if not etcdir.exists(): etcdir.mkdir()
         profilenii = etcdir / 'profile.nii'
         self.niidata.saveAppGlobalsEnv(profilenii)
+
+    def getDbPasswd(self, prefix):
+        """ Sync /opt/kusu/etc/db.passwd. """
+        root = path(prefix)
+        etcdir = root / 'opt' / 'kusu' / 'etc'
+        if not etcdir.exists(): etcdir.makedirs()
+        dbpasswd = etcdir / 'db.passwd'
+        self.niidata.saveDbPasswd(dbpasswd)
 
     def setTimezone(self):
         tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz
