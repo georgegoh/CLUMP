@@ -97,23 +97,33 @@ class PluginRunner:
             if type(self.plugins[fname]) == str:
 
                 self.display('Running ' + fname)
-                p = subprocess.Popen('sh ' + self.plugins[fname],
-                                     env = kusuenv,
-                                     shell=True,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE)
 
-                p.communicate()
-                retval = p.returncode
+                try:
+                    p = subprocess.Popen('sh ' + self.plugins[fname],
+                                         env = kusuenv,
+                                         shell=True,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE)
 
-                if retval == 0:
-                    self.success()
-                    kl.info('Plugin: %s ran successfully' % fname)
-                else:
+                    p.communicate()
+                    retval = p.returncode
+
+                    if retval == 0:
+                        retval = True
+                        self.success()
+                        kl.info('Plugin: %s ran successfully' % fname)
+                    else:
+                        retval = False
+                        self.failure()
+                        kl.error('Plugin: %s failed to run successfully' % fname)
+ 
+                    results.append( (fname, retval, None) )
+
+                except Exception, e:
                     self.failure()
-                    kl.error('Plugin: %s failed to run successfully' % fname)
-                    
-                results.append( (fname, retval, None) )
+                    results.append( (fname, False, e) )
+                    kl.error('Plugin: %s failed to run successfully. Reason: %s' % (fname,e))
+               
             else:
                 try:
                     plugin = self.plugins[fname]
