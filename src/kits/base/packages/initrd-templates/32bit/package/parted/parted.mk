@@ -49,7 +49,7 @@ $(PARTED_WORKDIR)/parted/parted:	$(PARTED_DIR)/.configured
 $(PARTED_WORKDIR)/.installed: 	$(PARTED_WORKDIR)/parted/parted
 	mkdir -p $(TARGET_DIR)/usr/bin
 	mkdir -p $(STAGING_DIR)/include/parted
-	cp -v $(PARTED_WORKDIR)/include/parted/*.h $(STAGING_DIR)/include/parted
+	cp -f $(PARTED_WORKDIR)/include/parted/*.h $(STAGING_DIR)/include/parted
 	cp -f $(PARTED_WORKDIR)/libparted/.libs/libparted*so* $(STAGING_DIR)/lib
 	cp -f $(PARTED_WORKDIR)/parted/.libs/parted $(TARGET_DIR)/usr/bin
 	cp -f $(PARTED_WORKDIR)/partprobe/.libs/partprobe $(TARGET_DIR)/usr/bin

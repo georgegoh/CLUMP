@@ -232,16 +232,19 @@ class boothost:
         the values when the value is set to NULL"""
         setstr = ''
         if kernel != '':
+            state = 'Expired'
             if kernel == 'NULL':
                 setstr = setstr + 'kernel=NULL, '
             else:
                 setstr = setstr + 'kernel=\'%s\', ' % kernel
         if initrd != '':
+            state = 'Expired'
             if initrd == 'NULL':
                 setstr = setstr + 'initrd=NULL, '
             else:
                 setstr = setstr + 'initrd=\'%s\', ' % initrd
         if kparams != '':
+            state = 'Expired'
             if kparams == 'NULL':
                 setstr = setstr + 'kparams=NULL, '
             else:

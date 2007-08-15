@@ -29,7 +29,7 @@ from optparse import OptionParser
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 
-
+CFMFILE = '/etc/cfm/.cfmsecret'
 
 class BuildInitrd:
     """This class will provide the initrd management functions"""
@@ -116,9 +116,10 @@ class BuildInitrd:
         self.compactInitrd(type)
 
         # Clean-up directory for next run
-        self.stderrout("moduledir = %s\n" % self.moduledir)
-        #os.system('rm -rf \"%s\"' % self.moduledir)
-
+        os.system('rm -rf \"%s\"' % self.modlink)
+        os.system('rm -rf \"%s\"' % self.initlink)
+        os.system('rm -rf \"%s\"' % self.moduledir)
+        os.system('rm -rf \"%s\"' % self.imagedir)
         
 
     def validateNG(self, nodegroup):
@@ -226,6 +227,11 @@ class BuildInitrd:
                 print "%s" % template
         os.system('zcat %s |cpio -id >/dev/null' % template) 
 
+        # Add the CFM data
+        global CFMFILE
+        if os.path.exists(CFMFILE):
+            os.system('cp %s \"%s\"' % (CFMFILE,  self.imagedir))
+
 
     def getModules(self):
         """getModules - Returns a list of modules that this
@@ -315,7 +321,7 @@ class BuildInitrd:
             if kpkg.split('.')[-1] == 'rpm':
                 os.system('mkdir -p \'%s\'' % self.moduledir)
                 os.chdir(self.moduledir)
-                os.system('rpm2cpio %s |cpio -id >/dev/null' % kpkg)
+                os.system('rpm2cpio %s |cpio -id >/dev/null 2>&1' % kpkg)
 
             elif kpkg.split('.')[-1] == 'deb':
                 os.system('mkdir -p \'%s\'' % self.moduledir)

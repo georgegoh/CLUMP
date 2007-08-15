@@ -104,4 +104,4 @@ install::
 	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES/
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
 	echo "# CFM changed file list.  Generated automatically" > $(ROOT)/opt/kusu/cfm/changedfiles.lst
-	chown -R apache $(ROOT)/opt/kusu/cfm
+	#chown -R apache $(ROOT)/opt/kusu/cfm

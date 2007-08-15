@@ -33,7 +33,12 @@ import pwd
 import grp
 import urllib
 import random
+import glob
 from kusu.ipfun import *
+
+
+PLUGINS='/opt/kusu/lib/plugins/cfmclient'
+CFMFILE='/etc/cfm/.cfmsecret'
 
 class Merger:
     """ The Merger Class is responsible for dealing with merging
@@ -403,8 +408,12 @@ class CFMClient:
         # Decrypt and decompress the file (if needed)
         if not cfmfile:
             tmpfile2 = "%s.decrypted.CFMtmpFile" % deststruct[0]
-            # *** Really need a better shared secret
-            cmd = 'openssl bf -d -a -salt -pass file:/opt/kusu/etc/db.passwd -in %s |gunzip > "%s"' % (tmpfile, tmpfile2)
+            global CFMFILE
+            if os.path.exists(CFMFILE):
+                cmd = 'openssl bf -d -a -salt -pass file:%s -in %s |gunzip > "%s"' % (CFMFILE, tmpfile, tmpfile2)
+            else:
+                # *** Really need a better shared secret.  REMOVE THIS LATER
+                cmd = 'openssl bf -d -a -salt -pass file:/opt/kusu/etc/db.passwd -in %s |gunzip > "%s"' % (tmpfile, tmpfile2)
             for line in os.popen(cmd).readlines():
                 if line:
                     print "ERROR:  %s" % line
@@ -659,6 +668,23 @@ class CFMClient:
                 merger.mergeFile(realfile)
             else:
                 print "WARNING: Unknown action type: %s for %s" % (filename, action) 
+
+
+    def __runPlugins(self):
+        """__runPlugins - Run any plugins found in the PLUGINS directory.
+        These can be any type of executable.  The list of plugins will be
+        sorted then run. """
+        global PLUGINS
+        sys.path.append(PLUGINS)
+        
+        flist = glob.glob('%s/*' % PLUGINS)
+        if len(flist) == 0:
+            return
+
+        flist.sort()
+
+        for plugin in flist:
+            os.system('/bin/sh %s >/dev/null 2>%1' % plugin)
         
 
     def updatePackages (self):
@@ -692,6 +718,7 @@ class CFMClient:
         self.__getFile('cfmfiles.lst', attr, 1)
         self.__findOlderFiles()
         self.__installNewFiles()
+        self.__runPlugins()
 
 
     def run (self):

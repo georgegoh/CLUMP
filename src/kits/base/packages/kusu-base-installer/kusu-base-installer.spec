@@ -28,6 +28,8 @@ Vendor: Platform Computing Inc
 BuildArchitectures: noarch
 Source: %{name}.tar.gz
 Buildroot: /var/tmp/%{name}-buildroot
+Requires: openssl
+Requires: httpd
 
 %description
 This package contains the Kusu installer node tools.
@@ -62,6 +64,16 @@ This package contains the Kusu installer node tools.
 ## POST
 ##
 %post
+if [ ! -f /etc/cfm/.cfmsecret ] ; then
+	# Contact Mark prior to touching this!
+	if [ ! -d /etc/cfm ] ; then
+		mkdir /etc/cfm
+	fi
+	umask 077
+	openssl rand -base64 32 > /etc/cfm/.cfmsecret
+	chmod 400 /etc/cfm/.cfmsecret
+	chown apache /etc/cfm/.cfmsecret
+fi
 
 ##
 ## PREUN
@@ -72,6 +84,11 @@ This package contains the Kusu installer node tools.
 ## POSTUN
 ##
 %postun
+if [ "$1" -eq 0 ] ; then
+	if [ -f /etc/cfm/.cfmsecret ] ; then
+		rm -rf /etc/cfm/.cfmsecret
+	fi
+fi
 
 
 ##

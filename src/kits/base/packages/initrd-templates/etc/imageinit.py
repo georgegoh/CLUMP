@@ -48,6 +48,7 @@ class ImagedNodeConfiger:
         self.modules = []
         self.ifs = []
         self.installer = []
+        self.logfilefp = 0
         try:
             fp = file('/proc/cmdline', 'r')
             for line in fp.readlines():
@@ -61,15 +62,16 @@ class ImagedNodeConfiger:
             self.installer = "10.1.0.1"
             self.test = 1
 
-        try:
-            self.logfilefp = file('/tmp/imageinit.log', 'w')
-        except:
-            self.logfilefp = 0
 
-            
     def log(self, mesg):
         """log - Output messages to a log file"""
-        self.logfilefp.write(mesg)
+        try:
+            self.logfilefp = file('/tmp/imageinit.log', 'w')
+            self.logfilefp.write(mesg)
+            self.logfilefp.close()
+        except:
+            self.logfilefp = 0
+            print "Logging unavailable!"
 
 
     def loadModules(self):
@@ -248,7 +250,19 @@ for i in niihandler.nics.keys():
 
 # Download the image, and store the NII
 app.mkNewRoot('/newroot')
+
+if len(niihandler.partitions.keys()) > 0:
+    # Mount the partitions
+    # TODO
+    #
+    print "Should mount ROOT on /newroot"
+
+    
 os.makedirs('/newroot/etc', mode=0755)
+os.makedirs('/newroot/etc/cfm', mode=0755)
+os.system('cp /.cfmsecret /newroot/etc/cfm/')
+os.system('chmod 400 /newroot/etc/cfm/.cfmsecret')
+os.system('chown root /newroot/etc/cfm/.cfmsecret')
 niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
 app.getImage(niihandler.nodegrpid)
 os.unlink('/tmp/%s.img.tar.bz2' % niihandler.nodegrpid)

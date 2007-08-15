@@ -93,6 +93,7 @@ class NodeInfo:
  
         installer = data[0]
 
+        # This section could probably be removed
         etcdbpasswd = path('/opt/kusu/etc/db.passwd')
         dbpasswd = ''
         if not etcdbpasswd.exists():
@@ -101,8 +102,17 @@ class NodeInfo:
             f = open(etcdbpasswd, 'r')
             dbpasswd = f.read().strip()
             f.close()
+
+        cfmsecretfile = path('/etc/cfm/.cfmsecret')
+        cfmsecret = ''
+        if not cfmsecretfile.exists():
+            print "Oops!"
+        else:
+            f = open(cfmsecretfile, 'r')
+            cfmsecret = f.read().strip()
+            f.close()
         
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd)
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s" cfmsecret="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd, cfmsecret)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '

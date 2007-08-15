@@ -33,6 +33,8 @@ from kusu.core.db import KusuDB
 from kusu.cfmnet import CFMNet
 from kusu.ipfun import *
 
+CFMFILE='/etc/cfm/.cfmsecret'
+
 class PackBuilder:
     """This class contains the code for generating the packaged files for
     distribution through CFM. """
@@ -260,7 +262,12 @@ class PackBuilder:
                     # Only deal with newer files
                     if origmtime > cfmmtime:
                         # Compress, encrypt, and base64 encode
-                        cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:/opt/kusu/etc/db.passwd -out %s' % (fqfn, cfmfqfn)
+                        global CFMFILE
+                        if os.path.exists(CFMFILE):
+                            cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:%s -out %s' % (CFMFILE, fqfn, cfmfqfn)
+                        else:
+                            # Fail back for older code
+                            cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:/opt/kusu/etc/db.passwd -out %s' % (fqfn, cfmfqfn)
 
                         # Encode:
                         #  openssl bf -e -a -salt -in infile -out infile.bf

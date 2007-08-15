@@ -49,6 +49,7 @@ install::
 	mkdir -p $(ROOT)/etc/rc.kusu.d
 	mkdir -p $(ROOT)/etc/rc.kusu.custom.d
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu
+	mkdir -p $(ROOT)/opt/kusu/lib/plugins/cfmclient
 	mkdir -p $(ROOT)/opt/kusu/sbin
 	mkdir -p $(ROOT)/opt/kusu/etc
 	install -m755 sbin/rc.kusu.sh $(ROOT)/etc/init.d/kusu
