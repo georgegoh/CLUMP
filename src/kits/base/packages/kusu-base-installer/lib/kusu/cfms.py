@@ -264,7 +264,7 @@ class PackBuilder:
                         # Compress, encrypt, and base64 encode
                         global CFMFILE
                         if os.path.exists(CFMFILE):
-                            cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:%s -out %s' % (CFMFILE, fqfn, cfmfqfn)
+                            cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:%s -out %s' % (fqfn, CFMFILE, cfmfqfn)
                         else:
                             # Fail back for older code
                             cmd = 'gzip -c \"%s\" |openssl bf -e -a -salt -pass file:/opt/kusu/etc/db.passwd -out %s' % (fqfn, cfmfqfn)
