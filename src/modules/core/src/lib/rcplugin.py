@@ -190,7 +190,7 @@ class PluginRunner:
 
         for plugin in self.dir.listdir('*.sh'): 
             self.plugins[plugin.basename()] = str(plugin)
-            kl.info('Loaded plugin: ' + m.name)
+            kl.info('Loaded plugin: ' + plugin.basename())
             
     def getNodeGroupInfo(self):
         """Returns the node name, nodegroup name, nodegroup type"""
