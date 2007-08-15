@@ -11,6 +11,7 @@ from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
 import kusu.util.log as kusulog
 from kusu.nodeinstaller.partitionfilterchain import *
+from pprint import PrettyPrinter
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
@@ -227,15 +228,17 @@ def getPartList(part_rules, diskprofile):
     part_list = []
     for p in part_rules:
         dev = p['device']
-        if dev in 'nN':
+        if dev.lower() == 'n':
             # Simple check to decide whether to include the 'N' device or not.
             # Doesn't check if there are other free spaces around.
             if not hasPVs(diskprofile):
                 part_list.append(p)
-        elif dev in '0123456789':
+                logger.debug('Append to part_list: %s' % p)
+        elif dev.isdigit():
             mountpoint = translateMntPnt(p['mntpnt'])
             if mountpoint not in diskprofile.mountpoint_dict.keys():
                 part_list.append(p)
+                logger.debug('Append to part_list: %s' % p)
     return part_list
 
 def hasPVs(diskprofile):
@@ -262,15 +265,16 @@ def createSchema(part_rules, diskprofile):
         method.
 
     """
-
     schema = {'disk_dict':{},'vg_dict':{}}
 
+    # format for debug printing
+    pp = PrettyPrinter(indent=2)
     vg_list = getVGList(part_rules, diskprofile)
-    logger.debug('VG List after filtering: %s' % str(vg_list))
+    logger.debug('VG List after filtering:\n%s' % pp.pformat(vg_list))
     part_list = getPartList(part_rules, diskprofile)
-    logger.debug('Partitions List after filtering: %s' % str(part_list))
+    logger.debug('Partitions List after filtering:\n%s' % pp.pformat(part_list))
     lv_list = getLVList(part_rules, diskprofile)
-    logger.debug('LV List after filtering: %s' % str(lv_list))
+    logger.debug('LV List after filtering:\n%s' % pp.pformat(lv_list))
     # create the volume groups first.
     try:
         for vginfo in vg_list:
