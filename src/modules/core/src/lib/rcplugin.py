@@ -84,27 +84,57 @@ class PluginRunner:
     def run(self):
         results = []
 
+        kusuenv = os.environ.copy()
+        kusuenv['KUSU_NODE_NAME'] = Plugin.nodename
+        kusuenv['KUSU_NII_HOST'] = ' '.join(Plugin.niihost)
+        kusuenv['KUSU_OS_NAME'] = Plugin.os_name
+        kusuenv['KUSU_OS_VERSION'] = Plugin.os_version
+        kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch 
+        kusuenv['KUSU_REPOID'] = str(Plugin.repoid)
+        kusuenv['KUSU_NGTYPE'] = self.ngtype
+
         for fname in sorted(self.plugins.keys()):
-            try:
-                plugin = self.plugins[fname]
-                self.display(plugin.desc)
-                retval = plugin.run()
-                if retval:
+            if type(self.plugins[fname]) == str:
+
+                self.display('Running ' + fname)
+                p = subprocess.Popen('sh ' + self.plugins[fname],
+                                     env = kusuenv,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+
+                p.communicate()
+                retval = p.returncode
+
+                if retval == 0:
                     self.success()
-                    kl.info('Plugin: %s ran successfully' % plugin.name)
+                    kl.info('Plugin: %s ran successfully' % fname)
                 else:
                     self.failure()
-                    kl.error('Plugin: %s failed to run successfully' % plugin.name)
-            
-                results.append( (plugin.name, retval, None) )
+                    kl.error('Plugin: %s failed to run successfully' % fname)
+                    
+                results.append( (fname, retval, None) )
+            else:
+                try:
+                    plugin = self.plugins[fname]
+                    self.display(plugin.desc)
+                    retval = plugin.run()
+                    if retval:
+                        self.success()
+                        kl.info('Plugin: %s ran successfully' % plugin.name)
+                    else:
+                        self.failure()
+                        kl.error('Plugin: %s failed to run successfully' % plugin.name)
+                
+                    results.append( (plugin.name, retval, None) )
 
-            except Exception, e:
-                self.failure()
-                results.append( (plugin.name, False, e) )
-                kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
-                   
-            if plugin.delete and (self.dir / fname).exists():
-                (self.dir / fname).remove()
+                except Exception, e:
+                    self.failure()
+                    results.append( (plugin.name, False, e) )
+                    kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
+                       
+                if plugin.delete and (self.dir / fname).exists():
+                    (self.dir / fname).remove()
 
         return results
 
@@ -158,6 +188,10 @@ class PluginRunner:
                 self.plugins[plugin.basename()] = m
                 kl.info('Loaded plugin: ' + m.name)
 
+        for plugin in self.dir.listdir('*.sh'): 
+            self.plugins[plugin.basename()] = str(plugin)
+            kl.info('Loaded plugin: ' + m.name)
+            
     def getNodeGroupInfo(self):
         """Returns the node name, nodegroup name, nodegroup type"""
 
