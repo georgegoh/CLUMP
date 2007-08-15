@@ -531,15 +531,18 @@ class BootHostApp(KusuApp):
         bhinst = boothost(self.gettext)
         self.parseargs(bhinst)
 
+        if self.reinstall == 1:
+            self.state = 'Expired'
+            
         if self.updatewhat == 'NodeList':
             bhinst.genNodeListPXE(self.nodelist, self.newkernel,
-                                  self.newinitrd, self.newkparms)
+                                  self.newinitrd, self.newkparms, self.state)
         elif self.updatewhat == 'NodeGroup':
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms)
+                                 self.newinitrd, self.newkparms, self.state)
         elif self.updatewhat == 'NodeUnSynced':
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms, 1)
+                                 self.newinitrd, self.newkparms, self.state, '', 1)
         else:
             bhinst.toolHelp()
 
