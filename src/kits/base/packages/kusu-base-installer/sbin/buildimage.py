@@ -246,10 +246,13 @@ class BuildImage:
         # print "repodir = %s" % self.repodir
 
         dirname = 'Redhat'
+        repopref = ''
         if self.ostype[:6] == 'fedora':
             dirname = 'Fedora'
         if self.ostype[:4] == 'rhel' :
             dirname = 'Redhat'
+            repopref = '/Server'
+            #   /depot/repos/1000/Server/repodata
         if self.ostype[:6] == 'centos':
             dirname = 'CentOS'
 
@@ -263,8 +266,8 @@ class BuildImage:
                 'reposdir=/dev/null\n'
                 'tolerant=1\n\n'
                 '[base]\n'
-                'name=RHEL-%s - Base\n'
-                'baseurl=file://%s\n' % (self.ostype, self.repodir)
+                'name=%s - Base\n'
+                'baseurl=file://%s%s\n' % (dirname, self.repodir, repopref)
                 )
 
         fp.write(out)
