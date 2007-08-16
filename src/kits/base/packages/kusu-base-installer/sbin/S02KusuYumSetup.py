@@ -34,6 +34,11 @@ class KusuRC(rcplugin.Plugin):
                     fh.write(line+"\n")
             fh.close()
 
+        """ Remove yum-rhn-plugin if exists. """
+        retcode, out, err = self.runCommand('rpm -qa | grep yum-rhn-plugin')
+        if retcode == 0 and len(out) > 0:
+            retcode, out, err = self.runCommand("rpm -ev " + out)
+
         """ Set up kusu.repo """
         kusurepo = path(etcyumeposd / 'kusu-%s.repo' % self.ngtypes[0])
 
