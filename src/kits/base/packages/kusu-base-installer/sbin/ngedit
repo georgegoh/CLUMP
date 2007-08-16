@@ -25,6 +25,7 @@ from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 
 global curNG, origNG
+MAXWIDTH = 70
 
 #emulate ternary cond. expression - only avail. in 2.5 & up :(
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
@@ -336,6 +337,14 @@ class NodeGroup(NodeGroupRec):
 
         NodeGroupRec.eraseFromDB(self,db)
 
+def RpmNameSplit(packname):
+    ''' return a tuple (name,version,release,arch,ext)
+    '''
+    rv = ['','','','','']
+    nvr,rv[3],rv[4] = packname.rsplit('.',2)
+    rv[0:2] = nvr.rsplit('-',2)
+    return tuple(rv)
+
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -425,11 +434,12 @@ class scrNGEMain(USXBaseScreen):
         #they will all share one instance of each
         ScreenFactory.screens = [
                                  scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                  #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp), #for testing
                                 ]
@@ -440,7 +450,6 @@ class scrNGEMain(USXBaseScreen):
         return NAV_NOTHING
 
     def drawImpl(self):
-        MAXWIDTH = 70
 
         cols = [ ['NODE GROUP', 'DESCRIPTION'] ]
         self.database.execute('''select max(char_length(ngname)), max(char_length(ngdesc))
@@ -572,7 +581,6 @@ class scrNGEEdit_Repo(USXBaseScreen):
         return NAV_BACK
 
     def drawImpl(self):
-        MAXWIDTH = 70
 
         cols = [ ['RepoName','Repository','OSType'] ]
 
@@ -852,7 +860,6 @@ class scrNGEEdit_Networks(USXBaseScreen):
         return NAV_FORWARD
 
     def drawImpl(self):
-        MAXWIDTH = 70
 
         if curNG.has_key('nets') and curNG['nets'] <> None:
             netlst = curNG['nets']
@@ -919,18 +926,27 @@ class scrNGEEdit_Networks(USXBaseScreen):
 class scrNGEEdit_Packages(USXBaseScreen):
     name = 'Optional Packages'
     msg = 'Please select optional packages to install'
-    buttons = ['next_button', 'back_button', 'cancel_button']
+    buttons = ['next_button', 'back_button', 'toggleview_button', 'cancel_button']
+    OldRepoId = None
+    __ct_alpha = None #checkbox tree of alphabetized packages
+    __ct_ctgry = None #checkbox tree of categorized packages
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.alphaview = True #alphabetical view by default, categorized view o.w.
 
     def setCallbacks(self):
 
         #for the buttons
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['toggleview_button'].setCallback_(self.TogglePackageView)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+
+    def TogglePackageView(self):
+        self.alphaview = not self.alphaview
+        return NAV_NOTHING
 
     def F12Action(self):
         return NAV_IGNORE
@@ -945,107 +961,152 @@ class scrNGEEdit_Packages(USXBaseScreen):
         return NAV_FORWARD
 
     def drawImpl(self):
-        import yum.comps
-        from kusu.kitops.package import PackageFactory
-
-        #TODO: 1. check packages already associated with this ngid - select them upon rendering
-        #      2. change derivation of repopacklst
-        #      3. if no change in repo - rebuild self.__ct only once
 
         self.screenGrid = snack.Grid(1, 1)
-        self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
 
-        query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
-        self.database.execute(query)
-        self.__repodir, ostype  = self.database.fetchone()
-        self.__repodir = self.__repodir.strip()
-        #self.__repodir = '/depot/repos/1000' #for testing
-
-        if ostype.lower().startswith('fedora'):
-            repopackdir = self.__repodir + '/Fedora/RPMS'
-        #additional repo os types here
+        #rebuild flag logic
+        rebuild =  curNG['repoid'] <> self.OldRepoId
+        if rebuild:
+            self.__ct_alpha = self.__ct_ctgry = self.OldRepoId = None #reset all
         else:
-            raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+            if self.alphaview and self.__ct_alpha:
+                self.__ct = self.__ct_alpha
+            elif (not self.alphaview) and self.__ct_ctgry:
+                self.__ct = self.__ct_ctgry
+            else:
+                rebuild = True
 
-        repopacklst = os.listdir(repopackdir) #only basename returned
-        repopacklst = map(lambda x: re.split('-[0-9]',x, 1)[0], repopacklst)
-        repopackset = Set(repopacklst) #work with the set
+        if rebuild:
+            query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
+            self.database.execute(query)
+            self.__repodir, ostype  = self.database.fetchone()
+            self.__repodir = self.__repodir.strip()
+    
+            if ostype.lower().startswith('fedora'):
+                repopackdir = self.__repodir + '/Fedora/RPMS'
+                compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
+            elif ostype.lower().startswith('rhel'):
+                repopackdir = self.__repodir + '/Server'
+                compsfile = glob.glob(repopackdir + '/repodata/comps*.xml')[0]
+            #additional repo os types here
+            else:
+                raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+    
+            cwdbackup = os.getcwd()
+            os.chdir(repopackdir)
+            repopacklst = glob.glob('*.[rR][pP][mM]') #only basenames returned
+            repopacklst = [ RpmNameSplit(x)[0] for x in repopacklst ] #get the RPM names
+            os.chdir(cwdbackup)
+    
+            repopackset = Set(repopacklst) #work with the set
+    
+            #remove packages coming from kits available through the current repo
+            rmpacklst = []
+            query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+                       repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
+                       k.isOS = 0 AND r.repoid = %s ''' %curNG['repoid']
+            self.database.execute(query)
+            rv = self.database.fetchall()
+    
+            for kitname,kitver,kitarch in rv:
+                path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
+                kitpacklst = os.listdir(path)
+                kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
+                rmpacklst.extend(kitpacklst)
+    
+            repopackset -= Set(rmpacklst)
+            #repopackset ready
+    
+            self.selector.popupMsg("DEBUG", "number of packages to display= %s" %len(repopackset))
 
-        #remove packages coming from kits available through the current repo
-        rmpacklst = []
-        query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
-                   repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND 
-                   k.isOS = 0 AND r.repoid = %s ''' %curNG['repoid']
-        self.database.execute(query)
-        rv = self.database.fetchall()
+            if self.alphaview: #alphabetic view
+                self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
 
-        for kitname,kitver,kitarch in rv:
-            path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
-            kitpacklst = os.listdir(path)
-            kitpacklst = map(lambda x: re.split('-[0-9]',x, 1)[0], kitpacklst)
-            rmpacklst.extend(kitpacklst)
-            
-        #instantiate comps
-        compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
-        compsinst = yum.comps.Comps()
-        compsinst.add(compsfile)
+                curletter = None
+                i = -1
+                for p in sorted(repopackset):
+                    letter = p[0]
+                    if letter != curletter:
+                        self.__ct.append(letter)
+                        i += 1
+                        curletter = letter
+                    self.__ct.addItem(p,(i,snack.snackArgs['append']), item=p)
 
-        #remove core & base packages from the list
-        for g in ['core','base']:
-            ginst = compsinst.return_group(g)
-            rmpacklst.extend(ginst.packages)
+                self.__ct_alpha = self.__ct
+                self.OldRepoId = curNG['repoid']
 
-        repopackset -= Set(rmpacklst)
+            else: #category view
+                import yum.comps
+                from kusu.kitops.package import PackageFactory
 
-        self.selector.popupMsg("DEBUG", "number of packages to display= %s" %len(repopackset))
+                self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
+                #instantiate comps
+                compsinst = yum.comps.Comps()
+                compsinst.add(compsfile)
 
-        tmpcnt = 0
-        ci = 0 #category index
-        for c in compsinst.categories:
-            self.__ct.append(c.name, item=c.categoryid)
-            gi = 0
-            for g in sorted(c.groups):
-                ginst = compsinst.return_group(g)
-                tmppackset = Set(ginst.packages)
-                set2show = repopackset & tmppackset
-                if set2show:  # do we have a non-empty intersection?
-                    self.__ct.addItem(g, path=(ci,-1), item=ginst.groupid)
-                    for p in sorted(set2show):
-                        tmpcnt+=1
-                        self.__ct.addItem(p, path=(ci,gi,-1), item=p)
-                    #done package
-                    repopackset -= set2show
-                    gi += 1
-            #done group
-            ci += 1
-        #done category
-
-        #construct group dictionary for remaining packages
-        groupdict = {}
-        self.__ct.append("Other")
-        for p in repopackset:
-            #reconstruct the full package name to pass to PackageFactory
-            pfile = glob.glob("%s/%s-[0-9]*" % (repopackdir, p))[0]
-            #get group through my package library -> RPMTAG_GROUP
-            pinst = PackageFactory(pfile)
-            group = pinst.getGroup()
-            if group not in groupdict.keys():
-                groupdict[group] = [] #initialize
-            groupdict[group].append(p)
+                tmpcnt = 0
+                ci = 0 #category index
+                for c in compsinst.categories:
+                    self.__ct.append(c.name, item=c.categoryid)
+                    gi = 0
+                    for g in sorted(c.groups):
+                        ginst = compsinst.return_group(g)
+                        set2show = None
+                        if ginst: #some groups don't have any packages
+                            set2show = repopackset & Set(ginst.packages)
+                        if set2show:  # do we have a non-empty intersection?
+                            self.__ct.addItem(g, path=(ci,-1), item=ginst.groupid)
+                            for p in sorted(set2show):
+                                tmpcnt+=1
+                                self.__ct.addItem(p, path=(ci,gi,-1), item=p)
+                            #done package
+                            repopackset -= set2show
+                            gi += 1
+                    #done group
+                    ci += 1
+                #done category
         
-        # display remaining packages
-        tmpcnt2 = 0
-        gi = 0
-        for g in sorted(groupdict):
-            self.__ct.addItem(g,path=(ci,-1), item=g)
-            for p in sorted(groupdict[g]):
-                tmpcnt2 += 1
-                self.__ct.addItem(p, path=(ci,gi,-1), item = p)
-            gi += 1
-        #done remaining packages
+                #construct group dictionary for remaining packages
+                groupdict = {}
+                self.__ct.append("Other")
+                for p in repopackset:
+                    #reconstruct the full package name to pass to PackageFactory
+                    tmplst = glob.glob("%s/%s-[0-9]*" % (repopackdir, p))
+                    if not tmplst: #corner case
+                        tmplst = glob.glob("%s/%s-*.rpm" % (repopackdir, p))
+                    pfile = tmplst[0]
+                    #get group through my package library -> RPMTAG_GROUP
+                    pinst = PackageFactory(pfile)
+                    group = pinst.getGroup()
+                    if group not in groupdict.keys():
+                        groupdict[group] = [] #initialize
+                    groupdict[group].append(p)
+                
+                # display remaining packages
+                tmpcnt2 = 0
+                gi = 0
+                for g in sorted(groupdict):
+                    self.__ct.addItem(g,path=(ci,-1), item=g)
+                    for p in sorted(groupdict[g]):
+                        tmpcnt2 += 1
+                        self.__ct.addItem(p, path=(ci,gi,-1), item = p)
+                    gi += 1
+                #done remaining packages
 
-        self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d" %(tmpcnt, tmpcnt2))
+                self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d" %(tmpcnt, tmpcnt2))
 
+                self.__ct_ctgry = self.__ct
+                self.OldRepoId = curNG['repoid']
+
+        
+            #mark currently selected packages
+            curpacklst = []
+            if curNG['packs']:
+                curpacklst = curNG['packs']
+            for p in Set(curpacklst) & repopackset:
+                    self.__ct.setEntryValue(item=p, selected=1)
+
+        #at this point self.__ct is ready to be displayed
         self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
 
     def validate(self):
@@ -1091,7 +1152,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             raise #for testing
             return NAV_NOTHING
 
-        #no exceptions to this point: successful
+        #no exceptions up to this point: successful
         self.database.endTransaction()
         self.selector.popupMsg("DB Update", "Database was successfully updated")
         return NAV_FORWARD
@@ -1115,7 +1176,6 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
 
     def drawImpl(self):
-        MAXWIDTH = 70
         self.__diffNG = curNG - origNG
         diffNG = self.__diffNG
 
@@ -1196,6 +1256,74 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
     def formAction(self):
         pass
+        
+class scrNGEEdit_Scripts(USXBaseScreen):
+    name = 'Custom Scripts'
+    msg = 'Enter the custom script path'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+    MAXSCRIPTS = 10
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def drawImpl(self):
+
+        self.screenGrid = snack.Grid(1, self.MAXSCRIPTS)
+
+        n = 0
+        if curNG['scripts']:
+            n = len(curNG['scripts'])
+
+        self.__entries = []
+        for i in xrange(self.MAXSCRIPTS):
+            labeltxt = 'Script %d:' %i
+            entrytxt = ''
+            if i < n:
+                entrytxt = curNG['scripts'][i]
+
+            entry = LabelledEntry(labelTxt = labeltxt, text = entrytxt,\
+                    width=MAXWIDTH, password=0, returnExit=0)
+            self.__entries.append(entry)
+            self.screenGrid.setField(entry, col=0,row=i)
+
+
+    def validate(self):
+        ###CONTINUE HERE#########################
+        query = ""
+        # * ensure the file exists and isfile()
+        # * ensure the uniqueness of the name
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        vallst = []
+        for i in xrange(self.MAXSCRIPTS):
+            val = self.__entries[i].value().strip()
+            if val:
+                vallst.append(val)
+
+        if not curNG['scripts'] and not vallst: #nothing to do
+            return
+
+        curNG['scripts'] = vallst
         
 
 class NGEApp(KusuApp):
