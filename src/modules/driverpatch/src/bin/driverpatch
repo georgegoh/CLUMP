@@ -17,6 +17,44 @@ kl = kusulog.getKusuLog()
 kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
                        'kusu-driverpatch.log')
 kl = kusulog.getKusuLog('driverpatch-app')
+
+def printTable(titles, entries, widths):
+    horline = '+'
+    for width in widths:
+        horline += '-' * (width + 2) + '+'
+
+    print horline
+
+    line = '|'
+    for x in xrange(len(titles)):
+        line += ' ' + titles[x].ljust(widths[x]) + ' |'
+
+    print line
+    print horline
+
+    for entry in entries:
+        newlines = True
+        while newlines:
+            newlines = False
+
+            line = '|'
+            for x in xrange(len(entry)):
+                newline = entry[x].find('\n')
+                if newline == -1:
+                    thisentry = entry[x]
+                    nextentry = ''
+                else:
+                    newlines = True
+                    thisentry = entry[x][:newline]
+                    nextentry = entry[x][newline + 1:]
+
+                line += ' ' + thisentry.ljust(widths[x]) + ' |'
+                entry[x] = nextentry
+
+            print line
+
+    print horline
+
         
 class App(KusuApp):
     """ Application class for buildkit. """
@@ -113,12 +151,7 @@ Example operations:
                 del li[0:2]
 
         return d
-        
-    def decryptDBPasswd(self):
-        """ Returns the db password. """
-        dbpasswd = open('/opt/kusu/etc/db.passwd','r').read()
-        
-        return dbpasswd
+
 
     def parseargs(self):
         """ App-specific arguments goes here. """
@@ -181,8 +214,7 @@ Example operations:
             dbuser = self.options.dbuser
         if self.options.dbpassword:
             dbpassword = self.options.dbpassword
-        else:
-            dbpassword = self.decryptDBPasswd()
+
 
         self.db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
@@ -205,7 +237,15 @@ Example operations:
         ngname = args.get('name','')
         ngid = args.get('id','')
         
-        pass
+        if not ngid and not ngname:
+            self.printUsageExit()
+        
+        if ngname:
+            ngkey = 'name'
+        elif ngid:
+            ngkey = 'id'
+            
+        
 
     def _list(self, args):
         """ Handler for list action. args is a dict of supported key-value pairs for this action. """
@@ -219,17 +259,40 @@ Example operations:
             ngkey = 'name'
         elif ngid:
             ngkey = 'id'
-        dpacks = self.controller.getDriverPacks(id=ngid,name=ngname)
+            
+        try:
+            dpacks = self.controller.getDriverPacks(id=ngid,name=ngname)
+        except ValueError:
+            msg = self._('id should be a number!')
+            self.printMsgExit(msg)
+            
+            
         if dpacks:
             msg = self._("Driverpacks belonging to nodegroup(s) matching '%(ngkey)s=%(ngval)s':" % 
                 {'ngkey':ngkey,
                 'ngval':ngid or ngname})
             print msg
-            i = 1
+
+            headers = ['name','description']
+            max_lengths = []
+            for x in xrange(len(headers)):
+                max_lengths.append(len(headers[x]))
+            
+            dplines = []
             for dpack in dpacks:
-                print '%02d.\tdriverpack name: %s' % (i,dpack.dpname)
-                print '\tdriverpack desc: %s' % dpack.dpdesc
-                i += 1
+                dpline = []
+                dpline.append(dpack.dpname)
+                dpline.append(dpack.dpdesc)
+                
+                # update maximum lengths
+                for x in xrange(len(dpline)):
+                    linelengths = [len(l) for l in dpline[x].split('\n')]
+                    if max(linelengths) > max_lengths[x]:
+                        max_lengths[x] = max(linelengths)
+
+                dplines.append(dpline)
+            
+            printTable(headers, dplines, max_lengths)
 
         
 if __name__ == '__main__':

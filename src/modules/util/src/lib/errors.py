@@ -172,4 +172,7 @@ class UnsupportedScriptMode(KusuError):pass
 class InvalidRPMHeader(KusuError): pass
 class RPMComparisonError(KusuError): pass
 
+# driverpatch
+class UnknownKernelModuleAsset(KusuError): pass
+
 
