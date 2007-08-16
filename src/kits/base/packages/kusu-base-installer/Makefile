@@ -77,6 +77,7 @@ install::
 	install -m644 sbin/S02KusuXinetd.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuMotd.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuYumSetup.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuGenconfig.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
