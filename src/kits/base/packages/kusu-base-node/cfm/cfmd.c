@@ -694,6 +694,10 @@ static int runUpdate(struct dataPack *dpack)
 
       snprintf(utype, 14, "%i", dpack->type) ;
 
+      /* Set the PYTHONPATH */
+      if (setenv("PYTHONPATH", "/opt/kusu/lib/python", 1))
+	cfmLog(LOG_ERROR, "Unable to set PYTHONPATH") ;
+
       cfmLog(LOG_DEBUG, "Running: /opt/kusu/sbin/cfmclient -t %s -i %s\n", utype, ilist) ;
 
       close(STDIN_FILENO) ;
