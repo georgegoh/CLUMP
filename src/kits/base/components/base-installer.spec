@@ -25,21 +25,21 @@ License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
 BuildArchitectures: noarch
-Requires: kusu-base-installer >= 0.1
-Requires: kusu-base-node >= 0.1
-Requires: kusu-boot >= 0.5
-Requires: kusu-buildkit >= 0.5
-Requires: kusu-core >= 0.5
-Requires: kusu-hardware >= 0.5
-Requires: kusu-kitops >= 0.5
-Requires: kusu-networktool >= 0.5
-Requires: kusu-path >= 0.5
-Requires: kusu-partitiontool >= 0.5
-Requires: kusu-repoman >= 0.5
-Requires: kusu-sqlalchemy >= 0.5
-Requires: kusu-ui >= 0.5
-Requires: kusu-util >= 0.5
-Requires: kusu-nodeinstaller-patchfiles >= 0.5
+Requires: kusu-base-installer 
+Requires: kusu-base-node 
+Requires: kusu-boot
+Requires: kusu-buildkit 
+Requires: kusu-core 
+Requires: kusu-hardware 
+Requires: kusu-kitops 
+Requires: kusu-networktool 
+Requires: kusu-path 
+Requires: kusu-partitiontool 
+Requires: kusu-repoman 
+Requires: kusu-sqlalchemy 
+Requires: kusu-ui 
+Requires: kusu-util 
+Requires: kusu-nodeinstaller-patchfiles 
 Requires: mysql
 Requires: mysql-server
 Requires: dhcp
