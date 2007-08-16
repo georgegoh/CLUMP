@@ -77,6 +77,15 @@ class KusuApp:
             mesg = self.gettext(message)
         sys.stderr.write(mesg)
 
+    def stderrMessage(self, message, *args):
+        """errorMessage - Output messages to STDERR with Internationalization.
+        Additional arguments will be used to substitute variables in the
+        message output"""
+        if len(args) > 0:
+            mesg = self.gettext(message) % args
+        else:
+            mesg = self.gettext(message)
+        sys.stderr.write(mesg)
 
     def stdoutMessage(self, message, *args):
         """errorMessage - Output messages to STDOUT with Internationalization.
