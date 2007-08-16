@@ -31,9 +31,9 @@ Requires: pdsh >= 2.14
 Requires: pdsh-rcmd-exec >= 2.14
 Requires: pdsh-rcmd-rsh >= 2.14
 Requires: pdsh-rcmd-ssh >= 2.14
-Requires: kusu-core >= 0.4
-Requires: kusu-path >= 0.4
-Requires: kusu-util >= 0.4
+Requires: kusu-core >= 0.5
+Requires: kusu-path >= 0.5
+Requires: kusu-util >= 0.5
 Requires: rsh-server
 Requires: rsh
 
