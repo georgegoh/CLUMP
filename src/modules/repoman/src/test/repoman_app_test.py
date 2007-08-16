@@ -10,6 +10,7 @@ from kusu.repoman import repo
 from path import path
 import tempfile
 import os
+from nose import SkipTest
 
 prefix = None
 kusudb = None
@@ -172,6 +173,8 @@ class TestRepoman:
         prefix.rmtree()
 
     def testNew(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
 
@@ -181,6 +184,8 @@ class TestRepoman:
         assert path(prefix / 'depot' / 'repos' / str(repo[0].repoid)).exists()
 
     def testNewWithNodeGroup(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
         
@@ -199,6 +204,8 @@ class TestRepoman:
         assert path(prefix / 'depot' / 'repos' / str(repo[0].repoid)).exists()
 
     def testNewWithNodeGroupDifferentRepo(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
         
@@ -251,6 +258,8 @@ class TestRepoman:
             assert path(prefix / 'depot' / 'repos' / str(r.repoid)).exists()
 
     def testNewWithNodeGroupSameRepo(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
         
@@ -284,6 +293,8 @@ class TestRepoman:
         assert path(prefix / 'depot' / 'repos' / str(repos[0].repoid)).exists()
 
     def testNewWithNodeGroupChangeKitsSameRepo(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
         
@@ -337,6 +348,8 @@ class TestRepoman:
         assert path(prefix / 'depot' / 'repos' / str(repos[0].repoid)).exists()
  
     def testSnapshost(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
  
@@ -349,6 +362,8 @@ class TestRepoman:
             assert path(prefix / 'depot' / 'repos' / str(r.repoid)).exists()
 
     def testDelete(self):
+        raise SkipTest
+
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
         oldRepo = self.dbs.Repos.select_by(reponame = 'testing')[0]
@@ -361,6 +376,7 @@ class TestRepoman:
         assert not path(prefix / 'depot' / 'repos' / str(oldRepo.repoid)).exists()
 
     def testList(self):
+        raise SkipTest
 
         cmd = 'repoman -n testing -o fedora-6-i386 --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
         assert runCommand(cmd)[2] == 0
