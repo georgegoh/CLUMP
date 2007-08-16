@@ -26,14 +26,14 @@ Vendor: Platform Computing Inc
 Requires: kusu-base-node >= 1.0
 
 BuildArchitectures: noarch
-Requires: python >= 2.4.3
-Requires: pdsh >= 2.14
-Requires: pdsh-rcmd-exec >= 2.14
-Requires: pdsh-rcmd-rsh >= 2.14
-Requires: pdsh-rcmd-ssh >= 2.14
-Requires: kusu-core >= 0.5
-Requires: kusu-path >= 0.5
-Requires: kusu-util >= 0.5
+Requires: python
+Requires: pdsh
+Requires: pdsh-rcmd-exec
+Requires: pdsh-rcmd-rsh
+Requires: pdsh-rcmd-ssh
+Requires: kusu-core
+Requires: kusu-path
+Requires: kusu-util
 Requires: rsh-server
 Requires: rsh
 

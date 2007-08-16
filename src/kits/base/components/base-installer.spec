@@ -40,33 +40,33 @@ Requires: kusu-sqlalchemy >= 0.5
 Requires: kusu-ui >= 0.5
 Requires: kusu-util >= 0.5
 Requires: kusu-nodeinstaller-patchfiles >= 0.5
-Requires: mysql >= 5.0
-Requires: mysql-server >= 5.0
-Requires: dhcp >= 3.0
-Requires: xinetd >= 2.3
-Requires: tftp-server >= 0.50
-Requires: syslinux >= 3.11
-Requires: httpd >= 2.2.3
-Requires: python >= 2.4.3
-Requires: python-devel >= 2.4.3
-Requires: MySQL-python >= 1.2.1
-Requires: createrepo >= 0.5.4
-Requires: rsync >= 2.6.6
+Requires: mysql
+Requires: mysql-server
+Requires: dhcp
+Requires: xinetd
+Requires: tftp-server
+Requires: syslinux
+Requires: httpd
+Requires: python
+Requires: python-devel
+Requires: MySQL-python
+Requires: createrepo
+Requires: rsync
 Requires: bind
 Requires: caching-nameserver
-Requires: pdsh >= 2.14
-Requires: pdsh-rcmd-exec >= 2.14
-Requires: pdsh-rcmd-rsh >= 2.14
-Requires: pdsh-rcmd-ssh >= 2.14
-Requires: pdsh-mod-machines >= 2.14
-Requires: pdsh-mod-dshgroup >= 2.14
-Requires: pdsh-mod-netgroup >= 2.14
-Requires: pdsh-debuginfo >= 2.14
-Requires: kusu-cheetah >= 0.5
-Requires: kusu-pysqlite >= 0.5
-Requires: kusu-ipy >= 0.5
+Requires: pdsh
+Requires: pdsh-rcmd-exec
+Requires: pdsh-rcmd-rsh
+Requires: pdsh-rcmd-ssh
+Requires: pdsh-mod-machines
+Requires: pdsh-mod-dshgroup
+Requires: pdsh-mod-netgroup
+Requires: pdsh-debuginfo
+Requires: kusu-cheetah
+Requires: kusu-pysqlite
+Requires: kusu-ipy
 Requires: initrd-templates
-Requires: pyparted >= 1.7.3
+Requires: pyparted
 Requires: rsh
 
 %description
