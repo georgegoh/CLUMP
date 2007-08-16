@@ -187,7 +187,6 @@ class KickstartFromNIIProfile(object):
                 'modify the partition schema for this nodegroup to reduce the size ' + \
                 'of this Logical Volume.'
             raise OutOfSpaceError, s
-
         return self.diskprofile
        
     def prepareKickstartPackageProfile(self,ni):

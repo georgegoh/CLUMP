@@ -163,7 +163,8 @@ class LogicalVolumeGroup(object):
 
     def __str__(self):
         s = self.name + ' Extent Size: ' + self.extent_size_humanreadable + \
-            ' Total Extents: ' + str(self.extentsTotal()) + '\n' + \
+            ' Total Extents: ' + str(self.extentsTotal()) + \
+            ' Leave Unchanged: ' + str(self.leaveUnchanged()) + \
             ' PVs: ' + str(self.pv_dict.keys()) + ' LVs: ' + \
             str(self.lv_dict.keys())
         return s
@@ -299,13 +300,16 @@ class LogicalVolumeGroup(object):
         if self.leaveUnchanged(): raise CannotDeleteVolumeGroupError, 'Volume Group flagged to be unchanged.' 
         logger.info('Deleting volume group %s' % self.name)
         self.delete = True
+        for pv in self.pv_dict.values():
+            pv.group = None
         queueCommand(lvm.removeVolumeGroup, (self.name))
 
     def leaveUnchanged(self):
         for pv in self.pv_dict.itervalues():
             if pv.partition.leave_unchanged:
-                print "Respecting leave_unchanged flag on %s" % pv.partition.path
+                logger.debug("Respecting leave_unchanged flag on %s" % pv.partition.path)
                 return True
+        return False
 
     def formatAll(self):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
@@ -329,7 +333,7 @@ class LogicalVolume(object):
     def __str__(self):
         s = self.name + ' VolGrp: ' + self.group.name + ' Extents: ' + \
             str(self.extents) + '\nFS: ' + str(self.fs_type) + ' On Disk: ' + str(self.on_disk) + \
-            ' MntPnt: ' + str(self.mountpoint)
+            ' MntPnt: ' + str(self.mountpoint) + ' Leave Unchanged: ' + str(self.leave_unchanged)
         return s
 
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):

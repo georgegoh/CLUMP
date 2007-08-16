@@ -499,7 +499,8 @@ class Partition(object):
     def __str__(self):
         s = '  ' + self.path + ' size(MB): ' + str(self.size_MB) + '\n'
         s += '  start sector: ' + str(self.start_sector) + ' end sector: ' + \
-             str(self.end_sector) + ' FS: ' + str(self.fs_type)
+             str(self.end_sector) + ' FS: ' + str(self.fs_type) + \
+             ' Leave unchanged: ' + str(self.leave_unchanged)
         return s
 
     def __init__(self, disk, pedPartition, mountpoint=None):

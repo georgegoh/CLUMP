@@ -449,17 +449,6 @@ class DB(object):
         sa.Index('nics_FKIndex2', nics.c.netid)
         self.__dict__['nics'] = nics
 
-        # If repoid is not nullable(nullable=False), a repo 
-        # has to be created (at least inserted into the table) 
-        # first before a nodegroup entry is made
-        #
-        # How can a repo be created when the 
-        # ng_has_comp is not filled up, which needs
-        # a nodegroup first? Without ng_has_comp, 
-        # no references can be made to components, then 
-        # to kits, which a repo is made out of.
-        #
-        # Therefore, it has been changed to nullable=True
         nodegroups = sa.Table('nodegroups', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('repoid', sa.Integer, sa.ForeignKey('repos.repoid'), nullable=True),
@@ -528,7 +517,7 @@ class DB(object):
         repos = sa.Table('repos', self.metadata,
             sa.Column('repoid', sa.Integer, primary_key=True,
                       autoincrement=True),
-            sa.Column('reponame', sa.String(45), unique=True, nullable=False),
+            sa.Column('reponame', sa.String(45), unique=True),
             sa.Column('repository', sa.String(255)),
             sa.Column('installers', sa.String(255)),
             sa.Column('ostype', sa.String(20)),

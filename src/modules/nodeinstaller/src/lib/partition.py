@@ -8,11 +8,10 @@
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
-import kusu.util.log as kusulog
+from kusu.util.errors import *
 from kusu.nodeinstaller.partitionfilterchain import *
 from pprint import PrettyPrinter
-
+import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
 def translateBoolean(value):
@@ -189,27 +188,53 @@ def adaptNIIPartition(niipartition, diskprofile):
         pefc.filter_list.append(FilterOnFileSystemNoPreserve())
 
     disk_profile = pefc.apply(part_rules, diskprofile)
+    logger.debug('Before cleaning diskprofile:\n%s' % str(disk_profile))
     cleanDiskProfile(disk_profile)
+    logger.debug('After cleaning diskprofile:\n%s' % str(disk_profile))
 
+    pp = PrettyPrinter()
+    logger.debug('Creating schema using rules:\n%s' % pp.pformat(part_rules))
     schema = createSchema(part_rules, diskprofile)
     return schema, diskprofile
  
 def cleanDiskProfile(disk_profile):
-    all_vols = disk_profile.lv_dict.values()
+    lv_list = disk_profile.lv_dict.values()
+
+    for lv in lv_list:
+        if not lv.leave_unchanged:
+            disk_profile.delete(lv)
+
+    for vg in disk_profile.lvg_dict.values():
+        try:
+            disk_profile.delete(vg)
+        except CannotDeleteVolumeGroupError:
+            logger.debug('VG: %s has PVs with leave unchanged' % vg.name)
+            pass
+        except PhysicalVolumeStillInUseError:
+            logger.debug('VG: %s has LVs remaining.' % vg.name)
+            pass
+
+    part_list = []
     extended_partition = None
     for disk in disk_profile.disk_dict.values():
         for p in disk.partition_dict.values():
             if p.type == 'extended':
                 extended_partition = p
             else:
-                all_vols.append(p)
+                part_list.append(p)
 
-    for vol in all_vols:
-        if not vol.leave_unchanged:
-            disk_profile.delete(vol)
+    for p in part_list:
+        if not p.leave_unchanged:
+            try:
+                disk_profile.delete(p)
+            except PartitionIsPartOfVolumeGroupError:
+                pass
 
     if extended_partition and not extended_partition.leave_unchanged:
-        disk_profile.delete(extended_partition)
+        try:
+            disk_profile.delete(extended_partition)
+        except CannotDeleteExtendedPartitionError:
+            pass
 
     disk_profile.executeLVMFifo()
     disk_profile.commit()
@@ -229,9 +254,8 @@ def getPartList(part_rules, diskprofile):
     for p in part_rules:
         dev = p['device']
         if dev.lower() == 'n':
-            # Simple check to decide whether to include the 'N' device or not.
-            # Doesn't check if there are other free spaces around.
-            if not hasPVs(diskprofile):
+            vg = translatePartitionOptions(p['options'], 'pv')[1]
+            if vg not in diskprofile.lvg_dict.keys():
                 part_list.append(p)
                 logger.debug('Append to part_list: %s' % p)
         elif dev.isdigit():
@@ -417,5 +441,3 @@ def handleLV(lvinfo, vg_name, vg_dict):
 
     vg['lv_dict'][name] = {'size_MB': size_MB, 'fill': fill,
                            'fs': fs, 'mountpoint': mountpoint}
-
-

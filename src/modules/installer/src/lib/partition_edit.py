@@ -134,6 +134,7 @@ class EditLogicalVolume(NewLogicalVolume):
         else:
             mountpoint = ''
         size = self.size.value()
+        logger.debug('Edit LV - size: %s fs: %s mntpnt: %s' % (str(size), str(fs_type), str(mountpoint)))
         self.disk_profile.editLogicalVolume(self.lv, size, fs_type, mountpoint)
 
         self.lv.do_not_format = self.do_not_format_partition.value()

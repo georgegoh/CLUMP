@@ -159,6 +159,7 @@ class PartitionEntriesFilterChain(object):
         disk_profile = self.prefilter(partition_entries, disk_profile)
         for filter in self.filter_list:
             disk_profile = filter.apply(partition_entries, disk_profile)
+            logger.debug('%s filter, diskprofile:\n%s' % (filter.__class__.__name__, str(disk_profile))) 
         disk_profile = self.postfilter(partition_entries, disk_profile)
         return disk_profile
 
@@ -267,10 +268,14 @@ class FilterOnFileSystem(PartitionEntriesFilter):
         for partinfo in valid_entries:
             fs = translateFSTypes(partinfo['fstype'])
             preserve = partinfo['preserve']
-            disk_profile = self.applyPreservation(fs, preserve, disk_profile)
+            if fs == 'physical volume':
+                vg_name =  translatePartitionOptions(partinfo['options'], 'pv')[1]
+                disk_profile = self.applyPreservation(fs, preserve, disk_profile, vg_name)
+            else:
+                disk_profile = self.applyPreservation(fs, preserve, disk_profile)
         return disk_profile
 
-    def applyPreservation(self, fs, preserve, disk_profile):
+    def applyPreservation(self, fs, preserve, disk_profile, vg_name=''):
         vol_list = self.filterOnFS(fs, disk_profile)
         for vol in vol_list:
             if preserve == '0':
@@ -351,7 +356,7 @@ class PartitionEntriesFilterChainDefaultNoPreserve(PartitionEntriesFilterChain):
 
         for lv in disk_profile.lv_dict.values():
             lv.leave_unchanged = False
- 
+        logger.debug('%s prefilter, diskprofile:\n%s' % (self.__class__.__name__, str(disk_profile))) 
         return disk_profile
 
     def postfilter(self, partition_entries, disk_profile):
@@ -372,6 +377,17 @@ class FilterOnMountpointsNoPreserve(FilterOnMountpoints):
 
 
 class FilterOnLogicalVolumeNoPreserve(FilterOnLogicalVolume):
+    def apply(self, partition_entries, disk_profile):
+        for lv in disk_profile.lv_dict.values():
+            lv.leave_unchanged = False
+        lv_entries = self.getLVEntries(partition_entries)
+        for lv in lv_entries:
+            name = lv['device']
+            preserve = lv['preserve']
+            disk_profile = self.applyPreservation(name, 
+                                                  preserve, disk_profile)
+        return disk_profile
+
     def applyPreservation(self, lv_name, preserve, disk_profile):
         if not disk_profile.lv_dict.has_key(lv_name): return disk_profile
 
@@ -384,17 +400,32 @@ class FilterOnLogicalVolumeNoPreserve(FilterOnLogicalVolume):
 
 
 class FilterOnFileSystemNoPreserve(FilterOnFileSystem):
-    def applyPreservation(self, fs, preserve, disk_profile):
+    def applyPreservation(self, fs, preserve, disk_profile, vg_name=''):
         vol_list = self.filterOnFS(fs, disk_profile)
         for vol in vol_list:
-            if preserve == '1':
-                vol.leave_unchanged = True
-                logger.debug('Preserve %s' % vol.path)
+            if fs=='physical volume':
+                pv = disk_profile.pv_dict[vol.path]
+                self.applyForPhysicalVol(vg_name, pv, preserve)
             else:
-                vol.leave_unchanged = False
-                logger.debug('Unpreserve %s' % vol.path)
+                self.applyForFS(vol, preserve)
         return disk_profile
 
+    def applyForPhysicalVol(self, vg_name, vol, preserve):
+        if vol.group.name==vg_name and preserve=='1':
+            vol.partition.leave_unchanged = True
+            logger.debug('Preserve %s' % vol.partition.path)
+        else:
+            vol.partition.leave_unchanged = False
+            logger.debug('Preserve %s' % vol.partition.path)
+
+    def applyForFS(self, vol, preserve):
+        if preserve == '1':
+            vol.leave_unchanged = True
+            logger.debug('Preserve %s' % vol.path)
+        else:
+            vol.leave_unchanged = False
+            logger.debug('Unpreserve %s' % vol.path)
+ 
 
 class FilterOnPartitionTypeNoPreserve(FilterOnPartitionType):
     def applyPreservation(self, p_type, preserve, disk_profile):

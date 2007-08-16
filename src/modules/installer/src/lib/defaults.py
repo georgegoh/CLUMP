@@ -489,6 +489,9 @@ def createPhysicalSchema(disk_profile, disk_schemata, preserved_mntpnt, preserve
                 logger.debug('Created new partition %d for disk %d of size %d' % (j+1, i, size_MB))
         except IndexError:
             raise PartitionSchemaError, 'Run out of disks.'
+        except PartitionSizeTooLargeError:
+            raise OutOfSpaceError, 'Available size not enough to fit partition of size %d MB' % \
+                                    size_MB
 
 
 def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv):

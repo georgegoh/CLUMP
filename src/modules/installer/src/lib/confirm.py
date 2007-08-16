@@ -17,6 +17,8 @@ from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.installer.language import getLangMap
 from kusu.installer.keyboard import modelDict as keyboardDict
+import kusu.util.log as kusulog
+logger = kusulog.getKusuLog('installer.confirm')
 
 class ConfirmScreen(InstallerScreen):
     """This screen confirms all settings made."""
@@ -39,7 +41,7 @@ class ConfirmScreen(InstallerScreen):
                                   'Network':self.renderNetwork,
                                   'Language':self.renderLanguage,
                                   'Keyboard':self.renderKeyboard,
-                                  'Timezone':None}
+                                  'Timezone':self.renderTimezone}
 
     def setCallbacks(self):
         """
@@ -75,12 +77,20 @@ class ConfirmScreen(InstallerScreen):
         textBox = snack.Textbox(40, 10, confirmText, 1)
         self.screenGrid.setField(textBox, col=0, row=1, padding=(0,0,0,-2))
 
+    def renderTimezone(self):
+        tz = self.kiprofile['Timezone']
+        dispTxt = '\n[Timezone]\n'  
+        import pprint
+        pp = pprint.PrettyPrinter()
+        dispTxt += pp.pformat(tz)
+        logger.debug(dispTxt)
+        return dispTxt + '\n'
 
     def renderKeyboard(self):
         keyb_key = self.kiprofile['Keyboard']
         dispTxt = '\n[Keyboard]\n'
         dispTxt += keyboardDict[keyb_key][0] + '\n'
-        return dispTxt + '\n'
+        return dispTxt
 
     def renderLanguage(self):
         lang_key = self.kiprofile['Language']
@@ -90,7 +100,7 @@ class ConfirmScreen(InstallerScreen):
             if v[0] == lang_key:
                 dispTxt += k + '\n'
                 break
-        return dispTxt + '\n'
+        return dispTxt
 
     def renderNetwork(self):
         network_profile = self.kiprofile['Network']
@@ -100,12 +110,12 @@ class ConfirmScreen(InstallerScreen):
         dispTxt += 'Gateway: %s\n' % network_profile['default_gw']
         dispTxt += 'DNS 1: %s\n' % network_profile['dns1']
         dispTxt += 'DNS 2: %s\n' % network_profile['dns2']
-        dispTxt += 'DNS 3: %s\n\n' % network_profile['dns3']
+        dispTxt += 'DNS 3: %s\n' % network_profile['dns3']
 
         interfaces = network_profile['interfaces']
         for name,intf in sorted(interfaces.iteritems()):
             if intf['configure']:
-                dispTxt += name + '\n'
+                dispTxt += '\n' + name + '\n'
                 for i in xrange(len(name)): dispTxt += '-'
                 dispTxt += '\n  MAC Addr: %s\n' % intf['hwaddr']
                 dispTxt += '  Active On Boot: %s\n' % intf['active_on_boot']
@@ -133,7 +143,8 @@ class ConfirmScreen(InstallerScreen):
                 dispTxt += '  ' + lv.name[0:13].ljust(13)
                 dispTxt += ' ' + str(lv.size)[0:8].ljust(8)
                 dispTxt += ' ' + str(lv.fs_type)[0:9].ljust(9)
-                dispTxt += ' ' + lv.mountpoint[0:12].ljust(12) + '\n'
+                mountpoint = lv.mountpoint or ''
+                dispTxt += ' ' + mountpoint[0:12].ljust(12) + '\n'
             
         for disk_name, disk in sorted(disk_profile.disk_dict.iteritems()):
             dispTxt = dispTxt + disk_name[0:15] + '\n'
