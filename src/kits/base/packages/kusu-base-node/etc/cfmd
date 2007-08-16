@@ -28,6 +28,8 @@
 
 prog='cfmd'
 
+export PYTHONPATH=/opt/kusu/lib/python
+
 start() {
     echo -n $"Starting $prog. "	
   
@@ -64,8 +66,8 @@ stop() {
     # Stop daemons.
     echo -n $"Stopping $prog: "
     RETVAL=0
-    if /sbin/pidof -o %PPID $named >/dev/null; then
-	killproc $named -TERM >/dev/null 2>&1
+    if /sbin/pidof -o %PPID $prog >/dev/null; then
+	killproc $prog -TERM >/dev/null 2>&1
 	RETVAL=$?
     fi;
 
