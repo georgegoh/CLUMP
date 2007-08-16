@@ -49,12 +49,24 @@ class KusuRC(rcplugin.Plugin):
 
         try:
             fh = open(kusurepo, 'w')
-            fh.write(header)
-            fh.write(name)
-            fh.write(baseurl)
-            fh.write(enabled)
-            fh.write(gpgcheck)
-            fh.write(gpgkey)
+            if self.os_name == "rhel" and self.os_version == "5":
+                for dtype in ['Server', 'Cluster', 'ClusterStorage', 'VT']:
+                    header = "[kusu-%s-%s]\n" % (self.ngtypes[0], dtype)
+                    baseurl = "baseurl=http://%s/repos/%s/%s\n" % (self.niihost[0], self.repoid, dtype)
+                    fh.write(header)
+                    fh.write(name)
+                    fh.write(baseurl)
+                    fh.write(enabled)
+                    fh.write(gpgcheck)
+                    fh.write(gpgkey+"\n")
+            else:
+                fh = open(kusurepo, 'w')
+                fh.write(header)
+                fh.write(name)
+                fh.write(baseurl)
+                fh.write(enabled)
+                fh.write(gpgcheck)
+                fh.write(gpgkey)
             fh.close()
             return True
         except:
