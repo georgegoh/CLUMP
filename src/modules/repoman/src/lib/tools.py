@@ -190,7 +190,7 @@ def getPackageFilePath(dbs, repoid, packagename):
         raise RepoNotFoundError, repoid
 
     from kusu.repoman import repofactory
-    rfactory = repofactory(self.dbs)
+    rfactory = repofactory.RepoFactory(dbs)
     repo = rfactory.getRepo(repoid)
     packageFilePath = repo.getPackageFilePath(packagename)
 
