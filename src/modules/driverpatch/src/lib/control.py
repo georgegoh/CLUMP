@@ -404,7 +404,9 @@ class DriverPatchController(object):
         modulespath = dirpath / 'modules'
         if not modulespath.exists(): raise DirDoesNotExistError, modulespath
         
-        assets = ['module-info', 'modules.alias', 'modules.dep', 'pci.ids']
+        assets = ['module-info', 'modules.alias', 'modules.dep', 
+                'modules.cgz','pci.ids']
+
         li = [k for k in assetsdict.keys() if k in assets]
         if not li: raise UnknownKernelModuleAsset, assetsdict
         for l in li:

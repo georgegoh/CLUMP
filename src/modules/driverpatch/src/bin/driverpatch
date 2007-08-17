@@ -63,7 +63,8 @@ class App(KusuApp):
         """ App-specific initialization. """
         KusuApp.__init__(self)
 
-        self.actions = {'nodegroup':['name','id'], 
+        self.actions = {'nodegroup':['name','id','arch','version',
+                        'kernel','initrd','assetsdir'], 
             'list':['name','id']}
 
         # self.action and self.actionargs will hold the current action and its arguments            
@@ -86,6 +87,13 @@ actions:
 
                       REQUIRED ARGS:
                         name=<nodegroup name> | id=<nodegroup id>
+                        arch=<arch of the kernel/initrd>
+                        
+                      OPTIONAL ARGS:
+                        version=<specific kernel version to use>
+                        kernel=<filepath of resulting kernel>
+                        initrd=<filepath of resulting initrd>
+                        assetsdir=<dir containing modules assets>
     
     list            - List the driverpacks that is associated to
                       the specified nodegroup. Nodegroup can be
@@ -98,11 +106,12 @@ actions:
         self.examples = self._("""\
 Example operations:
 
-    To patch initrds belonging to a nodegroup named compute
-    # driverpatch nodegroup name=compute
+    To patch initrds for i586 arch belonging to a nodegroup 
+    named compute
+    # driverpatch nodegroup name=compute arch=i586
     
-    To patch initrds belonging to a nodegroup id of 3
-    # driverpatch nodegroup id=3
+    To patch initrds for i686 belonging to a nodegroup id of 3
+    # driverpatch nodegroup id=3 arch=i586
     
     To list driverpacks that is associated to a nodegroup 
     named compute:
@@ -251,6 +260,11 @@ Example operations:
         """ Handler for list action. args is a dict of supported key-value pairs for this action. """
         ngname = args.get('name','')
         ngid = args.get('id','')
+        karch = args.get('arch','')
+        kver = args.get('version','')
+        kernelfile = args.get('kernel','')
+        initrdfile = args.get('initrd','')
+        assetsdir = args.get('assetsdir','')
 
         if not ngid and not ngname:
             self.printUsageExit()
