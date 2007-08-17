@@ -341,7 +341,10 @@ def RpmNameSplit(packname):
     ''' return a tuple (name,version,release,arch,ext)
     '''
     rv = ['','','','','']
-    nvr,rv[3],rv[4] = packname.rsplit('.',2)
+    try:
+        nvr,rv[3],rv[4] = packname.rsplit('.',2)
+    except Exception,msg:
+        raise Exception, str(msg)+"\npackname = %s,rv = %s" %(packname,str(rv))
     rv[0:2] = nvr.rsplit('-',2)
     return tuple(rv)
 
@@ -416,17 +419,22 @@ class scrNGEMain(USXBaseScreen):
         global curNG,origNG
 
         ngid = self.__nglistbox.current()
+        curNG = NodeGroup(ngid=ngid)
+        curNG.syncFromDB(self.database)
 
         #construct query string
-        query = 'SELECT %s' + ', %s'*(len(NodeGroup.fields)-1) + ' from nodegroups where %s = %s'
-        query = query % (NodeGroup.fields + (NodeGroup.fields[0], ngid)) #tuple concat...
+        #query = 'SELECT %s' + ', %s'*(len(NodeGroup.fields)-1) + ' from nodegroups where %s = %s'
+        #query = query % (NodeGroup.fields + (NodeGroup.fields[0], ngid)) #tuple concat...
 
-        self.database.execute(query)
-        rv = self.database.fetchone() #returns a tuple
+        #self.database.execute(query)
+        #rv = self.database.fetchone() #returns a tuple
+        #rv = [ ifelse(x==None,'',x) for x in rv ]
 
-        rv = [ ifelse(x==None,'',x) for x in rv ] #replace all Null values
+        #replace all Null values
+        for f in NodeGroup.fields[1:]:
+            if curNG[f] == None:
+                curNG[f] = ''
 
-        curNG = NodeGroup(rv)
         origNG = curNG.copy()
         assert(curNG == origNG)
 
@@ -434,11 +442,12 @@ class scrNGEMain(USXBaseScreen):
         #they will all share one instance of each
         ScreenFactory.screens = [
                                  scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                  #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp), #for testing
@@ -934,6 +943,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.alphaview = True #alphabetical view by default, categorized view o.w.
+        self.__ct = None #pointer to the current checkbox tree structure
 
     def setCallbacks(self):
 
@@ -943,12 +953,17 @@ class scrNGEEdit_Packages(USXBaseScreen):
         self.buttonsDict['toggleview_button'].setCallback_(self.TogglePackageView)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F10'] = self.TogglePackageView
 
     def TogglePackageView(self):
+        assert(self.__ct)
         self.alphaview = not self.alphaview
+        curNG['packs'] = self.__ct.getSelection()
+        time.sleep(0.5) #snack chokes if toggling too fast
         return NAV_NOTHING
 
     def F12Action(self):
+        self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
         return NAV_IGNORE
 
     def doBackAction(self):
@@ -963,6 +978,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
     def drawImpl(self):
 
         self.screenGrid = snack.Grid(1, 1)
+        timediff = []
 
         #rebuild flag logic
         rebuild =  curNG['repoid'] <> self.OldRepoId
@@ -977,6 +993,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 rebuild = True
 
         if rebuild:
+            self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
             query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
             self.database.execute(query)
             self.__repodir, ostype  = self.database.fetchone()
@@ -996,7 +1013,6 @@ class scrNGEEdit_Packages(USXBaseScreen):
             os.chdir(repopackdir)
             repopacklst = glob.glob('*.[rR][pP][mM]') #only basenames returned
             repopacklst = [ RpmNameSplit(x)[0] for x in repopacklst ] #get the RPM names
-            os.chdir(cwdbackup)
     
             repopackset = Set(repopacklst) #work with the set
     
@@ -1007,20 +1023,19 @@ class scrNGEEdit_Packages(USXBaseScreen):
                        k.isOS = 0 AND r.repoid = %s ''' %curNG['repoid']
             self.database.execute(query)
             rv = self.database.fetchall()
-    
+
             for kitname,kitver,kitarch in rv:
                 path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
-                kitpacklst = os.listdir(path)
+                os.chdir(path)
+                kitpacklst = glob.glob('*.[rR][pP][mM]')
                 kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
                 rmpacklst.extend(kitpacklst)
     
             repopackset -= Set(rmpacklst)
+            os.chdir(cwdbackup)
             #repopackset ready
     
-            self.selector.popupMsg("DEBUG", "number of packages to display= %s" %len(repopackset))
-
             if self.alphaview: #alphabetic view
-                self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
 
                 curletter = None
                 i = -1
@@ -1039,7 +1054,9 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 import yum.comps
                 from kusu.kitops.package import PackageFactory
 
-                self.__ct = snack.CheckboxTree(height = 13, scroll = 1)
+                prog_dlg = self.selector.popupProgress('Categorized view', 'Generating categorized view ...')
+
+                t1 = time.time()
                 #instantiate comps
                 compsinst = yum.comps.Comps()
                 compsinst.add(compsfile)
@@ -1065,6 +1082,8 @@ class scrNGEEdit_Packages(USXBaseScreen):
                     #done group
                     ci += 1
                 #done category
+
+                t2 = time.time()
         
                 #construct group dictionary for remaining packages
                 groupdict = {}
@@ -1081,7 +1100,9 @@ class scrNGEEdit_Packages(USXBaseScreen):
                     if group not in groupdict.keys():
                         groupdict[group] = [] #initialize
                     groupdict[group].append(p)
-                
+               
+                t3 = time.time()
+ 
                 # display remaining packages
                 tmpcnt2 = 0
                 gi = 0
@@ -1093,18 +1114,34 @@ class scrNGEEdit_Packages(USXBaseScreen):
                     gi += 1
                 #done remaining packages
 
-                self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d" %(tmpcnt, tmpcnt2))
+                t4 = time.time()
+                prog_dlg.close()
+
+                self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d\ntcomps=%f\n\
+                   time to build d.s. for other=%f\ntime to add other = %f " %(tmpcnt, tmpcnt2,t2-t1,t3-t2,t4-t3))
 
                 self.__ct_ctgry = self.__ct
                 self.OldRepoId = curNG['repoid']
 
         
-            #mark currently selected packages
-            curpacklst = []
-            if curNG['packs']:
-                curpacklst = curNG['packs']
-            for p in Set(curpacklst) & repopackset:
-                    self.__ct.setEntryValue(item=p, selected=1)
+        #mark currently selected packages
+        s1 = Set(self.__ct.getSelection())
+        curpacklst = [] #require selection
+        if curNG['packs']:
+            curpacklst = curNG['packs']
+        s2 = Set(curpacklst)
+        #self.selector.popupMsg('DEBUG', 's1=%s, s2=%s\npacksFromDB = %s' %(s1,s2,str(curNG['packs'])))
+
+        for p in s1-s2:
+            self.__ct.setEntryValue(item=p, selected=0)
+
+        #note: the user may have changed the repo, hence some packages in
+        #curNG['packs'] (a.k.a s2) may not be in the currently selected repo
+        for p in s2-s1:
+            try:
+                self.__ct.setEntryValue(item=p, selected=1)
+            except KeyError,msg:
+                continue
 
         #at this point self.__ct is ready to be displayed
         self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
@@ -1114,7 +1151,80 @@ class scrNGEEdit_Packages(USXBaseScreen):
 
     def formAction(self):
         curNG['packs'] = self.__ct.getSelection()
-        self.selector.popupMsg("DEBUG: selected packages", str(curNG['packs']))
+
+        ###CONTINUE HERE
+        #if curNG['installtype'] and curNG['installtype'].lower() <> 'package':
+        #    if not isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_General):
+        #        self.selector.screens.insert(self.selector.currentStep+1,\
+        #                    scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp))
+        #self.selector.popupMsg('DEBUG', str(self.selector.screens))
+
+
+class scrNGEEdit_Modules(USXBaseScreen):
+    name = 'Modules'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 1)
+
+        if not curNG['comps']:
+            #no components chosen for this nodegroup
+            msg = 'No components associated with this nodegroup. No modules to display.'
+            self.screenGrid.setField(snack.TextboxReflowed(text=msg,width=self.gridWidth),
+                                 0,0,growx=1,growy=1)
+            return
+        
+        assert(len(curNG['comps']))
+#        self.selector.popupMsg('DEBUG', str(curNG['comps']))
+
+        self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
+
+        query = "SELECT *"
+
+        # TODO: modify self.__ct generation
+        # to get the list of modules: rpm2cpio kernel-2.6.18-8.el5.i686.rpm |cpio -t *.ko   
+        #curletter = None
+        #i = -1
+        #for p in sorted(repopackset):
+        #    letter = p[0]
+        #    if letter != curletter:
+        #        self.__ct.append(letter)
+        #        i += 1
+        #        curletter = letter
+        #    self.__ct.addItem(p,(i,snack.snackArgs['append']), item=p)
+        self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['modules'] = self.__ct.getSelection()
+
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):
