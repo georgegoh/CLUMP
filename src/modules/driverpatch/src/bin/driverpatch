@@ -12,6 +12,9 @@ from kusu.core.app import KusuApp
 from kusu.core import database as db
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
+from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \
+                            UnknownKernelModuleAsset, DirDoesNotExistError, UnknownFileTypeError, \
+                            RepoNotFoundError
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog()
@@ -306,15 +309,15 @@ Example operations:
             self.printMsgExit(msg)
                     
         # get the correct dpacks
-        li = [dpack.dpname for dpack in dpacks if dpack.dpname.find(karch) >-1]
+        dprpms = [dpack.dpname for dpack in dpacks if dpack.dpname.find(karch) >-1]
 
-        if not li:
+        if not dprpms:
             msg = self._('No valid driverpacks found.')
             self.printMsgExit(msg)            
         
-        for l in li:
+        for dprpm in dprpms:
             msg = self._('Found valid driverpack: %(dpname)s' %
-                        {'dpname':l})
+                        {'dpname':dprpm})
             print msg
             
         # get the repoid for this nodegroup
@@ -326,13 +329,53 @@ Example operations:
         repos = self.db.Repos.select_by(repoid=repoid)
         repo = repos[0].repository
         if not repo:
-            msg = self._('No valid repo available this nodegroup!')
+            msg = self._('No valid repo available for this nodegroup!')
             self.printMsgExit(msg)
             
         msg = self._('Looking in %(repository)s..' %
                     {'repository':repo})
         print msg
         
+        # lets get the driverpacks packages
+        pkglist = []
+        for dprpm in dprpms:
+            try:
+                pkg = repotools.getPackageFilePath(self.db,repoid,dprpm)
+                pkglist.append(pkg)
+            except RepoNotFoundError:
+                msg = self._('No valid repo available for this nodegroup!')
+                self.printMsgExit(msg)
+            except FileDoesNotExistError:
+                msg = self._('%(pkgname)s not available in for the repo belong to this nodegroup!' %
+                            {'pkgname':dprpm})
+                self.printMsgExit(msg)
+                
+        for pkg in pkglist:
+            msg = self._('Found %(pkgname)s..' %
+                        {'pkgname':pkg})
+            print msg
+        
+        tftpbootdir = path('/tftpboot/kusu')
+        if not tftpbootdir.exists():
+            msg = self._('/tftpboot/kusu not found! Aborting operation.')
+            self.printMsgExit(msg)
+        
+        # get the kernel rpm
+        # FIXME: There has to be a better way of identifying distro package kernels!
+        li = [pkg for pkg in pkglist if pkg.find('kernel-') > -1]
+        if not li:
+            msg = self._('Kernel rpm not found!')
+            self.printMsgExit(msg)
+            
+        kernelrpm = li[0]
+
+        msg = self._('Extracting kernel image to /tftpboot/kusu..')
+        print msg
+        kernelname = self.controller.copyKernel(kernelrpm,tftpbootdir,kernelfile)
+        msg = self._('Kernel image extracted as /tftpboot/kusu/%(kernelname)s' %
+                    {'kernelname':kernelname})
+        print msg
+
 
             
         

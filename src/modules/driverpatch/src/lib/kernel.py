@@ -73,25 +73,38 @@ class RPMPackage(object):
                     l.copy(destdir)
             
             
-        def extractKernel(self,destdir):
+        def extractKernel(self,destdir, kernelname=''):
             """ Extracts the kernel to destdir.
+                Returns the name of the copied kernel image.
             """
             tmpdir = path(tools.mkdtemp())
+            destdir = path(destdir).abspath()
             self.unpack(tmpdir)
             # get the kernel
             bootdir = tmpdir / 'boot'
             if not bootdir.exists(): 
                 if tmpdir.exists(): tmpdir.rmtree()
-                raise FileDoesNotExistError,'kernel'
+                raise FileDoesNotExistError,'vmlinuz'
 
-            li = bootdir.files('kernel*')
+            li = [f for f in bootdir.walkfiles('vmlinuz*')]
             destdir = path(destdir)
             if not destdir.exists(): 
                 if tmpdir.exists(): tmpdir.rmtree()
                 raise DirDoesNotExistError
-
-            for l in li:
-                l.copy(destdir)
+                
+            if not li:
+                if tmpdir.exists(): tmpdir.rmtree()
+                raise FileDoesNotExistError,'vmlinuz'
+                
+            kernelimage = li[0]
+            kname = kernelname or kernelimage.basename()
+                
+            dest = destdir / kname
+            if dest.exists(): dest.remove()
+            kernelimage.copy(dest)
+                
+            if tmpdir.exists(): tmpdir.rmtree()
+            return kname
                 
             
         

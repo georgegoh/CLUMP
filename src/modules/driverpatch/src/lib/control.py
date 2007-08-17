@@ -341,12 +341,13 @@ class DriverPatchController(object):
         """ Packs the specified dirpath into initrdimg. """
         return self.bmt.packRootImg(dirpath, initrdimg)
         
-    def copyKernel(self, kernelrpm, destdir):
+    def copyKernel(self, kernelrpm, destdir, kernelname=''):
         """ Copy the kernel image found in kernelrpm to destdir.
+            If kernelname is specified, copy the image as the kernelname
         """
         kernelrpm = path(kernelrpm)
         krpm = kernel.RPMPackage(kernelrpm)
-        krpm.extractKernel(destdir)
+        return krpm.extractKernel(destdir,kernelname)
         
     def extractKernelModulesDir(self, kernelrpm, destdir):
         """ Extracts the kernel modules directory found in kernelrpm to destdir.
