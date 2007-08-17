@@ -34,6 +34,7 @@ Requires: pdsh-rcmd-ssh
 Requires: kusu-core
 Requires: kusu-path
 Requires: kusu-util
+Requires: xinetd
 Requires: rsh-server
 Requires: rsh
 

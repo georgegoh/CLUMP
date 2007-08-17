@@ -24,7 +24,8 @@ class KusuRC(rcplugin.Plugin):
         files = [path('/etc/shadow'),
                  path('/etc/passwd'),
                  path('/etc/group'),
-                 path('/etc/hosts')]
+                 path('/etc/hosts'),
+                 path('/etc/hosts.equiv')]
 
         ngs = self.dbs.NodeGroups.select()
 
