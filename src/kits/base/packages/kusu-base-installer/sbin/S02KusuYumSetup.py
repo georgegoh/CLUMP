@@ -21,29 +21,24 @@ class KusuRC(rcplugin.Plugin):
         """ Disable all other repos. """
         etcyumeposd = path('/etc/yum.repos.d')
 
-        for repo in etcyumeposd.files('*.repo'):
-            fh = open(repo, 'r')
-            lines = fh.read().splitlines()
-            fh.close()
-
-            fh = open(repo, 'w')
-            for line in lines:
-                if line.find('enabled=')>=0:
-                    fh.write('enabled=0\n')
-                else:
-                    fh.write(line+"\n")
-            fh.close()
-
-        """ Remove yum-rhn-plugin if exists. """
-        retcode, out, err = self.runCommand('rpm -qa | grep yum-rhn-plugin')
-        if retcode == 0 and len(out) > 0:
-            retcode, out, err = self.runCommand("rpm -ev " + out)
-
         """ Set up kusu.repo """
         kusurepo = path(etcyumeposd / 'kusu-%s.repo' % self.ngtypes[0])
 
         if not kusurepo.exists():
             kusurepo.touch()
+
+        for repo in etcyumeposd.files('*.repo'):
+            if repo.basename() == kusurepo.basename():
+                continue
+
+            newFile = path(etcyumeposd / '%s.disable' % repo.basename())
+            if newFile.exists(): newFile.remove()
+            repo.move(newFile)
+
+        """ Remove yum-rhn-plugin if exists. """
+        retcode, out, err = self.runCommand('rpm -qa | grep yum-rhn-plugin')
+        if retcode == 0 and len(out) > 0:
+            retcode, out, err = self.runCommand("rpm -ev " + out)
 
         header = "[kusu-%s]\n" % self.ngtypes[0]
         name = "name=Kusu %s %s %s %s\n" % (self.ngtypes[0], self.os_name, self.os_version, self.os_arch)
