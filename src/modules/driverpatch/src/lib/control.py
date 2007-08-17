@@ -364,6 +364,18 @@ class DriverPatchController(object):
         tmpdir = path(mkdtemp())
         col.unpack(tmpdir)
         col.pack(tmpdir,modulearchive)
+        
+    def getKernelVersion(self, kmoddir):
+        """ Returns the kernel version.
+        """
+        col = KernelModulesCollection(kmoddir)
+        return col.getKernelVersion()
+        
+    def getKernelArch(self, kmoddir):
+        """ Returns the kernel arch.
+        """
+        col = KernelModulesCollection(kmoddir)
+        return col.getKernelArch()
 
     def getKernelModulesCgz(self, dirpath):
         """ Locate the modules.cgz in the dirpath. """

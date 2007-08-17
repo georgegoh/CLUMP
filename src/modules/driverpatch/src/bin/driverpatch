@@ -10,6 +10,7 @@ import os
 from path import path
 from kusu.core.app import KusuApp
 from kusu.core import database as db
+from kusu.util import tools as utiltools
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \
@@ -368,13 +369,88 @@ Example operations:
             self.printMsgExit(msg)
             
         kernelrpm = li[0]
+        
+        # get the current kernel/initrd for this nodegroup
+        _ng = self.db.NodeGroups.select_by(ngname=ngname)
 
+        # FIXME: Ensure the ngedit has not updated the kernel/initrd fields!
+        ngkernel = _ng[0].kernel
+        nginitrd = _ng[0].initrd
+
+        tmpdir = path(utiltools.mkdtemp())
+
+        # get the existing initrd
+        initrdpath = tftpbootdir / nginitrd
+        if not initrdpath.exists():
+            msg = self._('Current initrd %(initrdpath)s not found! Aborting operation!' %
+                        {'initrdpath':initrdpath})
+            self.printMsgExit(msg)
+            
+        self.controller.unpackInitrdImage(initrdpath,tmpdir)
+        # get the modules cgz
+        oldmodulescgz = self.controller.getKernelModulesCgz(tmpdir)
+        oldmodulescgz.remove()
+        
+        msg = self._('Extracting kernel modules from package..')
+        print msg
+        tmpkmoddir = path(utiltools.mkdtemp())
+        self.controller.extractKernelModulesDir(kernelrpm,tmpkmoddir)
+        
+        # get kver and arch from the modulesdir
+        _kver = self.controller.getKernelVersion(tmpkmoddir)
+        _karch = self.controller.getKernelArch(tmpkmoddir)
+        
+        # validate version
+        if kver:
+            if _kver <> kver:
+                msg = self._('The kernel version in package does not match %(kver)s! Aborting operation!' %
+                            {'kver':kver})
+                            
+                if tmpkmoddir.exists(): tmpkmoddir.rmtree()
+                if tmpdir.exists(): tmpdir.rmtree()
+                self.printMsgExit(msg)
+            
+        # validate arch
+        if _karch <> karch:
+            msg = self._('The kernel arch in package does not match %(karch)s! Aborting operation!' %
+                        {'karch':karch})
+                        
+            if tmpkmoddir.exists(): tmpkmoddir.rmtree()
+            if tmpdir.exists(): tmpdir.rmtree()
+            self.printMsgExit(msg)        
+        
+        msg = self._('Packing kernel modules as modules archive..')
+        print msg
+        self.controller.convertKmodDirToModulesArchive(tmpkmoddir,oldmodulescgz)
+        
+        if not initrdfile:
+            newinitrd = '-'.join(['initrd',_kver,_karch])
+        else:
+            newinitrd = initrdfile
+            
+        # TODO: Handle the module assets here!
+        #self.controller.updateKernelModulesAssets(foo)
+
+        msg = self._('Packing the initrd..')
+        print msg
+        newinitrdpath = tftpbootdir / newinitrd
+        if newinitrdpath.exists(): newinitrdpath.remove()
+        self.controller.packInitrdImage(newinitrdpath,tmpdir)
+        msg = self._('Initrd image saved as /tftpboot/kusu/%(initrd)s' %
+                    {'initrd':newinitrd})
+        print msg
+        
+        
         msg = self._('Extracting kernel image to /tftpboot/kusu..')
         print msg
         kernelname = self.controller.copyKernel(kernelrpm,tftpbootdir,kernelfile)
-        msg = self._('Kernel image extracted as /tftpboot/kusu/%(kernelname)s' %
+        msg = self._('Kernel image saved as /tftpboot/kusu/%(kernelname)s' %
                     {'kernelname':kernelname})
         print msg
+        
+        # housecleaning
+        if tmpkmoddir.exists(): tmpkmoddir.rmtree()
+        if tmpdir.exists(): tmpdir.rmtree()
 
 
             
