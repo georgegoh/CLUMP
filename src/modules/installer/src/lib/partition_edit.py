@@ -41,10 +41,11 @@ def editDevice(baseScreen):
                 scr = EditLogicalVolume(screen, selected_device, disk_profile)
                 scr.start()
             elif selected_device in disk_profile.disk_dict.keys():
-                raise KusuError, 'Cannot delete the selected device because it is a physical disk in the system.'
+                raise KusuError, 'Cannot edit the selected device because it is a physical disk in the system.'
             else:
                 for disk in disk_profile.disk_dict.values():
                     if selected_device in disk.partition_dict.values():
+                        checkPartOfActiveVolGroup(selected_device, disk_profile)
                         scr = EditPartition(screen, selected_device, disk_profile)
                         scr.start()
 
@@ -56,7 +57,18 @@ def editDevice(baseScreen):
             msgbox.add(text, 0, 0)
             msgbox.add(snack.Button('Ok'), 0, 1)
             msgbox.runPopup()
+            return NAV_NOTHING
 
+def checkPartOfActiveVolGroup(partition, disk_profile):
+    if partition.path in disk_profile.pv_dict.keys():
+        pv = disk_profile.pv_dict[partition.path]
+        if pv.group and pv.group.lv_dict:
+            raise PartitionIsPartOfVolumeGroupError, 'Partition %s cannot ' % \
+                (partition.path) + \
+                'be edited because it is part of Logical Volume Group %s, ' % \
+                (pv.group.name) + \
+                'which still contains allocated logical volumes.\nDelete those first.'
+ 
 
 class EditPartition(NewPartition):
     """Form for editing an existing partition."""

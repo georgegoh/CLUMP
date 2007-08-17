@@ -584,30 +584,40 @@ class DiskProfile(object):
              Edit an existing partition. The mountpoint dictionary needs to
              be updated as well.
         """
-        logger.debug('Edit partition %s' % partition_obj.path)
-        if size_MB == partition_obj.size_MB and \
-           (partition_obj.fs_type == fs_type or \
-           fs_type in fsTypes.keys()):
-            if partition_obj.mountpoint in self.mountpoint_dict:
-                del(self.mountpoint_dict[partition_obj.mountpoint])
-            partition_obj.mountpoint = mountpoint
-            if mountpoint:
-                self.mountpoint_dict[mountpoint] = partition_obj
-            partition_obj.fs_type = fs_type
-            return partition_obj
+        try:
+            logger.debug('Edit partition %s' % partition_obj.path)
+            if partition_obj.path in self.pv_dict.keys():
+                pv = self.pv_dict[partition_obj.path]
+                if pv.group and pv.group.lv_dict:
+                    raise PartitionIsPartOfVolumeGroupError
+            if size_MB == partition_obj.size_MB and \
+               (partition_obj.fs_type == fs_type or \
+               fs_type in fsTypes.keys()):
+                if partition_obj.mountpoint in self.mountpoint_dict:
+                    del(self.mountpoint_dict[partition_obj.mountpoint])
+                partition_obj.mountpoint = mountpoint
+                if mountpoint:
+                    self.mountpoint_dict[mountpoint] = partition_obj
+                partition_obj.fs_type = fs_type
+                return partition_obj
 
-        backup_disk_id = basename(partition_obj.disk.path)
-        backup_size = partition_obj.size_MB
-        backup_fs_type = partition_obj.fs_type
-        backup_mountpoint = partition_obj.mountpoint
+            backup_disk_id = basename(partition_obj.disk.path)
+            backup_size = partition_obj.size_MB
+            backup_fs_type = partition_obj.fs_type
+            backup_mountpoint = partition_obj.mountpoint
 
-        try:        
             self.deletePartition(partition_obj, keep_in_place=True)
         except PartitionIsPartOfVolumeGroupError:
+            pv = self.pv_dict[partition_obj.path]
+            if pv.group:
+                group = pv.group.name
+            else:
+                group = 'Unknown'
             raise PartitionIsPartOfVolumeGroupError, 'Partition %s cannot ' % \
                 (partition_obj.path) + \
-                'be edited because it is part of Logical Volume Group %s.' % \
-                (partition_obj.group.name)
+                'be edited because it is part of Logical Volume Group %s, ' % \
+                (group) + \
+                'which still contains allocated logical volumes.\nDelete those first.'
         logger.debug('Original partition deleted. Remaining partitions: ' + \
                      str(partition_obj.disk.partition_dict.keys()))
         try:
