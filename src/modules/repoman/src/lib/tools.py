@@ -159,37 +159,38 @@ def getConfig(file):
 
     return cfg
  
-def getLowestKernel(rpmPkgs, arch):
-    """Get a min arch of a kernel"""
-    
-    if rpmPkgs.has_key('kernel'):
-        if self.os_arch == 'x86_64':
-            # We want to use x64 kernel
-            kernelRPM = rpmPkgs['kernel']['x86_64'][0]
-        elif self.os_arch == 'i386':
-            # Take the lowest arch
-            if rpmPkgs['kernel'].has_key('i386'):
-                kernelRPM = rpmPkgs['kernel']['i386'][0]
-            elif rpmPkgs['kernel'].has_key('i486'):
-                kernelRPM = rpmPkgs['kernel']['i486'][0]
-            elif rpmPkgs['kernel'].has_key('i586'):
-                kernelRPM = rpmPkgs['kernel']['i586'][0]
-            elif rpmPkgs['kernel'].has_key('i686'):
-                kernelRPM = rpmPkgs['kernel']['i686'][0]
-    else:
-        kernelRPM = None
-
-    return kernelRPM
+#def getLowestKernel(rpmPkgs, arch):
+#    """Get a min arch of a kernel"""
+#    
+#    if rpmPkgs.has_key('kernel'):
+#        if self.os_arch == 'x86_64':
+#            # We want to use x64 kernel
+#            kernelRPM = rpmPkgs['kernel']['x86_64'][0]
+#        elif self.os_arch == 'i386':
+#            # Take the lowest arch
+#            if rpmPkgs['kernel'].has_key('i386'):
+#                kernelRPM = rpmPkgs['kernel']['i386'][0]
+#            elif rpmPkgs['kernel'].has_key('i486'):
+#                kernelRPM = rpmPkgs['kernel']['i486'][0]
+#            elif rpmPkgs['kernel'].has_key('i586'):
+#                kernelRPM = rpmPkgs['kernel']['i586'][0]
+#            elif rpmPkgs['kernel'].has_key('i686'):
+#                kernelRPM = rpmPkgs['kernel']['i686'][0]
+#    else:
+#        kernelRPM = None
+#
+#    return kernelRPM
 
 def getPackageFilePath(dbs, repoid, packagename):
     """Returns the path of the packagename based on the repoid.
        packagename is the filename of the package (e.g foo-1.2-1.i386.rpm).
        Raises FileDoesNotExistError if not found"""
-    
-    if not repoExists(self.dbs, repoid):
+   
+    if not repoExists(dbs, repoid):
         raise RepoNotFoundError, repoid
 
-    rfactory = repoman.repofactor(self.dbs)
+    from kusu.repoman import repofactory
+    rfactory = repofactory(self.dbs)
     repo = rfactory.getRepo(repoid)
     packageFilePath = repo.getPackageFilePath(packagename)
 
