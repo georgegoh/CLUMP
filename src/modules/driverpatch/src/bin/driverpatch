@@ -174,6 +174,8 @@ Example operations:
 
         self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.add_option('-u','--update', action='store_true', dest='update',
+                                help=self._('Update the kernel/initrd entries in database.'))
         self.parser.add_option('--dbdriver', dest='dbdriver',
                                 help=self._('Database driver (sqlite, mysql)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
@@ -182,7 +184,7 @@ Example operations:
                                 help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                 help=self._('Database password'))
-        self.parser.set_defaults(verbose=False,showexamples=False)
+        self.parser.set_defaults(verbose=False,showexamples=False,update=False)
         self.options, self.args = self.parser.parse_args()
 
 
@@ -452,8 +454,15 @@ Example operations:
         if tmpkmoddir.exists(): tmpkmoddir.rmtree()
         if tmpdir.exists(): tmpdir.rmtree()
 
-
-            
+        # update the kernel/initrd entries for this nodegroup if required
+        if self.options.update:
+            msg = self._('Updating kernel/initrd entries for this nodegroup.')
+            print msg
+            ngs = self.db.NodeGroups.select_by(ngname=ngname)
+            ng = ngs[0]
+            ng.kernel = kernelname
+            ng.initrd = newinitrd
+            ng.flush()
         
 
     def _list(self, args):
