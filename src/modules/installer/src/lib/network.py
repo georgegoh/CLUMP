@@ -74,6 +74,11 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             else:
                 errList.append(msg % ('host name', dups[0]))
 
+        rv = self.checkProvisionNetPresent()
+        if not rv:
+            msg = _('Define at least one provision type network.')
+            errList.append(msg)
+
         if errList:
             errMsg = _('Please correct the following errors:')
             for i, string in enumerate(errList):
@@ -113,7 +118,21 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
             return False, dup_props
 
         return True, []
- 
+
+    def checkProvisionNetPresent(self):
+        """
+        Return False if no provision network is defined.
+        """
+
+        interfaces = self.kiprofile[self.profile]['interfaces']
+
+        for intf in interfaces:
+            if interfaces[intf]['configure'] \
+                and interfaces[intf]['nettype'] == 'provision':
+                return True
+
+        return False
+
     def drawImpl(self):
         """
         Draw the window.
@@ -163,6 +182,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                                interfaces[intf]['netmask']
 
                 entrystr += ' ' + interfaces[intf]['netname']
+                entrystr += ' (' + interfaces[intf]['nettype'] + ')'
 
                 if interfaces[intf]['active_on_boot']:
                     entrystr = '* ' + intf + ' ' + entrystr
