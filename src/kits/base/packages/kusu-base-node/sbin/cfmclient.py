@@ -26,6 +26,9 @@
 UPDATEFILE    = 1
 UPDATEPACKAGE = 2
 
+# Set DEBUG to 1 to see debugging info in /tmp/cfm.log
+DEBUG = 0
+
 import os
 import sys
 import string
@@ -224,6 +227,18 @@ class CFMClient:
         self.installers = []
         self.bestinstaller = ''   # The IP of the installer to get files from
 
+
+    def log(self, mesg):
+        """log - Output messages to a log file"""
+        global DEBUG
+        if DEBUG:
+            try:
+                fp = file('/tmp/cfm.log', 'a')
+                fp.write(mesg)
+                fp.close()
+            except:
+                print "Logging unavailable!"   
+
     
     def parseargs(self):
         """parseargs - Parse the command line arguments and populate the
@@ -240,10 +255,10 @@ class CFMClient:
                     try:
                         self.type = string.atoi(val)
                     except:
-                        print "ERROR:  Invalid type argument"
+                        self.log("ERROR:  Invalid type argument\n")
                         sys.exit(1)
                 else:
-                    print "ERROR:  Type not specified"
+                    self.log("ERROR:  Type not specified\n")
                     sys.exit(2)
                     
             elif args[i] == '-i':
@@ -251,10 +266,10 @@ class CFMClient:
                     self.installers = string.split(args[i+1], ',')
                     i += 1
                 else:
-                    print "ERROR:  Installers not specified"
+                    self.log("ERROR:  Installers not specified\n")
                     sys.exit(3)
             else:
-                print "ERROR:  Unknown argument"
+                self.log("ERROR:  Unknown argument\n")
                 sys.exit(4)
             i += 1
 
@@ -285,7 +300,7 @@ class CFMClient:
         try:
             self.ngid = string.atoi(self.getProfileVal("NII_NGID"))
         except:
-            print "ERROR:  Unable to determine NGID.  Got: %s" % self.ngid
+            self.log("ERROR:  Unable to determine NGID.  Got: %s\n" % self.ngid)
             self.ngid = 0
         
             
@@ -303,16 +318,16 @@ class CFMClient:
 
         # Test for local access
         filetest = "%s/%s/opt/kusu/etc/package.lst" % (self.CFMBaseDir, self.ngid)
-        # print "++  Testing for: %s" % filetest
-        # print "++  CFMBaseDir: %s" % self.CFMBaseDir
-        # print "++  NGID = %i" % self.ngid
+        self.log("++  Testing for: %s\n" % filetest)
+        self.log("++  CFMBaseDir: %s\n" % self.CFMBaseDir)
+        self.log("++  NGID = %i\n" % self.ngid)
         if os.path.exists(filetest):
             return True
 
         myIPs = getMyIPs()
-        # print "myIPs = %s, installers = %s" % (myIPs, self.installers)
+        self.log("myIPs = %s, installers = %s\n" % (myIPs, self.installers))
         bestIPlist = bestIP(myIPs, self.installers)
-        # print "BestIPlist = %s" % bestIPlist
+        self.log("BestIPlist = %s\n" % bestIPlist)
         if len(bestIPlist) == 0:
             # No good one found!
             bestIPlist = self.installers[:]
@@ -340,13 +355,13 @@ class CFMClient:
         try:
             os.chmod(file, mode)
         except:
-            print "ERROR:  Failed to set the mode of %s to %s" % (file, mode)
+            self.log("ERROR:  Failed to set the mode of %s to %s\n" % (file, mode))
             sys.exit(-1)
             
         try:
             os.chown(file, uid, gid)
         except:
-            print "ERROR:  Failed to set the ownership of %s, UID=%s, GID=%s" % (file, uid, gid)
+            self.log("ERROR:  Failed to set the ownership of %s, UID=%s, GID=%s\n" % (file, uid, gid))
 
 
 
@@ -363,6 +378,10 @@ class CFMClient:
 
         # This is an intermediate file we will use
         tmpfile = "%s.CFMtmpFile" % deststruct[0]
+
+        # Make the directory if it does not exist
+        if not os.path.exists(os.path.dirname(tmpfile)):
+            os.system('mkdir -p %s' % os.path.dirname(tmpfile))
         
         if self.__haveLocalAccess():
             # Copy the file from a directory
@@ -371,7 +390,7 @@ class CFMClient:
             else:
                 cfmpath = "%s/%i/%s" % (self.CFMBaseDir, self.ngid, source)
             if not os.path.exists(cfmpath):
-                print "ERROR: Unable to locate: %s" % cfmpath
+                self.log("ERROR: Unable to locate: %s\n" % cfmpath)
                 return -1
 
             os.system('cp \"%s\" \"%s\" > /tmp/m3 2>&1' % (cfmpath, tmpfile))
@@ -385,15 +404,20 @@ class CFMClient:
             datafile = ''
             try:
                 (datafile, header) = urllib.urlretrieve(url, tmpfile)
-            except:
-                print "WARNING: Download from %s Failed!" % self.bestinstaller
+            except Exception, e:
+                import traceback
+                msg = str(e)
+                tb = traceback.format_exc()
+                msg = msg + '\n' + tb + '\n'
+                self.log("URL download failed!  Trace: %s" % msg)
+                self.log("WARNING: Download from %s Failed!\n" % self.bestinstaller)
                 # Download failed.  Try the other IP's
                 for ip in self.installers:
                     if cfmfile:
                         url = "http://%s/cfm/%s" % (ip, source)
                     else:
                         url = "http://%s/cfm/%s/%s" % (ip, self.ngid, source)
-                    print "Trying: %s" % url
+                    self.log("Trying: %s\n" % url)
                     try:
                         (datafile, header) = urllib.urlretrieve(url, tmpfile)
                         # This one worked.  Switch to it
@@ -402,7 +426,7 @@ class CFMClient:
                     except:
                         pass
                 if not datafile:
-                    print "ERROR:  Failed to download: %s" % url
+                    self.log("ERROR:  Failed to download: %s\n" % url)
                     return -1
 
         # Decrypt and decompress the file (if needed)
@@ -416,7 +440,7 @@ class CFMClient:
                 cmd = 'openssl bf -d -a -salt -pass file:/opt/kusu/etc/db.passwd -in %s |gunzip > "%s"' % (tmpfile, tmpfile2)
             for line in os.popen(cmd).readlines():
                 if line:
-                    print "ERROR:  %s" % line
+                    self.log("ERROR:  %s\n" % line)
                     if os.path.exists(tmpfile2):
                         os.unlink(tmpfile2)
                     if os.path.exists(tmpfile):
@@ -436,9 +460,9 @@ class CFMClient:
                 bits = string.split(line)
                 md5sum = bits[0]
                 if origmd5sum != md5sum:
-                    print "ERROR:  The checksum of the received file, and the original do not match.  Aborting transfer!"
-                    print "Filename = %s" % tmpfile
-                    print "origmd5sum= %s   md5sum= %s" % (origmd5sum, md5sum)
+                    self.log("ERROR:  The checksum of the received file, and the original do not match.  Aborting transfer!\n")
+                    self.log("Filename = %s\n" % tmpfile)
+                    self.log("origmd5sum= %s   md5sum= %s\n" % (origmd5sum, md5sum))
                     os.unlink(tmpfile)
                     return -1
 
@@ -481,7 +505,7 @@ class CFMClient:
         """__installPackages - Install the packages in the list."""
 
         if not self.newpackages:
-            print "Nothing to add"
+            self.log("Nothing to add\n")
             return
         
         if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
@@ -490,7 +514,7 @@ class CFMClient:
             for i in self.newpackages:
                 cmd += "%s " % i
 
-            print "Running:  %s" % cmd
+            self.log("Running:  %s\n" % cmd)
             for line in os.popen(cmd).readlines():
                 sys.stdout.write(line)
 
@@ -499,7 +523,7 @@ class CFMClient:
         """__removePackages - Remove the packages in the list."""
 
         if not self.oldpackages:
-            print "Nothing to remove"
+            self.log("Nothing to remove\n")
             return
         
         if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
@@ -508,7 +532,7 @@ class CFMClient:
             for i in self.oldpackages:
                 cmd = "/usr/bin/yum -y -c /tmp/yum.conf remove %s" % i
 
-                print "Running:  %s" % cmd
+                self.log("Running:  %s\n" % cmd)
                 for line in os.popen(cmd).readlines():
                     sys.stdout.write(line)
 
@@ -552,14 +576,14 @@ class CFMClient:
         for entry in newlist:
             if entry:
                 self.newpackages.append(entry)
-            #print "Found new package: %s" % entry
+            self.log("Found new package: %s\n" % entry)
 
         # Anything still in oldlist is a package to remove
         self.oldpackages = []
         for entry in oldlist:
             if entry:
                 self.oldpackages.append(entry)
-            # print "Found old package: %s" % entry
+            self.log("Found old package: %s\n" % entry)
 
 
     def __processFileName(self, filename):
@@ -601,7 +625,7 @@ class CFMClient:
             filep = open(self.cfmfilelst, 'r')
 
         except:
-            print "ERROR:  Could not open: %s" % self.cfmfilelst
+            self.log("ERROR:  Could not open: %s\n" % self.cfmfilelst)
             return
         
         for line in filep.readlines():
@@ -634,12 +658,12 @@ class CFMClient:
                 if os.path.exists(fn):
                     mtime = os.path.getmtime(fn)
                     if mtime < time:
-                        # print "Going to get: %s" % filename
-                        # print "local file time=%i, remote file time=%i" % (mtime, time)
+                        self.log(" ++ Going to get: %s\n" % filename)
+                        self.log("local file time=%i, remote file time=%i\n" % (mtime, time))
                         # File needs to be updated
                         self.newfiles.append([filename, user, group, mode, action, md5sum])
                 else:
-                    print "NOTICE:  File: %s does not exist!" % filename
+                    self.log("NOTICE:  File: %s does not exist!\n" % filename)
                     self.newfiles.append([filename, user, group, mode, action, md5sum])
 
         filep.close()
@@ -650,7 +674,7 @@ class CFMClient:
         for filename, user, group, mode, action, md5sum in self.newfiles:
 
             attr = (filename, user, group, mode, md5sum)
-            print "Updating file: %s" % filename
+            self.log("Updating file: %s\n" % filename)
             retval = self.__getFile(filename, attr, 0)
             if retval:
                 continue
@@ -672,7 +696,7 @@ class CFMClient:
                 merger = Merger()
                 merger.mergeFile(realfile)
             else:
-                print "WARNING: Unknown action type: %s for %s" % (filename, action) 
+                self.log("WARNING: Unknown action type: %s for %s\n" % (filename, action) )
 
 
     def __runPlugins(self):
@@ -689,12 +713,13 @@ class CFMClient:
         flist.sort()
 
         for plugin in flist:
-            os.system('/bin/sh %s >/dev/null 2>%1' % plugin)
+            self.log("Running plugin: %s\n" % plugin)
+            os.system('/bin/sh %s >/dev/null 2>&1' % plugin)
         
 
     def updatePackages (self):
         """updatepackages - Update packages"""
-        print "Updating Packages"
+        self.log("Updating Packages\n")
         if os.path.exists(self.packagelst):
             os.rename(self.packagelst, '%s.ORIG' % self.packagelst)
         attr = (self.packagelst, 'root', 'root', 0600)
@@ -704,7 +729,7 @@ class CFMClient:
         testdata = self.__getFileEntries(self.packagelst)
         if len(testdata) != 0 and testdata[0][0] == '<':
             # This is not proper content
-            print "ERROR:  Failed to get the package.lst."
+            self.log("ERROR:  Failed to get the package.lst.\n")
             if os.path.exists('%s.ORIG' % self.packagelst):
                 os.rename('%s.ORIG' % self.packagelst, self.packagelst)
         else:
@@ -717,13 +742,14 @@ class CFMClient:
 
     def updateFiles (self):
         """updatefiles - Update files"""
-        print "Updating Files"
+        self.log("Updating Files\n")
         # Update the package list.
         attr = (self.cfmfilelst, 'root', 'root', 0600)
         self.__getFile('cfmfiles.lst', attr, 1)
         self.__findOlderFiles()
         self.__installNewFiles()
-        self.__runPlugins()
+        if len(self.newfiles):
+            self.__runPlugins()
 
 
     def run (self):
