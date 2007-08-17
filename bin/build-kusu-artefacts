@@ -36,7 +36,7 @@ SUPPORTED_ARCH = ['i386', 'x86_64']
 
 KUSU_MODULES = ['autoinstall','boot','core','util','ui',
     'partitiontool','installer','nodeinstaller','networktool',
-    'hardware','kitops','repoman', 'buildkit']
+    'hardware','kitops','repoman', 'buildkit', 'driverpatch']
 
 KUSU_3RDPARTY = ['pysqlite','path','md5crypt','cheetah','urlgrabber',
     'wget','thttpd','sqlalchemy','createrepo','ipy']

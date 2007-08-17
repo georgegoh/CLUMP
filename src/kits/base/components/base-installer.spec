@@ -30,6 +30,7 @@ Requires: kusu-base-node
 Requires: kusu-boot
 Requires: kusu-buildkit 
 Requires: kusu-core 
+Requires: kusu-driverpatch 
 Requires: kusu-hardware 
 Requires: kusu-kitops 
 Requires: kusu-networktool 
