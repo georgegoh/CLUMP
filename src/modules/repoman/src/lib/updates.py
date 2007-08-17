@@ -19,7 +19,6 @@ from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
 from kusu.repoman.tools import getFile, getConfig
 from kusu.util.errors import *
-
 try:
     import subprocess
 except:
@@ -69,7 +68,7 @@ class BaseUpdate:
             # when buildkit prepares temp new directory for
             # making kit
             file.symlink(dest) 
-        
+    
         self.makeKit(tempkitdir, kitdir, kitName)
 
         return (kitdir, kitName, kitVersion, kitRelease, kitArch)
@@ -267,7 +266,7 @@ class YumUpdate(BaseUpdate):
             else:
                 # No such existing rpm, so download it
                 downloadPkgs.append(r)
-
+                            
         # Download the packages
         for r in downloadPkgs:
             filename = r.getFilename()
@@ -288,25 +287,20 @@ class YumUpdate(BaseUpdate):
                 f.close()
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
+        pkgs = rpmPkgs.getList()
+        
+        newKernels = rpmtool.RPMCollection()
+        for pkg in pkgs:
+            if pkg.getName().startswith('kernel'):
+                newKernelPkg = rpmtool.RPM(name = pkg.getName(),
+                                           version = pkg.getVersion(),
+                                           release = pkg.getRelease(),
+                                           arch = pkg.getArch(),
+                                           epoch = pkg.getEpoch())
+                newKernelPkg.filename = dir / pkg.getFilename().basename()
+                newKernels.add(newKernelPkg)
 
-        if rpmPkgs.has_key('kernel'):
-            if self.os_arch == 'x86_64':
-                # We want to use x64 kernel
-                kernelRPM = rpmPkgs['kernel']['x86_64'][0]
-            elif self.os_arch == 'i386':
-                # Take the lowest arch
-                if rpmPkgs['kernel'].has_key('i386'):
-                    kernelRPM = rpmPkgs['kernel']['i386'][0]
-                elif rpmPkgs['kernel'].has_key('i486'):
-                    kernelRPM = rpmPkgs['kernel']['i486'][0]
-                elif rpmPkgs['kernel'].has_key('i586'):
-                    kernelRPM = rpmPkgs['kernel']['i586'][0]
-                elif rpmPkgs['kernel'].has_key('i686'):
-                    kernelRPM = rpmPkgs['kernel']['i686'][0]
-        else:
-            kernelRPM = None
-
-        return (rpmPkgs.getList(), kernelRPM)
+        return (pkgs, newKernels)
 
     def getLatestRPM(self, primarys):
         """Return the latested rpms from yum repos"""
@@ -412,22 +406,17 @@ class RHNUpdate(BaseUpdate):
         except: pass
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
+        pkgs = rpmPkgs.getList()
+        
+        newKernels = rpmtool.RPMCollection()
+        for pkg in pkgs:
+            if pkg.getName().startswith('kernel'):
+                newKernelPkg = rpmtool.RPM(name = pkg.getName(),
+                                           version = pkg.getVersion(),
+                                           release = pkg.getRelease(),
+                                           arch = pkg.getArch(),
+                                           epoch = pkg.getEpoch())
+                newKernelPkg.filename = dir / pkg.getFilename().basename()
+                newKernels.add(newKernelPkg)
 
-        if rpmPkgs.has_key('kernel'):
-            if self.os_arch == 'x86_64':
-                # We want to use x64 kernel
-                kernelRPM = rpmPkgs['kernel']['x86_64'][0]
-            elif self.os_arch == 'i386':
-                # Take the lowest arch
-                if rpmPkgs['kernel'].has_key('i386'):
-                    kernelRPM = rpmPkgs['kernel']['i386'][0]
-                elif rpmPkgs['kernel'].has_key('i486'):
-                    kernelRPM = rpmPkgs['kernel']['i486'][0]
-                elif rpmPkgs['kernel'].has_key('i586'):
-                    kernelRPM = rpmPkgs['kernel']['i586'][0]
-                elif rpmPkgs['kernel'].has_key('i686'):
-                    kernelRPM = rpmPkgs['kernel']['i686'][0]
-        else:
-            kernelRPM = None
-
-        return (rpmPkgs.getList(), kernelRPM)
+        return (pkgs, newKernels)

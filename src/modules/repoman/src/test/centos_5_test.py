@@ -328,7 +328,7 @@ class TestCentos5Repo:
         r = repo.Centos5Repo('i386', prefix, self.dbs)
         r.setConfig(configFile)
         r.test = True
-        (rpmpkgs, kernel) = r.getUpdates()
+        (rpmpkgs, kernelPkgs) = r.getUpdates()
 
         updatesDir = prefix / 'depot' / 'updates' / 'centos' / '5' / 'i386'
 
@@ -344,5 +344,5 @@ class TestCentos5Repo:
         # newer kernel
         assert (updatesDir / 'kernel-1-1.2.1.i386.rpm').exists()
 
-        assert kernel.getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
+        assert kernelPkgs.getList()[0].getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
  

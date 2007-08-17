@@ -62,19 +62,47 @@ class RepoPatchApp(KusuApp):
         else:
             repoObj.setConfig(kusu_root / 'etc' / 'updates.conf')
 
-        pkgs, kernel = repoObj.getUpdates()
+        self.stdoutMessage('Getting updates for %s\n', repoObj.ostype)
+        try:
+            pkgs, newKernels = repoObj.getUpdates()
+        except Exception, e:
+            self.stderrMessage('Unable to get updates. Reason: %s\n', e)
+            sys.exit(1)
 
-        dir, kitName, kitVersion, kitRelease, kitArch = repoObj.makeUpdateKit(pkgs)
-        repoObj.addUpdateKit(dir)
+        if newKernels:
+            self.stdoutMessage('New kernel(s) found:\n\t%s\n', 
+                               '\n\t'.join(sorted([k.getFilename().basename() for k in newKernels.getList()])))
 
-        if kernel:
-            vmlinuz, initrd = repoObj.makeTFTP(kernel, kitRelease)
-            #repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
+            result = None
+            while result not in ['yes', 'y', 'no', 'n']:
+                self.stdoutMessage('Do you wish to include them? (Yes or No): ')
+                result = raw_input().strip()
+
+                result = result.lower()
+                if result in ['yes', 'y']:
+                    yes = True
+                elif result in ['no', 'n']:
+                    yes = False
+                    
+            if yes:
+                pass
+                #vmlinuz, initrd = repoObj.makeTFTP(kernel, kitRelease)
+                #repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
+            else:
+                for k in newKernels.getList():
+                    if k in pkgs: pkgs.remove(k)
+                        
         else:
             # no updated kernel at all
             pass
  
-        ngs = self.dbs.NodeGroups.select_by(repoid = repoObj.repoid)
+        self.stdoutMessage('Making new update kit.\n')
+        try:
+            dir, kitName, kitVersion, kitRelease, kitArch = repoObj.makeUpdateKit(pkgs)
+            repoObj.addUpdateKit(dir)
+        except Exception, e:
+            self.stderrMessage('Unable to add update kit. Reason: %s\n', e)
+            sys.exit(1)
 
         oldKitComp = None
         oldUpdateKit = None
@@ -90,30 +118,18 @@ class RepoPatchApp(KusuApp):
                                             version = kitVersion,
                                             arch = kitArch)[0]
 
-        for ng in ngs:
-            oldComponents = ng.components
-            if oldKitComp and oldKitComp in oldComponents:
-                oldComponents.remove(oldKitComp)
-            ng.components = oldComponents
-            ng.components.append(updateKit.components[0])
-            ng.save()
-            ng.flush()
-
-            cmd  = "boothost -s '%s'" % ng.ngname
-            p = subprocess.Popen(cmd,
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            retcode = p.returncode
-
         if oldUpdateKit and oldUpdateKit in repo.kits:
             repo.kits.remove(oldUpdateKit)
         repo.kits.append(updateKit)
         repo.save()
         repo.flush()
 
-        repoObj.refresh(repoObj.repoid)
+        self.stdoutMessage('Refreshing repo. This may take awhile...\n')
+        try:
+            repoObj.refresh(repoObj.repoid)
+        except Exception, e:
+            self.stderrMessage('Unable to add refresh repo. You may refresh manually via repoman -u. Reason: %s\n', e)
+            sys.exit(1)
 
     def run(self):
         self.parseArgs()

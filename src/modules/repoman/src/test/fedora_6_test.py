@@ -329,7 +329,7 @@ class TestFedora6Repo:
         r = repo.Fedora6Repo('i386', prefix, self.dbs)
         r.setConfig(configFile)
         r.test = True
-        (rpmpkgs, kernel) = r.getUpdates()
+        (rpmpkgs, kernelPkgs) = r.getUpdates()
 
         updatesDir = prefix / 'depot' / 'updates' / 'fedora' / '6' / 'i386'
 
@@ -343,4 +343,4 @@ class TestFedora6Repo:
         # newer kernel
         assert (updatesDir / 'kernel-1-1.2.1.i386.rpm').exists() 
 
-        assert kernel.getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
+        assert kernelPkgs.getList()[0].getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
