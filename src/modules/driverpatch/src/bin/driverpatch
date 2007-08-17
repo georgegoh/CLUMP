@@ -10,6 +10,7 @@ import os
 from path import path
 from kusu.core.app import KusuApp
 from kusu.core import database as db
+from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
 
 import kusu.util.log as kusulog
@@ -17,6 +18,8 @@ kl = kusulog.getKusuLog()
 kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
                        'kusu-driverpatch.log')
 kl = kusulog.getKusuLog('driverpatch-app')
+
+SUPPORTED_KERNEL_ARCHES = ['i586','i686','x86_64']
 
 def printTable(titles, entries, widths):
     horline = '+'
@@ -81,7 +84,7 @@ deployments.
 
 actions:
 
-    nodegroup       - Refresh the initrd images with the driverpacks
+    nodegroup       - Updates the PXE kernel/initrd with the driverpacks
                       belonging to the specified nodegroup. Nodegroup
                       can be specified with name OR id:
 
@@ -245,14 +248,92 @@ Example operations:
         """ Handler for nodegroup action. args is a dict of supported key-value pairs for this action. """
         ngname = args.get('name','')
         ngid = args.get('id','')
+        karch = args.get('arch','')
+        kver = args.get('version','')
+        kernelfile = args.get('kernel','')
+        initrdfile = args.get('initrd','')
+        assetsdir = args.get('assetsdir','')
         
         if not ngid and not ngname:
             self.printUsageExit()
+            
+        if not karch:
+            self.printUsageExit()
+            
+        if not karch in SUPPORTED_KERNEL_ARCHES:
+            msg = self._('Arch %(karch)s not supported!' %
+                        {'karch':karch})
+            self.printMsgExit(msg)
         
         if ngname:
             ngkey = 'name'
         elif ngid:
             ngkey = 'id'
+            
+        # get the ngname
+        if ngkey == 'id':
+            try:
+                _ngid = long(ngid)
+            except ValueError:
+                msg = self._('id should be a number!')
+                self.printMsgExit(msg)
+            
+            _ng = self.db.NodeGroups.select_by(ngid=_ngid)
+            if _ng:
+                ng = _ng[0]
+                ngname = ng.ngname
+            else:
+                msg = self._('Nodegroup not found!')
+                self.printMsgExit(msg)
+    
+        else:
+            # validate the supplied ngname
+            _ng = self.db.NodeGroups.select_by(ngname=ngname)
+            if not _ng:
+                msg = self._('Nodegroup not found!')
+                self.printMsgExit(msg)
+
+            
+        # get the available driverpacks
+        try:
+            dpacks = self.controller.getDriverPacks(id=ngid,name=ngname)
+        except ValueError:
+            msg = self._('id should be a number!')
+            self.printMsgExit(msg)
+            
+        if not dpacks:
+            msg = self._('No valid driverpacks found.')
+            self.printMsgExit(msg)
+                    
+        # get the correct dpacks
+        li = [dpack.dpname for dpack in dpacks if dpack.dpname.find(karch) >-1]
+
+        if not li:
+            msg = self._('No valid driverpacks found.')
+            self.printMsgExit(msg)            
+        
+        for l in li:
+            msg = self._('Found valid driverpack: %(dpname)s' %
+                        {'dpname':l})
+            print msg
+            
+        # get the repoid for this nodegroup
+        if not repotools.repoForNodeGroupExists(self.db,ngname):
+            msg = self._('No valid repo available this nodegroup!')
+            self.printMsgExit(msg)
+            
+        repoid = repotools.getRepoFromNodeGroup(self.db,ngname)
+        repos = self.db.Repos.select_by(repoid=repoid)
+        repo = repos[0].repository
+        if not repo:
+            msg = self._('No valid repo available this nodegroup!')
+            self.printMsgExit(msg)
+            
+        msg = self._('Looking in %(repository)s..' %
+                    {'repository':repo})
+        print msg
+        
+
             
         
 
@@ -260,11 +341,7 @@ Example operations:
         """ Handler for list action. args is a dict of supported key-value pairs for this action. """
         ngname = args.get('name','')
         ngid = args.get('id','')
-        karch = args.get('arch','')
-        kver = args.get('version','')
-        kernelfile = args.get('kernel','')
-        initrdfile = args.get('initrd','')
-        assetsdir = args.get('assetsdir','')
+
 
         if not ngid and not ngname:
             self.printUsageExit()
