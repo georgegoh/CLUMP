@@ -625,9 +625,14 @@ class CFMClient:
                 # Make mode an octal number
                 mode = string.atoi(tmode, 8)
                     
+                # Only look at destination file
+                fn = filename
+                if action != '':
+                    fn = filename[:-(len(action) + 1)]
+
                 # Test to see if it's newer
-                if os.path.exists(filename):
-                    mtime = os.path.getmtime(filename)
+                if os.path.exists(fn):
+                    mtime = os.path.getmtime(fn)
                     if mtime < time:
                         # print "Going to get: %s" % filename
                         # print "local file time=%i, remote file time=%i" % (mtime, time)
