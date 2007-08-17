@@ -475,6 +475,14 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / 'core' / 'updates' / '6' / self.os_arch )
 
         return [updates]
+    
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
 
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
@@ -525,6 +533,14 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / '5' / 'updates' / self.os_arch)
         
         return [os,updates]
+    
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
 
 class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     def __init__(self, os_arch, prefix, db):
@@ -671,6 +687,16 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 dotrepodata.rmtree()
  
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+    
+    def getPackageFilePath(self, packagename):
 
+        for dirlayount in [self.dirlayout['server.rpmsdir'],
+                           self.dirlayout['cluster.rpmsdir'],
+                           self.dirlayout['clusterstorage.rpmsdir'],
+                           self.dirlayout['vt.rpmsdir']]:
+            p = (self.repo_path / dirlayout / packagename)
 
-  
+            if p.exists():
+                return p
+ 
+        return None 
