@@ -14,11 +14,9 @@ import urlparse
 import re
 
 from kusu.util import rpmtool
-from kusu.util.errors import rhnInvalidLoginError, rhnInvalidSystemError, \
-                             rhnURLNotFound, rhnUnknownError, rhnServerError, \
-                             rhnError, rhnUnknownMethodError, rhnNoBaseChannelError, \
-                             rhnFailedDownloadRPM, rhnInvalidServerID
+from kusu.util.errors import *
 from kusu.repoman import tools
+from path import path
 
 class RHN:
     headers = ['X-RHN-Server-Id',
@@ -184,9 +182,14 @@ class RHN:
         return pkgs
        
     def getSystemID(self):
-        f = open('/etc/sysconfig/rhn/systemid', 'r')
-        systemid = f.read()
-        f.close()
+
+        systemidFile = path('/etc/sysconfig/rhn/systemid')
+        if systemidFile.exists():
+            f = open(systemidFile, 'r')
+            systemid = f.read()
+            f.close()
+        else:
+            raise rhnSystemNotRegisterd, 'System not registered with rhn'
 
         return systemid
 
@@ -199,7 +202,7 @@ class RHN:
         if mt:
             return int(mt.group())
         else:
-            raise rhnInvalidServerID
+            raise rhnInvalidServerID, 'Invalid systemid file'
     
     def getPackage(self, rpm, channelLabel):
         """Get a RPM from the channel"""

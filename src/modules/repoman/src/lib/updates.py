@@ -337,10 +337,13 @@ class RHNUpdate(BaseUpdate):
             username = cfg['username']
             password = cfg['password']
             url = cfg['url']
+
+            if not (username and password and url):
+                raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/updates.conf'
             return RHN(username, password, url)
 
         else:
-            raise rhnNoAccountInformationProvidedError
+            raise rhnNoAccountInformationProvidedError, 'No config file provided'
 
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
@@ -350,6 +353,11 @@ class RHNUpdate(BaseUpdate):
         if not dir.exists():
             dir.makedirs()
 
+        if not self.rhn: 
+            self.rhn = self.getRHN()
+        self.rhn.login()
+        channels = self.rhn.getChannels(self.rhn.getServerID())
+ 
         # Get the latest list of rpms from os kits and the
         # updates dir
         searchPaths = []
@@ -359,12 +367,6 @@ class RHNUpdate(BaseUpdate):
         searchPaths.append(dir)
         rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
       
-        if not self.rhn: 
-            self.rhn = self.getRHN()
-        
-        self.rhn.login()
-        channels = self.rhn.getChannels(self.rhn.getServerID())
-
         downloadPkgs={}
         for channel in channels:
             downloadPkgs[channel['channel_label']] = []

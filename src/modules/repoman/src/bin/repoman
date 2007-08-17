@@ -172,7 +172,12 @@ class RepoManApp(KusuApp):
 
         self.stdoutMessage('Refreshing repo: %s This may take awhile...\n', repo_name)
         r = self.rfinst.getRepo(repo.repoid)
-        r.refresh(repo.repoid)
+
+        try:
+            r.refresh(repo.repoid)
+        except Exception, e:
+            self.stderrMessage('Unable to refresh repo. Reason: %s\n', e)
+            sys.exit(1)
 
     def delete(self, repo_name):
         self.repoExists(repo_name)
