@@ -80,9 +80,14 @@ class ConfirmScreen(InstallerScreen):
     def renderTimezone(self):
         tz = self.kiprofile['Timezone']
         dispTxt = '\n[Timezone]\n'  
-        import pprint
-        pp = pprint.PrettyPrinter()
-        dispTxt += pp.pformat(tz)
+        dispTxt += 'Timezone: %s\n' % tz['zone']
+        dispTxt += 'NTP Server: %s\n' % tz['ntp_server']
+
+        if tz['utc']:
+            dispTxt += 'System uses UTC\n'
+        else:
+            dispTxt += 'System not using UTC\n'
+
         logger.debug(dispTxt)
         return dispTxt + '\n'
 
@@ -109,22 +114,27 @@ class ConfirmScreen(InstallerScreen):
         dispTxt += 'Domain: %s\n' % network_profile['fqhn_domain']
         dispTxt += 'Gateway: %s\n' % network_profile['default_gw']
         dispTxt += 'DNS 1: %s\n' % network_profile['dns1']
-        dispTxt += 'DNS 2: %s\n' % network_profile['dns2']
-        dispTxt += 'DNS 3: %s\n' % network_profile['dns3']
+        if network_profile['dns2']:
+            dispTxt += 'DNS 2: %s\n' % network_profile['dns2']
+        if network_profile['dns3']:
+            dispTxt += 'DNS 3: %s\n' % network_profile['dns3']
 
         interfaces = network_profile['interfaces']
-        for name,intf in sorted(interfaces.iteritems()):
+        for name, intf in sorted(interfaces.iteritems()):
             if intf['configure']:
                 dispTxt += '\n' + name + '\n'
-                for i in xrange(len(name)): dispTxt += '-'
+                dispTxt += '-' * len(name)
                 dispTxt += '\n  MAC Addr: %s\n' % intf['hwaddr']
-                dispTxt += '  Active On Boot: %s\n' % intf['active_on_boot']
-                dispTxt += '  DHCP: %s\n' % intf['use_dhcp']
-                dispTxt += '  Netname: %s\n' % intf['netname']
-                dispTxt += '  Net type: %s\n' % intf['nettype']
-                if not intf['use_dhcp']:
+
+                if intf['use_dhcp']:
+                    dispTxt += '  Using DHCP\n'
+                else:
                     dispTxt += '  IP: %s\n' % intf['ip_address']
                     dispTxt += '  Netmask: %s\n' % intf['netmask']
+
+                dispTxt += '  Active on Boot: %s\n' % intf['active_on_boot']
+                dispTxt += '  Net Name: %s\n' % intf['netname']
+                dispTxt += '  Net Type: %s\n' % intf['nettype']
         return dispTxt + '\n'
 
 
