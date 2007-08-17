@@ -653,8 +653,9 @@ class DiskProfile(object):
 
         partition_is_logical = (partition_obj.type == 'logical')
         disk = partition_obj.disk
+        p_path = partition_obj.path
         disk.delPartition(partition_obj, keep_in_place)
-        logger.debug('Deleted partition')
+        logger.debug('Deleted partition %s' % p_path)
 
         if partition_is_logical:
             if not disk.hasLogicalPartitions():

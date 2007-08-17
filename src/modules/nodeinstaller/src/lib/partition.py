@@ -347,8 +347,9 @@ def createSchema(part_rules, diskprofile):
 def attachPVsToVGs(disk_profile, vg_dict):
     for vg_name,vg in vg_dict.iteritems():
         logger.debug('VG Name: %s' % vg_name)
-        for pv in disk_profile.pv_dict.values():
-            logger.debug('PV, group: %s' % pv.group.name)
+        pvs_with_vgs = [pv for pv in disk_profile.pv_dict.values() if pv.group]
+        for pv in pvs_with_vgs:
+            logger.debug('PV, group: %s' % str(pv.group.name))
             if pv.group.name == vg_name:
                 disk_no = getDiskNumber(pv.partition, disk_profile.disk_dict)
                 part_no = pv.partition.num
