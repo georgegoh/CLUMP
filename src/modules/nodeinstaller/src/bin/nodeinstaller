@@ -249,11 +249,6 @@ class ProgressScreen(BaseScreen):
         self.nodeinst.mountKusuMntPts(kusu_prefix)
         dlg.close()
 
-        kl.debug('Setting syslog.conf')
-        dlg = self.selector.popupProgress('Syslog Setup', 'Generating config...')
-        self.nodeinst.setSyslogConf(self.niihost, kusu_prefix)
-        dlg.close()
-
         kl.debug('Copying public keys')
         dlg = self.selector.popupProgress('SSH Public Keys', 'Downloading SSH public keys...')
         self.nodeinst.getSSHPublicKeys(self.niihost, kusu_prefix)

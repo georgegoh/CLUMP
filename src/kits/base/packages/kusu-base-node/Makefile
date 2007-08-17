@@ -61,3 +61,4 @@ install::
 	install -m644 sbin/S02KusuClientCFM.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuNodeNTPD.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuClientYumSetup.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuNodeSyslog.py $(ROOT)/etc/rc.kusu.d/

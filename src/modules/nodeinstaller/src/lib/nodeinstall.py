@@ -398,13 +398,6 @@ class NodeInstaller(object):
         logger.debug('Setting timezone hwclock args: %s, return code: %s',
                      hwclock_args, hwclockP.returncode)
 
-    def setSyslogConf(self, hostip, prefix=''):
-        syslog = open(prefix + '/etc/syslog.conf', 'a')
-        syslog.writelines(['# Forward all log messages to master installer\n',
-                           '*.*' + '\t' * 7 + '@%s\n' % hostip])
-        syslog.flush()
-        syslog.close()
-
     def getSSHPublicKeys(self, hostip, prefix=''):
         authorized_keys = path(prefix + '/root/.ssh/authorized_keys')
 
