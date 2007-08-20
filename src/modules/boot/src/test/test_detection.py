@@ -254,8 +254,105 @@ class TestFedora6Detection:
 
         assert fedoraObj.getKernelPackages() == li
         assert fedoraObj.getKernelRpms() == li
-        
 
+class TestFedora7Detection:
+    """Test suite for detecting Fedora 7 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupFedora()
+
+    def tearDown(self):
+        """Clean up after done"""
+
+        self.teardownFedora()
+
+    def setupFedora(self):
+        """Fedora-centric housekeeping"""
+
+        self.fedoraLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+        # create a directory and delete it immediately after. 
+        self.invalidFedoraLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+        self.invalidFedoraLocalPath.rmdir()
+
+        path(self.fedoraLocalPath / 'isolinux').mkdir()
+        path(self.fedoraLocalPath / 'isolinux/isolinux.bin').touch()
+        path(self.fedoraLocalPath / 'isolinux/vmlinuz').touch()
+        path(self.fedoraLocalPath / 'isolinux/initrd.img').touch()
+        path(self.fedoraLocalPath / 'images').mkdir()
+        path(self.fedoraLocalPath / 'images/stage2.img').touch()
+        path(self.fedoraLocalPath / 'Fedora').mkdir()
+
+        f = open(path(self.fedoraLocalPath / '.discinfo'), 'w')
+        f.write('1180276843.561677\n')
+        f.write('"Fedora 7"\n')
+        f.write('i386\n')
+        f.write('1\n')
+        f.write('Fedora/base\n')
+        f.write('/srv/pungi/f7gold/7/Fedora/i386/os/Fedora\n')
+        f.write('Fedora/pixmaps\n')
+        f.close()
+
+        # set up some kernel packages
+        path(self.fedoraLocalPath / 'Fedora/kernel-2.6.21-1.3194.fc7.i586.rpm').touch()
+        path(self.fedoraLocalPath / 'Fedora/kernel-devel-2.6.21-1.3194.fc7.i586.rpm').touch()
+        path(self.fedoraLocalPath / 'Fedora/kernel-doc-2.6.21-1.3194.fc7.noarch.rpm').touch()
+        
+    def teardownFedora(self):
+        """Fedora-centric housekeeping in reverse"""
+
+        path(self.fedoraLocalPath / 'isolinux/vmlinuz').remove()
+        path(self.fedoraLocalPath / 'isolinux/initrd.img').remove()
+        path(self.fedoraLocalPath / 'isolinux/isolinux.bin').remove()
+        path(self.fedoraLocalPath / 'isolinux').rmdir()
+        path(self.fedoraLocalPath / 'images/stage2.img').remove()
+        path(self.fedoraLocalPath / 'images').rmdir()
+        path(self.fedoraLocalPath / 'Fedora').rmtree()
+        path(self.fedoraLocalPath / '.discinfo').remove()
+        self.fedoraLocalPath.rmdir()
+
+    def test_IsFedoraCD(self):
+        """Test if the CD is a Fedora CD"""
+
+        cdObj = DistroFactory(self.fedoraLocalPath)
+        assert cdObj.ostype == "fedora"
+
+    def test_IsNotFedoraCD(self):
+        """Test if the CD is not a Fedora CD"""
+
+        cdObj = DistroFactory(self.invalidFedoraLocalPath)
+        assert cdObj.ostype != "fedora"
+
+    def test_FedoraCDPathExists(self):
+        """Test if the path does indeed contain Fedora media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.verifyLocalSrcPath() is True
+
+
+    def test_FedoraCDPathNotExists(self):
+        """Test if the path does indeed contain Fedora media"""
+
+        fedoraObj = DistroFactory(self.invalidFedoraLocalPath)
+        assert fedoraObj.verifyLocalSrcPath() is False
+
+    def test_FedoraCDArch(self):
+        """Test if the arch is correct for the Fedora media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getArch() == 'i386'
+
+    def test_FedoraGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        li = [path(self.fedoraLocalPath / 'Fedora/kernel-2.6.21-1.3194.fc7.i586.rpm')]
+
+        assert fedoraObj.getKernelPackages() == li
+        assert fedoraObj.getKernelRpms() == li
+ 
 class TestRHEL5Detection:
     """Test suite for detecting RHEL 5 installation sources"""
 

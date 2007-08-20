@@ -493,7 +493,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
-        self.dirlayout['rpmsdir'] = 'CentOS'
+        self.dirlayout['rpmsdir'] = 'Fedora'
  
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
@@ -533,6 +533,52 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / '5' / 'updates' / self.os_arch)
         
         return [os,updates]
+    
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
+class Fedora7Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'fedora', '7', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'fedora', '7', os_arch, prefix, db)
+        
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'Fedora'
+ 
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      version=self.os_version,
+                                      arch=self.os_arch)
+
+        if kits:
+            return [path(os.path.join(self.prefix, 'depot', 'kits', \
+                                      self.os_name, self.os_version, self.os_arch, \
+                                      self.dirlayout['rpmsdir']))]
+        else:
+            return []
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['fedora']['url'])
+            else:
+                baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+
+        core = str(baseurl / 'releases' / '7' / 'Fedora' / self.os_arch / 'os')
+        updates = str(baseurl / 'updates' / '7' / self.os_arch )
+
+        return [updates]
     
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
