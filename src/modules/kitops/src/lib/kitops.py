@@ -232,16 +232,17 @@ class KitOps:
                 # also store the OS/ARCH -- but how to determine?
                 newcomp.save()
 
-                ngs = self.__db.NodeGroups.select(
-                    self.__db.NodeGroups.c.type.in_(*comp['ngtypes']))
+                if self.installer:
+                    ngs = self.__db.NodeGroups.select(
+                        self.__db.NodeGroups.c.type.in_(*comp['ngtypes']))
 
-                for ng in ngs:
-                    ng.components.append(newcomp)
+                    for ng in ngs:
+                        ng.components.append(newcomp)
 
-                # keep track of updated nodegroup types
-                for type in comp['ngtypes']:
-                    if type not in updated_ngtypes:
-                        updated_ngtypes.append(type)
+                    # keep track of updated nodegroup types
+                    for type in comp['ngtypes']:
+                        if type not in updated_ngtypes:
+                            updated_ngtypes.append(type)
             else:
                 raise ComponentAlreadyInstalledError, \
                     'Component %s already installed' % comp['name']
@@ -432,8 +433,9 @@ class KitOps:
 
         # add mock component to complete link from nodegroups to kits
         comp = self.__db.Components(cname=kit['longname'],
-                                    cdesc='%s mock component' % kit['longname'])
-        
+                                cdesc='%s mock component' % kit['longname'])
+        newkit.components.append(comp)
+ 
         # setup driverpacks entry and associate it with the mock component
         for kpkg in kpkgs:
             dpack = self.__db.DriverPacks()
@@ -442,15 +444,13 @@ class KitOps:
             dpack.dpdesc = desc        
             comp.driverpacks.append(dpack)
 
-        newkit.components.append(comp)
-
         if self.installer:
             ngs = self.__db.NodeGroups.select(
                     self.__db.NodeGroups.c.type.in_('compute', 'installer'))
 
-        for ng in ngs:
-            if comp not in ng.components:
-                ng.components.append(comp)
+            for ng in ngs:
+                if comp not in ng.components:
+                    ng.components.append(comp)
 
         self.__db.flush()
 
