@@ -499,9 +499,6 @@ class KitOps:
                                   (kit.rname, kit.version, kit.arch))
                 continue
                 
-            # remove the RPMS kit contents
-            del_path.rmtree()
-
             # uninstall kit RPM
             if not kit.isOS and not self.installer:
                 rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
@@ -530,6 +527,9 @@ class KitOps:
             # remove kit DB info
             kit.delete()
         
+            # remove the RPMS kit contents
+            del_path.rmtree()
+
         self.__db.flush()
 
         if error_kits:
