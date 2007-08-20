@@ -418,7 +418,7 @@ class KitOps:
         #populate the database with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['sum'],
                                 version=kit['ver'], isOS=True,
-                                removable=False, arch=kit['arch'])
+                                removable=True, arch=kit['arch'])
         newkit.save()
         self.__db.flush()
         
@@ -503,6 +503,8 @@ class KitOps:
             try:
                 # remove component info from DB
                 for component in kit.components:
+                    for dpack in component.driverpacks:
+                        dpack.delete()
                     component.delete()
 
                 # remove packages
