@@ -764,7 +764,7 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            self.version = words[i].strip('"')
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null

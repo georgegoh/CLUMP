@@ -233,7 +233,6 @@ class TestFedora6Detection:
         fedoraObj = DistroFactory(self.fedoraLocalPath)
         assert fedoraObj.verifyLocalSrcPath() is True
 
-
     def test_FedoraCDPathNotExists(self):
         """Test if the path does indeed contain Fedora media"""
 
@@ -245,6 +244,12 @@ class TestFedora6Detection:
 
         fedoraObj = DistroFactory(self.fedoraLocalPath)
         assert fedoraObj.getArch() == 'i386'
+
+    def test_FedoraCDVersion(self):
+        """Test if the version is correct for the Fedora media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getVersion() == '6'
 
     def test_FedoraGetKernelPackages(self):
         """ Test to get the kernel packages. """
@@ -331,7 +336,6 @@ class TestFedora7Detection:
         fedoraObj = DistroFactory(self.fedoraLocalPath)
         assert fedoraObj.verifyLocalSrcPath() is True
 
-
     def test_FedoraCDPathNotExists(self):
         """Test if the path does indeed contain Fedora media"""
 
@@ -343,6 +347,12 @@ class TestFedora7Detection:
 
         fedoraObj = DistroFactory(self.fedoraLocalPath)
         assert fedoraObj.getArch() == 'i386'
+
+    def test_FedoraCDVersion(self):
+        """Test if the version is correct for the Fedora media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getVersion() == '7'
 
     def test_FedoraGetKernelPackages(self):
         """ Test to get the kernel packages. """
@@ -479,7 +489,6 @@ class TestRHEL5Detection:
         rhelObj = DistroFactory(self.rhelLocalPath)
         assert rhelObj.verifyLocalSrcPath() is True
 
-
     def test_RHELCDPathNotExists(self):
         """Test if the path does indeed contain RHEL media"""
 
@@ -491,6 +500,12 @@ class TestRHEL5Detection:
         
         rhelObj = DistroFactory(self.rhelLocalPath)
         assert rhelObj.getArch() == 'i386'
+
+    def test_RHELCDVersion(self):
+        """Test if the version is correct for the RHEL media"""
+        
+        rhelObj = DistroFactory(self.rhelLocalPath)
+        assert rhelObj.getVersion() == '5'
 
     def test_RHELGetKernelPackages(self):
         """ Test to get the kernel packages. """
@@ -592,7 +607,6 @@ class TestCentOS5Detection:
         cdObj = DistroFactory(self.centosLocalPath)
         assert cdObj.ostype == "centos"
 
-            
     def test_IsAdditionalCentOSCD(self):
         """Test if the CD is an additional CentOS CD"""
         
@@ -613,7 +627,6 @@ class TestCentOS5Detection:
         centosObj = DistroFactory(self.centosLocalPath)
         assert centosObj.verifyLocalSrcPath() is True
 
-
     def test_CentOSCDPathNotExists(self):
         """Test if the path does indeed contain CentOS media"""
 
@@ -625,6 +638,12 @@ class TestCentOS5Detection:
         
         centosObj = DistroFactory(self.centosLocalPath)
         assert centosObj.getArch() == 'i386'
+   
+    def test_CentOSCDVersion(self):
+        """Test if the version is correct for the CentOS media"""
+        
+        centosObj = DistroFactory(self.centosLocalPath)
+        assert centosObj.getVersion() == '5'
         
     def test_CentOSGetKernelPackages(self):
         """ Test to get the kernel packages. """
