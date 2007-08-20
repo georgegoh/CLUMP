@@ -82,7 +82,8 @@ class KusuRC(rcplugin.Plugin):
         stmt.append_from(nodes.join(nics, nodes.c.nid==nics.c.nid).join(
                          networks, nics.c.netid==networks.c.netid))
 
-        stmt.append_whereclause(nodes.c.name=='master')
+        master = self.dbs.AppGlobals.selectfirst_by(kname='PrimaryInstaller')
+        stmt.append_whereclause(nodes.c.name==master.kvalue)
         result = stmt.execute().fetchall()
         return result
 
