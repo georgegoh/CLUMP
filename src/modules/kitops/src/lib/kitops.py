@@ -16,6 +16,7 @@ import tempfile
 import glob
 import re
 from path import path
+import sqlalchemy as sa
 
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
@@ -499,6 +500,22 @@ class KitOps:
                                   (kit.rname, kit.version, kit.arch))
                 continue
                 
+            try:
+                # remove component info from DB
+                for component in kit.components:
+                    component.delete()
+
+                # remove packages
+                pkgs = self.__db.Packages.select_by(packagename='kit-%s' %
+                                                    kit.rname)
+                for pkg in pkgs:
+                    pkg.delete()
+
+                # remove kit DB info
+                kit.delete()
+            except sa.exceptions.SQLError, e:
+                raise DeleteKitsError, [e]
+ 
             # uninstall kit RPM
             if not kit.isOS and not self.installer:
                 rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
@@ -507,26 +524,13 @@ class KitOps:
                                        stderr=subprocess.PIPE)
                 rmP.communicate()
 
-            # remove component info from DB
-            for component in kit.components:
-                component.delete()
-
+            # remove tftpboot contents
             if kit.isOS:
-                # remove tftpboot contents
                 path(self.pxeboot_dir / 'initrd-%s.img' % kit.longname).remove()
                 path(self.pxeboot_dir / 'kernel-%s' % kit.longname).remove()
                 if not self.pxeboot_dir.listdir():  # directory is empty
                     self.pxeboot_dir.rmdir()
 
-            # remove packages
-            pkgs = self.__db.Packages.select_by(packagename='kit-%s' %
-                                                kit.rname)
-            for pkg in pkgs:
-                pkg.delete()
-
-            # remove kit DB info
-            kit.delete()
-        
             # remove the RPMS kit contents
             del_path.rmtree()
 
