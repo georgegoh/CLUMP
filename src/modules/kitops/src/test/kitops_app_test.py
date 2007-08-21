@@ -712,7 +712,7 @@ class TestFedoraCore6i386:
                'Description: %s, expected: OS kit for fedora 6 i386' % kit.rdesc
         assert kit.version == '6', 'Version: %s, expected: 6' % kit.version
         assert kit.isOS, 'Expected isOS to be True'
-        assert not kit.removable, 'Expected removable to be False'
+        assert kit.removable, 'Expected removable to be True'
         assert kit.arch == 'i386', 'Arch: %s, expected: i386' % kit.arch
 
         # the fedora 6 kit has one 'mock' component

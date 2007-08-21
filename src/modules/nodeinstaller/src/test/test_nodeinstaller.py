@@ -17,6 +17,7 @@ import tempfile
 from path import path
 import os
 from kusu.partitiontool import DiskProfile
+from kusu.util.errors import ParseNIISourceError
 
 def checkToolExists(tool):
     """ Check if the current tool exists in the system path. """
@@ -251,7 +252,12 @@ Node: node0000
         """ Test to parse empty NII """
 
         ni = NodeInstaller()
-        ni.parseNII()
+
+        try:
+            ni.parseNII()
+        except ParseNIISourceError:
+            pass
+
         assert ni.name == ''
         
     def testValidateKSFile(self):
