@@ -52,7 +52,7 @@ class KusuRC(rcplugin.Plugin):
         if syslinux.exists():
             syslinux.copy('/tftpboot/kusu/pxelinux.0')
 
-        self.runCommand('/sbin/chkconfig xinetd start')
+        self.runCommand('/etc/init.d/xinetd restart')
         self.runCommand('/sbin/chkconfig xinetd on')
 
         return True
