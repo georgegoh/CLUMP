@@ -62,7 +62,7 @@ def makeRepo(kiprofile):
     db.flush()
 
 def genAutoInstallScript(disk_profile, kiprofile):
-    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
+    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart, RHEL5Kickstart
 
@@ -100,6 +100,8 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
         script = Script(RHEL5KickstartFactory(k))
+    elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '7':
+        script = Script(Fedora7KickstartFactory(k))
     else:
         script = Script(KickstartFactory(k))
 

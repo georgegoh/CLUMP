@@ -7,7 +7,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-import cElementTree
+import sys
 import md5
 import sha
 import gzip
@@ -17,6 +17,19 @@ from path import path
 from kusu.util import rpmtool
 from kusu.util.errors import *
 from kusu.repoman import tools
+
+version_info = sys.version_info[:2]
+
+if version_info < (2,5):
+    try:
+        import cElementTree
+    except:
+        import ElementTree
+elif version_info >= (2,5):
+    try:
+        from xml.etree import cElementTree
+    except:
+        from xml.etree import ElementTree
 
 class YumRepo:
 

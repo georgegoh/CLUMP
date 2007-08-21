@@ -137,8 +137,8 @@ class TestFedora7Repo:
             if not new_path.isdir():    
                 new_path.touch()
 
-        download('comps.xml', \
-                 prefix / 'depot' / 'kits' / 'fedora' / '7' / 'i386' / 'repodata' / 'comps.xml')
+        download('comps-f7.xml', \
+                 prefix / 'depot' / 'kits' / 'fedora' / '7' / 'i386' / 'repodata' / 'comps-f7.xml')
 
         download('ks.cfg.tmpl', \
                  prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'fedora' / '7' / 'i386' / 'ks.cfg.tmpl')
@@ -157,7 +157,7 @@ class TestFedora7Repo:
     def getPath(self):
         
         paths = ['Fedora/',\
-                 'repodata/comps.xml', \
+                 'repodata/comps-f7.xml', \
                  'repodata/other.xml.gz', \
                  'repodata/filelists.xml.gz', \
                  'repodata/repomd.xml', \

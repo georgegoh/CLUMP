@@ -18,7 +18,9 @@ key --skip
 url --url $url
 rootpw --iscrypted $rootpw
 lang $lang
-langsupport --default=$lang $lang
+#if $varExists('langsupport')
+langsupport --default=$langsupport $langsupport
+#end if
 keyboard $keybd
 #for $net in $networks
 $net

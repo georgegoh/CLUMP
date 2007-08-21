@@ -553,6 +553,18 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'Fedora'
  
+    
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        src = self.os_path / self.dirlayout['repodatadir'] / 'comps-f7.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'comps-f7.xml'
+
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
     def getSources(self):
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       version=self.os_version,

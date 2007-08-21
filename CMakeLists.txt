@@ -18,6 +18,7 @@ SET(KUSU_3RDPARTY
   sqlalchemy
   createrepo
   ipy
+  libxml2-python
 )
 
 # ## Add kusu modules to the build lists

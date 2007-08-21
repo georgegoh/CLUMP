@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
+from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
@@ -349,6 +349,8 @@ class NodeInstaller(object):
 
         if kusu_dist == 'rhel' and kusu_distver == '5':
             autoscript = Script(RHEL5KickstartFactory(self.ksprofile))
+        elif kusu_dist == 'fedora' and kusu_distver == '7':
+            autoscript = Script(Fedora7KickstartFactory(self.ksprofile))
         else:
             autoscript = Script(KickstartFactory(self.ksprofile))
 

@@ -63,7 +63,7 @@ class KickstartFactory(BaseFactory):
 
     def _validateProfile(self, profile):
         for key in self.keys:
-            if not getattr(profile, key):
+            if not hasattr(profile, key):
                 raise ProfileNotCompleteError, '%s attribute not found' % key
 
         return True
@@ -73,6 +73,7 @@ class KickstartFactory(BaseFactory):
         self.namespace['rootpw'] = self.profile.rootpw
         self.namespace['tz'] = self.profile.tz
         self.namespace['lang'] = self.profile.lang
+        self.namespace['langsupport'] = self.profile.lang
         self.namespace['keybd'] = self.profile.keyboard
         self.namespace['packages'] = self.profile.packageprofile 
         self.namespace['partitions'] = self._getPartitions()
@@ -220,11 +221,28 @@ class RHEL5KickstartFactory(KickstartFactory):
         self.namespace['rootpw'] = self.profile.rootpw
         self.namespace['tz'] = self.profile.tz
         self.namespace['lang'] = self.profile.lang
+        self.namespace['langsupport'] = self.profile.lang
         self.namespace['keybd'] = self.profile.keyboard
         self.namespace['packages'] = self.profile.packageprofile 
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
         self.namespace['instnum'] = self.profile.instnum
+
+        return self.namespace
+
+class Fedora7KickstartFactory(KickstartFactory):
+    def __init__(self, profile, template=None):
+        KickstartFactory.__init__(self, profile, template) 
+
+    def getNameSpace(self):
+        self.namespace['url'] = self.profile.installsrc
+        self.namespace['rootpw'] = self.profile.rootpw
+        self.namespace['tz'] = self.profile.tz
+        self.namespace['lang'] = self.profile.lang
+        self.namespace['keybd'] = self.profile.keyboard
+        self.namespace['packages'] = self.profile.packageprofile 
+        self.namespace['partitions'] = self._getPartitions()
+        self.namespace['networks'] = self._getNetworks()
 
         return self.namespace
 
