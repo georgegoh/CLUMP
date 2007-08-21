@@ -296,8 +296,16 @@ class BuildInitrd:
             # There can be more than one package.  All have to be processed
             if self.stdoutout:
                 self.stdoutout("Looking for modules in: %s\n", row[0])
-
-            pattern = '%s/*/RPMS/%s' % (self.repodir, row[0])
+                
+            # Warning OS Specific Stuff
+            pattern = '/nonexistant/stuff'
+            if self.ostype[:6] == 'fedora':
+                pattern = '%s/Fedora/RPMS/%s' % (self.repodir, row[0])
+            elif self.ostype[:4] == 'rhel':
+                pattern = '%s/*/%s' % (self.repodir, row[0])
+            elif self.ostype[:6] == 'centos':
+                pattern = '%s/*/%s' % (self.repodir, row[0])
+                
             flist = glob.glob(pattern)
 
             if len(flist) == 0:
