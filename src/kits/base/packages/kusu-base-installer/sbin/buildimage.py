@@ -180,7 +180,7 @@ class BuildImage:
                 self.packages.append(row[0])
 
         # Add all the components to the list of packages
-        query = ('select packagename from packages where ngid="%s"' % self.ngid)
+        query = ('select cname from components c, ng_has_comp n, kits k where k.kid=c.kid and k.isOS=0 and n.cid=c.cid and ngid="%s"' % self.ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
