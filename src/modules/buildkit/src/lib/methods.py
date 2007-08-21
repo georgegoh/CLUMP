@@ -101,6 +101,8 @@ def DefaultKit(**kwargs):
         del kwargs['removeable']
     if not 'removable' in kwargs and not 'removeable' in kwargs:
         kwargs['removable'] = True
+        
+    if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
     kit = KusuKit(**kwargs)
 
@@ -136,6 +138,7 @@ def DefaultComponent(**kwargs):
     if not 'comprelease' in kwargs: kwargs['comprelease'] = '0'
     if not 'ngtypes' in kwargs: kwargs['ngtypes'] = ['installer','compute']
     if not 'description' in kwargs: kwargs['description'] = ''
+    if not 'srctype' in kwargs: kwargs['srctype'] = 'component'
     
     component = KusuComponent(**kwargs)
   
@@ -144,7 +147,7 @@ def DefaultComponent(**kwargs):
 
 def BinaryPackage(**kwargs):
     """ This is used to handle binary distribution packages. """
-    return Package(srctype='binarydist')
+    return Package(srctype='binary')
 
 def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
@@ -171,7 +174,7 @@ def Package(**kwargs):
     """ Basic convenience package method. """
     if kwargs['srctype'] == 'autotools':
         pkg = PackageProfile(AutoToolsWrapper(),**kwargs)
-    elif kwargs['srctype'] == 'binarydist':
+    elif kwargs['srctype'] == 'binary':
         pkg = PackageProfile(BinaryPackageWrapper(),**kwargs)
     elif kwargs['srctype'] == 'distro':
         pkg = PackageProfile(DistroPackageWrapper(),**kwargs)

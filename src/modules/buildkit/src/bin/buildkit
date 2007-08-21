@@ -8,7 +8,7 @@
 import sys
 import os
 from kusu.core.app import KusuApp
-from kusu.buildkit import BuildKit
+from kusu.buildkit import BuildKit, getSyntaxValidator
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined
 from kusu.util.tools import checkToolDeps, mkdtemp
@@ -259,6 +259,60 @@ Example operations:
         msg = self._('Found kitscript. Loading it..')
         print msg
         kit, components, packages = self.bkinst.loadKitScript(kitscript)
+        
+        # validate the syntax
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # first the packages
+        for pkg in packages:
+            sv = getSyntaxValidator(pkg)
+            if not sv.validate():
+                for a in sv.getMissingAttributes():
+                    if not a in missingAttributes: missingAttributes.append(a)
+                c += 1
+                
+        if c > 0:
+            msg = self._('There are missing attributes for the package(s): %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
+            
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # second the comps
+        for comp in components:
+            sv = getSyntaxValidator(comp)
+            if not sv.validate():
+                for a in sv.getMissingAttributes():
+                    if not a in missingAttributes: missingAttributes.append(a)
+                c += 1
+
+        if c > 0:
+            msg = self._('There are missing attributes for the component(s): %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
+
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # lastly the kit
+        sv = getSyntaxValidator(kit)
+        if not sv.validate():
+            for a in sv.getMissingAttributes():
+                if not a in missingAttributes: missingAttributes.append(a)
+            c += 1
+
+        if c > 0:
+            msg = self._('There are missing attributes for the kit: %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
         
         # lets build the packages if any:
         if packages:
