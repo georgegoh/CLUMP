@@ -343,3 +343,13 @@ class TestFedora7Repo:
         assert (updatesDir / 'kernel-1-1.2.1.i386.rpm').exists() 
 
         assert kernelPkgs.getList()[0].getFilename().basename() == 'kernel-1-1.2.1.i386.rpm'
+
+    def testGetPackageFilePath(self):
+        global prefix
+
+        r = repo.Fedora7Repo('i386', prefix, self.dbs)
+        r.test = True
+        r.make('installer nodegroup')
+
+        p = r.getPackageFilePath('kernel-2.6.9-11.EL.i386.rpm') 
+        assert p == prefix / 'depot' / 'repos' / str(r.repoid) / 'Fedora' / 'kernel-2.6.9-11.EL.i386.rpm'

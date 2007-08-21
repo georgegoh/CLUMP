@@ -748,7 +748,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     
     def getPackageFilePath(self, packagename):
 
-        for dirlayount in [self.dirlayout['server.rpmsdir'],
+        for dirlayout in [self.dirlayout['server.rpmsdir'],
                            self.dirlayout['cluster.rpmsdir'],
                            self.dirlayout['clusterstorage.rpmsdir'],
                            self.dirlayout['vt.rpmsdir']]:

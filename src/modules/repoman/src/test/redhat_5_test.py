@@ -322,4 +322,14 @@ class TestRedhat5Repo:
 
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
+     
+    def testGetPackageFilePath(self):
+        global prefix
 
+        r = repo.Redhat5Repo('i386', prefix, self.dbs)
+        r.test = True
+        r.make('installer nodegroup')
+
+        p = r.getPackageFilePath('kernel-2.6.9-11.EL.i386.rpm') 
+        print p
+        assert p == prefix / 'depot' / 'repos' / str(r.repoid) / 'Server' / 'kernel-2.6.9-11.EL.i386.rpm'
