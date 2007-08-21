@@ -100,6 +100,10 @@ class boothost:
         else:
             fp.write("default Reinstall\n")
 
+        # ** FIX ME
+        # ** This query does not handle the case where there is more than one
+        # ** entry in the networks table for the same network/subnet mask
+        # ** This will have to be fixed (at some point).
         query = ("SELECT nics.ip FROM nics, nodes, networks WHERE nodes.nid=nics.nid " +
                  "AND networks.netid=nics.netid " +
                  "AND networks.netid=(SELECT netid FROM nics WHERE mac='%s') " % mac +
@@ -233,18 +237,21 @@ class boothost:
         setstr = ''
         if kernel != '':
             state = 'Expired'
+            localboot = 0
             if kernel == 'NULL':
                 setstr = setstr + 'kernel=NULL, '
             else:
                 setstr = setstr + 'kernel=\'%s\', ' % kernel
         if initrd != '':
             state = 'Expired'
+            localboot = 0
             if initrd == 'NULL':
                 setstr = setstr + 'initrd=NULL, '
             else:
                 setstr = setstr + 'initrd=\'%s\', ' % initrd
         if kparams != '':
             state = 'Expired'
+            localboot = 0
             if kparams == 'NULL':
                 setstr = setstr + 'kparams=NULL, '
             else:
@@ -254,6 +261,8 @@ class boothost:
                 setstr = setstr + 'state=NULL, '
             else:
                 setstr = setstr + 'state=\'%s\', ' % state
+                if state == 'Expired':
+                    localboot = 0
         if localboot != '':
             if localboot == '1':
                 setstr = setstr + 'bootfrom=1, '
@@ -294,13 +303,13 @@ class boothost:
             try:
                 self.db.execute(query)
             except:
-                raise "ERROR:  Unable to update database"
+                print "ERROR:  Unable to update database"
         
         # Query the database to gather the data needed
         query = ('select '
                  'nodes.name, nodes.kernel, nodes.initrd, nodes.kparams, nodes.bootfrom, '
                  'nodegroups.kernel, nodegroups.initrd, nodegroups.kparams, '
-                 'nics.mac '
+                 'nics.mac, nodes.state '
                  'from nodes,nodegroups,nics where nodes.name="%s" '
                  'and nodes.ngid=nodegroups.ngid '
                  'and nics.nid=nodes.nid '
@@ -326,7 +335,19 @@ class boothost:
                 initrd  = data[6]
             if kparams == None :
                 kparams = data[7]
-            mac = data[8]
+            mac      = data[8]
+            state    = data[9]
+
+            # Force reinstall if state == Expired
+            if state == 'Expired' and bootfrom == 1:
+                bootfrom = 0 
+                setstr = self.__mkUpdateSql('', '', '', '', 0)
+                query = ('update nodes set %s where name="%s"' % (setstr, nodename))
+                try:
+                    self.db.execute(query)
+                except:
+                    print "ERROR:  Unable to update database"
+                    print "Ran: %s" % query
 
             self.mkPXEFile(mac, kernel, initrd, kparams, bootfrom, name)
 
