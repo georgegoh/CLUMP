@@ -56,8 +56,13 @@ def retrieveNII(niihost):
         logger.debug('urlopen data: %s' % data)
         return StringIO(data)
     except urllib2.HTTPError, e:
-        logger.debug(str(e))
-        return None
+        msg = "nodeboot.cgi unavailable. " + \
+              "Return code: %d, message: %s, URL: %s" % (e.code, e.msg, url)
+        logger.error(msg)
+        raise NIISourceUnavailableError, msg
+    except urllib2.URLError, e:
+        logger.error('%s', ex.reason)
+        raise NIISourceUnavailableError, str(ex.reason)
 
 
 def getRandomSeq(length=8, chars=string.letters + string.digits):
@@ -302,8 +307,7 @@ class NodeInstaller(object):
         """ Parses the NII and places the resulting data into self.niidata """
         try:
             logger.debug('Parsing NII')
-            logger.debug('niisource : %s' % self.source)
-        
+            logger.debug('niisource : %s' % self.source) 
             if not self.source :
                 self.reset()
                 raise EmptyNIISource
@@ -318,10 +322,18 @@ class NodeInstaller(object):
                 setattr(self,i,getattr(self.niidata,i))
                 logger.debug('%s : %s' % (i,getattr(self,i)))
 
-        except SAXParseException:
-            logger.debug('Failed parsing NII!')
+        except SAXParseException, e:
+            msg = "Failure parsing NII!\n" + \
+                  "System ID: %s\n" % e.getSystemId() + \
+                  "Line: %s\nColumn: %s\n" % (e.getLineNumber(),
+                                              e.getColumnNumber()) + \
+                  "Message: %s" % e.getMessage()
+            logger.error(msg)
+            raise ParseNIISourceError, msg
         except EmptyNIISource:
-            logger.debug('NII Source is empty!')
+            msg = 'NII Source is empty!'
+            logger.error(msg)
+            raise ParseNIISourceError, msg
         
     def setup(self, autoinstallfile):
         """ Preparing attributes needed for automatic provisioning.

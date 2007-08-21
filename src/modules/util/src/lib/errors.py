@@ -152,7 +152,9 @@ class FailedBuildMake(KusuError): pass
 class KitCopyError(KusuError): pass
 
 # nodeinstaller
+class NIISourceUnavailableError(KusuError): pass
 class EmptyNIISource(KusuError): pass
+class ParseNIISourceError(KusuError): pass
 class InvalidPartitionSchema(KusuError): pass
 
 # buildkit
