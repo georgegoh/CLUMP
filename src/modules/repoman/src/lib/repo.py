@@ -493,7 +493,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
-        self.dirlayout['rpmsdir'] = 'Fedora'
+        self.dirlayout['rpmsdir'] = 'CentOS'
  
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
