@@ -35,15 +35,24 @@ class KusuRC(rcplugin.Plugin):
 
             if dhcpdnics:
                 f = open('/etc/sysconfig/dhcpd', 'r')
-                dhcpd = f.read()
+                dhcpd = f.readlines()
                 f.close()
 
-                line = 'DHCPDARGS='
-                index = dhcpd.find(line)
+                argline = -1
+                for x in xrange(len(dhcpd)):
+                    # returns 0 when string begins with find term
+                    if not dhcpd[x].find('DHCPDARGS='):
+                        argline = x
+                        break
+
+                # we haven't found the line, so append it at the end
+                if argline == -1:
+                    dhcpd.append('')
+
+                dhcpd[argline] = 'DHCPDARGS="%s"\n' % ' '.join(dhcpdnics)
 
                 f = open('/etc/sysconfig/dhcpd', 'w')
-                f.write(dhcpd[:index] + 'DHCPDARGS=%s' % ' '.join(dhcpdnics) + \
-                        dhcpd[index + len(line):])
+                f.writelines(dhcpd)
                 f.close()
 
                 retval, out, err = self.runCommand('/sbin/chkconfig dhcpd on')

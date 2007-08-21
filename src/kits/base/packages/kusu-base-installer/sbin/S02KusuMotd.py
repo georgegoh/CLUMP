@@ -22,12 +22,26 @@ class KusuRC(rcplugin.Plugin):
 
     def run(self):
         f = open('/etc/motd', 'r')
-        lines = f.read()
+        lines = f.readlines()
         f.close()
 
+        motdlines = []
+        # find the lines containing 'Kusu * Installer Node'
+        for x in xrange(len(lines)):
+            # find returns 0 when line begins with find term
+            if not lines[x].find('Kusu') \
+                and lines[x].find('Installer Node') > 0:
+                motdlines.append(x)
+
+        if not motdlines:
+            lines.append('')
+            motdlines.append(-1)
+
+        for motdline in motdlines:
+            lines[motdline] = 'Kusu %s Installer Node\n' % VERSION
+
         f = open('/etc/motd', 'w')
-        f.write(lines)
-        f.write('Kusu %s Installer Node\n' % VERSION)
+        f.writelines(lines)
         f.close()
 
         return True
