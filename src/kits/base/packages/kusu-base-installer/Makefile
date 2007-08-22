@@ -63,21 +63,21 @@ install::
 	# Just for development
 	#echo "Letmein" > $(ROOT)/opt/kusu/etc/db.passwd
 	touch $(ROOT)/depot/repos/custom_scripts/bogus.sh
-	install -m644 sbin/S01KusuDB.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S90KusuCFM.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuDHCPD.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuRepo.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuSSH.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuSyslog.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuApache.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuNfsExport.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S03KusuImage.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuIptables.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuNtp.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuXinetd.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuMotd.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuYumSetup.py $(ROOT)/etc/rc.kusu.d/
-	install -m644 sbin/S02KusuGenconfig.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S01KusuDB.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S90KusuCFM.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuDHCPD.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuRepo.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuSSH.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuSyslog.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuApache.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuNfsExport.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S03KusuImage.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuIptables.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuNtp.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuXinetd.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuMotd.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuYumSetup.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuGenconfig.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
