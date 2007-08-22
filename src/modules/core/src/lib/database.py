@@ -907,8 +907,8 @@ class DB(object):
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
         AppGlobals(kname='InstallerServeDNS', kvalue='0')
         AppGlobals(kname='InstallerServeNIS', kvalue='0')
-        AppGlobals(kname='InstallerServeNTP', kvalue='0')
-        AppGlobals(kname='InstallerServeNFS', kvalue='0')
+        AppGlobals(kname='InstallerServeNTP', kvalue='1')
+        AppGlobals(kname='InstallerServeNFS', kvalue='1')
         AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
 
         Repos(repoid=999, reponame="DELETEME")
