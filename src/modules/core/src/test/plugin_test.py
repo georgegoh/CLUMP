@@ -26,6 +26,12 @@ def setUp():
     url = 'http://www.osgdc.org/pub/build/tests/modules/kusurc'
     tools.url_mirror_copy(url, prefix) 
 
+    for f in prefix.listdir('index.html*'):
+        f.remove()
+    
+    for f in prefix.listdir():
+        f.chmod(0755)
+
 def tearDown():
     global kusudb
     kusudb.parent.rmtree()
@@ -85,7 +91,7 @@ class TestPlugin:
         pRunner = rcplugin.PluginRunner('KusuRC', prefix, self.dbs)
         results = pRunner.run()
 
-        assert len(results) == 5
+        assert len(results) == 7
 
         for result in results:
             if result[0] == 'hello':
@@ -103,6 +109,14 @@ class TestPlugin:
             elif result[0] == 'fail.sh':
                 assert result[1] == False
                 assert result[2] == None
+            elif result[0] == 'scriptOK.py':
+                assert result[1] == True
+                assert result[2] == None
+            elif result[0] == 'scriptFail.py':
+                assert result[1] == False
+                assert result[2] == None
+ 
+
             assert result[0] != 'norun'
 
 
