@@ -41,7 +41,8 @@ class ConfirmScreen(InstallerScreen):
                                   'Network':self.renderNetwork,
                                   'Language':self.renderLanguage,
                                   'Keyboard':self.renderKeyboard,
-                                  'Timezone':self.renderTimezone}
+                                  'Timezone':self.renderTimezone,
+                                  'InstNum':self.renderInstNum}
 
     def setCallbacks(self):
         """
@@ -69,11 +70,11 @@ class ConfirmScreen(InstallerScreen):
                     confirmText = confirmText + \
                                   renderFunc()
             else:
-                confirmText = confirmText + '[' + context_key + ']' + '\n'
+                confirmText = confirmText + '\n[' + context_key + ']\n'
                 settings_for_context = self.kiprofile[context_key]
                 for setting in settings_for_context:
                     confirmText += str(setting) + '\n'
-                confirmText = confirmText + '\n'
+                confirmText += '\n'
         textBox = snack.Textbox(40, 10, confirmText, 1)
         self.screenGrid.setField(textBox, col=0, row=1, padding=(0,0,0,-2))
 
@@ -136,6 +137,16 @@ class ConfirmScreen(InstallerScreen):
                 dispTxt += '  Net Name: %s\n' % intf['netname']
                 dispTxt += '  Net Type: %s\n' % intf['nettype']
         return dispTxt + '\n'
+
+    def renderInstNum(self):
+        dispTxt = '\n[Installation Number]\n'
+
+        if self.kiprofile['InstNum']:
+            dispTxt += self.kiprofile['InstNum'] + '\n'
+        else:
+            dispTxt += 'Skipped\n'
+ 
+        return dispTxt
 
 
     def renderPartition(self):
