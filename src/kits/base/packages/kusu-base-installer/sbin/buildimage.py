@@ -83,6 +83,11 @@ class BuildImage:
                 self.stderrout("ERROR: Invalid node group: %s\n", nodegroup)
             return
 
+        if self.installtype == 'package':
+            if self.stderrout:
+                self.stderrout("ERROR: Invalid node group type: %s\n", self.installtype)
+            return
+
         self.__getPackages()
         if len(self.packages) == 0:
             if self.stderrout:

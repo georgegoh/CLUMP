@@ -86,6 +86,11 @@ class BuildInitrd:
                 self.stderrout("ERROR: Invalid node group: %s\n", nodegroup)
             return
 
+        if self.installtype == 'package':
+            if self.stderrout:
+                self.stderrout("ERROR: Invalid node group type: %s\n", self.installtype)
+            return
+
         # Get a list of modules to add
         self.getModules()
         if len(self.modules) == 0:
