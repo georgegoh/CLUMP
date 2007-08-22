@@ -112,7 +112,7 @@ class KickstartFromNIIProfile(object):
             if ni.appglobal.has_key('InstNum'):
                 self.instnum = ni.appglobal['InstNum']
 
-    def prepareKickstartNetworkProfile(self,ni):
+    def prepareKickstartNetworkProfile(self,ni,niihost):
         """ Reads in the NII instance and fills up the networkprofile. """
         
         logger.debug('Preparing network profile')
@@ -159,9 +159,12 @@ class KickstartFromNIIProfile(object):
         else:
             nw['gw_dns_use_dhcp'] = True
 
-        nw['dns1'] = ni.appglobal.get('dns1', '')
-        nw['dns2'] = ni.appglobal.get('dns2', '')
-        nw['dns3'] = ni.appglobal.get('dns3', '')
+        if ni.appglobal.get('InstallerServeDNS', '0') == '1':
+            nw['dns1'] = niihost
+        else:
+            nw['dns1'] = ni.appglobal.get('dns1', '')
+            nw['dns2'] = ni.appglobal.get('dns2', '')
+            nw['dns3'] = ni.appglobal.get('dns3', '')
 
         logger.debug('network profile constructed: %r' % nw)
         
@@ -291,7 +294,7 @@ class NodeInstaller(object):
         self.repo = ''
         self.ostype = ''
         self.installtype = ''
-        self. nodegrpid = 0 
+        self.nodegrpid = 0 
         self.appglobal = {}
         self.nics = {}
         self.partitions = {}
@@ -335,7 +338,7 @@ class NodeInstaller(object):
             logger.error(msg)
             raise ParseNIISourceError, msg
         
-    def setup(self, autoinstallfile):
+    def setup(self, autoinstallfile, niihost):
         """ Preparing attributes needed for automatic provisioning.
             A distro-specific autoinstallation configuration filename
             needs to be provided.
@@ -345,7 +348,7 @@ class NodeInstaller(object):
         self.autoinstallfile = autoinstallfile
         self.ksprofile = KickstartFromNIIProfile()
         self.ksprofile.prepareKickstartSiteProfile(self)
-        self.ksprofile.prepareKickstartNetworkProfile(self)
+        self.ksprofile.prepareKickstartNetworkProfile(self, niihost)
         self.diskprofile = self.ksprofile.prepareKickstartDiskProfile(self)
         self.ksprofile.prepareKickstartPackageProfile(self)
         self.generateAutoinstall()

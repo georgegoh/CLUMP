@@ -226,7 +226,7 @@ class ProgressScreen(BaseScreen):
 
         kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg.')
         dlg = self.selector.popupProgress('Preparing Kickstart', 'Preparing Kickstart files...')
-        self.nodeinst.setup(self.ksfile)
+        self.nodeinst.setup(self.ksfile, self.niihost)
         dlg.close()
 
         kl.debug('Setting timezone')
