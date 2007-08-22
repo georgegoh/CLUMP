@@ -230,32 +230,43 @@ class boothost:
                 self.getNodeBootInfo(row)
 
 
-    def __mkUpdateSql(self, kernel='', initrd='', kparams='', state='', localboot=''):
-        """__mkUpdateSql - This method generates the SQL fragment to update the
+    def __mkUpdateSql2(self, kernel='', initrd='', kparams=''):
+        """__mkUpdateSql2 - This method generates the SQL fragment to update the
         kernel, initrd, and/or kparams.  It also handles unsetting
         the values when the value is set to NULL"""
         setstr = ''
         if kernel != '':
-            state = 'Expired'
-            localboot = 0
             if kernel == 'NULL':
                 setstr = setstr + 'kernel=NULL, '
             else:
                 setstr = setstr + 'kernel=\'%s\', ' % kernel
         if initrd != '':
-            state = 'Expired'
-            localboot = 0
             if initrd == 'NULL':
                 setstr = setstr + 'initrd=NULL, '
             else:
                 setstr = setstr + 'initrd=\'%s\', ' % initrd
         if kparams != '':
-            state = 'Expired'
-            localboot = 0
             if kparams == 'NULL':
                 setstr = setstr + 'kparams=NULL, '
             else:
                 setstr = setstr + 'kparams=\'%s\', ' % kparams
+
+        if setstr != '':
+            return setstr[:-2]
+        return ''
+
+
+    def __mkUpdateSql(self, kernel='', initrd='', kparams='', state='', localboot=''):
+        """__mkUpdateSql - This method generates the SQL fragment to update the
+        kernel, initrd, and/or kparams.  It also handles unsetting
+        the values when the value is set to NULL"""
+        setstr = self.__mkUpdateSql2(kernel, initrd, kparams)
+        if setstr != '':
+            setstr = setstr + ', '
+
+        if kernel != '' or initrd != '' or kparams != '':
+            state = 'Expired'
+            localboot = 0
         if state != '':
             if state == 'NULL':
                 setstr = setstr + 'state=NULL, '
@@ -272,7 +283,7 @@ class boothost:
         if setstr != '':
             return setstr[:-2]
         return ''
-                
+
 
     def __genNodesPXE(self, nodename, kernel='', initrd='', kparams='', state='', localboot=''):
         """__genNodesPXE - This function will generate the PXE file associated
@@ -393,7 +404,7 @@ class boothost:
             sys.exit(-1)
 
         # Update the Kernel, initrd, and/or kernel paramaters if needed
-        setstr = self.__mkUpdateSql(kernel, initrd, kparams)
+        setstr = self.__mkUpdateSql2(kernel, initrd, kparams)
         if setstr != '':
             # Need to update the database
             query = ('update nodegroups set %s where ngname="%s"' % (setstr, nodegroup))
@@ -423,18 +434,34 @@ class boothost:
             sys.exit(-1)
 
         self.updatednodes = hostlist
-        
-        # Clean out and custom kernel, initrd, and kernel params
-        setstr = self.__mkUpdateSql('NULL', 'NULL', 'NULL', state, localboot)
-        if setstr != '':
-            # Need to update the database
-            query = ('update nodes set %s where '
-                     'ngid=(select ngid from nodegroups '
-                     'where ngname="%s")' % (setstr, nodegroup))
+
+        # If a kernel, initrd, or kparams is specified all nodes are expired
+        # and need to install.  If they are not specified, only those nodes
+        # that have their own kernel, initrd, or kparams should be reinstalled
+        if kernel != '' or initrd != '' or kparams != '':
+            # Clean out and custom kernel, initrd, and kernel params
+            setstr = self.__mkUpdateSql('NULL', 'NULL', 'NULL', 'Expired', 0)
+            if setstr != '':
+                # Need to update the database
+                query = ('update nodes set %s where '
+                         'ngid=(select ngid from nodegroups '
+                         'where ngname="%s")' % (setstr, nodegroup))
+                try:
+                    self.db.execute(query)
+                except:
+                    self.errorMessage('boothost_unable_to_update_nodegroup %s\n', nodegroup)
+        else:
+            # Only reset those nodes that have a custom kernel, initrd, and kernel params
+            query = ('update nodes set '
+                     'bootfrom=0, kernel=NULL, initrd=NULL, kparams=NULL, state="Expired" '
+                     'where (kernel is not null or initrd is not null or kparams is not null) '
+                     'and ngid=(select ngid from nodegroups where ngname="%s")' % (nodegroup))
+
             try:
                 self.db.execute(query)
             except:
                 self.errorMessage('boothost_unable_to_update_nodegroup %s\n', nodegroup)
+
 
         # Iterate over the list of hosts
         if hostlist:
