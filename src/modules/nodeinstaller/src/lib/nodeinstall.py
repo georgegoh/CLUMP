@@ -393,8 +393,8 @@ class NodeInstaller(object):
         # May not want dbpasswd on all nodes!
         # Want the cfm secret though
         cfmdir = root / 'etc' / 'cfm'
-	if not cfmdir.exists(): cfmdir.makedirs()
-	cfmfile = cfmdir / '.cfmsecret'
+        if not cfmdir.exists(): cfmdir.makedirs()
+        cfmfile = cfmdir / '.cfmsecret'
         self.niidata.saveCFMSecret(cfmfile)
 
     def setTimezone(self):
