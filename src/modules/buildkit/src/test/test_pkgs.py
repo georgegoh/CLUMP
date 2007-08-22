@@ -15,7 +15,7 @@ from path import path
 from nose import SkipTest
 
 
-TMPDIR = None
+TMPDIR = path(tools.mkdtemp(prefix='kitsrc-test-'))
 TEST_ASSETS_URL = 'http://www.osgdc.org/pub/build/tests/modules/buildkit/'
 GOOD_PKGS = ['hello-2.3.tar.gz', 'hello-2.3.tbz2']
 BAD_PKGS = ['dummy-2.3.tar.gz']
@@ -30,7 +30,6 @@ def downloadAssets():
 
 def setUp():
     global TMPDIR
-    TMPDIR = path(tools.mkdtemp(prefix='kitsrc-test-'))
     if not path(TMPDIR / 'assets').exists():
         path(TMPDIR / 'assets').mkdir()
         downloadAssets()
@@ -137,17 +136,17 @@ class TestGNUBuildTarballPkg(object):
 
         
     def testBinaryPackage(self):
-        """ Test the BinaryPackage setup. Incomplete! """
+        """ Test the BinaryPackage setup."""
         
         pkg = BinaryPackage()
         pkg.name = 'foo'
         
-        assert pkg.srctype == 'binarydist'
+        assert pkg.srctype == 'binary'
         assert pkg.name == 'foo'
 
         
     def testSRPMPackage(self):
-        """ Test the BinaryPackage setup. Incomplete! """
+        """ Test the BinaryPackage setup."""
 
         pkg = SRPMPackage()
         pkg.name = 'foo'
