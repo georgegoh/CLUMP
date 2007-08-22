@@ -83,7 +83,6 @@ class TestPlugin:
     def tearDown(self):
         global prefix
         self.dbs.dropTables()
-        prefix.rmtree()
 
     def testScriptPass(self):
         global prefix
@@ -118,6 +117,25 @@ class TestPlugin:
  
 
             assert result[0] != 'norun'
+
+    def testSingleScriptPass(self):
+        global prefix
+
+        pRunner = rcplugin.PluginRunner('KusuRC', prefix / 'ok.sh', self.dbs)
+        results1 = pRunner.run()
+
+        pRunner = rcplugin.PluginRunner('KusuRC', prefix / 'fail.sh', self.dbs)
+        results2 = pRunner.run()
+
+        assert len(results1 + results2) == 2
+
+        for result in results1 + results2:
+            if result[0] == 'ok.sh':
+                assert result[1] == True
+                assert result[2] == None
+            elif result[0] == 'fail.sh':
+                assert result[1] == False
+                assert result[2] == None
 
 
 

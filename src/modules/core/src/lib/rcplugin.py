@@ -52,15 +52,14 @@ class Plugin:
         return retval, out, err
 
 class PluginRunner:
-    def __init__(self, classname, dir, dbs, debug=False):
+    def __init__(self, classname, p, dbs, debug=False):
         self.classname = classname
-        self.dir = path(dir)
         self.plugins = {}
         self.dbs = dbs
         self.ngtype = self.getNodeGroupInfo()
 
         self.initPlugin()
-        self.loadPlugins()
+        self.loadPlugins(p)
 
     def display(self, desc):
         print '%s%s:' % (' '*3, desc or ''),
@@ -167,8 +166,15 @@ class PluginRunner:
 
         kl.debug(logstr)
 
-    def loadPlugins(self):
-        for plugin in self.dir.listdir(): 
+    def loadPlugins(self, p):
+        if p.isdir():
+            self.dir = p
+            plugins = self.dir.listdir()
+        else:
+            self.dir = p.parent
+            plugins = [p]
+
+        for plugin in plugins:
             if plugin.endswith('.rc.py'):
                 ns = {}
                 try:

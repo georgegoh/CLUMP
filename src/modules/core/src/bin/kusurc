@@ -20,9 +20,9 @@ if __name__ == '__main__':
     args = sys.argv
 
     if len(args) == 1:
-        dir = '/etc/rc.kusu.d'
+        p = path('/etc/rc.kusu.d')
     else:
-        dir = args[1]
+        p = path(args[1])
 
     if path('/etc/profile.nii').exists():
         dbs = None
@@ -41,5 +41,5 @@ if __name__ == '__main__':
         
         dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
-    p = PluginRunner('KusuRC', dir, dbs)
-    p.run()
+    prunner = PluginRunner('KusuRC', p, dbs)
+    prunner.run()
