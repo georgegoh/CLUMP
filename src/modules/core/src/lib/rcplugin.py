@@ -12,6 +12,7 @@ from path import path
 import os
 import socket
 import sys
+import traceback
 
 try:
     import subprocess
@@ -99,7 +100,7 @@ class PluginRunner:
                 self.display('Running ' + fname)
 
                 try:
-                    p = subprocess.Popen('sh ' + self.plugins[fname],
+                    p = subprocess.Popen(self.plugins[fname],
                                          env = kusuenv,
                                          shell=True,
                                          stdout=subprocess.PIPE,
@@ -142,8 +143,6 @@ class PluginRunner:
                     self.failure()
                     results.append( (plugin.name, False, e) )
                     kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
-
-                    import traceback
                     kl.error('Plugin traceback:\n%s', traceback.format_exc())
                        
                 if plugin.delete and (self.dir / fname).exists():
@@ -169,42 +168,39 @@ class PluginRunner:
         kl.debug(logstr)
 
     def loadPlugins(self):
-        for plugin in self.dir.listdir('*.py'): 
-
-            if plugin in ['__init__.py']:
-                continue
-
-            ns = {}
-            try:
-                execfile(plugin, ns)
-            except Exception, e:   
-                kl.error('Unable to load plugin: %s Reason: %s' % (plugin.basename(), e))
-                continue
-
-            if ns.has_key(self.classname):
+        for plugin in self.dir.listdir(): 
+            if plugin.endswith('.rc.py'):
+                ns = {}
                 try:
-                    m = ns[self.classname]()
+                    execfile(plugin, ns)
                 except Exception, e:   
-                    kl.error('Unable to instatiate plugin: %s Reason: %s' % (plugin.basename(), e))
-                    continue
-            
-                if m.disable:
-                    kl.info('Ignoring plugin: ' + m.name)
+                    kl.error('Unable to load plugin: %s Reason: %s' % (plugin.basename(), e))
+                    kl.error('Plugin traceback:\n%s', traceback.format_exc())
                     continue
 
-                if self.ngtype not in m.ngtypes:
-                    if m.delete and plugin.exists():
-                        plugin.remove()
+                if ns.has_key(self.classname):
+                    try:
+                        m = ns[self.classname]()
+                    except Exception, e:   
+                        kl.error('Unable to instatiate plugin: %s Reason: %s' % (plugin.basename(), e))
+                        kl.error('Plugin traceback:\n%s', traceback.format_exc())
+                        continue
+                
+                    if m.disable:
+                        kl.info('Ignoring plugin: ' + m.name)
+                        continue
 
-                    continue
+                    if self.ngtype not in m.ngtypes:
+                        if m.delete and plugin.exists():
+                            plugin.remove()
+                        continue
 
-                self.plugins[plugin.basename()] = m
-                kl.info('Loaded plugin: ' + m.name)
+                    self.plugins[plugin.basename()] = m
+                    kl.info('Loaded plugin: ' + m.name)
+            else:
+                self.plugins[plugin.basename()] = str(plugin)
+                kl.info('Loaded plugin: ' + plugin.basename())
 
-        for plugin in self.dir.listdir('*.sh'): 
-            self.plugins[plugin.basename()] = str(plugin)
-            kl.info('Loaded plugin: ' + plugin.basename())
-            
     def getNodeGroupInfo(self):
         """Returns the node name, nodegroup name, nodegroup type"""
 
