@@ -165,6 +165,7 @@ class NodeMemberApp(object, KusuApp):
                     print "\n"
             except:
                 self.parser.error("%s\n" % self._("options_invalid_nodegroup"))
+            sys.exit(0)
 
         # Handle -t option - Copy to this node group.
         if bool(self._options.togroup):
