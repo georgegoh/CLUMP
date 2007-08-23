@@ -40,12 +40,15 @@ class NGEInvalidRecord(NGEObjectException): pass
 class NGEDBReadFail(NGEDBException):        pass
 class NGEDBWriteFail(NGEDBException):       pass
 
-
-class NodeGroupRec(UserDict):
-    #assume NodeGroupRec.fields[0] is always the PK
-    fields = ( 'ngid', 'repoid', 'ngname', 'installtype', 'ngdesc',
-               'nameformat', 'kernel', 'initrd', 'kparams'
-             )
+class KusuDBRec(UserDict):
+    ''' KusuDBRec is the abstract class defining the attributes & behavior
+        of a Kusu DB table record object as well as its interface with the DB.
+        Assumption: KusuDBRec.fields[0] is always the PK
+    '''
+    fields = ()
+    table = None
+    PKfld = property(lambda self: self.fields[0])
+    PKval = property(lambda self: self.data[self.PKfld])
 
     def __init__(self, record=None, **kwargs):
         '''Re-defining native constructor to narrow down the utility of the child '''
@@ -66,7 +69,7 @@ class NodeGroupRec(UserDict):
             self.update(kwdict)
 
     def __setitem__(self, key, item):
-        '''NodeGroupRec:[] Allows setting exactly one field for the given record '''
+        '''KusuDBRec:[] Allows setting exactly one field for the given record '''
         key = key.lower()
         if key in self.fields:
             self.data[key] = item
@@ -78,14 +81,14 @@ class NodeGroupRec(UserDict):
             del self.data[key]
 
     def set(self, keys, values):
-        '''NodeGroupRec:set allows setting multiple fields for the given record'''
+        '''KusuDBRec:set allows setting multiple fields for the given record'''
         for i in range(0, min(len(keys), len(values))):
             key = keys[i].lower()
             if key in self.fields:
                 self[key] = values[i]
 
     def values(self):
-        ''' NodeGroupRec:values returns an ordered list of values '''
+        ''' KusuDBRec:values returns an ordered list of values '''
         rv = []
         for key in self.fields:
             if key in self.data.keys():
@@ -93,7 +96,7 @@ class NodeGroupRec(UserDict):
         return rv
 
     def keys(self):
-        ''' NodeGroupRec:keys returns an ordered list of keys '''
+        ''' KusuDBRec:keys returns an ordered list of keys '''
         rv = []
         for key in self.fields:
             if key in self.data.keys():
@@ -102,7 +105,7 @@ class NodeGroupRec(UserDict):
 
     def __sub__(self,other):
 
-        if not isinstance(other,NodeGroupRec):
+        if not isinstance(other,KusuDBRec) or self.fields != other.fields:
             raise TypeError, "unsupported operand types(s) for '-': '%s' and '%s'"\
                              %(type(self),type(other))
         result = {}
@@ -115,14 +118,13 @@ class NodeGroupRec(UserDict):
     def syncFromDB(self,db):
         ''' updates this instance with information from the database
         '''
-        pk = self.data['ngid'] #primary key
         try:
-            assert(pk)
+            assert(self.PKval)
         except AssertionError, msg:
-            raise NGEInvalidRecord,"Invalid NodeGroup record, missing primary key?"
+            raise NGEInvalidRecord,"Invalid KusuDBRec record, missing primary key?"
 
         query = 'SELECT %s' + ', %s' * (len(self.fields[1:]) - 1) + \
-                ' from nodegroups where %s = %s' % (self.fields[0], pk)
+                ' FROM %s WHERE %s = %s' % (self.table, self.PKfld, self.PKval)
         query = query % self.fields[1:]
 
         try:
@@ -133,14 +135,12 @@ class NodeGroupRec(UserDict):
 
         self.set(self.fields[1:], rv)
 
-
     def syncToDB(self,db):
         ''' updates DB with information in this instance
         '''
         mode = 'update'
-        pk = self.data['ngid']
         try:
-            assert(pk)
+            assert(self.PKval)
         except AssertionError, msg:
             mode = 'insert'
 
@@ -152,20 +152,20 @@ class NodeGroupRec(UserDict):
             return
 
         if mode == 'update':
-            query = "UPDATE nodegroups SET %s = '%s'" + ", %s = '%s'"*(len(dbdict)-1) +\
-                    " WHERE ngid = %s"
-            tpl = ()
+            query = "UPDATE %s SET %s = '%s'" + ", %s = '%s'"*(len(dbdict)-1) +\
+                    " WHERE %s = %s"
+            tpl = (self.table,)
             for t in dbdict.items():
                 tpl += t #tuple concat
-            tpl += (pk,)
+            tpl += (self.PKfld, self.PKval)
             query = query % tpl
 
         elif mode == 'insert':
             itemlst = dbdict.items()
             keylst = [k for k,v in itemlst]
             vallst = ["'%s'" %str(v) for k,v in itemlst]
-            query = 'INSERT into nodegroups (%s) values (%s)' %(string.join(keylst,',') ,\
-                        string.join(vallst,','))
+            query = 'INSERT into %s (%s) values (%s)' %(self.table, \
+                        string.join(keylst,',') , string.join(vallst,','))
 
         try:
             db.execute(query)
@@ -175,26 +175,43 @@ class NodeGroupRec(UserDict):
         if mode == 'insert':
             #get the PK for the record just inserted
             try:
-                db.execute("SELECT ngid from nodegroups where ngname = '%s'" % self.data['ngname'])
+                db.execute("SELECT last_insert_id()")
                 rv = db.fetchone()
             except Exception,msg:
                 raise NGEDBReadFail,msg
     
             assert(len(rv)==1)
-            self.data['ngid'] = rv[0]
+            self.data[self.PKfld] = rv[0]
+
 
     def eraseFromDB(self,db):
         ''' erase this record from the database '''
-        pk = self.data['ngid']
         try:
-            assert(pk)
+            assert(self.PKval)
         except AssertionError,msg:
             raise NGEInvalidRecord,msg
 
         try:
-            db.execute("DELETE from nodegroups where ngid = %s" %pk)
+            db.execute("DELETE from %s where %s = %s" %(self.table, self.PKfld, self.PKval))
         except Exception,msg:
             raise NGEDBWriteFail,msg
+
+
+class PartitionRec(KusuDBRec):
+    fields = ( 'idpartitions', 'ngid', 'device', 'partition', 'mntpnt',
+               'fstype', 'size', 'options', 'preserve'
+             )
+    table = 'partitions'
+
+
+class NodeGroupRec(KusuDBRec):
+    #assume NodeGroupRec.fields[0] is always the PK
+    fields = ( 'ngid', 'repoid', 'ngname', 'installtype', 'ngdesc',
+               'nameformat', 'kernel', 'initrd', 'kparams', 'type'
+             )
+    table = 'nodegroups'
+
+
         
 class NodeGroup(NodeGroupRec):
     ''' NodeGroup class extends beyond NG table record representation - it
@@ -261,39 +278,65 @@ class NodeGroup(NodeGroupRec):
                 #both operands have non-Null value
                 l1 = self.data[key][:]
                 l2 = other[key][:]
-                l1.sort()
-                l2.sort()
-                if l1 != l2:
+                sortkey = None
+                if key == 'parts':
+                    sortkey = lambda x: x['idpartitions']
+                l1.sort(key = sortkey)
+                l2.sort(key = sortkey)
+                    
+                if l1 != l2: #this uses UserDict.__cmp__
                     result[key] = self.data[key]
         return result
 
     def __getLinkByFK(self,db,link):
 
-        pk = self.data['ngid']
-        db.execute("select %s from %s where ngid = %s" %(self.linksDBmap[link][1], \
-                    self.linksDBmap[link][0], pk))
+        db.execute("SELECT %s FROM %s WHERE ngid = %s" %(self.linksDBmap[link][1], \
+                    self.linksDBmap[link][0], self.PKval))
         rv = db.fetchall()
-        self.data[link] = [x for x, in rv]
+        if link == 'parts':
+            #special case - create list of PartitionRec instances
+            self.data[link] = []
+            for id, in rv:
+                obj = PartitionRec(idpartitions = id)
+                obj.syncFromDB(db)
+                self.data[link].append(obj)
+        else:
+            self.data[link] = [x for x, in rv]
 
     def __putLinkByFK(self,db,link):
         #delete all records matching pk and add new ones
         #assume self.data[link] is non-Null
-        pk = self.data['ngid']
 
-        db.execute("DELETE from %s where ngid = %s" %(self.linksDBmap[link][0], pk))
+        query = "DELETE from %s where ngid = %s" %(self.linksDBmap[link][0], self.PKval)
+        db.execute(query)
 
         if len(self.data[link]) < 1:
             return
-        query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
-                    self.linksDBmap[link][1])
-        query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
 
-        tpl = ()
-        for v in self.data[link]:
-            tpl += pk,v
-        query = query % tpl
+        if link == 'parts': 
+            #special case - iterate over the list of PartitionRec instances
+            for p in self.data[link]:   #for each partition
+                p[p.PKfld] = None       #give the Partition record new identity
+                p['ngid'] = self.PKval  #if copied from other N.G. - correct ngid field
+                p.syncToDB(db)
+                db.execute('select last_insert_id()')
+                rv = db.fetchone()
+                p[p.PKfld] = rv[0]
 
-        db.execute(query)
+        else:
+            query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
+                        self.linksDBmap[link][1])
+            query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
+
+            tpl = ()
+            for v in self.data[link]:
+                tpl += self.PKval,v
+            query = query % tpl
+
+            try:
+                db.execute(query)
+            except Exception,msg:
+                raise NGEDBWriteFail,'Failed syncing link=%s to DB with msg = %s\nQuery=%s' %(link,str(msg),query)
 
 
     def syncFromDB(self,db):
@@ -309,10 +352,9 @@ class NodeGroup(NodeGroupRec):
         ''' updates DB with information in this instance
         '''
         NodeGroupRec.syncToDB(self,db)
-        pk = self.data['ngid']
 
         try:
-            assert(pk)
+            assert(self.PKval)
         except AssertionError,msg:
             raise NGEInvalidRecord,msg
 
@@ -322,16 +364,15 @@ class NodeGroup(NodeGroupRec):
 
     def eraseFromDB(self,db):
         ''' erase this record from the database '''
-        pk = self.data['ngid']
         try:
-            assert(pk)
+            assert(self.PKval)
         except AssertionError,msg:
             raise NGEInvalidRecord,msg
 
         for l in self.links:
             if self.data[l] !=None:
                 try:
-                    db.execute("DELETE from %s where ngid = %s" % (self.linksDBmap[l][0], pk) )
+                    db.execute("DELETE from %s where ngid = %s" % (self.linksDBmap[l][0], self.PKval) )
                 except Exception,msg:
                     raise NGEDBWriteFail,msg
 
@@ -397,6 +438,7 @@ class scrNGEMain(USXBaseScreen):
         ngname = '%s Copy %s' %(newNG['ngname'], suffix)
         newNG['ngname'] = ngname
 
+        self.selector.popupMsg('DEBUG','check the DB for ngid = %s' %ngid)
         newNG.syncToDB(self.database)
        
         return NAV_NOTHING
@@ -796,44 +838,6 @@ class scrNGEEdit_Components(USXBaseScreen):
 
     def formAction(self):
         curNG['comps'] = [int(x) for x in self.__ct.getSelection()] #convert from long
-        if not curNG['comps']:
-            return #nothing to do
-        elif len(curNG['comps']) == 1: #special case
-            tplstr = '(%s)' % str(curNG['comps'][0])
-        else:
-            tplstr = str(tuple(curNG['comps']))
-
-        query = 'select cname from components where cid in %s' % tplstr
-        self.database.execute(query)
-        rv = self.database.fetchall()
-        CompNameList = [x for x, in rv]
-
-        if self.__plugdir not in sys.path:
-            sys.path.append(self.__plugdir)
-
-        CompPlugList = []
-        for comp in CompNameList:
-            flist = glob.glob('%s/*-%s.py' %(self.__plugdir,comp))
-            CompPlugList.extend(flist)
-        CompPlugList.sort()
-
-        PlugInstList = []
-        for plugfile in CompPlugList:
-            plugmname = os.path.splitext(os.path.basename(plugfile))[0] #module name
-            plugminst = __import__(plugmname)           #module instance
-            plugcname = getattr(plugminst, 'NGPlugin')  #class name
-            if not issubclass(plugcname, USXBaseScreen):
-                raise Exception, 'Invalid NG Plugin Screen class encountered: %s' %plugcname
-
-            plugcinst = plugcname(self.database, self.kusuApp)  #class instance
-            PlugInstList.append(plugcinst)
-
-        if not PlugInstList: #no plugin screens to display
-            return
-
-        ScreenFactory.screens = PlugInstList
-        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
-        ks.run()
 
 class scrNGEEdit_Networks(USXBaseScreen):
     name = 'Networks'
@@ -1234,6 +1238,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.__diffNG = None
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
 
     def setCallbacks(self):
         #for the buttons
@@ -1364,9 +1369,71 @@ class scrNGEEdit_Finalize(USXBaseScreen):
     def validate(self):
         return True, 'Success'
 
+    def handleCompPlug(self, CompIdList, action):
+        if not CompIdList:
+            return
+        CompIdList = [ int(x) for x in CompIdList ]
+        if len(CompIdList) == 1: #special case
+            tplstr = '(%s)' % str(CompIdList[0])
+        else:
+            tplstr = str(tuple(CompIdList))
+
+        query = 'select cname from components where cid in %s' % tplstr
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        CompNameList = [x for x, in rv]
+
+        CompPlugList = []
+        for comp in CompNameList:
+            flist = glob.glob('%s/*-%s.py' %(self.__plugdir,comp))
+            CompPlugList.extend(flist)
+        CompPlugList.sort()
+
+        PlugInstList_draw = []
+        PlugInstList_run = []
+        for plugfile in CompPlugList:
+            plugmname = os.path.splitext(os.path.basename(plugfile))[0] #module name
+            plugminst = __import__(plugmname)           #module instance
+            plugcname = getattr(plugminst, 'NGPlugin')  #class name
+            if not issubclass(plugcname, USXBaseScreen):
+                raise Exception, 'Invalid NG Plugin Screen class encountered: %s' %plugcname
+
+            plugcinst = plugcname(self.database, self.kusuApp)  #class instance
+            plugcinst.ngid = curNG['ngid']
+            if action == 'add':
+                if plugcinst.isInteractive():
+                    PlugInstList_draw.append(plugcinst)
+                else:
+                    PlugInstList_run.append(plugcinst)
+            elif action == 'remove':
+                PlugInstList_run.append(plugcinst)
+
+        if PlugInstList_draw:
+            ScreenFactory.screens = PlugInstList_draw
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
+            ks.run()
+
+        if action == 'add':
+            for inst in PlugInstList_run:
+                inst.add()
+        elif action == 'remove':
+            for inst in PlugInstList_run:
+                inst.remove()
+
+
     def formAction(self):
-        pass
-        
+        if self.__plugdir not in sys.path:
+            sys.path.append(self.__plugdir)
+
+        s1 = Set(curNG['comps'])
+        s2 = Set(origNG['comps'])
+        addedComps = list(s1 - s2)
+        removedComps = list(s2 - s1)
+
+        self.handleCompPlug(addedComps, 'add')
+        self.handleCompPlug(removedComps, 'remove')
+
+
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'
     msg = 'Enter the custom script path'
