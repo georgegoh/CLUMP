@@ -41,7 +41,7 @@ class NodeData:
         # Public 
         self.nodeRackNumber = 0
         self.nodeGroupSelected = 0
-        self.nodesInstalled = []
+        self.nodeList = []
         self.selectedInterface = None
         self.syslogFilePosition = None
         self.optionReplaceMode = False
@@ -248,7 +248,7 @@ class AddHostApp(KusuApp):
                      # Ask all plugins to call added() function
                      if pluginActions:
                          pluginActions.plugins_add(nodeName)
-                     myNodeInfo.nodesInstalled.append([nodeName, macaddr])
+                     myNodeInfo.nodeList.append(nodeName)
                  #else:
                      #print "Duplicate: %s, Ignoring" % macaddr
             sys.exit(0)
@@ -287,6 +287,7 @@ class AddHostApp(KusuApp):
                  # Ask all plugins to call removed() function
                  if pluginActions:
                     pluginActions.plugins_removed(delnode)
+                 myNodeInfo.nodeList.append(delnode)
 
                  # Handle removing node from db.
                  myNode.deleteNode(delnode)
@@ -361,7 +362,7 @@ class AddHostApp(KusuApp):
         screenFactory = ScreenFactoryImpl(screenList)
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
-        if len(myNodeInfo.nodesInstalled):
+        if len(myNodeInfo.nodeList):
             if pluginActions:
                pluginActions.plugins_finished()
  
@@ -373,7 +374,7 @@ class AddHostPlugin:
         """virtual"""
         pass
     
-    def finish(self, dbconn):
+    def finish(self, dbconn, nodelist):
         """virtual"""
         pass
     
@@ -455,11 +456,12 @@ class PluginActions(object, KusuApp):
         """plugins_finished()
         Call all Add host plugins finished() method
         """
+	global myNodeInfo
         print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
              # Does this AddHostPlugin instance have a finished() method If so, execute it.
              if callable(getattr(plugin, "finished", None)):
-                 plugin.finished(self._dbconnection)
+                 plugin.finished(self._dbconnection, myNodeInfo.nodeList)
     
     def plugins_updated(self):
         """plugins_updated()
@@ -489,7 +491,7 @@ class NodeGroupWindow(USXBaseScreen):
             if result == "yes":
                 return NAV_QUIT
         else:
-            if len(myNodeInfo.nodesInstalled):
+            if len(myNodeInfo.nodeList):
                 if pluginActions:
                    pluginActions.plugins_finished()
             return NAV_QUIT
@@ -498,7 +500,7 @@ class NodeGroupWindow(USXBaseScreen):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
-        if len(myNodeInfo.nodesInstalled):
+        if len(myNodeInfo.nodeList):
             if pluginActions:
                pluginActions.plugins_finished()
         return NAV_QUIT
@@ -711,7 +713,7 @@ class WindowNodeStatus(NodeGroupWindow):
                         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
                         if pluginActions:
                            pluginActions.plugins_add(nodeName)
-                        myNodeInfo.nodesInstalled.append([nodeName, macAddress])
+                        myNodeInfo.nodeList.append(nodeName)
                         del self.aNode
                     
                     if myNodeInfo.optionReplaceMode and discoveryCheck == False:

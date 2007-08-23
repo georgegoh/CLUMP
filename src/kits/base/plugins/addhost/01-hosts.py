@@ -16,11 +16,8 @@
 import os
 
 class AddHostPlugin:
-    def added(self, dbconn, nodename, info):
-        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
-
-    def removed(self, dbconn, nodename, info):
-        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
-
     def updated(self, dbconn, nodename, info):
+        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
+
+    def finished(self, dbconn, nodelist):
         os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
