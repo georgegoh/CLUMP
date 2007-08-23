@@ -83,6 +83,9 @@ msgstr "Delete"
 msgid "move_button"
 msgstr "Move"
 
+msgid "toggleview_button"
+msgstr "Toggle View"
+
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
 
