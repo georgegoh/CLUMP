@@ -84,6 +84,7 @@ class UnableToGenerateFileFromTemplateError(KusuError): pass
 class CannotMountKitMediaError(KusuError): pass
 class UnrecognizedKitMediaError(KusuError): pass
 class KitAlreadyInstalledError(KusuError): pass
+class InvalidKitInfoError(KusuError): pass
 class ComponentAlreadyInstalledError(KusuError): pass
 class KitNotInstalledError(KusuError): pass
 class InstallKitRPMError(KusuError): pass

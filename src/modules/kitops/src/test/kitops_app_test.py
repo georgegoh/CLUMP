@@ -99,6 +99,9 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
+        # skip until buildkit fixed to place kitinfo file inside kit RPM
+        raise SkipTest
+
         # we need to be root
         assertRoot()
 
@@ -433,6 +436,9 @@ class TestMetaKit:
         umountP.wait()
 
     def testAddMetaKit(self):
+        # skip until buildkit fixed to place kitinfo file inside kit RPM
+        raise SkipTest
+
         # we need to be root
         assertRoot()
 

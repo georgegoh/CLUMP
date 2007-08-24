@@ -25,6 +25,7 @@ from kusu.util.tools import cpio_copytree
 from kusu.util import rpmtool
 from kusu.buildkit import processKitInfo
 from kusu.util.errors import *
+from kusu.util.rpmtool import RPM
 # TODO: uncomment this to call repoman's refresh
 #from kusu.repoman.repofactory import RepoFactory
 
@@ -256,10 +257,28 @@ class KitOps:
         """
 
         availableKits = []
-        for kitinfo in self.mountpoint.walkfiles('kitinfo'):
-            location = kitinfo.abspath().dirname()
-            kit, components = processKitInfo(kitinfo)
-            availableKits.append((location, kit, components))
+        for kitrpm in self.mountpoint.walkfiles('kit-*.rpm'):
+            location = kitrpm.abspath().dirname()
+
+            # extract the kitrpm contents into a temporary directory
+            tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=self.tmpprefix))
+            rpm = RPM(str(kitrpm))
+            rpm.extract(tmpdir)
+
+            kitinfos = []
+            for kitinfo in tmpdir.walkfiles('kitinfo'):
+                kitinfos.append(kitinfo)
+
+            # only one kitinfo file permitted
+            if len(kitinfos) > 1:
+                raise InvalidKitInfoError, \
+                    'Found %d kitinfo files, only 1 expected' % len(kitinfos)
+
+            for kitinfo in kitinfos:
+                kit, components = processKitInfo(kitinfo)
+                availableKits.append((location, kit, components))
+
+            tmpdir.rmtree()
 
         if not availableKits:
             self.unmountMedia()

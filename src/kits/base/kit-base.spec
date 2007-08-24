@@ -34,10 +34,12 @@ information container for the database.
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
+kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{name}/%{version}/noarch
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
 mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit
+mkdir -p $kitinfodir
 
 /usr/bin/install -m 444 %{_topdir}/docs/index.html    $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
@@ -47,6 +49,7 @@ mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit
 /usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py    $plugdir/genconfig
 /usr/bin/install -m 444 %{_topdir}/plugins/ngedit/*.py      $plugdir/ngedit
 
+/usr/bin/install -m 444 %{_topdir}/kitinfo $kitinfodir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -56,11 +59,30 @@ rm -rf $RPM_BUILD_ROOT
 /depot/www/kits/%{name}/%{version}/index.html
 /depot/www/kits/%{name}/%{version}/readme.html
 /depot/www/kits/%{name}/%{version}/COPYING
+/depot/kits/%{name}/%{version}/noarch/kitinfo
 
 # plugins
-/opt/kusu/lib/plugins/addhost/*.py
-/opt/kusu/lib/plugins/genconfig/*.py
-/opt/kusu/lib/plugins/ngedit/*.py
+/opt/kusu/lib/plugins/addhost/00-boothost.py
+/opt/kusu/lib/plugins/addhost/01-hosts.py
+/opt/kusu/lib/plugins/addhost/02-dnsreverse.py
+/opt/kusu/lib/plugins/addhost/03-dnszone.py
+/opt/kusu/lib/plugins/addhost/04-dhcp.py
+/opt/kusu/lib/plugins/addhost/05-hostspdsh.py
+/opt/kusu/lib/plugins/addhost/06-hostsequiv.py
+/opt/kusu/lib/plugins/genconfig/__init__.py
+/opt/kusu/lib/plugins/genconfig/apache_conf.py
+/opt/kusu/lib/plugins/genconfig/debug.py
+/opt/kusu/lib/plugins/genconfig/dhcpd.py
+/opt/kusu/lib/plugins/genconfig/hostsequiv.py
+/opt/kusu/lib/plugins/genconfig/hostspdsh.py
+/opt/kusu/lib/plugins/genconfig/hosts.py
+/opt/kusu/lib/plugins/genconfig/named.py
+/opt/kusu/lib/plugins/genconfig/nodes.py
+/opt/kusu/lib/plugins/genconfig/reverse.py
+/opt/kusu/lib/plugins/genconfig/zone.py
+/opt/kusu/lib/plugins/ngedit/01-component-base-installer.py
+/opt/kusu/lib/plugins/ngedit/02-component-base-installer.py
+/opt/kusu/lib/plugins/ngedit/03-component-base-node.py
 %exclude /opt/kusu/lib/plugins/addhost/*.py?
 %exclude /opt/kusu/lib/plugins/genconfig/*.py?
 %exclude /opt/kusu/lib/plugins/ngedit/*.py?
