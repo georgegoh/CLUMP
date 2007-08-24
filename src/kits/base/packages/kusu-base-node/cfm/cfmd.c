@@ -46,12 +46,13 @@
 #define UNIX 1
 
 #ifdef UNIX
-#define CFM_SEQUENCE  "/opt/kusu/etc/.sequence.client"
+#define CFM_SEQUENCE  "/etc/.cfm.client.sequence"
 #define CFM_PROFILE_NII "/etc/profile.nii"
 #endif
 
 #define UPDATEFILE 1
 #define UPDATEPACKAGE 2
+#define FORCEFILES 4            /* Force the files to be updated */
 
 
 /*
@@ -174,7 +175,7 @@ int main(int argc, char* argv[])
       /* No installer list available!  Revert to the NII installer */
       if(getNiiInstallers(&dpack))
 	{
-	  dpack.type = UPDATEFILE | UPDATEPACKAGE ;
+	  dpack.type = UPDATEFILE | UPDATEPACKAGE | FORCEFILES ;
 	  cfmLog(LOG_DEBUG, "Using NII host: %s\n", dpack.installers[0]) ;
 	  cfmLog(LOG_DEBUG, "On startup update type = %i\n", dpack.type) ;
 	  runUpdate(&dpack) ;

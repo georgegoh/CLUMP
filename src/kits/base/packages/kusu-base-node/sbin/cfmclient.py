@@ -25,6 +25,8 @@
 
 UPDATEFILE    = 1
 UPDATEPACKAGE = 2
+FORCEFILES    = 4
+
 
 # Set DEBUG to 1 to see debugging info in /tmp/cfm.log
 DEBUG = 0
@@ -476,11 +478,11 @@ class CFMClient:
 
     def __setupForYum(self):
         """__setupForYum  - Make a yum.conf pointing to the installer that is closest"""
-        dirname = 'Redhat'
+        dirname = 'Server'
         if self.ostype[:6] == 'fedora':
-            dirname = 'Fedora'
+            dirname = 'Fedora/RPMS'
         if self.ostype[:4] == 'rhel' :
-            dirname = 'Redhat'
+            dirname = 'Server'
         if self.ostype[:6] == 'centos':
             dirname = 'CentOS'
 
@@ -494,7 +496,7 @@ class CFMClient:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=%s - Base\n'
-                'baseurl=http://%s/repos/%s/%s/RPMS/\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
+                'baseurl=http://%s/repos/%s/%s/\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
                 )
 
         fp.write(out)
@@ -616,11 +618,13 @@ class CFMClient:
         return (fn, action)
 
 
-    def __findOlderFiles(self):
+    def __findOlderFiles(self, force=0):
         """__findOlderFiles  - This function will read the cfmfilelst, and
         locate files in that list that are older than the timestamp in the
         file, then populate the self.newfiles with the list of files to
-        update."""
+        update.  If the force option is provided and is non-zero then all
+        files will be updated.  This is to deal with newly installed nodes
+        where the timestamp on the files is always newer then the CFM file."""
         try:
             filep = open(self.cfmfilelst, 'r')
 
@@ -654,6 +658,11 @@ class CFMClient:
                 if action != '':
                     fn = filename[:-(len(action) + 1)]
 
+                # Force the file installation
+                if force != 0:
+                    self.newfiles.append([filename, user, group, mode, action, md5sum])
+                    continue
+                
                 # Test to see if it's newer
                 if os.path.exists(fn):
                     mtime = os.path.getmtime(fn)
@@ -740,13 +749,13 @@ class CFMClient:
                 os.unlink('%s.ORIG' % self.packagelst)
         
 
-    def updateFiles (self):
+    def updateFiles (self, force):
         """updatefiles - Update files"""
         self.log("Updating Files\n")
         # Update the package list.
         attr = (self.cfmfilelst, 'root', 'root', 0600)
         self.__getFile('cfmfiles.lst', attr, 1)
-        self.__findOlderFiles()
+        self.__findOlderFiles(force)
         self.__installNewFiles()
         if len(self.newfiles):
             self.__runPlugins()
@@ -755,15 +764,45 @@ class CFMClient:
     def run (self):
         """run - Entry point for CFM client"""
         self.parseargs()
-        self.setupNIIVars()
+        if self.installers[0] != 'self':
+            self.setupNIIVars()
+        else:
+            # This is the installer to try the database
+            self.ngid = 1
+            try:
+                from kusu.core.db import KusuDB
+            except:
+                print "Database modules are unavailable!"
+                sys.exit(-1)
+
+            db = KusuDB()
+            db.connect('kusudb', 'apache')
+            query = ('select repos.repoid, repos.ostype from repos, nodegroups where nodegroups.ngid=1 and nodegroups.repoid=repos.repoid')
+            try:
+                db.execute(query)
+                data = db.fetchone()
+            except:
+                print "Failed to connect to database!"
+                sys.exit(-1)
+                
+            self.repoid = data[0]
+            self.ostype = data[1]
+            self.CFMBaseDir = db.getAppglobals('CFMBaseDir')
+            
         global UPDATEFILE
         global UPDATEPACKAGE
+        global FORCEFILES
         if not self.installers or not self.type:
             print "Usage:  {cmd} -t [1|2|3] -i {Installer list}"
             sys.exit(-1)
+
+        force = 0
+        if self.type & FORCEFILES:
+            self.log("INFO:  Forcing update of all files.\n")
+            force = 1
             
         if self.type & UPDATEFILE:
-            self.updateFiles()
+            self.updateFiles(force)
 
         if self.type & UPDATEPACKAGE:
             self.updatePackages()
