@@ -374,7 +374,7 @@ class AddHostPlugin:
         """virtual"""
         pass
     
-    def finish(self, dbconn, nodelist):
+    def finished(self, dbconn, nodelist):
         """virtual"""
         pass
     

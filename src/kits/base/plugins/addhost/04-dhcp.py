@@ -16,6 +16,6 @@
 import os
 
 class AddHostPlugin:
-    def finished(self, dbconn):
+    def finished(self, dbconn, nodelist):
 	os.system("/opt/kusu/bin/genconfig dhcpd > /etc/dhcpd.conf")
 	os.system("/etc/init.d/dhcpd restart")
