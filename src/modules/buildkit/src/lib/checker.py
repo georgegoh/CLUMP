@@ -65,7 +65,7 @@ class AutotoolsValidator(PackageProfileValidator):
 
     def __init__(self, obj):
         super(AutotoolsValidator, self).__init__(obj)
-        self.attributes = ['filename', 'installroot', 'version', 'release']
+        self.attributes = ['filename', 'installroot', 'version']
 
 
 class SrpmValidator(PackageProfileValidator):
