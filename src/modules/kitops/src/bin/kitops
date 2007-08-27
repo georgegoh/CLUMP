@@ -8,7 +8,6 @@
 
 import sys
 import os
-import string
 from path import path
 from optparse import SUPPRESS_HELP
 
@@ -110,18 +109,20 @@ class KitOpsApp(KusuApp):
             sys.exit(1)
 
         if options.action == 'add':
-            if not options.media:
-                sys.stderr.write('FIXME: need to specify -m flag\n')
-                sys.exit(123)
-                #media_choices = self.autoDetectMedia()
+            kit_media = options.media
+            if not kit_media:
+                media_choices = self.autoDetectMedia()
                 #found_kits = sorted(media_choices.keys())
 
-                #if len(found_kits) == 1:
-                #    kit_media = media_choices[found_kits[0]]
-                #else:
-                #    kit_media = selectKitMedia(media_choices)
-            else:
-                kit_media = options.media
+                if len(media_choices) == 1:
+                    kit_media = media_choices.keys()[0]
+                else:
+                    kit_media = selectKitMedia(media_choices)
+
+            # to indicate which kit to install from a metakit
+            self.kit_name = options.kitname
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
 
             koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
@@ -210,6 +211,9 @@ class KitOpsApp(KusuApp):
         elif kits:
             # we cannot identify the distro -- treat as ordinary kit
             kitError = False
+
+            kits = self.selectKits(kits)
+
             for kit in kits:
                 try:
                     self.koinst.addKit(kit)
@@ -263,7 +267,7 @@ class KitOpsApp(KusuApp):
 
             print "Please insert next disk if installing from phys. media NOW"
             res = raw_input('(URI for next ISO | blank if phys. media | N to finish): ')
-            res = string.strip(res)
+            res = res.strip()
             if res == 'N':
                 break
       
@@ -337,7 +341,7 @@ class KitOpsApp(KusuApp):
         for cd in cdrom_list:
             try:
                 self.koinst.mountMedia(cd)
-                available_kits[self.koinst.determineKitName()] = cd
+                available_kits[cd] = self.koinst.getAvailableKits()
                 self.koinst.unmountMedia()
             except CannotMountKitMediaError:
                 pass
@@ -347,7 +351,7 @@ class KitOpsApp(KusuApp):
 
         # at this point, we cannot find any kits
         kl.debug('Kit media neither specified nor found')
-        sys.stderr.write('Kit media neither specified nor found')
+        sys.stderr.write('Kit media neither specified nor found\n')
         sys.exit(EKITLOC_FAIL)
 
     def selectKitMedia(self, choices):
@@ -355,25 +359,76 @@ class KitOpsApp(KusuApp):
         Present a list of kits for the user to select from.
         """
 
-        choice_names = sorted(choices.keys())
-        choice_list = {}
-        for i in range(len(choice_names)):
-            choice_list[i + 1] = choice_name[i]
-
+        choice_list = []
         while 1:
-            for choice in choice_list:
-                print '[%d]: %s' % (choice, choice_list[choice])
+            for num_media in enumerate(sorted(choices)):
+                choice_list.append(num_media[1])
+                print '[%d] (%s) Kits:' % (num_media[0], num_media[1])
 
-            res = raw_input('Select kit to add, 0 or ENTER to quit:')
-            res = string.strip(res)
-            if res == '' or res == '0':
-                kl.debug('No kit selected, terminating')
+                for kit in choices[num_media[1]]:
+                    print '     %s-%s-%s' % (kit[1]['name'], kit[1]['version'],
+                                             kit[1]['arch'])
+
+            res = raw_input('Select media to add from or ENTER to quit: ')
+            res = res.strip()
+            if res == '':
+                kl.debug('No media selected, terminating')
+                self.koinst.unmountMedia()
                 sys.exit(0)
 
             try:
-                if int(res) in choice_list:
-                    return choices[int(res)]
-            except ValueError:
+                return choices[choice_list[int(res)]]
+            except ValueError, IndexError:
+                pass
+
+    def selectKits(self, kits):
+        """
+        From a list of kits found inside a metakit, select kits to install.
+        """
+
+        if len(kits) == 1:
+            return kits
+
+        if self.kit_name is not None:
+            for kit in kits:
+                if self.kit_name == kit[1]['name']:
+                    if self.kit_ver is not None \
+                        and self.kit_ver != kit[1]['version']:
+                        continue
+                    if self.kit_arch is not None \
+                        and self.kit_arch != kit[1]['arch']:
+                        continue
+                    kl.debug('Kit to install provided on command line: %s', kit)
+                    return [kit]
+            kl.debug('No kit found matching criteria: name: %s, version: %s, ' +
+                     'arch: %s', self.kit_name, self.kit_ver, self.kit_arch)
+            return []
+
+        choice_list = []
+        while 1:
+            for num_kits in enumerate(sorted(kits)):
+                print '[%d]: %s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
+                                          num_kits[1][1]['version'],
+                                          num_kits[1][1]['arch'])
+
+            res = raw_input('Provide a comma separated list of kits ' +
+                            "to install,\n'all' to install all kits " +
+                            'or ENTER to quit: ')
+            res = [x.strip() for x in res.split(',')]
+            if res == ['']:
+                kl.debug('No kits selected, terminating')
+                self.koinst.unmountMedia()
+                sys.exit(0)
+
+            if res == ['all']:
+                return kits
+
+            try:
+                selected_kits = []
+                for x in res:
+                    selected_kits.append(kits[int(x)])
+                return selected_kits
+            except ValueError, IndexError:
                 pass
 
     def printHelp(self):

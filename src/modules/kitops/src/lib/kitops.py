@@ -135,7 +135,6 @@ class KitOps:
         
         #check if this kit is already installed - by name and version
         if self.checkKitInstalled(kit['name'], kit['version'], kit['arch']):
-            self.unmountMedia()
             raise KitAlreadyInstalledError, \
                     "Kit '%s-%s-%s' already installed" % \
                     (kit['name'], kit['version'], kit['arch'])
@@ -177,8 +176,8 @@ class KitOps:
                                         shell=True, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
                 o, e = rpmP.communicate()
+                kl.debug('Installing kit RPM stdout: %s, stderr: %s', o, e)
             except Exception, e:
-                self.unmountMedia()
                 raise InstallKitRPMError, \
                         'Kit RPM installation failed\n%s' % e
 
@@ -274,6 +273,13 @@ class KitOps:
                 raise InvalidKitInfoError, \
                     'Found %d kitinfo files, only 1 expected' % len(kitinfos)
 
+            if len(kitinfos) == 0: # no kitinfo file, revert to legacy discovery
+                kl.info('No kitinfo found in %s, determining metadata ' +
+                        'from RPMs directly', kitrpm)
+                kit, components = self.inspectRPMs(kitrpm)
+                if kit:
+                    availableKits.append((location, kit, components))
+
             for kitinfo in kitinfos:
                 kit, components = processKitInfo(kitinfo)
                 availableKits.append((location, kit, components))
@@ -284,6 +290,55 @@ class KitOps:
             self.unmountMedia()
 
         return availableKits
+
+    def inspectRPMs(self, kitrpm):
+        """
+        Determine kit and component info by inspecting RPMs.
+        """
+
+        kit = {}
+        components = []
+
+        #extract some RPMTAG info
+        kitinst = PackageFactory(str(kitrpm))
+        kit['version'] = kitinst.getVersion()
+        kit['release'] = kitinst.getRelease()
+        kit['pkgname'] = kitinst.getName()
+        kit['name'] = kitinst.getName()
+        kit['arch'] = kitinst.getArch()
+        kit['description'] = kitinst.getSummary()
+
+        # unknowns
+        kit['dependencies'] = []
+        kit['license'] = ''
+        kit['scripts'] = []
+        kit['removable'] = True
+
+        if kit['name'].startswith('kit-'):
+            kit['name'] = kit['name'][len('kit-'):]
+
+        complist = kitrpm.abspath().dirname().glob('component-*.rpm')
+        for comploc in complist:
+            comp = {}
+            compinst = PackageFactory(str(comploc))
+            comp['compversion'] = compinst.getVersion()
+            comp['comprelease'] = compinst.getRelease()
+            comp['pkgname'] = compinst.getName()
+            comp['name'] = compinst.getName()
+            comp['arch'] = compinst.getArch()
+            comp['description'] = compinst.getSummary()
+
+            # unknowns
+            comp['ngtypes'] = []
+            comp['ostype'] = ''
+            comp['osversion'] = ''
+
+            if comp['name'].startswith('component-'):
+                comp['name'] = comp['name'][len('component-'):]
+
+            components.append(comp)
+
+        return kit, components
 
     def checkKitInstalled(self, kitname, kitver, kitarch):
         """

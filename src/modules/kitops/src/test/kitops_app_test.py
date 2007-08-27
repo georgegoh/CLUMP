@@ -64,7 +64,7 @@ class TestBaseKit:
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
-        self.kit_iso = 'mock-kit-base-0.1-1.noarch.iso'
+        self.kit_iso = 'mock-kit-base-0.1-0.noarch.iso'
         downloadFiles(self.kit_iso)
 
         self.kit = test_kits_path / self.kit_iso
@@ -99,9 +99,6 @@ class TestBaseKit:
         umountP.wait()
 
     def testAddKit(self):
-        # skip until buildkit fixed to place kitinfo file inside kit RPM
-        raise SkipTest
-
         # we need to be root
         assertRoot()
 
@@ -442,12 +439,13 @@ class TestMetaKit:
         # we need to be root
         assertRoot()
 
-        addP = subprocess.Popen('kitops -a -m %s %s -p %s' %
-                                (self.kit, dbinfo_str, self.temp_root),
-                                shell=True)
+        add_echo = "all"
+        cmd = 'echo "%s" | kitops -a -m %s ' % (add_echo, self.kit) + \
+              '%s -p %s &> /dev/null' % (dbinfo_str, self.temp_root)
+        addP = subprocess.Popen(cmd, shell=True)
         rv = addP.wait()
 
-        assert rv == 0, 'kitops returned error: %s' % rv
+        assert rv == 0, 'kitops returned error: %s, command: %s' % (rv, cmd)
 
         rpms = {}
         for x in xrange(self.kit_members):

@@ -29,7 +29,7 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
 tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
 test_kits_path = tmp_prefix / 'kitops_test_isos'
-test_kits_base = 'mock-kit-base-0.1-1.noarch.iso'
+test_kits_base = 'mock-kit-base-0.1-0.noarch.iso'
 test_kits_fc6i386_1 = 'mock-FC-6-i386-disc1.iso'
 test_kits_fc6i386_2 = 'mock-FC-6-i386-disc2.iso'
 
@@ -106,9 +106,6 @@ class TestKitOps:
             'kitops.getOSDist() does not check out for kit %s' % kit
 
     def testAddKitPrepareISO(self):
-        # skip until buildkit fixed to place kitinfo file inside kit RPM
-        raise SkipTest
-
         assertRoot()
 
         needKit(test_kits_base)
@@ -130,9 +127,6 @@ class TestKitOps:
                 'Mount point %s is not a mount point' % koinst_mountpoint
 
     def testAddKitPrepareMountPoint(self):
-        # skip until buildkit fixed to place kitinfo file inside kit RPM
-        raise SkipTest
-
         assertRoot()
 
         needKit(test_kits_base)
@@ -155,9 +149,6 @@ class TestKitOps:
                 'Mount point %s is not a mount point' % koinst_mountpoint
 
     def testAddKitPrepareNetISO(self):
-        # skip until buildkit fixed to place kitinfo file inside kit RPM
-        raise SkipTest
-
         assertRoot()
 
         self.koinst.kitmedia = test_kits_url + test_kits_base

@@ -94,9 +94,9 @@ class KickstartFromNIIProfile(object):
             profile.
         """
         
-        # rootpw is a randomly generated string since cfm will refresh /etc/passwd and /etc/shadow files
-        #self.rootpw = getRandomSeq()
-        self.rootpw = 'system'
+        # rootpw is a randomly generated string since cfm will
+        # refresh /etc/passwd and /etc/shadow files
+        self.rootpw = getRandomSeq()
         self.tz = ni.appglobal['Timezone_zone']
         self.tz_utc = translateBoolean(ni.appglobal['Timezone_utc'])
         self.lang = ni.appglobal['Language']
