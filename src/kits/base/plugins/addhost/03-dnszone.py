@@ -18,7 +18,7 @@ from kusu.addhost import *
 import kusu.core.db
  
 class AddHostPlugin(AddHostPluginBase):
-    def updated(self, nodename, info):
+    def updated(self):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
         os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
 

@@ -22,29 +22,29 @@
 """ AddHostPluginBase: These class methods may be overwriteable as needed """
 
 class AddHostPluginBase:
-      def __init__(self, dbconn):
-          self.dbconn = dbconn
+    def __init__(self, dbconn):
+        self.dbconn = dbconn
 
-      def finished(self, nodelist):
-          """virtual"""
-          pass
+    def enabled(self):
+        """virtual"""
+        return True
 
-      def added(self, nodename, info):
-          """virtual"""
-          pass
+    def added(self, nodename, info):
+        """virtual"""
+        pass
 
-      def deleted(self, nodename, info):
-          """virtual"""
-          pass
+    def deleted(self, nodename, info):
+        """virtual"""
+        pass
 
-      def replaced(self, nodename, info):
-          """virtual"""
-          pass
+    def replaced(self, nodename, info):
+        """virtual"""
+        pass
 
-      def updated(self):
-          """virtual"""
-          pass
+    def updated(self):
+        """virtual"""
+        pass
 
-      def enabled(self):
-          """virtual"""
-          return True
+    def finished(self, nodelist):
+        """virtual"""
+        pass
