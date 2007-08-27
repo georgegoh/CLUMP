@@ -16,12 +16,15 @@ from kusu.util.testing import *
 from tempfile import mkstemp
 from sets import Set
 from nose import SkipTest
+from socket import gethostname
 
 class TestDiskProfile:
     """Test cases for the DiskProfile class.
        Create an empty loopback device.
     """
     def setup(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
         size = 1024 * 1024 * 1024
         self.loopback, self.tmpfile = createLoopbackDevice(size)
         self.dp = DiskProfile(True, basename(self.loopback))
@@ -159,3 +162,29 @@ sysfs                       /sys        sysfs   defaults        0 0
         assert dev_map['/dev/VolGroup00/LogVol00'] == '/', "Key and Value don't match."
         assert dev_map['/dev/sda6'] == '/hd6', "Key and Value don't match."
         assert dev_map['LABEL=/boot'] == '/boot', "Key and Value don't match."
+
+class TestLVM:
+    """
+        Test for LVM parts. ONLY RUNS ON DIZZY.
+        Assumptions for dizzy:
+            - Has an unused /dev/sdb with at least 10GB.
+    """
+    def setup(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
+        self.dp = DiskProfile(True, probe_fstab=False)
+        assert self.dp.disk_dict.has_key('sdb'), "dizzy must have a /dev/sdb!"
+        sdb = self.dp.disk_dict['sdb']
+        size_GB = sdb.length * sdb.sector_size / 1024 / 1024 / 1024
+        assert size_GB >= 10, "/dev/sdb must be larger than 10GB."
+
+    def makePartitions(self): 
+        self.dp.newPartition('sdb', 100, False, 'ext3', '/boot')
+        self.dp.newPartition('sdb', 1000, False, 'swap', None)
+        pv = self.dp.newPartition('sdb', 8000, False, 'physical volume', None)
+
+        nosey = self.dp.newLogicalVolumeGroup('NOSEY', '32M', [pv])
+        self.dp.newLogicalVolume('PICKY', nosey, size_MB=3000, fs_type='ext3',
+                                 mountpoint='/')
+        self.dp.newLogicalVolume('BOGEY', nosey, size_MB=4000, fs_type='ext3',
+                                 mountpoint='/data', fill=True)
