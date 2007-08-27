@@ -362,7 +362,7 @@ Node: node0000
 
         
         # validate disk schema
-        dp = DiskProfile(fresh=True)
+        #dp = DiskProfile(fresh=True)
         #adaptedSchema = adaptNIIPartition(ni.partitions, dp)
         #schema = {'disk_dict': {1: {'partition_dict': {1: {'fill': False,
         #                                          'fs': u'ext3',

@@ -23,6 +23,7 @@ from kusu.installer.defaults import LVMGroup as SchemaLVMGroup
 from kusu.installer.defaults import LVMLogicalVolume as SchemaLVMLogicalVolume
 from kusu.installer.defaults import DiskCollection, LVMCollection, PartitionSchema
 from kusu.util.structure import Struct
+from socket import gethostname
 
 class FakePartition(object):
     def __init__(self):
@@ -37,6 +38,8 @@ class TestNIIPartition:
     """
 
     def setUp(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
         self.tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
         niidata = """\
 <?xml version="1.0"?>
