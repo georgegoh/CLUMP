@@ -14,12 +14,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+from kusu.addhost import *
 
-class AddHostPlugin:
-    def added(self, dbconn, nodename, info):
+class AddHostPlugin(AddHostPluginBase):
+    def added(self, nodename, info):
 	os.system("/opt/kusu/sbin/boothost -n %s" % nodename)
 
-    def removed(self, dbconn, nodename, info):
+    def removed(self, nodename, info):
 	try:
              testnode = info[nodename][0]["macaddress"]
 	except:

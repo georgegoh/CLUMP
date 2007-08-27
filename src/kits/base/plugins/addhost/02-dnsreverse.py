@@ -13,16 +13,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import kusu.core.db
 import os
+import kusu.core.db
+from kusu.addhost import *
 
-class AddHostPlugin:
-    def added(self, dbconn, nodename, info):
+class AddHostPlugin(AddHostPluginBase):
+    def added(self, nodename, info):
         if info:
-            dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
+            self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
 
-            networks = dbconn.fetchall()
+            networks = self.dbconn.fetchall()
 
             # Run genconfig for each network
             for net in networks:
@@ -30,9 +31,9 @@ class AddHostPlugin:
 
     def removed(self, dbconn, nodename, info):
         if info:
-            dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
+            self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
-            networks = dbconn.fetchall()
+            networks = self.dbconn.fetchall()
 
             # Run genconfig for each network
             for net in networks:

@@ -13,14 +13,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import kusu.core.db
 import os
+from kusu.addhost import *
+import kusu.core.db
  
-class AddHostPlugin:
-    def updated(self, dbconn, nodename, info):
-        dnsZone = dbconn.getAppglobals('DNSZone')
+class AddHostPlugin(AddHostPluginBase):
+    def updated(self, nodename, info):
+        dnsZone = self.dbconn.getAppglobals('DNSZone')
         os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
 
-    def finished(self, dbconn, nodelist):
-        dnsZone = dbconn.getAppglobals('DNSZone')
+    def finished(self, nodelist):
+        dnsZone = self.dbconn.getAppglobals('DNSZone')
         os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)

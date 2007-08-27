@@ -14,8 +14,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+from kusu.addhost import *
 
-class AddHostPlugin:
-    def finished(self, dbconn, nodelist):
-	os.system("/opt/kusu/bin/genconfig dhcpd > /etc/dhcpd.conf")
-	os.system("/etc/init.d/dhcpd restart")
+class AddHostPlugin(AddHostPluginBase):
+      def finished(self, nodelist):
+	   os.system("/opt/kusu/bin/genconfig dhcpd > /etc/dhcpd.conf")
+	   os.system("/etc/init.d/dhcpd restart")

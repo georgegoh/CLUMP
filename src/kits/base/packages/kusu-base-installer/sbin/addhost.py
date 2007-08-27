@@ -106,9 +106,18 @@ class AddHostApp(KusuApp):
         Loads all plugins for Add hosts. """
         
         global pluginActions
+        global database
         pluginList = []
         pluginInstances = []
         moduleInstance = None
+
+        # Make a connection to the database:
+        try:
+            database.connect()
+        except:
+            print self._("DB_Query_Error\n")
+            sys.exit(-1)
+
         if not os.path.exists(myNodeInfo.pluginLocation):
             # No plugins found the tool should still work even without any plugins.
             return
@@ -131,10 +140,11 @@ class AddHostApp(KusuApp):
         # Create instances of each new plugin and store the instances.
         for thisModule in moduleInstances:
              try:
-                  thisPlugin = thisModule.AddHostPlugin()
-                  pluginInstances.append(thisPlugin)
+                 thisPlugin = thisModule.AddHostPlugin(database)
+	         if thisPlugin.enabled():
+                    pluginInstances.append(thisPlugin)
              except:
-                  print kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule)
+                 print kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED." % thisModule)
         pluginActions = PluginActions(pluginInstances)
     
     def nxor(self, *args):
@@ -150,7 +160,6 @@ class AddHostApp(KusuApp):
         screenList = []
 
         global kusuApp
-        
         
         haveInterface = False
         haveNodegroup = False
@@ -251,6 +260,8 @@ class AddHostApp(KusuApp):
                      myNodeInfo.nodeList.append(nodeName)
                  #else:
                      #print "Duplicate: %s, Ignoring" % macaddr
+            if pluginActions:
+                pluginActions.plugins_finished()
             sys.exit(0)
               
         if self._options.macfile:
@@ -366,42 +377,11 @@ class AddHostApp(KusuApp):
             if pluginActions:
                pluginActions.plugins_finished()
  
-""" AddHostPlugin class
-    This class is a virtual used to be implemented by plugins """
-
-class AddHostPlugin:
-    def __init__(self):
-        """virtual"""
-        pass
-    
-    def finished(self, dbconn, nodelist):
-        """virtual"""
-        pass
-    
-    def added(self, dbconn, nodename, info):
-        """virtual"""
-        pass
-    
-    def deleted(self, dbconn, nodename, info):
-        """virtual"""
-        pass
-    
-    def replaced(self, dbconn, nodename, info):
-        """virtual"""
-        pass
-        
-    def updated(self, dbconn):
-        """virtual"""
-        pass
-    
 class PluginActions(object, KusuApp):
     def __init__(self, pluginInstances):
         KusuApp.__init__(self)
         self._pluginInstances = pluginInstances
-        self._dbconnection = KusuDB()  # Read only database connection
         self._NodeHandler = kusu.nodefun.NodeFun()
-        self._kusuApp = KusuApp()
-        self._dbconnection.connect()
         
     # Plugin call actions
     def plugins_add(self, nodename):
@@ -413,13 +393,10 @@ class PluginActions(object, KusuApp):
             print self._kusuApp._("add_primary_installer_error\n")
             return
             
-        #print "DEBUG: Calling added() method from plugins"
         info = self._NodeHandler.getNodeInformation(nodename)
 
         for plugin in self._pluginInstances:
-             # Does this AddHostPlugin instance have a added() method? If so, execute it.
-             if callable(getattr(plugin, "added", None)):
-                 plugin.added(self._dbconnection, nodename, info)
+            plugin.added(nodename, info)
          
     def plugins_removed(self, nodename):
         """plugins_removed(nodename)
@@ -430,9 +407,7 @@ class PluginActions(object, KusuApp):
         if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._NodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
-                 # Does this AddHostPlugin instance have a removed() method? If so, execute it.
-                 if callable(getattr(plugin, "removed", None)):
-                     plugin.removed(self._dbconnection, nodename, info)
+                plugin.deleted(nodename, info)
         else:
             print self._kusuApp._("remove_primary_installer_error\n")
             
@@ -445,9 +420,7 @@ class PluginActions(object, KusuApp):
         if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._NodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
-                 # Does this AddHostPlugin instance have a replaced() method If so, execute it.
-                 if callable(getattr(plugin, "replaced", None)):
-                     plugin.replace(self._dbconnection, info)
+                plugin.replace(info)
         else:
             print self._kusuApp._("replace_primary_installer_error\n")
             sys.exit(-1)
@@ -459,9 +432,7 @@ class PluginActions(object, KusuApp):
 	global myNodeInfo
         print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
-             # Does this AddHostPlugin instance have a finished() method If so, execute it.
-             if callable(getattr(plugin, "finished", None)):
-                 plugin.finished(self._dbconnection, myNodeInfo.nodeList)
+            plugin.finished(myNodeInfo.nodeList)
     
     def plugins_updated(self):
         """plugins_updated()
@@ -469,9 +440,7 @@ class PluginActions(object, KusuApp):
         """
         print "DEBUG: Calling updated() method from plugins"
         for plugin in self._pluginInstances:
-             # Does this AddHostPlugin instance have a update() method If so, execute it.
-             if callable(getattr(plugin, "update", None)):
-                 plugin.updated(self._dbconnection)
+            plugin.updated()
 
 class NodeGroupWindow(USXBaseScreen):
 

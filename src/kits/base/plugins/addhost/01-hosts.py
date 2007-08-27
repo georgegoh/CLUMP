@@ -14,10 +14,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+from kusu.addhost import *
 
-class AddHostPlugin:
-    def updated(self, dbconn, nodename, info):
+class AddHostPlugin(AddHostPluginBase):
+    def updated(self, nodename, info):
         os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
 
-    def finished(self, dbconn, nodelist):
+    def finished(self, nodelist):
         os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
