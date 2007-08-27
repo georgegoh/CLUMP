@@ -127,6 +127,8 @@ class FakeMountableDevice:
 class TestReadFstab:
     """Test cases for reading fstab."""
     def setUp(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
         fd, self.fstab_path = mkstemp(text=True)
         self.fstab = open(self.fstab_path, 'w')
         self.fstab.write("""# Test fstab, taken from my system
