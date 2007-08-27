@@ -143,8 +143,11 @@ class BaseUpdate:
         ko.setDB(self.db) 
         ko.setKitMedia(kitdir)
         kits = ko.addKitPrepare()
+
+        if len(kits) != 1:
+            raise UnrecognizedKitMediaError, "Unable to add update kit"    
+
         ko.addKit(kits[0])
-   
         return kits[0]
  
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
