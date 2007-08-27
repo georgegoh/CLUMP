@@ -35,7 +35,6 @@ class PartitionScreen(InstallerScreen):
     buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
 #    buttons = [_('New'), _('Delete')]#, _('RAID')]
     disk_profile = None
-    isCommitment = True
 
     def setCallbacks(self):
         """

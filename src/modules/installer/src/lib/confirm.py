@@ -26,6 +26,7 @@ class ConfirmScreen(InstallerScreen):
     profile = 'Confirm'
     msg = _('Please confirm the following:')
     buttons = [_('Restart Installation')]
+    isCommitment = True
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
