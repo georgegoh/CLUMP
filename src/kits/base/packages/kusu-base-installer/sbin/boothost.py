@@ -127,7 +127,7 @@ class boothost:
         except:
             self.errorMessage('DB_Query_Error\n')
             sys.exit(-1)
-y
+            
         repoid      = data[0]
         ksdevice    = data[1]
         ostype      = data[2].split('-')[0]
