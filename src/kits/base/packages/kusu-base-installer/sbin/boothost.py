@@ -144,10 +144,11 @@ y
                              (initrd, instip, instip, kickstart_file, ksdevice, kparams or ''))
         else:
             # Diskless and imaged do not care.  They can find the best one.
+            niihost = ""
             for line in self.installerIPs:
                 niihost = niihost + "%s," % line[0]
             niihost = niihost[:-1]
-            fp.write("        append initrd=%s niihost=%s %s\n" % (initrd, http_ip, kparams or ''))
+            fp.write("        append initrd=%s niihost=%s %s\n" % (initrd, niihost, kparams or ''))
 
         fp.close()
 
