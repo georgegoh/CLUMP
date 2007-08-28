@@ -27,7 +27,7 @@ import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun
-
+import kusu.ipfun
 
 version="-VERSION-"
 
@@ -36,10 +36,29 @@ class boothost:
     updatednodes = []    # This list will contain a list of the nodes acted on
                          # It is used to reduce the DB queries for the "-r"
     def __init__(self, gettext):
-        self.db = KusuDB()
+        self.db           = KusuDB()
         self.db.connect('kusudb', 'apache')
-        self.gettext = gettext
+        self.gettext      = gettext
+        self.passdata     = pwd.getpwnam('apache')     # Cache this for later
+        # Get the installers here so it can be cached for other hosts
+        self.installerIPs = []
+        query = ('select nics.ip, networks.subnet from nics, nodes, networks '
+                 'where nodes.nid=nics.nid and nics.netid=networks.netid '
+                 'and nodes.name=(select kvalue from appglobals where '
+                 'kname="PrimaryInstaller")')
         
+        try:
+            self.db.execute(query)
+            data = self.db.fetchall()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+        if not data:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+        for ipdata in data:
+            self.installerIPs.append(ipdata)
+
 
     def errorMessage(self, message, *args):
         """errorMessage - Output messages to STDERR with Internationalization.
@@ -70,24 +89,6 @@ class boothost:
         """mkPXEFile - Create a PXE boot file given the kernel, initrd and
         kparams.  If the localboot flag is true then the PXE file that is
         generated will attempt to boot from the local disk first."""
-        
-        # Get the IP of the primary installer
-        #query = ('select nics.ip from nics,nodes where nodes.nid=nics.nid '
-        #         'and nodes.name=(select kvalue from appglobals where '
-        #         'kname="PrimaryInstaller")')
-        #
-        #try:
-        #    self.db.execute(query)
-        #    data = self.db.fetchall()
-        #except:
-        #    self.errorMessage('DB_Query_Error\n')
-        #    sys.exit(-1)
-        #         
-        #niihost = ''
-        #if data:
-        #    for line in data:
-        #        niihost = niihost + "%s," % line[0]
-        #    niihost = niihost[:-1]
 
         newmac = '01-%s' % mac.replace(':', '-')
         filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',newmac)
@@ -97,27 +98,23 @@ class boothost:
             
         if localboot == True :
             fp.write("default localdisk\n")
+            fp.write("prompt 0\n")
+            fp.write("\nlabel localdisk\n")
+            fp.write("        localboot 0\n")
         else:
             fp.write("default Reinstall\n")
-
-        # ** FIX ME
-        # ** This query does not handle the case where there is more than one
-        # ** entry in the networks table for the same network/subnet mask
-        # ** This will have to be fixed (at some point).
-        query = ("SELECT nics.ip FROM nics, nodes, networks WHERE nodes.nid=nics.nid " +
-                 "AND networks.netid=nics.netid " +
-                 "AND networks.netid=(SELECT netid FROM nics WHERE mac='%s') " % mac +
-                 "AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')")
-        try:
-            self.db.execute(query)
-            data = self.db.fetchone()
-        except:
-            self.errorMessage('DB_Query_Error\n')
-            sys.exit(-1)
-
-        http_ip = data[0]
-
-        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype, nodegroups.installtype " + 
+            fp.write("prompt 0\n")
+            
+        fp.write("label Reinstall\n")
+        fp.write("        kernel %s\n" % kernel)
+            
+        # Determine which niihost to give to the node.
+        # If it is diskless or imaged, then just give it a list.  It will
+        # determine the best one to use.  If it is package based then
+        # Correlate the installers IP's with the nodes IP's.  Where they
+        # intersect use that IP as the niihost.
+        # Have:  self.installerIPs which is a list of primary installer IP's
+        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype, nodegroups.installtype, nics.ip " + 
                  "FROM nics, nodes, networks, nodegroups, repos " + 
                  "WHERE nodes.nid=nics.nid " + 
                  "AND nics.netid=networks.netid " +
@@ -130,33 +127,33 @@ class boothost:
         except:
             self.errorMessage('DB_Query_Error\n')
             sys.exit(-1)
-
-        repoid = data[0]
-        ksdevice = data[1]
-        ostype = data[2].split('-')[0]
+y
+        repoid      = data[0]
+        ksdevice    = data[1]
+        ostype      = data[2].split('-')[0]
         installtype = data[3]
-
-        fp.write("prompt 0\n")
-        fp.write("label Reinstall\n")
-        fp.write("        kernel %s\n" % kernel)
+        nodesip     = data[4]
 
         if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel']:
-            kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (http_ip, repoid, http_ip)
-            fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
-                     (initrd, http_ip, http_ip, kickstart_file, ksdevice, kparams or ''))
+            # Find the best IP address to use
+            for netdata in self.installerIPs:
+                instip, instsub = netdata
+                if kusu.ipfun.onNetwork(instip, instsub, nodesip):
+                    kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (instip, repoid, instip)
+                    fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
+                             (initrd, instip, instip, kickstart_file, ksdevice, kparams or ''))
         else:
+            # Diskless and imaged do not care.  They can find the best one.
+            for line in self.installerIPs:
+                niihost = niihost + "%s," % line[0]
+            niihost = niihost[:-1]
             fp.write("        append initrd=%s niihost=%s %s\n" % (initrd, http_ip, kparams or ''))
 
-        if localboot == True :
-            fp.write("\nlabel localdisk\n")
-            fp.write("        localboot 0\n")
-                
         fp.close()
 
         # The PXE file needs to be owned by apache, so the nodeboot.cgi can update it.
         os.chmod(filename, 0644)
-        passdata = pwd.getpwnam('apache')     # Might be more efficient to cache this
-        os.chown(filename, passdata[2], passdata[3])
+        os.chown(filename, self.passdata[2], self.passdata[3])
     
 
 
