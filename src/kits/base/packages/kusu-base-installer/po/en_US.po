@@ -248,6 +248,9 @@ msgstr "The -n option requires a Node group name"
 msgid "addhost_options_remove_required"
 msgstr "The -e option requires a node name"
 
+msgid "addhost_options_interface_options_needed"
+msgstr "The -i option requires the -n option also"
+
 msgid "options_invalid_nodegroup"
 msgstr "Not a valid node group. Please try again"
 
