@@ -240,10 +240,13 @@ msgid "addhost_options_invalid_interface"
 msgstr "Not a valid network interface. Please try again"
 
 msgid "addhost_options_macfile_options_needed"
-msgstr "The -f option requires the -i and -n options"
+msgstr "The -f option requires the -j and -n options"
 
 msgid "addhost_options_nodegroup_required"
 msgstr "The -n option requires a Node group name"
+
+msgid "addhost_options_remove_required"
+msgstr "The -e option requires a node name"
 
 msgid "options_invalid_nodegroup"
 msgstr "Not a valid node group. Please try again"
