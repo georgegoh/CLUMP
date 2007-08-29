@@ -374,6 +374,7 @@ class NodeFun(object, KusuApp):
                subnetNetwork = NICInfo[1]
                startIP = NICInfo[2]
                IPincrement = int(NICInfo[3])
+               ngGateway = NICInfo[4]
 
                while True:
                    if self.isIPUsed(startIP):
@@ -402,6 +403,7 @@ class NodeFun(object, KusuApp):
              subnetNetwork = NICInfo[1]
              self._newIPAddress = NICInfo[2]
              IPincrement = int(NICInfo[3])
+             ngGateway = NICInfo[4]
              
              while True:
                  if self.isIPUsed(self._newIPAddress):
@@ -411,7 +413,7 @@ class NodeFun(object, KusuApp):
 
              if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
                 # We're a DHCP/boot interface
-                if kusu.ipfun.onNetwork(installer_network, installer_subnet, subnetNetwork):
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False:
                    self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
                    self._writeDHCPLease(self._newIPAddress, macaddr)
                 else:
@@ -558,12 +560,12 @@ class NodeFun(object, KusuApp):
         The dictionary uses the device name as its key item[1]. """
         
         interfaceInfo = {}
-        self._dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc FROM \
+        self._dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc, networks.gateway FROM \
                                    networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s AND \
                                    networks.usingdhcp = 0" % self._nodeGroupType)
         data = self._dbReadonly.fetchall()
         for item in data:
-             interfaceInfo[item[1]] = "%d %s %s %s" % (item[0], item[2], item[3], item[4])
+             interfaceInfo[item[1]] = "%d %s %s %s %s" % (item[0], item[2], item[3], item[4], item[5])
         return interfaceInfo
 
     def findBootDevice(self, nodename):
