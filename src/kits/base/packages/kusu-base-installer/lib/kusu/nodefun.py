@@ -231,8 +231,8 @@ class NodeFun(object, KusuApp):
                   info["%s" % data[i][2]][i]['macaddress'] = data[i][5]
         return info
         
-    def addNode (self, macaddr, selectedinterface):
-        """newNode()
+    def addNode (self, macaddr, selectedinterface, installer=True):
+        """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
         
         self._nodeList, ngConflicts = self._getNodes()
@@ -300,12 +300,12 @@ class NodeFun(object, KusuApp):
                  if self._nodeName in self._nodeList:
                      self._rankCount += 1
                  else:
-                     self._createNodeEntry(macaddr, selectedinterface)
+                     self._createNodeEntry(macaddr, selectedinterface, installer)
                      return self._nodeName
 
         # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
         self._hostNameParse()
-        self._createNodeEntry(macaddr, selectedinterface)
+        self._createNodeEntry(macaddr, selectedinterface, installer)
         return self._nodeName
 
     def deleteNode(self, nodename):
@@ -336,25 +336,67 @@ class NodeFun(object, KusuApp):
             return False
         return True
         
-    def _createNodeEntry(self, macaddr, selectedinterface):
+    def _createNodeEntry(self, macaddr, selectedinterface, installer=True):
         """createNodeEntry()
         Create a node in the database. """
         
-        self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" % 
-        (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
-        
+        flag = 0
+        installer_subnet = None
+        installer_network = None
+
+        self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" %
+                              (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
+ 
         nodeID = self.getNodeID(self._nodeName)
         interfaces = self._findInterfaces()
 
-        # Get the installer's subnet and network information.
-        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                  nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
-                                  AND networks.device='%s'" % selectedinterface)
+        if installer:
+           # Get selected installer's subnet and network information.
+           self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
+                                     AND networks.device='%s'" % selectedinterface)
+        else:
+           # Get the installer's subnet and network information.
+           self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')") 
+
+        if installer:
+           # Use the gui selected network interface as the installer's interface. 
+           installer_subnet, installer_network = self._dbReadonly.fetchone()
+        else:
+           # List ALL of subnet/networks of installer, since we need to find it.
+           installerInfo = self._dbReadonly.fetchall()
      
-        installer_subnet, installer_network = self._dbReadonly.fetchone()
-       
-        # Iterate though list of interface devices.
+        if not installer: 
+           for subnet, network in installerInfo:
+               NICInfo = interfaces[selectedinterface].split()
+               networkID = NICInfo[0]
+               subnetNetwork = NICInfo[1]
+               startIP = NICInfo[2]
+               IPincrement = int(NICInfo[3])
+
+               while True:
+                   if self.isIPUsed(startIP):
+                      startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
+                   else:
+                      break
+
+               if kusu.ipfun.onNetwork(network, subnet, startIP):
+                  # We're a DHCP/boot interface
+                  self._createNICBootEntry(nodeID, networkID, startIP, 1, macaddr)
+                  self._writeDHCPLease(startIP, macaddr)
+                  del interfaces[selectedinterface]
+                  flag = 1
+                  break
+
+           if not flag:
+              self._dbRWrite.execute("DELETE FROM nodes where nodes.ngid=%s AND nodes.name='%s'" % (self._nodeGroupType, self._nodeName))
+              print "ERROR:  Could not create nodes on interface '%s'. Please try a different interface\n" % selectedinterface
+              sys.exit(-1)
+
+        # Iterate though list interface devices that are not from the installer nodegroup.
         for nicdev in interfaces:
+             #print "NON MATCHED DEVICES: %s" % nicdev
              NICInfo = interfaces[nicdev].split()
              networkID = NICInfo[0]
              subnetNetwork = NICInfo[1]
@@ -366,14 +408,17 @@ class NodeFun(object, KusuApp):
                       self._newIPAddress = kusu.ipfun.incrementIP(self._newIPAddress, IPincrement, subnetNetwork)
                  else:
                     break
-                
-             # We're a DHCP/boot interface
-             if kusu.ipfun.onNetwork(installer_network, installer_subnet, self._newIPAddress):
-                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
-                 self._writeDHCPLease(self._newIPAddress, macaddr)
+
+             if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
+                # We're a DHCP/boot interface
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, self._newIPAddress):
+                   self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
+                   self._writeDHCPLease(self._newIPAddress, macaddr)
+                else:
+                   # Not a boot interface, just write out other info. 
+                   self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0)
              else:
-             # Not a boot interface, just write out other info. 
-                 self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0)
+                self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 0)
 
     def replaceNodeEntry(self, nodename):
         """replaceNodeEntry(nodename)
@@ -461,13 +506,18 @@ class NodeFun(object, KusuApp):
           # Mac address does not exist
           return False
     
-    def validateInterface(self, interface):
+    def validateInterface(self, interface, installer=True, nodegroup=None):
         """validateInterface(self, interface)
         Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
-        
-        self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
+      
+        if installer: 
+           self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
                                    AND nics.netid=networks.netid AND networks.device='%s' AND \
                                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % interface)
+        else:
+           self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE \
+                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s'" % (nodegroup, interface))
+
         result = self._dbReadonly.fetchone()
  
         try:
@@ -520,17 +570,39 @@ class NodeFun(object, KusuApp):
     def findBootDevice(self, nodename):
         """findBootDevice()
         Returns the boot device that has its boot flag set to 1 """
-        
-        nid = self.getNodeID(nodename)
+        #nid = self.getNodeID(nodename)
         try:
-            self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
-        except:
-            return None
-        try:
-            data = self._dbReadonly.fetchone()
-            return data[0]
-        except:
-            return None
+             query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway \
+                     FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
+
+             self.database.execute(query)
+             installerInfo = self.database.fetchall()
+
+             # Get list of node available gateway
+             query = ('SELECT networks.gateway FROM nodes,networks,nics,ng_has_net,nodegroups WHERE '
+                      'ng_has_net.netid=networks.netid AND nodegroups.ngid=ng_has_net.ngid AND '
+                      'nics.netid=networks.netid AND nics.nid=nodes.nid AND nodes.ngid=ng_has_net.ngid '
+                      'AND nodes.name="%s" AND nics.boot = 1' % nodename)
+        except: 
+             return None
+
+        for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
+            for node_gateway in set(nodeGateway):
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, node_gateway[0]):
+                   return installer_device
+
+        return None
+
+        #try:
+        #    self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
+        #except:
+        #    return None
+        #try:
+        #    data = self._dbReadonly.fetchone()
+        #    return data[0]
+        #except:
+        #    return None
 
     def setNodegroupByName(self, nodegroupname):
         # Convert the name into a nodegroup id

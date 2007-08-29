@@ -19,21 +19,22 @@
 
 # Author: Shawn Starr <sstarr@platform.com>
 
-""" AddHostPluginBase: These class methods may be overwriteable as needed """
+""" AddHostPluginBase class
+    This class is a virtual used to be implemented by plugins """
 
 class AddHostPluginBase:
     def __init__(self, dbconn):
         self.dbconn = dbconn
 
-    def enabled(self):
+    def finished(self, nodelist):
         """virtual"""
-        return True
+        pass
 
     def added(self, nodename, info):
         """virtual"""
         pass
 
-    def deleted(self, nodename, info):
+    def removed(self, nodename, info):
         """virtual"""
         pass
 
@@ -45,6 +46,7 @@ class AddHostPluginBase:
         """virtual"""
         pass
 
-    def finished(self, nodelist):
+    def enabled(self):
         """virtual"""
-        pass
+        return True
+

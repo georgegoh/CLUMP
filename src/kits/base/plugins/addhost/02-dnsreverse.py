@@ -29,7 +29,7 @@ class AddHostPlugin(AddHostPluginBase):
             for net in networks:
                  os.system("/opt/kusu/bin/genconfig reverse %s > /var/named/reverse.%s" % (net[0], net[0]))
 
-    def removed(self, dbconn, nodename, info):
+    def removed(self, nodename, info):
         if info:
             self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)

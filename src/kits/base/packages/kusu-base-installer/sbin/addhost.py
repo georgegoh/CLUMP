@@ -31,10 +31,17 @@ import snack
 from kusu.ui.text.USXscreenfactory import USXBaseScreen, ScreenFactory
 from kusu.ui.text.USXnavigator import *
 from kusu.nodefun import NodeFun
+from kusu.util.errors import UserExitError
+import kusu.util.log as kusulog
+from path import path
 import kusu.ipfun
 
 NOCANCEL    = 0
 ALLOWCANCEL = 1
+
+kl = kusulog.getKusuLog()
+kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
+                       'kusu.log')
 
 class NodeData:
     def __init__(self):
@@ -43,6 +50,7 @@ class NodeData:
         self.nodeGroupSelected = 0
         self.nodeList = []
         self.selectedInterface = None
+        self.selectedNodeInterface = None
         self.syslogFilePosition = None
         self.optionReplaceMode = False
         self.pluginLocation = "/opt/kusu/lib/plugins/addhost"
@@ -89,6 +97,8 @@ class AddHostApp(KusuApp):
                                 type="string", dest="nodegroup", help=self._("addhost_nodegroup_usage"))
         self.parser.add_option("-i", "--interface", action="store",
                                 type="string", dest="interface", help=self._("addhost_interface_usage"))
+        self.parser.add_option("-j", "--node-interface", action="store",
+                                type="string", dest="nodeinterface", help=self._("addhost_nodeinterface_usage"))
         self.parser.add_option("-f", "--file", action="store",
                                 type="string", dest="macfile", help=self._("addhost_macfile_usage"))
         self.parser.add_option("-e", "--remove", action="callback",
@@ -104,7 +114,7 @@ class AddHostApp(KusuApp):
     def loadPlugins(self):
         """ loadPlugins()
         Loads all plugins for Add hosts. """
-        
+       
         global pluginActions
         global database
         pluginList = []
@@ -167,7 +177,7 @@ class AddHostApp(KusuApp):
 
         # Parse command options
         self.parseargs()
-        
+       
         # Load addhost plugins
         self.loadPlugins()
         
@@ -197,12 +207,24 @@ class AddHostApp(KusuApp):
             if self._options.interface[0] == '-':
                 self.parser.error(kusuApp._("addhost_options_interface_required"))
             else:
-                if myNode.validateInterface(self._options.interface):
+                if myNode.validateInterface(self._options.interface, installer=True):
                     myNodeInfo.selectedInterface = self._options.interface
                     haveInterface = True
                 else:
                     self.parser.error(kusuApp._("addhost_options_invalid_interface"))
 
+        if self._options.interface:
+           if not self._options.nodegroup:
+             self.parser.error(kusuApp._("addhost_options_interface_options_needed"))
+
+        # Handle -j option needed for -f only
+        if self._options.nodeinterface:
+              myNodeInfo.selectedNodeInterface = self._options.nodeinterface
+       
+        if self._options.nodeinterface:
+            if not self._options.macfile or not self._options.nodegroup:
+               self.parser.error(kusuApp._("addhost_options_macfile_options_needed"))
+   
         # Handle -n option
         if self._options.nodegroup:
             if self._options.nodegroup[0] == '-':
@@ -216,9 +238,13 @@ class AddHostApp(KusuApp):
                 else:
                     self.parser.error(kusuApp._("options_invalid_nodegroup"))
 
-        # Handle -f -i -n options
-        if (self._options.macfile and self._options.interface and self._options.nodegroup):
-            
+        # Handle -f -j -n options
+        if (self._options.macfile and self._options.nodeinterface and self._options.nodegroup):
+
+            # Check if the node group's interfaces are valid. 
+            if not myNode.validateInterface(self._options.nodeinterface, installer=False, nodegroup=myNodeInfo.nodeGroupSelected):
+               self.parser.error(kusuApp._("addhost_options_invalid_interface"))
+
             # Check if the file specified exists.
             if not os.path.isfile(self._options.macfile):
                 self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
@@ -252,14 +278,14 @@ class AddHostApp(KusuApp):
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = self.prepopulateNodes.findMACAddress(macaddr)
                  if checkMacAddr == False:
-                     nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedInterface)
+                     nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False)
                      print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
                      if pluginActions:
                          pluginActions.plugins_add(nodeName)
                      myNodeInfo.nodeList.append(nodeName)
-                 #else:
-                     #print "Duplicate: %s, Ignoring" % macaddr
+                 else:
+                     print "Duplicate: %s, Ignoring" % macaddr
             if pluginActions:
                 pluginActions.plugins_finished()
             sys.exit(0)
@@ -307,7 +333,7 @@ class AddHostApp(KusuApp):
             sys.exit(0)
 
         elif self._options.remove == []:
-              self.parser.error(kusuApp._("addhost_options_invalid_node"))
+              self.parser.error(kusuApp._("addhost_options_remove_required"))
 
         # Handle -u option
         if self._options.update:
@@ -373,6 +399,7 @@ class AddHostApp(KusuApp):
         screenFactory = ScreenFactoryImpl(screenList)
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
         ks.run()
+
         if len(myNodeInfo.nodeList):
             if pluginActions:
                pluginActions.plugins_finished()
@@ -390,7 +417,7 @@ class PluginActions(object, KusuApp):
         """
         
         if self._NodeHandler.nodeIsPrimaryInstaller(nodename):
-            print self._kusuApp._("add_primary_installer_error\n")
+            print self._("add_primary_installer_error\n")
             return
             
         info = self._NodeHandler.getNodeInformation(nodename)
@@ -407,9 +434,9 @@ class PluginActions(object, KusuApp):
         if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._NodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
-                plugin.deleted(nodename, info)
+                plugin.removed(nodename, info)
         else:
-            print self._kusuApp._("remove_primary_installer_error\n")
+            print self._("remove_primary_installer_error\n")
             
     def plugins_replaced(self, nodename):
         """plugins_replaced(nodename)
@@ -420,9 +447,9 @@ class PluginActions(object, KusuApp):
         if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._NodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
-                plugin.replace(info)
+                plugin.replaced(nodename, info)
         else:
-            print self._kusuApp._("replace_primary_installer_error\n")
+            print self._("replace_primary_installer_error\n")
             sys.exit(-1)
             
     def plugins_finished(self):
@@ -488,7 +515,7 @@ class NodeGroupWindow(USXBaseScreen):
         
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
-        
+      
         try:
             self.database.connect()
         except:
@@ -545,42 +572,53 @@ class WindowSelectNode(NodeGroupWindow):
         """" Get list of network interfaces and allow user to choose one"""
         
         networkList = []
-        query = "SELECT networks.device, nics.ip FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                 nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
-        
-        # FIXME: Problem: Which SQL query do I use?
-        #query = "SELECT networks.device, networks.network FROM nodes,networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid AND ng_has_net.ngid = (SELECT ngid FROM nodegroups WHERE ngname='Installer') AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
- 
+        validNets = []
+        # Get installer's available networks.
         try:
             self.database.connect()
+            query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
             self.database.execute(query)
-            networks = self.database.fetchall()
+            installerInfo = self.database.fetchall()
+
+            # Get list of node group's available gateways.
+            query = "SELECT networks.gateway FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s" % \
+                    myNodeInfo.nodeGroupSelected
+            self.database.execute(query) 
+            ngInfo = self.database.fetchall()
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
-            sys.exit(-1)
-        
-        self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Label(self.msg)
-        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0) 
+            raise UserExitError
+      
         defaultFlag = 1
-        for networkInfo in networks:
-            itemName = "%s  (%s)" % (networkInfo[0].ljust(4), networkInfo[1])
-            if defaultFlag:
-                networkList.append([itemName, networkInfo, 1 ])
-            else:
-                networkList.append([itemName, networkInfo, 0 ])
-            defaultFlag = 0
- 
-        self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
-            
-        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=1)
-        self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
+        # Check if any node group networks match/fit in to the installer networks found if so display those only.
+        for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
+            for ng_gateway in set(ngInfo):
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
+                   itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
+                   if defaultFlag:
+                      networkList.append([itemName, installer_device, 1 ])
+                   else:
+                      networkList.append([itemName, installer_device, 0 ])
+                   defaultFlag = 0
+
+        if not networkList:
+              self.selector.popupMsg (self.kusuApp._("Error"), "No network interfaces were associated to the selected node group. Unable to add nodes.")
+              self.screen.finish()
+              raise UserExitError
+        else:
+             self.screenGrid = snack.Grid(1, 2)
+             instruction = snack.Label(self.msg)
+             instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0)
+             self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
+	     self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
+             self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
-        myNodeInfo.selectedInterface = self.radioButtonList.getSelection()[0]
-        #result = self.selector.popupStatus(self._("Debug Window"), "Interface Selected: %s " % self.radioButtonList.getSelection()[0], 1)
+        myNodeInfo.selectedInterface = self.radioButtonList.getSelection()
+        #result = self.selector.popupStatus(self.kusuApp._("Debug Window"), myNodeInfo.selectedInterface, 1)
         return True, 'Success'
     
     def formAction(self):
@@ -591,7 +629,7 @@ class WindowSelectNode(NodeGroupWindow):
         flag = 1
         filep = open("/var/log/messages", 'r')
         filep.seek(0, 2)
-        myNodeInfo.selectedInterface = self.radioButtonList.getSelection()[0]
+        myNodeInfo.selectedInterface = self.radioButtonList.getSelection()
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
 
@@ -678,7 +716,7 @@ class WindowNodeStatus(NodeGroupWindow):
                     if discoveryCheck == False and (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface) \
                         and not myNodeInfo.optionReplaceMode:
                         self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-                        nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface)
+                        nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True)
                         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
                         if pluginActions:
                            pluginActions.plugins_add(nodeName)
@@ -687,6 +725,7 @@ class WindowNodeStatus(NodeGroupWindow):
                     
                     if myNodeInfo.optionReplaceMode and discoveryCheck == False:
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
+                       print myNodeInfo.selectedInterface
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
                            self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
