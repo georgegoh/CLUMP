@@ -411,7 +411,7 @@ class NodeFun(object, KusuApp):
 
              if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
                 # We're a DHCP/boot interface
-                if kusu.ipfun.onNetwork(installer_network, installer_subnet, self._newIPAddress):
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, subnetNetwork):
                    self._createNICBootEntry(nodeID, networkID, self._newIPAddress, 1, macaddr)
                    self._writeDHCPLease(self._newIPAddress, macaddr)
                 else:
@@ -451,7 +451,6 @@ class NodeFun(object, KusuApp):
         """createNICBootEntry(nodeid, networkid, ipaddress, bootflag, macaddress)
         Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
         will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from. """
-        
         if macaddress:
             self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
