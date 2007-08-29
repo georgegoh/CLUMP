@@ -16,6 +16,9 @@ import os
 import glob
 import string
 import re
+import subprocess
+import tempfile
+import shutil
 from sets import Set
 from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
 from kusu.ui.text.USXnavigator import *
@@ -828,8 +831,24 @@ class scrNGEEdit_Modules(USXBaseScreen):
     def doForwardAction(self):
         return NAV_FORWARD
 
+    def seq2tplstr(self,seq):
+        '''convert a sequence to a tuple string representation without a trailing comma
+        '''
+        if not seq:
+            return None
+        try:
+            if len(seq) == 1:
+                tplstr = '(%s)' % str(seq[0])
+            else:
+                tplstr = str(tuple(seq))
+            return tplstr
+        except:
+            return None
+
+
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
+        self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
 
         if not curNG['comps']:
             #no components chosen for this nodegroup
@@ -839,23 +858,90 @@ class scrNGEEdit_Modules(USXBaseScreen):
             return
         
         assert(len(curNG['comps']))
-#        self.selector.popupMsg('DEBUG', str(curNG['comps']))
 
-        self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
+        #get repository information
+        query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
+        self.database.execute(query)
+        self.__repodir, ostype  = self.database.fetchone()
+        self.__repodir = self.__repodir.strip()
 
-        query = "SELECT *"
+        if ostype.lower().startswith('fedora'):
+            repopackdir = self.__repodir + '/Fedora/RPMS'
+        elif ostype.lower().startswith('rhel'):
+            repopackdir = self.__repodir + '/Server'
+        #additional repo os types here
+        else:
+            raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
 
-        # TODO: modify self.__ct generation
-        # to get the list of modules: rpm2cpio kernel-2.6.18-8.el5.i686.rpm |cpio -t *.ko   
-        #curletter = None
-        #i = -1
-        #for p in sorted(repopackset):
-        #    letter = p[0]
-        #    if letter != curletter:
-        #        self.__ct.append(letter)
-        #        i += 1
-        #        curletter = letter
-        #    self.__ct.addItem(p,(i,snack.snackArgs['append']), item=p)
+        assert(repopackdir)
+
+        #2. obtain the name of driverpacks to examine
+        query = "SELECT dpname from driverpacks where cid in " + self.seq2tplstr(curNG['comps'])
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        dpacklst = [ x for x, in rv]
+        # create a temp dir for ko files
+        tmpdir = tempfile.mkdtemp()
+
+        prog_dlg = self.selector.popupProgress('Driver Package Extraction', 'Generating module list...')
+
+        t1 = time.time()
+        for dpack in dpacklst:
+            dpackfull = "%s/%s" %(repopackdir,dpack)
+            if not os.path.exists(dpackfull):
+                self.selector.popupMsg('WARNING', 'Driver package %s not found in repo %s'\
+                                        %(dpack,self.__repodir))
+            else:
+                #3. extract the driverpack's ko files (can't use rpmtool.extract)
+                cmd = "rpm2cpio %s | cpio -id *.ko" %dpackfull
+                p = subprocess.Popen(   cmd, shell=True, 
+                                        cwd = tmpdir,
+                                        stdout = subprocess.PIPE,
+                                        stderr = subprocess.PIPE
+                                     )
+                p.communicate()
+
+        t2 = time.time()
+
+        #4. populate the module dictionary with description
+        moddict = {}    #dictionary of modules & their description
+        cmd = 'find %s -name "*.ko" | xargs modinfo | egrep "^filename|^description"'  %tmpdir
+        p = subprocess.Popen(cmd, shell=True, cwd = tmpdir,
+                                     stdout = subprocess.PIPE,
+                                     stderr = subprocess.PIPE
+                             )
+        rv = p.communicate()[0]
+        fname = None
+        for line in rv.split('\n'):
+            if line.startswith('filename:'):
+                fname = line.split(':',1)[1].strip() #path/file.ext
+                fname = os.path.splitext(os.path.split(fname)[1])[0]
+                moddict[fname] = ''
+            elif line.startswith('description:'):
+                if not moddict[fname]: #only one description - posible >1 desc field per module
+                    moddict[fname] = line.split(':',1)[1].strip()
+
+        t3 = time.time()
+        prog_dlg.close()
+        shutil.rmtree(tmpdir)
+        self.selector.popupMsg('DEBUG', 'driver rpm extraction: %f\ndesc info extraction: %f\nmoddict len = %d' %(t2-t1,t3-t2, len(moddict)))
+
+
+        curletter = None
+        i = -1
+        for m in sorted(moddict):
+            letter = m[0]
+            if letter != curletter:
+                maxlen = max(map(len, filter(lambda x : x[0] == letter, moddict.keys())))
+                self.__ct.append(letter)
+                i += 1
+                curletter = letter
+            str2add = (m.ljust(maxlen+1) + moddict[m])[:MAXWIDTH]
+            isSel = 0
+            if m in curNG['modules']:
+                isSel = 1
+            self.__ct.addItem(str2add,(i,snack.snackArgs['append']), item=m, selected=isSel)
+
         self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
 
 
@@ -864,7 +950,7 @@ class scrNGEEdit_Modules(USXBaseScreen):
 
     def formAction(self):
         curNG['modules'] = self.__ct.getSelection()
-
+        self.selector.popupMsg('selected modules', str(curNG['modules']))
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):
