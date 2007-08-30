@@ -371,7 +371,7 @@ class AddHostApp(KusuApp):
                       except:
                           print kusuApp._("Error: The value %s is not a number. Please try again" % response)
                           flag = 1
-        else: 
+        elif (haveNodegroup and self._options.macfile and self._options.interface):
              self.parser.error(kusuApp._("Cannot use -i with -f and -n options"))
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
