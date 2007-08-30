@@ -92,6 +92,7 @@ install::
 	install -m644 lib/kusu/__init__.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/nodefun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/syncfun.py $(ROOT)/opt/kusu/lib/python/kusu
+	install -m644 lib/kusu/addhost.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/cfms.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/cfmnet.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/genconfig.py $(ROOT)/opt/kusu/lib/python/kusu
