@@ -45,8 +45,11 @@ class NodeFun(object, KusuApp):
         self._isMasterInstaller = False
         self._primaryInstaller = ""
         self._cachedDeviceIPs = {}
+        self._nodegroupInterfaces = {}
         self._cachedUsedIP = None
+        self._cachedMACAddress = {}
         self._installerNetworks = None
+        
         self._nodegroupInterfaces = None
 
         # Instances of a read and write database.
@@ -66,7 +69,10 @@ class NodeFun(object, KusuApp):
         # Get a list of all the IPs sorted.
         if not self._cachedUsedIP:
            self._getUsedIPs()
+           self._getMACAddresses()
            self.getNodeFormat()
+           if self._nodeGroupType:
+              self._nodegroupInterfaces = self._findInterfaces()
            self._installerNetworks = self._getInstallerNetworks()
            self._ngConflicts = self._getNodegroupConflicts()
            self._nodeList = self._getNodes()
@@ -85,6 +91,7 @@ class NodeFun(object, KusuApp):
         if self._nodeFormat == None:
            self.getNodeFormat()
            self._ngConflicts = self._getNodegroupConflicts()
+           self._nodegroupInterfaces = self._findInterfaces()
 
     def _getUsedIPs(self):
         self._cachedUsedIP = {}
@@ -94,8 +101,21 @@ class NodeFun(object, KusuApp):
         for i in range(0, len(ips)):
             self._cachedUsedIP["%s" % ips[i][0]] = 'Used'
 
+    def _getMACAddresses(self):
+        t1=time.time()
+        self._dbReadonly.execute("SELECT mac FROM nics")
+        macs = self._dbReadonly.fetchall()
+        
+        for i in range(0, len(macs)):
+            self._cachedMACAddress["%s" % macs[i][0]] = 'Used'
+        t2=time.time()
+        print "Time Spent: getMACAddresses(): %f" % (t2-t1)
+
     def _addUsedIP(self, ip):
         self._cachedUsedIP[ip] = 'Used'
+
+    def _addUsedMAC(self, mac):
+        self._cachedMACAddress[mac] = 'Used'
 
     def isNodenameHasRack(self):
         """ isNodenameHasRack()
@@ -429,21 +449,24 @@ class NodeFun(object, KusuApp):
         flag = 0
         installer_subnet = None
         installer_network = None
-
+        interfaces = {}
         if self._nodeList.has_key(self._nodeName):
            return
 
         self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" %
                                (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
  
+        self._dbRWrite.execute("SELECT last_insert_id()")
+        nodeID = self._dbRWrite.fetchone()[0]
+
         # Add the node to the 'used' list of nodes in db.
         self._nodeList[self._nodeName] = self._nodeName
 
-        nodeID = self.getNodeID(self._nodeName)
+        #nodeID = self.getNodeID(self._nodeName)
 
         if installer:
            # Get selected installer's subnet and network information.
-           self._nodegroupInterfaces = self._findInterfaces()
+           interfaces.update(self._nodegroupInterfaces)
            self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                                      nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                      AND networks.device='%s'" % selectedinterface)
@@ -451,15 +474,14 @@ class NodeFun(object, KusuApp):
            # Use the gui selected network interface as the installer's interface. 
            installer_subnet, installer_network = self._dbReadonly.fetchone()
 
-        self._nodegroupInterfaces = self._findInterfaces()
-
+        interfaces.update(self._nodegroupInterfaces)
         if not installer: 
            for subnet, network in self._installerNetworks:
                # We don't need to check other subnets only one needs to pass
                if flag:
                   break
 
-               NICInfo = self._nodegroupInterfaces[selectedinterface].split()
+               NICInfo = interfaces[selectedinterface].split()
                networkID = NICInfo[0]
                subnetNetwork = NICInfo[1]
 
@@ -481,7 +503,7 @@ class NodeFun(object, KusuApp):
                          self._addUsedIP(startIP)
                          self._createNICBootEntry(nodeID, networkID, startIP, 1, macaddr)
                          self._writeDHCPLease(startIP, macaddr)
-                         del self._nodegroupInterfaces[selectedinterface]
+                         del interfaces[selectedinterface]
                          flag = 1
                          break
                    else:
@@ -494,9 +516,9 @@ class NodeFun(object, KusuApp):
               sys.exit(-1)
 
         # Iterate though list interface devices that are not from the installer nodegroup.
-        for nicdev in self._nodegroupInterfaces:
+        for nicdev in interfaces:
              #print "NON MATCHED DEVICES: %s" % nicdev
-             NICInfo = self._nodegroupInterfaces[nicdev].split()
+             NICInfo = interfaces[nicdev].split()
              networkID = NICInfo[0]
              subnetNetwork = NICInfo[1]
 
@@ -520,6 +542,8 @@ class NodeFun(object, KusuApp):
              if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
                 # We're a DHCP/boot interface
                 if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False:
+                   # Mark the MAC as used.
+                   self._addUsedMAC(macaddr)
                    self._createNICBootEntry(nodeID, networkID, newIP, 1, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
                 else:
@@ -623,6 +647,11 @@ class NodeFun(object, KusuApp):
     
     def findMACAddress(self, macaddr):
         t1=time.time()
+        if self._cachedMACAddress.has_key(macaddr):
+           return True
+        else:
+           return False
+
         self._dbReadonly.execute("SELECT mac FROM nics WHERE mac='%s'" % macaddr)
         try:
           result = self._dbReadonly.fetchone()[0] 
