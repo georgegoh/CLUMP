@@ -172,6 +172,7 @@ class AddHostApp(KusuApp):
         global kusuApp
         
         haveInterface = False
+        haveNodeInterface = False
         haveNodegroup = False
         replaceMode = False
 
@@ -220,6 +221,7 @@ class AddHostApp(KusuApp):
         # Handle -j option needed for -f only
         if self._options.nodeinterface:
               myNodeInfo.selectedNodeInterface = self._options.nodeinterface
+              haveNodeInterface = True
        
         if self._options.nodeinterface:
             if not self._options.macfile or not self._options.nodegroup:
@@ -253,10 +255,9 @@ class AddHostApp(KusuApp):
                 if self._options.rack == 0:
                     myNodeInfo.nodeRackNumber = self._options.rack
                 else:
-                    checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-                    checkHost.getNodeFormat()
+                    myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
                     flag = 1
-                    if checkHost.isNodenameHasRack() and haveInterface:
+                    if myNode.isNodenameHasRack() and haveNodeInterface:
                          while flag:
                             response = raw_input(kusuApp._("prompt_for_rack"))
                             try:
@@ -266,6 +267,7 @@ class AddHostApp(KusuApp):
                                   flag = 1
                                else:
                                   myNodeInfo.nodeRackNumber = result
+                                  myNode.setRackNumber(myNodeInfo.nodeRackNumber) 
                                   flag = 0
                             except:
                                print kusuApp._("Error: The value %s is not a number. Please try again" % response)
@@ -273,12 +275,13 @@ class AddHostApp(KusuApp):
               
             # Read in list of mac addresses
             macfileList = open(self._options.macfile,'r').readlines()
-            self.prepopulateNodes = NodeFun(myNodeInfo.nodeRackNumber, myNodeInfo.nodeGroupSelected)
+            myNode.setRackNumber(myNodeInfo.nodeRackNumber)
+            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  macaddr = macaddr.lower().strip()
-                 checkMacAddr = self.prepopulateNodes.findMACAddress(macaddr)
+                 checkMacAddr = myNode.findMACAddress(macaddr)
                  if checkMacAddr == False:
-                     nodeName = self.prepopulateNodes.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False)
+                     nodeName = myNode.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False)
                      print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
                      if pluginActions:
@@ -351,10 +354,10 @@ class AddHostApp(KusuApp):
             if self._options.rack == 0:
                myNodeInfo.nodeRackNumber = self._options.rack
             else:
-               checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-               checkHost.getNodeFormat()
+               myNode.setRackNumber(myNodeInfo.nodeRackNumber)
+               myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
                flag = 1
-               if checkHost.isNodenameHasRack() and haveInterface:
+               if myNode.isNodenameHasRack() and haveInterface:
                    while flag:
                       response = raw_input(kusuApp._("prompt_for_rack"))
                       try:
@@ -371,9 +374,9 @@ class AddHostApp(KusuApp):
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
         if (haveNodegroup and self._options.rack):
-            checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-            checkHost.getNodeFormat()
-            if not checkHost.isNodenameHasRack():
+            myNode.setRackNumber(myNodeInfo.nodeRackNumber)
+            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+            if not myNode.isNodenameHasRack():
                 myNodeInfo.nodeRackNumber = 0
 
         # Screen ordering
@@ -408,7 +411,8 @@ class PluginActions(object, KusuApp):
     def __init__(self, pluginInstances):
         KusuApp.__init__(self)
         self._pluginInstances = pluginInstances
-        self._NodeHandler = kusu.nodefun.NodeFun()
+        global myNode
+        self._nodeHandler = myNode
         
     # Plugin call actions
     def plugins_add(self, nodename):
@@ -416,11 +420,11 @@ class PluginActions(object, KusuApp):
         Call all Add host plugins added() method
         """
         
-        if self._NodeHandler.nodeIsPrimaryInstaller(nodename):
+        if self._nodeHandler.nodeIsPrimaryInstaller(nodename):
             print self._("add_primary_installer_error\n")
             return
             
-        info = self._NodeHandler.getNodeInformation(nodename)
+        info = self._nodeHandler.getNodeInformation(nodename)
 
         for plugin in self._pluginInstances:
             plugin.added(nodename, info)
@@ -431,12 +435,9 @@ class PluginActions(object, KusuApp):
         """
         
         print "DEBUG: Calling removed() method from plugins"
-        if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
-            info = self._NodeHandler.getNodeInformation(nodename)
-            for plugin in self._pluginInstances:
-                plugin.removed(nodename, info)
-        else:
-            print self._("remove_primary_installer_error\n")
+        info = self._nodeHandler.getNodeInformation(nodename)
+        for plugin in self._pluginInstances:
+            plugin.removed(nodename, info)
             
     def plugins_replaced(self, nodename):
         """plugins_replaced(nodename)
@@ -444,8 +445,8 @@ class PluginActions(object, KusuApp):
         """
         
         print "DEBUG: Calling replaced() method from plugins"
-        if not self._NodeHandler.nodeIsPrimaryInstaller(nodename):
-            info = self._NodeHandler.getNodeInformation(nodename)
+        if not self._nodeHandler.nodeIsPrimaryInstaller(nodename):
+            info = self._nodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
                 plugin.replaced(nodename, info)
         else:
@@ -635,9 +636,9 @@ class WindowSelectNode(NodeGroupWindow):
 
         # Prompt for Rack Number if node format requires a rack number specified.
         if not myNodeInfo.nodeRackNumber:
-           checkHost = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-           checkHost.getNodeFormat()
-           if checkHost.isNodenameHasRack():
+           myNode.setRackNumber(myNodeInfo.nodeRackNumber)
+           myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+           if myNode.isNodenameHasRack():
                while flag:
                     buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
                     self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")], 
@@ -725,7 +726,6 @@ class WindowNodeStatus(NodeGroupWindow):
                     
                     if myNodeInfo.optionReplaceMode and discoveryCheck == False:
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
-                       print myNodeInfo.selectedInterface
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
                            self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Discovered node: %s\nMac Address: %s" % (myNodeInfo.replaceNodeName, macAddress)), 3)
