@@ -30,7 +30,7 @@ class AddHostPluginBase:
         """virtual"""
         pass
 
-    def added(self, nodename, info):
+    def added(self, nodename, info, prePopulateMode):
         """virtual"""
         pass
 

@@ -18,23 +18,13 @@ import kusu.core.db
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def added(self, nodename, info):
-        if info:
-            self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
-                            AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
+    def finished(self, nodelist):
+        self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
+                        AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
 
-            networks = self.dbconn.fetchall()
+        networks = self.dbconn.fetchall()
 
-            # Run genconfig for each network
-            for net in networks:
-                 os.system("/opt/kusu/bin/genconfig reverse %s > /var/named/reverse.%s" % (net[0], net[0]))
-
-    def removed(self, nodename, info):
-        if info:
-            self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
-                            AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
-            networks = self.dbconn.fetchall()
-
-            # Run genconfig for each network
-            for net in networks:
-                 os.system("/opt/kusu/bin/genconfig reverse %s > /var/named/reverse.%s" % (net[0], net[0]))
+        # Run genconfig for each network
+        for net in networks:
+            os.system("/opt/kusu/bin/genconfig reverse %s > /var/named/reverse.%s" % (net[0], net[0]))
+            os.system("kill -HUP `pidof named`")

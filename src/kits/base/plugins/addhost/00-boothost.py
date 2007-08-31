@@ -17,8 +17,14 @@ import os
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def added(self, nodename, info):
-	os.system("/opt/kusu/sbin/boothost -n %s" % nodename)
+    def added(self, nodename, info, prePopulateMode):
+        if prePopulateMode:
+           self.dbconn.execute('SELECT nodegroups.ngname FROM nodegroup, nodes WHERE nodes.ngid=nodegroups.ngid AND \
+                                nodes.name="%s"' % nodename)
+           ngname = self.dbconn.fetchone()[0]
+           os.system("/opt/kusu/sbin/boothost -t %s" % ngname)
+        else:
+	   os.system("/opt/kusu/sbin/boothost -n %s" % nodename)
 
     def removed(self, nodename, info):
 	try:

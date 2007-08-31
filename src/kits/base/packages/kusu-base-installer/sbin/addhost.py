@@ -33,15 +33,13 @@ from kusu.ui.text.USXnavigator import *
 from kusu.nodefun import NodeFun
 from kusu.util.errors import UserExitError
 import kusu.util.log as kusulog
-from path import path
 import kusu.ipfun
 
 NOCANCEL    = 0
 ALLOWCANCEL = 1
 
 kl = kusulog.getKusuLog()
-kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
-                       'kusu.log')
+kl.addFileHandler("/tmp/kusu/kusu.log")
 
 class NodeData:
     def __init__(self):
@@ -285,7 +283,7 @@ class AddHostApp(KusuApp):
                      print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
                      if pluginActions:
-                         pluginActions.plugins_add(nodeName)
+                         pluginActions.plugins_add(nodeName, True)
                      myNodeInfo.nodeList.append(nodeName)
                  else:
                      print "Duplicate: %s, Ignoring" % macaddr
@@ -346,7 +344,7 @@ class AddHostApp(KusuApp):
             # Ask all plugins to call updated() function
             if pluginActions:
                pluginActions.plugins_updated()
-               pluginActions.plugins_finished()
+               #pluginActions.plugins_finished()
             sys.exit(0)
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
@@ -417,11 +415,12 @@ class PluginActions(object, KusuApp):
         self._nodeHandler = myNode
         
     # Plugin call actions
-    def plugins_add(self, nodename):
+    def plugins_add(self, nodename, prePopulateMode=False):
         """plugins_add(nodename)
         Call all Add host plugins added() method
         """
         
+        pt1=time.time()
         if self._nodeHandler.nodeIsPrimaryInstaller(nodename):
             print self._("add_primary_installer_error\n")
             return
@@ -429,48 +428,79 @@ class PluginActions(object, KusuApp):
         info = self._nodeHandler.getNodeInformation(nodename)
 
         for plugin in self._pluginInstances:
-            plugin.added(nodename, info)
+            t1=time.time()
+            plugin.added(nodename, info, prePopulateMode)
+            t2=time.time()
+            print "====> PLUGIN: %s: Time Spent: added(): %f" % (plugin, t2-t1)
+      
+        t2=time.time() 
+        print "******** ALL added() Plugins Time Spent: %f" % (t2-pt1)
          
     def plugins_removed(self, nodename):
         """plugins_removed(nodename)
         Call all Add host plugins removed() method
         """
-        
-        print "DEBUG: Calling removed() method from plugins"
+         
+        pt1=time.time()
+        #print "DEBUG: Calling removed() method from plugins"
         info = self._nodeHandler.getNodeInformation(nodename)
         for plugin in self._pluginInstances:
+            t1=time.time()
             plugin.removed(nodename, info)
+            t2=time.time()
+            print "====> PLUGIN: %s: Time Spent: removed(): %f" % (plugin, t2-t1)
+
+        t2=time.time()
+        print "******** ALL removed() Plugins Time Spent: %f" % (t2-pt1)
             
     def plugins_replaced(self, nodename):
         """plugins_replaced(nodename)
         Call all Add host plugins replaced() method
         """
         
-        print "DEBUG: Calling replaced() method from plugins"
+        pt1=time.time()
+        #print "DEBUG: Calling replaced() method from plugins"
         if not self._nodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._nodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
+                t1=time.time()
                 plugin.replaced(nodename, info)
+                t2=time.time()
+                print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
         else:
             print self._("replace_primary_installer_error\n")
             sys.exit(-1)
+        t2=time.time()
+        print "******** ALL replaced() Plugins Time Spent: %f" % (t2-pt1)
             
     def plugins_finished(self):
         """plugins_finished()
         Call all Add host plugins finished() method
         """
 	global myNodeInfo
-        print "DEBUG: Calling finished() method from plugins"
+        pt1=time.time()
+        #print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
+            t1=time.time()
             plugin.finished(myNodeInfo.nodeList)
+            t2=time.time()
+            print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
+        t2=time.time()
+        print "******** ALL finished() Plugins Time Spent: %f" % (t2-pt1)
     
     def plugins_updated(self):
         """plugins_updated()
         Call all Add host plugins updated() method
         """
-        print "DEBUG: Calling updated() method from plugins"
+        #print "DEBUG: Calling updated() method from plugins"
+        pt1=time.time()
         for plugin in self._pluginInstances:
+            t1=time.time()
             plugin.updated()
+            t2=time.time()
+            print "====> PLUGIN: %s: Time Spent: updated(): %f" % (plugin, t2-t1)
+        t2=time.time()
+        print "******** ALL updated() Plugins Time Spent: %f" % (t2-pt1)
 
 class NodeGroupWindow(USXBaseScreen):
 
