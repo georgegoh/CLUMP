@@ -41,6 +41,7 @@ from niifun import NodeInstInfoHandler
 
 MODULE_LOAD_LIST='/etc/module-load-order.lst'
 
+initrddebug = 0
 class ImagedNodeConfiger:
     """This class contains the code for doing the steps above"""
 
@@ -49,12 +50,16 @@ class ImagedNodeConfiger:
         self.ifs = []
         self.installer = []
         self.logfilefp = 0
+        global initrddebug
+        initrddebug = 0
         try:
             fp = file('/proc/cmdline', 'r')
             for line in fp.readlines():
                 for entry in string.split(line):
                     if entry[:8] == 'niihost=':
                         self.installer = string.split(entry[8:], ',')
+                    if entry == 'initrddebug':
+                        initrddebug = 1
             fp.close()
             self.test = 0
         except:
@@ -66,7 +71,7 @@ class ImagedNodeConfiger:
     def log(self, mesg):
         """log - Output messages to a log file"""
         try:
-            self.logfilefp = file('/tmp/imageinit.log', 'w')
+            self.logfilefp = file('/tmp/imageinit.log', 'a')
             self.logfilefp.write(mesg)
             self.logfilefp.close()
         except:
@@ -215,6 +220,7 @@ if len(niihandler.partitions.keys()) > 0:
     # Bring up the partitions according to the NII
     # TODO
     #
+    # Need to get a lot more modules from the installer before this can work
     from nodeinstaller import adaptNIIPartition
     from kusu.partitiontool import DiskProfile
     from kusu.installer.defaults import setupDiskProfile
@@ -223,6 +229,10 @@ if len(niihandler.partitions.keys()) > 0:
     setupDiskProfile(disk_profile, schema)
     disk_profile.commit()
     disk_profile.formatAll()
+
+    
+
+
 
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)
@@ -267,3 +277,10 @@ niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
 app.getImage(niihandler.nodegrpid)
 os.unlink('/tmp/%s.img.tar.bz2' % niihandler.nodegrpid)
 os.system('hostname %s' % niihandler.name)
+
+app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
+if initrddebug == 1:
+    # Exit with 5 to stop the switch_root
+    sys.exit(5)
+
+sys.exit(0)

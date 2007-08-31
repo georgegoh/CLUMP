@@ -78,7 +78,7 @@ verbose_kmsg
 /bin/touch /var/log/messages
 
 /imageinit.py
-
+RETVAL=$?
 if [ -f /tmp/imageinit.log ] ; then
     cp /tmp/imageinit.log ${NEW_ROOT}/tmp/imageinit.log
 fi
@@ -91,8 +91,10 @@ fi
 # mdev -s
 # echo "Listing of /dev after running mdev: "; cd /dev; ls -l; cd /
 
-# exec switch_root -c ${CONSOLE} ${NEW_ROOT} ${NEW_INIT}
-exec switch_root ${NEW_ROOT} ${NEW_INIT}
+if [ $RETVAL -ne 5 ]; then
+    # exec switch_root -c ${CONSOLE} ${NEW_ROOT} ${NEW_INIT}
+    exec switch_root ${NEW_ROOT} ${NEW_INIT}
+fi
 
-echo "exec switch_root failed, debugging time again..."
+echo "Debugging time again..."
 /bin/bash
