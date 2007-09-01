@@ -54,6 +54,7 @@ install::
 	mkdir -p $(ROOT)/opt/kusu/cfm
 	mkdir -p $(ROOT)/opt/kusu/etc
 	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ui/text
+	mkdir -p $(ROOT)/opt/kusu/lib/python/kusu/ngedit
 	mkdir -p $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES
 	mkdir -p $(ROOT)/opt/kusu/sql
 	mkdir -p $(ROOT)/opt/kusu/man/man8
