@@ -107,6 +107,7 @@ make ROOT=$RPM_BUILD_ROOT install
 %defattr(-,root,root)
 /opt/kusu/*
 %exclude /opt/kusu/lib/python/kusu/*.py?
+%exclude /opt/kusu/lib/python/kusu/ngedit/*.py?
 %exclude /opt/kusu/lib/python/kusu/ui/text/*.py?
 %exclude /etc/rc.kusu.d/*.py?
 #%exclude /opt/kusu/lib/python/kusu/ui/*.py?
