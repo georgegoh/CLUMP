@@ -22,10 +22,12 @@ import shutil
 from sets import Set
 from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
 from kusu.ui.text.USXnavigator import *
-from kusu.ui.text.kusuwidgets import LabelledEntry
+from kusu.ui.text import kusuwidgets
+from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
-from kusu.ngedit import *
+from kusu.ngedit.ngedit import *
+from kusu.ngedit.partition import *
 
 global curNG, origNG
 MAXWIDTH = 70
@@ -131,6 +133,7 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Partitions(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
 
@@ -219,11 +222,11 @@ class scrNGEEdit_General(USXBaseScreen):
         labellen = max(len(labeltxt1), len(labeltxt2), len(labeltxt3))
 
         self.__entries = {}
-        self.__entries['ngname'] = LabelledEntry(labelTxt=labeltxt1.rjust(labellen),\
+        self.__entries['ngname'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt1.rjust(labellen),\
                      text = curNG['ngname'], width=30, password=0, returnExit = 0)
-        self.__entries['ngdesc'] = LabelledEntry(labelTxt=labeltxt2.rjust(labellen),\
+        self.__entries['ngdesc'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt2.rjust(labellen),\
                      text = curNG['ngdesc'], width=30, password=0, returnExit = 0)
-        self.__entries['nameformat'] = LabelledEntry(labelTxt=labeltxt3.rjust(labellen),\
+        self.__entries['nameformat'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt3.rjust(labellen),\
                      text = curNG['nameformat'], width=30, password=0, returnExit = 0)
  
         self.screenGrid = snack.Grid(1, 3)
@@ -952,6 +955,244 @@ class scrNGEEdit_Modules(USXBaseScreen):
         curNG['modules'] = self.__ct.getSelection()
         self.selector.popupMsg('selected modules', str(curNG['modules']))
 
+class scrNGEEdit_Partitions(USXBaseScreen):
+    name = 'Partitions'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        id = self.listbox.current()
+        self.selector.popupMsg('DEBUG', 'currently pointing to id = %s' %id)
+        #self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+
+    def createSchema(self, part_rules):
+        ''' creates a partition schema compatible with nodeinstaller's with addition
+            of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
+            nodeinstaller's partition API
+        '''
+        from kusu.partitiontool import partitiontool
+
+        diskprofile = partitiontool.DiskProfile(fresh=True)
+        
+        schema = {'disk_dict':{},'vg_dict':{}}
+        vg_list = getVGList(part_rules, diskprofile)
+        part_list = getPartList(part_rules, diskprofile)
+        lv_list = getLVList(part_rules, diskprofile)
+
+        # create the volume groups first.
+        try:
+            for vginfo in vg_list:
+                vgname = vginfo['device']
+                vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
+                schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
+                                             'extent_size':vg_extent_size,
+                                             'name':vgname, 'instid': vginfo.PKval}
+    
+            # create the normal volumes.
+            for partinfo in part_list:
+                fs = translateFSTypes(partinfo['fstype'])
+                self.createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
+                pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+                if pv:
+                    handlePV(partinfo, vg_name, schema['vg_dict'])
+            # renumber spanning partitions - resolve 'N'
+            for disk in schema['disk_dict'].itervalues():
+                part_dict = disk['partition_dict']
+                if part_dict.has_key('N'):
+                    partition = part_dict['N']
+                    part_dict[len(part_dict)] = partition
+                    del part_dict['N']
+    
+            # create the logical volumes.
+            for lvinfo in lv_list:
+                lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
+                if lv: 
+                    handleLV(lvinfo, vg_name, schema['vg_dict'])
+                    #associate with corresponding PartitionRec instance
+                    vg = schema['vg_dict'][vg_name.strip()]
+                    lv_name = lvinfo['device']
+                    vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
+    
+            attachPVsToVGs(diskprofile, schema['vg_dict'])
+    
+            preserve_types = Partition.native_type_dict.values()
+            preserve_fs = DiskProfile.fsType_dict.keys()
+            preserve_mntpnt = diskprofile.mountpoint_dict.keys()
+            preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
+            schema['preserve_types'] = preserve_types
+            schema['preserve_fs'] = preserve_fs
+            schema['preserve_mntpnt'] = preserve_mntpnt
+            schema['preserve_lv'] = preserve_lv
+    
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the lines."
+    
+        return schema
+
+    def createPartition(self, partinfo, disk_dict, vg_dict):
+        """ Create a new partition and add it to the supplied disk dictionary."""
+        try:
+            disknum = int(partinfo['device'])
+            part_no = translatePartitionNumber(partinfo['partition'])
+        except ValueError:
+            if partinfo['device'].lower() == 'n':
+                handleSpanningPartition(partinfo, disk_dict, vg_dict)
+                disknum = 1
+                part_no = 'N'
+            else:
+                raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
+        try:
+            size = translatePartitionSize(partinfo['size'])
+            fs = translateFSTypes(partinfo['fstype'])
+            mountpoint = translateMntPnt(partinfo['mntpnt'])
+            fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
+                                          "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
+                                          "part_no=%s" % (partinfo['device'], partinfo['size'], \
+                                          partinfo['fstype'], partinfo['mntpnt'], \
+                                          partinfo['options'], partinfo['partition'])
+     
+        if part_no != 'N' and part_no <= 0:
+            raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+        partition = {'size_MB': size, 'fill': fill,
+                     'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+    
+        if disk_dict.has_key(disknum): disk = disk_dict[disknum]
+        else: disk = {'partition_dict': {}}
+        disk['partition_dict'][part_no] = partition
+        disk_dict[disknum] = disk
+
+
+    def drawImpl(self):
+        #from kusu.ngedit.defaults import setupDiskProfile #Disk,Partition,LVMCollection, etc
+        #import kusu.util.log as kusulog
+
+        self.screenGrid = snack.Grid(1, 1)
+
+        self.listbox = kusuwidgets.ColumnListbox(height=8,
+                                 colWidths=[15,15,15,15],
+                                 colLabels=['Device', 'Size(MB) ', 'Type  ',
+                                            'Mount Point   '],
+                                 justification=[LEFT, RIGHT, LEFT, LEFT], 
+                                 returnExit=0)
+
+        partdictlst = curNG['parts']
+        for p in curNG['parts']:
+            if p['options'] == None:
+                p['options'] = ''
+            if p['mntpnt'] == None:
+                p['mntpnt'] = ''
+            if p['device'] == None:
+                p['device'] = ''
+
+        t1 = time.time()
+        schema = self.createSchema(partdictlst)
+        #setupDiskProfile(self.disk_profile, schema)
+        t2 = time.time()
+
+        str2display = ''
+        for d in schema.keys():
+            if type(schema[d]) == type({}):
+                str2display += d.upper()+'\n'
+                for k in schema[d].keys():
+                    if type(schema[d][k]) == type({}):
+                        str2display += "\t%s\n" %str(k).upper()
+                        for k2 in schema[d][k].keys():
+                            str2display += "\t\t%s : %s\n" % (k2, schema[d][k][k2])
+                    else:
+                        str2display += "\t%s : %s\n" %(k, schema[d][k])
+            else:
+                str2display += '%s : %s\n' %(d.upper(), schema[d])
+        str2display+='\npopulated disk profile in %f' %(t2-t1)
+
+        self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
+
+        # retrieve info about logical volumes and lv groups
+        lvg_keys = schema['vg_dict'].keys()
+
+        for key in sorted(lvg_keys):
+            lvg = schema['vg_dict'][key] 
+            lvg_displayname = 'VG ' + key
+            lvg_size_MB = ''
+            # display volume groups first in listbox
+            self.listbox.addRow(['VG ' + key,  str(lvg_size_MB), 'VolGroup',
+                                 ''], objRef=lvg['instid'])
+
+            lv_keys = lvg['lv_dict'].keys()
+            for lv_key in sorted(lv_keys):
+                lv =  lvg['lv_dict'][lv_key] 
+                lv_devicename = '  LV ' + lv_key
+                lv_size_MB = lv['size_MB']   
+                # display indented logical volumes belonging to the vg.
+                self.listbox.addRow([lv_devicename, str(lv_size_MB),lv['fs'],
+                                    lv['mountpoint']], objRef=lv['instid'])
+
+
+        disk_keys = schema['disk_dict'].keys()
+        for key in sorted(disk_keys):
+            # display device
+            device = schema['disk_dict'][key]
+            self.listbox.addRow(['Disk '+str(key),  '', '', ''] ) 
+            parts_dict =  device['partition_dict']          
+            parts_keys = parts_dict.keys()
+            for part_key in sorted(parts_keys):
+                partition = parts_dict[part_key]
+                part_devicename = '  ' +'d'+ str(key) +'p'+ str(part_key)
+                # indent one more level if logical partition.
+                #if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
+                fs_type = partition['fs']
+                mountpoint = partition['mountpoint']
+                #if partition.lvm_flag:
+                #    fs_type = 'phys_vol'
+                #    for pv_name, pv in self.disk_profile.pv_dict.iteritems():
+                #        if pv.partition is partition and pv.group:
+                #            mountpoint = pv.group.name
+                # display partition info
+                self.listbox.addRow([part_devicename,
+                                    str(partition['size_MB']),
+                                    fs_type,
+                                    mountpoint], partition['instid'])
+
+#        prog_dlg.close()
+
+        if self.listbox.length < 1:
+            msg = 'no partition schema associated with the current Node Group'
+            self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
+                text=msg), 0,0, (0,0,0,0), anchorLeft=1)
+        else:
+            self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
+                                 padding=(0,0,0,0))
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        #curNG['parts'] = 'something'
+        self.selector.popupMsg('partition schema', str(curNG['parts']))
+
 
 class scrNGEEdit_Finalize(USXBaseScreen):
     name = 'Summary of Changes'
@@ -1196,7 +1437,7 @@ class scrNGEEdit_Scripts(USXBaseScreen):
             if i < n:
                 entrytxt = curNG['scripts'][i]
 
-            entry = LabelledEntry(labelTxt = labeltxt, text = entrytxt,\
+            entry = kusuwidgets.LabelledEntry(labelTxt = labeltxt, text = entrytxt,\
                     width=MAXWIDTH, password=0, returnExit=0)
             self.__entries.append(entry)
             self.screenGrid.setField(entry, col=0,row=i)
