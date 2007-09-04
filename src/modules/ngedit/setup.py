@@ -13,6 +13,9 @@ setup(name="kusu-ngedit",
     author_email="atumanov@platform.com",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
-    packages = ['ngedit'],
-    scripts=['src/bin/ngedit']
+    packages = ['ngedit','ngedit.ui','ngedit.ui.text'],
+    package_dir = {'ngedit' : 'src/lib',
+                'ngedit.ui':'src/lib/ui',
+                'ngedit.ui.text': 'src/lib/ui/text'},
+    scripts=['src/sbin/ngedit']
      )
