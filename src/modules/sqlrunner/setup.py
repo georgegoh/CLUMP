@@ -14,5 +14,5 @@ setup(name="kusu-sqlrunner",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
     packages = ['sqlrunner'],
-    scripts=['src/bin/sqlrunner']
+    scripts=['src/sbin/sqlrunner']
      )
