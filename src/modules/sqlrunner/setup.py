@@ -13,6 +13,5 @@ setup(name="kusu-sqlrunner",
     author_email="sstarr@platform.com",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
-    packages = ['sqlrunner'],
     scripts=['src/sbin/sqlrunner']
      )
