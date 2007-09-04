@@ -13,7 +13,6 @@ setup(name="kusu-sqlrunner",
     author_email="sstarr@platform.com",
     url="http://www.osgdc.org/project/kusu",
     platforms=["any"],
-    packages = ['driverpatch'],
-    package_dir = {'driverpatch' : 'src/lib'},
-    scripts=['src/bin/driverpatch']
+    packages = ['sqlrunner'],
+    scripts=['src/bin/sqlrunner']
      )
