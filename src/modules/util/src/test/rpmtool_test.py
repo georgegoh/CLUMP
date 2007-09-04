@@ -68,7 +68,8 @@ def setUp():
             'invalid-1.0-1.i386.rpm',
             'epoch-0.0.1-1.i386.rpm',          
             'epoch-0.1-1.i386.rpm',          
-            'epoch-1.0-1.i386.rpm']
+            'epoch-1.0-1.i386.rpm',
+            'rpmsections-1-1.i386.rpm']
 
     for r in rpms:
         testing.download(url + r, dest=cachedir)
@@ -177,6 +178,34 @@ class TestRPMTool:
         r = rpmtool.RPM(str(cachedir / 'myconflictpkg-1-1.i386.rpm'))
        
         assert r.getConflicts()[0] == 'conflictwiththisrpm'
+
+    def testgetPostSection(self):
+        r = rpmtool.RPM(str(cachedir / 'rpmsections-1-1.i386.rpm'))
+        post = r.getPost()
+
+        assert post.find('#!/bin/sh') != -1
+        assert post.find('post') != -1
+    
+    def testgetPostUnSection(self):
+        r = rpmtool.RPM(str(cachedir / 'rpmsections-1-1.i386.rpm'))
+        postun = r.getPostUn()
+    
+        assert postun.find('#!/bin/sh') != -1
+        assert postun.find('postun') != -1
+    
+    def testgetPreSection(self):
+        r = rpmtool.RPM(str(cachedir / 'rpmsections-1-1.i386.rpm'))
+        pre = r.getPre()
+
+        assert pre.find('#!/bin/sh') != -1
+        assert pre.find('pre') != -1
+    
+    def testgetPreUnSection(self):
+        r = rpmtool.RPM(str(cachedir / 'rpmsections-1-1.i386.rpm'))
+        preun = r.getPreUn()
+
+        assert preun.find('#!/bin/sh') != -1
+        assert preun.find('preun') != -1
 
     def testEqual(self):
         r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))

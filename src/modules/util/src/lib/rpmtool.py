@@ -382,6 +382,22 @@ class RPM:
         """Returns the functionality group of the RPM"""
         return self.hdr[rpm.RPMTAG_GROUP]
 
+    def getPost(self):
+        """Returns the post section of the RPM, including the hash bang"""
+        return '#!%s\n%s' % (self.hdr[rpm.RPMTAG_POSTINPROG],self.hdr[rpm.RPMTAG_POSTIN])
+
+    def getPostUn(self):
+        """Returns the postun section of the RPM, including the hash bang"""
+        return '#!%s\n%s' % (self.hdr[rpm.RPMTAG_POSTUNPROG],self.hdr[rpm.RPMTAG_POSTUN])
+
+    def getPre(self):
+        """Returns the pre section of the RPM, including the hash bang"""
+        return '#!%s\n%s' % (self.hdr[rpm.RPMTAG_PREINPROG],self.hdr[rpm.RPMTAG_PREIN])
+
+    def getPreUn(self):
+        """Returns the preun section of the RPM, including the hash bang"""
+        return '#!%s\n%s' % (self.hdr[rpm.RPMTAG_PREUNPROG],self.hdr[rpm.RPMTAG_PREUN])
+
     def extract(self, dir):
         """Extract the contents of the RPM to the dir"""
 
