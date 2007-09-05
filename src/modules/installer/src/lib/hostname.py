@@ -29,7 +29,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     name = _('Host Name')
     profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
-    msg = _('Please specify a fully-qualified host name for this computer:')
+    msg = _('Please specify the host name and DNS zone for this computer:')
     buttons = [_('Clear All')]
 
     def __init__(self, kiprofile):
@@ -53,7 +53,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn'] = self.hostname.value()
 
         if not self.netProfile['fqhn_use_dhcp']:
-            self.netProfile['fqhn'] = ''
+            #self.netProfile['fqhn'] = ''
+            self.netProfile['fqhn_host'] = ''
+            self.netProfile['fqhn_domain'] = ''
         return NAV_NOTHING
 
     def drawImpl(self):
@@ -66,7 +68,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
 
         ### Removing DHCP temporarily, fix in KUSU-207
         #self.screenGrid = snack.Grid(1, 3)
-        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid = snack.Grid(1, 3)
         ###
         entryWidth = 33
 
@@ -82,18 +84,28 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         except KeyError:
             pass
 
+        #self.hostname = kusuwidgets.LabelledEntry(
+        #            labelTxt=_('Host Name '), width=entryWidth)
+        #self.hostname.addCheck(verifyFQDN)
         self.hostname = kusuwidgets.LabelledEntry(
                     labelTxt=_('Host Name '), width=entryWidth)
         self.hostname.addCheck(verifyFQDN)
+        self.domain = kusuwidgets.LabelledEntry(
+                    labelTxt=_('DNS Zone '), width=entryWidth)
+        self.domain.addCheck(verifyFQDN)
 
-        try:
-            self.hostname.setEntry(self.netProfile['fqhn'])
-        except KeyError:
-            self.hostname.setEntry(self.defaultFQHN)
+        self.hostname.setEntry(self.netProfile.get('fqhn_host',
+                                                   self.defaultname))
+        self.domain.setEntry(self.netProfile.get('fqhn_domain',
+                                                 self.defaultzone))
+        #try:
+            #self.hostname.setEntry(self.netProfile['fqhn'])
+        #except KeyError:
+        #    self.hostname.setEntry(self.defaultFQHN)
 
         dhcpd = {'control': self.use_dhcp,
-                 'disable': (self.hostname, ),
-                 'enable': (self.hostname, ),
+                 'disable': (self.hostname, self.domain),
+                 'enable': (self.hostname, self.domain),
                  'invert': True}
         self.use_dhcp.setCallback(network.enabledByValue, [dhcpd])
         network.enabledByValue([dhcpd])
@@ -103,7 +115,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                                  col=0, row=0, anchorLeft=1)
         ### Removing DHCP temporarily, fix in KUSU-207
         self.screenGrid.setField(self.hostname, col=0, row=1,
-                                 padding=(3, 1, 0, 3), anchorLeft=1)
+                                 padding=(3, 1, 0, 0), anchorLeft=1)
+        self.screenGrid.setField(self.domain, col=0, row=2,
+                                 padding=(4, 0, 0, 2), anchorLeft=1)
         #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
         #                         padding=(0, 1, 0, 0), anchorLeft=1)
         #self.screenGrid.setField(self.hostname, col=0, row=2,
@@ -116,11 +130,25 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         if not self.use_dhcp.value():
+            errList = []
+
             rv, msg = self.hostname.verify()
             if rv is None:
-                return False, _('Host name field is empty')
-            if not rv:
-                return False, msg
+                errList.append(_('Host Name field is empty'))
+            elif not rv:
+                errList.append(_('Host Name: ') + msg)
+
+            rv, msg = self.domain.verify()
+            if rv is None:
+                errList.append(_('DNS Zone field is empty'))
+            elif not rv:
+                errList.append(_('DNS Zone: ') + msg)
+
+            if errList:
+                errMsg = _('Please correct the following errors:')
+                for i, string in enumerate(errList):
+                    errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
+                return False, errMsg
 
         return True, ''
 
@@ -130,10 +158,12 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         self.netProfile['fqhn_use_dhcp'] = bool(self.use_dhcp.value())
-        self.netProfile['fqhn'] = self.hostname.value()
-        self.netProfile['fqhn_host'] = self.netProfile['fqhn'].split('.')[0]
-        self.netProfile['fqhn_domain'] = \
-                                '.'.join(self.netProfile['fqhn'].split('.')[1:])
+        #self.netProfile['fqhn'] = self.hostname.value()
+        #self.netProfile['fqhn_host'] = self.netProfile['fqhn'].split('.')[0]
+        #self.netProfile['fqhn_domain'] = \
+        #                        '.'.join(self.netProfile['fqhn'].split('.')[1:])
+        self.netProfile['fqhn_host'] = self.hostname.value()
+        self.netProfile['fqhn_domain'] = self.domain.value()
 
     def setDefaults(self):
         db = self.kiprofile.getDatabase()
@@ -144,7 +174,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         installerng = db.NodeGroups.selectfirst_by(type='installer')
         mastername = db.Nodes.selectfirst_by(ngid=installerng.ngid).name
 
-        self.defaultFQHN = '.'.join((mastername, dnsdomain.kvalue))
+        #self.defaultFQHN = '.'.join((mastername, dnsdomain.kvalue))
+        self.defaultname = mastername
+        self.defaultzone = dnsdomain.kvalue
 
     def save(self, db, profile):
         if not profile['fqhn_use_dhcp']:
