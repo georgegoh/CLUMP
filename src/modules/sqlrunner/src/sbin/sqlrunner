@@ -68,9 +68,10 @@ class SQLInjectorApp(KusuApp):
         # Handle -r option
         if self._options.querystring:
            try:
-               self.db.connect('kusudb', 'apache')
-           except:
-               print self._("DB_Query_Error\n")
+                self.db.connect('/tmp/kusu/kusu.db', driver='sqlite')
+           except Exception, e:
+                print e
+                print self._("DB_Query_Error\n")
 
            self.db.execute(self._options.querystring)
            try:

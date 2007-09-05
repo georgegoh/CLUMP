@@ -23,7 +23,10 @@ from MySQLdb import *
 #commenting this out for now as it's only avail. on my dev. box
 #from Crypto.Cipher import Blowfish
 import sys
+from kusu.util.testing import isFileExists
+from pysqlite2 import dbapi2 as sqlite
 
+        
 class KusuDB:
     """KusuDB class will handle Kusu DB connections, own the connection handle,
        process queries, manage transactions, and otherwise implement database
@@ -41,7 +44,23 @@ class KusuDB:
     def __del__(self):
         self.disconnect()
 
-    def connect(self, dbname=None, user=None, passwd=None):
+    def connectSQLite(self, db_file):
+        """
+        Connects to(reads) an SQLite flat file database. Will normally
+        throw an OperationalError if db_file does not exist, unless the
+        'create_db_if_absent' flag is set to True.
+        """
+        if not isFileExists(db_file):
+            raise OperationalError, "Specified DB file does not exist."
+
+        self.__dbconn = sqlite.connect(db_file)
+        self.__dbcursor = self.__dbconn.cursor()
+
+    def connect(self, dbname=None, user=None, passwd=None, driver='mysql'):
+        if driver=='sqlite':
+            self.connectSQLite(dbname)
+            return
+
         if dbname:
             self.dbname = dbname
         if user:

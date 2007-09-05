@@ -73,3 +73,15 @@ def download(url, dest=os.environ.get('KUSU_TMP', '/tmp')):
     f = open(dest, 'w')
     f.write(content)
     f.close()
+
+def isFileExists(filename):
+    """Returns True if the given filename exists."""
+    try:
+        f = open(filename)
+        f.close()
+    except IOError, e:
+        if e.errno == 2:
+            return False
+        else:
+            raise e
+    return True
