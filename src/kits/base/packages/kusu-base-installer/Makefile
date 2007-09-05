@@ -100,6 +100,7 @@ install::
 	install -m644 lib/kusu/niifun.py $(ROOT)/opt/kusu/lib/python/kusu
 	install -m644 lib/kusu/ngedit/ngedit.py $(ROOT)/opt/kusu/lib/python/kusu/ngedit
 	install -m644 lib/kusu/ngedit/partition.py $(ROOT)/opt/kusu/lib/python/kusu/ngedit
+	install -m644 lib/kusu/ngedit/__init__.py $(ROOT)/opt/kusu/lib/python/kusu/ngedit
 	install -m644 lib/kusu/ui/text/USXkusuwidgets.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/kusu/ui/text/USXnavigator.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
 	install -m644 lib/kusu/ui/text/USXscreenfactory.py $(ROOT)/opt/kusu/lib/python/kusu/ui/text
