@@ -50,6 +50,10 @@ if [ $EXIT_CODE -eq 0 ]; then
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
     /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu/kusu-ks.cfg ;
+
+    if [ -f "/mnt/kusu/tmp/installer_running" ]; then
+        /bin/rm -f /mnt/kusu/tmp/installer_running > /dev/null 2>&1
+    fi
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump
     echo "An internal program error has occurred."

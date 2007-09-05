@@ -174,6 +174,8 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Migrated kusu.db and kusu.log')
         prog_dlg.close()
 
+        setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        kl.debug('Set the installation flag')
 
     def save(self, db, profile):
         ngs = db.NodeGroups.select()

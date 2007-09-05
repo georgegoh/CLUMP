@@ -188,4 +188,17 @@ def writeNTP(prefix, kiprofile):
             ntp.remove()
         logger.warn('Unable to create ntp.conf')
 
-    
+def setInstallFlag(prefix, kiprofile):
+    prefix = path(prefix)
+
+    tmpdir = prefix / 'tmp'
+    tmpdir.makedirs()
+
+    if kiprofile['OS'] in ['rhel', 'fedora', 'centos']:
+        tmpdir.chmod(1777)
+
+    flag = tmpdir /  'kusu ' / 'installer_running'
+    flag.parent.makedirs()
+    flag.touch()
+
+
