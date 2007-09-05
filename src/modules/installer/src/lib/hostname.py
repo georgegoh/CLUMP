@@ -85,7 +85,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
 
         self.hostname = kusuwidgets.LabelledEntry(
                     labelTxt=_('Host Name '), width=entryWidth)
-        self.hostname.addCheck(verifyFQDN)
+        self.hostname.addCheck(verifyHostname)
         self.domain = kusuwidgets.LabelledEntry(
                     labelTxt=_('DNS Zone '), width=entryWidth)
         self.domain.addCheck(verifyFQDN)
