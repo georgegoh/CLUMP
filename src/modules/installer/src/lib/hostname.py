@@ -53,7 +53,6 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn'] = self.hostname.value()
 
         if not self.netProfile['fqhn_use_dhcp']:
-            #self.netProfile['fqhn'] = ''
             self.netProfile['fqhn_host'] = ''
             self.netProfile['fqhn_domain'] = ''
         return NAV_NOTHING
@@ -67,7 +66,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile = self.kiprofile[self.profile]
 
         ### Removing DHCP temporarily, fix in KUSU-207
-        #self.screenGrid = snack.Grid(1, 3)
+        #self.screenGrid = snack.Grid(1, 4)
         self.screenGrid = snack.Grid(1, 3)
         ###
         entryWidth = 33
@@ -84,9 +83,6 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         except KeyError:
             pass
 
-        #self.hostname = kusuwidgets.LabelledEntry(
-        #            labelTxt=_('Host Name '), width=entryWidth)
-        #self.hostname.addCheck(verifyFQDN)
         self.hostname = kusuwidgets.LabelledEntry(
                     labelTxt=_('Host Name '), width=entryWidth)
         self.hostname.addCheck(verifyFQDN)
@@ -98,10 +94,6 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                                                    self.defaultname))
         self.domain.setEntry(self.netProfile.get('fqhn_domain',
                                                  self.defaultzone))
-        #try:
-            #self.hostname.setEntry(self.netProfile['fqhn'])
-        #except KeyError:
-        #    self.hostname.setEntry(self.defaultFQHN)
 
         dhcpd = {'control': self.use_dhcp,
                  'disable': (self.hostname, self.domain),
@@ -121,7 +113,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
         #                         padding=(0, 1, 0, 0), anchorLeft=1)
         #self.screenGrid.setField(self.hostname, col=0, row=2,
-        #                         padding=(3, 0, 0, 1), anchorLeft=1)
+        #                         padding=(3, 0, 0, 0), anchorLeft=1)
+        #self.screenGrid.setField(self.domain, col=0, row=3,
+        #                         padding=(4, 0, 0, 1), anchorLeft=1)
         ###
 
     def validate(self):
@@ -158,10 +152,6 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         self.netProfile['fqhn_use_dhcp'] = bool(self.use_dhcp.value())
-        #self.netProfile['fqhn'] = self.hostname.value()
-        #self.netProfile['fqhn_host'] = self.netProfile['fqhn'].split('.')[0]
-        #self.netProfile['fqhn_domain'] = \
-        #                        '.'.join(self.netProfile['fqhn'].split('.')[1:])
         self.netProfile['fqhn_host'] = self.hostname.value()
         self.netProfile['fqhn_domain'] = self.domain.value()
 
@@ -174,7 +164,6 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         installerng = db.NodeGroups.selectfirst_by(type='installer')
         mastername = db.Nodes.selectfirst_by(ngid=installerng.ngid).name
 
-        #self.defaultFQHN = '.'.join((mastername, dnsdomain.kvalue))
         self.defaultname = mastername
         self.defaultzone = dnsdomain.kvalue
 
