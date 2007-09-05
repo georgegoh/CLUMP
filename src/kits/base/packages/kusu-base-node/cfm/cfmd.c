@@ -404,8 +404,11 @@ static int getNiiInstallers(struct dataPack *dpack)
   char buff[256] ;
   char *startptr = NULL ;
   char *endptr   = NULL ;
+  int i ;
 
-  memset(&dpack->installers[0][0], 0, 16) ;
+  for(i=0; i<10; i++)
+    memset(&dpack->installers[i][0], 0, 16) ;
+
   if ((fd = fopen(CFM_PROFILE_NII, "r")) == NULL ) 
     return(0) ;
 
