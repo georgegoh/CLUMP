@@ -1,0 +1,145 @@
+
+#**********************************************************
+# cshrc.lsf:
+#    Sets the C shell user environment for LSF commands
+#
+# Instructions:
+#    Add this file to the end of the .cshrc file for all 
+#    LSF users:
+#    o  Copy cshrc.lsf into .cshrc for each user
+#       OR
+#    o  Add a line similar to the following to the end of 
+#       .cshrc:
+#       source /usr/local/lsf/conf/cshrc.lsf
+#
+# See the LSF UNIX Installation Guide for more information 
+#********************************************************** 
+#!/bin/csh
+#--------------------------------------------------------------------------
+# This code gets the binary type when setting LSF user environment.
+# It is based on found_binary_type() in scripts/funcs.sh.
+#---------------------------------------------------------------------------
+
+set _CUR_PATH_ENV = "$PATH"
+setenv PATH /usr/bin:/bin:/usr/local/bin:/local/bin:/sbin:/usr/sbin:/usr/ucb:/usr/sbin:/usr/bsd:${PATH}
+
+# handle difference between system V and BSD echo
+# To echo "foo" with no newline, do
+# echo $enf "foo" $enl
+
+if ( "`echo -n`" == "-n" )  then
+    set enf=
+    set enl="\c"
+else
+    set enf=-n
+    set enl=
+endif
+
+  
+set LSNULFILE=/dev/null
+
+# Find a version of awk we can trust
+
+set AWK=""
+foreach tmp (awk  /usr/toolbox/nawk gawk nawk)
+#   This is the real test, for functions & tolower
+#    if foo=`(echo FOO | $tmp 'function tl(str) { return tolower(str) } { print tl($1) }') 2>$LSNULFILE` \
+#       && test "$foo" = "foo"
+#   A simpler test, just for executability
+    set val_tmp=`$tmp 'BEGIN{ } { }'< $LSNULFILE |& cat`
+    if ( "$val_tmp" == "" )  then
+	set AWK=$tmp
+        break
+    endif
+end
+
+if (  "$AWK" == "") then
+    echo "Cannot find a correct version of awk."
+    echo "Exiting ..."
+    exit 1
+endif
+  
+   set uname_val=`uname -a`
+   set BINARY_TYPE="fail"
+   set field1=`echo $uname_val |$AWK '{print $1}'`
+
+   switch ($field1) 
+
+    case Linux:
+        set version=`echo $uname_val | $AWK '{split($3, a, "."); print a[1]}'`
+        if ( $version == "1" ) then
+	   set BINARY_TYPE="linux"
+	endif
+        if (  $version == "2" ) then
+            set subver=`echo $uname_val | $AWK '{split($3, a, "."); print a[1]"."a[2]}'`
+            set libcver=`ls /lib/libc-* >& /dev/null`
+            set libcver=`echo $libcver | $AWK '{split($1, a, "."); print a[3]}'`
+
+            if ( $subver == "2.4" ) then
+               set BINARY_TYPE="linux2.4"
+
+# ia64 is the family of 64-bit CPUs from Intel. We shouldn't need a new
+# distribution for each processor
+               set smp=`echo $uname_val | $AWK '{print $5}'`
+               if ( "$smp" == "SMP" ) then
+                    set machine=`echo $uname_val | $AWK '{print $12}'`
+               else
+                    set machine=`echo $uname_val | $AWK '{print $11}'`
+               endif
+           
+               if ( "$machine" == "ia64" ) then
+                    set BINARY_TYPE="linux2.4-glibc2.2-ia64"
+               else if ( "$machine" == "alpha" ) then
+                    set BINARY_TYPE="linux2.4-glibc2.2-alpha"
+               else 
+                   set _libcver=`/lib/libc.so.6 | grep "GNU C Library" | $AWK '{print $7}' | $AWK -F. '{print $2}'`
+                   if ( "$_libcver" == "1" ) then
+                          set BINARY_TYPE="linux2.4-glibc2.1-x86"
+                   else
+                          set BINARY_TYPE="linux2.4-glibc2.2-x86"
+                   endif 
+               endif
+            endif
+
+           if ( $subver == "2.6" ) then
+               set BINARY_TYPE="linux2.6-glibc2.3-x86"
+           endif
+
+        endif
+        breaksw
+    default:
+        # Unsupported machine type
+	echo "Unsupported machine type: $field1"
+	set BINARY_TYPE="fail"
+        breaksw
+    endsw
+    if ( $BINARY_TYPE == "fail" ) then
+        echo "Cannot get $BINARY_TYPE."
+    else
+    endif
+setenv LSF_TOP /opt/lava
+setenv LSF_VERSION 1.0
+if ( $BINARY_TYPE == "trix6" || $BINARY_TYPE == "trix6.5.8") then
+    set LSF_LINK_PATH=`grep "LSF_LINK_PATH=" $LSF_TOP/conf/lsf.conf | sed -e "s/LSF_LINK_PATH=//g" `
+    setenv LSF_BINDIR $LSF_LINK_PATH/bin
+    setenv LSF_SERVERDIR $LSF_LINK_PATH/etc
+else
+    setenv LSF_BINDIR $LSF_TOP/$LSF_VERSION/$BINARY_TYPE/bin
+    setenv LSF_SERVERDIR $LSF_TOP/$LSF_VERSION/$BINARY_TYPE/etc
+endif
+setenv LSF_LIBDIR $LSF_TOP/$LSF_VERSION/$BINARY_TYPE/lib
+set ldpath=`printenv LD_LIBRARY_PATH`
+if ( $ldpath == "") then
+    setenv LD_LIBRARY_PATH "$LSF_TOP/$LSF_VERSION/$BINARY_TYPE/lib"
+else
+    setenv LD_LIBRARY_PATH "$LSF_TOP/$LSF_VERSION/$BINARY_TYPE/lib:$ldpath"
+endif
+setenv XLSF_UIDDIR $LSF_TOP/$LSF_VERSION/$BINARY_TYPE/lib/uid
+setenv LSF_ENVDIR $LSF_TOP/conf
+setenv PATH ${LSF_BINDIR}:${LSF_SERVERDIR}:${_CUR_PATH_ENV}
+if ($?MANPATH) then
+    setenv MANPATH /opt/lava/1.0/man:${MANPATH}
+else
+    setenv MANPATH /opt/lava/1.0/man:
+endif
+unsetenv LSF_TOP LSF_VERSION

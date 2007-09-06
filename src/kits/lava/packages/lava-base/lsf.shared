@@ -1,0 +1,69 @@
+# $Id: lsf.shared,v 1.1.4.4 2006/04/28 21:36:01 mblack Exp $
+
+# ----------------------------------------------------------------------
+# T H I S   F I L E:  Is shared by all clusters in the Lava system.
+#
+# This file contains all definitions referenced by individual 
+# lsf.cluster.<clustername> files. The definitions in this file can be
+# a superset, i.e., not all definitions in this file need to be used in
+# other files. 
+#
+# See lsf.cluster(5) and "Inside Platform Lava".
+# ----------------------------------------------------------------------
+
+Begin Cluster
+ClusterName			# Keyword
+#white				# Example
+lava
+End Cluster
+
+Begin HostType
+TYPENAME                        # Keyword
+DEFAULT		                # used by lsfsetup
+LINUX
+LINUX2
+LINUXAXP
+LINUX86
+LINUXPPC
+LINUX64
+DLINUX
+DLINUX64
+DLINUXAXP
+LNXS39032
+LNXS390X64
+LINUXPPC64
+IA64
+End HostType
+
+
+#
+# The CPU factor values are derived from SPECfp95 given by hardware vendors
+# or SpecBench (unless indicated otherwise)
+# See http://www.specbench.org for more information on CPU benchmarking
+# To find out an architecture string for a new model, run 'lim -t'
+#
+Begin HostModel
+MODELNAME  CPUFACTOR   ARCHITECTURE # keyword
+# CPU factors are only comparisons. 
+PC      100    (x15_2600_Indeterminate x6_2100_Indeterminate)
+DEFAULT           1.0          ()   # used by lsfsetup
+End HostModel
+
+Begin Resource
+RESOURCENAME  TYPE    INTERVAL INCREASING  DESCRIPTION 	      # Keywords
+   fs         Boolean ()       ()          (File server)	
+   cs         Boolean ()       ()          (Compute server)	
+   bigmem     Boolean ()       ()          (Hosts with very big memory)
+   diskless   Boolean ()       ()          (Diskless hosts) 	
+   linux      Boolean ()       ()          (LINUX UNIX) 
+   nt         Boolean ()       ()          (Windows NT) 
+   openmpi    Boolean ()       ()          (OpenMPI)
+   lammpi     Boolean ()       ()          (LAM MPI)
+   mpich_gm   Boolean ()       ()          (MPICH GM MPI)
+   mpichp4    Boolean ()       ()          (MPICH P4 MPI)
+   mvapich    Boolean ()       ()          (Infiniband MPI)
+   intelmpi   Boolean ()       ()          (Intel MPI)
+#  nio        Numeric 60       Y           (Network I/O in Kbytes/second)
+#  console    String  60       ()          (Console user name)
+End Resource
+

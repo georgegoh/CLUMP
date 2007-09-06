@@ -1,0 +1,101 @@
+#!/bin/sh
+# $Id: lava.xml,v 1.1.6.9.6.1 2006/06/29 20:22:39 mblack Exp $
+#
+# Start and stop Lava daemons
+# Make sure we're running a shell that understands functions
+#
+# The following is for the Linux chkconfig utlility
+# chkconfig: 35 99 01
+# description:  Load Sharing Facility
+#
+# The following is for the Linux insserv utility
+### BEGIN INIT INFO
+# Provides: lsf
+# Required-Start: $remote_fs
+# Required-Stop: $remote_fs
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: Start Lava daemons
+### END INIT INFO
+
+kill_daemons() {
+    # make sure all old daemons are dead first
+    # This would be "/etc/killall lim res sbatch mbatchd" if everyone had
+    # killall
+    # On CRAY, the command to detect processes is different, so treat it apart
+    MACHINETYPE=`uname -a | cut -d" " -f 5`
+    PIDS=`(ps -ef; ps auxww) 2>/dev/null | egrep " lim |/lim | lim$|/lim$| sbatchd |/sbatchd | sbatchd$|/sbatchd$| mbatchd |/mbatchd | mbatchd$|/mbatchd$| res |/res | res$|/res$"| sed -n "/grep/d;s/^ *root *\([0-9]*\).*/\1/p" | sort -u`
+    if [ "$PIDS" != "" ]
+    then
+        kill $PIDS
+    fi
+}
+# The correct exit status must be returned
+EXIT_OK=0
+EXIT_ERR=1  # Failed to startup Lava
+EXIT_NA=2    # Lava not configured
+
+case "$1" in
+  'stop')
+        kill_daemons
+        exit $EXIT_OK
+        ;;
+
+  'start')
+        if [ x$LSF_ENVDIR = x ]
+        then
+            #       Using default path of lsf.conf...
+            LSF_CONF=/opt/lava/conf/lsf.conf
+        else
+            #       Using modified path of lsf.conf...
+            LSF_CONF=$LSF_ENVDIR/lsf.conf
+        fi
+
+        if [ -f $LSF_CONF ]
+        then
+            kill_daemons
+
+            # Get the location of the Lava daemons
+            . $LSF_CONF
+            # Export this env.variable to notify Lava daemons the loc. of
+            # lsf.conf
+            export LSF_ENVDIR
+
+            # For default install ( remove link )
+            if [ "x$LSF_SERVERDIR" = "x" ]; then
+                . ${LSF_CONFDIR}/profile.lsf
+            fi
+
+            # Add /etc/services entries for Lava
+            if [ `grep -c 7981 /etc/services` -ne 1 ]; then
+               echo "res             7981/tcp                        # Lava res" >> /etc/services
+               echo "lim             7982/udp                        # Lava lim" >> /etc/services
+               echo "mbatchd         7993/tcp                        # Lava mbatchd" >> /etc/services
+               echo "sbatchd         7994/tcp                        # Lava sbatchd" >> /etc/services
+            fi
+
+            # If they are really there, start them
+            if [ -f $LSF_SERVERDIR/lim -a -f $LSF_SERVERDIR/res -a -f $LSF_SERVERDIR/sbatchd ]
+            then
+                $LSF_SERVERDIR/lim &
+                $LSF_SERVERDIR/res &
+                $LSF_SERVERDIR/sbatchd &
+                exit $EXIT_OK
+            fi
+            exit $EXIT_ERR
+        fi
+        exit $EXIT_NA
+        ;;
+  *)
+        echo "Script for starting up and shutting down lava"
+        echo "Usage: $0 { start | stop }"
+            exit $EXIT_ERR
+        ;;
+esac
+
+if [ `grep -c 7981 /etc/services` -ne 1 ]; then
+   echo "res             7981/tcp                        # Lava res" >> /etc/services
+   echo "lim             7982/udp                        # Lava lim" >> /etc/services
+   echo "mbatchd         7993/tcp                        # Lava mbatchd" >> /etc/services
+   echo "sbatchd         7994/tcp                        # Lava sbatchd" >> /etc/services
+fi

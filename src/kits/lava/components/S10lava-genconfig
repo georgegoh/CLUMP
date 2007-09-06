@@ -1,0 +1,41 @@
+#!/bin/sh
+
+GENCONFIG=""
+VERSION="1_0"
+# Generate Lava host configuration for installer only.
+if [ -f /opt/kusu/bin/genconfig ]; then 
+   export PYTHONPATH=/opt/kusu/lib/python:$PYTHONPATH
+   GENCONFIG="/opt/kusu/bin/genconfig"
+fi
+
+# XXX: PYTHONPATH Differs on Fedora!!!!
+
+if [ -f /usr/bin/genconfig ]; then
+   export PYTHONPATH=/usr/lib/python2.4/site-packages/kusu:$PYTHONPATH"
+   GENCONFIG="/usr/bin/genconfig"
+fi
+
+if [ -z $GENCONFIG ]; then
+   exit
+fi
+
+$GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava
+$GENCONFIG lavacluster_$VERSION batch > /opt/lava/conf/lsbatch/lava/configdir/lsb.hosts
+$GENCONFIG lavaconf_$VERSION master > /opt/lava/conf/lsf.conf
+$GENCONFIG lavahosts_$VERSION > /opt/lava/conf/hosts
+
+chown -R lavaadmin:lavaadmin /opt/lava/conf/*
+
+# Generate CFM symlinks
+for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5'`; do
+    cd /etc/cfm/$i
+    if [ ! -d /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir ]; then
+       mkdir -p /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir
+    fi
+
+# Lava master slave configuration only
+$GENCONFIG lavaconf_$VERSION slave > /etc/cfm/$i/opt/lava/conf/lsf.conf
+
+done
+
+rm -rf /etc/rc.kusu.d/S10lava-genconfig

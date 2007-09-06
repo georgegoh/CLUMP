@@ -1,0 +1,19 @@
+# $Id: lsb.modules,v 1.1.4.1 2005/06/15 15:21:31 wnguyen Exp $
+
+# Define plugins for Scheduler and Resource Broker.
+# SCH_PLUGIN coloum specifies the share module name for Scheduler, while
+# RB_PLUGIN specifies the share module name for Resource Broker
+# A Scheduler plugin can have one, multiple, or none RB plugins 
+# corresponding to it.
+# SCH_DISABLE_PHASES specifies which phases of that scheduler plugin
+# should be disabled, i.e., inactivated. A scheduler plugin has 4 phases:
+# pre processing, match/limit, order/alloc, post processing. Scheduler
+# won't invokes disabled phases over jobs
+# Note all share modules should be put under LSF_LIBDIR
+
+Begin PluginModule
+SCH_PLUGIN			RB_PLUGIN		     SCH_DISABLE_PHASES
+schmod_default			()				()
+schmod_limit			()				()
+schmod_parallel			()				()
+End PluginModule
