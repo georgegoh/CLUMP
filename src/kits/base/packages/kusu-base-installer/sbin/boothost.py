@@ -24,6 +24,13 @@ import pwd
 import string
 import sys
 
+sys.path.append("/opt/kusu/bin")
+sys.path.append("/opt/kusu/lib")
+import platform
+if platform.machine() == "x86_64":
+    sys.path.append("/opt/kusu/lib64/python")
+sys.path.append("/opt/kusu/lib/python")
+
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun

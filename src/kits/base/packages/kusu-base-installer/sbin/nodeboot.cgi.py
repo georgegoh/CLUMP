@@ -31,6 +31,9 @@ import time
 
 sys.path.append("/opt/kusu/bin")
 sys.path.append("/opt/kusu/lib")
+import platform
+if platform.machine() == "x86_64":
+    sys.path.append("/opt/kusu/lib64/python")
 sys.path.append("/opt/kusu/lib/python")
 
 from optparse import OptionParser
