@@ -88,7 +88,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                     labelTxt=_('Host Name '), width=entryWidth)
         self.hostname.addCheck(verifyHostname)
         self.domain = kusuwidgets.LabelledEntry(
-                    labelTxt=_('DNS Zone '), width=entryWidth)
+                    labelTxt=_('Domain '), width=entryWidth)
         self.domain.addCheck(verifyFQDN)
 
         self.hostname.setEntry(self.netProfile.get('fqhn_host',
@@ -110,7 +110,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(self.hostname, col=0, row=1,
                                  padding=(3, 1, 0, 0), anchorLeft=1)
         self.screenGrid.setField(self.domain, col=0, row=2,
-                                 padding=(4, 0, 0, 2), anchorLeft=1)
+                                 padding=(6, 0, 0, 2), anchorLeft=1)
         #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
         #                         padding=(0, 1, 0, 0), anchorLeft=1)
         #self.screenGrid.setField(self.hostname, col=0, row=2,
@@ -136,7 +136,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
             rv, msg = self.domain.verify()
             # DNS zone can be empty
             if rv is not None and not rv:
-                errList.append(_('DNS Zone: ') + msg)
+                errList.append(_('Domain: ') + msg)
 
             if errList:
                 errMsg = _('Please correct the following errors:')
