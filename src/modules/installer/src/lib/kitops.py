@@ -13,7 +13,6 @@ from kusu.ui.text import kusuwidgets
 from kusu.util.errors import *
 import kits_sourcehandlers
 from kusu.ui.text.navigator import NAV_NOTHING, NAV_BACK
-from kusu.kitops.kitops import KitOps
 
 kitsource_handler_dict = { 'CDROM': kits_sourcehandlers.addKitFromCDForm,
                            'URI': kits_sourcehandlers.addKitFromURIForm }

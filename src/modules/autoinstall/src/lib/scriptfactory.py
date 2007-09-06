@@ -119,9 +119,15 @@ class KickstartFactory(BaseFactory):
                         str = str + ' --nameserver=%s' % ','.join(dns)
                    
                 if not networks['fqhn_use_dhcp'] \
-                   and networks.has_key('fqhn') and networks['fqhn']: 
+                   and networks.has_key('fqhn_host') and networks['fqhn_host']: 
                     # manual hostname
-                    str = str + ' --hostname %s' % networks['fqhn']
+                    hostnameList = [networks['fqhn_host']]
+                    if networks.has_key('fqhn_domain') \
+                        and networks['fqhn_domain']:
+                        hostnameList.append(networks['fqhn_domain'])
+
+                    str += ' --hostname %s' % '.'.join(hostnameList)
+                    #str = str + ' --hostname %s' % networks['fqhn']
                 
                 network_lines.append(str)
 

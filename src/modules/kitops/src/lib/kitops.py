@@ -180,6 +180,14 @@ class KitOps:
             except Exception, e:
                 raise InstallKitRPMError, \
                         'Kit RPM installation failed\n%s' % e
+        else:
+            rpm = kitinfo[3]
+
+            # execute pre section
+            self.runRPMSection(rpm.getPre())
+
+            # execute post section
+            self.runRPMSection(rpm.getPost())
 
         # RPM install successful, add kit to DB
         self.__db.flush()
@@ -257,6 +265,8 @@ class KitOps:
 
         availableKits = []
         for kitrpm in self.mountpoint.walkfiles('kit-*.rpm'):
+            # TODO: should keep track of these locations and make sure we don't
+            # have multiple kit RPMs in the same directory tree
             location = kitrpm.abspath().dirname()
 
             # extract the kitrpm contents into a temporary directory
@@ -278,11 +288,11 @@ class KitOps:
                         'from RPMs directly', kitrpm)
                 kit, components = self.inspectRPMs(kitrpm)
                 if kit:
-                    availableKits.append((location, kit, components))
+                    availableKits.append((location, kit, components, rpm))
 
             for kitinfo in kitinfos:
                 kit, components = processKitInfo(kitinfo)
-                availableKits.append((location, kit, components))
+                availableKits.append((location, kit, components, rpm))
 
             tmpdir.rmtree()
 
@@ -599,6 +609,23 @@ class KitOps:
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
                 rmP.communicate()
+            elif self.installer:
+                kitpath = path(kit.path)
+                if kitpath.startswith('/'): kitpath = path(kitpath[1:])
+                kitpath = self.prefix / kitpath
+
+                rpmpath = kitpath.glob('kit-%s*.rpm' % kit.rname)
+                if len(rpmpath) > 1 or len(rpmpath) == 0:
+                    raise InvalidKitInfoError, \
+                        'Found %s kit RPMs in %s' % (len(rpmpath), kitpath)
+
+                rpm = RPM(str(rpmpath[0]))
+
+                # execute preun section
+                self.runRPMSection(rpm.getPreUn())
+
+                # execute postun section
+                self.runRPMSection(rpm.getPostUn())
 
             # remove tftpboot contents
             if kit.isOS:
@@ -608,12 +635,21 @@ class KitOps:
                     self.pxeboot_dir.rmdir()
 
             # remove the RPMS kit contents
+            #(self.prefix / del_path).rmtree()
             del_path.rmtree()
 
         self.__db.flush()
 
         if error_kits:
             raise DeleteKitsError, error_kits
+
+    def runRPMSection(self, cmd):
+        """
+        Runs the commands stored in an RPMs executable section (pre, post,
+        preun, postun).
+        """
+
+        kl.debug("About to run the following:\n%s", cmd)
 
     def listKit(self, kitname=None, kitver=None, kitarch=None):
         if kitname or kitver or kitarch:

@@ -50,7 +50,8 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         self.netProfile['fqhn_use_dhcp'] = self.use_dhcp.value()
-        self.netProfile['fqhn'] = self.hostname.value()
+        self.netProfile['fqhn_host'] = self.hostname.value()
+        self.netProfile['fqhn_domain'] = self.domain.value()
 
         if not self.netProfile['fqhn_use_dhcp']:
             self.netProfile['fqhn_host'] = ''
@@ -133,9 +134,8 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                 errList.append(_('Host Name: ') + msg)
 
             rv, msg = self.domain.verify()
-            if rv is None:
-                errList.append(_('DNS Zone field is empty'))
-            elif not rv:
+            # DNS zone can be empty
+            if rv is not None and not rv:
                 errList.append(_('DNS Zone: ') + msg)
 
             if errList:
