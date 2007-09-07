@@ -29,15 +29,10 @@ BuildArchitectures: noarch
 This package is a metapackage for Lava
 
 %prep
+mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
+
+%install
+install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %files
-
-%pre
-
-%post
-#equivalent of the kits post section for the client
-
-%preun
-
-%postun
-#equivalent of the kits uninstall section for the client
+/etc/rc.kusu.d/S10lava-genconfig
