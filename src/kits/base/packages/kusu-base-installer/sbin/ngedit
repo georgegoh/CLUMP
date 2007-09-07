@@ -834,21 +834,6 @@ class scrNGEEdit_Modules(USXBaseScreen):
     def doForwardAction(self):
         return NAV_FORWARD
 
-    def seq2tplstr(self,seq):
-        '''convert a sequence to a tuple string representation without a trailing comma
-        '''
-        if not seq:
-            return None
-        try:
-            if len(seq) == 1:
-                tplstr = '(%s)' % str(seq[0])
-            else:
-                tplstr = str(tuple(seq))
-            return tplstr
-        except:
-            return None
-
-
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
         self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
@@ -879,7 +864,7 @@ class scrNGEEdit_Modules(USXBaseScreen):
         assert(repopackdir)
 
         #2. obtain the name of driverpacks to examine
-        query = "SELECT dpname from driverpacks where cid in " + self.seq2tplstr(curNG['comps'])
+        query = "SELECT dpname from driverpacks where cid in " + seq2tplstr(curNG['comps'])
         self.database.execute(query)
         rv = self.database.fetchall()
         dpacklst = [ x for x, in rv]
@@ -1030,102 +1015,6 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         return NAV_FORWARD
 
 
-    def createSchema(self, part_rules, diskprofile):
-        ''' creates a partition schema compatible with nodeinstaller's with addition
-            of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
-            nodeinstaller's partition API
-        '''
-
-        schema = {'disk_dict':{},'vg_dict':{}}
-        vg_list = getVGList(part_rules, diskprofile)
-        part_list = getPartList(part_rules, diskprofile)
-        lv_list = getLVList(part_rules, diskprofile)
-
-        # create the volume groups first.
-        try:
-            for vginfo in vg_list:
-                vgname = vginfo['device']
-                vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
-                schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
-                                             'extent_size':vg_extent_size,
-                                             'name':vgname, 'instid': vginfo.PKval}
-    
-            # create the normal volumes.
-            for partinfo in part_list:
-                fs = translateFSTypes(partinfo['fstype'])
-                self.createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
-                pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
-                if pv:
-                    handlePV(partinfo, vg_name, schema['vg_dict'])
-            # renumber spanning partitions - resolve 'N'
-            for disk in schema['disk_dict'].itervalues():
-                part_dict = disk['partition_dict']
-                if part_dict.has_key('N'):
-                    partition = part_dict['N']
-                    part_dict[len(part_dict)] = partition
-                    del part_dict['N']
-    
-            # create the logical volumes.
-            for lvinfo in lv_list:
-                lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
-                if lv: 
-                    handleLV(lvinfo, vg_name, schema['vg_dict'])
-                    #associate with corresponding PartitionRec instance
-                    vg = schema['vg_dict'][vg_name.strip()]
-                    lv_name = lvinfo['device']
-                    vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
-    
-            attachPVsToVGs(diskprofile, schema['vg_dict'])
-    
-            preserve_types = Partition.native_type_dict.values()
-            preserve_fs = DiskProfile.fsType_dict.keys()
-            preserve_mntpnt = diskprofile.mountpoint_dict.keys()
-            preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
-            schema['preserve_types'] = preserve_types
-            schema['preserve_fs'] = preserve_fs
-            schema['preserve_mntpnt'] = preserve_mntpnt
-            schema['preserve_lv'] = preserve_lv
-    
-        except ValueError:
-            raise InvalidPartitionSchema, "Couldn't parse one of the lines."
-    
-        return schema
-
-    def createPartition(self, partinfo, disk_dict, vg_dict):
-        """ Create a new partition and add it to the supplied disk dictionary."""
-        try:
-            disknum = int(partinfo['device'])
-            part_no = translatePartitionNumber(partinfo['partition'])
-        except ValueError:
-            if partinfo['device'].lower() == 'n':
-                handleSpanningPartition(partinfo, disk_dict, vg_dict)
-                disknum = 1
-                part_no = 'N'
-            else:
-                raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
-        try:
-            size = translatePartitionSize(partinfo['size'])
-            fs = translateFSTypes(partinfo['fstype'])
-            mountpoint = translateMntPnt(partinfo['mntpnt'])
-            fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
-        except ValueError:
-            raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
-                                          "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
-                                          "part_no=%s" % (partinfo['device'], partinfo['size'], \
-                                          partinfo['fstype'], partinfo['mntpnt'], \
-                                          partinfo['options'], partinfo['partition'])
-     
-        if part_no != 'N' and part_no <= 0:
-            raise InvalidPartitionSchema, "Partition number cannot be less than 1."
-        partition = {'size_MB': size, 'fill': fill,
-                     'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
-    
-        if disk_dict.has_key(disknum): disk = disk_dict[disknum]
-        else: disk = {'partition_dict': {}}
-        disk['partition_dict'][part_no] = partition
-        disk_dict[disknum] = disk
-
-
     def drawImpl(self):
         #from kusu.ngedit.defaults import setupDiskProfile #Disk,Partition,LVMCollection, etc
         #import kusu.util.log as kusulog
@@ -1153,7 +1042,8 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                 p['device'] = ''
 
         t1 = time.time()
-        self.schema = self.createSchema(partdictlst,self.disk_profile)
+        #FIXME: createSchema name conflict
+        self.schema = mycreateSchema(partdictlst,self.disk_profile)
         schema = self.schema
         #setupDiskProfile(self.disk_profile, schema)
         t2 = time.time()
@@ -1680,9 +1570,9 @@ class NGEApp(KusuApp):
         ''' parse the CL, populate options dict, & define self.action
         '''
         (options, args) = self.parser.parse_args()
-        print 'options = ', options
-        print 'args = ', args
-        print 'class(options) = ', options.__class__
+        #print 'options = ', options
+        #print 'args = ', args
+        #print 'class(options) = ', options.__class__
 
         if args:
             self.stderrMessage('ngedit: No arguments expected - encountered args = %s\n',
@@ -1765,6 +1655,95 @@ class NGEApp(KusuApp):
             ngdel = NodeGroup(ngid = ngid)
             ngdel.syncFromDB(self.__db)
             ngdel.eraseFromDB(self.__db)
+
+        elif self.action == NGE_PRNALL:
+            self.__db.execute('select ngname,ngdesc,type from nodegroups')
+            rv = self.__db.fetchall()
+            rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+            for ngname,ngdesc,type in rv:
+                print "%s : %s : %s" %(ngname,ngdesc,type)
+
+        elif self.action == NGE_PRNSTL:
+            query = ''' select n.name, n.lastupdate, n.rack, n.rank from nodes n,
+                        nodegroups ng where n.state = 'Expired' and n.ngid = ng.ngid
+                        and ng.ngname = '%s' ''' % self.ng
+            self.__db.execute(query)
+            rv = self.__db.fetchall()
+            rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+
+            for name,lastup,rack,rank in rv:
+                print "%s | %s | %s | %s" %(name,lastup,rack,rank)
+
+        elif self.action == NGE_PRNONE:
+            self.__db.execute("select ngid from nodegroups where ngname = '%s'" %self.ng)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+            ngprn = NodeGroup(ngid = ngid)
+            ngprn.syncFromDB(self.__db)
+            ngprn.prettyPrint()
+
+            #print repo
+            reponame = None
+            if ngprn['repoid']:
+                self.__db.execute("select reponame from repos where repoid = %s " %ngprn['repoid'])
+                rv = self.__db.fetchone()
+                if rv:
+                    reponame = rv[0]
+            justval = len("Nodename Format: ")
+            print "Repository: ".ljust(justval), reponame
+
+            #print inSync info
+            query = "select nid from nodes where ngid = %s and state = 'Expired'" % ngid
+            self.__db.execute(query)
+            rv = self.__db.fetchall()
+            inSync = True
+            if len(rv) > 0:
+                inSync = False
+            print "In Sync: ".ljust(justval), inSync
+
+            # print all the links now
+            # oneliners: components, modules, packages, scripts
+            compsstr = None
+            if ngprn['comps'] :
+                ngprn['comps'] = [ int(x) for x in ngprn['comps'] ]
+                query = ''' select k.rname,c.cname,c.cdesc from kits k, components c
+                             where c.kid = k.kid and c.cid in %s ''' %seq2tplstr(ngprn['comps'])
+                self.__db.execute(query)
+                rv = self.__db.fetchall()
+                compsstr = '\n'
+                for rname,cname,cdesc in rv:
+                    compsstr += "\t%s : %s : %s\n" %(rname,cname,cdesc)
+            print "Components: ".ljust(justval), compsstr
+
+            if ngprn['packs']:
+                #assume min(columns) >= 80
+                ngprn['packs'].sort()
+                packstr = ''
+                for i in xrange(len(ngprn['packs'])):
+                    if i%2 == 0:
+                        packstr += '\t' + ngprn['packs'][i].ljust(36)
+                    else:
+                        packstr += ngprn['packs'][i].ljust(36)+'\n'
+                print 'Packages:\n' + packstr
+            else:
+                print 'Packages: '.ljust(justval), None
+
+            if ngprn['modules']:
+                ngprn['modules'].sort()
+                print 'Modules:\n\t', string.join(ngprn['modules'], ', ')
+            else:
+                print 'Modules: '.ljust(justval), None
+            if ngprn['scripts']:
+                ngprn['scripts'].sort()
+                print 'Scripts:\n\t', string.join(ngprn['scripts'], ', ')
+            else:
+                print 'Scripts: '.ljust(justval), None
+
+            #extended info on: networks, partition schema
+            #for partitions follow the TUI case: build schema and pretty print
 
 
 

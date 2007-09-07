@@ -193,6 +193,10 @@ class KusuDBRec(UserDict):
         except Exception,msg:
             raise NGEDBWriteFail,msg
 
+    def prettyPrint(self):
+        ''' virtual print '''
+        pass
+
 
 class PartitionRec(KusuDBRec):
     fields = ( 'idpartitions', 'ngid', 'device', 'partition', 'mntpnt',
@@ -207,6 +211,16 @@ class NodeGroupRec(KusuDBRec):
                'nameformat', 'kernel', 'initrd', 'kparams', 'type'
              )
     table = 'nodegroups'
+
+    def prettyPrint(self):
+        print "Name:            ", self.data['ngname']
+        print "Desc:            ", self.data['ngdesc']
+        print "Type:            ", self.data['type']
+        print "Install Type:    ", self.data['installtype']
+        print "Nodename Format: ", self.data['nameformat']
+        print "Kernel:          ", self.data['kernel']
+        print "Kernel Params:   ", self.data['kparams']
+        print "Initrd:          ", self.data['initrd']
 
 
         
@@ -385,6 +399,118 @@ def RpmNameSplit(packname):
         raise Exception, str(msg)+"\npackname = %s,rv = %s" %(packname,str(rv))
     rv[0:2] = nvr.rsplit('-',2)
     return tuple(rv)
+
+def seq2tplstr(seq):
+    '''convert a sequence to a tuple string representation without a trailing comma
+    '''
+    if not seq:
+        return None
+    try:
+        if len(seq) == 1:
+            tplstr = '(%s)' % str(seq[0])
+        else:
+            tplstr = str(tuple(seq))
+        return tplstr
+    except:
+        return None
+
+from kusu.ngedit.partition import *
+
+def mycreateSchema(part_rules, diskprofile):
+    ''' creates a partition schema compatible with nodeinstaller's with addition
+        of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
+        nodeinstaller's partition API
+    '''
+
+    schema = {'disk_dict':{},'vg_dict':{}}
+    vg_list = getVGList(part_rules, diskprofile)
+    part_list = getPartList(part_rules, diskprofile)
+    lv_list = getLVList(part_rules, diskprofile)
+
+    # create the volume groups first.
+    try:
+        for vginfo in vg_list:
+            vgname = vginfo['device']
+            vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
+            schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
+                                         'extent_size':vg_extent_size,
+                                         'name':vgname, 'instid': vginfo.PKval}
+
+        # create the normal volumes.
+        for partinfo in part_list:
+            fs = translateFSTypes(partinfo['fstype'])
+            createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
+            pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+            if pv:
+                handlePV(partinfo, vg_name, schema['vg_dict'])
+        # renumber spanning partitions - resolve 'N'
+        for disk in schema['disk_dict'].itervalues():
+            part_dict = disk['partition_dict']
+            if part_dict.has_key('N'):
+                partition = part_dict['N']
+                part_dict[len(part_dict)] = partition
+                del part_dict['N']
+
+        # create the logical volumes.
+        for lvinfo in lv_list:
+            lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
+            if lv: 
+                handleLV(lvinfo, vg_name, schema['vg_dict'])
+                #associate with corresponding PartitionRec instance
+                vg = schema['vg_dict'][vg_name.strip()]
+                lv_name = lvinfo['device']
+                vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
+
+        attachPVsToVGs(diskprofile, schema['vg_dict'])
+
+        preserve_types = Partition.native_type_dict.values()
+        preserve_fs = DiskProfile.fsType_dict.keys()
+        preserve_mntpnt = diskprofile.mountpoint_dict.keys()
+        preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
+        schema['preserve_types'] = preserve_types
+        schema['preserve_fs'] = preserve_fs
+        schema['preserve_mntpnt'] = preserve_mntpnt
+        schema['preserve_lv'] = preserve_lv
+
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the lines."
+
+    return schema
+
+def createPartition(partinfo, disk_dict, vg_dict):
+    """ Create a new partition and add it to the supplied disk dictionary."""
+    try:
+        disknum = int(partinfo['device'])
+        part_no = translatePartitionNumber(partinfo['partition'])
+    except ValueError:
+        if partinfo['device'].lower() == 'n':
+            handleSpanningPartition(partinfo, disk_dict, vg_dict)
+            disknum = 1
+            part_no = 'N'
+        else:
+            raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
+    try:
+        size = translatePartitionSize(partinfo['size'])
+        fs = translateFSTypes(partinfo['fstype'])
+        mountpoint = translateMntPnt(partinfo['mntpnt'])
+        fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
+    except ValueError:
+        raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
+                                      "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
+                                      "part_no=%s" % (partinfo['device'], partinfo['size'], \
+                                      partinfo['fstype'], partinfo['mntpnt'], \
+                                      partinfo['options'], partinfo['partition'])
+ 
+    if part_no != 'N' and part_no <= 0:
+        raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+    partition = {'size_MB': size, 'fill': fill,
+                 'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+
+    if disk_dict.has_key(disknum): disk = disk_dict[disknum]
+    else: disk = {'partition_dict': {}}
+    disk['partition_dict'][part_no] = partition
+    disk_dict[disknum] = disk
+
 
 import snack
 from kusu.ui.text.USXscreenfactory import USXBaseScreen
