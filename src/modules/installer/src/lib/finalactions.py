@@ -178,7 +178,8 @@ def writeNTP(prefix, kiprofile):
     prefix = path(prefix)
     
     ntp = path(prefix / 'etc' / 'ntp.conf')
-    ntp.parent.makedirs()
+    if not ntp.parent.exists():
+        ntp.parent.makedirs()
 
     kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
     src = kusu_root / 'etc' / 'templates' / 'ntp.conf.tmpl'
@@ -213,7 +214,7 @@ def setInstallFlag(prefix, kiprofile):
     if kiprofile['OS'] in ['rhel', 'fedora', 'centos']:
         tmpdir.chmod(1777)
 
-    flag = tmpdir /  'kusu ' / 'installer_running'
+    flag = tmpdir /  'kusu' / 'installer_running'
     flag.parent.makedirs()
     flag.touch()
 

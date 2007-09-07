@@ -184,10 +184,12 @@ class KitOps:
             rpm = kitinfo[3]
 
             # execute pre section
-            self.runRPMSection(rpm.getPre())
+            self.addRPMPreScript(kit['name'], kit['version'], kit['arch'],
+                                 rpm.getPre())
 
             # execute post section
-            self.runRPMSection(rpm.getPost())
+            self.addRPMPostScript(kit['name'], kit['version'], kit['arch'],
+                                  rpm.getPost())
 
         # RPM install successful, add kit to DB
         self.__db.flush()
@@ -610,22 +612,8 @@ class KitOps:
                                        stderr=subprocess.PIPE)
                 rmP.communicate()
             elif self.installer:
-                kitpath = path(kit.path)
-                if kitpath.startswith('/'): kitpath = path(kitpath[1:])
-                kitpath = self.prefix / kitpath
-
-                rpmpath = kitpath.glob('kit-%s*.rpm' % kit.rname)
-                if len(rpmpath) > 1 or len(rpmpath) == 0:
-                    raise InvalidKitInfoError, \
-                        'Found %s kit RPMs in %s' % (len(rpmpath), kitpath)
-
-                rpm = RPM(str(rpmpath[0]))
-
-                # execute preun section
-                self.runRPMSection(rpm.getPreUn())
-
-                # execute postun section
-                self.runRPMSection(rpm.getPostUn())
+                # remove any scripts
+                self.removeRPMScripts(kit.rname, kit.version, kit.arch)
 
             # remove tftpboot contents
             if kit.isOS:
@@ -635,7 +623,6 @@ class KitOps:
                     self.pxeboot_dir.rmdir()
 
             # remove the RPMS kit contents
-            #(self.prefix / del_path).rmtree()
             del_path.rmtree()
 
         self.__db.flush()
@@ -643,13 +630,61 @@ class KitOps:
         if error_kits:
             raise DeleteKitsError, error_kits
 
-    def runRPMSection(self, cmd):
+    def addRPMPreScript(self, kitname, kitver, kitarch, cmd):
         """
-        Runs the commands stored in an RPMs executable section (pre, post,
-        preun, postun).
+        Places commands in cmd into a kusurc pre section script.
         """
 
-        kl.debug("About to run the following:\n%s", cmd)
+        self.addRPMScript(kitname, kitver, kitarch, cmd, 0)
+
+    def addRPMPostScript(self, kitname, kitver, kitarch, cmd):
+        """
+        Places commands in cmd into a kusurc post section script.
+        """
+
+        self.addRPMScript(kitname, kitver, kitarch, cmd, 1)
+
+    def addRPMScript(self, kitname, kitver, kitarch, cmd, order):
+        """
+        Places commands in cmd into a kusurc script.
+        """
+
+        script = self.getRPMScriptName(kitname, kitver, kitarch, order)
+
+        if script.exists():
+            kl.debug("Script '%s' already exists, doing nothing" % script)
+            return
+
+        kl.debug("Writing to '%s' the following:\n%s", script, cmd)
+
+        if not script.parent.exists():
+            script.parent.makedirs()
+
+        f = open(script, 'w')
+        f.write(cmd + '\nrm -r $0\n') # also delete myself when I'm finished
+        f.flush()
+        f.close()
+
+    def removeRPMScripts(self, kitname, kitver, kitarch):
+        """
+        Removes kusurc script for this kit RPM.
+        """
+
+        for order in [0, 1]:
+            script = self.getRPMScriptName(kitname, kitver, kitarch, order)
+            kl.debug("Removing '%s'", script)
+
+            if script.exists():
+                script.remove()
+
+    def getRPMScriptName(self, kitname, kitver, kitarch, order):
+        """
+        Generates a kusurc script name for this kit.
+        """
+
+        script = path('S01KusuDB-script-%s-%s-%s-%s.rc' % (kitname, kitver,
+                                                           kitarch, order))
+        return self.prefix / 'etc/rc.kusu.d' / script
 
     def listKit(self, kitname=None, kitver=None, kitarch=None):
         if kitname or kitver or kitarch:
