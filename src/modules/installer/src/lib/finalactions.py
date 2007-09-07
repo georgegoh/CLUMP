@@ -38,23 +38,39 @@ def makeRepo(kiprofile):
 
     db = kiprofile.getDatabase()
     rfactory = RepoFactory(db, kiprofile['Kusu Install MntPt'])
-
-    #Guaranteed by installer screens. Only 1 OS kit for the platform
-    #we are installing
-    logger.debug('Making repo using rfactory.')
     ngname = 'installer' + '-' + kiprofile['Kits']['longname']
-    repo = rfactory.make(ngname, 'Repo for ' + ngname)
+    reponame = 'Repo for ' + kiprofile['Kits']['longname']
 
-    logger.debug('Save repo.')
-    repoRow = db.Repos.get(repo.repoid)
-    repoRow.reponame = 'Repo for ' + kiprofile['Kits']['longname']
-    repoRow.save()
-    repoRow.flush()
+    logger.debug('Making repo')
+
+    repo = db.Repos()
+    repo.reponame = reponame
+    row = db.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
+    masterNode = db.Nodes.select_by(name=row.kvalue)[0]
+    repo.installers = ';'.join([nic.ip for nic in masterNode.nics if nic.ip])
+    repo.kits = db.Kits.select()
+    repo.ostype = '%s-%s-%s' % (kiprofile['OS'], kiprofile['OS_VERSION'], kiprofile['OS_ARCH'])
+    repo.save()
+    repo.flush()
+
+    location = path('/depot/repos/%s' % repo.repoid)
+    (path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / str(repo.repoid)).makedirs()
+    repo.repository = str(location)
+    repo.save()
+    repo.flush()
+
+    ng = db.NodeGroups.select_by(ngname = ngname)[0]    
+    ng.repoid = repo.repoid
+    ng.save()
+    ng.flush()
+    
+    r = rfactory.getRepo(repo.repoid)
+    r.refresh(repo.repoid)
 
     logger.debug('Making symlink to $KUSU_TMP/www.')
     #Makes symlink in $KUSU_TMP/www
     kusu_tmp = os.environ.get('KUSU_TMP', None)
-    repo.repo_path.symlink(path(kusu_tmp) / 'www')
+    (path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / str(repo.repoid)).symlink(path(kusu_tmp) / 'www')
 
     logger.debug('Finalising repo.')
     # workaround for starting repoIDs at 1000

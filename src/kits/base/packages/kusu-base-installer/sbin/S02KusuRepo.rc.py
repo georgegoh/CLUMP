@@ -20,24 +20,15 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Makes the repoistory for compute and installer nodes."""
 
-        from kusu.repoman.repofactory import RepoFactory
+        repoid = self.dbs.Repos.select()[0].repoid
 
-        rfactory = RepoFactory(self.dbs)
-        longname = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
+        ngs = self.dbs.NodeGroups.select()
+        for ng in ngs:
+            if ng.ngname == 'unmanaged':
+                continue
 
-        try:
-            ngname = 'compute' + '-' + longname
-            rfactory.make(ngname, 'Repo for ' + ngname)
-        except: pass
-
-        try:
-            ngname = 'compute-diskless' + '-' + longname
-            rfactory.make(ngname, 'Repo for ' + ngname)
-        except: pass
-        
-        try:
-            ngname = 'compute-imaged' + '-' + longname
-            rfactory.make(ngname, 'Repo for ' + ngname)
-        except: pass
+            ng.repoid = repoid
+            ng.save()
+            ng.flush()
 
         return True
