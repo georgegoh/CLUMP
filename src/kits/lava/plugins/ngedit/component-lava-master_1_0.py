@@ -19,7 +19,7 @@ class NGPlugin(NGEPluginBase):
 	except:
             return
    
-	os.system("mkdir -p /etc/cfm/%s/opt/lava/conf" % ngname)
+	os.system('mkdir -p \"/etc/cfm/%s/opt/lava/conf\"' % ngname)
 
     def remove(self):
         assert(self.ngid)
@@ -30,4 +30,4 @@ class NGPlugin(NGEPluginBase):
         except:
             return
 
-        os.system("rm -rf /etc/cfm/%s/opt/lava/conf" % ngname)
+        os.system('rm -rf \"/etc/cfm/%s/opt/lava/conf\"' % ngname)

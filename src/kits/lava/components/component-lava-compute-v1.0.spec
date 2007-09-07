@@ -24,7 +24,7 @@ License: LGPL
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
-Requires: lava-1.0
+Requires: lava = 1.0
 
 %description
 This package is a meta package for Lava

@@ -137,7 +137,7 @@ class thisReport(Report):
 		nodes = []	
 		for name in self.db.fetchall():
 			nodes.append(name)
-			print "Got %s, %s, %d \n" % name
+			#print "Got %s, %s, %d \n" % name
 
 		# Add nodes
 		for node in nodes:

@@ -24,7 +24,6 @@ Vendor: Platform Computing Corporation
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
 AutoReq: no
-Requires: component-lava-master-v1.0
 
 %description
 This package is destined for the installer node and serves as an 
@@ -66,7 +65,6 @@ rm -rf $RPM_BUILD_ROOT
 /repo/www/kits/%{name}/%{version}/lava_admin_1.0.pdf
 /repo/www/kits/%{name}/%{version}/lava_using_1.0.pdf
 
-
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py
 /opt/kusu/lib/plugins/genconfig/*.py
@@ -76,9 +74,10 @@ rm -rf $RPM_BUILD_ROOT
 #%exclude /opt/kusu/lib/plugins/genconfig/*.py?
 #%exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
-%pre
-
 %post
+
+# In Anaconda install mode?
+if [ -e /tmp/kusu/installer_running ]; then exit 0; fi 
 
 # Check if MySQL is running if not, start it.
 if [ `service mysqld status | grep -c running` -ne 1 ]; then
@@ -88,27 +87,27 @@ fi
 # SQL/Shell/Python code to update the database.. The updates may optionally
 # include Node group creation and component association
 
-nodegroup=`sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid=2'`
-ngedit -c $nodegroup -n new_nodegroup
+component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-master-v1.0'`
+component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-compute-v1.0'`
 
-component=`sqlrunner -q 'SELECT cid FROM components WHERE cname='component-service1'`
-sqlrunner -q 'DELETE FROM ng_has_comp WHERE ngid = (SELECT ngid FROM nodegroups WHERE ngname = 'new_nodegroup')'
+sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 1, cid = $component_id_master`
 
-sqlrunner -q 'INSERT INTO ng_has_comp SET cid=$component, ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'new_nodegroup')'
+sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 2, cid = $component_id_compute'
+sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 3, cid = $component_id_compute'
+sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 4, cid = $component_id_compute'
 
-sqlrunner -q 'INSERT INTO ng_has_comp SET cid=(SELECT cid FROM components WHERE cname = 'component-base-node'), ngid = (SELECT ngid FROM nodegroups WHERE ngname = 'new_nodegroup')'
-
-sqlrunner -q 'UPDATE nodegroups SET ngdesc='Brand Spanking new Node Group''
-
-
-%preun
+%postun
 
 # Check if MySQL is running if not, start it.
 if [ `service mysqld status | grep -c running` -ne 1 ]; then
    service mysqld start
 fi
 
-ngedit -d new_nodegroup
-
-%postun
 # Code necessary to cleanup the database from any entries inserted by the %post
+
+component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-master-v1.0'`
+component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-compute-v1.0'`
+
+sqlrunner -q 'DELETE FROM ng_has_comp WHERE cid = $component_id_master OR cid = $component_id_compute'
+
+

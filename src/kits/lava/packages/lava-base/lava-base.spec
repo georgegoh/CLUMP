@@ -128,10 +128,16 @@ install -m444 lava.init $RPM_BUILD_ROOT/etc/init.d/lava
 %defattr(-,root,root)
 /etc/init.d/lava
 /opt/lava/%{version}/*
+/opt/lava/conf/cshrc.lsf
+/opt/lava/conf/profile.lsf
 
 %files master-config
 /opt/lava/conf/*
 /opt/lava/work/*
+%exclude /opt/lava/conf/cshrc.lsf
+%exclude /opt/lava/conf/profile.lsf
+
+
 
 ##
 ## CLEAN

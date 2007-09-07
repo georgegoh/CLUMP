@@ -169,12 +169,12 @@ class AddHostPlugin(AddHostPluginBase):
     	    """ Fix CFM symlinks for master and master candidate Lava nodegroups """
 
 	    for nodegroup in nodegroups:
-	       if not os.path.exists("/etc/cfm/\'%s\'/opt/lava/conf/lsf.cluster.lava" % nodegroup):
-		  os.system("mkdir -p /etc/cfm/\'%s\'/opt/lava/conf" % nodegroup)
-                  os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/\'%s\'/opt/lava/conf/lsf.cluster.lava" % nodegroup)
+	       if not os.path.exists('/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava' % nodegroup):
+		  os.system("mkdir -p '/etc/cfm/\"%s\"/opt/lava/conf'" % nodegroup)
+                  os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/%s/opt/lava/conf/lsf.cluster.lava" % nodegroup)
 
-	       if not os.path.exists("/etc/cfm/\'%s\'/opt/lava/conf/hosts" % nodegroup):
-		  os.symlink("/opt/lava/conf/hosts", "/etc/cfm/\'%s\'/opt/lava/conf/hosts" % nodegroup)
+	       if not os.path.exists("/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup):
+		  os.symlink("/opt/lava/conf/hosts", "/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup)
 		       
 	def reconfigLava(self):
 		"""Restart Lava cluster"""
