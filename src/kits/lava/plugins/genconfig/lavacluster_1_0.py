@@ -27,7 +27,7 @@ import sys
 import string
 
 global COMPONENT_NAME
-COMPONENT_NAME = 'component-lava-compute'
+COMPONENT_NAME = 'component-lava-compute-v1.0'
 
 class thisReport(Report):
 
@@ -40,7 +40,7 @@ class thisReport(Report):
 	def getClusterHosts(self):
 		filename = "/opt/lava/conf/lsf.cluster.lava"
 		if os.path.exists(filename) == 0:
-			return
+			return False
 		
 		fp = file(filename, 'r')
                 data = []
@@ -144,14 +144,114 @@ class thisReport(Report):
 			if node in currenthosts:
 				continue
 			print '%s\t!\t!\t1     3.5 ()    ()    (%s)' % (node, res)
-      
+
+
+        def generateLavaClusterHosts(self):
+            print """
+#-----------------------------------------------------------------------
+# T H I S   I S   A    O N E   P E R   C L U S T E R    F I L E
+#
+# This is a sample cluster definition file.  There is a cluster
+# definition file for each cluster.  This file's name should be
+# lsf.cluster."cluster-name".
+# See lsf.cluster(5) and the "Inside Platform Lava".
+#
+
+Begin   ClusterAdmins
+Administrators = lavaadmin
+End    ClusterAdmins
+
+Begin   Host
+HOSTNAME  model    type        server r1m  mem  swp  RESOURCES    #Keywords
+#apple    Sparc5S  SUNSOL       1     3.5  1    2   (sparc bsd)   #Example
+#peach    DEC3100  DigitalUNIX  1     3.5  1    2   (alpha osf1)
+#banana   HP9K778  HPPA         1     3.5  1    2   (hp68k hpux)
+#mango    HP735    HPPA         1     3.5  1    2   (hpux cs)
+#grape    SGI4D35  SGI5         1     3.5  1    2   (irix)
+#lemon    PC200    LINUX        1     3.5  1    2   (linux)
+#pear     IBM350   IBMAIX4      1     3.5  1    2   (aix cs)
+#plum     PENT_100 NTX86        1     3.5  1    2   (nt)
+#berry    DEC3100  !            1     3.5  1    2   (ultrix fs bsd mips dec)
+#orange   !        SUNSOL       1     3.5  1    2   (sparc bsd)   #Example
+#prune    !        !            1     3.5  1    2   (convex)
+%s !       !       1       3.5 ()   ()   ()
+End     Host
+
+Begin Parameters
+End Parameters
+
+# Begin ResourceMap
+# RESOURCENAME  LOCATION
+# tmp2          [default]
+# nio           [all]
+# console       [default]
+# End ResourceMap
+""" % self.db.getAppglobals('PrimaryInstaller')
+
+        def generateLavaBatchConfig(self):
+            print """
+# The section "host" is optional.  If no hosts are listed here, all hosts
+# known by Lava will be used by Batch.  Otherwise only the hosts listed will
+# be used by Batch.  The value of keyword HOST_NAME may be an official host
+# name (see gethostbyname(3)), a host type/model name (see lsf.shared(5)), or
+# the reserved word "default".  The type/model name represents each of the
+# hosts which are of that particular host type/model.  The reserved
+# word "default" represents all other hosts in the Lava cluster.
+
+# MXJ is the maximum number of jobs which can run on the host at one time.
+# If MXJ is set as ! the system automatically assigns it to be the
+# number of CPUs on the host.
+
+# DISPATCH_WINDOW is the time windows when the host is available to run
+# batch jobs.  The default dispatch window is always open.
+
+# Other columns specify scheduling and stopping thresholds for LIM load
+# indices.  A "()" or "-" is used to specify the default value in a column
+# and cannot be omitted.
+
+# All the host names (except default) in this example are commented out,
+# since they are just examples which may not be suitable for some sites.
+# Don't use non-default thresholds unless job dispatch needs to be controlled.
+
+Begin Host
+HOST_NAME MXJ   r1m     pg    ls    tmp  DISPATCH_WINDOW  # Keywords
+#apple        1    1   3.5/4.5  15/   12/15  0      ()             # Example
+#orange       ()   2     3.5  15/18   12/    0/  (5:19:00-1:8:30 20:00-8:30)
+#grape        ()   ()   3.5/5   18    15     ()     ()             # Example
+#banana       ()   ()    ()     ()    ()     ()     ()             # Example
+#pomegranate  3    1     ()     ()    ()     ()     ()             # Example
+#SPARCIPC     ()   ()  4.0/5.0  18    16     ()     ()             # Example
+default    !    ()      ()    ()     ()     ()             # Example
+%s 0       ()         ()      ()   ()   ()
+End Host
+""" % self.db.getAppglobals('PrimaryInstaller')
+
 	def runPlugin(self, pluginargs):
 		if self.haveLsf() != 1:
 			print "# Error:  Not an Lava machine OR Lava not ready"
 			return
 
 		chosts = []
-		chosts = self.getClusterHosts()
-		fp = self.preHostEndList()
-		self.newLines(chosts)
-		self.postHostEndList(fp)
+
+                if not pluginargs: # Default generate cluster file
+		   chosts = self.getClusterHosts()
+                   if chosts:
+		      fp = self.preHostEndList()
+		      self.newLines(chosts)
+		      self.postHostEndList(fp)
+                   else:
+                      self.generateLavaClusterHosts()
+        
+                if len(pluginargs) > 0:
+                   if pluginargs[0] == 'cluster':
+                      chosts = self.getClusterHosts()
+                      if chosts:
+                         fp = self.preHostEndList()
+                         self.newLines(chosts)
+                         self.postHostEndList(fp)
+                      else:
+                         self.generateLavaClusterHosts()
+
+                   if pluginargs[0] == 'batch':
+                      self.generateLavaBatchConfig()
+ 

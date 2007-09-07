@@ -34,6 +34,7 @@ ARCH=$(shell arch)
 rpm:
 	-mkdir -p $(TOPDIR)/BUILD
 	-mkdir -p $(TOPDIR)/SOURCES
+	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 
 	# Copy the tarballs from PCC and put into roll automatically.
 	@if [ "x${ARCH}" == "xx86_64" ]; then \
