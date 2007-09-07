@@ -18,8 +18,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 
-
-from MySQLdb import *
+try:
+    from MySQLdb import *
+except ImportError:
+    # FIXME: let's hope this happens during the Kusu Installer environment
+    pass
 #commenting this out for now as it's only avail. on my dev. box
 #from Crypto.Cipher import Blowfish
 import sys

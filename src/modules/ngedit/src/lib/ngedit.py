@@ -16,14 +16,13 @@ import string
 import re
 from UserDict import UserDict
 from sets import Set
-#from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
-#from kusu.ui.text.USXnavigator import *
-#from kusu.ui.text.kusuwidgets import LabelledEntry
-#from kusu.core.app import KusuApp
-#from kusu.core.db import KusuDB
 
-#global curNG, origNG
-#MAXWIDTH = 70
+NGE_TUI     = 0x01
+NGE_CPY     = 0x02
+NGE_DEL     = 0x04
+NGE_PRNSTL  = 0x08
+NGE_PRNALL  = 0x10
+NGE_PRNONE  = 0x20
 
 #emulate ternary cond. expression - only avail. in 2.5 & up :(
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
@@ -388,8 +387,8 @@ def RpmNameSplit(packname):
     return tuple(rv)
 
 import snack
-from kusu.ui.text.USXscreenfactory import USXBaseScreen
-from kusu.ui.text.USXnavigator import *
+from kusu.ngedit.ui.text.USXscreenfactory import USXBaseScreen
+from kusu.ngedit.ui.text.USXnavigator import *
 
 class NGEPluginBase(USXBaseScreen):
     name= 'Generic Plugin Name'

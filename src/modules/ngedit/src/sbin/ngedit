@@ -133,7 +133,7 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Partitions(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
 
@@ -955,12 +955,17 @@ class scrNGEEdit_Modules(USXBaseScreen):
         curNG['modules'] = self.__ct.getSelection()
         self.selector.popupMsg('selected modules', str(curNG['modules']))
 
-class scrNGEEdit_Partitions(USXBaseScreen):
-    name = 'Partitions'
-    buttons = ['next_button', 'back_button', 'cancel_button']
+class scrNGEEdit_PartSchema(USXBaseScreen):
+    name = 'Partition Schema'
+    buttons = [ 'next_button', 'back_button', 'new_button','edit_button', 
+                'delete_button', 'cancel_button'
+              ]
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.disk_profile = None
+        self.schema = None  # stores the partition schema information
+
 
     def setCallbacks(self):
 
@@ -968,6 +973,8 @@ class scrNGEEdit_Partitions(USXBaseScreen):
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.buttonsDict['new_button'].setCallback_(self.doNewAction)
+        self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
         self.hotkeysDict['F12'] = self.F12Action
 
     def F12Action(self):
@@ -975,6 +982,43 @@ class scrNGEEdit_Partitions(USXBaseScreen):
         self.selector.popupMsg('DEBUG', 'currently pointing to id = %s' %id)
         #self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
         return NAV_IGNORE
+
+    def doNewAction(self):
+        button,item = self.selector.popupListBox('Select type of device', "Please select what you'd like to create",\
+                 [('Partition', 'partition'), ('Logical Volume', 'log_vol')])
+
+        if button != 'cancel':
+            if item == 'partition':
+                partrec = PartitionRec()
+                ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
+                                        ]
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+                ks.run()
+            elif item == 'log_vol':
+                partrec = PartitionRec()
+                ScreenFactory.screens = [ scrPartSchema_LVEdit(partrec,database=self.database, kusuApp=self.kusuApp)
+                                        ]
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+                ks.run()
+
+        return NAV_NOTHING
+
+    def doEditAction(self):
+        #determine what the user is trying to edit
+        #if partition:
+        #    partrec = None
+        #    for p in curNG['parts']:
+        #        if p.PKval == selected PKval:
+        #            partrec = p
+        #            break
+        #    assert(partrec)
+        #    ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
+        #                            ]
+        #    ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+        #    ks.run()
+
+        return NAV_NOTHING
+
 
     def doBackAction(self):
         return NAV_BACK
@@ -986,15 +1030,12 @@ class scrNGEEdit_Partitions(USXBaseScreen):
         return NAV_FORWARD
 
 
-    def createSchema(self, part_rules):
+    def createSchema(self, part_rules, diskprofile):
         ''' creates a partition schema compatible with nodeinstaller's with addition
             of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
             nodeinstaller's partition API
         '''
-        from kusu.partitiontool import partitiontool
 
-        diskprofile = partitiontool.DiskProfile(fresh=True)
-        
         schema = {'disk_dict':{},'vg_dict':{}}
         vg_list = getVGList(part_rules, diskprofile)
         part_list = getPartList(part_rules, diskprofile)
@@ -1088,6 +1129,10 @@ class scrNGEEdit_Partitions(USXBaseScreen):
     def drawImpl(self):
         #from kusu.ngedit.defaults import setupDiskProfile #Disk,Partition,LVMCollection, etc
         #import kusu.util.log as kusulog
+        from kusu.partitiontool import partitiontool
+
+        if not self.disk_profile:
+            self.disk_profile = partitiontool.DiskProfile(fresh=True)
 
         self.screenGrid = snack.Grid(1, 1)
 
@@ -1108,26 +1153,26 @@ class scrNGEEdit_Partitions(USXBaseScreen):
                 p['device'] = ''
 
         t1 = time.time()
-        schema = self.createSchema(partdictlst)
+        self.schema = self.createSchema(partdictlst,self.disk_profile)
+        schema = self.schema
         #setupDiskProfile(self.disk_profile, schema)
         t2 = time.time()
 
-        str2display = ''
-        for d in schema.keys():
-            if type(schema[d]) == type({}):
-                str2display += d.upper()+'\n'
-                for k in schema[d].keys():
-                    if type(schema[d][k]) == type({}):
-                        str2display += "\t%s\n" %str(k).upper()
-                        for k2 in schema[d][k].keys():
-                            str2display += "\t\t%s : %s\n" % (k2, schema[d][k][k2])
-                    else:
-                        str2display += "\t%s : %s\n" %(k, schema[d][k])
-            else:
-                str2display += '%s : %s\n' %(d.upper(), schema[d])
-        str2display+='\npopulated disk profile in %f' %(t2-t1)
-
-        self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
+        #str2display = ''
+        #for d in schema.keys():
+        #    if type(schema[d]) == type({}):
+        #        str2display += d.upper()+'\n'
+        #        for k in schema[d].keys():
+        #            if type(schema[d][k]) == type({}):
+        #                str2display += "\t%s\n" %str(k).upper()
+        #                for k2 in schema[d][k].keys():
+        #                    str2display += "\t\t%s : %s\n" % (k2, schema[d][k][k2])
+        #            else:
+        #                str2display += "\t%s : %s\n" %(k, schema[d][k])
+        #    else:
+        #        str2display += '%s : %s\n' %(d.upper(), schema[d])
+        #str2display+='\npopulated disk profile in %f' %(t2-t1)
+        #self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
 
         # retrieve info about logical volumes and lv groups
         lvg_keys = schema['vg_dict'].keys()
@@ -1173,6 +1218,7 @@ class scrNGEEdit_Partitions(USXBaseScreen):
                 self.listbox.addRow([part_devicename,
                                     str(partition['size_MB']),
                                     fs_type,
+                                    #mountpoint], partition['instid'])
                                     mountpoint], partition['instid'])
 
 #        prog_dlg.close()
@@ -1192,6 +1238,143 @@ class scrNGEEdit_Partitions(USXBaseScreen):
     def formAction(self):
         #curNG['parts'] = 'something'
         self.selector.popupMsg('partition schema', str(curNG['parts']))
+
+class scrPartSchema_PartEdit(USXBaseScreen):
+    ''' This screen class allows to edit existing or create new Partitions. 
+        More specifically, it exposes PartRec to the user for modification.
+    '''
+    name = "Partition Modification"
+    buttons = [ 'ok_button', 'cancel_button' ]
+
+    def __init__(self,parentScreen, PartRec, database, kusuApp=None,gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.PartRec = PartRec  #a reference to the DB record we're working with
+        self.disk_profile = parentScreen.disk_profile
+        self.schema = parentScreen.schema
+        self.partition = None
+        self.disk_key = None
+        if PartRec and PartRec.PKval != None:
+            #we're editing - get a partition_dict handle
+            done = False
+            for disk_key in self.schema['disk_dict']:
+                for part_key in self.schema['disk_dict'][disk_key]:
+                    part_dict = self.schema['disk_dict'][disk_key][part_key]
+                    if part_dict['instid'] == PartRec.PKval:
+                        self.disk_key = disk_key
+                        self.partition = part_dict
+                        done = True
+                        break
+                if done:
+                    break
+
+
+    def setCallbacks(self):
+        #for the buttons
+        self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doOkAction(self):
+        #perform preparation required for validation and subsequent formAction
+        return NAV_FORWARD
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 5)
+
+        #mntpnt
+        self.mountpoint = kusuwidgets.LabelledEntry('Mount Point:', 20,
+                                                    text="", hidden=0,
+                                                    password=0, scroll=0,
+                                                    returnExit=0
+                                                   )
+        if self.partition and self.partition['mountpoint']:
+            self.mountpoint.setEntry(self.partition['mountpoint'])
+
+        #fs
+        self.filesystem = kusuwidgets.ColumnListbox(2, colWidths=[20], 
+                                                    colLabels=['File System type:'],
+                                                    justification=[LEFT],
+                                                    returnExit=0)
+
+        fs_types = self.disk_profile.fsType_dict.keys()
+        fs_types.sort()
+        for fs in fs_types:
+            self.filesystem.addRow([fs], fs)
+        if self.partition and self.partition['fs'] and self.partition['fs'] in fs_types:
+            self.filesystem.setCurrent(self.partition['fs'])
+
+        #disks
+        self.drives = kusuwidgets.ColumnListbox(2, colWidths=[20],
+                                                colLabels=['Allowable Drives:'],
+                                                justification=[LEFT],
+                                                returnExit=0)
+
+        disks = self.schema['disk_dict'].keys()
+        disks = ['Disk %s' %x for x in disks]
+        for disk in disks:
+            self.drives.addRow([disk], disk)
+        if self.disk_key:
+            self.drives.setCurrent('Disk %s' %self.disk_key)
+
+        #size
+        fill = False
+        size = ''
+        if self.partition:
+            fill = self.partition['fill']
+            size = self.partition['size_MB']
+            
+        self.fixed_size = snack.SingleRadioButton('Fixed Size (MB):', None,
+                                                  isOn=not fill)
+        self.fixed_size_entry = snack.Entry(7)
+
+        self.min_size = snack.SingleRadioButton('Fill at least (MB):',
+                                                self.fixed_size, isOn = fill)
+        self.min_size_entry = snack.Entry(7)
+        if fill:
+            self.min_size_entry.set(size)
+        else:
+            self.fixed_size_entry.set(size)
+
+        #preserve
+        self.do_not_format_partition = snack.Checkbox('Do not format partition')
+        if self.partition and self.PartRec['preserve'] == '1':
+            self.do_not_format_partition.setValue(True)
+                
+
+        # position widgets on screen
+
+        self.screenGrid.setField(self.mountpoint, 0,0, padding=(0,0,0,1))
+        subgrid = snack.Grid(2,1)
+
+        subgrid.setField(self.filesystem, 0,0, padding=(0,0,2,0))
+        subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
+        self.screenGrid.setField(subgrid, 0,1)
+
+        subgrid = snack.Grid(2,1)
+        subgrid.setField(self.fixed_size, 0,0)
+        subgrid.setField(self.fixed_size_entry, 1,0)
+        self.screenGrid.setField(subgrid, 0,2, anchorLeft=1, padding=(0,1,0,0))
+
+        subgrid = snack.Grid(2,1)
+        subgrid.setField(self.min_size, 0,0)
+        subgrid.setField(self.min_size_entry, 1,0)
+        self.screenGrid.setField(subgrid, 0,3, anchorLeft=1)
+
+        self.screenGrid.setField(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
+        
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        #collect widget data into self.PartRec <- passed by ref
+        pass
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):
@@ -1470,23 +1653,121 @@ class NGEApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
+
         self.__db = KusuDB()
+        self.action = NGE_TUI
+        self.ng = None
+        self.ngnew = None
+
         try:
-            self.__db.connect(user='apache', dbname='kusudb')
+            # FIXME: this wil only work in Kusu Installer environment!
+            self.__db.connect('/tmp/kusu/kusu.db', driver='sqlite')
         except Exception,msg:
             sys.stderr.write('Problems establishing database connection. Error: %s' %msg)
             sys.exit(1)
+
+        # setup the CL parser
+        self.parser.add_option('-d', '--delete',    dest='ngdel')
+        self.parser.add_option('-c', '--copy',      dest='ngsrc')
+        self.parser.add_option('-n', '--new',       dest='ngnew')
+        self.parser.add_option('-s', '--stale',     dest='ngstale')
+        self.parser.add_option('-l', '--list',      dest='list', action="store_true")
+        self.parser.add_option('-p', '--print',     dest='ngprint')
         
+    def printHelp(self):
+        self.parser.print_help()
+
     def parse(self):
-        pass
+        ''' parse the CL, populate options dict, & define self.action
+        '''
+        (options, args) = self.parser.parse_args()
+        print 'options = ', options
+        print 'args = ', args
+        print 'class(options) = ', options.__class__
+
+        if args:
+            self.stderrMessage('ngedit: No arguments expected - encountered args = %s\n',
+                                string.join(args,', '))
+            self.printHelp()
+            sys.exit(1)
+
+        if bool(options.ngsrc) ^ bool(options.ngnew):
+            #exactly one of them was specified
+            self.stderrMessage('ngedit: both ngsrc and ngdst must be specified to copy a node group\n')
+            self.printHelp()
+            sys.exit(1)
+
+        if options.list:
+            self.action = NGE_PRNALL
+        elif options.ngdel:
+            self.action = NGE_DEL
+            self.ng = options.ngdel
+        elif options.ngsrc:
+            self.action = NGE_CPY
+            self.ng = options.ngsrc
+            self.ngnew = options.ngnew
+        elif options.ngstale:
+            self.action = NGE_PRNSTL
+            self.ng = options.ngstale
+        elif options.ngprint:
+            self.action = NGE_PRNONE
+            self.ng = options.ngprint
 
     def run(self):
-        ScreenFactory.screens = [
-                                    scrNGEMain(database=self.__db, kusuApp=self),
-                                ]
+        if self.action == NGE_TUI:
+            ScreenFactory.screens = [
+                                        scrNGEMain(database=self.__db, kusuApp=self),
+                                    ]
 
-        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Editor", showTrail=False)
-        ks.run()
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Editor", showTrail=False)
+            ks.run()
+
+        elif self.action == NGE_CPY:
+            query = "select ngid from nodegroups where ngname = '%s'" %self.ng
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+
+            query = "select ngid from nodegroups where ngname = '%s'" %self.ngnew
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' already exists. Please change.\n", self.ngnew)
+                sys.exit(self.action)
+
+            ngsrc = NodeGroup(ngid = ngid)
+            ngsrc.syncFromDB(self.__db)
+            ngsrc[ngsrc.PKfld] = None    #give it new identity
+            ngsrc['ngname'] = self.ngnew
+            ngsrc.syncToDB(self.__db)
+
+        elif self.action == NGE_DEL:
+            query = "select ngid from nodegroups where ngname= '%s'" %self.ng
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+
+            #delete only if no hosts using it
+            query = "select nid from nodes where ngid = %s" % ngid
+            self.__db.execute(query)
+            rv = self.__db.fetchall()
+            if len(rv) > 0:
+                self.stdoutMessage("ngedit: %s node(s) are still using nodegroup '%s'." +\
+                                    " Deletion disallowed\n", len(rv),self.ng)
+                sys.exit(self.action)
+
+            #beauty
+            ngdel = NodeGroup(ngid = ngid)
+            ngdel.syncFromDB(self.__db)
+            ngdel.eraseFromDB(self.__db)
+
+
 
 if __name__ == '__main__':
     NGEinst = NGEApp()
