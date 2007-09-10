@@ -31,4 +31,11 @@ class KusuRC(rcplugin.Plugin):
             ng.save()
             ng.flush()
 
+        from kusu.repoman.repofactory import RepoFactory
+        rfactory = RepoFactory(self.dbs) 
+        repoObj = rfactory.getRepo(repoid)
+
+        repoObj.copyKusuNodeInstaller()
+        repoObj.makeAutoInstallScript()
+ 
         return True
