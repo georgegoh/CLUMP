@@ -22,7 +22,9 @@ class KusuRC(rcplugin.Plugin):
         row = self.dbs.AppGlobals.select_by(kname = 'InstallerServeDNS')[0]
 
         if row.kvalue == '1':
-            self.runCommand('/opt/kusu/sbin/genconfig named > /etc/named.conf')
+            #self.runCommand('/opt/kusu/sbin/genconfig named > /etc/named.conf')
+            #self.runCommand('/opt/kusu/sbin/genconfig named > /var/named/kusu.zone')
+            #self.runCommand('/opt/kusu/sbin/genconfig reverse %s > /var/named/%s.reverse' % (net,net))
 
             self.runCommand('/etc/init.d/named start')
             self.runCommand('/sbin/chkconfig named on')
