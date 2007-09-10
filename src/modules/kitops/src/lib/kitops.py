@@ -550,6 +550,11 @@ class KitOps:
 
         kits = self.findKits(del_name, del_version, del_arch)
 
+        if not kits:
+            raise KitNotInstalledError, \
+                    "Kit '%s%s%s' is not in the database" % \
+                    (del_name, del_version, del_arch)
+
         del_path = ''
         if del_arch and del_version:
             kl.info("Removing kit '%s', version %s, arch %s" %
@@ -567,11 +572,6 @@ class KitOps:
                     del_name)
             del_path = self.kits_dir / del_name
 
-        if not kits:
-            raise KitNotInstalledError, \
-                    "Kit '%s%s%s' is not in the database" % \
-                    (del_name, del_version, del_arch)
-
         error_kits = []
         for kit in kits:
             if not self.installer and not kit.removable:
@@ -579,7 +579,7 @@ class KitOps:
                                    (kit.rname, kit.version, kit.arch))
                 continue
 
-            repos = self.__db.Repos.select_by(kid=kit.kid)
+            repos = self.__db.ReposHaveKits.select_by(kid=kit.kid)
             if repos:
                 error_kits.append("Cannot delete kit " +
                                   "'%s-%s-%s', it is used by a repo" %
@@ -655,6 +655,17 @@ class KitOps:
             kl.debug("Script '%s' already exists, doing nothing" % script)
             return
 
+        # ignore if only comments/empty lines in script
+        skipScript = True
+        for command in cmd.split('\n'):
+            if command.strip() != '' and not command.strip().startswith('#'):
+                skipScript = False
+                break
+
+        if skipScript:
+            kl.debug("Script '%s' contains no commands, doing nothing" % script)
+            return
+
         kl.debug("Writing to '%s' the following:\n%s", script, cmd)
 
         if not script.parent.exists():
@@ -665,6 +676,8 @@ class KitOps:
         f.flush()
         f.close()
 
+        script.chmod(0766)
+
     def removeRPMScripts(self, kitname, kitver, kitarch):
         """
         Removes kusurc script for this kit RPM.
@@ -672,10 +685,12 @@ class KitOps:
 
         for order in [0, 1]:
             script = self.getRPMScriptName(kitname, kitver, kitarch, order)
-            kl.debug("Removing '%s'", script)
 
             if script.exists():
+                kl.debug("Removing '%s'", script)
                 script.remove()
+
+            kl.debug("Script '%s' does not exist, doing nothing", script)
 
     def getRPMScriptName(self, kitname, kitver, kitarch, order):
         """

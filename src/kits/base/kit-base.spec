@@ -30,11 +30,13 @@ This package is destined for the installer node and serves as an
 information container for the database.  
 
 %prep
+%define _name base
+%define arch noarch
 
 %install
-docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
+docdir=$RPM_BUILD_ROOT/depot/www/kits/%{_name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
-kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{name}/%{version}/noarch
+kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{arch}
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
@@ -56,10 +58,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/depot/www/kits/%{name}/%{version}/index.html
-/depot/www/kits/%{name}/%{version}/readme.html
-/depot/www/kits/%{name}/%{version}/COPYING
-/depot/kits/%{name}/%{version}/noarch/kitinfo
+/depot/www/kits/%{_name}/%{version}/index.html
+/depot/www/kits/%{_name}/%{version}/readme.html
+/depot/www/kits/%{_name}/%{version}/COPYING
+/depot/kits/%{_name}/%{version}/%{arch}/kitinfo
 
 # plugins
 /opt/kusu/lib/plugins/addhost/00-boothost.py
