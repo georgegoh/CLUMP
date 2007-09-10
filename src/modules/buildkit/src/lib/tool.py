@@ -90,11 +90,15 @@ class BuildKit:
         """ Handles the configuring, building and deploying of the components. """
         for c in components:
             c.buildprofile = buildprofile
+            c.setup()
+            c._processAddScripts()
             c.deploy(verbose=self.verbose)
             
     def handleKit(self, kit, buildprofile):
         """ Handles the configuring, building and deploying of the kit. """
         kit.buildprofile = buildprofile
+        kit.setup()
+        kit._processAddScripts()
         kit.deploy(verbose=self.verbose)
         
     def populatePackagesDir(self, buildprofile):

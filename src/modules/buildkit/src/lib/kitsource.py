@@ -6,9 +6,9 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 from path import path
-from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType
+from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType, UnsupportedScriptMode, FileDoesNotExistError
 from kusu.util.structure import Struct
-from kusu.buildkit.builder import RPMBuilder, getTemplateSpec
+from kusu.buildkit.builder import RPMBuilder, getTemplateSpec, stripShebang
 import pprint
 
 
@@ -110,20 +110,48 @@ class KusuComponent(Struct):
                             
     dependencies = []                   # list of dependencies for this component
     ngtypes = ['installer','compute']   # list of nodegroup types for this component
-    scripts = []                        # list of additional scripts for this component
     arch = 'noarch'
     compversion = '0.1'
     comprelease = '0'
+
     
     
     def __init__(self, **kwargs):
         Struct.__init__(self,kwargs)
+        self._queuecmds = []
 
     def setup(self):
         """ Prepares the attributes for this class. This method have to be called before any
             other operation.
         """
+        self.builddir = path(self.buildprofile.builddir)
+        self.srcdir = path(self.buildprofile.srcdir)
+        self.pkgdir = path(self.buildprofile.pkgdir)
+        self.tmpdir = path(self.buildprofile.tmpdir)
+        self.templatesdir = path(self.buildprofile.templatesdir)
+        
+        self.scripts = {}
+        self.scripts['postscript'] = ''
+        self.scripts['postunscript'] = ''
+        self.scripts['preunscript'] = ''
+        self.scripts['prescript'] = ''
+        
+    def verify(self):
+        # FIXME: needs to be fill out
         pass
+        
+    def _processAddScripts(self):
+        """ Process any queued commands.
+        """
+        for cmd in self._queuecmds:
+            if len(cmd) > 1:
+                func = cmd[0]
+                args = cmd[1:]
+            else:
+                func = cmd[0]
+                args = []
+
+            func(*args)
         
     def associateWith(self, ngtype):
         """ Add ngtype for this component to belong to. """
@@ -135,6 +163,14 @@ class KusuComponent(Struct):
         d = self.copy()
         # we don't want to return everything
         if 'buildprofile' in d: del d['buildprofile']
+        if 'buildprofile' in d: del d['buildprofile']
+        if 'builddir' in d: del d['builddir']
+        if 'pkgdir' in d: del d['pkgdir']
+        if 'srcdir' in d: del d['srcdir']
+        if 'templatesdir' in d: del d['templatesdir']
+        if 'tmpdir' in d: del d['tmpdir']
+        if '_queuecmds' in d: del d['_queuecmds']
+        
         return d
         
     def addDep(self, package, absoluteversion=False):
@@ -144,13 +180,20 @@ class KusuComponent(Struct):
         """
         if package not in self.dependencies:
             self.dependencies.append((package,absoluteversion))
-
-    def addScripts(self, script, mode='post'):
+            
+    def addScript(self, script, mode='post'):
         """ Add script for this component. Available modes are
             post, pre, postun and preun. 
         """
-        if not script in self.scripts:
-            self.scripts.append((script,mode))
+        self._queuecmds.append((self._addScript,script,mode))
+
+    def _addScript(self, script, mode='post'):
+
+        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
+        scriptfile = self.srcdir / script
+        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        key = '%sscript' % mode
+        self.scripts[key] = stripShebang(scriptfile)
             
     def _generateNS(self):
         """ Generates the namespace needed for the pack operation.
@@ -165,6 +208,10 @@ class KusuComponent(Struct):
         _ns['arch'] = self.arch
         _ns['dependencies'] = self.dependencies
         _ns['description'] = self.description
+        _ns['prescript'] = self.scripts['prescript']
+        _ns['preunscript'] = self.scripts['preunscript']
+        _ns['postscript'] = self.scripts['postscript']
+        _ns['postunscript'] = self.scripts['postunscript']
 
         return _ns
         
@@ -188,7 +235,6 @@ class KusuComponent(Struct):
 class KusuKit(Struct):
     """ Kit class. """
     components = []     # list of components belonging to this kit
-    scripts = []        # list of additional scripts belonging to this kit
     dependencies = []   # list of dependencies for this kit
     license = 'LGPL'    # license for this kit
     version = '0.1' 
@@ -199,12 +245,55 @@ class KusuKit(Struct):
     def __init__(self, **kwargs):
 
         Struct.__init__(self,kwargs)
+        self._queuecmds = []
 
     def setup(self):
         """ Prepares the attributes for this class. This method have to be called before any
             other operation.
         """
+        self.builddir = path(self.buildprofile.builddir)
+        self.srcdir = path(self.buildprofile.srcdir)
+        self.pkgdir = path(self.buildprofile.pkgdir)
+        self.tmpdir = path(self.buildprofile.tmpdir)
+        self.templatesdir = path(self.buildprofile.templatesdir)
+
+        self.scripts = {}
+        self.scripts['postscript'] = ''
+        self.scripts['postunscript'] = ''
+        self.scripts['preunscript'] = ''
+        self.scripts['prescript'] = ''
+
+    def verify(self):
+        # FIXME: needs to be fill out
         pass
+
+    def _processAddScripts(self):
+        """ Process any queued commands.
+        """
+        for cmd in self._queuecmds:
+            if len(cmd) > 1:
+                func = cmd[0]
+                args = cmd[1:]
+            else:
+                func = cmd[0]
+                args = []
+
+            func(*args)
+
+    def addScript(self, script, mode='post'):
+        """ Add script for this component. Available modes are
+            post, pre, postun and preun. 
+        """
+        self._queuecmds.append((self._addScript,script,mode))
+
+    def _addScript(self, script, mode='post'):
+
+        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
+        scriptfile = self.srcdir / script
+        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        key = '%sscript' % mode
+        self.scripts[key] = stripShebang(scriptfile)
+
 
     def generate(self):
         """ Returns a metadata for this kit. """
@@ -214,7 +303,14 @@ class KusuKit(Struct):
             del d['removeable']
         # we don't want to return everything
         if 'buildprofile' in d: del d['buildprofile']
+        if 'builddir' in d: del d['builddir']
+        if 'pkgdir' in d: del d['pkgdir']
+        if 'srcdir' in d: del d['srcdir']
+        if 'templatesdir' in d: del d['templatesdir']
+        if 'tmpdir' in d: del d['tmpdir']
         del d['components']
+        if '_queuecmds' in d: del d['_queuecmds']
+
         return d
 
     def addComponent(self, component):
@@ -229,12 +325,6 @@ class KusuKit(Struct):
         if not package in self.dependencies:
             self.dependencies.append(package)
 
-    def addScripts(self, script, mode='post'):
-        """ Add script for this component. Available modes are
-            post, pre, postun and preun. 
-        """
-        if not script in self.scripts:
-            self.scripts.append((script,mode))
             
     def _generateNS(self):
         """ Generates the namespace needed for the pack operation.
@@ -248,6 +338,10 @@ class KusuKit(Struct):
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license
         _ns['description'] = self.description
+        _ns['prescript'] = self.scripts['prescript']
+        _ns['preunscript'] = self.scripts['preunscript']
+        _ns['postscript'] = self.scripts['postscript']
+        _ns['postunscript'] = self.scripts['postunscript']
         
         
         return _ns
