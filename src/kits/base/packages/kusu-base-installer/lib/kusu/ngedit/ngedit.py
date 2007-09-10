@@ -415,101 +415,166 @@ def seq2tplstr(seq):
         return None
 
 from kusu.ngedit.partition import *
+from kusu.partitiontool import partitiontool
 
-def mycreateSchema(part_rules, diskprofile):
-    ''' creates a partition schema compatible with nodeinstaller's with addition
-        of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
-        nodeinstaller's partition API
-    '''
-
-    schema = {'disk_dict':{},'vg_dict':{}}
-    vg_list = getVGList(part_rules, diskprofile)
-    part_list = getPartList(part_rules, diskprofile)
-    lv_list = getLVList(part_rules, diskprofile)
-
-    # create the volume groups first.
-    try:
-        for vginfo in vg_list:
-            vgname = vginfo['device']
-            vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
-            schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
-                                         'extent_size':vg_extent_size,
-                                         'name':vgname, 'instid': vginfo.PKval}
-
-        # create the normal volumes.
-        for partinfo in part_list:
-            fs = translateFSTypes(partinfo['fstype'])
-            createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
-            pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
-            if pv:
-                handlePV(partinfo, vg_name, schema['vg_dict'])
-        # renumber spanning partitions - resolve 'N'
-        for disk in schema['disk_dict'].itervalues():
-            part_dict = disk['partition_dict']
-            if part_dict.has_key('N'):
-                partition = part_dict['N']
-                part_dict[len(part_dict)] = partition
-                del part_dict['N']
-
-        # create the logical volumes.
-        for lvinfo in lv_list:
-            lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
-            if lv: 
-                handleLV(lvinfo, vg_name, schema['vg_dict'])
-                #associate with corresponding PartitionRec instance
-                vg = schema['vg_dict'][vg_name.strip()]
-                lv_name = lvinfo['device']
-                vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
-
-        attachPVsToVGs(diskprofile, schema['vg_dict'])
-
-        preserve_types = Partition.native_type_dict.values()
-        preserve_fs = DiskProfile.fsType_dict.keys()
-        preserve_mntpnt = diskprofile.mountpoint_dict.keys()
-        preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
-        schema['preserve_types'] = preserve_types
-        schema['preserve_fs'] = preserve_fs
-        schema['preserve_mntpnt'] = preserve_mntpnt
-        schema['preserve_lv'] = preserve_lv
-
-    except ValueError:
-        raise InvalidPartitionSchema, "Couldn't parse one of the lines."
-
-    return schema
-
-def createPartition(partinfo, disk_dict, vg_dict):
-    """ Create a new partition and add it to the supplied disk dictionary."""
-    try:
-        disknum = int(partinfo['device'])
-        part_no = translatePartitionNumber(partinfo['partition'])
-    except ValueError:
-        if partinfo['device'].lower() == 'n':
-            handleSpanningPartition(partinfo, disk_dict, vg_dict)
-            disknum = 1
-            part_no = 'N'
+class PartSchema:
+    def __init__(self, diskprofile = None ):
+        #schema and PartRecList should be tightly related and reflect each other;
+        #to prevent them being out of sync, they should be managed in one place;
+        #therefore, disallow passing them to PartSchema's ctor
+    
+        if diskprofile:
+            self.disk_profile = diskprofile
         else:
-            raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
-    try:
-        size = translatePartitionSize(partinfo['size'])
-        fs = translateFSTypes(partinfo['fstype'])
-        mountpoint = translateMntPnt(partinfo['mntpnt'])
-        fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
-    except ValueError:
-        raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
-                                      "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
-                                      "part_no=%s" % (partinfo['device'], partinfo['size'], \
-                                      partinfo['fstype'], partinfo['mntpnt'], \
-                                      partinfo['options'], partinfo['partition'])
- 
-    if part_no != 'N' and part_no <= 0:
-        raise InvalidPartitionSchema, "Partition number cannot be less than 1."
-    partition = {'size_MB': size, 'fill': fill,
-                 'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+            self.disk_profile = partitiontool.DiskProfile(fresh=True)
 
-    if disk_dict.has_key(disknum): disk = disk_dict[disknum]
-    else: disk = {'partition_dict': {}}
-    disk['partition_dict'][part_no] = partition
-    disk_dict[disknum] = disk
+        self.schema = None
+        self.PartRecList = None
+        self.pk2dict = {}   #maps PartitionRec.PKval to the associated schema dict
+
+    def mycreateSchema(self, part_rules):
+        ''' creates a partition schema compatible with nodeinstaller's with addition
+            of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
+            nodeinstaller's partition API
+        '''
+        diskprofile = self.disk_profile
+        self.PartRecList = part_rules
+    
+        schema = {'disk_dict':{},'vg_dict':{}}
+        vg_list = getVGList(part_rules, diskprofile)
+        part_list = getPartList(part_rules, diskprofile)
+        lv_list = getLVList(part_rules, diskprofile)
+    
+        # create the volume groups first.
+        try:
+            for vginfo in vg_list:
+                vgname = vginfo['device']
+                vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
+                schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
+                                             'extent_size':vg_extent_size,
+                                             'name':vgname, 'instid': vginfo.PKval}
+                self.pk2dict[vginfo.PKval] = schema['vg_dict'][vgname]
+    
+            # create the normal volumes.
+            for partinfo in part_list:
+                fs = translateFSTypes(partinfo['fstype'])
+                self.createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
+                pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+                if pv:
+                    handlePV(partinfo, vg_name, schema['vg_dict'])
+            # renumber spanning partitions - resolve 'N'
+            for disk in schema['disk_dict'].itervalues():
+                part_dict = disk['partition_dict']
+                if part_dict.has_key('N'):
+                    partition = part_dict['N']
+                    part_dict[len(part_dict)] = partition
+                    del part_dict['N']
+    
+            # create the logical volumes.
+            for lvinfo in lv_list:
+                lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
+                if lv: 
+                    handleLV(lvinfo, vg_name, schema['vg_dict'])
+                    #associate with corresponding PartitionRec instance
+                    vg = schema['vg_dict'][vg_name.strip()]
+                    lv_name = lvinfo['device']
+                    vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
+                    self.pk2dict[lvinfo.PKval] = vg['lv_dict'][lv_name]
+    
+            attachPVsToVGs(diskprofile, schema['vg_dict'])
+    
+            preserve_types = Partition.native_type_dict.values()
+            preserve_fs = DiskProfile.fsType_dict.keys()
+            preserve_mntpnt = diskprofile.mountpoint_dict.keys()
+            preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
+            schema['preserve_types'] = preserve_types
+            schema['preserve_fs'] = preserve_fs
+            schema['preserve_mntpnt'] = preserve_mntpnt
+            schema['preserve_lv'] = preserve_lv
+    
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the lines."
+    
+        self.schema = schema
+        return self.schema
+    
+    def createPartition(self, partinfo, disk_dict, vg_dict):
+        """ Create a new partition and add it to the supplied disk dictionary."""
+        try:
+            disknum = int(partinfo['device'])
+            part_no = translatePartitionNumber(partinfo['partition'])
+        except ValueError:
+            if partinfo['device'].lower() == 'n':
+                handleSpanningPartition(partinfo, disk_dict, vg_dict)
+                disknum = 1
+                part_no = 'N'
+            else:
+                raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
+        try:
+            size = translatePartitionSize(partinfo['size'])
+            fs = translateFSTypes(partinfo['fstype'])
+            mountpoint = translateMntPnt(partinfo['mntpnt'])
+            fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
+                                          "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
+                                          "part_no=%s" % (partinfo['device'], partinfo['size'], \
+                                          partinfo['fstype'], partinfo['mntpnt'], \
+                                          partinfo['options'], partinfo['partition'])
+     
+        if part_no != 'N' and part_no <= 0:
+            raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+        partition = {'size_MB': size, 'fill': fill,
+                     'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+    
+        if disk_dict.has_key(disknum): disk = disk_dict[disknum]
+        else: disk = {'partition_dict': {}}
+        disk['partition_dict'][part_no] = partition
+        self.pk2dict[partinfo.PKval] = partition    #add the pk->dict mapping for the partition
+        disk_dict[disknum] = disk
+
+    def getDictByPK(self,pk):
+        try:
+            return self.pk2dict[pk]
+        except KeyError:
+            return None
+
+    def getPartRecByPK(self,pk):
+        for p in self.PartRecList:
+            if p.PKval == pk:
+                return p
+        return None
+
+    def addPartRec(self,record):
+        ''' adds a new PartitionRec object to the PartRecList - assumes it's not there yet '''
+        self.PartRecList.append(record)
+
+    def updatePartRec(self,record):
+        ''' updates existing PartitionRec object with the new one
+            raise error if the matching record not found
+        '''
+
+        for i in xrange(len(self.PartSchemaObj.PartRecList)):
+            p = self.PartSchemaObj.PartRecList[i]
+            if p.PKval == record.PKval:
+                del self.PartSchemaObj.PartRecList[i]
+                self.PartSchemaObj.PartRecList.insert(i,record)
+
+    def isPartition(self,id):
+        for p in self.PartRecList:
+            if p.PKval == id:
+                rv = getPartList([p], self.disk_profile)
+                if rv and len(rv) == 1:
+                    return True
+        return False
+
+    def isLV(self,id):
+        for p in self.PartRecList:
+            if p.PKval == id:
+                rv = getLVList([p], self.disk_profile)
+                if rv and len(rv) == 1:
+                    return True
+        return False
 
 
 import snack

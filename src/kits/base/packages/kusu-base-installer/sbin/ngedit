@@ -125,14 +125,14 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
@@ -948,8 +948,9 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        self.disk_profile = None
-        self.schema = None  # stores the partition schema information
+        #self.disk_profile = None
+        self.PartSchema = None
+        #self.schema = None  # stores the partition schema information
 
 
     def setCallbacks(self):
@@ -964,7 +965,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
     def F12Action(self):
         id = self.listbox.current()
-        self.selector.popupMsg('DEBUG', 'currently pointing to id = %s' %id)
+        self.selector.popupMsg('DEBUG', 'currently pointing to id = %s\n%s' %(id,str(self.PartSchema.pk2dict[id])))
         #self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
         return NAV_IGNORE
 
@@ -974,14 +975,14 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         if button != 'cancel':
             if item == 'partition':
-                partrec = PartitionRec()
-                ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
+                ScreenFactory.screens = [
+                    scrPartSchema_PartEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
                                         ]
                 ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
                 ks.run()
             elif item == 'log_vol':
-                partrec = PartitionRec()
-                ScreenFactory.screens = [ scrPartSchema_LVEdit(partrec,database=self.database, kusuApp=self.kusuApp)
+                ScreenFactory.screens = [
+                    scrPartSchema_LVEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
                                         ]
                 ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
                 ks.run()
@@ -989,18 +990,23 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         return NAV_NOTHING
 
     def doEditAction(self):
-        #determine what the user is trying to edit
-        #if partition:
-        #    partrec = None
-        #    for p in curNG['parts']:
-        #        if p.PKval == selected PKval:
-        #            partrec = p
-        #            break
-        #    assert(partrec)
-        #    ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
-        #                            ]
-        #    ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-        #    ks.run()
+        id = self.listbox.current()
+        if self.PartSchema.isPartition(id):
+            ScreenFactory.screens = [
+               scrPartSchema_PartEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
+                                    ]
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+            ks.run()
+
+        elif self.PartSchema.isLV(id):
+            ScreenFactory.screens = [
+               scrPartSchema_LVEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
+                                    ]
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+            ks.run()
+
+        else:
+            self.selector.popupMsg('Error', 'Can only edit partitions and logical volumes')
 
         return NAV_NOTHING
 
@@ -1016,12 +1022,12 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
 
     def drawImpl(self):
-        #from kusu.ngedit.defaults import setupDiskProfile #Disk,Partition,LVMCollection, etc
-        #import kusu.util.log as kusulog
-        from kusu.partitiontool import partitiontool
+        #from kusu.partitiontool import partitiontool
 
-        if not self.disk_profile:
-            self.disk_profile = partitiontool.DiskProfile(fresh=True)
+        #if not self.disk_profile:
+        #    self.disk_profile = partitiontool.DiskProfile(fresh=True)
+        if not self.PartSchema:
+            self.PartSchema = PartSchema() #triggers disk_profile creation
 
         self.screenGrid = snack.Grid(1, 1)
 
@@ -1032,7 +1038,6 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                  justification=[LEFT, RIGHT, LEFT, LEFT], 
                                  returnExit=0)
 
-        partdictlst = curNG['parts']
         for p in curNG['parts']:
             if p['options'] == None:
                 p['options'] = ''
@@ -1043,8 +1048,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         t1 = time.time()
         #FIXME: createSchema name conflict
-        self.schema = mycreateSchema(partdictlst,self.disk_profile)
-        schema = self.schema
+        schema = self.PartSchema.mycreateSchema(curNG['parts'])
         #setupDiskProfile(self.disk_profile, schema)
         t2 = time.time()
 
@@ -1136,27 +1140,27 @@ class scrPartSchema_PartEdit(USXBaseScreen):
     name = "Partition Modification"
     buttons = [ 'ok_button', 'cancel_button' ]
 
-    def __init__(self,parentScreen, PartRec, database, kusuApp=None,gridWidth=45):
+    def __init__(self, PartSchemaObj, id=None,  database=None, kusuApp=None,gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        self.PartRec = PartRec  #a reference to the DB record we're working with
-        self.disk_profile = parentScreen.disk_profile
-        self.schema = parentScreen.schema
-        self.partition = None
+        self.PartSchemaObj = PartSchemaObj  #passed by ref.
+        self.partition = PartSchemaObj.getDictByPK(id)
+        self.PartRec = None
+        schema = PartSchemaObj.schema
         self.disk_key = None
-        if PartRec and PartRec.PKval != None:
-            #we're editing - get a partition_dict handle
+        if id != None:
+            self.PartRec = PartSchemaObj.getPartRecByPK(id)
+            #we're editing - get the disk_key we belong to
             done = False
-            for disk_key in self.schema['disk_dict']:
-                for part_key in self.schema['disk_dict'][disk_key]:
-                    part_dict = self.schema['disk_dict'][disk_key][part_key]
-                    if part_dict['instid'] == PartRec.PKval:
+            for disk_key in schema['disk_dict']:
+                for part_key in schema['disk_dict'][disk_key]['partition_dict']:
+                    part_dict = schema['disk_dict'][disk_key]['partition_dict'][part_key]
+                    if part_dict['instid'] == id:
                         self.disk_key = disk_key
-                        self.partition = part_dict
+                        assert(self.partition == part_dict)
                         done = True
                         break
                 if done:
                     break
-
 
     def setCallbacks(self):
         #for the buttons
@@ -1188,7 +1192,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                                                     justification=[LEFT],
                                                     returnExit=0)
 
-        fs_types = self.disk_profile.fsType_dict.keys()
+        fs_types = self.PartSchemaObj.disk_profile.fsType_dict.keys()
         fs_types.sort()
         for fs in fs_types:
             self.filesystem.addRow([fs], fs)
@@ -1201,7 +1205,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                                                 justification=[LEFT],
                                                 returnExit=0)
 
-        disks = self.schema['disk_dict'].keys()
+        disks = self.PartSchemaObj.schema['disk_dict'].keys()
         disks = ['Disk %s' %x for x in disks]
         for disk in disks:
             self.drives.addRow([disk], disk)
@@ -1213,7 +1217,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         size = ''
         if self.partition:
             fill = self.partition['fill']
-            size = self.partition['size_MB']
+            size = str(self.partition['size_MB'])
             
         self.fixed_size = snack.SingleRadioButton('Fixed Size (MB):', None,
                                                   isOn=not fill)
@@ -1228,9 +1232,10 @@ class scrPartSchema_PartEdit(USXBaseScreen):
             self.fixed_size_entry.set(size)
 
         #preserve
-        self.do_not_format_partition = snack.Checkbox('Do not format partition')
-        if self.partition and self.PartRec['preserve'] == '1':
-            self.do_not_format_partition.setValue(True)
+        isOn = 0
+        if self.partition and self.PartRec['preserve'] == 1:
+            isOn = 1
+        self.do_not_format_partition = snack.Checkbox('Do not format partition', isOn = isOn)
                 
 
         # position widgets on screen
@@ -1263,7 +1268,13 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         ''' Actions taken once the form data was successfully validated.
             Timeline: Next_callback, validation, formAction
         '''
-        #collect widget data into self.PartRec <- passed by ref
+        #collect widget data into a PartitionRec object
+        # if we're editing:
+        #self.PartSchemaObj.updatePartRec(PartitionRec)
+
+        # elif we're creating new Partition:
+        #self.PartSchemaObj.addPartRec(PartitionRec)
+
         pass
 
 
