@@ -105,6 +105,13 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     if kiprofile.has_key('Network'):
         k.networkprofile = kiprofile['Network']
+
+        row = kiprofile.getDatabase().AppGlobals.select_by(kname = 'InstallerServeDNS')[0]
+        if row.kvalue == '1':
+            k.networkprofile['dns1'] = '127.0.0.1'
+            if k.networkprofile.has_key('dns2'): del k.networkprofile['dns2']
+            if k.networkprofile.has_key('dns3'): del k.networkprofile['dns3']
+
     else:
         k.networkprofile = {}
 
