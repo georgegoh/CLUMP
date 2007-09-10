@@ -8,6 +8,8 @@
 # 
 
 install
+
+# Define the installation number.
 #if $varExists('instnum')
 #if $instnum 
 key $instnum
@@ -15,28 +17,37 @@ key $instnum
 key --skip
 #end if
 #end if
+
 url --url $url
 rootpw --iscrypted $rootpw
+
 lang $lang
 #if $varExists('langsupport')
 langsupport --default=$langsupport $langsupport
 #end if
+
 keyboard $keybd
+
 #for $net in $networks
 $net
 #end for
+
 firewall --disabled
 selinux --disabled
 firstboot --disable
 authconfig --enableshadow --enablemd5
 timezone $tz
 bootloader --location=mbr
+skipx
+
 #clearpart --all
 clearpart --none
 #for $part in $partitions
 $part
 #end for
+
 reboot
+
 %packages
 #for $pkg in $packages
 $pkg
@@ -45,5 +56,6 @@ $pkg
 vim-enhanced
 ntp
 subversion
+
 %post
 
