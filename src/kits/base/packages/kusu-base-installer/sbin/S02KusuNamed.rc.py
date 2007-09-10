@@ -13,7 +13,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'named'
-        self.desc = 'Setting up Named'
+        self.desc = 'Setting up named'
         self.ngtypes = ['installer']
         self.delete = True
 
@@ -22,9 +22,13 @@ class KusuRC(rcplugin.Plugin):
         row = self.dbs.AppGlobals.select_by(kname = 'InstallerServeDNS')[0]
 
         if row.kvalue == '1':
-            #self.runCommand('/opt/kusu/sbin/genconfig named > /etc/named.conf')
-            #self.runCommand('/opt/kusu/sbin/genconfig named > /var/named/kusu.zone')
-            #self.runCommand('/opt/kusu/sbin/genconfig reverse %s > /var/named/%s.reverse' % (net,net))
+            domain = self.dbs.AppGlobals.select_by(kname = 'DNSZone')[0]
+           
+            self.runCommand('/opt/kusu/sbin/genconfig named > /etc/named.conf')
+            self.runCommand('/opt/kusu/sbin/genconfig zone > /var/named/%s.zone' % domain)
+
+            for net in self.dbs.Networks.select():
+                self.runCommand('/opt/kusu/sbin/genconfig reverse %s > /var/named/%s.rev' % (net.network,net.network))
 
             self.runCommand('/etc/init.d/named start')
             self.runCommand('/sbin/chkconfig named on')
