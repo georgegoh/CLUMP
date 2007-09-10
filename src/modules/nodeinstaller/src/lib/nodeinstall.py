@@ -151,7 +151,8 @@ class KickstartFromNIIProfile(object):
             nw['interfaces'].pop(nic)
 
         nw['fqhn_use_dhcp'] = False     # always static hostnames
-        nw['fqhn'] = '.'.join([ni.name, ni.appglobal['DNSZone']])
+        nw['fqhn_host'] = ni.name
+        nw['fqhn_domain'] = ni.appglobal['DNSZone']
 
         if default_gateway:
             nw['gw_dns_use_dhcp'] = False
