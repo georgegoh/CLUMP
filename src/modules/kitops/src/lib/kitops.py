@@ -697,7 +697,7 @@ class KitOps:
         Generates a kusurc script name for this kit.
         """
 
-        script = path('S01KusuDB-script-%s-%s-%s-%s.rc' % (kitname, kitver,
+        script = path('S01-script-KusuDB-%s-%s-%s-%s.rc' % (kitname, kitver,
                                                            kitarch, order))
         return self.prefix / 'etc/rc.kusu.d' / script
 
