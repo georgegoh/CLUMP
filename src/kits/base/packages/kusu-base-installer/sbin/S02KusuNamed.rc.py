@@ -24,11 +24,11 @@ class KusuRC(rcplugin.Plugin):
         if row.kvalue == '1':
             domain = self.dbs.AppGlobals.select_by(kname = 'DNSZone')[0]
            
-            self.runCommand('/opt/kusu/sbin/genconfig named > /etc/named.conf')
-            self.runCommand('/opt/kusu/sbin/genconfig zone > /var/named/%s.zone' % domain)
+            self.runCommand('/opt/kusu/bin/genconfig named > /etc/named.conf')
+            self.runCommand('/opt/kusu/bin/genconfig zone > /var/named/%s.zone' % domain)
 
             for net in self.dbs.Networks.select():
-                self.runCommand('/opt/kusu/sbin/genconfig reverse %s > /var/named/%s.rev' % (net.network,net.network))
+                self.runCommand('/opt/kusu/bin/genconfig reverse %s > /var/named/%s.rev' % (net.network,net.network))
 
             self.runCommand('/etc/init.d/named start')
             self.runCommand('/sbin/chkconfig named on')
