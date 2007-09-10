@@ -35,7 +35,7 @@ class thisReport(Report):
         
         # Test to see if the Installer node should be running DNS.
         dnsenabled = self.db.getAppglobals('InstallerServeDNS')
-        if dnsenabled != 'True':
+        if dnsenabled != '1':
             sys.exit(0)
 
         network = ''
