@@ -76,6 +76,7 @@ class NodeFun(object, KusuApp):
            self._installerNetworks = self._getInstallerNetworks()
            self._ngConflicts = self._getNodegroupConflicts()
            self._nodeList = self._getNodes()
+        
 
     def _getInstallerNetworks(self):
         # Get the installer's subnet and network information.
@@ -474,6 +475,14 @@ class NodeFun(object, KusuApp):
            # Use the gui selected network interface as the installer's interface. 
            installer_subnet, installer_network = self._dbReadonly.fetchone()
 
+        if self._nodegroupInterfaces == {} :
+           print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
+           sys.exit(-1)
+
+        if not selectedinterface in self._nodegroupInterfaces:
+           print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
+           sys.exit(-1)
+
         interfaces.update(self._nodegroupInterfaces)
         if not installer: 
            for subnet, network in self._installerNetworks:
@@ -496,7 +505,11 @@ class NodeFun(object, KusuApp):
                while True:
                    if kusu.ipfun.onNetwork(network, subnet, startIP):
                       if self.isIPUsed(startIP):
-		         startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
+                         try:
+		              startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
+                         except:
+                              print "ERROR:  Too many hosts specified for network. Choose a bigger network."
+                              sys.exit(-1)
                       else:
                          # We're a DHCP/boot interface
                          self._cachedDeviceIPs[selectedinterface] = startIP

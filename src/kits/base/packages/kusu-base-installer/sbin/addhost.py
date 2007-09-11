@@ -249,11 +249,11 @@ class AddHostApp(KusuApp):
             if not os.path.isfile(self._options.macfile):
                 self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
+            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
             if haveNodegroup and not self._options.rack:
                 if self._options.rack == 0:
                     myNodeInfo.nodeRackNumber = self._options.rack
                 else:
-                    myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
                     flag = 1
                     if myNode.isNodenameHasRack() and haveNodeInterface:
                          while flag:
@@ -274,7 +274,7 @@ class AddHostApp(KusuApp):
             # Read in list of mac addresses
             macfileList = open(self._options.macfile,'r').readlines()
             myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+            #myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = myNode.findMACAddress(macaddr)
