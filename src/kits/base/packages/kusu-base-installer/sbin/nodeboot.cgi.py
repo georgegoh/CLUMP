@@ -80,9 +80,15 @@ class NodeInfo:
         # network request from the node is hitting. 
         # We will use multiple installers next time when
         # we have other installers up and running. 
-        query = ('select ip from nics,nodes where nics.nid=nodes.nid ' + 
-                 'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' + 
-                 'and netid = (select netid from nodes,nics where nodes.nid=nics.nid and nodes.name="%s" and nics.ip="%s")' % (nodename,nodeip))
+        #query = ('select ip from nics,nodes where nics.nid=nodes.nid ' + 
+        #         'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' + 
+        #         'and netid = (select netid from nodes,nics where nodes.nid=nics.nid and nodes.name="%s" and nics.ip="%s")' % (nodename,nodeip))
+        query = ('SELECT ip FROM nics, nodes, networks WHERE nics.nid=nodes.nid AND nics.netid=networks.netid ' +
+                 'AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") ' +
+                 'AND networks.network=(SELECT network FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
+                                        'AND networks.netid=nics.netid AND nodes.name="%s" AND nics.ip="%s") ' % (nodename, nodeip) +
+                 'AND networks.subnet=(SELECT subnet FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
+                                       'AND networks.netid=nics.netid AND nodes.name="%s" AND nics.ip="%s")' % (nodename, nodeip))
 
         try:
             self.db.execute(query)
