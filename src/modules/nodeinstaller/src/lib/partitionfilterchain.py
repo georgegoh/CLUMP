@@ -16,11 +16,12 @@ logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
 def translateBoolean(value):
     """ Tries to translate value into boolean"""
-    if value.lower() == 'true':
-        return True
-    elif value.lower() == 'false':
-        return False
     try:
+        if not value: return False
+        if value.lower() == 'true':
+            return True
+        elif value.lower() == 'false':
+            return False
         if int(value) > 0:
             return True
         else:
@@ -48,22 +49,21 @@ def translatePartitionSize(value):
 
 def translateMntPnt(value):
     """ Check if mountpoint is an empty string - translate into None if yes. """
-    if value.strip():
-        return value
-    else:
+    try:
+        if value.strip():
+            return value
+        else:
+            return None
+    except AttributeError:
         return None
 
 def translateFSTypes(fstype):
     """ Translates fstype to something partitiontool can understand. Right now
         only swap fstypes needs to be translated, the rest can be passed through.
     """
-
-    if fstype == 'swap':
-        return 'linux-swap'
-    elif fstype.strip() == '':
-        return None
-    else:
-        return fstype
+    if fstype == None or fstype.strip() == '': return None
+    elif fstype == 'swap': return 'linux-swap'
+    else: return fstype
 
 def translatePartitionOptions(options, opt):
     """ Translate the options line for the opt value. This method returns
@@ -93,6 +93,7 @@ def translatePartitionOptions(options, opt):
         against the device name of an existing Volume Group definition:
             pv;vg=VolGroup00    
     """
+    if not options: return (False, None)
     optionlist = options.split(';')
     opt_dict = {}
     if optionlist:
