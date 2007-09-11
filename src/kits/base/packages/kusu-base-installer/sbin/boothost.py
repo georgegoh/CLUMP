@@ -238,7 +238,8 @@ class boothost:
     def __mkUpdateSql2(self, kernel='', initrd='', kparams=''):
         """__mkUpdateSql2 - This method generates the SQL fragment to update the
         kernel, initrd, and/or kparams.  It also handles unsetting
-        the values when the value is set to NULL"""
+        the values when the value is set to NULL.
+        This can be used with the nodegroup table, but NOT the nodes table"""
         setstr = ''
         if kernel != '':
             if kernel == 'NULL':
@@ -269,6 +270,7 @@ class boothost:
         if setstr != '':
             setstr = setstr + ', '
 
+        # A reinstall has to occur if the kernel, initrd, or kparams changes.
         if kernel != '' or initrd != '' or kparams != '':
             state = 'Expired'
             localboot = 0
@@ -277,8 +279,6 @@ class boothost:
                 setstr = setstr + 'state=NULL, '
             else:
                 setstr = setstr + 'state=\'%s\', ' % state
-                if state == 'Expired':
-                    localboot = 0
         if localboot != '':
             if localboot == '1':
                 setstr = setstr + 'bootfrom=1, '
@@ -353,17 +353,6 @@ class boothost:
                 kparams = data[7]
             mac      = data[8]
             state    = data[9]
-
-            # Force reinstall if state == Expired
-            if state == 'Expired' and bootfrom == 1:
-                bootfrom = 0 
-                setstr = self.__mkUpdateSql('', '', '', '', 0)
-                query = ('update nodes set %s where name="%s"' % (setstr, nodename))
-                try:
-                    self.db.execute(query)
-                except:
-                    print "ERROR:  Unable to update database"
-                    print "Ran: %s" % query
 
             self.mkPXEFile(mac, kernel, initrd, kparams, bootfrom, name)
 
@@ -456,7 +445,20 @@ class boothost:
                 except:
                     self.errorMessage('boothost_unable_to_update_nodegroup %s\n', nodegroup)
         else:
-            # Only reset those nodes that have a custom kernel, initrd, and kernel params
+            if state != '' or localboot != '':
+               # Set the state of these nodes to what the user requested
+               setstr = self.__mkUpdateSql('', '', '', state, localboot)
+               if setstr != '':
+                   # Need to update the database
+                   query = ('update nodes set %s where '
+                            'ngid=(select ngid from nodegroups '
+                            'where ngname="%s")' % (setstr, nodegroup))
+                   try:
+                       self.db.execute(query)
+                   except:
+                       self.errorMessage('boothost_unable_to_update_nodegroup %s\n', nodegroup)
+
+            # Reset those nodes that have a custom kernel, initrd, and kernel params
             query = ('update nodes set '
                      'bootfrom=0, kernel=NULL, initrd=NULL, kparams=NULL, state="Expired" '
                      'where (kernel is not null or initrd is not null or kparams is not null) '
@@ -589,16 +591,17 @@ class BootHostApp(KusuApp):
 
         if self.reinstall == 1:
             self.state = 'Expired'
+            self.localboot = 0
             
         if self.updatewhat == 'NodeList':
             bhinst.genNodeListPXE(self.nodelist, self.newkernel,
-                                  self.newinitrd, self.newkparms, self.state)
+                                  self.newinitrd, self.newkparms, self.state, self.localboot)
         elif self.updatewhat == 'NodeGroup':
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms, self.state)
+                                 self.newinitrd, self.newkparms, self.state, self.localboot)
         elif self.updatewhat == 'NodeUnSynced':
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms, self.state, '', 1)
+                                 self.newinitrd, self.newkparms, self.state, self.localboot, 1)
         else:
             bhinst.toolHelp()
 
