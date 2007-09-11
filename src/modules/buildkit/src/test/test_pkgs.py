@@ -86,9 +86,13 @@ class TestGNUBuildTarballPkg(object):
     def testKitInfo(self):
         """ Test that a kitinfo is defined correctly. """
         
+        # set buildprofile
+        bp = setupprofile(self.testkitsrc)
+        
         # create a default kitinfo
         kit = DefaultKit()
         kit.name = 'testkit'
+        kit.buildprofile = bp
         kit.setup()
         
         assert kit.name == 'testkit'

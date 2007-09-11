@@ -20,5 +20,7 @@ setup(name="kusu-buildkit",
                 ('etc/buildkit-templates', ['src/etc/templates/package.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/component.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/build.kit.tmpl']),
-                ('etc/buildkit-templates', ['src/etc/templates/kit.spec.tmpl'])]
+                ('etc/buildkit-templates', ['src/etc/templates/kit.spec.tmpl']),
+                ('etc/buildkit-templates', ['src/etc/templates/00-post-script.sh.tmpl']),
+                ('etc/buildkit-templates', ['src/etc/templates/00-postun-script.sh.tmpl'])]
      )

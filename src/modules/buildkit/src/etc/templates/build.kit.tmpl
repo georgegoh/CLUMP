@@ -19,6 +19,7 @@ comp.description = '$compdesc'
 # Add any packages defined earlier by using the comp.addDep method
 #comp.addDep(pkg1)
 
+
 # define a default kit
 k = $kitclass
 k.name = '$kitname'
@@ -27,4 +28,12 @@ k.description = '$kitdesc'
 # Adding the component defined earlier
 k.addComponent(comp)
 
+
+# Add post install script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-post-script.sh',mode='post')
+
+# Add post uninstall script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-postun-script.sh',mode='postun')
 

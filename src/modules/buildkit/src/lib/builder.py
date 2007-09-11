@@ -146,6 +146,18 @@ def getTemplateSpec(templatetype, templatedir=None):
 
     if not tmpl.exists(): raise FileDoesNotExistError
     return tmpl
+    
+def getScriptTemplate(scripttype, templatedir=None):
+    """ Get the template for scripts. """
+    if not templatedir:
+        kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
+        templatedir = kusuroot / 'etc/buildkit-templates'
+    tmpldir = path(templatedir)
+    _t = '00-%s-script.sh.tmpl' % scripttype
+    tmpl = tmpldir / _t
+
+    if not tmpl.exists(): raise FileDoesNotExistError
+    return tmpl
 
 def getDirName(p):
     """ Returns the unpacked directory name of a tarfile. """

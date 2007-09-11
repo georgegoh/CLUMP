@@ -9,7 +9,7 @@ import os
 import pwd
 import subprocess
 from kusu.buildkit.kitsource import KitSrcFactory, KusuKit, KusuComponent
-from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKitTemplate
+from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKitTemplate, getScriptTemplate
 from kusu.buildkit.methods import *
 from path import path
 from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty
@@ -36,6 +36,18 @@ class BuildKit:
         f.write(s)
         f.close()
         
+        # create sample post/postun scripts
+        postscript = getScriptTemplate('post')
+        t = Template(file=str(postscript),searchList=[])
+        f = open('%s/sources/00-post-script.sh' % srcpath,'w')
+        f.write(str(t))
+        f.close()
+
+        postunscript = getScriptTemplate('postun')
+        t = Template(file=str(postunscript),searchList=[])
+        f = open('%s/sources/00-postun-script.sh' % srcpath,'w')
+        f.write(str(t))
+        f.close()
         
     def getKitSrc(self, srcpath):
         """ Builds the kit based on the kitsrc dir"""
