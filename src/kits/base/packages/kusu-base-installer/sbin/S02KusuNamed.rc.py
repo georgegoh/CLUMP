@@ -22,7 +22,7 @@ class KusuRC(rcplugin.Plugin):
         row = self.dbs.AppGlobals.select_by(kname = 'InstallerServeDNS')[0]
 
         if row.kvalue == '1':
-            domain = self.dbs.AppGlobals.select_by(kname = 'DNSZone')[0]
+            domain = self.dbs.AppGlobals.select_by(kname = 'DNSZone')[0].kvalue
            
             self.runCommand('/opt/kusu/bin/genconfig named > /etc/named.conf')
             self.runCommand('/opt/kusu/bin/genconfig zone > /var/named/%s.zone' % domain)
