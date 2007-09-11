@@ -238,7 +238,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                                      netname=interfaces[intf]['netname'],
                                      type=interfaces[intf]['nettype'],
                                      suffix='-' + intf)
-                
+ 
                 if not interfaces[intf]['use_dhcp']:
                     newnic.ip = interfaces[intf]['ip_address']
 
@@ -250,6 +250,17 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     newnet.gateway = interfaces[intf]['ip_address']
 
                 master.networks.append(newnet)
+
+                # copy network with eth0 if not already eth0
+                if intf != 'eth0':
+                    net_copy = db.Networks()
+
+                    for col in newnet.cols:
+                        setattr(net_copy, col, getattr(newnet, col))
+
+                    net_copy.device = 'eth0'
+                    net_copy.netname = newnet.netname + '-eth0'
+                    net_copy.suffix = '-eth0'
  
                 # DANGER!!!! HARDCODING OCS-STYLE NETWORKS
                 if intf == 'eth0':

@@ -301,6 +301,7 @@ class KitOps:
         if not availableKits:
             self.unmountMedia()
 
+        kl.debug("Kits available: %s", availableKits)
         return availableKits
 
     def inspectRPMs(self, kitrpm):
@@ -455,7 +456,8 @@ class KitOps:
         bmt = BootMediaTool()
 
         if self.installer:
-            bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'])
+            bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],
+                           overwrite=True)
         else:
             fd, tmprd1 = tempfile.mkstemp(prefix='kitops', dir=self.tmpprefix)
             os.close(fd)
