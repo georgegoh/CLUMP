@@ -417,6 +417,9 @@ def seq2tplstr(seq):
 from kusu.ngedit.partition import *
 from kusu.partitiontool import partitiontool
 
+LEFT    = -1
+CENTER  = 0
+RIGHT   = 1
 class PartSchema:
     def __init__(self, diskprofile = None ):
         #schema and PartRecList should be tightly related and reflect each other;
@@ -575,6 +578,89 @@ class PartSchema:
                 if rv and len(rv) == 1:
                     return True
         return False
+
+    def __str__(self):
+        colLabels=['Device', 'Size(MB) ', 'Type  ', 'Mount Point   ']
+        colWidths=[15,15,15,15]
+        justification=[LEFT, RIGHT, LEFT, LEFT]
+
+        txt = self.__createRowText(['a','b','c','d'], colWidths, justification)
+        schema = self.schema
+        str2display = ''
+
+        lvg_keys = schema['vg_dict'].keys()
+
+        for key in sorted(lvg_keys):
+            lvg = schema['vg_dict'][key] 
+            lvg_displayname = 'VG ' + key
+            lvg_size_MB = ''
+            # display volume groups first in listbox
+            txt = self.__createRowText(['VG ' + key,  str(lvg_size_MB), 'VolGroup',
+                                 ''], colWidths, justification)
+            str2display += txt + '\n'
+
+            lv_keys = lvg['lv_dict'].keys()
+            for lv_key in sorted(lv_keys):
+                lv =  lvg['lv_dict'][lv_key] 
+                lv_devicename = '  LV ' + lv_key
+                lv_size_MB = lv['size_MB']   
+                # display indented logical volumes belonging to the vg.
+                txt = self.__createRowText([lv_devicename, str(lv_size_MB),lv['fs'],
+                                    lv['mountpoint']], colWidths, justification)
+                str2display += txt + '\n'
+
+
+        disk_keys = schema['disk_dict'].keys()
+        for key in sorted(disk_keys):
+            # display device
+            device = schema['disk_dict'][key]
+            txt = self.__createRowText(['Disk '+str(key),  '', '', ''], colWidths, justification ) 
+            str2display += txt + '\n'
+
+            parts_dict =  device['partition_dict']          
+            parts_keys = parts_dict.keys()
+            for part_key in sorted(parts_keys):
+                partition = parts_dict[part_key]
+                part_devicename = '  ' +'d'+ str(key) +'p'+ str(part_key)
+                # indent one more level if logical partition.
+                #if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
+                fs_type = partition['fs']
+                mountpoint = partition['mountpoint']
+                txt = self.__createRowText([part_devicename,
+                                    str(partition['size_MB']),
+                                    fs_type,
+                                    mountpoint], colWidths, justification)
+                str2display += txt + '\n'
+
+        if str2display:
+            str2display = self.__createRowText(colLabels, colWidths, justification)+\
+                          '\n' + str2display
+
+        return str2display
+
+
+    def __createRowText(self, colTexts, colWidths, justification):
+        if len(colWidths) is not len(colTexts):
+            raise Exception, "Number of items in colWidths does not match \
+                              number of items in colTexts."
+        rowText = ''
+        for i, text in enumerate(colTexts):
+            if not text:
+                text = ''
+            currentColWidth = colWidths[i]
+            currentColText = text[:currentColWidth]
+
+            if justification[i] is LEFT:
+                justifiedColText = ' ' + currentColText.ljust(currentColWidth-1)
+            if justification[i] is CENTER:
+                justifiedColText = currentColText.center(currentColWidth)
+            if justification[i] is RIGHT:
+                justifiedColText = currentColText.rjust(currentColWidth-1) + ' '
+
+            rowText = rowText + justifiedColText
+        return rowText
+
+        
 
 
 import snack

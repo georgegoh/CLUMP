@@ -125,14 +125,14 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
@@ -1038,6 +1038,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                  justification=[LEFT, RIGHT, LEFT, LEFT], 
                                  returnExit=0)
 
+        #work around Kusu bug 347
         for p in curNG['parts']:
             if p['options'] == None:
                 p['options'] = ''
@@ -1755,8 +1756,56 @@ class NGEApp(KusuApp):
 
             #extended info on: networks, partition schema
             #for partitions follow the TUI case: build schema and pretty print
+            if ngprn['parts']:
+                #work around Kusu bug 347
+                for p in ngprn['parts']:
+                    if p['options'] == None:
+                        p['options'] = ''
+                    if p['mntpnt'] == None:
+                        p['mntpnt'] = ''
+                    if p['device'] == None:
+                        p['device'] = ''
 
+                schemaObj = PartSchema()
+                schemaObj.mycreateSchema(ngprn['parts'])
+                print "Partition Schema:"
+                str2display = str(schemaObj)
+                strlst = ['\t'+x for x in string.split(str2display,'\n')]
+                print string.join(strlst,'\n')
+            else:
+                print "Partition Schema:".ljust(justval), None
 
+            if ngprn['nets']:
+                cols = [ ['Device','Network','Subnet','Description'] ]
+                self.__db.execute('''select max(char_length(device)),max(char_length(network))
+                                         , max(char_length(subnet)), max(char_length(netname))
+                                         from networks''')
+
+                rv = self.__db.fetchone()
+                cols.append([int(x) for x in rv]) #justification values
+                headstr = ''
+                for i in xrange(len(cols[0])): #for all columns
+                    cols[1][i] = max(cols[1][i], len(cols[0][i]))+1 #make room for the label
+                    headstr += cols[0][i].ljust(cols[1][i])
+                headstr = headstr[:MAXWIDTH]
+                print "Networks:\n\t", headstr
+
+                query = "select device, network, subnet, netname, netid from networks"
+                self.__db.execute(query)
+                rv = self.__db.fetchall()
+
+                for record in rv:
+                    record = list(record) #convert to list
+                    netid = record.pop()
+                    entrystr = ''
+                    for i in xrange(len(record)): #construct an entry string
+                        entrystr += record[i].ljust(cols[1][i])
+                    if len(entrystr) > MAXWIDTH:
+                        entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+                    print '\t' + entrystr
+            else:
+                print "Networks: ".ljust(justval), None
+                        
 
 if __name__ == '__main__':
     NGEinst = NGEApp()
