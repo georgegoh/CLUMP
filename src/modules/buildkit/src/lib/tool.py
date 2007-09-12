@@ -169,6 +169,15 @@ class BuildKit:
         ns['compdesc'] = compdesc
         t = Template(file=str(tmpl),searchList=[ns])
         return str(t)
+        
+    def stripOutSVN(self, dirpath):
+        """ Removes .svn assets from the dirpath.
+        """
+        dirpath = path(dirpath)
+        svnlist = [f for f in dirpath.walk('.svn')]
+        for l in svnlist:
+            l.rmtree()
+
 
     def makeKitDir(self, kitsrc, kitdir):
         """ Creates a Kusu Kit Directory based on the Kit Source dir.
@@ -194,8 +203,8 @@ class BuildKit:
         if kitnamedir.exists(): kitnamedir.rmtree()
         kitnamedir.mkdir()
         cpio_copytree(pkgdir,kitnamedir)
-        #kitinfo.copy(kitnamedir)
-        
+        self.stripOutSVN(kitnamedir)
+
         
     def makeKitISO(self, kitsrc):
         """ Creates a Kusu Kit ISO based on the kitsrc dir.
