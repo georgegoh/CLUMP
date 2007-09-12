@@ -194,7 +194,7 @@ class BuildKit:
         if kitnamedir.exists(): kitnamedir.rmtree()
         kitnamedir.mkdir()
         cpio_copytree(pkgdir,kitnamedir)
-        kitinfo.copy(kitnamedir)
+        #kitinfo.copy(kitnamedir)
         
         
     def makeKitISO(self, kitsrc):

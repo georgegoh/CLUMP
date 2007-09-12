@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.util import tools
+from kusu.util import tools, rpmtool
 import subprocess
 from kusu.buildkit import *
 from path import path
@@ -66,7 +66,15 @@ class TestBuildKitApp(object):
         p.wait()
 
         kitdir = self.scratchdir / 'testdir'
-        kitinfo = kitdir / 'test/kitinfo'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'test/kit-test-0.1-0.noarch.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
 
         assert kitinfo.exists()
         
@@ -101,7 +109,15 @@ k.addComponent(comp)
         p.wait()
 
         kitdir = self.scratchdir / 'testdir'
-        kitinfo = kitdir / 'foo/kitinfo'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'foo/kit-foo-0.1-0.noarch.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
         assert kitinfo.exists()
         
         kit,comps = processKitInfo(kitinfo)
@@ -160,7 +176,15 @@ k.addComponent(comp)
         p.wait()
 
         kitdir = self.scratchdir / 'testdir'
-        kitinfo = kitdir / 'foo/kitinfo'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'foo/kit-foo-0.1-0.noarch.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
         assert kitinfo.exists()
 
         kit,comps = processKitInfo(kitinfo)
@@ -200,7 +224,15 @@ k.addComponent(comp)
         p.wait()
 
         kitdir = self.scratchdir / 'testdir'
-        kitinfo = kitdir / 'foo/kitinfo'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'foo/kit-foo-0.1-0.noarch.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
         assert kitinfo.exists()
 
         kit,comps = processKitInfo(kitinfo)

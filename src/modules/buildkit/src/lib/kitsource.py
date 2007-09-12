@@ -8,6 +8,7 @@
 from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType, UnsupportedScriptMode, FileDoesNotExistError
 from kusu.util.structure import Struct
+from kusu.util.tools import cpio_copytree
 from kusu.buildkit.builder import RPMBuilder, getTemplateSpec, stripShebang
 import pprint
 
@@ -82,7 +83,14 @@ class KitSrcBase(object):
                     path(self.srcPath / v['file']).touch()
             if k.endswith('dir'):
                 if 'dir' in v.keys():
-                    path(self.srcPath / v['dir']).makedirs()                    
+                    if k == 'pluginsdir':
+                        pdir = path(self.srcPath / v['dir'])
+                        pdir.mkdir()
+                        path(pdir / 'addhost').mkdir()
+                        path(pdir / 'ngedit').mkdir()
+                        path(pdir / 'genconfig').mkdir()
+                    else:
+                        path(self.srcPath / v['dir']).makedirs()                    
                     
         
 class GeneralKitSrc(KitSrcBase):
@@ -99,6 +107,8 @@ class GeneralKitSrc(KitSrcBase):
             'artifactsdir' : {'dir':'artifacts'},
             'binpkgsdir' : {'dir':'packages'},
             'srcpkgsdir' : {'dir':'sources'},
+            'pluginsdir' : {'dir':'plugins'},
+            'docsdir' : {'dir':'docs'},
             'tmpdir' : {'dir':'tmp'}
         }
         
@@ -129,6 +139,8 @@ class KusuComponent(Struct):
         self.pkgdir = path(self.buildprofile.pkgdir)
         self.tmpdir = path(self.buildprofile.tmpdir)
         self.templatesdir = path(self.buildprofile.templatesdir)
+        self.docsdir = path(self.buildprofile.docsdir)
+        self.pluginsdir = path(self.buildprofile.pluginsdir)
         
         self.scripts = {}
         self.scripts['postscript'] = ''
@@ -170,6 +182,8 @@ class KusuComponent(Struct):
         if 'templatesdir' in d: del d['templatesdir']
         if 'tmpdir' in d: del d['tmpdir']
         if '_queuecmds' in d: del d['_queuecmds']
+        if 'docsdir' in d: del d['docsdir']
+        if 'pluginsdir' in d: del d['pluginsdir']
         
         return d
         
@@ -214,13 +228,14 @@ class KusuComponent(Struct):
         _ns['postunscript'] = self.scripts['postunscript']
 
         return _ns
-        
+
     def _packRPM(self, verbose=False):
         """ RPM packaging stage for this class. """
 
         ns = self._generateNS()
+        
         tmpl = getTemplateSpec('component')
-        builddir = path(self.buildprofile.builddir)
+        builddir = path(self.builddir)
         _s = '%s.spec' % ns['pkgname']
         specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
@@ -256,6 +271,8 @@ class KusuKit(Struct):
         self.pkgdir = path(self.buildprofile.pkgdir)
         self.tmpdir = path(self.buildprofile.tmpdir)
         self.templatesdir = path(self.buildprofile.templatesdir)
+        self.docsdir = path(self.buildprofile.docsdir)
+        self.pluginsdir = path(self.buildprofile.pluginsdir)
 
         self.scripts = {}
         self.scripts['postscript'] = ''
@@ -308,6 +325,8 @@ class KusuKit(Struct):
         if 'srcdir' in d: del d['srcdir']
         if 'templatesdir' in d: del d['templatesdir']
         if 'tmpdir' in d: del d['tmpdir']
+        if 'docsdir' in d: del d['docsdir']
+        if 'pluginsdir' in d: del d['pluginsdir']
         del d['components']
         if '_queuecmds' in d: del d['_queuecmds']
 
@@ -325,7 +344,68 @@ class KusuKit(Struct):
         if not package in self.dependencies:
             self.dependencies.append(package)
 
+    def _prepDocumentation(self, ns):
+        """ Sets up the kit documentation.
+            Returns the list of files.
+        """
+        srcdir = self.docsdir
+        _filelist = srcdir.files()
+        if not _filelist: return []
+        _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
+        buildroot = self.tmpdir / _root
+        if not buildroot.exists(): buildroot.makedirs()
+        docsdir = '/depot/www/kits/%s/%s' % (ns['name'], ns['pkgversion'])
+        docsdir = path(docsdir)
+        destdir = buildroot / str(docsdir)[1:]
+        if not destdir.exists(): destdir.makedirs()
+        cpio_copytree(srcdir,destdir)
+        filelist = []
+        for f in destdir.files():
+            filelist.append(str(path(docsdir / f.basename())))
             
+        return filelist
+
+    def _prepPlugins(self, ns):
+        """ Sets up the kit plugins.
+            Returns the list of files.
+        """
+        srcdir = self.pluginsdir
+        _filelist = []
+        ngeditPlugins = srcdir / 'ngedit'
+        addhostPlugins = srcdir / 'addhost'
+        genconfigPlugins = srcdir / 'genconfig'
+        _filelist = ngeditPlugins.files() + addhostPlugins.files() + \
+            genconfigPlugins.files()
+        if not _filelist: return []
+        
+        _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
+        buildroot = self.tmpdir / _root
+        if not buildroot.exists: buildroot.makedirs()
+        plugdir = path('/opt/kusu/plugins')
+        destdir = buildroot / str(plugdir)[1:]
+        if not destdir.exists(): destdir.makedirs()
+        cpio_copytree(srcdir,destdir)
+        fl = [f.split(str(srcdir) + '/')[1] for f in _filelist]
+        filelist = []
+        for f in fl:
+            filelist.append(str(path(plugdir / f)))
+        return filelist
+        
+    def _prepKitInfo(self,ns):
+        """ Sets up the kitinfo
+            Returns the path for kitinfo
+        """
+        _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
+        buildroot = self.tmpdir / _root
+        kiroot = '/depot/kits/%s/%s/%s' % (ns['name'],ns['pkgversion'],ns['arch'])
+        destdir = buildroot / kiroot[1:]
+        if not destdir.exists(): destdir.makedirs()
+        kifile = path(destdir / 'kitinfo')
+        self.generateKitInfo(kifile)
+        _kitfile = kiroot + '/kitinfo'
+        return [_kitfile]
+        
+
     def _generateNS(self):
         """ Generates the namespace needed for the pack operation.
         """
@@ -334,6 +414,7 @@ class KusuKit(Struct):
         self.pkgname = 'kit-%s' % self.name
         _ns['pkgname'] = self.pkgname
         _ns['name'] = self.name
+        _ns['arch'] = self.arch
         _ns['pkgversion'] = self.version
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license
@@ -353,6 +434,11 @@ class KusuKit(Struct):
         tmpl = getTemplateSpec('kit')
         builddir = path(self.buildprofile.builddir)
         _s = '%s.spec' % ns['pkgname']
+        fl = []
+        fl.extend(self._prepDocumentation(ns))
+        fl.extend(self._prepPlugins(ns))
+        fl.extend(self._prepKitInfo(ns))
+        ns['filelist'] = fl
         specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         rpmbuilder.build()

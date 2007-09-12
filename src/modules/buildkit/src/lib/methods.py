@@ -23,8 +23,11 @@ def setupprofile(basedir=''):
             builddir = _basedir / 'artifacts'
             pkgdir = _basedir / 'packages'
             srcdir = _basedir / 'sources'
+            docsdir = _basedir / 'docs'
+            pluginsdir = _basedir / 'plugins'
             tmpdir = _basedir / 'tmp'
-            return BuildProfile(builddir=builddir,tmpdir=tmpdir,srcdir=srcdir,pkgdir=pkgdir)
+            return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+                srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
         else:
             raise InvalidBuildProfile
     _basedir = path(basedir)
@@ -32,9 +35,12 @@ def setupprofile(basedir=''):
     if _kitsrc.verifyLocalSrcPath():        
         builddir = _basedir / 'artifacts'
         srcdir = _basedir / 'sources'
+        docsdir = _basedir / 'docs'
+        pluginsdir = _basedir / 'plugins'
         pkgdir = _basedir / 'packages'
         tmpdir = _basedir / 'tmp'
-        return BuildProfile(builddir=builddir,tmpdir=tmpdir,srcdir=srcdir,pkgdir=pkgdir)
+        return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+            srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
     else:
         raise InvalidBuildProfile
         
