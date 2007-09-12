@@ -36,6 +36,7 @@ mkdir -p %{buildroot}%{_approot}
 %install
 cd %{_builddir}/%{name}-%{version}-%{release}
 find bin/ | cpio -mpdu %{buildroot}%{_approot}
+find sbin/ | cpio -mpdu %{buildroot}%{_approot}
 find etc/ | cpio -mpdu %{buildroot}%{_approot}
 find info/ | cpio -mpdu %{buildroot}%{_approot}
 find include/ | cpio -mpdu %{buildroot}%{_approot}
