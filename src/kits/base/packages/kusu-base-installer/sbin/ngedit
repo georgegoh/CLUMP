@@ -106,18 +106,21 @@ class scrNGEMain(USXBaseScreen):
         curNG = NodeGroup(ngid=ngid)
         curNG.syncFromDB(self.database)
 
-        #construct query string
-        #query = 'SELECT %s' + ', %s'*(len(NodeGroup.fields)-1) + ' from nodegroups where %s = %s'
-        #query = query % (NodeGroup.fields + (NodeGroup.fields[0], ngid)) #tuple concat...
-
-        #self.database.execute(query)
-        #rv = self.database.fetchone() #returns a tuple
-        #rv = [ ifelse(x==None,'',x) for x in rv ]
-
         #replace all Null values
         for f in NodeGroup.fields[1:]:
             if curNG[f] == None:
                 curNG[f] = ''
+
+        #work around Kusu bug 347
+        if curNG['parts']:
+            for p in curNG['parts']:
+                if p['options'] == None:
+                    p['options'] = ''
+                if p['mntpnt'] == None:
+                    p['mntpnt'] = ''
+                if p['device'] == None:
+                    p['device'] = ''
+
 
         origNG = curNG.copy()
         assert(curNG == origNG)
@@ -948,9 +951,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        #self.disk_profile = None
         self.PartSchema = None
-        #self.schema = None  # stores the partition schema information
 
 
     def setCallbacks(self):
@@ -998,6 +999,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
             ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
             ks.run()
 
+
         elif self.PartSchema.isLV(id):
             ScreenFactory.screens = [
                scrPartSchema_LVEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
@@ -1028,6 +1030,9 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         #    self.disk_profile = partitiontool.DiskProfile(fresh=True)
         if not self.PartSchema:
             self.PartSchema = PartSchema() #triggers disk_profile creation
+            schema = self.PartSchema.mycreateSchema(curNG['parts'])
+        else:
+            schema = self.PartSchema.mycreateSchema()
 
         self.screenGrid = snack.Grid(1, 1)
 
@@ -1038,20 +1043,6 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                  justification=[LEFT, RIGHT, LEFT, LEFT], 
                                  returnExit=0)
 
-        #work around Kusu bug 347
-        for p in curNG['parts']:
-            if p['options'] == None:
-                p['options'] = ''
-            if p['mntpnt'] == None:
-                p['mntpnt'] = ''
-            if p['device'] == None:
-                p['device'] = ''
-
-        t1 = time.time()
-        #FIXME: createSchema name conflict
-        schema = self.PartSchema.mycreateSchema(curNG['parts'])
-        #setupDiskProfile(self.disk_profile, schema)
-        t2 = time.time()
 
         #str2display = ''
         #for d in schema.keys():
@@ -1131,8 +1122,8 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         return True, 'Success'
 
     def formAction(self):
-        #curNG['parts'] = 'something'
-        self.selector.popupMsg('partition schema', str(curNG['parts']))
+        curNG['parts'] = self.PartSchema.PartRecList
+        self.selector.popupMsg('partition schema', "%s\n%s" %(str(curNG['parts']), str(curNG == origNG)))
 
 class scrPartSchema_PartEdit(USXBaseScreen):
     ''' This screen class allows to edit existing or create new Partitions. 
@@ -1145,11 +1136,10 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.PartSchemaObj = PartSchemaObj  #passed by ref.
         self.partition = PartSchemaObj.getDictByPK(id)
-        self.PartRec = None
         schema = PartSchemaObj.schema
         self.disk_key = None
+        self.part_key = None
         if id != None:
-            self.PartRec = PartSchemaObj.getPartRecByPK(id)
             #we're editing - get the disk_key we belong to
             done = False
             for disk_key in schema['disk_dict']:
@@ -1157,6 +1147,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                     part_dict = schema['disk_dict'][disk_key]['partition_dict'][part_key]
                     if part_dict['instid'] == id:
                         self.disk_key = disk_key
+                        self.part_key = part_key
                         assert(self.partition == part_dict)
                         done = True
                         break
@@ -1164,7 +1155,6 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                     break
 
     def setCallbacks(self):
-        #for the buttons
         self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
 
@@ -1234,7 +1224,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
 
         #preserve
         isOn = 0
-        if self.partition and self.PartRec['preserve'] == 1:
+        if self.partition and self.partition['preserve'] == 1:
             isOn = 1
         self.do_not_format_partition = snack.Checkbox('Do not format partition', isOn = isOn)
                 
@@ -1263,6 +1253,15 @@ class scrPartSchema_PartEdit(USXBaseScreen):
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
+        fs = self.filesystem.current()
+        if fs == "physical volume":
+            if self.mountpoint.value().strip():
+                return False, "Physical Volumes cannot have a mount point"
+            #if we already have a physical volume - not good, only one allowed - TODO
+        elif fs in ('ext2', 'ext3'):
+            if not self.mountpoint.value().strip():
+                return False, "Regular partitions require a mountpoint"
+        
         return True, 'Success'
 
     def formAction(self):
@@ -1270,13 +1269,74 @@ class scrPartSchema_PartEdit(USXBaseScreen):
             Timeline: Next_callback, validation, formAction
         '''
         #collect widget data into a PartitionRec object
-        # if we're editing:
-        #self.PartSchemaObj.updatePartRec(PartitionRec)
+        if self.partition:
+            id = self.partition['instid']
+        else:
+            id = self.PartSchemaObj.getNewPartId()
+        partrec = PartitionRec(idpartitions = id)
 
-        # elif we're creating new Partition:
-        #self.PartSchemaObj.addPartRec(PartitionRec)
+        #mntpnt
+        partrec['mntpnt'] = self.mountpoint.value().strip()
+        #fs
+        fs = self.filesystem.current()
+        partrec['fstype'] = fs
 
-        pass
+        #options
+        optlst = []
+        if fs == 'physical volume':
+            optlst.append('pv')
+            lvg_keys = self.PartSchemaObj.schema['vg_dict'].keys()
+            if len(lvg_keys) < 1:
+                raise NGEPartSchemaError, "Current partition schema has no Volume Groups defined"
+            lvg_keys.sort()
+            vg = lvg_keys[0]
+            optlst.append('vg=%s' %vg)
+        if self.min_size.selected():
+            optlst.append('fill')
+        partrec['options'] = string.join(optlst,';')
+
+        #preserve
+        preserve = 0
+        if self.do_not_format_partition.value():
+            preserve = 1
+        partrec['preserve'] = preserve
+
+        #size
+        size = None
+        if self.min_size.selected():
+            size = self.min_size_entry.value()
+        elif self.fixed_size.selected():
+            size = self.fixed_size_entry.value()
+        partrec['size'] = size
+
+        #device/partition
+        if fs == 'physical volume':
+            device = 'N'
+            partnum = 0
+        else:
+            device = int(self.drives.current().split()[1].strip())
+            if self.partition and device == self.disk_key:
+                partnum = self.part_key     #preserve partition number
+            else:
+                #new disk
+                disk_dict = self.PartSchemaObj.schema['disk_dict'][device]
+                part_keys = disk_dict['partition_dict'].keys()
+                partnum = 1
+                for k in part_keys:
+                    part_dict = disk_dict['partition_dict'][k]
+                    if part_dict['fs'].lower() != "physical volume":
+                        partnum += 1
+        partrec['device'] = str(device)
+        partrec['partition'] = str(partnum)
+
+        #self.selector.popupMsg('DEBUG', 'partrec = %s\nvg_dict = %s\ndisk_dict = %s' \
+        #        %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict'])))
+        
+        if self.partition: #we're editing
+            self.PartSchemaObj.updatePartRec(partrec)
+        else:   #new partition
+            self.PartSchemaObj.addPartRec(partrec)
+        #self.selector.popupMsg('DEBUG', str(self.PartSchemaObj.PartRecList))
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):

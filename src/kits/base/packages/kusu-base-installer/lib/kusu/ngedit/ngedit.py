@@ -28,14 +28,15 @@ NGE_PRNONE  = 0x20
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
 
 
-class UnsupportedOSType(Exception):         pass
+class UnsupportedOSType(Exception):             pass
 #NGE Exception hierarchy
-class NodeGroupError(Exception):            pass
-class NGEObjectException(NodeGroupError):   pass
-class NGEDBException(NodeGroupError):       pass
-class NGEInvalidRecord(NGEObjectException): pass
-class NGEDBReadFail(NGEDBException):        pass
-class NGEDBWriteFail(NGEDBException):       pass
+class NodeGroupError(Exception):                pass
+class NGEObjectException(NodeGroupError):       pass
+class NGEDBException(NodeGroupError):           pass
+class NGEInvalidRecord(NGEObjectException):     pass
+class NGEPartSchemaError(NGEObjectException):   pass
+class NGEDBReadFail(NGEDBException):            pass
+class NGEDBWriteFail(NGEDBException):           pass
 
 class KusuDBRec(UserDict):
     ''' KusuDBRec is the abstract class defining the attributes & behavior
@@ -429,19 +430,22 @@ class PartSchema:
         if diskprofile:
             self.disk_profile = diskprofile
         else:
-            self.disk_profile = partitiontool.DiskProfile(fresh=True)
+            self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
 
         self.schema = None
         self.PartRecList = None
         self.pk2dict = {}   #maps PartitionRec.PKval to the associated schema dict
 
-    def mycreateSchema(self, part_rules):
+    def mycreateSchema(self, part_rules=None):
         ''' creates a partition schema compatible with nodeinstaller's with addition
             of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
             nodeinstaller's partition API
         '''
         diskprofile = self.disk_profile
-        self.PartRecList = part_rules
+        if part_rules == None:
+            part_rules = self.PartRecList
+        else:
+            self.PartRecList = part_rules
     
         schema = {'disk_dict':{},'vg_dict':{}}
         vg_list = getVGList(part_rules, diskprofile)
@@ -482,6 +486,7 @@ class PartSchema:
                     vg = schema['vg_dict'][vg_name.strip()]
                     lv_name = lvinfo['device']
                     vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
+                    vg['lv_dict'][lv_name]['preserve'] = lvinfo['preserve']
                     self.pk2dict[lvinfo.PKval] = vg['lv_dict'][lv_name]
     
             attachPVsToVGs(diskprofile, schema['vg_dict'])
@@ -527,8 +532,9 @@ class PartSchema:
      
         if part_no != 'N' and part_no <= 0:
             raise InvalidPartitionSchema, "Partition number cannot be less than 1."
-        partition = {'size_MB': size, 'fill': fill,
-                     'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+        partition = {'size_MB': size, 'fill': fill, 
+                     'fs': fs, 'mountpoint': mountpoint,
+                     'instid':partinfo.PKval, 'preserve': partinfo['preserve'] } #the only change
     
         if disk_dict.has_key(disknum): disk = disk_dict[disknum]
         else: disk = {'partition_dict': {}}
@@ -550,6 +556,8 @@ class PartSchema:
 
     def addPartRec(self,record):
         ''' adds a new PartitionRec object to the PartRecList - assumes it's not there yet '''
+        if not self.PartRecList:
+            self.PartRecList = []
         self.PartRecList.append(record)
 
     def updatePartRec(self,record):
@@ -557,11 +565,11 @@ class PartSchema:
             raise error if the matching record not found
         '''
 
-        for i in xrange(len(self.PartSchemaObj.PartRecList)):
-            p = self.PartSchemaObj.PartRecList[i]
+        for i in xrange(len(self.PartRecList)):
+            p = self.PartRecList[i]
             if p.PKval == record.PKval:
-                del self.PartSchemaObj.PartRecList[i]
-                self.PartSchemaObj.PartRecList.insert(i,record)
+                del self.PartRecList[i]
+                self.PartRecList.insert(i,record)
 
     def isPartition(self,id):
         for p in self.PartRecList:
@@ -578,6 +586,15 @@ class PartSchema:
                 if rv and len(rv) == 1:
                     return True
         return False
+
+    def getNewPartId(self):
+        if not self.PartRecList:
+            return -1
+        minid = 0
+        for p in self.PartRecList:
+            if p.PKval < minid:
+                minid = p.PKval
+        return minid-1
 
     def __str__(self):
         colLabels=['Device', 'Size(MB) ', 'Type  ', 'Mount Point   ']
