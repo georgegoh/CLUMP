@@ -7,12 +7,15 @@
 
 import sys
 import os
+import pwd
+import atexit
 from kusu.core.app import KusuApp
 from kusu.buildkit import BuildKit, getSyntaxValidator
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined
 from kusu.util.tools import checkToolDeps, mkdtemp
 import subprocess
+        
         
 class App(KusuApp):
     """ Application class for buildkit. """
@@ -187,6 +190,21 @@ Example operations:
 
         handler(self.actionargs)
     
+    def restoreRpmMacros(self, oldrpmmacros):
+        """ Restore the old .rpmmacros
+        """
+        rpmmacros = oldrpmmacros.splitext()[0]
+        if oldrpmmacros.exists():
+            if rpmmacros.exists(): rpmmacros.remove()
+            oldrpmmacros.rename(rpmmacros)
+            msg = self._('Original .rpmmacros restored.')
+            print msg
+            
+    def removeRpmMacros(self):
+        userhome = path(pwd.getpwuid(os.getuid())[5])
+        rpmmacros = userhome / '.rpmmacros'
+        if rpmmacros.exists(): rpmmacros.remove()
+
     def _new(self, args):
         """ Handler for new action. args is a dict of supported key-value pairs for this action. """
         dirname = path(args['kit'])
@@ -210,8 +228,6 @@ Example operations:
             self.makeiso = True
         else:
             kitdir = path(_kitdir).abspath()
-        
-        oldrpmmacros = ''
 
         # get the kitsrc
         msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
@@ -238,8 +254,11 @@ Example operations:
         # set up the .rpmmacros
         msg = self._('Setting up a proper .rpmmacros for building this kit')
         print msg
-        oldrpmmacros = self.bkinst.setupRPMMacros(bp)
-
+        rpmmacrosExist, oldrpmmacros = self.bkinst.setupRPMMacros(bp)
+        if rpmmacrosExist: 
+            atexit.register(self.restoreRpmMacros,oldrpmmacros)
+        else:
+            atexit.register(self.removeRpmMacros)
 
         # get the kitscript
         _ks = self.options.kitscript
@@ -249,9 +268,6 @@ Example operations:
             print msg
             kitscript = self.bkinst.getKitScript(kitsrc,_ks)
         except FileDoesNotExistError:
-            if oldrpmmacros:
-                msg = self._('Restoring .rpmmacros')
-                self.bkinst.restoreRPMMacros(oldrpmmacros)
             msg = self._('kitscript %(kitscript)s not found!' % {'kitscript':_ks})
             self.printMsgExit(msg)
             
@@ -358,9 +374,6 @@ Example operations:
         
             if not kitiso:
                 msg = self._('Error creating Kit ISO!')
-                if oldrpmmacros:
-                    msg = self._('Restoring .rpmmacros')
-                    self.bkinst.restoreRPMMacros(oldrpmmacros)
                 self.printMsgExit(msg)
                 
             msg = self._('Kit ISO created.')
@@ -376,10 +389,7 @@ Example operations:
             msg = self._('Kit directory is at %(kitdir)s.' % {'kitdir':kitdir})
             print msg
         
-        if oldrpmmacros:
-            msg = self._('Restoring .rpmmacros')
-            self.bkinst.restoreRPMMacros(oldrpmmacros)
-            
+ 
     def _makeMeta(self, args):
         """ Handler for make-meta action. args is a dict of supported key-value pairs for this action. """
 
@@ -449,7 +459,6 @@ Example operations:
         msg = self._('Created meta Kit at %(isofile)s' % {'isofile':isofile})
         print msg
         
-
         
         
 if __name__ == '__main__':

@@ -119,7 +119,8 @@ class BuildKit:
         
     def setupRPMMacros(self, buildprofile):
         """ Sets up a proper .rpmmacros file for building purposes. """
-        curRPMMacros = setupRPMMacrofile(buildprofile)
+        return setupRPMMacrofile(buildprofile)
+
         
     def restoreRPMMacros(self, oldrpmmacros):
         """ Restores the old .rpmmacros. """

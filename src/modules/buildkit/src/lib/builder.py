@@ -66,12 +66,13 @@ def setupRPMMacrofile(buildprofile):
     """
     userhome = path(pwd.getpwuid(os.getuid())[5])
     rpmmacros = userhome / '.rpmmacros'
-
-    oldrpmmacros = None
+    rpmmacrosExists = False
     if rpmmacros.exists():
+        rpmmacrosExists = True
         ext = genrandomstr()
-        oldrpmmacros = '.'.join([rpmmacros,ext])
-        rpmmacros.rename(oldrpmmacros)
+        _oldrpmmacros = '.'.join([rpmmacros,ext])
+        rpmmacros.rename(_oldrpmmacros)
+        _oldrpmmacros = path(_oldrpmmacros)
 
     rpmtopdir = path(buildprofile.builddir) / 'packages'
     if not rpmtopdir.exists(): 
@@ -90,8 +91,10 @@ def setupRPMMacrofile(buildprofile):
     f = open(rpmmacros,'w')
     f.write(str(t))
 
-    if oldrpmmacros: return oldrpmmacros
-
+    if rpmmacrosExists and _oldrpmmacros.exists(): 
+        return (True,_oldrpmmacros)
+    else:
+        return (False,None)
 
 def prepareNS(packageprofile):
     """ Prepare a namespace dict for generating templates. """
