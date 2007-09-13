@@ -131,7 +131,7 @@ Example operations:
 
         self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
         self.parser.add_option('-s','--kitscript', action='store', dest='kitscript')
-        self.parser.add_option('-d','--keep-debuginfo', action='store', dest='debuginfo')
+        self.parser.add_option('-d','--keep-debuginfo', action='store_true', dest='debuginfo')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
         self.parser.set_defaults(verbose=False,showexamples=False,kitscript='build.kit',debuginfo=False)
         self.options, self.args = self.parser.parse_args()
