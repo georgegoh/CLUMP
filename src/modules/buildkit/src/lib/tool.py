@@ -212,7 +212,7 @@ class BuildKit:
         kitnamedir.mkdir()
         cpio_copytree(pkgdir,kitnamedir)
         self.stripOutSVN(kitnamedir)
-        if self.debuginfo: self.stripOutDebugInfo(kitnamedir)
+        if not self.debuginfo: self.stripOutDebugInfo(kitnamedir)
 
         
     def makeKitISO(self, kitsrc):
