@@ -20,6 +20,13 @@ bonniepkg.version = '1.03a'
 bonniepkg.release = '1'
 bonniepkg.filename = 'bonnie++-1.03a-1.src.rpm'
 
+# package iozone
+iozonepkg = SRPMPackage()
+iozonepkg.name = 'iozone'
+iozonepkg.version = '3_283'
+iozonepkg.release = '1'
+iozonepkg.filename = 'iozone-3_283-1.src.rpm'
+
 # package iperf
 iperfpkg = SRPMPackage()
 iperfpkg.name = 'iperf'
@@ -42,6 +49,7 @@ comp.description = 'hpc component for CentOS 5.'
 # Add any packages defined earlier by using the comp.addDep method
 comp.addDep(netcdfpkg)
 comp.addDep(bonniepkg)
+comp.addDep(iozonepkg)
 comp.addDep(iperfpkg)
 comp.addDep(streampkg)
 
@@ -61,4 +69,3 @@ k.addScript('00-post-script.sh',mode='post')
 # Add post uninstall script. You can modify this shell script or add new ones in the
 # sources directory
 k.addScript('00-postun-script.sh',mode='postun')
-
