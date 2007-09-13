@@ -20,6 +20,13 @@ bonniepkg.version = '1.03a'
 bonniepkg.release = '1'
 bonniepkg.filename = 'bonnie++-1.03a-1.src.rpm'
 
+# package iperf
+iperfpkg = SRPMPackage()
+iperfpkg.name = 'iperf'
+iperfpkg.version = '2.0.2'
+iperfpkg.release = '1'
+iperfpkg.filename = 'iperf-2.0.2-1.src.rpm'
+
 # define a default component
 comp = Centos5Component()
 comp.name = 'hpc'
@@ -28,6 +35,7 @@ comp.description = 'hpc component for CentOS 5.'
 # Add any packages defined earlier by using the comp.addDep method
 comp.addDep(netcdfpkg)
 comp.addDep(bonniepkg)
+comp.addDep(iperfpkg)
 
 # define a default kit
 k = DefaultKit()
