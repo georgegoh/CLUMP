@@ -1,0 +1,41 @@
+# $Id$
+# build.kit template
+
+
+# Define your packages here by using a correct packageprofile class.
+# Available types are SourcePackage(), RPMPackage(), SRPMPackage(),
+# DistroPackage(), BinaryPackage()
+
+netcdfpkg = SourcePackage()
+netcdfpkg.name = 'netcdf'
+netcdfpkg.version = '3.6.2'
+netcdfpkg.release = '0'
+netcdfpkg.installroot = '/opt/netcdf'
+netcdfpkg.filename = 'netcdf-3.6.2.tar.gz'
+
+# define a default component
+comp = Centos5Component()
+comp.name = 'hpc'
+comp.description = 'hpc component for CentOS 5.'
+
+# Add any packages defined earlier by using the comp.addDep method
+comp.addDep(netcdfpkg)
+
+
+# define a default kit
+k = DefaultKit()
+k.name = 'hpc'
+k.description = 'hpc kit.'
+
+# Adding the component defined earlier
+k.addComponent(comp)
+
+
+# Add post install script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-post-script.sh',mode='post')
+
+# Add post uninstall script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-postun-script.sh',mode='postun')
+
