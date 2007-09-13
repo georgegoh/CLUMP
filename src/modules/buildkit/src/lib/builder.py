@@ -258,6 +258,7 @@ class PackageProfile(Struct):
 
         # expose the attributes to the wrapper object
         self.wrapper.update(Struct(self))
+        self.wrapper.verbose=self.verbose
         
     def _processAddScripts(self):
         """ Process any queued commands.
@@ -293,10 +294,10 @@ class PackageProfile(Struct):
         """ Installation stage for this class. """
         return self.wrapper.install(**kwargs)
 
-    def deploy(self, pkgtype='rpm'):
+    def deploy(self, pkgtype='rpm', verbose=False):
         """ Deploying stage. This includes packing into distro-specific packages (if needed).
         """
-        return self.wrapper.deploy(pkgtype)
+        return self.wrapper.deploy(pkgtype,verbose)
 
 class PackageWrapper(Struct):
     """ Base class. PackageWrapper provides easy access to attributes and
@@ -341,26 +342,26 @@ class PackageWrapper(Struct):
     def addScript(self, script, mode='post'):
         pass
 
-    def _packRPM(self):
+    def _packRPM(self, verbose=False):
         """ RPM handling stage for this class. This package type-specific 
             and has to be implemented.
         """
         raise NotImplementedError
         
-    def _packDEB(self):
+    def _packDEB(self, verbose=False):
         """ DEB handling stage for this class. This package type-specific 
             and has to be implemented.
         """
         raise NotImplementedError
 
-    def deploy(self, pkgtype='rpm'):
+    def deploy(self, pkgtype='rpm', verbose=False):
         """ Deploying stage. """
 
         if pkgtype == 'rpm':
-            return self._packRPM()
+            return self._packRPM(verbose)
             
         elif pkgtype == 'deb':
-            return self._packDEB()
+            return self._packDEB(verbose)
             
 
 class AutoToolsWrapper(PackageWrapper):
@@ -438,7 +439,7 @@ class AutoToolsWrapper(PackageWrapper):
         makeinstallP.wait()        
 
         
-    def _packRPM(self):
+    def _packRPM(self, verbose=False):
         """ RPM handling stage for this class. """
         self.namespace = prepareNS(self)
 
@@ -454,7 +455,7 @@ class AutoToolsWrapper(PackageWrapper):
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
         
-        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
         rpmbuilder.build()
 
 
@@ -472,7 +473,7 @@ class SRPMWrapper(PackageWrapper):
             return False
         return True
 
-    def _packRPM(self):
+    def _packRPM(self, verbose=False):
         """ RPM handling stage for this class. """
         self.namespace = prepareNS(self)
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
@@ -486,7 +487,7 @@ class SRPMWrapper(PackageWrapper):
         tmpl = getPackageSpecTmpl(self.templatesdir)
         srpmfile = self.srcdir / self.filename
 
-        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=srpmfile,verbose=self.verbose)
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=srpmfile,verbose=verbose)
         rpmbuilder.build()
 
 
@@ -526,7 +527,7 @@ class BinaryPackageWrapper(PackageWrapper):
         destroot = path(prefix).abspath()
         cpio_copytree(self.buildsrc,destroot)
 
-    def _packRPM(self):
+    def _packRPM(self, verbose=False):
         """ RPM handling stage for this class. """
         self.namespace = prepareNS(self)
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
@@ -541,7 +542,7 @@ class BinaryPackageWrapper(PackageWrapper):
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
         
-        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=self.verbose)
+        rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
         rpmbuilder.build()
         
         
@@ -557,7 +558,7 @@ class RPMWrapper(PackageWrapper):
             return False
         return True
 
-    def deploy(self, pkgname='rpm'):
+    def deploy(self, pkgname='rpm', verbose=False):
         """ Since we don't need rpm packaging, we just handle this specifically.
         """
         pass
@@ -575,7 +576,7 @@ class DistroPackageWrapper(PackageWrapper):
         # actually exists.
         return True
         
-    def deploy(self, pkgname='rpm'):
+    def deploy(self, pkgname='rpm', verbose=False):
         pass
 
 

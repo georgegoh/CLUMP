@@ -22,6 +22,7 @@ class BuildKit:
     """
     
     verbose = False
+    debuginfo = False
     
     def newKitSrc(self, srcpath):
         """prepare the Kit source directory"""
@@ -89,14 +90,13 @@ class BuildKit:
     def handlePackages(self, packages, buildprofile):
         """ Handles the configuring, building and deploying of the packages. """
         for p in packages:
-            p.verbose = self.verbose
             p.buildprofile = buildprofile
             p.setup()
             p.verify()
             p._processAddScripts()
             p.configure()
             p.build()
-            p.deploy()
+            p.deploy(verbose=self.verbose)
             
     def handleComponents(self, components, buildprofile):
         """ Handles the configuring, building and deploying of the components. """
@@ -179,6 +179,13 @@ class BuildKit:
         for l in svnlist:
             l.rmtree()
 
+    def stripOutDebugInfo(self, dirpath):
+        """ Removes any debuginfo packages
+        """
+        dirpath = path(dirpath)
+        dblist = [f for f in dirpath.walkfiles('*-debuginfo-*rpm')]
+        for db in dblist:
+            db.remove()
 
     def makeKitDir(self, kitsrc, kitdir):
         """ Creates a Kusu Kit Directory based on the Kit Source dir.
@@ -205,6 +212,7 @@ class BuildKit:
         kitnamedir.mkdir()
         cpio_copytree(pkgdir,kitnamedir)
         self.stripOutSVN(kitnamedir)
+        if self.debuginfo: self.stripOutDebugInfo(kitnamedir)
 
         
     def makeKitISO(self, kitsrc):
