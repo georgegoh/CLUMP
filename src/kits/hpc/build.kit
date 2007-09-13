@@ -27,6 +27,13 @@ iperfpkg.version = '2.0.2'
 iperfpkg.release = '1'
 iperfpkg.filename = 'iperf-2.0.2-1.src.rpm'
 
+# package stream
+streampkg = SRPMPackage()
+streampkg.name = 'stream'
+streampkg.version = '5.8'
+streampkg.release = '1'
+streampkg.filename = 'stream-5.8-1.src.rpm'
+
 # define a default component
 comp = Centos5Component()
 comp.name = 'hpc'
@@ -36,6 +43,7 @@ comp.description = 'hpc component for CentOS 5.'
 comp.addDep(netcdfpkg)
 comp.addDep(bonniepkg)
 comp.addDep(iperfpkg)
+comp.addDep(streampkg)
 
 # define a default kit
 k = DefaultKit()
