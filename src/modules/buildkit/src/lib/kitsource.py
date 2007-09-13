@@ -117,16 +117,14 @@ class BinaryKitSrc(KitSrcBase): pass
 
 class KusuComponent(Struct):
     """ Component for Kits. """
-                            
-    dependencies = []                   # list of dependencies for this component
-    ngtypes = ['installer','compute']   # list of nodegroup types for this component
-    arch = 'noarch'
-    compversion = '0.1'
-    comprelease = '0'
 
     
-    
     def __init__(self, **kwargs):
+        self.dependencies = []                   # list of dependencies for this component
+        self.ngtypes = ['installer','compute']   # list of nodegroup types for this component
+        self.arch = 'noarch'
+        self.compversion = '0.1'
+        self.comprelease = '0'
         Struct.__init__(self,kwargs)
         self._queuecmds = []
 
@@ -184,6 +182,7 @@ class KusuComponent(Struct):
         if '_queuecmds' in d: del d['_queuecmds']
         if 'docsdir' in d: del d['docsdir']
         if 'pluginsdir' in d: del d['pluginsdir']
+        del d['dependencies']
         
         return d
         
@@ -249,16 +248,14 @@ class KusuComponent(Struct):
             
 class KusuKit(Struct):
     """ Kit class. """
-    components = []     # list of components belonging to this kit
-    dependencies = []   # list of dependencies for this kit
-    license = 'LGPL'    # license for this kit
-    version = '0.1' 
-    release = '0'
-    arch = 'noarch'
 
-    
     def __init__(self, **kwargs):
-
+        self.components = []     # list of components belonging to this kit
+        self.dependencies = []   # list of dependencies for this kit
+        self.license = 'LGPL'    # license for this kit
+        self.version = '0.1' 
+        self.release = '0'
+        self.arch = 'noarch'
         Struct.__init__(self,kwargs)
         self._queuecmds = []
 
@@ -328,6 +325,7 @@ class KusuKit(Struct):
         if 'docsdir' in d: del d['docsdir']
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['components']
+        del d['dependencies']
         if '_queuecmds' in d: del d['_queuecmds']
 
         return d

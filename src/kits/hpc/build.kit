@@ -1,9 +1,5 @@
 # $Id$
-# build.kit template
-
-# Define your packages here by using a correct packageprofile class.
-# Available types are SourcePackage(), RPMPackage(), SRPMPackage(),
-# DistroPackage(), BinaryPackage()
+# build.kit for HPC kit
 
 # package netcdf
 netcdfpkg = SourcePackage()
@@ -41,25 +37,36 @@ streampkg.version = '5.8'
 streampkg.release = '1'
 streampkg.filename = 'stream-5.8-1.src.rpm'
 
-# define a default component
-comp = Centos5Component()
-comp.name = 'hpc'
-comp.description = 'hpc component for CentOS 5.'
 
-# Add any packages defined earlier by using the comp.addDep method
-comp.addDep(netcdfpkg)
-comp.addDep(bonniepkg)
-comp.addDep(iozonepkg)
-comp.addDep(iperfpkg)
-comp.addDep(streampkg)
 
-# define a default kit
+# define component-HPC-libraries
+hpcLibrariesComp = DefaultComponent()
+hpcLibrariesComp.name = 'HPC-libraries'
+hpcLibrariesComp.description = 'This component contains a collection of HPC libraries.'
+
+# adding package dependencies for component-HPC-libraries
+hpcLibrariesComp.addDep(netcdfpkg)
+
+
+# define component-Benchmarking-tools
+benchmarkingToolsComp = DefaultComponent()
+benchmarkingToolsComp.name = 'Benchmarking-tools'
+benchmarkingToolsComp.description = 'This component contains a collection of benchmarking tools.'
+
+# adding package dependencies for component-Benchmarking-tools
+benchmarkingToolsComp.addDep(bonniepkg)
+benchmarkingToolsComp.addDep(iozonepkg)
+benchmarkingToolsComp.addDep(iperfpkg)
+benchmarkingToolsComp.addDep(streampkg)
+
+# define HPC kit
 k = DefaultKit()
 k.name = 'hpc'
-k.description = 'hpc kit.'
+k.description = 'HPC kit.'
 
-# Adding the component defined earlier
-k.addComponent(comp)
+# Adding the components defined earlier
+k.addComponent(hpcLibrariesComp)
+k.addComponent(benchmarkingToolsComp)
 
 
 # Add post install script. You can modify this shell script or add new ones in the
