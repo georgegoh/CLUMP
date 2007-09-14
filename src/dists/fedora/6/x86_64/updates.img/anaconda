@@ -53,7 +53,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     EXIT_CODE=$?
     
     if [ -f "/mnt/kusu/tmp/kusu/installer_running" ]; then
-        /bin/rm -f /mnt/kusu/tmp/kusu/installer_running > /dev/null 2>&1
+        /usr/bin/rm -f /mnt/kusu/tmp/kusu/installer_running > /dev/null 2>&1
     fi
     exit $EXIT_CODE
 
