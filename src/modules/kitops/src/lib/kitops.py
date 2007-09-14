@@ -309,7 +309,9 @@ class KitOps:
         Determine kit and component info by inspecting RPMs.
         """
 
-        kit = {}
+        kit = {'version': '', 'release': '', 'pkgname': '', 'name': '',
+               'arch': '', 'description': '', 'dependencies': [],
+               'license': '', 'scripts': [], 'removable': True}
         components = []
 
         #extract some RPMTAG info
@@ -321,18 +323,15 @@ class KitOps:
         kit['arch'] = kitinst.getArch()
         kit['description'] = kitinst.getSummary()
 
-        # unknowns
-        kit['dependencies'] = []
-        kit['license'] = ''
-        kit['scripts'] = []
-        kit['removable'] = True
-
         if kit['name'].startswith('kit-'):
             kit['name'] = kit['name'][len('kit-'):]
 
         complist = kitrpm.abspath().dirname().glob('component-*.rpm')
         for comploc in complist:
-            comp = {}
+            comp = {'compversion': '', 'comprelease': '', 'pkgname': '',
+                    'name': '', 'arch': '', 'description': '', 'ngtypes': [],
+                    'ostype': '', 'osversion': ''}
+
             compinst = PackageFactory(str(comploc))
             comp['compversion'] = compinst.getVersion()
             comp['comprelease'] = compinst.getRelease()
@@ -340,11 +339,6 @@ class KitOps:
             comp['name'] = compinst.getName()
             comp['arch'] = compinst.getArch()
             comp['description'] = compinst.getSummary()
-
-            # unknowns
-            comp['ngtypes'] = []
-            comp['ostype'] = ''
-            comp['osversion'] = ''
 
             if comp['name'].startswith('component-'):
                 comp['name'] = comp['name'][len('component-'):]
