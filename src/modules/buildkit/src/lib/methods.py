@@ -108,6 +108,9 @@ def DefaultKit(**kwargs):
     if not 'removable' in kwargs and not 'removeable' in kwargs:
         kwargs['removable'] = True
         
+    if not 'pkgname' in kwargs: kwargs['pkgname'] = ''
+    if not 'name' in kwargs: kwargs['name'] = ''
+    
     if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
     kit = KusuKit(**kwargs)
@@ -145,6 +148,10 @@ def DefaultComponent(**kwargs):
     if not 'ngtypes' in kwargs: kwargs['ngtypes'] = ['installer','compute']
     if not 'description' in kwargs: kwargs['description'] = ''
     if not 'srctype' in kwargs: kwargs['srctype'] = 'component'
+    if not 'name' in kwargs: kwargs['name'] = ''
+    if not 'pkgname' in kwargs: kwargs['pkgname'] = ''
+    if not 'ostype' in kwargs: kwargs['ostype'] = ''
+    if not 'osversion' in kwargs: kwargs['osversion'] = ''
     
     component = KusuComponent(**kwargs)
   

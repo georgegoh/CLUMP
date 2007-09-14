@@ -325,7 +325,6 @@ class KusuKit(Struct):
         if 'docsdir' in d: del d['docsdir']
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['components']
-        del d['dependencies']
         if '_queuecmds' in d: del d['_queuecmds']
 
         return d
