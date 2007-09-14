@@ -390,6 +390,12 @@ class NodeGroup(NodeGroupRec):
 
         NodeGroupRec.eraseFromDB(self,db)
 
+    def copy(self):
+        result = UserDict.copy(self)
+        if result['parts']:
+            result['parts'] = self.data['parts'][:] #copy the PartitionRec list
+        return result
+
 def RpmNameSplit(packname):
     ''' return a tuple (name,version,release,arch,ext)
     '''
@@ -585,6 +591,13 @@ class PartSchema:
                 rv = getLVList([p], self.disk_profile)
                 if rv and len(rv) == 1:
                     return True
+        return False
+
+    def isLVG(self,id):
+        vg_list = getVGList(self.PartRecList, self.disk_profile)
+        for p in vg_list:
+            if p.PKval == id:
+                return True
         return False
 
     def getNewPartId(self):

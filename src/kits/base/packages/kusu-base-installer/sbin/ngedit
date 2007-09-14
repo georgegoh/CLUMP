@@ -128,14 +128,14 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
@@ -962,12 +962,14 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.buttonsDict['new_button'].setCallback_(self.doNewAction)
         self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
+        self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
         self.hotkeysDict['F12'] = self.F12Action
 
     def F12Action(self):
         id = self.listbox.current()
-        self.selector.popupMsg('DEBUG', 'currently pointing to id = %s\n%s' %(id,str(self.PartSchema.pk2dict[id])))
-        #self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        if id != None:
+            self.selector.popupMsg('DEBUG', 'currently pointing to id = %s\n%s'\
+                                    %(id,str(self.PartSchema.pk2dict[id])))
         return NAV_IGNORE
 
     def doNewAction(self):
@@ -1012,6 +1014,45 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         return NAV_NOTHING
 
+    def doDeleteAction(self):
+        id = self.listbox.current()
+        if not id:
+            self.selector.popupMsg('Delete Operation', 'Currently selected item is not deletable')
+            return NAV_NOTHING
+
+        selected_dict = self.PartSchema.pk2dict[id]
+        if self.PartSchema.isPartition(id):
+            #TODO: check physical volumes
+            pass
+        if self.PartSchema.isLVG(id):
+            #disallow deletion if LVs associated with this VG exist
+            vg_dict = self.PartSchema.pk2dict[id]
+            if  vg_dict['lv_dict'].keys():
+                self.selector.popupMsg("Delete Operation", "Cannot delete a non-empty " +\
+                                       "Volume group. Delete the logical volumes first.")
+                return NAV_NOTHING
+
+            #disassociate the volume group from all physical volumes
+            for disk_key in self.PartSchema.schema['disk_dict']:
+                for part_key in self.PartSchema.schema['disk_dict'][disk_key]['partition_dict']:
+                    part_dict = self.PartSchema.schema['disk_dict'][disk_key]['partition_dict'][part_key]
+                    partrec = self.PartSchema.getPartRecByPK(part_dict['instid'])
+                    assert(partrec)
+                    #disassociate this PV
+                    (ispv, vg) = translatePartitionOptions(partrec['options'],'pv')
+                    if ispv and vg == selected_dict['name']:
+                        optlst = partrec['options'].split(';')
+                        optlst = [x for x in optlst if not x.strip().lower().startswith('vg=')]
+                        partrec['options'] = string.join(optlst, ';')
+                        
+
+        for i in xrange(len(self.PartSchema.PartRecList)):
+            p = self.PartSchema.PartRecList[i]
+            if p.PKval == id:
+                del self.PartSchema.PartRecList[i]
+                break
+
+        return NAV_NOTHING
 
     def doBackAction(self):
         return NAV_BACK
@@ -1024,10 +1065,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
 
     def drawImpl(self):
-        #from kusu.partitiontool import partitiontool
 
-        #if not self.disk_profile:
-        #    self.disk_profile = partitiontool.DiskProfile(fresh=True)
         if not self.PartSchema:
             self.PartSchema = PartSchema() #triggers disk_profile creation
             schema = self.PartSchema.mycreateSchema(curNG['parts'])
@@ -1057,7 +1095,6 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         #                str2display += "\t%s : %s\n" %(k, schema[d][k])
         #    else:
         #        str2display += '%s : %s\n' %(d.upper(), schema[d])
-        #str2display+='\npopulated disk profile in %f' %(t2-t1)
         #self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
 
         # retrieve info about logical volumes and lv groups
@@ -1124,10 +1161,11 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
     def formAction(self):
         curNG['parts'] = self.PartSchema.PartRecList
         self.selector.popupMsg('partition schema', "%s\n%s" %(str(curNG['parts']), str(curNG == origNG)))
+        self.selector.popupMsg('original part schema', 'origNG[parts]= %s' %str(origNG['parts']))
 
 class scrPartSchema_PartEdit(USXBaseScreen):
     ''' This screen class allows to edit existing or create new Partitions. 
-        More specifically, it exposes PartRec to the user for modification.
+        It exposes PartSchemaObj to the user for modification.
     '''
     name = "Partition Modification"
     buttons = [ 'ok_button', 'cancel_button' ]
@@ -1136,9 +1174,9 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.PartSchemaObj = PartSchemaObj  #passed by ref.
         self.partition = PartSchemaObj.getDictByPK(id)
-        schema = PartSchemaObj.schema
         self.disk_key = None
         self.part_key = None
+        schema = PartSchemaObj.schema
         if id != None:
             #we're editing - get the disk_key we belong to
             done = False
@@ -1336,7 +1374,162 @@ class scrPartSchema_PartEdit(USXBaseScreen):
             self.PartSchemaObj.updatePartRec(partrec)
         else:   #new partition
             self.PartSchemaObj.addPartRec(partrec)
-        #self.selector.popupMsg('DEBUG', str(self.PartSchemaObj.PartRecList))
+
+class scrPartSchema_LVEdit(USXBaseScreen):
+    ''' This screen class allows to edit existing or create new Logical Volumes. 
+        It exposes PartSchemaObj to the user for modification.
+    '''
+    name = "Logical Volume Modification"
+    buttons = [ 'ok_button', 'cancel_button' ]
+
+    def __init__(self, PartSchemaObj, id=None,  database=None, kusuApp=None,gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.PartSchemaObj = PartSchemaObj  #passed by ref.
+        self.partition = PartSchemaObj.getDictByPK(id)
+        self.vg_name = None
+        self.lv_name = None
+        schema = PartSchemaObj.schema
+        if id != None:
+            #we're editing - get the vgname we belong to
+            done = False
+            for vg in schema['vg_dict']:
+                for lvname in schema['vg_dict'][vg]['lv_dict']:
+                    lv_dict = schema['vg_dict'][vg]['lv_dict'][lvname]
+                    if lv_dict['instid'] == id:
+                        self.vg_name = vg
+                        self.lv_name = lvname
+                        assert(self.partition == lv_dict)
+                        done = True
+                        break
+                if done:
+                    break
+
+    def setCallbacks(self):
+        self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doOkAction(self):
+        #perform preparation required for validation and subsequent formAction
+        return NAV_FORWARD
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 5)
+        lbllst = ['Mount Point:', 'Logical Volume Name:', 'Size (MB):']
+        justval = max([len(x) for x in lbllst])
+
+        #mntpnt
+        self.mountpoint = kusuwidgets.LabelledEntry(lbllst[0].rjust(justval), 20,
+                                                    text="", hidden=0,
+                                                    password=0, scroll=0,
+                                                    returnExit=0
+                                                   )
+        if self.partition and self.partition['mountpoint']:
+            self.mountpoint.setEntry(self.partition['mountpoint'])
+
+        #lvname
+        self.lvname = kusuwidgets.LabelledEntry(
+                                        lbllst[1].rjust(justval),
+                                        20, text="", hidden=0, password=0,
+                                        scroll=0, returnExit=0
+                                   )
+        if self.partition:
+            if self.lv_name:
+                self.lvname.setEntry(self.lv_name)
+            self.lvname.setEnabled(False)
+
+
+        self.size = kusuwidgets.LabelledEntry(lbllst[2].rjust(justval), 20,
+                                              text="", hidden=0, password=0,
+                                              scroll=0, returnExit=0
+                                             )
+        if self.partition:
+            self.size.setEntry(str(self.partition['size_MB']))
+
+        self.filesystem = kusuwidgets.ColumnListbox(2, colWidths=[20], 
+                                                colLabels=['File System type:'],
+                                                justification=[LEFT],
+                                                returnExit=0)
+        fs_types = self.PartSchemaObj.disk_profile.fsType_dict.keys()
+        fs_types.sort()
+        for fs in fs_types:
+            self.filesystem.addRow([fs], fs)
+        if self.partition and self.partition['fs'] and self.partition['fs'] in fs_types:
+            self.filesystem.setCurrent(self.partition['fs'])
+
+
+        self.volumegroup = kusuwidgets.ColumnListbox(2, colWidths=[20],
+                                                    colLabels=['Volume Group:'],
+                                                    justification=[LEFT])
+
+        for vg_key in self.PartSchemaObj.schema['vg_dict']:
+            self.volumegroup.addRow([vg_key],vg_key)
+        if self.partition and self.vg_name:
+            self.volumegroup.setCurrent(self.vg_name)
+
+        #preserve
+        isOn = 0
+        if self.partition and self.partition['preserve'] == 1:
+            isOn = 1
+
+        self.do_not_format_partition = snack.Checkbox('Do not format partition',isOn=isOn)
+
+        #position widgets on the screen
+        self.screenGrid.setField(self.mountpoint, 0,0)
+        self.screenGrid.setField(self.lvname, 0,1)
+        self.screenGrid.setField(self.size, 0,2)
+
+        subgrid = snack.Grid(2,1)
+        subgrid.setField(self.filesystem, 0,0, padding=(0,0,2,0))
+        subgrid.setField(self.volumegroup, 1,0, padding=(2,0,0,0))
+        self.screenGrid.setField(subgrid, 0,3, padding=(0,1,0,1))
+
+        self.screenGrid.setField(self.do_not_format_partition, 0,4, padding=(0,0,0,1))
+
+
+    def validate(self):
+        mntpnt = self.mountpoint.value().strip()
+        fs = self.filesystem.current()
+        if fs in ('ext2','ext3') and not mntpnt:
+            return False, "Logical volumes of specified type require a mountpoint"
+        return True, 'Success'
+
+    def formAction(self):
+        #collect widget data into a PartitionRec object
+        if self.partition:
+            id = self.partition['instid']
+        else:
+            id = self.PartSchemaObj.getNewPartId()
+        partrec = PartitionRec(idpartitions = id)
+
+        #mntpnt
+        partrec['mntpnt'] = self.mountpoint.value().strip()
+        #fs
+        fs = self.filesystem.current()
+        partrec['fstype'] = fs
+
+        #options
+        optlst = ['lv']
+        optlst.append('vg=%s' %self.volumegroup.current())
+        if self.partition and self.partition['fill']:
+            optlst.append('fill')
+        partrec['options'] = string.join(optlst,';')
+
+        #preserve
+        preserve = 0
+        if self.do_not_format_partition.value():
+            preserve = 1
+        partrec['preserve'] = preserve
+
+        partrec['size'] = self.size.value().strip()
+        partrec['device'] = self.lvname.value().strip()
+
+        if self.partition: #we're editing
+            self.PartSchemaObj.updatePartRec(partrec)
+        else:   #new partition
+            self.PartSchemaObj.addPartRec(partrec)
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):
