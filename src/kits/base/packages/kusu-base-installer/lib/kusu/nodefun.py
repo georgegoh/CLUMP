@@ -71,7 +71,7 @@ class NodeFun(object, KusuApp):
            self._getUsedIPs()
            self._getMACAddresses()
            self.getNodeFormat()
-           if self._nodeGroupType:
+           if self._nodeGroupType and self._nodeGroupType != "unmanaged":
               self._nodegroupInterfaces = self._findInterfaces()
            self._installerNetworks = self._getInstallerNetworks()
            self._ngConflicts = self._getNodegroupConflicts()
@@ -92,7 +92,8 @@ class NodeFun(object, KusuApp):
         if self._nodeFormat == None:
            self.getNodeFormat()
            self._ngConflicts = self._getNodegroupConflicts()
-           self._nodegroupInterfaces = self._findInterfaces()
+           if nodegroup != "unmanaged":
+              self._nodegroupInterfaces = self._findInterfaces()
 
     def _getUsedIPs(self):
         self._cachedUsedIP = {}
@@ -587,7 +588,32 @@ class NodeFun(object, KusuApp):
             t2=time.time()
             print "replaceNodeEntry(): %f" % (t2-t1)
             return False
+   
+    def addUnmanagedStaticDevice(self, devicename, ip):
+        """addUnmanagedDevice(devicename)
+        Adds devices such as printers, switches, routers that have an IP and or may use DHCP to set an IP."""
+
+        # Check if the node name is already used.
+        if self.validateNode(devicename):
+           return False, "Device name already in use"
+
+        # Check if the IP is already used.
+        if self.isIPUsed(ip):
+           return False, "IP Address already used"
     
+        self._dbReadonly.execute('SELECT netid FROM networks WHERE type="unmanaged"')
+        netid = self._dbReadonly.fetchone()[0]
+
+        self._dbRWrite.execute('INSERT INTO nodes SET ngid=(SELECT ngid FROM nodegroups WHERE ngname="unmanaged"), name="%s", state="Installed"' % devicename)
+
+        self._dbRWrite.execute("SELECT last_insert_id()")
+        nid = self._dbRWrite.fetchone()[0]
+        self._dbRWrite.execute('INSERT INTO nics SET netid="%s", nid="%s", ip="%s", boot=0' % (netid, nid,ip))
+        return True, "Success"
+
+    #def addUnmanagedDHCPDevice(self, devicename, ip, mac):
+         
+           
     def replaceNICBootEntry(self, nodename, macaddress):
         """replaceNICBootEntry(nodename, macaddress)
         Replaces nics table containing new mac address for replaced node """

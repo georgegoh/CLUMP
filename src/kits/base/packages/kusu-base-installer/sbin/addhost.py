@@ -30,6 +30,7 @@ from kusu.core.db import KusuDB
 import snack
 from kusu.ui.text.USXscreenfactory import USXBaseScreen, ScreenFactory
 from kusu.ui.text.USXnavigator import *
+from kusu.ui.text.kusuwidgets import *
 from kusu.nodefun import NodeFun
 from kusu.util.errors import UserExitError
 import kusu.util.log as kusulog
@@ -51,7 +52,12 @@ class NodeData:
         self.selectedNodeInterface = None
         self.syslogFilePosition = None
         self.optionReplaceMode = False
+        self.optionStaticHostMode = False
+        self.staticHostname = None
+        self.staticIPAddress = None
+        self.optionDHCPMode = False
         self.pluginLocation = "/opt/kusu/lib/plugins/addhost"
+        self.forceQuitflag = False
         # We don't want to prompt the user to quit if we reached the last screen.
         self.quitPrompt = True
 
@@ -105,8 +111,12 @@ class AddHostApp(KusuApp):
                                 type="string", dest="replace", help=self._("addhost_replace_usage"))
         self.parser.add_option("-r", "--rack", action="store",
                                 type="int", dest="rack", help=self._("addhost_rack_usage"))
-        self.parser.add_option("-u", "--update", action="store_true", dest="update", help=self._("addhost_update_usage"))
-    
+        self.parser.add_option("-u", "--update", action="store_true", 
+                                dest="update", help=self._("addhost_update_usage"))
+        self.parser.add_option("-s", "--static-host", action="store", 
+                                dest="statichost", help=self._("addhost_statichost_usage"))
+        self.parser.add_option("-x", "--ip-address", action="store", 
+                                dest="ipaddr", help=self._("addhost_ipaddr_usage"))
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
     def loadPlugins(self):
@@ -186,9 +196,9 @@ class AddHostApp(KusuApp):
         else:
             removeFlag = bool(self._options.remove)
            
-        # Don't allow option -n -p -e -u to be used together. Mutually exclusive.
-        if (not self.nxor(bool(self._options.nodegroup), bool(self._options.replace), bool(self._options.update), removeFlag)):
-                    if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False):
+        # Don't allow option -n -p -e -u -s to be used together. Mutually exclusive.
+        if (not self.nxor(bool(self._options.nodegroup), bool(self._options.replace), bool(self._options.update), removeFlag, self._options.statichost)):
+                    if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False and bool(self._options.statichost) == False):
                         pass
                     else:
                         self.parser.error(kusuApp._("addhost_options_exclusive"))
@@ -201,6 +211,24 @@ class AddHostApp(KusuApp):
             else:
                 myNodeInfo.nodeRackNumber = self._options.rack
 
+        # Handle -s option
+        if self._options.ipaddr and self._options.statichost:
+           if not kusu.ipfun.validIP(self._options.ipaddr):
+              print "ERROR: Not a valid IP Address"
+
+           myNodeInfo.optionStaticHostMode = True
+           myNode.setNodegroup("unmanaged")
+           result, msg = myNode.addUnmanagedStaticDevice(self._options.statichost, ip=self._options.ipaddr)
+           if not result:
+              print "ERROR:  %s" % msg
+              sys.exit(-1)
+
+           sys.exit(0)
+           
+        if self._options.statichost and not self._options.ipaddr:
+           print "Must specify IP address"
+           sys.exit(0)
+ 
         # Handle -i option
         if self._options.interface:
             if self._options.interface[0] == '-':
@@ -338,9 +366,6 @@ class AddHostApp(KusuApp):
 
         # Handle -u option
         if self._options.update:
-            # Handle any local pending updates.
-            #myNode.doUpdates()
-
             # Ask all plugins to call updated() function
             if pluginActions:
                pluginActions.plugins_updated()
@@ -576,7 +601,15 @@ class NodeGroupWindow(USXBaseScreen):
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
         myNodeInfo.nodeGroupSelected = self.listbox.current()
-        #result = self.selector.popupStatus(self._("Debug Window"), self._("Debug: %s ") % nodeGroupSelected, 1)
+        if myNode.getNodegroupNameByID(myNodeInfo.nodeGroupSelected) == 'unmanaged':
+           myNodeInfo.optionStaticHostMode = True
+           screenList = [ WindowUnmanaged(database=database, kusuApp=kusuApp) ]
+           screenFactory = ScreenFactoryImpl(screenList)
+           ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
+           result = ks.run()
+           if not myNodeInfo.optionDHCPMode:
+              raise UserExitError
+    
         return True, 'Success'
 
     def formAction(self):
@@ -603,9 +636,11 @@ class WindowSelectNode(NodeGroupWindow):
         
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
-        
+       
+ 
         networkList = []
         validNets = []
+        itemName = None
         # Get installer's available networks.
         try:
             self.database.connect()
@@ -625,28 +660,42 @@ class WindowSelectNode(NodeGroupWindow):
             raise UserExitError
       
         defaultFlag = 1
-        # Check if any node group networks match/fit in to the installer networks found if so display those only.
-        for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
-            for ng_gateway in set(ngInfo):
-                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
-                   itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
-                   if defaultFlag:
-                      networkList.append([itemName, installer_device, 1 ])
-                   else:
-                      networkList.append([itemName, installer_device, 0 ])
-                   defaultFlag = 0
-
-        if not networkList:
+        # Static mode needs to see all the interfaces from the installer we don't care about if a network fits on any interface
+        if myNodeInfo.optionStaticHostMode:
+           for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
+               itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
+               if defaultFlag:
+                  networkList.append([itemName, installer_device, 1 ])
+               else:
+                  networkList.append([itemName, installer_device, 0 ])
+               defaultFlag = 0
+        else:
+           # Check if any node group networks match/fit in to the installer networks found if so display those only.
+           for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
+               for ng_gateway in set(ngInfo):
+                   if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
+                      itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
+                      if defaultFlag:
+                         networkList.append([itemName, installer_device, 1 ])
+                      else:
+                         networkList.append([itemName, installer_device, 0 ])
+                      defaultFlag = 0
+         
+           if not networkList:
               self.selector.popupMsg (self.kusuApp._("Error"), "No network interfaces were associated to the selected node group. Unable to add nodes.")
               self.screen.finish()
               raise UserExitError
-        else:
-             self.screenGrid = snack.Grid(1, 2)
-             instruction = snack.Label(self.msg)
-             instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0)
-             self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
-	     self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
-             self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=1)
+
+        self.screenGrid = snack.Grid(1, 2)
+
+        if myNodeInfo.forceQuitflag == True:
+           return NAV_QUIT
+
+        instruction = snack.Label(self.msg)
+        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=0)
+        self.radioButtonList = snack.RadioBar(self.screenGrid, networkList)
+        self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
@@ -690,7 +739,78 @@ class WindowSelectNode(NodeGroupWindow):
                         flag = 1
 
         return True, 'Success'
+       
+class WindowUnmanaged(NodeGroupWindow):
+    name = "addhost_window_title_unmanaged"
+    buttons = ['ok_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
+
+    def setCallbacks(self):
+        self.buttonsDict['ok_button'].setCallback_(self.validateInfo)
+
+    def checkDHCPStatus(self):
+        if self.dhcpCheck.value():
+           self.IPEntry.setEnabled(False) # DHCP set
+           myNodeInfo.optionDHCPMode = True
+        else:
+           self.IPEntry.setEnabled(True) # DHCP not set
+           myNodeInfo.optionDHCPMode = False
         
+    def drawImpl(self):
+        instruction = snack.Textbox(50, 3, self.kusuApp._("Type a hostname, choose DHCP if the device is able to get an IP dynamically. Otherwise, type an IP address"), scroll=0, wrap=1)
+        self.staticHostname = LabelledEntry(labelTxt=self.kusuApp._("Hostname: "), text="", width=20,
+                password=0, returnExit = 0)
+
+        self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = 0)
+        self.IPEntry = LabelledEntry(labelTxt=self.kusuApp._("IP Address: "), text="", width=20,
+                password=0, returnExit = 0)
+        self.dhcpCheck.setCallback(self.checkDHCPStatus)
+
+        self.screenGrid = snack.Grid(1, 4)
+        self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0))
+        self.screenGrid.setField(self.staticHostname, col=0, row=1, padding=(-11,1,0,0))
+        self.screenGrid.setField(self.dhcpCheck, col=0, row=2, padding=(-30,1,0,0))
+        self.screenGrid.setField(self.IPEntry, col=0, row=3, padding=(-10,1,0,0))
+
+    def validateInfo(self):
+        # Validate if hostname is used or not.
+        myNodeInfo.staticHostname = self.staticHostname.value().strip()
+        myNodeInfo.staticIPAddress = self.IPEntry.value().strip()
+        # The hostname is already used, try another one
+
+        if len(myNodeInfo.staticHostname) == 0:
+           self.selector.popupStatus(self.kusuApp._("Error"), 
+           self.kusuApp._("Error: Must provide a hostname"), 3)
+           return NAV_NOTHING
+
+        if myNodeInfo.staticHostname.find(' ') > 0:
+           self.selector.popupStatus(self.kusuApp._("Error"),
+           self.kusuApp._("Error: Cannot have a space in the hostname"), 3)
+           return NAV_NOTHING
+
+        if myNode.validateNode(myNodeInfo.staticHostname):
+           self.selector.popupStatus(self.kusuApp._("Error"),
+           self.kusuApp._("Error: The hostname %s is already in use. Please another hostname" % myNodeInfo.staticHostname), 3)
+           return NAV_NOTHING
+       
+        # Is what the user typed a valid IP address? 
+        if not kusu.ipfun.validIP(myNodeInfo.staticIPAddress) and myNodeInfo.optionDHCPMode == False:
+           self.selector.popupStatus(self.kusuApp._("Error"),
+           self.kusuApp._("Error: '%s' is not a valid IP Address, try again" % myNodeInfo.staticIPAddress), 4)
+           return NAV_NOTHING
+        
+        if myNode.isIPUsed(myNodeInfo.staticIPAddress):
+           self.selector.popupStatus(self.kusuApp._("Error"),
+           self.kusuApp._("Error: The IP '%s' is already in use. Try another" % myNodeInfo.staticIPAddress), 4)
+           return NAV_NOTHING
+
+        if not myNodeInfo.optionDHCPMode:
+           result = self.selector.popupStatus(self.kusuApp._("Adding Device"), "Adding device: %s, IP: %s" % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 4)
+           myNodeInfo.forceQuitflag = True
+        return NAV_QUIT
+ 
 class WindowNodeStatus(NodeGroupWindow):
     name = "addhost_window_title_installing"
     buttons = ['quit_button']
@@ -704,7 +824,6 @@ class WindowNodeStatus(NodeGroupWindow):
         self.hotkeysDict['F12'] = self.F12Action
     
     def drawImpl(self):
-        #self.currentScreen = self.selector.getCurrentScreen()
         self.listbox = snack.Listbox(10, scroll =1, returnExit = 1, width = 60, showCursor = 0)
         
         # We can't go back after we get here
@@ -747,7 +866,7 @@ class WindowNodeStatus(NodeGroupWindow):
                     discoveryCheck = self.myNode.findMACAddress(macAddress)
                     # This is a new mac address to add to the database.
                     if discoveryCheck == False and (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface) \
-                        and not myNodeInfo.optionReplaceMode:
+                        and not myNodeInfo.optionReplaceMode and not myNodeInfo.optionStaticHostMode:
                         self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
                         nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True)
                         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
@@ -755,7 +874,8 @@ class WindowNodeStatus(NodeGroupWindow):
                            pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodeList.append(nodeName)
                         del self.aNode
-                    
+                   
+                    # Replace node  
                     if myNodeInfo.optionReplaceMode and discoveryCheck == False:
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
@@ -766,6 +886,13 @@ class WindowNodeStatus(NodeGroupWindow):
                            if pluginActions:
                               pluginActions.plugins_replaced(myNodeInfo.replaceNodeName)
                            return NAV_QUIT
+ 
+                    # Adding a Static hostname w/ DHCP 
+                    if myNodeInfo.optionStaticHostMode and myNodeInfo.optionDHCPMode and discoveryCheck == False:
+                       if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
+                          self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Adding Static device: %s" % myNodeInfo.staticHostname), 3)
+                          return NAV_QUIT
+
                     del self.myNode
         
         # Store current position of /var/log/messages
