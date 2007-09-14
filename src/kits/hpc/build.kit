@@ -37,6 +37,14 @@ streampkg.version = '5.8'
 streampkg.release = '1'
 streampkg.filename = 'stream-5.8-1.src.rpm'
 
+# package hdf5
+hdf5pkg = SRPMPackage()
+hdf5pkg.name = 'hdf5'
+hdf5pkg.version = '1.6.6'
+hdf5pkg.release = '1'
+hdf5pkg.filename = 'hdf5-1.6.6-1.src.rpm'
+
+
 
 
 # define component-HPC-libraries
@@ -46,6 +54,7 @@ hpcLibrariesComp.description = 'This component contains a collection of HPC libr
 
 # adding package dependencies for component-HPC-libraries
 hpcLibrariesComp.addDep(netcdfpkg)
+hpcLibrariesComp.addDep(hdf5pkg)
 
 
 # define component-Benchmarking-tools
