@@ -232,7 +232,24 @@ class PartitionScreen(InstallerScreen):
                                       missing_partitions))
             self.selector.currentStep = self.selector.currentStep - 1
             return
-        
+
+        missing_fs_types = self.checkMissingFSTypes()
+        if missing_fs_types:
+            proceed = self.selector.popupMsg('No Filesystem type defined',
+                        'The following volumes have mountpoints defined but ' + \
+                        'no filesystem type defined. The installation cannot ' + \
+                        'proceed until you have defined the filesystem for:\n' + \
+                        missing_fs_types)
+            self.selector.currentStep = self.selector.currentStep - 1
+            return
+
+    def checkMissingFSTypes(self):
+        """Check that all the mountpoints have associated mountpoints."""
+        missing_fs_types = []
+        for vol in self.disk_profile.mountpoint_dict.values():
+            if not vol.fs_type:
+                missing_fs_type.append(vol.path)
+
 #        proceed = self.selector.popupYesNo(_('Really Proceed?'),
 #                       _('Proceeding beyond this screen will cause ' + \
 #                         'irreversible changes to your disk(s).\n\nIf you ' + \

@@ -65,6 +65,7 @@ from os.path import basename, exists
 from kusu.util.errors import *
 from kusu.util.tools import mkdtemp
 from kusu.util.testing import runCommand
+from kusu.util.structure import Struct
 
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool')
@@ -76,12 +77,12 @@ def checkAndMakeNode(devpath):
     by lanana.
     """
     # temp solution, until ggoh refactor this
-    logger.info('FORMAT %s: Checking if node already exists in /dev.' % \
+    logger.info('%s: Checking if node already exists in /dev.' % \
                 devpath)
     import stat
     from os import mknod, makedev, path
     if not path.exists(devpath):
-        logger.info('FORMAT %s: %s does not exist. Creating...' % \
+        logger.info('%s: %s does not exist. Creating...' % \
                     (devpath, devpath))
         dev_basename = basename(devpath)
 
@@ -273,21 +274,27 @@ class DiskProfile(object):
         else:
             try:
                 self.populateDiskProfile(fresh, probe_fstab)
-            except:
+            except Exception, e:
                 logger.debug("Encountered an unrecoverable error while " + \
                              "scanning the disks/LVM. Clearing the disk " + \
-                             "profile and starting fresh.")
-                self.populateDiskProfile(fresh=True, probe_fstab=False)
+                             "profile and starting without probing fstab.")
+                import traceback
+                tb = traceback.format_exc()
+                logger.debug("Traceback: %s" % tb)
+                self.populateDiskProfile(fresh, probe_fstab=False)
         logger.debug('State after scan:\n%s' % self.__str__())
 
 
     def probeLVMEntities(self):
         logger.debug('Probing PVs.')
         pv_probe_dict = probePhysicalVolumes()
+        logger.debug('PVs found: %s' % str(pv_probe_dict))
         logger.debug('Probing VGs.')
         lvg_probe_dict = probeLogicalVolumeGroups()
+        logger.debug('VGs found: %s' % str(lvg_probe_dict))
         logger.debug('Probing LVs.')
         lv_probe_dict = probeLogicalVolumes()
+        logger.debug('LVs found: %s' % str(lv_probe_dict))
         return pv_probe_dict, lvg_probe_dict, lv_probe_dict
 
     def populateDiskProfileTest(self, fresh, test):
@@ -355,6 +362,7 @@ class DiskProfile(object):
         disk_dict = {}
         disks_str = kusu.hardware.probe.getDisks().keys()
         for disk_str in disks_str:
+            logger.debug('Disk: %s' % disk_str)
             disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
         logger.debug('Found disks.')
         return disk_dict
@@ -371,11 +379,14 @@ class DiskProfile(object):
             found, loc = self.lookForFstab(p, fstab_path)
             if found:
                 dev_map = self.extractFstabToDevices(p, loc)
-                for dev, mntpnt in dev_map.iteritems():
-                    vol = self.findDevice(dev)
+                for dev_path, dev in dev_map.iteritems():
+                    logger.debug("populating %s's mountpoint" % dev)
+                    vol = self.findDevice(dev_path)
                     if vol:
-                        self.mountpoint_dict[mntpnt] = vol
-                        vol.mountpoint = mntpnt
+                        self.mountpoint_dict[dev.mntpnt] = vol
+                        vol.mountpoint = dev.mntpnt
+                        vol.fs_type = dev.fs_type
+                    logger.debug('Done')
                 # Ok, we've parsed the first fstab we found, job done.
                 return
 
@@ -386,24 +397,31 @@ class DiskProfile(object):
 
         try:
             # mount the device.
+            logger.debug('Mounting %s on %s to extract fstab.' % (device.path, mntpnt))
             device.mount(mountpoint=mntpnt, readonly=True)
             fstab_loc = str(path(mntpnt) / path(loc))
             # open fstab file and filter out comments.
+            logger.debug('%s mounted, opening fstab.' % device.path)
             fstab = open(fstab_loc)
             f_lines = [l for l in fstab.readlines() if \
                        len(l.strip()) and l.strip()[0] != '#']
             fstab.close()
+            logger.debug('fstab read, unmounting %s.' % mntpnt)
             device.unmount()
+            logger.debug('%s unmounted.' % device.path)
 
             device_map = {}
+            logger.debug('Parsing fstab')
             for l in f_lines:
                 try:
                     # look for a mountable entry and append it to our dict.
                     dev, mntpnt, fs_type = l.split()[:3]
                     if fs_type in self.mountable_fsType.keys():
-                        device_map[dev] = mntpnt
+                        dev_struct = Struct(fs_type=fs_type, mntpnt=mntpnt)
+                        device_map[dev] = dev_struct
                 except ValueError, e:
                     raise KusuError, str(e) + ' Offending line: \n' + l
+            logger.debug('Parsed fstab')
         except MountFailedError:
             pass
         return device_map
@@ -466,12 +484,14 @@ class DiskProfile(object):
         logger.debug('Looking for fstab in %s' % partition.path)
         mntpnt = mkdtemp()
         partition.mount(mountpoint=mntpnt, readonly=True)
+        logger.debug('Mounted %s on %s' % (partition.path, mntpnt))
         loc = path(mntpnt) / path(fstab_path)
         loc_exists = loc.exists()
         partition.unmount()
         if loc_exists:
-            logger.debug('Fstab found')
+            logger.debug('fstab found')
             return True, fstab_path
+        logger.debug('fstab not found')
         return False, None
 
     def __wipeLVMObjects(self, pv_probe_dict, lvg_probe_dict, lv_probe_dict):
@@ -792,6 +812,7 @@ class DiskProfile(object):
         print reprFifo()
 
     def formatAll(self):
+        logger.debug('Format all disks in the profile.')
         for disk in self.disk_dict.itervalues():
             disk.formatAll()
         for lvg in self.lvg_dict.itervalues():

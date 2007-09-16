@@ -70,6 +70,7 @@ class Disk(object):
             try:
                 self.pedDisk = parted.PedDisk.new(pedDevice)
                 self.__populateInitialPartitions()
+                logger.debug('Partitions dict: %s' % self.partition_dict)
             except parted.error, e:
                 if str(e).endswith('unrecognised disk label.'):
                     pedDiskType = parted.disk_type_get('msdos')
@@ -100,6 +101,7 @@ class Disk(object):
            a parted.PedPartition object and add it to the list of partitions on
            this disk.
         """
+        logger.debug('Create Partition Object')
         new_partition = Partition(self, pedPartition, mountpoint)
         self.partition_dict[pedPartition.num] = new_partition
         return new_partition
@@ -650,11 +652,14 @@ class Partition(object):
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
 
+            logger.info('FORMAT done, doing tune2fs')
             tune2fs = subprocess.Popen('tune2fs -c0 -i0 -O dir_index -ouser_xattr,acl %s' % self.path,
                                        shell=True,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             tune2fs_out, status = tune2fs.communicate()
+            logger.info('tune2fs done.')
+
         elif self.fs_type == 'linux-swap':
             logger.info('FORMAT %s: Making swap fs on %s' % \
                         (self.path, self.path))
@@ -663,6 +668,7 @@ class Partition(object):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
+            logger.info('mkswap done.')
         elif self.lvm_flag:
             # do the lvm thing
             pass

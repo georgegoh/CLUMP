@@ -433,7 +433,7 @@ class LogicalVolume(object):
 
     def format(self):
         if self.leave_unchanged or self.do_not_format:
-            logger.info('Not formating %s due to flag' % self.path)
+            logger.info('Not formatting %s due to flag' % self.path)
             return
 
         if self.fs_type == 'ext2':
@@ -443,6 +443,7 @@ class LogicalVolume(object):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
+            logger.info('mkfs.ext2 done')
         elif self.fs_type == 'ext3':
             logger.info('Making ext3 fs on %s' % self.path)
             mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
@@ -451,11 +452,13 @@ class LogicalVolume(object):
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
 
+            logger.info('FORMAT done, doing tune2fs')
             tune2fs = subprocess.Popen('tune2fs -c0 -i0 -O dir_index -ouser_xattr,acl %s' % self.path,
                                        shell=True,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             tune2fs_out, status = tune2fs.communicate()
+            logger.info('tune2fs done.')
         elif self.fs_type == 'linux-swap':
             logger.info('Making swap fs on %s' % self.path)
             mkfs = subprocess.Popen('mkswap %s' % self.path,
@@ -463,3 +466,4 @@ class LogicalVolume(object):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
+            logger.info('mkswap done.')
