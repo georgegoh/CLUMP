@@ -100,8 +100,10 @@ class DistroInstallSrcBase(object):
                 if filepath.exists() and overwrite:
                     filepath.chmod(0644)            
                     self.getKernelPath().copy(filepath)
+                    return
                 elif not filepath.exists():
                     self.getKernelPath().copy(filepath)
+                    return
                 else:
                     raise FileAlreadyExists
             else:
@@ -110,10 +112,13 @@ class DistroInstallSrcBase(object):
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
                 if path(dest).exists() and overwrite:
-                    path(dest).chmod(0644)
+                    # remove the existing file if overwrite is true
+                    path(dest).remove()
                     self.getKernelPath().copy(dest)
+                    return
                 elif not path(dest).exists():
                     self.getKernelPath().copy(dest)
+                    return
                 else:
                     raise FileAlreadyExists
             else:
@@ -124,13 +129,16 @@ class DistroInstallSrcBase(object):
 
         if path(dest).isdir():
             if path(dest).access(os.W_OK):
+                print 'is a dir!'
                 # check if the destpath already contains the same name as the initrdPath
                 filepath = path(dest) / self.getInitrdPath().basename()
                 if filepath.exists() and overwrite:
                     filepath.chmod(0644)            
                     self.getInitrdPath().copy(filepath)
+                    return
                 elif not filepath.exists():
                     self.getInitrdPath().copy(filepath)
+                    return
                 else:
                     raise FileAlreadyExists                
             else:
@@ -139,10 +147,13 @@ class DistroInstallSrcBase(object):
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
                 if path(dest).exists() and overwrite: 
-                    path(dest).chmod(0644)
+                    # remove the existing file if overwrite is true
+                    path(dest).remove()
                     self.getInitrdPath().copy(dest)
+                    return
                 if not path(dest).exists():
                     self.getInitrdPath().copy(dest)
+                    return
                 else:
                     raise FileAlreadyExists
             else:
