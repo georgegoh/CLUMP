@@ -128,14 +128,14 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
@@ -974,7 +974,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
     def doNewAction(self):
         button,item = self.selector.popupListBox('Select type of device', "Please select what you'd like to create",\
-                 [('Partition', 'partition'), ('Logical Volume', 'log_vol')])
+                 [('Partition', 'partition'), ('Logical Volume', 'log_vol'), ('Volume Group', 'vol_grp')])
 
         if button != 'cancel':
             if item == 'partition':
@@ -989,6 +989,14 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                         ]
                 ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
                 ks.run()
+
+            elif item == "vol_grp":
+                ScreenFactory.screens = [
+                    scrPartSchema_VGEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
+                                        ]
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+                ks.run()
+
 
         return NAV_NOTHING
 
@@ -1009,8 +1017,15 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
             ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
             ks.run()
 
+        elif self.PartSchema.isVG(id):
+            ScreenFactory.screens = [
+               scrPartSchema_VGEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
+                                    ]
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+            ks.run()
+
         else:
-            self.selector.popupMsg('Error', 'Can only edit partitions and logical volumes')
+            self.selector.popupMsg('Error', 'Modification allowed for partitions, VGs, & LVs only')
 
         return NAV_NOTHING
 
@@ -1022,12 +1037,17 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         selected_dict = self.PartSchema.pk2dict[id]
         if self.PartSchema.isPartition(id):
-            #TODO: check physical volumes
-            pass
-        if self.PartSchema.isLVG(id):
+            if selected_dict['fs'] == 'physical volume':
+                partrec = self.PartSchema.getPartRecByPK(id)
+                (ispv, vg) = translatePartitionOptions(partrec['options'],'pv')
+                if vg in self.PartSchema.schema['vg_dict'].keys():
+                    #can't delete PV if any VGs are using it
+                    self.selector.popupMsg("Delete Operation", "Can't delete a PV if it has VGs using it")
+                    return NAV_NOTHING
+
+        if self.PartSchema.isVG(id):
             #disallow deletion if LVs associated with this VG exist
-            vg_dict = self.PartSchema.pk2dict[id]
-            if  vg_dict['lv_dict'].keys():
+            if  selected_dict['lv_dict'].keys():
                 self.selector.popupMsg("Delete Operation", "Cannot delete a non-empty " +\
                                        "Volume group. Delete the logical volumes first.")
                 return NAV_NOTHING
@@ -1042,6 +1062,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                     (ispv, vg) = translatePartitionOptions(partrec['options'],'pv')
                     if ispv and vg == selected_dict['name']:
                         optlst = partrec['options'].split(';')
+                        #optlst = [ ifelse(x.strip().lower().startswith('vg='), 'vg=', x ) for x in optlst ]
                         optlst = [x for x in optlst if not x.strip().lower().startswith('vg=')]
                         partrec['options'] = string.join(optlst, ';')
                         
@@ -1132,11 +1153,11 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                 #if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
                 fs_type = partition['fs']
                 mountpoint = partition['mountpoint']
-                #if partition.lvm_flag:
-                #    fs_type = 'phys_vol'
-                #    for pv_name, pv in self.disk_profile.pv_dict.iteritems():
-                #        if pv.partition is partition and pv.group:
-                #            mountpoint = pv.group.name
+                if fs_type == 'physical volume':
+                    partrec = self.PartSchema.getPartRecByPK(partition['instid'])
+                    (ispv,vg) = translatePartitionOptions(partrec['options'],'pv')
+                    if ispv and vg:
+                        mountpoint = vg
                 # display partition info
                 self.listbox.addRow([part_devicename,
                                     str(partition['size_MB']),
@@ -1144,7 +1165,6 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                     #mountpoint], partition['instid'])
                                     mountpoint], partition['instid'])
 
-#        prog_dlg.close()
 
         if self.listbox.length < 1:
             msg = 'no partition schema associated with the current Node Group'
@@ -1160,8 +1180,8 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
     def formAction(self):
         curNG['parts'] = self.PartSchema.PartRecList
-        self.selector.popupMsg('partition schema', "%s\n%s" %(str(curNG['parts']), str(curNG == origNG)))
-        self.selector.popupMsg('original part schema', 'origNG[parts]= %s' %str(origNG['parts']))
+        #self.selector.popupMsg('partition schema', "%s\n%s" %(str(curNG['parts']), str(curNG == origNG)))
+        #self.selector.popupMsg('original part schema', 'origNG[parts]= %s' %str(origNG['parts']))
 
 class scrPartSchema_PartEdit(USXBaseScreen):
     ''' This screen class allows to edit existing or create new Partitions. 
@@ -1323,12 +1343,12 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         optlst = []
         if fs == 'physical volume':
             optlst.append('pv')
-            lvg_keys = self.PartSchemaObj.schema['vg_dict'].keys()
-            if len(lvg_keys) < 1:
-                raise NGEPartSchemaError, "Current partition schema has no Volume Groups defined"
-            lvg_keys.sort()
-            vg = lvg_keys[0]
-            optlst.append('vg=%s' %vg)
+            #lvg_keys = self.PartSchemaObj.schema['vg_dict'].keys()
+            #if len(lvg_keys) < 1:
+            #    raise NGEPartSchemaError, "Current partition schema has no Volume Groups defined"
+            #lvg_keys.sort()
+            #vg = lvg_keys[0]
+            #optlst.append('vg=%s' %vg)
         if self.min_size.selected():
             optlst.append('fill')
         partrec['options'] = string.join(optlst,';')
@@ -1359,11 +1379,15 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                 #new disk
                 disk_dict = self.PartSchemaObj.schema['disk_dict'][device]
                 part_keys = disk_dict['partition_dict'].keys()
-                partnum = 1
-                for k in part_keys:
-                    part_dict = disk_dict['partition_dict'][k]
-                    if part_dict['fs'].lower() != "physical volume":
-                        partnum += 1
+                part_keys = [ k for k in part_keys if disk_dict['partition_dict'][k]['fs'] \
+                                                      != "physical volume"
+                            ]
+                partnum = min(Set(range(1,max(part_keys)+2)) - Set(part_keys))
+                #partnum = 1
+                #for k in part_keys:
+                #    part_dict = disk_dict['partition_dict'][k]
+                #    if part_dict['fs'].lower() != "physical volume":
+                #        partnum += 1
         partrec['device'] = str(device)
         partrec['partition'] = str(partnum)
 
@@ -1530,6 +1554,90 @@ class scrPartSchema_LVEdit(USXBaseScreen):
             self.PartSchemaObj.updatePartRec(partrec)
         else:   #new partition
             self.PartSchemaObj.addPartRec(partrec)
+
+class scrPartSchema_VGEdit(USXBaseScreen):
+    ''' This screen class allows to edit existing or create new Volume Groups. 
+        It exposes PartSchemaObj to the user for modification.
+    '''
+    name = "Logical Volume Modification"
+    buttons = [ 'ok_button', 'cancel_button' ]
+
+    def __init__(self, PartSchemaObj, id=None,  database=None, kusuApp=None,gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.PartSchemaObj = PartSchemaObj  #passed by ref.
+        self.partition = PartSchemaObj.getDictByPK(id)
+
+
+    def setCallbacks(self):
+        self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doOkAction(self):
+        #perform preparation required for validation and subsequent formAction
+        return NAV_FORWARD
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 4)
+        lbllst = ['Volume Group Name:', 'Physical Extent (MB):']
+        justval = max([len(x) for x in lbllst])
+
+
+        self.vg_name = kusuwidgets.LabelledEntry(
+                                       lbllst[0].rjust(justval),
+                                       21, text="", hidden=0, password=0,
+                                       scroll=0, returnExit=0
+                                   )
+        if self.partition:
+            self.vg_name.setEnabled(False)
+            self.vg_name.setEntry(self.partition['name'])
+
+        self.phys_extent = kusuwidgets.LabelledEntry(
+                                           lbllst[1].rjust(justval),
+                                           21, text="32", hidden=0, password=0,
+                                           scroll=0, returnExit=0
+                                       )
+        if self.partition:
+            self.phys_extent.setEnabled(False)
+            self.phys_extent.setEntry(self.partition['extent_size'])
+
+        self.phys_to_use_lbl = snack.Label('Physical Volumes to Use:')
+        self.phys_to_use = snack.CheckboxTree(height=3, scroll=1)
+        #populate with available PVs
+        PVidmap = self.PartSchemaObj.getPVMap()
+        unassocPVidlst = [k for k,v in PVidmap.items() if not v]
+        if unassocPVidlst:
+            for disk_key in self.PartSchemaObj.schema['disk_dict']:
+                part_dict = self.PartSchemaObj.schema['disk_dict'][disk_key]['partition_dict']
+                for part_key in part_dict.keys():
+                    partition = part_dict[part_key]
+                    if partition['instid'] in unassocPVidlst:
+                        self.phys_to_use.append("d%sp%s" %(disk_key,part_key), item=partition['instid'])
+
+
+        #position widgets on the screen
+        self.screenGrid.setField(self.vg_name, 0,0)
+        self.screenGrid.setField(self.phys_extent, 0,1)
+        self.screenGrid.setField(self.phys_to_use_lbl, 0,2)
+        self.screenGrid.setField(self.phys_to_use, 0,3)
+
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        #collect widget data into a PartitionRec object
+        if self.partition:
+            id = self.partition['instid']
+        else:
+            id = self.PartSchemaObj.getNewPartId()
+        partrec = PartitionRec(idpartitions = id)
+
+
+
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):

@@ -519,7 +519,7 @@ class PartSchema:
             part_no = translatePartitionNumber(partinfo['partition'])
         except ValueError:
             if partinfo['device'].lower() == 'n':
-                handleSpanningPartition(partinfo, disk_dict, vg_dict)
+                #handleSpanningPartition(partinfo, disk_dict, vg_dict)  #do we care?
                 disknum = 1
                 part_no = 'N'
             else:
@@ -593,12 +593,31 @@ class PartSchema:
                     return True
         return False
 
-    def isLVG(self,id):
+    def isVG(self,id):
         vg_list = getVGList(self.PartRecList, self.disk_profile)
         for p in vg_list:
             if p.PKval == id:
                 return True
         return False
+
+    def getPVMap(self):
+        ''' returns a map of all PV PartRec ids mapping to an associated VG, if any
+        '''
+
+        part_list = getPartList(self.PartRecList, self.disk_profile)
+        allPVmap = {}
+
+        for p in part_list:
+            ispv,vg = translatePartitionOptions(p['options'],'pv')
+            if ispv:
+                allPVmap[p.PKval] = vg
+            else:
+                #may still be an unassociated PV
+                if 'pv' in [x.lower() for x in p['options'].split(';')]:
+                    allPVmap[p.PKval] = None
+
+        return allPVmap
+
 
     def getNewPartId(self):
         if not self.PartRecList:
