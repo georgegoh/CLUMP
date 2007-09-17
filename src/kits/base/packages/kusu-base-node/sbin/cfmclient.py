@@ -480,11 +480,11 @@ class CFMClient:
         """__setupForYum  - Make a yum.conf pointing to the installer that is closest"""
         dirname = 'Server'
         if self.ostype[:6] == 'fedora':
-            dirname = 'Fedora/RPMS'
+            dirname = ''
         if self.ostype[:4] == 'rhel' :
-            dirname = 'Server'
+            dirname = '/Server/'
         if self.ostype[:6] == 'centos':
-            dirname = 'CentOS'
+            dirname = '/CentOS/'
 
         yumconf = '/tmp/yum.conf'
         fp = file(yumconf, 'w')
@@ -496,7 +496,7 @@ class CFMClient:
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=%s - Base\n'
-                'baseurl=http://%s/repos/%s/%s/\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
+                'baseurl=http://%s/repos/%s%s\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
                 )
 
         fp.write(out)
@@ -583,6 +583,10 @@ class CFMClient:
         # Anything still in oldlist is a package to remove
         self.oldpackages = []
         for entry in oldlist:
+            # Skip yum and rpm
+            if entry == 'yum' or entry == 'rpm':
+                self.log("WARNING:  Can't remove: %s\n" % entry)
+                continue
             if entry:
                 self.oldpackages.append(entry)
             self.log("Found old package: %s\n" % entry)
@@ -695,8 +699,15 @@ class CFMClient:
                 realfile = filename[:-(len(action) + 1)]
                 osfile   = "/opt/kusu/etc/%s.OS" % realfile
                 if not os.path.exists(osfile):
+                    self.log("Copying original file to: %s\n" % osfile)
                     os.system('mkdir -p \"%s\"' % os.path.dirname(osfile))
-                    os.system('cp \"%s\" \"%s\"' % (realfile, osfile))
+                    if os.path.exists(realfile):
+                        os.system('cp \"%s\" \"%s\"' % (realfile, osfile))
+                    else:
+                        fin = open(osfile, 'w')
+                        fin.close()
+
+                self.log("Combining: %s and %s to %s\n" % (osfile, filename, realfile))
                 os.system('cat \"%s\" \"%s\" > \"%s\"' % (osfile, filename, realfile))
                 os.unlink(filename)
             elif action == 'merge':
@@ -743,11 +754,24 @@ class CFMClient:
                 os.rename('%s.ORIG' % self.packagelst, self.packagelst)
         else:
             self.__getPackageChanges()
-            self.__removePackages()
-            self.__installPackages()
-            if os.path.exists('%s.ORIG' % self.packagelst):
-                os.unlink('%s.ORIG' % self.packagelst)
-        
+            try:
+                self.__removePackages()
+                self.__installPackages()
+                if os.path.exists('%s.ORIG' % self.packagelst):
+                    os.unlink('%s.ORIG' % self.packagelst)
+            except:
+                # Revert old package list so we can retry
+                if os.path.exists('%s.ORIG' % self.packagelst):
+                    os.rename('%s.ORIG' % self.packagelst, self.packagelst)
+
+        # Mark the node as Installed instead of Expired
+        datafile = ''
+        url = "http://%s/repos/nodeboot.cgi?state=Installed" % self.bestinstaller
+        try:
+            (datafile, header) = urllib.urlretrieve(url)
+        except:
+            pass
+
 
     def updateFiles (self, force):
         """updatefiles - Update files"""
