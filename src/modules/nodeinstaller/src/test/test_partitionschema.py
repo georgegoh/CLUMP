@@ -201,6 +201,8 @@ class TestNIIPartitionPreserve(TestNIIPartition):
     """
 
     def setUp(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
         self.tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
         niidata = """\
 <?xml version="1.0"?>
@@ -297,6 +299,8 @@ class TestNIIPartitionLVM(TestNIIPartition):
     """
 
     def setUp(self):
+        if not gethostname() == 'dizzy.int.osgdc.org':
+            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
         self.tmpdir = path(tempfile.mkdtemp(dir='/tmp'))
         niidata = """\
 <?xml version="1.0"?>
