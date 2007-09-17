@@ -70,9 +70,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/*.py
 /opt/kusu/lib/plugins/ngedit/*.py
 
-#%exclude /opt/kusu/lib/plugins/addhost/*.py?
-#%exclude /opt/kusu/lib/plugins/genconfig/*.py?
-#%exclude /opt/kusu/lib/plugins/ngedit/*.py?
+%exclude /opt/kusu/lib/plugins/addhost/*.py?
+%exclude /opt/kusu/lib/plugins/genconfig/*.py?
+%exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %post
 
@@ -105,8 +105,8 @@ fi
 
 # Code necessary to cleanup the database from any entries inserted by the %post
 
-component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-master-v1.0'`
-component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-compute-v1.0'`
+component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = "component-lava-master-v1.0"'`
+component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = "component-lava-compute-v1.0"'`
 
 sqlrunner -q 'DELETE FROM ng_has_comp WHERE cid = $component_id_master OR cid = $component_id_compute'
 
