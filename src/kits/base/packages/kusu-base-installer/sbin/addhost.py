@@ -215,9 +215,10 @@ class AddHostApp(KusuApp):
         if self._options.ipaddr and self._options.statichost:
            if not kusu.ipfun.validIP(self._options.ipaddr):
               print "ERROR: Not a valid IP Address"
+              sys.exit(0)
 
            myNodeInfo.optionStaticHostMode = True
-           myNode.setNodegroup("unmanaged")
+           myNode.setNodegroupByName("unmanaged")
            result, msg = myNode.addUnmanagedStaticDevice(self._options.statichost, ip=self._options.ipaddr)
            if not result:
               print "ERROR:  %s" % msg
@@ -277,7 +278,7 @@ class AddHostApp(KusuApp):
             if not os.path.isfile(self._options.macfile):
                 self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
-            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+            myNode.setNodegroupByID(myNodeInfo.nodeGroupSelected)
             if haveNodegroup and not self._options.rack:
                 if self._options.rack == 0:
                     myNodeInfo.nodeRackNumber = self._options.rack
@@ -378,7 +379,7 @@ class AddHostApp(KusuApp):
                myNodeInfo.nodeRackNumber = self._options.rack
             else:
                myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-               myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+               myNode.setNodegroupByID(myNodeInfo.nodeGroupSelected)
                flag = 1
                if myNode.isNodenameHasRack() and haveInterface:
                    while flag:
@@ -400,7 +401,8 @@ class AddHostApp(KusuApp):
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
         if (haveNodegroup and self._options.rack):
             myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-            myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+            myNode.setNodegroupByID(myNodeInfo.nodeGroupSelected)
+
             if not myNode.isNodenameHasRack():
                 myNodeInfo.nodeRackNumber = 0
 
@@ -445,7 +447,7 @@ class PluginActions(object, KusuApp):
         Call all Add host plugins added() method
         """
         
-        pt1=time.time()
+        #pt1=time.time()
         if self._nodeHandler.nodeIsPrimaryInstaller(nodename):
             print self._("add_primary_installer_error\n")
             return
@@ -453,79 +455,79 @@ class PluginActions(object, KusuApp):
         info = self._nodeHandler.getNodeInformation(nodename)
 
         for plugin in self._pluginInstances:
-            t1=time.time()
+            #t1=time.time()
             plugin.added(nodename, info, prePopulateMode)
-            t2=time.time()
-            print "====> PLUGIN: %s: Time Spent: added(): %f" % (plugin, t2-t1)
+            #t2=time.time()
+            #print "====> PLUGIN: %s: Time Spent: added(): %f" % (plugin, t2-t1)
       
-        t2=time.time() 
-        print "******** ALL added() Plugins Time Spent: %f" % (t2-pt1)
+        #t2=time.time() 
+        #print "******** ALL added() Plugins Time Spent: %f" % (t2-pt1)
          
     def plugins_removed(self, nodename):
         """plugins_removed(nodename)
         Call all Add host plugins removed() method
         """
          
-        pt1=time.time()
+        #pt1=time.time()
         #print "DEBUG: Calling removed() method from plugins"
         info = self._nodeHandler.getNodeInformation(nodename)
         for plugin in self._pluginInstances:
-            t1=time.time()
+            #t1=time.time()
             plugin.removed(nodename, info)
-            t2=time.time()
-            print "====> PLUGIN: %s: Time Spent: removed(): %f" % (plugin, t2-t1)
+            #t2=time.time()
+            #print "====> PLUGIN: %s: Time Spent: removed(): %f" % (plugin, t2-t1)
 
-        t2=time.time()
-        print "******** ALL removed() Plugins Time Spent: %f" % (t2-pt1)
+        #t2=time.time()
+        #print "******** ALL removed() Plugins Time Spent: %f" % (t2-pt1)
             
     def plugins_replaced(self, nodename):
         """plugins_replaced(nodename)
         Call all Add host plugins replaced() method
         """
         
-        pt1=time.time()
+        #pt1=time.time()
         #print "DEBUG: Calling replaced() method from plugins"
         if not self._nodeHandler.nodeIsPrimaryInstaller(nodename):
             info = self._nodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
-                t1=time.time()
+                #t1=time.time()
                 plugin.replaced(nodename, info)
-                t2=time.time()
-                print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
+                #t2=time.time()
+                #print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
         else:
             print self._("replace_primary_installer_error\n")
             sys.exit(-1)
-        t2=time.time()
-        print "******** ALL replaced() Plugins Time Spent: %f" % (t2-pt1)
+        #t2=time.time()
+        #print "******** ALL replaced() Plugins Time Spent: %f" % (t2-pt1)
             
     def plugins_finished(self):
         """plugins_finished()
         Call all Add host plugins finished() method
         """
 	global myNodeInfo
-        pt1=time.time()
+        #pt1=time.time()
         #print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
-            t1=time.time()
+            #t1=time.time()
             plugin.finished(myNodeInfo.nodeList)
-            t2=time.time()
-            print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
-        t2=time.time()
-        print "******** ALL finished() Plugins Time Spent: %f" % (t2-pt1)
+            #t2=time.time()
+            #print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
+        #t2=time.time()
+        #print "******** ALL finished() Plugins Time Spent: %f" % (t2-pt1)
     
     def plugins_updated(self):
         """plugins_updated()
         Call all Add host plugins updated() method
         """
         #print "DEBUG: Calling updated() method from plugins"
-        pt1=time.time()
+        #pt1=time.time()
         for plugin in self._pluginInstances:
-            t1=time.time()
+            #t1=time.time()
             plugin.updated()
-            t2=time.time()
-            print "====> PLUGIN: %s: Time Spent: updated(): %f" % (plugin, t2-t1)
-        t2=time.time()
-        print "******** ALL updated() Plugins Time Spent: %f" % (t2-pt1)
+            #t2=time.time()
+            #print "====> PLUGIN: %s: Time Spent: updated(): %f" % (plugin, t2-t1)
+        #t2=time.time()
+        #print "******** ALL updated() Plugins Time Spent: %f" % (t2-pt1)
 
 class NodeGroupWindow(USXBaseScreen):
 
@@ -581,7 +583,7 @@ class NodeGroupWindow(USXBaseScreen):
             print self.kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
 
-        query = "SELECT ngname,ngid FROM nodegroups"
+        query = "SELECT ngname, ngid FROM nodegroups"
         try:
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
@@ -592,11 +594,16 @@ class NodeGroupWindow(USXBaseScreen):
    
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
-        self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
+        self.listbox = snack.Listbox(5, scroll=1, returnExit=0)
+
+        #value = snack.ListboxChoiceWindow(self.screen, self.kusuApp._(self.name), self.kusuApp._(self.msg), nodeGroups, buttons = ['Next', 'Exit'], width = 40, scroll=1, height=6, default=None, help=None)
+
         for ng,ngid in nodeGroups:
             self.listbox.append("%s" % ng, "%s" % ngid)
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 1), growx=1)
         self.screenGrid.setField(self.listbox, col=0, row=1, padding=(0, 0, 0, 1), growx=1)
+
+        #self.screenGrid.setField(self.listbox, col=0, row=0, padding=(0, 0, 0, 1), growx=1)
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
@@ -609,6 +616,8 @@ class NodeGroupWindow(USXBaseScreen):
            result = ks.run()
            if not myNodeInfo.optionDHCPMode:
               raise UserExitError
+        else:
+           myNodeInfo.optionStaticHostMode = False
     
         return True, 'Success'
 
@@ -637,7 +646,6 @@ class WindowSelectNode(NodeGroupWindow):
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
        
- 
         networkList = []
         validNets = []
         itemName = None
@@ -718,7 +726,7 @@ class WindowSelectNode(NodeGroupWindow):
         # Prompt for Rack Number if node format requires a rack number specified.
         if not myNodeInfo.nodeRackNumber:
            myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-           myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+           myNode.setNodegroupByID(myNodeInfo.nodeGroupSelected)
            if myNode.isNodenameHasRack():
                while flag:
                     buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
@@ -742,13 +750,32 @@ class WindowSelectNode(NodeGroupWindow):
        
 class WindowUnmanaged(NodeGroupWindow):
     name = "addhost_window_title_unmanaged"
-    buttons = ['ok_button']
+    buttons = ['ok_button', 'exit_button']
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
 
+    def F12Action(self):
+        if myNodeInfo.quitPrompt:
+            result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"),
+                    (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+            if result == "no":
+                return NAV_IGNORE
+            if result == "yes":
+                return NAV_QUIT
+        else:
+            if len(myNodeInfo.nodeList):
+                if pluginActions:
+                   pluginActions.plugins_finished()
+            raise UserExitError
+
+    def exitAction(self):
+        return NAV_QUIT
+   
     def setCallbacks(self):
         self.buttonsDict['ok_button'].setCallback_(self.validateInfo)
+        self.buttonsDict['exit_button'].setCallback_(self.exitAction)
+        self.hotkeysDict['F12'] = self.F12Action
 
     def checkDHCPStatus(self):
         if self.dhcpCheck.value():
@@ -806,8 +833,9 @@ class WindowUnmanaged(NodeGroupWindow):
            self.kusuApp._("Error: The IP '%s' is already in use. Try another" % myNodeInfo.staticIPAddress), 4)
            return NAV_NOTHING
 
-        if not myNodeInfo.optionDHCPMode:
-           result = self.selector.popupStatus(self.kusuApp._("Adding Device"), "Adding device: %s, IP: %s" % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 4)
+        if  myNodeInfo.optionDHCPMode == False:
+           result = self.selector.popupStatus(self.kusuApp._("Adding Device"), "Adding device: %s, IP: %s" % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 2)
+           myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname.strip(), myNodeInfo.staticIPAddress.strip())
            myNodeInfo.forceQuitflag = True
         return NAV_QUIT
  
@@ -824,7 +852,7 @@ class WindowNodeStatus(NodeGroupWindow):
         self.hotkeysDict['F12'] = self.F12Action
     
     def drawImpl(self):
-        self.listbox = snack.Listbox(10, scroll =1, returnExit = 1, width = 60, showCursor = 0)
+        self.listbox = snack.Listbox(10, scroll =1, returnExit = 0, width = 60, showCursor = 0)
         
         # We can't go back after we get here
         myNodeInfo.quitPrompt = False
@@ -891,6 +919,11 @@ class WindowNodeStatus(NodeGroupWindow):
                     if myNodeInfo.optionStaticHostMode and myNodeInfo.optionDHCPMode and discoveryCheck == False:
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
                           self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("Adding Static device: %s" % myNodeInfo.staticHostname), 3)
+                          self.myNode.addUnmanagedDHCPDevice(myNodeInfo.selectedInterface, myNodeInfo.staticHostname, macAddress)
+                          
+                          if pluginActions:
+                             pluginActions.plugins_add(myNodeInfo.staticHostname)
+                             pluginActions.plugins_finished()
                           return NAV_QUIT
 
                     del self.myNode

@@ -27,6 +27,7 @@ import time
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
+from kusu.util.errors import UserExitError
 import kusu.ipfun
 
 """ class NodeFun
@@ -49,8 +50,6 @@ class NodeFun(object, KusuApp):
         self._cachedUsedIP = None
         self._cachedMACAddress = {}
         self._installerNetworks = None
-        
-        self._nodegroupInterfaces = None
 
         # Instances of a read and write database.
         self._dbReadonly = KusuDB()
@@ -71,7 +70,7 @@ class NodeFun(object, KusuApp):
            self._getUsedIPs()
            self._getMACAddresses()
            self.getNodeFormat()
-           if self._nodeGroupType and self._nodeGroupType != "unmanaged":
+           if self._nodeGroupType:
               self._nodegroupInterfaces = self._findInterfaces()
            self._installerNetworks = self._getInstallerNetworks()
            self._ngConflicts = self._getNodegroupConflicts()
@@ -87,13 +86,9 @@ class NodeFun(object, KusuApp):
     def setRackNumber(self, rack):
         self._rackNumber = rack
    
-    def setNodegroup(self, nodegroup):
-        self._nodeGroupType = nodegroup
-        if self._nodeFormat == None:
-           self.getNodeFormat()
-           self._ngConflicts = self._getNodegroupConflicts()
-           if nodegroup != "unmanaged":
-              self._nodegroupInterfaces = self._findInterfaces()
+    def getNodegroupByName(self, ngname):
+        self._dbReadonly.execute('SELECT ngid FROM nodegroups WHERE ngname = "%s"' % ngname)
+        return self._dbReadonly.fetchone()[0]
 
     def _getUsedIPs(self):
         self._cachedUsedIP = {}
@@ -104,14 +99,14 @@ class NodeFun(object, KusuApp):
             self._cachedUsedIP["%s" % ips[i][0]] = 'Used'
 
     def _getMACAddresses(self):
-        t1=time.time()
+        #t1=time.time()
         self._dbReadonly.execute("SELECT mac FROM nics")
         macs = self._dbReadonly.fetchall()
         
         for i in range(0, len(macs)):
             self._cachedMACAddress["%s" % macs[i][0]] = 'Used'
-        t2=time.time()
-        print "Time Spent: getMACAddresses(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: getMACAddresses(): %f" % (t2-t1)
 
     def _addUsedIP(self, ip):
         self._cachedUsedIP[ip] = 'Used'
@@ -123,11 +118,11 @@ class NodeFun(object, KusuApp):
         """ isNodenameHasRack()
         Checks if the node format has a Rack AND rank. If it does, returns true, else false """
         
-        t1=time.time()   
+        #t1=time.time()   
         flag = 0
         # If the nodeformat is None, return False immediately.
         if not self._nodeFormat:
-            t2=time.time()
+            #t2=time.time()
             return False
             
         # Find special characters
@@ -138,25 +133,25 @@ class NodeFun(object, KusuApp):
 
              if flag:
                  if self._nodeFormat[i] == 'R':
-                     t2=time.time()
+                     #t2=time.time()
                      return True
 
-        t2=time.time()
-        print "Time Spent: isNodenameHasRack(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: isNodenameHasRack(): %f" % (t2-t1)
         return False	
 
     def getNodeFormat(self):
         """getNodeFormat()
         Gets and sets the node format from database. """
-        t1=time.time()
+        #t1=time.time()
         
         try:
             self._dbReadonly.execute("SELECT nameformat FROM nodegroups WHERE ngid='%s'" % self._nodeGroupType)
             self._nodeFormat = self._dbReadonly.fetchone()[0]
         except:
             self._nodeFormat = None
-        t2=time.time()
-        print "Time Spent: getNodeFormat(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: getNodeFormat(): %f" % (t2-t1)
 
     def _hostNameParse(self):
         """_hostNameParse()
@@ -170,7 +165,7 @@ class NodeFun(object, KusuApp):
         tmpR = "%s" % self._rackNumber   # Use rack number, maybe 0 depending on node format.
         tmpN = "%s" % self._rankCount
 
-        t1=time.time()
+        #t1=time.time()
         # Find special characters and count the number of each special character.
         for i in range (0, len(self._nodeFormat)):
              if self._nodeFormat[i] == "#":
@@ -206,8 +201,8 @@ class NodeFun(object, KusuApp):
             newString += tmpN.zfill(rankNum)
 
         self._nodeName = string.join(newString, "")
-        t2=time.time()
-        print "Time Spent: hostNameParse(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: hostNameParse(): %f" % (t2-t1)
 
     def _getNodegroupConflicts(self):
         self._dbReadonly.execute("SELECT ngid FROM nodegroups WHERE nameformat='%s'" % self._nodeFormat)
@@ -218,7 +213,7 @@ class NodeFun(object, KusuApp):
         """_getNodes()
         Gets the nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format """
        
-        t1=time.time()
+        #t1=time.time()
 
         # Build the SQL query since there many be more than one node group that has the same node group format.
         sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid"
@@ -242,8 +237,8 @@ class NodeFun(object, KusuApp):
         for info in data:
              if not self._nodeList.has_key(info[0]):
                 self._nodeList[info[0]] = info[0]
-        t2=time.time()
-        print "Time Spent: getNodes(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: getNodes(): %f" % (t2-t1)
         return self._nodeList
 
     def _getPrimaryInstaller(self):
@@ -253,45 +248,45 @@ class NodeFun(object, KusuApp):
         return self._primaryInstaller
     
     def nodeIsPrimaryInstaller(self, nodename):
-        t1=time.time()
+        #t1=time.time()
         if not nodename:
             return False
             
         if nodename.strip() == self._getPrimaryInstaller():
-            t2=time.time()
-            print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
             return True
 
-        t2=time.time()
-        print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
         return False
         
     def getNodeID (self, nodename):
         """getNodeID(nodename)
         Returns the node ID if found, otherwise false if nodename is the primary installer name, or not found in db """
-        t1=time.time()
+        #t1=time.time()
  
         if self.nodeIsPrimaryInstaller(nodename):
-            t2=time.time()
-            print "Time Spent: getNodeID(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: getNodeID(): %f" % (t2-t1)
             self._isMasterInstaller = True
             print self._("remove_primary_installer_error\n")
             sys.exit(-1)
         try:
             self._dbReadonly.execute("SELECT nid FROM nodes WHERE nodes.name='%s'" % nodename)
             self._isMasterInstaller = False
-            t2=time.time()
-            print "Time Spent: getNodeID(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: getNodeID(): %f" % (t2-t1)
             return self._dbReadonly.fetchone()[0]
         except:
-             return None
+            return None
     
     def getNodeInformation(self, nodename):
         """getNodeInformation(nodename)
         Returns node information: nodegroup id, node id, nic id, network id, ip address, mac address, node name """
         
         info = {}
-        t1=time.time()
+        #t1=time.time()
         self._dbReadonly.execute("SELECT nodes.ngid, nodes.nid, nodes.name, nics.netid, nics.ip, nics.mac FROM nodes, nics \
                                    WHERE nodes.name='%s' AND nodes.nid=nics.nid" % nodename)
 
@@ -314,20 +309,20 @@ class NodeFun(object, KusuApp):
                   info["%s" % data[i][2]][i]['nicnetid'] = int(data[i][3])
                   info["%s" % data[i][2]][i]['ipaddress'] = data[i][4]
                   info["%s" % data[i][2]][i]['macaddress'] = data[i][5]
-        t2=time.time()
-        print "Time Spent: getNodeInformation(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: getNodeInformation(): %f" % (t2-t1)
         return info
         
     def addNode (self, macaddr, selectedinterface, installer=True):
         """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
        
-        t1=time.time()
+        #t1=time.time()
         #self._nodeList = self._getNodes()
        
         if not self._nodeList and not self._ngConflicts:
-            t2=time.time()
-            print "Time Spent: addNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: addNode(): %f" % (t2-t1)
             return False
 
         # Check if the node format has a rack AND rank. If it doesn't set the rack to 0 always,
@@ -337,8 +332,8 @@ class NodeFun(object, KusuApp):
         # Check if node group exists by looking for the nodeformat If it's empty. Abort.
        
         if self._nodeFormat == None:
-            t2=time.time()
-            print "Time Spent: addNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: addNode(): %f" % (t2-t1)
             return False
         
         # Build SQL query based on the node groups sharing the same node format.
@@ -394,60 +389,61 @@ class NodeFun(object, KusuApp):
                      self._rankCount += 1
                  else:
                      self._createNodeEntry(macaddr, selectedinterface, installer)
-                     t2=time.time()
-                     print "Time Spent: addNode(): %f" % (t2-t1)
+                     #t2=time.time()
+                     #print "Time Spent: addNode(): %f" % (t2-t1)
                      return self._nodeName
 
         # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
         self._hostNameParse()
         self._createNodeEntry(macaddr, selectedinterface, installer)
-        t2=time.time()
-        print "Time Spent: addNode(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: addNode(): %f" % (t2-t1)
         return self._nodeName
 
     def deleteNode(self, nodename):
         """deleteNode(nodename)
         Deletes node from database, and calls deleteDHCPLease() to delete the DHCP entry also. """
-        t1=time.time()
+        #t1=time.time()
 
         if not nodename or nodename == None:
-            t2=time.time()
-            print "Time Spent: deleteNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: deleteNode(): %f" % (t2-t1)
             return False
             
         # We can't be the master installer
         if not self._isMasterInstaller:
             nid = self.getNodeID(nodename)
             if nid == None:
-                t2=time.time() 
-                print "Time Spent: deleteNode(): %f" % (t2-t1)
+                #t2=time.time() 
+                #print "Time Spent: deleteNode(): %f" % (t2-t1)
+                print "Node '%s' not found" % nodename
                 return False
                 
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("DELETE FROM nics where nid=%s" % nid)
             self._dbRWrite.execute("DELETE FROM nodes where nid=%s" % nid)
-            t2=time.time()
-            print "Time Spent: deleteNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: deleteNode(): %f" % (t2-t1)
             return True
 
     def isIPUsed(self, ipaddress):
         """isIPUsed(ipaddress)
         Checks if the IP is in use, returns false if not, true if it is. """
 
-        t1=time.time()
+        #t1=time.time()
         if self._cachedUsedIP.has_key(ipaddress):
-           t2=time.time()
-           print "Time Spent: isUPUsed(): %f" % (t2-t1)
+           #t2=time.time()
+           #print "Time Spent: isUPUsed(): %f" % (t2-t1)
            return True
         
-        t2=time.time()
-        print "Time Spent: isUPUsed(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: isUPUsed(): %f" % (t2-t1)
         return False
         
-    def _createNodeEntry(self, macaddr, selectedinterface, installer=True):
+    def _createNodeEntry(self, macaddr, selectedinterface, installer=True, static=False):
         """createNodeEntry()
         Create a node in the database. """
-        t1=time.time()
+        #t1=time.time()
         flag = 0
         installer_subnet = None
         installer_network = None
@@ -455,8 +451,15 @@ class NodeFun(object, KusuApp):
         if self._nodeList.has_key(self._nodeName):
            return
 
-        self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" %
-                               (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
+        if static == False:
+           self._nodegroupInterfaces = self._findInterfaces()
+
+        if static == True:
+           unmanagedID = self.getNodegroupByName('unmanaged')
+           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Installed', 0, '%s', '%s')" %                                               (unmanagedID, self._nodeName, self._rackNumber, self._rankCount))
+        else:
+           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" %
+                                   (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
  
         self._dbRWrite.execute("SELECT last_insert_id()")
         nodeID = self._dbRWrite.fetchone()[0]
@@ -464,11 +467,10 @@ class NodeFun(object, KusuApp):
         # Add the node to the 'used' list of nodes in db.
         self._nodeList[self._nodeName] = self._nodeName
 
-        #nodeID = self.getNodeID(self._nodeName)
+        # Get selected installer's subnet and network information.
+        interfaces.update(self._nodegroupInterfaces)
 
         if installer:
-           # Get selected installer's subnet and network information.
-           interfaces.update(self._nodegroupInterfaces)
            self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                                      nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                      AND networks.device='%s'" % selectedinterface)
@@ -476,15 +478,15 @@ class NodeFun(object, KusuApp):
            # Use the gui selected network interface as the installer's interface. 
            installer_subnet, installer_network = self._dbReadonly.fetchone()
 
-        if self._nodegroupInterfaces == {} :
-           print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
-           sys.exit(-1)
-
-        if not selectedinterface in self._nodegroupInterfaces:
+        if static == False:
+           if self._nodegroupInterfaces == {}:
+              print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
+              sys.exit(-1)
+   
+        if not selectedinterface in self._nodegroupInterfaces and static == False:
            print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
            sys.exit(-1)
 
-        interfaces.update(self._nodegroupInterfaces)
         if not installer: 
            for subnet, network in self._installerNetworks:
                # We don't need to check other subnets only one needs to pass
@@ -565,28 +567,28 @@ class NodeFun(object, KusuApp):
                    self._createNICBootEntry(nodeID, networkID, newIP, 0)
              else:
                 self._createNICBootEntry(nodeID, networkID, newIP, 0)
-        t2=time.time()
-        print "Time Spent: createNodeEntry(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: createNodeEntry(): %f" % (t2-t1)
 
     def replaceNodeEntry(self, nodename):
         """replaceNodeEntry(nodename)
         Replaces an existing node, first by deleting the existing DHCP entry for the node since it contains the old mac address. 
         Then setting the MAC address to NULL so a new DHCP request may be done.  """
 
-        t1=time.time()
+        #t1=time.time()
 
         nid = self.getNodeID(nodename)
         if not self._isMasterInstaller:
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
             self._dbRWrite.execute("UPDATE nodes SET state='Expired' WHERE nid='%s'" % nid)
-            t2=time.time()
-            print "replaceNodeEntry(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "replaceNodeEntry(): %f" % (t2-t1)
             return True
         else:
             print self.kusuApp._("replace_primary_installer_error\n")
-            t2=time.time()
-            print "replaceNodeEntry(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "replaceNodeEntry(): %f" % (t2-t1)
             return False
    
     def addUnmanagedStaticDevice(self, devicename, ip):
@@ -600,24 +602,30 @@ class NodeFun(object, KusuApp):
         # Check if the IP is already used.
         if self.isIPUsed(ip):
            return False, "IP Address already used"
-    
-        self._dbReadonly.execute('SELECT netid FROM networks WHERE type="unmanaged"')
-        netid = self._dbReadonly.fetchone()[0]
+   
+        self._dbReadonly.execute('SELECT nodegroups.ngid, networks.netid FROM nodegroups,networks,ng_has_net \
+                                  WHERE ng_has_net.netid=networks.netid AND nodegroups.ngid=ng_has_net.ngid AND \
+                                  ng_has_net.ngid=(SELECT ngid FROM nodegroups WHERE ngname="unmanaged")') 
 
-        self._dbRWrite.execute('INSERT INTO nodes SET ngid=(SELECT ngid FROM nodegroups WHERE ngname="unmanaged"), name="%s", state="Installed"' % devicename)
+        ngid, netid = self._dbReadonly.fetchone()
+
+        self._dbRWrite.execute('INSERT INTO nodes SET ngid="%s", name="%s", state="Installed", bootfrom=0' % (ngid, devicename))
 
         self._dbRWrite.execute("SELECT last_insert_id()")
         nid = self._dbRWrite.fetchone()[0]
         self._dbRWrite.execute('INSERT INTO nics SET netid="%s", nid="%s", ip="%s", boot=0' % (netid, nid,ip))
         return True, "Success"
 
-    #def addUnmanagedDHCPDevice(self, devicename, ip, mac):
-         
+    def addUnmanagedDHCPDevice(self, interface, devicename, mac):
+        self._nodeName = devicename
+        self.setNodegroupByName('unmanaged')
+        self._nodegroupInterfaces = self._findInterfaces()
+        self._createNodeEntry(mac, interface, installer=True, static=True)
            
     def replaceNICBootEntry(self, nodename, macaddress):
         """replaceNICBootEntry(nodename, macaddress)
         Replaces nics table containing new mac address for replaced node """
-        t1=time.time()
+        #t1=time.time()
         nid = self.getNodeID(nodename)
         self._dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = 1" % (macaddress, nid))
         self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
@@ -625,25 +633,25 @@ class NodeFun(object, KusuApp):
         self._nodeName = nodename
         # Recreate DHCP lease, this time using the new mac address found
         self._writeDHCPLease(data, macaddress)
-        t2=time.time()
-        print "Time Spent: replaceNICBootEntry(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: replaceNICBootEntry(): %f" % (t2-t1)
             
     def _createNICBootEntry(self, nodeid, networkid, ipaddress, bootflag, macaddress=None):
         """createNICBootEntry(nodeid, networkid, ipaddress, bootflag, macaddress)
         Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
         will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from. """
-        t1=time.time()
+        #t1=time.time()
         if macaddress:
             self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
             self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
-        t2=time.time()
-        print "Time Spent: createNICBootEntry(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: createNICBootEntry(): %f" % (t2-t1)
    
     def _writeDHCPLease(self, ipaddr, macaddr):
         """writeDHCPLease(ipaddr, macaddr)
         Use DHCP's API to create a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
-        t1=time.time()
+        #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
         tochild.flush()
@@ -661,14 +669,14 @@ class NodeFun(object, KusuApp):
         tochild.flush()
         tochild.close()
         fromchild.close()
-        t2=time.time()
-        print "Time Spent: writeDHCPLease(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: writeDHCPLease(): %f" % (t2-t1)
 
     def _deleteDHCPLease(self, nodename):
         """writeDHCPLease(nodename)
         Use DHCP's API to delete a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
         
-        t1=time.time()
+        #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
         tochild.flush()
@@ -681,11 +689,11 @@ class NodeFun(object, KusuApp):
         tochild.write("remove\n")
         tochild.close()
         fromchild.close()
-        t2=time.time()
-        print "Time Spent: deleteDHCPLease(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: deleteDHCPLease(): %f" % (t2-t1)
     
     def findMACAddress(self, macaddr):
-        t1=time.time()
+        #t1=time.time()
         if self._cachedMACAddress.has_key(macaddr):
            return True
         else:
@@ -695,19 +703,19 @@ class NodeFun(object, KusuApp):
         try:
           result = self._dbReadonly.fetchone()[0] 
           # Mac address exists
-          t2=time.time()
-          print "Time Spent: findMACAddress(): %f" % (t2-t1)
+          #t2=time.time()
+          #print "Time Spent: findMACAddress(): %f" % (t2-t1)
           return True
         except:
           # Mac address does not exist
-          t2=time.time()
-          print "Time Spent: findMACAddress(): %f" % (t2-t1)
+          #t2=time.time()
+          #print "Time Spent: findMACAddress(): %f" % (t2-t1)
           return False
     
     def validateInterface(self, interface, installer=True, nodegroup=None):
         """validateInterface(self, interface)
         Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
-        t1=time.time()
+        #t1=time.time()
         if installer: 
            self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
                                    AND nics.netid=networks.netid AND networks.device='%s' AND \
@@ -720,12 +728,12 @@ class NodeFun(object, KusuApp):
  
         try:
             testval = result[0]
-            t2=time.time()
-            print "Time Spent: validateInterface(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateInterface(): %f" % (t2-t1)
             return True
         except:
-            t2=time.time()
-            print "Time Spent: validateInterface(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateInterface(): %f" % (t2-t1)
             return False
 
     def validateNodegroup(self, nodegroup):
@@ -733,17 +741,17 @@ class NodeFun(object, KusuApp):
         Checks if the requested node group exists. If it does, returns True and the ngid, otherwise False"""
 
         # Check for valid nodegroup.
-        t1=time.time()
+        #t1=time.time()
         self._dbReadonly.execute("SELECT ngid, ngname FROM nodegroups WHERE ngname = '%s'" % nodegroup)
         result = self._dbReadonly.fetchone()
         try:
             testval = result[0]
-            t2=time.time()
-            print "Time Spent: validateNodegroup(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateNodegroup(): %f" % (t2-t1)
             return True, testval
         except:
-            t2=time.time()
-            print "Time Spent: validateNodegroup(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateNodegroup(): %f" % (t2-t1)
             return False, None
 
     def validateNode(self, node):
@@ -751,40 +759,43 @@ class NodeFun(object, KusuApp):
         Checks if the requested node exists or not. If it does, returns True, otherwise False"""
         
         # Check for valid node to replace. if not return an error.
-        t1=time.time()
+        #t1=time.time()
         self._dbReadonly.execute("SELECT nodes.name FROM nodes WHERE nodes.name = '%s'" % node)
         result = self._dbReadonly.fetchone()
  
         try:
             testval = result[0]
-            t2=time.time()
-            print "Time Spent: validateNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateNode(): %f" % (t2-t1)
             return True
         except:
-            t2=time.time()
-            print "Time Spent: validateNode(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: validateNode(): %f" % (t2-t1)
             return False
 
     def _findInterfaces(self):
         """findInterfaces()
         Returns a dictionary containing Networks ID number, Subnetwork, Starting IP Address and IP Increment value.
         The dictionary uses the device name as its key item[1]. """
-        t1=time.time()
+        #t1=time.time()
         interfaceInfo = {}
         self._dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc, networks.gateway FROM \
-                                   networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s AND \
-                                   networks.usingdhcp = 0" % self._nodeGroupType)
+                                  networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s AND \
+                                  networks.usingdhcp = 0" % self._nodeGroupType)
+
         data = self._dbReadonly.fetchall()
+
         for item in data:
-             interfaceInfo[item[1]] = "%d %s %s %s %s" % (item[0], item[2], item[3], item[4], item[5])
-        t2=time.time()
-        print "Time Spent: findInterfaces(): %f" % (t2-t1)
+                interfaceInfo[item[1]] = "%d %s %s %s %s" % (item[0], item[2], item[3], item[4], item[5])
+
+        #t2=time.time()
+        #print "Time Spent: findInterfaces(): %f" % (t2-t1)
         return interfaceInfo
 
     def findBootDevice(self, nodename):
         """findBootDevice()
         Returns the boot device that has its boot flag set to 1 """
-        t1=time.time()
+        #t1=time.time()
         query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway \
                  FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                  nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
@@ -799,11 +810,11 @@ class NodeFun(object, KusuApp):
 
         for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
                 if kusu.ipfun.onNetwork(installer_network, installer_subnet, nodeIP):
-                   t2=time.time() 
-                   print "Time Spent: findBootDevice(): %f" % (t2-t1)
+                   #t2=time.time() 
+                   #print "Time Spent: findBootDevice(): %f" % (t2-t1)
                    return installer_device
-        t2=time.time()
-        print "Time Spent: findBootDevice(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: findBootDevice(): %f" % (t2-t1)
         return None
 
         #try:
@@ -818,30 +829,34 @@ class NodeFun(object, KusuApp):
 
     def setNodegroupByName(self, nodegroupname):
         # Convert the name into a nodegroup id
-        t1=time.time()
+        #t1=time.time()
         query = "SELECT ngid FROM nodegroups WHERE ngname='%s'" % nodegroupname
         try:
             self._dbReadonly.execute(query)
             self._nodeGroupType = self._dbReadonly.fetchone()[0]
         except:
             self._nodeGroupType = None
-        t2=time.time()
-        print "Time Spent: setNodegroupByName(): %f" % (t2-t1)
+        #t2=time.time()
+        #print "Time Spent: setNodegroupByName(): %f" % (t2-t1)
 
     def setNodegroupByID(self, ngid):
         self._nodeGroupType = ngid
+        if self._nodeFormat == None:
+           self.getNodeFormat()
+           self._ngConflicts = self._getNodegroupConflicts()
+           self._nodegroupInterfaces = self._findInterfaces()
      
     def getNodegroupNameByID(self, ngid):
-        t1=time.time()
+        #t1=time.time()
         query = "SELECT ngname FROM nodegroups WHERE ngid=%s" % ngid
         try:
             self._dbReadonly.execute(query)
-            t2=time.time()
-            print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
             return self._dbReadonly.fetchone()[0]
         except:
-            t2=time.time()
-            print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
+            #t2=time.time()
+            #print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
             return None
 
     def moveNodegroups(self, groupList, destGroup):
