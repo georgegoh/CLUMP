@@ -84,7 +84,7 @@ install::
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd
 	install -m755 sbin/addhost.py $(ROOT)/opt/kusu/sbin/addhost
-	install -m755 sbin/update.py $(ROOT)/opt/kusu/sbin/update
+	install -m755 sbin/cfmsync.py $(ROOT)/opt/kusu/sbin/cfmsync
 	install -m755 sbin/netedit.py $(ROOT)/opt/kusu/sbin/netedit
 	install -m755 sbin/ngedit $(ROOT)/opt/kusu/sbin/ngedit
 	install -m755 sbin/nghosts.py $(ROOT)/opt/kusu/sbin/nghosts

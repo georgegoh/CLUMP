@@ -21,6 +21,8 @@
 
 UPDATEFILE    = 1
 UPDATEPACKAGE = 2
+FORCEFILES    = 4
+
 
 import os
 import sys
@@ -78,7 +80,6 @@ class UpdateApp(KusuApp):
 
         if not self.options.updatefile and not self.options.updatepackages:
             self.toolHelp()
-
 
         type = 0
         if self.options.updatefile:
