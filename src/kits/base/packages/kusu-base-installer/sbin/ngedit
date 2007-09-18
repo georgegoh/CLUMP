@@ -968,8 +968,10 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
     def F12Action(self):
         id = self.listbox.current()
         if id != None:
-            self.selector.popupMsg('DEBUG', 'currently pointing to id = %s\n%s'\
-                                    %(id,str(self.PartSchema.pk2dict[id])))
+            partrec = self.PartSchema.getPartRecByPK(id)
+            dct = self.PartSchema.pk2dict[id]
+            self.selector.popupMsg('DEBUG', 'currently pointing to id = %s\npartrec=%s\ndict=%s'\
+                                    %(id,str(partrec),str(dct)))
         return NAV_IGNORE
 
     def doNewAction(self):
@@ -1194,6 +1196,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.PartSchemaObj = PartSchemaObj  #passed by ref.
         self.partition = PartSchemaObj.getDictByPK(id)
+        self.PartRec = PartSchemaObj.getPartRecByPK(id)
         self.disk_key = None
         self.part_key = None
         schema = PartSchemaObj.schema
@@ -1315,10 +1318,24 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         if fs == "physical volume":
             if self.mountpoint.value().strip():
                 return False, "Physical Volumes cannot have a mount point"
-            #if we already have a physical volume - not good, only one allowed - TODO
         elif fs in ('ext2', 'ext3'):
             if not self.mountpoint.value().strip():
                 return False, "Regular partitions require a mountpoint"
+
+        #size validation
+        if self.min_size.selected():
+            size = self.min_size_entry.value()
+        elif self.fixed_size.selected():
+            size = self.fixed_size_entry.value()
+        size = size.strip()
+        if not size:
+            return False, "Please specify the partition size"
+        try:
+            size = int(size)
+            if size <= 0:
+                return False, "Partition size must be a positive integer"
+        except:
+            return False, "Partition size must be a positive integer"
         
         return True, 'Success'
 
@@ -1343,14 +1360,13 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         optlst = []
         if fs == 'physical volume':
             optlst.append('pv')
-            #lvg_keys = self.PartSchemaObj.schema['vg_dict'].keys()
-            #if len(lvg_keys) < 1:
-            #    raise NGEPartSchemaError, "Current partition schema has no Volume Groups defined"
-            #lvg_keys.sort()
-            #vg = lvg_keys[0]
-            #optlst.append('vg=%s' %vg)
+            if self.partition and self.PartRec:
+                ispv,vgname = translatePartitionOptions(self.PartRec['options'], 'pv')
+                if ispv and vgname:
+                    optlst.append('vg=%s' %vgname)
         if self.min_size.selected():
             optlst.append('fill')
+        optlst.sort()
         partrec['options'] = string.join(optlst,';')
 
         #preserve
@@ -1368,31 +1384,52 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         partrec['size'] = size
 
         #device/partition
+        DevPartNumDone = False
         if fs == 'physical volume':
-            device = 'N'
-            partnum = 0
-        else:
+            if self.partition: #editing
+                if self.PartRec['device'].lower() == 'n':
+                    #editing spanning PV
+                    device = 'N'
+                    partition = 0
+                    DevPartNumDone = True
+            else:       #new PV creation
+                #determine whether to have this PV span all disks
+                pvmap = self.PartSchemaObj.getPVMap()
+                DevPartNumDone = True
+                for k in pvmap.keys():
+                    p = self.PartSchemaObj.getPartRecByPK(k)
+                    if p['device'] == 'N':
+                        #spanning PV already exists
+                        DevPartNumDone = False
+                        break
+                if DevPartNumDone == True:
+                    #no spanning PVs yet
+                    msg = 'Do you want this PV to span all disks?'
+                    pv_span = self.selector.popupYesNo('Spanning PV', msg, defaultNo=True)
+                    if pv_span:
+                        device = 'N'
+                        partnum = 0
+                    else:
+                        DevPartNumDone = False
+
+        if not DevPartNumDone:
             device = int(self.drives.current().split()[1].strip())
             if self.partition and device == self.disk_key:
                 partnum = self.part_key     #preserve partition number
             else:
-                #new disk
+                #new disk or new partition
                 disk_dict = self.PartSchemaObj.schema['disk_dict'][device]
                 part_keys = disk_dict['partition_dict'].keys()
-                part_keys = [ k for k in part_keys if disk_dict['partition_dict'][k]['fs'] \
-                                                      != "physical volume"
-                            ]
-                partnum = min(Set(range(1,max(part_keys)+2)) - Set(part_keys))
-                #partnum = 1
-                #for k in part_keys:
-                #    part_dict = disk_dict['partition_dict'][k]
-                #    if part_dict['fs'].lower() != "physical volume":
-                #        partnum += 1
+                part_keys = [ k for k in part_keys if not disk_dict['partition_dict'][k].has_key('pv_span') ]
+                if not part_keys:
+                    partnum = 1
+                else:
+                    partnum = max(part_keys) + 1
         partrec['device'] = str(device)
         partrec['partition'] = str(partnum)
 
-        #self.selector.popupMsg('DEBUG', 'partrec = %s\nvg_dict = %s\ndisk_dict = %s' \
-        #        %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict'])))
+        self.selector.popupMsg('DEBUG', 'partrec = %s\nvg_dict = %s\ndisk_dict = %s' \
+                %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict'])))
         
         if self.partition: #we're editing
             self.PartSchemaObj.updatePartRec(partrec)
@@ -1518,6 +1555,18 @@ class scrPartSchema_LVEdit(USXBaseScreen):
         fs = self.filesystem.current()
         if fs in ('ext2','ext3') and not mntpnt:
             return False, "Logical volumes of specified type require a mountpoint"
+
+        #size validation
+        size = self.size.value().strip()
+        if not size:
+            return False, "Please specify the logical volume size"
+        try:
+            size = int(size)
+            if size <= 0:
+                return False, "LV size must be a positive integer"
+        except:
+            return False, "LV size must be a positive integer"
+
         return True, 'Success'
 
     def formAction(self):
@@ -1566,7 +1615,7 @@ class scrPartSchema_VGEdit(USXBaseScreen):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.PartSchemaObj = PartSchemaObj  #passed by ref.
         self.partition = PartSchemaObj.getDictByPK(id)
-
+        self.PartRec = PartSchemaObj.getPartRecByPK(id)
 
     def setCallbacks(self):
         self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
@@ -1601,21 +1650,28 @@ class scrPartSchema_VGEdit(USXBaseScreen):
                                        )
         if self.partition:
             self.phys_extent.setEnabled(False)
-            self.phys_extent.setEntry(self.partition['extent_size'])
+            self.phys_extent.setEntry(self.partition['extent_size'].split('M',1)[0])
 
         self.phys_to_use_lbl = snack.Label('Physical Volumes to Use:')
         self.phys_to_use = snack.CheckboxTree(height=3, scroll=1)
+
         #populate with available PVs
         PVidmap = self.PartSchemaObj.getPVMap()
-        unassocPVidlst = [k for k,v in PVidmap.items() if not v]
-        if unassocPVidlst:
+        for k,v in PVidmap.items():
+            if self.partition and v and v != self.partition['name']:
+                #this pv is associated with another VolGrp
+                continue
+            isOn = False
+            if self.partition and v and v == self.partition['name']:
+                isOn = True
+            #determine the disk & partition to display
             for disk_key in self.PartSchemaObj.schema['disk_dict']:
                 part_dict = self.PartSchemaObj.schema['disk_dict'][disk_key]['partition_dict']
                 for part_key in part_dict.keys():
                     partition = part_dict[part_key]
-                    if partition['instid'] in unassocPVidlst:
-                        self.phys_to_use.append("d%sp%s" %(disk_key,part_key), item=partition['instid'])
-
+                    if partition['instid'] == k:
+                        self.phys_to_use.append("d%sp%s" %(disk_key,part_key), item=k, selected=isOn)
+                    
 
         #position widgets on the screen
         self.screenGrid.setField(self.vg_name, 0,0)
@@ -1623,12 +1679,36 @@ class scrPartSchema_VGEdit(USXBaseScreen):
         self.screenGrid.setField(self.phys_to_use_lbl, 0,2)
         self.screenGrid.setField(self.phys_to_use, 0,3)
 
-
-
     def validate(self):
+        #ensure uniqueness of VG name
+        vgname = self.vg_name.value().strip()
+
+        if not vgname.isalnum():
+            return False, "VG name should contain only alphanumeric characters"
+
+        if not self.partition and vgname in self.PartSchemaObj.schema['vg_dict']:
+            return False, "VG name '%s' already exists - please modify" %vgname
+
+        #VG must have at least one PV
+        newAssocList = self.phys_to_use.getSelection()
+        if not newAssocList:
+            return False, "VG must use at least one PV"
+
+        if not self.partition:
+            extent_size = self.phys_extent.value()
+            try:
+                extent_size = int(extent_size)
+                if extent_size <= 0:
+                    return False, "Extent size must be a positive integer"
+            except:
+                return False, "Extent size must be a positive integer"
+                
+
         return True, 'Success'
 
     def formAction(self):
+        #Precondition: vgname uniqueness/sanity is guaranteed
+
         #collect widget data into a PartitionRec object
         if self.partition:
             id = self.partition['instid']
@@ -1636,8 +1716,54 @@ class scrPartSchema_VGEdit(USXBaseScreen):
             id = self.PartSchemaObj.getNewPartId()
         partrec = PartitionRec(idpartitions = id)
 
+        oldAssocList = []
+        if self.partition:
+            PVidmap = self.PartSchemaObj.getPVMap()
+            oldAssocList = [k for k,v in PVidmap.items() if v and v == self.partition['name']]
+        newAssocList = self.phys_to_use.getSelection()
+        oldAssocSet = Set(oldAssocList)
+        newAssocSet = Set(newAssocList)
+
+        if self.partition and oldAssocSet == newAssocSet:
+            #nothing has changed
+            return
+
+        vgname = self.vg_name.value().strip()
+        
+        for id in oldAssocSet - newAssocSet:
+            #handle removed associations
+            p = self.PartSchemaObj.getPartRecByPK(id)
+            optlst = p['options'].split(';')
+            optlst = [x for x in optlst if not x.strip().lower().startswith('vg=')]
+            optlst.sort()
+            p['options'] = string.join(optlst, ';')
+
+        for id in newAssocSet - oldAssocSet:
+            #handle added associations
+            p = self.PartSchemaObj.getPartRecByPK(id)
+            optlst = p['options'].split(';')
+            optlst.append('vg=%s' %vgname)
+            optlst.sort()
+            p['options'] = string.join(optlst, ';')
+
+        #options
+        optlst = ['vg']
+        optlst.append('extent=%sM' %self.phys_extent.value())
+        partrec['options'] = string.join(optlst, ';')
+            
+        #name
+        partrec['device'] = vgname
+        #preserve
+        if self.partition:
+            partrec['preserve'] = self.PartRec['preserve']
+        else:
+            partrec['preserve'] = 1     #does this have any effect?
 
 
+        if self.partition: #we're editing
+            self.PartSchemaObj.updatePartRec(partrec)
+        else:   #new partition
+            self.PartSchemaObj.addPartRec(partrec)
 
 
 class scrNGEEdit_Finalize(USXBaseScreen):

@@ -480,7 +480,13 @@ class PartSchema:
                 part_dict = disk['partition_dict']
                 if part_dict.has_key('N'):
                     partition = part_dict['N']
-                    part_dict[len(part_dict)] = partition
+                    part_keys = disk['partition_dict'].keys()
+                    part_keys = [ k for k in part_keys if not disk['partition_dict'][k].has_key('pv_span') ]
+                    if not part_keys:
+                        part_num = 1
+                    else:
+                        part_num = max(part_keys)+1
+                    part_dict[part_num] = partition
                     del part_dict['N']
     
             # create the logical volumes.
@@ -514,12 +520,13 @@ class PartSchema:
     
     def createPartition(self, partinfo, disk_dict, vg_dict):
         """ Create a new partition and add it to the supplied disk dictionary."""
+        handleSpanPart = False
         try:
             disknum = int(partinfo['device'])
             part_no = translatePartitionNumber(partinfo['partition'])
         except ValueError:
             if partinfo['device'].lower() == 'n':
-                #handleSpanningPartition(partinfo, disk_dict, vg_dict)  #do we care?
+                handleSpanPart = True
                 disknum = 1
                 part_no = 'N'
             else:
@@ -540,13 +547,32 @@ class PartSchema:
             raise InvalidPartitionSchema, "Partition number cannot be less than 1."
         partition = {'size_MB': size, 'fill': fill, 
                      'fs': fs, 'mountpoint': mountpoint,
-                     'instid':partinfo.PKval, 'preserve': partinfo['preserve'] } #the only change
+                     'instid':partinfo.PKval, 'preserve': partinfo['preserve'] }
     
         if disk_dict.has_key(disknum): disk = disk_dict[disknum]
         else: disk = {'partition_dict': {}}
         disk['partition_dict'][part_no] = partition
         self.pk2dict[partinfo.PKval] = partition    #add the pk->dict mapping for the partition
         disk_dict[disknum] = disk
+        if handleSpanPart:
+            self.handleSpanningPartition(partinfo, disk_dict, vg_dict)
+
+    def handleSpanningPartition(self, partinfo, disk_dict, vg_dict):
+        '''Precondition:
+            a. assume disk_dict already contains the PV info from partinfo
+            b. assume that spanning PV's will always have device = 1, part_num = 'N'
+        '''
+        is_pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+        if is_pv:
+            vg_dict[vg_name]['pv_span'] = True
+        else:
+            if not 'pv' in [ x.lower() for x in partinfo['options'].split(';')]:
+                raise NGEPartSchemaError , "non-PV partition marked as spanning multiple disks."
+
+        #we're dealing with a PV:
+        part_dict = disk_dict[1]['partition_dict']['N']
+        assert(part_dict['instid'] == partinfo.PKval)
+        part_dict['pv_span'] = True
 
     def getDictByPK(self,pk):
         try:
