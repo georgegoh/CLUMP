@@ -524,7 +524,10 @@ class BuildInitrd:
             print "Packing initial RAM Disk"
 
         if type == 'initrd':
-            print "FIX ME"
+            os.chdir(os.path.dirname(self.imagedir))
+            os.system('mkfs.cramfs %s %s.prezip' % (self.imagedir, self.initrd))
+            os.system('gzip %s.prezip' % self.initrd)
+            os.system('mv %s.prezip.gz \"/tftpboot/kusu/%s\"' % (self.initrd,self.initrd))
 
         else:
             os.chdir(self.imagedir)
