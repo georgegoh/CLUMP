@@ -570,8 +570,8 @@ class BuildInitrdApp(KusuApp):
                                type="string", dest="user")
         self.parser.add_option("-p", "--password", action="store",
                                type="string", dest="password")
-        self.parser.add_option("-t", "--type", action="store",
-                               type="string", dest="type")
+        self.parser.add_option("-r", "--initrd", action="store_true",
+                               dest="itype", default=False)
         self.parser.add_option("-v", "--version", action="store_true",
                                dest="wantver", default=False)
 
@@ -604,8 +604,8 @@ class BuildInitrdApp(KusuApp):
             image = self.options.image
 
         type = 'initramfs'
-        if self.options.type:
-            if self.options.type == 'initrd':
+        if self.options.itype:
+            if self.options.itype == True:
                 type = 'initrd'
                 
         if self.options.nodegrp:

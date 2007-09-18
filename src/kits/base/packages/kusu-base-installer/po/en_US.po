@@ -368,7 +368,8 @@ msgid "Extracting template Initial Ram Disk\n"
 msgstr "Extracting template Initial Ram Disk\n"
 
 msgid "buildinitrd_Help"
-msgstr "buildinitrd [-h|-v| -n node_group {-i image_name} {-t type}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by ngedit."
+msgstr "buildinitrd [-h|-v| -n node_group {-i image_name} {-r}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by ngedit.  It can build both initramfs\nand initrd type images.  By default it will build initramfs.  The -r \n
+argument causes cramfs initrd's to be built instead."
 
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
