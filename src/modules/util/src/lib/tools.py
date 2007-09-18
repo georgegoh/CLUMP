@@ -23,7 +23,27 @@ logger = kusulog.getKusuLog('util.tools')
 
 TOOLS_DEPS = ['cpio', 'mount', 'umount', 'file', 'strings', 'zcat', 
     'mkisofs', 'tar', 'gzip']
+    
+X86_ARCHES = ['i386','i486','i586','i686']
 
+def getArch():
+    """ Returns the arch of the current system.
+        If arch is not supported, 'unknown' will
+        be returned.
+    """
+    cmd = 'arch'
+    archP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
+    result, code = archP.communicate()
+    _arch = result.strip('\n')
+    
+    if _arch in X86_ARCHES:
+        return 'x86'
+        
+    if _arch == 'x86_64':
+        return _arch
+        
+    return 'unknown'
+    
 
 def checkToolDeps(tool):
     """ Check if the tool is indeed available. A ToolNotFound exception 

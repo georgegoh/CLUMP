@@ -51,6 +51,25 @@ modulespkg.version = '3.5.2'
 modulespkg.release = '1'
 modulespkg.filename = 'modules-3.2.5-1.src.rpm'
 
+# package atlas
+# this uses an existing binary rpm
+# untuned and generic
+atlaspkg = RPMPackage()
+atlaspkg.name = 'atlas'
+atlaspkg.version = '3.7.37'
+atlaspkg.release = '1'
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    atlaspkg.filename = 'atlas-3.7.37-1.i386.rpm'
+if getArch() == 'x86_64':
+    atlaspkg.filename = 'atlas-3.7.37-1.x86_64.rpm'
+
+# package fftw
+fftwpkg = SRPMPackage()
+fftwpkg.name = 'fftw'
+fftwpkg.version = '3.1.2'
+fftwpkg.release = '1'
+fftwpkg.filename = 'fftw-3.1.2-1.src.rpm'
 
 
 # define component-HPC-libraries
@@ -62,6 +81,9 @@ hpcLibrariesComp.description = 'This component contains a collection of HPC libr
 hpcLibrariesComp.addDep(netcdfpkg)
 hpcLibrariesComp.addDep(hdf5pkg)
 hpcLibrariesComp.addDep(modulespkg)
+hpcLibrariesComp.addDep(fftwpkg)
+hpcLibrariesComp.addDep(atlaspkg)
+
 
 
 # define component-Benchmarking-tools

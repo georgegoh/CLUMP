@@ -13,7 +13,7 @@ from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKit
 from kusu.buildkit.methods import *
 from path import path
 from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty
-from kusu.util.tools import mkdtemp, cpio_copytree
+from kusu.util.tools import mkdtemp, cpio_copytree, getArch
 from Cheetah.Template import Template
 
 
