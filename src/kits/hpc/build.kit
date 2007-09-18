@@ -44,6 +44,12 @@ hdf5pkg.version = '1.6.6'
 hdf5pkg.release = '1'
 hdf5pkg.filename = 'hdf5-1.6.6-1.src.rpm'
 
+# package modules
+modulespkg = SRPMPackage()
+modulespkg.name = 'modules'
+modulespkg.version = '3.5.2'
+modulespkg.release = '1'
+modulespkg.filename = 'modules-3.2.5-1.src.rpm'
 
 
 
@@ -55,6 +61,7 @@ hpcLibrariesComp.description = 'This component contains a collection of HPC libr
 # adding package dependencies for component-HPC-libraries
 hpcLibrariesComp.addDep(netcdfpkg)
 hpcLibrariesComp.addDep(hdf5pkg)
+hpcLibrariesComp.addDep(modulespkg)
 
 
 # define component-Benchmarking-tools
@@ -67,6 +74,7 @@ benchmarkingToolsComp.addDep(bonniepkg)
 benchmarkingToolsComp.addDep(iozonepkg)
 benchmarkingToolsComp.addDep(iperfpkg)
 benchmarkingToolsComp.addDep(streampkg)
+benchmarkingToolsComp.addDep(modulespkg)
 
 # define HPC kit
 k = DefaultKit()
