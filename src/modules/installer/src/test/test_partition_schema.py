@@ -32,7 +32,7 @@ class TestDiskProfileSchema:
         if gethostname() == 'dizzy.int.osgdc.org':
             self.dp = DiskProfile(False, probe_fstab=False)
         else:
-            raise SkiptTest
+            raise SkipTest
             size = 1024 * 1024 * 1024
             self.loopback, self.tmpfile = createLoopbackDevice(size)
             self.dp = DiskProfile(True, basename(self.loopback))
