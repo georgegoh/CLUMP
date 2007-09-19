@@ -579,18 +579,18 @@ class NodeGroupWindow(USXBaseScreen):
         try:
             self.database.connect()
         except:
-            self.screen.finish()
-            print self.kusuApp._("DB_Query_Error\n")
-            sys.exit(-1)
+           self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("DB_Query_Error\n"))
+           self.screen.finish()
+           raise UserExitError
 
         query = "SELECT ngname, ngid FROM nodegroups"
         try:
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
         except:
-	    self.screen.finish()
-            print self.kusuApp._("DB_Query_Error\n")
-            sys.exit(-1)
+            self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("DB_Query_Error\n"))
+            self.screen.finish()
+            raise UserExitError
    
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
@@ -663,10 +663,10 @@ class WindowSelectNode(NodeGroupWindow):
             self.database.execute(query) 
             ngInfo = self.database.fetchall()
         except:
+            self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("DB_Query_Error\n"))
             self.screen.finish()
-            print self.kusuApp._("DB_Query_Error\n")
             raise UserExitError
-      
+
         defaultFlag = 1
         # Static mode needs to see all the interfaces from the installer we don't care about if a network fits on any interface
         if myNodeInfo.optionStaticHostMode:
