@@ -140,10 +140,14 @@ class RepoManApp(KusuApp):
                 else:
                     ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
+                    ngInUse = []
                     for ng in ngs:
                         if kit in repotools.getKits(self.dbs, ng.ngname):
-                            self.stdoutMessage('Kit: %s %s %s in use by nodegroup: %s\n', kname,kversion,karch, ng.ngname)
-                            sys.exit(1)
+                            ngInUse.append(ng.ngname)
+                            
+                    if ngInUse:
+                        self.stdoutMessage('Kit: %s %s %s in use by nodegroup(s):\n%s\n', kname,kversion,karch, '\n'.join(ngInUse))
+                        sys.exit(1)
 
                     if kit.isOS:
                         repo.ostype = None
