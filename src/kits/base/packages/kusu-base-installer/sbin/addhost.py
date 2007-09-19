@@ -762,7 +762,7 @@ class WindowUnmanaged(NodeGroupWindow):
             if result == "no":
                 return NAV_IGNORE
             if result == "yes":
-                return NAV_QUIT
+                raise UserExitError
         else:
             if len(myNodeInfo.nodeList):
                 if pluginActions:
