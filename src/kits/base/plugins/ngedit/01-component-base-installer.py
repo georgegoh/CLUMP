@@ -1,7 +1,7 @@
 import os
 import glob
 import snack
-from kusu.ngedit import NGEPluginBase
+from kusu.ngedit.ngedit import NGEPluginBase
 
 class NGPlugin(NGEPluginBase):
     name= 'Base Installer Plugin Screen'
