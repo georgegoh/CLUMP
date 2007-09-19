@@ -252,7 +252,8 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 master.networks.append(newnet)
 
                 # copy network with eth0 if not already eth0
-                if intf != 'eth0':
+                if intf != 'eth0' \
+                    and interfaces[intf]['nettype'] == 'provision':
                     net_copy = db.Networks()
 
                     for col in newnet.cols:
