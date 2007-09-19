@@ -1,6 +1,6 @@
 import os
 import snack
-from kusu.ngedit import NGEPluginBase
+from kusu.ngedit.ngedit import NGEPluginBase
 
 class NGPlugin(NGEPluginBase):
     name= 'Lava NGEdit Plugin'
