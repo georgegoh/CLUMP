@@ -349,7 +349,8 @@ Node: node0000
         ksprofile.prepareKickstartNetworkProfile(ni, '10.1.10.1')
         assert ksprofile.networkprofile['interfaces']['eth0']['configure'] == True
         assert ksprofile.networkprofile['interfaces']['eth0']['use_dhcp'] == False
-        assert ksprofile.networkprofile['fqhn'] == 'node0000.myzone.company.com'
+        assert ksprofile.networkprofile['fqhn_host'] == 'node0000'
+        assert ksprofile.networkprofile['fqhn_domain'] == 'myzone.company.com'
         assert ksprofile.networkprofile['interfaces']['eth0']['ip_address'] == '10.1.10.10'            
         assert ksprofile.networkprofile['interfaces']['eth0']['netmask'] == '255.255.255.0'                
         assert ksprofile.networkprofile['interfaces']['eth0']['active_on_boot'] == True
