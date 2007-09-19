@@ -243,13 +243,13 @@ class NodeMemberApp(object, KusuApp):
                     tmpname.close()
 
                     print self._("nghosts_moving_nodes_progress")
-                    os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(Set(nodesList), ' '))
+                    os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(Set(nodesList), ' '))
                
                     # Add these back using mac file
                     if bool(self._options.racknumber):
-                        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
+                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
                     else:
-                        os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup))
+                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null" % (tmpfile, interface, self._options.togroup))
 
                     # If the user wants to reinstall the nodes check if the option is selected or not.
                     if bool(self._options.reinstall):
@@ -372,9 +372,9 @@ class SelectNodesWindow(USXBaseScreen):
 
                # Add these back using mac file
                if needRack:
-                  os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
+                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
                else:
-                  os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
+                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
 
                # Remove temp file
                os.remove(tmpfile)
@@ -551,9 +551,9 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Add these back using mac file
                 if needRack:
-                   os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
+                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
                 else:
-                   os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
+                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
 
                 # Remove temp file
                 os.remove(tmpfile)
