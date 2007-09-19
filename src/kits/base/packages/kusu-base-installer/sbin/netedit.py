@@ -851,7 +851,8 @@ class NetworkMainWindow(USXBaseScreen):
            networkInUse = True
            self.selector.popupMsg(self.kusuApp._("netedit_window_title_edit"), "%s\t\t\n\n" %
            (self.kusuApp._("The network '%s' is in use. Only some fields may be changed") % currNetwork[1]))
-           
+        else:
+           networkInUse = False
    
         ScreenFactory.screens = \
                         [ NetworkEditWindow(database=database, kusuApp=kusuApp) ]
