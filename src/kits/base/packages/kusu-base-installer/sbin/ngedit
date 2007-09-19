@@ -22,20 +22,23 @@ import shutil
 from sets import Set
 from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
 from kusu.ui.text.USXnavigator import *
-from kusu.ui.text import kusuwidgets
-from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.ui.text import USXkusuwidgets as kusuwidgets
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.ngedit.ngedit import *
 from kusu.ngedit.partition import *
+
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog()
 kl.addFileHandler(os.environ.get('KUSU_TMP', '/tmp/kusu') + "/kusu-ngedit.log")
 kl = kusulog.getKusuLog('ngedit')
 
-
 global curNG, origNG
 MAXWIDTH = 70
+MAXHEIGHT = 18
+LEFT=kusuwidgets.LEFT
+CENTER=kusuwidgets.CENTER
+RIGHT=kusuwidgets.RIGHT
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -1958,6 +1961,23 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         self.handleCompPlug(addedComps, 'add')
         self.handleCompPlug(removedComps, 'remove')
 
+        #run second-party tools:
+        # * if imaged (both disked & diskless)
+        #        if changes in (components or packages or repo)
+        #            run buildimage (buildimage -n $ngid)
+
+        #  * if imaged (both disked & diskless)
+        #        if changes in (modules or repo)
+        #            buildinitrd -n $ngid
+
+        #  * all install types
+        #    if changes in packages or components
+        #        call update -n $ngid -p (nothing after -p)
+
+        #  * if package-based and adding a component with drivers
+        #       driverpatch to patch initrd w/ new drivers
+        #       driverpatch nodegroup id=curNG['ngid'] arch=$arch
+
         key_lst = self.__diffNG.keys()
         #if ('comps' in key_lst or 'packs' in key_lst or 'repoid' in key_lst) \
         #     and curNG['installtype'] != 'package' :
@@ -1969,23 +1989,32 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                                     stdout = subprocess.PIPE,
                                     stderr = subprocess.STDOUT
                                 )
-            prog_dlg = self.selector.popupProgress('Building Initrd', 'This may take a while...')
-            t1 = time.time()
+
+            prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
+                'buildinitrd progress', msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
             output = ''
+
+            t1 = time.time()
             line = p.stdout.readline()
             while line:
-                #can get one line at a time in real-time
                 output += line
+                prog_out.setText(output)
+                prog_out.draw()
+                prog_out.refresh()
                 line = p.stdout.readline()
+            time.sleep(2)
+            prog_out.close()
 
+            prog_simple = self.selector.popupProgress("buildinitrd","waiting for buildinitrd to terminate")
             sts = os.waitpid(p.pid,0)
+            prog_simple.close()
             t2 = time.time()
-            prog_dlg.close()
 
             retcode = p.returncode
+
             if not retcode:
                 _title = "buildinitrd - success"
-                _msg = "buildinitrd returned successfully. Please inspect its output\n"
+                _msg = "buildinitrd reported successful return. Please inspect its output:\n"
             else:
                 _title = "buildinitrd - error"
                 _msg = "initrd build process returned an error"+\
@@ -2006,16 +2035,29 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                                     stdout = subprocess.PIPE,
                                     stderr = subprocess.STDOUT
                                 )
-            prog_dlg = self.selector.popupProgress('Building Image', 'This may take a while...')
+            prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
+                'buildimage progress', msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
+            output = ''
             t1 = time.time()
-            output,err = p.communicate()
-            retcode = p.returncode
-            prog_dlg.close()
+            line = p.stdout.readline()
+            while line:
+                output += line
+                prog_out.setText(output)
+                prog_out.draw()
+                prog_out.refresh()
+                line = p.stdout.readline()
+            time.sleep(2)
+            prog_out.close()
+
+            prog_simple = self.selector.popupProgress("buildimage","waiting for buildimage to terminate")
+            sts = os.waitpid(p.pid,0)
+            prog_simple.close()
             t2 = time.time()
+            retcode = p.returncode
 
             if not retcode:
                 _title = "buildimage - success"
-                _msg = "buildimage returned successfully. Please inspect its output\n"
+                _msg = "buildimage reported successful return. Please inspect its output:\n"
             else:
                 _title = "buildimage - error"
                 _msg = "image build process returned an error"+\
@@ -2027,23 +2069,6 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
             kl.info("buildimage finished in %f sec. Output:\n%s" %((t2-t1),output))
 
-
-        #run second-party tools:
-        # * if imaged (both disked & diskless)
-        #        if changes in (components or packages or repo)
-        #            run buildimage (buildimage -n $ngid)
-
-        #  * if imaged (both disked & diskless)
-        #        if changes in (modules or repo)
-        #            buildinitrd -n $ngid
-
-        #  * all install types
-        #    if changes in packages or components
-        #        call update -n $ngid -p (nothing after -p)
-
-        #  * if package-based and adding a component with drivers
-        #       driverpatch to patch initrd w/ new drivers
-        #       driverpatch nodegroup id=curNG['ngid'] arch=$arch
 
 
 class scrNGEEdit_Scripts(USXBaseScreen):
