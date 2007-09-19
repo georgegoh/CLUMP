@@ -168,7 +168,6 @@ class NetworkRecord(object):
             print self._("DB_Query_Error\n")
             sys.exit(-1)
             
-            
     def checkNetworkEntry(self, networkid):
         # Check if the network selected is not in use.
         netuse = 0
@@ -244,8 +243,10 @@ class NetEditApp(object, KusuApp):
         self.parser.add_option("-o", "--options", action="store", dest="opt", help=self._("netedit_options_usage"))
         self.parser.add_option("-e", "--description", action="store", dest="desc", help=self._("netedit_description_usage"))
         self.parser.add_option("-p", "--dhcp", action="store_true", dest="dhcp", help=self._("netedit_dhcp_usage"))
-        self.parser.add_option("-y", "--interface-type", action="store_true", dest="provision", help=self._("netedit_provision_usage"))
-
+        self.parser.add_option("-w", "--change-used-network", action="store",
+                               type="int", dest="changeused", help=self._("netedit_changeused_usage"))
+        self.parser.add_option("-y", "--provision-type", action="store_true", dest="provision", help=self._("netedit_provision_usage"))
+        self.parser.add_option("-z", "--public-type", action="store_true", dest="public", help=self._("netedit_public_usage"))
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
     def nxor(self, *args):
@@ -288,11 +289,6 @@ class NetEditApp(object, KusuApp):
         else:
            self._options.dhcp = True
 
-        if not bool(self._options.provision):
-           self._options.provision = False
-        else:
-           self._options.provision = True
-                
         # Handle -l option
         if self._options.listnetworks:
             netrec = NetworkRecord()
@@ -336,12 +332,18 @@ class NetEditApp(object, KusuApp):
 
             networkEntryInfo.append(int(self._options.dhcp))
 
-            if self._options.provision:
-               self._options.provision = 'provision'
-            else:
-               self._options.provision = 'public'
+            # Check for conflicting options:
+            if self._options.provision and self._options.public:
+               print "ERROR:  Cannot specify -z and -y at same time."
+               sys.exit(-1)
 
-            networkEntryInfo.append(self._options.provision)
+            if self._options.provision:
+               nettype = 'provision'
+
+            if self._options.public:
+               nettype = 'public'
+
+            networkEntryInfo.append(nettype)
             
             networkrecord = NetworkRecord(networkEntryInfo, None)            
             result, errorMsg = networkrecord.validateNetworkEntry()
@@ -382,57 +384,72 @@ class NetEditApp(object, KusuApp):
                 self.parser.error(self._("netedit_error_invalid_id"))
             sys.exit(0)
 
-        # Handle -c -t|-e|-r|-o|-y - Changing non-destructive values
-        if (self._options.change):
+        # Handle -w: -t|-e|-r|-o|-y|-z - Changing non-destructive values
+        if (self._options.changeused):
             database.connect('kusudb', 'apache')
-            if ((self._options.startip or self._options.desc or self._options.opt or self._options.increment) and not self._options.network and not self._options.subnet and not self._options.interface):
+            if (self._options.startip or self._options.desc or self._options.opt or self._options.increment or self._options.public or self._options.provision) and not (self._options.network or self._options.subnet or self._options.gateway or self._options.interface or self._options.dhcp):
+
+                # Check for conflicting options:
+                if self._options.provision and self._options.public:
+                   print "ERROR:  Cannot specify -z and -y at same time."
+                   sys.exit(-1)
+ 
                 networkrecord = NetworkRecord()
                 networkInfo = list(networkrecord.getNetworkList())
                 invalidID = True
                 for network in networkInfo:
-                    if network[0] == self._options.change:
+                    if network[0] == self._options.changeused:
                        invalidID = False
                        database.connect('kusudb', 'apache')
                        # Get the node group's network and subnet for the specified ID.
-                       database.execute("SELECT networks.network, networks.subnet FROM networks WHERE netid = %d" % int(self._options.change))
+                       database.execute("SELECT networks.network, networks.subnet FROM networks WHERE netid = %d" % int(self._options.changeused))
                        changeinfo = database.fetchone()
 
                        if self._options.startip:
                           if networkrecord.validateIPAddress(self._options.startip.strip(), changeinfo[0], changeinfo[1]):
-                             database.execute("UPDATE networks SET startip = '%s' WHERE netid = %d" % (self._options.startip.strip(), int(self._options.change)))
+                             database.execute("UPDATE networks SET startip = '%s' WHERE netid = %d" % (self._options.startip.strip(), int(self._options.changeused)))
                           else:
                              self.parser.error(self._("netedit_validate_startip"))
                         
                        if self._options.desc:
                           if len(self._options.desc.strip()) > 0:
-                             database.execute("UPDATE networks SET netname = '%s' WHERE netid = %d" % (self._options.desc.strip(), int(self._options.change)))
+                             database.execute("UPDATE networks SET netname = '%s' WHERE netid = %d" % (self._options.desc.strip(), int(self._options.changeused)))
                           else:
                              print "ERROR: Cannot have an empty description!"
                              sys.exit(-1)
 
                        if self._options.opt:
-                          database.execute("UPDATE networks SET options = '%s' WHERE netid = %d" % (self._options.opt.strip(), int(self._options.change)))
+                          database.execute("UPDATE networks SET options = '%s' WHERE netid = %d" % (self._options.opt.strip(), int(self._options.changeused)))
 
                        if self._options.increment:
-                             changeflag = 1
-                             database.execute("UPDATE networks SET inc = %d WHERE netid =%d" % (self._options.increment, int(self._options.change)))
+                          changeflag = 1
+                          database.execute("UPDATE networks SET inc = %d WHERE netid =%d" % (self._options.increment, int(self._options.changeused)))
 
+                       if self._options.provision:
+                          #print "Changing Network to 'provision'"
+                          database.execute("UPDATE networks SET type = '%s' WHERE netid =%d" % ('provision', int(self._options.changeused)))
+                       if self._options.public:
+                          #print "Changing Network to 'public'"
+                          database.execute("UPDATE networks SET type = '%s' WHERE netid =%d" % ('public', int(self._options.changeused)))
+   
                 if invalidID:
                    self.parser.error(self._("netedit_error_invalid_id"))
 
-            if self._options.provision == False:
-               print "Changing Network to 'provision'"
-               database.execute("UPDATE networks SET type = '%s' WHERE netid =%d" % ('provision', int(self._options.change)))
-               sys.exit(0)
-                
-            if self._options.provision == True:
-               print "Changing Network to 'public'"
-               database.execute("UPDATE networks SET type = '%s' WHERE netid =%d" % ('public', int(self._options.change)))
-               sys.exit(0)
+                sys.exit(0)
 
-            # Handle -c, -n, -s, -g, -t, -i, -e - Changing network
+            else:
+                 print "ERROR:  Cannot specify -s, -n, -g, -i or -p options when changing a used network"
+                 sys.exit(-1)
+
+        if (self._options.change):
+            # Handle -c, -n, -s, -g, -t, -i, -e (minimal options) - Changing network - Destructive
             # Check whole network if it's not in use
-            if (self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc):
+            if (self._options.network and self._options.subnet and self._options.startip and self._options.gateway and self._options.interface and self._options.desc):
+
+                # Check for conflicting options:
+                if self._options.provision and self._options.public:
+                   print "ERROR:  Cannot specify -z and -y at same time."
+                   sys.exit(-1)
             
                 result = None
                 invalidID = True
@@ -467,7 +484,7 @@ class NetEditApp(object, KusuApp):
                              
                             if self._options.provision:
                                networkEntryInfo.append('provision')
-                            else:
+                            if self._options.public:
                                networkEntryInfo.append('public')
 
                             del networkrecord
@@ -481,10 +498,8 @@ class NetEditApp(object, KusuApp):
                         
                 if invalidID:
                         self.parser.error(self._("netedit_error_invalid_network"))
-        
-        if self._options.change: 
-            if not self._options.network or not self._options.subnet or not self._options.gateway or not self._options.startip \
-                or not self._options.interface or not self._options.desc:
+
+            else:
                 self.parser.error(self._("netedit_options_change_options_needed"))
         
         if len(sys.argv[1:]) > 0:
