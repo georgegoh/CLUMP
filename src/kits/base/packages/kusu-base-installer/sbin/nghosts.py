@@ -34,11 +34,14 @@ from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
 from kusu.syncfun import syncfun
 from kusu.nodefun import NodeFun
+from kusu.util.errors import UserExitError
 
 global database
 global kusuApp
+global reallyQuit
 database = KusuDB()
 kusuApp = KusuApp()
+reallyQuit = False
         
 NOCANCEL    = 0
 ALLOWCANCEL = 1
@@ -288,7 +291,7 @@ class NodeMemberApp(object, KusuApp):
 class SelectNodesWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
     msg = "nghosts_instruction_select_node"
-    buttons = [ 'move_button', 'previous_button', "quit_button" ]
+    buttons = [ 'move_button', 'previous_button', 'quit_button' ]
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
@@ -303,10 +306,16 @@ class SelectNodesWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            self.screen.finish()
+            global reallyQuit
+            reallyQuit = True
 	    return NAV_QUIT
         else:
             return NAV_NOTHING
+
+    def quitAction(self):
+        global reallyQuit
+        reallyQuit = True
+        return NAV_QUIT
  
     def moveAction(self):
         flag = 1
@@ -394,13 +403,10 @@ class SelectNodesWindow(USXBaseScreen):
     def previousAction(self):
         return NAV_QUIT
 
-    def exitAction(self):
-        self.screen.finish()
-
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)        
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
-	self.buttonsDict['quit_button'].setCallback_(self.exitAction)
+        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.moveAction
@@ -481,12 +487,18 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            self.screen.finish()
+            global reallyQuit
+            reallyQuit = True
 	    return NAV_QUIT
 
         else:
             return NAV_NOTHING
- 
+    
+    def quitAction(self):
+        global reallyQuit
+        reallyQuit = True
+        return NAV_QUIT
+
     def moveAction(self):
         flag = 1
         rack = 0
@@ -573,13 +585,10 @@ class SelectNodegroupsWindow(USXBaseScreen):
     def previousAction(self):
         return NAV_QUIT
 
-    def exitAction(self):
-	self.screen.finish()
-
     def setCallbacks(self):
         self.buttonsDict['move_button'].setCallback_(self.moveAction)
         self.buttonsDict['previous_button'].setCallback_(self.previousAction)
-	self.buttonsDict['quit_button'].setCallback_(self.exitAction)
+        self.buttonsDict['quit_button'].setCallback_(self.quitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.moveAction
@@ -665,6 +674,7 @@ class MembershipMainWindow(USXBaseScreen):
     def nextAction(self, data=None):
         global database
         global kusuApp
+        global reallyQuit
         
         # Check if the user selected no option. Pop up a msgbox with an error.
         if self.radioButtonList.getSelection() == None:
@@ -680,7 +690,10 @@ class MembershipMainWindow(USXBaseScreen):
         
         ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
-        return NAV_QUIT
+        if reallyQuit:
+           return NAV_QUIT
+        else:
+           return NAV_NOTHING
         
     def exitAction(self, data=None):
         return NAV_QUIT
