@@ -37,7 +37,11 @@ class TestPatchingKernel(object):
     """
 
     def setUp(self):
-        
+        global RPMDIR
+        global KRPM1_URL
+        global KRPM1
+        dest = RPMDIR / KRPM1
+        if not dest.exists(): download(KRPM1_URL,dest)
         self.scratchdir = path(utiltools.mkdtemp())
         self.kusudb = self.scratchdir / 'kusu.db'
         self.dbinst = db.DB('sqlite', self.kusudb)

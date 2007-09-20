@@ -94,9 +94,9 @@ actions:
 
                       REQUIRED ARGS:
                         name=<nodegroup name> | id=<nodegroup id>
-                        arch=<arch of the kernel/initrd>
                         
                       OPTIONAL ARGS:
+                        arch=<arch of the kernel/initrd>
                         version=<specific kernel version to use>
                         kernel=<filepath of resulting kernel>
                         initrd=<filepath of resulting initrd>
@@ -113,12 +113,11 @@ actions:
         self.examples = self._("""\
 Example operations:
 
-    To patch initrds for i586 arch belonging to a nodegroup 
-    named compute
-    # driverpatch nodegroup name=compute arch=i586
+    To patch initrds belonging to a nodegroup named compute
+    # driverpatch nodegroup name=compute
     
     To patch initrds for i686 belonging to a nodegroup id of 3
-    # driverpatch nodegroup id=3 arch=i586
+    # driverpatch nodegroup id=3 arch=i686
     
     To list driverpacks that is associated to a nodegroup 
     named compute:
@@ -263,13 +262,13 @@ Example operations:
         if not ngid and not ngname:
             self.printUsageExit()
             
-        if not karch:
-            self.printUsageExit()
+        #if not karch:
+        #    self.printUsageExit()
             
-        if not karch in SUPPORTED_KERNEL_ARCHES:
-            msg = self._('Arch %(karch)s not supported!' %
-                        {'karch':karch})
-            self.printMsgExit(msg)
+        #if not karch in SUPPORTED_KERNEL_ARCHES:
+        #    msg = self._('Arch %(karch)s not supported!' %
+        #                {'karch':karch})
+        #    self.printMsgExit(msg)
         
         if ngname:
             ngkey = 'name'
@@ -312,7 +311,8 @@ Example operations:
             self.printMsgExit(msg)
                     
         # get the correct dpacks
-        dprpms = [dpack.dpname for dpack in dpacks if dpack.dpname.find(karch) >-1]
+        #dprpms = [dpack.dpname for dpack in dpacks if dpack.dpname.find(karch) >-1]
+        dprpms = [dpack.dpname for dpack in dpacks]
 
         if not dprpms:
             msg = self._('No valid driverpacks found.')
@@ -413,13 +413,13 @@ Example operations:
                 self.printMsgExit(msg)
             
         # validate arch
-        if _karch <> karch:
-            msg = self._('The kernel arch in package does not match %(karch)s! Aborting operation!' %
-                        {'karch':karch})
+        #if _karch <> karch:
+        #    msg = self._('The kernel arch in package does not match %(karch)s! Aborting operation!' %
+        #                {'karch':karch})
                         
-            if tmpkmoddir.exists(): tmpkmoddir.rmtree()
-            if tmpdir.exists(): tmpdir.rmtree()
-            self.printMsgExit(msg)        
+        #    if tmpkmoddir.exists(): tmpkmoddir.rmtree()
+        #    if tmpdir.exists(): tmpdir.rmtree()
+        #    self.printMsgExit(msg)        
         
         msg = self._('Packing kernel modules as modules archive..')
         print msg
