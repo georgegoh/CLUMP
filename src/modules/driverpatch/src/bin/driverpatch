@@ -11,6 +11,7 @@ from path import path
 from kusu.core.app import KusuApp
 from kusu.core import database as db
 from kusu.util import tools as utiltools
+from kusu.util import rpmtool
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \
@@ -82,7 +83,7 @@ class App(KusuApp):
         self.usagestr = self._("""\
 driverpatch [-h|-v] <action> arg1=val1 arg2=val2 ...
 
-driverpatch is used to update initrd images related to nodeinstaller
+driverpatch is used to update initrd images related to package-based
 deployments.
 
 
@@ -307,7 +308,7 @@ Example operations:
             self.printMsgExit(msg)
             
         if not dpacks:
-            msg = self._('No valid driverpacks found.')
+            msg = self._("No valid driverpacks found. Please ensure that the nodegroup's installtype is package-based.")
             self.printMsgExit(msg)
                     
         # get the correct dpacks
@@ -369,8 +370,14 @@ Example operations:
         if not li:
             msg = self._('Kernel rpm not found!')
             self.printMsgExit(msg)
-            
-        kernelrpm = li[0]
+        
+        # if there are more than one kernel rpms, get the highest one
+        if len(li) > 1:
+            krpms = [rpmtool.RPM(str(l)) for l in li]
+            krpms.sort()
+            kernelrpm = krpms[-1]   # last one is the highest
+        else:
+            kernelrpm = li[0]
         
         # get the current kernel/initrd for this nodegroup
         _ng = self.db.NodeGroups.select_by(ngname=ngname)
@@ -426,9 +433,12 @@ Example operations:
         self.controller.convertKmodDirToModulesArchive(tmpkmoddir,oldmodulescgz)
         
         if not initrdfile:
-            newinitrd = '-'.join(['initrd',_kver,_karch])
+            newinitrd = nginitrd
         else:
             newinitrd = initrdfile
+            
+        if not kernelfile:
+            kernelfile = ngkernel
             
         # TODO: Handle the module assets here!
         #self.controller.updateKernelModulesAssets(foo)

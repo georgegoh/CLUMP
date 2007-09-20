@@ -284,11 +284,14 @@ class DataModel(object):
         self.dbinst = dbinst
         
     def getDriverPacks(self, **kwargs):
-        """ Get the driverpacks entries based on ngid or ngname.
+        """ Get the driverpacks entries based on ngid or ngname and installtype.
+            installtype defaults to 'package'.
         """
 
         if not 'id' in kwargs and not 'name' in kwargs:
             raise InvalidArguments, 'id or name not specified!'
+            
+        installtype = kwargs.get('installtype','package')
         
         _ngid = kwargs.get('id','')
         ngid = None
@@ -304,11 +307,13 @@ class DataModel(object):
         ngs = self.dbinst.NodeGroups.select()
         if 'id' in kwargs and ngid:
             # get the components based on ngid
-            comps = [ng.components for ng in ngs if ng.ngid == ngid]
+            comps = [ng.components for ng in ngs if ng.ngid == ngid and \
+                ng.installtype == installtype]
             
         elif 'name' in kwargs and ngname:
             # get the components based on ngname
-            comps = [ng.components for ng in ngs if ng.ngname.find(ngname) > -1]
+            comps = [ng.components for ng in ngs if ng.ngname.find(ngname) > -1 and \
+                ng.installtype == installtype]
             
         if not comps: return None
 
