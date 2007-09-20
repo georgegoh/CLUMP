@@ -34,11 +34,13 @@ kl.addFileHandler(os.environ.get('KUSU_TMP', '/tmp/kusu') + "/kusu-ngedit.log")
 kl = kusulog.getKusuLog('ngedit')
 
 global curNG, origNG
+
 MAXWIDTH = 70
 MAXHEIGHT = 18
 LEFT=kusuwidgets.LEFT
 CENTER=kusuwidgets.CENTER
 RIGHT=kusuwidgets.RIGHT
+CustomScriptDir = "/depot/repos/custom_scripts/"
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -48,7 +50,7 @@ class scrNGEMain(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.setHelpLine('Select the Node Group to operate on and choose desired operation')
-        self.__nglistbox = None #Listbox for Node Group Selection
+        self.__nglistbox = None
 
     def setCallbacks(self):
 
@@ -66,11 +68,10 @@ class scrNGEMain(USXBaseScreen):
 
         ngid = self.__nglistbox.current()
 
-        # comment out for testing
-        #if ngid == 1:
-        #    self.selector.popupMsg('Operation Disallowed', 'Installer nodegroup'+\
-        #                           ' is not allowed to be copied')
-        #    return NAV_NOTHING
+        if ngid == 1:
+            self.selector.popupMsg('Operation Disallowed', 'Installer nodegroup'+\
+                                   ' is not allowed to be copied')
+            return NAV_NOTHING
             
         newNG = NodeGroup(ngid = ngid)
         newNG.syncFromDB(self.database)
@@ -135,13 +136,13 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
@@ -1819,12 +1820,32 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             self.database.endTransaction()
             self.selector.popupMsg("DB Update", "Database was successfully updated")
 
+            #clean up scripts
+            if 'scripts' in self.__diffNG.keys():
+                delScripts = Set(origNG['scripts']) - Set(curNG['scripts'])
+                if delScripts:
+                    tplstr = "'%s'" + " , '%s'"*(len(delScripts)-1)
+                    tplstr = tplstr % tuple(delScripts)
+                    query = "select script from scripts where script in (%s)" % tplstr
+                    self.database.execute(query)
+                    rv = self.database.fetchall()
+                    dbScripts = Set([x for x, in rv])   #scripts in use
+                    delScripts -= dbScripts
+                    for script in delScripts:
+                        delscr = os.path.join(CustomScriptDir, script)
+                        if os.path.isfile(delscr):
+                            os.remove(delscr)
+                
+
         return NAV_FORWARD
 
 
     def drawImpl(self):
         self.__diffNG = curNG - origNG
         diffNG = self.__diffNG
+
+        #self.selector.popupMsg("scripts", "curNG: %s\norigNG: %s\ndiffNG=%s" \
+        #        %(str(curNG['scripts']),str(origNG['scripts']),str(self.__diffNG)))
 
         msg = ''
         for field in NodeGroupRec.fields[2:] : #skip the keys
@@ -2069,11 +2090,12 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'
     msg = 'Enter the custom script path'
-    buttons = ['next_button', 'back_button', 'cancel_button']
-    MAXSCRIPTS = 10
+    buttons = ['next_button', 'back_button','add_button', 'delete_button', 'cancel_button']
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.__allscrpath = CustomScriptDir
+        self.__copiedfiles = []
 
     def setCallbacks(self):
 
@@ -2081,8 +2103,21 @@ class scrNGEEdit_Scripts(USXBaseScreen):
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.buttonsDict['add_button'].setCallback_(self.doAddAction)
+        self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
+        #for hotkeys
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        self.selector.popupMsg("Internal State", "curNG['scripts']=%s\ncopiedfiles= %s" \
+                 %(str(curNG['scripts']), str(self.__copiedfiles)))
+
+        return NAV_IGNORE
 
     def doCancelAction(self):
+        for curscr in self.__copiedfiles:
+            os.remove(os.path.join(self.__allscrpath,curscr))
+        self.__copiedfiles = []
         return NAV_QUIT
 
     def doForwardAction(self):
@@ -2091,48 +2126,94 @@ class scrNGEEdit_Scripts(USXBaseScreen):
     def doBackAction(self):
         return NAV_BACK
 
+    def doDeleteAction(self):
+        if not self.__curscr:
+            return NAV_NOTHING
+
+        curscr = self.__curscr.current()
+        assert(curscr in curNG['scripts'])
+        del curNG['scripts'][curNG['scripts'].index(curscr)]
+        if curscr in self.__copiedfiles:
+            #it's been copied in the current editing session
+            os.remove(os.path.join(self.__allscrpath,curscr))
+            del self.__copiedfiles[self.__copiedfiles.index(curscr)]
+            
+        return NAV_NOTHING
+
+    def doAddAction(self):
+        newscr = self.__newscr.value().strip()
+        if not newscr:
+            self.selector.popupMsg("Invalid script specification", "Please enter script location")
+            return NAV_NOTHING
+
+        head,tail = os.path.split(newscr)
+        if not head:
+            #no path given - assume default
+            if not os.path.isfile(os.path.join(self.__allscrpath,tail)):
+                self.selector.popupMsg("Invalid script specification", "Specified script was not found in the script repo")
+                return NAV_NOTHING
+
+        else:
+            #path was specified
+            if not os.path.isabs(newscr):
+                self.selector.popupMsg("Invalid script path specification", "Script path must be absolute")
+                return NAV_NOTHING
+            if not os.path.isfile(newscr):
+                self.selector.popupMsg("Script not found", "Please ensure path correctness")
+                return NAV_NOTHING
+            #newscr is an existing file on the f.s.
+            if os.path.realpath(os.path.normpath(newscr)) != \
+                            os.path.normpath(os.path.join(self.__allscrpath,tail)):
+                #dealing with an existing file outside script repo
+                #ensure name uniqueness
+                self.database.execute("select script from scripts where script='%s'" %tail)
+                rv = self.database.fetchall()
+                if len(rv) >=1 or tail in os.listdir(self.__allscrpath):
+                    self.selector.popupMsg("Script name verification", "Please rename the script. Name conflict.")
+                    return NAV_NOTHING
+                else:
+                    shutil.copy(newscr,self.__allscrpath)
+                    self.__copiedfiles.append(tail)
+
+        #update curNG
+        if not curNG['scripts']:
+            curNG['scripts'] = []
+        if not tail in curNG['scripts']:
+            curNG['scripts'].append(tail)
+
+        return NAV_NOTHING
+
     def drawImpl(self):
 
-        self.screenGrid = snack.Grid(1, self.MAXSCRIPTS)
+        self.screenGrid = snack.Grid(1, 2)
+        labelTxt = 'New Script: '
 
-        n = 0
+        w = self.gridWidth
         if curNG['scripts']:
-            n = len(curNG['scripts'])
+            w = max([len(x) for x in curNG['scripts']] + [MAXWIDTH*3/4])
+            self.__curscr = snack.Listbox(height=10, scroll=1, width=w,returnExit=1, showCursor=0)
+            for script in sorted(curNG['scripts']):
+                self.__curscr.append(script, item=script)
+        else:
+            self.__curscr = None
 
-        self.__entries = []
-        for i in xrange(self.MAXSCRIPTS):
-            labeltxt = 'Script %d:' %i
-            entrytxt = ''
-            if i < n:
-                entrytxt = curNG['scripts'][i]
+        self.__newscr = kusuwidgets.LabelledEntry(labelTxt=labelTxt, text="",width=w-len(labelTxt))
 
-            entry = kusuwidgets.LabelledEntry(labelTxt = labeltxt, text = entrytxt,\
-                    width=MAXWIDTH, password=0, returnExit=0)
-            self.__entries.append(entry)
-            self.screenGrid.setField(entry, col=0,row=i)
-
+        if self.__curscr:
+            self.screenGrid.setField(self.__curscr, 0,0, anchorLeft=1)
+        else:
+            self.screenGrid.setField(snack.TextboxReflowed(text="Currently no scripts associated.",
+                                     width=w),0,0, (0,0,0,1), anchorLeft=1)
+        self.screenGrid.setField(self.__newscr, 0,1, anchorLeft=1)
 
     def validate(self):
-        query = ""
-        #TODO: 
-        # * ensure the file exists and isfile()
-        # * ensure the uniqueness of the name
+        txt = self.__newscr.value().strip()
+        if txt:
+            return False, "Please leave the entry field empty to proceed to the next screen."
         return True, 'Success'
 
     def formAction(self):
-        ''' Actions taken once the form data was successfully validated.
-            Timeline: Next_callback, validation, formAction
-        '''
-        vallst = []
-        for i in xrange(self.MAXSCRIPTS):
-            val = self.__entries[i].value().strip()
-            if val:
-                vallst.append(val)
-
-        if not curNG['scripts'] and not vallst: #nothing to do
-            return
-
-        curNG['scripts'] = vallst
+        pass
         
 
 class NGEApp(KusuApp):

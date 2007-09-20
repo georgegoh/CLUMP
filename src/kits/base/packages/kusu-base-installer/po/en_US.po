@@ -86,6 +86,9 @@ msgstr "Move"
 msgid "toggleview_button"
 msgstr "Toggle View"
 
+msgid "add_button"
+msgstr "Add"
+
 msgid "Unknown arguments %i\n"
 msgstr "ERROR:  Unknown argument(s): %s\n"
 

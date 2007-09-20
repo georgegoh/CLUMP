@@ -394,6 +394,8 @@ class NodeGroup(NodeGroupRec):
         result = UserDict.copy(self)
         if result['parts']:
             result['parts'] = self.data['parts'][:] #copy the PartitionRec list
+        if result['scripts']:
+            result['scripts'] = self.data['scripts'][:] #copy the script list
         return result
 
 def RpmNameSplit(packname):
