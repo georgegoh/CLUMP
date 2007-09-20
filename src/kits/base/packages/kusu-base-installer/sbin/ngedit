@@ -74,7 +74,7 @@ class scrNGEMain(USXBaseScreen):
             
         newNG = NodeGroup(ngid = ngid)
         newNG.syncFromDB(self.database)
-        self.selector.popupMsg('DEBUG: copyAction',str(newNG))
+        kl.debug("Copy Action performed. new NG record:\n%s" %str(newNG))
         newNG['ngid'] = None    #give it new identity
 
 
@@ -88,7 +88,6 @@ class scrNGEMain(USXBaseScreen):
         ngname = '%s Copy %s' %(newNG['ngname'], suffix)
         newNG['ngname'] = ngname
 
-        self.selector.popupMsg('DEBUG','check the DB for ngid = %s' %ngid)
         newNG.syncToDB(self.database)
        
         return NAV_NOTHING
@@ -774,8 +773,8 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 t4 = time.time()
                 prog_dlg.close()
 
-                self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d\ntcomps=%f\n\
-                   time to build d.s. for other=%f\ntime to add other = %f " %(tmpcnt, tmpcnt2,t2-t1,t3-t2,t4-t3))
+                kl.debug("Optional Packages: comps: %d, unlisted: %d;\ntcomps=%f;\t" %(tmpcnt, tmpcnt2,t2-t1) +\
+                   "time to build d.s. for other=%f;\ttime to add other = %f" %(t3-t2,t4-t3))
 
                 self.__ct_ctgry = self.__ct
                 self.OldRepoId = curNG['repoid']
@@ -787,7 +786,6 @@ class scrNGEEdit_Packages(USXBaseScreen):
         if curNG['packs']:
             curpacklst = curNG['packs']
         s2 = Set(curpacklst)
-        #self.selector.popupMsg('DEBUG', 's1=%s, s2=%s\npacksFromDB = %s' %(s1,s2,str(curNG['packs'])))
 
         for p in s1-s2:
             self.__ct.setEntryValue(item=p, selected=0)
@@ -809,7 +807,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
     def formAction(self):
         curNG['packs'] = self.__ct.getSelection()
 
-        ###CONTINUE HERE
+        ###TODO: use modules screen only if diskless
         #if curNG['installtype'] and curNG['installtype'].lower() <> 'package':
         #    if not isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_General):
         #        self.selector.screens.insert(self.selector.currentStep+1,\
@@ -923,8 +921,10 @@ class scrNGEEdit_Modules(USXBaseScreen):
         t3 = time.time()
         prog_dlg.close()
         shutil.rmtree(tmpdir)
-        self.selector.popupMsg('DEBUG', 'driver rpm extraction: %f\ndesc info extraction: %f\nmoddict len = %d' %(t2-t1,t3-t2, len(moddict)))
-
+        kl.debug("Modules screen: \ndriver rpm extraction: %f\ndesc info extraction: %f\nmoddict len = %d" \
+                    %(t2-t1,t3-t2, len(moddict))
+                )
+        #self.selector.popupMsg('DEBUG', 'driver rpm extraction: %f\ndesc info extraction: %f\nmoddict len = %d' %(t2-t1,t3-t2, len(moddict)))
 
         curletter = None
         i = -1
@@ -949,7 +949,8 @@ class scrNGEEdit_Modules(USXBaseScreen):
 
     def formAction(self):
         curNG['modules'] = self.__ct.getSelection()
-        self.selector.popupMsg('selected modules', str(curNG['modules']))
+        kl.debug("MODULES Selected: %s" %str(curNG['modules']))
+        #self.selector.popupMsg('selected modules', str(curNG['modules']))
 
 class scrNGEEdit_PartSchema(USXBaseScreen):
     name = 'Partition Schema'
@@ -1436,8 +1437,11 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         partrec['device'] = str(device)
         partrec['partition'] = str(partnum)
 
-        self.selector.popupMsg('DEBUG', 'partrec = %s\nvg_dict = %s\ndisk_dict = %s' \
-                %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict'])))
+        kl.debug("scrPartSchema_PartEdit: \npartrec = %s\nvg_dict = %s\ndisk_dict = %s" \
+            %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict']))
+                )
+        #self.selector.popupMsg('DEBUG', 'partrec = %s\nvg_dict = %s\ndisk_dict = %s' \
+        #        %(str(partrec),str(self.PartSchemaObj.schema['vg_dict']), str(self.PartSchemaObj.schema['disk_dict'])))
         
         if self.partition: #we're editing
             self.PartSchemaObj.updatePartRec(partrec)
@@ -1887,7 +1891,8 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         if 'parts' in diffNG.keys():
             msg += "PARTITIONS: schema changed\n"
 
-        self.selector.popupMsg("diffNG", str(diffNG))
+        kl.info("Finalize: diffNG = %s" %str(diffNG))
+        #self.selector.popupMsg("diffNG", str(diffNG))
 
         self.screenGrid = snack.Grid(1, 1)
         self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
