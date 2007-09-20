@@ -1953,6 +1953,52 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             for inst in PlugInstList_run:
                 inst.remove()
 
+    def runTool(self,tool, argstr):
+
+        kl.info("Final Actions: Running %s:" %tool)
+        cmd = "%s %s" %(tool,argstr)
+        p = subprocess.Popen(   cmd, shell=True,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.STDOUT
+                            )
+
+        prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
+            '%s progress' %tool, msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
+        output = ''
+
+        t1 = time.time()
+        line = p.stdout.readline()
+        while line:
+            output += line
+            prog_out.setText(output)
+            prog_out.draw()
+            prog_out.refresh()
+            line = p.stdout.readline()
+        time.sleep(2)
+        prog_out.close()
+
+        prog_simple = self.selector.popupProgress("%s" %tool, \
+            "waiting for %s to terminate" %tool)
+        sts = os.waitpid(p.pid,0)
+        prog_simple.close()
+        t2 = time.time()
+
+        retcode = p.returncode
+
+        if not retcode:
+            _title = "%s - success" %tool
+            _msg = "%s reported successful return. Please inspect its output:\n" %tool
+        else:
+            _title = "%s - error" %tool
+            _msg = tool + " returned an error, so its operation may be incomplete."  +\
+                   " Please refer to ngedit log file"+\
+                   " for more detail. You can rerun the command manually as follows:\n"+\
+                   cmd + "\nPlease inspect the output below:\n"
+        _msg += output
+
+        self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
+        kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
+
 
     def formAction(self):
         if self.__plugdir not in sys.path:
@@ -1963,6 +2009,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         addedComps = list(s1 - s2)
         removedComps = list(s2 - s1)
 
+        #self.selector.popupMsg("Plugin DEBUG", "(+) %s\n(-) %s" %(str(addedComps),str(removedComps)))
         self.handleCompPlug(addedComps, 'add')
         self.handleCompPlug(removedComps, 'remove')
 
@@ -1988,93 +2035,39 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #     and curNG['installtype'] != 'package' :
         if True:    #FIXME: for testing
             #buildinitrd
-            kl.info("Final Actions: Running buildinitrd:")
-            cmd = "buildinitrd -n %s" %curNG['ngname']
-            p = subprocess.Popen(   cmd, shell=True,
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.STDOUT
-                                )
+            self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
 
-            prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
-                'buildinitrd progress', msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
-            output = ''
-
-            t1 = time.time()
-            line = p.stdout.readline()
-            while line:
-                output += line
-                prog_out.setText(output)
-                prog_out.draw()
-                prog_out.refresh()
-                line = p.stdout.readline()
-            time.sleep(2)
-            prog_out.close()
-
-            prog_simple = self.selector.popupProgress("buildinitrd","waiting for buildinitrd to terminate")
-            sts = os.waitpid(p.pid,0)
-            prog_simple.close()
-            t2 = time.time()
-
-            retcode = p.returncode
-
-            if not retcode:
-                _title = "buildinitrd - success"
-                _msg = "buildinitrd reported successful return. Please inspect its output:\n"
-            else:
-                _title = "buildinitrd - error"
-                _msg = "initrd build process returned an error"+\
-                       " and may therefore be incomplete. Please refer to ngedit log file"+\
-                       " for more detail. You can rerun the command manually as follows:\n"+\
-                       cmd + "\nPlease inspect the output below:\n"
-            _msg += output
-
-            self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
-            kl.info("buildinitrd finished in %f sec. Output:\n%s" %((t2-t1),output))
-
-        #if curNG['installtype'] != 'package' and ('modules' in key_lst or 'repoid' in key_lst):
-        if True:   #FIXME: for testing
+        if curNG['installtype'] != 'package' and ('modules' in key_lst or 'repoid' in key_lst):
+        #if True:   #FIXME: for testing
             #buildimage
-            kl.info("Final Actions: Running buildimage:")
-            cmd = "buildimage -n %s" %curNG['ngname']
-            p = subprocess.Popen(   cmd, shell=True,
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.STDOUT
-                                )
-            prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
-                'buildimage progress', msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
-            output = ''
-            t1 = time.time()
-            line = p.stdout.readline()
-            while line:
-                output += line
-                prog_out.setText(output)
-                prog_out.draw()
-                prog_out.refresh()
-                line = p.stdout.readline()
-            time.sleep(2)
-            prog_out.close()
+            self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
 
-            prog_simple = self.selector.popupProgress("buildimage","waiting for buildimage to terminate")
-            sts = os.waitpid(p.pid,0)
-            prog_simple.close()
-            t2 = time.time()
-            retcode = p.returncode
+        run_driverpatch = False
+        addedComps = [int(x) for x in addedComps]
+        if curNG['installtype'] == 'package' and addedComps:
+            query = "select dpid from driverpacks where cid in %s" %seq2tplstr(addedComps)
+            self.database.execute(query)
+            rv = self.database.fetchall()
+            if len(rv) >= 1:
+                run_driverpatch = True
 
-            if not retcode:
-                _title = "buildimage - success"
-                _msg = "buildimage reported successful return. Please inspect its output:\n"
-            else:
-                _title = "buildimage - error"
-                _msg = "image build process returned an error"+\
-                       " and may therefore be incomplete. Please refer to ngedit log file"+\
-                       " for more detail. You can rerun the command manually as follows:\n"+\
-                       cmd + "\nPlease inspect the output below:\n"
-            _msg += output
+        if run_driverpatch:
+            #driverpatch
+            #FIXME: cmd subject to change
+            __arch = 'x86_64'
+            self.runTool('driverpatch', " nodegroup name='%s' arch=%s" %(curNG['ngname'],__arch))
 
-            self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
-            kl.info("buildimage finished in %f sec. Output:\n%s" %((t2-t1),output))
+        run_update = self.selector.popupYesNo("CFM Sync", "Do you wish to update "+\
+                        "the nodes in this nodegroup now?", defaultNo=True)
+        if run_update:
+            #cfmsync
+            self.runTool('cfmsync', "-n '%s' -p" %curNG['ngname'])
+        else:
+            cmd = 'cfmsync'+ " -n '%s' -p" %curNG['ngname']
+            self.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
+                " at your earliest convenience by running\n%s" %cmd)
 
-
+        self.selector.popupMsg("You are DONE!", "Nodegroup modification is now complete!")
 
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'
@@ -2123,8 +2116,8 @@ class scrNGEEdit_Scripts(USXBaseScreen):
 
 
     def validate(self):
-        ###CONTINUE HERE#########################
         query = ""
+        #TODO: 
         # * ensure the file exists and isfile()
         # * ensure the uniqueness of the name
         return True, 'Success'
