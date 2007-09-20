@@ -164,7 +164,6 @@ def BinaryPackage(**kwargs):
 
 def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
-    if 'ostype' not in kwargs: raise UndefinedOSType
     kwargs['srctype'] = 'distro'
     return Package(**kwargs)
     

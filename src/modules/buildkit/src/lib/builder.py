@@ -208,6 +208,7 @@ class PackageProfile(Struct):
         self._release = kwargs.get('release','0')
         self.filename = kwargs.get('filename',None)
         self.installroot = kwargs.get('installroot',None)
+        self.ostype = kwargs.get('ostype','')
         self.author = kwargs.get('author','')
         self.vendor = kwargs.get('vendor','')
         self.license = kwargs.get('license','')

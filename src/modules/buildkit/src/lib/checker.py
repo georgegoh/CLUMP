@@ -93,6 +93,7 @@ class DistroValidator(PackageProfileValidator):
 
     def __init__(self, obj):
         super(DistroValidator, self).__init__(obj)
+        self.attributes = ['ostype']
     
 class ComponentValidator(BaseValidator):
     """ This class validates KusuComponent objects. """

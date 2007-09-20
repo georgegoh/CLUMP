@@ -37,8 +37,6 @@ SET(KUSU_MODULES
   repoman
   buildkit
   driverpatch
-  sqlrunner
-  ngedit
 )
 
 ## Include Kusu globals
