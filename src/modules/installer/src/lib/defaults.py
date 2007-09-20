@@ -229,7 +229,7 @@ def vanillaSchemaLVM():
 
     # Disk 1 Partition 3.
     d1p3 = Partition()
-    d1p3.size_MB = 6000
+    d1p3.size_MB = 8000
     d1p3.fs = 'physical volume'
     d1p3.mountpoint = None
     d1p3.fill = True
@@ -249,7 +249,7 @@ def vanillaSchemaLVM():
     # Root Logical Volume.
     root = LVMLogicalVolume()
     root.name = 'ROOT'
-    root.size_MB = 2000
+    root.size_MB = 4000
     root.fs = 'ext3'
     root.mountpoint = '/'
     root.fill = False
