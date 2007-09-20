@@ -2031,14 +2031,12 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #       driverpatch nodegroup id=curNG['ngid'] arch=$arch
 
         key_lst = self.__diffNG.keys()
-        #if ('comps' in key_lst or 'packs' in key_lst or 'repoid' in key_lst) \
-        #     and curNG['installtype'] != 'package' :
-        if True:    #FIXME: for testing
+        if ('comps' in key_lst or 'packs' in key_lst or 'repoid' in key_lst) \
+             and curNG['installtype'] != 'package' :
             #buildinitrd
             self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
 
         if curNG['installtype'] != 'package' and ('modules' in key_lst or 'repoid' in key_lst):
-        #if True:   #FIXME: for testing
             #buildimage
             self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
 
@@ -2053,19 +2051,18 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
         if run_driverpatch:
             #driverpatch
-            #FIXME: cmd subject to change
-            __arch = 'x86_64'
-            self.runTool('driverpatch', " nodegroup name='%s' arch=%s" %(curNG['ngname'],__arch))
+            self.runTool('driverpatch', " nodegroup name='%s'" %curNG['ngname'])
 
-        run_update = self.selector.popupYesNo("CFM Sync", "Do you wish to update "+\
-                        "the nodes in this nodegroup now?", defaultNo=True)
-        if run_update:
+        if 'packs' in key_lst or 'comps' in key_lst:
             #cfmsync
-            self.runTool('cfmsync', "-n '%s' -p" %curNG['ngname'])
-        else:
-            cmd = 'cfmsync'+ " -n '%s' -p" %curNG['ngname']
-            self.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
-                " at your earliest convenience by running\n%s" %cmd)
+            run_update = self.selector.popupYesNo("CFM Sync", "Do you wish to update "+\
+                        "the nodes in this nodegroup now?", defaultNo=True)
+            if run_update:
+                self.runTool('cfmsync', "-n '%s' -p" %curNG['ngname'])
+            else:
+                cmd = 'cfmsync'+ " -n '%s' -p" %curNG['ngname']
+                self.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
+                    " at your earliest convenience by running\n%s" %cmd)
 
         self.selector.popupMsg("You are DONE!", "Nodegroup modification is now complete!")
 
