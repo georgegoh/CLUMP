@@ -136,13 +136,13 @@ class scrNGEMain(USXBaseScreen):
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
         ScreenFactory.screens = [
-                                 #scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
