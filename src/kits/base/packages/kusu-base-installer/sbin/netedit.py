@@ -497,7 +497,7 @@ class NetEditApp(object, KusuApp):
                             sys.exit(0)
                         
                 if invalidID:
-                        self.parser.error(self._("netedit_error_invalid_network"))
+                        self.parser.error(self._("netedit_error_invalid_id"))
 
             else:
                 self.parser.error(self._("netedit_options_change_options_needed"))
@@ -718,7 +718,17 @@ class NetworkNewWindow(USXBaseScreen):
         
     def cancelAction(self):
         return NAV_QUIT
-    
+   
+    def F12Action(self):
+        result = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_exit"), self.kusuApp._("netedit_instructions_exit"),
+                (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
+        if result == "no":
+            return NAV_NOTHING
+        if result == "yes":
+            return NAV_QUIT
+        else:
+            return NAV_NOTHING
+ 
     def guessIPandGateway(self):
         # First check if the values are valid IP address notation
         net = self.networkEntry.value()
@@ -753,6 +763,7 @@ class NetworkNewWindow(USXBaseScreen):
 
         self.hotkeysDict['F5'] = self.cancelAction
         self.hotkeysDict['F8'] = self.okAction
+	self.hotkeysDict['F12'] = self.F12Action
         
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 13)
