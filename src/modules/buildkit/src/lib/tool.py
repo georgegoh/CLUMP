@@ -232,7 +232,7 @@ class BuildKit:
             if isodir.exists(): isodir.rmtree
             raise KitDefinitionEmpty
 
-        isofile = 'kit-%(name)s-%(version)s-%(release)s-%(arch)s.iso' % kit
+        isofile = 'kit-%(name)s-%(version)s-%(release)s.%(arch)s.iso' % kit
         cmd = 'mkisofs -quiet -V "%s" -r -T -f -o %s/%s .' % (kit['name'],kitsrc,isofile)
         mkP = subprocess.Popen(cmd,shell=True,cwd=isodir)
         mkP.wait()
