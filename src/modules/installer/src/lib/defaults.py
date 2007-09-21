@@ -221,7 +221,7 @@ def vanillaSchemaLVM():
 
     # Disk 1 Partition 2.
     d1p2 = Partition()
-    d1p2.size_MB = 1000
+    d1p2.size_MB = 2000
     d1p2.fs = 'linux-swap'
     d1p2.mountpoint = None
     d1p2.fill = False
@@ -229,7 +229,7 @@ def vanillaSchemaLVM():
 
     # Disk 1 Partition 3.
     d1p3 = Partition()
-    d1p3.size_MB = 8000
+    d1p3.size_MB = 38000
     d1p3.fs = 'physical volume'
     d1p3.mountpoint = None
     d1p3.fill = True
@@ -249,16 +249,34 @@ def vanillaSchemaLVM():
     # Root Logical Volume.
     root = LVMLogicalVolume()
     root.name = 'ROOT'
-    root.size_MB = 4000
+    root.size_MB = 12000
     root.fs = 'ext3'
     root.mountpoint = '/'
     root.fill = False
     volgroup00.addLV(root)
 
+    # /var Logical Volume.
+    var = LVMLogicalVolume()
+    var.name = 'VAR'
+    var.size_MB = 4000
+    var.fs = 'ext3'
+    var.mountpoint = '/var'
+    var.fill = False
+    volgroup00.addLV(var)
+
+    # /home Logical Volume.
+    home = LVMLogicalVolume()
+    home.name = 'HOME'
+    home.size_MB = 12000
+    home.fs = 'ext3'
+    home.mountpoint = '/home'
+    home.fill = False
+    volgroup00.addLV(home)
+
     # Depot Logical Volume.
     depot = LVMLogicalVolume()
     depot.name = 'DEPOT'
-    depot.size_MB = 4000
+    depot.size_MB = 10000
     depot.fs = 'ext3'
     depot.mountpoint = '/depot'
     depot.fill = True
