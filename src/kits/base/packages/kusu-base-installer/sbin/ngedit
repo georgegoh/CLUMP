@@ -239,6 +239,12 @@ class scrNGEEdit_General(USXBaseScreen):
                      text = curNG['ngdesc'], width=30, password=0, returnExit = 0)
         self.__entries['nameformat'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt3.rjust(labellen),\
                      text = curNG['nameformat'], width=30, password=0, returnExit = 0)
+
+        query = "select nid from nodes where ngid = %s" %curNG.PKval
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        if len(rv) >=1:
+            self.__entries['nameformat'].setEnabled(False)
  
         self.screenGrid = snack.Grid(1, 3)
         self.screenGrid.setField(self.__entries['ngname'], col=0,row=0)
@@ -246,18 +252,24 @@ class scrNGEEdit_General(USXBaseScreen):
         self.screenGrid.setField(self.__entries['nameformat'], col=0,row=2)
 
     def validate(self):
-        """Validation code goes here. Activated when 'Next' button is pressed."""
-        #TODO: ensure uniqueness of ngname
+        ngname = self.__entries['ngname'].value().strip()
+        if not ngname:
+            return False, "Node Group name is required"
+
+        query = "select ngname from nodegroups where ngname = '%s' and ngid != %s" \
+                    %(ngname, curNG.PKval)
+        self.database.execute(query)
+        rv = self.database.fetchone()
+        if rv:
+            return False, "Specified NG name is in use. Please change."
         return True, 'Success'
 
     def formAction(self):
-        ''' Actions taken once the form data was successfully validated.
-            Timeline: Next_callback, validation, formAction
-        '''
+
         #update curNG with entry values
-        curNG['ngname'] = self.__entries['ngname'].value()
-        curNG['ngdesc'] = self.__entries['ngdesc'].value()
-        curNG['nameformat'] = self.__entries['nameformat'].value()
+        curNG['ngname'] = self.__entries['ngname'].value().strip()
+        curNG['ngdesc'] = self.__entries['ngdesc'].value().strip()
+        curNG['nameformat'] = self.__entries['nameformat'].value().strip()
         
 
 class scrNGEEdit_Repo(USXBaseScreen):
@@ -344,6 +356,7 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.__kerneldir = "/tftpboot/kusu/"
 
     def setCallbacks(self):
 
@@ -396,14 +409,17 @@ class scrNGEEdit_Boot(USXBaseScreen):
         self.screenGrid.setField(self.__InstallTypeRb,1,2,(0,1,0,0),anchorLeft=1)
 
     def validate(self):
+        kernel = self.__entries['kernel'].value().strip()
+        if not os.path.isfile(os.path.join(self.__kerneldir, kernel)):
+            return False, "Specified kernel was not found under " + self.__kerneldir
         return True, 'Success'
 
     def formAction(self):
         ''' Actions taken once the form data was successfully validated.
             Timeline: drawImpl, Next_callback, validation, formAction
         '''
-        curNG['kernel'] = self.__entries['kernel'].value()
-        curNG['kparams'] = self.__entries['kparams'].value()
+        curNG['kernel'] = self.__entries['kernel'].value().strip()
+        curNG['kparams'] = self.__entries['kparams'].value().strip()
         curNG['installtype'] = self.__InstallTypeRb.getSelection()
 
 
@@ -2020,8 +2036,37 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
         kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
 
+    def expireNodes(self):
+        diff_keys = Set(self.__diffNG.keys())
+        if not diff_keys:
+            return
+
+        reinst_keys = Set(['installtype', 'repoid', 'parts', 'nets', 'modules',
+                           'scripts', 'kernel', 'kparams'
+                          ])
+        expire_keys = reinst_keys | Set(['packs', 'comps'])
+        reinst = diff_keys & reinst_keys
+        expire = diff_keys & expire_keys
+
+        update_vallst = []
+        if reinst:
+            update_vallst.append("bootfrom=0")
+        if expire:
+            update_vallst.append("state='Expired'")
+        if update_vallst:
+            query = "update nodes set " + string.join(update_vallst,',') + " where ngid = %s" %curNG.PKval
+            try:
+                self.database.execute(query)
+            except:
+                self.selector.popupMsg("Node state update", "Failed updating node state " +\
+                                       "- they may require a reinstall")
 
     def formAction(self):
+
+        #1. FinalActions: node state update
+        self.expireNodes()
+
+        #2. handle component plugins
         if self.__plugdir not in sys.path:
             sys.path.append(self.__plugdir)
 
@@ -2030,26 +2075,22 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         addedComps = list(s1 - s2)
         removedComps = list(s2 - s1)
 
-        #self.selector.popupMsg("Plugin DEBUG", "(+) %s\n(-) %s" %(str(addedComps),str(removedComps)))
         self.handleCompPlug(addedComps, 'add')
         self.handleCompPlug(removedComps, 'remove')
 
-        #run second-party tools:
+        #3. run second-party tools:
         # * if imaged (both disked & diskless)
         #        if changes in (components or packages or repo)
         #            run buildimage (buildimage -n $ngid)
-
         #  * if imaged (both disked & diskless)
         #        if changes in (modules or repo)
         #            buildinitrd -n $ngid
-
         #  * all install types
         #    if changes in packages or components
-        #        call update -n $ngid -p (nothing after -p)
-
+        #        call update -n $ngid -p
         #  * if package-based and adding a component with drivers
         #       driverpatch to patch initrd w/ new drivers
-        #       driverpatch nodegroup id=curNG['ngid'] arch=$arch
+        #       driverpatch nodegroup id=curNG['ngid']
 
         key_lst = self.__diffNG.keys()
         if ('comps' in key_lst or 'packs' in key_lst or 'repoid' in key_lst) \
