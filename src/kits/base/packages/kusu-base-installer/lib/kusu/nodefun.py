@@ -242,7 +242,7 @@ class NodeFun(object, KusuApp):
 
         sqlquery += " AND nodes.rack=%d ORDER BY nodes.rack, nodes.rank"
 
-        self._dbReadonly.execute(sqlquery % rack)
+        self._dbReadonly.execute(sqlquery % self._rackNumber)
         data = self._dbReadonly.fetchall()
         
         for info in data:
