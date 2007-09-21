@@ -80,16 +80,26 @@ fftwpkg.filename = 'fftw-3.1.2-1.src.rpm'
 
 # package hdf5-mpich1-gnu
 # this uses an existing binary rpm
-hdf5mpich1pkg = RPMPackage()
-hdf5mpich1pkg.name = 'hdf6-mpich1-gnu'
-hdf5mpich1pkg.version = '1.6.6'
-hdf5mpich1pkg.release = '1'
+hdf5mpich1Pkg = RPMPackage()
+hdf5mpich1Pkg.name = 'hdf6-mpich1-gnu'
+hdf5mpich1Pkg.version = '1.6.6'
+hdf5mpich1Pkg.release = '1'
 # each arch uses a different binary rpm
 if getArch() == 'x86':
-    hdf5mpich1pkg.filename = 'hdf5-mpich1-gnu-1.6.6-1.i386.rpm'
+    hdf5mpich1Pkg.filename = 'hdf5-mpich1-gnu-1.6.6-1.i386.rpm'
 if getArch() == 'x86_64':
-    hdf5mpich1pkg.filename = 'hdf5-mpich1-gnu-1.6.6-1.x86_64.rpm'
+    hdf5mpich1Pkg.filename = 'hdf5-mpich1-gnu-1.6.6-1.x86_64.rpm'
 
+linpackmpich1Pkg = RPMPackage()
+linpackmpich1Pkg.name = 'linpack-mpich1-gnu'
+linpackmpich1Pkg.version = '1.0a'
+linpackmpich1Pkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    linpackmpich1Pkg.filename = 'linpack-mpich1-gnu-1.0a-1.i386.rpm'
+if getArch() == 'x86_64':
+    linpackmpich1Pkg.filename = 'linpack-mpich1-gnu-1.0a-1.x86_64.rpm'
 
 # define component-mpich1
 mpich1Comp = DefaultComponent()
@@ -97,8 +107,8 @@ mpich1Comp.name = 'MPICH1-libraries'
 mpich1Comp.description = 'This component contains a collection of MPICH1 libraries.'
 
 # adding package dependencies for component-MPICH1-libraries
-mpich1Comp.addDep(hdf5mpich1pkg)
-
+mpich1Comp.addDep(hdf5mpich1Pkg)
+mpich1Comp.addDep(linpackmpich1Pkg)
 
 # define component-HPC-libraries
 hpcLibrariesComp = DefaultComponent()
