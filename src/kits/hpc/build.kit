@@ -101,6 +101,13 @@ if getArch() == 'x86':
 if getArch() == 'x86_64':
     linpackmpich1Pkg.filename = 'linpack-mpich1-gnu-1.0a-1.x86_64.rpm'
 
+# package modules-mpich1-gnu
+modulesmpich1gnupkg = SRPMPackage()
+modulesmpich1gnupkg.name = 'modules-mpich1-gnu'
+modulesmpich1gnupkg.version = '0.1'
+modulesmpich1gnupkg.release = '1'
+modulesmpich1gnupkg.filename = 'modules-mpich1-gnu-0.1-1.src.rpm'
+
 # define component-mpich1
 mpich1Comp = DefaultComponent()
 mpich1Comp.name = 'MPICH1-libraries'
@@ -109,6 +116,7 @@ mpich1Comp.description = 'This component contains a collection of MPICH1 librari
 # adding package dependencies for component-MPICH1-libraries
 mpich1Comp.addDep(hdf5mpich1Pkg)
 mpich1Comp.addDep(linpackmpich1Pkg)
+mpich1Comp.addDep(modulesmpich1gnupkg)
 
 # define component-HPC-libraries
 hpcLibrariesComp = DefaultComponent()
