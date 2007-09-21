@@ -922,7 +922,6 @@ class WindowNodeStatus(NodeGroupWindow):
                           if pluginActions:
                              pluginActions.plugins_add(myNodeInfo.staticHostname)
                              pluginActions.plugins_finished()
-                          time.sleep(30)
                           return NAV_QUIT
 
                     del self.myNode
