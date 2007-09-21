@@ -355,6 +355,7 @@ class AddHostApp(KusuApp):
                  myNodeInfo.nodeList.append(delnode)
 
                  # Handle removing node from db.
+                 print "Removing node: %s" % delnode
                  myNode.deleteNode(delnode)
             if pluginActions:
                pluginActions.plugins_finished()
