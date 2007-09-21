@@ -34,7 +34,6 @@ from kusu.ui.text.kusuwidgets import *
 import kusu.ipfun
 from kusu.syncfun import syncfun
 from kusu.nodefun import NodeFun
-from kusu.util.errors import UserExitError
 
 global database
 global kusuApp
@@ -250,7 +249,7 @@ class NodeMemberApp(object, KusuApp):
                     os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(Set(nodesList), ' '))
                
                     # Add these back using mac file
-                    if self._options.racknumber => 0:
+                    if self._options.racknumber >= 0:
                         os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
                     else:
                         os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null" % (tmpfile, interface, self._options.togroup))

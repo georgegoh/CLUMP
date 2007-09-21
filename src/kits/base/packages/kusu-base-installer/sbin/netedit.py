@@ -19,7 +19,6 @@
 
 # Author: Shawn Starr <sstarr@platform.com>
 
-import os
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB

@@ -21,10 +21,7 @@
 
 import os
 import sys
-import string
-import gettext
 import time
-import popen2
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
@@ -925,6 +922,7 @@ class WindowNodeStatus(NodeGroupWindow):
                           if pluginActions:
                              pluginActions.plugins_add(myNodeInfo.staticHostname)
                              pluginActions.plugins_finished()
+                          time.sleep(30)
                           return NAV_QUIT
 
                     del self.myNode

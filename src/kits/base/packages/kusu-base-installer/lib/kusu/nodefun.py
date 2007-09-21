@@ -23,11 +23,10 @@ import os
 import string
 import popen2
 import tempfile
-import time
+#import time
 import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
-from kusu.util.errors import UserExitError
 import kusu.ipfun
 
 """ class NodeFun
