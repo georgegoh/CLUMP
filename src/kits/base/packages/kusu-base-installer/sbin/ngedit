@@ -121,6 +121,9 @@ class scrNGEMain(USXBaseScreen):
             if curNG[f] == None:
                 curNG[f] = ''
 
+        if curNG['comps']:
+            curNG['comps'] = [ int(x) for x in curNG['comps'] ]
+
         #work around Kusu bug 347
         if curNG['parts']:
             for p in curNG['parts']:
@@ -144,7 +147,7 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
@@ -348,6 +351,8 @@ class scrNGEEdit_Repo(USXBaseScreen):
             Timeline: Next_callback, validation, formAction
         '''
         curNG['repoid'] = self.__repolistbox.current()
+        if curNG['repoid'] <> origNG['repoid']:
+            curNG['kernel'] = ''
 
 
 
@@ -391,7 +396,7 @@ class scrNGEEdit_Boot(USXBaseScreen):
         lbl1 = snack.Label('Kernel: ')
         lbl2 = snack.Label('Kernel Params: ')
         lbl3 = snack.Label('Install Type: ')
-        w = min(max(len(curNG['kernel']), len(curNG['kparams']))+1, 60)
+        w = min(max(len(curNG['kernel']), len(curNG['kparams']), MAXWIDTH*1/2), MAXWIDTH)
         self.__entries = {}
         self.__entries['kernel'] = snack.Entry(width=w, text=curNG['kernel'])
         self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
@@ -826,13 +831,17 @@ class scrNGEEdit_Packages(USXBaseScreen):
     def formAction(self):
         curNG['packs'] = self.__ct.getSelection()
 
-        ###TODO: use modules screen only if diskless
-        #if curNG['installtype'] and curNG['installtype'].lower() <> 'package':
-        #    if not isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_General):
-        #        self.selector.screens.insert(self.selector.currentStep+1,\
-        #                    scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp))
-        #self.selector.popupMsg('DEBUG', str(self.selector.screens))
-
+        bIsPackaged = curNG['installtype'] == 'package'
+        bModNext = isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_Modules)
+        if bIsPackaged ^ bModNext:
+            return
+        if bIsPackaged and bModNext:
+            #remove module screen from the sequence
+            del self.selector.screens[self.selector.currentStep+1]
+        else:
+            #add module screen to the sequence
+            self.selector.screens.insert(self.selector.currentStep+1,\
+                        scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp))
 
 class scrNGEEdit_Modules(USXBaseScreen):
     name = 'Modules'
