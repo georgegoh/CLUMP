@@ -220,7 +220,7 @@ class NodeFun(object, KusuApp):
             nodes.append(node[0])
         return nodes
             
-    def _getSelectedNodes (self)
+    def _getSelectedNodes(self):
         """_getSelectedNodes()
         Gets selected based nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format """
        
