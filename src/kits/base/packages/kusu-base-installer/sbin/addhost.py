@@ -301,9 +301,9 @@ class AddHostApp(KusuApp):
                                flag = 1
               
             # Read in list of mac addresses
-            macfileList = open(self._options.macfile,'r').readlines()
+            macfileList = [line for line in open(self._options.macfile,'r') if len(line.strip()) > 0]
             myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-            #myNode.setNodegroup(myNodeInfo.nodeGroupSelected)
+            #myNode.setNodegroupByName(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = myNode.findMACAddress(macaddr)
@@ -311,6 +311,7 @@ class AddHostApp(KusuApp):
                      nodeName = myNode.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False)
                      print kusuApp._("Adding Node: %s, %s" % (nodeName, macaddr))
                      # Ask all plugins to call added() function
+                     myNode.addUsedMAC(macaddr)
                      if pluginActions:
                          pluginActions.plugins_add(nodeName, True)
                      myNodeInfo.nodeList.append(nodeName)
@@ -583,7 +584,7 @@ class NodeGroupWindow(USXBaseScreen):
            self.screen.finish()
            raise UserExitError
 
-        query = "SELECT ngname, ngid FROM nodegroups"
+        query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngid"
         try:
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
