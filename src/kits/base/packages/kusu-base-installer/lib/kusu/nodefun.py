@@ -74,7 +74,7 @@ class NodeFun(object, KusuApp):
               self._nodegroupInterfaces = self._findInterfaces()
            self._installerNetworks = self._getInstallerNetworks()
            self._ngConflicts = self._getNodegroupConflicts()
-           self._nodeList = self._getNodes()
+           self._nodeList = self._getSelectedNodes()
         
 
     def _getInstallerNetworks(self):
@@ -111,7 +111,7 @@ class NodeFun(object, KusuApp):
     def _addUsedIP(self, ip):
         self._cachedUsedIP[ip] = 'Used'
 
-    def _addUsedMAC(self, mac):
+    def addUsedMAC(self, mac):
         self._cachedMACAddress[mac] = 'Used'
 
     def isNodenameHasRack(self):
@@ -209,15 +209,27 @@ class NodeFun(object, KusuApp):
         conflicts = self._dbReadonly.fetchall()
         return conflicts
 
-    def _getNodes (self):
-        """_getNodes()
-        Gets the nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format """
+    def _getAllNodes(self):
+        nodes = []
+        sqlquery = 'SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
+                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") AND NOT \
+                    nodes.ngid=(SELECT ngid FROM nodegroups WHERE ngname = "unmanaged")'
+        self._dbReadonly.execute(sqlquery)
+        data = self._dbReadonly.fetchall()
+        for node in data:
+            nodes.append(node[0])
+        return nodes
+            
+        
+    def _getSelectedNodes (self, rack=0):
+        """_getSelectedNodes()
+        Gets selected based nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format """
        
         #t1=time.time()
 
         # Build the SQL query since there many be more than one node group that has the same node group format.
         sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid"
-        
+    
         if self._ngConflicts:
             sqlquery += " AND ("
             for ngid in self._ngConflicts:
@@ -231,7 +243,7 @@ class NodeFun(object, KusuApp):
 
         sqlquery += " AND nodes.rack=%d ORDER BY nodes.rack, nodes.rank"
 
-        self._dbReadonly.execute(sqlquery % self._rackNumber)
+        self._dbReadonly.execute(sqlquery % rack)
         data = self._dbReadonly.fetchall()
         
         for info in data:
@@ -316,9 +328,6 @@ class NodeFun(object, KusuApp):
     def addNode (self, macaddr, selectedinterface, installer=True):
         """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
-       
-        #t1=time.time()
-        #self._nodeList = self._getNodes()
        
         if not self._nodeList and not self._ngConflicts:
             #t2=time.time()
@@ -559,7 +568,7 @@ class NodeFun(object, KusuApp):
                 # We're a DHCP/boot interface
                 if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False:
                    # Mark the MAC as used.
-                   self._addUsedMAC(macaddr)
+                   self.addUsedMAC(macaddr)
                    self._createNICBootEntry(nodeID, networkID, newIP, 1, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
                 else:
@@ -884,7 +893,7 @@ class NodeFun(object, KusuApp):
          
          return self.moveNodes(nodeList, destGroup)
 
-    def moveNodes(self, nodeList, nodegroupname):
+    def moveNodes(self, requestedNodes, nodegroupname,rack=0):
         dataList = {}
         macList = {}
         badList = []
@@ -893,54 +902,64 @@ class NodeFun(object, KusuApp):
         interfaceName = ""
         badflag = 0
         self.setNodegroupByName(nodegroupname)
+        nodeList = set(self._getAllNodes())
+
+        # Check which nodes are valid.
+        for requestNode in requestedNodes:
+            if requestNode in nodeList:
+               continue
+            else:
+               #print "Node does not exist: %s" % requestNode
+               badList.append(requestNode)
+
+        for node in badList:
+            requestedNodes.remove(node)
 
         # Check for valid nodegroup.
-        if not self._nodeGroupType:   
+        if not self._nodeGroupType:
            return None, None, None
 
+        # Can't move unmanaged nodes.
+        if self._nodeGroupType == self.getNodegroupByName('unmanaged'):
+           return None, None, None
+
+        # Remove the primary installer if the user tries to move it to another node group.
         if self._getPrimaryInstaller() in nodeList:
            nodeList.remove(self._getPrimaryInstaller())
 
         # Check if the item being moved already exists in the same node group, delete from list if it is.
-        for node in nodeList: 
-            try: 
-               self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes WHERE nodes.name='%s' AND nodes.ngid='%s'" % (node, self._nodeGroupType))
-               data = int(self._dbReadonly.fetchone()[0])
-               if data:
-                  dupeList.append(node)
-            except:
-               pass
+        for node in requestedNodes: 
+            self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes WHERE nodes.name='%s' AND nodes.ngid=%s" % (node, self._nodeGroupType))
+            data = bool(self._dbReadonly.fetchone()[0])
+            if data:
+               print "Node %s already exists in destination node group" % node
+               dupeList.append(node)
 
-        for dupenode in dupeList:
-           nodeList.remove(dupenode)
+        if dupeList:
+           for dupenode in dupeList:
+               requestedNodes.remove(dupenode)
 
-        for node in nodeList:
-           try:
-               self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=1" % node)
-               data = self._dbReadonly.fetchone()
-               if data:
-                   dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
-                   macList["%s" % node] = "%s" % data[0]
-               else:
-                   nodeList.remove(node)
-                   badList.append(node)
-           except: 
-               nodeList.remove(node)
+        for node in requestedNodes:
+            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=1 AND nodegroups.ngid=nodes.ngid AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
+            data = self._dbReadonly.fetchone()
+            if data:
+               print "Valid node info:  %s" % node
+               dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
+               macList["%s" % node] = "%s" % data[0]
+            else:
                badList.append(node)
+
+        for node in badList: 
+            if node in requestedNodes:
+               requestedNodes.remove(node)
 
         # Get the new nodegroups network and device table list
         self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
         newngdata = list(self._dbReadonly.fetchall())
     
-        # Delete nodes that don't exist in db.
-        for node in nodeList:
-            if not node in dataList:
-               nodeList.remove(node)
-               badList.append(node)
- 
         # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
         # Have to resolve this by running add hosts
-        for node in nodeList:
+        for node in requestedNodes:
            nodeData = dataList[node].split()
            for netinfo in newngdata:
               device, network, subnet = netinfo
@@ -961,10 +980,12 @@ class NodeFun(object, KusuApp):
                badList.append(node)
                badflag = 0
 
-        for badnode in badList:
-              nodeList.remove(badnode)
-    
-        return nodeList, ipList, macList, badList, interfaceName
+        if badList:
+           for badnode in badList:
+               if badnode in nodeList:
+                  nodeList.remove(badnode)
+
+        return requestedNodes, ipList, macList, badList, interfaceName
 
 # Run some unittests
 if __name__ == "__amain__":
@@ -1247,11 +1268,39 @@ if __name__ == "__amain__":
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
 
 if __name__ == "__main__":
-    myNodeFun = NodeFun()
+    #myNodeFun = NodeFun()
 
-    movegroups = ["Compute", "Compute Disked", "Compute Diskless"]
-    moveList, macList, badList, interface = myNodeFun.moveNodegroups(movegroups, "Installer")
+    #movegroups = ["Compute", "Compute Disked", "Compute Diskless"]
+    #moveList, macList, badList, interface = myNodeFun.moveNodegroups(movegroups, "Installer")
+    #if (moveList, macList, badList):
+    #    print "\t* Testing NodeFun.moveNodegroups: Returns: %s" % moveList
+    #    print "\t* badList = %s" % badList
+    #    print "Interface = %s" % interface
+
+    # Now move them back to their original place.
+    myNodeFun = NodeFun()
+    myNodeFun.setRackNumber(9)
+    movenodes = ["host000","installer-09-05", "garbage"]
+
+    #moveList, ipList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "installer-rhel-5-x86_64")
+    moveList, ipList, macList, badList, interface = myNodeFun.moveNodes(movenodes, "compute-rhel-5-x86_64")
     if (moveList, macList, badList):
-        print "\t* Testing NodeFun.moveNodegroups: Returns: %s" % moveList
-        print "\t* badList = %s" % badList
-        print "Interface = %s" % interface
+        print "* Testing NodeFun.moveNodes(\"[compute-00-00]\", \"Compute\"): Result: PASS (Valid Nodegroup, Moving nodes to installer-rhel-5-x86_64)"
+        print "\t* Testing NodeFun.moveNodes: Returns: %s" % moveList
+
+        # Create Temp file
+        (fd, tmpfile) = tempfile.mkstemp()
+        tmpname = os.fdopen(fd, 'w')
+        for node in moveList:
+           tmpname.write("%s\n" % macList[node])
+        tmpname.close()
+
+        # Call addhosts to delete these nodes
+        print "COMMAND: /opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' ')
+        print moveList, ipList, macList, badList, interface
+        #os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(moveList, ' '))
+
+        # Add these back using mac file
+        print "COMMAND: /opt/kusu/sbin/addhost --file='%s' --interface=%s --nodegroup='%s'" % (tmpfile, interface, "installer-rhel-5-x86_64") # Installer ngid
+        #os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'" % (tmpfile, interface, myNodeFun.getNodegroupNameByName("installer-rhel-5-x86_64")))
+

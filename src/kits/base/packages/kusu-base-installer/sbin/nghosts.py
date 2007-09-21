@@ -196,6 +196,7 @@ class NodeMemberApp(object, KusuApp):
                                   flag = 1
                               else:
                                   self._options.racknumber = result
+                                  nodeRecord.setRackNumber(result)
                                   flag = 0
                           except:
                               print self._("Error: The value %s is not a number. Please try again" % response)
@@ -221,7 +222,7 @@ class NodeMemberApp(object, KusuApp):
                            print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
                            sys.exit(-1)
                         else:
-                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup)
+                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, self._options.racknumber)
                            nodesList += moveList
                            moveIPList += ipList
                            if interface:
@@ -249,7 +250,7 @@ class NodeMemberApp(object, KusuApp):
                     os.system("/opt/kusu/sbin/addhost --remove %s" % string.join(Set(nodesList), ' '))
                
                     # Add these back using mac file
-                    if bool(self._options.racknumber):
+                    if self._options.racknumber => 0:
                         os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
                     else:
                         os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null" % (tmpfile, interface, self._options.togroup))
@@ -358,6 +359,7 @@ class SelectNodesWindow(USXBaseScreen):
                               flag = 1
                           else:
                               rack = result
+                              nodeRecord.setRackNumber(rack)
                               flag = 0
                       except:
                           self.selector.popupStatus(self.kusuApp._("Error"),
@@ -421,7 +423,7 @@ class SelectNodesWindow(USXBaseScreen):
         labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
-        query = "SELECT ngname FROM nodegroups ORDER BY ngname"
+        query = 'SELECT ngname, ngid FROM nodegroups WHERE NOT ngname = "unmanaged" ORDER BY ngid'
         
         try:
             self.database.connect()
@@ -603,7 +605,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         labeltokens = self.kusuApp._("nghosts_source_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
-        query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngname"
+        query = 'SELECT ngname, ngid FROM nodegroups WHERE NOT ngname = "unmanaged" ORDER BY ngid'
 
         try:
             self.database.connect()
