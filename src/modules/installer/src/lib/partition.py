@@ -75,7 +75,7 @@ class PartitionScreen(InstallerScreen):
                                  returnExit=0)
 
         if not self.disk_profile:
-            self.disk_profile = partitiontool.DiskProfile(fresh=False)
+            self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
             first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
             first_disk = self.disk_profile.disk_dict[first_disk_key]
             if first_disk.partition_dict:
@@ -89,13 +89,16 @@ class PartitionScreen(InstallerScreen):
                                                  ['Use Default', 'Use Existing', 'Clear All Partitions'])
                 if str(result) == 'use default':
                     logger.debug('Default chosen')
-                    self.disk_profile = partitiontool.DiskProfile(fresh=False)
+                    self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
                     schema = vanillaSchemaLVM()
                     logger.debug('%s' % schema)
                     setupDiskProfile(self.disk_profile, schema)
                 elif str(result) == 'clear all partitions':
                     logger.debug('Clear all partitions')
                     self.disk_profile = partitiontool.DiskProfile(fresh=True)
+                else:
+                    logger.debug('Use Existing')
+                    self.disk_profile = partitiontool.DiskProfile(fresh=False)
             else:
                 # tell user nothing exists and ask to proceed.
                 msg = 'The installer has detected that no disk(s) ' + \
