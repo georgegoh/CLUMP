@@ -941,7 +941,6 @@ class NodeFun(object, KusuApp):
             self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=1 AND nodegroups.ngid=nodes.ngid AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
             data = self._dbReadonly.fetchone()
             if data:
-               print "Valid node info:  %s" % node
                dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
                macList["%s" % node] = "%s" % data[0]
             else:
