@@ -27,11 +27,7 @@ from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.ngedit.ngedit import *
 from kusu.ngedit.partition import *
-
 import kusu.util.log as kusulog
-kl = kusulog.getKusuLog()
-kl.addFileHandler(os.environ.get('KUSU_TMP', '/tmp/kusu') + "/kusu-ngedit.log")
-kl = kusulog.getKusuLog('ngedit')
 
 global curNG, origNG
 
@@ -96,7 +92,13 @@ class scrNGEMain(USXBaseScreen):
     def doDeleteAction(self):
         ngid = self.__nglistbox.current()
 
-        #TODO: check if the nodegroup is in use by any nodes
+        query = "select nid from nodes where ngid = %s" %ngid
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        if rv:
+            self.selector.popupMsg("Node Group Deletion", "Unable to delete - it's in use. "+\
+                                   "Please (re)move the nodes from this NG first.")
+            return NAV_NOTHING
 
         tmpNG = NodeGroup(ngid = ngid)
         tmpNG.syncFromDB(self.database) #to get all the links
@@ -1860,8 +1862,6 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         self.__diffNG = curNG - origNG
         diffNG = self.__diffNG
 
-        #self.selector.popupMsg("scripts", "curNG: %s\norigNG: %s\ndiffNG=%s" \
-        #        %(str(curNG['scripts']),str(origNG['scripts']),str(self.__diffNG)))
 
         msg = ''
         for field in NodeGroupRec.fields[2:] : #skip the keys
@@ -1878,21 +1878,27 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
         # go through comps, nets, packs, modules, scripts, parts
         if 'comps' in diffNG.keys():
-            compsstr = ''
-            if diffNG['comps']:
-                if len(diffNG['comps']) == 1:
-                    #tuples have a trailing comma when only one element
-                    tplstr = "(%s)" %diffNG['comps'][0]
-                else:
-                    tplstr = str(tuple(diffNG['comps']))
-                query = "select cname from components where cid in %s" %tplstr
+            s1 = Set(ifelse(origNG['comps'], [int(x) for x in origNG['comps']], [] ))
+            s2 = Set(ifelse(curNG['comps'], [int(x) for x in curNG['comps']], [] ))
+            delItems = s1 - s2
+            newItems = s2 - s1
+            if delItems or newItems:
+                msg += "COMPONENTS:\n"
+            if delItems:
+                query = "select cname from components where cid in %s" %seq2tplstr(list(delItems))
                 self.database.execute(query)
                 rv = self.database.fetchall()
-                compslst = [x for x, in rv]
-                compsstr = '%s' + ', %s'*(len(compslst)-1)
-                compsstr = compsstr % tuple(compslst)
-            msg += "COMPONENTS SELECTED:\n\t%s\n" %compsstr
-
+                delItems = [x for x, in rv]
+                tmpstr = string.join(['%s']*len(delItems), ', ')
+                msg += "\t(-) " + tmpstr % tuple(sorted(delItems)) + '\n'
+            if newItems:
+                query = "select cname from components where cid in %s" %seq2tplstr(list(newItems))
+                self.database.execute(query)
+                rv = self.database.fetchall()
+                newItems = [x for x, in rv]
+                tmpstr = string.join(['%s']*len(newItems), ', ')
+                msg += "\t(+) " + tmpstr % tuple(sorted(newItems)) + '\n'
+            
         if 'nets' in diffNG.keys():
             netsstr = ''
             if diffNG['nets']:
@@ -1913,23 +1919,36 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                     'scripts': 'OPTIONAL SCRIPTS',
                     'modules': 'MODULES'
                   }
+
         for link in caption.keys():
             if link in diffNG.keys():
-                tmpstr = ''
-                if diffNG[link]: #one or more elements
-                    if link == 'scripts':
-                        #format scripts one per line
-                        tmpstr = '%s' + '\n\t%s'*(len(diffNG[link])-1)
-                    else:
-                        tmpstr = '%s' + ', %s'*(len(diffNG[link])-1)
-                    tmpstr = tmpstr % tuple(diffNG[link])
-                msg += "%s:\n\t%s\n" %(caption[link],tmpstr)
+                s1 = Set(origNG[link])
+                s2 = Set(curNG[link])
+                delItems = s1-s2
+                newItems = s2-s1
+                if delItems or newItems:
+                    msg += caption[link] +':\n'
+                if delItems:
+                    tmpstr = string.join(['%s']*len(delItems), ', ')
+                    msg += "\t(-) " + tmpstr % tuple(sorted(delItems)) + '\n'
+                if newItems:
+                    tmpstr = string.join(['%s']*len(newItems), ', ')
+                    msg += "\t(+) " + tmpstr % tuple(sorted(newItems)) + '\n'
+
+                #tmpstr = ''
+                #if diffNG[link]: #one or more elements
+                #    if link == 'scripts':
+                #        #format scripts one per line
+                #        tmpstr = '%s' + '\n\t%s'*(len(diffNG[link])-1)
+                #    else:
+                #        tmpstr = '%s' + ', %s'*(len(diffNG[link])-1)
+                #    tmpstr = tmpstr % tuple(diffNG[link])
+                #msg += "%s:\n\t%s\n" %(caption[link],tmpstr)
 
         if 'parts' in diffNG.keys():
             msg += "PARTITIONS: schema changed\n"
 
         kl.info("Finalize: diffNG = %s" %str(diffNG))
-        #self.selector.popupMsg("diffNG", str(diffNG))
 
         self.screenGrid = snack.Grid(1, 1)
         self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
@@ -2514,6 +2533,14 @@ class NGEApp(KusuApp):
                         
 
 if __name__ == '__main__':
+    if os.geteuid() != 0:
+        print "ngedit: only root can run this administrative tool."
+        sys.exit(1)
+
+    kl = kusulog.getKusuLog()
+    kl.addFileHandler(os.environ.get('KUSU_TMP', '/tmp/kusu') + "/kusu-ngedit.log")
+    kl = kusulog.getKusuLog('ngedit')
+
     NGEinst = NGEApp()
     NGEinst.parse()
     NGEinst.run()
