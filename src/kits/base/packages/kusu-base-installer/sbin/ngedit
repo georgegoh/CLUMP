@@ -149,7 +149,7 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
                                  #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
+                                 #scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                 ]
 
@@ -1828,11 +1828,17 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         return NAV_QUIT
 
     def doAcceptAction(self):
-        #construct a diff NG object from dict
-        diffNGobj = NodeGroup(**self.__diffNG)
-        diffNGobj['ngid'] = curNG['ngid']
 
         if self.__diffNG:   #only if there are changes
+            #clean up partschema for diskless
+            if curNG['installtype'] == 'diskless' and curNG['parts']:
+                curNG['parts'] = []
+                self.__diffNG = curNG - origNG
+
+            #construct a diff NG object from dict
+            diffNGobj = NodeGroup(**self.__diffNG)
+            diffNGobj['ngid'] = curNG['ngid']
+
             kl.debug('Finalize: prior to DBsync\ndiffNGobj = %s' % str(diffNGobj))
             self.database.beginTransaction()
             try:
@@ -1862,10 +1868,8 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                         delscr = os.path.join(CustomScriptDir, script)
                         if os.path.isfile(delscr):
                             os.remove(delscr)
-                
 
         return NAV_FORWARD
-
 
     def drawImpl(self):
         self.__diffNG = curNG - origNG
@@ -1954,7 +1958,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                 #    tmpstr = tmpstr % tuple(diffNG[link])
                 #msg += "%s:\n\t%s\n" %(caption[link],tmpstr)
 
-        if 'parts' in diffNG.keys():
+        if 'parts' in diffNG.keys() and curNG['installtype'] != 'diskless':
             msg += "PARTITIONS: schema changed\n"
 
         kl.info("Finalize: diffNG = %s" %str(diffNG))
@@ -2282,8 +2286,17 @@ class scrNGEEdit_Scripts(USXBaseScreen):
         return True, 'Success'
 
     def formAction(self):
-        pass
-        
+        bIsDiskless = curNG['installtype'] == 'diskless'
+        bPartNext = isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_PartSchema)
+        if bIsDiskless ^ bPartNext:
+            return
+        if bIsDiskless and bPartNext:
+            #remove screen from sequence
+            del self.selector.screens[self.selector.currentStep+1]
+        else:
+            #add screen to sequence
+            self.selector.screens.insert(self.selector.currentStep+1,\
+                        scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp))
 
 class NGEApp(KusuApp):
 
