@@ -90,6 +90,8 @@ if getArch() == 'x86':
 if getArch() == 'x86_64':
     hdf5mpich1Pkg.filename = 'hdf5-mpich1-gnu-1.6.6-1.x86_64.rpm'
 
+# package linpack-mpich-gnu
+# this uses an existing binary rpm
 linpackmpich1Pkg = RPMPackage()
 linpackmpich1Pkg.name = 'linpack-mpich1-gnu'
 linpackmpich1Pkg.version = '1.0a'
@@ -107,6 +109,81 @@ modulesmpich1gnupkg.name = 'modules-mpich1-gnu'
 modulesmpich1gnupkg.version = '0.1'
 modulesmpich1gnupkg.release = '1'
 modulesmpich1gnupkg.filename = 'modules-mpich1-gnu-0.1-1.src.rpm'
+
+# package openmpi-gnu
+# this uses an existing binary rpm
+openmpiPkg = RPMPackage()
+openmpiPkg.name = 'openmpi'
+openmpiPkg.version = '1.2.3'
+openmpiPkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    openmpiPkg.filename = 'openmpi-1.2.3-1.i386.rpm'
+if getArch() == 'x86_64':
+    openmpiPkg.filename = 'openmpi-1.2.3-1.x86_64.rpm'
+
+# package hdf5-openmpi-gnu
+# this uses an existing binary rpm
+hdf5openmpiPkg = RPMPackage()
+hdf5openmpiPkg.name = 'hdf5-openmpi-gnu'
+hdf5openmpiPkg.version = '1.6.6'
+hdf5openmpiPkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    hdf5openmpiPkg.filename = 'hdf5-openmpi-gnu-1.6.6-1.i386.rpm'
+if getArch() == 'x86_64':
+    hdf5openmpiPkg.filename = 'hdf5-openmpi-gnu-1.6.6-1.x86_64.rpm'
+
+# package linpack-openmpi-gnu
+# this uses an existing binary rpm
+linpackopenmpiPkg = RPMPackage()
+linpackopenmpiPkg.name = 'linpack-openmpi-gnu'
+linpackopenmpiPkg.version = '1.0a'
+linpackopenmpiPkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    linpackopenmpiPkg.filename = 'linpack-openmpi-gnu-1.0a-1.i386.rpm'
+if getArch() == 'x86_64':
+    linpackopenmpiPkg.filename = 'linpack-openmpi-gnu-1.0a-1.x86_64.rpm'
+
+# package mpich2-openmpi-gnu
+# this uses an existing binary rpm
+mpich2Pkg = RPMPackage()
+mpich2Pkg.name = 'mpich2-ethernet-gnu-'
+mpich2Pkg.version = '1.0.6'
+mpich2Pkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    mpich2Pkg.filename = 'mpich2-ethernet-gnu-1.0.6-1.i386.rpm'
+if getArch() == 'x86_64':
+    mpich2Pkg.filename = 'mpich2-ethernet-gnu-1.0.6-1.x86_64.rpm'
+
+# define component-MPICH2
+mpich2Comp = DefaultComponent()
+mpich2Comp.name = 'MPICH2-libraries'
+mpich2Comp.description = 'This component contains a collection of MPICH2 libraries.'
+
+# adding package dependencies for component-MPICH2-libraries
+mpich2Comp.addDep(mpich2Pkg)
+#mpich2Comp.addDep()
+#mpich2Comp.addDep()
+
+# define component-OpenMPI
+openmpiComp = DefaultComponent()
+openmpiComp.name = 'OpenMPI-libraries'
+openmpiComp.description = 'This component contains a collection of OpenMPI libraries.'
+
+# adding package dependencies for component-OpenMPI-libraries
+openmpiComp.addDep(openmpiPkg)
+openmpiComp.addDep(hdf5openmpiPkg)
+openmpiComp.addDep(linpackopenmpiPkg)
+#openmpiComp.addDep()
+#openmpiComp.addDep()
+#openmpiComp.addDep()
 
 # define component-mpich1
 mpich1Comp = DefaultComponent()
@@ -154,6 +231,8 @@ k.description = 'HPC kit.'
 k.addComponent(hpcLibrariesComp)
 k.addComponent(benchmarkingToolsComp)
 k.addComponent(mpich1Comp)
+k.addComponent(openmpiComp)
+k.addComponent(mpich2Comp)
 
 
 # Add post install script. You can modify this shell script or add new ones in the
