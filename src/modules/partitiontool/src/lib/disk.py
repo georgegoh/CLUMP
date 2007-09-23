@@ -638,7 +638,7 @@ class Partition(object):
         if self.fs_type == 'ext2':
             logger.info('FORMAT %s: Making ext2 fs on %s' % \
                         (self.path, self.path))
-            mkfs = subprocess.Popen('mkfs.ext2 %s' % self.path,
+            mkfs = subprocess.Popen('mke2fs %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
@@ -646,7 +646,7 @@ class Partition(object):
         elif self.fs_type == 'ext3':
             logger.info('FORMAT %s: Making ext3 fs on %s' % \
                         (self.path, self.path))
-            mkfs = subprocess.Popen('mkfs.ext3 %s' % self.path,
+            mkfs = subprocess.Popen('mke2fs -j %s' % self.path,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
