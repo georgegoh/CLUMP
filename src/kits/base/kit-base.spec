@@ -84,6 +84,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/reverse.py
 /opt/kusu/lib/plugins/genconfig/zone.py
 /opt/kusu/lib/plugins/genconfig/ssh.py
+/opt/kusu/lib/plugins/genconfig/bashrc.py
 /opt/kusu/lib/plugins/ngedit/01-component-base-installer.py
 /opt/kusu/lib/plugins/ngedit/02-component-base-installer.py
 /opt/kusu/lib/plugins/ngedit/03-component-base-node.py

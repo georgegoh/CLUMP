@@ -52,6 +52,9 @@ class KusuRC(rcplugin.Plugin):
         if not webdir.exists():
             webdir.makedirs()
 
+        # copy public key to authorized_keys
+        (sshdir / 'id_rsa.pub').copy(sshdir / 'authorized_keys')
+
         # copy public key to webdir
         (sshdir / 'id_rsa.pub').copy(webdir / 'public_keys')
 
