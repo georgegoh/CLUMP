@@ -20,10 +20,10 @@ import kusu.core.db
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
+        os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
         os.system("kill -HUP `pidof named`")
 
     def finished(self, nodelist):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/genconfig zone > /var/named/zone.%s" % dnsZone)
+        os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
         os.system("kill -HUP `pidof named`")
