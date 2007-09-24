@@ -45,11 +45,11 @@ hdf5pkg.release = '1'
 hdf5pkg.filename = 'hdf5-1.6.6-1.src.rpm'
 
 # package mpich1-ethernet-gnu
-mpich1pkg = SRPMPackage()
-mpich1pkg.name = 'mpich1-ethernet-gnu'
-mpich1pkg.version = '1.2.7p1'
-mpich1pkg.release = '1'
-mpich1pkg.filename = 'mpich1-ethernet-gnu-1.2.7p1-1.src.rpm'
+mpich1ethernetgnupkg = SRPMPackage()
+mpich1ethernetgnupkg.name = 'mpich1-ethernet-gnu'
+mpich1ethernetgnupkg.version = '1.2.7p1'
+mpich1ethernetgnupkg.release = '1'
+mpich1ethernetgnupkg.filename = 'mpich1-ethernet-gnu-1.2.7p1-1.src.rpm'
 
 # package modules
 modulespkg = SRPMPackage()
@@ -110,6 +110,34 @@ modulesbenchmarkingtoolspkg.version = '0.1'
 modulesbenchmarkingtoolspkg.release = '1'
 modulesbenchmarkingtoolspkg.filename = 'modules-benchmarking-tools-0.1-1.src.rpm'
 
+# package modules-hpc-libraries
+moduleshpclibrariespkg = SRPMPackage()
+moduleshpclibrariespkg.name = 'modules-hpc-libraries'
+moduleshpclibrariespkg.version = '0.1'
+moduleshpclibrariespkg.release = '1'
+moduleshpclibrariespkg.filename = 'modules-hpc-libraries-0.1-1.src.rpm'
+
+# package modules-hpc-libraries
+modulesmpich1gnupkg = SRPMPackage()
+modulesmpich1gnupkg.name = 'modules-mpich1-gnu'
+modulesmpich1gnupkg.version = '0.1'
+modulesmpich1gnupkg.release = '1'
+modulesmpich1gnupkg.filename = 'modules-mpich1-gnu-0.1-1.src.rpm'
+
+# package modules-hpc-libraries
+modulesmpich2gnupkg = SRPMPackage()
+modulesmpich2gnupkg.name = 'modules-mpich2-gnu'
+modulesmpich2gnupkg.version = '0.1'
+modulesmpich2gnupkg.release = '1'
+modulesmpich2gnupkg.filename = 'modules-mpich2-gnu-0.1-1.src.rpm'
+
+# package modules-hpc-libraries
+modulesopenmpignupkg = SRPMPackage()
+modulesopenmpignupkg.name = 'modules-openmpi-gnu'
+modulesopenmpignupkg.version = '0.1'
+modulesopenmpignupkg.release = '1'
+modulesopenmpignupkg.filename = 'modules-openmpi-gnu-0.1-1.src.rpm'
+
 # package openmpi-gnu
 # this uses an existing binary rpm
 openmpiPkg = RPMPackage()
@@ -169,6 +197,8 @@ mpich2Comp.description = 'This component contains a collection of MPICH2 librari
 
 # adding package dependencies for component-MPICH2-libraries
 mpich2Comp.addDep(mpich2Pkg)
+mpich2Comp.addDep(modulesmpich2gnupkg)
+mpich2Comp.addDep(modulespkg)
 #mpich2Comp.addDep()
 #mpich2Comp.addDep()
 
@@ -181,6 +211,8 @@ openmpiComp.description = 'This component contains a collection of OpenMPI libra
 openmpiComp.addDep(openmpiPkg)
 openmpiComp.addDep(hdf5openmpiPkg)
 openmpiComp.addDep(linpackopenmpiPkg)
+openmpiComp.addDep(modulesopenmpignupkg)
+openmpiComp.addDep(modulespkg)
 #openmpiComp.addDep()
 #openmpiComp.addDep()
 #openmpiComp.addDep()
@@ -191,8 +223,11 @@ mpich1Comp.name = 'MPICH1-libraries'
 mpich1Comp.description = 'This component contains a collection of MPICH1 libraries.'
 
 # adding package dependencies for component-MPICH1-libraries
+mpich1Comp.addDep(mpich1ethernetgnupkg)
 mpich1Comp.addDep(hdf5mpich1Pkg)
 mpich1Comp.addDep(linpackmpich1Pkg)
+mpich1Comp.addDep(modulesmpich1gnupkg)
+mpich1Comp.addDep(modulespkg)
 
 # define component-HPC-libraries
 hpcLibrariesComp = DefaultComponent()
@@ -205,7 +240,7 @@ hpcLibrariesComp.addDep(hdf5pkg)
 hpcLibrariesComp.addDep(modulespkg)
 hpcLibrariesComp.addDep(fftwpkg)
 hpcLibrariesComp.addDep(atlaspkg)
-hpcLibrariesComp.addDep(mpich1pkg)
+hpcLibrariesComp.addDep(moduleshpclibrariespkg)
 
 
 
