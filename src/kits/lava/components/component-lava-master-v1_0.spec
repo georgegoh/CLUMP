@@ -13,32 +13,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# 
-# 
+#
 
-Summary: Lava compute component
-Name: component-lava-compute-v1.0
+Summary: Lava master component
+Name: component-lava-master-v1_0
 Version: 1.0
 Release: 0
-License: LGPL
+License: Something
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
+Requires: lava = 1.0 lava-master-config-1.0 component-lava-compute-v1.0
 BuildArchitectures: noarch
-Requires: lava = 1.0
 
 %description
-This package is a meta package for Lava
+This package is a metapackage for Lava
 
 %prep
+mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
+
+%install
+install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %files
-
-%pre
-
-%post
-# Place any component post install code here
-
-%preun
-
-%postun
-# Place any component uninstall code here
+/etc/rc.kusu.d/S10lava-genconfig
