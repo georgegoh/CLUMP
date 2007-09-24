@@ -20,7 +20,6 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Setup ssh host file"""
         retval = self.runCommand('$KUSU_ROOT/bin/genconfig ssh > /etc/ssh/ssh_config')[0]
-        if retval != 0: return False
 
         f = path('/etc/ssh/ssh_config')
         f.chmod(0644)
