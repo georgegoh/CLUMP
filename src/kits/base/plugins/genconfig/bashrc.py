@@ -40,5 +40,6 @@ class thisReport(Report):
         print "# User specific aliases and functions"
         print "if [ ! -f ~/.ssh/id_rsa ]; then"
         print "	echo 'No public/private RSA keypair found.'"
-        print "	ssh-keygen -f ~/.ssh/id_rsa -N \"\""
+        print "	ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N \"\""
+        print "	cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys"
         print "fi"
