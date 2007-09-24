@@ -423,6 +423,12 @@ def seq2tplstr(seq):
     except:
         return None
 
+
+def nxor(*args):
+    """nxor(varargs args)
+    N-way function, only one condition may be true otherwise false. """
+    return len([x for x in args if x]) == 1
+
 from kusu.ngedit.partition import *
 from kusu.partitiontool import partitiontool
 

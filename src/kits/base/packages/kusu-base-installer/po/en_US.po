@@ -371,8 +371,7 @@ msgid "Extracting template Initial Ram Disk\n"
 msgstr "Extracting template Initial Ram Disk\n"
 
 msgid "buildinitrd_Help"
-msgstr "buildinitrd [-h|-v| -n node_group {-i image_name} {-r}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by ngedit.  It can build both initramfs\nand initrd type images.  By default it will build initramfs.  The -r \n
-argument causes cramfs initrd's to be built instead."
+msgstr "buildinitrd [-h|-v| -n node_group {-i image_name} {-r}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by ngedit.  It can build both initramfs\nand initrd type images.  By default it will build initramfs.  The -r \nargument causes cramfs initrd's to be built instead."
 
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
@@ -724,4 +723,23 @@ msgid "Could not move the selected nodes to the '%s' node group. They may be alr
 
 msgstr "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
 
+msgid "ngedit_Help"
+msgstr "Node Group Editor is an administrative tool for nodegroup related operations,\nincluding their copying/deletion/modification. It allows ultimate control over\nthe specific behavior/configuration of node groups. ngedit is used as follows:\nngedit [ -l | { -p | -s | -d } <NGName> | -c <NGName> -n <NewNGName> ]"
 
+msgid "ngedit_usage_delete"
+msgstr "Delete specified nodegroup"
+
+msgid "ngedit_usage_copy"
+msgstr "Copy specified nodegroup"
+
+msgid "ngedit_usage_new"
+msgstr "NG name to use for a new nodegroup"
+
+msgid "ngedit_usage_stale"
+msgstr "Print all nodes with expired state for a given NG"
+
+msgid "ngedit_usage_list"
+msgstr "List all nodegroups"
+
+msgid "ngedit_usage_print"
+msgstr "Provide detailed printout of a specified NG"

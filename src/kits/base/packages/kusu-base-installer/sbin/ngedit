@@ -2315,12 +2315,12 @@ class NGEApp(KusuApp):
             sys.exit(1)
 
         # setup the CL parser
-        self.parser.add_option('-d', '--delete',    dest='ngdel')
-        self.parser.add_option('-c', '--copy',      dest='ngsrc')
-        self.parser.add_option('-n', '--new',       dest='ngnew')
-        self.parser.add_option('-s', '--stale',     dest='ngstale')
-        self.parser.add_option('-l', '--list',      dest='list', action="store_true")
-        self.parser.add_option('-p', '--print',     dest='ngprint')
+        self.parser.add_option('-d', '--delete',    dest='ngdel', help=self._("ngedit_usage_delete"))
+        self.parser.add_option('-c', '--copy',      dest='ngsrc', help=self._("ngedit_usage_copy"))
+        self.parser.add_option('-n', '--new',       dest='ngnew', help=self._("ngedit_usage_new"))
+        self.parser.add_option('-s', '--stale',     dest='ngstale',help=self._("ngedit_usage_stale"))
+        self.parser.add_option('-l', '--list',      dest='list', action="store_true", help=self._("ngedit_usage_list"))
+        self.parser.add_option('-p', '--print',     dest='ngprint', help=self._("ngedit_usage_print"))
         
     def printHelp(self):
         self.parser.print_help()
@@ -2342,6 +2342,12 @@ class NGEApp(KusuApp):
         if bool(options.ngsrc) ^ bool(options.ngnew):
             #exactly one of them was specified
             self.stderrMessage('ngedit: both ngsrc and ngdst must be specified to copy a node group\n')
+            self.printHelp()
+            sys.exit(1)
+
+        if not nxor(bool(options.list), bool(options.ngdel), bool(options.ngsrc), \
+                    bool(options.ngstale), bool(options.ngprint)):
+            self.stderrMessage('ngedit: Invalid combination of command-line options specified.\n')
             self.printHelp()
             sys.exit(1)
 
@@ -2423,9 +2429,15 @@ class NGEApp(KusuApp):
                 print "%s : %s : %s" %(ngname,ngdesc,type)
 
         elif self.action == NGE_PRNSTL:
-            query = ''' select n.name, n.lastupdate, n.rack, n.rank from nodes n,
-                        nodegroups ng where n.state = 'Expired' and n.ngid = ng.ngid
-                        and ng.ngname = '%s' ''' % self.ng
+            self.__db.execute("select ngid from nodegroups where ngname = '%s'" %self.ng)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+
+            query = ''' select n.name, n.lastupdate, n.rack, n.rank from nodes n
+                        where n.state = 'Expired' and n.ngid = %s ''' %ngid
             self.__db.execute(query)
             rv = self.__db.fetchall()
             rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
