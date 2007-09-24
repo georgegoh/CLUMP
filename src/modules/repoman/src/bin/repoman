@@ -17,6 +17,7 @@ import kusu.util.log as kusulog
 
 from path import path
 import os
+import time
 import sys
 from optparse import SUPPRESS_HELP
 
@@ -309,7 +310,7 @@ class RepoManApp(KusuApp):
         if options.new:
             self.new(options.reponame)
         elif options.snapshot:
-            self.snapshot(options.new)
+            self.snapshot(options.reponame)
         elif options.list:
             self.list()
         elif options.delete:
