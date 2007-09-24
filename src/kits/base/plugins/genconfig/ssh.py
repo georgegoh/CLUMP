@@ -49,31 +49,31 @@ class thisReport(Report):
             sys.exit(-1)
 
         else:
-            print 'Host 127.0.0.1\n\tStrictHostKeyChecking no'
-            print 'Host localhost\n\tStrictHostKeyChecking no'
-            print 'Host localhost.localdomain\n\tStrictHostKeyChecking no'
             data = self.db.fetchall()
             for row in data:
                 ip, name, suffix, boot = row
 
-                if suffix and suffix != '':
-                    hostname = '%s%s.%s' % (name, suffix ,dnszone)
-                else:
-                    hostname = '%s.%s' % (name, dnszone)
-       
                
                 print 'Host ' + ip
                 print '\tStrictHostKeyChecking no'
 
-                print 'Host ' + hostname 
+                print 'Host %s%s.%s' % (name, suffix ,dnszone)
                 print '\tStrictHostKeyChecking no'
-            
+           
+                print 'Host ' + '%s.%s' % (name, dnszone) 
+                print '\tStrictHostKeyChecking no'
+                
+                print 'Host ' + name
+                print '\tStrictHostKeyChecking no'
+
                 print
 
-            print '# ssh_config defaults'
             print 'Host *'
+            print '\t# ssh_config defaults'
             print '\tGSSAPIAuthentication yes'
             print '\tForwardX11Trusted yes'
             print '\tSendEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES'
             print '\tSendEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT'
             print '\tSendEnv LC_IDENTIFICATION LC_ALL'
+            print '\t# kusu defaults'
+            print '\tNoHostAuthenticationForLocalhost yes'
