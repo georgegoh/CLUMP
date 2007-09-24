@@ -69,6 +69,7 @@ install::
 	install -m644 sbin/S02KusuDHCPD.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuRepo.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuSSH.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuSSHHosts.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuSyslog.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuApache.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuNfsExport.rc.py $(ROOT)/etc/rc.kusu.d/

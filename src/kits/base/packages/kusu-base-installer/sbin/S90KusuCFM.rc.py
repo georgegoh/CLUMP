@@ -25,7 +25,8 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/passwd'),
                  path('/etc/group'),
                  path('/etc/hosts'),
-                 path('/etc/hosts.equiv')]
+                 path('/etc/hosts.equiv'),
+                 path('/etc/ssh/ssh_config')]
 
         ngs = self.dbs.NodeGroups.select()
 
