@@ -2163,12 +2163,11 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #       driverpatch nodegroup id=curNG['ngid']
 
         key_lst = self.__diffNG.keys()
-        if Set(key_lst) & Set(['comps','packs','repoid','initrd']) \
-             and curNG['installtype'] != 'package' :
+        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['modules','repoid','initrd']):
             #buildinitrd
             self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
 
-        if curNG['installtype'] != 'package' and ('modules' in key_lst or 'repoid' in key_lst):
+        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['comps','packs','repoid']): 
             #buildimage
             self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
 
