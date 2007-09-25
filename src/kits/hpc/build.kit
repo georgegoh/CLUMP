@@ -134,15 +134,15 @@ modulesopenmpignupkg.filename = 'modules-openmpi-gnu-0.1-1.src.rpm'
 # package openmpi-gnu
 # this uses an existing binary rpm
 openmpiPkg = RPMPackage()
-openmpiPkg.name = 'openmpi'
+openmpiPkg.name = 'openmpi-interconnects-gnu'
 openmpiPkg.version = '1.2.3'
 openmpiPkg.release = '1'
 
 # each arch uses a different binary rpm
 if getArch() == 'x86':
-    openmpiPkg.filename = 'openmpi-1.2.3-1.i386.rpm'
+    openmpiPkg.filename = 'openmpi-interconnects-gnu-1.2.3-1.i386.rpm'
 if getArch() == 'x86_64':
-    openmpiPkg.filename = 'openmpi-1.2.3-1.x86_64.rpm'
+    openmpiPkg.filename = 'openmpi-interconnects-gnu-1.2.3-1.x86_64.rpm'
 
 # package hdf5-openmpi-gnu
 # this uses an existing binary rpm
