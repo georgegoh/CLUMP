@@ -241,6 +241,7 @@ class Navigator(object, KusuApp):
                     else:
                         loop=False
                 elif result is NAV_BACK:
+                    self.currentScreen.rollback()
                     self.mainScreen.finish()
                     self.mainScreen = PlatformScreen(self.screenTitle)
                     self.selectScreen(self.currentStep-1)

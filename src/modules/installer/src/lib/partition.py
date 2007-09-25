@@ -76,45 +76,12 @@ class PartitionScreen(InstallerScreen):
 
         if not self.disk_profile:
             self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True)
+            self.prompt_for_default_schema = True
 
-        first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
-        first_disk = self.disk_profile.disk_dict[first_disk_key]
-        if first_disk.partition_dict:
-            # tell user a schema exists and ask to proceed.
-            msg = 'The installer has detected that one of the disks  ' + \
-                  'is already partitioned. Do you want to use the ' + \
-                  'default schema, edit the existing schema, or ' + \
-                  'clear all partitions on the system?'
-            result = self.selector.popupDialogBox('Partitions exist',
-                                                  msg,
-                                                 ['Use Default', 'Use Existing', 'Clear All Partitions'])
-            if str(result) == 'use default':
-                logger.debug('Default chosen')
-                self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
-                schema = vanillaSchemaLVM()
-                logger.debug('%s' % schema)
-                setupDiskProfile(self.disk_profile, schema)
-            elif str(result) == 'clear all partitions':
-                logger.debug('Clear all partitions')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True)
-            else:
-                logger.debug('Use Existing')
+        if self.prompt_for_default_schema:
+            self.promptForDefaultSchema()
+            self.prompt_for_default_schema = False
 
-        else:
-            # tell user nothing exists and ask to proceed.
-            msg = 'The installer has detected that no disk(s) ' + \
-                  'on this system are partitioned. Do you want to ' + \
-                  'use the default schema?'
-            result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
-                                                  msg,
-                                                 ['Use Default', "Don't Use Default"])
-            if str(result) == 'use default':
-                logger.debug('Default chosen')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True)
-                schema = vanillaSchemaLVM()
-                logger.debug('%s' % schema)
-                setupDiskProfile(self.disk_profile, schema)
- 
         # retrieve info about logical volumes and lv groups
         lvg_keys = self.disk_profile.lvg_dict.keys()
         for key in sorted(lvg_keys):
@@ -173,14 +140,58 @@ class PartitionScreen(InstallerScreen):
                             'system hardware to make sure that you have ' + \
                             'installed your disks correctly.'
 
+    def promptForDefaultSchema(self):
+        first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
+        first_disk = self.disk_profile.disk_dict[first_disk_key]
+        if first_disk.partition_dict:
+            # tell user a schema exists and ask to proceed.
+            msg = 'The installer has detected that one of the disks  ' + \
+                  'is already partitioned. Do you want to use the ' + \
+                  'default schema, edit the existing schema, or ' + \
+                  'clear all partitions on the system?'
+            result = self.selector.popupDialogBox('Partitions exist',
+                                                  msg,
+                                                 ['Use Default', 'Use Existing', 'Clear All Partitions'])
+            if str(result) == 'use default':
+                logger.debug('Default chosen')
+                self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
+                schema = vanillaSchemaLVM()
+                logger.debug('%s' % schema)
+                setupDiskProfile(self.disk_profile, schema)
+            elif str(result) == 'clear all partitions':
+                logger.debug('Clear all partitions')
+                self.disk_profile = partitiontool.DiskProfile(fresh=True)
+            else:
+                logger.debug('Use Existing')
+
+        else:
+            # tell user nothing exists and ask to proceed.
+            msg = 'The installer has detected that no disk(s) ' + \
+                  'on this system are partitioned. Do you want to ' + \
+                  'use the default schema?'
+            result = self.selector.popupDialogBox('Use Default Partitioning Scheme?',
+                                                  msg,
+                                                 ['Use Default', "Don't Use Default"])
+            if str(result) == 'use default':
+                logger.debug('Default chosen')
+                self.disk_profile = partitiontool.DiskProfile(fresh=True)
+                schema = vanillaSchemaLVM()
+                logger.debug('%s' % schema)
+                setupDiskProfile(self.disk_profile, schema)
+ 
+    def rollback(self):
+        self.prompt_for_default_schema = True
+
     def validate(self):
         errList = []
-        # verify that /, swap, and /depot exist.
+        # verify that /, swap, /depot, and /boot exist.
         mntpnts = self.disk_profile.mountpoint_dict.keys()
         if '/' not in mntpnts:
             errList.append("'/' partition is required.")
         if '/depot' not in  mntpnts:
             errList.append("'/depot' partition is required.")
+        if '/boot' not in  mntpnts:
+            errList.append("'/boot' partition is required.")
         has_swap = False
         for disk in self.disk_profile.disk_dict.itervalues():
             for part in disk.partition_dict.itervalues():
@@ -189,6 +200,15 @@ class PartitionScreen(InstallerScreen):
                     break
         if not has_swap:
             errList.append("swap partition is required.")
+
+        # verify that /, /boot and /depot are to be formatted
+        for mntpnt in ['/', '/boot', '/depot']:
+            vol = self.disk_profile.mountpoint_dict[mntpnt]
+            if vol.do_not_format or vol.leave_unchanged:
+                errList.append('%s is flagged as "do_not_format". ' % mntpnt + \
+                               'Installation cannot continue until this ' + \
+                               'flag is cleared.')
+
         if errList:
             errMsg = _('Please correct the following errors:')
             for i, string in enumerate(errList):
@@ -196,6 +216,12 @@ class PartitionScreen(InstallerScreen):
             return False, errMsg
         else:
             return True, ''
+
+    def willBeFormatted(self, vol):
+        if vol.do_not_format or vol.leave_unchanged:
+            return False
+        else:
+            return True
 
     def swapPartitionExists(self):
         for disk in self.disk_profile.disk_dict.itervalues():
@@ -220,22 +246,6 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
-
-        # check if we have a swap partition and a root partition.
-        missing_partitions = ''
-        if not self.disk_profile.mountpoint_dict.has_key('/'):
-            missing_partitions += '\troot (/)\n'
-
-        if not self.swapPartitionExists():
-            missing_partitions += '\tswap\n'
-
-        if missing_partitions:
-            self.selector.popupMsg(_('Partitions Not Defined'),
-                                   _('The installation cannot proceed until ' + \
-                                     'you define the following partitions:\n' + \
-                                      missing_partitions))
-            self.selector.currentStep = self.selector.currentStep - 1
-            return
 
         missing_fs_types = self.checkMissingFSTypes()
         if missing_fs_types:

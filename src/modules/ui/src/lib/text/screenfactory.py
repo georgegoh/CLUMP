@@ -82,6 +82,14 @@ class BaseScreen(object):
         """
         return True, 'Success'
 
+    def rollback(self):
+        """(Abstract) Rollback method actions called to rollback changes made in this screen.
+
+        rollback() is called by the framework after the 'Prev' button is pressed
+        on the UI.
+        """
+        pass
+
     def formAction(self):
         """(Abstract)
         
