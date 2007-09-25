@@ -88,6 +88,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             UnrecognizedKitMediaError):
         baseScreen.selector.popupMsg('Cannot Mount CD/DVD device',
                                 "Couldn't mount the CD/DVD. Please wait and try again.")
+        return
 
     kl.debug('Get OS Dist')
 
