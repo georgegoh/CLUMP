@@ -1026,7 +1026,6 @@ def validateNodeFormat(nodestr):
 
          if special:
             if nodestr[i].isdigit():
-               print "ERROR: Cannot have number after special charactor!"
                return False
 
          special = 0
@@ -1036,7 +1035,6 @@ def validateNodeFormat(nodestr):
         return False
 
      if not alphanum:
-        print "Error: Must have an alphanumeric value also when using special charactor"
         return False
 
      return True
