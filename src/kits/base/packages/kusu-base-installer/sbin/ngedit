@@ -102,6 +102,9 @@ class scrNGEMain(USXBaseScreen):
 
     def doDeleteAction(self):
         ngid = self.__nglistbox.current()
+        if 1 <= ngid and ngid <= 5:
+            self.selector.popupMsg("Node Group Deletion", "Deletion of reserved node groups is not permitted.")
+            return NAV_NOTHING
 
         query = "select nid from nodes where ngid = %s" %ngid
         self.database.execute(query)
@@ -2421,6 +2424,10 @@ class NGEApp(KusuApp):
                 sys.exit(self.action)
             ngid = rv[0]
 
+            if ngid==1:
+                self.stdoutMessage("ngedit: Installer nodegroup is not allowed to be copied\n")
+                sys.exit(self.action)
+
             query = "select ngid from nodegroups where ngname = '%s'" %self.ngnew
             self.__db.execute(query)
             rv = self.__db.fetchone()
@@ -2442,6 +2449,10 @@ class NGEApp(KusuApp):
                 self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
                 sys.exit(self.action)
             ngid = rv[0]
+
+            if 1<=ngid and ngid<=5:
+                self.stdoutMessage("ngedit: Deletion of reserved node groups is not permitted.\n")
+                sys.exit(self.action)
 
             #delete only if no hosts using it
             query = "select nid from nodes where ngid = %s" % ngid
