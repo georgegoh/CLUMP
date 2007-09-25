@@ -993,6 +993,7 @@ def validateNodeFormat(nodestr):
      special = 0
      mini_rank = 0
      rack_found = 0
+     alphanum = 0
 
      if nodestr.find(' ') > 0:
         return False
@@ -1023,9 +1024,19 @@ def validateNodeFormat(nodestr):
                mini_rank = 1
                continue
 
+         if special:
+            if nodestr[i].isdigit():
+               print "ERROR: Cannot have number after special charactor!"
+               return False
+
          special = 0
+         alphanum = 1
 
      if not mini_rank:
+        return False
+
+     if not alphanum:
+        print "Error: Must have an alphanumeric value also when using special charactor"
         return False
 
      return True
@@ -1394,3 +1405,20 @@ if __name__ == "__main__":
       print "PASS: Format is INVALID (Whitespace in hostname format)"
    else:
       print "FAIL: Evaluated format is VALID"
+
+   if validateNodeFormat("hello-#R0") == False:
+      print "PASS: Format is INVALID (Number after special charactor)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if validateNodeFormat("#R") == False:
+      print "PASS: Format is INVALID (No other charactors other than special charactor)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if validateNodeFormat("hello") == False:
+      print "PASS: Format is INVALID (Minimal rank not specified)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+
