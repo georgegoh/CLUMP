@@ -90,6 +90,14 @@ class scrNGEMain(USXBaseScreen):
        
         #assign new initrd
         imagename = 'initrd.%s.%s.img' %(newNG['installtype'], newNG.PKval)
+        tmpNG = NodeGroup(ngid=newNG.PKval, initrd=imagename)
+        tmpNG.syncToDB(self.database)
+        #copy initrd, assuming it exists for original NG
+        if os.path.isfile(os.path.join(BootDir, newNG['initrd'])):
+            shutil.copyfile(os.path.join(BootDir, newNG['initrd']), os.path.join(BootDir,imagename))
+        else:
+            kl.info("WARNING: initrd '%s' does not exist for nodegroup '%s'" %(imagename,newNG['ngname']))
+        
         return NAV_NOTHING
 
     def doDeleteAction(self):
@@ -394,15 +402,18 @@ class scrNGEEdit_Boot(USXBaseScreen):
         installtype = {'package':'Package Based', 'diskless':'Diskless', 
                        'disked': 'Imaged Disked'
                       }
-        self.screenGrid = snack.Grid(2, 3)
+        self.screenGrid = snack.Grid(2, 4)
 
         lbl1 = snack.Label('Kernel: ')
         lbl2 = snack.Label('Kernel Params: ')
         lbl3 = snack.Label('Install Type: ')
+        lbl4 = snack.Label('Initrd: ')
         w = min(max(len(curNG['kernel']), len(curNG['kparams']), MAXWIDTH*1/2), MAXWIDTH)
         self.__entries = {}
         self.__entries['kernel'] = snack.Entry(width=w, text=curNG['kernel'])
         self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
+        self.__entries['initrd'] = snack.Entry(width=w, text=curNG['initrd'])
+        self.__entries['initrd'].setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
 
         rblist = []
         for key,val in installtype.items():
@@ -413,10 +424,12 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
         self.screenGrid.setField(lbl1,0,0,anchorRight=1)
         self.screenGrid.setField(lbl2,0,1,anchorRight=1)
-        self.screenGrid.setField(lbl3,0,2,(0,1,0,0),anchorRight=1)
+        self.screenGrid.setField(lbl4,0,2,anchorRight=1)
+        self.screenGrid.setField(lbl3,0,3,(0,1,0,0),anchorRight=1)
         self.screenGrid.setField(self.__entries['kernel'], 1,0,anchorLeft=1)
         self.screenGrid.setField(self.__entries['kparams'],1,1,anchorLeft=1)
-        self.screenGrid.setField(self.__InstallTypeRb,1,2,(0,1,0,0),anchorLeft=1)
+        self.screenGrid.setField(self.__entries['initrd'], 1,2,anchorLeft=1)
+        self.screenGrid.setField(self.__InstallTypeRb,1,3,(0,1,0,0),anchorLeft=1)
 
     def validate(self):
         kernel = self.__entries['kernel'].value().strip()
@@ -430,8 +443,11 @@ class scrNGEEdit_Boot(USXBaseScreen):
         '''
         curNG['kernel'] = self.__entries['kernel'].value().strip()
         curNG['kparams'] = self.__entries['kparams'].value().strip()
-        curNG['installtype'] = self.__InstallTypeRb.getSelection()
-
+        installtype = self.__InstallTypeRb.getSelection()
+        if installtype <> curNG['installtype']:
+            #change initrd name
+            curNG['initrd'] = "initrd.%s.%s.img" %(installtype, curNG.PKval)
+        curNG['installtype'] = installtype
 
 class scrNGEEdit_Components(USXBaseScreen):
     name = 'Components'
@@ -1857,20 +1873,36 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             self.selector.popupMsg("DB Update", "Database was successfully updated")
 
             #clean up scripts
-            if 'scripts' in self.__diffNG.keys():
-                delScripts = Set(origNG['scripts']) - Set(curNG['scripts'])
-                if delScripts:
-                    tplstr = "'%s'" + " , '%s'"*(len(delScripts)-1)
-                    tplstr = tplstr % tuple(delScripts)
-                    query = "select script from scripts where script in (%s)" % tplstr
+            try:
+                if 'scripts' in self.__diffNG.keys():
+                    delScripts = Set(origNG['scripts']) - Set(curNG['scripts'])
+                    if delScripts:
+                        tplstr = "'%s'" + " , '%s'"*(len(delScripts)-1)
+                        tplstr = tplstr % tuple(delScripts)
+                        query = "select script from scripts where script in (%s)" % tplstr
+                        self.database.execute(query)
+                        rv = self.database.fetchall()
+                        dbScripts = Set([x for x, in rv])   #scripts in use
+                        delScripts -= dbScripts
+                        for script in delScripts:
+                            delscr = os.path.join(CustomScriptDir, script)
+                            if os.path.isfile(delscr):
+                                os.remove(delscr)
+            except:
+                #proceed despite cleanup failure
+                kl.debug("Final Actions: script cleanup failed for ngname='%s'" %curNG['ngname'])
+
+            #clean up initrd
+            try:
+                if 'initrd' in self.__diffNG.keys():
+                    query = "select ngid from nodegroups where initrd = '%s'" %origNG['initrd']
                     self.database.execute(query)
-                    rv = self.database.fetchall()
-                    dbScripts = Set([x for x, in rv])   #scripts in use
-                    delScripts -= dbScripts
-                    for script in delScripts:
-                        delscr = os.path.join(CustomScriptDir, script)
-                        if os.path.isfile(delscr):
-                            os.remove(delscr)
+                    rv = self.database.fetchone()
+                    if not rv and os.path.isfile(os.path.join(BootDir, origNG['initrd'])):
+                        os.remove(os.path.join(BootDir, origNG['initrd']))
+            except:
+                #proceed despite cleanup failure
+                kl.debug("Final Actions: initrd cleanup failed for initrd='%s'" %origNG['initrd'])
 
         return NAV_FORWARD
 
@@ -2128,7 +2160,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #       driverpatch nodegroup id=curNG['ngid']
 
         key_lst = self.__diffNG.keys()
-        if ('comps' in key_lst or 'packs' in key_lst or 'repoid' in key_lst) \
+        if Set(key_lst) & Set(['comps','packs','repoid','initrd']) \
              and curNG['installtype'] != 'package' :
             #buildinitrd
             self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
