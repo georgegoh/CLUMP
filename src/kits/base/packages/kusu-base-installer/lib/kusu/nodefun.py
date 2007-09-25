@@ -994,7 +994,11 @@ def validateNodeFormat(nodestr):
      mini_rank = 0
      rack_found = 0
 
+     if nodestr.find(' ') > 0:
+        return False
+  
      for i in range(0, len(nodestr)):
+
          if nodestr[i].isdigit():
             digit_flag = 1
             continue
@@ -1383,5 +1387,10 @@ if __name__ == "__main__":
 
    if validateNodeFormat("compute-room-3452-#R") == False:
       print "PASS: Format is INVALID (Missing rank number only rack specified)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if validateNodeFormat("hello world") == False:
+      print "PASS: Format is INVALID (Whitespace in hostname format)"
    else:
       print "FAIL: Evaluated format is VALID"
