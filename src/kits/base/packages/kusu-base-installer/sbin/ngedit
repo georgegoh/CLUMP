@@ -37,6 +37,7 @@ LEFT=kusuwidgets.LEFT
 CENTER=kusuwidgets.CENTER
 RIGHT=kusuwidgets.RIGHT
 CustomScriptDir = "/depot/repos/custom_scripts/"
+BootDir = "/tftpboot/kusu/"
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -87,6 +88,8 @@ class scrNGEMain(USXBaseScreen):
 
         newNG.syncToDB(self.database)
        
+        #assign new initrd
+        imagename = 'initrd.%s.%s.img' %(newNG['installtype'], newNG.PKval)
         return NAV_NOTHING
 
     def doDeleteAction(self):
@@ -363,7 +366,7 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        self.__kerneldir = "/tftpboot/kusu/"
+        self.__kerneldir = BootDir
 
     def setCallbacks(self):
 
@@ -2315,12 +2318,13 @@ class NGEApp(KusuApp):
             sys.exit(1)
 
         # setup the CL parser
-        self.parser.add_option('-d', '--delete',    dest='ngdel', help=self._("ngedit_usage_delete"))
-        self.parser.add_option('-c', '--copy',      dest='ngsrc', help=self._("ngedit_usage_copy"))
-        self.parser.add_option('-n', '--new',       dest='ngnew', help=self._("ngedit_usage_new"))
-        self.parser.add_option('-s', '--stale',     dest='ngstale',help=self._("ngedit_usage_stale"))
-        self.parser.add_option('-l', '--list',      dest='list', action="store_true", help=self._("ngedit_usage_list"))
-        self.parser.add_option('-p', '--print',     dest='ngprint', help=self._("ngedit_usage_print"))
+        self.parser.add_option('-d', '--delete',dest='ngdel',  help=self._("ngedit_usage_delete"))
+        self.parser.add_option('-c', '--copy',  dest='ngsrc',  help=self._("ngedit_usage_copy"))
+        self.parser.add_option('-n', '--new',   dest='ngnew',  help=self._("ngedit_usage_new"))
+        self.parser.add_option('-s', '--stale', dest='ngstale',help=self._("ngedit_usage_stale"))
+        self.parser.add_option('-l', '--list',  dest='list',   help=self._("ngedit_usage_list"),
+                               action="store_true")
+        self.parser.add_option('-p', '--print', dest='ngprint',help=self._("ngedit_usage_print"))
         
     def printHelp(self):
         self.parser.print_help()
@@ -2345,8 +2349,8 @@ class NGEApp(KusuApp):
             self.printHelp()
             sys.exit(1)
 
-        if not nxor(bool(options.list), bool(options.ngdel), bool(options.ngsrc), \
-                    bool(options.ngstale), bool(options.ngprint)):
+        if not len([x for x in [bool(options.list), bool(options.ngdel), bool(options.ngsrc), \
+                    bool(options.ngstale), bool(options.ngprint)] if x]) <= 1:
             self.stderrMessage('ngedit: Invalid combination of command-line options specified.\n')
             self.printHelp()
             sys.exit(1)
