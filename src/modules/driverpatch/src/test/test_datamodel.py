@@ -50,23 +50,23 @@ class TestDataModel(object):
 
         # installer nodegroup
         installer = self.dbinst.NodeGroups(ngname='installer nodegroup',
-                                  type='installer') 
+                                  type='installer',installtype='package') 
         installer.nodes.append(node)
         installer.save()
         installer.flush()
         
         # compute nodegroup
-        compute = self.dbinst.NodeGroups(ngname='compute nodegroup',type='compute')
+        compute = self.dbinst.NodeGroups(ngname='compute nodegroup',type='compute',installtype='package')
         compute.save()
         compute.flush()
         
         # compute-imaged nodegroup
         computeimg = self.dbinst.NodeGroups(ngname='compute-imaged nodegroup',
-            type='compute')
+            type='compute',installtype='disked')
             
         # compute-diskless nodegroup
         computediskless = self.dbinst.NodeGroups(ngname='compute-diskless nodegroup',
-            type='compute')
+            type='compute',installtype='diskless')
         computediskless.save()
         computediskless.flush()
 
@@ -161,12 +161,11 @@ class TestDataModel(object):
         li.sort()
         
         assert li == names
-        
+
+        # nothing should be returned since the installtype is diskless
         dpacks = dm.getDriverPacks(name='compute-diskless')
-        li = [dpack.dpname for dpack in dpacks]
-        li.sort()
-        assert li == names
-        
+        assert not dpacks
+
         dpacks = dm.getDriverPacks(id='1')
         li = [dpack.dpname for dpack in dpacks]
         li.sort()
