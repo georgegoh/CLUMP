@@ -57,7 +57,7 @@ class thisReport(Report):
                 print 'Host ' + ip
                 print '\tStrictHostKeyChecking no'
 
-                if not suffix:
+                if suffix:
                     print 'Host %s%s.%s' % (name, suffix ,dnszone)
                     print '\tStrictHostKeyChecking no'
                
