@@ -152,6 +152,46 @@ class NodeFun(object, KusuApp):
         #t2=time.time()
         #print "Time Spent: getNodeFormat(): %f" % (t2-t1)
 
+    def validateNodeFormat(self, nodestr):
+        """validateNodeFormat()
+        Returns true if the string format is valid, false if not."""
+        digit_flag = 0
+        special = 0
+        mini_rank = 0
+        rack_found = 0
+
+        for i in range(0, len(nodestr)):
+            if nodestr[i].isdigit():
+               digit_flag = 1
+               continue
+   
+            if digit_flag and nodestr[i] == "#":
+               if nodestr[i-1].isdigit():
+                  return False
+ 
+            if nodestr[i] == '#':
+               if special == 1:
+                  return False
+               special = 1
+               continue
+
+            if special:
+               if nodestr[i] == 'R':
+                  rack_found = 1
+                  continue
+
+            if special:
+               if nodestr[i] == 'N':
+                  mini_rank = 1
+                  continue
+
+            special = 0
+
+        if not mini_rank:
+           return False
+
+        return True
+
     def _hostNameParse(self):
         """_hostNameParse()
         Parses the node format and generates the appropriate node name """
@@ -1264,7 +1304,7 @@ if __name__ == "__amain__":
     else:
         print "* Testing NodeFun.moveNodes(\"[installer03, installer04]\"): Result: FAIL (Valid Nodegroup, NOT Moving nodes to Installer)"
 
-if __name__ == "__main__":
+if __name__ == "__amain__":
     #myNodeFun = NodeFun()
 
     #movegroups = ["Compute", "Compute Disked", "Compute Diskless"]
@@ -1301,3 +1341,45 @@ if __name__ == "__main__":
         print "COMMAND: /opt/kusu/sbin/addhost --file='%s' --interface=%s --nodegroup='%s'" % (tmpfile, interface, "installer-rhel-5-x86_64") # Installer ngid
         #os.system("/opt/kusu/sbin/addhost --file=%s --interface=%s --nodegroup='%s'" % (tmpfile, interface, myNodeFun.getNodegroupNameByName("installer-rhel-5-x86_64")))
 
+if __name__ == "__main__":
+   foo = NodeFun()
+
+   if foo.validateNodeFormat("1234#R#N-ABCDEF") == False:
+      print "PASS: Format is INVALID (number next to special charactor)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("compute-#R-#N"):
+      print "PASS: Format is VALID (Valid format)"
+   else:
+      print "FAIL: Evaluated format is INVALID"
+
+   if foo.validateNodeFormat("compute-room-3452-#R") == False:
+      print "PASS: Format is INVALID (Missing Rank, has only rack)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("1#N") == False:
+      print "PASS: Format is INVALID (Number next to rank)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("1#R") == False:
+      print "PASS: Format is INVALID (Number next to rack)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("#N#N#N#R") == False:
+      print "PASS: Format is INVALID (Special charactor next to another special charactor)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("1-2-#N-#N-#N") == True:
+      print "PASS: Format is VALID (Rank number minimally specified)"
+   else:
+      print "FAIL: Evaluated format is VALID"
+
+   if foo.validateNodeFormat("compute-room-3452-#R") == False:
+      print "PASS: Format is INVALID (Missing rank number only rack specified)"
+   else:
+      print "FAIL: Evaluated format is VALID"
