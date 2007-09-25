@@ -183,7 +183,7 @@ def reduceLogicalVolume(lv_path, new_extents, extent_size, fs_type):
         size_MB = new_extents * extent_size / 1024 / 1024
         size_str = str(size_MB) + 'M'
         out, err = runCommand('resize2fs %s %s' % (lv_path, size_str))
-    out, err = runCommand('lvm lvreduce -l%d %s' % (new_extents, lv_path))
+    out, err = runCommand('lvm lvreduce -l%d %s -f' % (new_extents, lv_path))
 
 def removeLogicalVolume(lv_path):
     out, err = runCommand('lvm lvremove -f %s' % lv_path)
