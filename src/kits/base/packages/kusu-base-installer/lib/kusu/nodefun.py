@@ -930,7 +930,7 @@ class NodeFun(object, KusuApp):
             self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes WHERE nodes.name='%s' AND nodes.ngid=%s" % (node, self._nodeGroupType))
             data = bool(self._dbReadonly.fetchone()[0])
             if data:
-               print "Node %s already exists in destination node group" % node
+               #print "Node %s already exists in destination node group" % node
                dupeList.append(node)
 
         if dupeList:
