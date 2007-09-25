@@ -28,6 +28,7 @@ from kusu.core.db import KusuDB
 from kusu.ngedit.ngedit import *
 from kusu.ngedit.partition import *
 import kusu.util.log as kusulog
+from kusu.nodefun import validateNodeFormat
 
 global curNG, origNG
 
@@ -281,6 +282,11 @@ class scrNGEEdit_General(USXBaseScreen):
         rv = self.database.fetchone()
         if rv:
             return False, "Specified NG name is in use. Please change."
+
+        #validate nameformat
+        nf = self.__entries['nameformat'].value().strip()
+        if not validateNodeFormat(nf):
+            return False, "Invalid name format"
         return True, 'Success'
 
     def formAction(self):
