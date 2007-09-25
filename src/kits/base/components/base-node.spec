@@ -31,6 +31,7 @@ Requires: pdsh
 Requires: pdsh-rcmd-exec
 Requires: pdsh-rcmd-rsh
 Requires: pdsh-rcmd-ssh
+Requires: modules
 Requires: kusu-core
 Requires: kusu-path
 Requires: kusu-util

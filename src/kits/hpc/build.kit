@@ -51,13 +51,6 @@ mpich1ethernetgnupkg.version = '1.2.7p1'
 mpich1ethernetgnupkg.release = '1'
 mpich1ethernetgnupkg.filename = 'mpich1-ethernet-gnu-1.2.7p1-1.src.rpm'
 
-# package modules
-modulespkg = SRPMPackage()
-modulespkg.name = 'modules'
-modulespkg.version = '3.2.5'
-modulespkg.release = '1'
-modulespkg.filename = 'modules-3.2.5-1.src.rpm'
-
 # package atlas
 # this uses an existing binary rpm
 # untuned and generic
@@ -198,7 +191,6 @@ mpich2Comp.description = 'This component contains a collection of MPICH2 librari
 # adding package dependencies for component-MPICH2-libraries
 mpich2Comp.addDep(mpich2Pkg)
 mpich2Comp.addDep(modulesmpich2gnupkg)
-mpich2Comp.addDep(modulespkg)
 #mpich2Comp.addDep()
 #mpich2Comp.addDep()
 
@@ -212,7 +204,6 @@ openmpiComp.addDep(openmpiPkg)
 openmpiComp.addDep(hdf5openmpiPkg)
 openmpiComp.addDep(linpackopenmpiPkg)
 openmpiComp.addDep(modulesopenmpignupkg)
-openmpiComp.addDep(modulespkg)
 #openmpiComp.addDep()
 #openmpiComp.addDep()
 #openmpiComp.addDep()
@@ -227,7 +218,6 @@ mpich1Comp.addDep(mpich1ethernetgnupkg)
 mpich1Comp.addDep(hdf5mpich1Pkg)
 mpich1Comp.addDep(linpackmpich1Pkg)
 mpich1Comp.addDep(modulesmpich1gnupkg)
-mpich1Comp.addDep(modulespkg)
 
 # define component-HPC-libraries
 hpcLibrariesComp = DefaultComponent()
@@ -237,7 +227,6 @@ hpcLibrariesComp.description = 'This component contains a collection of HPC libr
 # adding package dependencies for component-HPC-libraries
 hpcLibrariesComp.addDep(netcdfpkg)
 hpcLibrariesComp.addDep(hdf5pkg)
-hpcLibrariesComp.addDep(modulespkg)
 hpcLibrariesComp.addDep(fftwpkg)
 hpcLibrariesComp.addDep(atlaspkg)
 hpcLibrariesComp.addDep(moduleshpclibrariespkg)
@@ -254,7 +243,6 @@ benchmarkingToolsComp.addDep(bonniepkg)
 benchmarkingToolsComp.addDep(iozonepkg)
 benchmarkingToolsComp.addDep(iperfpkg)
 benchmarkingToolsComp.addDep(streampkg)
-benchmarkingToolsComp.addDep(modulespkg)
 benchmarkingToolsComp.addDep(modulesbenchmarkingtoolspkg)
 
 # define HPC kit

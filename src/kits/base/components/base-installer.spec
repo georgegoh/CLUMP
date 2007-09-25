@@ -63,6 +63,7 @@ Requires: pdsh-mod-machines
 Requires: pdsh-mod-dshgroup
 Requires: pdsh-mod-netgroup
 Requires: pdsh-debuginfo
+Requires: modules
 Requires: kusu-cheetah
 Requires: kusu-pysqlite
 Requires: kusu-ipy
