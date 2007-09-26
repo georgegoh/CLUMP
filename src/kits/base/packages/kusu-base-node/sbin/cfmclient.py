@@ -279,7 +279,7 @@ class CFMClient:
     def getProfileVal(self, name):
         """getProfileVal - Returns the value of the NII property from
         /etc/profile.nii with any quotes removed."""
-        cmd = "grep %s /etc/profile.nii" % name
+        cmd = "grep %s /etc/profile.nii 2>/dev/null" % name
         val = ''
         for line in os.popen(cmd).readlines():
             loc = string.find(line, name)
@@ -319,7 +319,7 @@ class CFMClient:
             self.CFMBaseDir = self.getProfileVal("CFMBaseDir")
 
         # Test for local access
-        filetest = "%s/%s/opt/kusu/etc/package.lst" % (self.CFMBaseDir, self.ngid)
+        filetest = "%s/%s.package.lst" % (self.CFMBaseDir, self.ngid)
         self.log("++  Testing for: %s\n" % filetest)
         self.log("++  CFMBaseDir: %s\n" % self.CFMBaseDir)
         self.log("++  NGID = %i\n" % self.ngid)
@@ -387,6 +387,7 @@ class CFMClient:
         
         if self.__haveLocalAccess():
             # Copy the file from a directory
+            self.log("INFO:  Have local Access\n")
             if cfmfile:
                 cfmpath = "%s/%s" % (self.CFMBaseDir, source)
             else:
@@ -812,6 +813,7 @@ class CFMClient:
             self.repoid = data[0]
             self.ostype = data[1]
             self.CFMBaseDir = db.getAppglobals('CFMBaseDir')
+            self.bestinstaller = '127.0.0.1'
             
         global UPDATEFILE
         global UPDATEPACKAGE

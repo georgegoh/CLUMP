@@ -28,7 +28,7 @@ import os
 import sys
 import string
 
-from kusu.core.app import KusuApp
+from kusu.core.app import *
 from kusu.core.db import KusuDB
 from kusu.cfms import PackBuilder
 
@@ -47,7 +47,7 @@ class UpdateApp(KusuApp):
 
     def toolHelp(self):
         """toolHelp - provide a help screen for this tool."""
-        self.stdoutMessage("update_Help")
+        self.stdoutMessage("cfmsync_Help")
         sys.stdout.write('\n')
         sys.exit(0)
 
@@ -72,6 +72,7 @@ class UpdateApp(KusuApp):
     def run(self):
         """run - Run the application"""
         self.parseargs()
+        ngid=0
 
         if self.options.wantver:
             # Print version
@@ -80,6 +81,24 @@ class UpdateApp(KusuApp):
 
         if not self.options.updatefile and not self.options.updatepackages:
             self.toolHelp()
+
+        if self.options.nodegrp:
+            # Validate the node group name
+            db = KusuDB()
+            db.connect('kusudb', 'apache')
+            query = ('select ngid from nodegroups where ngname="%s"' % self.options.nodegrp)
+            try:
+                db.execute(query)
+                data = db.fetchone()
+            except:
+                self.stderrout("DB_Query_Error: %s\n", query)
+                sys.exit(-1)
+
+            if not data:
+                self.stdoutMessage('cfmsync_invalid_node_group\n')
+                sys.exit(-1)
+
+            ngid = data[0]
 
         type = 0
         if self.options.updatefile:
@@ -92,17 +111,25 @@ class UpdateApp(KusuApp):
         pb = PackBuilder()
 
         if self.options.updatepackages:
+            if os.path.exists(CFMCLIENT):
+                cmd = "%s -t %i -i self" % (CFMCLIENT, UPDATEPACKAGE)
+            else:
+                cmd = "cfmclient -t %i -i self" % UPDATEPACKAGE
+                
             if self.options.nodegrp:
                 # Only update a given nodegroup 
                 pb.getPackageList(self.options.nodegrp)
+                if ngid == 1:
+                    os.system(cmd)
             else:
                 # Update all node groups
                 pb.getPackageList()
+                os.system(cmd)
 
         if self.options.updatefile:
             size = pb.updateCFMdir()
             if size:
-                print "Distributing %i KBytes to all nodes." % (size / 1024)
+                self.stdoutMessage("Distributing %i KBytes to all nodes.\n", (size / 1024))
             
         pb.genFileList()
 
