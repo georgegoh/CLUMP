@@ -27,6 +27,7 @@ from kusu.ui.text.USXscreenfactory import USXBaseScreen
 from kusu.ui.text.USXnavigator import *
 from kusu.ui.text.screenfactory import ScreenFactory
 from kusu.ui.text.kusuwidgets import *
+from kusu.util.errors import UserExitError
 import kusu.ipfun
 
 global selectedNetwork
@@ -135,24 +136,15 @@ class NetworkRecord(object):
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
+           return True, 'Success'
         except:
            if self._thisWindow:
-              self._thisWindow.screen.finish()
+              return False, 'DB_Query_Error\n'
+           else:
               print kusuApp._("DB_Query_Error\n")
               sys.exit(-1)
+        return True, 'Success'
        
-    def updateNetworkStartIP(self, currentItem):
-        query = "UPDATE networks SET startip='%s' WHERE netid=%d" % (self._startip_field, int(currentItem))
-       
-        try:
-            self._database.connect('kusudb', 'apache')
-            self._database.execute(query)
-        except:
-            if self._thisWindow:
-               self._thisWindow.screen.finish()
-            print kusuApp._("DB_Query_Error\n")
-            sys.exit(-1)
-
     def insertNetworkEntry(self):
         query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
@@ -161,12 +153,15 @@ class NetworkRecord(object):
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
+           return True, 'Success'
         except:
             if self._thisWindow:
-                self._thisWindow.screen.finish()
-            print kusuApp._("DB_Duplicate_Error\n")
-            sys.exit(-1)
-            
+                #self._thisWindow.screen.finish()
+                return False, 'DB_Duplicate_Error\n'
+            else:
+                print kusuApp._("DB_Duplicate_Error\n")
+                sys.exit(-1)
+        
     def checkNetworkEntry(self, networkid):
         # Check if the network selected is not in use.
         netuse = 0
@@ -177,9 +172,12 @@ class NetworkRecord(object):
            netuse = self._database.fetchone()[0]
         except:
            if self._thisWindow:
-              self._thisWindow.screen.finish()
-           print self._("DB_Query_Error\n")
-           sys.exit(-1)
+              #self._thisWindow.screen.finish()
+              print kusuApp._("DB_Query_Error\n")
+              raise UserExitError
+           else:
+              print kusuApp._("DB_Query_Error\n")
+              sys.exit(-1)
             
         if int(netuse) >= 1:
                 return True
@@ -189,16 +187,19 @@ class NetworkRecord(object):
     def getNetworkList(self):   
         networkInfo = None
         query = "SELECT netid, network, subnet, netname, device, type FROM networks ORDER BY netid"
-        #try:
-        self._database.connect()
-        self._database.execute(query)
-        networkInfo = self._database.fetchall()
-        return networkInfo
-        #except:
-        #if self._thisWindow:
-        #   self._thisWindow.screen.finish()
-        #print self._("DB_Query_Error\n")
-        #sys.exit(-1)
+        try:
+           self._database.connect()
+           self._database.execute(query)
+           networkInfo = self._database.fetchall()
+           return networkInfo
+        except:
+           if self._thisWindow:
+              self._thisWindow.screen.finish()
+              print kusuApp._("DB_Query_Error\n")
+              raise UserExitError
+           else:
+              print kusuApp._("DB_Query_Error\n")
+              sys.exit(-1)
     
 class NetEditApp(object, KusuApp):
 
@@ -701,7 +702,10 @@ class NetworkEditWindow(USXBaseScreen):
             return False, self.kusuApp._(errorMsg)  
          
         global selectedNetwork
-        modifiedRecord.updateNetworkEntry(selectedNetwork)            
+        result, errorMsg = modifiedRecord.updateNetworkEntry(selectedNetwork)            
+        if not result:
+           return False, self.kusuApp._(errorMSg)
+
         return True, 'Success'
         
 class NetworkNewWindow(USXBaseScreen):
@@ -827,7 +831,9 @@ class NetworkNewWindow(USXBaseScreen):
         if not result:
             return False, self.kusuApp._(errorMsg)
         
-        modifiedRecord.insertNetworkEntry()
+        result, errorMsg = modifiedRecord.insertNetworkEntry()
+        if not result:
+           return False, self.kusuApp._(errorMsg)
             
         return True, 'Success'
 
