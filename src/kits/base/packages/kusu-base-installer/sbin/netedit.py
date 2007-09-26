@@ -178,8 +178,8 @@ class NetworkRecord(object):
         except:
            if self._thisWindow:
               self._thisWindow.screen.finish()
-        print self._("DB_Query_Error\n")
-        sys.exit(-1)
+           print self._("DB_Query_Error\n")
+           sys.exit(-1)
             
         if int(netuse) >= 1:
                 return True
