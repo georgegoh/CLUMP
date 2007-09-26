@@ -245,6 +245,15 @@ msgstr "Installing Node Status"
 msgid "addhost_window_title_unmanaged"
 msgstr "Add an unmanaged device"
 
+msgid "addhost_unmanaged_instructions"
+msgstr "Type a hostname, choose DHCP if the device is able to get an IP dynamically. Otherwise, type an IP address"
+
+msgid "addhost_hostname_label"
+msgstr "Hostname: "
+
+msgid "addhost_ipaddr_label"
+msgstr "IP Address: "
+
 msgid "addhost_options_exclusive"
 msgstr "The options -n, -p and -e are mutually exclusive"
 

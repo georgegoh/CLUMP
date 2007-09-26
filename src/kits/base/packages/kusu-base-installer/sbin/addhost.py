@@ -785,12 +785,12 @@ class WindowUnmanaged(NodeGroupWindow):
            myNodeInfo.optionDHCPMode = False
         
     def drawImpl(self):
-        instruction = snack.Textbox(50, 3, self.kusuApp._("Type a hostname, choose DHCP if the device is able to get an IP dynamically. Otherwise, type an IP address"), scroll=0, wrap=1)
-        self.staticHostname = LabelledEntry(labelTxt=self.kusuApp._("Hostname: "), text="", width=20,
+        instruction = snack.Textbox(50, 3, self.kusuApp._("addhost_unmanaged_instructions"), scroll=0, wrap=1)
+        self.staticHostname = LabelledEntry(labelTxt=self.kusuApp._("addhost_hostname_label"), text="", width=20,
                 password=0, returnExit = 0)
 
         self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = 0)
-        self.IPEntry = LabelledEntry(labelTxt=self.kusuApp._("IP Address: "), text="", width=20,
+        self.IPEntry = LabelledEntry(labelTxt=self.kusuApp._("addhost_ipaddr_label"), text="", width=20,
                 password=0, returnExit = 0)
         self.dhcpCheck.setCallback(self.checkDHCPStatus)
 
