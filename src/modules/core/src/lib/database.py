@@ -793,7 +793,6 @@ class DB(object):
         diskless.packages.append(Packages(packagename='module-init-tools'))
         diskless.packages.append(Packages(packagename='udev'))
         diskless.packages.append(Packages(packagename='cracklib'))
-        diskless.packages.append(Packages(packagename='component-base-node'))
 
         imaged.packages.append(Packages(packagename='SysVinit'))
         imaged.packages.append(Packages(packagename='basesystem'))
@@ -855,7 +854,6 @@ class DB(object):
         imaged.packages.append(Packages(packagename='module-init-tools'))
         imaged.packages.append(Packages(packagename='udev'))
         imaged.packages.append(Packages(packagename='cracklib'))
-        imaged.packages.append(Packages(packagename='component-base-node'))
 
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING
