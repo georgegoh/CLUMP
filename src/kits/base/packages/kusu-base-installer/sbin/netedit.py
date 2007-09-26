@@ -300,7 +300,7 @@ class NetEditApp(object, KusuApp):
             subnet_field = self._("netedit_list_subnet_field")
             desc_field = self._("netedit_list_description_field")
             dev_field = self._("netedit_list_device_field")
-            type_field = self._("Interface Type")
+            type_field = self._("netedit_interface_label")
             print "%s %s %s %s %s %s" % (netid_field.ljust(10), dev_field.ljust(12), network_field.ljust(13), subnet_field.ljust(15),desc_field.ljust(40), type_field)
 
             print "%s".ljust(3) % (("=") * len(netid_field)) + "%s".ljust(9) % (("=") * len(dev_field)) + "%s".ljust(9) % (("=") * \
@@ -394,8 +394,7 @@ class NetEditApp(object, KusuApp):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
-                   print "ERROR:  Cannot specify -z and -y at same time."
-                   sys.exit(-1)
+                   self.parser.error(self._("netedit_options_conflict_type"))
  
                 networkrecord = NetworkRecord()
                 networkInfo = list(networkrecord.getNetworkList())
@@ -418,8 +417,7 @@ class NetEditApp(object, KusuApp):
                           if len(self._options.desc.strip()) > 0:
                              database.execute("UPDATE networks SET netname = '%s' WHERE netid = %d" % (self._options.desc.strip(), int(self._options.changeused)))
                           else:
-                             print "ERROR: Cannot have an empty description!"
-                             sys.exit(-1)
+                             self.parser.error(self._("netedit_empty_description"))
 
                        if self._options.opt:
                           database.execute("UPDATE networks SET options = '%s' WHERE netid = %d" % (self._options.opt.strip(), int(self._options.changeused)))
@@ -441,8 +439,7 @@ class NetEditApp(object, KusuApp):
                 sys.exit(0)
 
             else:
-                 print "ERROR:  Cannot specify -s, -n, -g, -i or -p options when changing a used network"
-                 sys.exit(-1)
+                 self.parser.error(self._("netedit_options_illegal_usednetwork"))
 
         if (self._options.change):
             # Handle -c, -n, -s, -g, -t, -i, -e (minimal options) - Changing network - Destructive
@@ -451,8 +448,7 @@ class NetEditApp(object, KusuApp):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
-                   print "ERROR:  Cannot specify -z and -y at same time."
-                   sys.exit(-1)
+                   self.parser.error(self._("netedit_options_conflict_type")
             
                 result = None
                 invalidID = True
@@ -465,7 +461,7 @@ class NetEditApp(object, KusuApp):
                         result = networkrecord.checkNetworkEntry(self._options.change)
 
                         if result:
-                           self.parser.error(self._("The network '%s' is in use. This can not be changed at this time. Use -c -t to change starting IP.") % network[1])
+                           self.parser.error(self._("The network '%s' is in use. To change non-destructive properties use the -w option") % network[1])
                         else:
                             # First, validate the record we want to replace.
                             networkEntryInfo = []
@@ -595,7 +591,7 @@ class NetworkEditWindow(USXBaseScreen):
         self.screenGrid  = snack.Grid(1, 13)
         
         instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_edit"), scroll=0, wrap=0)
-        self.typeLabel = snack.Label(self.kusuApp._("Interface Type"))
+        self.typeLabel = snack.Label(self.kusuApp._("netedit_interface_label"))
         self.typeList = snack.Listbox(height=2, scroll=0, width=15, returnExit=0, showCursor=0)
       
         if self.networkRecord[7] == None:
@@ -778,7 +774,7 @@ class NetworkNewWindow(USXBaseScreen):
         self.screenGrid = snack.Grid(1, 13)
         instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_new"), scroll=0, wrap=0)
         self.typeList = snack.Listbox(height=2, scroll=0, width=15, returnExit=0, showCursor=0)
-        self.typeLabel = snack.Label(self.kusuApp._("Interface Type"))
+        self.typeLabel = snack.Label(self.kusuApp._("netedit_interface_label"))
         self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), width=30, password=0, returnExit = 0)
         self.subnetEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_subnet").rjust(13), width=30, password=0, returnExit = 0)
         self.gatewayEntry= LabelledEntry(labelTxt=self.kusuApp._("netedit_field_gateway").rjust(13), width=30, password=0, returnExit = 0)
