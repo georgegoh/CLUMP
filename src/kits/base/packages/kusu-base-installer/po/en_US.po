@@ -101,6 +101,9 @@ msgstr "ERROR:  Database query failed!  Make sure the database is available\nFai
 msgid "DB_Update_Error\n"
 msgstr "ERROR:  Unable to update database\n"
 
+msgid "DB_Duplicate_Error\n"
+msgstr "ERROR:  Unable to add entry into database. Duplicate value\n"
+
 msgid "nonroot_execution\n"
 msgstr "ERROR:  Only root can run this tool\n"
 
@@ -491,7 +494,7 @@ msgid "netedit_add_usage"
 msgstr "Add a network"
 
 msgid "netedit_change_usage"
-msgstr "Change an existing network"
+msgstr "Change an existing network not in use"
 
 msgid "netedit_oldnet_usage"
 msgstr "Old network value to change"
@@ -529,8 +532,17 @@ msgstr "Description of the network entry"
 msgid "netedit_dhcp_usage"
 msgstr "Specify to enable or disable using DHCP. By default disabled"
 
+msgid "netedit_changeused_usage"
+msgstr "Change non-destructive values for a network in use (associated with ngedit)"
+
+msgid "netedit_provision_usage"
+msgstr "Set network to 'provision' type"
+
+msgid "netedit_public_usage"
+msgstr "Set network to 'public' type"
+
 msgid "netedit_options_exclusive"
-msgstr "The options -a, -d and -c and -l are mutually exclusive"
+msgstr "The options -a, -d, -c, w and -l are mutually exclusive"
 
 msgid "netedit_options_add_options_needed"
 msgstr "The -a option needs the -n, -s, -i, -t and -g specified"
@@ -539,10 +551,19 @@ msgid "netedit_options_delete_options_needed"
 msgstr "The -d option needs the -n and -s options specified"
 
 msgid "netedit_options_change_options_needed"
-msgstr "The -c option needs the options -n, -s, -g, -t and -i specified. You can also use -c to edit non-destructive values with -t, -e, -r, -o or -y"
+msgstr "The -c option needs the options -n, -s, -g, -t, -i, -e"
 
 msgid "netedit_options_required_options"
-msgstr "Can only specify -a -c -l and -d as command options"
+msgstr "Can only specify -a, -c, -w, -l and -d as command options"
+
+msgid "netedit_options_conflict_type"
+msgstr "Cannot specify the options -z and -y at the same time"
+
+msgid "netedit_options_illegal_usednetwork"
+msgstr "Cannot specify -s, -n, -g, -i or -p options when changing a network already assigned with ngedit (in use)"
+
+msgid "netedit_empty_description"
+msgstr "Cannot have an empty network description"
 
 msgid "netedit_list_networkid_field"
 msgstr "Network ID"
@@ -571,11 +592,17 @@ msgstr "ERROR: The network specified does not exist"
 msgid "The network '%s' is in use. If you wish to delete this, please use the node group editor"
 msgstr "The network '%s' is in use. If you wish to delete this, please use the node group editor"
 
-msgid "The network '%s' is in use. This can not be changed at this time"
-msgstr "The network '%s' is in use. This can not be changed at this time"
+msgid "The network '%s' is in use. Only some fields may be changed"
+msgstr "The network '%s' is in use. Only some fields may be changed"
+
+msgid "The network '%s' is in use. To change non-destructive properties use the -w option"
+msgstr "The network '%s' is in use. To change non-destructive properties use the -w option"
 
 msgid "netedit_instruction_edit"
 msgstr "Please edit any of the network information below."
+
+msgid "netedit_interface_label"
+msgstr "Interface Type"
 
 msgid "netedit_instruction_new"
 msgstr "Please enter the network information below."
