@@ -57,6 +57,7 @@ import math
 import parted
 import subprocess
 from lvm import *
+from filesystems import *
 from common import *
 from path import path
 from struct import unpack
@@ -434,8 +435,15 @@ class DiskProfile(object):
             logger.warning('fstab file uses UUID signatures. This is not yet supported.')
 
         if dev.startswith('LABEL='):
-            # TODO find device with matching label.
-            logger.warning('Encountered label, but is not yet supported.')
+            lbl = dev.strip('LABEL=')
+            for d in self.disk_dict.itervalues():
+                for p in d.partition_dict.itervalues():
+                    try:
+                        fs = Ext2Viewer(p.path)
+                        if fs.label == lbl:
+                            return p
+                    except Exception:
+                        pass
 
         # Check physical partitions.
         for d in self.disk_dict.itervalues():
