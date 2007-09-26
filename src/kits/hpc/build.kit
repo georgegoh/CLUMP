@@ -184,6 +184,16 @@ if getArch() == 'x86':
 if getArch() == 'x86_64':
     linpackopenmpiPkg.filename = 'linpack-openmpi-gnu-1.0a-1.x86_64.rpm'
 
+# package blacs-openmpi-gnu
+blacsopenmpignupkg = RPMPackage()
+blacsopenmpignupkg.name = 'blacs-openmpi-gnu'
+blacsopenmpignupkg.version = '20000224'
+blacsopenmpignupkg.release = '1'
+if getArch() == 'x86':
+    blacsmpich1gnupkg.filename = 'blacs-openmpi-gnu-20000224-1.i386.rpm'
+if getArch() == 'x86_64':
+    blacsmpich1gnupkg.filename = 'blacs-openmpi-gnu-20000224-1.x86_64.rpm'
+
 # package mpich2-openmpi-gnu
 # this uses an existing binary rpm
 mpich2Pkg = RPMPackage()
@@ -218,7 +228,7 @@ openmpiComp.addDep(openmpiPkg)
 openmpiComp.addDep(hdf5openmpiPkg)
 openmpiComp.addDep(linpackopenmpiPkg)
 openmpiComp.addDep(modulesopenmpignupkg)
-#openmpiComp.addDep()
+openmpiComp.addDep(blacsopenmpignupkg)
 #openmpiComp.addDep()
 #openmpiComp.addDep()
 
