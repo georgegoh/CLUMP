@@ -2216,8 +2216,8 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #3. handle component plugins
         if self.__plugdir not in sys.path:
             sys.path.append(self.__plugdir)
-        self.handleCompPlug(addedComps, 'add')
         self.handleCompPlug(removedComps, 'remove')
+        self.handleCompPlug(addedComps, 'add')
 
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'
