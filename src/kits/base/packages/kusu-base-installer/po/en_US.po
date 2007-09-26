@@ -200,6 +200,12 @@ msgstr "The rack number to assign the hosts to (if used)"
 msgid "addhost_update_usage"
 msgstr "Updates configurations on the installer node the tool is run from"
 
+msgid "addhost_statichost_usage"
+msgstr "The static hostname to assign"
+
+msgid "addhost_ipaddr_usage"
+msgstr "The static IP address to assign to the device"
+
 msgid "addhost_window_title_nodegroup"
 msgstr "Select node group"
 
@@ -235,6 +241,9 @@ msgstr "Select the network interface to install your node group from"
 
 msgid "addhost_window_title_installing"
 msgstr "Installing Node Status"
+
+msgid "addhost_window_title_unmanaged"
+msgstr "Add an unmanaged device"
 
 msgid "addhost_options_exclusive"
 msgstr "The options -n, -p and -e are mutually exclusive"
