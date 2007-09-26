@@ -51,7 +51,7 @@ class TestBuildKitApp(object):
         p.wait()
         
         kitsrcdir = self.scratchdir / 'test'
-        isofile = kitsrcdir / 'kit-test-0.1-0-noarch.iso'
+        isofile = kitsrcdir / 'kit-test-0.1-0.noarch.iso'
         
         assert isofile.exists()
         
