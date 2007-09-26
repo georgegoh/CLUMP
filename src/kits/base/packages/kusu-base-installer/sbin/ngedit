@@ -427,7 +427,8 @@ class scrNGEEdit_Boot(USXBaseScreen):
         rblist = []
         for key,val in installtype.items():
             isOn = int(curNG['installtype'] == key) #cast bool to int
-            rblist.append((val,key,isOn))
+            if isOn:
+                rblist.append((val,key,isOn))
 
         self.__InstallTypeRb = snack.RadioBar(self.screen, rblist)
 
