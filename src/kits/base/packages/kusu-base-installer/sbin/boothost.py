@@ -121,12 +121,11 @@ class boothost:
         # Correlate the installers IP's with the nodes IP's.  Where they
         # intersect use that IP as the niihost.
         # Have:  self.installerIPs which is a list of primary installer IP's
-        query = ("SELECT nodegroups.repoid, networks.device, repos.ostype, nodegroups.installtype, nics.ip " + 
-                 "FROM nics, nodes, networks, nodegroups, repos " + 
+        query = ("SELECT nodegroups.repoid, networks.device, nodegroups.installtype, nics.ip, nodes.ngid " + 
+                 "FROM nics, nodes, networks, nodegroups " + 
                  "WHERE nodes.nid=nics.nid " + 
                  "AND nics.netid=networks.netid " +
                  "AND nodegroups.ngid=nodes.ngid " +
-                 "AND nodegroups.repoid=repos.repoid " +
                  "AND nics.mac ='%s'" % mac)
         try:
             self.db.execute(query)
@@ -134,12 +133,25 @@ class boothost:
         except:
             self.errorMessage('DB_Query_Error\n')
             sys.exit(-1)
+
+        # Unmanaged hosts do not need a PXE file!
+        if data[4] == 5:
+            sys.exit(0)
             
         repoid      = data[0]
         ksdevice    = data[1]
-        ostype      = data[2].split('-')[0]
-        installtype = data[3]
-        nodesip     = data[4]
+        installtype = data[2]
+        nodesip     = data[3]
+        
+        query = ("SELECT ostype FROM repos WHERE repos.repoid = '%s'" % repoid)
+        try:
+            self.db.execute(query)
+            data = self.db.fetchone()
+        except:
+            self.errorMessage('DB_Query_Error\n')
+            sys.exit(-1)
+            
+        ostype      = data[0].split('-')[0]
 
         if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel']:
             # Find the best IP address to use
