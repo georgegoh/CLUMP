@@ -2055,17 +2055,35 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             elif action == 'remove':
                 PlugInstList_run.append(plugcinst)
 
-        if PlugInstList_draw:
-            ScreenFactory.screens = PlugInstList_draw
-            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
-            ks.run()
-
         if action == 'add':
+            #execute non-interactive first
             for inst in PlugInstList_run:
-                inst.add()
+                try:
+                    inst.add()
+                except Exception,msg:
+                    self.selector.popupMsg("Non-interactive component plugins", "One of the non-interactive "+\
+                    "plugins threw an exception. Will proceed, skipping over the erroneous plugin. Please "+\
+                    "inspect the error below and/or the logs:\n%s" %msg)
+
+            if PlugInstList_draw:
+                ScreenFactory.screens = PlugInstList_draw
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
+                try:
+                    ks.run()
+                except Exception,msg:
+                    self.selector.popupMsg("Interactive component plugins", "There was an error running " +\
+                    "interactive component plugins. Some interactive plugins may not have run. Please " +\
+                    "inspect the error below and/or the logs:\n%s" %msg)
+
+
         elif action == 'remove':
             for inst in PlugInstList_run:
-                inst.remove()
+                try:
+                    inst.remove()
+                except Exception,msg:
+                    self.selector.popupMsg("Component plugins", "Upon executing the removal action, one of "+\
+                    "the plugins threw an exception. Will proceed, skipping the erroneous plugin. Please "+\
+                    "inspect the error below and/or the logs:\n%s" %msg)
 
     def runTool(self,tool, argstr):
 
@@ -2143,19 +2161,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #1. FinalActions: node state update
         self.expireNodes()
 
-        #2. handle component plugins
-        if self.__plugdir not in sys.path:
-            sys.path.append(self.__plugdir)
-
-        s1 = Set(curNG['comps'])
-        s2 = Set(origNG['comps'])
-        addedComps = list(s1 - s2)
-        removedComps = list(s2 - s1)
-
-        self.handleCompPlug(addedComps, 'add')
-        self.handleCompPlug(removedComps, 'remove')
-
-        #3. run second-party tools:
+        #2. run second-party tools:
         # * if imaged (both disked & diskless)
         #        if changes in (components or packages or repo)
         #            run buildimage (buildimage -n $ngid)
@@ -2179,6 +2185,10 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
 
         run_driverpatch = False
+        s1 = Set(curNG['comps'])
+        s2 = Set(origNG['comps'])
+        addedComps = list(s1 - s2)
+        removedComps = list(s2 - s1)
         addedComps = [int(x) for x in addedComps]
         if curNG['installtype'] == 'package' and addedComps:
             query = "select dpid from driverpacks where cid in %s" %seq2tplstr(addedComps)
@@ -2202,7 +2212,12 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                 self.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
                     " at your earliest convenience by running\n%s" %cmd)
 
-        self.selector.popupMsg("You are DONE!", "Nodegroup modification is now complete!")
+
+        #3. handle component plugins
+        if self.__plugdir not in sys.path:
+            sys.path.append(self.__plugdir)
+        self.handleCompPlug(addedComps, 'add')
+        self.handleCompPlug(removedComps, 'remove')
 
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'

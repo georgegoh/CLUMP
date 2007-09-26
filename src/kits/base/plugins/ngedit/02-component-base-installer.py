@@ -16,4 +16,6 @@ class NGPlugin(NGEPluginBase):
 
     def remove(self):
         assert(self.ngid)
-        os.system("rm /tmp/KuSu_%s_add" %self.ngid)
+        if os.path.exists("/tmp/KuSu_%s_add" %self.ngid):
+            os.remove("/tmp/KuSu_%s_add" %self.ngid)
+            #os.system("rm /tmp/KuSu_%s_add" %self.ngid)
