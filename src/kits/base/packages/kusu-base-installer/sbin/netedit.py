@@ -272,7 +272,7 @@ class NetEditApp(object, KusuApp):
                         self.parser.error(self._("netedit_options_exclusive"))
 
         # Non required values, if not set default to these
-        if not self._options.increment and not self._options.change:
+        if bool(self._options.increment) == False:  # and bool(self._options.change) == False
             self._options.increment = 1
         
         if not self._options.suffix:
@@ -489,6 +489,9 @@ class NetEditApp(object, KusuApp):
                                networkEntryInfo.append('provision')
                             if self._options.public:
                                networkEntryInfo.append('public')
+
+                            if not self._options.public or self._options.provision:
+                               networkEntryInfo.append('provision')
 
                             del networkrecord
                             networkrecord = NetworkRecord(networkEntryInfo, None)
