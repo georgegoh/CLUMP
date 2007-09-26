@@ -636,6 +636,9 @@ msgstr "Specify to mark the nodes as expired for reinstallation"
 msgid "nghosts_rack_usage"
 msgstr "The rack number to use (if applicable)"
 
+msgid "nghosts_options_exclusive"
+msgstr "The options -l, -g and -t are mutually exclusive"
+
 msgid "nghosts_window_title_prompt"
 msgstr "Node Membership Editor"
 
@@ -733,7 +736,7 @@ msgid "nghosts_options_groups_missing"
 msgstr "The -f option requires node group(s) to be specified"
 
 msgid "nghosts_options_required_options"
-msgstr "Can only specify -l -g -t as command options"
+msgstr "Can only specify -l, -g, -t as command options"
 
 msgid "Node not found: %s"
 msgstr "Node not found: %s"
