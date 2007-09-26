@@ -132,14 +132,14 @@ class NetworkRecord(object):
                  self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                  self._description_field, self._startip_field, int(self._inc_field), \
                  int(self._dhcp_checkbox), self._type_field, int(currentItem))
-        #try:
-        self._database.connect('kusudb', 'apache')
-        self._database.execute(query)
-        #except:
-        #if self._thisWindow:
-        #   self._thisWindow.screen.finish()
-        #   print self._("DB_Query_Error\n")
-        #sys.exit(-1)
+        try:
+           self._database.connect('kusudb', 'apache')
+           self._database.execute(query)
+        except:
+           if self._thisWindow:
+              self._thisWindow.screen.finish()
+              print kusuApp._("DB_Query_Error\n")
+              sys.exit(-1)
        
     def updateNetworkStartIP(self, currentItem):
         query = "UPDATE networks SET startip='%s' WHERE netid=%d" % (self._startip_field, int(currentItem))
@@ -150,7 +150,7 @@ class NetworkRecord(object):
         except:
             if self._thisWindow:
                self._thisWindow.screen.finish()
-            print self._("DB_Query_Error\n")
+            print kusuApp._("DB_Query_Error\n")
             sys.exit(-1)
 
     def insertNetworkEntry(self):
@@ -159,27 +159,27 @@ class NetworkRecord(object):
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                 self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox), self._type_field)
         try:
-            self._database.connect('kusudb', 'apache')
-            self._database.execute(query)
+           self._database.connect('kusudb', 'apache')
+           self._database.execute(query)
         except:
             if self._thisWindow:
                 self._thisWindow.screen.finish()
-            print self._("DB_Query_Error\n")
+            print kusuApp._("DB_Duplicate_Error\n")
             sys.exit(-1)
             
     def checkNetworkEntry(self, networkid):
         # Check if the network selected is not in use.
         netuse = 0
         query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(networkid)
-        #try:
-        self._database.connect('kusudb', 'apache')
-        self._database.execute(query)
-        netuse = self._database.fetchone()[0]
-        #except:
-        #if self._thisWindow:
-        #   self._thisWindow.screen.finish()
-        #print self._("DB_Query_Error\n")
-        #sys.exit(-1)
+        try:
+           self._database.connect('kusudb', 'apache')
+           self._database.execute(query)
+           netuse = self._database.fetchone()[0]
+        except:
+           if self._thisWindow:
+              self._thisWindow.screen.finish()
+        print self._("DB_Query_Error\n")
+        sys.exit(-1)
             
         if int(netuse) >= 1:
                 return True
@@ -311,7 +311,7 @@ class NetEditApp(object, KusuApp):
             
         # Handle -a -n -s -g,-i,-t, -e options - Adding network
         if (self._options.add and self._options.network and self._options.subnet and self._options.interface and self._options.startip and self._options.desc):
-            
+            nettype = None
             # Next verify the record
             networkEntryInfo = []
             networkEntryInfo.append(self._options.network.strip())
@@ -341,6 +341,9 @@ class NetEditApp(object, KusuApp):
 
             if self._options.public:
                nettype = 'public'
+
+            if not nettype:
+               nettype = 'provision'
 
             networkEntryInfo.append(nettype)
             
