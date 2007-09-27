@@ -184,12 +184,18 @@ class KitOps:
             rpm = kitinfo[3]
 
             # execute pre section
-            self.addRPMPreScript(kit['name'], kit['version'], kit['arch'],
-                                 rpm.getPre())
+            cfmsync = self.addRPMPreScript(kit['name'],
+                                           kit['version'],
+                                           kit['arch'],
+                                           rpm.getPre())
 
             # execute post section
-            self.addRPMPostScript(kit['name'], kit['version'], kit['arch'],
-                                  rpm.getPost())
+            cfmsync = self.addRPMPostScript(kit['name'],
+                                            kit['version'],
+                                            kit['arch'],
+                                            rpm.getPost()) or cfmsync
+
+            if cfmsync: self.add_cfmsync_script()
 
         # RPM install successful, add kit to DB
         self.__db.flush()
@@ -631,25 +637,27 @@ class KitOps:
         Places commands in cmd into a kusurc pre section script.
         """
 
-        self.addRPMScript(kitname, kitver, kitarch, cmd, 0)
+        return self.addRPMScript(kitname, kitver, kitarch, cmd, 0)
 
     def addRPMPostScript(self, kitname, kitver, kitarch, cmd):
         """
         Places commands in cmd into a kusurc post section script.
         """
 
-        self.addRPMScript(kitname, kitver, kitarch, cmd, 1)
+        return self.addRPMScript(kitname, kitver, kitarch, cmd, 1)
 
     def addRPMScript(self, kitname, kitver, kitarch, cmd, order):
         """
         Places commands in cmd into a kusurc script.
+
+        Returns True if the script is written to disk, False otherwise.
         """
 
         script = self.getRPMScriptName(kitname, kitver, kitarch, order)
 
         if script.exists():
             kl.debug("Script '%s' already exists, doing nothing" % script)
-            return
+            return False
 
         # ignore if only comments/empty lines in script
         skipScript = True
@@ -660,7 +668,7 @@ class KitOps:
 
         if skipScript:
             kl.debug("Script '%s' contains no commands, doing nothing" % script)
-            return
+            return False
 
         kl.debug("Writing to '%s' the following:\n%s", script, cmd)
 
@@ -673,6 +681,8 @@ class KitOps:
         f.close()
 
         script.chmod(0766)
+
+        return True
 
     def removeRPMScripts(self, kitname, kitver, kitarch):
         """
@@ -696,6 +706,25 @@ class KitOps:
         script = path('S01RPMScript-%s-%s-%s-%s.rc' % (kitname, kitver,
                                                        kitarch, order))
         return self.prefix / 'etc/rc.kusu.d' / script
+
+    def add_cfmsync_script(self):
+        """
+        Generate an rc script which runs cfmsync -p, if said script doesn't
+        already exist.
+        """
+
+        script = self.prefix / 'etc/rc.kusu.d/S01RunCFMSync.rc'
+
+        if not script.exists(): # only do this once
+            if not script.parent.exists():
+                script.parent.makedirs()
+
+            f = open(script, 'w')
+            f.write('\n'.join(('#!/bin/bash', 'cfmsync -p', 'rm -r $0\n')))
+            f.flush()
+            f.close()
+
+            script.chmod(0766)
 
     def listKit(self, kitname=None, kitver=None, kitarch=None):
         if kitname or kitver or kitarch:
