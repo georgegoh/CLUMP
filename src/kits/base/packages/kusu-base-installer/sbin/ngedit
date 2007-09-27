@@ -1456,7 +1456,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                 if self.PartRec['device'].lower() == 'n':
                     #editing spanning PV
                     device = 'N'
-                    partition = 0
+                    partnum = 0
                     DevPartNumDone = True
             else:       #new PV creation
                 #determine whether to have this PV span all disks
