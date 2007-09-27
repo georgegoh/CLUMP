@@ -21,6 +21,9 @@
 
 __version__ = "5.0"
 
+CFMSYNC    = '/opt/kusu/sbin/cfmsync'
+CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
+
 import gettext
 import os
 import sys
