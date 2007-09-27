@@ -415,11 +415,19 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
         lbl1 = snack.Label('Kernel: ')
         lbl2 = snack.Label('Kernel Params: ')
-        lbl3 = snack.Label('Install Type: ')
-        lbl4 = snack.Label('Initrd: ')
+        lbl3 = snack.Label('Initrd: ')
+        lbl4 = snack.Label('Install Type: ')
+
         w = min(max(len(curNG['kernel']), len(curNG['kparams']), MAXWIDTH*1/2), MAXWIDTH)
+
+        self.__kernellb = snack.Listbox(height=3, scroll=1,width=w,returnExit=1)
+        for kernel in map(os.path.basename, glob.glob(os.path.join(self.__kerneldir,'kernel*'))):
+            if os.path.isfile(os.path.join(self.__kerneldir, kernel)):
+                self.__kernellb.append(kernel,item=kernel)
+                if curNG['kernel'] == kernel:
+                    self.__kernellb.setCurrent(kernel)
+
         self.__entries = {}
-        self.__entries['kernel'] = snack.Entry(width=w, text=curNG['kernel'])
         self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
         self.__entries['initrd'] = snack.Entry(width=w, text=curNG['initrd'])
         self.__entries['initrd'].setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
@@ -432,26 +440,21 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
         self.__InstallTypeRb = snack.RadioBar(self.screen, rblist)
 
-        self.screenGrid.setField(lbl1,0,0,anchorRight=1)
+        self.screenGrid.setField(lbl1,0,0,(0,0,0,1), anchorRight=1)
         self.screenGrid.setField(lbl2,0,1,anchorRight=1)
-        self.screenGrid.setField(lbl4,0,2,anchorRight=1)
-        self.screenGrid.setField(lbl3,0,3,(0,1,0,0),anchorRight=1)
-        self.screenGrid.setField(self.__entries['kernel'], 1,0,anchorLeft=1)
+        self.screenGrid.setField(lbl3,0,2,anchorRight=1)
+        self.screenGrid.setField(lbl4,0,3,anchorRight=1)
+        self.screenGrid.setField(self.__kernellb, 1,0, (0,0,0,1), anchorLeft=1)
         self.screenGrid.setField(self.__entries['kparams'],1,1,anchorLeft=1)
         self.screenGrid.setField(self.__entries['initrd'], 1,2,anchorLeft=1)
-        self.screenGrid.setField(self.__InstallTypeRb,1,3,(0,1,0,0),anchorLeft=1)
+        self.screenGrid.setField(self.__InstallTypeRb,1,3,anchorLeft=1)
 
     def validate(self):
-        kernel = self.__entries['kernel'].value().strip()
-        if not os.path.isfile(os.path.join(self.__kerneldir, kernel)):
-            return False, "Specified kernel was not found under " + self.__kerneldir
         return True, 'Success'
 
     def formAction(self):
-        ''' Actions taken once the form data was successfully validated.
-            Timeline: drawImpl, Next_callback, validation, formAction
-        '''
-        curNG['kernel'] = self.__entries['kernel'].value().strip()
+
+        curNG['kernel'] = self.__kernellb.current()
         curNG['kparams'] = self.__entries['kparams'].value().strip()
         installtype = self.__InstallTypeRb.getSelection()
         if installtype <> curNG['installtype']:
