@@ -714,9 +714,17 @@ class scrNGEEdit_Packages(USXBaseScreen):
             elif ostype.lower().startswith('rhel'):
                 repopackdir = self.__repodir + '/Server'
                 compsfile = glob.glob(repopackdir + '/repodata/comps*.xml')[0]
+            elif ostype.lower().startswith('centos'):
+                repopackdir = self.__repodir + '/CentOS'
+                compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
             #additional repo os types here
+            #FIXME: possible to use kusu.repoman.repo as a single point of repo specifics
             else:
-                raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+                msg = "Currently selected repo (ostype=%s) cannot yet be used " %ostype +\
+                      "for optional package selection."
+                self.screenGrid.setField(snack.TextboxReflowed(text=msg,width=self.gridWidth),
+                                 0,0,growx=1,growy=1)
+                return
     
             cwdbackup = os.getcwd()
             os.chdir(repopackdir)
