@@ -708,24 +708,29 @@ class scrNGEEdit_Packages(USXBaseScreen):
             self.__repodir, ostype  = self.database.fetchone()
             self.__repodir = self.__repodir.strip()
     
-            if ostype.lower().startswith('fedora'):
-                repopackdir = self.__repodir + '/Fedora/RPMS'
-                compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
-            elif ostype.lower().startswith('rhel'):
-                repopackdir = self.__repodir + '/Server'
-                compsfile = glob.glob(repopackdir + '/repodata/comps*.xml')[0]
-            elif ostype.lower().startswith('centos'):
-                repopackdir = self.__repodir + '/CentOS'
-                compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
-            #additional repo os types here
-            #FIXME: possible to use kusu.repoman.repo as a single point of repo specifics
-            else:
+            import kusu.repoman.repofactory as repofactory
+            from kusu.core import database as sadb
+
+            dbinst = sadb.DB(driver='mysql',db='kusudb',username='nobody')
+            rf = repofactory.RepoFactory(db=dbinst)
+            try:
+                repoinst = rf.getRepo(curNG['repoid'])
+            except:
                 msg = "Currently selected repo (ostype=%s) cannot yet be used " %ostype +\
                       "for optional package selection."
                 self.screenGrid.setField(snack.TextboxReflowed(text=msg,width=self.gridWidth),
                                  0,0,growx=1,growy=1)
                 return
-    
+
+            repodatakey = "repodatadir"
+            rpmsdirkey = 'rpmsdir'
+            if ostype.lower().startswith('rhel'):
+                repodatakey = "server." + repodatakey
+                rpmsdirkey  = "server." + rpmsdirkey
+
+            repopackdir = os.path.join(self.__repodir, repoinst.dirlayout[rpmsdirkey])
+            compsfile = glob.glob(os.path.join(self.__repodir, repoinst.dirlayout[repodatakey],'comps*.xml'))[0]
+
             cwdbackup = os.getcwd()
             os.chdir(repopackdir)
             repopacklst = glob.glob('*.[rR][pP][mM]') #only basenames returned
