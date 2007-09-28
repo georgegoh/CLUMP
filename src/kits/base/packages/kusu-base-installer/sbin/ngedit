@@ -521,6 +521,13 @@ class scrNGEEdit_Components(USXBaseScreen):
                 origNG['comps'] = [x[0] for x in tplrv]
             cidlst = origNG['comps']
 
+        #ensure cidlst contains the OS component
+        query = ''' select c.cid from repos_have_kits rk, kits k, components c where
+                    rk.kid = k.kid and k.kid = c.kid and k.isOS = 1 and rk.repoid = %s''' %curNG['repoid']
+        self.database.execute(query)
+        oscidtpl = self.database.fetchone()
+        cidlst = list(Set(cidlst) | Set(oscidtpl))
+
         self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
         curkid = rv[0][0]
         self.__ct.append(rv[0][1])
