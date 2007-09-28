@@ -178,7 +178,7 @@ class KitOps:
             # updateComponents encountered an error, remove kit from DB
             newkit.removable = True
             newkit.flush()
-            self.deleteKit()
+            self.deleteKit(kit['name'], kit['version'], kit['arch'])
             raise ComponentAlreadyInstalledError, msg
             
         # install the kit RPM
@@ -190,12 +190,14 @@ class KitOps:
                                         stderr=subprocess.PIPE)
                 o, e = rpmP.communicate()
                 kl.debug('Installing kit RPM stdout: %s, stderr: %s', o, e)
-            except Exception, e:
-                # failed installing RPM, remove kit from DB
-                newkit.removable = True
-                newkit.flush()
-                self.deleteKit()
-                raise InstallKitRPMError, 'Kit RPM installation failed\n%s' % e
+
+                if rpmP.returncode != 0:
+                    # failed installing RPM, remove kit from DB
+                    newkit.removable = True
+                    newkit.flush()
+                    self.deleteKit(kit['name'], kit['version'], kit['arch'])
+                    raise InstallKitRPMError, 'Kit RPM installation ' + \
+                        'failed, return code: %d' % rpmP.returncode
         else:
             rpm = kitinfo[3]
 
@@ -612,11 +614,12 @@ class KitOps:
  
             # uninstall kit RPM
             if not kit.isOS and not self.installer:
-                rmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
-                                       kit.rname, shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-                rmP.communicate()
+                rpmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
+                                        kit.rname, shell=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                o, e = rpmP.communicate()
+                kl.debug('Removing kit RPM stdout: %s, stderr: %s', o, e)
             elif self.installer:
                 # remove any scripts
                 self.removeRPMScripts(kit.rname, kit.version, kit.arch)
