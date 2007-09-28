@@ -11,7 +11,7 @@ fi
 # XXX: PYTHONPATH Differs on Fedora!!!!
 
 if [ -f /usr/bin/genconfig ]; then
-   export PYTHONPATH=/usr/lib/python2.4/site-packages/kusu:$PYTHONPATH"
+   export PYTHONPATH=/usr/lib/python2.4/site-packages/kusu:$PYTHONPATH
    GENCONFIG="/usr/bin/genconfig"
 fi
 
@@ -23,6 +23,9 @@ $GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava
 $GENCONFIG lavacluster_$VERSION batch > /opt/lava/conf/lsbatch/lava/configdir/lsb.hosts
 $GENCONFIG lavaconf_$VERSION master > /opt/lava/conf/lsf.conf
 $GENCONFIG lavahosts_$VERSION > /opt/lava/conf/hosts
+
+groupadd lavaadmin
+adduser -d "/home/lavaadmin" -g lavaadmin -m lavaadmin
 
 chown -R lavaadmin:lavaadmin /opt/lava/conf/*
 

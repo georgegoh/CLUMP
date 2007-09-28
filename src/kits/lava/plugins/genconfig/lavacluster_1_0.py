@@ -27,7 +27,7 @@ import sys
 import string
 
 global COMPONENT_NAME
-COMPONENT_NAME = 'component-lava-compute-v1.0'
+COMPONENT_NAME = 'component-lava-compute-v1_0'
 
 class thisReport(Report):
 

@@ -36,4 +36,6 @@ rpm:
 	@rm -rf $(HOME)/.rpmmacros
 
 clean:
-	find $(TOPDIR)/RPMS -type f -name "component-*.rpm" -exec rm -f {} \;
+	@if [ -d $(TOPDIR)/RPMS ]; then \
+		find $(TOPDIR)/RPMS -type f -name "component-*.rpm" -exec rm -f {} \; ; \
+	fi

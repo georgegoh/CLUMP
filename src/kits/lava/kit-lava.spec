@@ -10,10 +10,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
+# along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
 #
+
+%define COMP1 component-lava-master-v1_0
+%define COMP2 component-lava-compute-v1_0
+
 Summary: Lava Kit
 Name: kit-lava
 Version: 1.0
@@ -74,40 +78,141 @@ rm -rf $RPM_BUILD_ROOT
 %exclude /opt/kusu/lib/plugins/genconfig/*.py?
 %exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
-%post
-
-# In Anaconda install mode?
-if [ -e /tmp/kusu/installer_running ]; then exit 0; fi 
-
-# Check if MySQL is running if not, start it.
-if [ `service mysqld status | grep -c running` -ne 1 ]; then
-   service mysqld start
+%pre
+PATH=$PATH:/opt/kusu/sbin
+export PATH
+if [ -d /opt/kusu/lib ]; then
+    PYTHONPATH=/opt/kusu/lib64/python:/opt/kusu/lib/python:
+else
+    PYTHONPATH=FIX_ME
 fi
+export PYTHONPATH
+
+if [ ! -e /tmp/kusu/installer_running ]; then
+    # Check if MySQL is running if not, start it.
+    if [ `service mysqld status | grep -c running` -ne 1 ]; then
+	service mysqld start
+    fi
+fi
+KID=`sqlrunner -q "SELECT * FROM kits"`
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+
+%post
+# POST section
+PATH=$PATH:/opt/kusu/sbin
+export PATH
+if [ -d /opt/kusu/lib ]; then
+    PYTHONPATH=/opt/kusu/lib64/python:/opt/kusu/lib/python:
+else
+    PYTHONPATH=FIX_ME
+fi
+export PYTHONPATH
+echo "In POST" > /tmp/kip
+echo "___________________________________________" >> /tmp/kip
+/bin/env >> /tmp/kip
+echo "___________________________________________" >> /tmp/kip
+echo "POST 1" >> /tmp/kip
+echo "___________________________________________" >> /tmp/kip
+/opt/kusu/sbin/sqlrunner -q "select * from appglobals" >> /tmp/kip 2>&1
+echo "___________________________________________" >> /tmp/kip
+
+/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'" >> /tmp/kip 2>&1
+echo "___________________________________________" >> /tmp/kip
+
+# Make the component entries because kitops is broken!!!
+KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+echo "KID = $KID" >> /tmp/kip
+if [ $? -ne 0 ]; then
+	exit 0
+fi
+
+sqlrunner -q "DELETE FROM components WHERE kid=$KID"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-i386'"
+
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-x86_64'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-i386'"
+sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-i386'"
+
+CID1=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
+echo "POST 1.5 CID1=$CID1" >> /tmp/kip
+echo "KID = $KID" >> /tmp/kip
+if [ x"$CID1" = x ]; then
+	# The kit provides components that are not used with the installers OS
+	exit 0
+fi
+
+CID2=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
 
 # SQL/Shell/Python code to update the database.. The updates may optionally
 # include Node group creation and component association
+sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 1, cid = $CID1"
+sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
+sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
+sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
 
-component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-master-v1.0'`
-component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = 'component-lava-compute-v1.0'`
+if [ ! -e /tmp/kusu/installer_running ]; then
+    # Running outside of Anaconda
+    if [ -f /etc/rc.kusu.d/S10lava-genconfig ]; then
+	/etc/rc.kusu.d/S10lava-genconfig
+    fi
+else
+    # Running within Anaconda
 
-sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 1, cid = $component_id_master`
-
-sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 2, cid = $component_id_compute'
-sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 3, cid = $component_id_compute'
-sqlrunner -q 'INSERT INTO ng_has_comp SET ngid = 4, cid = $component_id_compute'
-
-%postun
-
-# Check if MySQL is running if not, start it.
-if [ `service mysqld status | grep -c running` -ne 1 ]; then
-   service mysqld start
 fi
 
+
+
+%preun
+# PREUN section
+
+# Test the database connection before allowing the package to be removed
+PATH=$PATH:/opt/kusu/sbin
+export PATH
+if [ -d /opt/kusu/lib ]; then
+    PYTHONPATH=/opt/kusu/lib64/python:/opt/kusu/lib/python:
+else
+    PYTHONPATH=FIX_ME
+fi
+export PYTHONPATH
+
+KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+if [ $? -ne 0 ]; then
+    echo "Database is down.  Unable to remove kit."
+    exit 1
+fi
+
+
+%postun
+# POSTUN section
+
 # Code necessary to cleanup the database from any entries inserted by the %post
+PATH=$PATH:/opt/kusu/sbin
+export PATH
 
-component_id_master=`sqlrunner -q 'SELECT cid FROM components WHERE cname = "component-lava-master-v1.0"'`
-component_id_compute=`sqlrunner -q 'SELECT cid FROM components WHERE cname = "component-lava-compute-v1.0"'`
+if [ -d /opt/kusu/lib ]; then
+    PYTHONPATH=/opt/kusu/lib64/python:/opt/kusu/lib/python:
+else
+    PYTHONPATH=FIX_ME
+fi
+export PYTHONPATH
 
-sqlrunner -q 'DELETE FROM ng_has_comp WHERE cid = $component_id_master OR cid = $component_id_compute'
+KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+sqlrunner -q "DELETE FROM ng_has_comp WHERE cid in (select cid from components where kid=$KID)"
+# Do not delete the component entries.  Kitops will do this.  It fails otherwise.
 
 

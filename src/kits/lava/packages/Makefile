@@ -31,4 +31,6 @@ rpm:
 	done
 
 clean:
-	find $(TOPDIR)/RPMS -type f -name "*.rpm" -exec rm -f {} \;
+	@if [ -d $(TOPDIR)/RPMS ]; then \
+		find $(TOPDIR)/RPMS -type f -name "*.rpm" -exec rm -f {} \; ; \
+	fi

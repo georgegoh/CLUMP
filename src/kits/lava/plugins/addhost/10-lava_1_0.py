@@ -23,7 +23,7 @@ from syslog import syslog
 from kusu.addhost import *
 
 global COMPONENT_NAME
-COMPONENT_NAME = "component-lava-master-v1.0"
+COMPONENT_NAME = "component-lava-master-v1_0"
 
 class AddHostPlugin(AddHostPluginBase):
 	"Lava cluster file updater plugin"

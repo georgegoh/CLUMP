@@ -22,7 +22,7 @@ Release: 0
 License: Something
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-Requires: lava = 1.0 lava-master-config-1.0 component-lava-compute-v1.0
+Requires: lava = 1.0 lava-master-config = 1.0 component-lava-compute-v1_0 = 1.0
 BuildArchitectures: noarch
 
 %description
