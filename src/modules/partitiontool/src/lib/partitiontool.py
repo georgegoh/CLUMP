@@ -431,8 +431,16 @@ class DiskProfile(object):
         """Find a device."""
         logger.debug('find device %s', dev)
         if dev.startswith('UUID='):
-            # TODO find device with matching UUID.
-            logger.warning('fstab file uses UUID signatures. This is not yet supported.')
+            uuid = dev.strip('UUID=')
+            for d in self.disk_dict.itervalues():
+                for p in d.partition_dict.itervalues():
+                    try:
+                        fs = Ext2Viewer(p.path)
+                        if fs.uuid == uuid:
+                            return p
+                    except Exception:
+                        pass
+            return None
 
         if dev.startswith('LABEL='):
             lbl = dev.strip('LABEL=')
@@ -444,6 +452,7 @@ class DiskProfile(object):
                             return p
                     except Exception:
                         pass
+            return None
 
         # Check physical partitions.
         for d in self.disk_dict.itervalues():

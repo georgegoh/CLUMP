@@ -33,8 +33,8 @@ class Ext2Viewer(FilesystemViewer):
         label = self.superblock[120:136]
         self.label = label.strip('\x00')
         # set UUID.
-        uuid = self.superblock[104:120]
-        self.uuid = uuid
+        uuid_bytes = self.superblock[104:120]
+        self.uuid = convertUUIDToStr(uuid_bytes)        
 
     def match(cls, buf):
         superblock = buf[1024:]
@@ -42,3 +42,8 @@ class Ext2Viewer(FilesystemViewer):
             return True
         return False
     match = classmethod(match)
+
+
+def convertUUIDToStr(bytes):
+    s = ('%02x'*16) % tuple(map(ord, bytes))
+    return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
