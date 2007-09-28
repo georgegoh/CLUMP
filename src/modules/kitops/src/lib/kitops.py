@@ -139,7 +139,7 @@ class KitOps:
                     "Kit '%s-%s-%s' already installed" % \
                     (kit['name'], kit['version'], kit['arch'])
 
-        # 1. copy the RPMS
+        # copy the RPMS
         repodir = self.kits_dir / kit['name'] / kit['version'] / kit['arch']
         if not repodir.exists():
             repodir.makedirs()
@@ -156,7 +156,7 @@ class KitOps:
         kifile = kitpath / 'kitinfo'
         if kifile.exists(): kifile.copy(repodir)
 
-        # 2. populate the kit DB table with info
+        # populate the kit DB table with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['description'],
                                 version=kit['version'], arch=kit['arch'],
                                 removable=kit['removable'])
@@ -168,7 +168,20 @@ class KitOps:
             installng.packages.append(
                                 self.__db.Packages(packagename=kit['pkgname']))
 
-        # 3. install the kit RPM
+        self.__db.flush()
+        kl.debug('Addkit kid: %s', newkit.kid)
+
+        # check/populate component table
+        try:
+            updated_ngtypes = self.updateComponents(newkit.kid, kitinfo[2])
+        except ComponentAlreadyInstalledError, msg:
+            # updateComponents encountered an error, remove kit from DB
+            newkit.removable = True
+            newkit.flush()
+            self.deleteKit()
+            raise ComponentAlreadyInstalledError, msg
+            
+        # install the kit RPM
         if not self.installer:
             try:
                 rpmP = subprocess.Popen('rpm --quiet -i %s' %
@@ -178,8 +191,11 @@ class KitOps:
                 o, e = rpmP.communicate()
                 kl.debug('Installing kit RPM stdout: %s, stderr: %s', o, e)
             except Exception, e:
-                raise InstallKitRPMError, \
-                        'Kit RPM installation failed\n%s' % e
+                # failed installing RPM, remove kit from DB
+                newkit.removable = True
+                newkit.flush()
+                self.deleteKit()
+                raise InstallKitRPMError, 'Kit RPM installation failed\n%s' % e
         else:
             rpm = kitinfo[3]
 
@@ -198,19 +214,7 @@ class KitOps:
             if cfmsync: self.add_cfmsync_script()
 
         # RPM install successful, add kit to DB
-        self.__db.flush()
-        kl.debug('Addkit kid: %s', newkit.kid)
 
-        # 4. check/populate component table
-        try:
-            updated_ngtypes = self.updateComponents(newkit.kid, kitinfo[2])
-        except ComponentAlreadyInstalledError, msg:
-            # updateComponents encountered an error, remove kit from DB
-            newkit.removable = True
-            newkit.flush()
-            self.deleteKit()
-            raise ComponentAlreadyInstalledError, msg
-            
         # TODO: handle driverpacks entry here, get BMT to return driver/module RPM
 
         # TODO: uncomment this to call repoman's refresh
