@@ -183,21 +183,20 @@ class KitOps:
             
         # install the kit RPM
         if not self.installer:
-            try:
-                rpmP = subprocess.Popen('rpm --quiet -i %s' %
-                                        (kitpath / kitrpm),
-                                        shell=True, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
-                o, e = rpmP.communicate()
-                kl.debug('Installing kit RPM stdout: %s, stderr: %s', o, e)
+            rpmP = subprocess.Popen('rpm --quiet -i %s' %
+                                    (kitpath / kitrpm),
+                                    shell=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            o, e = rpmP.communicate()
+            kl.debug('Installing kit RPM stdout: %s, stderr: %s', o, e)
 
-                if rpmP.returncode != 0:
-                    # failed installing RPM, remove kit from DB
-                    newkit.removable = True
-                    newkit.flush()
-                    self.deleteKit(kit['name'], kit['version'], kit['arch'])
-                    raise InstallKitRPMError, 'Kit RPM installation ' + \
-                        'failed, return code: %d' % rpmP.returncode
+            if rpmP.returncode != 0:
+                # failed installing RPM, remove kit from DB
+                newkit.removable = True
+                newkit.flush()
+                self.deleteKit(kit['name'], kit['version'], kit['arch'])
+                raise InstallKitRPMError, 'Kit RPM installation ' + \
+                    'failed, return code: %d' % rpmP.returncode
         else:
             rpm = kitinfo[3]
 
