@@ -448,8 +448,8 @@ class NetEditApp(object, KusuApp):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
-                   self.parser.error(self._("netedit_options_conflict_type")
-            
+                   self.parser.error(self._("netedit_options_conflict_type"))
+
                 result = None
                 invalidID = True
                 networkrecord = NetworkRecord()
