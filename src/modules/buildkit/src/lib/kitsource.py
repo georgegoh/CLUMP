@@ -378,7 +378,7 @@ class KusuKit(Struct):
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
         if not buildroot.exists: buildroot.makedirs()
-        plugdir = path('/opt/kusu/plugins')
+        plugdir = path('/opt/kusu/lib/plugins')
         destdir = buildroot / str(plugdir)[1:]
         if not destdir.exists(): destdir.makedirs()
         cpio_copytree(srcdir,destdir)
