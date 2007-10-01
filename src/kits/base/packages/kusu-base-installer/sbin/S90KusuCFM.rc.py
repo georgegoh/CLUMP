@@ -67,7 +67,10 @@ class KusuRC(rcplugin.Plugin):
 
         # Update the cfm files
         from kusu.cfms import PackBuilder
-        pb = PackBuilder()
+        from kusu.core import app 
+        kApp = app.KusuApp()
+        _ = kApp.langinit()
+        pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
         size = pb.updateCFMdir()
         pb.genFileList()
 
