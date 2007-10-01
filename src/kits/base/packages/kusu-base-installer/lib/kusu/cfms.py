@@ -40,7 +40,7 @@ class PackBuilder:
     distribution through CFM. """
 
 
-    def __init__(self):
+    def __init__(self, stderrtxt, stdouttxt):
         """__init__ - initializer for the class"""
         self.db          = KusuDB()
         self.database    = 'kusudb'
@@ -53,17 +53,21 @@ class PackBuilder:
         self.nodegrplst  = {}    # Dictionary of the nodegroups and their ID's
         self.pkgfile     = 'package.lst'  # File holding package list
         self.updatesize  = 0      # The size of the files that need to be updated
+        self.stdoutMessage = stdouttxt
+        self.errorMessage = stderrtxt
         self.db.connect(self.database, self.user)
         tmp = self.db.getAppglobals('CFMBaseDir')
         if tmp:
             self.cfmbasedir = tmp
         if not os.path.exists(self.md5sum):
-            raise "Fix the PATH for md5sum!"
+            self.errorMessage('cfm_Failed to locate md5sum\n')
+            sys.exit(1)
 
         try:
             self.apacheuser  = pwd.getpwnam('apache')
         except:
-            raise "Apache is not installed!  Fix this!"
+            self.errorMessage('cfm_No_apache_user\n')
+            sys.exit(1)
 
         # Populate the list of nodegroups
         query = ('select ngname, ngid from nodegroups')
@@ -72,7 +76,7 @@ class PackBuilder:
             self.db.execute(query)
             data = self.db.fetchall()
         except:
-            self.errorMessage('DB_Query_Error\n')
+            self.errorMessage('DB_Query_Error: %s\n', query)
             sys.exit(-1)
                  
         if data:
@@ -98,7 +102,7 @@ class PackBuilder:
             self.db.execute(query)
             data = self.db.fetchone()
         except:
-            self.errorMessage('DB_Query_Error\n')
+            self.errorMessage('DB_Query_Error: %s\n', query)
             sys.exit(-1)
                  
         if data:
@@ -117,7 +121,7 @@ class PackBuilder:
             self.db.execute(query)
             data = self.db.fetchall()
         except:
-            self.errorMessage('DB_Query_Error\n')
+            self.errorMessage('DB_Query_Error: %s\n', query)
             sys.exit(-1)
                  
         if data:
@@ -136,7 +140,7 @@ class PackBuilder:
             self.db.execute(query)
             data = self.db.fetchall()
         except:
-            self.errorMessage('DB_Query_Error\n')
+            self.errorMessage('DB_Query_Error: %s\n', query)
             sys.exit(-1)
                  
         if data:
@@ -249,13 +253,17 @@ class PackBuilder:
                     continue
                 for file in files:
                     fqfn = os.path.join(root, file)
+                    if not os.path.exists(fqfn):
+                        if os.path.islink(fqfn):
+                            self.errorMessage('cfm_broken_symbolic_link: %s\n', fqfn)
+                        continue
                     origmtime = os.path.getmtime(fqfn)
                     # cfmfqfn = os.path.join(cfmloc, fqfn[len(top):]) # THIS DOES NOT WORK!
                     cfmfqfn = "%s%s" % (cfmloc, fqfn[len(top):])
                     cfmmtime = 0
 
                     if not os.path.exists(cfmfqfn):
-                        print "New file found:  %s" % fqfn
+                        self.stdoutMessage('cfm_New file found:  %s\n', fqfn)
                     else:
                         cfmmtime = os.path.getmtime(cfmfqfn)
 
@@ -280,7 +288,7 @@ class PackBuilder:
 
                         for line in os.popen(cmd).readlines():
                             if line:
-                                print "ERROR:  %s" % line
+                                self.errorMessage('cfm_error: %s\n', line)
 
                         self.updatesize = self.updatesize + os.path.getsize(cfmfqfn)
                         os.chown(cfmfqfn, self.apacheuser[2], self.apacheuser[3])
@@ -312,13 +320,12 @@ class PackBuilder:
                 self.db.execute(query)
                 data = self.db.fetchall()
             except:
-                self.errorMessage('DB_Query_Error\n')
+                self.errorMessage('DB_Query_Error: %s\n', query)
                 sys.exit(-1)
                  
             if data:
                 for p in data:
                     packages.append(p[0])
-                    # print "Adding Package %s" % p[0]
                     
             # Add the components
             query = ('select components.cname from components, ng_has_comp '
@@ -328,7 +335,7 @@ class PackBuilder:
                 self.db.execute(query)
                 data = self.db.fetchall()
             except:
-                self.errorMessage('DB_Query_Error\n')
+                self.errorMessage('DB_Query_Error: %s\n', query)
                 sys.exit(-1)
                  
             if data:
@@ -406,7 +413,9 @@ class PackBuilder:
 
 
 if __name__ == '__main__':
-    pb = PackBuilder()
+    app = UpdateApp(sys.argv)
+    _ = app.langinit()
+    pb = PackBuilder(app.errorMessage, app.stdoutMessage)
     pb.getPackageList()
     pb.updateCFMdir()
     pb.genFileList()

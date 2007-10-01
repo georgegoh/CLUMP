@@ -429,6 +429,22 @@ msgstr "ERROR:  Invalid nodegroup!\n"
 msgid "Distributing %i KBytes to all nodes.\n"
 msgstr "Distributing %i KBytes to all nodes.\n"
 
+msgid "cfm_Failed to locate md5sum\n"
+msgstr "FATAL:  Can't find md5sum!\n"
+
+msgid "cfm_No_apache_user\n"
+msgstr "FATAL:  Can't find the apache user.\n"
+
+msgid "cfm_broken_symbolic_link: %s\n"
+msgstr "Warning: Broken Symbolic link: %s\n"
+
+msgid "cfm_New file found:  %s\n"
+msgstr "New file found:  %s\n"
+
+msgid "cfm_error: %s\n"
+msgstr "ERROR:  %s\n"
+
+
 # netedit messages
 msgid "netedit_window_title_new"
 msgstr "Create new network"

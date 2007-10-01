@@ -108,7 +108,7 @@ class UpdateApp(KusuApp):
             global UPDATEPACKAGE
             type = type | UPDATEPACKAGE
             
-        pb = PackBuilder()
+        pb = PackBuilder(self.errorMessage, self.stdoutMessage)
 
         if self.options.updatepackages:
             if os.path.exists(CFMCLIENT):
