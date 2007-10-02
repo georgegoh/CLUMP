@@ -5,10 +5,7 @@ cactiPkg = RPMPackage()
 cactiPkg.name = 'cacti'
 cactiPkg.version = '0.8.6j'
 cactiPkg.release = '1'
-if getArch() == 'x86':
-    cactiPkg.filename = 'cacti-0.8.6j-1.noarch.rpm'
-if getArch() == 'x86_64':
-    cactiPkg.filename = 'cacti-0.8.6j-1.noarch.rpm'
+cactiPkg.filename = 'cacti-0.8.6j-1.noarch.rpm'
 
 # package cactid
 cactidPkg = SRPMPackage()
@@ -22,11 +19,7 @@ cactiNodePkg = RPMPackage()
 cactiNodePkg.name = 'cacti-node'
 cactiNodePkg.version = '1'
 cactiNodePkg.release = '1'
-if getArch() == 'x86':
-    cactiNodePkg.filename = 'cacti-node-1-1.noarch.rpm'
-if getArch() == 'x86_64':
-    cactiNodePkg.filename = 'cacti-node-1-1.noarch.rpm'
-
+cactiNodePkg.filename = 'cacti-node-1-1.noarch.rpm'
 
 # cacti component
 cactiComp = DefaultComponent()
@@ -43,7 +36,6 @@ cactiNodeComp.name = 'cacti-monitored-node'
 cactiNodeComp.ngtypes = ['installer', 'compute']
 cactiNodeComp.description = 'component associated with cacti nodes'
 cactiNodeComp.addDep(cactiNodePkg)
-
 
 # define a default kit
 k = DefaultKit()
