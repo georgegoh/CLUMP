@@ -703,7 +703,7 @@ class NetworkEditWindow(USXBaseScreen):
         global selectedNetwork
         result, errorMsg = modifiedRecord.updateNetworkEntry(selectedNetwork)            
         if not result:
-           return False, self.kusuApp._(errorMSg)
+           return False, self.kusuApp._(errorMsg)
 
         return True, 'Success'
         
