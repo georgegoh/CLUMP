@@ -20,7 +20,7 @@
 TOPDIR = $(PWD)/../..
 OFEDDIR=OFED-1.2.5.1
 SRCNAME=OFED-1.2.5.1.tgz
-SRCDIR=$(PWD)/../../../../3rdparty/ofed/
+SRCDIR=$(PWD)/
 SRCFILE=$(SRCDIR)/$(SRCNAME)
 TARARGS=zxf
 
