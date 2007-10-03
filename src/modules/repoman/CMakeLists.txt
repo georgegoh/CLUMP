@@ -16,5 +16,10 @@ SET(SETUPPY_INSTALL_ARGS)
 SET(SETUPPY_SDIST_ARGS sdist)
 SET(SETUPPY_BDIST_ARGS bdist)
 
+# Stamp version string 
+CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/repoman
+               ${SETUPPY_PATH}/src/bin/repoman)
+CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/repopatch
+               ${SETUPPY_PATH}/src/bin/repopatch)
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)

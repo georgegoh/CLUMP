@@ -18,7 +18,7 @@ from path import path
 import os
 import sys
 import time
-from optparse import SUPPRESS_HELP
+from optparse import SUPPRESS_HELP, OptionParser
 
 try:
     import subprocess
@@ -36,9 +36,21 @@ class RepoPatchApp(KusuApp):
     def __init__(self):
         """ App-specific initialization. """
         KusuApp.__init__(self)
-    
+  
+        usage = """repopatch [-h | --help]
+               [-v | --version]
+               [-r reponame | --reponame reponame]
+               [--dbdriver]
+               [--dbdatabase]
+               [--dbuser]
+               [--dbpassword]
+"""
+        usage = self._(usage)
+        self.parser = OptionParser(usage)
+   
         # setup command line parser
-        self.parser.add_option('-r', '--repo', dest='repo_name')
+        self.parser.add_option('-r', '--repo', dest='repo_name', help=self._('repo name'))
+        self.parser.add_option('-v', '--version', dest='version', action="store_true", help=self._('Display version of tool'))
         self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
         self.parser.add_option('--dbdriver', dest='dbdriver',
                                help=self._('Database driver (sqlite, mysql)'))
@@ -48,6 +60,9 @@ class RepoPatchApp(KusuApp):
                                help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
+
+    def getVersion(self):
+        self.stdoutMessage('Repopatch ${VERSION_STR}\n')
 
     def update(self, repo_name):
         self.repoExists(repo_name)
@@ -167,7 +182,9 @@ class RepoPatchApp(KusuApp):
             self.rfinst = repofactory.RepoFactory(self.dbs)
 
         if options.repo_name:
-            self.update(options.repo_name)        
+            self.update(options.repo_name)       
+        elif options.version:
+            self.getVersion() 
 
     def repoExists(self, repo_name):
         repo = self.dbs.Repos.select_by(reponame=repo_name)
@@ -180,6 +197,9 @@ class RepoPatchApp(KusuApp):
 
 
 if __name__ == '__main__':
-    
+    if os.getuid() != 0:
+        sys.stderr.write('You need to be root to run repopatch.\n')
+        sys.exit(1)
+
     app = RepoPatchApp() 
     app.run()
