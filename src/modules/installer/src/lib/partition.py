@@ -160,7 +160,7 @@ class PartitionScreen(InstallerScreen):
                 setupDiskProfile(self.disk_profile, schema)
             elif str(result) == 'clear all partitions':
                 logger.debug('Clear all partitions')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True)
+                self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
             else:
                 logger.debug('Use Existing')
 
@@ -201,13 +201,14 @@ class PartitionScreen(InstallerScreen):
         if not has_swap:
             errList.append("swap partition is required.")
 
-        # verify that /, /boot and /depot are to be formatted
-        for mntpnt in ['/', '/boot', '/depot']:
-            vol = self.disk_profile.mountpoint_dict[mntpnt]
-            if vol.do_not_format or vol.leave_unchanged:
-                errList.append('%s is flagged as "do_not_format". ' % mntpnt + \
-                               'Installation cannot continue until this ' + \
-                               'flag is cleared.')
+        if not errList:
+            # verify that /, /boot and /depot are to be formatted
+            for mntpnt in ['/', '/boot', '/depot']:
+                vol = self.disk_profile.mountpoint_dict[mntpnt]
+                if vol.do_not_format or vol.leave_unchanged:
+                    errList.append('%s is flagged as "do_not_format". ' % mntpnt + \
+                                   'Installation cannot continue until this ' + \
+                                   'flag is cleared.')
 
         if errList:
             errMsg = _('Please correct the following errors:')
