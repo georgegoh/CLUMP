@@ -394,6 +394,7 @@ class LogicalVolume(object):
         """
         if not mountpoint:
             mountpoint = self.mountpoint
+        logger.debug('Mounting %s on %s' % (self.path, mountpoint))
         args = ''
         if readonly:
             args = args + '-r'
