@@ -19,6 +19,9 @@ if [ -z $GENCONFIG ]; then
    exit
 fi
 
+# Make directories
+mkdir -p /opt/lava/conf/lsbatch/lava/configdir
+
 $GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava
 $GENCONFIG lavacluster_$VERSION batch > /opt/lava/conf/lsbatch/lava/configdir/lsb.hosts
 $GENCONFIG lavaconf_$VERSION master > /opt/lava/conf/lsf.conf

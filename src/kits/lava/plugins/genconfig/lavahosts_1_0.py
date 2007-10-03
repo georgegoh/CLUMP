@@ -62,7 +62,6 @@ class thisReport(Report):
                 fp.close()
                 return data
 
-
 	def listHosts(self):
 		# List the contents of the lava hosts file
 		filename = "/opt/lava/conf/hosts"
@@ -99,12 +98,16 @@ class thisReport(Report):
 			compname = "%s%s" % (name, suffix)
 		    else:
 			compname = name
-
-		    if not compname in currenthosts:
-		        if suffix and suffix != '':
-		            print "%s %s%s.%s %s%s" % (ip, name, suffix, domain, name, suffix)
-		        else:
-		            print "%s %s.%s %s" % (ip, name, domain, name)
+		    if currenthosts and not compname in currenthosts:
+		       if suffix and suffix != '':
+		          print "%s %s%s.%s %s%s" % (ip, name, suffix, domain, name, suffix)
+		       else:
+        	          print "%s %s.%s %s" % (ip, name, domain, name)
+                    else:
+                       if suffix and suffix != '':
+                          print "%s %s%s.%s %s%s %s.%s %s" % (ip, name, suffix, domain, name, suffix, name, domain, name)
+                       else:
+                          print "%s %s.%s %s" % (ip, name, domain, name)
 
 	def runPlugin(self, pluginargs):
 		if self.haveLsf() != 1:

@@ -31,7 +31,7 @@ AutoReq: no
 
 %description
 This package is destined for the installer node and serves as an 
-information container for the database.  
+information container for the database.
 
 %prep
 
@@ -57,7 +57,6 @@ mkdir -p $plugdir/ngedit
 /usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py   $plugdir/genconfig
 /usr/bin/install -m 444 %{_topdir}/plugins/ngedit/*.py    $plugdir/ngedit
 
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -74,9 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/*.py
 /opt/kusu/lib/plugins/ngedit/*.py
 
-%exclude /opt/kusu/lib/plugins/addhost/*.py?
-%exclude /opt/kusu/lib/plugins/genconfig/*.py?
-%exclude /opt/kusu/lib/plugins/ngedit/*.py?
+#%exclude /opt/kusu/lib/plugins/addhost/*.py?
+#%exclude /opt/kusu/lib/plugins/genconfig/*.py?
+#%exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %pre
 PATH=$PATH:/opt/kusu/sbin
@@ -91,12 +90,12 @@ export PYTHONPATH
 if [ ! -e /tmp/kusu/installer_running ]; then
     # Check if MySQL is running if not, start it.
     if [ `service mysqld status | grep -c running` -ne 1 ]; then
-	service mysqld start
+       service mysqld start
     fi
 fi
 KID=`sqlrunner -q "SELECT * FROM kits"`
 if [ $? -ne 0 ]; then
-	exit 1
+   exit 1
 fi
 
 
@@ -110,23 +109,11 @@ else
     PYTHONPATH=FIX_ME
 fi
 export PYTHONPATH
-echo "In POST" > /tmp/kip
-echo "___________________________________________" >> /tmp/kip
-/bin/env >> /tmp/kip
-echo "___________________________________________" >> /tmp/kip
-echo "POST 1" >> /tmp/kip
-echo "___________________________________________" >> /tmp/kip
-/opt/kusu/sbin/sqlrunner -q "select * from appglobals" >> /tmp/kip 2>&1
-echo "___________________________________________" >> /tmp/kip
-
-/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'" >> /tmp/kip 2>&1
-echo "___________________________________________" >> /tmp/kip
 
 # Make the component entries because kitops is broken!!!
-KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
-echo "KID = $KID" >> /tmp/kip
+KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
 if [ $? -ne 0 ]; then
-	exit 0
+   exit 0
 fi
 
 sqlrunner -q "DELETE FROM components WHERE kid=$KID"
@@ -149,11 +136,10 @@ sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute N
 sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-i386'"
 
 CID1=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
-echo "POST 1.5 CID1=$CID1" >> /tmp/kip
-echo "KID = $KID" >> /tmp/kip
-if [ x"$CID1" = x ]; then
-	# The kit provides components that are not used with the installers OS
-	exit 0
+
+if [ "x$CID1" = "x" ]; then
+   # The kit provides components that are not used with the installers OS#
+   exit 0
 fi
 
 CID2=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
@@ -166,16 +152,13 @@ sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
 sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
 
 if [ ! -e /tmp/kusu/installer_running ]; then
-    # Running outside of Anaconda
-    if [ -f /etc/rc.kusu.d/S10lava-genconfig ]; then
-	/etc/rc.kusu.d/S10lava-genconfig
-    fi
-else
-    # Running within Anaconda
-
+   # Running outside of Anaconda
+   if [ -f /etc/rc.kusu.d/S10lava-genconfig ]; then
+       exec /etc/rc.kusu.d/S10lava-genconfig
+   fi
+#else
+   # Running within Anaconda
 fi
-
-
 
 %preun
 # PREUN section
@@ -196,7 +179,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
 %postun
 # POSTUN section
 
@@ -212,7 +194,12 @@ fi
 export PYTHONPATH
 
 KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
-sqlrunner -q "DELETE FROM ng_has_comp WHERE cid in (select cid from components where kid=$KID)"
+
+if [ ! -z $KID ]; then
+   sqlrunner -q "DELETE FROM ng_has_comp WHERE cid in (select cid from components where kid=$KID)"
+fi
+
 # Do not delete the component entries.  Kitops will do this.  It fails otherwise.
 
-
+# Remove user/group on removal of kit
+userdel -r lavaadmin
