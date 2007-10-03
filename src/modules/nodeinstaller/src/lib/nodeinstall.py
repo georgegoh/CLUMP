@@ -433,6 +433,18 @@ class NodeInstaller(object):
 
         authorized_keys.chmod(0600)
 
+    def saveLogs(self, destdir='/mnt/kusu/root', prefix='/tmp/kusu/'):
+        """Save the kusu.log and kusu-ks.cfg to /root."""
+        kusu_log = path(prefix) / path('kusu.log')
+        ks_cfg = path(prefix) / path('ks.cfg')
+        d = path(destdir)
+
+        if not d.exists():
+            d.makedirs()
+
+        kusu_log.copy(d)
+        ks_cfg.copy(d)
+
     def mountKusuMntPts(self, prefix):
         prefix = path(prefix)
 
@@ -451,6 +463,7 @@ class NodeInstaller(object):
             # and mount it at the mountpoint
             if d.has_key(m):
                 try:
+                    logger.debug('Try to mount %s' % m)
                     d[m].mount(mntpnt)
                     mounted.append(m)
                 except MountFailedError, e:

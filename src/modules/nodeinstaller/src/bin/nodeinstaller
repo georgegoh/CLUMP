@@ -269,6 +269,12 @@ class ProgressScreen(BaseScreen):
         self.nodeinst.getDbPasswd(kusu_prefix)
         dlg.close()
 
+        kl.debug('Copying out /tmp/kusu/kusu.log and /tmp/kusu/ks.cfg to /root')
+        dlg = self.selector.popupProgress('Backup log and config',
+                                          'Copying out /tmp/kusu/kusu.log and ' + \
+                                          '/tmp/kusu/ks.cfg to /root')
+        self.nodeinst.saveLogs(destdir='/mnt/kusu/root', prefix='/tmp/kusu')
+        dlg.close()
         raise UserExitError
 
 if __name__ == '__main__':
