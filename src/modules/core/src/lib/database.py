@@ -874,14 +874,16 @@ class DB(object):
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
                               size='100', device='1', preserve=0)
             swap = Partitions(fstype='linux-swap', partition='2',
-                              size='1000', device='1', preserve=0)
+                              size='2000', device='1', preserve=0)
             pv = Partitions(fstype='physical volume', partition='0',
-                            size='6000', device='N', preserve=1,
+                            size='30000', device='N', preserve=1,
                             options='fill;pv;vg=VolGroup00')
             vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=1)
-            root = Partitions(mntpnt='/', fstype='ext3', size='2000',
+            root = Partitions(mntpnt='/', fstype='ext3', size='12000',
                               device='ROOT', options='lv;vg=VolGroup00', preserve=0)
-            data = Partitions(mntpnt='/data', fstype='ext3', size='4000',
+            var = Partitions(mntpnt='/var', fstype='ext3', size='4000',
+                             device='VAR', options='lv;vg=VolGroup00', preserve=0)
+            data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
                               device='DATA', options='lv;vg=VolGroup00;fill', preserve=1)
             dell = Partitions(options='partitionID=Dell Utility', preserve=1)
 #            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
@@ -894,12 +896,32 @@ class DB(object):
             ng.partitions.append(pv)
             ng.partitions.append(vg)
             ng.partitions.append(root)
+            ng.partitions.append(var)
             ng.partitions.append(data)
             ng.partitions.append(dell)
 #            ng.partitions.append(donotpreserve1)
 #            ng.partitions.append(donotpreserve2)
 #            ng.partitions.append(donotpreserve3)
             ng.partitions.append(donotpreserve4)
+
+        # Installer Partitioning Schema
+        boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
+                          size='100', device='1', preserve=0)
+        swap = Partitions(fstype='linux-swap', partition='2',
+                          size='2000', device='1', preserve=0)
+        pv = Partitions(fstype='physical volume', partition='0',
+                        size='30000', device='N', preserve=0,
+                        options='fill;pv;vg=VolGroup00')
+        vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=0)
+        root = Partitions(mntpnt='/', fstype='ext3', size='12000',
+                          device='ROOT', options='lv;vg=VolGroup00', preserve=0)
+        depot = Partitions(mntpnt='/depot', fstype='ext3', size='4000',
+                           device='DEPOT', options='lv;vg=VolGroup00', preserve=0)
+        var = Partitions(mntpnt='/var', fstype='ext3', size='4000',
+                         device='VAR', options='lv;vg=VolGroup00', preserve=0)
+        for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve4]:
+            installer.partitions.append(parts)
+        # End Installer Partitioning Schema
 
         # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
