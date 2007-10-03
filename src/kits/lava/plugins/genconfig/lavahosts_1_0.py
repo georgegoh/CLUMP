@@ -100,7 +100,7 @@ class thisReport(Report):
 			compname = name
 		    if currenthosts and not compname in currenthosts:
 		       if suffix and suffix != '':
-		          print "%s %s%s.%s %s%s" % (ip, name, suffix, domain, name, suffix)
+		          print "%s %s%s.%s %s%s %s.%s %s" % (ip, name, suffix, domain, name, suffix, name, domain, name)
 		       else:
         	          print "%s %s.%s %s" % (ip, name, domain, name)
                     else:
