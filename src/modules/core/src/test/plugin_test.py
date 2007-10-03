@@ -94,26 +94,26 @@ class TestPlugin:
 
         for result in results:
             if result[0] == 'hello':
-                assert result[1] == True
-                assert result[2] == None
+                assert result[2] == True
+                assert result[3] == None
             elif result[0] == 'fail':
-                assert result[1] == False
-                assert result[2] == None
+                assert result[2] == False
+                assert result[3] == None
             elif result[0] == 'except':
-                assert result[1] == False
-                assert result[2] != None
+                assert result[2] == False
+                assert result[3] != None
             elif result[0] == 'ok.sh':
-                assert result[1] == True
-                assert result[2] == None
+                assert result[2] == True
+                assert result[3] == None
             elif result[0] == 'fail.sh':
-                assert result[1] == False
-                assert result[2] == None
+                assert result[2] == False
+                assert result[3] == None
             elif result[0] == 'scriptOK.py':
-                assert result[1] == True
-                assert result[2] == None
+                assert result[2] == True
+                assert result[3] == None
             elif result[0] == 'scriptFail.py':
-                assert result[1] == False
-                assert result[2] == None
+                assert result[2] == False
+                assert result[3] == None
  
 
             assert result[0] != 'norun'
@@ -131,11 +131,11 @@ class TestPlugin:
 
         for result in results1 + results2:
             if result[0] == 'ok.sh':
-                assert result[1] == True
-                assert result[2] == None
+                assert result[2] == True
+                assert result[3] == None
             elif result[0] == 'fail.sh':
-                assert result[1] == False
-                assert result[2] == None
+                assert result[2] == False
+                assert result[3] == None
 
 
 
