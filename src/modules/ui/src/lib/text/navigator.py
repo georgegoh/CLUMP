@@ -91,6 +91,15 @@ class Navigator(object, KusuApp):
         snack.ButtonChoiceWindow(self.mainScreen, title, msg, width=width,
                                  buttons=[self._('Ok')])
 
+    def popupEntry(self, title, msg, prompts, width=40):
+        """Show a popup dialog with a given title and message and entry box."""
+        button_pressed, entries = snack.EntryWindow(self.mainScreen, title,
+                                                    msg, prompts, width=width)
+        if button_pressed == 'ok':
+            return (True, entries)
+        else:
+            return (False, None)
+
     def popupYesNo(self, title, msg, defaultNo=False):
         """Show a popup dialog with a yes/no answer. Return True on yes, False on No."""
         buttons = [self._('Yes'), self._('No')]

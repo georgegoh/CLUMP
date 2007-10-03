@@ -49,13 +49,30 @@ class PartitionScreen(InstallerScreen):
 #        self.buttonsDict[_('RAID')].setCallback_(self.raidPartition)
 
     def setHotKeys(self):
-        self.hotkeysDict = {'F5': self.displayInternalState }
+        self.hotkeysDict = {'F5': self.displayInternalState, 'F6' : self.saveInternalStateToFile }
 
     def displayInternalState(self):
         s = str(self.disk_profile) + '\n\n'
         s = s + 'LVM Fifo:\n'
         s = s + self.disk_profile.reprLVMFifo()
         self.selector.popupMsg('Internal Partitiontool State', s)
+        return NAV_NOTHING
+
+    def saveInternalStateToFile(self):
+        result, values = self.selector.popupEntry('Save Partition Tool Dump To File',
+                                 'Enter the location of the file where ' + \
+                                 'you would like to save the dump of partitiontool',
+                                 ['Location'], width=40)
+        if result:
+            try:
+                location = values[0]
+                s = str(self.disk_profile) + '\n\n'
+                s = s + 'LVM Fifo:\n'
+                s = s + self.disk_profile.reprLVMFifo()
+                f = open(location, 'w')
+                f.write(s)
+            finally:
+                f.close()
         return NAV_NOTHING
 
     def raidPartition(self):
