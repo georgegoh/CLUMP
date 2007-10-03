@@ -762,7 +762,10 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 kitpacklst = glob.glob('*.[rR][pP][mM]')
                 kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
                 rmpacklst.extend(kitpacklst)
-    
+   
+            #MODIFICATION
+	    rmpacklst = [ x for x in rmpacklst if not x.startswith('kit-') ]
+ 
             repopackset -= Set(rmpacklst)
             os.chdir(cwdbackup)
             #repopackset ready
