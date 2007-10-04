@@ -298,6 +298,9 @@ class BuildInitrd:
             return 0
 
         for row in data:
+            if row[0] == '':
+                continue
+
             # There can be more than one package.  All have to be processed
             if self.stdoutout:
                 self.stdoutout("Looking for modules in: %s\n", row[0])
