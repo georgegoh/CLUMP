@@ -145,3 +145,20 @@ class KusuApp:
             prog = path(sys.argv[0]).stripext().basename()
             lock = path('/var/lock/subsys/') / prog
             if lock.exists(): lock.remove()
+            
+    def islock(self):
+        if len(sys.argv) >= 1:
+            prog = path(sys.argv[0]).stripext().basename()
+            lock = path('/var/lock/subsys/') / prog
+            return lock.exists() 
+        else:
+            return None
+
+    def getlockfile(self):
+        if len(sys.argv) >= 1:
+            prog = path(sys.argv[0]).stripext().basename()
+            lock = path('/var/lock/subsys/') / prog
+            return lock
+        else:
+            return None
+

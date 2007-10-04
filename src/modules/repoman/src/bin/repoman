@@ -334,6 +334,7 @@ For examples:
             dbpassword = options.dbpassword
 
         self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        self.lock()
 
         if options.prefix:
             self.prefix = path(options.prefix)
@@ -353,6 +354,7 @@ For examples:
                     kitname, kitversion, kitarch = options.kit.split('-')
                 except:
                     self.stderrMessage('Invalid kit.\n')
+                    self.unlock()
                     sys.exit(1)
 
                 self.delKit(options.reponame, kitname, kitversion, kitarch)
@@ -366,6 +368,7 @@ For examples:
                     kitname, kitversion, kitarch = options.kit.split('-')
                 except:
                     self.stderrMessage('Invalid kit.\n')
+                    self.unlock()
                     sys.exit(1)
 
                 self.addKit(options.reponame, kitname, kitversion, kitarch)
@@ -375,6 +378,8 @@ For examples:
             self.update(options.reponame)
         elif options.version:
             self.getVersion()
+
+        self.unlock()
 
     def list(self):
         headers = ['Repo name', 'Repository', 'Installers', 'Ostype', 'Kits' ]
@@ -457,4 +462,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     app = RepoManApp() 
-    app.run()
+
+    if app.islock():
+        sys.stderr.write('Another instance of repoman is running.\n')
+        sys.stderr.write('Lock file found: %s\n' % app.getlockfile())
+        sys.exit(1)
+    else:
+        app.run()
