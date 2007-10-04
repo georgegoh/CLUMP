@@ -82,6 +82,7 @@ class RepoPatchApp(KusuApp):
             pkgs, newKernels = repoObj.getUpdates()
         except Exception, e:
             self.stderrMessage('Unable to get updates. Reason: %s\n', e)
+            self.unlock()
             sys.exit(1)
 
         if newKernels:
@@ -117,6 +118,7 @@ class RepoPatchApp(KusuApp):
             repoObj.addUpdateKit(dir)
         except Exception, e:
             self.stderrMessage('Unable to add update kit. Reason: %s\n', e)
+            self.unlock()
             sys.exit(1)
 
         oldKitComp = None
@@ -144,6 +146,7 @@ class RepoPatchApp(KusuApp):
             repoObj.refresh(repoObj.repoid)
         except Exception, e:
             self.stderrMessage('Unable to add refresh repo. You may refresh manually via repoman -u. Reason: %s\n', e)
+            self.unlock()
             sys.exit(1)
 
     def run(self):
@@ -198,6 +201,7 @@ class RepoPatchApp(KusuApp):
 
         if not repo:
             print self._('No such repo')
+            self.unlock()
             sys.exit(1)
         else:
             return True
