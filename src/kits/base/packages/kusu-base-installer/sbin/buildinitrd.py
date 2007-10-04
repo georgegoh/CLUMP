@@ -172,7 +172,7 @@ class BuildInitrd:
         query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
                  'where nodegroups.repoid=repos.repoid and '
                  'repos.repoid=repos_have_kits.repoid and '
-                 'repos_have_kits.kid=kits.kid and kits.arch is not NULL ' 
+                 'repos_have_kits.kid=kits.kid and kits.isOS=1 ' 
                  'and nodegroups.ngid="%s"' % self.ngid)
         try:
             self.db.execute(query)
