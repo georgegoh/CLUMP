@@ -356,6 +356,8 @@ class LogicalVolume(object):
     def __getattr__(self, name):
         if name == 'size':
             return self.__size()
+        elif name == 'size_MB':
+            return (self.__size() / (1024 * 1024))
         elif name == 'path':
             return '/dev/' + self.group.name + '/' + self.name
         else:

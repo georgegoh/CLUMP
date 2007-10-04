@@ -112,9 +112,8 @@ class PartitionScreen(InstallerScreen):
             for lv_key in sorted(lv_keys):
                 lv = self.disk_profile.lv_dict[lv_key]
                 lv_devicename = '  LV ' + lv.name
-                lv_size_MB = lv.size / (1024 * 1024)
                 # display indented logical volumes belonging to the vg.
-                self.listbox.addRow([lv_devicename, '', '', str(lv_size_MB),lv.fs_type,
+                self.listbox.addRow([lv_devicename, '', '', str(lv.size_MB),lv.fs_type,
                                     lv.mountpoint], lv)
 
         logger.debug('Partition screen: getting disk list')

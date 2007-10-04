@@ -163,7 +163,7 @@ class ConfirmScreen(InstallerScreen):
             dispTxt = dispTxt + vg_name[0:15] + '\n'
             for lv in vg.lv_dict.values():
                 dispTxt += '  ' + lv.name[0:13].ljust(13)
-                dispTxt += ' ' + str(lv.size)[0:8].ljust(8)
+                dispTxt += ' ' + str(lv.size_MB)[0:8].ljust(8)
                 dispTxt += ' ' + str(lv.fs_type)[0:9].ljust(9)
                 mountpoint = lv.mountpoint or ''
                 dispTxt += ' ' + mountpoint[0:12].ljust(12) + '\n'
@@ -172,7 +172,7 @@ class ConfirmScreen(InstallerScreen):
             dispTxt = dispTxt + disk_name[0:15] + '\n'
             for part_id, partition in sorted(disk.partition_dict.iteritems()):
                 dispTxt += '  ' + partition.path[0:13].ljust(13) + ' '
-                dispTxt += str(partition.size)[0:8].ljust(8) + ' '
+                dispTxt += str(partition.size_MB)[0:8].ljust(8) + ' '
                 fs_type = partition.fs_type or ''
                 dispTxt += fs_type[0:9].ljust(9) + ' '
                 mountpoint = partition.mountpoint or ''
