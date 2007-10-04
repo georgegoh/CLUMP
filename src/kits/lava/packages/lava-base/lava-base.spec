@@ -61,6 +61,7 @@ mkdir -p $RPM_BUILD_ROOT/opt/lava/%{version}/%{binaryarch}/bin
 mkdir -p $RPM_BUILD_ROOT/opt/lava/%{version}/%{binaryarch}/etc
 mkdir -p $RPM_BUILD_ROOT/opt/lava/%{version}/%{binaryarch}/lib
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
+mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 
 ## 
 
@@ -103,6 +104,8 @@ rm -rf $RPM_BUILD_ROOT/opt/lava/%{version}/misc
 # Install configs
 install -m755 cshrc.lsf $RPM_BUILD_ROOT/opt/lava/conf
 install -m755 profile.lsf $RPM_BUILD_ROOT/opt/lava/conf
+install -m755 profile.lsf $RPM_BUILD_ROOT/etc/profile.d
+install -m755 cshrc.lsf $RPM_BUILD_ROOT/etc/profile.d
 install -m755 lsf.shared $RPM_BUILD_ROOT/opt/lava/conf
 install -m755 lsf.task $RPM_BUILD_ROOT/opt/lava/conf
 
@@ -127,6 +130,7 @@ install -m755 lava.init $RPM_BUILD_ROOT/etc/init.d/lava
 %files
 %defattr(-,root,root)
 /etc/init.d/lava
+/etc/profile.d/*
 /opt/lava/%{version}/*
 /opt/lava/conf/cshrc.lsf
 /opt/lava/conf/profile.lsf
