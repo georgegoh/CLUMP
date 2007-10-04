@@ -188,6 +188,8 @@ class RepoPatchApp(KusuApp):
             self.getVersion() 
         else:
             self.parser.print_help()
+            self.unlock()
+            sys.exit(1)
 
         self.unlock()
 
