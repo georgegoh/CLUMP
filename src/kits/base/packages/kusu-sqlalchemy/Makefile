@@ -20,7 +20,7 @@
 
 # Be sure to change the MODULE and VERSION to fit your needs
 MODULE = sqlalchemy
-VERSION = 0.5
+VERSION = 0.6
 
 
 # The following settings can be changed accordingly to your needs
