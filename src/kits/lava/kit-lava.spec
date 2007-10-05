@@ -205,5 +205,10 @@ rm -rf /opt/kusu/lib/plugins/addhost/10-lava*.py?
 rm -rf /opt/kusu/lib/plugins/genconfig/lava*.py?
 rm -rf /opt/kusu/lib/plugins/ngedit/lava*.py?
 
-
-
+# Remove CFM symlinks
+for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5'`; do
+    cd /etc/cfm/$i
+    if [ -d /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir ]; then
+       rm -rf /etc/cfm/$i/opt/lava
+    fi
+done
