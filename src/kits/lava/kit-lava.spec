@@ -200,6 +200,10 @@ if [ ! -z $KID ]; then
 fi
 
 # Do not delete the component entries.  Kitops will do this.  It fails otherwise.
+rm -rf /opt/lava
+rm -rf /opt/kusu/lib/plugins/addhost/10-lava*.py?
+rm -rf /opt/kusu/lib/plugins/genconfig/lava*.py?
+rm -rf /opt/kusu/lib/plugins/ngedit/lava*.py?
 
-# Remove user/group on removal of kit
-userdel -r lavaadmin
+
+

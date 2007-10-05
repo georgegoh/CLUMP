@@ -94,7 +94,7 @@ rm -rf $RPM_BUILD_ROOT/opt/lava/%{version}/misc
 ## POSTUN
 ##
 %postun
-
+service lava stop
 
 ##
 ## INSTALL

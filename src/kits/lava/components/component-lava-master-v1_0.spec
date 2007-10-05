@@ -34,5 +34,9 @@ mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 %install
 install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
+%postun
+# Remove user/group on removal of kit
+userdel -r lavaadmin
+
 %files
 /etc/rc.kusu.d/S10lava-genconfig
