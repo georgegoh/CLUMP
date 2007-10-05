@@ -2,12 +2,11 @@
 # build.kit for HPC kit
 
 # package netcdf
-netcdfpkg = SourcePackage()
+netcdfpkg = SRPMPackage()
 netcdfpkg.name = 'netcdf'
 netcdfpkg.version = '3.6.2'
-netcdfpkg.release = '0'
-netcdfpkg.installroot = '/opt/netcdf'
-netcdfpkg.filename = 'netcdf-3.6.2.tar.gz'
+netcdfpkg.release = '1'
+netcdfpkg.filename = 'netcdf-3.6.2-1.src.rpm'
 
 # package bonnie++
 bonniepkg = SRPMPackage()
@@ -59,11 +58,11 @@ if getArch() == 'x86_64':
 blacsmpich1gnupkg = RPMPackage()
 blacsmpich1gnupkg.name = 'blacs-mpich1-gnu'
 blacsmpich1gnupkg.version = '20000224'
-blacsmpich1gnupkg.release = '1'
+blacsmpich1gnupkg.release = '2'
 if getArch() == 'x86':
-    blacsmpich1gnupkg.filename = 'blacs-mpich1-gnu-20000224-1.i386.rpm'
+    blacsmpich1gnupkg.filename = 'blacs-mpich1-gnu-20000224-2.i386.rpm'
 if getArch() == 'x86_64':
-    blacsmpich1gnupkg.filename = 'blacs-mpich1-gnu-20000224-1.x86_64.rpm'
+    blacsmpich1gnupkg.filename = 'blacs-mpich1-gnu-20000224-2.x86_64.rpm'
 
 # package atlas
 # this uses an existing binary rpm
@@ -71,12 +70,12 @@ if getArch() == 'x86_64':
 atlaspkg = RPMPackage()
 atlaspkg.name = 'atlas'
 atlaspkg.version = '3.7.37'
-atlaspkg.release = '1'
+atlaspkg.release = '2'
 # each arch uses a different binary rpm
 if getArch() == 'x86':
-    atlaspkg.filename = 'atlas-3.7.37-1.i386.rpm'
+    atlaspkg.filename = 'atlas-3.7.37-2.i386.rpm'
 if getArch() == 'x86_64':
-    atlaspkg.filename = 'atlas-3.7.37-1.x86_64.rpm'
+    atlaspkg.filename = 'atlas-3.7.37-2.x86_64.rpm'
 
 # package fftw
 fftwpkg = SRPMPackage()
@@ -109,6 +108,20 @@ if getArch() == 'x86':
     linpackmpich1Pkg.filename = 'linpack-mpich1-gnu-1.0a-1.i386.rpm'
 if getArch() == 'x86_64':
     linpackmpich1Pkg.filename = 'linpack-mpich1-gnu-1.0a-1.x86_64.rpm'
+    
+
+# package scalapack-mpich1
+# this uses an existing binary rpm
+# untuned and generic
+scalapackmpich1pkg = RPMPackage()
+scalapackmpich1pkg.name = 'scalapack-mpich1-gnu'
+scalapackmpich1pkg.version = '1.8.0'
+scalapackmpich1pkg.release = '1'
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    scalapackmpich1pkg.filename = 'scalapack-mpich1-gnu-1.8.0-1.i386.rpm'
+if getArch() == 'x86_64':
+    scalapackmpich1pkg.filename = 'scalapack-mpich1-gnu-1.8.0-1.x86_64.rpm'
 
 # package modules-benchmarking-tools
 modulesbenchmarkingtoolspkg = SRPMPackage()
@@ -188,11 +201,25 @@ if getArch() == 'x86_64':
 blacsopenmpignupkg = RPMPackage()
 blacsopenmpignupkg.name = 'blacs-openmpi-gnu'
 blacsopenmpignupkg.version = '20000224'
-blacsopenmpignupkg.release = '1'
+blacsopenmpignupkg.release = '2'
 if getArch() == 'x86':
-    blacsopenmpignupkg.filename = 'blacs-openmpi-gnu-20000224-1.i386.rpm'
+    blacsopenmpignupkg.filename = 'blacs-openmpi-gnu-20000224-2.i386.rpm'
 if getArch() == 'x86_64':
-    blacsopenmpignupkg.filename = 'blacs-openmpi-gnu-20000224-1.x86_64.rpm'
+    blacsopenmpignupkg.filename = 'blacs-openmpi-gnu-20000224-2.x86_64.rpm'
+
+# package scalapack-openmpi
+# this uses an existing binary rpm
+# untuned and generic
+scalapackOpenMPIpkg = RPMPackage()
+scalapackOpenMPIpkg.name = 'scalapack-openmpi-gnu'
+scalapackOpenMPIpkg.version = '1.8.0'
+scalapackOpenMPIpkg.release = '1'
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    scalapackOpenMPIpkg.filename = 'scalapack-openmpi-gnu-1.8.0-1.i386.rpm'
+if getArch() == 'x86_64':
+    scalapackOpenMPIpkg.filename = 'scalapack-openmpi-gnu-1.8.0-1.x86_64.rpm'
+
 
 # package mpich2-openmpi-gnu
 # this uses an existing binary rpm
@@ -229,8 +256,7 @@ openmpiComp.addDep(hdf5openmpiPkg)
 openmpiComp.addDep(linpackopenmpiPkg)
 openmpiComp.addDep(modulesopenmpignupkg)
 openmpiComp.addDep(blacsopenmpignupkg)
-#openmpiComp.addDep()
-#openmpiComp.addDep()
+openmpiComp.addDep(scalapackOpenMPIpkg)
 
 # define component-mpich1
 mpich1Comp = DefaultComponent()
@@ -243,6 +269,7 @@ mpich1Comp.addDep(hdf5mpich1Pkg)
 mpich1Comp.addDep(linpackmpich1Pkg)
 mpich1Comp.addDep(modulesmpich1gnupkg)
 mpich1Comp.addDep(blacsmpich1gnupkg)
+mpich1Comp.addDep(scalapackmpich1pkg)
 
 # define component-HPC-libraries
 hpcLibrariesComp = DefaultComponent()
