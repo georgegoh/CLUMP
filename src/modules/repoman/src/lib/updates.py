@@ -342,7 +342,7 @@ class RHNUpdate(BaseUpdate):
             url = cfg['url']
 
             if not (username and password and url):
-                raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/updates.conf'
+               raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
             return RHN(username, password, url)
 
         else:
