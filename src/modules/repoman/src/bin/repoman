@@ -366,7 +366,7 @@ For examples:
                 try:
                     kitname, kitversion, kitarch = options.kit.split('-')
                 except:
-                    self.stderrMessage('Invalid kit.\n')
+                    self.stderrMessage('Invalid kit provided. Try using --kit=<kit name>-<kit version>-<kit arch>\n')
                     self.unlock()
                     sys.exit(1)
 
@@ -380,7 +380,7 @@ For examples:
                 try:
                     kitname, kitversion, kitarch = options.kit.split('-')
                 except:
-                    self.stderrMessage('Invalid kit.\n')
+                    self.stderrMessage('Invalid kit provided. Try using --kit=<kit name>-<kit version>-<kit arch>\n')
                     self.unlock()
                     sys.exit(1)
 
