@@ -25,9 +25,6 @@ class RHN:
                'X-RHN-Auth-Server-Time',
                'X-RHN-Auth-Expire-Offset']
 
-    rhnURL = 'https://rhn.redhat.com/rpc/api'
-    up2dateURL = 'https://xmlrpc.rhn.redhat.com/XMLRPC'
-
     # From rhnserver.py:
     #if fault.faultCode == -3:
     #    # This username is already taken, or the password is incorrect.
@@ -88,7 +85,10 @@ class RHN:
                        404: rhnURLNotFound}
 
     def __init__(self, username, password, rhnURL=None):
-        
+    
+        self.rhnURL = 'https://rhn.redhat.com/rpc/api'
+        self.up2dateURL = 'https://xmlrpc.rhn.redhat.com/XMLRPC'
+
         if rhnURL:
             schema, hostname, p, ignore, ignore = urlparse.urlsplit(rhnURL)
 
@@ -96,10 +96,10 @@ class RHN:
                 self.rhnServer = xmlrpclib.Server(self.rhnURL)
                 self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
             else:
-                up2dateURL = urlparse.urlunparse((schema,hostname,'rpc/api','','',''))
-
-                self.rhnServer = xmlrpclib.Server(rhnURL)
-                self.up2dateServer = xmlrpclib.Server(up2dateURL)
+                #up2dateURL = urlparse.urlunparse((schema,hostname,'rpc/api','','',''))
+                self.up2dateURL = rhnURL
+                self.rhnServer = xmlrpclib.Server(self.rhnURL)
+                self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
         else:
             self.rhnServer = xmlrpclib.Server(self.rhnURL)
             self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
