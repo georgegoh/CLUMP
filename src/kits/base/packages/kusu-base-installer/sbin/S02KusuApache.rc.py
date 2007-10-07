@@ -31,6 +31,16 @@ class KusuRC(rcplugin.Plugin):
         nodeboot.chown(uid, gid)
         nodeboot.chmod(0770)
 
+        # Set kusu.log permission
+        filename = path(os.environ["KUSU_LOGFILE"])
+        filename.chown(uid, gid)
+        filename.chmod(0644)
+
+        # kusu KUSU_LOGFILE path permission
+        parent_path = filename.splitpath()[0].abspath()
+        parent_path.chown(uid, gid)
+        parent_path.chmod(0755)
+
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
 
         if path('/var/www/html').exists():

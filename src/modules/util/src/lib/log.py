@@ -55,7 +55,7 @@ class Logger(logging.Logger):
         Adds a file handler to logger.
 
         If filename not specified, will try $KUSU_LOGFILE, else use default of
-        /tmp/kusu/kusu.log. File and full path will be created.
+        /var/log/kusu/kusu.log. File and full path will be created.
         """
 
         # try $KUSU_LOGFILE environment variable, or use the default filename
@@ -63,9 +63,9 @@ class Logger(logging.Logger):
             try:
                 filename = os.environ["KUSU_LOGFILE"]
             except KeyError:
-                filename = "/tmp/kusu/kusu.log"
+                filename = "/var/log/kusu/kusu.log"
             if filename == "":
-                filename = "/tmp/kusu/kusu.log"
+                filename = "/var/log/kusu/kusu.log"
 
         # checks whether the path exists, if not mkdir.
         filename = path(filename)

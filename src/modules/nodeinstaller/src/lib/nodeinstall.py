@@ -435,7 +435,7 @@ class NodeInstaller(object):
 
     def saveLogs(self, destdir='/mnt/kusu/root', prefix='/tmp/kusu/'):
         """Save the kusu.log and kusu-ks.cfg to /root."""
-        kusu_log = path(prefix) / path('kusu.log')
+        kusu_log = path(os.environ.get('KUSU_LOGFILE', '/var/log/kusu/kusu.log'))
         ks_cfg = path(prefix) / path('ks.cfg')
         d = path(destdir)
 
@@ -443,7 +443,7 @@ class NodeInstaller(object):
             d.makedirs()
 
         kusu_log.copy(d)
-        ks_cfg.copy(d)
+        ks_cfg.copy(d / 'kusu-ks.cfg')
 
     def mountKusuMntPts(self, prefix):
         prefix = path(prefix)

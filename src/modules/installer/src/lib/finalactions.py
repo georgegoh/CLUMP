@@ -134,7 +134,7 @@ def migrate(prefix):
     dest = path(prefix) + '/root'
     
     kusu_tmp = os.environ.get('KUSU_TMP', '/tmp/kusu')
-    kusu_log = os.environ.get('KUSU_LOGFILE', '/tmp/kusu/kusu.log')
+    kusu_log = os.environ.get('KUSU_LOGFILE', '/var/log/kusu/kusu.log')
 
     kusu_tmp = path(kusu_tmp)
     kusu_log = path(kusu_log)

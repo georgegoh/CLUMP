@@ -10,6 +10,9 @@ SET(VERSION_STR ${KUSU_VERSION})
 SET(SRC_URL http://www.osgdc.org)
 SET(KUSU_MODULE ON) #Set to ON if this is a Kusu module else set to OFF.
 
+SET(KUSU_LOGFILE /var/log/kusu.log)
+
+
 SET(SETUPPY_PATH ${CMAKE_CURRENT_BINARY_DIR})
 SET(SETUPPY_BUILD_ARGS)
 SET(SETUPPY_INSTALL_ARGS)
