@@ -27,8 +27,7 @@ except:
     from popen5 import subprocess
 
 kl = kusulog.getKusuLog()
-kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
-                       'kusu.log')
+kl.addFileHandler(os.environ['KUSU_LOGFILE'])
 
 class RepoManApp(KusuApp):
     """ Application class for repoman. """
