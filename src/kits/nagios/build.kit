@@ -8,32 +8,44 @@ nagios_pkg.release = '1'
 nagios_pkg.filename = 'nagios-2.9-1.src.rpm'
 
 # Nagios Remote Process Executor for compute nodes
-nagios_nrpe_pkg = SRPMPackage()
+nagios_nrpe_pkg = RPMPackage()
 nagios_nrpe_pkg.name = 'nagios-nrpe'
 nagios_nrpe_pkg.version = '2.9'
 nagios_nrpe_pkg.release = '1'
-nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.src.rpm'
+if getArch() == 'x86':
+    nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.x86_64.rpm'
 
 # Main Nagios plugins
-nagios_plugins_pkg = SRPMPackage()
+nagios_plugins_pkg = RPMPackage()
 nagios_plugins_pkg.name = 'nagios-plugins'
 nagios_plugins_pkg.version = '1.4.9'
 nagios_plugins_pkg.release = '1'
-nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.src.rpm'
+if getArch() == 'x86':
+    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.x86_64.rpm'
 
 # Nagios MySQL plugin
-nagios_plugin_mysql_pkg = SRPMPackage()
+nagios_plugin_mysql_pkg = RPMPackage()
 nagios_plugin_mysql_pkg.name = 'nagios-plugin-mysql'
 nagios_plugin_mysql_pkg.version = '1.4.9'
 nagios_plugin_mysql_pkg.release = '1'
-nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.src.rpm'
+if getArch() == 'x86':
+    nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.x86_64.rpm'
 
 # Nagios NRPE plugin
-nagios_plugin_nrpe_pkg = SRPMPackage()
+nagios_plugin_nrpe_pkg = RPMPackage()
 nagios_plugin_nrpe_pkg.name = 'nagios-plugin-nrpe'
 nagios_plugin_nrpe_pkg.version = '2.9'
 nagios_plugin_nrpe_pkg.release = '1'
-nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.src.rpm'
+if getArch() == 'x86':
+    nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.x86_64.rpm'
 
 # perl-Crypt-DES -- a dependency unavailable from the repos, so included here
 perl_crypt_des_pkg = SRPMPackage()
@@ -50,10 +62,9 @@ perl_net_snmp_pkg.release = '1'
 perl_net_snmp_pkg.filename = 'perl-Net-SNMP-5.2.0-1.rf.src.rpm'
 
 # Component installed on the monitoring node
-installer_comp = Fedora6Component()
+installer_comp = DefaultComponent()
 installer_comp.name = 'installer-nagios'
-installer_comp.description = \
-        'Nagios component for Fedora Core 6 installer node.'
+installer_comp.description = 'Nagios component for installer node.'
 
 # Installer component contains...
 installer_comp.addDep(nagios_pkg)
@@ -64,9 +75,9 @@ installer_comp.addDep(perl_crypt_des_pkg)
 installer_comp.addDep(perl_net_snmp_pkg)
 
 # Component installed on the monitored nodes
-compute_comp = Fedora6Component()
+compute_comp = DefaultComponent()
 compute_comp.name = 'compute-nagios'
-compute_comp.description = 'Nagios component for Fedora Core 6 compute nodes.'
+compute_comp.description = 'Nagios component for compute nodes.'
 
 # Compute component contains...
 compute_comp.addDep(nagios_nrpe_pkg)
