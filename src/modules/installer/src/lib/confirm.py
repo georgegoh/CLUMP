@@ -112,6 +112,7 @@ class ConfirmScreen(InstallerScreen):
     def renderNetwork(self):
         network_profile = self.kiprofile['Network']
         dispTxt = '\n[Network]\n'
+        dispTxt += 'Admin Email: %s\n' % network_profile['admin_email']
         dispTxt += 'Hostname: %s\n' % network_profile['fqhn_host']
         dispTxt += 'Domain: %s\n' % network_profile['fqhn_domain']
         dispTxt += 'Gateway: %s\n' % network_profile['default_gw']

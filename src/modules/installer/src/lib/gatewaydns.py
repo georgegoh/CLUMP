@@ -70,11 +70,16 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
         ### Removing DHCP temporarily, fix in KUSU-207
         #self.screenGrid = snack.Grid(1, 6)
-        self.screenGrid = snack.Grid(1, 5)
+        self.screenGrid = snack.Grid(1, 6)
         ###
         entryWidth = 28
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
+
+        self.admin_email = kusuwidgets.LabelledEntry(
+                                       labelTxt=_('Cluster Admin Email ').rjust(24),
+                                       width=entryWidth)
+        self.admin_email.addCheck(verifyEmail)
 
         self.gateway = kusuwidgets.LabelledEntry(
                                    labelTxt=_('Default Gateway ').rjust(24), 
@@ -100,13 +105,15 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
         ### Removing DHCP temporarily, fix in KUSU-207
-        self.screenGrid.setField(self.gateway, col=0, row=1, anchorLeft=1,
+        self.screenGrid.setField(self.admin_email, col=0, row=1, anchorLeft=1,
                                  padding=(3, 1, 0, 0))
-        self.screenGrid.setField(self.dns1, col=0, row=2, anchorLeft=1,
+        self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
                                  padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns2, col=0, row=3, anchorLeft=1,
+        self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
                                  padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns3, col=0, row=4, anchorLeft=1,
+        self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
+                                 padding=(3, 0, 0, 0))
+        self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
                                  padding=(3, 0, 0, 1))
         #self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
         #                         padding=(0, 1, 0, 0))
@@ -148,6 +155,11 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
         # try to set field with data, or leave blank if no data
         try:
+            self.admin_email.setEntry(self.netProfile['admin_email'])
+        except KeyError:
+            pass
+
+        try:
             self.gateway.setEntry(self.netProfile['default_gw'])
         except KeyError:
             pass
@@ -171,10 +183,15 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         """
         Perform validity checks on received data.
         """
+        errList = []
+
+        result, msg = self.admin_email.verify()
+        if result is None:
+            errList.append(_('Admin Email field is empty'))
+        elif not result:
+            errList.append(_('Default Admin Email: ') + msg)
 
         if not self.use_dhcp.value():
-            errList = []
-
             result, msg = self.gateway.verify()
             if result is None:
                 errList.append(_('Default Gateway field is empty'))
@@ -234,7 +251,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         """
         Store the gateway settings.
         """
-
+        self.netProfile['admin_email'] = self.admin_email.value()
         self.netProfile['gw_dns_use_dhcp'] = bool(self.use_dhcp.value())
         self.netProfile['default_gw'] = self.gateway.value()
         self.netProfile['dns1'] = self.dns1.value()
