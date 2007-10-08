@@ -763,8 +763,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
                 rmpacklst.extend(kitpacklst)
    
-            #MODIFICATION
-	    rmpacklst = [ x for x in rmpacklst if not x.startswith('kit-') ]
+            rmpacklst = [ x for x in rmpacklst if not x.startswith('kit-') ]
  
             repopackset -= Set(rmpacklst)
             os.chdir(cwdbackup)
@@ -1505,14 +1504,24 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                         DevPartNumDone = False
 
         if not DevPartNumDone:
-            device = int(self.drives.current().split()[1].strip())
+            #determine the device num
+            if self.drives.current() == None: #creating 1st partition
+                device = 1
+            else:
+                device = int(self.drives.current().split()[1].strip())
+            #determine the partition num
             if self.partition and device == self.disk_key:
                 partnum = self.part_key     #preserve partition number
             else:
                 #new disk or new partition
-                disk_dict = self.PartSchemaObj.schema['disk_dict'][device]
-                part_keys = disk_dict['partition_dict'].keys()
-                part_keys = [ k for k in part_keys if not disk_dict['partition_dict'][k].has_key('pv_span') ]
+                try:
+                    disk_dict = self.PartSchemaObj.schema['disk_dict'][device]
+                    part_keys = disk_dict['partition_dict'].keys()
+                    part_keys = [ k for k in part_keys if not disk_dict['partition_dict'][k].has_key('pv_span') ]
+                except KeyError:    #new disk
+                    disk_dict = None
+                    part_keys = []
+
                 if not part_keys:
                     partnum = 1
                 else:
