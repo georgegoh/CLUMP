@@ -65,6 +65,7 @@ perl_net_snmp_pkg.filename = 'perl-Net-SNMP-5.2.0-1.rf.noarch.rpm'
 installer_comp = DefaultComponent()
 installer_comp.name = 'installer-nagios'
 installer_comp.description = 'Nagios component for installer node.'
+installer_comp.ngtypes = ['installer']
 
 # Installer component contains...
 installer_comp.addDep(nagios_pkg)
@@ -78,6 +79,7 @@ installer_comp.addDep(perl_net_snmp_pkg)
 compute_comp = DefaultComponent()
 compute_comp.name = 'compute-nagios'
 compute_comp.description = 'Nagios component for compute nodes.'
+compute_comp.ngtypes = ['compute']
 
 # Compute component contains...
 compute_comp.addDep(nagios_nrpe_pkg)
@@ -98,9 +100,9 @@ k.addComponent(compute_comp)
 
 # Add post install script. You can modify this shell script or add new ones in the
 # sources directory
-k.addScript('00-post-script.sh',mode='post')
+#k.addScript('00-post-script.sh',mode='post')
 
 # Add post uninstall script. You can modify this shell script or add new ones in the
 # sources directory
-k.addScript('00-postun-script.sh',mode='postun')
+#k.addScript('00-postun-script.sh',mode='postun')
 
