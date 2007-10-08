@@ -1,0 +1,95 @@
+# build.kit for Nagios kit
+
+# Main Nagios package
+nagios_pkg = SRPMPackage()
+nagios_pkg.name = 'nagios'
+nagios_pkg.version = '2.9'
+nagios_pkg.release = '1'
+nagios_pkg.filename = 'nagios-2.9-1.src.rpm'
+
+# Nagios Remote Process Executor for compute nodes
+nagios_nrpe_pkg = SRPMPackage()
+nagios_nrpe_pkg.name = 'nagios-nrpe'
+nagios_nrpe_pkg.version = '2.9'
+nagios_nrpe_pkg.release = '1'
+nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.src.rpm'
+
+# Main Nagios plugins
+nagios_plugins_pkg = SRPMPackage()
+nagios_plugins_pkg.name = 'nagios-plugins'
+nagios_plugins_pkg.version = '1.4.9'
+nagios_plugins_pkg.release = '1'
+nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.src.rpm'
+
+# Nagios MySQL plugin
+nagios_plugin_mysql_pkg = SRPMPackage()
+nagios_plugin_mysql_pkg.name = 'nagios-plugin-mysql'
+nagios_plugin_mysql_pkg.version = '1.4.9'
+nagios_plugin_mysql_pkg.release = '1'
+nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.src.rpm'
+
+# Nagios NRPE plugin
+nagios_plugin_nrpe_pkg = SRPMPackage()
+nagios_plugin_nrpe_pkg.name = 'nagios-plugin-nrpe'
+nagios_plugin_nrpe_pkg.version = '2.9'
+nagios_plugin_nrpe_pkg.release = '1'
+nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.src.rpm'
+
+# perl-Crypt-DES -- a dependency unavailable from the repos, so included here
+perl_crypt_des_pkg = SRPMPackage()
+perl_crypt_des_pkg.name = 'perl-Crypt-DES'
+perl_crypt_des_pkg.version = '2.05'
+perl_crypt_des_pkg.release = '3'
+perl_crypt_des_pkg.filename = 'perl-Crypt-DES-2.05-3.rf.src.rpm'
+
+# perl-Net-SNMP -- a dependency unavailable from the repos, so included here
+perl_net_snmp_pkg = SRPMPackage()
+perl_net_snmp_pkg.name = 'perl-Net-SNMP'
+perl_net_snmp_pkg.version = '5.2.0'
+perl_net_snmp_pkg.release = '1'
+perl_net_snmp_pkg.filename = 'perl-Net-SNMP-5.2.0-1.rf.src.rpm'
+
+# Component installed on the monitoring node
+installer_comp = Fedora6Component()
+installer_comp.name = 'installer-nagios'
+installer_comp.description = \
+        'Nagios component for Fedora Core 6 installer node.'
+
+# Installer component contains...
+installer_comp.addDep(nagios_pkg)
+installer_comp.addDep(nagios_plugins_pkg)
+installer_comp.addDep(nagios_plugin_mysql_pkg)
+installer_comp.addDep(nagios_plugin_nrpe_pkg)
+installer_comp.addDep(perl_crypt_des_pkg)
+installer_comp.addDep(perl_net_snmp_pkg)
+
+# Component installed on the monitored nodes
+compute_comp = Fedora6Component()
+compute_comp.name = 'compute-nagios'
+compute_comp.description = 'Nagios component for Fedora Core 6 compute nodes.'
+
+# Compute component contains...
+compute_comp.addDep(nagios_nrpe_pkg)
+compute_comp.addDep(nagios_plugins_pkg)
+compute_comp.addDep(nagios_plugin_nrpe_pkg)
+compute_comp.addDep(perl_crypt_des_pkg)
+compute_comp.addDep(perl_net_snmp_pkg)
+
+# The kit RPM
+k = DefaultKit()
+k.name = 'nagios'
+k.description = 'Nagios kit.'
+
+# Adding the installer and compute components
+k.addComponent(installer_comp)
+k.addComponent(compute_comp)
+
+
+# Add post install script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-post-script.sh',mode='post')
+
+# Add post uninstall script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-postun-script.sh',mode='postun')
+
