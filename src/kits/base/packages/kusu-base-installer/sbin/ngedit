@@ -561,6 +561,7 @@ class scrNGEEdit_Networks(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.__devmap = {}
 
     def setCallbacks(self):
 
@@ -624,6 +625,7 @@ class scrNGEEdit_Networks(USXBaseScreen):
         for record in rv:
             record = list(record) #convert to list
             netid = record.pop()
+            self.__devmap[netid] = record[0]
             if netid in netlst:
                 isSel = 1
             else:
@@ -642,6 +644,11 @@ class scrNGEEdit_Networks(USXBaseScreen):
         self.screenGrid.setField(self.__ct, 0,1, (0,0,0,0), anchorLeft=1)
 
     def validate(self):
+        netid_select = self.__ct.getSelection()
+        devlist = [ v for k,v in self.__devmap.items() if k in netid_select ]
+        if len(devlist) <> len(Set(devlist)):
+            return False, "Duplicate devices selected, please revise."
+
         return True, 'Success'
 
     def formAction(self):
