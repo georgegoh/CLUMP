@@ -15,7 +15,6 @@ from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def added(self, nodename, info, prePopulateMode):
-        print "Nagios adding nodes:", nodename
         cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py',
                 '-a', nodename]
         nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
@@ -23,7 +22,6 @@ class AddHostPlugin(AddHostPluginBase):
         out, err = nagiosconfigP.communicate()
 
     def removed(self, nodename, info):
-        print "Nagios removing node:", nodename
         cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py',
                 '-r', nodename]
         nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
