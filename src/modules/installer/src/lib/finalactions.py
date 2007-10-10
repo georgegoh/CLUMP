@@ -100,6 +100,8 @@ def genAutoInstallScript(disk_profile, kiprofile):
         k.instnum = kiprofile['InstNum']
     else:
         k = Kickstart(kiprofile.getDatabase(), ngname)
+        logger.debug('Created Kickstart object(k) successfully')
+        logger.debug('k.packageprofile: %s' % k.packageprofile)
 
     k.rootpw = kiprofile['RootPasswd'] 
 

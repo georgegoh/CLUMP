@@ -60,13 +60,15 @@ class BaseInstall:
     def _getPackageProfile(self, ngname):
         # There can only be 1 installer. Guaranteed by the db. 
         installer = self.dbs.NodeGroups.select_by(ngname=ngname)[0]
+        try:
+            components = [component.cname for component in installer.components \
+                          if not component.kit.isOS]
 
-        components = [component.cname for component in installer.components \
-                      if not component.kit.isOS]
+            pkgs = [pkg.packagename for pkg in installer.packages]
 
-        pkgs = [pkg.packagename for pkg in installer.packages]
-
-        return components + pkgs
+            return components + pkgs
+        except AttributeError:
+            raise AttributeError, 'components: %s' % str(installer.components)
 
 class Kickstart(BaseInstall):
     def __init__(self, db, prefix=None):
