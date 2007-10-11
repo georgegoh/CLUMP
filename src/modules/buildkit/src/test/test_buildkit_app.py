@@ -65,7 +65,13 @@ class TestBuildKitApp(object):
         kitsrcdir = self.scratchdir / 'test'
         
         # get the current arch
-        arch = tools.getArch()
+        _arch = tools.getArch()
+        
+        if _arch == 'x86':
+            arch = 'i386'
+        else:
+            arch = _arch
+        
         isoname = 'kit-test-0.1-0.%s.iso' % arch
         isofile = kitsrcdir / isoname
         
