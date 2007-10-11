@@ -326,6 +326,11 @@ class KusuKit(Struct):
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['components']
         if '_queuecmds' in d: del d['_queuecmds']
+        
+        if self.arch == 'x86':
+            d['arch'] = 'i386'
+        else:
+            d['arch'] = self.arch
 
         return d
 
@@ -411,7 +416,12 @@ class KusuKit(Struct):
         self.pkgname = 'kit-%s' % self.name
         _ns['pkgname'] = self.pkgname
         _ns['name'] = self.name
-        _ns['arch'] = self.arch
+
+        if self.arch == 'x86':
+            _ns['arch'] = 'i386'
+        else:
+            _ns['arch'] = self.arch
+
         _ns['pkgversion'] = self.version
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license

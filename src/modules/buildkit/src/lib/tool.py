@@ -24,7 +24,7 @@ class BuildKit:
     verbose = False
     debuginfo = False
     
-    def newKitSrc(self, srcpath):
+    def newKitSrc(self, srcpath, arch='noarch'):
         """prepare the Kit source directory"""
         srcpath = path(srcpath)
         newkit = KitSrcFactory(srcpath)
@@ -32,7 +32,7 @@ class BuildKit:
         
         # also create a sample build.kit
         defaultname = srcpath.basename()
-        s = self.prepareBuildKitTemplate(defaultname)
+        s = self.prepareBuildKitTemplate(defaultname, arch)
         f = open('%s/build.kit' % srcpath,'w')
         f.write(s)
         f.close()
@@ -113,9 +113,9 @@ class BuildKit:
         kit._processAddScripts()
         kit.deploy(verbose=self.verbose)
         
-    def populatePackagesDir(self, buildprofile):
+    def populatePackagesDir(self, buildprofile, arch):
         """ Populates the built or binary packages into the package directory. """
-        populatePackagesDir(buildprofile)
+        populatePackagesDir(buildprofile, arch)
         
     def setupRPMMacros(self, buildprofile):
         """ Sets up a proper .rpmmacros file for building purposes. """
@@ -138,7 +138,7 @@ class BuildKit:
         """
         kit.generateKitInfo(filepath)
         
-    def prepareBuildKitTemplate(self, defaultname):
+    def prepareBuildKitTemplate(self, defaultname, arch='noarch'):
         """ Gets the build.kit template and populate it with the correct 
             namespace. The defaultname is just a string to set the default
             component and kit names.
@@ -167,6 +167,7 @@ class BuildKit:
         ns['kitclass'] = 'DefaultKit()'
         ns['kitname'] = defaultname
         ns['kitdesc'] = '%s kit.' % defaultname
+        ns['kitarch'] = arch
         ns['compdesc'] = compdesc
         t = Template(file=str(tmpl),searchList=[ns])
         return str(t)

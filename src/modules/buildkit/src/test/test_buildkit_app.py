@@ -10,6 +10,18 @@ import subprocess
 from kusu.buildkit import *
 from path import path
 from cStringIO import StringIO
+from nose import SkipTest
+
+RPMdir = path(tools.mkdtemp(prefix='buildkit-assets-'))
+URI = 'http://www.osgdc.org/pub/build/tests/modules/buildkit/'
+
+def setUp():
+    cmd = "lftp -e 'mget *.rpm && exit' %s > /dev/null 2>&1" % URI
+    lftpP = subprocess.Popen(cmd,shell=True,cwd=RPMdir)
+    lftpP.wait()
+    
+def tearDown():
+    if RPMdir.exists(): RPMdir.rmtree()
 
 class TestBuildKitApp(object):
     """ Basic tests for the app"""
@@ -51,13 +63,77 @@ class TestBuildKitApp(object):
         p.wait()
         
         kitsrcdir = self.scratchdir / 'test'
-        isofile = kitsrcdir / 'kit-test-0.1-0.noarch.iso'
+        
+        # get the current arch
+        arch = tools.getArch()
+        isoname = 'kit-test-0.1-0.%s.iso' % arch
+        isofile = kitsrcdir / isoname
         
         assert isofile.exists()
         
+    def testBuildx86EmptyKitISO(self):
+        """ Test to create an empty x86 kit and build it. """
+        
+        if getArch() != 'x86': raise SkipTest
+        
+        cmd1 = 'buildkit --arch=x86 new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitsrcdir = self.scratchdir / 'test'
+
+        isoname = 'kit-test-0.1-0.i386.iso'
+        isofile = kitsrcdir / isoname
+
+        assert isofile.exists()
+
+    def testBuildx86_64EmptyKitISO(self):
+        """ Test to create an empty x86_64 kit and build it. """
+        
+        if getArch() != 'x86_64': raise SkipTest
+        
+        cmd1 = 'buildkit --arch=x86_64 new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitsrcdir = self.scratchdir / 'test'
+
+        isoname = 'kit-test-0.1-0.x86_64.iso'
+        isofile = kitsrcdir / isoname
+
+        assert isofile.exists()
+
+
+    def testBuildnoarchEmptyKitISO(self):
+        """ Test to create an empty noarch kit and build it. """
+        cmd1 = 'buildkit --arch=noarch new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitsrcdir = self.scratchdir / 'test'
+
+        isoname = 'kit-test-0.1-0.noarch.iso'
+        isofile = kitsrcdir / isoname
+
+        assert isofile.exists()
+
+        
+        
     def testBuildEmptyKitDir(self):
         """ Test to create an empty kit and build it. """
-        cmd1 = 'buildkit new kit=test > /dev/null 2>&1'
+        cmd1 = 'buildkit --arch=noarch new kit=test > /dev/null 2>&1'
         cmd2 = 'buildkit make kit=test dir=testdir > /dev/null 2>&1'
         p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
         p.wait()
@@ -93,6 +169,7 @@ comp.description = 'foo component for Fedora Core 6.'
 k = DefaultKit()
 k.name = 'foo'
 k.description = 'foo kit.'
+k.arch = 'noarch'
 
 # Adding the component defined earlier
 k.addComponent(comp)
@@ -160,6 +237,7 @@ k = DefaultKit()
 k.name = 'foo'
 k.description = 'foo kit.'
 k.removable = False
+k.arch = 'noarch'
 
 # Adding the component defined earlier
 k.addComponent(comp)
@@ -208,6 +286,7 @@ k = DefaultKit()
 k.name = 'foo'
 k.description = 'foo kit.'
 k.removeable = False
+k.arch = 'noarch'
 
 # Adding the component defined earlier
 k.addComponent(comp)
@@ -240,6 +319,144 @@ k.addComponent(comp)
         # assert the kit
         assert kit['removable'] == False
 
+    def testPackagesExist(self):
+        """ Test to check if the rpms are downloaded and exist. """
+        assert RPMdir.exists()
 
+        foos = ['foo%i-1-1.i386.rpm'%i for i in xrange(10)]
+        for foo in foos:
+            assert path(RPMdir / foo).exists()
+
+        bars = ['bar%i-1-1.x86_64.rpm'%i for i in xrange(10)]
+        for bar in bars:
+            assert path(RPMdir / bar).exists()
+
+        bazs = ['baz%i-1-1.noarch.rpm'%i for i in xrange(10)]
+        for baz in bazs:
+            assert path(RPMdir / baz).exists()
+            
+    
+
+    def testBuildx86Kit(self):
+        """ Test to build a kit containing x86 packages. """
         
+        if getArch() != 'x86': raise SkipTest
+        
+        cmd1 = 'buildkit --arch=x86 new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test dir=testdir > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+        
+        # copy the rpms into the srcdir
+        
+        for p in RPMdir.walkfiles('*.rpm'):
+            p.copy(self.scratchdir / 'test/sources')
 
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitdir = self.scratchdir / 'testdir'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'test/kit-test-0.1-0.i386.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
+
+        assert kitinfo.exists()
+        
+        rpmdir = kitdir / 'test'
+        # there should not be any x86_64 packages here
+        rpmfiles = rpmdir.files('*.x86_64.rpm')
+        assert not rpmfiles
+
+        rpmfiles = rpmdir.files('*86.rpm')
+        assert rpmfiles
+        
+        rpmfiles = rpmdir.files('*.noarch.rpm')
+        assert rpmfiles
+
+    def testBuildx86_64Kit(self):
+        """ Test to build a kit containing x86_64 packages. """
+        
+        if getArch() != 'x86_64': raise SkipTest
+        
+        cmd1 = 'buildkit --arch=x86_64 new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test dir=testdir > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        # copy the rpms into the srcdir
+
+        for p in RPMdir.walkfiles('*.rpm'):
+            p.copy(self.scratchdir / 'test/sources')
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitdir = self.scratchdir / 'testdir'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'test/kit-test-0.1-0.x86_64.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
+
+        assert kitinfo.exists()
+
+        rpmdir = kitdir / 'test'
+
+        rpmfiles = rpmdir.files('*.x86_64.rpm')
+        assert rpmfiles
+
+        # there should not be any x86 packages here
+        rpmfiles = rpmdir.files('*86.rpm')
+        assert not rpmfiles
+
+        rpmfiles = rpmdir.files('*.noarch.rpm')
+        assert rpmfiles
+        
+    def testBuildnoarchKit(self):
+        """ Test to build a kit containing noarch packages. """
+        cmd1 = 'buildkit --arch=noarch new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test dir=testdir > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        # copy the rpms into the srcdir
+
+        for p in RPMdir.walkfiles('*.rpm'):
+            p.copy(self.scratchdir / 'test/sources')
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        kitdir = self.scratchdir / 'testdir'
+        _tdir = self.scratchdir / 'tdir'
+        _tdir.mkdir()
+        rpmfile = kitdir / 'test/kit-test-0.1-0.noarch.rpm'
+        assert rpmfile.exists()
+        kitrpm = rpmtool.RPM(str(rpmfile))
+        kitrpm.extract(_tdir)
+        _li = [f for f in _tdir.walkfiles('kitinfo')]
+        assert len(_li) == 1
+        kitinfo = _li[0]
+
+        assert kitinfo.exists()
+
+        rpmdir = kitdir / 'test'
+
+        rpmfiles = rpmdir.files('*.x86_64.rpm')
+        assert rpmfiles
+
+        rpmfiles = rpmdir.files('*86.rpm')
+        assert rpmfiles
+
+        rpmfiles = rpmdir.files('*.noarch.rpm')
+        assert rpmfiles

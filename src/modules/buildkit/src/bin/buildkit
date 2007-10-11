@@ -13,7 +13,7 @@ from kusu.core.app import KusuApp
 from kusu.buildkit import BuildKit, getSyntaxValidator
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined
-from kusu.util.tools import checkToolDeps, mkdtemp
+from kusu.util.tools import checkToolDeps, mkdtemp, getArch
 import subprocess
         
         
@@ -131,9 +131,12 @@ Example operations:
 
         self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
         self.parser.add_option('-s','--kitscript', action='store', dest='kitscript')
+        self.parser.add_option('-a','--arch', action='store', type='choice', 
+                            choices=['x86_64','x86','noarch'], dest='arch')
         self.parser.add_option('-d','--keep-debuginfo', action='store_true', dest='debuginfo')
         self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
-        self.parser.set_defaults(verbose=False,showexamples=False,kitscript='build.kit',debuginfo=False)
+        self.parser.set_defaults(verbose=False,showexamples=False,arch=getArch(),
+            kitscript='build.kit',debuginfo=False)
         self.options, self.args = self.parser.parse_args()
 
 
@@ -213,13 +216,27 @@ Example operations:
         """ Handler for new action. args is a dict of supported key-value pairs for this action. """
         dirname = path(args['kit'])
         
+        # get the current arch
+        arch = getArch()
+        
+        if self.options.arch != arch and self.options.arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s is not possible on this system. The possible architectures are noarch and %(curArch)s.' \
+                % {'arch':self.options.arch,'curArch':arch})
+            self.printMsgExit(msg)
+        
         if dirname.exists():
             msg = self._('There is already a directory called %(dirname)s. Please remove it and try again.' % {'dirname':dirname})
             self.printMsgExit(msg)          
 
         msg = self._('Creating %(kitname)s directory..' % {'kitname':dirname.basename()})
         print msg
-        self.bkinst.newKitSrc(dirname)
+        # get the arch
+        if self.options.arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s architecture..' % {'arch':self.options.arch})
+        else:
+            msg = self._('Creating kit for all architectures..' % {'arch':self.options.arch})
+        print msg
+        self.bkinst.newKitSrc(dirname,self.options.arch)
         msg = self._('%(kitname)s directory created.' % {'kitname':dirname.basename()})
         print msg
 
@@ -233,6 +250,7 @@ Example operations:
         else:
             kitdir = path(_kitdir).abspath()
 
+        
         # get the kitsrc
         msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
         print msg
@@ -279,6 +297,22 @@ Example operations:
         msg = self._('Found kitscript. Loading it..')
         print msg
         kit, components, packages = self.bkinst.loadKitScript(kitscript)
+        
+        # get the current arch
+        curArch = getArch()
+        arch = kit['arch']
+                
+        if arch != curArch and arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s is not possible on this system. The allowed architectures are noarch and %(curArch)s.' \
+                % {'arch':arch,'curArch':curArch})
+            self.printMsgExit(msg)
+
+
+        if arch != 'noarch':
+            msg = self._('Building kit for %(arch)s architecture..' % {'arch':arch})
+        else:
+            msg = self._('Building kit for all architectures..' % {'arch':arch})
+        print msg
         
         # validate the syntax
         # set up a counter
@@ -362,7 +396,7 @@ Example operations:
         # populate the packages dir
         msg = self._('Populating the packages directory with the Kit artifacts..')
         print msg
-        self.bkinst.populatePackagesDir(bp)
+        self.bkinst.populatePackagesDir(bp,arch)
         
         # generate the kitinfo file
         msg = self._('Generating kitinfo..')

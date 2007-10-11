@@ -28,7 +28,7 @@ X86_ARCHES = ['i386','i486','i586','i686']
 
 def getArch():
     """ Returns the arch of the current system.
-        If arch is not supported, 'unknown' will
+        If arch is not supported, 'noarch' will
         be returned.
     """
     cmd = 'arch'
@@ -42,7 +42,7 @@ def getArch():
     if _arch == 'x86_64':
         return _arch
         
-    return 'unknown'
+    return 'noarch'
     
 
 def checkToolDeps(tool):

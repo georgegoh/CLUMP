@@ -44,35 +44,52 @@ def setupprofile(basedir=''):
     else:
         raise InvalidBuildProfile
         
-def populatePackagesDir(buildprofile):
+def populatePackagesDir(buildprofile, arch='noarch'):
     """ Sweeps through the kitsrc dir and makes the built packages
         available in the packages dir.
     
     """
     # TODO : need to handle DEBs too instead of just RPMs
     
+    filespecs = []
+
+    if arch == 'x86':
+        fspec = '*86.rpm'
+    elif arch == 'x86_64':
+        fspec = '*.x86_64.rpm'
+    elif arch == 'noarch':
+        fspec = '*.rpm'
+    if not fspec in filespecs: filespecs.append(fspec)
+
+    # add noarch packages no matter what
+    if not '*.noarch.rpm' in filespecs: filespecs.append('*.noarch.rpm')
+    
     # locate the built rpms
     builtdir = buildprofile.builddir / 'packages/RPMS'
-    for f in builtdir.walkfiles('*.rpm'):
-        _f = f.basename()
-        if not path(buildprofile.pkgdir / _f).exists(): 
-            pass
-        else:
-            path(buildprofile.pkgdir / _f).remove()
 
-        cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
-        lnP = subprocess.Popen(cmd,shell=True)
-        lnP.wait()
+    for fspec in filespecs:
+        for f in builtdir.walkfiles(fspec):
+            _f = f.basename()
+            if not path(buildprofile.pkgdir / _f).exists(): 
+                pass
+            else:
+                path(buildprofile.pkgdir / _f).remove()
 
-        
-    # also locate rpms that are located in the srcdir
-    for f in buildprofile.srcdir.walkfiles('*.rpm'):
-        if f.endswith('.src.rpm'): 
-            pass
-        else:
             cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
             lnP = subprocess.Popen(cmd,shell=True)
             lnP.wait()
+
+        
+    # also locate rpms that are located in the srcdir
+
+    for fspec in filespecs:
+        for f in buildprofile.srcdir.walkfiles(fspec):
+            if f.endswith('.src.rpm'): 
+                pass
+            else:
+                cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
+                lnP = subprocess.Popen(cmd,shell=True)
+                lnP.wait()
 
 
 def processKitInfo(kitinfo):
