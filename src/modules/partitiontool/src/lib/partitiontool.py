@@ -812,6 +812,12 @@ class DiskProfile(object):
             del self.lv_dict[lv.name]
 
     def commit(self):
+        p = subprocess.Popen('lvm vgchange -an',
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        logger.debug('Deactivate VGs: %s, %s' % (out, err)) 
         for disk in self.disk_dict.itervalues():
             disk.commit()
             for part in disk.partition_dict.itervalues():
