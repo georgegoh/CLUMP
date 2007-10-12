@@ -513,7 +513,7 @@ class KitOps:
                                 version=kit['ver'], isOS=True,
                                 removable=True, arch=kit['arch'])
         newkit.save()
-        self.__db.flush()
+        newkit.flush()
         
         # get the kernel packages
         oskitdir = self.kits_dir / kit['name'] / kit['ver'] / kit['arch']

@@ -1000,6 +1000,7 @@ class DB(object):
         """Flushes the current session context."""
 
         self.ctx.current.flush()
+        self.ctx.current.clear()
 
     def copyTo(self, other_db):
         """Copies the content of current database to
