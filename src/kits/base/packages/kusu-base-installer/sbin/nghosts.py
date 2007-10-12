@@ -76,7 +76,7 @@ class NodeMemberApp(object, KusuApp):
                                 callback=self.varargs, dest="movegroups", help=self._("nghosts_from_group_usage"))
         self.parser.add_option("-t", "--to-group", action="store",
                                 type="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
-        self.parser.add_option("-n", "--copy-hosts", action="callback",
+        self.parser.add_option("-c", "--copy-hosts", action="callback",
                                 callback=self.varargs, dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
         self.parser.add_option("-r", "--reinstall", action="store_true", dest="reinstall", help=kusuApp._("nghosts_reinstall_usage"))
         self.parser.add_option("-a", "--rack", type="int", action="store", dest="racknumber", help=kusuApp._("nghosts_rack_usage"))
@@ -181,6 +181,16 @@ class NodeMemberApp(object, KusuApp):
                     macsList = {}
                     myinterface = ""
                     nodeRecord = NodeFun()
+
+                    # If nodegroups is unmanaged throw an error
+                    if self._options.togroup.strip() == 'unmanaged':
+                       self.parser.error(self._("options_invalid_nodegroup"))
+
+                    # Validate if the nodegroup exists
+                    testng,val = nodeRecord.validateNodegroup(self._options.togroup)
+                    if testng == False:
+                       self.parser.error(self._("options_invalid_nodegroup"))
+
                     nodeRecord.setNodegroupByName(self._options.togroup)
                     nodeRecord.getNodeFormat()
                     # Check if the selected node format has a rack if so, prompt for it.
@@ -221,7 +231,7 @@ class NodeMemberApp(object, KusuApp):
                            print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
                            sys.exit(-1)
                         else:
-                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, self._options.racknumber)
+                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, rack=self._options.racknumber)
                            nodesList += moveList
                            moveIPList += ipList
                            if interface:
