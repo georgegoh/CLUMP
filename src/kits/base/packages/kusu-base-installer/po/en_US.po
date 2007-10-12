@@ -170,6 +170,9 @@ msgstr "This plugin generates the DNS zone file.\nUSE:  genconfig reverse {netwo
 msgid "genconfig_Apache_Help"
 msgstr "This plugin generates the Apache configuration file.\nUSE:  genconfig apache_conf\nThe resulting file should be placed in /etc/httpd/conf.d"
 
+msgid "genconfig_Nodegroups_Help"
+msgstr "This plugin generates a list of all nodegroups.\nUSE:  genconfig nodegroups {Optional SQL}\nThe optional SQL forms part of a WHERE clause\n which can be used to adjust the query e.g.\n    genconfig nodegroups 'ngid=1'"
+
 msgid "repoman_Help"
 msgstr "Repoman help goes here"
 
