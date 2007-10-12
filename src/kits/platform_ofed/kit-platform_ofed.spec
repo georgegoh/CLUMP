@@ -25,11 +25,14 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
 AutoReq: no
 
+%define driverpack kernel-ib-1.2.5.1-2.6.18_8.el5.x86_64.rpm
+
 %description
 This package is destined for the installer node and serves as an 
 information container for the database.  
 
 %prep
+
 
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
@@ -67,7 +70,6 @@ rm -rf $RPM_BUILD_ROOT
 %exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %post
-
 # include Node group creation and component association
 echo "POST Start" > /tmp/platform_ofed.log
 KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='platform_ofed'"`
@@ -76,12 +78,9 @@ echo "KID = $KID" >> /tmp/platform_ofed.log
 # Setup the kit
 if [ -z "$KID" ] ; then	
 	echo "Adding kit entries to database" >> /tmp/platform_ofed.log
-	/opt/kusu/sbin/sqlrunner -q "INSERT INTO kits SET rname='platform_ofed', rdesc='%{summary}', version='%{version}', isOS=0, removeable=1, arch='x86_64'" 2>/dev/null
+	/opt/kusu/sbin/sqlrunner -q "INSERT INTO kits SET rname='platform_ofed', rdesc='%{summary}', version='%{version}', isOS=0, removeable=1, arch='noarch'" 2>/dev/null
 	KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='platform_ofed'"`
 	echo "KID = $KID" >> /tmp/platform_ofed.log
-else
-	echo "Updating kit" >> /tmp/platform_ofed.log
-	/opt/kusu/sbin/sqlrunner -q "UPDATE kits SET arch='x86_64' WHERE rname='platform_ofed' AND rdesc='%{summary}' AND version='%{version}'"
 fi
 
 # Setup the first component
@@ -106,6 +105,19 @@ else
 	/opt/kusu/sbin/sqlrunner -q "UPDATE components SET os='rhel-5-x86_64' WHERE cname='component-Platform-OFED-v1_2_5_1' AND kid=$KID" >> /tmp/platform_ofed.log
 fi
 echo "Stop  post" >> /tmp/platform_ofed.log
+
+# Setup the driverpacks table
+cid_full=`/opt/kusu/sbin/sqlrunner -q "SELECT cid FROM components WHERE cname='component-Platform-OFED-v1_2_5_1'"` >> /tmp/platform_ofed.log
+dpid=`/opt/kusu/sbin/sqlrunner -q "SELECT dpid FROM driverpacks WHERE cid=$cid_full"` >> /tmp/platform_ofed.log
+if [ -z "$dpid" ]; then
+	/opt/kusu/sbin/sqlrunner -q "INSERT INTO driverpacks SET dpname='%{driverpack}', dpdesc='Platform OFED Kernel modules', cid=$cid_full" >> /tmp/platform_ofed.log
+fi
+cid_imaged=`/opt/kusu/sbin/sqlrunner -q "SELECT cid FROM components WHERE cname = 'component-Platform-OFED-Diskless-v1_2_5_1'"`
+dpid=`/opt/kusu/sbin/sqlrunner -q "SELECT dpid FROM driverpacks WHERE cid=$cid_imaged"` >> /tmp/platform_ofed.log
+if [ -z "$dpid" ]; then
+	/opt/kusu/sbin/sqlrunner -q "INSERT INTO driverpacks SET dpname='%{driverpack}', dpdesc='Platform OFED Kernel modules', cid=$cid_imaged" >> /tmp/platform_ofed.log
+fi
+
 exit 0
 
 %postun

@@ -70,3 +70,11 @@ This package is a meta package for OFED packages
 
 %postun
 # Place any component uninstall code here
+
+# Generate scripts for the CFM to remove other packages
+/bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+#!/bin/sh
+yum -y remove dapl dapl-utils ibutils ipoibtools kernel-ib libibcm libibcommon libibmad libibumad libibverbs libibverbs-utils libmlx4 libmthca libopensm libosmcomp libosmvendor librdmacm librdmacm-utils libsdp mstflint ofed-scripts openib-diags perftest sdpnetstat srptools tvflash
+rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+EOF
+
