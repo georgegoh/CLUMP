@@ -494,6 +494,9 @@ class CFMClient:
                 'debuglevel=2\n'
                 'logfile=/var/log/yum.log\n'
                 'reposdir=/dev/null\n'
+                'retries=20\n'
+                'timeout=30\n'
+                'assumeyes=1\n'
                 'tolerant=1\n\n'
                 '[base]\n'
                 'name=%s - Base\n'
@@ -734,9 +737,34 @@ class CFMClient:
         flist.sort()
 
         for plugin in flist:
+            if plugin[-7:] == '.remove':
+                continue
             self.log("Running plugin: %s\n" % plugin)
             os.system('/bin/sh %s >/dev/null 2>&1' % plugin)
+
+
+    def __removeDeps(self):
+        """__removeDeps - Run any plugin found in the PLUGINS directory that
+        end in .remove   These can be any type of executable.  The list of
+        plugins will be sorted then run. """
+        global PLUGINS
+        sys.path.append(PLUGINS)
         
+        flist = glob.glob('%s/*.remove' % PLUGINS)
+        if len(flist) == 0:
+            return
+
+        flist.sort()
+
+        for plugin in flist:
+            self.log("Running plugin: %s\n" % plugin)
+            os.system('/bin/sh %s' % plugin)
+            if os.path.exists(plugin):
+                try:
+                    os.unlink(plugin)
+                except:
+                    pass
+
 
     def updatePackages (self):
         """updatepackages - Update packages"""
@@ -757,6 +785,7 @@ class CFMClient:
             self.__getPackageChanges()
             try:
                 self.__removePackages()
+                self.__removeDeps()
                 self.__installPackages()
                 if os.path.exists('%s.ORIG' % self.packagelst):
                     os.unlink('%s.ORIG' % self.packagelst)
@@ -842,6 +871,6 @@ class CFMClient:
 if __name__ == '__main__':
     app = CFMClient(sys.argv)
     if app.getProfileVal('NII_NGID') == "":
-        print "ERROR:  Unable to locate /profile.nii"
+        print "Unable to locate /profile.nii.  This must be the primary installer!"
     
     app.run()
