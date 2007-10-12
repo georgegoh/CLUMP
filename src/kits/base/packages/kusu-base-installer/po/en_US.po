@@ -174,7 +174,7 @@ msgid "repoman_Help"
 msgstr "Repoman help goes here"
 
 msgid "addhost_Help"
-msgstr "Usage: addhost [-h | --help]\n\t       [-v | --version]\n\t       [-n {Node Group} | --nodegroup {Node Group}]\n\t       [-i {Interface} | --interface {Interface}]\n\t       [-f {MAC File} | --file {MAC File}]\n\t       [-e host1 host2 host3 ... | --remove host1 host2 host3 ...]\n\t       [-r {Rack #} | --racknumber {Rack #}]\n\t       [-p {Hostname} | --replace {Hostname}]\n\t       [-u | --update]"
+msgstr "addhost [-hvu]\n\t       [-r rack#]\n\t       [-i ifname -n {node group} [-r rack #]]\n\t       [-f file -j ifname -n {node group} [-r rack#]]\n\t       [-p hostname]\n\t       [-e {nodes_to_remove}]\n\t       [-s static_hostname -x ip_addr]"
 
 msgid "addhost_version_usage"
 msgstr "Display version of tool"
@@ -398,6 +398,10 @@ msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
 
 # Netedit specific messages
+
+msgid "netedit_Help"
+msgstr "netedit [-hvl]\n\t       [-d netid#]\n\t       [-a -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}] [-p] [-y | -z]\n [-r increment]]\n\t       [-c netid# -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}] [-p]\n [-y | -z]] [-r increment]\n\t       [-w netid# [-x suffix] [-o netoptions] [-y | -z] [-t start_ipaddr] [-e {network description}] [-r increment]]"
+
 msgid "netedit_window_title_network"
 msgstr "Network Editor"
 
@@ -579,7 +583,7 @@ msgid "netedit_options_exclusive"
 msgstr "The options -a, -d, -c, w and -l are mutually exclusive"
 
 msgid "netedit_options_add_options_needed"
-msgstr "The -a option needs the -n, -s, -i, -t and -g specified"
+msgstr "The -a option needs the -n, -s, -i, -t, -g and -e specified"
 
 msgid "netedit_options_delete_options_needed"
 msgstr "The -d option needs the -n and -s options specified"
@@ -645,6 +649,9 @@ msgid "helpline_instructions"
 msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
 
 # nghosts
+
+msgid "nghosts_Help"
+msgstr "nghosts [-hvlg]\n\t       [-c {hosts} -t {node group} [-f {node group}] [-a rack#] [-r]]\n\t       [-f {node group} -t {node group} [-a rack#] [-r]]"
 
 msgid "nghosts_version_usage"
 msgstr "Display version of tool"
