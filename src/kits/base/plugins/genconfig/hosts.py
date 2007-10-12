@@ -56,9 +56,9 @@ class thisReport(Report):
                 ip, name, suffix, boot = row
                 if suffix and suffix != '':
                     if boot == 1:
-                        print "%s\t%s%s.%s \t%s%s \t%s" % (ip, name, suffix ,dnszone, name, suffix, name)
+                        print "%s\t%s%s.%s \t%s.%s \t%s%s \t%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix, name)
                     else:
-                        print "%s\t%s%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, suffix )
+                        print "%s\t%s%s.%s \t%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix )
                 else:
                     print "%s\t%s.%s \t%s" % (ip, name, dnszone, name)
         
