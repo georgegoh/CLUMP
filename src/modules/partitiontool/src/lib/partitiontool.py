@@ -163,7 +163,7 @@ def checkAndMakeNode(devpath):
         logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
                     (devpath, dev_major_num, part_minor_num, devpath))
         raw_dev_num = makedev(dev_major_num, part_minor_num)
-        mknod(devpath, stat.S_IFBLK, raw_dev_num)
+        mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
 
 
 from disk import *

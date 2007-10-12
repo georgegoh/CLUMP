@@ -346,6 +346,7 @@ class LogicalVolume(object):
         self.extents = extents
         self.fs_type = fs_type
         self.mountpoint = mountpoint
+        self.mountedpoint = None
         self.on_disk = False
         self.leave_unchanged = False
         self.do_not_format = False
@@ -432,7 +433,7 @@ class LogicalVolume(object):
             raise MountFailedError, err_msg
         else:
             logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
-
+            self.mountedpoint = None
 
     def format(self):
         if self.leave_unchanged or self.do_not_format:

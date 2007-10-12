@@ -431,6 +431,24 @@ class Disk(object):
                     raise e
                 else:
                     logger.warning(msg)
+                    p = subprocess.Popen('mount',
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                    out, err = p.communicate()
+                    logger.warning('mounts: %s' % out)
+                    logger.warning('Unmounting all partitions.')
+                    for p in self.partition_dict.itervalues():
+                        p.unmount()
+
+                    p = subprocess.Popen('hdparm -z %s' % self.path,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                    out, err = p.communicate()
+                    logger.warning('hdparm -z: %s, %s' % (out, err))
+
+
             for partition in self.partition_dict.itervalues():
                 partition.on_disk = True
         else:
@@ -509,6 +527,7 @@ class Partition(object):
         self.disk = disk
         self.pedPartition = pedPartition
         self.mountpoint = mountpoint
+        self.mountedpoint = None
         self.leave_unchanged = False
         self.on_disk = False
         self.do_not_format = False
@@ -613,6 +632,7 @@ class Partition(object):
 
     def unmount(self):
         """Unmounts this partition."""
+        if not self.mountedpoint: return
         p = subprocess.Popen('umount %s' % self.mountedpoint,
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -625,7 +645,7 @@ class Partition(object):
             raise MountFailedError, err_msg
         else:
             logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
-
+            self.mountedpoint = None
 
     def format(self):
         """Format this partition with the FS type defined."""
