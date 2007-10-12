@@ -22,9 +22,12 @@ Release: 0
 License: Something
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-Requires: lava = 1.0, lava-master-config = 1.0, component-lava-compute-v1_0 = 1.0
+Requires: lava-master-config = 1.0, component-lava-compute-v1_0 = 1.0
 BuildArchitectures: noarch
 
+%define compdependency component-lava-compute-v1_0
+
+ 
 %description
 This package is a metapackage for Lava
 
@@ -32,11 +35,20 @@ This package is a metapackage for Lava
 mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %install
-install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
+## install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %postun
 # Remove user/group on removal of kit
-userdel -r lavaadmin
+if [ `grep -c lavaadmin /etc/passwd ` -eq 1 ]; then
+   /usr/sbin/userdel -r lavaadmin
+fi
+
+# Generate scripts for the CFM to remove other packages
+/bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+#!/bin/sh
+yum -y remove component-lava-compute-v1_0 lava-master-config lava
+rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+rm -rf /opt/kusu/lib/plugins/cfmclient/%{compdependency}.remove
+EOF
 
 %files
-/etc/rc.kusu.d/S10lava-genconfig

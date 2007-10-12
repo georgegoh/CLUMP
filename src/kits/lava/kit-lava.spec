@@ -41,12 +41,14 @@ plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
+mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d
 
 # Add your own plugins if needed
 mkdir -p $plugdir/addhost
 mkdir -p $plugdir/genconfig
 mkdir -p $plugdir/ngedit
 
+/usr/bin/install -m 755 %{_topdir}/S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 /usr/bin/install -m 444 %{_topdir}/docs/index.html    $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/LICENSE       $docdir
@@ -73,6 +75,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/*.py
 /opt/kusu/lib/plugins/ngedit/*.py
 
+/etc/rc.kusu.d/S10lava-genconfig
 #%exclude /opt/kusu/lib/plugins/addhost/*.py?
 #%exclude /opt/kusu/lib/plugins/genconfig/*.py?
 #%exclude /opt/kusu/lib/plugins/ngedit/*.py?
@@ -154,7 +157,7 @@ sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
 if [ ! -e /tmp/kusu/installer_running ]; then
    # Running outside of Anaconda
    if [ -f /etc/rc.kusu.d/S10lava-genconfig ]; then
-       exec /etc/rc.kusu.d/S10lava-genconfig
+       /etc/rc.kusu.d/S10lava-genconfig
    fi
 #else
    # Running within Anaconda

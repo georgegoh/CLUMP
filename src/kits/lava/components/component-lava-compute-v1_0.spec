@@ -42,3 +42,10 @@ This package is a meta package for Lava
 
 %postun
 # Place any component uninstall code here
+# Generate scripts for the CFM to remove other packages
+/bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+#!/bin/sh
+yum -y remove lava
+
+rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
+EOF

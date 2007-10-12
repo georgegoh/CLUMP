@@ -89,12 +89,12 @@ rm -rf $RPM_BUILD_ROOT/opt/lava/%{version}/misc
 ## PREUN
 ##
 %preun
+service lava stop
 
 ##
 ## POSTUN
 ##
 %postun
-service lava stop
 
 ##
 ## INSTALL
@@ -104,8 +104,8 @@ service lava stop
 # Install configs
 install -m755 cshrc.lsf $RPM_BUILD_ROOT/opt/lava/conf
 install -m755 profile.lsf $RPM_BUILD_ROOT/opt/lava/conf
-install -m755 profile.lsf $RPM_BUILD_ROOT/etc/lava.sh
-install -m755 cshrc.lsf $RPM_BUILD_ROOT/etc/lava.csh
+install -m755 profile.lsf $RPM_BUILD_ROOT/etc/profile.d/lava.sh
+install -m755 cshrc.lsf $RPM_BUILD_ROOT/etc/profile.d/lava.csh
 install -m755 lsf.shared $RPM_BUILD_ROOT/opt/lava/conf
 install -m755 lsf.task $RPM_BUILD_ROOT/opt/lava/conf
 
