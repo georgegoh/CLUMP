@@ -183,7 +183,7 @@ class KitOps:
             
         # install the kit RPM
         if not self.installer:
-            rpmP = subprocess.Popen('rpm --quiet -i %s' %
+            rpmP = subprocess.Popen('rpm --quiet --force --nodeps -i %s' %
                                     (kitpath / kitrpm),
                                     shell=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
@@ -193,6 +193,7 @@ class KitOps:
             if rpmP.returncode != 0:
                 # failed installing RPM, remove kit from DB
                 newkit.removable = True
+                newkit.update()
                 newkit.flush()
                 self.deleteKit(kit['name'], kit['version'], kit['arch'])
                 raise InstallKitRPMError, 'Kit RPM installation ' + \
@@ -613,8 +614,9 @@ class KitOps:
  
             # uninstall kit RPM
             if not kit.isOS and not self.installer:
-                rpmP = subprocess.Popen('/bin/rpm --quiet -e --nodeps kit-%s' %
-                                        kit.rname, shell=True,
+                cmds = ['/bin/rpm', '--quiet', '-e', '--nodeps',
+                        'kit-%s-%s' % (kit.rname, kit.version)]
+                rpmP = subprocess.Popen(cmds,# shell=True,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
                 o, e = rpmP.communicate()
@@ -625,13 +627,15 @@ class KitOps:
 
             # remove tftpboot contents
             if kit.isOS:
-                path(self.pxeboot_dir / 'initrd-%s.img' % kit.longname).remove()
-                path(self.pxeboot_dir / 'kernel-%s' % kit.longname).remove()
+                p = self.pxeboot_dir / ('initrd-%s.img' % kit.longname)
+                if p.exists(): p.remove()
+                p = self.pxeboot_dir / ('kernel-%s' % kit.longname)
+                if p.exists(): p.remove()
                 if not self.pxeboot_dir.listdir():  # directory is empty
                     self.pxeboot_dir.rmdir()
 
             # remove the RPMS kit contents
-            del_path.rmtree()
+            if del_path.exists(): del_path.rmtree()
 
         self.__db.flush()
 

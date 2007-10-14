@@ -233,7 +233,7 @@ class TestBaseKit:
         assert isRPMInstalled('kit-' + self.kit_name), 'Need RPM installed'
 
         # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e --kitname %s %s -p %s' %
+        addP = subprocess.Popen('kitops -e --kitname %s %s -p %s -y > /dev/null' %
                                 (self.kit_name, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -358,7 +358,8 @@ class TestBaseKit:
         # insert data into DB
         # create a new kit with removable set to True
         newkit = self.kusudb.Kits(rname=self.kit_name, rdesc='Base Kit',
-                                  version='0.1', isOS=False, removable=True)
+                                  version=self.kit_ver, arch=self.kit_arch,
+                                  isOS=False, removable=True)
         component_node = self.kusudb.Components(cname='component-base-node',
                                         cdesc='Component for Kusu Node Base')
         component_installer = self.kusudb.Components(

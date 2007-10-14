@@ -51,6 +51,7 @@ class KitOpsApp(KusuApp):
         self.kit_name = ''
         self.kit_ver = ''
         self.kit_arch = ''
+        self.skip_confirm = False
 
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
@@ -93,6 +94,9 @@ class KitOpsApp(KusuApp):
                                help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
+        self.parser.add_option('-y', '--yes', dest='skip_confirm',
+                               help=self._('kitops_usage_skip_confirm'),
+                               action='store_true', default=False)
 
         self.parser.add_option('-p', '--prefix', dest='prefix',
                                help=SUPPRESS_HELP)
@@ -157,6 +161,8 @@ class KitOpsApp(KusuApp):
             kl.debug('Setting prefix to %s', options.prefix)
             self.koinst.setPrefix(options.prefix)
 
+        self.skip_confirm = options.skip_confirm
+
     def run(self):
         '''The main body of the application.  '''
 
@@ -173,8 +179,17 @@ class KitOpsApp(KusuApp):
         elif self.kitop == KITOP_DEL:
             kl.debug('Performing delete operation')
             try:
-                self.koinst.deleteKit(self.kit_name, self.kit_ver,
-                                      self.kit_arch)
+                kits = self.koinst.findKits(self.kit_name, self.kit_ver,
+                                            self.kit_arch)
+
+                msg = 'The above kits will be removed.\n'
+                msg += 'Use the --kitversion and --kitarch command line\n' + \
+                       'options to further specify kits to be removed.'
+                if confirm(kits, msg, self.skip_confirm):
+                    self.koinst.deleteKit(self.kit_name, self.kit_ver,
+                                          self.kit_arch)
+                else:
+                    kl.debug('Deletion confirmation aborted!')
             except (AssertionError, KitNotInstalledError), e:
                 kl.debug('FAIL performing delete operation')
                 sys.stderr.write(e.args[0] + '\n')
@@ -433,6 +448,41 @@ class KitOpsApp(KusuApp):
 
     def printHelp(self):
         self.parser.print_help()
+
+def confirm(kits, msg, skip=True):
+    headers = ['Kit', 'Version', 'Architecture']
+    max_lengths = []
+    for x in xrange(len(headers)):
+        max_lengths.append(len(headers[x]))
+
+    kitlines = []
+    for kit in kits:
+        kitline = []
+        kitline.append(kit.rname)
+        kitline.append(kit.version)
+        kitline.append(kit.arch or 'noarch')
+
+        print kitline
+        for x in xrange(len(kitline)):
+            linelengths = [len(l) for l in kitline[x].split('\n')]
+            if max(linelengths) > max_lengths[x]:
+                max_lengths[x] = max(linelengths)
+
+        kitlines.append(kitline)
+
+    printTable(headers, kitlines, max_lengths)
+
+    print msg
+    if not skip:
+        res = raw_input('Confirm [y/N]: ')
+    else:
+        print 'Confirm [y/N]: y'
+        res = 'y'
+
+    if res.lower() == 'y' or res.lower == 'yes':
+        return True
+
+    return False
 
 def printTable(titles, entries, widths):
     horline = '+'
