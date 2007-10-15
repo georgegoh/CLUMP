@@ -64,7 +64,7 @@ Requires: ofed-scripts = 1.2.5.1
 Requires: openib-diags = 1.2.7
 Requires: opensm = 3.0.3
 Requires: perftest = 1.2
-Requires: sdpnetstat= 1.50
+Requires: sdpnetstat = 1.50
 Requires: srptools = 0.0.4
 Requires: tvflash = 0.9.0
 
