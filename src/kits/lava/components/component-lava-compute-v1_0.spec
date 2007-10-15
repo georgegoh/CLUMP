@@ -41,6 +41,12 @@ This package is a meta package for Lava
 %preun
 
 %postun
+
+# Remove user/group on removal of component
+if [ `grep -c lavaadmin /etc/passwd ` -eq 1 ]; then
+   /usr/sbin/userdel -r lavaadmin
+fi
+
 # Place any component uninstall code here
 # Generate scripts for the CFM to remove other packages
 /bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
@@ -49,3 +55,4 @@ yum -y remove lava
 
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
+

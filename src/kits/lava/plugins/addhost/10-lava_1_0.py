@@ -53,13 +53,13 @@ class AddHostPlugin(AddHostPluginBase):
 		   return
 
 		self.updateLavaConfig()
-		self.fixSymlinks(nodelist)
+		self.updateSymlinks(nodelist)
 		self.reconfigLava()
 		self.printLsfHpcRestartMsg()
 
 	def checkAvailableComponent(self):
 	    """ Return a list of all nodegroups that have the Lava components in use """
-	    query = ('select nodegroups.ngname from nodegroups, ng_has_comp, component where '
+	    query = ('select nodegroups.ngname from nodegroups, ng_has_comp, components where '
 		     'nodegroups.ngid = ng_has_comp.ngid and ng_has_comp.cid = components.cid and '
 		     'components.cname = "%s"' % COMPONENT_NAME)
 
@@ -150,20 +150,19 @@ class AddHostPlugin(AddHostPluginBase):
 
 		genconfig_cmd = '/opt/kusu/bin/genconfig lavacluster_1_0'
 		lsf_cluster_file = '/opt/lava/conf/lsf.cluster.lava'
-
 		if os.path.exists(lsf_cluster_file):
 		   os.system('echo "Updating Lava files"') 
 		   os.system('%s > %s.NEW 2> /dev/null' % (genconfig_cmd, lsf_cluster_file))
 		   os.system('cp %s %s.OLD' % (lsf_cluster_file, lsf_cluster_file))
 		   os.system('cp %s.NEW %s' % (lsf_cluster_file, lsf_cluster_file))
-                   os.system('chown lavaadmin:root %s' % lsf_cluster_file)
+                   os.system('chown lavaadmin:lavaadmin %s' % lsf_cluster_file)
 
 	           genconfig_cmd = '/opt/kusu/bin/genconfig lavahosts_1_0'
                    lsf_host_file = '/opt/lava/conf/hosts'
                    os.system('echo "Updating Lava host file"')
                    os.system('%s > %s.tmp 2> /dev/null' % (genconfig_cmd, lsf_host_file))
                    os.system('cp %s.tmp %s' % (lsf_host_file, lsf_host_file))
-                   os.system('chown lavaadmin:root %s' % lsf_host_file)
+                   os.system('chown lavaadmin:lavaadmin %s' % lsf_host_file)
 
 	def updateSymlinks(self, nodegroups):
     	    """ Fix CFM symlinks for master and master candidate Lava nodegroups """
@@ -171,10 +170,10 @@ class AddHostPlugin(AddHostPluginBase):
 	    for nodegroup in nodegroups:
 	       if not os.path.exists('/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava' % nodegroup):
 		  os.system("mkdir -p '/etc/cfm/\"%s\"/opt/lava/conf'" % nodegroup)
-                  os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/%s/opt/lava/conf/lsf.cluster.lava" % nodegroup)
+                  os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava" % nodegroup)
 
-	       if not os.path.exists("/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup):
-		  os.symlink("/opt/lava/conf/hosts", "/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup)
+	       if not os.path.exists("/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup):
+		  os.symlink("/opt/lava/conf/hosts", "/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup)
 		       
 	def reconfigLava(self):
 		"""Restart Lava cluster"""
@@ -189,4 +188,4 @@ class AddHostPlugin(AddHostPluginBase):
 		"""Print a reminder for the user to manually restart 
 		   their Lava cluster """
 
-		print "Note: Please run 'update -f' to finish configuring your nodes"
+		print "Note: Please run 'cfmsync -f' to finish configuring your nodes"

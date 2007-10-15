@@ -215,3 +215,8 @@ for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid <
        rm -rf /etc/cfm/$i/opt/lava
     fi
 done
+
+# Remove user/group on removal of kit
+if [ `grep -c lavaadmin /etc/passwd ` -eq 1 ]; then
+   /usr/sbin/userdel -r lavaadmin
+fi
