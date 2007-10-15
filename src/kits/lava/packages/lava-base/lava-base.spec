@@ -134,6 +134,7 @@ mkdir -p $RPM_BUILD_ROOT/opt/lava/log
 /etc/init.d/lava
 /etc/profile.d/*
 /opt/lava/%{version}/*
+%attr(0755, root, root) /opt/lava/1.0/linux2.6-glibc2.3-x86/etc/eauth
 /opt/lava/conf/cshrc.lsf
 /opt/lava/conf/profile.lsf
 
