@@ -124,7 +124,7 @@ class thisReport(Report):
                 except:
                         res = ""
 
-		query = ('select nodes.name from nodes, nodegroups, ng_has_comp, components where '
+		query = ('select distinct nodes.name from nodes, nodegroups, ng_has_comp, components where '
 			 'nodes.ngid = ng_has_comp.ngid and ng_has_comp.cid = components.cid and '
 			 'components.cname = "%s"' % COMPONENT_NAME)
 
@@ -137,14 +137,14 @@ class thisReport(Report):
 		nodes = []	
 		for name in self.db.fetchall():
 			nodes.append(name)
-			#print "Got %s, %s, %d \n" % name
+			#print "Got %s\n" % name
 
 		# Add nodes
 		for node in nodes:
-			if node in currenthosts:
-				continue
-			print '%s\t!\t!\t1     3.5 ()    ()    (%s)' % (node, res)
-
+		    if node in currenthosts:
+		       continue
+                    else:
+		       print '%s\t!\t!\t1     3.5 ()    ()    (%s)' % (node[0], res)
 
         def generateLavaClusterHosts(self):
             print """

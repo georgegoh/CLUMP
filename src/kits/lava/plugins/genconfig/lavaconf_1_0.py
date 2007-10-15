@@ -44,7 +44,6 @@ LSB_SHAREDIR=/opt/lava/work
 
 # Configuration directives
 LSF_CONFDIR=/opt/lava/conf
-#LSB_CONFDIR=/opt/lava/conf/lsbatch
 
 LSF_MASTER_LIST=%s
 

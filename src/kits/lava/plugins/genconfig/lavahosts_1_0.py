@@ -53,11 +53,9 @@ class thisReport(Report):
 
                         if line[:1] == '#':
 				continue
-			
-			longhost = string.split(line)[1]
-			shorthost = string.split(longhost, '.')[0]
-                        data.append(shorthost)
-			#print "Found %s\n" % shorthost
+		
+                        data.append(line.split(' ')[0])
+			#print "Found %s\n" % line.split(' ')[0]
 			
                 fp.close()
                 return data
@@ -94,20 +92,19 @@ class thisReport(Report):
 
 		for row in self.db.fetchall():
 		    ip, name, suffix = row
-		    if suffix and suffix != '':
-			compname = "%s%s" % (name, suffix)
-		    else:
-			compname = name
-		    if currenthosts and not compname in currenthosts:
-		       if suffix and suffix != '':
-		          print "%s %s%s.%s %s%s %s.%s %s" % (ip, name, suffix, domain, name, suffix, name, domain, name)
-		       else:
-        	          print "%s %s.%s %s" % (ip, name, domain, name)
-                    else:
-                       if suffix and suffix != '':
-                          print "%s %s%s.%s %s%s %s.%s %s" % (ip, name, suffix, domain, name, suffix, name, domain, name)
+                    if currenthosts:
+		       if ip in currenthosts:
+                          continue
                        else:
-                          print "%s %s.%s %s" % (ip, name, domain, name)
+                          if suffix and suffix != '':
+                             print "%s %s %s%s.%s" % (ip, name, name, suffix, domain)
+                          else:
+                             print "%s %s %s.%s" % (ip, name, domain, name)
+                    else:
+                          if suffix and suffix != '':
+                             print "%s %s %s%s.%s" % (ip, name, name, suffix, domain)
+                          else:
+                             print "%s %s %s.%s" % (ip, name, domain, name)
 
 	def runPlugin(self, pluginargs):
 		if self.haveLsf() != 1:

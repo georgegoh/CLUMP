@@ -22,7 +22,9 @@ fi
 # Make directories
 mkdir -p /opt/lava/conf/lsbatch/lava/configdir
 
-$GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava
+$GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava.NEW
+mv /opt/lava/conf/lsf.cluster.lava.NEW /opt/lava/conf/lsf.cluster.lava
+
 $GENCONFIG lavacluster_$VERSION batch > /opt/lava/conf/lsbatch/lava/configdir/lsb.hosts
 $GENCONFIG lavaconf_$VERSION master > /opt/lava/conf/lsf.conf
 $GENCONFIG lavahosts_$VERSION > /opt/lava/conf/hosts
@@ -38,10 +40,11 @@ for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid <
     if [ ! -d /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir ]; then
        mkdir -p /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir
     fi
+       ln -sf /opt/lava/conf/hosts /etc/cfm/$i/opt/lava/conf/hosts
+       ln -sf /opt/lava/conf/lsf.cluster.lava /etc/cfm/$i/opt/lava/conf/lsf.cluster.lava
 
 # Lava master slave configuration only
 $GENCONFIG lavaconf_$VERSION slave > /etc/cfm/$i/opt/lava/conf/lsf.conf
-
 done
 
 rm -rf /etc/rc.kusu.d/S10lava-genconfig

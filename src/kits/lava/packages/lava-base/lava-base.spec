@@ -124,6 +124,8 @@ install -m755 mpich-mpirun $RPM_BUILD_ROOT/opt/lava/%{version}/%{binaryarch}/bin
 install -m444 license_agreement.txt $RPM_BUILD_ROOT/opt/lava/%{version}
 install -m755 lava.init $RPM_BUILD_ROOT/etc/init.d/lava
 
+mkdir -p $RPM_BUILD_ROOT/opt/lava/log
+
 ##
 ## FILES
 ##
