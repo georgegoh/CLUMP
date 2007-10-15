@@ -498,8 +498,8 @@ class CFMClient:
                 'timeout=30\n'
                 'assumeyes=1\n'
                 'tolerant=1\n\n'
-                '[base]\n'
-                'name=%s - Base\n'
+                '[kusu-installer]\n'
+                'name=%s - Booger\n'
                 'baseurl=http://%s/repos/%s%s\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
                 )
 
@@ -516,6 +516,17 @@ class CFMClient:
         
         if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             self.__setupForYum()
+
+            cmd = "/usr/bin/yum -y -c /tmp/yum.conf clean metadata"
+            self.log("Running:  %s\n" % cmd)
+            for line in os.popen(cmd).readlines():
+                sys.stdout.write(line)
+
+            cmd = "/usr/bin/yum -y -c /tmp/yum.conf clean all"
+            self.log("Running:  %s\n" % cmd)
+            for line in os.popen(cmd).readlines():
+                sys.stdout.write(line)
+                
             cmd = "/usr/bin/yum -y -c /tmp/yum.conf install "
             for i in self.newpackages:
                 cmd += "%s " % i
