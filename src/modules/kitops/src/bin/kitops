@@ -178,27 +178,38 @@ class KitOpsApp(KusuApp):
 
         elif self.kitop == KITOP_DEL:
             kl.debug('Performing delete operation')
-            try:
-                kits = self.koinst.findKits(self.kit_name, self.kit_ver,
-                                            self.kit_arch)
 
+            kits = self.koinst.findKits(self.kit_name, self.kit_ver,
+                                        self.kit_arch)
+
+            if not kits:
+                msg = "Kit '%s" % self.kit_name
+                if self.kit_ver:
+                    msg += '-%s' % self.kit_ver
+                if self.kit_arch:
+                    msg += '-%s' % self.kit_arch
+                msg += "' is not in the database\n"
+                sys.stderr.write(msg)
+                sys.exit(EKITDEL_FAIL)
+            elif confirm(kits, msg, self.skip_confirm):
                 msg = 'The above kits will be removed.\n'
                 msg += 'Use the --kitversion and --kitarch command line\n' + \
                        'options to further specify kits to be removed.'
-                if confirm(kits, msg, self.skip_confirm):
+
+                try:
                     self.koinst.deleteKit(self.kit_name, self.kit_ver,
                                           self.kit_arch)
-                else:
-                    kl.debug('Deletion confirmation aborted!')
-            except (AssertionError, KitNotInstalledError), e:
-                kl.debug('FAIL performing delete operation')
-                sys.stderr.write(e.args[0] + '\n')
-                sys.exit(EKITDEL_FAIL)
-            except DeleteKitsError, e:
-                kl.debug('FAIL perfoming delete operation')
-                for error in e.args[0]:
-                    sys.stderr.write(error + '\n')
-                sys.exit(EKITDEL_FAIL)
+                except (AssertionError, KitNotInstalledError), e:
+                    kl.debug('FAIL performing delete operation')
+                    sys.stderr.write(e.args[0] + '\n')
+                    sys.exit(EKITDEL_FAIL)
+                except DeleteKitsError, e:
+                    kl.debug('FAIL perfoming delete operation')
+                    for error in e.args[0]:
+                        sys.stderr.write(error + '\n')
+                    sys.exit(EKITDEL_FAIL)
+            else:
+                kl.debug('Deletion confirmation aborted!')
 
             kl.debug('SUCCESS performing delete operation')
 

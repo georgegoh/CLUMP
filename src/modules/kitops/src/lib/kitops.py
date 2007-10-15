@@ -559,9 +559,13 @@ class KitOps:
         kits = self.findKits(del_name, del_version, del_arch)
 
         if not kits:
-            raise KitNotInstalledError, \
-                    "Kit '%s%s%s' is not in the database" % \
-                    (del_name, del_version, del_arch)
+            msg = "Kit '%s" % del_name
+            if del_version:
+                msg += '-%s' % del_version
+            if del_arch:
+                msg += '-%s' % del_arch
+            msg += "' is not in the database"
+            raise KitNotInstalledError, msg
 
         del_path = ''
         if del_arch and del_version:
