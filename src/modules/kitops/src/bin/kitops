@@ -182,6 +182,10 @@ class KitOpsApp(KusuApp):
             kits = self.koinst.findKits(self.kit_name, self.kit_ver,
                                         self.kit_arch)
 
+            msg = 'The above kits will be removed.\n'
+            msg += 'Use the --kitversion and --kitarch command line\n' + \
+                   'options to further specify kits to be removed.'
+
             if not kits:
                 msg = "Kit '%s" % self.kit_name
                 if self.kit_ver:
@@ -192,10 +196,6 @@ class KitOpsApp(KusuApp):
                 sys.stderr.write(msg)
                 sys.exit(EKITDEL_FAIL)
             elif confirm(kits, msg, self.skip_confirm):
-                msg = 'The above kits will be removed.\n'
-                msg += 'Use the --kitversion and --kitarch command line\n' + \
-                       'options to further specify kits to be removed.'
-
                 try:
                     self.koinst.deleteKit(self.kit_name, self.kit_ver,
                                           self.kit_arch)
