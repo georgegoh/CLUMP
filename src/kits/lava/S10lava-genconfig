@@ -22,6 +22,7 @@ fi
 # Make directories
 mkdir -p /opt/lava/conf/lsbatch/lava/configdir
 
+$GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava
 $GENCONFIG lavacluster_$VERSION cluster > /opt/lava/conf/lsf.cluster.lava.NEW
 mv /opt/lava/conf/lsf.cluster.lava.NEW /opt/lava/conf/lsf.cluster.lava
 
