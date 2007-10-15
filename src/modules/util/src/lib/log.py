@@ -36,8 +36,10 @@ class Logger(logging.Logger):
         logging.Logger.__init__(self, name)
 
         # set default formatter
-        self.fmt = logging.Formatter("%(levelname)-8s %(name)s(%(filename)s:" +
-                                     "%(lineno)d) %(asctime)s %(message)s")
+        self.fmt = logging.Formatter("%(asctime)s %(levelname)s " +
+                                     "%(name)s(%(filename)s:" +
+                                     "%(lineno)d) %(message)s")
+        self.fmt.datefmt = '%Y-%m-%d %H:%M:%S' 
 
         # set log level according to $KUSU_LOGLEVEL
         try:
