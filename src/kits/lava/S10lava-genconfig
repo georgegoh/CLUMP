@@ -34,8 +34,8 @@ $GENCONFIG lavahosts_$VERSION > /opt/lava/conf/hosts
 groupadd lavaadmin
 adduser -d "/home/lavaadmin" -g lavaadmin -m lavaadmin
 
-chown -R lavaadmin:lavaadmin /opt/lava/conf/
-chown -R lavaadmin:lavaadmin /opt/lava/work/lava/logdir/
+chown -R lavaadmin:lavaadmin /opt/lava/conf
+chown -R lavaadmin:lavaadmin /opt/lava/work
 
 # Generate CFM symlinks
 for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5'`; do

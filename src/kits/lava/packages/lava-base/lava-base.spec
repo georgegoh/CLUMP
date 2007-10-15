@@ -48,6 +48,7 @@ Platform Lava Master configuration files
 ## PREP
 ##
 %prep
+rm -rf $RPM_BUILD_ROOT # /var/tmp/lava-buildroot
 mkdir -p $RPM_BUILD_ROOT
 
 # Make a bunch of directories
@@ -71,7 +72,6 @@ mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 ## BUILD
 ##
 %build
-
 tar -zxf %{name}%{version}_linux2.6-glibc2.3-x86.tar.Z -C $RPM_BUILD_ROOT/opt/lava/%{version}
 rm -rf $RPM_BUILD_ROOT/opt/lava/%{version}/misc
 
@@ -135,16 +135,16 @@ mkdir -p $RPM_BUILD_ROOT/opt/lava/log
 /etc/profile.d/*
 /opt/lava/%{version}/*
 %attr(0755, root, root) /opt/lava/1.0/linux2.6-glibc2.3-x86/etc/eauth
-/opt/lava/conf/cshrc.lsf
-/opt/lava/conf/profile.lsf
+%attr(-,lavaadmin,lavaadmin) /opt/lava/conf
+%attr(-,lavaadmin,lavaadmin) /opt/lava/conf/cshrc.lsf
+%attr(-,lavaadmin,lavaadmin) /opt/lava/conf/profile.lsf
 
 %files master-config
-/opt/lava/conf/*
-/opt/lava/work/*
+%defattr(-,lavaadmin,lavaadmin)
+%attr(-,lavaadmin,lavaadmin) /opt/lava/conf
+%attr(-,lavaadmin,lavaadmin) /opt/lava/work
 %exclude /opt/lava/conf/cshrc.lsf
 %exclude /opt/lava/conf/profile.lsf
-
-
 
 ##
 ## CLEAN
