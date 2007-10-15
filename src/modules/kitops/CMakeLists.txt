@@ -16,5 +16,8 @@ SET(SETUPPY_INSTALL_ARGS)
 SET(SETUPPY_SDIST_ARGS sdist)
 SET(SETUPPY_BDIST_ARGS bdist)
 
+# Stamp version string 
+CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/kitops
+               ${SETUPPY_PATH}/src/bin/kitops)
 INCLUDE(PythonSetupPy)
 SET(KUSU_MODULE OFF)

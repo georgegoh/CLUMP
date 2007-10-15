@@ -11,6 +11,10 @@ import os
 from path import path
 from optparse import SUPPRESS_HELP
 
+if os.getuid() != 0:
+    sys.stderr.write('You need to be root to run kitops.\n')
+    sys.exit(1)
+
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog()
 kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
@@ -97,6 +101,9 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-y', '--yes', dest='skip_confirm',
                                help=self._('kitops_usage_skip_confirm'),
                                action='store_true', default=False)
+        self.parser.add_option('-v', '--version', dest='version',
+                               help=self._('Display version'),
+                               action='store_true', default=False)
 
         self.parser.add_option('-p', '--prefix', dest='prefix',
                                help=SUPPRESS_HELP)
@@ -111,6 +118,10 @@ class KitOpsApp(KusuApp):
                              args)
             self.printHelp()
             sys.exit(1)
+
+        if options.version:
+            self.stdoutMessage('Kitops ${VERSION_STR}\n')
+            sys.exit(0)
 
         if options.action == 'add':
             kit_media = options.media
