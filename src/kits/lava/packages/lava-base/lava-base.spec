@@ -79,17 +79,22 @@ rm -rf $RPM_BUILD_ROOT/opt/lava/%{version}/misc
 ## PRE
 ##
 ## %pre
+# Add user/group lavaadmin
+if [ `grep -c lavaadmin /etc/passwd ` -eq 0 ]; then
+   /usr/sbin/useradd lavaadmin
+fi
 
 ##
 ## POST
 ##
 %post
-
+/sbin/chkconfig --add lava
 ##
 ## PREUN
 ##
 %preun
-service lava stop
+/sbin/chkconfig --del lava
+/sbin/service lava stop
 
 ##
 ## POSTUN

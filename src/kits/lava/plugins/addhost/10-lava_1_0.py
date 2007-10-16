@@ -150,6 +150,7 @@ class AddHostPlugin(AddHostPluginBase):
 
 		genconfig_cmd = '/opt/kusu/bin/genconfig lavacluster_1_0'
 		lsf_cluster_file = '/opt/lava/conf/lsf.cluster.lava'
+		os.system('echo "Woot" > /tmp/foo')
 		if os.path.exists(lsf_cluster_file):
 		   os.system('echo "Updating Lava files"') 
 		   os.system('%s > %s.NEW 2> /dev/null' % (genconfig_cmd, lsf_cluster_file))
@@ -170,10 +171,16 @@ class AddHostPlugin(AddHostPluginBase):
 	    for nodegroup in nodegroups:
 	       if not os.path.exists('/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava' % nodegroup):
 		  os.system("mkdir -p '/etc/cfm/\"%s\"/opt/lava/conf'" % nodegroup)
-                  os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava" % nodegroup)
+		  try:
+                       os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava" % nodegroup)
+                  except:
+		       pass
 
 	       if not os.path.exists("/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup):
-		  os.symlink("/opt/lava/conf/hosts", "/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup)
+                  try:
+		       os.symlink("/opt/lava/conf/hosts", "/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup)
+                  except:
+		       pass
 		       
 	def reconfigLava(self):
 		"""Restart Lava cluster"""
