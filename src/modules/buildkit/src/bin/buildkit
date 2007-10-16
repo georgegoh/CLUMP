@@ -447,7 +447,8 @@ Example operations:
             
         msg = self._('Locating kits in %(dirname)s..' % {'dirname':dirname})
         li = dirname.files('*.iso')
-        kdirs = [f.dirname() for f in dirname.walkfiles('kitinfo')]
+        # FIXME: This works only for RPM-based distros!
+        kdirs = [f.dirname() for f in dirname.walkfiles('kit-*.rpm')]
         
         isoroot = path(mkdtemp(prefix='buildkit-isoroot-'))
         
@@ -461,7 +462,18 @@ Example operations:
             cmd = 'mount -o loop,ro %s %s' % (l,mntpnt)
             mountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
             mountP.wait()
-            kdirs.extend([f.dirname() for f in mntpnt.walkfiles('kitinfo')])
+            # FIXME: This works only for RPM-based distros!
+            kdirs.extend([f.dirname() for f in mntpnt.walkfiles('kit-*.rpm')])
+            
+        if not kdirs:
+            # no kits found. cleanup and exit
+            for mntpnt in mntlist:
+                cmd = 'umount %s' % mntpnt
+                umountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+                umountP.wait()
+                
+            msg = self._('No kits found in %(kitdir)s!' % {'kitdir':dirname})
+            self.printMsgExit(msg)    
             
         for kdir in kdirs:
             msg = self._('Found %(kit)s. Including it..' % {'kit':kdir.basename()})
@@ -474,6 +486,7 @@ Example operations:
             symlinkP.wait()
             
         # make the iso
+        kdirs.sort()
         if not _isofile:
             _isofile = '%s.iso' % '+'.join([kdir.basename() for kdir in kdirs])
         isofile = path(_isofile).abspath()
