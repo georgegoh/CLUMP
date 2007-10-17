@@ -151,8 +151,8 @@ CID2=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2
 # include Node group creation and component association
 sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 1, cid = $CID1"
 sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
+#sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
+#sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
 
 if [ ! -e /tmp/kusu/installer_running ]; then
    # Running outside of Anaconda
@@ -209,10 +209,15 @@ rm -rf /opt/kusu/lib/plugins/genconfig/lava*.py?
 rm -rf /opt/kusu/lib/plugins/ngedit/lava*.py?
 
 # Remove CFM symlinks
-for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5'`; do
-    cd /etc/cfm/$i
-    if [ -d /etc/cfm/$i/opt/lava/conf/lsbatch/lava/configdir ]; then
+for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+    if [ -d /etc/cfm/$i/opt/lava ]; then
        rm -rf /etc/cfm/$i/opt/lava
+    fi
+done
+
+for i in `sqlrunner -q 'SELECT ngid FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+    if [ -d /opt/kusu/cfm/$i/opt/lava ]; then
+       rm -rf /opt/kusu/cfm/$i/opt/lava
     fi
 done
 

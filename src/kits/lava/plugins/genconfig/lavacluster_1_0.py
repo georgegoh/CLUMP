@@ -140,8 +140,9 @@ class thisReport(Report):
 			#print "Got %s\n" % name
 
 		# Add nodes
+ 
 		for node in nodes:
-		    if node in currenthosts:
+		    if node[0] in currenthosts:
 		       continue
                     else:
 		       print '%s\t!\t!\t1     3.5 ()    ()    (%s)' % (node[0], res)

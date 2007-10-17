@@ -19,7 +19,7 @@ Summary: Lava master component
 Name: component-lava-master-v1_0
 Version: 1.0
 Release: 0
-License: Something
+License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 Requires: lava-master-config = 1.0, component-lava-compute-v1_0 = 1.0
@@ -35,7 +35,6 @@ This package is a metapackage for Lava
 mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %install
-## install -m755 S10lava-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %postun
 # Remove user/group on removal of kit

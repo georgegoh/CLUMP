@@ -150,7 +150,6 @@ class AddHostPlugin(AddHostPluginBase):
 
 		genconfig_cmd = '/opt/kusu/bin/genconfig lavacluster_1_0'
 		lsf_cluster_file = '/opt/lava/conf/lsf.cluster.lava'
-		os.system('echo "Woot" > /tmp/foo')
 		if os.path.exists(lsf_cluster_file):
 		   os.system('echo "Updating Lava files"') 
 		   os.system('%s > %s.NEW 2> /dev/null' % (genconfig_cmd, lsf_cluster_file))
@@ -169,16 +168,16 @@ class AddHostPlugin(AddHostPluginBase):
     	    """ Fix CFM symlinks for master and master candidate Lava nodegroups """
 
 	    for nodegroup in nodegroups:
-	       if not os.path.exists('/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava' % nodegroup):
-		  os.system("mkdir -p '/etc/cfm/\"%s\"/opt/lava/conf'" % nodegroup)
+	       if not os.path.exists('/etc/cfm/%s/opt/lava/conf/lsf.cluster.lava' % nodegroup):
+		  os.system("mkdir -p '/etc/cfm/%s/opt/lava/conf'" % nodegroup)
 		  try:
-                       os.symlink("/opt/lava/conf/lsf.cluster.lava", "/etc/cfm/\"%s\"/opt/lava/conf/lsf.cluster.lava" % nodegroup)
+                       os.symlink("/opt/lava/conf/lsf.cluster.lava", '/etc/cfm/%s/opt/lava/conf/lsf.cluster.lava' % nodegroup)
                   except:
 		       pass
 
-	       if not os.path.exists("/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup):
+	       if not os.path.exists("/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup):
                   try:
-		       os.symlink("/opt/lava/conf/hosts", "/etc/cfm/\"%s\"/opt/lava/conf/hosts" % nodegroup)
+		       os.symlink("/opt/lava/conf/hosts", "/etc/cfm/%s/opt/lava/conf/hosts" % nodegroup)
                   except:
 		       pass
 		       
@@ -194,5 +193,14 @@ class AddHostPlugin(AddHostPluginBase):
 	def printLsfHpcRestartMsg(self):
 		"""Print a reminder for the user to manually restart 
 		   their Lava cluster """
+
+                os.system('echo "   1) Restart your Lava cluster by running:"')
+                os.system('echo "      \'lsadmin reconfig -f\'"')
+                os.system('echo ""')
+                os.system('echo "   2) Restart the Lava batch service by running:"')
+                os.system('echo "      \'badmin reconfig\'"')
+                os.system('echo ""')
+                os.system('echo "   *** NOTE: If the nodes boot up before you quit insert-ethers you need add them to the batch system"')
+                os.system('echo "             For each node not found by Lava, log into the node and run: badmin hstartup"')
 
 		print "Note: Please run 'cfmsync -f' to finish configuring your nodes"
