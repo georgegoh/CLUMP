@@ -53,7 +53,7 @@ class KusuRC(rcplugin.Plugin):
         chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         password =  ''.join([r.choice(chars) for i in xrange(8)])
 
-        p = path(os.environ.get('KUSU_ROOT', '/opt/kusu')) / 'etc' /  'db.passwd'
+        p = path(os.environ.get('KUSU_ROOT', '/opt/kusu')) / 'etc/db.passwd'
         f = open(p, 'w')
         f.write(password)
         f.close()

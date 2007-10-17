@@ -1041,15 +1041,18 @@ class DB(object):
 
                 try:
                     obj.save_or_update(entity_name=other_db.entity_name)
+                    obj.flush()
                 except:
                     raise UnableToSaveDataError, obj
 
-            try:
-                other_db.flush()
-            except sa.exceptions, e: 
-                raise UnableToCommitDataError, e
-            except Exception, e:
-                raise KusuError, e
+            # We are flushing once per object. Flushing the entire database
+            # causes an exception to be raised, as described in KUSU-507.
+            #try:
+            #    other_db.flush()
+            #except sa.exceptions, e: 
+            #    raise UnableToCommitDataError, e
+            #except Exception, e:
+            #    raise KusuError, e
 
 def findNodeGroupsFromKit(db, columns=[], ngargs={}, kitargs={}):
     """
