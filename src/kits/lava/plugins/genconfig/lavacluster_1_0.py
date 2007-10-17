@@ -120,7 +120,7 @@ class thisReport(Report):
 
                 # Print out the data
                 try:
-                        res = self.db.getAppsglobals('DefaultLavaHostResource')
+                        res = self.db.getAppsglobals('DefaultLavaHostRes')
                 except:
                         res = ""
 
