@@ -44,14 +44,10 @@ source /etc/profile.nii
 checksum=`cat /opt/kusu/etc/cfmfiles.lst | grep "/opt/kusu/cfm/${NII_NGID}/opt/lava/conf/lsf.cluster.lava" | cut -d' ' -f6`
 actual_checksum=`md5sum /opt/lava/conf/lsf.cluster.lava | cut -d' ' -f1`
 
-if [ "$checksum" != "$actual_checksumi" ]; then
+if [ "$checksum" != "$actual_checksum" ]; then
    badmin hstartup
 fi
 EOF
-
-if [ ! -z ${NII_NGID} ]; then
-   rm -rf /opt/kusu/lib/plugins/cfmclient/lava-restart
-fi
 
 %preun
 

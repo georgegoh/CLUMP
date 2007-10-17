@@ -194,13 +194,4 @@ class AddHostPlugin(AddHostPluginBase):
 		"""Print a reminder for the user to manually restart 
 		   their Lava cluster """
 
-                os.system('echo "   1) Restart your Lava cluster by running:"')
-                os.system('echo "      \'lsadmin reconfig -f\'"')
-                os.system('echo ""')
-                os.system('echo "   2) Restart the Lava batch service by running:"')
-                os.system('echo "      \'badmin reconfig\'"')
-                os.system('echo ""')
-                os.system('echo "   *** NOTE: If the nodes boot up before you quit insert-ethers you need add them to the batch system"')
-                os.system('echo "             For each node not found by Lava, log into the node and run: badmin hstartup"')
-
-		print "Note: Please run 'cfmsync -f' to finish configuring your nodes"
+                print "Please run: 'cfmsync -f' To restart the Lava batch service."

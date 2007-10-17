@@ -34,6 +34,14 @@ This package is a metapackage for Lava
 %prep
 mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
+%post
+/bin/cat << 'EOF' > /opt/kusu/lib/plugins/cfmclient/lava-restart
+#!/bin/sh
+source /etc/profile.d/lava.sh
+lsadmin reconfig -f 
+badmin hstartup
+EOF
+
 %install
 
 %postun
