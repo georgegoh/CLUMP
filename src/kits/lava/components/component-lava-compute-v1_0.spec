@@ -49,7 +49,7 @@ if [ "$checksum" != "$actual_checksumi" ]; then
 fi
 EOF
 
-if [ -z ${NII_NGID} ]; then
+if [ ! -z ${NII_NGID} ]; then
    rm -rf /opt/kusu/lib/plugins/cfmclient/lava-restart
 fi
 
