@@ -760,9 +760,16 @@ class NGEPluginBase(USXBaseScreen):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.ngid = None
         self.interactive = False #default to non-interactive
+        self.__compname = None
 
     def isInteractive(self):
         return self.interactive
+
+    def setComponentName(self, compname):
+        self.__compname = compname
+
+    def getComponentName(self):
+        return self.__compname
 
     def setCallbacks(self):
 

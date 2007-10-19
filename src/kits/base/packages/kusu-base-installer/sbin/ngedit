@@ -2089,6 +2089,8 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
             plugcinst = plugcname(self.database, self.kusuApp)  #class instance
             plugcinst.ngid = curNG['ngid']
+            plugCompName = [ x for x in CompNameList if plugmname.endswith(x) ][0] #guaranteed to have 1
+            plugcinst.setComponentName(plugCompName)
             if action == 'add':
                 if plugcinst.isInteractive():
                     PlugInstList_draw.append(plugcinst)
