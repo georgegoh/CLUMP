@@ -17,6 +17,7 @@
 
 %define COMP1 component-lava-master-v1_0
 %define COMP2 component-lava-compute-v1_0
+%define kitname lava
 
 Summary: Lava Kit
 Name: kit-lava
@@ -36,7 +37,7 @@ information container for the database.
 %prep
 
 %install
-docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
+docdir=$RPM_BUILD_ROOT/depot/www/kits/%{kitname}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
 rm -rf $RPM_BUILD_ROOT
@@ -64,11 +65,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/depot/www/kits/%{name}/%{version}/index.html
-/depot/www/kits/%{name}/%{version}/readme.html
-/depot/www/kits/%{name}/%{version}/LICENSE
-/depot/www/kits/%{name}/%{version}/lava_admin_1.0.pdf
-/depot/www/kits/%{name}/%{version}/lava_using_1.0.pdf
+/depot/www/kits/%{kitname}/%{version}/index.html
+/depot/www/kits/%{kitname}/%{version}/readme.html
+/depot/www/kits/%{kitname}/%{version}/LICENSE
+/depot/www/kits/%{kitname}/%{version}/lava_admin_1.0.pdf
+/depot/www/kits/%{kitname}/%{version}/lava_using_1.0.pdf
 
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py
