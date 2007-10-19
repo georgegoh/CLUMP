@@ -48,6 +48,21 @@ mount_proc() {
     fi
 }
 
+start_udev() {
+    mount -t ramfs udev /dev
+    ret=$?
+    if [ "$ret" -ne '0' ]
+    then
+        # /dev mount failed .. udev wont work
+	echo "ERROR:  Failed to mount /dev"
+    fi
+    mkdir /dev/pts
+    mkdir /dev/shm
+    echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
+    /sbin/udevd -d
+    /sbin/udevstart
+}
+
 quiet_kmsg() {
     echo '0' > /proc/sys/kernel/printk
 }
@@ -62,6 +77,7 @@ exec >${CONSOLE} <${CONSOLE} 2>&1
 mount_proc
 mount_sysfs
 verbose_kmsg
+start_udev
 
 /bin/mount -o remount,rw /
 /bin/mount -a
@@ -72,7 +88,7 @@ verbose_kmsg
 # now run any rc scripts
 /etc/init.d/rcS
 
-/sbin/getty 38400 tty1 &
+# Provide shell for watching what it is doing.
 /sbin/getty 38400 tty2 &
 
 /bin/touch /var/log/messages
@@ -91,10 +107,15 @@ fi
 # mdev -s
 # echo "Listing of /dev after running mdev: "; cd /dev; ls -l; cd /
 
-if [ $RETVAL -ne 5 ]; then
+if [ $RETVAL -eq 0 ]; then
     # exec switch_root -c ${CONSOLE} ${NEW_ROOT} ${NEW_INIT}
     exec switch_root ${NEW_ROOT} ${NEW_INIT}
 fi
+if [ $RETVAL -eq 99 ]; then
+    # Imaged node finished 
+    echo "Installation Finished.  Rebooting!"
+    reboot
+fi
 
-echo "Debugging time again..."
-/bin/bash
+echo "Debugging time..."
+/sbin/getty 38400 tty1

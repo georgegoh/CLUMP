@@ -42,6 +42,7 @@ from niifun import NodeInstInfoHandler
 MODULE_LOAD_LIST='/etc/module-load-order.lst'
 
 initrddebug = 0
+dlp = ''
 class ImagedNodeConfiger:
     """This class contains the code for doing the steps above"""
 
@@ -159,10 +160,18 @@ class ImagedNodeConfiger:
         
 
 
-    def getImage(self, ngid):
-        """getImage - Download and extract the image to use as the root filesystem"""
+    def getImage(self, ngid, disked):
+        """getImage - Download and extract the image to use as the root filesystem.
+        The 'disked' flag is used to control where the image is downloaded to"""
         image = "http://%s/images/%s.img.tar.bz2" % (bestip, ngid)
-        os.chdir('/tmp')
+        sys.stdout.write("Downloading image: %s to " % image)
+        if disked:
+            os.chdir('/newroot/tmp')
+            sys.stdout.write("/newroot/tmp")
+        else:
+            os.chdir('/tmp')
+            sys.stdout.write("/tmp")
+            
         self.log("Downloading image: %s\n" % image)
         sys.stdout.write("Downloading image: %s\n" % image)
         status = os.system('wget %s' % image)
@@ -172,16 +181,257 @@ class ImagedNodeConfiger:
         os.chdir('/newroot')
         self.log("Extracting image\n")
         sys.stdout.write("Extracting image\n")
-        os.system('tar jxf /tmp/%s.img.tar.bz2' % ngid)
+        if disked:
+            es = os.system('tar jxf /newroot/tmp/%s.img.tar.bz2' % ngid)
+        else:
+            es = os.system('tar jxf /tmp/%s.img.tar.bz2' % ngid)
+        if es != 0:
+            sys.stdout.write("FATAL:  Failed to extract image!\n")
+            sys.stdout.write("There may not be enough disk space\n")
+        if disked:
+            os.unlink('/newroot/tmp/%s.img.tar.bz2' % ngid)
+        else:
+            os.unlink('/tmp/%s.img.tar.bz2' % ngid)
+
+        
+class DirtyLittlePartitioner:
+    """ This class will deal with partitioning disks for imaged nodes
+    until the real partitioning code can be used."""
+
+    def __init__(self):
+        self.firstdisk = ""
+        self.rootdev = ""
+        self.bootpartnum = 0
+        self.partinfo  = {}    # Dictionary of all the Partition info.
+        devlist = []
+        pdir = "/proc/partitions"
+        if os.path.exists(pdir):
+            fin = open(pdir, 'r')
+            data= fin.readlines()
+            fin.close()
+            for line in data[2:]:
+                dev = string.split(line)[-1:]
+                c = dev[0]
+                if c[:4] == 'loop' or c[:2] == 'fd' or c[:2] == 'md' or str.isdigit(c[-1:]):
+                    continue
+                devlist.append(dev[0])
+                print "Found: %s" % dev[0]
+
+        else:
+            # No disk found!
+            print "FATAL:  No Disk Found!"
+            print "The kernel modules for the drive controller is not loaded."
+            sys.exit(4)
+
+        preference = ['sda', 'sdb', 'sdc', 'sdd', 'hda', 'hdb', 'hdc', 'hdd', 'none']
+        best = ''
+        for best in preference:
+            print "Checking for %s in %s" % (best, devlist)
+            if best in devlist:
+                break
+
+        self.firstdisk = best
+        print "First disk to use is: %s" % best
+
+        
+    def addPart(self, pnum, ptype, size, mntpnt):
+        '''addPart - Store the partition information in a class structure'''
+        self.partinfo[pnum] = { 'type'   : ptype,
+                                'size'   : size,
+                                'mntpnt' : mntpnt,
+                                'boot'   : '',
+                                'device' : "/dev/%s%s" % (self.firstdisk, pnum) }
         
 
+    def findType(self, fstype):
+        if fstype == 'linux-swap':
+            ptype = 82  # Swap
+        elif fstype == 'ext2':
+            ptype = 83  # Linux partition
+        elif fstype == 'ext3':
+            ptype = 83  # Linux partition
+        elif fstype == 'fat32':
+            ptype = 82  # Dos partition
+        elif fstype == 'ntfs':
+            ptype = 82  # Windows partition
+        else:
+            ptype = 83  # Linux partition
+        return(ptype)
+
+
+    def wipeParts(self):
+        '''wipeParts - Delete all partitions'''
+        try:
+            fp = file('/tmp/part0', 'w')
+            fp.write(';\n;\n;\n;\n')
+            fp.close()
+        except:
+            print "Unable to partition disk!"
+            return
+            
+        os.system('sfdisk /dev/%s < /tmp/part0 >/dev/null 2>/dev/null' % (self.firstdisk))
+
+
+    def partitionDisk(self):
+        '''partitionDisk - Create the partitions'''
+        # Determine which to boot
+        boot = -1
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] == '/boot':
+                boot = i
+                break
+            if self.partinfo[i]['mntpnt'] == '/':
+                boot = i
+                    
+        if boot == -1:
+            print "ERROR:  No root or /boot partition available!"
+            sys.exit(-6)
+
+        self.partinfo[boot]['boot'] = "*"
+        
+        # Make the sfdisk strings
+        for i in self.partinfo.keys():
+            type = self.findType(self.partinfo[i]['type'])
+            if i == 1:
+                self.partinfo[i]['sfdiskstr'] =  '0,%s,%i,%s\n' % (self.partinfo[i]['size'], type, self.partinfo[i]['boot'])
+            else:
+                self.partinfo[i]['sfdiskstr'] =  ',%s,%i,%s\n' % (self.partinfo[i]['size'], type, self.partinfo[i]['boot'])
+
+        try:
+            fp = file('/tmp/partitions', 'w')
+            if self.partinfo.has_key('1'):
+                fp.write(self.partinfo['1']['sfdiskstr'])
+            else:
+                fp.write('0,0,0,\n')
+            if self.partinfo.has_key('2'):
+                fp.write(self.partinfo['2']['sfdiskstr'])
+            else:
+                fp.write('0,0,0,\n')
+            if self.partinfo.has_key('3'):
+                fp.write(self.partinfo['3']['sfdiskstr'])
+            else:
+                fp.write('0,0,0,\n')
+            if self.partinfo.has_key('4'):
+                fp.write(self.partinfo['4']['sfdiskstr'])
+            else:
+                fp.write('0,0,0,\n')
+            
+            fp.close()
+        except:
+            print "Unable to partition disk!"
+            return
+        print "****  Running:  sfdisk -uM /dev/%s < /tmp/partitions" % (self.firstdisk)
+        os.system('sfdisk -uM /dev/%s < /tmp/partitions >/dev/null 2>/dev/null' % (self.firstdisk))
+
+
+    def formatPart(self):
+        '''prepPart  - Format the partitions on the disk, and use swap'''
+        for i in self.partinfo.keys():
+            device = "/dev/%s%s" % (self.firstdisk, i)
+            type = self.partinfo[i]['type']
+            print "Formatting %s as %s" % (device, type)
+            if type == 'linux-swap':
+                os.system('mkswap %s >> /tmp/imageinit.log 2>&1' % device)
+                os.system('swapon %s >> /tmp/imageinit.log 2>&1' % device)
+            elif type == 'ext2':
+                os.system('mke2fs -q %s >> /tmp/imageinit.log 2>&1' % device)
+            elif type == 'ext3':
+                os.system('mke2fs -j -q %s >> /tmp/imageinit.log 2>&1' % device)
+            else:
+                print "Unknown partition type: %s" % type
+
+
+    def mountParts(self):
+        '''mountParts - Mount the partitions.'''
+        # Find root key first
+        rkey = ''
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] == '/':
+                rkey = i
+
+        if rkey == '':
+            print "ERROR:  No root partition defined!"
+            sys.exit(-7)
+            
+        print "Mounting %s as root" % self.partinfo[rkey]['device']
+        os.system('mount %s /newroot/ >> /tmp/imageinit.log 2>&1' % self.partinfo[rkey]['device'])
+
+        # Now mount the other filesystems
+        for i in self.partinfo.keys():
+            if i == rkey:
+                continue
+            if self.partinfo[i]['type'] == 'linux-swap':
+                continue
+            os.makedirs('/newroot%s' % self.partinfo[i]['mntpnt'], mode=0755)
+            os.system('mount %s /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['device'], self.partinfo[i]['mntpnt']))
+
+
+    def unmountParts(self):
+        '''unmountParts - Unmount the partitions.'''
+        # Find root key first
+        rkey = ''
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] == '/':
+                rkey = i
+
+        # Unmount the other filesystems first
+        for i in self.partinfo.keys():
+            if i == rkey:
+                continue
+            if self.partinfo[i]['type'] == 'linux-swap':
+                continue
+            os.system('umount /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['mntpnt']))
+
+        os.system('umount /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['mntpnt']))
+            
+                
+    def addGrub(self):
+        '''addGrub  - Install the grub bootloader'''
+        flist = glob.glob('/newroot/boot/initrd*')
+        if len(flist) == 0:
+            print "ERROR:  Unable to locate the initrd!"
+            sys.exit(-2)
+        init = os.path.basename(flist[0])
+        
+        flist = glob.glob('/newroot/boot/vmlin*')
+        if len(flist) == 0:
+            print "ERROR:  Unable to locate the kernel for imaged nodes!"
+            sys.exit(-3)
+        kern = os.path.basename(flist[0])
+
+        if not os.path.exists('/newroot/usr/share/grub/'):
+            print "ERROR:  Unable to locate the grub package!"
+            sys.exit(-4)
+
+        # Find root dev, and bootable dev
+        rkey = 0
+        bdev = 0
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] == '/':
+                rkey = i
+            if self.partinfo[i]['boot'] == '*':
+                bdev = string.atoi(i) - 1
+
+        os.system('cp -r /newroot/usr/share/grub/*/* /newroot/boot/grub')
+        fp = file('/newroot/boot/grub/grub.conf', 'w')
+        fp.write('# Imaged node \n')
+        fp.write('# \n')
+        fp.write('default=0\n')
+        fp.write('timeout=2\n')
+        fp.write('\n')
+        fp.write('title Imaged Node\n')
+        fp.write('        root (hd0,%s)\n' % bdev)
+        fp.write('        kernel /%s ro root=%s\n' % (kern, self.partinfo[rkey]['device']))
+        fp.write('        initrd /%s\n' % (init))
+        fp.close()
+        
 
 app = ImagedNodeConfiger()
 app.loadModules()
 app.upInterfaces()
 
 bestip = app.findBestInstaller()
-app.log("Best Installer = %s" % bestip )
+app.log("Best Installer = %s\n" % bestip )
 
 niiinfo = NIIFun()
 niiinfo.setState('Installed')
@@ -191,13 +441,20 @@ niiinfo.wantNII(1)
 try:
     niifile = niiinfo.callNodeboot(bestip)
 except:
-    app.log("ERROR:  Unable to get NII from:  %s" % bestip)
+    app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
     sys.exit(-1)
     
 niihandler = NodeInstInfoHandler()
 parser = make_parser() 
 parser.setContentHandler(niihandler)
 parser.parse(open(niifile)) 
+
+if len(niihandler.partitions.keys()) > 0 and niihandler.installtype == 'disked':
+    disked = True
+    app.log("Using local disk\n")
+else:
+    disked = False
+    app.log("Not using local disk\n")
 
 app.log("Name        = %s\n" % niihandler.name)
 app.log("installers  = %s\n" % niihandler.installers)
@@ -215,24 +472,6 @@ for i in niihandler.partitions.keys():
     app.log("        size      = %s\n" % (niihandler.partitions[i]['size']))
     app.log("        options   = %s\n" % (niihandler.partitions[i]['options']))
     app.log("        preserve  = %s\n" % (niihandler.partitions[i]['preserve']))
-
-if len(niihandler.partitions.keys()) > 0:
-    # Bring up the partitions according to the NII
-    # TODO
-    #
-    # Need to get a lot more modules from the installer before this can work
-    from nodeinstaller import adaptNIIPartition
-    from kusu.partitiontool import DiskProfile
-    from kusu.installer.defaults import setupDiskProfile
-    disk_profile = DiskProfile(True) # Start with blank disk.
-    schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
-    setupDiskProfile(disk_profile, schema)
-    disk_profile.commit()
-    disk_profile.formatAll()
-
-    
-
-
 
 for i in niihandler.nics.keys():
     app.log("------------------------------ NICS:  Key = %s" % i)
@@ -258,29 +497,74 @@ for i in niihandler.nics.keys():
                              niihandler.nics[i]['ip'],
                              niihandler.nics[i]['subnet'])
 
-# Download the image, and store the NII
-app.mkNewRoot('/newroot')
+if disked:
+    os.makedirs('/newroot/', mode=0755)
+else:
+    # Make a RAM root filesystem
+    app.mkNewRoot('/newroot')
 
-if len(niihandler.partitions.keys()) > 0:
-    # Mount the partitions
+if disked and 'gdfgd' == 'FAIL':
+    # Bring up the partitions according to the NII
     # TODO
     #
-    print "Should mount ROOT on /newroot"
+    # Need to get a lot more modules from the installer before this can work
+    #from nodeinstaller import adaptNIIPartition
+    #from kusu.partitiontool import DiskProfile
+    #from kusu.installer.defaults import setupDiskProfile
+    #disk_profile = DiskProfile(True) # Start with blank disk.
+    #schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
+    #setupDiskProfile(disk_profile, schema)
+    #disk_profile.commit()
+    #disk_profile.formatAll()
+    print ""
 
+if disked:
+    dlp = DirtyLittlePartitioner()
+    if dlp.firstdisk == 'none':
+        print "FATAL:  No Disk Found!"
+        print "The kernel modules for the drive controller may not be loaded."
+        print "Type:  Alt-F2, login and look at /proc/partitions"
+        sys.exit(4)
+        
+    app.log("Trying to partition %s\n" % dlp.firstdisk)
+    dlp.wipeParts()
+    for i in niihandler.partitions.keys():
+        # This is all we will deal with.
+        if niihandler.partitions[i]['device'] == "1":
+            if niihandler.partitions[i]['partition'] == '':
+                continue
+
+            dlp.addPart(niihandler.partitions[i]['partition'],
+                        niihandler.partitions[i]['fstype'],
+                        niihandler.partitions[i]['size'],
+                        niihandler.partitions[i]['mntpnt'])
+
+    dlp.partitionDisk()
+    dlp.formatPart()
+    dlp.mountParts()
     
+
 os.makedirs('/newroot/etc', mode=0755)
 os.makedirs('/newroot/etc/cfm', mode=0755)
+os.makedirs('/newroot/tmp', mode=0777)
 os.system('cp /.cfmsecret /newroot/etc/cfm/')
 os.system('chmod 400 /newroot/etc/cfm/.cfmsecret')
 os.system('chown root /newroot/etc/cfm/.cfmsecret')
 niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
-app.getImage(niihandler.nodegrpid)
-os.unlink('/tmp/%s.img.tar.bz2' % niihandler.nodegrpid)
+app.getImage(niihandler.nodegrpid, disked)
+
 os.system('hostname %s' % niihandler.name)
+
+if disked:
+    # Install the bootloader
+    dlp.addGrub()
+    dlp.unmountParts()
+    # Exit with 99 to force reboot 
+    sys.exit(99)
 
 app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
 if initrddebug == 1:
-    # Exit with 5 to stop the switch_root
-    sys.exit(5)
+    # Exit with 1 to stop the switch_root
+    sys.exit(1)
 
 sys.exit(0)

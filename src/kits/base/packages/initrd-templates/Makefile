@@ -57,7 +57,7 @@ initrd-32bit:
 	@if [ -d buildroot ]; then \
 		rm -rf buildroot ; \
 	fi
-	@tar jxf ../../../../3rdparty/buildroot/buildroot*.bz2
+	@tar jxf buildroot*.bz2
 	(cd 32bit ;cp .config* ../buildroot)
 	(cd 32bit/packages ;cp -fr * ../../buildroot/packages/ )
 	(cd buildroot ; make)
@@ -74,7 +74,7 @@ initrd-64bit:
 	@if [ -d buildroot ]; then \
 		rm -rf buildroot ; \
 	fi
-	@tar jxf ../../../../3rdparty/buildroot/buildroot*.bz2
+	@tar jxf buildroot*.bz2
 	(cd 64bit ;cp .config* ../buildroot)
 	(cd 64bit/packages ;cp -fr * ../../buildroot/packages/ )
 	(cd buildroot ; make)
