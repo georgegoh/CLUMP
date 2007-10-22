@@ -26,7 +26,13 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/group'),
                  path('/etc/hosts'),
                  path('/etc/hosts.equiv'),
-                 path('/etc/ssh/ssh_config')]
+                 path('/etc/ssh/ssh_config'),
+                 path('/etc/ssh/ssh_host_dsa_key'),
+                 path('/etc/ssh/ssh_host_key'),
+                 path('/etc/ssh/ssh_host_rsa_key'),
+                 path('/etc/ssh/ssh_host_dsa_key.pub'),
+                 path('/etc/ssh/ssh_host_key.pub'),
+                 path('/etc/ssh/ssh_host_rsa_key.pub')]
 
         ngs = self.dbs.NodeGroups.select()
 
