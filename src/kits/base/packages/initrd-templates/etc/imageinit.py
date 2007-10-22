@@ -200,7 +200,6 @@ class DirtyLittlePartitioner:
 
     def __init__(self):
         self.firstdisk = ""
-        self.rootdev = ""
         self.bootpartnum = 0
         self.partinfo  = {}    # Dictionary of all the Partition info.
         devlist = []
@@ -389,7 +388,7 @@ class DirtyLittlePartitioner:
         '''addGrub  - Install the grub bootloader'''
         flist = glob.glob('/newroot/boot/initrd*')
         if len(flist) == 0:
-            print "ERROR:  Unable to locate the initrd!"
+            print "ERROR:  Unable to locate the initrd!  Was the kernel package included?"
             sys.exit(-2)
         init = os.path.basename(flist[0])
         
@@ -400,7 +399,7 @@ class DirtyLittlePartitioner:
         kern = os.path.basename(flist[0])
 
         if not os.path.exists('/newroot/usr/share/grub/'):
-            print "ERROR:  Unable to locate the grub package!"
+            print "ERROR:  Unable to locate the grub package!  Was the grub package included?"
             sys.exit(-4)
 
         # Find root dev, and bootable dev
@@ -424,7 +423,110 @@ class DirtyLittlePartitioner:
         fp.write('        kernel /%s ro root=%s\n' % (kern, self.partinfo[rkey]['device']))
         fp.write('        initrd /%s\n' % (init))
         fp.close()
+        os.chdir('/newroot/boot/grub')
+        os.system('ln -s grub.conf menu.lst')
+        os.chdir('/')
+
         
+    def mkfstab(self):
+        '''mkfstab - write out the fstab file'''
+        filename = "/newroot/etc/fstab"
+        fp = file(filename, 'w')
+        fp.writelines('# Created by Kusu Image installation\n')
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] != '/':
+                continue
+            device = "/dev/%s%s" % (self.firstdisk, i)
+            fp.writelines('%s          /       %s     defaults        1 1\n' % (device, self.partinfo[i]['type']))
+
+        fp.writelines('devpts                  /dev/pts                devpts  gid=5,mode=620  0 0\n')
+        fp.writelines('tmpfs                   /dev/shm                tmpfs   defaults        0 0\n')
+        fp.writelines('proc                    /proc                   proc    defaults        0 0\n')
+        fp.writelines('sysfs                   /sys                    sysfs   defaults        0 0\n')   
+
+        for i in self.partinfo.keys():
+            if self.partinfo[i]['mntpnt'] == '/':
+                continue
+            device = "/dev/%s%s" % (self.firstdisk, i)
+            type = self.partinfo[i]['type']
+            if type == 'linux-swap':
+                fp.writelines('%s          swap       swap     defaults      0 0\n' % device)
+                continue
+            # FIX THIS:  Mounting may require ordering
+            fp.writelines('%s         %s         %s     defaults   1 2\n' % (device, self.partinfo[i]['mntpnt'], type))
+                
+        fp.close()
+
+
+class ImagedConfigFiles:
+    """ This class will deal with all the files that need to be created
+    on imaged nodes."""
+
+    def __init__(self):
+        self.root = '/newroot'
+
+    def mkifcfgs(self, hostname, data):
+        """mkifcfgs - Write the /etc/sysconfig/network-scripts/ifcfg-XXX files."""
+        path = "%s/etc/sysconfig/network-scripts/" % self.root
+        gw = ''
+        for i in data.keys():
+            filename = "%sifcfg-%s" % (path, data[i]['device'])
+            fp = file(filename, 'w')
+            fp.writelines('# NIC configured by Kusu\n')
+            fp.writelines('DEVICE=%s\n' % data[i]['device'])
+            fp.writelines('ONBOOT=yes\n')
+            if data[i]['dhcp'] == '0':
+                fp.writelines('BOOTPROTO=static\n')
+                fp.writelines('IPADDR=%s\n' % data[i]['ip'])
+                fp.writelines('NETMASK=%s\n' % data[i]['subnet'])
+                fp.writelines('NETWORK=%s\n' % data[i]['network'])
+            else:
+                fp.writelines('BOOTPROTO=dhcp\n')
+                fp.writelines('# IPADDR=%s\n' % data[i]['ip'])
+                fp.writelines('# NETMASK=%s\n' % data[i]['subnet'])
+                fp.writelines('# NETWORK=%s\n' % data[i]['network'])
+                fp.writelines('# dhcp=%s\n' % data[i]['dhcp'])
+            fp.close()
+            if data[i]['gateway'] != '':
+                gw = data[i]['gateway']
+
+        path = "%s/etc/sysconfig/" % self.root
+        filename = "%snetwork" % (path)
+        fp = file(filename, 'w')
+        fp.writelines('NETWORKING=yes\n')
+        if gw != '':
+            fp.writelines('GATEWAY=%s\n' % gw)
+        fp.writelines('HOSTNAME=%s\n' % hostname)
+        fp.close()
+
+
+    def rebuildInitrd(self):
+        '''rebuildInitrd - rebuild the initrd so this thing can boot.
+        This is VERY linux centric.'''
+
+        kver = ''
+        flist = glob.glob('/newroot/boot/vmlinuz*')
+        if len(flist) == 0:
+            print "ERROR:  Unable to locate the kernel for imaged nodes!"
+            sys.exit(-3)
+        kern = os.path.basename(flist[0])
+        kver = kern[len('vmlinuz-'):]
+
+        # Create a script to run in a chroot'ed environment to build the initrd
+        filename = "/newroot/SetupInitrd"
+        fp = file(filename, 'w')
+        fp.writelines('#!/bin/sh\n')
+        fp.writelines('mount /sys\n')
+        fp.writelines('mount /proc\n')
+        fp.writelines('/sbin/new-kernel-pkg --package kernel --mkinitrd --depmod --install %s\n' % kver)
+        fp.writelines('umount /sys\n')
+        fp.writelines('umount /proc\n')
+        fp.writelines('exit')
+        fp.close()
+        os.system('chmod 755 %s' %  filename)
+        os.system('chroot /newroot /SetupInitrd')
+        os.chdir('/')
+
 
 app = ImagedNodeConfiger()
 app.loadModules()
@@ -436,16 +538,23 @@ app.log("Best Installer = %s\n" % bestip )
 niiinfo = NIIFun()
 niiinfo.setState('Installed')
 niiinfo.wantNII(1)
-# niiinfo.wantCFM(1)  # Can't do anything with it yet
+#niiinfo.wantCFM(1)  # Can't do anything with it yet
 
 try:
     niifile = niiinfo.callNodeboot(bestip)
 except:
     app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
+    print "ERROR:  Unable to get NII from:  %s\n" % bestip
     sys.exit(-1)
     
 niihandler = NodeInstInfoHandler()
-parser = make_parser() 
+try:
+    parser = make_parser()
+except:
+    app.log("ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n")
+    print "ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n"
+    sys.exit(-1)
+    
 parser.setContentHandler(niihandler)
 parser.parse(open(niifile)) 
 
@@ -557,8 +666,45 @@ os.system('hostname %s' % niihandler.name)
 
 if disked:
     # Install the bootloader
+    print "Adding bootloader"
     dlp.addGrub()
+
+    print "Adding Fstab"
+    dlp.mkfstab()
+    
+    # Write config files
+    icf = ImagedConfigFiles()
+    nicdata = {}
+    for i in niihandler.nics.keys():
+        nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
+                       'ip'      : niihandler.nics[i]['ip'],
+                       'subnet'  : niihandler.nics[i]['subnet'],
+                       'network' : niihandler.nics[i]['network'],
+                       'suffix'  : niihandler.nics[i]['suffix'],
+                       'gateway' : niihandler.nics[i]['gateway'],
+                       'dhcp'    : niihandler.nics[i]['dhcp'],
+                       'options' : niihandler.nics[i]['options'],
+                       'boot'    : niihandler.nics[i]['boot'] }
+        
+    print "Writing network config files"
+    icf.mkifcfgs(niihandler.name, nicdata)
+
+    print "Installing initrd"
+    icf.rebuildInitrd()
+
     dlp.unmountParts()
+
+    print "Changing boot device"
+    niiinfo.setState('Installed')
+    niiinfo.wantNII(0)
+    niiinfo.setBootFrom('disk')  # This is only for disked!
+    try:
+        niifile = niiinfo.callNodeboot(bestip)
+    except:
+        app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
+        print "ERROR:  Unable to update bootfrom:  %s\n" % bestip
+        sys.exit(-1)
+    
     # Exit with 99 to force reboot 
     sys.exit(99)
 
