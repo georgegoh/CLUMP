@@ -37,8 +37,10 @@ MAXHEIGHT = 18
 LEFT=kusuwidgets.LEFT
 CENTER=kusuwidgets.CENTER
 RIGHT=kusuwidgets.RIGHT
+
 CustomScriptDir = "/depot/repos/custom_scripts/"
 BootDir = "/tftpboot/kusu/"
+CFMBaseDir = "/etc/cfm"
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -85,6 +87,7 @@ class scrNGEMain(USXBaseScreen):
         else:
             suffix = int(max(filter((lambda x: x.isdigit()), [string.split(x[0])[-1] for x in rv]))) + 1
         ngname = '%s Copy %s' %(newNG['ngname'], suffix)
+        old_ngname = newNG['ngname']    #save the old NG name
         newNG['ngname'] = ngname
 
         newNG.syncToDB(self.database)
@@ -98,7 +101,18 @@ class scrNGEMain(USXBaseScreen):
             shutil.copyfile(os.path.join(BootDir, newNG['initrd']), os.path.join(BootDir,imagename))
         else:
             kl.info("WARNING: initrd '%s' does not exist for nodegroup '%s'" %(imagename,newNG['ngname']))
-        
+
+        #copy CFM directory
+        srcNGcfmdir = os.path.join(CFMBaseDir,old_ngname)
+        dstNGcfmdir = os.path.join(CFMBaseDir,newNG['ngname'])
+        if os.path.isdir(srcNGcfmdir):
+            if not os.path.exists(dstNGcfmdir):
+                #copy the tree
+                shutil.copytree(srcNGcfmdir,dstNGcfmdir,True)
+            else:
+                self.selector.popupMsg('CFM Directory Copy', "CFM Directory for nodegroup "+\
+                    "'%s' already exists. It was left intact." %newNG['ngname'])
+            
         return NAV_NOTHING
 
     def doDeleteAction(self):
@@ -2505,6 +2519,17 @@ class NGEApp(KusuApp):
             ngsrc[ngsrc.PKfld] = None    #give it new identity
             ngsrc['ngname'] = self.ngnew
             ngsrc.syncToDB(self.__db)
+
+            #copy CFM directory
+            srcNGcfmdir = os.path.join(CFMBaseDir, self.ng)
+            dstNGcfmdir = os.path.join(CFMBaseDir, self.ngnew)
+            if os.path.isdir(srcNGcfmdir):
+                if not os.path.exists(dstNGcfmdir):
+                    #copy the tree
+                    shutil.copytree(srcNGcfmdir,dstNGcfmdir,True)
+                else:
+                    self.stdoutMessage("ngedit: CFM directory for nodegroup "+\
+                        "'%s' already exists. It was left intact.\n" %self.ngnew)
 
         elif self.action == NGE_DEL:
             query = "select ngid from nodegroups where ngname= '%s'" %self.ng
