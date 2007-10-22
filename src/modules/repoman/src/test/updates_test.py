@@ -96,7 +96,7 @@ class TestTool:
 
         assert lines.find("k.version = '6_r100'\n") != -1
         assert lines.find("k.release = '100'\n") != -1
-        assert lines.find("k.arch = 'i386'\n") != -1
+        assert lines.find("k.arch = 'x86'\n") != -1
         assert lines.find("comp = Fedora6Component()\n") != -1
 
     def testMakeUpdateKit(self):

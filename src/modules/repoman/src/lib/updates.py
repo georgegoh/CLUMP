@@ -165,7 +165,11 @@ class BaseUpdate:
         ns['kitname'] = kitName
         ns['kitver'] = kitVersion
         ns['kitrel'] = kitRelease
-        ns['kitarch'] = self.os_arch
+        if self.os_arch in ['i386', 'i486', 'i586', 'i686']:
+            ns['kitarch'] = 'x86'
+        else:
+            ns['kitarch'] = self.os_arch
+
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
                         (self.os_name, self.os_version, self.os_arch, time.asctime())
         ns['compclass'] = compclass[self.os_name][self.os_version]

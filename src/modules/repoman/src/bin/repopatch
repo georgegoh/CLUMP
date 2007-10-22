@@ -138,7 +138,7 @@ class RepoPatchApp(KusuApp):
         if oldUpdateKit and oldUpdateKit in repo.kits:
             repo.kits.remove(oldUpdateKit)
         repo.kits.append(updateKit)
-        repo.save()
+        repo.save_or_update()
         repo.flush()
 
         self.stdoutMessage('Refreshing repo. This may take awhile...\n')
