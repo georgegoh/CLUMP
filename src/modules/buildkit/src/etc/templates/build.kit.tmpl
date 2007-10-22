@@ -11,7 +11,7 @@
 #pkg1.installroot = '/opt/foo'
 #pkg1.filename = 'foo-1.0.tar.gz'
 
-# define a default component
+# Define a default component
 comp = $compclass
 comp.name = '$compname'
 comp.description = '$compdesc'
@@ -20,12 +20,12 @@ comp.description = '$compdesc'
 #comp.addDep(pkg1)
 
 
-# define a default kit
-# be sure to change arch to fit your needs (x86, x86_64, noarch)
+# Define a default kit
+# Change arch if needed to fit your needs (x86, x86_64, noarch)
 k = $kitclass
 k.name = '$kitname'
 k.description = '$kitdesc'
-k.arch = '$kitarch'
+k.arch = $kitarch
 
 # Adding the component defined earlier
 k.addComponent(comp)

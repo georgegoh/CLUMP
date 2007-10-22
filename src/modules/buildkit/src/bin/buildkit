@@ -233,10 +233,12 @@ Example operations:
         # get the arch
         if self.options.arch != 'noarch':
             msg = self._('Creating kit for %(arch)s architecture..' % {'arch':self.options.arch})
+            self.bkinst.newKitSrc(dirname)
         else:
             msg = self._('Creating kit for all architectures..' % {'arch':self.options.arch})
+            self.bkinst.newKitSrc(dirname,self.options.arch)
         print msg
-        self.bkinst.newKitSrc(dirname,self.options.arch)
+
         msg = self._('%(kitname)s directory created.' % {'kitname':dirname.basename()})
         print msg
 

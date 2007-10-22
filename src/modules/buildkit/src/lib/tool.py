@@ -24,7 +24,7 @@ class BuildKit:
     verbose = False
     debuginfo = False
     
-    def newKitSrc(self, srcpath, arch='noarch'):
+    def newKitSrc(self, srcpath, arch=None):
         """prepare the Kit source directory"""
         srcpath = path(srcpath)
         newkit = KitSrcFactory(srcpath)
@@ -138,7 +138,7 @@ class BuildKit:
         """
         kit.generateKitInfo(filepath)
         
-    def prepareBuildKitTemplate(self, defaultname, arch='noarch'):
+    def prepareBuildKitTemplate(self, defaultname, arch=None):
         """ Gets the build.kit template and populate it with the correct 
             namespace. The defaultname is just a string to set the default
             component and kit names.
@@ -167,7 +167,10 @@ class BuildKit:
         ns['kitclass'] = 'DefaultKit()'
         ns['kitname'] = defaultname
         ns['kitdesc'] = '%s kit.' % defaultname
-        ns['kitarch'] = arch
+        if arch:
+            ns['kitarch'] = "'%s'" % arch
+        else:
+            ns['kitarch'] = 'getArch()'
         ns['compdesc'] = compdesc
         t = Template(file=str(tmpl),searchList=[ns])
         return str(t)
