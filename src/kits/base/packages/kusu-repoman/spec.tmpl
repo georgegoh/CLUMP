@@ -65,4 +65,6 @@ rm -rf %{buildroot}
 %{_approot}/lib/*
 %{_approot}/etc/repoman-templates
 %{_approot}/share/*
+
+%defattr(0600,root,root)
 %config(noreplace) %{_approot}/etc/updates.conf
