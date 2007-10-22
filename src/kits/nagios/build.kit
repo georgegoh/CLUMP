@@ -92,6 +92,7 @@ compute_comp.addDep(perl_net_snmp_pkg)
 k = DefaultKit()
 k.name = 'nagios'
 k.description = 'Nagios kit.'
+k.arch = getArch()
 
 # Adding the installer and compute components
 k.addComponent(installer_comp)

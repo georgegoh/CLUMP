@@ -14,21 +14,12 @@ except:
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def added(self, nodename, info, prePopulateMode):
-        cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py',
-                '-a', nodename]
-        nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
-        out, err = nagiosconfigP.communicate()
-
-    def removed(self, nodename, info):
-        cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py',
-                '-r', nodename]
-        nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
-        out, err = nagiosconfigP.communicate()
-
     def finished(self, nodelist):
+        cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py', '--regen']
+        nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE)
+        out, err = nagiosconfigP.communicate()
+
         cmds = ['/etc/init.d/nagios', 'restart']
         nagiosserviceP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)

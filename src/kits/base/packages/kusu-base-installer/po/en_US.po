@@ -355,7 +355,7 @@ msgid "kitops_Help"
 msgstr "KUSU kitops - kit operations tool"
 
 msgid "kitops_usage_add"
-msgstr "add the specified kit"
+msgstr "add the kit specified with -m"
 
 msgid "kitops_usage_media"
 msgstr "specify the media iso or mountpoint for the kit"
