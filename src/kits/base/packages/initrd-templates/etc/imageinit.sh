@@ -97,6 +97,9 @@ start_udev
 RETVAL=$?
 if [ -f /tmp/imageinit.log ] ; then
     cp /tmp/imageinit.log ${NEW_ROOT}/tmp/imageinit.log
+    if [ $? -ne 0 ] ; then
+	echo "ERROR:  Imageinit failed.  The required network module may be missing"
+    fi
 fi
 
 # Install symlinks to all the busybox applets
