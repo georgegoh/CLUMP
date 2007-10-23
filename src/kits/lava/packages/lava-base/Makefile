@@ -23,7 +23,7 @@ ROOT =
 NAME = lava
 VERSION = 1.0
 BINARY_ARCH=linux2.6-glibc2.3-x86
-DOWNLOAD_SITE = http://www.osgdc.org/pub/build/kits/lava
+DOWNLOAD_SITE = http://www.osgdc.org/pub/build/kits/lava/sources
 
 
 # Default cluster name
