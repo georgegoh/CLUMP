@@ -27,7 +27,7 @@ TARARGS=zxf
 define check_prequisites
 	echo "--------------------------------------------------------"
 	echo ""
-	echo "Building this kit requires the folloowing prerequisits:"
+	echo "Building this kit requires the folloowing prerequisites:"
 	echo ""
 	echo "   glibc-devel"
 	echo "   gcc-c++"
@@ -35,7 +35,7 @@ define check_prequisites
 	echo "   pciutils-devel"
 	echo "   tcl-devel"
 	echo "   tk"
-	echo ""
+	echo "	 kernel-devel-2.6.18-8.el5"
 	echo "--------------------------------------------------------"
 endef
 

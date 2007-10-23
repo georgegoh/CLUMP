@@ -45,7 +45,7 @@ kit:
 	#cp kitinfo $(TOPDIR)/disk1/$(NAME)
 	cd $(TOPDIR)/disk1/$(NAME) ; \
 	for i in $(RPMS); do ln -s $$i; done 
-	mkisofs -quiet -V "Lava $(VERSION) Kit" -r -T -f -o kit-$(NAME)-$(VERSION)-$(RELEASE).noarch.iso disk1
+	mkisofs -quiet -V "Platform OFED $(VERSION) Kit" -r -T -f -o kit-$(NAME)-$(VERSION)-$(RELEASE).noarch.iso disk1
 
 clean:
 	rm -rf $(TOPDIR)/RPMS/$(ARCH)/*
