@@ -913,9 +913,9 @@ class DB(object):
                           size='8000', device='1', preserve=0)
         root = Partitions(mntpnt='/', fstype='ext3', partition='3',
                           size='24000', device='1', preserve=0)
-        ng.partitions.append(boot)
-        ng.partitions.append(swap)
-        ng.partitions.append(root)
+        imaged.partitions.append(boot)
+        imaged.partitions.append(swap)
+        imaged.partitions.append(root)
 
         # Installer Partitioning Schema
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
