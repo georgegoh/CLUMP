@@ -27,7 +27,7 @@ TARARGS=zxf
 define check_prequisites
 	echo "--------------------------------------------------------"
 	echo ""
-	echo "Building this kit requires the folloowing prerequisites:"
+	echo "Building this kit requires the following prerequisites:"
 	echo ""
 	echo "   glibc-devel"
 	echo "   gcc-c++"
