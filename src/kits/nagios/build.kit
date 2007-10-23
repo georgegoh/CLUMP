@@ -66,6 +66,7 @@ installer_comp = DefaultComponent()
 installer_comp.name = 'installer-nagios'
 installer_comp.description = 'Nagios component for installer node.'
 installer_comp.ngtypes = ['installer']
+installer_comp.addScript('installer-postun.sh', mode='postun')
 
 # Installer component contains...
 installer_comp.addDep(nagios_pkg)
@@ -80,6 +81,7 @@ compute_comp = DefaultComponent()
 compute_comp.name = 'compute-nagios'
 compute_comp.description = 'Nagios component for compute nodes.'
 compute_comp.ngtypes = ['compute']
+compute_comp.addScript('compute-postun.sh', mode='postun')
 
 # Compute component contains...
 compute_comp.addDep(nagios_nrpe_pkg)
@@ -97,13 +99,3 @@ k.arch = getArch()
 # Adding the installer and compute components
 k.addComponent(installer_comp)
 k.addComponent(compute_comp)
-
-
-# Add post install script. You can modify this shell script or add new ones in the
-# sources directory
-#k.addScript('00-post-script.sh',mode='post')
-
-# Add post uninstall script. You can modify this shell script or add new ones in the
-# sources directory
-#k.addScript('00-postun-script.sh',mode='postun')
-

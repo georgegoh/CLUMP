@@ -484,7 +484,6 @@ def confirm(kits, msg, skip=True):
         kitline.append(kit.version)
         kitline.append(kit.arch or 'noarch')
 
-        print kitline
         for x in xrange(len(kitline)):
             linelengths = [len(l) for l in kitline[x].split('\n')]
             if max(linelengths) > max_lengths[x]:
