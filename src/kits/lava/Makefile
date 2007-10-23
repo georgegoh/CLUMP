@@ -45,7 +45,7 @@ kit:
 	mkdir -p $(TOPDIR)/disk1/$(NAME)
 	#cp kitinfo $(TOPDIR)/disk1/$(NAME)
 	cd $(TOPDIR)/disk1/$(NAME) ; \
-	for i in $(RPMS); do ln -s $$i; done 
+	for i in $(RPMS); do ln -sf $$i; done 
 	mkisofs -quiet -V "Lava $(VERSION) Kit" -r -T -f -o kit-$(NAME)-$(VERSION)-$(RELEASE).x86_64.iso disk1
 
 clean:

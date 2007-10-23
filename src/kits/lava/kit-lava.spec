@@ -19,6 +19,9 @@
 %define COMP2 component-lava-compute-v1_0
 %define kitname lava
 
+# ignore unpackaged files
+%define _unpackaged_files_terminate_build 0
+
 Summary: Lava Kit
 Name: kit-lava
 Version: 1.0
@@ -105,6 +108,10 @@ fi
 
 %post
 # POST section
+# the following line is needed because kitops will extract
+# the %post sections during the kusu installer
+if [ -e /tmp/kusu/installer_running ]; then exit 0; fi 
+
 PATH=$PATH:/opt/kusu/sbin
 export PATH
 if [ -d /opt/kusu/lib ]; then

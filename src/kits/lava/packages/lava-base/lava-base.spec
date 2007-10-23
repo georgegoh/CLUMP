@@ -20,6 +20,9 @@
 %define binaryarch linux2.6-glibc2.3-x86
 %define clustername lava
 
+# ignore unpackaged files
+%define _unpackaged_files_terminate_build 0
+
 Summary: Lava base package
 Name: lava
 Version: 1.0

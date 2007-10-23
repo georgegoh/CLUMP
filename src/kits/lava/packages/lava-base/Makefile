@@ -23,6 +23,8 @@ ROOT =
 NAME = lava
 VERSION = 1.0
 BINARY_ARCH=linux2.6-glibc2.3-x86
+DOWNLOAD_SITE = http://www.osgdc.org/pub/build/kits/lava
+
 
 # Default cluster name
 CLUSTER_NAME = lava
@@ -36,12 +38,17 @@ rpm:
 	-mkdir -p $(TOPDIR)/SOURCES
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 
-	# Copy the tarballs from PCC and put into roll automatically.
-	@if [ "x${ARCH}" == "xx86_64" ]; then \
-	    echo "*** Copying Fake 64bit Lava..." ; \
-	    cp /pcc/lsf_madison/Lava/$(VERSION)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ;\
-	elif [ "x${ARCH}" == "xi386" -o "x${ARCH}" == "xi686" ]; then \
-	    cp /pcc/lsf_madison/Lava/$(VERSION)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ;\
+	# Copy the tarballs from PCC if available and put into kit automatically.
+	-cp /pcc/lsf_madison/Lava/$(VERSION)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD
+
+	# If not available, download the tarballs from the DOWNLOAD_SITE and put into kit automatically.
+	if [ ! -f $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z ] ; then \
+		if [ "x${ARCH}" == "xx86_64" ] ; then \
+		    echo "*** Copying Fake 64bit Lava..."; \
+		    curl -o $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z -L $(DOWNLOAD_SITE)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z ; \
+		elif [ "x${ARCH}" == "xi386" -o "x${ARCH}" == "xi686" ] ; then \
+		    curl -o $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z -L $(DOWNLOAD_SITE)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ; \
+		fi \
 	fi
 
 	@echo "Tarring $(NAME)"
