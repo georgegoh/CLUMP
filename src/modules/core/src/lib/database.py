@@ -797,6 +797,8 @@ class DB(object):
         imaged.packages.append(Packages(packagename='SysVinit'))
         imaged.packages.append(Packages(packagename='basesystem'))
         imaged.packages.append(Packages(packagename='bash'))
+        imaged.packages.append(Packages(packagename='kernel'))
+        imaged.packages.append(Packages(packagename='grub'))
         imaged.packages.append(Packages(packagename='redhat-release'))
         imaged.packages.append(Packages(packagename='chkconfig'))
         imaged.packages.append(Packages(packagename='coreutils'))
@@ -870,7 +872,7 @@ class DB(object):
 #        compute.partitions.append(swap)
 #        compute.partitions.append(data)
 # LVM PARTITIONING
-        for ng in [compute, imaged]:
+        for ng in [compute]:
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
                               size='100', device='1', preserve=0)
             swap = Partitions(fstype='linux-swap', partition='2',
@@ -903,6 +905,17 @@ class DB(object):
 #            ng.partitions.append(donotpreserve2)
 #            ng.partitions.append(donotpreserve3)
             ng.partitions.append(donotpreserve4)
+        
+        # Imaged Partitioning
+        boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
+                          size='100', device='1', preserve=0)
+        swap = Partitions(fstype='linux-swap', partition='2',
+                          size='8000', device='1', preserve=0)
+        root = Partitions(mntpnt='/', fstype='ext3', partition='3',
+                          size='24000', device='1', preserve=0)
+        ng.partitions.append(boot)
+        ng.partitions.append(swap)
+        ng.partitions.append(root)
 
         # Installer Partitioning Schema
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
