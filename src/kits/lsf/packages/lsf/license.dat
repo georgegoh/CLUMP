@@ -1,0 +1,21 @@
+FEATURE lsf_base lsf_ld 7.000 8-Oct-2007 0 4D87D0E1D9F336605688 "Platform" DEMO
+FEATURE ego_base lsf_ld 1.200 8-Oct-2007 0 DD17807101933F1A2FF6 "Platform" DEMO
+FEATURE lsf_manager lsf_ld 7.000 8-Oct-2007 0 BD87C06127BBA9B6B37E "Platform" DEMO
+FEATURE lsf_sched_fairshare lsf_ld 7.000 8-Oct-2007 0 3DE750B17EAC5818D95A "Platform" DEMO
+FEATURE lsf_sched_resource_reservation lsf_ld 7.000 8-Oct-2007 0 4D271081B4D4A0C11E09 "Platform" DEMO
+FEATURE lsf_sched_preemption lsf_ld 7.000 8-Oct-2007 0 0D7740316254D91E71FE "Platform" DEMO
+FEATURE lsf_sched_parallel lsf_ld 7.000 8-Oct-2007 0 7D777071B76BBED766AD "Platform" DEMO
+FEATURE lsf_sched_advance_reservation lsf_ld 7.000 8-Oct-2007 0 DD17E0A1BD8B88B2D368 "Platform" DEMO
+FEATURE platform_hpc lsf_ld 7.000 8-Oct-2007 0 BDD700B14E9055A4EB60 "Platform" DEMO
+FEATURE lsf_client lsf_ld 7.000 8-Oct-2007 0 1D0770518CC06E3BDB49 "Platform" DEMO
+FEATURE lsf_float_client lsf_ld 7.000 8-Oct-2007 0 0D17A08186C0D37BB2C3 "Platform" DEMO
+FEATURE lsf_after_hours lsf_ld 7.000 8-Oct-2007 0 6D5720416D0B400D8E86 "Platform" DEMO
+FEATURE lsf_make lsf_ld 7.000 8-Oct-2007 0 6D07D0F1012446429767 "Platform" DEMO
+FEATURE lsf_multicluster lsf_ld 7.000 8-Oct-2007 0 AD3760E1E06CE78897A5 "Platform" DEMO
+FEATURE lsf_license_scheduler lsf_ld 7.000 8-Oct-2007 0 FD0770F1C085E7A9DC94 "Platform" DEMO
+FEATURE lsf_sla lsf_ld 7.000 8-Oct-2007 0 7D279011A20B8A4D64FD "Platform" DEMO
+FEATURE lsf_parallel lsf_ld 7.000 8-Oct-2007 0 5D57E0D1A2022BA3688C "Platform" DEMO
+FEATURE lsf_reports lsf_ld 7.000 8-Oct-2007 0 BDB7C0D1F30BA2B4FAB6 "Platform" DEMO
+FEATURE lsf_dualcore_x86 lsf_ld 7.000 8-Oct-2007 0 AD2730A1CE53A99BBAEB "Platform" DEMO
+FEATURE lsf_mv_grid_filter lsf_ld 7.000 8-Oct-2007 0 2DF730F1F7FBEDD9DC32 "Platform" DEMO
+
