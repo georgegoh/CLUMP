@@ -129,9 +129,6 @@ class BuildImage:
         # Package the image for use
         self.__packageImage()
        
-        if os.path.exists(yumconf):
-            os.remove(yumconf) 
-
     def __validateNG(self, nodegroup):
         """__validateNG - Test the node group name to make sure it is valid.
         Returns:  True - when the node group exists, otherwise False.
@@ -352,6 +349,8 @@ class BuildImage:
             os.chdir(self.imagedir)
             os.system('rm -rf var/cache/yum/base/packages/*.rpm')
             print 'Removing:  \"%s/var/cache/yum/base/packages/*.rpm\"' %  self.imagedir
+            os.system('rm -f tmp/yum.conf')
+            print 'Removing:  \"%s/tmp/yum.conf\"' %  self.imagedir
 
             
     def __packageImage(self):
