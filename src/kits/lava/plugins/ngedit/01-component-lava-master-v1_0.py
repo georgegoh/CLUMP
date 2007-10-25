@@ -13,6 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
+#
 
 import os
 import snack
@@ -28,14 +29,14 @@ class NGPlugin(NGEPluginBase):
 
     def add(self):
         assert(self.ngid)
-        query = ('select ngname from nodegroups where ngid = %s' % self.ngid)
-        try:
-            database.execute(query)
-            ngname = database.fetchone()
-        except:
+	query = ('select ngname from nodegroups where ngid = %s' % self.ngid)
+	try:
+	    database.execute(query)
+	    ngname = database.fetchone()
+	except:
             return
-
-        os.system('mkdir -p \"/etc/cfm/%s/opt/lava/conf\"' % ngname)
+   
+	os.system('mkdir -p \"/etc/cfm/%s/opt/lava/conf\"' % ngname)
 
     def remove(self):
         assert(self.ngid)
@@ -47,4 +48,3 @@ class NGPlugin(NGEPluginBase):
             return
 
         os.system('rm -rf \"/etc/cfm/%s/opt/lava/conf\"' % ngname)
-
