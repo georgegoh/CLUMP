@@ -297,6 +297,16 @@ benchmarkingToolsComp.addDep(iperfpkg)
 benchmarkingToolsComp.addDep(streampkg)
 benchmarkingToolsComp.addDep(modulesbenchmarkingtoolspkg)
 
+#define the MVAPICH1 component
+mvapich1Comp = DefaultComponent()
+mvapich1Comp.name = 'MVAPICH1-libraries'
+mvapich1Comp.description = 'This component contains a collection of MVAPICH1 libraries.'
+
+#define the MVAPICH2 component
+mvapich2Comp = DefaultComponent()
+mvapich2Comp.name = 'MVAPICH2-libraries'
+mvapich2Comp.description = 'This component contains a collection of MVAPICH2 libraries.'
+
 # define HPC kit
 k = DefaultKit()
 k.name = 'hpc'
