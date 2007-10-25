@@ -710,6 +710,7 @@ class DB(object):
         diskless.modules.append(Modules(loadorder=12,module='sunrpc'))
         diskless.modules.append(Modules(loadorder=13,module='mii'))
         diskless.modules.append(Modules(loadorder=14,module='pcnet32'))
+        diskless.modules.append(Modules(loadorder=15,module='autofs4'))
  
         imaged.modules.append(Modules(loadorder=1,module='nfs'))
         imaged.modules.append(Modules(loadorder=2,module='ext3'))
@@ -731,6 +732,7 @@ class DB(object):
         imaged.modules.append(Modules(loadorder=17,module='mii'))
         imaged.modules.append(Modules(loadorder=18,module='e100'))
         imaged.modules.append(Modules(loadorder=19,module='pcnet32'))
+        imaged.modules.append(Modules(loadorder=20,module='autofs4'))
 
         # Creates the necessary pkg list for image and diskless nodes
         diskless.packages.append(Packages(packagename='SysVinit'))
@@ -776,6 +778,7 @@ class DB(object):
         diskless.packages.append(Packages(packagename='shadow-utils'))
         diskless.packages.append(Packages(packagename='openssh'))
         diskless.packages.append(Packages(packagename='openssh-server'))
+        diskless.packages.append(Packages(packagename='openssh-clients'))
         diskless.packages.append(Packages(packagename='sysklogd'))
         diskless.packages.append(Packages(packagename='tcp_wrappers'))
         diskless.packages.append(Packages(packagename='termcap'))
@@ -797,6 +800,9 @@ class DB(object):
         diskless.packages.append(Packages(packagename='vim-minimal'))
         diskless.packages.append(Packages(packagename='vim-common'))
         diskless.packages.append(Packages(packagename='vim-enhanced'))
+        diskless.packages.append(Packages(packagename='rootfiles'))
+        diskless.packages.append(Packages(packagename='autofs'))
+        diskless.packages.append(Packages(packagename='ntp'))
 
         imaged.packages.append(Packages(packagename='SysVinit'))
         imaged.packages.append(Packages(packagename='basesystem'))
@@ -843,6 +849,7 @@ class DB(object):
         imaged.packages.append(Packages(packagename='shadow-utils'))
         imaged.packages.append(Packages(packagename='openssh'))
         imaged.packages.append(Packages(packagename='openssh-server'))
+        imaged.packages.append(Packages(packagename='openssh-clients'))
         imaged.packages.append(Packages(packagename='sysklogd'))
         imaged.packages.append(Packages(packagename='tcp_wrappers'))
         imaged.packages.append(Packages(packagename='termcap'))
@@ -864,6 +871,9 @@ class DB(object):
         imaged.packages.append(Packages(packagename='vim-minimal'))
         imaged.packages.append(Packages(packagename='vim-common'))
         imaged.packages.append(Packages(packagename='vim-enhanced'))
+        imaged.packages.append(Packages(packagename='rootfiles'))
+        imaged.packages.append(Packages(packagename='autofs'))
+        imaged.packages.append(Packages(packagename='ntp'))
 
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING

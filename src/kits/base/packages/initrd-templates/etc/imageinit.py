@@ -29,6 +29,7 @@
 
 import os
 import sys
+import shutil
 import string
 import glob
 import ipfun
@@ -193,7 +194,41 @@ class ImagedNodeConfiger:
         else:
             os.unlink('/tmp/%s.img.tar.bz2' % ngid)
 
-        
+    def setupSystem(self, niihandler, bestip):
+
+        # setup /etc/sysconfig/network
+        if not os.path.exists('/newroot/etc/sysconfig/network'):
+            hostname = niihandler.name
+            gateway = bestip
+
+            f = open('/newroot/etc/sysconfig/network', 'w')
+            f.write('NETWORKING=yes\n')
+            f.write('NETWORKING_IPV6=yes\n')
+            f.write('HOSTNAME=%s\n' % hostname)
+            f.write('GATEWAY=%s\n' % bestip)
+            f.close()
+       
+        # setup timezone
+        print niihandler.appglobal.keys()
+        print niihandler.appglobal.values()
+
+        timezone = niihandler.appglobal['Timezone_zone']
+        shutil.copy(os.path.join('/newroot/usr/share/zoneinfo', timezone), '/newroot/etc/localtime')
+
+        hwclock_args = '--hctosys'
+        if niihandler.appglobal['Timezone_utc'] == '1':
+            hwclock_args += ' -u'
+        os.system('hwclock %s > /dev/null 2>&1' % hwclock_args)
+ 
+        f = open('/newroot/etc/sysconfig/clock', 'w')
+        f.write('ZONE="%s"\n' % timezone)
+        if niihandler.appglobal['Timezone_utc'] == '1':
+            f.write('UTC=true\n')
+        else:
+            f.write('UTC=false\n')
+        f.write('ARC=false\n')
+        f.close()
+
 class DirtyLittlePartitioner:
     """ This class will deal with partitioning disks for imaged nodes
     until the real partitioning code can be used."""
@@ -661,6 +696,7 @@ os.system('chmod 400 /newroot/etc/cfm/.cfmsecret')
 os.system('chown root /newroot/etc/cfm/.cfmsecret')
 niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
 app.getImage(niihandler.nodegrpid, disked)
+app.setupSystem(niihandler, bestip)
 
 os.system('hostname %s' % niihandler.name)
 

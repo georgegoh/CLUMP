@@ -28,6 +28,7 @@ KUSUUSCRIPTS='/etc/rc.kusu.custom.d'
 KUSUPOSTSCRIPT='/etc/rc.kusu.sh'
 
 import os
+import shutil
 import sys
 from optparse import OptionParser
 from kusu.core.app import KusuApp
@@ -101,7 +102,7 @@ class BuildImage:
         # Now install all the packages.  Note list of packages may exceed
         # length of args.
         arg = ''
-        yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
+        yumconf = os.path.join(self.imagedir, 'tmp/yum.conf')
         try:
             for package in self.packages:
                 arg = arg + " %s" % package
@@ -122,9 +123,14 @@ class BuildImage:
         # Cleanup the installation fragments
         self.__cleanImage()
 
+        # Set up the diskless node
+        self.__setupImage()
+
         # Package the image for use
         self.__packageImage()
-        
+       
+        if os.path.exists(yumconf):
+            os.remove(yumconf) 
 
     def __validateNG(self, nodegroup):
         """__validateNG - Test the node group name to make sure it is valid.
@@ -262,7 +268,8 @@ class BuildImage:
             dirname = 'CentOS'
 
         # Create the yum config file
-        yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
+        #yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
+        yumconf = os.path.join(self.imagedir, 'tmp/yum.conf')
         fp = file(yumconf, 'w')
         out = ( '[main]\n'
                 'cachedir=/var/cache/yum\n'
@@ -359,9 +366,30 @@ class BuildImage:
         os.chdir('/tmp')
         os.system('rm -rf \"%s\"' %  self.imagedir)
 
+    def __setupImage(self):
+        
+        # setup root ssh keys
+        sshdir = os.path.join(self.imagedir, 'root/.ssh')
+        if not os.path.exists(sshdir):
+            os.makedirs(sshdir)
+            os.chown(sshdir, 0, 0)
+            os.chmod(sshdir, 0700)
 
+            if os.path.exists('/root/.ssh/id_rsa.pub'):
+                authorizedkeys =  os.path.join(sshdir, 'authorized_keys')
+                shutil.copy('/root/.ssh/id_rsa.pub', os.path.join(sshdir, authorizedkeys))
+                os.chown(authorizedkeys, 0, 0)
+                os.chmod(authorizedkeys, 0644)
 
+        # setup nfs mounts
+        autohome = '/var/www/html/auto.home'
+        automaster = '/var/www/html/auto.master'
+        if os.path.exists(autohome) and os.path.exists(automaster):
+            shutil.copy(autohome, os.path.join(self.imagedir, 'etc/auto.home'))
+            shutil.copy(automaster, os.path.join(self.imagedir, 'etc/auto.master'))
 
+            os.chmod(os.path.join(self.imagedir, 'etc/auto.home'), 0644)
+            os.chmod(os.path.join(self.imagedir, 'etc/auto.master'), 0644)
 
 class BuildImageApp(KusuApp):
 
