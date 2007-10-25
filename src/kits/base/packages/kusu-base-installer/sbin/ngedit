@@ -1,13 +1,23 @@
 #!/usr/bin/env python
 #
+# Copyright (C) 2007 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
 # $Id$
 #
 # Node Group Editor
-#
-# Copyright 2007 Platform Computing Inc.
-#
-# Licensed under GPL version 2; See LICENSE file for details.
-#
 # Author: Alexey Tumanov (atumanov)
 
 import snack
@@ -135,6 +145,10 @@ class scrNGEMain(USXBaseScreen):
         rv = self.selector.popupYesNo('Node Group Deletion Alert', msg, defaultNo=True)
         if rv:
             tmpNG.eraseFromDB(self.database)
+            #purge the CFM directory
+            delNGcfmdir = os.path.join(CFMBaseDir, tmpNG['ngname'])
+            if os.path.isdir(delNGcfmdir):
+                shutil.rmtree(delNGcfmdir)
 
         return NAV_NOTHING
 
@@ -1938,7 +1952,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             self.database.endTransaction()
             self.selector.popupMsg("DB Update", "Database was successfully updated")
 
-            #clean up scripts
+            #1. clean up scripts
             try:
                 if 'scripts' in self.__diffNG.keys():
                     delScripts = Set(origNG['scripts']) - Set(curNG['scripts'])
@@ -1958,7 +1972,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                 #proceed despite cleanup failure
                 kl.debug("Final Actions: script cleanup failed for ngname='%s'" %curNG['ngname'])
 
-            #clean up initrd
+            #2. clean up initrd
             try:
                 if 'initrd' in self.__diffNG.keys():
                     query = "select ngid from nodegroups where initrd = '%s'" %origNG['initrd']
@@ -1969,6 +1983,12 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             except:
                 #proceed despite cleanup failure
                 kl.debug("Final Actions: initrd cleanup failed for initrd='%s'" %origNG['initrd'])
+
+            #3. sync CFM dir name with NG name
+            if 'ngname' in self.__diffNG.keys():
+                srcNGcfmdir = os.path.join(CFMBaseDir,origNG['ngname'])
+                dstNGcfmdir = os.path.join(CFMBaseDir,curNG['ngname'])
+                shutil.move(srcNGcfmdir, dstNGcfmdir)
 
         return NAV_FORWARD
 
@@ -2557,6 +2577,11 @@ class NGEApp(KusuApp):
             ngdel = NodeGroup(ngid = ngid)
             ngdel.syncFromDB(self.__db)
             ngdel.eraseFromDB(self.__db)
+
+            #purge the CFM directory
+            delNGcfmdir = os.path.join(CFMBaseDir, ngdel['ngname'])
+            if os.path.isdir(delNGcfmdir):
+                shutil.rmtree(delNGcfmdir)
 
         elif self.action == NGE_PRNALL:
             self.__db.execute('select ngname,ngdesc,type from nodegroups')
