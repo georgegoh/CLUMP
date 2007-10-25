@@ -17,10 +17,6 @@
 #  NOTE:  The packageing of LSF is GPL, but LSF is NOT.
 #
 
-%define LSFSRC /pcc/internet/ftp.platform.com/lsfuser/distrib/7.0/platform_lsf/
-%define LSFTAR lsf7.0.1_linux2.6-glibc2.3-x86_64.tar.Z
-%define LSFINSTALL lsf7.0.1_lsfinstall.tar.Z
-
 %define lsftopdir   /opt/lsf
 %define lsfversion  7.0.1
 #%define lsflimport  7869
@@ -48,56 +44,7 @@ AutoReq: no
 %description
 This package contains the LSF binaries.
 
-
 %prep
-PREPDIR=lsfinstall
-if [ ! -d $PREPDIR ]; then
-    mkdir $PREPDIR
-fi
-
-cp license.dat $PREPDIR
-
-if [ %{ARCH} = 'x86_64' ]; then
-    if [ ! -f %{LSFSRC}%{LSFTAR} ]; then
-	echo "ERROR:  Unable to locate the LSF tar ball for packaging.  Looking for %{LSFSRC}%{LSFTAR}"
-	exit -1
-    fi	
-    cp %{LSFSRC}%{LSFTAR} $PREPDIR
-    if [ ! -f %{LSFSRC}%{LSFINSTALL} ]; then
-	echo "ERROR:  Unable to locate the LSF tar ball for packaging.  Looking for %{LSFSRC}%{LSFINSTALL}"
-	exit -1
-    fi
-    cp %{LSFSRC}%{LSFINSTALL} $PREPDIR
-else
-    echo "ERROR:  Unsupported architecture: %{ARCH}"
-    exit -1		
-fi
-cd $PREPDIR
-tar zxvf %{LSFINSTALL}
-cd 
-
-echo "LSF_TOP=/opt/lsfhpc" > inst.conf
-echo "LSF_MASTER_LIST=XXX_lsfmc_XXX" >> inst.conf
-echo "LSF_ADMINS=lsfadmin" >> inst.conf
-echo "LSF_CLUSTER_NAME=XXX_clustername_XXX" >> inst.conf
-echo "LSF_TARDIR=`pwd`" >> inst.conf
-echo "EGO_DAEMON_CONTROL=N" >> inst.conf
-echo "LSF_LICENSE=`pwd`/license.dat" >> inst.conf
-echo "LSF_QUIET_INST=Y"
-echo "ENABLE_HPC_INST=Y" >> inst.conf
-
-export j=$(shell grep XXX_lsfmc_XXX /etc/hosts | sed -e "s/^[ \t]*\#.*//g")
-
-if [ -z "$j" ]; then 
-    echo "Appending XXX_lsfmc_XXX host entry to /etc/hosts..."
-    echo -e "w.x.y.z\t\tXXX_lsfmc_XXX" >> /etc/hosts
-else
-    echo "Using $j "
-fi
-echo -e "\n\n" | ./lsfinstall -f inst.conf
-
-
-
 
 %install
 
@@ -107,12 +54,8 @@ plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
 
-
-
-
 %clean
 rm -rf $RPM_BUILD_ROOT
-
 
 %files
 

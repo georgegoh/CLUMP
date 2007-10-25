@@ -18,13 +18,16 @@
 # 
 
 
-RELEASE = 0
+RELEASE = 1
+ROOT = 
 NAME = lsf
-VERSION = 7.0.1
+VERSION = 7.0
+BINARY_ARCH=linux2.6-glibc2.3-x86
 
 SPECFILES = `find . -maxdepth 1 -type f -name "*.spec"`
 TOPDIR = $(PWD)/../..
 ARCH=$(shell arch)
+export CLUSTERNAME=$(shell grep XXX_lsfmc_XXX /etc/hosts | sed -e "s/^[ \t]*\#.*//g")
 
 rpm:
 	-mkdir -p $(TOPDIR)/BUILD
@@ -32,12 +35,41 @@ rpm:
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 
 	# Copy the tarballs from PCC and put into roll automatically.
-	#@if [ "x${ARCH}" == "xx86_64" ]; then \
-	#    echo "*** Copying Fake 64bit Lava..." ; \
-	#    cp /pcc/lsf_madison/Lava/$(VERSION)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ;\
-	#elif [ "x${ARCH}" == "xi386" -o "x${ARCH}" == "xi686" ]; then \
-	#    cp /pcc/lsf_madison/Lava/$(VERSION)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ;\
-	#fi
+
+	-cp /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION)/platform_lsf/lsf$(VERSION).1_lsfinstall.tar.Z $(TOPDIR)/BUILD
+
+	tar zxvf $(TOPDIR)/BUILD/lsf$(VERSION).1_lsfinstall.tar.Z -C $(TOPDIR)/BUILD
+
+	-cp /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION)/platform_lsf/lsf$(VERSION).1_linux2.6-glibc2.3-x86_64.tar.Z $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/
+
+	@echo "LSF_TOP=/opt/lsfhpc" > $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_MASTER_LIST=XXX_lsfmc_XXX" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_ADMINS=lsfadmin" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_CLUSTER_NAME=XXX_clustername_XXX" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_TARDIR=$(TOPDIR)/BUILD/lsf7.0.1_lsfinstall" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "EGO_DAEMON_CONTROL=N" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_LICENSE=$(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/license.dat" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_QUIET_INST=Y" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "ENABLE_HPC_INST=Y" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+
+	cp license.dat $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/
+
+	if [ -z "$(CLUSTERNAME)" ]; then \
+	   echo "Appending XXX_lsfmc_XXX host entry to /etc/hosts..." ;\
+	   echo -e "w.x.y.z\t\tXXX_lsfmc_XXX" >> /etc/hosts ;\
+	else \
+	   echo "Using $(CLUSTERNAME) " ; \
+	fi
+
+	if [ `grep -c lsfadmin /etc/passwd` -eq 0 ]; then \
+	   useradd lsfadmin ; \
+	fi
+
+	(cd $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall; \
+	 grep show_copyright lsfinstall -v > lsfinstall.tmp; \
+         mv lsfinstall.tmp lsfinstall; \
+         chmod 755 ./lsfinstall ; \
+	 echo -e "y\n\n" | ./lsfinstall -f ./inst.conf)
 
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
