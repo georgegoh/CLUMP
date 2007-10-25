@@ -56,11 +56,11 @@ For examples:
     repoman -n -r "Example repo"
     repoman -d -r "Example repo"
 
-    repoman -a --kit fedora-6-i386
-    repoman -a --kitname fedora --kitversion 6 --kitarch i386
+    repoman -r "Example repo" -a --kit fedora-6-i386
+    repoman -r "Example repo" -a --kitname fedora --kitversion 6 --kitarch i386
 
-    repoman -d --kit fedora-6-i386
-    repoman -d --kitname fedora --kitversion 6 --kitarch i386
+    repoman -r "Example repo" -d --kit fedora-6-i386
+    repoman -r "Example repo" -d --kitname fedora --kitversion 6 --kitarch i386
 """
         usage = self._(usage)
         self.parser = OptionParser(usage)
