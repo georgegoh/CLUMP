@@ -20,11 +20,18 @@
 # Project #77475 - Add PDSH support to Extras roll
 #
 REDHAT.ROOT = $(PWD)/../..
+TOPDIR = $(PWD)/../..
 
 include version.mk
 
 BASENAME = $(NAME)-$(VERSION)
 rpm::
+	-mkdir -p $(TOPDIR)/BUILD/$(NAME)
+	@if [ -f $(HOME)/.rpmmacros ] ; then \
+		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
+	fi
+	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
+	# @rm -rf $(HOME)/.rpmmacros
 	rpmbuild --rebuild $(BASENAME)-$(RELEASE).src.rpm
 clean::
 	rm -f ../../RPMS/i386/$(NAME)-$(VERSION)-$(RELEASE).i386.rpm
