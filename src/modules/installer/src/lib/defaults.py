@@ -202,13 +202,13 @@ def vanillaSchemaLVM():
     """This is a plain vanilla schema that contains 3 physical partitions:
           a. /boot - ext3, 100:
           b. swap - 2000M
-          c. LVM physical volume - 38000M (fill)
+          c. LVM physical volume - 29000M (fill)
        The LVM pv makes up a logical volume group'VolGroup00', which contains
-       2 logical volumes:
+       4 logical volumes:
           a. ROOT - ext3, 12000M, mounted on /
-          b. DEPOT - ext3, 4000M, mounted on /depot
-          c. VAR - ext3, 4000M, mounted on /var
-          d. HOME - ext3, 12000M, mounted on /home (fill)
+          b. DEPOT - ext3, 10000M, mounted on /depot
+          c. VAR - ext3, 2000M, mounted on /var
+          d. HOME - ext3, 5000M, mounted on /home (fill)
     """
     # Physical Disks.
     d1 = Disk()
@@ -231,7 +231,7 @@ def vanillaSchemaLVM():
 
     # Disk 1 Partition 3.
     d1p3 = Partition()
-    d1p3.size_MB = 38000
+    d1p3.size_MB = 29000
     d1p3.fs = 'physical volume'
     d1p3.mountpoint = None
     d1p3.fill = True
@@ -260,7 +260,7 @@ def vanillaSchemaLVM():
     # /var Logical Volume.
     var = LVMLogicalVolume()
     var.name = 'VAR'
-    var.size_MB = 4000
+    var.size_MB = 2000
     var.fs = 'ext3'
     var.mountpoint = '/var'
     var.fill = False
@@ -278,7 +278,7 @@ def vanillaSchemaLVM():
    # /home Logical Volume.
     home = LVMLogicalVolume()
     home.name = 'HOME'
-    home.size_MB = 12000
+    home.size_MB = 5000
     home.fs = 'ext3'
     home.mountpoint = '/home'
     home.fill = True
