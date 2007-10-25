@@ -209,9 +209,6 @@ class ImagedNodeConfiger:
             f.close()
        
         # setup timezone
-        print niihandler.appglobal.keys()
-        print niihandler.appglobal.values()
-
         timezone = niihandler.appglobal['Timezone_zone']
         shutil.copy(os.path.join('/newroot/usr/share/zoneinfo', timezone), '/newroot/etc/localtime')
 
