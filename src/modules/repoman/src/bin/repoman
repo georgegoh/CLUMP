@@ -187,13 +187,19 @@ For examples:
                         self.unlock()
                         sys.exit(1)
 
-                    if kit.isOS:
-                        repo.ostype = None
-
                     repo.kits.remove(kit)
+                    
+                    noOS = True
+                    for kit in repo.kits:
+                        if kit.isOS:
+                            noOS = False
+                            break
+
+                    if noOS:
+                        repo.ostpe = None
                     repo.save()
                     repo.flush()
-
+                        
                     self.stdoutMessage('Kit: %s %s %s removed from repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
         else:
             self.stderrMessage('No such kit. Please specify kit name, version and arch.\n')
