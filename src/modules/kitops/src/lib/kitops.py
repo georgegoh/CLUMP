@@ -727,7 +727,7 @@ class KitOps:
         already exist.
         """
 
-        script = self.prefix / 'etc/rc.kusu.d/S01RunCFMSync.rc'
+        script = self.prefix / 'etc/rc.kusu.d/S99RunCFMSync.rc'
 
         if not script.exists(): # only do this once
             if not script.parent.exists():

@@ -85,25 +85,6 @@ rm -rf $RPM_BUILD_ROOT
 #%exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %pre
-PATH=$PATH:/opt/kusu/sbin
-export PATH
-if [ -d /opt/kusu/lib ]; then
-    PYTHONPATH=/opt/kusu/lib64/python:/opt/kusu/lib/python:
-else
-    PYTHONPATH=FIX_ME
-fi
-export PYTHONPATH
-
-if [ ! -e /tmp/kusu/installer_running ]; then
-    # Check if MySQL is running if not, start it.
-    if [ `service mysqld status | grep -c running` -ne 1 ]; then
-       service mysqld start
-    fi
-fi
-KID=`sqlrunner -q "SELECT * FROM kits"`
-if [ $? -ne 0 ]; then
-   exit 1
-fi
 
 
 %post
@@ -122,45 +103,45 @@ fi
 export PYTHONPATH
 
 # Make the component entries because kitops is broken!!!
-KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
 if [ $? -ne 0 ]; then
    exit 0
 fi
 
-sqlrunner -q "DELETE FROM components WHERE kid=$KID"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-i386'"
+/opt/kusu/sbin/sqlrunner -q "DELETE FROM components WHERE kid=$KID"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='rhel-5-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='centos-5-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-6-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='Lava Master Candidate', kid=$KID, os='fedora-7-i386'"
 
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-x86_64'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='rhel-5-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='centos-5-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-6-i386'"
+/opt/kusu/sbin/sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='Lava Compute Node', kid=$KID, os='fedora-7-i386'"
 
-CID1=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
+CID1=`/opt/kusu/sbin/sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
 
 if [ "x$CID1" = "x" ]; then
    # The kit provides components that are not used with the installers OS#
    exit 0
 fi
 
-CID2=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
+CID2=`/opt/kusu/sbin/sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
 
 # SQL/Shell/Python code to update the database.. The updates may optionally
 # include Node group creation and component association
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 1, cid = $CID1"
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
-#sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
-#sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
+/opt/kusu/sbin/sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 1, cid = $CID1"
+/opt/kusu/sbin/sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
+#/opt/kusu/sbin/sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
+#/opt/kusu/sbin/sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
 
 if [ ! -e /tmp/kusu/installer_running ]; then
    # Running outside of Anaconda
@@ -184,7 +165,7 @@ else
 fi
 export PYTHONPATH
 
-KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
 if [ $? -ne 0 ]; then
     echo "Database is down.  Unable to remove kit."
     exit 1
@@ -204,10 +185,10 @@ else
 fi
 export PYTHONPATH
 
-KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
+KID=`/opt/kusu/sbin/sqlrunner -q "SELECT kid FROM kits WHERE rname='lava' and version='%{version}'"`
 
 if [ ! -z $KID ]; then
-   sqlrunner -q "DELETE FROM ng_has_comp WHERE cid in (select cid from components where kid=$KID)"
+   /opt/kusu/sbin/sqlrunner -q "DELETE FROM ng_has_comp WHERE cid in (select cid from components where kid=$KID)"
 fi
 
 # Do not delete the component entries.  Kitops will do this.  It fails otherwise.
@@ -217,13 +198,13 @@ rm -rf /opt/kusu/lib/plugins/genconfig/lava*.py?
 rm -rf /opt/kusu/lib/plugins/ngedit/lava*.py?
 
 # Remove CFM symlinks
-for i in `sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
     if [ -d /etc/cfm/$i/opt/lava ]; then
        rm -rf /etc/cfm/$i/opt/lava
     fi
 done
 
-for i in `sqlrunner -q 'SELECT ngid FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngid FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
     if [ -d /opt/kusu/cfm/$i/opt/lava ]; then
        rm -rf /opt/kusu/cfm/$i/opt/lava
     fi
