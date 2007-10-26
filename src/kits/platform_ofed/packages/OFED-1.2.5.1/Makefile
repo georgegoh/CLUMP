@@ -39,12 +39,18 @@ define check_prequisites
 	echo "--------------------------------------------------------"
 endef
 
-
+define setrpmmacro
+	if [ -f $(HOME)/.rpmmacros ] ; then \
+                mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
+        fi
+        echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
+endef
 
 default:        rpm
 
 rpm:	
 	@$(call check_prequisites)
+	@$(call setrpmmacro)
 	@echo "Building OFED Packages (This will take a while...)"
 	@if [ ! -d ${TOPDIR}/RPMS ]; then \
 		mkdir -p ${TOPDIR}/RPMS ; \
@@ -52,12 +58,17 @@ rpm:
 	@if [ ! -f ${TOPDIR}/RPMS/kernel-ib-devel*.rpm ]; then \
 		tar ${TARARGS} ${SRCFILE} ; \
 		cp ofed.conf ${OFEDDIR} ; \
+		rpmbuild -bb ofed-src.spec ; \
 		cd ${OFEDDIR} ;./build.sh -c ofed.conf ; \
 		cd ${OFEDDIR} ;mv -v RPMS/*/*.rpm ../../../RPMS ; \
 	else \
 		echo "Skipping build.  Packages exist" ; \
 	fi
 
+rpmsrc:
+	tar ${TARARGS} ${SRCFILE}
+	cp ofed.conf ${OFEDDIR} ;
+	
 clean::
 	@echo "Cleaning OFED Packages...."
 	-@rm -rfv RPMS/* 

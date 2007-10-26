@@ -16,8 +16,8 @@
 # 
 # 
 
-Summary: Platform OFED component
-Name: component-Platform-OFED-Diskless-v1_2_5_1
+Summary: Platform OFED Development Component
+Name: component-Platform-OFED-devel-v1_2_5_1
 Version: 1.2.5.1
 Release: 0
 License: Kit is GPL.  OpenIB.org is BSD license
@@ -26,36 +26,24 @@ Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
 
 # Use Exact versions to allow different versions of this kit to co-exist
-Requires: dapl = 1.2.1
-Requires: dapl-utils = 1.2.1
-Requires: ibutils = 1.2
-Requires: ipoibtools = 1.1
-Requires: kernel-ib = 1.2.5.1
-Requires: libibcm = 1.0
-Requires: libibcommon = 1.0.4
-Requires: libibmad = 1.0.6
-Requires: libibumad = 1.0.6
-Requires: libibverbs = 1.1.1
-Requires: libibverbs-utils = 1.1.1
-Requires: libmlx4 = 0.1
-Requires: libmthca = 1.0.4
-Requires: libopensm = 3.0.3
-Requires: libosmcomp = 3.0.3
-Requires: libosmvendor = 3.0.3
-Requires: librdmacm = 1.0.2
-Requires: librdmacm-utils = 1.0.2
-Requires: libsdp = 1.1.99
-Requires: mstflint = 1.2
-Requires: ofed-scripts = 1.2.5.1
-Requires: openib-diags = 1.2.7
-Requires: perftest = 1.2
-Requires: sdpnetstat = 1.50
-Requires: srptools = 0.0.4
-Requires: tvflash = 0.9.0
+Requires: dapl-devel = 1.2.1
+Requires: kernel-ib-devel = 1.2.5.1
+Requires: libibcm-devel= 1.0
+Requires: libibcommon-devel = 1.0.4
+Requires: libibmad-devel = 1.0.6
+Requires: libibumad-devel = 1.0.6
+Requires: libibverbs-devel = 1.1.1
+Requires: libmlx4-devel = 0.1
+Requires: libmthca-devel = 1.0.4
+Requires: libopensm-devel = 3.0.3
+Requires: libosmcomp-devel = 3.0.3
+Requires: libosmvendor-devel = 3.0.3
+Requires: librdmacm-devel = 1.0.2
+Requires: ofed-src = 1.2.5.1 
 
 
 %description
-This package is a meta package for OFED packages
+This package is a meta package for OFED development packages
 
 %prep
 
@@ -70,11 +58,10 @@ This package is a meta package for OFED packages
 
 %postun
 # Place any component uninstall code here
-
 # Generate scripts for the CFM to remove other packages
 /bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 #!/bin/sh
-yum -y remove dapl dapl-utils ibutils ipoibtools kernel-ib libibcm libibcommon libibmad libibumad libibverbs libibverbs-utils libmlx4 libmthca libopensm libosmcomp libosmvendor librdmacm librdmacm-utils libsdp mstflint ofed-scripts openib-diags perftest sdpnetstat srptools tvflash
+yum -y remove dapl dapl-devel dapl-utils ibutils ipoibtools kernel-ib kernel-ib-devel libibcm libibcm-devel libibcommon libibcommon-devel libibmad libibmad-devel libibumad libibumad-devel libibverbs libibverbs-devel libibverbs-utils libmlx4 libmlx4-devel libmthca libmthca-devel libopensm libopensm-devel libosmcomp libosmcomp-devel libosmvendor libosmvendor-devel librdmacm librdmacm-devel librdmacm-utils libsdp mstflint ofed-docs ofed-scripts openib-diags opensm perftest sdpnetstat srptools tvflash
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
 
