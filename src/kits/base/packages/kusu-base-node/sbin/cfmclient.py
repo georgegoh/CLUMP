@@ -690,6 +690,17 @@ class CFMClient:
                         self.log("local file time=%i, remote file time=%i\n" % (mtime, time))
                         # File needs to be updated
                         self.newfiles.append([filename, user, group, mode, action, md5sum])
+                    elif action == '':
+                        # Test the md5sum of the file to see if it differs
+                        # NOTE:  This is only valid if the action is ''
+                        cmd = '%s "%s"' % (self.md5sum, filename)
+                        origsum = '-none-'
+                        for line in os.popen(cmd).readlines():
+                            bits = string.split(line)
+                            origsum = bits[0]
+                            if origsum != md5sum:
+                                self.log(" ++ Md5sum differs Going to get: %s\n" % filename)
+                                self.newfiles.append([filename, user, group, mode, action, md5sum])
                 else:
                     self.log("NOTICE:  File: %s does not exist!\n" % filename)
                     self.newfiles.append([filename, user, group, mode, action, md5sum])
