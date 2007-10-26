@@ -718,11 +718,10 @@ class DB(object):
         imaged.modules.append(Modules(loadorder=4,module='tg3'))
         imaged.modules.append(Modules(loadorder=5,module='bnx2'))
         imaged.modules.append(Modules(loadorder=6,module='e1000'))
-        imaged.modules.append(Modules(loadorder=6,module='mptscsih'))
         imaged.modules.append(Modules(loadorder=7,module='mptsas'))
         imaged.modules.append(Modules(loadorder=8,module='mptfc'))
         imaged.modules.append(Modules(loadorder=9,module='mptspi'))
-        imaged.modules.append(Modules(loadorder=10,module='mptscsi'))
+        imaged.modules.append(Modules(loadorder=10,module='mptscsih'))
         imaged.modules.append(Modules(loadorder=11,module='mptbase'))
         imaged.modules.append(Modules(loadorder=12,module='jbd'))
         imaged.modules.append(Modules(loadorder=13,module='lockd'))
@@ -738,7 +737,10 @@ class DB(object):
         diskless.packages.append(Packages(packagename='SysVinit'))
         diskless.packages.append(Packages(packagename='basesystem'))
         diskless.packages.append(Packages(packagename='bash'))
-        diskless.packages.append(Packages(packagename='redhat-release'))
+        if kusu_dist and kusu_dist == 'fedora':
+            diskless.packages.append(Packages(packagename='fedora-release'))
+        else:
+            diskless.packages.append(Packages(packagename='redhat-release'))
         diskless.packages.append(Packages(packagename='chkconfig'))
         diskless.packages.append(Packages(packagename='coreutils'))
         diskless.packages.append(Packages(packagename='db4'))
@@ -809,7 +811,10 @@ class DB(object):
         imaged.packages.append(Packages(packagename='bash'))
         imaged.packages.append(Packages(packagename='kernel'))
         imaged.packages.append(Packages(packagename='grub'))
-        imaged.packages.append(Packages(packagename='redhat-release'))
+        if kusu_dist and kusu_dist == 'fedora':
+            imaged.packages.append(Packages(packagename='fedora-release'))
+        else:
+            imaged.packages.append(Packages(packagename='redhat-release'))
         imaged.packages.append(Packages(packagename='chkconfig'))
         imaged.packages.append(Packages(packagename='coreutils'))
         imaged.packages.append(Packages(packagename='db4'))
