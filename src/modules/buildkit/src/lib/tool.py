@@ -12,7 +12,7 @@ from kusu.buildkit.kitsource import KitSrcFactory, KusuKit, KusuComponent
 from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKitTemplate, getScriptTemplate
 from kusu.buildkit.methods import *
 from path import path
-from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty
+from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty, PackageBuildError
 from kusu.util.tools import mkdtemp, cpio_copytree, getArch
 from Cheetah.Template import Template
 
@@ -96,7 +96,9 @@ class BuildKit:
             p._processAddScripts()
             p.configure()
             p.build()
-            p.deploy(verbose=self.verbose)
+            exitcode = p.deploy(verbose=self.verbose)
+            if exitcode != 0:
+                raise PackageBuildError, p.name
             
     def handleComponents(self, components, buildprofile):
         """ Handles the configuring, building and deploying of the components. """
@@ -104,14 +106,18 @@ class BuildKit:
             c.buildprofile = buildprofile
             c.setup()
             c._processAddScripts()
-            c.deploy(verbose=self.verbose)
+            exitcode = c.deploy(verbose=self.verbose)
+            if exitcode != 0:
+                raise PackageBuildError, c.name
             
     def handleKit(self, kit, buildprofile):
         """ Handles the configuring, building and deploying of the kit. """
         kit.buildprofile = buildprofile
         kit.setup()
         kit._processAddScripts()
-        kit.deploy(verbose=self.verbose)
+        exitcode = kit.deploy(verbose=self.verbose)
+        if exitcode != 0:
+            raise PackageBuildError, kit.name
         
     def populatePackagesDir(self, buildprofile, arch):
         """ Populates the built or binary packages into the package directory. """

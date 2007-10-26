@@ -12,7 +12,7 @@ import atexit
 from kusu.core.app import KusuApp
 from kusu.buildkit import BuildKit, getSyntaxValidator
 from path import path
-from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined
+from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined, PackageBuildError
 from kusu.util.tools import checkToolDeps, mkdtemp, getArch
 import subprocess
         
@@ -384,16 +384,29 @@ Example operations:
                 msg = self._('Package attribute %(attribute)s is not defined! Please fix this and build again.' \
                     % {'attribute':e})
                 self.printMsgExit(msg)
+            except PackageBuildError, e:
+                msg = self._('Error building package %(name)s! Please fix this and build again.' \
+                    % {'name':e})
+                self.printMsgExit(msg)
             
         if components:
-            msg = self._('Building the packages for component(s)..')
-            self.bkinst.handleComponents(components,bp)
-            print msg
+            try:
+                msg = self._('Building the packages for component(s)..')
+                self.bkinst.handleComponents(components,bp)
+                print msg
+            except PackageBuildError, e:
+                msg = self._('Error building component %(name)s! Please fix this and build again.' \
+                    % {'name':e})
+                self.printMsgExit(msg)
             
         if kit:
-            msg = self._('Building the package for the kit..')
-            self.bkinst.handleKit(kit,bp)
-            print msg
+            try:
+                msg = self._('Building the package for the kit..')
+                self.bkinst.handleKit(kit,bp)
+                print msg
+            except PackageBuildError, e:
+                msg = self._('Error building kit! Please fix this and build again.')
+                self.printMsgExit(msg)
             
         # populate the packages dir
         msg = self._('Populating the packages directory with the Kit artifacts..')

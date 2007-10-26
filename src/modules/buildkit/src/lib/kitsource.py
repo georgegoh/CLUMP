@@ -238,7 +238,7 @@ class KusuComponent(Struct):
         _s = '%s.spec' % ns['pkgname']
         specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.build()
+        return rpmbuilder.build()
         
     def deploy(self, pkgtype='rpm', verbose=False):
         """ Deploying stage. This is what the user would call. """
@@ -448,7 +448,7 @@ class KusuKit(Struct):
         ns['filelist'] = fl
         specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.build()
+        return rpmbuilder.build()
 
     def generateKitInfo(self, filename):
         """ Generates a .kitinfo file."""

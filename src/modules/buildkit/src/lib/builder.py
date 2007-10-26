@@ -457,7 +457,7 @@ class AutoToolsWrapper(PackageWrapper):
         specfile = self.builddir / _specfile
         
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.build()
+        return rpmbuilder.build()
 
 
 class SRPMWrapper(PackageWrapper):
@@ -489,7 +489,7 @@ class SRPMWrapper(PackageWrapper):
         srpmfile = self.srcdir / self.filename
 
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=srpmfile,verbose=verbose)
-        rpmbuilder.build()
+        return rpmbuilder.build()
 
 
 
@@ -544,7 +544,7 @@ class BinaryPackageWrapper(PackageWrapper):
         specfile = self.builddir / _specfile
         
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
-        rpmbuilder.build()
+        return rpmbuilder.build()
         
         
 class RPMWrapper(PackageWrapper):
@@ -562,7 +562,7 @@ class RPMWrapper(PackageWrapper):
     def deploy(self, pkgname='rpm', verbose=False):
         """ Since we don't need rpm packaging, we just handle this specifically.
         """
-        pass
+        return 0
 
 
 class DistroPackageWrapper(PackageWrapper):
@@ -578,7 +578,7 @@ class DistroPackageWrapper(PackageWrapper):
         return True
         
     def deploy(self, pkgname='rpm', verbose=False):
-        pass
+        return 0
 
 
 
@@ -619,8 +619,9 @@ class RPMBuilder:
             else:
                 cmd = 'rpmbuild --rebuild %s > /dev/null 2>&1' % (self.sourcefile)
 
-        rpmP = subprocess.Popen(cmd,shell=True)
+        rpmP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
         rpmP.wait()
         
+        return rpmP.returncode        
 
 
