@@ -7,7 +7,12 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 #
-
+if [ ! -e ${KUSU_ROOT}/bin/kusudevenv.sh ]; then
+  ( cd ${CMAKE_BINARY_DIR} && cmake ${CMAKE_SOURCE_DIR} )
+fi
+if [ ! -e ${KUSU_ROOT}/bin/boot-media-tool ]; then
+  ( cd ${CMAKE_BINARY_DIR} && make )
+fi
 source ${KUSU_ROOT}/bin/kusudevenv.sh
 BUILDDATE=`date +"%Y%m%d%H%m%S"`
 KUSUREVISION=`svn info ${CMAKE_CURRENT_SOURCE_DIR} | grep "Last Changed Rev" | awk '{print $4}'`
