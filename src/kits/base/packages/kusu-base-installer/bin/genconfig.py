@@ -31,8 +31,17 @@ PLUGINS='/opt/kusu/lib/plugins/genconfig'
 
 class DbReportApp(KusuApp):
     def __init__(self, argv):
+        KusuApp.__init__(self)
         self.args       = argv
 
+    def toolVersion(self):
+        """ 
+        toolVersion()
+        Prints out the version of the tool to screen. 
+        """
+
+        print "genconfig Version %s" % self.version
+        sys.exit(0)
 
     def parseargs(self, toolinst):
         """parseargs - Parse the command line arguments and populate the
