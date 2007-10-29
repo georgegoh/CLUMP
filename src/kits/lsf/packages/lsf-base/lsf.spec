@@ -20,7 +20,6 @@
 %define lsftopdir   /opt/lsf
 %define lsfversion  7.0
 #%define lsflimport  7869
-#%define lsfservers  XXX_lsfmc_XXX
 %define lsfclustername XXX_clustername_XXX
 %define lsfadmin    lsfadmin
 
@@ -30,14 +29,13 @@
 %define lsfbintype  linux2.6-glibc2.3-x86_64
 %endif
 
-%define lsfproduct  lsf
 %define egotopdir	/opt/lsf/ego
 %define egoversion	1.2
 %define egowaittime	60
 %define ARCH x86_64
 
-Summary: LSF binaries
-Name: %{lsfproduct}
+Summary: Platform(R) LSF(R) binaries
+Name: lsf
 Version: 7.0.1
 Release: 0
 License: Commercial
@@ -47,7 +45,16 @@ BuildArch: x86_64
 AutoReq: no
 
 %description
-This package contains the LSF binaries.
+This package contains the LSF(R) binaries.
+
+%package master-config
+Summary: Platform LSF(R) master configuration
+Group: Applications/System
+Vendor: Platform Computing Corporation
+Prefix: /opt/lsf
+
+%description master-config
+Platform(R) LSF(R) Master configuration files
 
 %prep
 
@@ -81,22 +88,22 @@ rm -rf $RPM_BUILD_ROOT
 %attr(644, %{lsfadmin}, root) %config %{lsftopdir}/conf/profile.lsf
 %attr(644, %{lsfadmin}, root) %config %{lsftopdir}/conf/cshrc.lsf
 %attr(644, %{lsfadmin}, root) %config %{lsftopdir}/conf/license.dat
-%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.conf
-%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.shared
-%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.task
-%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.cluster.%{lsfclustername}
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.conf
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.shared
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.task
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.cluster.%{lsfclustername}
 
-%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch
-%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch/%{lsfclustername}
-%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir
-%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir/lsb.*
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch/%{lsfclustername}
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir/lsb.*
 
 %attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/log
 %attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work
-%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}
-%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/logdir
-%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_cmddir
-%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_indir
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/logdir
+#%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_cmddir
+#%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_indir
 
 #all the EGO files will have to be added
 %attr(755, %{lsfadmin}, root) %dir %{egotopdir}/kernel/conf
@@ -137,6 +144,29 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755, %{lsfadmin}, root) %dir %{egotopdir}/kernel/log
 %dir %{egotopdir}/kernel/work
 
+%files master-config
+%defattr(-,lsfadmin,lavaadmin)
+%attr(-,lsfadmin,lavaadmin) %{lsftopdir}/conf
+%attr(-,lsfadmin,lavaadmin) %{lsftopdir}/work
+%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.shared
+%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsf.task
+%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch
+%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/conf/lsbatch/*
+#%attr(644, %{lsfadmin}, root) %config (noreplace) %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir/lsb.*
+
+%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/log
+%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/*
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}
+#%attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/logdir
+#%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_cmddir
+#%attr(777, %{lsfadmin}, root) %dir %{lsftopdir}/work/%{lsfclustername}/lsf_indir
+
+%exclude %{lsftopdir}/conf/cshrc.lsf
+%exclude %{lsftopdir}/conf/profile.lsf
+%exclude %{lsftopdir}/conf/license.dat
+%exclude %{lsftopdir}/conf/lsf.conf
+%exclude %{lsftopdir}/conf/lsbatch/%{lsfclustername}/configdir/lsb.hosts
+%exclude %{lsftopdir}/conf/lsf.cluster.XXX_clustername_XXX
 
 %preun
 # Setup LSF environment

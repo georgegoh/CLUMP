@@ -71,6 +71,10 @@ rpm:
          chmod 755 ./lsfinstall ; \
 	 echo -e "y\n\n" | ./lsfinstall -f ./inst.conf)
 
+	rm -rvf /opt/lsf/conf/*.old
+	rm -rvf /opt/lsf/conf/*.old*
+	rm -rvf /opt/lsf/conf/lsbatch/XXX_clustername_XXX/configdir/*.old*
+
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
 	@if [ -f $(HOME)/.rpmmacros ] ; then \
@@ -83,3 +87,6 @@ rpm:
 	# @rm -rf $(HOME)/.rpmmacros
 
 install::
+
+clean::
+	@echo "Cleaning up..."
