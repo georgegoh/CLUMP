@@ -17,7 +17,10 @@
 #
 
 NAME = nagios
-ARCHIVE_SITE = http://www.osgdc.org/pub/build/kits/$(NAME)/sources
+ifndef ARCHIVE_SITE
+ARCHIVE_SITE = http://www.osgdc.org/pub/build/kits
+endif
+KIT_ASSETS = $(ARCHIVE_SITE)/$(NAME)/sources
 
 default: prep kit
 	
