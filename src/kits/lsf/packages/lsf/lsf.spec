@@ -18,12 +18,18 @@
 #
 
 %define lsftopdir   /opt/lsf
-%define lsfversion  7.0.1
+%define lsfversion  7.0
 #%define lsflimport  7869
 #%define lsfservers  XXX_lsfmc_XXX
 %define lsfclustername XXX_clustername_XXX
 %define lsfadmin    lsfadmin
+
+%ifarch i386
 %define lsfbintype  linux2.6-glibc2.3-x86
+%else 
+%define lsfbintype  linux2.6-glibc2.3-x86_64
+%endif
+
 %define lsfproduct  lsf
 %define egotopdir	/opt/lsf/ego
 %define egoversion	1.2
@@ -32,12 +38,11 @@
 
 Summary: LSF binaries
 Name: %{lsfproduct}
-Version: %{lsfversion}
+Version: 7.0.1
 Release: 0
 License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: x86_64
 AutoReq: no
 

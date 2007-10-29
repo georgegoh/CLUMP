@@ -42,7 +42,7 @@ rpm:
 
 	-cp /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION)/platform_lsf/lsf$(VERSION).1_linux2.6-glibc2.3-x86_64.tar.Z $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/
 
-	@echo "LSF_TOP=/opt/lsfhpc" > $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
+	@echo "LSF_TOP=/opt/lsf" > $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
 	@echo "LSF_MASTER_LIST=XXX_lsfmc_XXX" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
 	@echo "LSF_ADMINS=lsfadmin" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
 	@echo "LSF_CLUSTER_NAME=XXX_clustername_XXX" >> $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/inst.conf
