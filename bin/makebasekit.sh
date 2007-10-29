@@ -20,10 +20,6 @@ fi
 cd ${CMAKE_CURRENT_BINARY_DIR}/src/kits/base
 echo "Making the Base Kit.."
 make
-echo "Moving kit-*.iso to $CURDIR."
-mv -f kit-*.iso $CURDIR
-echo "Done."
-exit 0
-
+exit $?
 
 
