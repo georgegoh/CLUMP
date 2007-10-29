@@ -15,9 +15,6 @@
 #
 #
 
-%define reqpack1 ego-linux2.6-glibc2.3-x86_64
-%define reqpack2 lsf-linux2.6-glibc2.3-x86_64
-
 Summary: LSF Compute Component
 Name: component-LSF-Compute-v7_0_1
 Version: 7.0.1
@@ -25,10 +22,8 @@ Release: 0
 License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-Requires: %{reqpack1} = 7.0.1
-Requires: %{reqpack2} = 7.0.1
+Requires: lsf = 7.0.1
 BuildArchitectures: noarch
-
 
 %description
 This package is a metapackage for LSF compute nodes
@@ -37,7 +32,7 @@ This package is a metapackage for LSF compute nodes
 # Generate scripts for the CFM to remove other packages
 /bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 #!/bin/sh
-yum -y remove %{reqpack1} %{reqpack2}
+yum -y remove lsf
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
 
