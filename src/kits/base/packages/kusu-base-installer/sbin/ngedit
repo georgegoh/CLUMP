@@ -2718,6 +2718,10 @@ class NGEApp(KusuApp):
                 for record in rv:
                     record = list(record) #convert to list
                     netid = record.pop()
+                    if not netid in ngprn['nets']:
+                        # Only display networks for which this nodegroup is
+                        # a member of
+                        continue
                     entrystr = ''
                     for i in xrange(len(record)): #construct an entry string
                         entrystr += record[i].ljust(cols[1][i])
