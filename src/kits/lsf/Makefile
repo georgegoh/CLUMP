@@ -41,7 +41,7 @@ components:
 	cd components; make
 
 kit:
-	if [ -f $(HOME)/.rpmmacros ] ; then \
+	@if [ -f $(HOME)/.rpmmacros ] ; then \
 		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
 	fi
 	-mkdir -p $(TOPDIR)/BUILD
@@ -49,7 +49,7 @@ kit:
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	rm -rf docs/files/*
 	mkdir -p docs/files
-	if [ -f $(DOCLOC)$(DOCFILE) ] ; then \
+	@if [ -f $(DOCLOC)$(DOCFILE) ] ; then \
 		cp $(DOCLOC)$(DOCFILE) docs/files ; \
 		cd docs/files ; tar zxf $(DOCFILE) ; \
 		cd $(VERSION) ; mv * .. ; \
