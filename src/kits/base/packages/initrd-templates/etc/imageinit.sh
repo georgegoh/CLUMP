@@ -95,20 +95,9 @@ start_udev
 
 /imageinit.py
 RETVAL=$?
-if [ -f /tmp/imageinit.log ] ; then
+if [ -s /tmp/imageinit.log ] ; then
     cp /tmp/imageinit.log ${NEW_ROOT}/tmp/imageinit.log
-    if [ $? -ne 0 ] ; then
-	echo "ERROR:  Imageinit failed.  The required network module may be missing"
-    fi
 fi
-
-# Install symlinks to all the busybox applets
-# busybox --install -s
-
-# Run BusyBox's mdev to create the devices
-# echo "Listing of /dev before running mdev: "; cd /dev; ls -l; cd /
-# mdev -s
-# echo "Listing of /dev after running mdev: "; cd /dev; ls -l; cd /
 
 if [ $RETVAL -eq 0 ]; then
     # exec switch_root -c ${CONSOLE} ${NEW_ROOT} ${NEW_INIT}
@@ -117,7 +106,7 @@ fi
 if [ $RETVAL -eq 99 ]; then
     # Imaged node finished 
     echo "Installation Finished.  Rebooting!"
-    reboot
+    echo "b" > /proc/sysrq-trigger
 fi
 
 echo "Debugging time..."

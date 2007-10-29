@@ -736,6 +736,9 @@ if disked:
     print "Installing initrd"
     icf.rebuildInitrd()
 
+    if os.path.exists('/tmp/imageinit.log'):
+        os.system('mv /tmp/imageinit.log /newroot/tmp/imageinit.log')
+
     dlp.unmountParts()
 
     print "Changing boot device"
@@ -749,7 +752,7 @@ if disked:
         print "ERROR:  Unable to update bootfrom:  %s\n" % bestip
         sys.exit(-1)
     
-    # Exit with 99 to force reboot 
+    # Exit with 99 to force reboot
     sys.exit(99)
 
 app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
