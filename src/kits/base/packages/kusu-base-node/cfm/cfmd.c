@@ -50,6 +50,10 @@
 #define CFM_PROFILE_NII "/etc/profile.nii"
 #endif
 
+#define CFMCLIENT_BINARY "/opt/kusu/sbin/cfmclient"
+
+#define CFMD_PORT ((unsigned short) 65001)
+
 #define UPDATEFILE 1
 #define UPDATEPACKAGE 2
 #define FORCEFILES 4            /* Force the files to be updated */
@@ -93,16 +97,17 @@ struct dataPack {
 } ;
 
 static void randSleep(int maxsleep) ;
-static void daemonize() ;
-static int getSequence() ;
+static void daemonize(void) ;
+static int getSequence(void) ;
 static int setSequence(int seq) ;
-static int getNGID() ;
+static int getNGID(void) ;
 static int setInstallers(struct dataPack *dpack) ;
 static int getInstallers(struct dataPack *dpack) ;
 static int getNiiInstallers(struct dataPack *dpack) ;
 static int cfmLog(LOG_LEVEL level, const char* format, ...) ;
-static int runUpdate(struct dataPack *dpack) ;
-
+static void runUpdate(struct dataPack *dpack) ;
+static int setupSocket(void);
+static int listen4packet(int sd, struct dataPack *dpack);
 
 int main(int argc, char* argv[])
 {
@@ -113,7 +118,6 @@ int main(int argc, char* argv[])
   int sent = 0 ;
   int mkdaemon = 1 ;
   struct dataPack dpack ;
-  struct dataPack testpack ;
  
   while (--argc) {
     ++argv;
@@ -187,10 +191,17 @@ int main(int argc, char* argv[])
     }
 
   sd = setupSocket() ;
+  if (sd == -1) {
+    cfmLog(LOG_ERROR, "Error setting up socket (%m)\n") ;
+    exit(1);
+  }
 
   while(1)
     {
-      listen4packet(sd, &dpack) ;
+      if (listen4packet(sd, &dpack) == -1) {
+        /* Received non-CFM packet */
+        continue;
+      }
 
       if(dpack.sequence <= sequence)
 	{
@@ -233,6 +244,7 @@ int main(int argc, char* argv[])
       runUpdate(&dpack) ;
     }
 
+    return(0) ;
 }
 
 /* randSleep - Sleep for a random number of seconds */
@@ -251,7 +263,7 @@ static void randSleep(int maxsleep)
     }
 }
 
-static void daemonize()
+static void daemonize(void)
 {
   int pid = fork();
 
@@ -268,7 +280,7 @@ static void daemonize()
 
 
 /* getSequence - Get the current sequence number from file */
-static int getSequence()
+static int getSequence(void)
 {
   FILE* fd = NULL ;
   char buff[16] ;
@@ -290,7 +302,7 @@ static int getSequence()
 static int setSequence(int seq)
 {
   FILE* fd = NULL ;
-  char buff[512] ;
+  static char buff[512] ;
 
   if ((fd = fopen(CFM_SEQUENCE, "r")) == NULL ) 
     return(0) ;
@@ -348,7 +360,6 @@ static int getInstallers(struct dataPack *dpack)
 static int setInstallers(struct dataPack *dpack)
 {
   FILE* fd = NULL ;
-  char buff[16] ;
   int sequence = 0 ;
   int i ;
 
@@ -372,10 +383,10 @@ static int setInstallers(struct dataPack *dpack)
 
 /* getNGID - Get the node group ID number from file. 
              This function will have to change. */
-static int getNGID()
+static int getNGID(void)
 {
   FILE* fd = NULL ;
-  char buff[256] ;
+  static char buff[256] ;
   int retval = 0 ;
 
   if ((fd = fopen(CFM_PROFILE_NII, "r")) == NULL ) 
@@ -386,6 +397,7 @@ static int getNGID()
       if ( ! strncmp(buff, "export NII_NGID=", strlen("export NII_NGID=")) )
 	{
 	  retval = atoi(&buff[strlen("export NII_NGID=")]) ;
+          break;
 	}
     }
   fclose(fd) ;
@@ -401,7 +413,7 @@ static int getNGID()
 static int getNiiInstallers(struct dataPack *dpack)
 {
   FILE* fd = NULL ;
-  char buff[256] ;
+  static char buff[256] ;
   char *startptr = NULL ;
   char *endptr   = NULL ;
   int i ;
@@ -433,19 +445,19 @@ static int getNiiInstallers(struct dataPack *dpack)
 
 /* setupSocket - Create a socket for listening for broadcasts.
  */
-int setupSocket()
+static int setupSocket()
 {
-  int sd ;
+  int sd = -1;
   const int on = 1 ;
   struct protoent    *proto ;
   struct servent     *sport ;
-  struct hostent     *host;
   struct sockaddr_in sin;
 
   memset(&sin, 0, sizeof(sin));
 
   sin.sin_family = AF_INET;
-  sin.sin_port = htons(65001) ;
+  sin.sin_port = htons(CFMD_PORT) ;
+  sin.sin_addr.s_addr = htonl(INADDR_ANY) ;
 
   if ((proto = (struct protoent *)getprotobyname("udp")) == NULL) {
     return (-1);
@@ -458,35 +470,34 @@ int setupSocket()
     return(-1) ;
   }
 
-  memset(&sin, 0, sizeof(sin));
-
-  sin.sin_family = AF_INET;
-  sin.sin_addr.s_addr = htonl(INADDR_ANY) ;
-  if ((sport = (struct servent *)getservbyname("cfm", "udp")) == NULL) 
+  if ((sport = (struct servent *)getservbyname("cfm", "udp")) != NULL) 
     {
-      sin.sin_port = htons(65001) ;
-    } 
-  else 
-    {
+      /* Use port defined in services, instead of default */
       sin.sin_port = sport->s_port ;
     }
-  cfmLog(LOG_DEBUG, "Port number = %i\n", ntohs(sin.sin_port)) ;
+  cfmLog(LOG_DEBUG, "Port number = %u\n", ntohs(sin.sin_port)) ;
 
   /* Allow address reuse */
-  setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) ;
+  if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0) {
+    return(-1) ;
+  }
 
   /* Set the broadcast options */
-  setsockopt(sd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) ;
+  if (setsockopt(sd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) != 0) {
+    return(-1) ;
+  }
 
-  bind(sd, (const struct sockaddr *)&sin, sizeof(sin)) ;
+  if (bind(sd, (const struct sockaddr *)&sin, sizeof(sin)) != 0) {
+    return(-1) ;
+  }
 
   return(sd) ;
 }
 
 
-int listen4packet(int sd, struct dataPack *dpack)
+static int listen4packet(int sd, struct dataPack *dpack)
 {
-  char rbuff[512] ;
+  static char rbuff[512] ;
   char convert[16] ;
   ssize_t read ;
   int i = 0 ;
@@ -592,7 +603,7 @@ int listen4packet(int sd, struct dataPack *dpack)
 	{
 	  convert[2*j] = pack->installers[i][j] ;
 	}
-      sprintf(dpack->installers[i], "%i.%i.%i.%i", \
+      sprintf(dpack->installers[i], "%ld.%ld.%ld.%ld", \
 	      (strtol(&convert[0], NULL, 16) << 4 ) + \
 	      strtol(&convert[2], NULL, 16), \
 	      (strtol(&convert[4], NULL, 16) << 4 ) + \
@@ -625,30 +636,19 @@ int listen4packet(int sd, struct dataPack *dpack)
 }
 
 
-/* log - log messages.  Note messages should not exceed 1K */
+/* log - log messages */
 static int cfmLog(LOG_LEVEL level, const char* format, ...)
 {
-  char *msgBuf  = NULL;
+  static char msgBuf[1024];
   va_list vl;
-  static int lflag = 1 ;
 
   if(level <= loggingLevel)
     {
-      msgBuf = (char *) calloc(1024, sizeof(char));
-      if(msgBuf == NULL) 
-	{
-	  if(lflag)
-	    {
-	      fprintf(stderr, "FATAL:  Logging not available!\n") ;
-	      lflag = 0 ;
-	    }
-	}
       va_start(vl, format);
       vsprintf(msgBuf, format, vl);
       va_end(vl);
-      
+
       printf("%s", msgBuf) ;
-      free(msgBuf) ;
     }
   return(0) ;
 }
@@ -656,7 +656,7 @@ static int cfmLog(LOG_LEVEL level, const char* format, ...)
   
 /* runUpdate - Run the CFM update client and wait for it
    to finish */
-static int runUpdate(struct dataPack *dpack)
+static void runUpdate(struct dataPack *dpack)
 {
   pid_t pid ;
   int options ;
@@ -673,7 +673,7 @@ static int runUpdate(struct dataPack *dpack)
     {
       /* This is the child */
       char utype[16] ;
-      char ilist[256] ;
+      static char ilist[256] ;
       int i ;
       
       /* Build the list of installers (comma seperated) */
@@ -702,13 +702,13 @@ static int runUpdate(struct dataPack *dpack)
       if (setenv("PYTHONPATH", "/opt/kusu/lib/python", 1))
 	cfmLog(LOG_ERROR, "Unable to set PYTHONPATH") ;
 
-      cfmLog(LOG_DEBUG, "Running: /opt/kusu/sbin/cfmclient -t %s -i %s\n", utype, ilist) ;
+      cfmLog(LOG_DEBUG, "Running: %s -t %s -i %s\n", CFMCLIENT_BINARY, utype, ilist) ;
 
       close(STDIN_FILENO) ;
       close(STDOUT_FILENO) ;
       close(STDERR_FILENO) ;
 
-      execl("/opt/kusu/sbin/cfmclient", "cfmclient", "-t", utype, "-i", ilist, (char *)0) ;
+      execl(CFMCLIENT_BINARY, "cfmclient", "-t", utype, "-i", ilist, (char *)0) ;
 
       exit(-1) ;
     }

@@ -17,6 +17,13 @@
 # $Id$
 # 
 
-cfmd:	cfmd.c
-	gcc -o cfmd cfmd.c -lm
+CC=gcc -g
+CFLAGS=-Wall -Werror -pedantic -Wc++-compat -DNDEBUG
 
+all: cfmd
+
+cfmd:	cfmd.c
+	$(CC) $(CFLAGS) -o cfmd cfmd.c -lm
+
+clean:
+	rm -f cfmd cfmd.o
