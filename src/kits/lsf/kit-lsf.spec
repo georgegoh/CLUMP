@@ -49,7 +49,9 @@ mkdir -p $plugdir/genconfig
 mkdir -p $plugdir/ngedit
 
 /usr/bin/install -m 755 %{_topdir}/S11lsf-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
-cp -r %{_topdir}/docs/* $docdir
+cp -r %{_topdir}/docs/LICENSE $docdir
+cp -r %{_topdir}/docs/readme.html $docdir
+cp -r %{_topdir}/docs/files/* $docdir
 find $docdir -exec chmod 444 {} \;
 
 /usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py    $plugdir/addhost

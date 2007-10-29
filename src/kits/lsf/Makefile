@@ -47,11 +47,13 @@ kit:
 	-mkdir -p $(TOPDIR)/BUILD
 	-mkdir -p $(TOPDIR)/RPMS/noarch
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
-	if [ -f $$(DOCLOC)/$$(DOCFILE) ] ; then \
-		cp $$(DOCLOC) docs ; \
-		cd docs ; tar zxf $$(DOCFILE) ; \
-		cd $$(VERSION) ; mv * .. ; \
-		cd .. ; rm -rf $$(VERSION) ; \
+	rm -rf docs/files/*
+	mkdir -p docs/files
+	if [ -f $(DOCLOC)$(DOCFILE) ] ; then \
+		cp $(DOCLOC)$(DOCFILE) docs/files ; \
+		cd docs/files ; tar zxf $(DOCFILE) ; \
+		cd $(VERSION) ; mv * .. ; \
+		cd .. ; rm -rf $(VERSION) ; \
 	else \
 		echo "ERROR NO DOCUMENTATION FOUND!" ; \
 		exit -1 ; \
@@ -68,6 +70,7 @@ clean:
 	rm -rf $(TOPDIR)/disk1
 	cd components; make clean
 	cd packages; make clean
+	rm -rf docs/files/*
 	rm -rf kit-*.iso BUILD RPMS SOURCES
 	rm -rf *.rpm
 

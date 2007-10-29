@@ -33,6 +33,7 @@ rpm:
 	-mkdir -p $(TOPDIR)/BUILD
 	-mkdir -p $(TOPDIR)/SOURCES
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
+	rm -rf /opt/lsf
 
 	# Copy the tarballs from PCC and put into roll automatically.
 
