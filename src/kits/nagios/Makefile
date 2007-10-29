@@ -30,10 +30,10 @@ prep:
 	@echo "Looking for buildkit.."
 	@which buildkit
 
-	cd sources && lftp -e "mget -c *  && quit" $(ARCHIVE_SITE)
+	cd sources && lftp -e "mget -c *  && quit" $(KIT_ASSETS)
 
 kit:
-	buildkit make kit=.
+	buildkit -v make kit=.
 	
 clean:
 	-rm -rf artifacts/* kitinfo tmp/* packages/* kit-$(NAME)-*.iso
