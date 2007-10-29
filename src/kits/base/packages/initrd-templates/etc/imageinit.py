@@ -226,6 +226,17 @@ class ImagedNodeConfiger:
         f.write('ARC=false\n')
         f.close()
 
+        # setup /etc/resolv.conf
+        f = open('/newroot/etc/resolv.conf', 'w')
+        f.write('search %s\n' % niihandler.appglobal['DNSZone'])
+        if niihandler.appglobal['InstallerServeDNS'] == '1':
+            f.write('nameserver %s\n' % bestip)
+        else:
+            for dns in ['dns1', 'dns2', 'dns3']:
+                if niihandler.appglobal.has_key(dns):
+                    f.write('search %s\n' % niihandler.appglobal[dns])
+        f.close()
+
 class DirtyLittlePartitioner:
     """ This class will deal with partitioning disks for imaged nodes
     until the real partitioning code can be used."""
