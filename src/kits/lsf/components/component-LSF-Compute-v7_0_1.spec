@@ -36,4 +36,5 @@ yum -y remove lsf
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
 
+%files
 

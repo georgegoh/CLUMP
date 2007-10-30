@@ -48,4 +48,4 @@ rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{compdependency}.remove
 EOF
 
-
+%files
