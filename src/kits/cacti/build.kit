@@ -41,6 +41,7 @@ cactiNodeComp.addDep(cactiNodePkg)
 k = DefaultKit()
 k.name = 'cacti'
 k.description = 'cacti kit.'
+k.arch = getArch()
 
 # Adding the component defined earlier
 k.addComponent(cactiComp)
