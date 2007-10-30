@@ -16,7 +16,7 @@ logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
 
 def partitionRulesDefaultIsPreserve(rules):
-    preserve = True
+    preserve = False
     for p in rules:
         logger.debug('Checking part_rule for partitionID=*')
         p_id, value = translatePartitionOptions(p['options'], 'partitionID')
