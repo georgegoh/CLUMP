@@ -111,21 +111,9 @@ fi
 sqlrunner -q "DELETE FROM components WHERE kid=$KID"
 sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='rhel-5-x86_64'"
 sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='centos-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='fedora-6-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='fedora-7-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='rhel-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='centos-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='fedora-6-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='fedora-7-i386'"
 
 sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='rhel-5-x86_64'"
 sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='centos-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='fedora-6-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='fedora-7-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='rhel-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='centos-5-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='fedora-6-i386'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='fedora-7-i386'"
 
 CID1=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
 
@@ -147,6 +135,22 @@ sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
 CNAME=`sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller'"`
 sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=1"
 sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=2"
+
+NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid=2"`
+
+OSTYPE=`sqlrunner -q "SELECT ostype FROM repos WHERE repoid=1000"`
+
+ngedit -c $NGNAME -n lsf-master-candidate
+
+NEW_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups where ngname = \"lsf-master-candidate\""`
+
+sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=$NEW_NGID"
+
+NEW_CID=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=2 AND nodegroups.repoid=repos.repoid)"`
+
+OLD_CID=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=2 AND nodegroups.repoid=repos.repoid)"`
+
+sqlrunner -q "UPDATE ng_has_comp SET cid=$NEW_CID WHERE ngid=$NEW_NGID AND cid=$OLD_CID"
 
 if [ ! -e /tmp/kusu/installer_running ]; then
     # Running outside of Anaconda
@@ -177,15 +181,19 @@ fi
 if [ ! -z $KID ]; then
     # Purge all the CFM entries for this kit
     for i in `sqlrunner -q "SELECT ngname FROM nodegroups, repos_have_kits WHERE nodegroups.repoid=repos_have_kits.repoid and repos_have_kits.kid=$KID"`; do
-	cd /etc/cfm/$i
-	if [ -d /etc/cfm/$i/opt/lsf/conf ]; then
-	    rm -rf /etc/cfm/$i/opt/lsf
+	if [ -d /etc/cfm/$i ]; then
+		cd /etc/cfm/$i
+		if [ -d /etc/cfm/$i/opt/lsf/conf ]; then
+	    		rm -rf /etc/cfm/$i/opt/lsf
+		fi
 	fi
     done
     for i in `sqlrunner -q "SELECT ngid FROM nodegroups, repos_have_kits WHERE nodegroups.repoid=repos_have_kits.repoid and repos_have_kits.kid=$KID"`; do
-	cd /opt/kusu/cfm/$i
-	if [ -d /opt/kusu/cfm/$i/opt/lsf/conf ]; then
-	    rm -rf /opt/kusu/cfm/$i/opt/lsf
+	if [ -d /opt/kusu/cfm/$i ]; then
+		cd /opt/kusu/cfm/$i
+		if [ -d /opt/kusu/cfm/$i/opt/lsf/conf ]; then
+	    		rm -rf /opt/kusu/cfm/$i/opt/lsf
+		fi
 	fi
     done
     # Remove associations if they exist
@@ -193,6 +201,9 @@ if [ ! -z $KID ]; then
 
 fi
 
+ngedit -d lsf-master-candidate
+
+sqlrunner -q "DELETE FROM appglobals WHERE kname='LSF7_0_1_ClusterName'"
 
 %postun
 # POSTUN section
