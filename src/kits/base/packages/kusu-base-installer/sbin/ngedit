@@ -983,6 +983,8 @@ class scrNGEEdit_Modules(USXBaseScreen):
             repopackdir = self.__repodir + '/Fedora/RPMS'
         elif ostype.lower().startswith('rhel'):
             repopackdir = self.__repodir + '/Server'
+        elif ostype.lower().startswith('centos'):
+            repopackdir = self.__repodir + '/CentOS'
         #additional repo os types here
         else:
             raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
