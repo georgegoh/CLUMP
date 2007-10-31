@@ -28,7 +28,7 @@ BuildArchitectures: noarch
 # Use Exact versions to allow different versions of this kit to co-exist
 Requires: dapl-devel = 1.2.1
 Requires: kernel-ib-devel = 1.2.5.1
-Requires: libibcm-devel= 1.0
+Requires: libibcm-devel = 1.0
 Requires: libibcommon-devel = 1.0.4
 Requires: libibmad-devel = 1.0.6
 Requires: libibumad-devel = 1.0.6
