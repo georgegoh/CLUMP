@@ -40,7 +40,7 @@ class AddHostPlugin(AddHostPluginBase):
                self.dbconn.execute('SELECT nodegroups.ngname FROM nodegroups, nodes WHERE nodes.ngid=nodegroups.ngid AND \
                                     nodes.name="%s"' % nodelist[0])
                ngname = self.dbconn.fetchone()[0]
-               os.system("/opt/kusu/sbin/boothost -t %s" % ngname)
+               os.system("/opt/kusu/sbin/boothost -t '%s'" % ngname)
            except:
                pass
      
