@@ -50,7 +50,7 @@ rpm:
 		    echo "*** Copying Fake 64bit Lava..."; \
 		    curl -o $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z -L $(LAVA_ASSETS)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z ; \
 		elif [ "x${ARCH}" == "xi386" -o "x${ARCH}" == "xi686" ] ; then \
-		    curl -o $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z -L $(LAVA_ASSETS)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z $(TOPDIR)/BUILD ; \
+		    curl -o $(TOPDIR)/BUILD/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z -L $(LAVA_ASSETS)/lava$(VERSION)_linux2.6-glibc2.3-x86.tar.Z ; \
 		fi \
 	fi
 
