@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.util import tools as utiltools
+from kusu.util import tools as utiltools, rpmtool
 from kusu.core import database as db
 from kusu.driverpatch import DriverPatchController
 import urllib
@@ -84,20 +84,23 @@ class TestPatchingKernel(object):
         """ Testing i586 kernel modules dir extraction.
         """
         krpm = path(RPMDIR) / KRPM1
+        r = rpmtool.RPM(str(krpm))
         if not krpm.exists():
             assert False, 'Kernel rpm not found!'
 
-        modulesdir = self.scratchdir / 'modules'
-        if not modulesdir.exists(): modulesdir.mkdir()
+        modulesdir = self.scratchdir
+        if not modulesdir.exists(): modulesdir.makedirs()
         self.controller.extractKernelModulesDir(krpm,modulesdir)
+        kver = self.controller.getKernelVersion(modulesdir, r.getArch())
         # find one well known asset
-        miiko = modulesdir / 'kernel/drivers/net/mii.ko'
+        miiko = modulesdir / 'lib/modules' / kver / 'kernel/drivers/net/mii.ko'
         assert miiko.exists()
         
     def testPackModulesCgzFori586(self):
         """ Test packaging of modules.cgz archive.
         """
         krpm = path(RPMDIR) / KRPM1
+        r = rpmtool.RPM(str(krpm))
         if not krpm.exists():
             assert False, 'Kernel rpm not found!'
 
@@ -105,24 +108,34 @@ class TestPatchingKernel(object):
         modulescgz = self.scratchdir / 'modules.cgz'
         if not modulesdir.exists(): modulesdir.mkdir()
         self.controller.extractKernelModulesDir(krpm,modulesdir)
-        self.controller.convertKmodDirToModulesArchive(modulesdir,modulescgz)
+        self.controller.convertKmodDirToModulesArchive(modulesdir,modulescgz, r.getArch())
         assert modulescgz.exists()
         
-    def testKernelVersionArch(self):
-        """ Validate the kernel version and arch for the modules.
+    def testKernelVersion(self):
+        """ Validate the kernel version for the modules.
         """
         krpm = path(RPMDIR) / KRPM1
+        r = rpmtool.RPM(str(krpm))
         if not krpm.exists():
             assert False, 'Kernel rpm not found!'
 
-        modulesdir = self.scratchdir / 'modules'
+        modulesdir = self.scratchdir
         if not modulesdir.exists(): modulesdir.mkdir()
         self.controller.extractKernelModulesDir(krpm,modulesdir)
-        kver = self.controller.getKernelVersion(modulesdir)
-        karch = self.controller.getKernelArch(modulesdir)
+        kver = self.controller.getKernelVersion(modulesdir, r.getArch())
         
         assert kver == '2.6.18-1.2798.fc6'
-        assert karch == 'i586'
+
+        
+    def testPackageIsKernelPackage(self):
+        """ Validate the package rpm is indeed a kernel package. """
+        
+        krpm = path(RPMDIR) / KRPM1
+        if not krpm.exists():
+            assert False, 'Kernel rpm not found!'
+            
+        assert self.controller.isKernelPackage(krpm)
+
 
 
         

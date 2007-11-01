@@ -67,14 +67,15 @@ class KernelModulesCollection(list):
     """ A collection of kernel modules, typically stored in an archive or a directory.
     """
     
-    def __init__(self, collectionpath):
-        """ The collectionpath can be a directory such as /lib/modules/`uname-r` 
-            or an archive such as modules.cgz.
+    def __init__(self, collectionpath, arch):
+        """ The collectionpath can be a directory containing a /lib/modules/`uname-r` 
+            subdirectory structure or an archive such as modules.cgz.
         """
         list.__init__(self)
         self.collectionpath = path(collectionpath)
+        self.arch = arch
         if not self.validate(): raise InvalidPathError
-        self.populateInitial()
+        #self.populateInitial()
         
     def getCollectionType(self):
         """ Returns the type of collectionpath.
@@ -84,7 +85,7 @@ class KernelModulesCollection(list):
         """
         if self.collectionpath.isfile() and self.collectionpath.endswith('.cgz'):
             return 'modulecgz'
-        elif self.collectionpath.isdir() and path(self.collectionpath / 'kernel').exists():
+        elif self.collectionpath.isdir() and path(self.collectionpath / 'lib/modules').exists():
             return 'moduledir'
         else:
             return ''
@@ -116,33 +117,9 @@ class KernelModulesCollection(list):
     def setupKernelModuleDir(self, dirpath):
         """ Creates a proper directory structure in dirpath for the kernel modules.
         """
-        # set a list of well-known kernel modules
-        wellknownkmds = ['st.ko','mii.ko','pcnet32.ko']
-        
-        li = [ko for ko in self.collectionpath.walkfiles('*.ko') if ko.basename() in wellknownkmds]
-        kvlist = []
-        kalist = []
-        for l in li:
-            kvlist.append(getKernelVersionfromKo(l))
-            kalist.append(getKernelArchfromKo(l))
-
-        if not kvlist and not kalist: raise UnknownKernelModuleAsset
-        # ensure that the list of kernel versions are the same
-        d = {}
-        for kv in kvlist:
-            d[kv] = 1
-            
-        if not len(d.keys()) == 1: raise UnknownKernelModuleAsset
-
-        # ensure that the list of kernel arches are the same            
-        d = {}
-        for ka in kalist:
-            d[ka] = 1
-        
-        if not len(d.keys()) == 1: raise UnknownKernelModuleAsset
             
         dirpath = path(dirpath)
-        versionarch = '%s/%s' % (kvlist[0],kalist[0])
+        versionarch = '%s/%s' % (self.getKernelVersion(),self.arch)
         kmoddir = dirpath / versionarch
         if not kmoddir.exists(): kmoddir.makedirs()
         
@@ -158,27 +135,22 @@ class KernelModulesCollection(list):
             tmpdir.rmtree()
             return verdir.basename()
         elif self.getCollectionType() == 'moduledir':
-            # get a well known kernel module
-            li = [f for f in self.collectionpath.walkfiles('st.ko')]
-            if not li: raise UnknownKernelModuleAsset
-            return getKernelVersionfromKo(li[0])
+            # get the modules directory
+            moddir = self.collectionpath / 'lib/modules'
+            kverdirs = moddir.dirs()
+            if not kverdirs:
+                raise UnknownKernelModuleAsset
+                
+            # FIXME: Only handling single subdirectory under /lib/modules
+            return kverdirs[0].basename()
+                
+                
             
 
     def getKernelArch(self):
         """ Returns the kernel arch.
         """
-        if self.getCollectionType() == 'modulecgz':
-            tmpdir = path(mkdtemp())
-            self.unpack(tmpdir)
-            verdir = tmpdir.dirs()[0]
-            
-            tmpdir.rmtree()
-            return verdir.basename()
-        elif self.getCollectionType() == 'moduledir':
-            # get a well known kernel module
-            li = [f for f in self.collectionpath.walkfiles('st.ko')]
-            if not li: raise UnknownKernelModuleAsset
-            return getKernelArchfromKo(li[0])
+        return self.arch
         
     def unpack(self,dirpath):
         """ Unpacks the collection into the dirpath.
@@ -194,14 +166,10 @@ class KernelModulesCollection(list):
             p2.communicate()
         elif self.getCollectionType() == 'moduledir':
             kmoddir = self.setupKernelModuleDir(dirpath)
-            kofiles = [ko for ko in self.collectionpath.walkfiles('*.ko')]
+            kofiles = [ko for ko in self.collectionpath.walkfiles('*.ko*')]
             for ko in kofiles:
                 if not ko.basename() in kmoddir.files():
                     ko.copy(kmoddir)
-#                elif:
-#                    f = kmoddir / ko.basename()
-#                    f.remove()
-#                    ko.copy(kmoddir)
                 
     def pack(self, dirpath, collectionpath):
         """ Packs the dirpath contents back into a collectionpath.
@@ -346,6 +314,13 @@ class DriverPatchController(object):
         """ Packs the specified dirpath into initrdimg. """
         return self.bmt.packRootImg(dirpath, initrdimg)
         
+    def isKernelPackage(self, packagerpm):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+        
+        return krpm.isKernel()
+        
     def copyKernel(self, kernelrpm, destdir, kernelname=''):
         """ Copy the kernel image found in kernelrpm to destdir.
             If kernelname is specified, copy the image as the kernelname
@@ -361,27 +336,21 @@ class DriverPatchController(object):
         krpm = kernel.RPMPackage(kernelrpm)
         krpm.extractKernelModulesDir(destdir)
         
-    def convertKmodDirToModulesArchive(self, kmoddir, modulearchive):
+    def convertKmodDirToModulesArchive(self, kmoddir, modulearchive, arch):
         """ Converts kernel module directory into a modulearchive file 
             (e.g modules.cgz).
         """
-        col = KernelModulesCollection(kmoddir)
+        col = KernelModulesCollection(kmoddir,arch)
         tmpdir = path(mkdtemp())
         col.unpack(tmpdir)
         col.pack(tmpdir,modulearchive)
         
-    def getKernelVersion(self, kmoddir):
+    def getKernelVersion(self, kmoddir, arch):
         """ Returns the kernel version.
         """
-        col = KernelModulesCollection(kmoddir)
+        col = KernelModulesCollection(kmoddir, arch)
         return col.getKernelVersion()
         
-    def getKernelArch(self, kmoddir):
-        """ Returns the kernel arch.
-        """
-        col = KernelModulesCollection(kmoddir)
-        return col.getKernelArch()
-
     def getKernelModulesCgz(self, dirpath):
         """ Locate the modules.cgz in the dirpath. """
         dirpath = path(dirpath).abspath()

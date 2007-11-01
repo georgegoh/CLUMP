@@ -30,7 +30,7 @@ prep:
 	@echo "Looking for buildkit.."
 	@which buildkit
 
-	cd sources && lftp -e "mget -c *  && quit" $(KIT_ASSETS)
+	@(cd sources && lftp -e "mget -c *  && quit" $(KIT_ASSETS))
 
 kit:
 	buildkit -v make kit=.

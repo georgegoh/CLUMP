@@ -365,19 +365,37 @@ Example operations:
             self.printMsgExit(msg)
         
         # get the kernel rpm
-        # FIXME: There has to be a better way of identifying distro package kernels!
-        li = [pkg for pkg in pkglist if pkg.find('kernel-') > -1]
+        li = []
+        for pkg in pkglist:
+            if self.controller.isKernelPackage(pkg):
+                li.append(pkg)
+
         if not li:
             msg = self._('Kernel rpm not found!')
             self.printMsgExit(msg)
+            
+        # remove the kernel rpms for the pkglist
+        kmodlist = [rpmtool.RPM(str(pkg)) for pkg in pkglist if not pkg in li]
         
         # if there are more than one kernel rpms, get the highest one
+
         if len(li) > 1:
             krpms = [rpmtool.RPM(str(l)) for l in li]
-            krpms.sort()
+            try:
+                krpms.sort()
+            except RPMComparisonError:
+                msg = self._('Different types of kernel packages found for this distro! This is unsupported!')
+                self.printMsgExit(msg)
+                
             kernelrpm = krpms[-1]   # last one is the highest
         else:
             kernelrpm = rpmtool.RPM(str(li[0]))
+
+        msg = self._('Using %(package)s as the kernel package.' %
+                {'package':str(kernelrpm)})
+                
+        # add the select kernelrpm into the kernel modules list
+        kmodlist.insert(0,kernelrpm)
         
         # get the current kernel/initrd for this nodegroup
         _ng = self.db.NodeGroups.select_by(ngname=ngname)
@@ -400,38 +418,19 @@ Example operations:
         oldmodulescgz = self.controller.getKernelModulesCgz(tmpdir)
         oldmodulescgz.remove()
         
-        msg = self._('Extracting kernel modules from package..')
-        print msg
         tmpkmoddir = path(utiltools.mkdtemp())
-        # expects kernelrpm filepath, not an instance of rpmtool.RPM
-        self.controller.extractKernelModulesDir(kernelrpm.filename,tmpkmoddir)
         
-        # get kver and arch from the modulesdir
-        _kver = self.controller.getKernelVersion(tmpkmoddir)
-        _karch = self.controller.getKernelArch(tmpkmoddir)
+        # extract kernel modules from the driverpacks table
+        for pkg in kmodlist:
+            msg = self._('Extracting kernel modules from package %(packagerpm)s..' %
+                    {'packagerpm':pkg.filename})
+            print msg
+            self.controller.extractKernelModulesDir(pkg.filename,tmpkmoddir)
         
-        # validate version
-        if kver:
-            if _kver <> kver:
-                msg = self._('The kernel version in package does not match %(kver)s! Aborting operation!' %
-                            {'kver':kver})
-                            
-                if tmpkmoddir.exists(): tmpkmoddir.rmtree()
-                if tmpdir.exists(): tmpdir.rmtree()
-                self.printMsgExit(msg)
-            
-        # validate arch
-        #if _karch <> karch:
-        #    msg = self._('The kernel arch in package does not match %(karch)s! Aborting operation!' %
-        #                {'karch':karch})
-                        
-        #    if tmpkmoddir.exists(): tmpkmoddir.rmtree()
-        #    if tmpdir.exists(): tmpdir.rmtree()
-        #    self.printMsgExit(msg)        
         
         msg = self._('Packing kernel modules as modules archive..')
         print msg
-        self.controller.convertKmodDirToModulesArchive(tmpkmoddir,oldmodulescgz)
+        self.controller.convertKmodDirToModulesArchive(tmpkmoddir,oldmodulescgz, kernelrpm.getArch())
         
         if not initrdfile:
             newinitrd = nginitrd

@@ -4,8 +4,7 @@
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-""" This module handles driverpatch operations dealing with DKMS
-    (http://linux.dell.com/dkms/dkms.html). 
+""" This module handles driverpatch operations dealing with kernel packages
 """
 
 
@@ -40,6 +39,21 @@ class RPMPackage(object):
             # dangerous and silly
             
             return self.rpmfile.version
+            
+        def isKernel(self):
+            """ Check if the package is a kernel package or not. Basically the existence of the vmlinuz file determines this check.
+            """
+            
+            tmpdir = path(tools.mkdtemp())
+            self.unpack(tmpdir)
+            
+            vmlist = [ f for f in tmpdir.walkfiles('vmlinuz*')]
+            
+            if tmpdir.exists(): tmpdir.rmtree()
+            
+            if vmlist: return True
+            
+            return False
 
             
         def unpack(self, destdir):
@@ -54,23 +68,26 @@ class RPMPackage(object):
             pass
             
         def extractKernelModulesDir(self, destdir, kofile=''):
-            """ Extracts the kernel modules or just one kofile to destdir. 
+            """ Extracts the kernel modules directory or just one kofile to destdir. 
             """
 
             tmpdir = path(tools.mkdtemp())
+            kmoddestdir = path(destdir / 'lib/modules')
+            
+            if not kmoddestdir.exists():
+                kmoddestdir.makedirs()
+            
             self.unpack(tmpdir)
-            modulesdir = tmpdir / 'lib/modules'
-            if not modulesdir.exists():
-                if tmpdir.exists(): tmpdir.rmtree()
-                raise DirDoesNotExistError, 'lib/modules'
-                
-            kmoddir = modulesdir.dirs()[0]
+            kmoddir = tmpdir / 'lib/modules'
+
             if not kofile:
-                tools.cpio_copytree(kmoddir,destdir)
+                tools.cpio_copytree(kmoddir,kmoddestdir)
             else:
                 li = [ko for ko in kmoddir.walkfiles(kofile)]
                 for l in li:
-                    l.copy(destdir)
+                    l.copy(kmoddestdir)
+                    
+            if tmpdir.exists(): tmpdir.rmtree()
             
             
         def extractKernel(self,destdir, kernelname=''):
