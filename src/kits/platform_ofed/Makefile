@@ -28,6 +28,7 @@ all:	packages components kit
 
 packages:
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
+	-mkdir -p $(TOPDIR)/BUILD
 	cd packages; make
 
 components:
