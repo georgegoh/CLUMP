@@ -358,7 +358,7 @@ class NetEditApp(object, KusuApp):
 
         if self._options.add == True:
             if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
-                or not self._options.startip:
+                or not self._options.startip or not self._options.desc:
                 self.parser.error(self._("netedit_options_add_options_needed"))
 
         # Handle -d  - Deleting network
