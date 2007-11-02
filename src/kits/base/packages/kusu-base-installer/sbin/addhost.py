@@ -310,12 +310,12 @@ class AddHostApp(KusuApp):
                      # Ask all plugins to call added() function
                      myNode.addUsedMAC(macaddr)
                      if pluginActions:
-                         pluginActions.plugins_add(nodeName, True)
+                         pluginActions.plugins_add(True)
                      myNodeInfo.nodeList.append(nodeName)
                  else:
                      print "Duplicate: %s, Ignoring" % macaddr
             if pluginActions:
-                pluginActions.plugins_finished()
+                pluginActions.plugins_finished(True)
             sys.exit(0)
               
         if self._options.macfile:
@@ -499,7 +499,7 @@ class PluginActions(object, KusuApp):
         #t2=time.time()
         #print "******** ALL replaced() Plugins Time Spent: %f" % (t2-pt1)
             
-    def plugins_finished(self):
+    def plugins_finished(self, prePopulateMode=False):
         """plugins_finished()
         Call all Add host plugins finished() method
         """
@@ -508,7 +508,7 @@ class PluginActions(object, KusuApp):
         #print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
             #t1=time.time()
-            plugin.finished(myNodeInfo.nodeList)
+            plugin.finished(myNodeInfo.nodeList, prePopulateMode)
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
         #t2=time.time()
@@ -536,6 +536,7 @@ class NodeGroupWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
+	self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("addhost_helpline_instructions"))
 
     def F12Action(self):
         if myNodeInfo.quitPrompt:
@@ -571,6 +572,7 @@ class NodeGroupWindow(USXBaseScreen):
         self.buttonsDict['exit_button'].setCallback_(self.exitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
+	self.hotkeysDict['F8'] = self.nextAction
         
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
@@ -593,7 +595,7 @@ class NodeGroupWindow(USXBaseScreen):
    
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
-        self.listbox = snack.Listbox(5, scroll=1, returnExit=0)
+        self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
 
         #value = snack.ListboxChoiceWindow(self.screen, self.kusuApp._(self.name), self.kusuApp._(self.msg), nodeGroups, buttons = ['Next', 'Exit'], width = 40, scroll=1, height=6, default=None, help=None)
 
@@ -635,12 +637,15 @@ class WindowSelectNode(NodeGroupWindow):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        
+        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("addhost_helpline_instructions"))
+
     def setCallbacks(self):
         self.buttonsDict['previous_button'].setCallback_(self.backAction)
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
 
         self.hotkeysDict['F12'] = self.F12Action
+	self.hotkeysDict['F8'] = self.nextAction
+	self.hotkeysDict['F5'] = self.backAction
         
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
@@ -753,6 +758,7 @@ class WindowUnmanaged(NodeGroupWindow):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
+	self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("addhost_helpline_instructions"))
 
     def F12Action(self):
         if myNodeInfo.quitPrompt:
