@@ -18,7 +18,7 @@ import kusu.core.db
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         if nodelist:
            self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
                                AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodelist[0])

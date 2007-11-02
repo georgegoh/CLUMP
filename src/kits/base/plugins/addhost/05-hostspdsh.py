@@ -20,5 +20,5 @@ class AddHostPlugin(AddHostPluginBase):
     def updated(self):
         os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts.pdsh")
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts.pdsh")

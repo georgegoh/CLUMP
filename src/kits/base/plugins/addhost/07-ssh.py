@@ -20,5 +20,5 @@ class AddHostPlugin(AddHostPluginBase):
     def updated(self):
         os.system("/opt/kusu/bin/genconfig ssh > /etc/ssh/ssh_config")
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         os.system("/opt/kusu/bin/genconfig ssh > /etc/ssh/ssh_config")

@@ -23,7 +23,7 @@ class AddHostPlugin(AddHostPluginBase):
         os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
         os.system("kill -HUP `pidof named`")
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
         os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
         os.system("kill -HUP `pidof named`")
