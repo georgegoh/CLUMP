@@ -26,7 +26,7 @@ class AddHostPluginBase:
     def __init__(self, dbconn):
         self.dbconn = dbconn
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         """virtual"""
         pass
 
