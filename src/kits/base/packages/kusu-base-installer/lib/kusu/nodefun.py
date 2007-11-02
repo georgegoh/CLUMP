@@ -726,10 +726,10 @@ class NodeFun(object, KusuApp):
         if installer: 
            self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
                                    AND nics.netid=networks.netid AND networks.device='%s' AND \
-                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % interface)
+                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision'" % interface)
         else:
            self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE \
-                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s'" % (nodegroup, interface))
+                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s' AND networks.type = 'provision'" % (nodegroup, interface))
 
         result = self._dbReadonly.fetchone()
  

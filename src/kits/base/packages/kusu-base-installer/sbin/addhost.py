@@ -652,7 +652,7 @@ class WindowSelectNode(NodeGroupWindow):
         try:
             self.database.connect()
             query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') ORDER BY device"
+                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision' ORDER BY device"
             self.database.execute(query)
             installerInfo = self.database.fetchall()
 
