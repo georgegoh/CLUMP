@@ -477,20 +477,25 @@ class NodeFun(object, KusuApp):
         # Get selected installer's subnet and network information.
         interfaces.update(self._nodegroupInterfaces)
 
-        if installer:
-           self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                     nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
-                                     AND networks.device='%s'" % selectedinterface)
+        #if installer:
+        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                                  nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
+                                  AND networks.device='%s'" % selectedinterface)
 
-           # Use the gui selected network interface as the installer's interface. 
-           installer_subnet, installer_network = self._dbReadonly.fetchone()
+        # Use the gui selected network interface as the installer's interface. 
+        installer_subnet, installer_network = self._dbReadonly.fetchone()
+
+	self._dbReadonly.execute("SELECT networks.startip FROM networks,ng_has_net,nodegroups WHERE networks.device='%s' \
+                                  AND nodegroups.ngid=ng_has_net.ngid AND nodegroups.ngid = %s" % (selectedinterface, self._nodeGroupType))
+
+        startIP = self._dbReadonly.fetchone()[0]
 
         if static == False:
            if self._nodegroupInterfaces == {}:
               print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
               sys.exit(-1)
-   
-        if not selectedinterface in self._nodegroupInterfaces and static == False:
+  
+        if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
            print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
            sys.exit(-1)
 
@@ -726,10 +731,10 @@ class NodeFun(object, KusuApp):
         if installer: 
            self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
                                    AND nics.netid=networks.netid AND networks.device='%s' AND \
-                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision'" % interface)
+                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % interface)
         else:
            self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE \
-                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s' AND networks.type = 'provision'" % (nodegroup, interface))
+                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s'" % (nodegroup, interface))
 
         result = self._dbReadonly.fetchone()
  
