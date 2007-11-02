@@ -27,10 +27,10 @@ Summary: Lava base package
 Name: lava
 Version: 1.0
 Release: 0
-License: Something
+License: GPLv2
 Group: Applications/System
 Vendor: Platform Computing Corporation
-BuildArchitectures: x86_64 i386
+BuildArchitectures: noarch
 Prefix: /opt/lava
 #Source: source_for_lava_coming
 Buildroot: /var/tmp/%{name}-buildroot
