@@ -651,6 +651,9 @@ msgstr "Please enter the network information below."
 msgid "helpline_instructions"
 msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
 
+msgid "addhost_helpline_instructions"
+msgstr "Instructions: Press F5 to go back, F8 to goto next screen, F12 to quit"
+
 # nghosts
 
 msgid "nghosts_Help"
