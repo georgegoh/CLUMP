@@ -39,6 +39,11 @@ SET(KUSU_MODULES
   driverpatch
 )
 
+## Add kits to the build lists
+SET(KUSU_KITS
+"base cacti lava nagios"
+)
+
 ## Include Kusu globals
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/CMakeScripts)
 INCLUDE(KusuGlobals)
