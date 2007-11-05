@@ -66,7 +66,7 @@ class AddHostPlugin(AddHostPluginBase):
 
     def removed(self, nodename, info):
 
-		clusterName = self.getClusterName()
+        clusterName = self.getClusterName()
 
         self.clusterFileName = 'lsf.cluster.%s' % clusterName
         self.clusterFilePath = '/opt/lsf/conf/%s' % clusterNameFile
