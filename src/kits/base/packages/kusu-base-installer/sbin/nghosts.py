@@ -57,6 +57,7 @@ class NodeMemberApp(object, KusuApp):
         """
 
         print "Nghosts Version %s\n" % self.version
+        self.unlock()
         sys.exit(0)
 
     def parseargs(self):
@@ -94,7 +95,12 @@ class NodeMemberApp(object, KusuApp):
         Run the application """
        
         global database
- 
+
+        if self.islock(): 
+           print "nghosts is in use!"
+           sys.exit(-1)
+
+        self.lock() 
         # Parse command options
         self.parseargs()
             
@@ -144,6 +150,7 @@ class NodeMemberApp(object, KusuApp):
                     for node,state in nodes:
                         print "%s".ljust(5) % node + "%s".rjust(1) % state
                     print "\n"
+            self.unlock()
             sys.exit(0)
             
         # Handle -g options - List specific nodegroup
@@ -167,6 +174,7 @@ class NodeMemberApp(object, KusuApp):
                     print "\n"
             except:
                 self.parser.error("%s\n" % self._("options_invalid_nodegroup"))
+            self.unlock()
             sys.exit(0)
 
         # Handle -t option - Copy to this node group.
@@ -230,6 +238,7 @@ class NodeMemberApp(object, KusuApp):
 
                         if not self._options.copyhosts:
                            print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
+                           self.unlock()
                            sys.exit(-1)
                         else:
 
@@ -245,6 +254,7 @@ class NodeMemberApp(object, KusuApp):
 
                     if not nodesList:
                        print self._("Could not move the requested nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group." % self._options.togroup)
+                       self.unlock()
                        sys.exit(0)
                     else:
                        if badList:
@@ -274,6 +284,7 @@ class NodeMemberApp(object, KusuApp):
                         rn = syncfun()
                         rn.runPdsh(list(Set(moveIPList)), "reboot")
                     os.remove(tmpfile)
+                    self.unlock()
                     sys.exit(0)
             
         # Handle -n without -t
@@ -300,6 +311,7 @@ class NodeMemberApp(object, KusuApp):
         screenFactory = ScreenFactoryImpl(screenList)
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 5.0", showTrail=False)
         ks.run()
+        self.unlock()
 
 class SelectNodesWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
@@ -444,6 +456,7 @@ class SelectNodesWindow(USXBaseScreen):
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
+            self.unlock()
             sys.exit(-1)
     
         for nodegroup in nodegroups:
@@ -458,6 +471,7 @@ class SelectNodesWindow(USXBaseScreen):
             except:
                 self.screen.finish()
                 print self.kusuApp._("DB_Query_Error\n")
+                self.unlock()
                 sys.exit(-1)
 
             # If the node group is empty don't display it.
@@ -626,6 +640,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
+            self.unlock()
             sys.exit(-1)
 
         for group in nodegroups:
@@ -639,6 +654,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
            except:
                self.screen.finish()
                print self.kusuApp._("DB_Query_Error\n")
+               self.unlock()
                sys.exit(-1)
  
            # Only display node groups that are not empty when moving.
