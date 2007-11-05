@@ -983,7 +983,9 @@ class NodeFun(object, KusuApp):
            for badnode in badList:
                if badnode in nodeList:
                   nodeList.remove(badnode)
+                  requestedNodes.remove(badnode)
 
+        #print "RETURNS: requestedNodes = %s, ipList = %s, badList = %s, interfaceName = %s" % (requestedNodes, ipList, badList, interfaceName) 
         return requestedNodes, ipList, macList, badList, interfaceName
 
 # For ngedit
