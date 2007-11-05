@@ -118,6 +118,12 @@ int main(int argc, char* argv[])
   int sent = 0 ;
   int mkdaemon = 1 ;
   struct dataPack dpack ;
+
+  /* Started by root */
+  if(geteuid()) {
+    printf("ERROR:  This daemon must run as root.\n") ;
+    exit(-1) ;
+  }
  
   while (--argc) {
     ++argv;
