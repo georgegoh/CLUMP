@@ -85,6 +85,7 @@ class AddHostApp(KusuApp):
         """
         
         print "Addhosts Version %s\n" % self.version
+        self.unlock()
         sys.exit(0)
         
     def parseargs(self):
@@ -131,6 +132,7 @@ class AddHostApp(KusuApp):
             database.connect()
         except:
             print self._("DB_Query_Error\n")
+            self.unlock()
             sys.exit(-1)
 
         if not os.path.exists(myNodeInfo.pluginLocation):
@@ -181,6 +183,12 @@ class AddHostApp(KusuApp):
         haveNodegroup = False
         replaceMode = False
 
+        if self.islock():
+           print "Addhost already in use!"
+           sys.exit(-1)
+
+        self.lock()
+
         # Parse command options
         self.parseargs()
        
@@ -212,6 +220,7 @@ class AddHostApp(KusuApp):
         if self._options.ipaddr and self._options.statichost:
            if not kusu.ipfun.validIP(self._options.ipaddr):
               print "ERROR: Not a valid IP Address"
+              self.unlock()
               sys.exit(0)
 
            myNodeInfo.optionStaticHostMode = True
@@ -219,12 +228,15 @@ class AddHostApp(KusuApp):
            result, msg = myNode.addUnmanagedStaticDevice(self._options.statichost, ip=self._options.ipaddr)
            if not result:
               print "ERROR:  %s" % msg
+              self.unlock()
               sys.exit(-1)
 
+           self.unlock()
            sys.exit(0)
            
         if self._options.statichost and not self._options.ipaddr:
            print "Must specify IP address"
+           self.unlock()
            sys.exit(0)
  
         # Handle -i option
@@ -316,6 +328,7 @@ class AddHostApp(KusuApp):
                      print "Duplicate: %s, Ignoring" % macaddr
             if pluginActions:
                 pluginActions.plugins_finished(True)
+            self.unlock()
             sys.exit(0)
               
         if self._options.macfile:
@@ -335,9 +348,11 @@ class AddHostApp(KusuApp):
                         myNodeInfo.optionReplaceMode = True
                         myNodeInfo.replaceNodeName = self._options.replace
                         if myNode.replaceNodeEntry(self._options.replace) == False:
+                            self.unlock()
                             sys.exit(-1)
                     else:
                         print kusuApp._("The node %s is not found. Please try again\n" % self._options.replace)
+                        self.unlock()
                         sys.exit(-1)
 
         # Handle -e option
@@ -359,6 +374,7 @@ class AddHostApp(KusuApp):
                  myNode.deleteNode(delnode)
             if pluginActions:
                pluginActions.plugins_finished()
+            self.unlock()
             sys.exit(0)
 
         elif self._options.remove == []:
@@ -370,6 +386,7 @@ class AddHostApp(KusuApp):
             if pluginActions:
                pluginActions.plugins_updated()
                #pluginActions.plugins_finished()
+            self.unlock()
             sys.exit(0)
     
         # If node group format has a Rack AND Rank, prompt for the rack number.
@@ -432,6 +449,8 @@ class AddHostApp(KusuApp):
         if len(myNodeInfo.nodeList):
             if pluginActions:
                pluginActions.plugins_finished()
+
+        self.unlock()
  
 class PluginActions(object, KusuApp):
     def __init__(self, pluginInstances):
@@ -495,6 +514,7 @@ class PluginActions(object, KusuApp):
                 #print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
         else:
             print self._("replace_primary_installer_error\n")
+            self.unlock()
             sys.exit(-1)
         #t2=time.time()
         #print "******** ALL replaced() Plugins Time Spent: %f" % (t2-pt1)
