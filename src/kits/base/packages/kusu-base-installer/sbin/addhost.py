@@ -310,7 +310,7 @@ class AddHostApp(KusuApp):
                      # Ask all plugins to call added() function
                      myNode.addUsedMAC(macaddr)
                      if pluginActions:
-                         pluginActions.plugins_add(True)
+                         pluginActions.plugins_add(nodeName, True)
                      myNodeInfo.nodeList.append(nodeName)
                  else:
                      print "Duplicate: %s, Ignoring" % macaddr
