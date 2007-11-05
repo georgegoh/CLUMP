@@ -47,7 +47,7 @@ class AddHostPlugin(AddHostPluginBase):
 		os.system("grep -v %s /opt/lava/conf/hosts > /opt/lava/conf/hosts.OLD" % (nodename + "."))
 		os.rename("/opt/lava/conf/hosts.OLD", "/opt/lava/conf/hosts")
 
-	def finished(self, nodelist):
+	def finished(self, nodelist, prePopulateMode):
 		nodelist = self.checkAvailableComponent()
 		if not nodelist:
 		   return

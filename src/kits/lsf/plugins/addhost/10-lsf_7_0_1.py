@@ -84,7 +84,7 @@ class AddHostPlugin(AddHostPluginBase):
         # os.system("grep -v %s /opt/lsf/conf/hosts > /opt/lsf/conf/hosts.OLD" % (nodename + "."))
         # os.rename("/opt/lsf/conf/hosts.OLD", "/opt/lsf/conf/hosts")
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         nodelist = self.checkAvailableComponent()
         if not nodelist:
            return

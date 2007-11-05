@@ -14,7 +14,7 @@ except:
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         cmds = ['/usr/bin/python', '/opt/nagios/bin/nagiosconfig.py', '--regen']
         nagiosconfigP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)

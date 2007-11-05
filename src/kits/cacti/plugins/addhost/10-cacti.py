@@ -23,5 +23,5 @@ class AddHostPlugin(AddHostPluginBase):
     def updated(self):
         self.common()
 
-    def finished(self, nodelist):
+    def finished(self, nodelist, prePopulateMode):
         self.common()
