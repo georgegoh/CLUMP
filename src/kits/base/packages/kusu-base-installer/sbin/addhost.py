@@ -36,9 +36,6 @@ import kusu.ipfun
 NOCANCEL    = 0
 ALLOWCANCEL = 1
 
-kl = kusulog.getKusuLog()
-kl.addFileHandler("/tmp/kusu/kusu.log")
-
 class NodeData:
     def __init__(self):
         # Public 
@@ -58,6 +55,11 @@ class NodeData:
         # We don't want to prompt the user to quit if we reached the last screen.
         self.quitPrompt = True
 
+
+if os.geteuid() != 0:
+   print "addhost: Only root can run this tool"
+   sys.exit(-1)
+
 # Global Instance of data
 global myNodeInfo
 myNodeInfo = NodeData()
@@ -70,6 +72,7 @@ pluginActions = None
 
 global kusuApp
 global database
+
 kusuApp = KusuApp()
 database = KusuDB()
 
@@ -188,6 +191,9 @@ class AddHostApp(KusuApp):
            sys.exit(-1)
 
         self.lock()
+
+        kl = kusulog.getKusuLog()
+        kl.addFileHandler("/tmp/kusu/kusu.log")
 
         # Parse command options
         self.parseargs()

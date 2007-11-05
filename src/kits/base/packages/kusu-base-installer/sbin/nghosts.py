@@ -96,6 +96,10 @@ class NodeMemberApp(object, KusuApp):
        
         global database
 
+        if os.geteuid() != 0:
+            print "nghosts: Only root can run this tool"
+            sys.exit(-1)
+
         if self.islock(): 
            print "nghosts is in use!"
            sys.exit(-1)

@@ -20,6 +20,7 @@
 # Author: Shawn Starr <sstarr@platform.com>
 
 import sys
+import os
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import snack
@@ -264,6 +265,10 @@ class NetEditApp(object, KusuApp):
         """run()
         Run the application """
         global database
+
+        if os.geteuid() != 0:
+            print "netedit: Only root can run this tool"
+            sys.exit(-1)
 
         if self.islock():
            print "netedit is already in use!"
