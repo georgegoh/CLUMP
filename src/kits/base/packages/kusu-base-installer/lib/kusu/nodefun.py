@@ -894,7 +894,7 @@ class NodeFun(object, KusuApp):
              nodes = self._dbReadonly.fetchall()
              for node in nodes:
                  nodeList.append(node[0])
-         
+        
          return self.moveNodes(nodeList, destGroup)
 
     def moveNodes(self, requestedNodes, nodegroupname,rack=0):
@@ -928,8 +928,13 @@ class NodeFun(object, KusuApp):
            return None, None, None
 
         # Remove the primary installer if the user tries to move it to another node group.
-        if self._getPrimaryInstaller() in nodeList:
-           nodeList.remove(self._getPrimaryInstaller())
+        primaryInstaller = self._getPrimaryInstaller()
+        if primaryInstaller in nodeList:
+           nodeList.remove(primaryInstaller)
+           badList.remove(primaryInstaller)
+
+        if primaryInstaller in badList:
+           badList.remove(primaryInstaller)
 
         # Check if the item being moved already exists in the same node group, delete from list if it is.
         for node in requestedNodes: 
@@ -959,7 +964,7 @@ class NodeFun(object, KusuApp):
         # Get the new nodegroups network and device table list
         self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
         newngdata = list(self._dbReadonly.fetchall())
-    
+   
         # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
         # Have to resolve this by running add hosts
         for node in requestedNodes:
