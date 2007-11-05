@@ -323,7 +323,7 @@ default    !    ()      ()    ()     ()     ()             # Example
 			print self.gettext("genconfig_LSFcluster_Help")
 			return
 		
-		if self.validateCluster(pluginargs[0]):
+		if not self.validateCluster(pluginargs[0]):
 			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
 			return
 
