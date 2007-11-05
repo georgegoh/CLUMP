@@ -967,8 +967,6 @@ class NodeFun(object, KusuApp):
            for netinfo in newngdata:
               device, network, subnet = netinfo
               #print "NODE: %s, IP = %s, Destination network/subnet: %s, %s: Source Dev: %s, Destination Device: %s" % (node, nodeData[1], network, subnet, nodeData[2], device)
-              # Check if device matches new node group device
-              #if device == nodeData[2]:
               interfaceName = device
               # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
               if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
@@ -977,8 +975,6 @@ class NodeFun(object, KusuApp):
                  break
               else:
                  badflag = 1
-              #else:
-              #     badflag = 1
            if badflag:
                badList.append(node)
                badflag = 0
