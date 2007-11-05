@@ -598,11 +598,6 @@ class BootHostApp(KusuApp):
     def run(self):
         """run - Run the application"""
 
-        # Check if root user
-        if os.geteuid():
-            print self._("nonroot_execution\n")
-            sys.exit(-1)
-            
         bhinst = boothost(self.gettext)
         self.parseargs(bhinst)
 
