@@ -2283,7 +2283,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
             #buildinitrd
             self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
 
-        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['comps','packs','repoid']): 
+        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['comps','packs','repoid','scripts']): 
             #buildimage
             self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
 
