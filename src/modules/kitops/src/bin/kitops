@@ -296,10 +296,10 @@ class KitOpsApp(KusuApp):
                 sys.stderr.write(e.args[0])
                 sys.exit(EKITLOC_FAIL)
 
-            while not (res.lower() == 'y' or res == 'N'):
-                res = raw_input('Any more disks for this OS kit? [y/N] ')
+            while not (res.lower() == 'y' or res.lower() == 'n'):
+                res = raw_input('Any more disks for this OS kit? [y/n] ')
 
-            if res == 'N':
+            if res.lower() == 'n':
                 break
 
             print "Please insert next disk if installing from phys. media NOW"
