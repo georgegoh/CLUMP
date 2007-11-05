@@ -266,6 +266,10 @@ class scrNGEEdit_General(USXBaseScreen):
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
 
+        #for hotkeys
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doCancelAction
+
     def doCancelAction(self):
         return NAV_QUIT
 
@@ -339,6 +343,10 @@ class scrNGEEdit_Repo(USXBaseScreen):
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doQuitAction)
+
+        #for hotkeys
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def doQuitAction(self):
         return NAV_QUIT
@@ -420,6 +428,10 @@ class scrNGEEdit_Boot(USXBaseScreen):
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+
+        #for hotkeys
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         self.selector.popupMsg('debug info','installtype = %s' %str(curNG['installtype']))
@@ -507,6 +519,8 @@ class scrNGEEdit_Components(USXBaseScreen):
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         return NAV_IGNORE
@@ -599,6 +613,8 @@ class scrNGEEdit_Networks(USXBaseScreen):
         self.buttonsDict['restore_button'].setCallback_(self.RestoreAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         return NAV_IGNORE
@@ -708,6 +724,8 @@ class scrNGEEdit_Packages(USXBaseScreen):
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F10'] = self.TogglePackageView
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def TogglePackageView(self):
         assert(self.__ct)
@@ -946,6 +964,8 @@ class scrNGEEdit_Modules(USXBaseScreen):
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
@@ -1092,6 +1112,8 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
         self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         id = self.listbox.current()
@@ -1921,6 +1943,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         self.buttonsDict['accept_button'].setCallback_(self.doAcceptAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F8'] = self.doAcceptAction
 
     def doBackAction(self):
         return NAV_BACK
@@ -2319,6 +2342,8 @@ class scrNGEEdit_Scripts(USXBaseScreen):
         self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
         #for hotkeys
         self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F8'] = self.doForwardAction
+        self.hotkeysDict['F5'] = self.doBackAction
 
     def F12Action(self):
         self.selector.popupMsg("Internal State", "curNG['scripts']=%s\ncopiedfiles= %s" \
