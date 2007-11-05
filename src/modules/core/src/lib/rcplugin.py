@@ -177,6 +177,9 @@ class PluginRunner:
 
         pluginsData = {}
         for plugin in plugins:
+            if plugin.endswith('.pyc') or plugin.endswith('.pyo'):
+                continue
+
             if plugin.endswith('.rc.py'):
                 ns = {}
                 try:
