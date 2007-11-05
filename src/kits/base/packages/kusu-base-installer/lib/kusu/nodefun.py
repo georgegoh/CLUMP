@@ -258,6 +258,7 @@ class NodeFun(object, KusuApp):
         return self._primaryInstaller
     
     def nodeIsPrimaryInstaller(self, nodename):
+
         #t1=time.time()
         if not nodename:
             return False
@@ -275,7 +276,7 @@ class NodeFun(object, KusuApp):
         """getNodeID(nodename)
         Returns the node ID if found, otherwise false if nodename is the primary installer name, or not found in db """
         #t1=time.time()
- 
+
         if self.nodeIsPrimaryInstaller(nodename):
             #t2=time.time()
             #print "Time Spent: getNodeID(): %f" % (t2-t1)
@@ -965,19 +966,19 @@ class NodeFun(object, KusuApp):
            nodeData = dataList[node].split()
            for netinfo in newngdata:
               device, network, subnet = netinfo
-              #print "NODE: %s, IP = %s, Destination network/subnet: %s, %s: Source Dev: %s, Destination Device: %s" % (node, nodeData[1], network, subnet, nodeData[2], device)
+              print "NODE: %s, IP = %s, Destination network/subnet: %s, %s: Source Dev: %s, Destination Device: %s" % (node, nodeData[1], network, subnet, nodeData[2], device)
               # Check if device matches new node group device
-              if device == nodeData[2]:
-                  interfaceName = device
-                  # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
-                  if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
-                     badflag = 0
-                     ipList.append(nodeData[1])
-                     break
-                  else:
-                     badflag = 1
+              #if device == nodeData[2]:
+              interfaceName = device
+              # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
+              if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
+                 badflag = 0
+                 ipList.append(nodeData[1])
+                 break
               else:
-                   badflag = 1
+                 badflag = 1
+              #else:
+              #     badflag = 1
            if badflag:
                badList.append(node)
                badflag = 0
