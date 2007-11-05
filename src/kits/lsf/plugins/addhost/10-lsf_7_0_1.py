@@ -47,7 +47,7 @@ class AddHostPlugin(AddHostPluginBase):
 		clusterName = self.getClusterName()
 
         self.clusterFileName = 'lsf.cluster.%s' % clusterName
-        self.clusterFilePath = '/opt/lsf/conf/%s' % clusterNameFile
+        self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
 
 	def getClusterName(self):
 		ngid = int(info[nodename][0]["nodegroupid"])
@@ -69,7 +69,7 @@ class AddHostPlugin(AddHostPluginBase):
         clusterName = self.getClusterName()
 
         self.clusterFileName = 'lsf.cluster.%s' % clusterName
-        self.clusterFilePath = '/opt/lsf/conf/%s' % clusterNameFile
+        self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
 
         # Remove host from the lsf.cluster file
         self.updateFile(self.clusterFilePath, self.parseLsfClusterLine,
