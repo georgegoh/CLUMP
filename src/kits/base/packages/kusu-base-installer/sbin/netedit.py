@@ -142,6 +142,7 @@ class NetworkRecord(object):
               return False, 'DB_Query_Error\n'
            else:
               print kusuApp._("DB_Query_Error\n")
+              self.unlock()
               sys.exit(-1)
         return True, 'Success'
        
@@ -160,6 +161,7 @@ class NetworkRecord(object):
                 return False, 'DB_Duplicate_Error\n'
             else:
                 print kusuApp._("DB_Duplicate_Error\n")
+                self.unlock()
                 sys.exit(-1)
         
     def checkNetworkEntry(self, networkid):
@@ -177,6 +179,7 @@ class NetworkRecord(object):
               raise UserExitError
            else:
               print kusuApp._("DB_Query_Error\n")
+              self.unlock()
               sys.exit(-1)
             
         if int(netuse) >= 1:
@@ -199,6 +202,7 @@ class NetworkRecord(object):
               raise UserExitError
            else:
               print kusuApp._("DB_Query_Error\n")
+              self.unlock()
               sys.exit(-1)
     
 class NetEditApp(object, KusuApp):
@@ -213,6 +217,7 @@ class NetEditApp(object, KusuApp):
         """
 
         print "Netedit Version %s\n" % self.version
+        self.unlock()
         sys.exit(0)
 
     def parseargs(self):
@@ -259,6 +264,12 @@ class NetEditApp(object, KusuApp):
         """run()
         Run the application """
         global database
+
+        if self.islock():
+           print "netedit is already in use!"
+           sys.exit(-1)
+        
+        self.lock()
 
         # Parse command options
         self.parseargs()
@@ -308,6 +319,7 @@ class NetEditApp(object, KusuApp):
 
             for nid,net,sub,netname,devname,type in networkList:
                 print "%s %s %s %s %s %s" % (str(nid).ljust(10), devname.ljust(12), net.ljust(13), sub.ljust(15), netname.ljust(40), type)
+            self.unlock()
             sys.exit(0)
             
         # Handle -a -n -s -g,-i,-t, -e options - Adding network
@@ -326,6 +338,7 @@ class NetEditApp(object, KusuApp):
 
             if len(self._options.desc.strip()) == 0:
                print "Error: Must have a network description set."
+               self.unlock()
                sys.exit(-1)
             else:
                networkEntryInfo.append(self._options.desc.strip())
@@ -335,6 +348,7 @@ class NetEditApp(object, KusuApp):
             # Check for conflicting options:
             if self._options.provision and self._options.public:
                print "ERROR:  Cannot specify -z and -y at same time."
+               self.unlock()
                sys.exit(-1)
 
             if self._options.provision:
@@ -354,6 +368,7 @@ class NetEditApp(object, KusuApp):
                 self.parser.error(self._(errorMsg))
 
             networkrecord.insertNetworkEntry()
+            self.unlock()
             sys.exit(0)
 
         if self._options.add == True:
@@ -374,6 +389,7 @@ class NetEditApp(object, KusuApp):
                     result = networkrecord.checkNetworkEntry(self._options.delete)
                     if result:
                         print self._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
+                        self.unlock()
                         sys.exit(0)
                     else:
                         try:
@@ -382,9 +398,11 @@ class NetEditApp(object, KusuApp):
                             print self._("Deleting network: %s\n" % network[1])
                         except:
                             print self._("DB_Query_Error\n")
+                            self.unlock()
                             sys.exit(-1)
             if invalidID: 
                 self.parser.error(self._("netedit_error_invalid_id"))
+            self.unlock()
             sys.exit(0)
 
         # Handle -w: -t|-e|-r|-o|-y|-z - Changing non-destructive values
@@ -436,6 +454,7 @@ class NetEditApp(object, KusuApp):
                 if invalidID:
                    self.parser.error(self._("netedit_error_invalid_id"))
 
+                self.unlock()
                 sys.exit(0)
 
             else:
@@ -496,6 +515,7 @@ class NetEditApp(object, KusuApp):
                                     self.parser.error(self._(errorMsg))
                                     
                             networkrecord.updateNetworkEntry(self._options.change) 
+                            self.unlock()
                             sys.exit(0)
                         
                 if invalidID:
@@ -514,6 +534,7 @@ class NetEditApp(object, KusuApp):
         screenFactory = ScreenFactoryImpl(screenList)
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Network Edit - Version 5.0", showTrail=False)
         ks.run()
+        self.unlock()
 
 class NetworkEditWindow(USXBaseScreen):
     name = "netedit_window_title_edit"
@@ -585,6 +606,7 @@ class NetworkEditWindow(USXBaseScreen):
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
+            self.unlock()
             sys.exit(-1)
             
 
