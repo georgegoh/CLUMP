@@ -74,6 +74,11 @@ class UpdateApp(KusuApp):
         self.parseargs()
         ngid=0
 
+        # Check if root user
+        if os.geteuid():
+            print self._("nonroot_execution\n")
+            sys.exit(-1)
+
         if self.options.wantver:
             # Print version
             self.toolVersion()
@@ -143,4 +148,5 @@ class UpdateApp(KusuApp):
 if __name__ == '__main__':
     app = UpdateApp(sys.argv)
     _ = app.langinit()
+        
     app.run()

@@ -436,6 +436,11 @@ class BuildImageApp(KusuApp):
         self.parseargs()
         image = ''
 
+        # Check if root user
+        if os.geteuid():
+            print self._("nonroot_execution\n")
+            sys.exit(-1)
+
         imgfun = BuildImage()
         imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)
         

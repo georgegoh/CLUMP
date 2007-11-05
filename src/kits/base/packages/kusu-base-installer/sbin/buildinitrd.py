@@ -587,6 +587,11 @@ class BuildInitrdApp(KusuApp):
         self.parseargs()
         image = ''
 
+        # Check if root user
+        if os.geteuid():
+            print self._("nonroot_execution\n")
+            sys.exit(-1)
+
         imgfun = BuildInitrd()
         imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)
         
@@ -621,9 +626,7 @@ class BuildInitrdApp(KusuApp):
             sys.exit(-1)
 
             
-
-
-        
+       
 if __name__ == '__main__':
     app = BuildInitrdApp()
     app.run()
