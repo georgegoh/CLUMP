@@ -840,6 +840,12 @@ class CFMClient:
     def run (self):
         """run - Entry point for CFM client"""
         self.parseargs()
+        
+        # Check if root user
+        if os.geteuid():
+            print "ERROR:  Only root can run this tool\n"
+            sys.exit(-1)
+            
         if self.installers[0] != 'self':
             self.setupNIIVars()
         else:
