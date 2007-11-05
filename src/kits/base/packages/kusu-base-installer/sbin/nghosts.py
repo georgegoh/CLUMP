@@ -216,6 +216,7 @@ class NodeMemberApp(object, KusuApp):
                         nodesList += moveList 
                         moveIPList += ipList
                         myinterface = interface
+
                         macsList.update(macList)
            
 		    if bool(self._options.copyhosts):
@@ -231,11 +232,12 @@ class NodeMemberApp(object, KusuApp):
                            print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
                            sys.exit(-1)
                         else:
-                           moveList, ipList, macList, badList, interface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, rack=self._options.racknumber)
+
+                           moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, rack=self._options.racknumber)
                            nodesList += moveList
                            moveIPList += ipList
-                           if interface:
-                              myinterface = interface
+                           if getinterface:
+                              myinterface = getinterface
                            macsList.update(macList)
 
                     if nodesList:
@@ -256,13 +258,14 @@ class NodeMemberApp(object, KusuApp):
                     tmpname.close()
 
                     print self._("nghosts_moving_nodes_progress")
+ 
                     os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(Set(nodesList), ' '))
                
                     # Add these back using mac file
                     if self._options.racknumber >= 0:
-                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup, self._options.racknumber))
+                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, myinterface, self._options.togroup, self._options.racknumber))
                     else:
-                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' >&2 /dev/null >& /dev/null" % (tmpfile, interface, self._options.togroup))
+                        os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' >&2 /dev/null >& /dev/null" % (tmpfile, myinterface, self._options.togroup))
 
                     # If the user wants to reinstall the nodes check if the option is selected or not.
                     if bool(self._options.reinstall):
