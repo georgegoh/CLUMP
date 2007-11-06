@@ -297,15 +297,37 @@ benchmarkingToolsComp.addDep(iperfpkg)
 benchmarkingToolsComp.addDep(streampkg)
 benchmarkingToolsComp.addDep(modulesbenchmarkingtoolspkg)
 
+# package mvapich1-infiniband-gnu
+mvapich1gnupkg = RPMPackage()
+mvapich1gnupkg.name = 'mvapich1-infiniband-gnu'
+mvapich1gnupkg.version = '0.9.9'
+mvapich1gnupkg.release = '1458'
+if getArch() == 'x86':
+    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.i386.rpm'
+if getArch() == 'x86_64':
+    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.x86_64.rpm'
+
 #define the MVAPICH1 component
 mvapich1Comp = DefaultComponent()
 mvapich1Comp.name = 'MVAPICH1-libraries'
 mvapich1Comp.description = 'This component contains a collection of MVAPICH1 libraries.'
+mvapich1Comp.addDep(mvapich1gnupkg)
+
+# package mvapich2-gnu
+mvapich2gnupkg = RPMPackage()
+mvapich2pkg.name = 'mvapich2-infiniband-gnu'
+mvapich2gnupkg.version = '0.9.8'
+mvapich2gnupkg.release = '15'
+if getArch() == 'x86':
+    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-0.9.8-15.i386.rpm'
+if getArch() == 'x86_64':
+    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-0.9.8-15.x86_64.rpm'
 
 #define the MVAPICH2 component
 mvapich2Comp = DefaultComponent()
 mvapich2Comp.name = 'MVAPICH2-libraries'
 mvapich2Comp.description = 'This component contains a collection of MVAPICH2 libraries.'
+mvapich2Comp.addDep(mvapich2gnupkg)
 
 # define HPC kit
 k = DefaultKit()
@@ -318,8 +340,8 @@ k.addComponent(benchmarkingToolsComp)
 k.addComponent(mpich1Comp)
 k.addComponent(openmpiComp)
 k.addComponent(mpich2Comp)
-
-
+k.addComponent(mvapich1Comp)
+k.addComponent(mvapich2Comp)
 # Add post install script. You can modify this shell script or add new ones in the
 # sources directory
 k.addScript('00-post-script.sh',mode='post')
