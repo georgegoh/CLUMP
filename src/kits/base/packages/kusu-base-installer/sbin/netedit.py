@@ -274,10 +274,11 @@ class NetEditApp(object, KusuApp):
            print "netedit is already in use!"
            sys.exit(-1)
         
-        self.lock()
 
         # Parse command options
         self.parseargs()
+
+        self.lock()
 
         # Don't allow option -a -d -c -l to be used together. Mutually Exclusive.
         if (not self.nxor(bool(self._options.add), bool(self._options.delete), bool(self._options.change), bool(self._options.listnetworks))):
@@ -285,6 +286,7 @@ class NetEditApp(object, KusuApp):
                     and bool(self._options.listnetworks) == False):
                         pass
                     else:
+		        self.unlock()
                         self.parser.error(self._("netedit_options_exclusive"))
 
         # Non required values, if not set default to these
@@ -370,6 +372,7 @@ class NetEditApp(object, KusuApp):
             networkrecord = NetworkRecord(networkEntryInfo, None)            
             result, errorMsg = networkrecord.validateNetworkEntry()
             if not result: 
+                self.unlock()
                 self.parser.error(self._(errorMsg))
 
             networkrecord.insertNetworkEntry()
@@ -379,6 +382,7 @@ class NetEditApp(object, KusuApp):
         if self._options.add == True:
             if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
                 or not self._options.startip or not self._options.desc:
+                self.unlock()
                 self.parser.error(self._("netedit_options_add_options_needed"))
 
         # Handle -d  - Deleting network
@@ -406,6 +410,7 @@ class NetEditApp(object, KusuApp):
                             self.unlock()
                             sys.exit(-1)
             if invalidID: 
+                self.unlock()
                 self.parser.error(self._("netedit_error_invalid_id"))
             self.unlock()
             sys.exit(0)
@@ -417,6 +422,7 @@ class NetEditApp(object, KusuApp):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
+                   self.unlock()
                    self.parser.error(self._("netedit_options_conflict_type"))
  
                 networkrecord = NetworkRecord()
@@ -434,12 +440,14 @@ class NetEditApp(object, KusuApp):
                           if networkrecord.validateIPAddress(self._options.startip.strip(), changeinfo[0], changeinfo[1]):
                              database.execute("UPDATE networks SET startip = '%s' WHERE netid = %d" % (self._options.startip.strip(), int(self._options.changeused)))
                           else:
+                             self.unlock()
                              self.parser.error(self._("netedit_validate_startip"))
                         
                        if self._options.desc:
                           if len(self._options.desc.strip()) > 0:
                              database.execute("UPDATE networks SET netname = '%s' WHERE netid = %d" % (self._options.desc.strip(), int(self._options.changeused)))
                           else:
+                             self.unlock()
                              self.parser.error(self._("netedit_empty_description"))
 
                        if self._options.opt:
@@ -457,12 +465,14 @@ class NetEditApp(object, KusuApp):
                           database.execute("UPDATE networks SET type = '%s' WHERE netid =%d" % ('public', int(self._options.changeused)))
    
                 if invalidID:
+                   self.unlock()
                    self.parser.error(self._("netedit_error_invalid_id"))
 
                 self.unlock()
                 sys.exit(0)
 
             else:
+                 self.unlock()
                  self.parser.error(self._("netedit_options_illegal_usednetwork"))
 
         if (self._options.change):
@@ -472,6 +482,7 @@ class NetEditApp(object, KusuApp):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
+                   self.unlock()
                    self.parser.error(self._("netedit_options_conflict_type"))
 
                 result = None
@@ -485,6 +496,7 @@ class NetEditApp(object, KusuApp):
                         result = networkrecord.checkNetworkEntry(self._options.change)
 
                         if result:
+                           self.unlock()
                            self.parser.error(self._("The network '%s' is in use. To change non-destructive properties use the -w option") % network[1])
                         else:
                             # First, validate the record we want to replace.
@@ -517,6 +529,7 @@ class NetEditApp(object, KusuApp):
                             networkrecord = NetworkRecord(networkEntryInfo, None)
                             result, errorMsg = networkrecord.validateNetworkEntry()
                             if not result:
+                                    self.unlock()
                                     self.parser.error(self._(errorMsg))
                                     
                             networkrecord.updateNetworkEntry(self._options.change) 
@@ -524,13 +537,16 @@ class NetEditApp(object, KusuApp):
                             sys.exit(0)
                         
                 if invalidID:
-                        self.parser.error(self._("netedit_error_invalid_id"))
+                    self.unlock()
+                    self.parser.error(self._("netedit_error_invalid_id"))
 
             else:
+                self.unlock()
                 self.parser.error(self._("netedit_options_change_options_needed"))
         
         if len(sys.argv[1:]) > 0:
             if (not bool(self._options.add) or not self._options.delete or not bool(self._options.change)):
+                self.unlock()
                 self.parser.error(self._("netedit_options_required_options"))
                 
         # Screen ordering
