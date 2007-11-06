@@ -478,27 +478,22 @@ class NodeFun(object, KusuApp):
         # Get selected installer's subnet and network information.
         interfaces.update(self._nodegroupInterfaces)
 
-        #if installer:
-        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+        if installer:
+           self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                                   nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                   AND networks.device='%s'" % selectedinterface)
 
-        # Use the gui selected network interface as the installer's interface. 
-        installer_subnet, installer_network = self._dbReadonly.fetchone()
-
-	self._dbReadonly.execute("SELECT networks.startip FROM networks,ng_has_net,nodegroups WHERE networks.device='%s' \
-                                  AND nodegroups.ngid=ng_has_net.ngid AND ng_has_net.netid=networks.netid AND nodegroups.ngid = %s" % (selectedinterface, self._nodeGroupType))
-
-        startIP = self._dbReadonly.fetchone()[0]
+           # Use the gui selected network interface as the installer's interface. 
+           installer_subnet, installer_network = self._dbReadonly.fetchone()
 
         if static == False:
            if self._nodegroupInterfaces == {}:
               print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
               sys.exit(-1)
  
-        if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
-           print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
-           sys.exit(-1)
+        #if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
+        #   print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
+        #   sys.exit(-1)
 
         if not installer: 
            for subnet, network in self._installerNetworks:
