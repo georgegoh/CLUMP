@@ -50,12 +50,8 @@ class BaseUpdate:
         kitVersion = '%s_r%s' % (self.os_version, kitRelease)
         kitArch = self.os_arch
 
-        if self.prefix:
-            tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=self.prefix))
-            kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=self.prefix))
-        else:
-            tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
-            kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+        tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+        kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
 
         self.prepKit(tempkitdir, kitName)
         self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
@@ -148,6 +144,10 @@ class BaseUpdate:
             raise UnrecognizedKitMediaError, "Unable to add update kit"    
 
         ko.addKit(kits[0])
+
+        if kitdir.exists():
+            kitdir.rmtree()
+
         return kits[0]
  
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
@@ -213,6 +213,16 @@ class BaseUpdate:
                 comp.remove()
                 realComp.copy(comp)
 
+            # Do not use symlink for kit
+            kit = (destDir / kitName).listdir('kit-%s-*.rpm' % kitName)
+            if kit and kit[0].islink():
+                kit = kit[0]
+                realKit = kit.realpath()
+                kit.remove()
+                realKit.copy(kit)
+
+            if workingDir.exists():
+                workingDir.rmtree()
             return True
         else:
             raise UnableToMakeUpdateKit, err
