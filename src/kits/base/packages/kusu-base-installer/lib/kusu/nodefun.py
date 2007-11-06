@@ -570,9 +570,9 @@ class NodeFun(object, KusuApp):
                    self.addUsedMAC(macaddr)
                    self._createNICBootEntry(nodeID, networkID, newIP, 1, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
-                else:
-                   # Not a boot interface, just write out other info. 
-                   self._createNICBootEntry(nodeID, networkID, newIP, 0)
+                #else:
+                #   # Not a boot interface, just write out other info. 
+                #   self._createNICBootEntry(nodeID, networkID, newIP, 0)
              else:
                 self._createNICBootEntry(nodeID, networkID, newIP, 0)
         #t2=time.time()
@@ -626,7 +626,7 @@ class NodeFun(object, KusuApp):
 
     def addUnmanagedDHCPDevice(self, interface, devicename, mac):
         self._nodeName = devicename
-        self.setNodegroupByName('unmanaged')
+        self.setNodegroupByID(1)
         self._nodegroupInterfaces = self._findInterfaces()
         self._createNodeEntry(mac, interface, installer=True, static=True)
            
