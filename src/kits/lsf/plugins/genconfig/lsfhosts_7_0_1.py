@@ -20,7 +20,7 @@
 from kusu.genconfig import Report
 
 #
-# This will generate the contents of the Lava hosts file.
+# This will generate the contents of the LSF hosts file.
 # It reads the existing file and adds any new hosts.
 #
 #
@@ -109,7 +109,7 @@ class thisReport(Report):
 
 
 	def listHosts(self, filename):
-		# List the contents of the lava hosts file
+		# List the contents of the LSF hosts file
 		if os.path.exists(filename) == 0:
 			return
 		
@@ -159,7 +159,7 @@ class thisReport(Report):
 			print "# ERROR:  No LSF cluster provided!"
 			return
 		
-		if self.validateCluster(pluginargs[0]):
+		if not self.validateCluster(pluginargs[0]):
 			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
 			return
 
