@@ -12,6 +12,7 @@ import math
 import parted
 import subprocess
 from common import *
+from time import *
 import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
@@ -649,11 +650,15 @@ class Partition(object):
 
     def format(self):
         """Format this partition with the FS type defined."""
-        logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
         if self.leave_unchanged or self.do_not_format:
             logger.info('Not formatting %s, respecting flag' % self.path)
             return
 
+        logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
+        logger.info('%s size: %.2f GB' % (self.path, 1.0*self.size_MB/1024))
+        logger.info('Starting clock.')
+        clock_start = clock()
+ 
         checkAndMakeNode(self.path)
 
         if self.fs_type == 'ext2':
@@ -693,6 +698,10 @@ class Partition(object):
         elif self.lvm_flag:
             # do the lvm thing
             pass
+
+        clock_end = clock()
+        elapsed_time = clock_end - clock_start
+        logger.info('Elapsed time to format %s: %.3f s' % (self.path, elapsed_time))
 
     native_type_dict = { 0 : 'Empty',
         1 : 'FAT12',

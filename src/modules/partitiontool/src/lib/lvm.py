@@ -26,6 +26,7 @@
       c) mountpoint collisions with an existing volume.
 """
 import subprocess
+from time import *
 from kusu.util.errors import *
 import lvm202 as lvm
 from kusu.util.log import getKusuLog
@@ -440,6 +441,11 @@ class LogicalVolume(object):
             logger.info('Not formatting %s due to flag' % self.path)
             return
 
+        logger.info('FORMAT %s: Starting to format %s.' % (self.path, self.path))
+        logger.info('%s size: %.2f GB' % (self.path, 1.0*self.size_MB/1024))
+        logger.info('Starting clock.')
+        clock_start = clock()
+
         if self.fs_type == 'ext2':
             logger.info('Making ext2 fs on %s' % self.path)
             mkfs = subprocess.Popen('mke2fs %s' % self.path,
@@ -471,3 +477,9 @@ class LogicalVolume(object):
                                     stderr=subprocess.PIPE)
             mkfs_out, status = mkfs.communicate()
             logger.info('mkswap done.')
+
+        clock_end = clock()
+        elapsed_time = clock_end - clock_start
+        logger.info('Elapsed time to format %s: %.3f s' % (self.path, elapsed_time))
+
+           
