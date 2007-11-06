@@ -54,11 +54,17 @@ class KusuRC(rcplugin.Plugin):
             if not path('/var/www/html/images').exists():
                 path('/depot/images').symlink('/var/www/html/images')
 
+            if not path('/var/www/html/kits').exists():
+                path('/depot/www/kits').symlink('/var/www/html/kits')
+
             self.runCommand('/sbin/chkconfig httpd on')
     	    
             retval = self.runCommand('$KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf')[0]
             if retval != 0: return False
 
+            retval = self.runCommand('echo "Include conf.d/kusu.conf" >> /etc/httpd/conf/httpd.conf')[0]
+            if retval != 0: return False
+            
             retval = self.runCommand('/etc/init.d/httpd restart')[0]
             if retval != 0: return False
 

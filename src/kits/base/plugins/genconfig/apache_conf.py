@@ -62,6 +62,7 @@ class thisReport(Report):
         print "UseCanonicalName Off"
         print "ServerName %s.%s" % (installer, dnszone)
         print "CacheDisable /cfm"
+        print "DirectoryIndex index.py index.cgi index.html index.htm"
         print ""
         # Forget mod_python.  Does not work with MySQLDb module, and php
         # print "LoadModule python_module modules/mod_python.so"  
@@ -84,6 +85,17 @@ class thisReport(Report):
                 allowlist = allowlist + '\tAllow from %s/%s\n' % (network, subnet)
         allowlist = allowlist + '\tAllow from 127.0.0.1'
 
+        # default homepage
+        print '<Directory "/var/www/html/>'
+        print '\tOptions FollowSymLinks Indexes ExecCGI'
+        print '\tSetEnv PYTHONPATH /opt/kusu/lib/python'
+        print '\tAddHandler cgi-script py'
+        print '\tAllowOverride None'
+        print '\tOrder allow,deny'
+        print '\tAllow from all'
+        print '</Directory>'
+        print ''
+ 
         # Allow access to the Repos        
         print '<Directory "/var/www/html/repos/">'
         print '\tOptions FollowSymLinks Indexes ExecCGI'
