@@ -674,7 +674,7 @@ msgstr "Specify node group to copy from"
 msgid "nghosts_to_group_usage"
 msgstr "Specify node group to copy to"
 
-msgid "nghosts_copy_hosts_usage"
+msgid "nghosts_move_hosts_usage"
 msgstr "Specify a list of nodes to move"
 
 msgid "nghosts_reinstall_usage"
@@ -701,11 +701,11 @@ msgstr "Welcome to the Kusu membership editor! Please choose an option then clic
 msgid "nghosts_helpline_intro"
 msgstr "Instructions: Select an option. Press F12 to quit, Press F8 to go next"
 
-msgid "nghosts_copy_selected_nodes"
-msgstr "Copy selected nodes to a node group"
+msgid "nghosts_move_selected_nodes"
+msgstr "Move selected nodes to a node group"
 
-msgid "nghosts_copy_nodegroup"
-msgstr "Copy all nodes from a node group to a new node group"
+msgid "nghosts_move_nodegroup"
+msgstr "Move all nodes from a node group to a new node group"
 
 msgid "nghosts_window_title_select_node"
 msgstr "Node Selection"

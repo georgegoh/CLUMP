@@ -77,8 +77,8 @@ class NodeMemberApp(object, KusuApp):
                                 callback=self.varargs, dest="movegroups", help=self._("nghosts_from_group_usage"))
         self.parser.add_option("-t", "--to-group", action="store",
                                 type="string", dest="togroup", help=kusuApp._("nghosts_to_group_usage"))
-        self.parser.add_option("-c", "--copy-hosts", action="callback",
-                                callback=self.varargs, dest="copyhosts", help=kusuApp._("nghosts_copy_hosts_usage"))
+        self.parser.add_option("-m", "--move-hosts", action="callback",
+                                callback=self.varargs, dest="movehosts", help=kusuApp._("nghosts_move_hosts_usage"))
         self.parser.add_option("-r", "--reinstall", action="store_true", dest="reinstall", help=kusuApp._("nghosts_reinstall_usage"))
         self.parser.add_option("-a", "--rack", type="int", action="store", dest="racknumber", help=kusuApp._("nghosts_rack_usage"))
 
@@ -181,9 +181,9 @@ class NodeMemberApp(object, KusuApp):
             self.unlock()
             sys.exit(0)
 
-        # Handle -t option - Copy to this node group.
+        # Handle -t option - Move to this node group.
         if bool(self._options.togroup):
-            if not bool(self._options.movegroups) and not bool(self._options.copyhosts):
+            if not bool(self._options.movegroups) and not bool(self._options.movehosts):
                     self.parser.error("%s\n" % self._("nghosts_options_togroup_options_needed"))
             else:
                     flag = 1
@@ -231,22 +231,22 @@ class NodeMemberApp(object, KusuApp):
 
                         macsList.update(macList)
            
-		    if bool(self._options.copyhosts):
-                        for node in self._options.copyhosts:
+		    if bool(self._options.movehosts):
+                        for node in self._options.movehosts:
                             if not nodeRecord.validateNode(node):
                                print self._("Node not found: %s" % node)
                                badnodes.append(node)
 
                         for node in badnodes:
-                               self._options.copyhosts.remove(node)
+                               self._options.movehosts.remove(node)
 
-                        if not self._options.copyhosts:
+                        if not self._options.movehosts:
                            print self._("There are no valid nodes to move to the node group '%s'" % self._options.togroup)
                            self.unlock()
                            sys.exit(-1)
                         else:
 
-                           moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.copyhosts, self._options.togroup, rack=self._options.racknumber)
+                           moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.movehosts, self._options.togroup, rack=self._options.racknumber)
                            nodesList += moveList
                            moveIPList += ipList
                            if getinterface:
@@ -292,14 +292,14 @@ class NodeMemberApp(object, KusuApp):
                     sys.exit(0)
             
         # Handle -n without -t
-        if bool(self._options.copyhosts) and not bool(self._options.togroup):
+        if bool(self._options.movehosts) and not bool(self._options.togroup):
             self.parser.error(self._("nghosts_options_missing_togroup"))
         
         # Handle -f without -t
         if bool(self._options.movegroups) and not bool(self._options.togroup):
             self.parser.error(self._("nghosts_options_missing_togroup"))
             
-        elif self._options.copyhosts == []:
+        elif self._options.movehosts == []:
             self.parser.error(self._("nghosts_options_nodes_missing"))
 
         elif self._options.movegroups == []:
@@ -749,8 +749,8 @@ class MembershipMainWindow(USXBaseScreen):
         
         defaultFlag = 1
         selectionOption = []
-        selectionOption.append([self.kusuApp._("nghosts_copy_selected_nodes"), 0, 0])
-        selectionOption.append([self.kusuApp._("nghosts_copy_nodegroup"), 1, 0])
+        selectionOption.append([self.kusuApp._("nghosts_move_selected_nodes"), 0, 0])
+        selectionOption.append([self.kusuApp._("nghosts_move_nodegroup"), 1, 0])
         self.radioButtonList = snack.RadioBar(self.screenGrid, selectionOption)
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 0), growx=1)
         self.screenGrid.setField(self.radioButtonList, col=0, row=1, padding=(0,0,0,2), growx=0)
