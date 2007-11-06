@@ -190,7 +190,6 @@ class AddHostApp(KusuApp):
            print "Addhost already in use!"
            sys.exit(-1)
 
-        self.lock()
 
         kl = kusulog.getKusuLog()
         kl.addFileHandler("/tmp/kusu/kusu.log")
@@ -198,6 +197,7 @@ class AddHostApp(KusuApp):
         # Parse command options
         self.parseargs()
        
+        self.lock()
         # Load addhost plugins
         self.loadPlugins()
         
@@ -212,12 +212,14 @@ class AddHostApp(KusuApp):
                     if (bool(self._options.nodegroup) == False and bool(self._options.replace) == False and bool(self._options.update) == False and removeFlag == False and bool(self._options.statichost) == False):
                         pass
                     else:
+                        self.unlock()
                         self.parser.error(kusuApp._("addhost_options_exclusive"))
 
         # Handle -r option
         if self._options.rack:
             result = int(self._options.rack)
             if result < 0:
+                self.unlock()
                 self.parser.error(kusuApp._("rack_negative_number"))
             else:
                 myNodeInfo.nodeRackNumber = self._options.rack
@@ -248,16 +250,19 @@ class AddHostApp(KusuApp):
         # Handle -i option
         if self._options.interface:
             if self._options.interface[0] == '-':
+                self.unlock()
                 self.parser.error(kusuApp._("addhost_options_interface_required"))
             else:
                 if myNode.validateInterface(self._options.interface, installer=True):
                     myNodeInfo.selectedInterface = self._options.interface
                     haveInterface = True
                 else:
+                    self.unlock()
                     self.parser.error(kusuApp._("addhost_options_invalid_interface"))
 
         if self._options.interface:
            if not self._options.nodegroup:
+             self.unlock()
              self.parser.error(kusuApp._("addhost_options_interface_options_needed"))
 
         # Handle -j option needed for -f only
@@ -267,12 +272,14 @@ class AddHostApp(KusuApp):
        
         if self._options.nodeinterface:
             if not self._options.macfile or not self._options.nodegroup:
+               self.unlock()
                self.parser.error(kusuApp._("addhost_options_macfile_options_needed"))
    
         # Handle -n option
         if self._options.nodegroup:
             if self._options.nodegroup[0] == '-':
-                self.parser.error(kusuApp._("addhost_options_nodegroup_required"))
+               self.unlock()
+               self.parser.error(kusuApp._("addhost_options_nodegroup_required"))
             else:
                 # Check for valid nodegroup. if not return an error.
                 result, ngid = myNode.validateNodegroup(self._options.nodegroup)
@@ -280,6 +287,7 @@ class AddHostApp(KusuApp):
                     myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
                 else:
+                    self.unlock()
                     self.parser.error(kusuApp._("options_invalid_nodegroup"))
 
         # Handle -f -j -n options
@@ -287,10 +295,12 @@ class AddHostApp(KusuApp):
 
             # Check if the node group's interfaces are valid. 
             if not myNode.validateInterface(self._options.nodeinterface, installer=False, nodegroup=myNodeInfo.nodeGroupSelected):
+               self.unlock()
                self.parser.error(kusuApp._("addhost_options_invalid_interface"))
 
             # Check if the file specified exists.
             if not os.path.isfile(self._options.macfile):
+                self.unlock()
                 self.parser.error(kusuApp._("The file '%s' was not found" % self._options.macfile))
                 
             myNode.setNodegroupByID(myNodeInfo.nodeGroupSelected)
@@ -339,14 +349,17 @@ class AddHostApp(KusuApp):
               
         if self._options.macfile:
             if not self._options.interface or not self._options.nodegroup:
+               self.unlock()
                self.parser.error(kusuApp._("addhost_options_macfile_options_needed"))
 
         # Handle -p option
         if self._options.replace:
             if self._options.replace.strip().isdigit():
+                self.unlock()
                 self.parser.error(kusuApp._("addhost_options_invalid_node"))
             else:
                 if self._options.replace[0] == '-':
+                    self.unlock()
                     self.parser.error(kusuApp._("addhost_options_replace_required"))
                 else:
                     if myNode.validateNode(self._options.replace):
@@ -365,9 +378,11 @@ class AddHostApp(KusuApp):
         if self._options.remove:
             for delnode in self._options.remove:
                  if delnode.strip().isdigit():
+                     self.unlock()
                      self.parser.error(kusuApp._("addhost_options_invalid_node"))
                  # Disallow options next to options.
                  if delnode[0] == '-':
+                     self.unlock()
                      self.parser.error(kusuApp._("addhost_options_invalid_node"))
 
                  # Ask all plugins to call removed() function
@@ -384,6 +399,7 @@ class AddHostApp(KusuApp):
             sys.exit(0)
 
         elif self._options.remove == []:
+              self.unlock()
               self.parser.error(kusuApp._("addhost_options_remove_required"))
 
         # Handle -u option
@@ -418,6 +434,7 @@ class AddHostApp(KusuApp):
                           print kusuApp._("Error: The value %s is not a number. Please try again" % response)
                           flag = 1
         elif (haveNodegroup and self._options.macfile and self._options.interface):
+             self.unlock()
              self.parser.error(kusuApp._("Cannot use -i with -f and -n options"))
 
         # If nodegroup format and rack specified but node format does not have a rack AND rank. Ignore user set rack and use 0.
