@@ -487,7 +487,7 @@ class NodeFun(object, KusuApp):
         installer_subnet, installer_network = self._dbReadonly.fetchone()
 
 	self._dbReadonly.execute("SELECT networks.startip FROM networks,ng_has_net,nodegroups WHERE networks.device='%s' \
-                                  AND nodegroups.ngid=ng_has_net.ngid AND nodegroups.ngid = %s" % (selectedinterface, self._nodeGroupType))
+                                  AND nodegroups.ngid=ng_has_net.ngid AND ng_has_net.netid=networks.netid AND nodegroups.ngid = %s" % (selectedinterface, self._nodeGroupType))
 
         startIP = self._dbReadonly.fetchone()[0]
 
@@ -495,7 +495,7 @@ class NodeFun(object, KusuApp):
            if self._nodegroupInterfaces == {}:
               print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
               sys.exit(-1)
-  
+ 
         if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
            print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
            sys.exit(-1)
