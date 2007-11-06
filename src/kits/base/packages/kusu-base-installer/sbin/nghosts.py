@@ -104,16 +104,18 @@ class NodeMemberApp(object, KusuApp):
            print "nghosts is in use!"
            sys.exit(-1)
 
-        self.lock() 
         # Parse command options
         self.parseargs()
             
+        self.lock() 
+
         # Don't allow option -l -g -t to be used together. Mutually Exclusive.
         if (not self.nxor(bool(self._options.allnodegroups), bool(self._options.listnodegroup), bool(self._options.togroup))):
                     if (bool(self._options.allnodegroups) == False and bool(self._options.listnodegroup) == False \
                         and bool(self._options.togroup) == False):
                         pass
                     else:
+                        self.unlock()
                         self.parser.error(self._("nghosts_options_exclusive"))
 
         # Non required values, if not set default to these            
@@ -126,6 +128,7 @@ class NodeMemberApp(object, KusuApp):
         if self._options.racknumber:
             result = int(self._options.racknumber)
             if result < 0:
+                self.unlock()
                 self.parser.error(self._("rack_negative_number"))
 
         # Handle -r option
@@ -177,6 +180,7 @@ class NodeMemberApp(object, KusuApp):
                        print "%s" % node
                     print "\n"
             except:
+                self.unlock()
                 self.parser.error("%s\n" % self._("options_invalid_nodegroup"))
             self.unlock()
             sys.exit(0)
@@ -184,6 +188,7 @@ class NodeMemberApp(object, KusuApp):
         # Handle -t option - Move to this node group.
         if bool(self._options.togroup):
             if not bool(self._options.movegroups) and not bool(self._options.movehosts):
+                    self.unlock()
                     self.parser.error("%s\n" % self._("nghosts_options_togroup_options_needed"))
             else:
                     flag = 1
@@ -196,11 +201,13 @@ class NodeMemberApp(object, KusuApp):
 
                     # If nodegroups is unmanaged throw an error
                     if self._options.togroup.strip() == 'unmanaged':
+                       self.unlock()
                        self.parser.error(self._("options_invalid_nodegroup"))
 
                     # Validate if the nodegroup exists
                     testng,val = nodeRecord.validateNodegroup(self._options.togroup)
                     if testng == False:
+                       self.unlock()
                        self.parser.error(self._("options_invalid_nodegroup"))
 
                     nodeRecord.setNodegroupByName(self._options.togroup)
@@ -293,20 +300,25 @@ class NodeMemberApp(object, KusuApp):
             
         # Handle -n without -t
         if bool(self._options.movehosts) and not bool(self._options.togroup):
+            self.unlock()
             self.parser.error(self._("nghosts_options_missing_togroup"))
         
         # Handle -f without -t
         if bool(self._options.movegroups) and not bool(self._options.togroup):
+            self.unlock()
             self.parser.error(self._("nghosts_options_missing_togroup"))
             
         elif self._options.movehosts == []:
+            self.unlock()
             self.parser.error(self._("nghosts_options_nodes_missing"))
 
         elif self._options.movegroups == []:
+            self.unlock()
             self.parser.error(self._("nghosts_options_groups_missing"))
             
         if len(sys.argv[1:]) > 0:
             if (not bool(self._options.allnodegroups) or not self._options.listnodegroup or not bool(self._options.togroup)):
+                self.unlock()
                 self.parser.error(self._("nghosts_options_required_options"))
                 
         # Screen ordering
