@@ -247,7 +247,7 @@ class PackBuilder:
         if len(oldfileentries) > 0:
             for fname in oldfileentries:
                 if os.path.exists(fname):
-                    self.stdoutMessage('cfm_Removing old file:  %s\n', fname)
+                    self.stdoutMessage('cfm_Removing old file: %s\n', fname)
                     try:
                         os.unlink(fname)
                     except:
