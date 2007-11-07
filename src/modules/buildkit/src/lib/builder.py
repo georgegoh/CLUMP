@@ -619,7 +619,7 @@ class RPMBuilder:
             else:
                 cmd = 'rpmbuild --rebuild %s > /dev/null 2>&1' % (self.sourcefile)
 
-        rpmP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
+        rpmP = subprocess.Popen(cmd,shell=True)
         rpmP.wait()
         
         return rpmP.returncode        
