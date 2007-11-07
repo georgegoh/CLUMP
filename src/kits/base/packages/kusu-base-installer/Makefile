@@ -48,6 +48,7 @@ lang:
 install::
 	mkdir -p $(ROOT)/etc/cfm
 	mkdir -p $(ROOT)/etc/rc.kusu.d
+	mkdir -p $(ROOT)/var/www/html
 	mkdir -p $(ROOT)/tftpboot/kusu/pxelinux.cfg
 	mkdir -p $(ROOT)/opt/kusu/sbin
 	mkdir -p $(ROOT)/opt/kusu/bin
@@ -112,6 +113,8 @@ install::
 	install -m644 sql/kusu_alterdb.sql $(ROOT)/opt/kusu/sql
 	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES/
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
+	install -m644 etc/index.tmpl $(ROOT)/var/www/html
+	install -m755 sbin/index.py $(ROOT)/var/www/html
 	cd man ;for i in `ls *.8.gz`; do \
 		cp $$i $(ROOT)/opt/kusu/man/man8/ ; \
 	done

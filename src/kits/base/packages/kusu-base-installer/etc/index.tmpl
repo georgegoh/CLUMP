@@ -1,0 +1,21 @@
+# \$Id$
+#
+# Copyright 2007 Platform Computing Inc.
+
+#extends Cheetah.Tools.CGITemplate
+#implements respond
+$cgiHeaders#slurp
+#import os
+
+<html><body>
+Installed kits:<p>
+#for kitName, kitVersion, kitArch, kitDesc in $kits
+Kit: $kitName $kitVersion $kitArch
+#if $os.path.exists($os.path.join('/depot/www/kits/',$kitName,$kitVersion, 'index.html'))
+<a href="kits/$kitName/$kitVersion">(Doc)</a>
+#end if
+<br>
+Description: $kitDesc<br>
+<p>
+#endfor
+</body></html>
