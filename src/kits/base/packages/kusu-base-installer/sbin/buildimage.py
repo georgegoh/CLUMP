@@ -23,9 +23,12 @@
 # Any changes to this must also be made in the rc.kusu.sh script.
 KUSUUSCRIPTS='/etc/rc.kusu.custom.d'
 
-# This is the script to run the post installation scripts
-# Any changes to this must be made in the base kit.
-KUSUPOSTSCRIPT='/etc/rc.kusu.sh'
+# This file is used to determine if the base kit is installed
+KUSUBASEFILE='/opt/kusu/sbin/cfmd'
+
+# This is the location of the custom scripts
+CUSTOMSCRIPTDIR='/depot/repos/custom_scripts'
+
 
 import os
 import shutil
@@ -318,26 +321,20 @@ class BuildImage:
         if data:
             # Copy the script over
             global KUSUUSCRIPTS
+            global CUSTOMSCRIPTDIR
             # sloc = os.path.join(self.imagedir, KUSUUSCRIPTS)   # This line failed!
             sloc = "%s/%s" % (self.imagedir, KUSUUSCRIPTS)
             for line in data:
-                script = line[0]
-                #print "imagedir=%s, sloc=%s, script=%s" % (self.imagedir, sloc, script)
-                os.system('cp -f \"%s\" \"%s\"' % (script, sloc))
-                newname = os.path.join(sloc,  os.path.basename(script))
+                sfile = "%s/%s" % (CUSTOMSCRIPTDIR, line[0])
+                #print "imagedir=%s, sloc=%s, script=%s" % (self.imagedir, sloc, sfile)
+                os.system('cp -f \"%s\" \"%s\"' % (sfile, sloc))
+                newname = os.path.join(sloc,  os.path.basename(sfile))
                 os.chmod(newname, 0755)
                 if self.stdoutout:
-                    self.stdoutout("Adding script: %s\n", script)
+                    self.stdoutout("Adding script: %s\n", sfile)
                 
-
-        global KUSUPOSTSCRIPT
-        pscript = "%s/%s" % (self.imagedir, KUSUPOSTSCRIPT)
-        if os.path.exists(pscript):
-            if self.stdoutout:
-                self.stdoutout("Chroot'ing to run script(s) in: %s\n" % self.imagedir)
-
-            os.system('chroot \"%s\" %s' % (self.imagedir, KUSUPOSTSCRIPT))
-        else:
+        global KUSUBASEFILE
+        if not os.path.exists(KUSUBASEFILE):
             if self.stderrout:
                 self.stderrout("WARNING:  The base kit is not installed\n")
 
