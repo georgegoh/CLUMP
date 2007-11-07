@@ -133,7 +133,7 @@ class PackBuilder:
 
     def __getBroadcasts(self):
         """getBroadcasts - Get a list of all of the available netowk broadcast addresses"""
-        query = ('select network, subnet from networks')
+        query = ('select distinct network, subnet from networks')
 
         bc = []
         try:
