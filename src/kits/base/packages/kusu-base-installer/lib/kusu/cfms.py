@@ -53,6 +53,7 @@ class PackBuilder:
         self.nodegrplst  = {}    # Dictionary of the nodegroups and their ID's
         self.pkgfile     = 'package.lst'  # File holding package list
         self.updatesize  = 0      # The size of the files that need to be updated
+        self.cfmdirfiles = []     # List of all files that should be in CFM distrib dir
         self.stdoutMessage = stdouttxt
         self.errorMessage = stderrtxt
         self.db.connect(self.database, self.user)
@@ -223,6 +224,35 @@ class PackBuilder:
         os.chown(filename, self.apacheuser[2], self.apacheuser[3])
                         
 
+    def removeOldFiles(self):
+        """removeOldFiles - Use the existing cfmfiles.lst and the self.cfmdirfiles to
+        determine which files are no longer needed in hte CFM distribution directory
+        and delete them"""
+        filename = os.path.join(self.cfmbasedir, 'cfmfiles.lst')
+        filep = open(filename, 'r')
+        oldfileentries = []
+        for line in filep.readlines():
+            if line[0] == '#':
+                continue
+            chunks = string.split(line)
+            filen  = string.join(chunks[:-5], ' ')
+            if filen != '':
+                oldfileentries.append(filen)
+
+        # Strip out the duplicates
+        for fname in self.cfmdirfiles:
+            if fname in oldfileentries:
+                oldfileentries.remove(fname)
+
+        if len(oldfileentries) > 0:
+            for fname in oldfileentries:
+                if os.path.exists(fname):
+                    self.stdoutMessage('cfm_Removing old file:  %s\n', fname)
+                    try:
+                        os.unlink(fname)
+                    except:
+                        pass
+
 
     def updateCFMdir(self):
         """updateCFMdir -  scan through the origdir looking for modified
@@ -243,7 +273,7 @@ class PackBuilder:
             ngid = self.nodegrplst[nodegrp]
             top = os.path.join(self.origdir, nodegrp)
             # cfmloc = os.path.join(self.cfmbasedir, "%i" % ngid)  # THIS DOES NOT WORK!
-            cfmloc = "%s/%i/" % (self.cfmbasedir, ngid)
+            cfmloc = "%s/%i" % (self.cfmbasedir, ngid)
             
             if not os.path.exists(top):
                 continue
@@ -266,6 +296,8 @@ class PackBuilder:
                         self.stdoutMessage('cfm_New file found:  %s\n', fqfn)
                     else:
                         cfmmtime = os.path.getmtime(cfmfqfn)
+
+                    self.cfmdirfiles.append(cfmfqfn)
 
                     # Only deal with newer files
                     if origmtime > cfmmtime:
@@ -418,5 +450,6 @@ if __name__ == '__main__':
     pb = PackBuilder(app.errorMessage, app.stdoutMessage)
     pb.getPackageList()
     pb.updateCFMdir()
+    pb.removeOldFiles()
     pb.genFileList()
     pb.signalUpdate(3, '')

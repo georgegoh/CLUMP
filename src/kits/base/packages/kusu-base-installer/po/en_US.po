@@ -451,6 +451,8 @@ msgstr "New file found:  %s\n"
 msgid "cfm_error: %s\n"
 msgstr "ERROR:  %s\n"
 
+msgid "cfm_Removing old file: %s\n"
+msgstr "Removing orphaned file:  %s\n"
 
 # netedit messages
 msgid "netedit_window_title_new"

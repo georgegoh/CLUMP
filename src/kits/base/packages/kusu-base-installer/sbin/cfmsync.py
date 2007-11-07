@@ -135,7 +135,8 @@ class UpdateApp(KusuApp):
             size = pb.updateCFMdir()
             if size:
                 self.stdoutMessage("Distributing %i KBytes to all nodes.\n", (size / 1024))
-            
+
+        pb.removeOldFiles()
         pb.genFileList()
 
         # Signal the nodes to start updating
