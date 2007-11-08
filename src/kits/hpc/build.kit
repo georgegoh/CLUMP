@@ -165,6 +165,13 @@ modulesmvapich1gnupkg.version = '0.1'
 modulesmvapich1gnupkg.release = '1'
 modulesmvapich1gnupkg.filename = 'modules-mvapich1-gnu-0.1-1.src.rpm'
 
+# package modules-mvapich2-gnu
+modulesmvapich2gnupkg = SRPMPackage()
+modulesmvapich2gnupkg.name = 'modules-mvapich2-gnu'
+modulesmvapich2gnupkg.version = '0.1'
+modulesmvapich2gnupkg.release = '1'
+modulesmvapich2gnupkg.filename = 'modules-mvapich2-gnu-0.1-1.src.rpm'
+
 # package openmpi-gnu
 # this uses an existing binary rpm
 openmpiPkg = RPMPackage()
@@ -336,6 +343,7 @@ mvapich2Comp = DefaultComponent()
 mvapich2Comp.name = 'MVAPICH2-libraries'
 mvapich2Comp.description = 'This component contains a collection of MVAPICH2 libraries.'
 mvapich2Comp.addDep(mvapich2gnupkg)
+mvapich2Comp.addDep(modulesmvapich2gnupkg)
 
 #define the source component
 #sourceComp = DefaultComponent()
