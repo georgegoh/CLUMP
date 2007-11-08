@@ -40,11 +40,14 @@ kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{arch}
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $docdir
+mkdir -p $docdir/images/border
+mkdir -p $docdir/styles
 mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit
 mkdir -p $kitinfodir
 
-/usr/bin/install -m 444 %{_topdir}/docs/index.html    $docdir
-/usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
+/usr/bin/install -m 444 %{_topdir}/docs/*.html    $docdir
+/usr/bin/install -m 444 %{_topdir}/docs/images/border/spacer.gif   $docdir/images/border/spacer.gif
+/usr/bin/install -m 444 %{_topdir}/docs/styles/site.css   $docdir/styles/site.css
 /usr/bin/install -m 444 %{_topdir}/docs/COPYING       $docdir
 
 /usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py     $plugdir/addhost
@@ -58,9 +61,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/depot/www/kits/%{_name}/%{version}/index.html
-/depot/www/kits/%{_name}/%{version}/readme.html
+/depot/www/kits/%{_name}/%{version}/*.html
 /depot/www/kits/%{_name}/%{version}/COPYING
+/depot/www/kits/%{_name}/%{version}/images/*/*
+/depot/www/kits/%{_name}/%{version}/styles/site.css
 /depot/kits/%{_name}/%{version}/%{arch}/kitinfo
 
 # plugins
