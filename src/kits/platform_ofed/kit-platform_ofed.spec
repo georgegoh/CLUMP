@@ -35,7 +35,7 @@ This package is destined for the installer node and serves as an
 information container for the database.  
 
 %prep
-
+%define _name platform_ofed
 
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
@@ -63,9 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/depot/www/kits/%{name}/%{version}/index.html
-/depot/www/kits/%{name}/%{version}/readme.html
-/depot/www/kits/%{name}/%{version}/LICENSE
+/depot/www/kits/%{_name}/%{version}/index.html
+/depot/www/kits/%{_name}/%{version}/readme.html
+/depot/www/kits/%{_name}/%{version}/LICENSE
 
 # plugins
 /opt/kusu/lib/plugins/ngedit/*.py
