@@ -28,6 +28,7 @@ kl.addFileHandler(path(os.environ.get('KUSU_TMP', '/tmp/kusu')) /
 # NOTE: test_kits_url NEEDS a trailing slash
 test_kits_url = 'http://www.osgdc.org/pub/build/tests/modules/kitops/'
 tmp_prefix = path(os.environ.get('KUSU_TMP', '/tmp'))
+tmp_prefix = tmp_prefix / 'kitops_test'
 test_kits_path = tmp_prefix / 'kitops_test_isos'
 test_kits_base = 'mock-kit-base-0.1-0.noarch.iso'
 test_kits_fc6i386_1 = 'mock-FC-6-i386-disc1.iso'
@@ -43,15 +44,18 @@ def setUp():
     global temp_mount
     global tmp_prefix
 
+    print tmp_prefix
+    print type(tmp_prefix)
+
     if not tmp_prefix.exists():
-        tmp_prefix.mkdirs()
+        tmp_prefix.makedirs()
 
     temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
 
 def tearDown():
-    global temp_mount
+    global tmp_prefix
 
-    temp_mount.rmtree()
+    tmp_prefix.rmtree()
 
 class TestKitOps:
     def setUp(self):
@@ -59,6 +63,12 @@ class TestKitOps:
 
         self.temp_mount = temp_mount
         self.koinst = KitOps()
+
+    def tearDown(self):
+        global temp_mount
+
+        if self.temp_mount.ismount():
+            unmountKit(self.temp_mount)
 
     def testSetPrefix(self):
         some_prefix = '/some/prefix'
@@ -184,7 +194,50 @@ class TestKitOps:
                 'Mount point %s is not a directory' % koinst_mountpoint
         assert koinst_mountpoint_ismount, \
                 'Mount point %s is not a mount point' % koinst_mountpoint
-        
+
+    def test_unmount_only_if_we_mounted(self):
+        assertRoot()
+
+        needKit(test_kits_base)
+
+        self.koinst.kitmedia = test_kits_path / test_kits_base
+
+        self.koinst.mountMedia(self.koinst.kitmedia, True)
+        current_mountpoint = self.koinst.mountpoint
+
+        assert current_mountpoint is not None, 'Error mounting ISO'
+
+        assert current_mountpoint.isdir(), \
+            'Mount point %s is not a directory' % current_mountpoint
+        assert current_mountpoint.ismount(), \
+            'Mount point %s is not a mount point' % current_mountpoint
+
+        self.koinst.unmountMedia()
+
+        assert not current_mountpoint.exists(), \
+            'Mountpoint %s not removed' % current_mountpoint
+
+    def test_dont_unmount_if_already_mounted(self):
+        assertRoot()
+
+        needKit(test_kits_base)
+
+        mountKit(test_kits_path / test_kits_base, self.temp_mount)
+        self.koinst.kitmedia = self.temp_mount
+        self.koinst.medialoc = path(self.temp_mount)
+        self.koinst.mountpoint = path(self.temp_mount)
+
+        self.koinst.unmountMedia()
+
+        assert self.temp_mount.exists(), \
+            'Mount point %s removed' % self.temp_mount
+        assert self.temp_mount.isdir(), \
+            'Mount point %s not a directory' % self.temp_mount
+        assert self.temp_mount.ismount(), \
+            'Mount point %s not a mount point' % self.temp_mount
+
+        unmountKit(self.temp_mount)
+
 def needKit(kit):
     if not path(test_kits_path / kit).exists():
         downloadFiles(kit)

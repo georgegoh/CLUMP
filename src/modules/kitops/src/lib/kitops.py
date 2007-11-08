@@ -43,6 +43,7 @@ class KitOps:
         self.kitmedia = ''
         self.dlkitiso = None
         self.mountpoint = None
+        self.i_mounted = False
         self.medialoc = None
         self.__db = kw.get('db', None)
 
@@ -391,13 +392,14 @@ class KitOps:
             raise CannotMountKitMediaError, ''.join(errors)
 
         self.mountpoint = tmpmntdir
+        self.i_mounted = True
 
     def unmountMedia(self):
         """
         self.mountpoint is unmounted, removed and set to None.
         """
 
-        if self.mountpoint and self.mountpoint.ismount():
+        if self.i_mounted and self.mountpoint and self.mountpoint.ismount():
             #umountP = subprocess.Popen('umount -l %s' %
             umountP = subprocess.Popen('umount %s' % self.mountpoint,
                                        shell=True, stdout=subprocess.PIPE,
