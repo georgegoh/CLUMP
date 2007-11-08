@@ -320,6 +320,43 @@ if getArch() == 'x86':
     mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.i386.rpm'
 if getArch() == 'x86_64':
     mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.x86_64.rpm'
+    
+# package linpack-mvapich1-gnu
+# this uses an existing binary rpm
+linpackmvapich1Pkg = RPMPackage()
+linpackmvapich1Pkg.name = 'linpack-mvapich1-gnu'
+linpackmvapich1Pkg.version = '1.0a'
+linpackmvapich1Pkg.release = '1'
+
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    linpackmvapich1Pkg.filename = 'linpack-mvapich1-gnu-1.0a-1.i386.rpm'
+if getArch() == 'x86_64':
+    linpackmvapich1Pkg.filename = 'linpack-mvapich1-gnu-1.0a-1.x86_64.rpm'
+    
+# package blacs-mvapich1-gnu
+blacsmvapich1gnupkg = RPMPackage()
+blacsmvapich1gnupkg.name = 'blacs-mvapich1-gnu'
+blacsmvapich1gnupkg.version = '20000224'
+blacsmvapich1gnupkg.release = '1'
+if getArch() == 'x86':
+    blacsmvapich1gnupkg.filename = 'blacs-mvapich1-gnu-20000224-1.i386.rpm'
+if getArch() == 'x86_64':
+    blacsmvapich1gnupkg.filename = 'blacs-mvapich1-gnu-20000224-1.x86_64.rpm'
+
+# package scalapack-mvapich1
+# this uses an existing binary rpm
+# untuned and generic
+scalapackmvapich1pkg = RPMPackage()
+scalapackmvapich1pkg.name = 'scalapack-mvapich1-gnu'
+scalapackmvapich1pkg.version = '1.8.0'
+scalapackmvapich1pkg.release = '1'
+# each arch uses a different binary rpm
+if getArch() == 'x86':
+    scalapackmvapich1pkg.filename = 'scalapack-mvapich1-gnu-1.8.0-1.i386.rpm'
+if getArch() == 'x86_64':
+    scalapackmvapich1pkg.filename = 'scalapack-mvapich1-gnu-1.8.0-1.x86_64.rpm'
+
 
 #define the MVAPICH1 component
 mvapich1Comp = DefaultComponent()
@@ -327,6 +364,9 @@ mvapich1Comp.name = 'MVAPICH1-libraries'
 mvapich1Comp.description = 'This component contains a collection of MVAPICH1 libraries.'
 mvapich1Comp.addDep(mvapich1gnupkg)
 mvapich1Comp.addDep(modulesmvapich1gnupkg)
+mvapich1Comp.addDep(linpackmvapich1Pkg)
+mvapich1Comp.addDep(blacsmvapich1gnupkg)
+mvapich1Comp.addDep(scalapackmvapich1pkg)
 
 # package mvapich2-gnu
 mvapich2gnupkg = RPMPackage()
