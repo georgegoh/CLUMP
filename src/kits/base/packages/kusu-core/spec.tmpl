@@ -52,10 +52,19 @@ if [ -f %{_approot}/bin/kusuenv.sh ]; then
     ln -sf %{_approot}/bin/kusuenv.sh /etc/profile.d/kusuenv.sh
 fi
 
+if [ -f %{_approot}/etc/kusu-release ]; then
+    ln -sf %{_approot}/etc/kusu-release /etc/kusu-release
+fi
+
+
 
 %preun
 if [ -f /etc/profile.d/kusuenv.sh ]; then
     rm -f /etc/profile.d/kusuenv.sh
+fi
+
+if [ -f /etc/kusu-release ]; then
+    rm -f /etc/kusu-release
 fi
 
 %postun
