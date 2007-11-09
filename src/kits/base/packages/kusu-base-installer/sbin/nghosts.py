@@ -98,7 +98,7 @@ class NodeMemberApp(object, KusuApp):
 
         # Check if nghosts is in use, if so abort running addhost.
         if os.path.isfile("/var/lock/subsys/addhost"):
-           self "nghosts: Error: Cannot run nghosts because addhost is running. Please exit addhost first\n"
+           print "nghosts: Error: Cannot run nghosts because addhost is running. Please exit addhost first\n"
            sys.exit(-1)
 
         if os.geteuid() != 0:
