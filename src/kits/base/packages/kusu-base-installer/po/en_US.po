@@ -659,7 +659,7 @@ msgstr "Instructions: Press F5 to go back, F8 to goto next screen, F12 to quit"
 # nghosts
 
 msgid "nghosts_Help"
-msgstr "nghosts [-hvlg]\n\t       [-c {hosts} -t {node group} [-f {node group}] [-a rack#] [-r]]\n\t       [-f {node group} -t {node group} [-a rack#] [-r]]"
+msgstr "nghosts [-hvlg]\n\t       [-m {hosts} -t {node group} [-f {node group}] [-a rack#] [-r]]\n\t       [-f {node group} -t {node group} [-a rack#] [-r]]"
 
 msgid "nghosts_version_usage"
 msgstr "Display version of tool"
