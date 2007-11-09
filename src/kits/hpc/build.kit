@@ -385,12 +385,18 @@ mvapich2Comp.description = 'This component contains a collection of MVAPICH2 lib
 mvapich2Comp.addDep(mvapich2gnupkg)
 mvapich2Comp.addDep(modulesmvapich2gnupkg)
 
-#define the source component
-#sourceComp = DefaultComponent()
-#sourceComp.name = 'Source packages'
-#sourceComp.description = 'This component contains a collection of hpc source packages.'
-#sourceComp.addDep()
+# package hpc source
+sourcePkg = RPMPackage()
+sourcePkg.name = 'hpc-source'
+sourcePkg.version = '1.0'
+sourcePkg.release = '1'
+sourcePkg.filename = 'hpc-source-1.0-1.noarch.rpm'
 
+#define the source component
+sourceComp = DefaultComponent()
+sourceComp.name = 'HPC-source-code'
+sourceComp.description = 'This component contains a collection of hpc source packages.'
+sourceComp.addDep(sourcePkg)
 # define HPC kit
 k = DefaultKit()
 k.name = 'hpc'
@@ -404,7 +410,8 @@ k.addComponent(openmpiComp)
 k.addComponent(mpich2Comp)
 k.addComponent(mvapich1Comp)
 k.addComponent(mvapich2Comp)
-#k.addComponent(sourceComp)
+k.addComponent(sourceComp)
+
 # Add post install script. You can modify this shell script or add new ones in the
 # sources directory
 k.addScript('00-post-script.sh',mode='post')
