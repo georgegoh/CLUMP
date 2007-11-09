@@ -96,6 +96,11 @@ class NodeMemberApp(object, KusuApp):
        
         global database
 
+        # Check if nghosts is in use, if so abort running addhost.
+        if os.path.isfile("/var/lock/subsys/addhost"):
+           self "nghosts: Error: Cannot run nghosts because addhost is running. Please exit addhost first\n"
+           sys.exit(-1)
+
         if os.geteuid() != 0:
             print "nghosts: Only root can run this tool"
             sys.exit(-1)

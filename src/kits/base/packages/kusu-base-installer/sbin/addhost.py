@@ -186,6 +186,11 @@ class AddHostApp(KusuApp):
         haveNodegroup = False
         replaceMode = False
 
+        # Check if nghosts is in use, if so abort running addhost.
+        if os.path.isfile("/var/lock/subsys/nghosts"):
+           self "addhost: Error: Cannot run addhost because nghosts is running. Please exit nghosts first\n"
+           sys.exit(-1)
+
         if self.islock():
            print "Addhost already in use!"
            sys.exit(-1)
