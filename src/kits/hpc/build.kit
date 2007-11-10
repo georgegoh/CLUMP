@@ -397,6 +397,8 @@ sourceComp = DefaultComponent()
 sourceComp.name = 'HPC-source-code'
 sourceComp.description = 'This component contains a collection of hpc source packages.'
 sourceComp.addDep(sourcePkg)
+sourceComp.ngtypes = ['installer']
+
 # define HPC kit
 k = DefaultKit()
 k.name = 'hpc'
