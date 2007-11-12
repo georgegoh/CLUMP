@@ -141,14 +141,24 @@ def getSCSI(type):
                        and (dev / 'device').realpath().find('usb') == -1: continue
 
                 dev = dev.basename()
-                # Handle cciss!c0d0 in /sys/block
-                if dev.find('cciss!') != -1:
-                    dev = dev.replace('!', os.sep)
-
                 d[dev] = {}
                 d[dev]['vendor'] = readFile(s / 'vendor')
                 d[dev]['model'] = readFile(s / 'model')
-        
+                    
+    sys_block = path('/sys/block')
+    if sys_block.exists():
+        # treating cciss as non-removable and type
+        for s in sys_block.listdir('cciss!*'): 
+            # Handle cciss!c0d0 in /sys/block
+            dev = s.basename()
+            if dev.find('cciss!') != -1:
+                dev = dev.replace('!', os.sep)
+
+            s = s / 'device'
+            d[dev] = {}
+            d[dev]['vendor'] = readFile(s / 'vendor')
+            d[dev]['model'] = readFile(s / 'model')
+    
 
     return d 
 
