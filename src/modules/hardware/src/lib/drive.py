@@ -160,24 +160,31 @@ def getSCSI(type):
             cciss_dev[dev] = {}
             cciss_dev[dev]['vendor'] = readFile(s / 'vendor')
 
-            if (s / 'model').exists():
-                cciss_dev[dev]['model'] = readFile(s / 'model')
-            elif (s / 'device').exists():
-                cciss_dev[dev]['model'] = readFile(s / 'device')
-            else:
+            if not cciss_dev[dev]['vendor']: 
                 cciss_dev[dev]['model'] = None
+            else:
+                if (s / 'model').exists():
+                    cciss_dev[dev]['model'] = readFile(s / 'model')
+                elif (s / 'device').exists():
+                    cciss_dev[dev]['model'] = readFile(s / 'device')
+                else:
+                    cciss_dev[dev]['model'] = None
 
-            if cciss_dev[dev]['vendor'] and cciss_dev[dev]['vendor'].startswith('0x'):
-                vendor = cciss_dev[dev]['vendor'][2:].strip()
-                pci = PCI([vendor])
-                if pci.ids.has_key(vendor):
-                    cciss_dev[dev]['vendor'] = pci.ids[vendor]['NAME']   
+                if cciss_dev[dev]['vendor'].startswith('0x'):
+                    vendor = cciss_dev[dev]['vendor'][2:].strip()
+                    pci = PCI([vendor])
+                    if pci.ids.has_key(vendor):
+                        cciss_dev[dev]['vendor'] = pci.ids[vendor]['NAME']   
 
-                    if cciss_dev[dev]['model'] and cciss_dev[dev]['model'].startswith('0x'):
-                        device = cciss_dev[dev]['model'][2:].strip()
-                        if pci.ids[vendor]['DEVICE'].has_key(device):
-                            cciss_dev[dev]['model'] = pci.ids[vendor]['DEVICE'][device]['NAME']
-   
+                        if cciss_dev[dev]['model'] and cciss_dev[dev]['model'].startswith('0x'):
+                            device = cciss_dev[dev]['model'][2:].strip()
+                            if pci.ids[vendor]['DEVICE'].has_key(device):
+                                cciss_dev[dev]['model'] = pci.ids[vendor]['DEVICE'][device]['NAME']
+                            else:
+                                cciss_dev[dev]['model'] = None
+                    else:
+                        cciss_dev[dev]['vendor'] = None
+                        cciss_dev[dev]['model'] = None
 
 
     d.update(cciss_dev)
