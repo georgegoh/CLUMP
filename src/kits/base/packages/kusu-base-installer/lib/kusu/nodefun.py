@@ -570,9 +570,9 @@ class NodeFun(object, KusuApp):
                    self.addUsedMAC(macaddr)
                    self._createNICBootEntry(nodeID, networkID, newIP, 1, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
-                #else:
-                #   # Not a boot interface, just write out other info. 
-                #   self._createNICBootEntry(nodeID, networkID, newIP, 0)
+                else:
+                   # Not a boot interface, just write out other info. 
+                   self._createNICBootEntry(nodeID, networkID, newIP, 0)
              else:
                 self._createNICBootEntry(nodeID, networkID, newIP, 0)
         #t2=time.time()
