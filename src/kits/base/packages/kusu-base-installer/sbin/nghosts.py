@@ -284,7 +284,8 @@ class NodeMemberApp(object, KusuApp):
                     tmpname.close()
 
                     print self._("nghosts_moving_nodes_progress")
- 
+
+                    self.unlock() 
                     os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(Set(nodesList), ' '))
                
                     # Add these back using mac file
@@ -293,6 +294,7 @@ class NodeMemberApp(object, KusuApp):
                     else:
                         os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' >&2 /dev/null >& /dev/null" % (tmpfile, myinterface, self._options.togroup))
 
+                    self.lock()
                     # If the user wants to reinstall the nodes check if the option is selected or not.
                     if bool(self._options.reinstall):
                         print self._("nghosts_reinstall_nodes_progress")
@@ -424,6 +426,7 @@ class SelectNodesWindow(USXBaseScreen):
                # Call addhosts to delete these nodes
                progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
 
+               self.unlock()
                os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
                # Add these back using mac file
@@ -434,6 +437,7 @@ class SelectNodesWindow(USXBaseScreen):
 
                # Remove temp file
                os.remove(tmpfile)
+               self.lock()
                progDialog.close()
 
                # If the user wants to reinstall the nodes check if the option is selected or not.
