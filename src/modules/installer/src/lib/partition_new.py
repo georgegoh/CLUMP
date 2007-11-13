@@ -352,7 +352,7 @@ class NewVolumeGroup:
         """Process the fields."""
         verified, msg = self.vg_name.verify()
         if not verified:
-            raise partitiontool.KusuError, msg
+            raise KusuError, msg
         vol_grp_name = self.vg_name.value() 
         phys_extent = self.phys_extent.value() + 'M' 
         phys_vols = self.phys_to_use.getSelection()

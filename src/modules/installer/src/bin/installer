@@ -59,20 +59,10 @@ if __name__ == '__main__':
     if os.access("/dev/tty3", os.W_OK):
         kl.addFileHandler('/dev/tty3')
 
-    # get the map of the available partitions
-    devmap = getPartitionMap()
-    devices = devmap.keys()
-
-    # set up a pattern of the devices we are interested in
-    pat = re.compile('[hs]d\d*')
-    for dev in devices:
-        m = pat.match(dev)
-        if m:
-            makeDev('b', devmap[dev]['major'], devmap[dev]['minor'], dev)
-
-    # setup CDROMs.
+    # setup disks.
     import kusu.hardware.probe
-    disks_str = kusu.hardware.probe.getCDROM().keys()
+    disks_str = kusu.hardware.probe.getDisks().keys()
+    disks_str += kusu.hardware.probe.getCDROM().keys()
     
     for dev in disks_str:
        checkAndMakeNode('/dev/' + dev)

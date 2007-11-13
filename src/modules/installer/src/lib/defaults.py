@@ -100,59 +100,6 @@ class PartitionSchema(Struct):
         return not self.__eq__(other)
 
 
-def percentSchema():
-    d1 = Disk()
-
-    d1p1 = Partition()
-    d1p1.size_MB = 2000
-    d1p1.fs = 'ext3'
-    d1p1.mountpoint = '/'
-    d1p1.fill = False
-    d1.addPartition(d1p1)
-
-#    d1p2 = Partition()
-#    d1p2.size_MB = 100
-#    d1p2.fs = 'ext3'
-#    d1p2.mountpoint = '/var'
-#    d1p2.fill = False
-#    d1.addPartition(d1p2)
-
-    d1p3 = Partition()
-    d1p3.size_MB = 2000
-#
-    d1p3.percent = 50
-#
-    d1p3.fs = 'ext3'
-    d1p3.mountpoint = '/depot'
-    d1p3.fill = False
-    d1.addPartition(d1p3)
-
-    d1p4 = Partition()
-    d1p4.size_MB = 100
-    d1p4.fs = 'ext3'
-    d1p4.mountpoint = '/boot'
-    d1p4.fill = False
-    d1.addPartition(d1p4)
-
-    d1p5 = Partition()
-    d1p5.size_MB = 1000
-    d1p5.fs = 'linux-swap'
-    d1p5.mountpoint = None
-    d1p5.fill = False
-    d1.addPartition(d1p5)
-
-    d1p6 = Partition()
-    d1p6.size_MB = 100
-    d1p6.fs = 'ext3'
-    d1p6.mountpoint = '/home'
-    d1p6.fill = True
-    d1.addPartition(d1p6)
-
-    disks = DiskCollection()
-    disks.addDisk(d1)
-    return PartitionSchema(disks=disks, preserve_types=['Dell Utility'])
-
-
 def vanillaSchema():
     """This is a plain vanilla schema that contains 4 physical partitions:
           a. /boot - ext3, 100:
@@ -237,9 +184,15 @@ def vanillaSchemaLVM():
     d1p3.fill = True
     d1.addPartition(d1p3)
 
+#    dn = Disk()
+#    dnpn = Partition()
+#    dnpn.fill = 'N'
+#    dn.addPartition(dnpn)
+
     # Create disk collection and add disk 1 to it.
     disks = DiskCollection()
     disks.addDisk(d1)
+#    disks.addDisk(dn)
 
     # LVM disks.
     volgroup00 = LVMGroup()
@@ -247,6 +200,7 @@ def vanillaSchemaLVM():
     volgroup00.extent_size = '32M'
     volgroup00.pv_span = True
     volgroup00.addPV(disk=1, partition=3)
+#    volgroup00.addPV(disk='N', partition='N')
 
     # Root Logical Volume.
     root = LVMLogicalVolume()
