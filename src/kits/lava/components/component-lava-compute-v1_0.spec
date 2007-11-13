@@ -37,6 +37,10 @@ This package is a meta package for Lava
 
 %post
 
+if [ ! -d /opt/kusu/lib/plugins/cfmclient ]; then
+   mkdir -p /opt/kusu/lib/plugins/cfmclient
+fi
+
 # Place any component post install code here
 /bin/cat << 'EOF' > /opt/kusu/lib/plugins/cfmclient/lava-restart
 #!/bin/sh
