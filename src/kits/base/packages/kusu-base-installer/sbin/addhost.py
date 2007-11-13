@@ -743,6 +743,7 @@ class WindowSelectNode(NodeGroupWindow):
          
            if not networkList:
               self.selector.popupMsg (self.kusuApp._("Error"), "No network interfaces were associated to the selected node group. Unable to add nodes.")
+              os.unlink("/var/lock/subsys/addhost")
               self.screen.finish()
               raise UserExitError
 
