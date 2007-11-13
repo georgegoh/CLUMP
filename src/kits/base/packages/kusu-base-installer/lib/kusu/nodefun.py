@@ -28,6 +28,7 @@ import sys
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import kusu.ipfun
+from kusu.util.errors import UserExitError
 
 """ class NodeFun
     This class handles adding, deleting, updating, replacing nodes, it also provides functionality to generate a node name. """
@@ -324,7 +325,7 @@ class NodeFun(object, KusuApp):
         #print "Time Spent: getNodeInformation(): %f" % (t2-t1)
         return info
         
-    def addNode (self, macaddr, selectedinterface, installer=True):
+    def addNode (self, macaddr, selectedinterface, installer=True, snackInstance=None):
         """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
        
@@ -396,14 +397,14 @@ class NodeFun(object, KusuApp):
                  if self._nodeList.has_key(self._nodeName):
                      self._rankCount += 1
                  else:
-                     self._createNodeEntry(macaddr, selectedinterface, installer)
+                     self._createNodeEntry(macaddr, selectedinterface, installer, snackinstance=snackInstance)
                      #t2=time.time()
                      #print "Time Spent: addNode(): %f" % (t2-t1)
                      return self._nodeName
 
         # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
         self._hostNameParse()
-        self._createNodeEntry(macaddr, selectedinterface, installer)
+        self._createNodeEntry(macaddr, selectedinterface, installer, snackinstance=snackInstance)
         #t2=time.time()
         #print "Time Spent: addNode(): %f" % (t2-t1)
         return self._nodeName
@@ -448,7 +449,7 @@ class NodeFun(object, KusuApp):
         #print "Time Spent: isUPUsed(): %f" % (t2-t1)
         return False
         
-    def _createNodeEntry(self, macaddr, selectedinterface, installer=True, static=False):
+    def _createNodeEntry(self, macaddr, selectedinterface, installer=True, static=False, snackinstance=None):
         """createNodeEntry()
         Create a node in the database. """
         #t1=time.time()
@@ -521,7 +522,11 @@ class NodeFun(object, KusuApp):
                          try:
 		              startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
                          except:
+                              # Delete the bogus entry created
                               print "ERROR:  Too many hosts specified for network. Choose a bigger network."
+                              self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
+                              if os.path.isfile("/var/lock/subsys/addhost"):
+                                 os.unlink("/var/lock/subsys/addhost")
                               sys.exit(-1)
                       else:
                          # We're a DHCP/boot interface
@@ -560,7 +565,17 @@ class NodeFun(object, KusuApp):
              
              while True:
                  if self.isIPUsed(newIP):
-                    newIP = kusu.ipfun.incrementIP(newIP, IPincrement, subnetNetwork)
+                    try: 
+                        newIP = kusu.ipfun.incrementIP(newIP, IPincrement, subnetNetwork)
+                    except:  
+                        if os.path.isfile("/var/lock/subsys/addhost"):
+                           os.unlink("/var/lock/subsys/addhost")
+                        if snackinstance:
+                           snackinstance.finish()
+                           print "ERROR:  IP Address overflow, please use a different subnetwork"
+                           raise UserExitError
+                        else:
+                           sys.exit(-1)
                  else:
                     # Add the used IP to cache list
                     self._addUsedIP(newIP)
