@@ -385,6 +385,12 @@ class NodeBootApp(KusuApp):
                 else:
                     bootfrom = 0
 
+            # Uncomment this for doing scalibility testing
+            # Exercise with:  wget 'http://HOSTNAME/repos/nodeboot.cgi?dump=1&ip=IP_ADDR&boot='
+            #if self.cgi.has_key('ip'):
+            #    if self.cgi['ip'].value:
+            #        ip = self.cgi['ip'].value[:]
+
         else:
             # Not running as a CGI
             if self.options.getversion:
