@@ -38,7 +38,7 @@ information container for the database.
 %define _name platform_ofed
 
 %install
-docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
+docdir=$RPM_BUILD_ROOT/depot/www/kits/%{_name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
 rm -rf $RPM_BUILD_ROOT
@@ -70,7 +70,7 @@ rm -rf $RPM_BUILD_ROOT
 # plugins
 /opt/kusu/lib/plugins/ngedit/*.py
 
-%exclude /opt/kusu/lib/plugins/ngedit/*.py?
+# %exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %post
 # include Node group creation and component association
