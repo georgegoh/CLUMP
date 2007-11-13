@@ -950,8 +950,10 @@ class WindowNodeStatus(NodeGroupWindow):
                     if discoveryCheck == False and (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface) \
                         and not myNodeInfo.optionReplaceMode and not myNodeInfo.optionStaticHostMode:
                         self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.nodeGroupSelected)
-                        nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True)
+                        nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=self.screen)
                         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
+                        self.listbox.setCurrent(nodeName)
+
                         if pluginActions:
                            pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodeList.append(nodeName)
