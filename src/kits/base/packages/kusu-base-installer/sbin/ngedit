@@ -51,6 +51,7 @@ RIGHT=kusuwidgets.RIGHT
 CustomScriptDir = "/depot/repos/custom_scripts/"
 BootDir = "/tftpboot/kusu/"
 CFMBaseDir = "/etc/cfm"
+ImageDir = "/depot/images"
 
 class scrNGEMain(USXBaseScreen):
     name= 'Node Group Editor'
@@ -73,6 +74,53 @@ class scrNGEMain(USXBaseScreen):
 
     def F12Action(self):
         return NAV_IGNORE
+
+    def runTool(self, tool, argstr):
+        
+        kl.info("Final Actions: Running %s:" %tool)
+        cmd = "%s %s" %(tool,argstr)
+        p = subprocess.Popen(   cmd, shell=True,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.STDOUT
+                            )
+
+        prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
+            '%s progress' %tool, msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
+        output = ''
+
+        t1 = time.time()
+        line = p.stdout.readline()
+        while line:
+            output += line
+            prog_out.setText(output)
+            prog_out.draw()
+            prog_out.refresh()
+            line = p.stdout.readline()
+        time.sleep(2)
+        prog_out.close()
+
+        prog_simple = self.selector.popupProgress("%s" %tool, \
+            "waiting for %s to terminate" %tool)
+        sts = os.waitpid(p.pid,0)
+        prog_simple.close()
+        t2 = time.time()
+
+        retcode = p.returncode
+
+        if not retcode:
+            _title = "%s - success" %tool
+            _msg = "%s reported successful return. Please inspect its output:\n" %tool
+        else:
+            _title = "%s - error" %tool
+            _msg = tool + " returned an error, so its operation may be incomplete."  +\
+                   " Please refer to ngedit log file"+\
+                   " for more detail. You can rerun the command manually as follows:\n"+\
+                   cmd + "\nPlease inspect the output below:\n"
+        _msg += output
+
+        self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
+        kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
+
 
     def doCopyAction(self):
 
@@ -112,6 +160,16 @@ class scrNGEMain(USXBaseScreen):
         else:
             kl.info("WARNING: initrd '%s' does not exist for nodegroup '%s'" %(imagename,newNG['ngname']))
 
+        # Copy the original image to the new image (Faster than rebuilding)
+        oldImage = '%s.img.tar.bz2' % ngid
+        newImage = '%s.img.tar.bz2' % newNG.PKval
+        if os.path.isfile(os.path.join(ImageDir, oldImage)):
+            shutil.copyfile(os.path.join(ImageDir, oldImage), os.path.join(ImageDir, newImage))
+            # Apache must own it
+            os.system('chown apache:apache \"%s\"' % os.path.join(ImageDir, newImage))
+        else:
+            kl.info("WARNING: Image for '%s' does not exist!" %(newNG['ngname']))
+            
         #copy CFM directory
         srcNGcfmdir = os.path.join(CFMBaseDir,old_ngname)
         dstNGcfmdir = os.path.join(CFMBaseDir,newNG['ngname'])
@@ -122,7 +180,10 @@ class scrNGEMain(USXBaseScreen):
             else:
                 self.selector.popupMsg('CFM Directory Copy', "CFM Directory for nodegroup "+\
                     "'%s' already exists. It was left intact." %newNG['ngname'])
-            
+            # Run the cfmsync so nodes will install properly
+            self.runTool('cfmsync', "-n '%s' -f" %newNG['ngname'])
+            # self.selector.popupMsg('CFM Update', "Preparing CFM for node installation" )
+
         return NAV_NOTHING
 
     def doDeleteAction(self):
@@ -149,6 +210,20 @@ class scrNGEMain(USXBaseScreen):
             delNGcfmdir = os.path.join(CFMBaseDir, tmpNG['ngname'])
             if os.path.isdir(delNGcfmdir):
                 shutil.rmtree(delNGcfmdir)
+
+            # Remove Images
+            oldImage = '%s.img.tar.bz2' % ngid
+            if os.path.isfile(os.path.join(ImageDir, oldImage)):
+                os.unlink(os.path.join(ImageDir, oldImage))
+
+            # Remove Initrd's
+            oldInitrd = 'initrd.diskless.%s.img' % ngid
+            if os.path.isfile(os.path.join(BootDir, oldInitrd)):
+                os.unlink(os.path.join(BootDir, oldInitrd))
+            oldInitrd = 'initrd.disked.%s.img' % ngid
+            if os.path.isfile(os.path.join(BootDir, oldInitrd)):
+                os.unlink(os.path.join(BootDir, oldInitrd))
+                
 
         return NAV_NOTHING
 
