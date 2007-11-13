@@ -115,8 +115,9 @@ install::
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
 	install -m644 etc/index.tmpl $(ROOT)/var/www/html
 	install -m755 sbin/index.py $(ROOT)/var/www/html
-	cd man ;for i in `ls *.8.gz`; do \
-		cp $$i $(ROOT)/opt/kusu/man/man8/ ; \
+	cd man ;for i in `ls *.8`; do \
+		gzip $$i ; \
+		cp $$i.gz $(ROOT)/opt/kusu/man/man8/ ; \
 	done
 	echo "# CFM changed file list.  Generated automatically" > $(ROOT)/opt/kusu/cfm/changedfiles.lst
 	#chown -R apache $(ROOT)/opt/kusu/cfm

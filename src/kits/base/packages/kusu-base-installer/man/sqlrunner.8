@@ -1,0 +1,38 @@
+.\" Copyright (c) 2007 Platform Computing Inc
+.TH "sqlrunner" "8" "5.0.0" "Mark Black" "Kusu Base"
+.SH "NAME"
+.LP 
+sqlrunner \- Kusu/OCS database SQL script runner.
+.SH "SYNTAX"
+.LP 
+\fBsqlrunner\fR [\-h|\-v|\-q <\fISQL Query\fR>] 
+
+.SH "DESCRIPTION"
+.LP 
+The sqlrunner command is a scriptable tool for querying the Kusu/OCS database.  The command can only be run by root, or the Apache web server user (apache).  
+.LP 
+The \fISQL Query\fR is a SQL string to run against the database.
+.LP 
+If the database password for the \fBapache\fR user is changed, then password file \fI/opt/kusu/etc/db.passwd\fR must be updated.  The file contains the unencrypted password.  The permissions of the file MUST only allow apache and root to read it. 
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-h, \-\-help\fR
+Print the help information and exit.
+.TP 
+\fB\-v, \-\-version\fR
+Print the version information and exit.
+.TP 
+\fB\-q <\fISQL Query\fR>, \-\-query=<\fISQL Query\fR>\fR
+Run the \fISQL Query\fR provided.
+
+.SH "FILES"
+.LP 
+.TP 
+/opt/kusu/etc/db.passwd
+.SH "AUTHORS"
+.LP 
+Shawn Starr <sstarr_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP 
+mysqladmin(1)  

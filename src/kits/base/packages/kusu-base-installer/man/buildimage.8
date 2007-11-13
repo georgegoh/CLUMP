@@ -1,0 +1,58 @@
+.\" Copyright (c) 2007 Platform Computing Inc
+.TH "buildimage" "8" "5.0.0" "Mark Black" "Kusu Base"
+.SH "NAME"
+.LP 
+buildimage \- Builds the root filesystem for diskless and imaged nodes.
+.SH "SYNTAX"
+.LP 
+buildimage [\fIOPTIONS\fP] \fI\-n\fP <\fInodegroup name\fP>
+.SH "DESCRIPTION"
+.LP 
+The buildimage tool creates the root ("/") filesystem for the Diskless and Imaged nodes to download and use.  The tool is typically called automatically by the Nodegroup Editor (ngedit), but can safely be manually run as well.  The tool will install all of packages and components associated with the requested nodegroup into the root filesystem used by the nodes.  The tool will build the image and place it in /depot/images.
+.LP 
+The tool should be called when the list of packages, or the list of components to install on a node change.  It may be run when other nodegroup properties change.
+.LP 
+Caution should be taken to ensure there is enough disk space when building images.  It will require almost twice the uncompressed image size while the image is being generated.
+
+
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-h, \-\-help\fR
+Output help information and exit.
+.TP 
+\fB\-i <\fIIMAGE\fR>, \-\-image=<\fIIMAGE\fR>\fR
+Do not use the default image name from the database.  Override it with IMAGE.  Note the nodes will not use this image without first replacing the existing image file in /depot/images.
+.TP 
+\fB\-n\fR <\fINodegroup Name\fP>, \-\-nodegroup=<\fINodegroup Name\fP>
+The name of the nodegroup to build the image for.  
+.TP 
+\fB\-v, \-\-version\fR
+Output version information and exit.
+.TP 
+\fB\-d, <\fIDATABASE\fR>, \-\-database=<\fIDATABASE\fR>\fR
+Connect to an alternate database to read the nodegroup information from.  This option is not needed for normal use.
+.TP 
+\fB\-u, <\fIUSER\fR>, \-\-database=<\fIUSER\fR>\fR
+Connect to an alternate database as user <\fIUSER\fR> to read the nodegroup information from.  This option is not needed for normal use.
+.TP 
+\fB\-p, <\fIPASSWORD\fR>, \-\-password=<\fIPASSWORD\fR>\fR
+Connect to an alternate database using the password provided to read the nodegroup information from.  This option is not needed for normal use.
+.SH "FILES"
+.LP 
+\fI/depot/images/*\fP
+\fI/opt/kusu/initrds/*\fP
+
+
+.SH "EXAMPLES"
+.LP 
+To generate a new root filesystem for the default diskess nodegroup using Redhat 5 run:
+.LP 
+buildimage \-n compute\-diskless\-rhel\-5\-x86_64
+
+.SH "AUTHORS"
+.LP 
+Mark Black <mblack_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP 
+buildinitrd(8) boothost(8) ngedit(8) 
