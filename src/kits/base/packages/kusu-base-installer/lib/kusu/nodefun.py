@@ -489,6 +489,8 @@ class NodeFun(object, KusuApp):
         if static == False:
            if self._nodegroupInterfaces == {}:
               print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
+              if os.path.isfile("/var/lock/subsys/addhost"):
+                 os.unlink("/var/lock/subsys/addhost")
               sys.exit(-1)
  
         #if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
@@ -537,6 +539,8 @@ class NodeFun(object, KusuApp):
            if not flag:
               self._dbRWrite.execute("DELETE FROM nodes where nodes.ngid=%s AND nodes.name='%s'" % (self._nodeGroupType, self._nodeName))
               print "ERROR:  Could not create nodes on interface '%s'. Please try a different interface\n" % selectedinterface
+              if os.path.isfile("/var/lock/subsys/addhost"):
+                 os.unlink("/var/lock/subsys/addhost")
               sys.exit(-1)
 
         # Iterate though list interface devices that are not from the installer nodegroup.
