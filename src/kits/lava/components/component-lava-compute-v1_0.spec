@@ -24,7 +24,7 @@ License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
-Requires: lava = 1.0
+Requires: lava = 1.0, coreutils
 
 %description
 This package is a meta package for Lava
@@ -38,7 +38,7 @@ This package is a meta package for Lava
 %post
 
 if [ ! -d /opt/kusu/lib/plugins/cfmclient ]; then
-   mkdir -p /opt/kusu/lib/plugins/cfmclient
+   /bin/mkdir -p /opt/kusu/lib/plugins/cfmclient
 fi
 
 # Place any component post install code here
