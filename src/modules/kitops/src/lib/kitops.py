@@ -576,15 +576,18 @@ class KitOps:
             del_path = self.kits_dir / del_name / del_version / del_arch
             del_version = '-' + del_version
             del_arch = '-' + del_arch
+            del_depth = 2
         elif del_version:
             kl.info("Removing kit '%s', version %s, all architectures" %
                     (del_name, del_version))
             del_path = self.kits_dir / del_name / del_version
             del_version = '-' + del_version
+            del_depth = 1
         else:
             kl.info("Removing kit '%s', all versions and architectures" %
                     del_name)
             del_path = self.kits_dir / del_name
+            del_depth = 0
 
         error_kits = []
         for kit in kits:
@@ -642,6 +645,12 @@ class KitOps:
 
             # remove the RPMS kit contents
             if del_path.exists(): del_path.rmtree()
+
+            deeper_del_path = del_path
+            for dd in xrange(del_depth):
+                deeper_del_path = deeper_del_path.dirname()
+                if not deeper_del_path.listdir():
+                    deeper_del_path.rmdir()
 
         self.__db.flush()
 
