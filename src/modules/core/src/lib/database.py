@@ -696,9 +696,9 @@ class DB(object):
         installer.nodes.append(master_node)
 
         # creates the necessary modules for image and diskless nodes
-        diskless.modules.append(Modules(loadorder=1,module='uhci_hcd'))
-        diskless.modules.append(Modules(loadorder=2,module='ohci_hcd'))
-        diskless.modules.append(Modules(loadorder=3,module='ehci_hcd'))
+        diskless.modules.append(Modules(loadorder=1,module='uhci-hcd'))
+        diskless.modules.append(Modules(loadorder=2,module='ohci-hcd'))
+        diskless.modules.append(Modules(loadorder=3,module='ehci-hcd'))
         diskless.modules.append(Modules(loadorder=4,module='jbd'))
         diskless.modules.append(Modules(loadorder=5,module='nfs'))
         diskless.modules.append(Modules(loadorder=6,module='ext3'))
@@ -716,9 +716,9 @@ class DB(object):
         diskless.modules.append(Modules(loadorder=18,module='forcedeth'))
         diskless.modules.append(Modules(loadorder=19,module='autofs4'))
  
-        imaged.modules.append(Modules(loadorder=1,module='uhci_hcd'))
-        imaged.modules.append(Modules(loadorder=2,module='ohci_hcd'))
-        imaged.modules.append(Modules(loadorder=3,module='ehci_hcd'))
+        imaged.modules.append(Modules(loadorder=1,module='uhci-hcd'))
+        imaged.modules.append(Modules(loadorder=2,module='ohci-hcd'))
+        imaged.modules.append(Modules(loadorder=3,module='ehci-hcd'))
         imaged.modules.append(Modules(loadorder=4,module='jbd'))
         imaged.modules.append(Modules(loadorder=5,module='nfs'))
         imaged.modules.append(Modules(loadorder=6,module='ext3'))
