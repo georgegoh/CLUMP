@@ -11,4 +11,6 @@ EGO_CONFDIR="$LSF_TOPDIR/ego/kernel/conf"
 ln -sf $EGO_CONFDIR/ego.shared $LSF_CONFDIR/lsf.shared
 ln -sf $EGO_CONFDIR/ego.cluster.$CLUSTERNAME $LSF_CONFDIR/lsf.cluster.$CLUSTERNAME
 
+sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" $LSF_TOPDIR/7.0/lsf_quick_admin.html
+
 rm -f /etc/rc.kusu.d/S10lsf-preconf
