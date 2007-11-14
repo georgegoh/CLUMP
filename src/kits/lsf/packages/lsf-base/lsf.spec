@@ -20,7 +20,6 @@
 %define lsftopdir   /opt/lsf
 %define lsfconfdir  %{lsftopdir}/conf
 %define lsfversion  7.0
-%define lsfclustername XXX_clustername_XXX
 %define lsfadmin    lsfadmin
 
 %ifarch i386
@@ -94,13 +93,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/log
 %attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/work
 
-#all the EGO files will have to be added
-# %attr(755, %{lsfadmin}, root) %dir %{egoconfdir}
-
-# %attr(644, %{lsfadmin}, root) %config %{egoconfdir}/cshrc.ego
-# %attr(644, %{lsfadmin}, root) %config %{egoconfdir}/profile.ego
-# %attr(644, %{lsfadmin}, root) %config %{egoconfdir}/ego.conf
-
 %dir %{egotopdir}
 %dir %{egotopdir}/kernel
 %dir %{egoconfdir}
@@ -148,6 +140,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %config %{egoconfdir}/wsg.conf
 
+%post
+ln -s %{lsfconfdir}/profile.lsf /etc/profile.d/lsf.sh
+ln -s %{lsfconfdir}/cshrc.lsf /etc/profile.d/lsf.csh
+ln -s %{lsftopdir}/%{lsfversion}/%{lsfbintype}/etc/lsf_daemons /etc/init.d/lsf_daemons
+chkconfig --add lsf_daemons
+
 %preun
 # Setup LSF environment
 if [ -f %{lsfconfdir}/profile.lsf ]; then
@@ -188,10 +186,9 @@ fi
 
 
 %postun
-
-#Remove LSFHPC from the local machine
-if [ -f /etc/rc.d/init.d/lsf ]; then
-   echo "Removing init script for LSFHPC..."
-   /sbin/chkconfig --del lsf >& /dev/null
-   rm -f /etc/rc.d/init.d/lsf
+# Remove initscript
+if [ -f /etc/rc.d/init.d/lsf_daemons ]; then
+   echo "Removing LSF initscript..."
+   /sbin/chkconfig --del lsf_daemons >& /dev/null
+   rm -f /etc/rc.d/init.d/lsf_daemons
 fi
