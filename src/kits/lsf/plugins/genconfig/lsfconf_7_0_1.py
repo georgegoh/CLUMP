@@ -27,6 +27,9 @@ import string
 global APPKEY
 APPKEY   = "LSF7_0_1_ClusterName"
 
+class ClusterInfo:
+	pass
+
 class thisReport(Report):
 
     	def toolHelp(self):
@@ -35,7 +38,7 @@ class thisReport(Report):
 
 	def validateCluster(self,clustername):
 		global APPKEY
-		query = ('select agid from appglobals where kname="%s" '
+		query = ('select ngid from appglobals where kname="%s" '
 			 'and kvalue="%s"' % (APPKEY, clustername)) 
 		try:
 			self.db.execute(query)
@@ -45,14 +48,35 @@ class thisReport(Report):
 
 		row = self.db.fetchone()
 		if not row:
-			return False
+			return None
 		if row[0] != '':
-			return True
-		return False
+			ci = ClusterInfo()
+			ci.masterCandidateNGID = int(row[0])
+			return ci
+		return None
 
-	
-	def generateLsfConfig(self, mode):
-            installerName = self.db.getAppglobals('PrimaryInstaller')
+	def getMasterCandidateList(self, ci):
+		query = 'SELECT name FROM nodes, nodegroups WHERE nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % ( ci.masterCandidateNGID )
+
+		try:
+			self.db.execute(query)
+		except:
+			sys.stderr.write(self.gettext("DB_Query_Error\n"))
+			sys.exit(-1)
+
+		l = []
+		for row in self.db.fetchall():
+			l.append(row[0])
+
+		if not l:
+			print '# No master hosts defined for cluster'
+			sys.exit(-1)
+
+		return ' '.join(l)
+
+	def generateLsfConfig(self, ci, mode):
+	    mcList = self.getMasterCandidateList(ci)
+
             if mode == 'slave':
                print """\
 # Refer to the "Administration Platform LSF" before changing any parameters in
@@ -98,7 +122,7 @@ LSB_SUB_COMMANDNAME=Y
 LSF_MASTER_LIST="%s"
 LSF_EGO_DAEMON_CONTROL="N"
 LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
-""" % ( installerName )
+""" % ( mcList )
 
             if mode == 'master':
                print """\
@@ -148,7 +172,7 @@ LSB_SUB_COMMANDNAME=Y
 LSF_MASTER_LIST="%s"
 LSF_EGO_DAEMON_CONTROL="N"
 LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
-""" % ( installerName )
+""" % ( mcList )
 
 	def runPlugin(self, pluginargs):
 		if not pluginargs:
@@ -161,7 +185,8 @@ LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
 			print self.gettext("genconfig_LSFconf_Help")
 			return
 		
-		if not self.validateCluster(pluginargs[0]):
+		ci = self.validateCluster(pluginargs[0])
+		if not ci:
 			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
 			return
 
@@ -173,5 +198,5 @@ LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
 			if pluginargs[1] == 'slave':
 				generate = 'slave'
 
-		self.generateLsfConfig(mode=generate)
+		self.generateLsfConfig(ci, mode=generate)
 

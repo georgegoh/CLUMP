@@ -104,6 +104,21 @@ export PYTHONPATH
 
 KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname = \"lsf\" AND version = \"%{version}\""`
 
+# Get NGID for "lsf-master-candidate" nodegroup
+MASTER_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups WHERE ngname = \"%{LSF_MASTER_NODEGROUP}\""`
+
+# Cleanup the ng_has_comp table in case this kit is being reinstalled
+for cid in `sqlrunner -q "SELECT cid FROM components WHERE kid = $KID"`; do
+	# Remove association to 'lsf-master-candidate' nodegroup
+	sqlrunner -q "DELETE FROM ng_has_comp WHERE ngid = $MASTER_NGID AND cid = $cid"
+	
+	# Remove association to compute nodegroup
+	sqlrunner -q "DELETE FROM ng_has_comp WHERE ngid = 2 AND cid = $cid"
+done
+
+# Remove components entries
+sqlrunner -q "DELETE FROM components WHERE kid = $KID"
+
 for os in `sqlrunner -q "SELECT DISTINCT ostype FROM repos"`; do
         # Add master component
         sqlrunner -q "INSERT INTO components SET cname = \"%{LSF_MASTER_COMP}\", cdesc = \"LSF Master Candidate\", kid = $KID, os = \"$os\""
@@ -117,9 +132,6 @@ NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid = 2"`
 
 # Create duplicate nodegroup
 ngedit -c $NGNAME -n %{LSF_MASTER_NODEGROUP}
-
-# Get NGID for "lsf-master-candidate" nodegroup
-MASTER_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups WHERE ngname = \"%{LSF_MASTER_NODEGROUP}\""`
 
 # Get CID for LSF compute component
 CID=`sqlrunner -q "SELECT cid FROM components WHERE kid = $KID AND cname = \"%{LSF_COMPUTE_COMP}\" AND os=(SELECT repos.ostype FROM repos, nodegroups WHERE nodegroups.ngid = 2 AND nodegroups.repoid = repos.repoid)"`

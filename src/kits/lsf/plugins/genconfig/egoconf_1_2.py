@@ -27,6 +27,9 @@ import string
 global APPKEY
 APPKEY = "LSF7_0_1_ClusterName"
 
+class ClusterInfo:
+	pass
+
 class thisReport(Report):
 
 	def toolHelp(self):
@@ -34,7 +37,7 @@ class thisReport(Report):
 
 	def validateCluster(self,clustername):
 		global APPKEY
-		query = ('select agid from appglobals where kname="%s" '
+		query = ('select ngid from appglobals where kname="%s" '
 			 'and kvalue="%s"' % (APPKEY, clustername)) 
 		try:
 			self.db.execute(query)
@@ -44,13 +47,32 @@ class thisReport(Report):
 
 		row = self.db.fetchone()
 		if not row:
-			return False
+			return None
 		if row[0] != '':
-			return True
-		return False
+			ci = ClusterInfo()
+			ci.masterCandidatesNgid = int(row[0])
+			return ci
+		return None
 
-	def generateEGOConfig(self, mode):
-		installerName = self.db.getAppglobals('PrimaryInstaller')
+	def generateEGOConfig(self, ci, mode):
+
+		query = 'SELECT nodes.name FROM nodes, nodegroups WHERE nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % ( ci.masterCandidatesNgid )
+
+		try:
+			self.db.execute(query)
+		except:
+			sys.stderr.write(self.gettext("DB_Query_Error\n"))
+			sys.exit(-1)
+
+		l = []
+		for row in self.db.fetchall():
+			l.append(row[0])
+
+		if not l:
+			print '# No master hosts defined for cluster'
+			sys.exit(-1)
+
+		masterList = ' '.join(l)
 
 		print """\
 # $Id: TMPL.ego.conf,v 1.3 2006/10/17 00:26:18 gwen Exp $
@@ -86,7 +108,7 @@ EGO_SEC_CONF=/opt/lsf/ego/kernel/conf
 EGO_CONFDIR=/opt/lsf/ego/kernel/conf
 EGO_VERSION=1.2.2
 EGO_TOP=/opt/lsf/ego
-""" % ( installerName )
+""" % ( masterList )
 
 		if mode == 'slave':
 			print """\
@@ -106,9 +128,13 @@ EGO_DYNAMIC_HOST_WAIT_TIME=60
 			print self.gettext("genconfig_EGOconf_Help")
 			return
 
-		if not self.validateCluster(pluginargs[0]):
+		ci = self.validateCluster(pluginargs[0])
+
+		if not ci:
 			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
 			return
+
+		ci.clusterName = pluginargs[0]
 
 		generate = 'master'
 		if len(pluginargs):
@@ -118,4 +144,4 @@ EGO_DYNAMIC_HOST_WAIT_TIME=60
 			if pluginargs[1] == 'slave':
 				generate = 'slave'
 
-		self.generateEGOConfig(mode = generate)
+		self.generateEGOConfig(ci, mode = generate)
