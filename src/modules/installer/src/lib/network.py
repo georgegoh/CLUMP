@@ -475,6 +475,8 @@ class ConfigureIntfScreen:
         if rv is None:
             errList.append(_('Network name is empty.'))
         elif not rv:
+            # Workaround; msg contains reference to Host name.
+            msg = msg.replace('Host name', 'Network name')
             errList.append(msg)
 
         rv, msg = self.ip_address.verify()

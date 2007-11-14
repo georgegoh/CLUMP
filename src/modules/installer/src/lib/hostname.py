@@ -26,11 +26,13 @@ DEFAULT_DNSZONE = 'kusu'
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
 
-    name = _('Host Name')
+    name = _('Host & Domain')
     profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
-    msg = _('Please specify the host name and DNS zone for this computer:')
     buttons = [_('Clear All')]
+    msg = _('Please specify public host name and private domain information.')
+    hostname_msg = _("This machine's identity on the public network")
+    domain_msg = _('The domain to use inside the cluster')
 
     def __init__(self, kiprofile):
         InstallerScreen.__init__(self, kiprofile=kiprofile)
@@ -67,10 +69,10 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile = self.kiprofile[self.profile]
 
         ### Removing DHCP temporarily, fix in KUSU-207
-        #self.screenGrid = snack.Grid(1, 4)
-        self.screenGrid = snack.Grid(1, 3)
+        #self.screenGrid = snack.Grid(1, 6)
+        self.screenGrid = snack.Grid(1, 5)
         ###
-        entryWidth = 33
+        entryWidth = 22
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
         self.use_dhcp.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
@@ -85,10 +87,11 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
             pass
 
         self.hostname = kusuwidgets.LabelledEntry(
-                    labelTxt=_('Host Name '), width=entryWidth)
-        self.hostname.addCheck(verifyHostname)
+                            labelTxt=_('Public Fully Qualified Host Name '),
+                            width=entryWidth)
+        self.hostname.addCheck(verifyFQDN)
         self.domain = kusuwidgets.LabelledEntry(
-                    labelTxt=_('Domain '), width=entryWidth)
+                    labelTxt=_('Private Cluster Domain '), width=entryWidth)
         self.domain.addCheck(verifyFQDN)
 
         self.hostname.setEntry(self.netProfile.get('fqhn_host',
@@ -106,11 +109,18 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        ### Removing DHCP temporarily, fix in KUSU-207
-        self.screenGrid.setField(self.hostname, col=0, row=1,
-                                 padding=(3, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.domain, col=0, row=2,
-                                 padding=(6, 0, 0, 2), anchorLeft=1)
+        ### Removing DHCP temporarily, FIXME in KUSU-207
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.hostname_msg,
+                                                       width=self.gridWidth),
+                                 col=0, row=1, padding=(0, 1, 0, 0),
+                                 anchorLeft=1)
+        self.screenGrid.setField(self.hostname, col=0, row=2,
+                                 padding=(0, 0, 0, 1), anchorLeft=1)
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
+                                                       width=self.gridWidth),
+                                 col=0, row=3, anchorLeft=1)
+        self.screenGrid.setField(self.domain, col=0, row=4,
+                                 padding=(0, 0, 0, 0), anchorLeft=1)
         #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
         #                         padding=(0, 1, 0, 0), anchorLeft=1)
         #self.screenGrid.setField(self.hostname, col=0, row=2,
@@ -164,7 +174,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         installerng = db.NodeGroups.selectfirst_by(type='installer')
         mastername = db.Nodes.selectfirst_by(ngid=installerng.ngid).name
 
-        self.defaultname = mastername
+        self.defaultname = '.'.join((mastername, 'example.com'))
         self.defaultzone = dnsdomain.kvalue
 
     def save(self, db, profile):
