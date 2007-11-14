@@ -30,6 +30,7 @@ from kusu.genconfig import Report
 import sys
 import string
 import glob
+import os.path
 
 global COMPONENT_NAME
 
@@ -91,6 +92,9 @@ class thisReport(Report):
 	def getClusterHosts(self, filename):
 		'''getClusterHosts - Get a list of all the current hosts
 		in the cluster.'''
+		if not os.path.exists(filename):
+			return []
+
 		fp = file(filename, 'r')
                 data = []
 		state = 0
@@ -198,8 +202,8 @@ class thisReport(Report):
 			print '%s\t!\t!\t1     3.5 ()    ()    (%s)' % (node, res)
 
 
-        def genLsfClusterHosts(self, clustername):
-		'''genLsfClusterHosts - Generate the cluster file if one does not exist'''
+        def genLsfClusterFile(self, clustername):
+		'''genLsfClusterFile - Generate the cluster file if one does not exist'''
 
 		print """
 #-----------------------------------------------------------------------
@@ -232,24 +236,23 @@ HOSTNAME  model    type        server r1m  mem  swp  RESOURCES    #Keywords
 
                 # Now fill in the list of hosts
 		global COMPNAME
-		query = ('SELECT nodes.name '
-			 'FROM nodes, appglobals, ng_has_comp, components '
+		query = ('SELECT DISTINCT nodes.name '
+			 'FROM nodes, appglobals, ng_has_comp, components, nics '
 			 'WHERE nics.nid = nodes.nid AND appglobals.ngid=nodes.ngid '
 			 'AND ng_has_comp.ngid=nodes.ngid AND ng_has_comp.cid=components.cid ' 
 			 'AND appglobals.kvalue="%s" AND components.cname="%s" '
 			 'ORDER BY nodes.name' % (clustername, COMPNAME))
 		
 		try:	
-    	             self.db.execute(query)
+			self.db.execute(query)
 		except:
-                     sys.stderr.write(self.gettext("DB_Query_Error\n"))
-                     sys.exit(-1)
+			sys.stderr.write(self.gettext("DB_Query_Error\n"))
+			sys.exit(-1)
 
 		nodes = []	
 		for name in self.db.fetchall():
-			print "%s !       !       1       3.5 ()   ()   ()" % name
-			
-                print """End     Host
+			print "%s\t!       !       1       3.5 ()   ()   ()" % name
+			print """End     Host
 
 Begin Parameters
 End Parameters
@@ -261,9 +264,6 @@ End Parameters
 # console       [default]
 # End ResourceMap
 """
-
-
-
 
         def genLsfBatchHosts(self):
 		'''genLsfBatchConfig - Create the lsb.hosts file'''
@@ -344,9 +344,7 @@ default    !    ()      ()    ()     ()     ()             # Example
 				self.newLines(chosts, pluginargs[0])
 				self.postHostEndList(fp)
 			else:
-				self.genLsfClusterHosts(pluginargs[0])
+				self.genLsfClusterFile(pluginargs[0])
 
 		else:
 			self.genLsfBatchHosts()
-
- 

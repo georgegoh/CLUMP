@@ -24,6 +24,9 @@ from kusu.genconfig import Report
 import os
 import string
 
+global APPKEY
+APPKEY   = "LSF7_0_1_ClusterName"
+
 class thisReport(Report):
 
     	def toolHelp(self):
@@ -50,68 +53,32 @@ class thisReport(Report):
 	
 	def generateLsfConfig(self, mode):
             installerName = self.db.getAppglobals('PrimaryInstaller')
-            dnsZone = self.db.getAppglobals('DNSZone')
             if mode == 'slave':
-               print """
-LSB_SHAREDIR=/opt/lava/work
-
-# Configuration directives
-LSF_CONFDIR=/opt/lava/conf
-#LSB_CONFDIR=/opt/lava/conf/lsbatch
-
-LSF_MASTER_LIST=%s
-
-# Daemon log messages
-LSF_LOGDIR=/opt/lava/log
-LSF_LOG_MASK=LOG_WARNING
-
-LSF_STRIP_DOMAIN=.%s
-LSB_MAILTO=!U@%s.%s
-LSB_MAILSERVER=SMTP:%s.%s
-
-LSF_AUTH=eauth
-
-# General variables
-LSF_ENVDIR=/opt/lava/conf
-
-# Internal variable to distinguish Default Install
-LSF_DEFAULT_INSTALL=y
-
-# Internal variable indicating operation mode
-LSB_MODE=batch
-
-# WARNING: Please do not delete/modify next line!!
-LSF_LINK_PATH=n
-
-LSF_TOP=/opt/lava
-""" % (installerName, dnsZone, installerName, dnsZone, installerName, dnsZone)
-
-            if mode == 'master':
-               print """
-# Refer to the Inside Platform Lava documentation
-# before changing any parameters in this file.
-# Any changes to the path names of Lava files must be reflected
+               print """\
+# Refer to the "Administration Platform LSF" before changing any parameters in
+# this file.
+# Any changes to the path names of LSF files must be reflected
 # in this file. Make these changes with caution.
 
-LSB_SHAREDIR=/opt/lava/work
+LSB_SHAREDIR=/opt/lsf/work
 
 # Configuration directories
-LSF_CONFDIR=/opt/lava/conf
-LSB_CONFDIR=/opt/lava/conf/lsbatch
+LSF_CONFDIR=/opt/lsf/conf
 
 # Daemon log messages
-LSF_LOGDIR=/opt/lava/log
+LSF_LOGDIR=/opt/lsf/log
 LSF_LOG_MASK=LOG_WARNING
+
+# Batch mail message handling
+LSB_MAILTO=!U
 
 # Miscellaneous
 LSF_AUTH=eauth
 
-# General cwinstall variables
-LSF_MANDIR=/opt/lava/1.0/man
-LSF_INCLUDEDIR=/opt/lava/1.0/include
-LSF_MISC=/opt/lava/1.0/misc
-XLSF_APPDIR=/opt/lava/1.0/misc
-LSF_ENVDIR=/opt/lava/conf
+# General lsfinstall variables
+LSF_MISC=/opt/lsf/7.0/misc
+XLSF_APPDIR=/opt/lsf/7.0/misc
+LSF_ENVDIR=/opt/lsf/conf
 
 # Internal variable to distinguish Default Install
 LSF_DEFAULT_INSTALL=y
@@ -122,20 +89,66 @@ LSB_MODE=batch
 # WARNING: Please do not delete/modify next line!!
 LSF_LINK_PATH=n
 
-# LSF_MACHDEP and LSF_INDEP are reserved to maintain
-# backward compatibility with legacy lsfsetup.
-# They are not used in the new cwinstall.
-LSF_INDEP=/opt/lava
-LSF_MACHDEP=/opt/lava/1.0
+LSF_TOP=/opt/lsf
+LSF_VERSION=7.0
+LSF_EGO_ENVDIR=/opt/lsf/ego/kernel/conf
+LSB_SHORT_HOSTLIST=1
+LSF_HPC_EXTENSIONS="CUMULATIVE_RUSAGE"
+LSB_SUB_COMMANDNAME=Y
+LSF_MASTER_LIST="%s"
+LSF_EGO_DAEMON_CONTROL="N"
+LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
+""" % ( installerName )
 
-LSF_TOP=/opt/lava
-LSF_VERSION=1.0
-LSF_MASTER_LIST=%s
-LSF_STRIP_DOMAIN=.%s
-LSB_MAILSERVER=SMTP:%s.%s
-LSB_MAILTO=!U@%s.%s
-LSF_RSH=ssh
-""" % (installerName, dnsZone, installerName, dnsZone, installerName, dnsZone)
+            if mode == 'master':
+               print """\
+# Refer to the "Administration Platform LSF" before changing any parameters in
+# this file.
+# Any changes to the path names of LSF files must be reflected
+# in this file. Make these changes with caution.
+
+LSB_SHAREDIR=/opt/lsf/work
+
+# Configuration directories
+LSF_CONFDIR=/opt/lsf/conf
+LSB_CONFDIR=/opt/lsf/conf/lsbatch
+
+# Daemon log messages
+LSF_LOGDIR=/opt/lsf/log
+LSF_LOG_MASK=LOG_WARNING
+
+# Batch mail message handling
+LSB_MAILTO=!U
+
+# Miscellaneous
+LSF_AUTH=eauth
+
+# General lsfinstall variables
+LSF_MANDIR=/opt/lsf/7.0/man
+LSF_INCLUDEDIR=/opt/lsf/7.0/include
+LSF_MISC=/opt/lsf/7.0/misc
+XLSF_APPDIR=/opt/lsf/7.0/misc
+LSF_ENVDIR=/opt/lsf/conf
+
+# Internal variable to distinguish Default Install
+LSF_DEFAULT_INSTALL=y
+
+# Internal variable indicating operation mode
+LSB_MODE=batch
+
+# WARNING: Please do not delete/modify next line!!
+LSF_LINK_PATH=n
+
+LSF_TOP=/opt/lsf
+LSF_VERSION=7.0
+LSF_EGO_ENVDIR=/opt/lsf/ego/kernel/conf
+LSB_SHORT_HOSTLIST=1
+LSF_HPC_EXTENSIONS="CUMULATIVE_RUSAGE"
+LSB_SUB_COMMANDNAME=Y
+LSF_MASTER_LIST="%s"
+LSF_EGO_DAEMON_CONTROL="N"
+LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
+""" % ( installerName )
 
 	def runPlugin(self, pluginargs):
 		if not pluginargs:
@@ -148,7 +161,7 @@ LSF_RSH=ssh
 			print self.gettext("genconfig_LSFconf_Help")
 			return
 		
-		if self.validateCluster(pluginargs[0]):
+		if not self.validateCluster(pluginargs[0]):
 			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
 			return
 

@@ -15,8 +15,12 @@
 # 
 #
 
-%define COMP1 component-LSF-Master-v7_0_1
-%define COMP2 component-LSF-Compute-v7_0_1
+%define LSF_VERSION 7_0_1
+%define EGO_VERSION 1_2
+%define LSF_MASTER_COMP component-LSF-Master-v%{LSF_VERSION}
+%define LSF_COMPUTE_COMP component-LSF-Compute-v%{LSF_VERSION}
+%define KNAME_CLUSTERNAME LSF%{LSF_VERSION}_ClusterName
+%define LSF_MASTER_NODEGROUP lsf-master-candidate
 
 Summary: LSF Kit
 Name: kit-lsf
@@ -69,11 +73,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/addhost/*.py
 /opt/kusu/lib/plugins/genconfig/*.py
 /opt/kusu/lib/plugins/ngedit/*.py
-
 /etc/rc.kusu.d/S11lsf-genconfig
-#%exclude /opt/kusu/lib/plugins/addhost/*.py?
-#%exclude /opt/kusu/lib/plugins/genconfig/*.py?
-#%exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
 %pre
 PATH=$PATH:/opt/kusu/sbin
@@ -102,63 +102,53 @@ else
 fi
 export PYTHONPATH
 
-# Make the component entries
-KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname='lsf' and version='%{version}'"`
-if [ $? -ne 0 ]; then
-   exit 0
+KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname = \"lsf\" AND version = \"%{version}\""`
+
+for os in `sqlrunner -q "SELECT DISTINCT ostype FROM repos"`; do
+        # Add master component
+        sqlrunner -q "INSERT INTO components SET cname = \"%{LSF_MASTER_COMP}\", cdesc = \"LSF Master Candidate\", kid = $KID, os = \"$os\""
+
+        # Add compute component
+        sqlrunner -q "INSERT INTO components SET cname = \"%{LSF_COMPUTE_COMP}\", cdesc = \"LSF Compute Node\", kid = $KID, os = \"$os\""
+done
+
+# Duplicate compute nodegroup to create "lsf-master-candiate" nodegroup
+NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid = 2"`
+
+# Create duplicate nodegroup
+ngedit -c $NGNAME -n %{LSF_MASTER_NODEGROUP}
+
+# Get NGID for "lsf-master-candidate" nodegroup
+MASTER_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups WHERE ngname = \"%{LSF_MASTER_NODEGROUP}\""`
+
+# Get CID for LSF compute component
+CID=`sqlrunner -q "SELECT cid FROM components WHERE kid = $KID AND cname = \"%{LSF_COMPUTE_COMP}\" AND os=(SELECT repos.ostype FROM repos, nodegroups WHERE nodegroups.ngid = 2 AND nodegroups.repoid = repos.repoid)"`
+
+if [ -z "$CID" ]; then
+        echo "Error: unable to get CID of LSF compute compoent"
+        exit 1
 fi
 
-sqlrunner -q "DELETE FROM components WHERE kid=$KID"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='rhel-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP1}', cdesc='LSF Master Candidate', kid=$KID, os='centos-5-x86_64'"
+# Create association from compute nodegroup to LSF compute component
+sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID"
 
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='rhel-5-x86_64'"
-sqlrunner -q "INSERT into components set cname='%{COMP2}', cdesc='LSF Compute Node', kid=$KID, os='centos-5-x86_64'"
+# Create association from 'lsf-master-candidate' nodegroup to LSF master
+# component
+NEW_CID=`sqlrunner -q "SELECT cid FROM components WHERE kid = $KID AND cname = \"%{LSF_MASTER_COMP}\" AND os=(SELECT repos.ostype FROM repos, nodegroups WHERE nodegroups.ngid = $MASTER_NGID and nodegroups.repoid = repos.repoid)"`
 
-CID1=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
-
-if [ "x$CID1" = "x" ]; then
-   # The kit provides components that are not used with the installers OS#
-   exit 0
-fi
-
-CID2=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=1 AND nodegroups.repoid=repos.repoid)"`
-
-# SQL/Shell/Python code to update the database.. The updates may optionally
-# include Node group creation and component association
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 1, cid = $CID1"
-sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 2, cid = $CID2"
-# sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 3, cid = $CID2"
-# sqlrunner -q "INSERT INTO ng_has_comp SET ngid = 4, cid = $CID2"
+sqlrunner -q "INSERT INTO ng_has_comp SET cid = $NEW_CID, ngid = $MASTER_NGID"
 
 # Assign the nodes to the default clustername
-CNAME=`sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller'"`
-sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=1"
-sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=2"
-
-NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid=2"`
-
-OSTYPE=`sqlrunner -q "SELECT ostype FROM repos WHERE repoid=1000"`
-
-ngedit -c $NGNAME -n lsf-master-candidate
-
-NEW_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups where ngname = \"lsf-master-candidate\""`
-
-sqlrunner -q "INSERT INTO appglobals SET kname='LSF7_0_1_ClusterName', kvalue=\"$CNAME\", ngid=$NEW_NGID"
-
-NEW_CID=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP1}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=2 AND nodegroups.repoid=repos.repoid)"`
-
-OLD_CID=`sqlrunner -q "SELECT cid from components where kid=$KID and cname='%{COMP2}' and os=(select repos.ostype from repos, nodegroups WHERE nodegroups.ngid=2 AND nodegroups.repoid=repos.repoid)"`
-
-sqlrunner -q "UPDATE ng_has_comp SET cid=$NEW_CID WHERE ngid=$NEW_NGID AND cid=$OLD_CID"
+CNAME=`sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname = \"PrimaryInstaller\""`
+sqlrunner -q "INSERT INTO appglobals SET kname = \"%{KNAME_CLUSTERNAME}\", kvalue=\"$CNAME\", ngid = $MASTER_NGID"
+sqlrunner -q "INSERT INTO appglobals SET kname = \"%{KNAME_CLUSTERNAME}\", kvalue=\"$CNAME\", ngid = 2"
 
 if [ ! -e /tmp/kusu/installer_running ]; then
     # Running outside of Anaconda
     if [ -f /etc/rc.kusu.d/S11lsf-genconfig ]; then
-	/etc/rc.kusu.d/S11lsf-genconfig
+	    /etc/rc.kusu.d/S11lsf-genconfig
     fi
 fi
-
 
 %preun
 # PREUN section
@@ -201,13 +191,14 @@ if [ ! -z $KID ]; then
 
 fi
 
-ngedit -d lsf-master-candidate
+ngedit -d %{LSF_MASTER_NODEGROUP}
 
-sqlrunner -q "DELETE FROM appglobals WHERE kname='LSF7_0_1_ClusterName'"
+sqlrunner -q "DELETE FROM appglobals WHERE kname='%{KNAME_CLUSTERNAME}'"
 
 %postun
-# POSTUN section
 rm -rf /opt/lsf
-rm -rf /opt/kusu/lib/plugins/addhost/10-lsf*7_0_1.py?
-rm -rf /opt/kusu/lib/plugins/genconfig/lsf*7_0_1.py?
-rm -rf /opt/kusu/lib/plugins/ngedit/lsf*7_0_1.py?
+rm -rf /opt/kusu/lib/plugins/addhost/10-lsf*%{LSF_VERSION}.py?
+rm -rf /opt/kusu/lib/plugins/addhost/11-lsf*%{LSF_VERSION}.py?
+rm -rf /opt/kusu/lib/plugins/genconfig/lsf*%{LSF_VERSION}.py?
+rm -rf /opt/kusu/lib/plugins/genconfig/ego*%{EGO_VERSION}.py?
+rm -rf /opt/kusu/lib/plugins/ngedit/lsf*%{LSF_VERSION}.py?

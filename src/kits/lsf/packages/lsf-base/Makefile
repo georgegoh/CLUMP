@@ -39,7 +39,7 @@ rpm:
 
 	-cp /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION)/platform_lsf/lsf$(VERSION).1_lsfinstall.tar.Z $(TOPDIR)/BUILD
 
-	tar zxvf $(TOPDIR)/BUILD/lsf$(VERSION).1_lsfinstall.tar.Z -C $(TOPDIR)/BUILD
+	tar zxf $(TOPDIR)/BUILD/lsf$(VERSION).1_lsfinstall.tar.Z -C $(TOPDIR)/BUILD
 
 	-cp /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION)/platform_lsf/lsf$(VERSION).1_linux2.6-glibc2.3-x86_64.tar.Z $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/
 
@@ -56,21 +56,27 @@ rpm:
 	cp license.dat $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall/
 
 	if [ -z "$(CLUSTERNAME)" ]; then \
-	   echo "Appending XXX_lsfmc_XXX host entry to /etc/hosts..." ;\
-	   echo -e "w.x.y.z\t\tXXX_lsfmc_XXX" >> /etc/hosts ;\
+		echo "Appending XXX_lsfmc_XXX host entry to /etc/hosts..." ;\
+		echo -e "w.x.y.z\t\tXXX_lsfmc_XXX" >> /etc/hosts ;\
 	else \
-	   echo "Using $(CLUSTERNAME) " ; \
+		echo "Using $(CLUSTERNAME) " ; \
+	fi
+
+	if [ `grep -c lsfadmin /etc/group` -eq 0 ]; then \
+	   groupadd lsfadmin; \
 	fi
 
 	if [ `grep -c lsfadmin /etc/passwd` -eq 0 ]; then \
-	   useradd lsfadmin ; \
+	   adduser -d "/home/lsfadmin" -g lsfadmin -m lsfadmin ;\
 	fi
 
 	(cd $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall; \
-	 grep show_copyright lsfinstall -v > lsfinstall.tmp; \
-         mv lsfinstall.tmp lsfinstall; \
-         chmod 755 ./lsfinstall ; \
+	 sed -i -e "/show_copyright/d" lsfinstall; \
 	 echo -e "y\n\n" | ./lsfinstall -f ./inst.conf)
+
+	# Remove junk from profile.lsf introduced by lsfinstall
+	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/profile.lsf
+	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/cshrc.lsf
 
 	rm -rvf /opt/lsf/conf/*.old
 	rm -rvf /opt/lsf/conf/*.old*
@@ -78,14 +84,19 @@ rpm:
 
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
+
 	@if [ -f $(HOME)/.rpmmacros ] ; then \
 		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
 	fi
+
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
+
 	for i in $(SPECFILES) ; do \
 		(rpmbuild -bb $$i ) ;\
 	done
-	# @rm -rf $(HOME)/.rpmmacros
+
+	# Cleanup /etc/hosts
+	sed -i -e '/^w\.x\.y\.z.*/d' /etc/hosts
 
 install::
 

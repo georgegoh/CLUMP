@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# The cluster name is "@CLUSTERNAME@"
+
+CLUSTERNAME="@CLUSTERNAME@"
+
+LSF_TOPDIR="/opt/lsf"
+LSF_CONFDIR="$LSF_TOPDIR/conf"
+EGO_CONFDIR="$LSF_TOPDIR/ego/kernel/conf"
+
+ln -sf $EGO_CONFDIR/ego.shared $LSF_CONFDIR/lsf.shared
+ln -sf $EGO_CONFDIR/ego.cluster.$CLUSTERNAME $LSF_CONFDIR/lsf.cluster.$CLUSTERNAME

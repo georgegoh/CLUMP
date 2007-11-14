@@ -110,7 +110,7 @@ class thisReport(Report):
 
 	def listHosts(self, filename):
 		# List the contents of the LSF hosts file
-		if os.path.exists(filename) == 0:
+		if not os.path.exists(filename):
 			return
 		
 		# WARNING:  There is the potential to clobber the file
@@ -166,5 +166,6 @@ class thisReport(Report):
 		chosts = []
 		filename = self.locateHosts(pluginargs[0])
 		chosts = self.getHost(filename)
-		self.listHosts(filename)
-		self.newLines(chosts)
+		if chosts:
+			self.listHosts(filename)
+			self.newLines(chosts)
