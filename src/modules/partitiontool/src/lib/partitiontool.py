@@ -80,21 +80,38 @@ def checkAndMakeNode(devpath):
     # temp solution, until ggoh refactor this
     logger.info('%s: Checking if node already exists in /dev.' % \
                 devpath)
+    device_path = path(devpath)
     import stat
-    from os import mknod, makedev, path
-    if not path.exists(devpath):
+    from os import mknod, makedev
+    import re
+    if not device_path.exists():
         logger.info('%s: %s does not exist. Creating...' % \
                     (devpath, devpath))
-        dev_basename = basename(devpath)
+        dev_basename = device_path.basename()
 
         if devpath[-1] in '1234567890':
-            if devpath[-2] in '1234567890': num = int(devpath[-2:])
-            else: num = int(devpath[-1])
+            num = int(devpath[-1])
+            if devpath[-2] in '1234567890': num += int(devpath[-2:]) * 10
         else: num = 0
+
+        if not device_path.dirname().exists():
+            device_path.dirname().mkdir(mode=755)
+
+        if device_path.dirname().basename() == 'cciss':
+            cciss_pat = re.compile('c(\d+)d(\d+)p(\d+)')
+            m = cciss_pat.match(dev_basename)
+            c = int(m.groups()[0])
+            d = int(m.groups()[1])
+            p = int(m.groups()[2])
+            assert p < 16
+            dev_major_num = 104 + c
+            part_minor_num = d * 16 + p
+            assert major < 112
+            assert minor < 256
 
         # Remap /dev/sr# to /dev/scd# - /dev/sr is legacy and is replaced with
         # /dev/scd. (http://www.lanana.org/docs/device-list/devices.txt)
-        if dev_basename.startswith('sr') or dev_basename.startswith('scd'):
+        elif dev_basename.startswith('sr') or dev_basename.startswith('scd'):
             dev_major_num = 11
             part_minor_num = num
 
@@ -156,9 +173,10 @@ def checkAndMakeNode(devpath):
             dev_major_num = 57
             part_minor_num = num
 
+
         else:
             raise UnknownDeviceError, "Cannot create %s - don't know the " + \
-                                      "major/minor number scheme." % basepath
+                                      "major/minor number scheme." % devpath
 
         logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
                     (devpath, dev_major_num, part_minor_num, devpath))
