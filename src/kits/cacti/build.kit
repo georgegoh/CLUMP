@@ -29,6 +29,7 @@ cactiComp.description = 'component associcated with cacti'
 cactiComp.addDep(cactiPkg)
 cactiComp.addDep(cactidPkg)
 cactiComp.addDep(cactiNodePkg)
+cactiComp.addScript('component-cacti.remove.sh', mode='postun')
 
 # cacti node component
 cactiNodeComp = DefaultComponent()
@@ -36,6 +37,7 @@ cactiNodeComp.name = 'cacti-monitored-node'
 cactiNodeComp.ngtypes = ['installer', 'compute']
 cactiNodeComp.description = 'component associated with cacti nodes'
 cactiNodeComp.addDep(cactiNodePkg)
+cactiNodeComp.addScript('component-cacti-monitored-node.remove.sh', mode='postun')
 
 # define a default kit
 k = DefaultKit()
