@@ -41,7 +41,7 @@ SET(KUSU_MODULES
 
 ## Add kits to the build lists
 SET(KUSU_KITS
-"base cacti lava nagios"
+"base cacti lava nagios hpc"
 )
 
 ## Include Kusu globals

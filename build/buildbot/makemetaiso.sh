@@ -29,6 +29,7 @@ METAKIT=`ls ${CMAKE_CURRENT_BINARY_DIR}/metakit-*.iso`
 if [ -f $METAKIT ]
 then
   boot-media-tool make-iso kususrc=${CMAKE_CURRENT_SOURCE_DIR} source=${KUSU_DISTRO_SRC} arch=${KUSU_BUILD_ARCH} kit=$METAKIT iso=kusu-$BUILDDATE-$KUSUREVISION.${KUSU_BUILD_DIST}-${KUSU_BUILD_DISTVER}.${KUSU_BUILD_ARCH}.iso  patch=updates.img
+  rm -f $METAKIT
 else
   echo "No meta kit found. Run ${CMAKE_BINARY_DIR}/bin/makemetakit.sh to generate one."
   exit 1
@@ -45,5 +46,4 @@ ln -sf kusu-$BUILDDATE-$KUSUREVISION.${KUSU_BUILD_DIST}-${KUSU_BUILD_DISTVER}.${
 tar -czf kusu-$BUILDDATE-$KUSUREVISION.${KUSU_BUILD_DIST}-${KUSU_BUILD_DISTVER}.${KUSU_BUILD_ARCH}.src.tgz ${CMAKE_CURRENT_SOURCE_DIR}
 chmod 644 kusu-$BUILDDATE-$KUSUREVISION.${KUSU_BUILD_DIST}-${KUSU_BUILD_DISTVER}.${KUSU_BUILD_ARCH}.*
 rsync -av --rsh=ssh --delete $SCRATCHDIR/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/${KUSU_BUILD_ARCH} build@ronin:/home/osgdc/www/pub/build/${KUSU_BUILD_DIST}/${KUSU_BUILD_DISTVER}/.
-
 
