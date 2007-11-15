@@ -43,6 +43,7 @@ Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArch: x86_64
 AutoReq: no
+Requires: coreutils, chkconfig
 
 %description
 This package contains the LSF(R) binaries.
@@ -52,14 +53,19 @@ Summary: Platform LSF(R) master configuration
 Group: Applications/System
 Vendor: Platform Computing Corporation
 Prefix: /opt/lsf
+Requires: lsf
 
 %description master-config
 Platform(R) LSF(R) Master configuration files
 
 %prep
 
-%install
+%pre
+# Add lsfadmin/lsfadmin user/group
+/usr/sbin/groupadd lsfadmin >/dev/null 2>&1 || :
+/usr/sbin/useradd -d "/home/lsfadmin" -g lsfadmin -m lsfadmin >/dev/null 2>&1 ||:
 
+%install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 
@@ -141,10 +147,10 @@ rm -rf $RPM_BUILD_ROOT
 %config %{egoconfdir}/wsg.conf
 
 %post
-ln -s %{lsfconfdir}/profile.lsf /etc/profile.d/lsf.sh
-ln -s %{lsfconfdir}/cshrc.lsf /etc/profile.d/lsf.csh
-ln -s %{lsftopdir}/%{lsfversion}/%{lsfbintype}/etc/lsf_daemons /etc/init.d/lsf_daemons
-chkconfig --add lsf_daemons
+/bin/ln -s %{lsfconfdir}/profile.lsf /etc/profile.d/lsf.sh
+/bin/ln -s %{lsfconfdir}/cshrc.lsf /etc/profile.d/lsf.csh
+/bin/ln -s %{lsftopdir}/%{lsfversion}/%{lsfbintype}/etc/lsf_daemons /etc/init.d/lsf_daemons
+/sbin/chkconfig --add lsf_daemons
 
 %preun
 # Setup LSF environment
@@ -187,8 +193,8 @@ fi
 
 %postun
 # Remove initscript
-if [ -f /etc/rc.d/init.d/lsf_daemons ]; then
-   echo "Removing LSF initscript..."
-   /sbin/chkconfig --del lsf_daemons >& /dev/null
-   rm -f /etc/rc.d/init.d/lsf_daemons
-fi
+/sbin/chkconfig --del lsf_daemons >& /dev/null || :
+rm -f /etc/rc.d/init.d/lsf_daemons
+
+# Remove symlinks
+rm -f /etc/profile.d/lsf.sh /etc/profile.d/lsf.csh
