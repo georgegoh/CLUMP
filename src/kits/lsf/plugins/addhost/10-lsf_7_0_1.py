@@ -38,16 +38,16 @@ global LSF_CLUSTER_PLUGIN
 LSF_CLUSTER_PLUGIN = 'lsfcluster_%s' % ( VERSION_WITH_UNDERSCORES )
 
 class AddHostPlugin(AddHostPluginBase):
-    "LSF cluster file updater plugin"
+	"LSF cluster file updater plugin"
 
-    def enabled(self):
-        return True
+	def enabled(self):
+		return True
 
 	def added(self, nodename, info, prePopulateMode):
 		clusterName = self.getClusterName()
 
-        self.clusterFileName = 'lsf.cluster.%s' % clusterName
-        self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
+		self.clusterFileName = 'lsf.cluster.%s' % clusterName
+		self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
 
 	def getClusterName(self):
 		ngid = int(info[nodename][0]["nodegroupid"])
@@ -64,25 +64,21 @@ class AddHostPlugin(AddHostPluginBase):
 
 		return clusterName
 
-    def removed(self, nodename, info):
+	def removed(self, nodename, info):
 
-        clusterName = self.getClusterName()
+		clusterName = self.getClusterName()
 
-        self.clusterFileName = 'lsf.cluster.%s' % clusterName
-        self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
+		self.clusterFileName = 'lsf.cluster.%s' % clusterName
+		self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
 
-        # Remove host from the lsf.cluster file
-        self.updateFile(self.clusterFilePath, self.parseLsfClusterLine,
-            nodename)
+		# Remove host from the lsf.cluster file
+		self.updateFile(self.clusterFilePath, self.parseLsfClusterLine,
+			nodename)
 
-        # Remove host from LSF_MASTER_LIST in lsf.conf if
-        # it is a master candidate host
-        self.updateFile("/opt/lsf/conf/lsf.conf", 
-             self.parseLsfConfLine, nodename)
-
-        # Remove host from the lsf host file
-        # os.system("grep -v %s /opt/lsf/conf/hosts > /opt/lsf/conf/hosts.OLD" % (nodename + "."))
-        # os.rename("/opt/lsf/conf/hosts.OLD", "/opt/lsf/conf/hosts")
+		# Remove host from LSF_MASTER_LIST in lsf.conf if
+		# it is a master candidate host
+		self.updateFile("/opt/lsf/conf/lsf.conf", self.parseLsfConfLine,
+			 nodename)
 
     def finished(self, nodelist, prePopulateMode):
         nodelist = self.checkAvailableComponent()
