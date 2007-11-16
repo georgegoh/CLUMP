@@ -23,11 +23,47 @@ ARCH=$(shell arch)
 SRCDIRS = `find . -maxdepth 1 -type d -not -name .svn -not -name CVS \
 	    -not -name .`
 
+define check_prequisites
+	echo "******************************************************************************"
+        echo "rrdtool needs the following packages to build"
+        echo ""
+        echo "  openssl-devel"
+        echo "  cgilib-devel (Built from this kit)"
+        echo "  libart_lgpl-devel"
+        echo "  libpng-devel"
+        echo "  freetype-devel"
+        echo "  ruby-devel"
+        echo "  tk-devel"
+        echo ""
+        echo "ntop needs the following packages to build"
+        echo ""
+        echo "  openssl-devel"
+        echo "  gdbm-devel"
+        echo "  rrdtool-devel (Built from this kit)"
+        echo "  glib-devel"
+        echo "  gd-devel"
+        echo "  automake"
+        echo "  autoconf"
+        echo "  libpcap-devel"
+ 	echo "  libtool"
+	echo ""
+	echo "******************************************************************************"
+endef
+
+define setrpmmacro
+        if [ -f $(HOME)/.rpmmacros ] ; then \
+                mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
+        fi
+        echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
+endef
+
 default: rpm
 
 rpm:
-	@echo "Building Ntop..."
+	@$(call check_prequisites)
+	@$(call setrpmmacro)
 
+	@echo "Building Ntop..."
 	rpmbuild --rebuild cgilib-0.5-1.src.rpm
 	@-rpm -ivh ../RPMS/$(ARCH)/cgilib-devel-0.5-1.$(ARCH).rpm
 	rpmbuild --rebuild rrdtool-1.2.23-1.src.rpm --define "_prefix /opt/ntop"
