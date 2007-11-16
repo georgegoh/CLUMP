@@ -93,10 +93,10 @@ prog="ntop"
 
 start () {
 	echo -n $"Starting $prog: "
-	daemon $prog -d -L @%{_sysconfdir}/ntop.conf
+	daemon %{_prefix}/bin/$prog -d -L @%{_sysconfdir}/ntop.conf
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch %{_localstatedir}/lock/subsys/\$prog
+	[ $RETVAL -eq 0 ] && touch %{_localstatedir}/lock/subsys/$prog
 	return $RETVAL
 }
 
