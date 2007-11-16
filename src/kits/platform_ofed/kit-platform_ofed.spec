@@ -68,7 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 /depot/www/kits/%{_name}/%{version}/LICENSE
 
 # plugins
-/opt/kusu/lib/plugins/ngedit/*.py
+/opt/kusu/lib/plugins/ngedit/*.py*
 
 # %exclude /opt/kusu/lib/plugins/ngedit/*.py?
 
