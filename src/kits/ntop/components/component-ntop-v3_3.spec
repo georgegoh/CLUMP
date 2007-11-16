@@ -24,15 +24,25 @@ License: GPL
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArchitectures: noarch
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 # Use Exact versions to allow different versions of this kit to co-exist
-
+Requires: perl-rrdtool, rrdtool
 %description
 This package is a meta package for OFED packages
 
 %prep
+rm -rf %{_tmppath}/%{name}-%{version}-%{release}-root
+mkdir -p %{_tmppath}/%{name}-%{version}-%{release}-root/var/ntop
+
+if [ "%{_arch}" == "x86_64" ]; then
+cp ntop_pw.db.64 $RPM_BUILD_ROOT/var/ntop/ntop_pw.db
+else
+cp ntop_pw.db.32 $RPM_BUILD_ROOT/var/ntop/ntop_pw.db
+fi
 
 %files
+/var/ntop/ntop_pw.db
 
 %pre
 
