@@ -470,7 +470,7 @@ class SelectNodesWindow(USXBaseScreen):
         self.screenGrid  = snack.Grid(1, 6)
         self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-        labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
+        labeltokens = self.kusuApp._("nghosts_source_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         query = 'SELECT ngname, ngid FROM nodegroups ORDER BY ngid'
@@ -657,7 +657,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         self.screenGrid  = snack.Grid(1, 7)
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
-        labeltokens = self.kusuApp._("nghosts_source_label").split(',')
+        labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
         query = 'SELECT ngname, ngid FROM nodegroups ORDER BY ngid'
