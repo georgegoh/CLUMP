@@ -27,6 +27,10 @@ default: all
 all:	packages components kit
 
 packages:
+	if [ -f $(HOME)/.rpmmacros ] ; then \
+		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
+	fi
+	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 	-mkdir -p $(TOPDIR)/BUILD
 	cd packages; make
@@ -35,11 +39,7 @@ components:
 	cd components; make
 
 kit:
-	if [ -f $(HOME)/.rpmmacros ] ; then \
-		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
-	fi
 	-mkdir -p $(TOPDIR)/BUILD
-	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	rpmbuild -bb kit-$(NAME).spec
 	-rm -rf $(HOME)/.rpmmacros
 	mkdir -p $(TOPDIR)/disk1/$(NAME)
