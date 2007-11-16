@@ -27,7 +27,7 @@ BuildArchitectures: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 # Use Exact versions to allow different versions of this kit to co-exist
-Requires: perl-rrdtool, rrdtool
+Requires: perl-rrdtool, rrdtool, ntop
 %description
 This package is a meta package for OFED packages
 
