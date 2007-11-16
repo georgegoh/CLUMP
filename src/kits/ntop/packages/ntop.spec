@@ -287,26 +287,5 @@ fi
 #%exclude %{_libdir}/plugins/
 
 %changelog
-* Sun Jun 10 2007 Dag Wieers <dag@wieers.com> - 3.3-1 - 5494+/dag
-- Updated to release 3.3.
-
-* Tue Feb 20 2007 Dag Wieers <dag@wieers.com> - 3.2-2
-- Enabled tcp_wrappers functionality.
-
-* Thu Nov 03 2005 Dries Verachtert <dries@ulyssis.org> - 3.2-1
-- Updated to release 3.2.
-
-* Fri Aug 12 2005 Dag Wieers <dag@wieers.com> - 3.1-2
-- Removed execute bit on ntop.conf. (C.Lee Taylor)
-
-* Sat Jan 01 2005 Dag Wieers <dag@wieers.com> - 3.1-1
-- Updated to release 3.1.
-
-* Tue May 11 2004 Dag Wieers <dag@wieers.com> - 3.0-2
-- Fixed missing { in logrotate conf. (Martijn Lievaart)
-
-* Tue Mar 23 2004 Dag Wieers <dag@wieers.com> - 3.0-1
-- Updated to release 3.0.
-
-* Mon Apr 28 2003 Dag Wieers <dag@wieers.com> - 2.2-0
-- Initial package. (using DAR)
+* Fri Nov 16 2007 Shawn Starr <sstarr@platform.com>
+- Modified Dag package - Initial packaging for Kusu

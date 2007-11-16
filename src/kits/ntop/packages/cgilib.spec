@@ -56,9 +56,5 @@ done
 %{approot}
 
 %changelog
-* Thu May 19 2005 Matthias Saou <http://freshrpms.net/> 0.5-2 - 3636/dries
-- Disable debuginfo package, as it ends up empty because there is only a
-  static library.
-
-* Fri Apr 29 2005 Dag Wieers <dag@wieers.com> - 0.5-1
-- Initial package. (using DAR)
+* Fri Nov 16 2007 Shawn Starr <sstarr@platform.com>
+- Modified Dag package - Initial Packaging for Kusu
