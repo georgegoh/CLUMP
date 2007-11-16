@@ -43,7 +43,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: gcc-c++, openssl-devel, cgilib-devel, libart_lgpl-devel >= 2.0
 BuildRequires: libpng-devel, zlib-devel, freetype-devel
 %{!?_without_python:BuildRequires: python-devel >= 2.3}
-%{!?_without_ruby:BuildRequires: ruby-devel}
+%{!?_without_ruby:BuildRequires: ruby, ruby-devel}
 %{!?_without_tcltk_devel:BuildRequires: tcl-devel, tk-devel}
 %{?_without_tcltk_devel:BuildRequires: tcl, tk}
 Requires: perl >= %(rpm -q --qf '%%{epoch}:%%{version}' perl)
@@ -160,8 +160,6 @@ for the Ruby language.
 %{__rm} -rf %{buildroot}%{buildroot}
 %{__make} -C bindings/perl-piped install INSTALLDIRS="vendor" DESTDIR="" PREFIX="%{buildroot}%{approot}"
 %{__make} -C bindings/perl-shared install INSTALLDIRS="vendor" DESTDIR="" PREFIX="%{buildroot}%{approot}"
-
-echo "********************************** DEBUG ====================> %{buildroot}%{approot}/%{ruby_sitearch}"
 
 ### FIXME: Another dirty hack to install ruby files if they're available
 if [ -f bindings/ruby/RRD.so ]; then
