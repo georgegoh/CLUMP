@@ -31,8 +31,7 @@ rpm:
 	rpmbuild --rebuild cgilib-0.5-1.src.rpm
 	@-rpm -ivh ../RPMS/$(ARCH)/cgilib-devel-0.5-1.$(ARCH).rpm
 	rpmbuild --rebuild rrdtool-1.2.23-1.src.rpm --define "_prefix /opt/ntop"
-	@-rpm -ivh ../RPMS/$(ARCH)/rrdtool-1.2.23-1.$(ARCH).rpm
+	@-rpm -ivh ../RPMS/$(ARCH)/perl-rrdtool-1.2.23-1.$(ARCH).rpm ../RPMS/$(ARCH)/rrdtool-1.2.23-1.$(ARCH).rpm
 	@-rpm -ivh ../RPMS/$(ARCH)/rrdtool-devel-1.2.23-1.$(ARCH).rpm
-
-	rpmbuild --rebuild ntop-3.3-1.rf.src.rpm --define "_program_prefix /opt/ntop" --define "dist el5"
+	rpmbuild --rebuild ntop-3.3-1.src.rpm  --define "dist el5" --define "_prefix /opt/ntop" --define "_initrddir /etc/init.d" --define "_sysconfdir /etc"
 clean:
