@@ -809,6 +809,7 @@ class CFMClient:
                 self.__removePackages()
                 self.__removeDeps()
                 self.__installPackages()
+                self.__runPlugins()
                 if os.path.exists('%s.ORIG' % self.packagelst):
                     os.unlink('%s.ORIG' % self.packagelst)
             except:
