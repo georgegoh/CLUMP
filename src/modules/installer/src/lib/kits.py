@@ -177,6 +177,8 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
         kl.debug('Set the installation flag')
 
+        # Insert Eject CD code here.
+
     def save(self, db, profile):
         ngs = db.NodeGroups.select()
         ngids = [row.ngid for row in db.NGHasComp.select()]

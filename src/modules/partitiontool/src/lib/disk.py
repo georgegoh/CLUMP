@@ -17,7 +17,7 @@ import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
 from kusu.util.errors import *
-from partitiontool import checkAndMakeNode
+from nodes import checkAndMakeNode
 
 logger = kusulog.getKusuLog('partitiontool.disk')
 

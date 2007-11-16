@@ -28,7 +28,7 @@ from kusu.core.app import KusuApp
 from kusu.ui.text.navigator import Navigator
 from kusu.installer.kusufactory import ScreenFactoryImpl
 from kusu.util.errors import *
-from kusu.partitiontool.partitiontool import checkAndMakeNode
+from kusu.partitiontool.nodes import checkAndMakeNode
 
 class KusuInstaller(Navigator, KusuApp):
     """Framework for displaying installation steps and screens.
