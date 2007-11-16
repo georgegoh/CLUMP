@@ -711,8 +711,8 @@ class NetworkEditWindow(USXBaseScreen):
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
         self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(10,-1,0,0))
-        self.screenGrid.setField(self.typeList, 0, 12, padding=(12,0,0,0))
+        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(-2,-1,0,0))
+        self.screenGrid.setField(self.typeList, 0, 12, padding=(0,0,0,-1))
 
     
     def validate(self):
@@ -841,8 +841,8 @@ class NetworkNewWindow(USXBaseScreen):
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
         self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(10,-1,0,0))
-        self.screenGrid.setField(self.typeList, 0, 12, padding=(12,0,0,0))
+        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(-2,-1,0,0))
+        self.screenGrid.setField(self.typeList, 0, 12, padding=(0,0,0,-1))
 
         self.typeList.append("public","public")
         self.typeList.append("provision","provision")
