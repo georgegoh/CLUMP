@@ -938,8 +938,8 @@ class NodeFun(object, KusuApp):
            return None, None, None
 
         # Can't move unmanaged nodes.
-        if self._nodeGroupType == self.getNodegroupByName('unmanaged'):
-           return None, None, None
+        #if self._nodeGroupType == self.getNodegroupByName('unmanaged'):
+        #   return None, None, None
 
         # Remove the primary installer if the user tries to move it to another node group.
         primaryInstaller = self._getPrimaryInstaller()

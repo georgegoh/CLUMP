@@ -205,9 +205,9 @@ class NodeMemberApp(object, KusuApp):
                     nodeRecord = NodeFun()
 
                     # If nodegroups is unmanaged throw an error
-                    if self._options.togroup.strip() == 'unmanaged':
-                       self.unlock()
-                       self.parser.error(self._("options_invalid_nodegroup"))
+                   # if self._options.togroup.strip() == 'unmanaged':
+                   #    self.unlock()
+                   #    self.parser.error(self._("options_invalid_nodegroup"))
 
                     # Validate if the nodegroup exists
                     testng,val = nodeRecord.validateNodegroup(self._options.togroup)
@@ -297,10 +297,11 @@ class NodeMemberApp(object, KusuApp):
                     self.lock()
                     # If the user wants to reinstall the nodes check if the option is selected or not.
                     if bool(self._options.reinstall):
-                        print self._("nghosts_reinstall_nodes_progress")
-                        # Call PDSH here
-                        rn = syncfun()
-                        rn.runPdsh(list(Set(moveIPList)), "reboot")
+                        if self._options.togroup != "unmanaged":
+                           print self._("nghosts_reinstall_nodes_progress")
+                           # Call PDSH here
+                           rn = syncfun()
+                           rn.runPdsh(list(Set(moveIPList)), "reboot")
                     os.remove(tmpfile)
                     self.unlock()
                     sys.exit(0)
@@ -426,7 +427,7 @@ class SelectNodesWindow(USXBaseScreen):
                # Call addhosts to delete these nodes
                progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
 
-               self.unlock()
+               self.kusuApp.unlock()
                os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
                # Add these back using mac file
@@ -437,11 +438,11 @@ class SelectNodesWindow(USXBaseScreen):
 
                # Remove temp file
                os.remove(tmpfile)
-               self.lock()
+               self.kusuApp.lock()
                progDialog.close()
 
                # If the user wants to reinstall the nodes check if the option is selected or not.
-               if self.reinstcheckbox.value():
+               if self.reinstcheckbox.value() and self.nodegroupRadio.getSelection() != "unmanaged":
                   progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                                self.kusuApp._("nghosts_reinstall_nodes_progress"))
                   # Call PDSH here
@@ -472,7 +473,7 @@ class SelectNodesWindow(USXBaseScreen):
         labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
-        query = 'SELECT ngname, ngid FROM nodegroups WHERE NOT ngname = "unmanaged" ORDER BY ngid'
+        query = 'SELECT ngname, ngid FROM nodegroups ORDER BY ngid'
         
         try:
             self.database.connect()
@@ -500,14 +501,15 @@ class SelectNodesWindow(USXBaseScreen):
                 sys.exit(-1)
 
             # If the node group is empty don't display it.
-            if len(nodes) > 0:
+            if len(nodes) > 0 and nodegroup[0] != "unmanaged":
                 self.nodeCheckbox.append(nodegroup[0])
                 self.nodeGroupNames.append(nodegroup[0])
                 self.nodegroupDict[nodegroup[0]] = []
             
             for node in nodes:
-                self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
-                self.nodegroupDict[nodegroup[0]].append(node[0])
+                if nodegroup[0] != "unmanaged":
+                   self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
+                   self.nodegroupDict[nodegroup[0]].append(node[0])
 
             if len(nodes) > 0:
                 count += 1
@@ -612,6 +614,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Call addhosts to delete these nodes
                 progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
+		self.kusuApp.unlock()
                 os.system("/opt/kusu/sbin/addhost --remove %s >&2 /dev/null >& /dev/null" % string.join(moveList, ' '))
 
                 # Add these back using mac file
@@ -622,10 +625,11 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Remove temp file
                 os.remove(tmpfile)
+		self.kusuApp.lock()
                 progDialog.close()
  
                 # If the user wants to reinstall the nodes check if the option is selected or not.
-                if self.reinstcheckbox.value():
+                if self.reinstcheckbox.value() and self.destNodegroupRadio.getSelection() != "unmanaged":
                     progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                                  self.kusuApp._("nghosts_reinstall_nodes_progress"))
                     # Call PDSH here
@@ -649,14 +653,14 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
         
     def drawImpl(self):
-        nodegroupList = []
+        destNodegroupList = []
         self.screenGrid  = snack.Grid(1, 7)
         self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
         labeltokens = self.kusuApp._("nghosts_source_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(25),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
-        query = 'SELECT ngname, ngid FROM nodegroups WHERE NOT ngname = "unmanaged" ORDER BY ngid'
+        query = 'SELECT ngname, ngid FROM nodegroups ORDER BY ngid'
 
         try:
             self.database.connect()
@@ -669,7 +673,8 @@ class SelectNodegroupsWindow(USXBaseScreen):
             sys.exit(-1)
 
         for group in nodegroups:
-           nodegroupList.append([group[0].ljust(23), group[0], 0])
+           destNodegroupList.append([group[0].ljust(23).strip(), group[0].strip(), 0])
+
            query = "SELECT COUNT(*) from nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group[0]
            try:
                self.database.connect()
@@ -688,10 +693,10 @@ class SelectNodegroupsWindow(USXBaseScreen):
               if not int(nodes[0]) == 1:
                   self.srcNodegroupsCheckbox.append(group[0])
            else:     
-               if int(nodes[0]) > 0: 
+               if int(nodes[0]) > 0 and group[0] != "unmanaged":
                   self.srcNodegroupsCheckbox.append(group[0])
 
-        self.destNodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList)
+        self.destNodegroupRadio = snack.RadioBar(self.screenGrid, destNodegroupList)
 
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(label, 0, 1, padding=(7,0,0,0), anchorLeft=1)
