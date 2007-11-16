@@ -213,6 +213,8 @@ class PackageProfile(Struct):
         self.vendor = kwargs.get('vendor','')
         self.license = kwargs.get('license','')
         self.buildprofile = kwargs.get('buildprofile','')
+        self.description = kwargs.get('description','')
+        self.driverpack = kwargs.get('driverpack',False)
         self._queuecmds = []
 
 
@@ -235,6 +237,7 @@ class PackageProfile(Struct):
             self.version = r.getVersion()
             self.release = r.getRelease()
             self.arch = r.getArch()
+            if not self.description: self.description = r.description[:255]
             
         elif self.srctype in  ['srpm','rpm','binarydist','autotools']:
             # ensure that the name, version, release are defined.

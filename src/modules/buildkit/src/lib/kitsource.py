@@ -9,6 +9,7 @@ from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType, UnsupportedScriptMode, FileDoesNotExistError
 from kusu.util.structure import Struct
 from kusu.util.tools import cpio_copytree
+from kusu.util.rpmtool import RPM
 from kusu.buildkit.builder import RPMBuilder, getTemplateSpec, stripShebang
 import pprint
 
@@ -122,6 +123,7 @@ class KusuComponent(Struct):
     def __init__(self, **kwargs):
         self.dependencies = []                   # list of dependencies for this component
         self.ngtypes = ['installer','compute']   # list of nodegroup types for this component
+        self.driverpacks = []                    # list of driverpacks for this kit
         self.arch = 'noarch'
         self.compversion = '0.1'
         self.comprelease = '0'
@@ -145,6 +147,17 @@ class KusuComponent(Struct):
         self.scripts['postunscript'] = ''
         self.scripts['preunscript'] = ''
         self.scripts['prescript'] = ''
+        
+        for package, absver in self.dependencies:
+            # also add to driverpacks list if this package is a driverpack type
+            if package.driverpack:
+                # create a small driverpack dict since we only want specific data
+                dpack = {}
+                dpack['name'] = package.filename
+                p = path(self.srcdir / package.filename)
+                rpm = RPM(str(p))
+                dpack['description'] = rpm.description
+                if dpack not in self.driverpacks: self.driverpacks.append(dpack)
         
     def verify(self):
         # FIXME: needs to be fill out
@@ -193,6 +206,7 @@ class KusuComponent(Struct):
         """
         if package not in self.dependencies:
             self.dependencies.append((package,absoluteversion))
+            
             
     def addScript(self, script, mode='post'):
         """ Add script for this component. Available modes are
