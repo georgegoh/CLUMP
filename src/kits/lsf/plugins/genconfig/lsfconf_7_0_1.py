@@ -23,6 +23,7 @@ from kusu.genconfig import Report
 
 import os
 import string
+import sys
 
 global APPKEY
 APPKEY   = "LSF7_0_1_ClusterName"
