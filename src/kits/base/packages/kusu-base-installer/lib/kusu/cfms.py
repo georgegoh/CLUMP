@@ -229,6 +229,9 @@ class PackBuilder:
         determine which files are no longer needed in hte CFM distribution directory
         and delete them"""
         filename = os.path.join(self.cfmbasedir, 'cfmfiles.lst')
+        if not os.path.exists(filename):
+            return
+        
         filep = open(filename, 'r')
         oldfileentries = []
         for line in filep.readlines():
@@ -239,6 +242,11 @@ class PackBuilder:
             if filen != '':
                 oldfileentries.append(filen)
 
+        filep.close()
+        
+        if len(self.cfmdirfiles) == 0:
+            return
+            
         # Strip out the duplicates
         for fname in self.cfmdirfiles:
             if fname in oldfileentries:
