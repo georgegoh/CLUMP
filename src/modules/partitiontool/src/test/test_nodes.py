@@ -61,9 +61,9 @@ class TestNodes:
         assert getMinorNumOffset(p) == 0
         p = path('/dev/sda1')
         assert getMinorNumOffset(p) == 1
-        p = path('/dev/sdb10')
+        p = path('/dev/sdb12')
         print getMinorNumOffset(p)
-        assert getMinorNumOffset(p) == 10
+        assert getMinorNumOffset(p) == 12
 
     def testGetMinorNumOffset_negative(self):
         raise SkipTest, "Work in progress"

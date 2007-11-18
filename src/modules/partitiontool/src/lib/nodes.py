@@ -81,7 +81,9 @@ def getMinorNumOffset(devpath):
     s = str(devpath)
     if s[-1] in '1234567890':
         num = int(s[-1])
-        if s[-2] in '1234567890': num += int(s[-2:])
+        if s[-2] in '1234567890':
+            assert s[-3] not in '1234567890', "Number too large"
+            num = int(s[-2:])
     else: num = 0
     return num
 
