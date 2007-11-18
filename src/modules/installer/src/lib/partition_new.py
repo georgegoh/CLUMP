@@ -186,9 +186,17 @@ class NewPartition:
         """Calculate Partition size from the form's fields. Multiply by
            megabyte (1024 * 1024)"""
         if self.fixed_size.selected():
-            return (long(self.fixed_size_entry.value()), 'True')
+            try:
+                value = long(self.fixed_size_entry.value())
+                return (value, 'True')
+            except ValueError:
+                return (0, 'True')
         elif self.min_size.selected():
-            return (long(self.min_size_entry.value()), 'False')
+            try:
+                value = long(self.min_size_entry.value())
+                return (long(self.min_size_entry.value()), 'False')
+            except ValueError:
+                return (0, 'False')
 
 
 class NewLogicalVolume:
@@ -281,7 +289,10 @@ class NewLogicalVolume:
             mountpoint = None
 
         vol_grp = self.volumegroup.current()
-        size = long(self.size.value())
+        try:
+            size = long(self.size.value())
+        except ValueError:
+            size = 0
         new_lv_name = self.lv_name.value()
         lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
                                                 lvg=vol_grp,
