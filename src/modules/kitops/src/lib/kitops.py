@@ -218,7 +218,25 @@ class KitOps:
 
         # RPM install successful, add kit to DB
 
-        # TODO: handle driverpacks entry here, get BMT to return driver/module RPM
+        # handling driverpacks
+
+        # get the handle on components
+        components = kitinfo[2]
+        # FIXME: Put a proper try/except here!
+
+        for comp in components:
+            if 'driverpacks' in comp:
+                # there should be one and only one component with the pkgname we want
+                _comp = self.__db.Components.select_by(cname=comp['pkgname'])[0]
+                for _dpack in comp['driverpacks']:
+                    dpname = _dpack['name']
+                    dpdesc = _dpack['description']
+                    dpack = self.__db.DriverPacks()
+                    dpack.dpname = dpname
+                    dpack.dpdesc = dpdesc
+                    _comp.driverpacks.append(dpack)
+
+                    self.__db.flush()
 
         # TODO: uncomment this to call repoman's refresh
         #if updated_ngtypes:
