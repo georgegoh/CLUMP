@@ -81,7 +81,7 @@ def getMinorNumOffset(devpath):
     s = str(devpath)
     if s[-1] in '1234567890':
         num = int(s[-1])
-        if s[-2] in '1234567890': num += int(s[-2:]) * 10
+        if s[-2] in '1234567890': num += int(s[-2:])
     else: num = 0
     return num
 
