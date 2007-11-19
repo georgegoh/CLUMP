@@ -61,9 +61,12 @@ if __name__ == '__main__':
 
     # setup disks.
     import kusu.hardware.probe
-    disks_str = kusu.hardware.probe.getDisks().keys()
+    disks_dict = kusu.hardware.probe.getDisks()
+    disks_str = disks_dict.keys()
+    for d in disks_dict.values():
+        disks_str += d['partitions']
     disks_str += kusu.hardware.probe.getCDROM().keys()
-    
+  
     for dev in disks_str:
        checkAndMakeNode('/dev/' + dev)
 
