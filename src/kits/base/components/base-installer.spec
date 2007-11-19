@@ -60,7 +60,8 @@ Requires: pdsh-rcmd-exec
 Requires: pdsh-rcmd-rsh
 Requires: pdsh-rcmd-ssh
 Requires: pdsh-mod-machines
-Requires: pdsh-mod-dshgroup
+# Can't use pdsh-mod-dshgroup and pdsh-mod-netgroup at the same time
+# Requires: pdsh-mod-dshgroup
 Requires: pdsh-mod-netgroup
 Requires: pdsh-debuginfo
 Requires: modules
