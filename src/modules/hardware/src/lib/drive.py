@@ -11,6 +11,7 @@ import os
 from kusu.util.errors import *
 from path import path
 from kusu.hardware.pci import PCI
+from kusu.util.structure import Struct
 
 # General utility
 def readFile(filename):
@@ -141,10 +142,11 @@ def getSCSI(type):
                        and not int(readFile(removable)) \
                        and (dev / 'device').realpath().find('usb') == -1: continue
 
-                dev = dev.basename()
-                d[dev] = {}
-                d[dev]['vendor'] = readFile(s / 'vendor')
-                d[dev]['model'] = readFile(s / 'model')
+                device = dev.basename()
+                d[device] = {}
+                d[device]['vendor'] = readFile(s / 'vendor')
+                d[device]['model'] = readFile(s / 'model')
+                d[device]['partitions'] = getSCSIPartitions(dev)
                 
     if type == 'disk':    
         sys_block = path('/sys/block')
@@ -157,38 +159,63 @@ def getSCSI(type):
                 if dev.find('cciss!') != -1:
                     dev = dev.replace('!', os.sep)
 
-                s = s / 'device'
-                cciss_dev[dev] = {}
-                cciss_dev[dev]['vendor'] = readFile(s / 'vendor')
-
-                if not cciss_dev[dev]['vendor']: 
-                    cciss_dev[dev]['model'] = None
-                else:
-                    if (s / 'model').exists():
-                        cciss_dev[dev]['model'] = readFile(s / 'model')
-                    elif (s / 'device').exists():
-                        cciss_dev[dev]['model'] = readFile(s / 'device')
-                    else:
-                        cciss_dev[dev]['model'] = None
-
-                    if cciss_dev[dev]['vendor'].startswith('0x'):
-                        vendor = cciss_dev[dev]['vendor'][2:].strip()
-                        pci = PCI([vendor])
-                        if pci.ids.has_key(vendor):
-                            cciss_dev[dev]['vendor'] = pci.ids[vendor]['NAME']   
-
-                            if cciss_dev[dev]['model'] and cciss_dev[dev]['model'].startswith('0x'):
-                                device = cciss_dev[dev]['model'][2:].strip()
-                                if pci.ids[vendor]['DEVICE'].has_key(device):
-                                    cciss_dev[dev]['model'] = pci.ids[vendor]['DEVICE'][device]['NAME']
-                                else:
-                                    cciss_dev[dev]['model'] = None
-                        else:
-                            cciss_dev[dev]['vendor'] = None
-                            cciss_dev[dev]['model'] = None
-
+                cciss_dev[dev] = CCISSDiskHandler(s)
+                
 
         d.update(cciss_dev)
     return d 
 
+def getSCSIPartitions(path):
+    """Retrieves a list of partitions."""
+    partitions = []
+    for p in path.listdir():
+        p_name = p.basename()
+        if p_name.startswith(path.basename()):
+            partitions.append(p_name)
+    return partitions
 
+
+def CCISSDiskHandler(path):
+    """Handles CCISS disks."""
+    cciss_dev = Struct(model=None)
+    d_path = path / 'device'
+
+    cciss_dev.partitions = getCCISSPartitions(path)
+
+    cciss_dev.vendor = readFile(d_path / 'vendor')
+    if not cciss_dev.vendor:
+        return dict(cciss_dev)
+
+    if (d_path / 'model').exists():
+        cciss_dev.model = readFile(d_path / 'model')
+    elif (d_path / 'device').exists():
+        cciss_dev.model = readFile(d_path / 'device')
+
+    if cciss_dev.vendor.startswith('0x'):
+        vendor = cciss_dev.vendor[2:].strip()
+        pci = PCI([vendor])
+        if pci.ids.has_key(vendor):
+            cciss_dev.vendor = pci.ids[vendor]['NAME']
+
+            if cciss_dev.model and cciss_dev.model.startswith('0x'):
+                device = cciss_dev.model[2:].strip()
+                if pci.ids[vendor]['DEVICE'].has_key(device):
+                    cciss_dev.model = pci.ids[vendor]['DEVICE'][device]['NAME']
+                else:
+                    cciss_dev.model = None
+            else:
+                cciss_dev.vendor = None
+                cciss_dev.model = None
+
+    return dict(cciss_dev)
+
+def getCCISSPartitions(path):
+    """Return a list of partitions in a CCISS disk."""
+    partitions = []
+    for p in path.listdir():
+        p_name = p.basename()
+        if p_name.startswith(path.basename()):
+            if p_name.find('cciss!') != -1:
+                p_name = p_name.replace('!', os.sep)
+            partitions.append(p_name)
+    return partitions
