@@ -53,6 +53,7 @@
    /etc/fstab for details about /etc/fstab.
 
 """
+import re
 import math
 import parted
 import subprocess
@@ -459,13 +460,21 @@ class DiskProfile(object):
 
     def getPartitionFromPath(self, path_str):
         i = -1
-        path = path_str.strip()
-        while path[i].isdigit():
+        p = path_str.strip()
+        while p[i].isdigit():
             i = i-1
-        i = i+1
-        disk_path = path[:i]
-        disk = self.disk_dict[basename(disk_path)]
-        partition_number = int(path[i:])
+
+        j = i+1
+        cciss_pat = re.compile('c(\d)d(\d+)p(\d+)')
+        m = cciss_pat.match(path(path_str).basename())
+        if m :
+            disk_path = path('cciss') / basename(p[:i])
+        else:
+            i = i+1
+            disk_path = basename(p[:i])
+
+        disk = self.disk_dict[disk_path]
+        partition_number = int(p[j:])
         partition = disk.partition_dict[partition_number]
         return partition
 
