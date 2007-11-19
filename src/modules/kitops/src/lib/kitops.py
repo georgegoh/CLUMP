@@ -362,7 +362,9 @@ class KitOps:
         for comploc in complist:
             comp = {'compversion': '', 'comprelease': '', 'pkgname': '',
                     'name': '', 'arch': '', 'description': '', 'ngtypes': [],
-                    'ostype': '', 'osversion': ''}
+                    'ostype': '', 'osversion': '', 
+                    'driverpacks':False}
+
 
             compinst = PackageFactory(str(comploc))
             comp['compversion'] = compinst.getVersion()
