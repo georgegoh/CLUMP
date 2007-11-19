@@ -37,7 +37,7 @@ you will need to install %{name}-devel.
 %{__make} CFLAGS="%{optflags} -I." libcgi.a
 
 %install
-%{__rm} -rf %{approot}
+%{__rm} -rf %{buildoot}
 mkdir -p $RPM_BUILD_ROOT%{approot}
 
 %{__install} -Dp -m0644 cgi.h $RPM_BUILD_ROOT%{approot}%{_includedir}/cgi.h
@@ -49,7 +49,7 @@ for man in cgi*.3; do
 done
 
 %clean
-%{__rm} -rf %{approot}
+%{__rm} -rf %{buildroot}
 
 %files devel
 %defattr(-, root, root, 0755)
