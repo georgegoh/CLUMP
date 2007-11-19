@@ -29,6 +29,10 @@ class FakePartition(object):
     def __init__(self):
         self.path='/dev/asd'
 
+class TestDefaultPreserve:
+    def testRules(self):
+        raise SkipTest
+
 class TestNIIPartition:
     """
     Test for standard partition schema:

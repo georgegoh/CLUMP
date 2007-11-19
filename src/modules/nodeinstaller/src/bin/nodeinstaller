@@ -19,6 +19,7 @@ from kusu.nodeinstaller import NodeInstaller, retrieveNII
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
 from kusu.ui.text.navigator import Navigator
+from kusu.partitiontool.nodes import checkAndMakeNode
 
 class NodeInstallerApp(KusuApp):
     
@@ -148,17 +149,15 @@ actions:
         niihost = args.get('niihost',None)
         kl.addSysLogHandler(host=niihost)
 
-        #try:
-        # get the map of the available partitions
-        devmap = getPartitionMap()
-        devices = devmap.keys()
+        import kusu.hardware.probe
+        disks_dict = kusu.hardware.probe.getDisks()
+        disks_str = disks_dict.keys()
+        for d in disks_dict.values():
+            disks_str += d['partitions']
+        disks_str += kusu.hardware.probe.getCDROM().keys()
 
-        # set up a pattern of the devices we are interested in
-        pat = re.compile('[hs]d\d*')
-        for dev in devices:
-            m = pat.match(dev)
-            if m:
-                makeDev('b', devmap[dev]['major'], devmap[dev]['minor'], dev)
+        for dev in disks_str:
+            checkAndMakeNode('/dev/' + dev)
 
         if not niihost: sys.exit(2)
         ksfile = '/tmp/kusu/ks.cfg'
