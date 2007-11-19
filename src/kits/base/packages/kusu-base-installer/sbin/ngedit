@@ -2348,7 +2348,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
         #            buildinitrd -n $ngid
         #  * all install types
         #    if changes in packages or components
-        #        call update -n $ngid -p
+        #        call cfmsync -n $ngid -p
         #  * if package-based and adding a component with drivers
         #       driverpatch to patch initrd w/ new drivers
         #       driverpatch nodegroup id=curNG['ngid']

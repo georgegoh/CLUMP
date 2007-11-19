@@ -313,6 +313,7 @@ class KitOps:
 
             # only one kitinfo file permitted
             if len(kitinfos) > 1:
+                tmpdir.rmtree()
                 raise InvalidKitInfoError, \
                     'Found %d kitinfo files, only 1 expected' % len(kitinfos)
 
