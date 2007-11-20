@@ -73,8 +73,26 @@ def getIDE(type):
             if readFile(media) == type:
                 d[hd.basename()] = {'model': readFile(hd / 'model'), \
                                     'vendor': readFile(hd / 'vendor')}
+                if type == 'disk':
+                    d[hd.basename()]['partitions'] = getIDEPartitions(hd.basename())
     
     return d
+
+def getIDEPartitions(dev):
+    partitions = []
+    p = getIDEDriveSysPath(dev)
+    if p:
+        blkdir = p.listdir('block:*')[0]
+        partitions = [x.basename() for x in blkdir.listdir(dev + '*')]
+    return partitions
+
+def getIDEDriveSysPath(dev):
+    ide_path = path('/sys/bus/ide/devices')
+    if ide_path.exists():
+        for p in ide_path.listdir():
+            if (p / 'drivename').exists() and readFile(p / 'drivename') == dev:
+                return p
+    return None
 
 # SCSI
 def getSCSI(type):
@@ -160,7 +178,6 @@ def getSCSI(type):
                     dev = dev.replace('!', os.sep)
 
                 cciss_dev[dev] = CCISSDiskHandler(s)
-                
 
         d.update(cciss_dev)
     return d 
