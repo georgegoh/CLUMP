@@ -136,7 +136,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{egotopdir}/%{egoversion}
 
 %attr(755, %{lsfadmin}, root) %dir %{egotopdir}/kernel/log
-%attr{755, %{lsfadmin}, %{lsfadmin}) %dir %{egotopdir}/kernel/work
+%attr(755, %{lsfadmin}, root) %dir %{egotopdir}/kernel/work
 
 %files master-config
 %defattr(-,lsfadmin,lsfadmin)
