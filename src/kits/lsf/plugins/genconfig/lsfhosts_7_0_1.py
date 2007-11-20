@@ -27,7 +27,8 @@ from kusu.genconfig import Report
 
 # Change these lines for newer versions of LSF
 APPKEY   = "LSF7_0_1_ClusterName"
-COMPNAME = "component-LSF-Master-v7_0_1"
+COMP_MASTER = "component-LSF-Master-v7_0_1"
+COMP_COMPUTE = "component-LSF-Compute-v7_0_1"
 
 import os
 import sys
@@ -64,23 +65,17 @@ class thisReport(Report):
 			 'WHERE appglobals.ngid=nodegroups.ngid AND '
 			 'nodegroups.ngid=ng_has_comp.ngid AND '
 			 'ng_has_comp.cid=components.cid AND '
-			 'components.cname="%s" AND appglobals.kvalue="%s"' % (COMPNAME, clustername))
+			 'components.cname="%s" AND appglobals.kvalue="%s"' % (COMP_MASTER, clustername))
 		try:
 			self.db.execute(query)
-			row = self.db.fetchall()
 		except:
 			sys.stderr.write(self.gettext("DB_Query_Error\n"))
 			sys.exit(-1)
 
-		if not row:
-			return
-
-		fqfn = ""
 		for row in self.db.fetchall():
 			ngname = row[0]
-			fqfn = "/etc/cfm/%s/opt/lsf/conf/hosts" % (row[0])
-			if os.path.exists(fqfn):
-				return fqfn
+			fqfn = "/etc/cfm/%s/opt/lsf/conf/hosts" % ngname
+			return fqfn
 
 		return ""
 		
@@ -89,49 +84,41 @@ class thisReport(Report):
 		'''getHost  - Locate the /opt/lsf/conf/hosts for this cluster
 		within the CFM then read in its contents.'''
 
-		fp = file(filename, 'r')
 		data = []
-		while True:
-			line = fp.readline().strip()
-			if len(line) == 0:
-				break
+
+		try:
+			fp = file(filename, 'r')
+			while True:
+				line = fp.readline().strip()
+				if len(line) == 0:
+					break
 			
-			if line[:1] == '#':
-				continue
+				if line[:1] == '#':
+					continue
 			
-			longhost = string.split(line)[1]
-			shorthost = string.split(longhost, '.')[0]
-			data.append(shorthost)
-			#print "Found %s\n" % shorthost
+				longhost = string.split(line)[1]
+				shorthost = string.split(longhost, '.')[0]
+				data.append(shorthost)
+				#print "Found %s\n" % shorthost
 			
-		fp.close()
+			fp.close()
+		except:
+			# Error reading hosts file
+			pass
+
 		return data
 
-
-	def listHosts(self, filename):
-		# List the contents of the LSF hosts file
-		if not os.path.exists(filename):
-			return
-		
-		# WARNING:  There is the potential to clobber the file
-		# you are reading  e.g.  genconfig lsfhosts > /etc/cfm/..../hosts
-		#  "Better... Better get a bucket"
-		fp = file(filename, 'r')
-		data = fp.readlines()
-		fp.close()
-		print data
-
-
-	def newLines(self, currenthosts, clustername):
+	def newLines(self, filename, currenthosts, clustername):
 		''' newLines - Output all the hosts not found in the original file'''
-		global COMPNAME
+		global COMP_MASTER
 
-		# Get a list os ip/nodes that are using the component and are part of the same cluster
+		# Get a list os ip/nodes that are using the component
+		# and are part of the same cluster
 		query = ('SELECT nics.ip, nodes.name '
 			 'FROM nics, nodes, appglobals, ng_has_comp, components '
 			 'WHERE nics.nid = nodes.nid AND appglobals.ngid=nodes.ngid '
 			 'AND ng_has_comp.ngid=nodes.ngid AND ng_has_comp.cid=components.cid ' 
-			 'AND appglobals.kvalue="%s" AND components.cname="%s"' % (clustername, COMPNAME))
+			 'AND appglobals.kvalue="%s" AND (components.cname = "%s" OR components.cname = "%s")' % (clustername, COMP_MASTER, COMP_COMPUTE))
 
 		try:
 			self.db.execute(query)
@@ -142,14 +129,10 @@ class thisReport(Report):
 		for row in self.db.fetchall():
 			ip, name = row
 
-			# The LSF hosts file is DIFFERENT from /etc/hosts.
+			# The LSF hosts file format is DIFFERENT from
+			# /etc/hosts.
+			print "%s %s" % (ip, name)
 
-			if currenthosts and not name in currenthosts:
-				print "%s %s" % (ip, name)
-			else:
-				print "%s %s" % (ip, name)
-
-		    
 	def runPlugin(self, pluginargs):
 		if not pluginargs:
 			print "# ERROR:  No LSF cluster provided!"
@@ -164,8 +147,15 @@ class thisReport(Report):
 			return
 
 		chosts = []
+
+		# Determine hosts file name for this cluster
 		filename = self.locateHosts(pluginargs[0])
+		if not filename:
+			print 'ERROR: unable to determine location of hosts file for this cluster'
+			sys.exit(-1)
+
+		# Read any existing entries (if any)
 		chosts = self.getHost(filename)
-		if chosts:
-			self.listHosts(filename)
-			self.newLines(chosts)
+
+		# Append any new entries.
+		self.newLines(filename, chosts, pluginargs[0])

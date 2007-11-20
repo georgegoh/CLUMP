@@ -42,8 +42,11 @@ information container for the database.
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
+tmpldir=$RPM_BUILD_ROOT/etc/cfm/templates
 
 rm -rf $RPM_BUILD_ROOT
+
+mkdir -p $tmpldir
 mkdir -p $docdir
 mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d
 
@@ -62,10 +65,22 @@ find $docdir -exec chmod 444 {} \;
 /usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py   $plugdir/genconfig
 /usr/bin/install -m 444 %{_topdir}/plugins/ngedit/*.py    $plugdir/ngedit
 
+/usr/bin/install -m 444 %{_topdir}/templates/default.* $tmpldir
+
+/usr/bin/install -d $tmpldir/lsbatch/default/configdir
+/usr/bin/install -m 444 %{_topdir}/templates/lsbatch/default/configdir/* $tmpldir/lsbatch/default/configdir
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
+%dir /etc/cfm/templates
+/etc/cfm/templates/default.*
+%dir /etc/cfm/templates/lsbatch
+%dir /etc/cfm/templates/lsbatch/default
+%dir /etc/cfm/templates/lsbatch/default/configdir
+/etc/cfm/templates/lsbatch/default/configdir/*
+
 # documentation
 /depot/www/kits/%{name}/%{version}/*
 
@@ -104,13 +119,25 @@ export PYTHONPATH
 
 KID=`sqlrunner -q "SELECT kid FROM kits WHERE rname = \"lsf\" AND version = \"%{version}\""`
 
-# Get NGID for "lsf-master-candidate" nodegroup
+if [ -z "$KID" ]; then
+	echo "Error: LSF kit does not appear to be installed"
+	exit 1
+fi
+
+# Insert this kit into all repos
+# for repoid in `sqlrunner -q "SELECT repoid FROM repos"`; do
+	# sqlrunner -q "INSERT INTO repos_have_kits (repoid, kid) VALUES ($repoid, $KID)"
+# done
+
+# Attempt to get NGID for "lsf-master-candidate" nodegroup.  This will
+# not succeed on a 'clean' install.
 MASTER_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups WHERE ngname = \"%{LSF_MASTER_NODEGROUP}\""`
 
-# Cleanup the ng_has_comp table in case this kit is being reinstalled
 for cid in `sqlrunner -q "SELECT cid FROM components WHERE kid = $KID"`; do
 	# Remove association to 'lsf-master-candidate' nodegroup
-	sqlrunner -q "DELETE FROM ng_has_comp WHERE ngid = $MASTER_NGID AND cid = $cid"
+	if [ -n "$MASTER_NGID" ]; then
+		sqlrunner -q "DELETE FROM ng_has_comp WHERE ngid = $MASTER_NGID AND cid = $cid"
+	fi
 	
 	# Remove association to compute nodegroup
 	sqlrunner -q "DELETE FROM ng_has_comp WHERE ngid = 2 AND cid = $cid"
@@ -127,11 +154,20 @@ for os in `sqlrunner -q "SELECT DISTINCT ostype FROM repos"`; do
         sqlrunner -q "INSERT INTO components SET cname = \"%{LSF_COMPUTE_COMP}\", cdesc = \"LSF Compute Node\", kid = $KID, os = \"$os\""
 done
 
-# Duplicate compute nodegroup to create "lsf-master-candiate" nodegroup
-NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid = 2"`
-
 # Create duplicate nodegroup
-ngedit -c $NGNAME -n %{LSF_MASTER_NODEGROUP}
+if [ -z "$MASTER_NGID" ]; then
+	# lsf-master-candidate nodegroup does not previously exist (good!)
+
+	# Use the compute nodegroup as a template for the 
+	# 'lsf-master-candidate' nodegroup
+	NGNAME=`sqlrunner -q "SELECT ngname FROM nodegroups WHERE ngid = 2"`
+
+	ngedit -c $NGNAME -n %{LSF_MASTER_NODEGROUP}
+
+	MASTER_NGID=`sqlrunner -q "SELECT ngid FROM nodegroups WHERE ngname = \"%{LSF_MASTER_NODEGROUP}\""`
+
+	sqlrunner -q "UPDATE nodegroups SET nameformat = \"lsfmaster-#RR-#NN\" WHERE ngid = $MASTER_NGID"
+fi
 
 # Get CID for LSF compute component
 CID=`sqlrunner -q "SELECT cid FROM components WHERE kid = $KID AND cname = \"%{LSF_COMPUTE_COMP}\" AND os=(SELECT repos.ostype FROM repos, nodegroups WHERE nodegroups.ngid = 2 AND nodegroups.repoid = repos.repoid)"`

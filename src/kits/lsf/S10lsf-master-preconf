@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# S10lsf-master-preconf
+
+# The cluster name is "@CLUSTERNAME@"
+
+CLUSTERNAME="@CLUSTERNAME@"
+
+LSF_TOPDIR="/opt/lsf"
+LSF_CONFDIR="$LSF_TOPDIR/conf"
+EGO_CONFDIR="$LSF_TOPDIR/ego/kernel/conf"
+
+ln -sf $EGO_CONFDIR/ego.shared $LSF_CONFDIR/lsf.shared
+ln -sf $EGO_CONFDIR/ego.cluster.$CLUSTERNAME $LSF_CONFDIR/lsf.cluster.$CLUSTERNAME
+ln -sf $LSF_CONFDIR/hosts $EGO_CONFDIR/hosts
+
+sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" $LSF_TOPDIR/7.0/lsf_quick_admin.html
+
+# Create cluster specific log directory
+[ -d "$LSF_TOPDIR/work/$CLUSTERNAME/logdir" ] || mkdir -p "$LSF_TOPDIR/work/$CLUSTERNAME/logdir"
+chown -R lsfadmin:lsfadmin "$LSF_TOPDIR/work/$CLUSTERNAME/logdir"
+
+rm -f /etc/rc.kusu.d/S10lsf-master-preconf

@@ -78,9 +78,28 @@ rpm:
 	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/profile.lsf
 	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/cshrc.lsf
 
+	# Copy templates files
+	@echo "Copying LSF \"template\" configuration files"
+	rm -rf $(TOPDIR)/templates
+	mkdir $(TOPDIR)/templates
+
+	# Clean remnants from lsfinstall procedure
 	rm -rvf /opt/lsf/conf/*.old
 	rm -rvf /opt/lsf/conf/*.old*
 	rm -rvf /opt/lsf/conf/lsbatch/XXX_clustername_XXX/configdir/*.old*
+
+	# Copy template cfg files
+	cp /opt/lsf/ego/kernel/conf/ego.shared $(TOPDIR)/templates/default.ego.shared
+	cp /opt/lsf/ego/kernel/conf/ego.cluster.XXX_clustername_XXX $(TOPDIR)/templates/default.ego.cluster
+
+	cp /opt/lsf/ego/kernel/conf/ego.conf $(TOPDIR)/templates/default.ego.conf
+
+	cp /opt/lsf/conf/lsf.conf $(TOPDIR)/templates/default.lsf.conf
+
+	# Build template version of the lsbatch directory/cfg files
+	[ -d $(TOPDIR)/templates/lsbatch/default/configdir ] || mkdir -p $(TOPDIR)/templates/lsbatch/default/configdir
+	cp -ar /opt/lsf/conf/lsbatch/XXX_clustername_XXX/configdir/* $(TOPDIR)/templates/lsbatch/default/configdir/
+
 
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
@@ -102,3 +121,5 @@ install::
 
 clean::
 	@echo "Cleaning up..."
+
+.PHONY: install clean rpm

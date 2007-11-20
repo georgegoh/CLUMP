@@ -36,10 +36,9 @@ This package is a metapackage for LSF(R)
 mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %install
-/usr/bin/install -m 755 %{_topdir}/S10lsf-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
+/usr/bin/install -m 755 %{_topdir}/S10lsf-master-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %post
-
 # sqlrunner is only available on the installer node
 if [ -f /etc/profile.nii ]; then
 	. /etc/profile.nii
@@ -55,10 +54,10 @@ if [ -z "$CNAME" ]; then
 fi
 
 # Update cluster name in pre-configuration script
-sed -i -e "s/@CLUSTERNAME@/$CNAME/" /etc/rc.kusu.d/S10lsf-preconf
+sed -i -e "s/@CLUSTERNAME@/$CNAME/" /etc/rc.kusu.d/S10lsf-master-preconf
 
-if [ -x /etc/rc.kusu.d/S10lsf-preconf ]; then
-	/etc/rc.kusu.d/S10lsf-preconf
+if [ -x /etc/rc.kusu.d/S10lsf-master-preconf ]; then
+	/etc/rc.kusu.d/S10lsf-master-preconf
 fi
 
 %postun
@@ -76,4 +75,4 @@ rm -rf /opt/kusu/lib/plugins/cfmclient/%{compdependency}.remove
 EOF
 
 %files
-/etc/rc.kusu.d/S10lsf-preconf
+/etc/rc.kusu.d/S10lsf-master-preconf

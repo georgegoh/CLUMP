@@ -28,6 +28,31 @@ BuildArchitectures: noarch
 %description
 This package is a metapackage for LSF compute nodes
 
+%install
+/usr/bin/install -m 755 %{_topdir}/S10lsf-compute-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
+
+%post
+# sqlrunner is only available on the installer node
+if [ -f /etc/profile.nii ]; then
+	. /etc/profile.nii
+
+	CNAME="$LSF7_0_1_ClusterName"
+else
+	CNAME=$( sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller'" )
+fi
+
+if [ -z "$CNAME" ]; then
+	echo "CNAME is blank; use a default"
+	CNAME="CLUSTER_NAME_NOT_DEFINED"
+fi
+
+# Update cluster name in pre-configuration script
+sed -i -e "s/@CLUSTERNAME@/$CNAME/" /etc/rc.kusu.d/S10lsf-compute-preconf
+
+if [ -x /etc/rc.kusu.d/S10lsf-compute-preconf ]; then
+	/etc/rc.kusu.d/S10lsf-compute-preconf
+fi
+
 %postun
 # Generate scripts for the CFM to remove other packages
 /bin/cat << 'EOF' >> /opt/kusu/lib/plugins/cfmclient/%{name}.remove
@@ -37,3 +62,4 @@ rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
 
 %files
+/etc/rc.kusu.d/S10lsf-compute-preconf

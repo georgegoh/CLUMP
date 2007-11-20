@@ -28,57 +28,66 @@ VERSION = '7.0.1'
 global VERSION_WITH_UNDERSCORES
 VERSION_WITH_UNDERSCORES = VERSION.replace('.', '_')
 
+EGO_VERSION_WITH_UNDERSCORES = "1_2"
+
 global COMPONENT_NAME
 COMPONENT_NAME = "component-LSF-Master-v%s" % ( VERSION_WITH_UNDERSCORES )
 
 global CLUSTER_NAME_KEY
 CLUSTER_NAME_KEY = 'LSF%s_ClusterName' % ( VERSION_WITH_UNDERSCORES )
 
-global LSF_CLUSTER_PLUGIN
-LSF_CLUSTER_PLUGIN = 'lsfcluster_%s' % ( VERSION_WITH_UNDERSCORES )
+global EGO_CLUSTER_PLUGIN
+
+
+
+EGO_CLUSTER_PLUGIN = 'egocluster_%s' % ( EGO_VERSION_WITH_UNDERSCORES )
+
+global LSF_HOSTS_PLUGIN
+LSF_HOSTS_PLUGIN = 'lsfhosts_%s' % ( VERSION_WITH_UNDERSCORES )
 
 class AddHostPlugin(AddHostPluginBase):
-	"LSF cluster file updater plugin"
+    "LSF cluster file updater plugin"
 
-	def enabled(self):
-		return True
+    def enabled(self):
+        return True
 
-	def added(self, nodename, info, prePopulateMode):
-		clusterName = self.getClusterName()
+    def added(self, nodename, info, prePopulateMode):
+        clusterName = self.getClusterName(nodename, info)
 
-		self.clusterFileName = 'lsf.cluster.%s' % clusterName
-		self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
+        self.clusterFileName = 'ego.cluster.%s' % clusterName
+        self.clusterFilePath = '/opt/lsf/ego/kernel/conf/%s' % \
+		( self.clusterFileName )
 
-	def getClusterName(self):
-		ngid = int(info[nodename][0]["nodegroupid"])
+    def getClusterName(self, nodename, info):
+        ngid = int(info[nodename][0]["nodegroupid"])
 
-		clusterName = None
+        clusterName = None
 
-		try:
-			sql = 'SELECT kvalue FROM appglobals WHERE kname = \'%s\' AND ngid=%d' % ( CLUSTER_NAME_KEY, ngid )
+        try:
+            sql = 'SELECT kvalue FROM appglobals WHERE kname = \'%s\' AND ngid=%d' % ( CLUSTER_NAME_KEY, ngid )
 
-			self.dbconn.execute(sql)
-			clusterName = self.dbconn.fetchone()[0]
-		except:
-			pass
+            self.dbconn.execute(sql)
+            clusterName = self.dbconn.fetchone()[0]
+        except:
+            pass
 
-		return clusterName
+        return clusterName
 
-	def removed(self, nodename, info):
+    def removed(self, nodename, info):
+        clusterName = self.getClusterName(nodename, info)
 
-		clusterName = self.getClusterName()
+        self.clusterFileName = 'ego.cluster.%s' % clusterName
+        self.clusterFilePath = '/opt/lsf/ego/kernel/conf/%s' % \
+		( self.clusterFileName )
 
-		self.clusterFileName = 'lsf.cluster.%s' % clusterName
-		self.clusterFilePath = '/opt/lsf/conf/%s' % self.clusterFileName
+        # Remove host from the lsf.cluster file
+        self.updateFile(self.clusterFilePath, self.parseLsfClusterLine,
+            nodename)
 
-		# Remove host from the lsf.cluster file
-		self.updateFile(self.clusterFilePath, self.parseLsfClusterLine,
-			nodename)
-
-		# Remove host from LSF_MASTER_LIST in lsf.conf if
-		# it is a master candidate host
-		self.updateFile("/opt/lsf/conf/lsf.conf", self.parseLsfConfLine,
-			 nodename)
+        # Remove host from LSF_MASTER_LIST in lsf.conf if
+        # it is a master candidate host
+        self.updateFile("/opt/lsf/conf/lsf.conf", self.parseLsfConfLine,
+             nodename)
 
     def finished(self, nodelist, prePopulateMode):
         nodelist = self.checkAvailableComponent()
@@ -182,7 +191,7 @@ class AddHostPlugin(AddHostPluginBase):
     def updateLSFConfig(self):
         """Update the LSF cluster file."""
 
-        genconfig_cmd = '/opt/kusu/bin/genconfig %s' % ( LSF_CLUSTER_PLUGIN )
+        genconfig_cmd = '/opt/kusu/bin/genconfig %s' % ( EGO_CLUSTER_PLUGIN )
 
         if os.path.exists(self.clusterFilePath):
            os.system('echo "Updating LSF files"') 
@@ -191,12 +200,13 @@ class AddHostPlugin(AddHostPluginBase):
            os.system('cp %s.NEW %s' % (self.clusterFilePath, self.clusterFilePath))
            os.system('chown lsfadmin:lsfadmin %s' % self.clusterFilePath)
 
-           # genconfig_cmd = '/opt/kusu/bin/genconfig lsfhosts_1_0'
-           # lsf_host_file = '/opt/lsf/conf/hosts'
-           # os.system('echo "Updating LSF host file"')
-           # os.system('%s > %s.tmp 2> /dev/null' % (genconfig_cmd, lsf_host_file))
-           # os.system('cp %s.tmp %s' % (lsf_host_file, lsf_host_file))
-           # os.system('chown lsfadmin:lsfadmin %s' % lsf_host_file)
+	# Update LSF/EGO hosts file
+        genconfig_cmd = '/opt/kusu/bin/genconfig %s' % ( LSF_HOSTS_PLUGIN )
+        lsf_host_file = '/opt/lsf/conf/hosts'
+        os.system('echo "Updating LSF hosts file"')
+        os.system('%s > %s.tmp 2> /dev/null' % (genconfig_cmd, lsf_host_file))
+        os.system('cp %s.tmp %s' % (lsf_host_file, lsf_host_file))
+        os.system('chown lsfadmin:lsfadmin %s' % lsf_host_file)
 
     def updateSymlinks(self, nodegroups):
         """ Fix CFM symlinks for master and master candidate LSF nodegroups """

@@ -24,9 +24,12 @@ from kusu.genconfig import Report
 import os
 import string
 import sys
+import re
 
 global APPKEY
 APPKEY   = "LSF7_0_1_ClusterName"
+
+COMP_MASTER = "component-LSF-Master-v7_0_1"
 
 class ClusterInfo:
 	pass
@@ -37,10 +40,15 @@ class thisReport(Report):
         	print self.gettext("genconfig_LSFconf_Help")
 
 
-	def validateCluster(self,clustername):
+	def validateCluster(self, clustername):
 		global APPKEY
+
+		ci = ClusterInfo()
+
+		ci.clusterName = clustername
+
 		query = ('select ngid from appglobals where kname="%s" '
-			 'and kvalue="%s"' % (APPKEY, clustername)) 
+			 'and kvalue="%s"' % (APPKEY, ci.clusterName)) 
 		try:
 			self.db.execute(query)
 		except:
@@ -48,12 +56,14 @@ class thisReport(Report):
 			sys.exit(-1)
 
 		row = self.db.fetchone()
+
 		if not row:
 			return None
+
 		if row[0] != '':
-			ci = ClusterInfo()
 			ci.masterCandidateNGID = int(row[0])
 			return ci
+
 		return None
 
 	def getMasterCandidateList(self, ci):
@@ -75,105 +85,56 @@ class thisReport(Report):
 
 		return ' '.join(l)
 
+	def getLsfConfDir(self, clusterName):
+	    query = ('SELECT ngname FROM nodegroups, appglobals, ng_has_comp, components '
+			'WHERE appglobals.ngid=nodegroups.ngid AND '
+			'nodegroups.ngid=ng_has_comp.ngid AND '
+			'ng_has_comp.cid=components.cid AND '
+			'components.cname="%s" AND appglobals.kvalue="%s"' % \
+			(COMP_MASTER, clusterName))
+	    try:
+	 	self.db.execute(query)
+	    except:
+		sys.stderr.write(self.gettext("DB_Query_Error\n"))
+		sys.exit(-1)
+
+	    lsfConfDir = ''
+
+	    try:
+	    	row = self.db.fetchone()
+
+	  	lsfConfDir = "/etc/cfm/%s/opt/lsf/conf" % ( row[0] )
+	    except:
+		pass
+
+	    return lsfConfDir
+
 	def generateLsfConfig(self, ci, mode):
+	    # Determine location of the configuration file based on the
+	    # nodegroup.
+	    #
+	    lsfConfFileName = "%s/lsf.conf" % \
+		( self.getLsfConfDir(ci.clusterName) )
+
+	    if not os.path.exists(lsfConfFileName):
+		return
+
 	    mcList = self.getMasterCandidateList(ci)
 
-            if mode == 'slave':
-               print """\
-# Refer to the "Administration Platform LSF" before changing any parameters in
-# this file.
-# Any changes to the path names of LSF files must be reflected
-# in this file. Make these changes with caution.
+	    fin = open(lsfConfFileName, "r")
 
-LSB_SHAREDIR=/opt/lsf/work
+	    while True:
+		instr = fin.readline()
+		if instr == '':
+		    break
 
-# Configuration directories
-LSF_CONFDIR=/opt/lsf/conf
+		if re.compile("^LSF_MASTER_LIST=").search(instr):
+			print "LSF_MASTER_LIST=\"%s\"" % mcList
+			continue
 
-# Daemon log messages
-LSF_LOGDIR=/opt/lsf/log
-LSF_LOG_MASK=LOG_WARNING
+		print instr,
 
-# Batch mail message handling
-LSB_MAILTO=!U
-
-# Miscellaneous
-LSF_AUTH=eauth
-
-# General lsfinstall variables
-LSF_MISC=/opt/lsf/7.0/misc
-XLSF_APPDIR=/opt/lsf/7.0/misc
-LSF_ENVDIR=/opt/lsf/conf
-
-# Internal variable to distinguish Default Install
-LSF_DEFAULT_INSTALL=y
-
-# Internal variable indicating operation mode
-LSB_MODE=batch
-
-# WARNING: Please do not delete/modify next line!!
-LSF_LINK_PATH=n
-
-LSF_TOP=/opt/lsf
-LSF_VERSION=7.0
-LSF_EGO_ENVDIR=/opt/lsf/ego/kernel/conf
-LSB_SHORT_HOSTLIST=1
-LSF_HPC_EXTENSIONS="CUMULATIVE_RUSAGE"
-LSB_SUB_COMMANDNAME=Y
-LSF_MASTER_LIST="%s"
-LSF_EGO_DAEMON_CONTROL="N"
-LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
-""" % ( mcList )
-
-            if mode == 'master':
-               print """\
-# Refer to the "Administration Platform LSF" before changing any parameters in
-# this file.
-# Any changes to the path names of LSF files must be reflected
-# in this file. Make these changes with caution.
-
-LSB_SHAREDIR=/opt/lsf/work
-
-# Configuration directories
-LSF_CONFDIR=/opt/lsf/conf
-LSB_CONFDIR=/opt/lsf/conf/lsbatch
-
-# Daemon log messages
-LSF_LOGDIR=/opt/lsf/log
-LSF_LOG_MASK=LOG_WARNING
-
-# Batch mail message handling
-LSB_MAILTO=!U
-
-# Miscellaneous
-LSF_AUTH=eauth
-
-# General lsfinstall variables
-LSF_MANDIR=/opt/lsf/7.0/man
-LSF_INCLUDEDIR=/opt/lsf/7.0/include
-LSF_MISC=/opt/lsf/7.0/misc
-XLSF_APPDIR=/opt/lsf/7.0/misc
-LSF_ENVDIR=/opt/lsf/conf
-
-# Internal variable to distinguish Default Install
-LSF_DEFAULT_INSTALL=y
-
-# Internal variable indicating operation mode
-LSB_MODE=batch
-
-# WARNING: Please do not delete/modify next line!!
-LSF_LINK_PATH=n
-
-LSF_TOP=/opt/lsf
-LSF_VERSION=7.0
-LSF_EGO_ENVDIR=/opt/lsf/ego/kernel/conf
-LSB_SHORT_HOSTLIST=1
-LSF_HPC_EXTENSIONS="CUMULATIVE_RUSAGE"
-LSB_SUB_COMMANDNAME=Y
-LSF_MASTER_LIST="%s"
-LSF_EGO_DAEMON_CONTROL="N"
-LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
-""" % ( mcList )
+	    fin.close()
 
 	def runPlugin(self, pluginargs):
 		if not pluginargs:
@@ -193,11 +154,9 @@ LSF_LICENSE_FILE=/opt/lsf/conf/license.dat
 
 		generate = 'master'
 		if len(pluginargs) > 1:
-			# The second argument is the name of the file to generate
 			if pluginargs[1] == 'master':
 				generate = 'master'
 			if pluginargs[1] == 'slave':
 				generate = 'slave'
 
-		self.generateLsfConfig(ci, mode=generate)
-
+		self.generateLsfConfig(ci, mode = generate)

@@ -3,12 +3,18 @@
 GENCONFIG=""
 LSFVERSION="7_0_1"
 EGOVERSION="1_2"
-CLUSTERNAME="master"
 
 LSF_CONFDIR="/opt/lsf/conf"
 EGO_CONFDIR="/opt/lsf/ego/kernel/conf"
 
 MASTER_NODEGROUP="lsf-master-candidate"
+
+CLUSTERNAME="$( sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname = \"PrimaryInstaller\"" )"
+if [ -z "$CLUSTERNAME" ]; then
+	# Unable to get default cluster name, set sane default
+	echo "Warning: unable to read global PrimaryInstaller setting"
+	CLUSTERNAME="master"
+fi
 
 # Generate LSF host configuration for installer only.
 if [ -f /opt/kusu/bin/genconfig ]; then
@@ -62,14 +68,48 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-$GENCONFIG lsfcluster_$LSFVERSION $CLUSTERNAME cluster >$CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME
+# Move template configuration files into place
+CFM_TMPLDIR="/etc/cfm/templates"
 
-$GENCONFIG egoshared_$EGOVERSION $CLUSTERNAME >$CFM_EGO_CONFDIR/ego.shared
+cp -a $CFM_TMPLDIR/default.ego.cluster $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME
+cp -a $CFM_TMPLDIR/default.ego.conf $CFM_EGO_CONFDIR/ego.conf
+cp -a $CFM_TMPLDIR/default.ego.shared $CFM_EGO_CONFDIR/ego.shared
+cp -a $CFM_TMPLDIR/default.lsf.conf $CFM_LSF_CONFDIR/lsf.conf
 
-$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME master >$CFM_LSF_CONFDIR/lsf.conf
-$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME master >$CFM_EGO_CONFDIR/ego.conf
+# Update lsf.cluster.<clustername>
+$GENCONFIG egocluster_$EGOVERSION $CLUSTERNAME cluster >$CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.new
+mv $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.old
+mv $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.new $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME
+rm -f $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.old
 
-# Generate CFM symlinks
+# Update ego.shared
+$GENCONFIG egoshared_$EGOVERSION $CLUSTERNAME >$CFM_EGO_CONFDIR/ego.shared.new
+mv $CFM_EGO_CONFDIR/ego.shared $CFM_EGO_CONFDIR/ego.shared.old
+mv $CFM_EGO_CONFDIR/ego.shared.new $CFM_EGO_CONFDIR/ego.shared
+rm -f $CFM_EGO_CONFDIR/ego.shared.old
+
+# Update lsf.conf
+$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME master >$CFM_LSF_CONFDIR/lsf.conf.new
+mv $CFM_LSF_CONFDIR/lsf.conf $CFM_LSF_CONFDIR/lsf.conf.old
+mv $CFM_LSF_CONFDIR/lsf.conf.new $CFM_LSF_CONFDIR/lsf.conf
+rm -f $CFM_LSF_CONFDIR/lsf.conf.old
+
+# Update ego.conf
+$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME master >$CFM_EGO_CONFDIR/ego.conf.new
+mv $CFM_EGO_CONFDIR/ego.conf $CFM_EGO_CONFDIR/ego.conf.old
+mv $CFM_EGO_CONFDIR/ego.conf.new $CFM_EGO_CONFDIR/ego.conf
+rm -f $CFM_EGO_CONFDIR/ego.conf.old
+
+# LSF hosts file
+$GENCONFIG lsfhosts_$LSFVERSION $CLUSTERNAME >$CFM_LSF_CONFDIR/hosts.new
+mv $CFM_LSF_CONFDIR/hosts $CFM_LSF_CONFDIR/hosts.old
+mv $CFM_LSF_CONFDIR/hosts.new $CFM_LSF_CONFDIR/hosts
+rm -f $CFM_LSF_CONFDIR/hosts.old
+
+# Copy lsbatch files into place
+[ -d $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir ] || mkdir -p $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir
+cp -ar $CFM_TMPLDIR/lsbatch/default/configdir/* $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir/
+
 for ng in $( sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5' ); do
 	CFM_LSF_CONFDIR="/etc/cfm/$ng""$LSF_CONFDIR"
 	CFM_EGO_CONFDIR="/etc/cfm/$ng""$EGO_CONFDIR"
@@ -86,8 +126,25 @@ for ng in $( sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngi
 		exit 1
 	fi
 
-	$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME slave >$CFM_LSF_CONFDIR/lsf.conf
-	$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME slave >$CFM_EGO_CONFDIR/ego.conf
+	# lsf.conf
+	$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME slave >$CFM_LSF_CONFDIR/lsf.conf.new
+	if [ -f $CFM_LSF_CONFDIR/lsf.conf ]; then
+		mv $CFM_LSF_CONFDIR/lsf.conf $CFM_LSF_CONFDIR/lsf.conf.old
+	fi
+	mv $CFM_LSF_CONFDIR/lsf.conf.new $CFM_LSF_CONFDIR/lsf.conf
+
+	# ego.conf
+	$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME slave >$CFM_EGO_CONFDIR/ego.conf.new
+	if [ -f $CFM_EGO_CONFDIR/ego.conf ]; then
+		mv $CFM_EGO_CONFDIR/ego.conf $CFM_EGO_CONFDIR/ego.conf.old
+	fi
+	mv $CFM_EGO_CONFDIR/ego.conf.new $CFM_EGO_CONFDIR/ego.conf
+
+	# hosts
+	$GENCONFIG lsfhosts_$LSFVERSION $CLUSTERNAME >$CFM_LSF_CONFDIR/hosts.new
+	mv $CFM_LSF_CONFDIR/hosts $CFM_LSF_CONFDIR/hosts.old
+	mv $CFM_LSF_CONFDIR/hosts.new $CFM_LSF_CONFDIR/hosts
+	rm -f $CFM_LSF_CONFDIR/hosts.old
 done
 
 rm -f /etc/rc.kusu.d/S11lsf-genconfig

@@ -70,8 +70,9 @@ clean:
 	rm -rf $(TOPDIR)/disk1
 	cd components; make clean
 	cd packages; make clean
-	rm -rf docs/files/*
+	rm -rf docs/files
 	rm -rf kit-*.iso BUILD RPMS SOURCES
 	rm -rf *.rpm
+	rm -rf templates
 
 .PHONY: components packages 

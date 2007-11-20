@@ -43,7 +43,7 @@ Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArch: x86_64
 AutoReq: no
-Requires: coreutils, chkconfig
+Requires: coreutils, chkconfig, shadow-utils
 
 %description
 This package contains the LSF(R) binaries.
@@ -136,14 +136,12 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{egotopdir}/%{egoversion}
 
 %attr(755, %{lsfadmin}, root) %dir %{egotopdir}/kernel/log
-%dir %{egotopdir}/kernel/work
+%attr{755, %{lsfadmin}, %{lsfadmin}) %dir %{egotopdir}/kernel/work
 
 %files master-config
 %defattr(-,lsfadmin,lsfadmin)
-
 %config %{egoconfdir}/ResourceGroups.xml
 %config %{egoconfdir}/ConsumerTrees.xml
-
 %config %{egoconfdir}/wsg.conf
 
 %post
@@ -189,7 +187,6 @@ if [ -f %{lsfconfdir}/license.dat ]; then
    echo "Backing up license file to /root"
    cp %{lsfconfdir}/license.dat /root
 fi
-
 
 %postun
 # Remove initscript
