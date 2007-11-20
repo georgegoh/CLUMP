@@ -164,7 +164,8 @@ def getSCSI(type):
                 d[device] = {}
                 d[device]['vendor'] = readFile(s / 'vendor')
                 d[device]['model'] = readFile(s / 'model')
-                d[device]['partitions'] = getSCSIPartitions(dev)
+                if type == 'disk':
+                    d[device]['partitions'] = getSCSIPartitions(dev)
                 
     if type == 'disk':    
         sys_block = path('/sys/block')
