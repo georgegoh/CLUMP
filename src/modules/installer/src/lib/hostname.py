@@ -22,6 +22,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 kl = kusulog.getKusuLog('installer.network')
 
 DEFAULT_DNSZONE = 'kusu'
+DEFAULT_PUBLIC_DNSZONE = 'example.com'
 
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
@@ -169,12 +170,14 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         db = self.kiprofile.getDatabase()
 
         dnsdomain = db.AppGlobals(kname='DNSZone', kvalue=DEFAULT_DNSZONE)
+        pubdnsdomain = db.AppGlobals(kname='PublicDNSZone',
+                                     kvalue=DEFAULT_PUBLIC_DNSZONE)
         db.flush()
 
         installerng = db.NodeGroups.selectfirst_by(type='installer')
         mastername = db.Nodes.selectfirst_by(ngid=installerng.ngid).name
 
-        self.defaultname = '.'.join((mastername, 'example.com'))
+        self.defaultname = '.'.join((mastername, pubdnsdomain.kvalue))
         self.defaultzone = dnsdomain.kvalue
 
     def save(self, db, profile):
@@ -183,12 +186,19 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                 dnsdomain = db.AppGlobals.selectfirst_by(kname='DNSZone')
                 dnsdomain.kvalue = profile['fqhn_domain']
 
+            host = self.netProfile['fqhn_host'].split('.')[0]
+            pub_domain = '.'.join(self.netProfile['fqhn_host'].split('.')[1:])
+
+            pubdnsdomain = \
+                db.AppGlobals.selectfirst_by(kname='PublicDNSZone')
+            pubdnsdomain.kvalue = pub_domain
+
             primaryinstaller = \
                 db.AppGlobals.selectfirst_by(kname='PrimaryInstaller')
-            primaryinstaller.kvalue = self.netProfile['fqhn_host']
+            primaryinstaller.kvalue = host
 
             installerng = db.NodeGroups.selectfirst_by(type='installer')
             master = db.Nodes.selectfirst_by(ngid=installerng.ngid)
-            master.name = self.netProfile['fqhn_host']
+            master.name = host
 
             db.flush()
