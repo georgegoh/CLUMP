@@ -93,71 +93,76 @@ class DistroInstallSrcBase(object):
     def copyKernel(self, dest, overwrite=False):
         """Copy the kernel file to a destination"""
         
-        if path(dest).isdir():
-            if path(dest).access(os.W_OK):
-                filepath = path(dest) / self.getKernelPath().basename()
-                # check if the destpath already contains the same name as the kernelPath
-                if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
-                    self.getKernelPath().copy(filepath)
-                    return
-                elif not filepath.exists():
-                    self.getKernelPath().copy(filepath)
-                    return
+        try:
+            if path(dest).isdir():
+                if path(dest).access(os.W_OK):
+                    filepath = path(dest) / self.getKernelPath().basename()
+                    # check if the destpath already contains the same name as the kernelPath
+                    if filepath.exists() and overwrite:
+                        filepath.chmod(0644)
+                        self.getKernelPath().copy(filepath)
+                        return
+                    elif not filepath.exists():
+                        self.getKernelPath().copy(filepath)
+                        return
+                    else:
+                        raise FileAlreadyExists
                 else:
-                    raise FileAlreadyExists
+                    raise CopyError
             else:
-                raise CopyError
-        else:
-            if path(dest).parent.access(os.W_OK):
-                # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite:
-                    # remove the existing file if overwrite is true
-                    path(dest).remove()
-                    self.getKernelPath().copy(dest)
-                    return
-                elif not path(dest).exists():
-                    self.getKernelPath().copy(dest)
-                    return
+                if path(dest).parent.access(os.W_OK):
+                    # make sure that the existing destpath is accessible and writable
+                    if path(dest).exists() and overwrite:
+                        # remove the existing file if overwrite is true
+                        path(dest).remove()
+                        self.getKernelPath().copy(dest)
+                        return
+                    elif not path(dest).exists():
+                        self.getKernelPath().copy(dest)
+                        return
+                    else:
+                        raise FileAlreadyExists
                 else:
-                    raise FileAlreadyExists
-            else:
-                raise CopyError
-        
+                    raise CopyError
+        except IOError, e:
+            raise e
+    
     def copyInitrd(self, dest, overwrite=False):
         """Copy the initrd file to a destination"""
 
-        if path(dest).isdir():
-            if path(dest).access(os.W_OK):
-                print 'is a dir!'
-                # check if the destpath already contains the same name as the initrdPath
-                filepath = path(dest) / self.getInitrdPath().basename()
-                if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
-                    self.getInitrdPath().copy(filepath)
-                    return
-                elif not filepath.exists():
-                    self.getInitrdPath().copy(filepath)
-                    return
+        try:
+            if path(dest).isdir():
+                if path(dest).access(os.W_OK):
+                    # check if the destpath already contains the same name as the initrdPath
+                    filepath = path(dest) / self.getInitrdPath().basename()
+                    if filepath.exists() and overwrite:
+                        filepath.chmod(0644)            
+                        self.getInitrdPath().copy(filepath)
+                        return
+                    elif not filepath.exists():
+                        self.getInitrdPath().copy(filepath)
+                        return
+                    else:
+                        raise FileAlreadyExists                
                 else:
-                    raise FileAlreadyExists                
+                    raise CopyError
             else:
-                raise CopyError
-        else:
-            if path(dest).parent.access(os.W_OK):
-                # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
-                    # remove the existing file if overwrite is true
-                    path(dest).remove()
-                    self.getInitrdPath().copy(dest)
-                    return
-                if not path(dest).exists():
-                    self.getInitrdPath().copy(dest)
-                    return
+                if path(dest).parent.access(os.W_OK):
+                    # make sure that the existing destpath is accessible and writable
+                    if path(dest).exists() and overwrite: 
+                        # remove the existing file if overwrite is true
+                        path(dest).remove()
+                        self.getInitrdPath().copy(dest)
+                        return
+                    if not path(dest).exists():
+                        self.getInitrdPath().copy(dest)
+                        return
+                    else:
+                        raise FileAlreadyExists
                 else:
-                    raise FileAlreadyExists
-            else:
-                raise CopyError
+                    raise CopyError
+        except IOError, e:
+            raise e
 
     def getVersion(self):
         '''virtual function to be implemented by specific distro children'''

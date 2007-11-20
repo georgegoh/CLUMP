@@ -279,7 +279,7 @@ class BootMediaTool:
             self._initSrc(srcpath)
             self.installsrc.copyKernel(dest,overwrite)
             return True
-        except (CopyError,FileAlreadyExists), e:
+        except (CopyError,FileAlreadyExists,IOError), e:
             raise e
             
     def copyInitrd(self, srcpath, dest, overwrite=False):
@@ -290,7 +290,7 @@ class BootMediaTool:
             self._initSrc(srcpath)
             self.installsrc.copyInitrd(dest,overwrite)
             return True
-        except (CopyError,FileAlreadyExists), e:
+        except (CopyError,FileAlreadyExists,IOError), e:
             raise e
             
     def packRootImg(self, dirname, rootimgpath, initscript=None):
