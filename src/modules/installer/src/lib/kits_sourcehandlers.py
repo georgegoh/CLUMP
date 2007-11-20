@@ -165,7 +165,16 @@ def verifyDistroVersionAndArch(kiprofile, distro):
 
 
 def addOSKit(baseScreen, kitops, osdistro, cdrom):
-    kit = kitops.prepareOSKit(osdistro)
+    try:
+        kit = kitops.prepareOSKit(osdistro)
+    except (IOError,FileAlreadyExists,CopyError), e :
+        baseScreen.selector.popupMsg('Error reading OS disk', 'Please ensure that the ' + \
+                                     'OS disk is not corrupted or that' + \
+                                     'the CD/DVD drive is not faulty.')
+        eject(cdrom)
+        return        
+        
+        
     if kit['name'] != baseScreen.kiprofile['OS'] or \
        kit['ver'] != baseScreen.kiprofile['OS_VERSION'] or \
        kit['arch'] != baseScreen.kiprofile['OS_ARCH']:

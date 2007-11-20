@@ -484,31 +484,46 @@ class KitOps:
 
         bmt = BootMediaTool()
 
-        if self.installer:
-            bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],
-                           overwrite=True)
-        else:
-            fd, tmprd1 = tempfile.mkstemp(prefix='kitops', dir=self.tmpprefix)
-            os.close(fd)
-            tmprd1 = path(tmprd1)
 
-            if tmprd1.exists():
-                tmprd1.remove()
+        fd, tmprd1 = tempfile.mkstemp(prefix='kitops', dir=self.tmpprefix)
+        os.close(fd)
+        tmprd1 = path(tmprd1)
 
-            tmprootfs = path(tempfile.mkdtemp(prefix='kitops',
-                                              dir=self.tmpprefix))
-
-            bmt.copyInitrd(self.mountpoint, tmprd1, True)
-            bmt.unpackRootImg(tmprd1, tmprootfs)
+        if tmprd1.exists():
             tmprd1.remove()
-            #patch tmprootfs with necessary pieces HERE
-            #pack up the patched rootfs & put it under tftpboot
-            bmt.packRootImg(tmprootfs, self.pxeboot_dir / kit['initrd'])
-            tmprootfs.rmtree()
 
-        #copy kernel to tftpboot & rename
-        bmt.copyKernel(self.mountpoint, self.pxeboot_dir / kit['kernel'], True)
+        tmprootfs = path(tempfile.mkdtemp(prefix='kitops',
+                                          dir=self.tmpprefix))
+        try:
+            if self.installer:
+                bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],
+                               overwrite=True)
+            else:
+                bmt.copyInitrd(self.mountpoint, tmprd1, True)
+                bmt.unpackRootImg(tmprd1, tmprootfs)
+                tmprd1.remove()
+                #patch tmprootfs with necessary pieces HERE
+                #pack up the patched rootfs & put it under tftpboot
+                bmt.packRootImg(tmprootfs, self.pxeboot_dir / kit['initrd'])
+                tmprootfs.rmtree()
 
+
+            #copy kernel to tftpboot & rename
+            bmt.copyKernel(self.mountpoint, self.pxeboot_dir / kit['kernel'], True)
+
+        except (CopyError,FileAlreadyExists,IOError), e:
+            # cleanup tmp stuff
+            if tmprd1.exists(): tmprd1.rmtree()
+            if tmprootfs.exists(): tmprootfs.rmtree()
+
+            # consider the kernel/initrd invalidated, remove them
+            if path(self.pxeboot_dir / kit['kernel']).exists():
+                path(self.pxeboot_dir / kit['kernel']).remove()
+            if path(self.pxeboot_dir / kit['initrd']).exists():
+                path(self.pxeboot_dir / kit['initrd']).remove()
+
+            raise e
+            
         return kit
 
     def copyOSKitMedia(self, kit):
