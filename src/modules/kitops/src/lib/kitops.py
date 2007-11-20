@@ -363,7 +363,7 @@ class KitOps:
             comp = {'compversion': '', 'comprelease': '', 'pkgname': '',
                     'name': '', 'arch': '', 'description': '', 'ngtypes': [],
                     'ostype': '', 'osversion': '', 
-                    'driverpacks':False}
+                    'driverpacks':[]}
 
 
             compinst = PackageFactory(str(comploc))
