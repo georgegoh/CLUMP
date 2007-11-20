@@ -23,17 +23,12 @@ ARCH=$(shell arch)
 default: rpm
 
 rpm:
-	@if [ -f $(HOME)/.rpmmacros ] ; then \
-                mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
-        fi
 	-mkdir -p $(TOPDIR)/BUILD
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
-	@echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	@for i in $(SPECFILES) ; do \
 		(rpmbuild -bb $$i ) ;\
 	done
-	@rm -rf $(HOME)/.rpmmacros
 
 clean:
 	@if [ -d $(TOPDIR)/RPMS ]; then \
