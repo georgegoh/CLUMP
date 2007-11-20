@@ -64,20 +64,5 @@ class KusuRC(rcplugin.Plugin):
             f.writelines(newline)
             f.close()
 
-            # place automount maps in web root
-            webdir = path('/var/www/html')
-
-            if not webdir.exists():
-                webdir.makedirs()
-
-            # copy automount maps to webdir
-            (etcnodeautomaster).copy(webdir / 'auto.master')
-            (etcnodeautohome).copy(webdir / 'auto.home')
-
-            retcode, out, err = self.runCommand('/etc/init.d/autofs restart')
-
-            if retcode != 0:
-                return False
-
         return True
 

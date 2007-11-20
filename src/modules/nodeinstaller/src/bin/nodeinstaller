@@ -258,11 +258,6 @@ class ProgressScreen(BaseScreen):
         self.nodeinst.generateProfileNII(kusu_prefix)
         dlg.close()
 
-        kl.debug('Copying automount maps')
-        dlg = self.selector.popupProgress('Automount Maps', 'Downloading Automount maps...')
-        self.nodeinst.getAutomountMaps(self.niihost, kusu_prefix)
-        dlg.close()
-
         kl.debug('Copying /opt/kusu/etc/db.passwd')
         dlg = self.selector.popupProgress('Db Passwd', 'Copying db.passwd...')
         self.nodeinst.getDbPasswd(kusu_prefix)

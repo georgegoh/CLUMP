@@ -62,3 +62,4 @@ install::
 	install -m644 sbin/S02KusuNodeNTPD.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuClientYumSetup.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuNodeSyslog.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m755 sbin/S02KusuAutomount.sh $(ROOT)/opt/kusu/lib/plugins/cfmclient

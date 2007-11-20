@@ -378,8 +378,8 @@ class BuildImage:
                 os.chmod(authorizedkeys, 0644)
 
         # setup nfs mounts
-        autohome = '/var/www/html/auto.home'
-        automaster = '/var/www/html/auto.master'
+        autohome = '/etc/node.auto.home' % (self.nodegroup)
+        automaster = "/etc/node.auto.master" % (self.nodegroup)
         if os.path.exists(autohome) and os.path.exists(automaster):
             shutil.copy(autohome, os.path.join(self.imagedir, 'etc/auto.home'))
             shutil.copy(automaster, os.path.join(self.imagedir, 'etc/auto.master'))

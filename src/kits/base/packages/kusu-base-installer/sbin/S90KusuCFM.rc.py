@@ -34,6 +34,9 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/ssh/ssh_host_key.pub'),
                  path('/etc/ssh/ssh_host_rsa_key.pub')]
 
+        nodeautomaster = path('/etc/node.auto.master')
+        nodeautohome = path('/etc/node.auto.home')
+
         ngs = self.dbs.NodeGroups.select()
 
         for ng in ngs:
@@ -62,7 +65,13 @@ class KusuRC(rcplugin.Plugin):
                 f.write('# Entries below this come from the CFM\'s fstab.append\n')
                 f.close()
 
-        
+            if nodeautomaster.exists():
+                ngautomaster = "/etc/cfm/%s/etc/auto.master" % (ng.ngname)
+                (nodeautomaster).copy(ngautomaster)
+
+            if nodeautohome.exists():
+                ngautohome = "/etc/cfm/%s/etc/auto.home" % (ng.ngname)
+                (nodeautohome).copy(ngautohome)
 
         # Redirect all stdout, stderr
         oldOut = sys.stdout
@@ -82,6 +91,15 @@ class KusuRC(rcplugin.Plugin):
 
         # Restore stdout and stderr
         sys.stdout = oldOut
-        sys.stderr = oldErr 
+        sys.stderr = oldErr
+
+        #reload automount maps
+        if nodeautomaster.exists() or nodeautohome.exists():
+            retcode, out, err = self.runCommand('/etc/init.d/autofs restart')
+
+            if retcode != 0:
+                return False
+
 
         return True
+

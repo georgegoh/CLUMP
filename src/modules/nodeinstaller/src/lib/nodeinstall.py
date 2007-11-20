@@ -472,23 +472,3 @@ class NodeInstaller(object):
             if m not in mounted:
                 raise KusuError, 'Mountpoint: %s not defined' % m
 
-    def getAutomountMaps(self, hostip, prefix=''):
-        automaster = path(prefix + '/etc/auto.master')
-        autohome = path(prefix + '/etc/auto.home')
-
-        # grab auto.master file from master
-        cmds = ['wget', 'http://%s/auto.master' % hostip, '-O', automaster]
-        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        out, err = wgetP.communicate()                                 
-
-        automaster.chmod(0644)
-
-        # grab auto.home file from master
-        cmds = ['wget', 'http://%s/auto.home' % hostip, '-O', autohome]
-        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        out, err = wgetP.communicate()                                 
-
-        automaster.chmod(0644)
-        autohome.chmod(0644)
