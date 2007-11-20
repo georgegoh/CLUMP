@@ -160,13 +160,13 @@ rm -rf /opt/ntop
 rm -rf /opt/kusu/lib/plugins/ngedit/*ntop*.py?
 
 # Remove CFM symlinks
-for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid = 1 AND ngid < 5'`; do
     if [ -d /etc/cfm/$i/opt/ntop ]; then
        rm -rf /etc/cfm/$i/opt/ntop
     fi
 done
 
-for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngid FROM nodegroups WHERE ngid >= 1 AND ngid < 5'`; do
+for i in `/opt/kusu/sbin/sqlrunner -q 'SELECT ngid FROM nodegroups WHERE ngid = 1 AND ngid < 5'`; do
     if [ -d /opt/kusu/cfm/$i/opt/ntop ]; then
        rm -rf /opt/kusu/cfm/$i/opt/ntop
     fi
