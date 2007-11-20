@@ -25,14 +25,15 @@ class NGPlugin(NGEPluginBase):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         NGEPluginBase.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.database = database
         self.setHelpLine("Lava Kit")
 
     def add(self):
         assert(self.ngid)
 	query = ('select ngname from nodegroups where ngid = %s' % self.ngid)
 	try:
-	    database.execute(query)
-	    ngname = database.fetchone()
+	    self.database.execute(query)
+	    ngname = self.database.fetchone()
 	except:
             return
    
@@ -42,8 +43,8 @@ class NGPlugin(NGEPluginBase):
         assert(self.ngid)
         query = ('select ngname from nodegroups where ngid = %s' % self.ngid)
         try:
-            database.execute(query)
-            ngname = database.fetchone()
+            self.database.execute(query)
+            ngname = self.database.fetchone()
         except:
             return
 
