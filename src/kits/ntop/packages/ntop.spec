@@ -227,7 +227,7 @@ EOF
 
 %{__install} -Dp -m0755 ntop.sysv %{buildroot}%{_initrddir}/ntop
 %{__install} -Dp -m0644 ntop.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/ntop
-%{__install} -Dp -m0600 ntop.conf.sample %{buildroot}%{_sysconfdir}/ntop.conf
+#%{__install} -Dp -m0600 ntop.conf.sample %{buildroot}%{_sysconfdir}/ntop.conf
 
 %pre
 if ! /usr/bin/id ntop &>/dev/null; then
@@ -270,7 +270,7 @@ fi
 %doc AUTHORS ChangeLog CONTENTS COPYING INSTALL MANIFESTO NEWS PORTING THANKS
 %doc *.txt docs/* ntop.conf.sample
 %doc %{_mandir}/man8/ntop.8*
-%config(noreplace) %{_sysconfdir}/ntop.conf
+#%config(noreplace) %{_sysconfdir}/ntop.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/ntop
 %config %{_sysconfdir}/ntop/
 %config %{_initrddir}/ntop
