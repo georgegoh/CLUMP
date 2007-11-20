@@ -25,7 +25,6 @@ class NGPlugin(NGEPluginBase):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         NGEPluginBase.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        self.database = database
         self.setHelpLine("Lava Kit")
 
     def add(self):
