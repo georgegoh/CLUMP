@@ -713,7 +713,7 @@ class KitOps:
                 break
 
         if skipScript:
-            kl.debug("Script '%s' contains no commands, doing nothing" % script)
+            kl.debug("Script '%s' is empty, will not be generated" % script)
             return False
 
         kl.debug("Writing to '%s' the following:\n%s", script, cmd)
