@@ -185,6 +185,7 @@ def getSCSI(type):
 def getSCSIPartitions(path):
     """Retrieves a list of partitions."""
     partitions = []
+    if str(path) == '/': return partitions
     for p in path.listdir():
         p_name = p.basename()
         if p_name.startswith(path.basename()):
@@ -229,6 +230,7 @@ def CCISSDiskHandler(path):
 def getCCISSPartitions(path):
     """Return a list of partitions in a CCISS disk."""
     partitions = []
+    if str(path) == '/': return partitions
     for p in path.listdir():
         p_name = p.basename()
         if p_name.startswith(path.basename()):
