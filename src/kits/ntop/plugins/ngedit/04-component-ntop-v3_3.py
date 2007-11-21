@@ -121,6 +121,10 @@ class NGPlugin(NGEPluginBase):
 ###  NOTE: For more than casual use, you probably want this.
 --daemon
 """ % (interfaces)
-        fptr = open("/etc/cfm/%s/etc/ntop.conf" % ngname,'w')
+        if self.ngid == 1:
+           fptr = open("/etc/ntop.conf", 'w')
+        else:
+           fptr = open("/etc/cfm/%s/etc/ntop.conf" % ngname,'w')
+
         fptr.writelines(ntopConfig)
         fptr.close()
