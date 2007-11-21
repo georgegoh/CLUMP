@@ -86,6 +86,10 @@ if [ ! -e ${KUSU_ROOT}/bin/buildkit ]; then
   ( cd ${CMAKE_BINARY_DIR} && make )
 fi
 
+if [ -d $KITS_EXTRA_ISO_DIR ]; then
+    cp $KITS_EXTRA_ISO_DIR/kit-*.iso $TMP_KITDIR/.
+fi
+
 buildkit make-meta dir=$TMP_KITDIR iso=${CMAKE_BINARY_DIR}/metakit-$BUILDDATE-$KUSUREVISION.${KUSU_BUILD_DIST}-${KUSU_BUILD_DISTVER}.${KUSU_BUILD_ARCH}.iso
 
 
