@@ -119,6 +119,9 @@ class thisReport(Report):
 	    if not os.path.exists(lsfConfFileName):
 		return
 
+       	    installerName = self.db.getAppglobals('PrimaryInstaller')
+            dnsZone = self.db.getAppglobals('DNSZone')
+
 	    mcList = self.getMasterCandidateList(ci)
 
 	    fin = open(lsfConfFileName, "r")
@@ -132,9 +135,19 @@ class thisReport(Report):
 			print "LSF_MASTER_LIST=\"%s\"" % mcList
 			continue
 
+		if mode == "master":
+			if re.compile("^LSB_MAILTO").search(instr):
+				print """LSB_MAILTO=!U@%s.%s
+LSB_MAILSERVER=SMTP:%s.%s""" % ( installerName, dnsZone, installerName, dnsZone )
+
+				continue
+
 		print instr,
 
 	    fin.close()
+
+	    if mode == "slave":
+		print """LSF_GET_CONF=lim"""
 
 	def runPlugin(self, pluginargs):
 		if not pluginargs:
