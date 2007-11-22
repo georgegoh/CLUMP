@@ -20,6 +20,7 @@
 # Author: Shawn Starr <sstarr@platform.com>
 
 import os
+import re
 import sys
 import time
 from kusu.core.app import KusuApp
@@ -335,6 +336,10 @@ class AddHostApp(KusuApp):
             myNode.setRackNumber(myNodeInfo.nodeRackNumber)
             #myNode.setNodegroupByName(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
+                 if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[-:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
+                    print "Skipping '%s'. Not a MAC address" % macaddr.strip()
+                    continue
+
                  macaddr = macaddr.lower().strip()
                  checkMacAddr = myNode.findMACAddress(macaddr)
                  if checkMacAddr == False:
