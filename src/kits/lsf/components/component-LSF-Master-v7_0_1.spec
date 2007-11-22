@@ -33,10 +33,13 @@ BuildArchitectures: noarch
 This package is a metapackage for LSF(R)
 
 %prep
-mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %install
+/usr/bin/install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
 /usr/bin/install -m 755 %{_topdir}/S10lsf-master-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
+
+/usr/bin/install -d $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmclient
+/usr/bin/install -m 755 %{_topdir}/cfm-lsf-master.sh $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmclient/S01lsf-master.sh
 
 %post
 # sqlrunner is only available on the installer node
@@ -75,4 +78,7 @@ rm -rf /opt/kusu/lib/plugins/cfmclient/%{compdependency}.remove
 EOF
 
 %files
+%dir /etc/rc.kusu.d
 /etc/rc.kusu.d/S10lsf-master-preconf
+%dir /opt/kusu/lib/plugins/cfmclient
+/opt/kusu/lib/plugins/cfmclient/S01lsf-master.sh

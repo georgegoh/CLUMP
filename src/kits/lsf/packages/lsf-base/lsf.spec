@@ -60,11 +60,6 @@ Platform(R) LSF(R) Master configuration files
 
 %prep
 
-%pre
-# Add lsfadmin/lsfadmin user/group
-/usr/sbin/groupadd lsfadmin >/dev/null 2>&1 || :
-/usr/sbin/useradd -d "/home/lsfadmin" -g lsfadmin -m lsfadmin >/dev/null 2>&1 ||:
-
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins

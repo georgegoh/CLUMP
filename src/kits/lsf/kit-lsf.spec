@@ -94,6 +94,10 @@ rm -rf $RPM_BUILD_ROOT
 PATH=$PATH:/opt/kusu/sbin
 export PATH
 
+# Add lsfadmin/lsfadmin user/group
+/usr/sbin/groupadd -g 495 lsfadmin >/dev/null 2>&1 || :
+/usr/sbin/useradd -u 495 -d "/home/lsfadmin" -g lsfadmin -m lsfadmin >/dev/null 2>&1 ||:
+
 if [ ! -e /tmp/kusu/installer_running ]; then
     # Check if MySQL is running if not, start it.
     if [ `service mysqld status | grep -c running` -ne 1 ]; then
@@ -123,11 +127,6 @@ if [ -z "$KID" ]; then
 	echo "Error: LSF kit does not appear to be installed"
 	exit 1
 fi
-
-# Insert this kit into all repos
-# for repoid in `sqlrunner -q "SELECT repoid FROM repos"`; do
-	# sqlrunner -q "INSERT INTO repos_have_kits (repoid, kid) VALUES ($repoid, $KID)"
-# done
 
 # Attempt to get NGID for "lsf-master-candidate" nodegroup.  This will
 # not succeed on a 'clean' install.

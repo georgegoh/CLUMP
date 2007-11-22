@@ -63,11 +63,11 @@ rpm:
 	fi
 
 	if [ `grep -c lsfadmin /etc/group` -eq 0 ]; then \
-	   groupadd lsfadmin; \
+	   groupadd -g 495 lsfadmin; \
 	fi
 
 	if [ `grep -c lsfadmin /etc/passwd` -eq 0 ]; then \
-	   adduser -d "/home/lsfadmin" -g lsfadmin -m lsfadmin ;\
+	   adduser -u 495 -d "/home/lsfadmin" -g lsfadmin -m lsfadmin ;\
 	fi
 
 	(cd $(TOPDIR)/BUILD/lsf7.0.1_lsfinstall; \
