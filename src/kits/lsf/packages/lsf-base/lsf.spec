@@ -87,8 +87,8 @@ rm -rf $RPM_BUILD_ROOT
 %{lsftopdir}/profile.platform
 
 %attr(755, %{lsfadmin}, root) %dir %{lsfconfdir}
-%attr(644, %{lsfadmin}, root) %config %{lsfconfdir}/profile.lsf
-%attr(644, %{lsfadmin}, root) %config %{lsfconfdir}/cshrc.lsf
+%attr(644, %{lsfadmin}, root) %{lsfconfdir}/profile.lsf
+%attr(644, %{lsfadmin}, root) %{lsfconfdir}/cshrc.lsf
 %attr(644, %{lsfadmin}, root) %config %{lsfconfdir}/license.dat
 
 %attr(755, %{lsfadmin}, root) %dir %{lsftopdir}/log
@@ -96,7 +96,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{egotopdir}
 %dir %{egotopdir}/kernel
-%dir %{egoconfdir}
+%attr(-, %{lsfadmin}, lsfadmin) %dir %{egoconfdir}
 
 %config %{egoconfdir}/users.xml
 %config %{egoconfdir}/cshrc.ego
