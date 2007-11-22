@@ -11,8 +11,6 @@
 %define pvfs2_prefix /opt/pvfs2
 %define sed_pvfs2_prefix \\/opt\\/pvfs2
 
-%define kernel_version %(uname -r)
-
 Summary: Utilities for the PVFS2 Distributed Filesystem. 
 Name: %{name}
 Version: %{version}
@@ -35,20 +33,6 @@ access to data that is distributed across a (possibly large) collection
 of servers.  PVFS2 serves as both a testbed for parallel I/O research
 and as a freely available production-level tool for the cluster community.
 
-%package kernel-module
-Summary: PVFS2 kernel module
-Group: System Environment/Base
-
-%description kernel-module
-PVFS2 kernel module
-
-%package kernel-utils
-Summary: PVFS2 kernel utilities
-Group: Applications/System
-
-%description kernel-utils
-PVFS2 kernel utilities
-
 %prep
 echo "Prep section called"
 if [ -d $RPM_BUILD_ROOT ]; then
@@ -62,11 +46,7 @@ fi
 echo "Build section called"
 
 # Configure with no karma GUI, to allow building on machines without gtk
-%ifarch x86_64
-%configure --enable-verbose-build --with-kernel=/usr/src/kernels/%{kernel_version}-x86_64
-%else
-%configure --enable-verbose-build --with-kernel=/usr/src/kernels/%{kernel_version}-i386
-%endif
+%configure --enable-verbose-build
 
 /usr/bin/make clean
 /usr/bin/make V=1
@@ -79,9 +59,6 @@ fi
 if test $? -ne 0 ; then
    exit 1
 fi
-
-# Build kernel module
-/usr/bin/make kmod
 
 %install
 echo "Install section called"
@@ -96,16 +73,12 @@ mkdir -p $RPM_BUILD_ROOT/opt/pvfs2/
 mkdir -p $RPM_BUILD_ROOT/opt/pvfs2/lib
 mkdir -p $RPM_BUILD_ROOT/opt/pvfs2/man/man1
 mkdir -p $RPM_BUILD_ROOT/opt/pvfs2/bin
-mkdir -p $RPM_BUILD_ROOT/lib/modules/%{kernel_version}/kernel/fs/pvfs2
 
 sed -e s/@prefix@/"%{sed_pvfs2_prefix}"/g < examples/pvfs2-server.rc.in > $RPM_BUILD_ROOT/etc/init.d/pvfs2-server
 
 # Fix for version 1.1.0 ot install missing bits 
 cp src/apps/kernel/linux/pvfs2-client $RPM_BUILD_ROOT/opt/pvfs2/sbin/
 cp src/apps/kernel/linux/pvfs2-client-core $RPM_BUILD_ROOT/opt/pvfs2/sbin/
-
-# Kernel module
-cp src/kernel/linux-2.6/pvfs2.ko $RPM_BUILD_ROOT/lib/modules/%{kernel_version}/kernel/fs/pvfs2
 
 %files 
 /etc/init.d/pvfs2-server
@@ -169,10 +142,6 @@ cp src/kernel/linux-2.6/pvfs2.ko $RPM_BUILD_ROOT/lib/modules/%{kernel_version}/k
 /%{pvfs2_prefix}/sbin/pvfs2-client
 /%{pvfs2_prefix}/sbin/pvfs2-client-core
 /%{pvfs2_prefix}/sbin/pvfs2-server
-
-%files kernel-module
-%defattr(-,root,root)
-/lib/modules/%{kernel_version}/kernel/fs/pvfs2/pvfs2.ko
 
 %post
 

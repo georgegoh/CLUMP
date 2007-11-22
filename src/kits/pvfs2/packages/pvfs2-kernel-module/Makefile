@@ -45,10 +45,10 @@ rpm:
 	@$(call check_prequisites)
 #	@$(call setrpmmacro)
 
-	@echo "Building PVFS2..."
+	@echo "Building PVFS2 kernel module..."
 	-@mkdir $(TOPDIR)/../SRPMS -p
 	-@mkdir $(TOPDIR)/../BUILD -p
 	-@mkdir $(TOPDIR)/../RPMS/x86_64 -p
-	rpmbuild -bs pvfs2.spec
-	rpmbuild --rebuild $(TOPDIR)/../SRPMS/pvfs-2.7.0-0.src.rpm --define "_prefix /opt/pvfs2" --define "_initrddir /etc/init.d" --define "_sysconfdir /etc" --define "_localstatedir /var"
+	rpmbuild -bs pvfs2-kernel-module.spec
+	rpmbuild --rebuild $(TOPDIR)/../SRPMS/pvfs2-kernel-module-2.7.0-0.src.rpm
 clean:
