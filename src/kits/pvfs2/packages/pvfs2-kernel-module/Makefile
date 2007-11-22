@@ -49,6 +49,7 @@ rpm:
 	-@mkdir $(TOPDIR)/../SRPMS -p
 	-@mkdir $(TOPDIR)/../BUILD -p
 	-@mkdir $(TOPDIR)/../RPMS/x86_64 -p
+	@cp $(TOPDIR)/../src/*.tar.gz $(TOPDIR)/../SOURCES
 	rpmbuild -bs pvfs2-kernel-module.spec
 	rpmbuild --rebuild $(TOPDIR)/../SRPMS/pvfs2-kernel-module-2.7.0-0.src.rpm
 clean:

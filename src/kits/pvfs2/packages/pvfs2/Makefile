@@ -49,6 +49,7 @@ rpm:
 	-@mkdir $(TOPDIR)/../SRPMS -p
 	-@mkdir $(TOPDIR)/../BUILD -p
 	-@mkdir $(TOPDIR)/../RPMS/x86_64 -p
+	cp $(TOPDIR)/../src/*.tar.gz $(TOPDIR)/../SOURCES
 	rpmbuild -bs pvfs2.spec
 	rpmbuild --rebuild $(TOPDIR)/../SRPMS/pvfs-2.7.0-0.src.rpm --define "_prefix /opt/pvfs2" --define "_initrddir /etc/init.d" --define "_sysconfdir /etc" --define "_localstatedir /var"
 clean:

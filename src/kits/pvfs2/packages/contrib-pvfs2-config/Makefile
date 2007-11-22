@@ -49,6 +49,7 @@ rpm:
 	-@mkdir $(TOPDIR)/../SRPMS -p
 	-@mkdir $(TOPDIR)/../BUILD -p
 	-@mkdir $(TOPDIR)/../RPMS/x86_64 -p
+	cp $(TOPDIR)/../src/*.tar.gz $(TOPDIR)/../SOURCES
 	cp $(TOPDIR)/../SRPMS/pvfs2-kernel-module*.src.rpm /usr/src/redhat/SRPMS
 	rpmbuild -bs contrib-pvfs2-config.spec
 	rpmbuild --rebuild $(TOPDIR)/../SRPMS/contrib-pvfs2-config-2.7.0-0.src.rpm

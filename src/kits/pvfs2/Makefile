@@ -30,6 +30,8 @@ packages:
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 	-mkdir -p $(TOPDIR)/BUILD
+	-mkdir -p $(TOPDIR)/SOURCES
+	cp src/*.tar.gz $(TOPDIR)/SOURCES
 	cd packages; make
 
 components:
@@ -50,7 +52,7 @@ clean:
 	rm -rf $(TOPDIR)/disk1
 	cd components; make clean
 	cd packages; make clean
-	rm -rf kit-*.iso BUILD RPMS SPECS SRPMS
+	rm -rf kit-*.iso BUILD RPMS SPECS SRPMS SOURCES
 	rm -rf *.rpm
 
 .PHONY: components packages 
