@@ -20,12 +20,13 @@
 TOPDIR = $(PWD)/..
 ARCH=$(shell arch)
 
-SRCDIRS = `find . -maxdepth 1 -type d -not -name .svn -not -name CVS \
-	    -not -name .`
+SRCDIRS = "pvfs2 pvfs2-kernel-module contrib-pvfs2-config"
 
 default: rpm
 
 rpm:
+	-@mkdir ../SOURCES
+	@cp ../src/*.tar.gz ../SOURCES
 	@for i in $(SRCDIRS) ; do \
 		(cd $$i; make $@) ; \
 	done
