@@ -64,7 +64,6 @@ fi
 echo "Install section called"
 
 /usr/bin/make install DESTDIR=$RPM_BUILD_ROOT
-/usr/bin/make kmod_install
 
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
 mkdir -p $RPM_BUILD_ROOT/opt/pvfs2/sbin
