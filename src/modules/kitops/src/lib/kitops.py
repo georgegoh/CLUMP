@@ -236,7 +236,7 @@ class KitOps:
                     dpack.dpdesc = dpdesc
                     _comp.driverpacks.append(dpack)
 
-                    self.__db.flush()
+                 self.__db.flush()
 
         # TODO: uncomment this to call repoman's refresh
         #if updated_ngtypes:
