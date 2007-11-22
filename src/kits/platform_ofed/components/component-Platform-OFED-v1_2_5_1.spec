@@ -61,9 +61,10 @@ This package is a meta package for OFED packages
 
 %prep
 
-%files
-
 %pre
+
+%install
+/usr/bin/install -m 755 %{_topdir}/S40ofed-setulimit.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %post
 # Place any component post install code here
@@ -80,3 +81,5 @@ yum -y remove dapl dapl-utils ibutils ipoibtools kernel-ib libibcm libibcommon l
 rm -rf /opt/kusu/lib/plugins/cfmclient/%{name}.remove
 EOF
 
+%files
+/etc/rc.kusu.d/S40ofed-setulimit.rc.py

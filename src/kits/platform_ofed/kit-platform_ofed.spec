@@ -53,8 +53,8 @@ mkdir -p $plugdir/ngedit
 /usr/bin/install -m 444 %{_topdir}/docs/readme.html   $docdir
 /usr/bin/install -m 444 %{_topdir}/docs/LICENSE       $docdir
 
-#/usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py    $plugdir/addhost
-#/usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py   $plugdir/genconfig
+/usr/bin/install -m 444 %{_topdir}/plugins/addhost/*.py    $plugdir/addhost
+/usr/bin/install -m 444 %{_topdir}/plugins/genconfig/*.py   $plugdir/genconfig
 /usr/bin/install -m 444 %{_topdir}/plugins/ngedit/*.py    $plugdir/ngedit
 
 
@@ -68,6 +68,8 @@ rm -rf $RPM_BUILD_ROOT
 /depot/www/kits/%{_name}/%{version}/LICENSE
 
 # plugins
+/opt/kusu/lib/plugins/addhost/*.py*
+/opt/kusu/lib/plugins/genconfig/*.py*
 /opt/kusu/lib/plugins/ngedit/*.py*
 
 # %exclude /opt/kusu/lib/plugins/ngedit/*.py?
