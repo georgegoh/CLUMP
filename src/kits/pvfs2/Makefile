@@ -50,7 +50,7 @@ clean:
 	rm -rf $(TOPDIR)/disk1
 	cd components; make clean
 	cd packages; make clean
-	rm -rf kit-*.iso BUILD RPMS SPECS
+	rm -rf kit-*.iso BUILD RPMS SPECS SRPMS
 	rm -rf *.rpm
 
 .PHONY: components packages 
