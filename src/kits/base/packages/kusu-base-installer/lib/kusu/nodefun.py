@@ -283,7 +283,7 @@ class NodeFun(object, KusuApp):
             #print "Time Spent: getNodeID(): %f" % (t2-t1)
             self._isMasterInstaller = True
             print self._("remove_primary_installer_error\n")
-            sys.exit(-1)
+            return None
         try:
             self._dbReadonly.execute("SELECT nid FROM nodes WHERE nodes.name='%s'" % nodename)
             self._isMasterInstaller = False
