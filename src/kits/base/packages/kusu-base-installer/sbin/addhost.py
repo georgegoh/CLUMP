@@ -189,13 +189,12 @@ class AddHostApp(KusuApp):
 
         # Check if nghosts is in use, if so abort running addhost.
         if os.path.isfile("/var/lock/subsys/nghosts"):
-           print "addhost: Error: Cannot run addhost because nghosts is running. Please exit nghosts first\n"
+           print kusuApp._("addhost_nghosts_lock")
            sys.exit(-1)
 
         if self.islock():
-           print "Addhost already in use!"
+           print kusuApp._("addhost_already_inuse")
            sys.exit(-1)
-
 
         kl = kusulog.getKusuLog()
         kl.addFileHandler("/tmp/kusu/kusu.log")
@@ -233,9 +232,8 @@ class AddHostApp(KusuApp):
         # Handle -s option
         if self._options.ipaddr and self._options.statichost:
            if not kusu.ipfun.validIP(self._options.ipaddr):
-              print "ERROR: Not a valid IP Address"
               self.unlock()
-              sys.exit(0)
+              self.parser.error(kusuApp._("addhost_invalid_ip"))
 
            myNodeInfo.optionStaticHostMode = True
            myNode.setNodegroupByName("unmanaged")
@@ -249,9 +247,8 @@ class AddHostApp(KusuApp):
            sys.exit(0)
            
         if self._options.statichost and not self._options.ipaddr:
-           print "Must specify IP address"
-           self.unlock()
-           sys.exit(0)
+	   self.unlock()
+           self.parser.error(kusuApp._("addhost_unmanaged_no_ip"))
  
         # Handle -i option
         if self._options.interface:
@@ -337,7 +334,7 @@ class AddHostApp(KusuApp):
             #myNode.setNodegroupByName(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
                  if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[-:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
-                    print "Skipping '%s'. Not a MAC address" % macaddr.strip()
+                    print kusuApp._("Skipping '%s'. Not a MAC address" % macaddr.strip())
                     continue
 
                  macaddr = macaddr.lower().strip()
@@ -351,7 +348,8 @@ class AddHostApp(KusuApp):
                          pluginActions.plugins_add(nodeName, True)
                      myNodeInfo.nodeList.append(nodeName)
                  else:
-                     print "Duplicate: %s, Ignoring" % macaddr
+                     print kusuApp._("Duplicate: %s, Ignoring" % macaddr)
+ 
             if pluginActions:
                 pluginActions.plugins_finished(True)
             self.unlock()
@@ -401,7 +399,7 @@ class AddHostApp(KusuApp):
                  myNodeInfo.nodeList.append(delnode)
 
                  # Handle removing node from db.
-                 print "Removing node: %s" % delnode
+                 print kusuApp._("Removing Node: %s" % delnode)
                  myNode.deleteNode(delnode)
             if pluginActions:
                pluginActions.plugins_finished()

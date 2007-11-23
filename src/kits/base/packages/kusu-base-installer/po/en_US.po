@@ -278,6 +278,12 @@ msgstr "The -e option requires a node name"
 msgid "addhost_options_interface_options_needed"
 msgstr "The -i option requires the -n option also"
 
+msgid "addhost_unmanaged_no_ip"
+msgstr "Missing -x option. Must provide an IP Address for the unmanaged node"
+
+msgid "addhost_invalid_ip"
+msgstr "ERROR:  Invalid IP address"
+
 msgid "options_invalid_nodegroup"
 msgstr "Not a valid node group. Please try again"
 
@@ -286,6 +292,12 @@ msgstr "The node %s is not found. Please try again\n"
 
 msgid "addhost_options_invalid_node"
 msgstr "The -p option requires a valid node name"
+
+msgid "addhost_nghosts_lock"
+msgstr "ERROR:   Cannot run addhost because nghosts is running. Please exit nghosts first"
+
+msgid "addhost_already_inuse"
+msgstr "ERROR:   Addhost is already in use. Delete the /var/lock/subsys/addhost lockfile if it is not"
 
 msgid "The file '%s' was not found"
 msgstr "The file '%s' was not found"
@@ -301,6 +313,15 @@ msgstr "Please enter a rack number: "
 
 msgid "Adding Node: %s, %s"
 msgstr "Adding Node: %s, %s"
+
+msgid "Duplicate: %s, Ignoring"
+msgstr "Duplicate: %s, Ignoring"
+
+msgid "Skipping '%s'. Not a MAC address"
+msgstr "Skipping '%s'. Not a MAC address"
+
+msgid "Removing Node: %s"
+msgstr "Removing Node: %s"
 
 msgid "addhost_installing_string"
 msgstr "Installing"
