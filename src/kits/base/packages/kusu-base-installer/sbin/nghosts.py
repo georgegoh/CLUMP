@@ -106,7 +106,7 @@ class NodeMemberApp(object, KusuApp):
             sys.exit(-1)
 
         if self.islock(): 
-           print "nghosts is in use!"
+           print kusuApp._("nghosts_already_inuse")
            sys.exit(-1)
 
         # Parse command options

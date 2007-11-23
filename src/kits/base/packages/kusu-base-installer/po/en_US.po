@@ -299,6 +299,7 @@ msgstr "ERROR:   Cannot run addhost because nghosts is running. Please exit ngho
 msgid "addhost_already_inuse"
 msgstr "ERROR:   Addhost is already in use. Delete the /var/lock/subsys/addhost lockfile if it is not"
 
+
 msgid "The file '%s' was not found"
 msgstr "The file '%s' was not found"
 
@@ -608,6 +609,12 @@ msgstr "Set network to 'public' type"
 msgid "netedit_options_exclusive"
 msgstr "The options -a, -d, -c, w and -l are mutually exclusive"
 
+msgid "netedit_missing_description"
+msgstr "Missing -e option. Must have a network description set"
+
+msgid "netedit_provision_conflict"
+msgstr "Cannot specify -z and -y at same time"
+
 msgid "netedit_options_add_options_needed"
 msgstr "The -a option needs the -n, -s, -i, -t, -g and -e specified"
 
@@ -676,6 +683,9 @@ msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
 
 msgid "addhost_helpline_instructions"
 msgstr "Instructions: Press F5 to go back, F8 to goto next screen, F12 to quit"
+
+msgid "netedit_already_inuse"
+msgstr "ERROR:   Netedit is already in use. Delete the /var/lock/subsys/netedit lockfile if it is not"
 
 # nghosts
 
@@ -766,6 +776,9 @@ msgstr "Error: No node groups selected or destination node group selected."
 msgid "nghosts_moving_nodes"
 msgstr "Moving nodes"
 
+msgid "nghosts_addhost_lock"
+msgstr "ERROR:  Cannot run nghosts because addhost is running. Please exit addhost first"
+
 msgid "nghosts_moving_nodes_progress"
 msgstr "Moving nodes, please wait..."
 
@@ -780,6 +793,9 @@ msgstr "Source Nodes, Destination Nodegroup"
 
 msgid "nghosts_nodegroup_label"
 msgstr "Source Nodegroups, Destination Nodegroup"
+
+msgid "nghosts_already_inuse"
+msgstr "ERROR:   Nghosts is already in use. Delete the /var/lock/subsys/nghosts lockfile if it is not"
 
 msgid "Node Group Editor"
 msgstr "Node Group Editor"

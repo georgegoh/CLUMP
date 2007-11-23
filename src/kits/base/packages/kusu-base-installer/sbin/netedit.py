@@ -267,14 +267,13 @@ class NetEditApp(object, KusuApp):
         global database
 
         if os.geteuid() != 0:
-            print "netedit: Only root can run this tool"
+            print self._("nonroot_execution\n")
             sys.exit(-1)
 
         if self.islock():
-           print "netedit is already in use!"
+           print self._("netedit_already_inuse")
            sys.exit(-1)
         
-
         # Parse command options
         self.parseargs()
 
@@ -344,9 +343,8 @@ class NetEditApp(object, KusuApp):
             networkEntryInfo.append(self._options.opt.strip())
 
             if len(self._options.desc.strip()) == 0:
-               print "Error: Must have a network description set."
                self.unlock()
-               sys.exit(-1)
+               self.parser.error(self._("netedit_missing_description"))
             else:
                networkEntryInfo.append(self._options.desc.strip())
 
@@ -354,9 +352,8 @@ class NetEditApp(object, KusuApp):
 
             # Check for conflicting options:
             if self._options.provision and self._options.public:
-               print "ERROR:  Cannot specify -z and -y at same time."
                self.unlock()
-               sys.exit(-1)
+               self.parser.error(self._("netedit_provision_conflict"))
 
             if self._options.provision:
                nettype = 'provision'
