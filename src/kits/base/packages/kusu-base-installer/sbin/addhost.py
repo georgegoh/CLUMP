@@ -56,9 +56,11 @@ class NodeData:
         # We don't want to prompt the user to quit if we reached the last screen.
         self.quitPrompt = True
 
+global kusuApp
+kusuApp = KusuApp()
 
 if os.geteuid() != 0:
-   print "addhost: Only root can run this tool"
+   print kusuApp._("nonroot_execution\n")
    sys.exit(-1)
 
 # Global Instance of data
@@ -71,10 +73,8 @@ myNode = kusu.nodefun.NodeFun()
 global pluginActions
 pluginActions = None
 
-global kusuApp
-global database
 
-kusuApp = KusuApp()
+global database
 database = KusuDB()
 
 class AddHostApp(KusuApp):
