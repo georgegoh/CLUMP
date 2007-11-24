@@ -174,6 +174,11 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Migrated kusu.db and kusu.log')
         prog_dlg.close()
 
+        prog_dlg = self.selector.popupProgress('Setting up browser default page', 'Setting up firefox default homepage...')
+        setFirefoxHomepage(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        kl.debug('Set up default firefox homepage')
+        prog_dlg.close()
+
         setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
         kl.debug('Set the installation flag')
 

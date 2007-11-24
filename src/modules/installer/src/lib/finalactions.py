@@ -155,6 +155,40 @@ def migrate(prefix):
             logger.info('Copied %s -> %s' % (f, dest))
             f.copy(dest)
 
+def setFirefoxHomepage(prefix, kiprofile):
+    '''Set the default homepage to "http://localhost/"'''
+    from subprocess import Popen, PIPE
+    p = Popen('uname -m', shell=True, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    # Redhat does not have 'firefox' symlinks which point to the exact
+    # 'firefox-X.X.X.X' version, so we have to have a fragile insertion
+    # for startup homepage. Debian flavours are friendlier.
+    firefox_path = None
+    if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
+        if out.strip().endswith('64'):
+            firefox_path = path(prefix) / 'usr/lib64/firefox-1.5.0.9/defaults/profile/user.js'
+    elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '6':
+        if out.strip().endswith('64'):
+            firefox_path = None
+        else:
+            firefox_path = path(prefix) / 'usr/lib64/firefox-1.5.0.9/defaults/profile/user.js'
+    else:
+        if out.strip().endswith('64'):
+            firefox_path = path(prefix) / 'usr/lib64/firefox/defaults/profile/user.js'
+        else:
+            firefox_path = path(prefix) / 'usr/lib/firefox/defaults/profile/user.js'
+    if firefox_path is None:
+        logger.warning('Unable to find appropriate location to place setting for default homepage.')
+        return
+    elif not firefox_path.dirname().exists():
+        firefox_path.dirname().makedirs()
+
+    f = firefox_path.open('w')
+    f.write('user_pref("browser.startup.homepage","http://localhost/");\n')
+    f.write('user_pref("startup.homepage_override_url", "http://localhost/");')
+    f.close()
+    return
+
 def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
 
