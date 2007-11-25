@@ -377,15 +377,6 @@ class BuildImage:
                 os.chown(authorizedkeys, 0, 0)
                 os.chmod(authorizedkeys, 0644)
 
-        # setup nfs mounts
-        autohome = '/etc/node.auto.home' % (self.nodegroup)
-        automaster = "/etc/node.auto.master" % (self.nodegroup)
-        if os.path.exists(autohome) and os.path.exists(automaster):
-            shutil.copy(autohome, os.path.join(self.imagedir, 'etc/auto.home'))
-            shutil.copy(automaster, os.path.join(self.imagedir, 'etc/auto.master'))
-
-            os.chmod(os.path.join(self.imagedir, 'etc/auto.home'), 0644)
-            os.chmod(os.path.join(self.imagedir, 'etc/auto.master'), 0644)
 
 class BuildImageApp(KusuApp):
 
