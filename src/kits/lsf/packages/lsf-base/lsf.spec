@@ -60,6 +60,15 @@ Platform(R) LSF(R) Master configuration files
 
 %prep
 
+%pre
+if [ `grep -c lsfadmin /etc/group` -eq 0 ]; then \
+	groupadd -g 495 lsfadmin; \
+fi
+
+if [ `grep -c lsfadmin /etc/passwd` -eq 0 ]; then \
+	adduser -u 495 -d "/home/lsfadmin" -g lsfadmin -m lsfadmin ;\
+fi
+
 %install
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
