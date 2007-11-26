@@ -198,14 +198,14 @@ zone "0.in-addr.arpa" IN {
             for row in data:
                 network, subnet = row
                 ipbytes = string.split(network, '.')
-                if ipbytes[3] != 0:
+                if ipbytes[3] != '0':
                     arpaname = "%s.%s.%s.%s" % (ipbytes[3], ipbytes[2],
                                                 ipbytes[1], ipbytes[0])
-                elif ipbytes[2] != 0:
+                elif ipbytes[2] != '0':
                     arpaname = "%s.%s.%s" % (ipbytes[2],
                                              ipbytes[1], ipbytes[0])
                 
-                elif ipbytes[1] != 0:
+                elif ipbytes[1] != '0':
                     arpaname = "%s.%s" % (ipbytes[1], ipbytes[0])
 
                 else :
