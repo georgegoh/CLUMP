@@ -106,17 +106,16 @@ class BaseUpdate:
 
         ngs = self.db.NodeGroups.select_by(repoid = repo.repoid)
         for ng in ngs:
-            # get the existing initrd
-            nginitrd = ng.initrd
-            if not nginitrd:
-                raise Exception, 'initrd: %s does not exists' % initrdpath
-            
-            else:    
-                initrdpath = tftpbootdir / nginitrd
-                if not initrdpath.exists():
-                    raise Exception, 'initrd: %s does not exists' % initrdpath
-     
             if ng.installtype == 'package':
+                nginitrd = ng.initrd
+                if not nginitrd:
+                    raise InvalidInitrd, 'initrd not found for nodegroup: %s' % ng.ngname
+                
+                else:    
+                    initrdpath = tftpbootdir / nginitrd
+                    if not initrdpath.exists():
+                        raise InvalidInitrd, 'initrd: %s does not exists' % initrdpath
+     
                 newinitrd = 'initrd-%s-%s-%s.%s.img' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
                 newkernel = 'kernel-%s-%s-%s.%s' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
                 
@@ -129,7 +128,7 @@ class BaseUpdate:
                 retcode = p.returncode
 
                 if retcode:
-                    raise Exception
+                    raise UnableToUpdateInitrdKernel, 'driverpatch failed to run'
 
             elif ng.installtype in ['disked', 'diskless']:
                 cmd = 'buildinitrd -n "%s"' % ng.ngname
@@ -141,9 +140,9 @@ class BaseUpdate:
                 retcode = p.returncode
    
                 if retcode:
-                    raise Exception 
+                    raise UnableToUpdateInitrdKernel, 'buildinitrd failed to run'
+ 
             # calls boothost to refresh pxe conf
-
             p = subprocess.Popen('boothost -t "%s"' % ng.ngname,
                                  shell=True,
                                  stdout=subprocess.PIPE,
@@ -152,7 +151,8 @@ class BaseUpdate:
             retcode = p.returncode
             
             if retcode:
-                raise Exception                
+                raise UnableToUpdateInitrdKernel, 'boothost failed to run'
+
     def addUpdateKit(self, kitdir):
         from kusu.kitops import kitops
 

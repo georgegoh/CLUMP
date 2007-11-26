@@ -137,6 +137,8 @@ class repodataChecksumError(KusuError): pass
 class UnableToPrepUpdateKit(KusuError): pass
 class UnableToMakeUpdateKit(KusuError): pass
 class UnableToExtractKernel(KusuError): pass
+class UnableToUpdateInitrdKernel(KusuError): pass
+class InvalidInitrd(KusuError): pass
 
 # b-m-t
 class FilePathError(KusuError): pass
