@@ -31,9 +31,9 @@ Requires: kusu-base-installer
 Requires: NetworkManager-gnome 
 Requires: alacarte 
 Requires: at-spi 
-Requires: beagle-evolution 
-Requires: beagle-gui 
-Requires: compiz 
+# Requires: beagle-evolution 
+# Requires: beagle-gui 
+# Requires: compiz 
 Requires: control-center 
 Requires: desktop-printing 
 Requires: dvd+rw-tools 
@@ -50,7 +50,7 @@ Requires: gnome-bluetooth
 Requires: gnome-media 
 Requires: gnome-netstatus 
 Requires: gnome-panel 
-Requires: gnome-pilot 
+# Requires: gnome-pilot 
 Requires: gnome-power-manager 
 Requires: gnome-screensaver 
 Requires: gnome-session 
@@ -58,7 +58,7 @@ Requires: gnome-system-monitor
 Requires: gnome-terminal 
 Requires: gnome-themes 
 Requires: gnome-user-docs 
-Requires: gnome-user-share 
+# Requires: gnome-user-share 
 Requires: gnome-utils 
 Requires: gnome-vfs2-smb 
 Requires: gnome-volume-manager 
@@ -69,11 +69,11 @@ Requires: im-chooser
 Requires: metacity 
 Requires: nautilus 
 Requires: nautilus-cd-burner 
-Requires: nautilus-sendto 
-Requires: nautilus-sendto-bluetooth 
+# Requires: nautilus-sendto 
+# Requires: nautilus-sendto-bluetooth 
 Requires: notification-daemon 
 Requires: orca 
-Requires: tomboy 
+# Requires: tomboy 
 Requires: vino 
 Requires: yelp 
 Requires: NetworkManager-glib 
@@ -82,7 +82,7 @@ Requires: alsa-lib
 Requires: audiofile 
 Requires: avahi 
 Requires: avahi-glib 
-Requires: beagle 
+# Requires: beagle 
 Requires: brlapi 
 Requires: cdparanoia-libs 
 Requires: cdrdao 
@@ -93,9 +93,9 @@ Requires: desktop-backgrounds-basic
 Requires: docbook-dtds 
 Requires: eel2 
 Requires: esound 
-Requires: evolution 
+# Requires: evolution 
 Requires: evolution-data-server 
-Requires: evolution-sharp 
+# Requires: evolution-sharp 
 Requires: festival 
 Requires: firefox 
 Requires: flac 
@@ -107,8 +107,8 @@ Requires: ghostscript
 Requires: ghostscript-fonts 
 Requires: giflib 
 Requires: gimp-print 
-Requires: gmime 
-Requires: gmime-sharp 
+# Requires: gmime 
+# Requires: gmime-sharp 
 Requires: gnome-bluetooth-libs 
 Requires: gnome-desktop 
 Requires: gnome-doc-utils 
@@ -128,27 +128,43 @@ Requires: gnome-python2-gnomeprint
 Requires: gnome-python2-gnomevfs 
 Requires: gnome-python2-gtksourceview 
 Requires: gnome-python2-libegg 
-Requires: gnome-sharp 
+# Requires: gnome-sharp 
 Requires: gnome-speech 
-Requires: gnome-spell 
+# Requires: gnome-spell 
 Requires: gnome-vfs2 
 Requires: gphoto2 
-Requires: gsf-sharp 
+# Requires: gsf-sharp 
 Requires: gstreamer 
 Requires: gstreamer-plugins-base 
 Requires: gstreamer-plugins-good 
 Requires: gstreamer-tools 
-Requires: gtk-sharp2 
+# Requires: gtk-sharp2 
 Requires: gtkhtml3 
 Requires: gtksourceview 
 Requires: gtkspell 
 Requires: gucharmap 
 Requires: hal-cups-utils 
 Requires: hicolor-icon-theme 
-Requires: httpd 
+Requires: httpd
+Requires: libFS
+Requires: libXScrnSaver
+Requires: libXTrap
+Requires: libXaw
+Requires: libXcomposite
+Requires: libXdamage
+Requires: libXevie
+Requires: libXfont
+Requires: libXfontcache
+Requires: libXmu
+Requires: libXpm
+Requires: libXres
+Requires: libXtst
+Requires: libXv
+Requires: libXxf86dga
+Requires: libXxf86misc
 Requires: libart_lgpl 
 Requires: libavc1394 
-Requires: libbeagle 
+# Requires: libbeagle 
 Requires: libbonobo 
 Requires: libbonoboui 
 Requires: libbtctl 
@@ -158,7 +174,7 @@ Requires: libdv
 Requires: libexif 
 Requires: libfontenc 
 Requires: libgail-gnome 
-Requires: libgdiplus 
+# Requires: libgdiplus 
 Requires: libgnome 
 Requires: libgnomecanvas 
 Requires: libgnomecups 
@@ -181,10 +197,10 @@ Requires: libxklavier
 Requires: libxslt 
 Requires: lockdev 
 Requires: mkisofs 
-Requires: mono-core 
-Requires: mono-data 
-Requires: mono-data-sqlite 
-Requires: mono-web 
+# Requires: mono-core 
+# Requires: mono-data 
+# Requires: mono-data-sqlite 
+# Requires: mono-web 
 Requires: nautilus-extensions 
 Requires: openjade 
 Requires: openobex 
@@ -203,7 +219,7 @@ Requires: perl-Net-IP
 Requires: perl-Net-SSLeay 
 Requires: perl-Socket6 
 Requires: perl-libwww-perl 
-Requires: pilot-link 
+#Requires: pilot-link 
 Requires: pkgconfig 
 Requires: poppler 
 Requires: poppler-utils 
