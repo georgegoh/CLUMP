@@ -384,6 +384,7 @@ class AddHostApp(KusuApp):
 
         # Handle -e option
         if self._options.remove:
+            delflag = False
             for delnode in self._options.remove:
                  if delnode.strip().isdigit():
                      self.unlock()
@@ -398,10 +399,11 @@ class AddHostApp(KusuApp):
                     pluginActions.plugins_removed(delnode)
                  myNodeInfo.nodeList.append(delnode)
 
-                 # Handle removing node from db.
                  print kusuApp._("Removing Node: %s" % delnode)
-                 myNode.deleteNode(delnode)
-            if pluginActions:
+                 # Handle removing node from db.
+                 if myNode.deleteNode(delnode):
+                    delflag = True
+            if pluginActions and delflag:
                pluginActions.plugins_finished()
             self.unlock()
             sys.exit(0)
