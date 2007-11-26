@@ -11,6 +11,7 @@ from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
 import sqlalchemy as sa
+import re
 
 def repoExists(dbs, repoid):
     """Checks whether a repo exists"""
@@ -199,3 +200,17 @@ def getPackageFilePath(dbs, repoid, packagename):
     else:
         raise FileDoesNotExistError
 
+def getKernelPackages(srcPath):
+    # set up pattern to match centos kernel packages
+    pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+    kpkgs = []
+
+    try:
+        root = path(srcPath)
+        li = [f for f in root.walkfiles('kernel*rpm')]
+        kpkgs.extend([l for l in li if re.findall(pat,l)])
+    except OSError:
+        pass
+
+    return kpkgs

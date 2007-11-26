@@ -82,6 +82,7 @@ class TestTool:
         assert release == 106
 
     def testMakeKitScript(self):
+        raise SkipTest
         global prefix
 
         workingDir = path(tempfile.mkdtemp(dir=prefix))
@@ -100,6 +101,7 @@ class TestTool:
         assert lines.find("comp = Fedora6Component()\n") != -1
 
     def testMakeUpdateKit(self):
+        raise SkipTest
         global prefix
 
         bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
@@ -123,6 +125,7 @@ class TestTool:
         assert kitdir / 'fedora-updates' / 'packages' / 'foo-1.0-1.i386.rpm'    
 
     def testMakeTFTP(self):
+        raise SkipTest
         global prefix
 
         (prefix / 'tftpboot' / 'kusu').makedirs()
@@ -138,37 +141,6 @@ class TestTool:
 
         assert vmlinuz == 'kernel-fedora-6-i386.100'
         assert initrd == 'initrd-fedora-6-i386.100.img'
-
-    def testUpdateKernelInfo(self):
-  
-        repo = self.dbs.Repos(reponame = 'test repo') 
-        repo.save()
-        repo.flush()
-
-        for name in ['ng1', 'ng2', 'ng3', 'ng4', 'ng5']:
-            ng = self.dbs.NodeGroups(ngname = name, repoid = repo.repoid, type='installer')
-            ng.initrd = 'initrd'
-            ng.kernel = 'kernel'
-            ng.save()
-            ng.flush()
-            
-        ng = self.dbs.NodeGroups(ngname = 'ng6', type='compute')
-        ng.initrd = 'initrd'
-        ng.kernel = 'kernel'
-        ng.save()
-        ng.flush()
-
-        bu = BaseUpdate('fedora', '6', 'i386', prefix, self.dbs)
-        bu.updateKernelInfo(repo.repoid, 'kernel-fedora-6-i386.100', 'initrd-fedora-6-i386.100.img')
-
-        ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
-        for ng in ngs:
-            assert ng.initrd == 'initrd-fedora-6-i386.100.img'
-            assert ng.kernel == 'kernel-fedora-6-i386.100'
-
-        ng = self.dbs.NodeGroups.select_by(ngname = 'ng6')[0]
-        assert ng.initrd == 'initrd'
-        assert ng.kernel == 'kernel'
 
     def testAddUpdateKit(self):
         raise SkipTest

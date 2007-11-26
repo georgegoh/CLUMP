@@ -105,9 +105,13 @@ class BuildInitrd:
         self.mkInitrdDir()
 
         # Extract the modules from the OS kernel package
-        self.extractModules(oskernel=1)
+        kernList = self.extractModules(oskernel=1)
 
-        # Patch in the modules that are from the OS
+        if not kernList:
+            self.stderrout("Kernel rpm not found!\n")
+            self.clean()
+            return    
+
         self.addModules()
 
         # Copy over the kernel (Required because of signed modules)
@@ -120,13 +124,15 @@ class BuildInitrd:
         # Compact the initrd and move it to the tftp directory
         self.compactInitrd(type)
 
+        self.clean()
+
+    def clean(self):
         # Clean-up directory for next run
         os.system('rm -rf \"%s\"' % self.modlink)
         os.system('rm -rf \"%s\"' % self.initlink)
         os.system('rm -rf \"%s\"' % self.moduledir)
         os.system('rm -rf \"%s\"' % self.imagedir)
-        
-
+ 
     def validateNG(self, nodegroup):
         """validateNG - Test the node group name to make sure it is valid.
         Returns:  True - when the node group exists, otherwise False.
@@ -297,14 +303,13 @@ class BuildInitrd:
                     sys.exit(-1)
             return 0
 
+
+        pkgList = []
         for row in data:
             if row[0] == '':
                 continue
 
-            # There can be more than one package.  All have to be processed
-            if self.stdoutout:
-                self.stdoutout("Looking for modules in: %s\n", row[0])
-                
+               
             # Warning OS Specific Stuff
             pattern = '/nonexistant/stuff'
             if self.ostype[:6] == 'fedora':
@@ -319,9 +324,14 @@ class BuildInitrd:
             if len(flist) == 0:
                 if self.stderrout:
                     # Fatal error
-                    self.stderrout("ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
-                                   % (self.repodir, pattern) )
-                    sys.exit(-1)
+                    self.stderrout("WARN: Unable to locate kernel package %s in: %s. Skipping.\n" % (row[0], self.repodir))
+                    continue
+                    #sys.exit(-1)
+            else:
+                # There can be more than one package.  All have to be processed
+                if self.stdoutout:
+                    self.stdoutout("Looking for modules in: %s\n", row[0])
+ 
 
             # If there is more than one package available use the highest rev
             if len(flist) > 1:
@@ -329,6 +339,8 @@ class BuildInitrd:
                 kpkg = "%s" % flist[-1]
             else:
                 kpkg = "%s" % flist[0]
+
+            pkgList.append(kpkg)
 
             # Extract the package.  This is OS specific
             if self.stdoutout:
@@ -351,7 +363,7 @@ class BuildInitrd:
                     self.stderrout("ERROR: Unknown kernel package type: %s" % kpkg )
                     sys.exit(-1)
 
-        return 1
+        return pkgList
 
         
     def getRepoInfo(self):
@@ -387,9 +399,8 @@ class BuildInitrd:
         if len(flist) == 0:
             if self.stderrout:
                 # Fatal error
-                self.stderrout("ERROR: Unable to locate kernel!  Try running:  ls %s\n"
-                               % (pattern) )
-                sys.exit(-1)
+                self.stderrout("ERROR: Unable to locate kernel! Skipping\n")
+                return 
 
         # If there is more than one package available use the highest rev
         if len(flist) > 1:
@@ -419,7 +430,6 @@ class BuildInitrd:
         """addModules - This method will locate the kernel package and extract
         the needed modules from it.  These will be copied to the initrd.  It
         will call depmod to build the needed kernel files."""
-
         if self.stdoutout:
             self.stdoutout("Patching in modules:\n")
         else:

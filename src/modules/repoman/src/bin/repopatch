@@ -100,22 +100,18 @@ class RepoPatchApp(KusuApp):
                 elif result in ['no', 'n']:
                     yes = False
                     
-            if yes:
-                pass
-                #vmlinuz, initrd = repoObj.makeTFTP(kernel, kitRelease)
-                #repoObj.updateKernelInfo(repoObj.repoid, vmlinuz, initrd)
-            else:
+            if not yes:
                 for k in newKernels.getList():
                     if k in pkgs: pkgs.remove(k)
                         
         else:
             # no updated kernel at all
-            pass
+            yes = False
  
         self.stdoutMessage('Making new update kit.\n')
         try:
-            dir, kitName, kitVersion, kitRelease, kitArch = repoObj.makeUpdateKit(pkgs)
-            repoObj.addUpdateKit(dir)
+            kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs = repoObj.makeUpdateKit(pkgs)
+            repoObj.addUpdateKit(kitdir)
         except Exception, e:
             self.stderrMessage('Unable to add update kit. Reason: %s\n', e)
             self.unlock()
@@ -136,6 +132,13 @@ class RepoPatchApp(KusuApp):
                                             arch = kitArch)[0]
 
         if oldUpdateKit and oldUpdateKit in repo.kits:
+            for ng in self.dbs.NodeGroups.select_by(repoid = repo.repoid):
+                if oldUpdateKit.components[0] in ng.components:
+                    ng.components.remove(oldUpdateKit.components[0])
+                    
+                ng.components.append(updateKit.components[0])
+                ng.save()
+                ng.flush()
             repo.kits.remove(oldUpdateKit)
         repo.kits.append(updateKit)
         repo.save_or_update()
@@ -148,6 +151,15 @@ class RepoPatchApp(KusuApp):
             self.stderrMessage('Unable to add refresh repo. You may refresh manually via repoman -u. Reason: %s\n', e)
             self.unlock()
             sys.exit(1)
+
+        if yes:
+            self.stdoutMessage('Updating initrd and vmlinuz...\n')
+            try:
+                repoObj.updateInitrdVmlinuz(kitVersion , repo, kernelPkgs)
+            except Exception, e:
+                self.stderrMessage('Unable to update initrd and vmlinuz. Reason: %s\n', e)
+                self.unlock()
+                sys.exit(1)
 
     def run(self):
         self.parseArgs()

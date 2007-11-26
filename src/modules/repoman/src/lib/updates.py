@@ -17,8 +17,11 @@ from Cheetah.Template import Template
 from kusu.util import rpmtool
 from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
-from kusu.repoman.tools import getFile, getConfig
+from kusu.repoman.tools import getFile, getConfig, getKernelPackages
+from kusu.driverpatch import DriverPatchController
+from kusu.util import tools as utiltools
 from kusu.util.errors import *
+
 try:
     import subprocess
 except:
@@ -50,24 +53,26 @@ class BaseUpdate:
         kitVersion = '%s_r%s' % (self.os_version, kitRelease)
         kitArch = self.os_arch
 
-        tempkitdir = path(tempfile.mkdtemp(prefix='repoman_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
-        kitdir = path(tempfile.mkdtemp(prefix='repoman_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+        # Buildkit's kit src
+        tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
+        # Used by kitops to add the kit from
+        kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
 
         self.prepKit(tempkitdir, kitName)
-        self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
 
         for p in pkgs:
             file = p.getFilename()
-            dest = tempkitdir / kitName / 'packages' / file.basename()
+            dest = tempkitdir / kitName / 'sources' / file.basename()
 
             # Use abs symlink. Relative links does not work
             # when buildkit prepares temp new directory for
             # making kit
             file.symlink(dest) 
     
+        kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
         self.makeKit(tempkitdir, kitdir, kitName)
-
-        return (kitdir, kitName, kitVersion, kitRelease, kitArch)
+        
+        return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
 
     def getNextRelease(self, kitName):
         # Find max version
@@ -88,50 +93,66 @@ class BaseUpdate:
 
         return maxRelease + 1
 
-    def makeTFTP(self, rpm, updateRelease):
-
-        ostype = '%s-%s-%s' % (self.os_name,self.os_version,self.os_arch)
-
-        tftpbootDir = path(self.prefix / 'tftpboot' / 'kusu')
-        if not tftpbootDir.exists():
-            raise DirDoesNotExistError, '%s not found' % (tftpbootDir)
-
-        tempdir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
-             
-        if rpm.extract(tempdir):
-            raise UnableToExtractKernel, rpm.getFilename()
-
-        if self.os_name in ['fedora', 'rhel', 'centos']:
-            vmlinuz = path(tempdir / 'boot').listdir('vmlinuz*')[0]
-
-        newVmlinuz = None
-        if vmlinuz.exists():
-            newVmlinuz = path(tftpbootDir / 'kernel-%s.%s' % (ostype, updateRelease))
-            vmlinuz.copy(newVmlinuz)
-       
-        initrd = path(tftpbootDir / 'initrd-%s.img' % (ostype))
-        newInitrd = None
-        if initrd.exists():
-            newInitrd = path(tftpbootDir / 'initrd-%s.%s.img' % (ostype, updateRelease))
-            # pack and unpack 
-            # image.unpack() 
-            initrd.copy(newInitrd)
+    def updateInitrdVmlinuz(self, kitVersion, repo, kernelPkgs):
         
-        try:
-            tempdir.rmtree()
-        except: pass
+        if not kernelPkgs:
+            return
 
-        return (newVmlinuz.basename(), newInitrd.basename())
+        controller = DriverPatchController(self.db)
 
-    def updateKernelInfo(self, repoid, vmlinuz, initrd):
-        ngs = self.db.NodeGroups.select_by(repoid = repoid)
+        tftpbootdir = path(self.prefix / 'tftpboot' / 'kusu')
+        if not tftpbootdir.exists():
+            raise DirDoesNotExistError, '%s not found' % (tftpbootdir)
 
+        ngs = self.db.NodeGroups.select_by(repoid = repo.repoid)
         for ng in ngs:
-            ng.kernel = vmlinuz
-            ng.initrd = initrd
-            ng.save()
-            ng.flush()
+            # get the existing initrd
+            nginitrd = ng.initrd
+            if not nginitrd:
+                raise Exception, 'initrd: %s does not exists' % initrdpath
+            
+            else:    
+                initrdpath = tftpbootdir / nginitrd
+                if not initrdpath.exists():
+                    raise Exception, 'initrd: %s does not exists' % initrdpath
+     
+            if ng.installtype == 'package':
+                newinitrd = 'initrd-%s-%s-%s.%s.img' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
+                newkernel = 'kernel-%s-%s-%s.%s' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
+                
+                cmd = 'driverpatch -u nodegroup id=%s initrd=%s kernel=%s' % (ng.ngid, newinitrd, newkernel)
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
 
+                if retcode:
+                    raise Exception
+
+            elif ng.installtype in ['disked', 'diskless']:
+                cmd = 'buildinitrd -n "%s"' % ng.ngname
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+   
+                if retcode:
+                    raise Exception 
+            # calls boothost to refresh pxe conf
+
+            p = subprocess.Popen('boothost -t "%s"' % ng.ngname,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+            
+            if retcode:
+                raise Exception                
     def addUpdateKit(self, kitdir):
         from kusu.kitops import kitops
 
@@ -173,12 +194,23 @@ class BaseUpdate:
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
                         (self.os_name, self.os_version, self.os_arch, time.asctime())
         ns['compclass'] = compclass[self.os_name][self.os_version]
-        
+
+        kpkgs = getKernelPackages(tempkitdir)
+        ns['kernels'] = []
+        for kpkg in kpkgs:
+            kpkg = rpmtool.RPM(str(kpkg))            
+            filename = kpkg.getFilename().basename() 
+            desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
+            ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
+                                  'release':kpkg.release, 'filename':filename})
+ 
         t = Template(file=str(template), searchList=[ns])  
         f = open(dest, 'w')
         f.write(str(t))
         f.close()
-    
+   
+        return kpkgs 
+
     def prepKit(self, workingDir, kitName):
         cmd = 'buildkit new kit=%s' % kitName
         p = subprocess.Popen(cmd,
@@ -205,8 +237,15 @@ class BaseUpdate:
         retcode = p.returncode
 
         if retcode == 0:
+            # Fix pathing
+            for file in (destDir / kitName).listdir():
+                if file.islink():
+                    realPath = file.realpath()
+                    file.remove()
+                    realPath.symlink(file)
+
             # Do not use symlink for component
-            comp = (destDir / kitName).listdir('component-%s-*.rpm' % kitName)
+            comp = (destDir / kitName).listdir('component-%s*.rpm' % kitName)
             if comp and comp[0].islink():
                 comp = comp[0]
                 realComp = comp.realpath()
@@ -214,7 +253,7 @@ class BaseUpdate:
                 realComp.copy(comp)
 
             # Do not use symlink for kit
-            kit = (destDir / kitName).listdir('kit-%s-*.rpm' % kitName)
+            kit = (destDir / kitName).listdir('kit-%s*.rpm' % kitName)
             if kit and kit[0].islink():
                 kit = kit[0]
                 realKit = kit.realpath()
@@ -225,7 +264,7 @@ class BaseUpdate:
                 workingDir.rmtree()
             return True
         else:
-            raise UnableToMakeUpdateKit, err
+            raise UnableToMakeUpdateKit, out
 
     def getSources(self):
         """Return the path of sources to compare against mirror"""

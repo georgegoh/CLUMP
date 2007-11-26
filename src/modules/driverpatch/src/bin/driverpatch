@@ -350,10 +350,10 @@ Example operations:
                 msg = self._('No valid repo available for this nodegroup!')
                 self.printMsgExit(msg)
             except FileDoesNotExistError:
-                msg = self._('%(pkgname)s not available in for the repo belong to this nodegroup!' %
+                msg = self._('%(pkgname)s not available in for the repo belong to this nodegroup! Skipping.' %
                             {'pkgname':dprpm})
-                self.printMsgExit(msg)
-                
+                print msg
+ 
         for pkg in pkglist:
             msg = self._('Found %(pkgname)s..' %
                         {'pkgname':pkg})
