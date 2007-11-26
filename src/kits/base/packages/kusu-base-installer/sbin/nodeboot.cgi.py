@@ -428,9 +428,9 @@ class NodeBootApp(KusuApp):
         print '<?xml version="1.0"?>'
         print "<nii>"
         print "<debug>"
-        print "Dump NII: %s " % dumpnii
-        print "State: %s " % state
-        print "Dump CFM: %s " % dumpcfm
+        print "Dump NII: %s" % dumpnii
+        print "State: %s" % state
+        print "Dump CFM: %s" % dumpcfm
             
         
         # Test to see if we need write access to the database and connect 
@@ -443,7 +443,7 @@ class NodeBootApp(KusuApp):
         if not node:
             node = nodefun.getNodeName('', ip)
 
-        print "Node: %s " % node
+        print "Node: %s" % node
         print "</debug>"
         
         if dumpnii:
