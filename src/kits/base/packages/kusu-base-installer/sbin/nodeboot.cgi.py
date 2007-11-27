@@ -303,7 +303,7 @@ class NodeInfo:
         NOTE:  This forces the database connection to close! """
         self.db.disconnect()
         if os.path.exists('/opt/kusu/sbin/boothost'):
-            os.system('/opt/kusu/sbin/boothost -n %s' % nodename)
+            os.system('/opt/kusu/sbin/boothost -m %s' % nodename)
 
 
 

@@ -553,13 +553,13 @@ class BootHostApp(KusuApp):
                 sys.exit(0)
             else:
                 # Now deal with all the other arguments that are not mutually exclusive
-                if args[i] == '-t':
+                if args[i] == '-n':
                     if len(args) > (i+1):
                         self.nodegroup = args[i+1]
                         self.updatewhat = 'NodeGroup'
                     else:
                         toolinst.toolHelp()
-                elif args[i] == '-n':
+                elif args[i] == '-m':
                     if len(args) > (i+1):
                         self.nodelist = string.split(args[i+1], ',')
                         self.updatewhat = 'NodeList'
