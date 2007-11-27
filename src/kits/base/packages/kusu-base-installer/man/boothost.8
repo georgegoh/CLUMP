@@ -7,7 +7,7 @@ boothost \- Creates the PXE configuration files for node booting.
 .LP 
 boothost [\-h|\-v|\-l {optional nodename}]
 .LP 
-boothost [\-t node_group] | [\-n node_list] | [\-s node_group]
+boothost [\-n node_group] | [\-m node_list] | [\-s node_group]
          [\-r] [\-k Kernel] [\-i Initrd] [\-p Kern_Parms]
 .SH "DESCRIPTION"
 .LP 
@@ -52,7 +52,7 @@ Provide node booting information and status for all nodes provisioned by the ins
    \- IP address of booting interface
 .br 
 .TP 
-\fB\-n <\fINode List\fR>\fR
+\fB\-m <\fINode List\fR>\fR
 Update the PXE configuration files for the node(s) listed.  This is a comma seperated list.  The command will read the database and regenerate the booting PXE file. 
 .TP 
 \fB\-p <\fIKernel Paramaters\fR>,\fR
@@ -64,7 +64,7 @@ Attempt to connect to and reboot the requested node(s) or nodegroup.  This uses 
 \fB\-s <\fINodegroup\fR>\fR
 Update the PXE configuration files for the nodes in the nodegroup that are in a state or expired.  This is option may be removed if not useful.  If any custom kernel, initrd, or kernel parameters were used these will be reset back to the nodegroups defaults.
 .TP 
-\fB\-t <\fINodegroup\fR>\fR
+\fB\-n <\fINodegroup\fR>\fR
 Update the PXE configuration files for the nodes in the nodegroup.  If any custom kernel, initrd, or kernel parameters were used these will be reset back to the nodegroups defaults.  If used in conjunction with \fB\-r\fR it will trigger the reinstallation of all nodes in the specified nodegroup.
 .TP 
 \fB\-v\fR
@@ -85,15 +85,15 @@ List the booting information for node host000:
 .LP 
 Rebuild the PXE configuration file for nodes host000 and host999:
 .LP 
-   boothost \-n host000,host999
+   boothost \-m host000,host999
 .LP 
 Rebuild the PXE configuration file for all nodes in nodegroup compute\-diskless\-test 
 .LP 
-   boothost \-t compute\-diskless\-test
+   boothost \-n compute\-diskless\-test
 .LP 
 Rebuild the PXE configuration file for host000 and set a custom kernel, initrd, and kernel parameters. 
 .LP 
-   boothost \-n host000 \-k kernel\-custom \-i initrd\-custom.img \-p 'param1 booger=nuggets'
+   boothost \-m host000 \-k kernel\-custom \-i initrd\-custom.img \-p 'param1 booger=nuggets'
 .SH "AUTHORS"
 .LP 
 Mark Black <mblack_at_platform_dot_com>
