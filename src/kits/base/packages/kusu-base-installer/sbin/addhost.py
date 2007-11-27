@@ -314,7 +314,13 @@ class AddHostApp(KusuApp):
                     flag = 1
                     if myNode.isNodenameHasRack() and haveNodeInterface:
                          while flag:
-                            response = raw_input(kusuApp._("prompt_for_rack"))
+                            try:
+                                response = raw_input(kusuApp._("prompt_for_rack"))
+                            except KeyboardInterrupt, e:
+                                print "\nAborted!"
+                                self.unlock()
+                                sys.exit(0)
+                                 
                             try:
                                result = int(response)
                                if result < 0:
@@ -431,7 +437,12 @@ class AddHostApp(KusuApp):
                flag = 1
                if myNode.isNodenameHasRack() and haveInterface:
                    while flag:
-                      response = raw_input(kusuApp._("prompt_for_rack"))
+                      try:
+                          response = raw_input(kusuApp._("prompt_for_rack"))
+                      except KeyboardInterrupt, e:
+                          print "\nAborted!"
+                          self.unlock()
+                          sys.exit(0)
                       try:
                           result = int(response)
                           if result < 0:
