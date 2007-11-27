@@ -243,9 +243,12 @@ class AddHostApp(KusuApp):
               self.unlock()
               sys.exit(-1)
 
+           if pluginActions:
+              pluginActions.plugins_add(self._options.statichost.strip())
+              pluginActions.plugins_finished()
            self.unlock()
            sys.exit(0)
-           
+
         if self._options.statichost and not self._options.ipaddr:
 	   self.unlock()
            self.parser.error(kusuApp._("addhost_unmanaged_no_ip"))
@@ -907,6 +910,9 @@ class WindowUnmanaged(NodeGroupWindow):
            result = self.selector.popupStatus(self.kusuApp._("Adding Device"), "Adding device: %s, IP: %s" % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 2)
            myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname.strip(), myNodeInfo.staticIPAddress.strip())
            myNodeInfo.forceQuitflag = True
+           if pluginActions:
+              pluginActions.plugins_add(myNodeInfo.staticHostname.strip())
+              pluginActions.plugins_finished()
         return NAV_QUIT
  
 class WindowNodeStatus(NodeGroupWindow):
