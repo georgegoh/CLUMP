@@ -204,42 +204,54 @@ class RHN:
         else:
             raise rhnInvalidServerID, 'Invalid systemid file'
     
-    def getPackage(self, rpm, channelLabel):
+    def getPackage(self, rpm, channelLabel, dest):
         """Get a RPM from the channel"""
-       
-        code, msg, content = self._getPackage(rpm, channelLabel)
 
-        if code == 401:
-            # Authorization required. Expired session
-            # login again
-            self.login()
-            code, msg, content = self._getPackage(rpm, channelLabel)
+	bRetryAfterLogin = False
+	f = None
+       
+	while True:
+            code = None
+            msg = None
+            content = None
+
+            req = urllib2.Request(self.up2dateURL + '/$RHN/%s/getPackage/%s' % (channelLabel, rpm))
+            for h in self.headers:
+                if self.loginInfo.has_key(h):
+                    req.add_header(h, self.loginInfo[h])
+
+            try:
+                f = urllib2.urlopen(req)
+                code = 200
+            except urllib2.HTTPError, e :
+                code = e.code
+                msg = e.msg
+            except urllib2.URLError, e:
+                raise e
+
+            if code == 401 and not bRetryAfterLogin:
+                # Authorization required. Expired session
+                # login again
+                self.login()
+		bRetryAfterLogin = True
+                continue
+
+	    # Fall-through...
+	    break
  
-        if content:
-            return content
+        if code == 200:
+	    outfile = open(dest, 'w')
+
+	    while True:
+		# Read data in 64k chunks
+		data = f.read(65536)
+		if data == '':
+		    break
+
+		outfile.write(data)
+
+	    outfile.close()
+
+            return True
         else:
             raise rhnFailedDownloadRPM, (code, msg)
-
-    def _getPackage(self, rpm, channelLabel):
-        code = None
-        msg = None
-        content = None
-
-        req = urllib2.Request(self.up2dateURL + '/$RHN/%s/getPackage/%s' % (channelLabel, rpm))
-        for h in self.headers:
-            if self.loginInfo.has_key(h):
-                req.add_header(h, self.loginInfo[h])
-
-        try:
-            f = urllib2.urlopen(req)
-            content = f.read()
-            f.close()
-            code = 200
-        except urllib2.HTTPError, e :
-            code = e.code
-            msg = e.msg
-        except urllib2.URLError, e:
-            raise e
-            
-        return (code, msg, content)
-     
