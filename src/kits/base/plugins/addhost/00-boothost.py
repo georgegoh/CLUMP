@@ -19,7 +19,7 @@ from kusu.addhost import *
 class AddHostPlugin(AddHostPluginBase):
     def added(self, nodename, info, prePopulateMode):
         if prePopulateMode == False:
-           os.system("/opt/kusu/sbin/boothost -n %s" % nodename)
+           os.system("/opt/kusu/sbin/boothost -m %s" % nodename)
 
     def removed(self, nodename, info):
 	try:
@@ -41,6 +41,6 @@ class AddHostPlugin(AddHostPluginBase):
                self.dbconn.execute('SELECT nodegroups.ngname FROM nodegroups, nodes WHERE nodes.ngid=nodegroups.ngid AND \
                                     nodes.name="%s"' % nodelist[0])
                ngname = self.dbconn.fetchone()[0]
-               os.system("/opt/kusu/sbin/boothost -t '%s'" % ngname)
+               os.system("/opt/kusu/sbin/boothost -n '%s'" % ngname)
            except:
                pass
