@@ -624,7 +624,7 @@ class NodeFun(object, KusuApp):
 
         # Check if the node name is already used.
         if self.validateNode(devicename):
-           return False, "Device name already in use"
+           return False, "The name already in use"
 
         # Check if the IP is already used.
         if self.isIPUsed(ip):
