@@ -61,8 +61,8 @@ def retrieveNII(niihost):
         logger.error(msg)
         raise NIISourceUnavailableError, msg
     except urllib2.URLError, e:
-        logger.error('%s', ex.reason)
-        raise NIISourceUnavailableError, str(ex.reason)
+        logger.error('%s', e.reason)
+        raise NIISourceUnavailableError, str(e.reason)
 
 
 def getRandomSeq(length=8, chars=string.letters + string.digits):

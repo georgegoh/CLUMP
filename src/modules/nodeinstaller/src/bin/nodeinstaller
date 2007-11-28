@@ -189,7 +189,7 @@ actions:
             msg = self._('Please specify a node name or node ip address.')
             self.printMsgExit(msg)
                   
-        nii = NodeInstaller.retrieveNII(niihost=niihost,node=node)
+        nii = retrieveNII(niihost)
         if nii: print nii
 
 def exceptionHandler(error):
