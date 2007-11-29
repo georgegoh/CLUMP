@@ -21,9 +21,9 @@ class KusuRC(rcplugin.Plugin):
         """Setup kusuadmin zope user"""
         zinstancehome = path('/opt/Plone-3.0.3/zinstance')
         dbpasswd = path('/opt/kusu/etc/db.passwd')
-        initscript = path('/etc/init.d/zinstance.sh')
+        initscript = path('/etc/init.d/zinstance')
 
-        if not zinstance.exists():
+        if not zinstancehome.exists():
             return False
 
         if not dbpasswd.exists():

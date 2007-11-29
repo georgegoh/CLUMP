@@ -34,15 +34,15 @@ BuildArch: noarch
 AutoReq: no
 
 %description
-This package installs the @NAME@ module runtime.
+This package installs the @NAME@.
 
 %prep
 mkdir -p %{buildroot}%{_approot}
+mkdir -p %{buildroot}/etc/init.d
 
 %install
 cd %{_builddir}/%{name}-%{version}-%{release}
 find bin/ | cpio -mpdu %{buildroot}%{_approot}
-find etc/ | cpio -mpdu %{buildroot}%{_approot}
 find info/ | cpio -mpdu %{buildroot}%{_approot}
 find lib/ | cpio -mpdu %{buildroot}%{_approot}
 find lib64/ | cpio -mpdu %{buildroot}%{_approot}
@@ -54,18 +54,29 @@ find zinstance/ | cpio -mpdu %{buildroot}%{_approot}
 find doc/ | cpio -mpdu %{buildroot}%{_approot}
 find Python-2.4.4/ | cpio -mpdu %{buildroot}%{_approot}
 
+install -m755 zinstance.3.0.3 %{buildroot}/etc/init.d/zinstance
+install -m755 zeocluster.3.0.3 %{buildroot}/etc/init.d/zeocluster
+
 %pre
-
-%post
-
-%preun
+if ! /usr/bin/id plone &>/dev/null; then
+    useradd -d %{_approot} plone > /dev/null 2>&1 || true
+fi
 
 %postun
+if [ $1 -eq 0 ]; then
+    /usr/sbin/userdel plone > /dev/null 2>&1 || true
+fi
+
+%post
+/bin/chown -R plone.plone %{_approot} > /dev/null 2>&1 
+
 
 %clean
 rm -rf %{buildroot}
 
 %files
-%defattr(-,plone,plone)
 %{_approot}
+/etc/init.d/zinstance
+/etc/init.d/zeocluster
+
 

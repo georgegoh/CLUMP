@@ -1,0 +1,21 @@
+#!/bin/sh
+
+case "$1" in
+start)
+        echo -n " Starting ZEO Cluster"
+        /opt/Plone-3.0.3/zeocluster/bin/startcluster.sh
+        ;;
+stop)
+        echo -n " Stopping ZEO Cluster"
+        /opt/Plone-3.0.3/zeocluster/bin/shutdowncluster.sh
+        ;;
+restart)
+        echo -n " Restarting ZEO Cluster"
+        /opt/Plone-3.0.3/zeocluster/bin/restartcluster.sh
+        ;;
+*)
+        echo "Usage: `basename $0` {start|stop|restart}" >&2
+        ;;
+esac
+
+exit 0
