@@ -83,6 +83,7 @@ install::
 	install -m644 sbin/S02KusuGenconfig.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuNamed.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuUsrSkel.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S02KusuZope.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S90KusuFirefox.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage

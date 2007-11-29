@@ -72,7 +72,9 @@ Requires: kusu-ipy
 Requires: initrd-templates
 Requires: pyparted
 Requires: rsh
-
+Requires: cadaver
+Requires: pexpect
+Requires: Plone
 
 %description
 This component provides the node with the Kusu management tools for the 
