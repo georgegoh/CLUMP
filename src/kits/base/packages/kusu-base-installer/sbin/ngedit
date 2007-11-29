@@ -118,7 +118,7 @@ class scrNGEMain(USXBaseScreen):
                    cmd + "\nPlease inspect the output below:\n"
         _msg += output
 
-        self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
+        self.selector.popupMsg(_title, _msg, width = 60)
         kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
 
 
@@ -2306,7 +2306,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                    cmd + "\nPlease inspect the output below:\n"
         _msg += output
 
-        self.selector.popupMsg(_title, _msg, width = MAXWIDTH)
+        self.selector.popupMsg(_title, _msg, width = 65)
         kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
 
     def expireNodes(self):
