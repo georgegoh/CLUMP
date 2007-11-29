@@ -65,7 +65,7 @@ rpm: install
 
 install::
 	tar xzvf $(MODULE)-$(VERSION).tar.gz
-	(cd $(MODULE)-$(VERSION) && python setup.py install --prefix ../)
+	(cd $(MODULE)-$(VERSION) && python setup.py install --home ../)
 	sed \
 		-e 's%@KUSUROOT@%$(KUSUROOT)%g' \
 		-e 's%@NAME@%$(NAME)%g' \
