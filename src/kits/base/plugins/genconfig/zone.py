@@ -80,7 +80,7 @@ class thisReport(Report):
         query = ('select nodes.name, nics.ip, networks.suffix from '
                  'nodes, nics, networks '
                  'where networks.netid=nics.netid and '
-                 'nodes.ngid=1 and nics.nid=nodes.nid')
+                 'nodes.ngid=1 and nics.nid=nodes.nid and networks.usingdhcp=0')
         try:
             self.db.execute(query)
 
@@ -106,7 +106,7 @@ class thisReport(Report):
         # Print out all the available names
         query = ('select nodes.name,nics.ip, networks.suffix from '
                  'nodes,nics,networks where nodes.nid=nics.nid and '
-                 'nics.netid=networks.netid order by nodes.name')
+                 'nics.netid=networks.netid and networks.usingdhcp=0 order by nodes.name')
 
         try:
             self.db.execute(query)

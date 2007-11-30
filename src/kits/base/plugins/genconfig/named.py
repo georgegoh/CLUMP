@@ -185,7 +185,7 @@ zone "0.in-addr.arpa" IN {
         print ''
 
         # Generate the in-addr.arpa entries for all subnets
-        query = ('select distinct network,subnet from ng_has_net,networks where ng_has_net.netid=networks.netid;')
+        query = ('select distinct network,subnet from ng_has_net,networks where ng_has_net.netid=networks.netid and networks.usingdhcp=0')
         try:
             self.db.execute(query)
 

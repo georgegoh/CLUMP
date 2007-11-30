@@ -104,7 +104,7 @@ class thisReport(Report):
         query = ('select nodes.name, nics.ip, networks.suffix from '
                  'nodes, nics, networks where '
                  'nodes.ngid=1 and nics.nid=nodes.nid and '
-                 'networks.netid=nics.netid')
+                 'networks.netid=nics.netid and networks.usingdhcp=0')
         try:
             self.db.execute(query)
 

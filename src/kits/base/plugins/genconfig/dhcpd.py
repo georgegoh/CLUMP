@@ -57,7 +57,8 @@ class thisReport(Report):
         query = ('select networks.network, networks.subnet, '
                  'networks.gateway, networks.netid, nics.ip '
                  'from networks,nics,nodes where nodes.nid=nics.nid and '
-                 'nics.netid=networks.netid and nodes.name="%s"' % installer)
+                 'nics.netid=networks.netid and networks.usingdhcp=0 '
+                 'and nodes.name="%s"' % installer)
         try:
             self.db.execute(query)
 
@@ -100,7 +101,7 @@ class thisReport(Report):
                 # Now cycle through the nodes on for this
                 query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
                          'from networks,nics,nodes where nodes.nid=nics.nid and '
-                         'nics.netid=networks.netid and nics.boot=1 ')
+                         'nics.netid=networks.netid and nics.boot=1 and networks.usingdhcp=0')
 
                 try:
                     self.db.execute(query)

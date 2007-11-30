@@ -45,9 +45,10 @@ class thisReport(Report):
             sys.stderr.write(_("genconfig_cannot_determine_Public_DNS_zone\n"))
             sys.exit(-1)
 
-        query = ('select nics.ip,nodes.name,networks.suffix,nics.boot,networks.type '
-                 'from nics,nodes,networks where nics.nid = nodes.nid '
-                 'and nics.netid = networks.netid order by nics.ip')
+        query = ('SELECT nics.ip,nodes.name,networks.suffix,nics.boot,networks.type '
+                 'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
+                 'AND nics.netid = networks.netid AND networks.usingdhcp=0 '
+                 'AND nodes.ngid!=5 ORDER BY nics.ip')
 
         try:
             self.db.execute(query)
@@ -71,5 +72,25 @@ class thisReport(Report):
                         else:
                             print "%s\t%s%s.%s \t%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix )
                 else:
+                    print "%s\t%s.%s \t%s" % (ip, name, dnszone, name)
+
+        # Create the unmanaged hosts entries
+        query = ('SELECT nics.ip,nodes.name '
+                 'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
+                 'AND nics.netid = networks.netid AND networks.usingdhcp=0 '
+                 'AND nodes.ngid=5 ORDER BY nics.ip')
+
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
+                    
+        else:            
+            data = self.db.fetchall()
+            if data:
+                print "\n# Unmanaged Nodes"
+                for row in data:
+                    ip, name = row
                     print "%s\t%s.%s \t%s" % (ip, name, dnszone, name)
         
