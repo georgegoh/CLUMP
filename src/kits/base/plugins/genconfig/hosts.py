@@ -40,7 +40,12 @@ class thisReport(Report):
             sys.stderr.write(_("genconfig_cannot_determine_DNS_zone\n"))
             sys.exit(0)
 
-        query = ('select nics.ip,nodes.name,networks.suffix,nics.boot '
+        publicdnszone = self.db.getAppglobals('PublicDNSZone')
+        if not dnszone:
+            sys.stderr.write(_("genconfig_cannot_determine_Public_DNS_zone\n"))
+            sys.exit(-1)
+
+        query = ('select nics.ip,nodes.name,networks.suffix,nics.boot,networks.type '
                  'from nics,nodes,networks where nics.nid = nodes.nid '
                  'and nics.netid = networks.netid order by nics.ip')
 
@@ -53,12 +58,18 @@ class thisReport(Report):
         else:            
             data = self.db.fetchall()
             for row in data:
-                ip, name, suffix, boot = row
+                ip, name, suffix, boot, nettype = row
                 if suffix and suffix != '':
                     if boot == 1:
-                        print "%s\t%s%s.%s \t%s.%s \t%s%s \t%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix, name)
+                        if nettype == 'public':
+                            print "%s\t%s%s.%s \t%s.%s \t%s%s \t%s \t%s.%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix, name, name, publicdnszone)
+                        else:
+                            print "%s\t%s%s.%s \t%s.%s \t%s%s \t%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix, name)
                     else:
-                        print "%s\t%s%s.%s \t%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix )
+                        if nettype == 'public':
+                            print "%s\t%s%s.%s \t%s.%s \t%s%s \t%s.%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix, name, publicdnszone)
+                        else:
+                            print "%s\t%s%s.%s \t%s.%s \t%s%s" % (ip, name, suffix ,dnszone, name, dnszone, name, suffix )
                 else:
                     print "%s\t%s.%s \t%s" % (ip, name, dnszone, name)
         
