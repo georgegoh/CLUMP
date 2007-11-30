@@ -130,4 +130,17 @@ class thisReport(Report):
         print '\tDeny from all'
         print '</Directory>'
         print ''
- 
+
+        #Configure rewrite rule to rewrite URL in to Zope
+        print '<VirtualHost *>'
+        print 'ServerName localhost'
+        print 'RewriteEngine On'
+        print 'RewriteRule ^/(.*) http://127.0.0.1:8080/VirtualHostBase/http/localhost:80/Plone/VirtualHostRoot/$1 [L,P]'
+        print '</VirtualHost>'
+        print ''
+        print '<VirtualHost *>'
+        print 'ServerName %s.%s' % (installer, dnszone)
+        print 'RewriteEngine On'
+        print 'RewriteRule ^/(.*) http://127.0.0.1:8080/VirtualHostBase/http/%s.%s:80/Plone/VirtualHostRoot/$1 [L,P]' % (installer, dnszone)
+        print '</VirtualHost>'
+
