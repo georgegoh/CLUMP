@@ -428,6 +428,11 @@ class NetEditApp(object, KusuApp):
            networkEntryInfo.append(self._options.opt.strip())
            #result, errorMsg = networkrecord.validateNetworkEntry()
 
+           if self._options.subnet or self._options.network or self._options.startip or self_options.gateway:
+              print "When using DHCP, you cannot specify a subnet, network,  starting ip or gateway\n"
+              self.unlock()
+              sys.exit(-1)
+
            if len(self._options.desc.strip()) == 0:
               self.unlock()
               self.parser.error(self._("netedit_missing_description"))
