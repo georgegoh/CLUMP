@@ -49,9 +49,10 @@ class boothost:
         self.passdata     = pwd.getpwnam('apache')     # Cache this for later
         # Get the installers here so it can be cached for other hosts
         self.installerIPs = []
-        query = ('select nics.ip, networks.subnet from nics, nodes, networks '
-                 'where nodes.nid=nics.nid and nics.netid=networks.netid '
-                 'and nodes.name=(select kvalue from appglobals where '
+        query = ('SELECT nics.ip, networks.subnet FROM nics, nodes, networks '
+                 'WHERE nodes.nid=nics.nid AND nics.netid=networks.netid '
+                 'AND networks.usingdhcp=0 '
+                 'AND nodes.name=(select kvalue from appglobals where '
                  'kname="PrimaryInstaller")')
         
         try:
