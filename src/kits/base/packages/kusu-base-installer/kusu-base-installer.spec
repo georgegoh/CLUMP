@@ -110,7 +110,6 @@ make ROOT=$RPM_BUILD_ROOT install
 %exclude /opt/kusu/lib/python/kusu/ngedit/*.py?
 %exclude /opt/kusu/lib/python/kusu/ui/text/*.py?
 %exclude /etc/rc.kusu.d/*.py?
-%exclude /var/www/html/index.py?
 #%exclude /opt/kusu/lib/python/kusu/ui/*.py?
 /etc/rc.kusu.d/*.py
 %defattr(-,apache,apache)
@@ -119,8 +118,6 @@ make ROOT=$RPM_BUILD_ROOT install
 /depot/images
 /depot/repos/custom_scripts
 /opt/kusu/cfm/changedfiles.lst
-/var/www/html/index.tmpl
-/var/www/html/index.py
 #%defattr(400,apache,apache)
 #/opt/kusu/etc/db.passwd
 

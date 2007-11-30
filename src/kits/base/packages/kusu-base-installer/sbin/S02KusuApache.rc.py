@@ -62,9 +62,6 @@ class KusuRC(rcplugin.Plugin):
             retval = self.runCommand('$KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf')[0]
             if retval != 0: return False
 
-            retval = self.runCommand('echo "Include conf.d/kusu.conf" >> /etc/httpd/conf/httpd.conf')[0]
-            if retval != 0: return False
-            
             retval = self.runCommand('/etc/init.d/httpd restart')[0]
             if retval != 0: return False
 
