@@ -76,40 +76,60 @@ class NetworkRecord(object):
   
     def validateNetworkEntry(self):
         # Validate if the value is in IP format. 
-        if not kusu.ipfun.validIP(self._network_field): 
-            if self._thisWindow:
-                self._thisWindow.networkEntry.setEntry('')
-            return False, 'netedit_validate_network'
-            
-        if not kusu.ipfun.validIP(self._subnet_field):
-            if self._thisWindow:
-                self._thisWindow.subnetEntry.setEntry('')
-            return False, 'netedit_validate_subnet'
+
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              if not kusu.ipfun.validIP(self._network_field):
+                 self._thisWindow.networkEntry.setEntry('')
+                 return False, 'netedit_validate_network'
+        else:
+           if not kusu.ipfun.validIP(self._network_field):
+              return False, 'netedit_validate_network'
+         
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              if not kusu.ipfun.validIP(self._subnet_field):
+                 self._thisWindow.subnetEntry.setEntry('')
+                 return False, 'netedit_validate_subnet'
+        else:
+           if not kusu.ipfun.validIP(self._subnet_field):
+              return False, 'netedit_validate_subnet'
    
         if self._gateway_field:
             if not kusu.ipfun.validIP(self._gateway_field):
                 if not self._network_field and not self._subnet_field and self._thisWindow:
-                        self._thisWindow.gatewayEntry.setEntry('')
-                return False, 'netedit_validate_gateway'
-   
-        if not kusu.ipfun.validIP(self._startip_field):
-            if not self._network_field and not self._subnet_field and self._thisWindow:
-                self._thisWindow.startIPEntry.setEntry('')
-            return False, 'netedit_validate_startip'
+                   self._thisWindow.gatewayEntry.setEntry('')
+                   return False, 'netedit_validate_gateway'
+ 
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              if not kusu.ipfun.validIP(self._startip_field):
+                 if not self._network_field and not self._subnet_field:
+                    self._thisWindow.startIPEntry.setEntry('')
+                    return False, 'netedit_validate_startip'
+        else:
+             if not kusu.ipfun.validIP(self._startip_field):
+                 if not self._network_field and not self._subnet_field:
+                    return False, 'netedit_validate_startip'
             
         # Check if the Increment is a number.
         try:
             result = int(self._inc_field)
             if result == 0:
-                if self._thisWindow:
-                    self._thisWindow.incEntry.setEntry('')
-                return False, 'netedit_validate_inc_not_zero'
+               if self._thisWindow:
+                   if self._thisWindow.dhcpCheck.value() == False:
+                      self._thisWindow.incEntry.setEntry('')
+                   return False, 'netedit_validate_inc_not_zero'
+               else:
+                   return False, 'netedit_validate_inc_not_zero'
+             
         except:
             if len(self._inc_field) == 0:
-                return False, 'netedit_validate_inc_not_empty'
-            if self._thisWindow:
-                self._thisWindow.incEntry.setEntry('')
-            return False, 'netedit_validate_inc_not_number'
+               if self._thisWindow and self._thisWindow.dhcpCheck.value() == False:
+                  self._thisWindow.incEntry.setEntry('')
+                  return False, 'netedit_validate_inc_not_empty'
+               else:
+                  return False, 'netedit_validate_inc_not_number'
             
         # Device field cannot be empty.
         if not self._device_field:
@@ -120,12 +140,13 @@ class NetworkRecord(object):
 
         # Validate if IP and gateway exist on the new network entered.        
         if not self._network_field == "" and not self._gateway_field == "": # If no gateway specified, don't bother to validate it.
-            if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
-                return False, 'netedit_validate_gateway_on_network'
+           if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
+              return False, 'netedit_validate_gateway_on_network'
 
         if not self._subnet_field == "":
-                if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
-                    return False, 'netedit_validate_startip_on_network'
+           if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
+              return False, 'netedit_validate_startip_on_network'
+
         return True, 'Success'
                     
     def updateNetworkEntry(self, currentItem):
@@ -143,12 +164,21 @@ class NetworkRecord(object):
               return False, 'DB_Query_Error\n'
            else:
               print kusuApp._("DB_Query_Error\n")
-              self.unlock()
+              kusuApp.unlock()
               sys.exit(-1)
         return True, 'Success'
        
     def insertNetworkEntry(self):
-        query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
+
+        if not self._inc_field:
+           self._inc_field = 0
+
+        if not self._subnet_field and not self._network_field and not self._startip_field:
+           query = "INSERT INTO networks (device, suffix, options, netname, inc, usingdhcp, type) VALUES \
+                ('%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._device_field, self._suffix_field, self._option_field, \
+                self._description_field, 0, 1, self._type_field)
+        else:
+           query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                 self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox), self._type_field)
@@ -162,7 +192,7 @@ class NetworkRecord(object):
                 return False, 'DB_Duplicate_Error\n'
             else:
                 print kusuApp._("DB_Duplicate_Error\n")
-                self.unlock()
+                kusuApp.unlock()
                 sys.exit(-1)
         
     def checkNetworkEntry(self, networkid):
@@ -324,15 +354,22 @@ class NetEditApp(object, KusuApp):
                   len(network_field)) + "%s".ljust(12) % (("=") * len(subnet_field)) + "%s".ljust(24) % (("=") * len(desc_field)) + "%s" % (("=") * len(type_field))
 
             for nid,net,sub,netname,devname,type in networkList:
+                if not net:
+                   net = "DHCP"
+                if not sub:
+                   sub = "DHCP"
+
                 print "%s %s %s %s %s %s" % (str(nid).ljust(10), devname.ljust(12), net.ljust(13), sub.ljust(15), netname.ljust(40), type)
             self.unlock()
             sys.exit(0)
             
-        # Handle -a -n -s -g,-i,-t, -e options - Adding network
-        if (self._options.add and self._options.network and self._options.subnet and self._options.interface and self._options.startip and self._options.desc):
+        # Handle Adding a network with DHCP is turned OFF
+        # Handle -a, -n -s, -i, -t, -e options - Adding network
+        if (self._options.add and self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc):
             nettype = None
             # Next verify the record
             networkEntryInfo = []
+
             networkEntryInfo.append(self._options.network.strip())
             networkEntryInfo.append(self._options.subnet.strip())
             networkEntryInfo.append(self._options.gateway.strip())
@@ -376,11 +413,54 @@ class NetEditApp(object, KusuApp):
             self.unlock()
             sys.exit(0)
 
-        if self._options.add == True:
-            if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
-                or not self._options.startip or not self._options.desc:
-                self.unlock()
-                self.parser.error(self._("netedit_options_add_options_needed"))
+        # DHCP Mode
+        if self._options.add and self._options.dhcp and self._options.interface and self._options.desc:
+           nettype = None
+           networkEntryInfo = []
+
+           networkEntryInfo.append(None)
+           networkEntryInfo.append(None)
+           networkEntryInfo.append(None)
+           networkEntryInfo.append(None)
+           networkEntryInfo.append(0)
+           networkEntryInfo.append(self._options.interface.strip())
+           networkEntryInfo.append(self._options.suffix.strip())
+           networkEntryInfo.append(self._options.opt.strip())
+           #result, errorMsg = networkrecord.validateNetworkEntry()
+
+           if len(self._options.desc.strip()) == 0:
+              self.unlock()
+              self.parser.error(self._("netedit_missing_description"))
+           else:
+              networkEntryInfo.append(self._options.desc.strip())
+
+           networkEntryInfo.append(True)
+
+           # Check for conflicting options:
+           if self._options.provision and self._options.public:
+              self.unlock()
+              self.parser.error(self._("netedit_provision_conflict"))
+
+           if self._options.provision:
+              nettype = 'provision'
+
+           if self._options.public:
+              nettype = 'public'
+
+           if not nettype:
+              nettype = 'public'
+
+           networkEntryInfo.append(nettype)
+
+           networkrecord = NetworkRecord(networkEntryInfo, None)
+           networkrecord.insertNetworkEntry()
+           self.unlock()
+           sys.exit(0)
+        elif self._options.add == True:
+           if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
+                or not self._options.startip or not self._options.desc and not self._options.dhcp == True:
+               self.unlock()
+               self.parser.error(self._("netedit_options_add_options_needed"))
 
         # Handle -d  - Deleting network
         if (self._options.delete):
@@ -717,8 +797,16 @@ class NetworkEditWindow(USXBaseScreen):
         networkEntryInfo = []
         networkEntryInfo.append(self.networkEntry.value().strip())
         networkEntryInfo.append(self.subnetEntry.value().strip())
-        networkEntryInfo.append(self.gatewayEntry.value().strip())
-        networkEntryInfo.append(self.startIPEntry.value().strip())
+        if self.gatewayEntry:
+           networkEntryInfo.append(self.gatewayEntry.value().strip())
+        else:
+           networkEntryInfo.append(None)
+
+        if self.startIPEntry:
+           networkEntryInfo.append(self.startIPEntry.value().strip())
+        else:
+           networkEntryInfo.append(None)
+
         networkEntryInfo.append(self.incEntry.value().strip())
         networkEntryInfo.append(self.deviceEntry.value().strip())
         networkEntryInfo.append(self.suffixEntry.value().strip())
@@ -739,7 +827,12 @@ class NetworkEditWindow(USXBaseScreen):
         if not result:
             #self.popWindow()
             return False, self.kusuApp._(errorMsg)  
-         
+        
+        # Validate if DHCP is unchecked subnet/network must be filled out!
+        if self.dhcpCheck.value() == False:
+           if len(self.networkEntry.value()) < 1 or len(self.subnetEntry.value()) < 1:
+              return False, "ERROR: Cannot have subnet and network empty when not using DHCP!"
+
         global selectedNetwork
         result, errorMsg = modifiedRecord.updateNetworkEntry(selectedNetwork)            
         if not result:
@@ -974,6 +1067,10 @@ class NetworkMainWindow(USXBaseScreen):
             if len(netname) > 43: 
                netname = netname[:22] + "..."
 
+            if not net:
+               net = "DHCP"
+            if not sub:
+               sub = "DHCP"
             self.networkListbox.append("%s %s %s %s" % (device.ljust(11), net.ljust(14), sub.ljust(15), netname.ljust(10)), "%s %s" % (nid, net))
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, -1), anchorLeft=1)
         self.screenGrid.setField(listboxlabel, col=0, row=1, padding=(0, 0, 0, 0), anchorLeft=1)
