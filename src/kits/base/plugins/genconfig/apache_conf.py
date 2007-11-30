@@ -73,7 +73,7 @@ class thisReport(Report):
         print ""
 
         # Determine the list of networks that this installer can serve
-        query = ('select network, subnet from networks')
+        query = ('select distinct network, subnet from networks where network is not NULL')
         try:
             self.db.execute(query)
 
