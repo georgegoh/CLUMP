@@ -497,7 +497,11 @@ class NetEditApp(object, KusuApp):
                         try:
                             database.connect('kusudb', 'apache')
                             database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
-                            print self._("Deleting network: %s\n" % network[1])
+                            if not network[1]:
+                               print self._("Deleting DHCP network: %s\n" % self._options.delete)
+                            else:
+                               print self._("Deleting network: %s\n" % network[1])
+
                         except:
                             print self._("DB_Query_Error\n")
                             self.unlock()
