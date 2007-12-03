@@ -143,9 +143,20 @@ class NetworkRecord(object):
            if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
               return False, 'netedit_validate_gateway_on_network'
 
-        if not self._subnet_field == "":
-           if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
-              return False, 'netedit_validate_startip_on_network'
+
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              if not self._subnet_field == "":
+                 if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
+                    return False, 'netedit_validate_startip_on_network'
+        else:
+              if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
+                 return False, 'netedit_validate_startip_on_network'
+
+        # Check if DHCP mode is on
+        if self._thisWindow.dhcpCheck.value() == True:
+           if self._network_field or self._subnet_field or self._gateway_field or self._startip_field:
+              return False, 'Cannot specify Network, Subnet, Gateway or Starting IP when using DHCP'
 
         return True, 'Success'
                     
@@ -171,12 +182,12 @@ class NetworkRecord(object):
     def insertNetworkEntry(self):
 
         if not self._inc_field:
-           self._inc_field = 0
+           self._inc_field = 1
 
         if not self._subnet_field and not self._network_field and not self._startip_field:
            query = "INSERT INTO networks (device, suffix, options, netname, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._device_field, self._suffix_field, self._option_field, \
-                self._description_field, 0, 1, self._type_field)
+                self._description_field, 1, 1, self._type_field)
         else:
            query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
@@ -374,7 +385,7 @@ class NetEditApp(object, KusuApp):
             networkEntryInfo.append(self._options.subnet.strip())
             networkEntryInfo.append(self._options.gateway.strip())
             networkEntryInfo.append(self._options.startip.strip())
-            networkEntryInfo.append(int(self._options.increment))
+            networkEntryInfo.append(self._options.increment)
             networkEntryInfo.append(self._options.interface.strip())
             networkEntryInfo.append(self._options.suffix.strip())
             networkEntryInfo.append(self._options.opt.strip())
@@ -422,14 +433,14 @@ class NetEditApp(object, KusuApp):
            networkEntryInfo.append(None)
            networkEntryInfo.append(None)
            networkEntryInfo.append(None)
-           networkEntryInfo.append(0)
+           networkEntryInfo.append(self._options.increment)
            networkEntryInfo.append(self._options.interface.strip())
            networkEntryInfo.append(self._options.suffix.strip())
            networkEntryInfo.append(self._options.opt.strip())
            #result, errorMsg = networkrecord.validateNetworkEntry()
 
-           if self._options.subnet or self._options.network or self._options.startip or self_options.gateway:
-              print "When using DHCP, you cannot specify a subnet, network,  starting ip or gateway\n"
+           if self._options.subnet or self._options.network or self._options.startip or self._options.gateway:
+              print "When using DHCP, you cannot specify a subnet, network, starting ip or gateway\n"
               self.unlock()
               sys.exit(-1)
 
@@ -587,7 +598,7 @@ class NetEditApp(object, KusuApp):
                             networkEntryInfo.append(self._options.subnet.strip())
                             networkEntryInfo.append(self._options.gateway.strip())
                             networkEntryInfo.append(self._options.startip.strip())
-                            networkEntryInfo.append(int(self._options.increment))
+                            networkEntryInfo.append(self._options.increment)
                             networkEntryInfo.append(self._options.interface.strip())
     
                             # If user didn't specify suffix 'guess it'
@@ -727,13 +738,22 @@ class NetworkEditWindow(USXBaseScreen):
         else:
            enableFlag = True
 
+        if self.networkRecord[0] == None:
+           self.networkRecord[0] = ""
+        
         self.networkEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_network").rjust(13), text=self.networkRecord[0], width=30, 
                 password=0, returnExit = 0)
         self.networkEntry.setEnabled(enableFlag)
 
+        if self.networkRecord[1] == None:
+           self.networkRecord[1] = ""
+
         self.subnetEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_subnet").rjust(13), text=self.networkRecord[1], width=30, 
                     password=0, returnExit = 0)
         self.subnetEntry.setEnabled(enableFlag)
+
+        if self.networkRecord[2] == None:
+           self.networkRecord[2] = ""
 
         self.gatewayEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_gateway").rjust(13), text=self.networkRecord[2], width=30, 
                     password=0, returnExit = 0)
@@ -742,6 +762,9 @@ class NetworkEditWindow(USXBaseScreen):
         self.deviceEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_device").rjust(13), text=self.networkRecord[3], width=30, 
                     password=0, returnExit = 0)
         self.deviceEntry.setEnabled(enableFlag)
+
+        if self.networkRecord[4] == None:
+           self.networkRecord[4] = ""
 
         self.startIPEntry = LabelledEntry(labelTxt=self.kusuApp._("netedit_field_startip").rjust(10), text=self.networkRecord[4], width=30, 
                     password=0, returnExit = 0)
