@@ -88,7 +88,7 @@ class AddHostApp(KusuApp):
         Prints out the version of the tool to screen. 
         """
         
-        print "Addhosts Version %s\n" % self.version
+        print "Addhost Version %s\n" % self.version
         self.unlock()
         sys.exit(0)
         
