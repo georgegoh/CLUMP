@@ -9,9 +9,13 @@ netedit \- Network editor for nodegroups.
 .LP 
 \fBnetedit\fR [\-h|\-l|\-v]  \- For information
 .LP 
-\fBnetedit\fR [\-a \-n network \-s subnet \-i ifname \-t start_ipaddr \-g gateway \-e {network description} [\-x suffix] [\-o {network options}] [\-p] [\-y | \-z] [\-r increment]]
+\fBnetedit\fR [\-a \-n network \-s subnet \-i ifname \-t start_ipaddr \-g gateway \-e {network description} [\-x suffix] [\-o {network options}] [\-y | \-z] [\-r increment]]
+.LP 
+\fBnetedit\fR [\-a \-i ifname \-e {network description} [\-x suffix] [\-o {network options}] [\-y | \-z] \-p] - DHCP Mode
 .LP 
 \fBnetedit\fR [\-c netid# \-n network \-s subnet \-i ifname \-t start_ipaddr \-g gateway \-e {network description} [\-x suffix] [\-o {network options}] [\-p] [\-y | \-z]] [\-r increment]
+.LP 
+\fBnetedit\fR [\-c netid# \-i ifname \-e {network description} [\-x suffix] [\-o {network options}] [\-y | \-z]] \-p] - DHCP Mode
 .LP 
 \fBnetedit\fR [\-w netid# [\-x suffix] [\-o netoptions] [\-y | \-z] [\-t start_ipaddr] [\-e {network description}] [\-r increment]]
 
@@ -57,7 +61,7 @@ The Network this is on e.g. 192.168.23.0
 The options field is in support of various netoworking options.  It has no effect at this time.
 .TP 
 \fB\-p, \-\-dhcp\fR
-Do not assign an IP to this interface.  Let the machine get an IP from that networks DHCP server, not the installer.
+Do not assign an IP to this interface.  Let the machine get an IP from that networks DHCP server, not the installer. The -a and -c option work differently when using -p mode.
 .TP 
 \fB\-r <\fIIncrement\fR>, \-\-increment=<\fIIncrement\fR>\fR
 The amount to change the IP address by when adding nodes.  This may be positive or negitive.  The default is 1.
