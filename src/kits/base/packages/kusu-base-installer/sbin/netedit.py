@@ -154,9 +154,10 @@ class NetworkRecord(object):
                  return False, 'netedit_validate_startip_on_network'
 
         # Check if DHCP mode is on
-        if self._thisWindow.dhcpCheck.value() == True:
-           if self._network_field or self._subnet_field or self._gateway_field or self._startip_field:
-              return False, 'Cannot specify Network, Subnet, Gateway or Starting IP when using DHCP'
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == True:
+              if self._network_field or self._subnet_field or self._gateway_field or self._startip_field:
+                 return False, 'Cannot specify Network, Subnet, Gateway or Starting IP when using DHCP'
 
         return True, 'Success'
                     
@@ -515,7 +516,7 @@ class NetEditApp(object, KusuApp):
         # Handle -w: -t|-e|-r|-o|-y|-z - Changing non-destructive values
         if (self._options.changeused):
             database.connect('kusudb', 'apache')
-            if (self._options.startip or self._options.desc or self._options.opt or self._options.increment or self._options.public or self._options.provision) and not (self._options.network or self._options.subnet or self._options.gateway or self._options.interface or self._options.dhcp):
+            if (self._options.startip or self._options.desc or self._options.opt or self._options.increment or self._options.public or self._options.provision) and not (self._options.network or self._options.subnet or self._options.gateway or self._options.interface):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
@@ -573,9 +574,70 @@ class NetEditApp(object, KusuApp):
                  self.parser.error(self._("netedit_options_illegal_usednetwork"))
 
         if (self._options.change):
-            # Handle -c, -n, -s, -g, -t, -i, -e (minimal options) - Changing network - Destructive
+            # Handle -c, -n, -s, -t, -i, -e (minimal options) - Changing network - Destructive
             # Check whole network if it's not in use
-            if (self._options.network and self._options.subnet and self._options.startip and self._options.gateway and self._options.interface and self._options.desc):
+
+            if self._options.dhcp and (self._options.subnet or self._options.network or self._options.startip or self._options.gateway):
+                print "When using DHCP, you cannot specify a subnet, network, starting ip or gateway\n"
+                self.unlock()
+                sys.exit(-1)
+
+            elif self._options.dhcp == True:
+                 result = None
+                 invalidID = True
+                 networkrecord = NetworkRecord()
+                 networkInfo = list(networkrecord.getNetworkList())
+                 for network in networkInfo:
+                     if network[0] == self._options.change:
+                         invalidID = False
+                         # We found this ID, let's check if it's in use or not.
+                         result = networkrecord.checkNetworkEntry(self._options.change)
+ 
+                         if result:
+                            self.unlock()
+                            self.parser.error(self._("The network '%s' is in use. To change non-destructive properties use the -w option") % network[1])
+                         else:
+                            nettype=""
+                            networkEntryInfo = []
+                            networkEntryInfo.append("")
+                            networkEntryInfo.append("")
+                            networkEntryInfo.append("")
+                            networkEntryInfo.append("")
+                            networkEntryInfo.append(self._options.increment)
+                            networkEntryInfo.append(self._options.interface.strip())
+                            networkEntryInfo.append(self._options.suffix.strip())
+                            networkEntryInfo.append(self._options.opt.strip())
+
+                            if len(self._options.desc.strip()) == 0:
+          		       self.unlock()
+            	               self.parser.error(self._("netedit_missing_description"))
+           		    else:
+               		       networkEntryInfo.append(self._options.desc.strip())
+
+                            networkEntryInfo.append(True)  # DHCP mode
+
+                            # Check for conflicting options:
+                            if self._options.provision and self._options.public:
+                               self.unlock()
+                               self.parser.error(self._("netedit_provision_conflict"))
+
+                            if self._options.provision:
+                               nettype = 'provision'
+
+                            if self._options.public:
+                               nettype = 'public'
+
+                            if not nettype:
+                               nettype = 'public'
+
+                            networkEntryInfo.append(nettype)
+
+                            dhcpnetrecord = NetworkRecord(networkEntryInfo, None)
+                            dhcpnetrecord.updateNetworkEntry(self._options.change)
+                            self.unlock()
+                            sys.exit(0)
+
+            elif self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc:
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
