@@ -592,7 +592,6 @@ class NetEditApp(object, KusuApp):
                          invalidID = False
                          # We found this ID, let's check if it's in use or not.
                          result = networkrecord.checkNetworkEntry(self._options.change)
- 
                          if result:
                             self.unlock()
                             self.parser.error(self._("The network '%s' is in use. To change non-destructive properties use the -w option") % network[1])
@@ -604,11 +603,17 @@ class NetEditApp(object, KusuApp):
                             networkEntryInfo.append("")
                             networkEntryInfo.append("")
                             networkEntryInfo.append(self._options.increment)
-                            networkEntryInfo.append(self._options.interface.strip())
-                            networkEntryInfo.append(self._options.suffix.strip())
-                            networkEntryInfo.append(self._options.opt.strip())
 
-                            if len(self._options.desc.strip()) == 0:
+                            if not self._options.interface or len(self._options.interface) == 0:
+                               self.unlock()
+                               self.parser.error(self._("netedit_missing_interface"))
+                            else:
+                               networkEntryInfo.append(self._options.interface.strip())
+ 
+                            networkEntryInfo.append(self._options.suffix)
+                            networkEntryInfo.append(self._options.opt)
+
+                            if not self._options.desc or len(self._options.desc) == 0:
           		       self.unlock()
             	               self.parser.error(self._("netedit_missing_description"))
            		    else:
@@ -636,6 +641,10 @@ class NetEditApp(object, KusuApp):
                             dhcpnetrecord.updateNetworkEntry(self._options.change)
                             self.unlock()
                             sys.exit(0)
+
+                 if invalidID:
+                    self.unlock()
+                    self.parser.error(self._("netedit_error_invalid_id"))
 
             elif self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc:
 
