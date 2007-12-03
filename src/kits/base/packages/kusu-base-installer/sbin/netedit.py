@@ -491,7 +491,11 @@ class NetEditApp(object, KusuApp):
                     # We found this ID, let's check if it's in use or not.
                     result = networkrecord.checkNetworkEntry(self._options.delete)
                     if result:
-                        print self._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
+                        if network[1] == '':
+                           print self._("The DHCP network '%s' is in use. If you wish to delete this, please use the node group editor\n" % self._options.delete)
+                        else:
+                           print self._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n" % network[1])
+
                         self.unlock()
                         sys.exit(0)
                     else:
@@ -749,7 +753,21 @@ class NetworkEditWindow(USXBaseScreen):
     
         self.hotkeysDict['F5'] = self.cancelAction
         self.hotkeysDict['F8'] = self.okAction
-        
+       
+    def toggleDHCPMode(self):
+        global networkInUse
+        if self.dhcpCheck.value() == True:
+           self.networkEntry.setEnabled(False)
+           self.subnetEntry.setEnabled(False)
+           self.gatewayEntry.setEnabled(False)
+           self.startIPEntry.setEnabled(False)
+        else:
+           if networkInUse == False:
+              self.networkEntry.setEnabled(True)
+              self.subnetEntry.setEnabled(True)
+              self.gatewayEntry.setEnabled(True)
+              self.startIPEntry.setEnabled(True)
+ 
     def guessIPandGateway(self):
         # First check if the values are valid IP address notation
         net = self.networkEntry.value()
@@ -866,11 +884,25 @@ class NetworkEditWindow(USXBaseScreen):
            self.typeList.setCurrent("public")
 
         self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = int(self.networkRecord[9]))
-
+        self.dhcpCheck.setCallback(self.toggleDHCPMode)
         if networkInUse:
            self.dhcpCheck.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
         else:
            self.dhcpCheck.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
+
+        if self.dhcpCheck.value() == True:
+           self.deviceEntry.setEnabled(True)
+           self.suffixEntry.setEnabled(True)
+           self.startIPEntry.setEnabled(False)
+           self.gatewayEntry.setEnabled(False)
+           self.networkEntry.setEnabled(False)
+           self.subnetEntry.setEnabled(False)
+        else:
+           if networkInUse == False:
+              self.startIPEntry.setEnabled(True)
+              self.gatewayEntry.setEnabled(True)
+              self.networkEntry.setEnabled(True)
+              self.networkEntry.setEnabled(True)
 
         # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
         if not self.networkRecord[2] == "":  # If there was no gateway set, don't force one on the user.
@@ -1107,8 +1139,12 @@ class NetworkMainWindow(USXBaseScreen):
         result = networkList.checkNetworkEntry(currNetwork[0])
         if result:
            networkInUse = True
-           self.selector.popupMsg(self.kusuApp._("netedit_window_title_edit"), "%s\t\t\n\n" %
-           (self.kusuApp._("The network '%s' is in use. Only some fields may be changed") % currNetwork[1]))
+           if currNetwork[1] == 'DHCP':
+              self.selector.popupMsg(self.kusuApp._("netedit_window_title_edit"), "%s\t\t\n\n" %
+              (self.kusuApp._("The DHCP network '%s' is in use. Only some fields may be changed") % currNetwork[0]))
+           else:
+              self.selector.popupMsg(self.kusuApp._("netedit_window_title_edit"), "%s\t\t\n\n" %
+              (self.kusuApp._("The network '%s' is in use. Only some fields may be changed") % currNetwork[1]))
         else:
            networkInUse = False
    
@@ -1124,8 +1160,13 @@ class NetworkMainWindow(USXBaseScreen):
         currNetwork = self.networkListbox.current().split()
         result = networkList.checkNetworkEntry(currNetwork[0])
         if result:
-            self.selector.popupMsg(self.kusuApp._("netedit_window_title_delete"), \
-            self.kusuApp._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currNetwork[1]))
+            if currNetwork[1] == 'DHCP':
+               self.selector.popupMsg(self.kusuApp._("netedit_window_title_delete"), \
+               self.kusuApp._("The DHCP network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currNetwork[0]))
+            else:
+               self.selector.popupMsg(self.kusuApp._("netedit_window_title_delete"), \
+               self.kusuApp._("The network '%s' is in use. If you wish to delete this, please use the node group editor\n\n" % currNetwork[1]))
+
         else:
             prompt = self.selector.popupDialogBox(self.kusuApp._("netedit_window_title_delete"), 
                     self.kusuApp._("Do you want to delete the network '%s'?") % currNetwork[1], (self.kusuApp._("no_button"), \
