@@ -705,10 +705,10 @@ msgid "nghosts_list_a_nodegroup_usage"
 msgstr "List a specific node group"
 
 msgid "nghosts_from_group_usage"
-msgstr "Specify node group to copy from"
+msgstr "Specify node group to move from"
 
 msgid "nghosts_to_group_usage"
-msgstr "Specify node group to copy to"
+msgstr "Move the nodes to the specified node group. Must be used with option -m or -f"
 
 msgid "nghosts_move_hosts_usage"
 msgstr "Specify a list of nodes to move"
@@ -825,7 +825,7 @@ msgid "nghosts_options_groups_missing"
 msgstr "The -f option requires node group(s) to be specified"
 
 msgid "nghosts_options_required_options"
-msgstr "Can only specify -l, -g, -t as command options"
+msgstr "Can only specify -l, -g, -t, -m as command options"
 
 msgid "Node not found: %s"
 msgstr "Node not found: %s"
