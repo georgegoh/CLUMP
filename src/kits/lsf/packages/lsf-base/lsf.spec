@@ -36,7 +36,7 @@
 
 Summary: Platform(R) LSF(R) binaries
 Name: lsf
-Version: 7.0.1
+Version: 7.0.2
 Release: 0
 License: Commercial
 Group: System Environment/Base
