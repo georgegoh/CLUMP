@@ -83,11 +83,11 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-m', dest='media',
                                help=self._('kitops_usage_media'))
 
-        self.parser.add_option('--kitname', dest='kitname',
-                               help=self._('kitname'))
-        self.parser.add_option('--kitversion', dest='kitversion',
+        self.parser.add_option('-k', '--kit', dest='kit',
+                               help=self._('kit'))
+        self.parser.add_option('-o', '--kitversion', dest='kitversion',
                                help=self._('kitversion'))
-        self.parser.add_option('--kitarch', dest='kitarch',
+        self.parser.add_option('-c', '--kitarch', dest='kitarch',
                                help=self._('kitarch'))
 
         self.parser.add_option('--dbdriver', dest='dbdriver',
@@ -135,19 +135,19 @@ class KitOpsApp(KusuApp):
                     kit_media = selectKitMedia(media_choices)
 
             # to indicate which kit to install from a metakit
-            self.kit_name = options.kitname
+            self.kit_name = options.kit
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
 
             koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
         elif options.action == 'delete':
-            self.kit_name = options.kitname
+            self.kit_name = options.kit
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_DEL
         elif options.action == 'list':
-            self.kit_name = options.kitname
+            self.kit_name = options.kit
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
@@ -322,44 +322,53 @@ class KitOpsApp(KusuApp):
 
         kits = self.koinst.listKit(self.kit_name, self.kit_ver, self.kit_arch)
 
-        kitlines = []
         for kit in kits:
-            kitline = []
+            print "%s:\t\t%s" % (headers[0], kit.rname)
+            print "%s:\t%s" % (headers[1], kit.rdesc)
+            print "%s:\t%s" % (headers[2], kit.version)
 
-            kitline.append(kit.rname)
-            kitline.append(kit.rdesc)
-            kitline.append(kit.version)
-
-            kitline.append('noarch')
+            sys.stdout.write("%s:\t" % headers[3])
             if kit.arch:
-                kitline[-1] = kit.arch
+               sys.stdout.write(kit.arch)
+            else:
+               sys.stdout.write("noarch")
 
-            kitline.append('No')
+            sys.stdout.write("\n%s:\t\t" % headers[4])
             if kit.isOS:
-                kitline[-1] = 'Yes'
+               sys.stdout.write("Yes")
+            else:
+               sys.stdout.write("No")
 
-            kitline.append('No')
+            sys.stdout.write("\n%s:\t" % headers[5])
             if kit.removable:
-                kitline[-1] = 'Yes'
-
-            # update maximum lengths
-            for x in xrange(len(kitline)):
-                linelengths = [len(l) for l in kitline[x].split('\n')]
-                if max(linelengths) > max_lengths[x]:
-                    max_lengths[x] = max(linelengths)
+               sys.stdout.write("Yes")
+            else:
+               sys.stdout.write("No")
 
             ngnames = [ng.ngname for ng in
                        self.koinst.getNodeGroups(kit.rname, kit.version,
                                                  kit.arch)]
-            kitline.append('\n'.join(ngnames))
 
-            nglengths = [len(ngname) for ngname in ngnames]
-            if nglengths and max(nglengths) > max_lengths[-1]:
-                max_lengths[-1] = max(nglengths)
-
-            kitlines.append(kitline)
-
-        printTable(headers, kitlines, max_lengths)
+            sys.stdout.write("\n%s:\t" % headers[6])
+            ngline=""
+            count=0
+            for ng in ngnames:
+               ngline += "%s" % ng
+               if ng:
+                  ngline += ", "
+               
+               if (count % 2):
+                  ngline +="\n\t\t"
+               count += 1
+ 
+            if ngline[-2:-1] == ',':
+               ngline = ngline[:-2]
+     
+            if ngline[len(ngline)-5:-4] == ',':
+               ngline = ngline[:len(ngline)-5]
+ 
+            sys.stdout.write(ngline)
+            print '\n'
 
         kl.debug('SUCCESS performing list operation')
 
