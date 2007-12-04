@@ -10,6 +10,7 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 from kusu.core.app import KusuApp
+from kusu.kitops.kitops import *
 from kusu.repoman import repofactory
 from kusu.repoman import tools as repotools
 from kusu.util import tools
@@ -45,19 +46,19 @@ class RepoManApp(KusuApp):
                [--dbuser]
                [--dbpassword]
                [-n | --new] [-r reponame | --reponame reponame]
-               [-a | --add] [--kit <name>-<version>-<arch>] 
-               [-d | --delete] [--kit <name>-<version>-<arch>] 
-               [-d | --delete] [-r reponame | --reponame reponame]
+               [-a | --add] [-k | --kit <name> [-o <version> | --kitversion <version>] [ -c <arch> | --kitarch <arch>]]
+               [-e | --delete] [--kit <name> [-o <version> | --kitversion <version> ] [-c <arch> | --kitarch <arch>]]
+               [-e | --delete] [-r reponame | --reponame reponame]
 
 For examples:
     repoman -n -r "Example repo"
-    repoman -d -r "Example repo"
+    repoman -e -r "Example repo"
 
-    repoman -r "Example repo" -a --kit fedora-6-i386
-    repoman -r "Example repo" -a --kitname fedora --kitversion 6 --kitarch i386
+    repoman -r "Example repo" -a --kit fedora
+    repoman -r "Example repo" -a --kit fedora --kitversion 6 --kitarch i386
 
-    repoman -r "Example repo" -d --kit fedora-6-i386
-    repoman -r "Example repo" -d --kitname fedora --kitversion 6 --kitarch i386
+    repoman -r "Example repo" -e --kit fedora
+    repoman -r "Example repo" -e --kit fedora --kitversion 6 --kitarch i386
 """
         usage = self._(usage)
         self.parser = OptionParser(usage)
@@ -65,14 +66,13 @@ For examples:
         # setup command line parser
         self.parser.add_option('-n', '--new', dest='new', action="store_true", help=self._('creates a new repo'))
         self.parser.add_option('-r', '--reponame', dest='reponame', help=self._('repo name'))
-        self.parser.add_option('', '--kit', dest='kit', help=self._('kit in <name>-<version>-<arch> format'))
-        self.parser.add_option('', '--kitname', dest='kitname', help=self._('kit name'))
-        self.parser.add_option('', '--kitversion', dest='kitversion', help=self._('kit version'))
-        self.parser.add_option('', '--kitarch', dest='kitarch', help=self._('kit arch'))
+        self.parser.add_option('-k', '--kit', dest='kit', help=self._('kit name'))
+        self.parser.add_option('-o', '--kitversion', dest='kitversion', help=self._('kit version'))
+        self.parser.add_option('-c', '--kitarch', dest='kitarch', help=self._('kit arch'))
         self.parser.add_option('-a', '--add', dest='add', action="store_true", help=self._('add kit'))
         self.parser.add_option('-u', '--update', dest='update', action="store_true", help=self._('update repo'))
         self.parser.add_option('-l', '--list', dest='list', action="store_true", help=self._('list repos'))
-        self.parser.add_option('-d', '--delete', dest='delete', action="store_true", help=self._('delete kit/repo'))
+        self.parser.add_option('-e', '--delete', dest='delete', action="store_true", help=self._('delete kit/repo'))
         self.parser.add_option('-s', '--snapshot', dest='snapshot', action="store_true", help=self._('snapshot repo'))
         self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
         self.parser.add_option('-v', '--version', dest='version', action="store_true", help=self._('Display version of tool'))
@@ -307,7 +307,7 @@ For examples:
                     return
 
                 elif options.add or options.delete:
-                    if not (options.kit or options.kitname and options.kitversion and options.kitarch):
+                    if not options.kit:
                         self.parser.print_help()
                         self.stderrMessage('No kit specified.\n')
                         sys.exit(1)
@@ -355,6 +355,9 @@ For examples:
             dbpassword = options.dbpassword
 
         self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        self.kitops = KitOps()
+        self.kitops.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
+        
         self.lock()
 
         if options.prefix:
@@ -370,31 +373,57 @@ For examples:
         elif options.list:
             self.list()
         elif options.delete:
+            self.kitarch = None
+            self.kitversion = None
+            if options.kitversion:
+               self.kitversion = options.kitversion
+            if options.kitarch:
+               self.kitarch = options.kitarch
             if options.kit:
-                try:
-                    kitname, kitversion, kitarch = options.kit.split('-')
-                except:
-                    self.stderrMessage('Invalid kit provided. Try using --kit=<kit name>-<kit version>-<kit arch>\n')
-                    self.unlock()
-                    sys.exit(1)
+                self.kitname = options.kit
+                kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
+                if len(kits) > 1: 
+                   print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                   self.unlock()
+                   self.exit(-1)
 
-                self.delKit(options.reponame, kitname, kitversion, kitarch)
-            elif options.kitname or options.kitversion or options.kitarch:
-                self.delKit(options.reponame, options.kitname, options.kitversion, options.kitarch)
+                if kits == []:
+                   print "The kit '%s' could not be found" % self.kitname
+                   self.unlock()
+                   sys.exit(-1)
+                else:
+                   self.kitversion = kits[0].version
+                   self.kitarch =  kits[0].arch
+                   self.delKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
+            elif options.kit or options.kitversion or options.kitarch:
+                self.delKit(options.reponame, options.kit, options.kitversion, options.kitarch)
             elif options.reponame:
                 self.delete(options.reponame)
         elif options.add:
+            self.kitarch = None
+            self.kitversion = None
+            if options.kitversion:
+               self.kitversion = options.kitversion
+            if options.kitarch:
+               self.kitarch = options.kitarch
             if options.kit:
-                try:
-                    kitname, kitversion, kitarch = options.kit.split('-')
-                except:
-                    self.stderrMessage('Invalid kit provided. Try using --kit=<kit name>-<kit version>-<kit arch>\n')
-                    self.unlock()
-                    sys.exit(1)
-
-                self.addKit(options.reponame, kitname, kitversion, kitarch)
+               self.kitname = options.kit
+               kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
+               if len(kits) > 1:
+                  print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                  self.unlock()
+                  self.exit(-1)
+           
+               if kits == []:
+                  print "The kit '%s' could not be found" % self.kitname
+                  self.unlock()
+                  sys.exit(-1)
+               else:
+                self.kitversion = kits[0].version
+                self.kitarch = kits[0].arch
+                self.addKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
             else: 
-                self.addKit(options.reponame, options.kitname, options.kitversion, options.kitarch)
+                self.addKit(options.reponame, options.kit, options.kitversion, options.kitarch)
         elif options.update:
             self.update(options.reponame)
         elif options.version:
@@ -405,77 +434,39 @@ For examples:
     def list(self):
         headers = ['Repo name', 'Repository', 'Installers', 'Ostype', 'Kits' ]
 
-        max_lengths = []
-        for x in xrange(len(headers)):
-            max_lengths.append(len(headers[x]))
-
         repos = self.dbs.Repos.select()
-        repolines = []
         for repo in repos:
-            repoline = []
-
-            repoline.append(repo.reponame)
-            repoline.append(repo.repository)
-            repoline.append(repo.installers)
-            repoline.append(repo.ostype or '')
-
-            # update maximum lengths
-            for x in xrange(len(repoline)):
-                linelengths = [len(l) for l in repoline[x].split('\n')]
-                if max(linelengths) > max_lengths[x]:
-                    max_lengths[x] = max(linelengths)
+            print "%s:\t%s" % (headers[0], repo.reponame)
+            print "%s:\t%s" % (headers[1], repo.repository)
+            print "%s:\t%s" % (headers[2], repo.installers)
+            print "%s:\t\t%s" % (headers[3], (repo.ostype or ''))
 
             kitnames = ['%s %s %s' % (kit.rname, kit.version, kit.arch) for kit in 
                        self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits]
-            repoline.append('\n'.join(kitnames))
 
-            kitlengths = [len(kitnames) for kitnames in kitnames]
-            if kitlengths and max(kitlengths) > max_lengths[-1]:
-                max_lengths[-1] = max(kitlengths)
+            sys.stdout.write("%s:\t\t" % headers[4])
+
+            kitline=""
+            count=0
+            for kit in kitnames:
+               kitline += "%s" % kit
+
+               if kit:
+                  kitline += ", "
+
+               if (count % 2):
+                   kitline +="\n\t\t"
+               count += 1
+
+            if kitline[-2:-1] == ',':
+               kitline = kitline[:-2]
+
+            if kitline[len(kitline)-5:-4] == ',':
+               kitline = kitline[:len(kitline)-5]
+
+            sys.stdout.write("%s" % kitline)
+            print "\n"
             
-            repolines.append(repoline)
-
-        self.printTable(headers, repolines, max_lengths)
-
-    def printTable(self, titles, entries, widths):
-        horline = '+'
-        for width in widths:
-            horline += '-' * (width + 2) + '+'
-
-        print horline
-
-        line = '|'
-        for x in xrange(len(titles)):
-            line += ' ' + titles[x].ljust(widths[x]) + ' |'
-
-        print line
-        print horline
-
-        for entry in entries:
-            newlines = True
-            while newlines:
-                newlines = False
-
-                line = '|'
-                for x in xrange(len(entry)):
-                    newline = entry[x].find('\n')
-                    if newline == -1:
-                        thisentry = entry[x]
-                        nextentry = ''
-                    else:
-                        newlines = True
-                        thisentry = entry[x][:newline]
-                        nextentry = entry[x][newline + 1:]
-
-                    line += ' ' + thisentry.ljust(widths[x]) + ' |'
-                    entry[x] = nextentry
-
-                print line
-
-        print horline
-
-
-
 if __name__ == '__main__':
 
     if os.getuid() != 0:
