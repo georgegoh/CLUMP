@@ -7,9 +7,9 @@ kitops \- Kusu/OCS kit management tool.
 .LP 
 \fBkitops\fR [\-h|\-v|\-l]    \- Kit information
 .LP 
-\fBkitops\fR [\-a \-M \fIMedia\fR [\-\-kitname=\fIKitname\fR  \-\-kitversion=\fIKitVersion\fR \-\-kitarch=\fIKitArch\fR]]  \- Adding a Kit
+\fBkitops\fR [\-a \-m \fIMedia\fR [{\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]]]       \- Adding a Kit
 .LP 
-\fBkitops\fR [\-e \-\-kitname=\fIKitname\fR  \-\-kitversion=\fIKitVersion\fR \-\-kitarch=\fIKitArch\fR]   \- Kit removal
+\fBkitops\fR [\-e {\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]                 \- Kit removal
 .SH "DESCRIPTION"
 .LP 
 Kitops is the kit operations tool.  It is for adding and removing kits.  Once a kit is added with \fBkitops\fR is must be associated with one or more repositories with the \fBrepoman\fR before the kit can be used.
@@ -32,13 +32,13 @@ Remove a kit.  The kit must not be associated with any repositories, and the com
 \fB\-h, \-\-help\fR
 Print the help information and exit.
 .TP 
-\fB\-\-kitname=<\fIKit Name\fR>\fR
+\fB\-k, \-\-kit=<\fIKit Name\fR>\fR
 Specifies the name of the kit to add or remove.
 .TP 
-\fB\-\-kitversion=<\fIKit Version\fR>\fR
+\fB\-o, \-\-kitversion=<\fIKit Version\fR>\fR
 Specifies the kit version to add or remove.  
 .TP 
-\fB\-\-kitarch=<\fIKit Arch\fR>\fR
+\fB\-c, \-\-kitarch=<\fIKit Arch\fR>\fR
 Specifies the kit architecture to add or remove. 
 .TP 
 \fB\-m <\fIMedia\fR>\fR

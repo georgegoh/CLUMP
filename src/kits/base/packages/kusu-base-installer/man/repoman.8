@@ -7,7 +7,7 @@ repoman \- Kusu/OCS repository management tool.
 .LP 
 \fBrepoman\fR [\-h|\-v|\-l] 
 .LP 
-\fBrepoman\fR [[\-a|\-d] \-r <Repo> [\-\-kit=<kit> | \-\-kitname=<kitname> \-\-kitversion=<kitversion> \-\-kitarch=<kitarch>]]
+\fBrepoman\fR [[\-a|\-e] \-r <Repo> {\-k <kit> | \-\-kit=<kit>} [\-o <kitversion> | \-\-kitversion=<kitversion>] [\-c <kitarch> |  \-\-kitarch=<kitarch>]
 .LP 
 \fBrepoman\fR [[\-s|\-u|\-n] \-r <Repo>]
 
@@ -40,22 +40,19 @@ Repoman has the following options:
 \fB\-a, \-\-add\fR
 Add a kit to the repository specified with the \fB\-r\fR option.  Note repoman has to be run again to rebuild (\fB\-u\fR) the repository after a kit has been added.
 .TP 
-\fB\-d, \-\-delete\fR
+\fB\-e, \-\-delete\fR
 Remove a kit from a repository specified with the \fB\-r\fR option.  Note repoman has to be run again to rebuild (\fB\-u\fR) the repository after a kit has been removed.
 .TP 
 \fB\-h, \-\-help\fR
 Print the help information and exit.
 .TP 
-\fB\-\-kit=<\fIFull Kit Name\fR>\fR
-Specifies the name of the kit to add or remove.  The <\fIFull Kit Name\fR> is the name, version and architecture seperated by dashes (\-).
-.TP 
-\fB\-\-kitname=<\fIKit Name\fR>\fR
+\fB\-k, \-\-kit=<\fIKit Name\fR>\fR
 Specifies the name of the kit to add or remove.
 .TP 
-\fB\-\-kitversion=<\fIKit Version\fR>\fR
+\fB\-o, \-\-kitversion=<\fIKit Version\fR>\fR
 Specifies the kit version to add or remove.  
 .TP 
-\fB\-\-kitarch=<\fIKit Arch\fR>\fR
+\fB\-c, \-\-kitarch=<\fIKit Arch\fR>\fR
 Specifies the kit architecture to add or remove. 
 .TP 
 \fB\-l, \-\-list\fR
