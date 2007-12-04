@@ -175,14 +175,14 @@ class NodeMemberApp(object, KusuApp):
                 print str
                 print "-" * len(str)
                 print "\n"
-                database.execute("select nodes.name from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
+                database.execute("select nodes.name, nodes.state from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
                                   WHERE kname='PrimaryInstaller' AND nodes.ngid=%s ORDER BY name)" % ngid)
                 nodes = database.fetchall()
                 if len(nodes):
                     print "%s" % self._options.listnodegroup
                     print "%s" % "-" * len(self._options.listnodegroup)
-                    for node in nodes:
-                       print "%s" % node
+                    for node, nodestate in nodes:
+                       print "%s".ljust(5) % node + "%s".rjust(1) % nodestate
                     print "\n"
             except:
                 self.unlock()
