@@ -813,13 +813,13 @@ msgid "Node Group"
 msgstr "Node Group"
 
 msgid "nghosts_options_togroup_options_needed"
-msgstr "The -t option needs the -c or -f options specified"
+msgstr "The -t option needs the -m or -f options specified"
 
 msgid "nghosts_options_missing_togroup"
 msgstr "The -t option is required"
 
 msgid "nghosts_options_nodes_missing"
-msgstr "The -c option requires node(s) to be specified"
+msgstr "The -m option requires node(s) to be specified"
 
 msgid "nghosts_options_groups_missing"
 msgstr "The -f option requires node group(s) to be specified"
