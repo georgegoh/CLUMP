@@ -41,7 +41,7 @@ class thisReport(Report):
             sys.exit(0)
 
         publicdnszone = self.db.getAppglobals('PublicDNSZone')
-        if not dnszone:
+        if not publicdnszone:
             sys.stderr.write(_("genconfig_cannot_determine_Public_DNS_zone\n"))
             sys.exit(-1)
 

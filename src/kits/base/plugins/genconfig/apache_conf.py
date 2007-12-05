@@ -54,7 +54,7 @@ class thisReport(Report):
             sys.exit(-1)
 
         publicdnszone = self.db.getAppglobals('PublicDNSZone')
-        if not dnszone:
+        if not publicdnszone:
             sys.stderr.write(_("genconfig_cannot_determine_Public_DNS_zone\n"))
             sys.exit(-1)
 
@@ -124,10 +124,23 @@ class thisReport(Report):
         print '</Directory>'
         print ''
 
+        query = ("SELECT nics.ip "
+                 "FROM nics, nodes, networks WHERE nics.nid = nodes.nid "
+                 "AND nics.netid = networks.netid AND networks.usingdhcp=0 "
+                 "AND networks.type = 'public' AND nodes.ngid!=5 ORDER BY nics.ip")
+
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
+
         #Configure rewrite rule to rewrite URL in to Zope
-        print '<VirtualHost *>'
-        print 'ServerName %s.%s' % (installer, publicdnszone)
-        print 'RewriteEngine On'
-        print 'RewriteRule ^/(.*) http://%s.%s:8080/VirtualHostBase/http/%s.%s:80/Plone/VirtualHostRoot/$1 [L,P]' % (installer, publicdnszone,installer, publicdnszone)
-        print '</VirtualHost>'
+        data = self.db.fetchone()
+        if data:
+            print '<VirtualHost %s:80>' % (data[0])
+            print 'ServerName %s.%s' % (installer, publicdnszone)
+            print 'RewriteEngine On'
+            print 'RewriteRule ^/(.*) http://%s:8080/VirtualHostBase/http/%s.%s:80/Plone/VirtualHostRoot/$1 [L,P]' % (data[0],installer, publicdnszone)
+            print '</VirtualHost>'
 
