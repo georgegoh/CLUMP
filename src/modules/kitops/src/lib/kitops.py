@@ -89,7 +89,13 @@ class KitOps:
 
         if rv[0]:
             kl.debug('Network kit specified, retrieving')
-            (self.dlkitiso, headers) = urllib.urlretrieve(self.kitmedia)
+            try:
+                (self.dlkitiso, headers) = urllib.urlretrieve(self.kitmedia)
+            except IOError, e:
+                # The user likely passed in a bad URL.
+                raise UnrecognizedKitMediaError, \
+                    'Error accessing or opening kit media: %s' % e.args[0]
+                
             self.dlkitiso = path(self.dlkitiso)
             self.medialoc = self.dlkitiso
         else:
@@ -586,7 +592,7 @@ class KitOps:
 
         self.__db.flush()
 
-    def deleteKit(self, del_name, del_version='', del_arch=''):
+    def deleteKit(self, del_name, del_version=None, del_arch=None):
         '''perform the delete operation on the kit specified '''
 
         try:
@@ -801,12 +807,10 @@ class KitOps:
 
     def findKits(self, name, version, arch):
         kits = []
-        if arch and version:
-            kits = self.__db.Kits.select_by(rname=name,
-                                            version=version, arch=arch)
-        elif version:
-            kits = self.__db.Kits.select_by(rname=name, version=version)
-        else:
-            kits = self.__db.Kits.select_by(rname=name)
+        kwargs = {}
+        if name is not None: kwargs['rname'] = name
+        if version is not None: kwargs['version'] = version
+        if arch is not None: kwargs['arch'] = arch
+        kits = self.__db.Kits.select_by(**kwargs)
  
         return kits

@@ -233,7 +233,7 @@ class TestBaseKit:
         assert isRPMInstalled('kit-' + self.kit_name), 'Need RPM installed'
 
         # remove the kit using kitops
-        addP = subprocess.Popen('kitops -e --kitname %s %s -p %s -y > /dev/null' %
+        addP = subprocess.Popen('kitops -e --kit %s %s -p %s -y > /dev/null' %
                                 (self.kit_name, dbinfo_str, self.temp_root),
                                 shell=True)
         rv = addP.wait()
@@ -280,14 +280,7 @@ class TestBaseKit:
 
         # first, test listing nothing
         lines = listKits()
-        wantlines = ['+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+',
-                     '| Kit | Description | Version | Architecture | OS Kit' + \
-                     ' | Removable | Node Groups |',
-                     '+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+',
-                     '+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+']
+        wantlines = []
         assert lines == wantlines, 'List error! ' + \
             'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
                                                 '\n'.join(wantlines))
@@ -296,18 +289,14 @@ class TestBaseKit:
         self.prepareDatabase()
 
         lines = listKits()
-        wantlines = ['+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+',
-                     '| Kit  | Description | Version | Architecture | OS Ki' + \
-                     't | Removable | Node Groups |',
-                     '+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+',
-                     '| base | Base Kit    | 0.1     | noarch       | No   ' + \
-                     '  | Yes       | installer   |',
-                     '|      |             |         |              |      ' + \
-                     '  |           | compute     |',
-                     '+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+']
+        wantlines = ['Kit:\t\tbase',
+                     'Description:\tBase Kit',
+                     'Version:\t0.1',
+                     'Architecture:\tnoarch',
+                     'OS Kit:\t\tNo',
+                     'Removable:\tYes',
+                     'Node Groups:\tinstaller, compute',
+                     '']
 
         assert lines == wantlines, 'List error! ' + \
             'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
@@ -324,32 +313,21 @@ class TestBaseKit:
         self.kusudb.flush()
 
         lines = listKits()
-        wantlines = ['+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+',
-                     '| Kit  | Description | Version | Architecture | OS Ki' + \
-                     't | Removable | Node Groups |',
-                     '+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+',
-                     '| base | Base Kit    | 0.1     | x86_64       | Yes  ' + \
-                     '  | No        | installer   |',
-                     '|      |             |         |              |      ' + \
-                     '  |           | compute     |',
-                     '+------+-------------+---------+--------------+------' + \
-                     '--+-----------+-------------+']
+        wantlines = ['Kit:\t\tbase',
+                     'Description:\tBase Kit',
+                     'Version:\t0.1',
+                     'Architecture:\tx86_64',
+                     'OS Kit:\t\tYes',
+                     'Removable:\tNo',
+                     'Node Groups:\tinstaller, compute',
+                     '']
 
         assert lines == wantlines, 'List error! ' + \
             'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
                                                 '\n'.join(wantlines))
 
         lines = listKits('lsf')
-        wantlines = ['+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+',
-                     '| Kit | Description | Version | Architecture | OS Kit' + \
-                     ' | Removable | Node Groups |',
-                     '+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+',
-                     '+-----+-------------+---------+--------------+-------' + \
-                     '-+-----------+-------------+']
+        wantlines = []
         assert lines == wantlines, 'List error! ' + \
             'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
                                                 '\n'.join(wantlines))
@@ -753,7 +731,7 @@ def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
 
     if name:
-        name = '--kitname %s' % name
+        name = '--kit %s' % name
     lsP = subprocess.Popen('kitops -l %s %s -p %s' %
                            (name, dbinfo_str, temp_root),
                            shell=True, stdout=ls_fd)
