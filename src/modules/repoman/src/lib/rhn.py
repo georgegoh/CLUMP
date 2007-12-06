@@ -242,16 +242,17 @@ class RHN:
         if code == 200:
             outfile = open(dest, 'w')
 
-        while True:
-            # Read data in 64k chunks
-            data = f.read(65536)
-            if data == '':
-                break
+            while True:
+                # Read data in 64k chunks
+                data = f.read(65536)
+                if data == '':
+                    break
 
             outfile.write(data)
 
             outfile.close()
 
             return True
-        else:
-            raise rhnFailedDownloadRPM, (code, msg)
+
+        # Fall-through and raise exception
+        raise rhnFailedDownloadRPM, (code, msg)
