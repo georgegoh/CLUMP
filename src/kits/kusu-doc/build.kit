@@ -1,0 +1,41 @@
+# $Id$
+
+# Define your packages here by using a correct packageprofile class.
+# Available types are SourcePackage(), RPMPackage(), SRPMPackage(),
+# DistroPackage(), BinaryPackage()
+
+pkg = BinaryPackage()
+pkg.name = 'kusu-doc-datafs'
+pkg.version = '0.1'
+pkg.release = '0'
+pkg.installroot = '/'
+pkg.filename = 'kusu-doc-datafs-0.1.tgz'
+
+# Define a default component
+comp = RHEL5Component()
+comp.name = 'kusu-doc'
+comp.description = 'kusu-doc component for RHEL5.'
+
+# Add any packages defined earlier by using the comp.addDep method
+comp.addDep(pkg)
+
+
+# Define a default kit
+# Change arch if needed to fit your needs (x86, x86_64, noarch)
+k = DefaultKit()
+k.name = 'kusu-doc'
+k.description = 'Project Kusu Documentation kit.'
+k.arch = 'noarch'
+
+# Adding the component defined earlier
+k.addComponent(comp)
+
+
+# Add post install script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-post-script.sh',mode='post')
+
+# Add post uninstall script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-postun-script.sh',mode='postun')
+
