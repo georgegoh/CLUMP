@@ -84,24 +84,29 @@ class RHN:
     rhnProtoErrors = { 302: rhnURLNotFound,
                        404: rhnURLNotFound}
 
-    def __init__(self, username, password, rhnURL=None):
+    def __init__(self, username, password, yumrhnURL=None, rhnURL=None):
     
-        self.rhnURL = 'https://rhn.redhat.com/rpc/api'
+        self.yumrhnURL = 'https://rhn.redhat.com/rpc/api'
         self.up2dateURL = 'https://xmlrpc.rhn.redhat.com/XMLRPC'
 
+        if yumrhnURL:
+            schema, hostname, p, ignore, ignore = urlparse.urlsplit(yumrhnURL)
+
+            if hostname == 'rhn.redhat.com':
+                self.rhnServer = xmlrpclib.Server(self.yumrhnURL)
+            else:
+                self.rhnServer = xmlrpclib.Server(yumrhnURL)
+              
         if rhnURL:
             schema, hostname, p, ignore, ignore = urlparse.urlsplit(rhnURL)
 
             if hostname == 'xmlrpc.rhn.redhat.com':
-                self.rhnServer = xmlrpclib.Server(self.rhnURL)
                 self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
             else:
-                #up2dateURL = urlparse.urlunparse((schema,hostname,'rpc/api','','',''))
                 self.up2dateURL = rhnURL
-                self.rhnServer = xmlrpclib.Server(self.rhnURL)
                 self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
         else:
-            self.rhnServer = xmlrpclib.Server(self.rhnURL)
+            self.rhnServer = xmlrpclib.Server(self.yumrhnURL)
             self.up2dateServer = xmlrpclib.Server(self.up2dateURL)
 
         self.username = username

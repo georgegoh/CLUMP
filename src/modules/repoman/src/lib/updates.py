@@ -393,10 +393,11 @@ class RHNUpdate(BaseUpdate):
             username = cfg['username']
             password = cfg['password']
             url = cfg['url']
+            yumrhn = cfg['yumrhn']
 
-            if not (username and password and url):
+            if not (username and password and url and yumrhn):
                raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
-            return RHN(username, password, url)
+            return RHN(username, password, yumrhn, url)
 
         else:
             raise rhnNoAccountInformationProvidedError, 'No config file provided'
