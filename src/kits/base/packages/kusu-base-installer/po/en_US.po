@@ -391,6 +391,9 @@ msgstr "upgrade the specified kit"
 msgid "kitops_usage_remove"
 msgstr "remove the specified kit"
 
+msgid "kitops_usage_skip_confirm"
+msgstr "Assume the answer to any question is Yes"
+
 msgid "kitops: Exactly one kit operation expected\n"
 msgstr "kitops: Exactly one kit operation expected. Choose from add,remmove,upgrade,list\n"
 

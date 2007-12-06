@@ -114,8 +114,7 @@ class KitOpsApp(KusuApp):
         kl.debug("args: %s", args)
 
         if args:
-            sys.stderr.write("No more arguments expected. Remaining args: %s" %
-                             args)
+            sys.stderr.write("Error: unclaimed arguments: %s\n\n" % args)
             self.printHelp()
             sys.exit(1)
 
@@ -207,8 +206,6 @@ class KitOpsApp(KusuApp):
                                         self.kit_arch)
 
             msg = 'The above kits will be removed.\n'
-            msg += 'Use the --kitversion and --kitarch command line\n' + \
-                   'options to further specify kits to be removed.'
 
             if not kits:
                 msg = "Kit '%s" % self.kit_name
@@ -292,7 +289,7 @@ class KitOpsApp(KusuApp):
             kit = self.koinst.prepareOSKit(osdistro)
         except KitAlreadyInstalledError, e:
             kl.debug('FAIL performing add operation')
-            sys.stderr.write(e.args[0])
+            sys.stderr.write(e.args[0] + '\n')
             sys.exit(EKITLOC_FAIL)
 
         res = ''
