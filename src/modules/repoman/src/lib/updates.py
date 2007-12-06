@@ -453,9 +453,10 @@ class RHNUpdate(BaseUpdate):
                         # corrupted/incomplete/etc
                         dest.remove()
 
+                
                 if self.rhn.getPackage(filename, channel, dest):
-                   # Success
-                   pass
+                    # Success
+                    pass
 
         try:
             self.rhn.logout()
