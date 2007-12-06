@@ -342,21 +342,21 @@ class KitOpsApp(KusuApp):
 
             sys.stdout.write("%s:\t" % headers[3])
             if kit.arch:
-               sys.stdout.write(kit.arch)
+                sys.stdout.write(kit.arch)
             else:
-               sys.stdout.write("noarch")
+                sys.stdout.write("noarch")
 
             sys.stdout.write("\n%s:\t\t" % headers[4])
             if kit.isOS:
-               sys.stdout.write("Yes")
+                sys.stdout.write("Yes")
             else:
-               sys.stdout.write("No")
+                sys.stdout.write("No")
 
             sys.stdout.write("\n%s:\t" % headers[5])
             if kit.removable:
-               sys.stdout.write("Yes")
+                sys.stdout.write("Yes")
             else:
-               sys.stdout.write("No")
+                sys.stdout.write("No")
 
             ngnames = [ng.ngname for ng in
                        self.koinst.getNodeGroups(kit.rname, kit.version,
@@ -366,20 +366,20 @@ class KitOpsApp(KusuApp):
             ngline=""
             count=0
             for ng in ngnames:
-               ngline += "%s" % ng
-               if ng:
-                  ngline += ", "
-               
-               if (count % 2):
-                  ngline +="\n\t\t"
-               count += 1
- 
+                ngline += "%s" % ng
+                if ng:
+                    ngline += ", "
+
+                if (count % 2):
+                   ngline +="\n\t\t"
+                count += 1
+
             if ngline[-2:-1] == ',':
-               ngline = ngline[:-2]
-     
+                ngline = ngline[:-2]
+
             if ngline[len(ngline)-5:-4] == ',':
-               ngline = ngline[:len(ngline)-5]
- 
+                ngline = ngline[:len(ngline)-5]
+
             sys.stdout.write(ngline)
             print '\n'
 
