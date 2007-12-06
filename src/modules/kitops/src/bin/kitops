@@ -371,7 +371,7 @@ class KitOpsApp(KusuApp):
                     ngline += ", "
 
                 if (count % 2):
-                   ngline +="\n\t\t"
+                    ngline +="\n\t\t"
                 count += 1
 
             if ngline[-2:-1] == ',':
