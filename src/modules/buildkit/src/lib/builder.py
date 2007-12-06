@@ -516,7 +516,7 @@ class BinaryPackageWrapper(PackageWrapper):
         if not self.installroot: raise PackageAttributeNotDefined, 'installroot'
         filename = self.srcdir / self.filename
         if not filename.exists(): raise FileDoesNotExistError, filename
-        if not tarfile.is_tarfile(self.filename): return False
+        if not tarfile.is_tarfile(filename): return False
         return True
 
     def configure(self, **kwargs):

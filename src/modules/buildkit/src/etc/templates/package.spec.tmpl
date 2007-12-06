@@ -44,6 +44,8 @@ find include/ | cpio -mpdu %{buildroot}%{_approot}
 find lib/ | cpio -mpdu %{buildroot}%{_approot}
 find man/ | cpio -mpdu %{buildroot}%{_approot}
 find share/ | cpio -mpdu %{buildroot}%{_approot}
+find opt/ | cpio -mpdu %{buildroot}%{_approot}
+find usr/ | cpio -mpdu %{buildroot}%{_approot}
 
 %pre
 #if $varExists('prescript')
