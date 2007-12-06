@@ -368,7 +368,7 @@ For examples:
         
         try:
             self.dbs.Repos.select()
-        except Exception:
+        except:
             self.parser.print_help()
             self.stderrMessage('Unable to connect to the database. Please check database configuration.\n')
             sys.exit(1)

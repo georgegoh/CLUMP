@@ -207,10 +207,10 @@ class RHN:
     def getPackage(self, rpm, channelLabel, dest):
         """Get a RPM from the channel"""
 
-	bRetryAfterLogin = False
-	f = None
+        bRetryAfterLogin = False
+        f = None
        
-	while True:
+        while True:
             code = None
             msg = None
             content = None
@@ -233,24 +233,24 @@ class RHN:
                 # Authorization required. Expired session
                 # login again
                 self.login()
-		bRetryAfterLogin = True
+                bRetryAfterLogin = True
                 continue
 
-	    # Fall-through...
-	    break
+            # Fall-through...
+            break
  
         if code == 200:
-	    outfile = open(dest, 'w')
+            outfile = open(dest, 'w')
 
-	    while True:
-		# Read data in 64k chunks
-		data = f.read(65536)
-		if data == '':
-		    break
+        while True:
+            # Read data in 64k chunks
+            data = f.read(65536)
+            if data == '':
+                break
 
-		outfile.write(data)
+            outfile.write(data)
 
-	    outfile.close()
+            outfile.close()
 
             return True
         else:
