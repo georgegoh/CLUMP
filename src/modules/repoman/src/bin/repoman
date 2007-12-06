@@ -368,10 +368,9 @@ For examples:
         
         try:
             self.dbs.Repos.select()
-        except Exception, e:
+        except Exception:
             self.parser.print_help()
             self.stderrMessage('Unable to connect to the database. Please check database configuration.\n')
-            self.stderrMessage(e)
             sys.exit(1)
         
         self.kitops = KitOps()
