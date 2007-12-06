@@ -332,7 +332,12 @@ For examples:
                 self.parser.print_help()
                 self.parser.error(self._('Exactly one repoman operation expected.\n'))
                 sys.exit(1)
-        
+
+        if options.dbdriver and options.dbdriver not in ['sqlite', 'mysql']:
+            self.parser.print_help()
+            self.stderrMessage('Invalid database driver.\n')
+            sys.exit(1)
+         
     def parseArgs(self):
         (options, args) = self.parser.parse_args()
         kl.debug("options: %s", options)
@@ -354,7 +359,21 @@ For examples:
         if options.dbpassword:
             dbpassword = options.dbpassword
 
-        self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        try:
+            self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        except (UnsupportedDriverError, NoSuchDBError):
+            self.parser.print_help()
+            self.stderrMessage('Unable to connect to the database. Please check database configuration.\n')
+            sys.exit(1)
+        
+        try:
+            self.dbs.Repos.select()
+        except Exception, e:
+            self.parser.print_help()
+            self.stderrMessage('Unable to connect to the database. Please check database configuration.\n')
+            self.stderrMessage(e)
+            sys.exit(1)
+        
         self.kitops = KitOps()
         self.kitops.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
         
@@ -376,25 +395,25 @@ For examples:
             self.kitarch = None
             self.kitversion = None
             if options.kitversion:
-               self.kitversion = options.kitversion
+                self.kitversion = options.kitversion
             if options.kitarch:
-               self.kitarch = options.kitarch
+                self.kitarch = options.kitarch
             if options.kit:
                 self.kitname = options.kit
                 kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
                 if len(kits) > 1: 
-                   print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
-                   self.unlock()
-                   self.exit(-1)
+                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                    self.unlock()
+                    self.exit(-1)
 
                 if kits == []:
-                   print "The kit '%s' could not be found" % self.kitname
-                   self.unlock()
-                   sys.exit(-1)
+                    print "The kit '%s' could not be found" % self.kitname
+                    self.unlock()
+                    sys.exit(-1)
                 else:
-                   self.kitversion = kits[0].version
-                   self.kitarch =  kits[0].arch
-                   self.delKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
+                    self.kitversion = kits[0].version
+                    self.kitarch =  kits[0].arch
+                    self.delKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
             elif options.kit or options.kitversion or options.kitarch:
                 self.delKit(options.reponame, options.kit, options.kitversion, options.kitarch)
             elif options.reponame:
@@ -403,25 +422,26 @@ For examples:
             self.kitarch = None
             self.kitversion = None
             if options.kitversion:
-               self.kitversion = options.kitversion
+                self.kitversion = options.kitversion
             if options.kitarch:
-               self.kitarch = options.kitarch
+                self.kitarch = options.kitarch
             if options.kit:
-               self.kitname = options.kit
-               kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
-               if len(kits) > 1:
-                  print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
-                  self.unlock()
-                  self.exit(-1)
+                self.kitname = options.kit
+                kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
+                if len(kits) > 1:
+                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                    self.unlock()
+                    self.exit(-1)
            
-               if kits == []:
-                  print "The kit '%s' could not be found" % self.kitname
-                  self.unlock()
-                  sys.exit(-1)
-               else:
-                self.kitversion = kits[0].version
-                self.kitarch = kits[0].arch
-                self.addKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
+                if kits == []:
+                    print "The kit '%s' could not be found" % self.kitname
+                    self.unlock()
+                    sys.exit(-1)
+               
+                else:
+                    self.kitversion = kits[0].version
+                    self.kitarch = kits[0].arch
+                    self.addKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
             else: 
                 self.addKit(options.reponame, options.kit, options.kitversion, options.kitarch)
         elif options.update:
@@ -449,20 +469,21 @@ For examples:
             kitline=""
             count=0
             for kit in kitnames:
-               kitline += "%s" % kit
+                kitline += "%s" % kit
 
-               if kit:
-                  kitline += ", "
+                if kit:
+                    kitline += ", "
 
-               if (count % 2):
-                   kitline +="\n\t\t"
-               count += 1
+                if (count % 2):
+                    kitline +="\n\t\t"
+               
+                count += 1
 
             if kitline[-2:-1] == ',':
-               kitline = kitline[:-2]
+                kitline = kitline[:-2]
 
             if kitline[len(kitline)-5:-4] == ',':
-               kitline = kitline[:len(kitline)-5]
+                kitline = kitline[:len(kitline)-5]
 
             sys.stdout.write("%s" % kitline)
             print "\n"
