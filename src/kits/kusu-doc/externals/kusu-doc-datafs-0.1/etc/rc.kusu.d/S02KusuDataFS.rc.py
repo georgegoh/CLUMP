@@ -7,6 +7,7 @@
 
 from path import path
 from kusu.core import rcplugin
+import subprocess
 import sys
 
 class KusuRC(rcplugin.Plugin):
@@ -32,5 +33,9 @@ class KusuRC(rcplugin.Plugin):
         
         # copy our Data.fs into the old path
         datafs.copy('/opt/Plone-3.0.3/zinstance/var')
+        
+        # set permissions
+        cmd = 'chown plone:plone Data.fs'
+        permsP = subprocess.Popen(cmd,cwd='/opt/Plone-3.0.3/zinstance/var',shell=True)
         
         return True
