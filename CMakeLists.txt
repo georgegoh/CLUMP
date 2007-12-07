@@ -4,7 +4,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-SET(KUSU_VERSION 0.6)
+SET(KUSU_VERSION 0.7)
 
 # ## Add 3rd party modules to the build lists
 SET(KUSU_3RDPARTY
