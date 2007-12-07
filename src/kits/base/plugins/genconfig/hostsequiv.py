@@ -10,6 +10,7 @@
 
 
 from kusu.genconfig import Report
+import sys
 
 class thisReport(Report):
     def runPlugin(self, pluginargs):

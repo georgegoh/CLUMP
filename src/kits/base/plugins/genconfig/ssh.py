@@ -20,7 +20,7 @@
 
 
 from kusu.genconfig import Report
-
+import sys
 
 class thisReport(Report):
     
@@ -35,7 +35,7 @@ class thisReport(Report):
        # Get the DNS Zone served by the Installer
         dnszone = self.db.getAppglobals('DNSZone')
         if not dnszone:
-            sys.stderr.write(_("genconfig_cannot_determine_DNS_zone\n"))
+            sys.stderr.write(self.gettext("genconfig_cannot_determine_DNS_zone\n"))
             sys.exit(0)
 
         query = ('select nics.ip,nodes.name,networks.suffix,nics.boot '

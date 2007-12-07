@@ -18,6 +18,7 @@
 #
 
 from kusu.genconfig import Report
+import sys
 
 class thisReport(Report):
     

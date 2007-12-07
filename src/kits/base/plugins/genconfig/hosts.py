@@ -20,7 +20,7 @@
 
 
 from kusu.genconfig import Report
-
+import sys
 
 class thisReport(Report):
     
@@ -34,6 +34,8 @@ class thisReport(Report):
         print "#"
         print "127.0.0.1\tlocalhost.localdomain\tlocalhost"
 
+        _ = self.gettext
+        
         # Get the DNS Zone served by the Installer
         dnszone = self.db.getAppglobals('DNSZone')
         if not dnszone:
