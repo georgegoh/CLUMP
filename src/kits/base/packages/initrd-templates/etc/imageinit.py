@@ -33,6 +33,7 @@ import shutil
 import string
 import glob
 import ipfun
+import time
 
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
@@ -583,11 +584,18 @@ niiinfo.setState('Installed')
 niiinfo.wantNII(1)
 #niiinfo.wantCFM(1)  # Can't do anything with it yet
 
-try:
-    niifile = niiinfo.callNodeboot(bestip)
-except:
-    app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
-    print "ERROR:  Unable to get NII from:  %s\n" % bestip
+cnt = 0
+while cnt < 20:
+    try:
+        niifile = niiinfo.callNodeboot(bestip)
+        break
+    except:
+        app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
+        print "ERROR:  Unable to get NII from:  %s\nWill retry in 30 seconds.\n" % bestip
+        cnt = cnt + 1
+        time.sleep(cnt * 30)
+
+if cnt == 20:
     sys.exit(-1)
     
 niihandler = NodeInstInfoHandler()
@@ -745,11 +753,19 @@ if disked:
     niiinfo.setState('Installed')
     niiinfo.wantNII(0)
     niiinfo.setBootFrom('disk')  # This is only for disked!
-    try:
-        niifile = niiinfo.callNodeboot(bestip)
-    except:
-        app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
-        print "ERROR:  Unable to update bootfrom:  %s\n" % bestip
+
+    cnt = 0
+    while cnt < 20:
+        try:
+            niifile = niiinfo.callNodeboot(bestip)
+            break
+        except:
+            app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
+            print "ERROR:  Unable to update bootfrom:  %s\nWill retry in 30 seconds.\n" % bestip
+            cnt = cnt + 1
+            time.sleep(cnt * 30)
+            
+    if cnt == 20:
         sys.exit(-1)
     
     # Exit with 99 to force reboot
