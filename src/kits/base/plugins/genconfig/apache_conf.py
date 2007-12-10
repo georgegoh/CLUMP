@@ -138,9 +138,11 @@ class thisReport(Report):
         #Configure rewrite rule to rewrite URL in to Zope
         data = self.db.fetchone()
         if data:
-            print '<VirtualHost %s:80>' % (data[0])
+            print '<VirtualHost *:80>'
             print 'ServerName %s.%s' % (installer, publicdnszone)
             print 'RewriteEngine On'
-            print 'RewriteRule ^/(.*) http://%s:8080/VirtualHostBase/http/%s.%s:80/Plone/VirtualHostRoot/$1 [L,P]' % (data[0],installer, publicdnszone)
+            print 'RewriteRule ^/$ http://%s.%s/Plone/ [R]' % (installer, publicdnszone)
+            print 'RewriteRule ^/Plone$ http://%s.%s/Plone/ [R]' % (installer, publicdnszone)
+            print 'RewriteRule ^/Plone/(.*) http://%s:8080/VirtualHostBase/http/%s.%s:80/VirtualHostRoot/Plone/$1 [L,P]' % (data[0],installer, publicdnszone)
             print '</VirtualHost>'
 
