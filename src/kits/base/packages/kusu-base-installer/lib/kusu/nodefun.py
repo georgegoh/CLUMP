@@ -80,7 +80,7 @@ class NodeFun(object, KusuApp):
     def _getInstallerNetworks(self):
         # Get the installer's subnet and network information.
         self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                 nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')")
+                                 nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')")
         return self._dbReadonly.fetchall()
 
     def setRackNumber(self, rack):
@@ -481,7 +481,7 @@ class NodeFun(object, KusuApp):
 
         if installer:
            self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                  nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
+                                  nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                   AND networks.device='%s'" % selectedinterface)
 
            # Use the gui selected network interface as the installer's interface. 
