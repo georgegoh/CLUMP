@@ -35,10 +35,10 @@ class KusuRC(rcplugin.Plugin):
             if newFile.exists(): newFile.remove()
             repo.move(newFile)
 
-        """ Remove yum-rhn-plugin if exists. """
-        retcode, out, err = self.runCommand('rpm -qa | grep yum-rhn-plugin')
-        if retcode == 0 and len(out) > 0:
-            retcode, out, err = self.runCommand("rpm -ev " + out)
+        # """ Remove yum-rhn-plugin if exists. """
+        # retcode, out, err = self.runCommand('rpm -qa | grep yum-rhn-plugin')
+        # if retcode == 0 and len(out) > 0:
+        #   retcode, out, err = self.runCommand("rpm -ev " + out)
 
         header = "[kusu-%s]\n" % self.ngtypes[0]
         name = "name=Kusu %s %s %s %s\n" % (self.ngtypes[0], self.os_name, self.os_version, self.os_arch)
