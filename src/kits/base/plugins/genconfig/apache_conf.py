@@ -139,10 +139,8 @@ class thisReport(Report):
         data = self.db.fetchone()
         if data:
             print '<VirtualHost *:80>'
-            print 'ServerName %s.%s' % (installer, publicdnszone)
             print 'RewriteEngine On'
-            print 'RewriteRule ^/$ http://%s.%s/Plone/ [R]' % (installer, publicdnszone)
-            print 'RewriteRule ^/Plone$ http://%s.%s/Plone/ [R]' % (installer, publicdnszone)
-            print 'RewriteRule ^/Plone/(.*) http://%s:8080/VirtualHostBase/http/%s.%s:80/VirtualHostRoot/Plone/$1 [L,P]' % (data[0],installer, publicdnszone)
+            print 'RewriteRule ^/$ http://%{HTTP_HOST}/Plone/ [R]'
+            print 'RewriteRule ^/Plone$ http://%{HTTP_HOST}/Plone/ [R]'
+            print 'RewriteRule ^/Plone/(.*) http://%{HTTP_HOST}:8080/VirtualHostBase/http/%{HTTP_HOST}:80/VirtualHostRoot/Plone/$1 [L,P]'
             print '</VirtualHost>'
-
