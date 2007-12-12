@@ -224,7 +224,7 @@ For examples:
             self.unlock()
             sys.exit(1)
 
-        self.stdoutMessage('Refreshing repo: %s. This may take awhile...\n', repo_name)
+        self.stdoutMessage('Refreshing repo: %s. This may take a while...\n', repo_name)
         r = self.rfinst.getRepo(repo.repoid)
 
         try:
