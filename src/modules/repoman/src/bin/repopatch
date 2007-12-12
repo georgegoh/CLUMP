@@ -25,9 +25,6 @@ try:
 except:
     from popen5 import subprocess
 
-kl = kusulog.getKusuLog()
-kl.addFileHandler(os.environ['KUSU_LOGFILE'])
-
 class RepoPatchApp(KusuApp):
     """ Application class for repoman. """
 
@@ -223,6 +220,9 @@ if __name__ == '__main__':
     if os.getuid() != 0:
         sys.stderr.write('You need to be root to run repopatch.\n')
         sys.exit(1)
+
+    kl = kusulog.getKusuLog()
+    kl.addFileHandler(os.environ['KUSU_LOGFILE'])
 
     app = RepoPatchApp() 
     
