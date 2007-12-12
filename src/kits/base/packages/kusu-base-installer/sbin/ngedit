@@ -737,7 +737,7 @@ class scrNGEEdit_Networks(USXBaseScreen):
         lblheader = snack.Label(headstr)
         self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
 
-        query = "select device, network, subnet, netname, netid from networks"
+        query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
         self.database.execute(query)
         rv = self.database.fetchall()
 
@@ -2140,7 +2140,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                     tplstr = "(%s)" %diffNG['nets'][0]
                 else:
                     tplstr = str(tuple(diffNG['nets']))
-                query = ''' select device,network,netname from networks where
+                query = ''' select device,IFNULL(network, 'DHCP'),IFNULL(netname, '') from networks where
                             netid in %s''' %tplstr
                 self.database.execute(query)
                 rv = self.database.fetchall()
@@ -2813,7 +2813,7 @@ class NGEApp(KusuApp):
                 headstr = headstr[:MAXWIDTH]
                 print "Networks:\n\t", headstr
 
-                query = "select device, network, subnet, netname, netid from networks"
+                query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP), IFNULL(netname, ''), netid from networks"
                 self.__db.execute(query)
                 rv = self.__db.fetchall()
 
