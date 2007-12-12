@@ -293,7 +293,7 @@ class RedhatYumRepo(BaseRepo):
         dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
 
         if src.exists() and not dest.exists():
-            (dest.parent.relpathto(src)).symlink(dest)
+            (dest.realpath().parent.relpathto(src)).symlink(dest)
 
     def makeAutoInstallScript(self):
         # kickstart
