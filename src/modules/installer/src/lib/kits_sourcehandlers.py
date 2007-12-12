@@ -42,6 +42,11 @@ def addKitFromCDForm(baseScreen, kitops):
     cdrom_dict = kusu.hardware.probe.getCDROM()
     cdrom_list = sorted(cdrom_dict.keys())
     cdrom_tulist = []
+
+    if not cdrom_list:
+        msg = _('No CD-ROM drives were found, cannot add any kits.')
+        baseScreen.selector.popupMsg(_('No CD-ROM drives found'), msg)
+        return NAV_BACK
     for key in cdrom_list:
         device_dict = cdrom_dict[key]
         vendor = device_dict['vendor']
