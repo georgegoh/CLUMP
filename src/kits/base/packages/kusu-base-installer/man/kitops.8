@@ -14,7 +14,7 @@ kitops \- Kusu/OCS kit management tool.
 .LP 
 Kitops is the kit operations tool.  It is for adding and removing kits.  Once a kit is added with \fBkitops\fR is must be associated with one or more repositories with the \fBrepoman\fR before the kit can be used.
 .LP 
-Adding a kit to the installer cause the packages to be copied to the /depot/kits directory.  The kit is not yet available ofr installation on the nodes.  The kit then needs to be associated with a repository using \fBrepoman\fR.
+Adding a kit to the installer cause the packages to be copied to the /depot/kits directory.  The kit is not yet available for installation on the nodes.  The kit then needs to be associated with a repository using \fBrepoman\fR.
 .LP 
 Kits can be deleted from the installer, however the kit must not be associated with any repository prior to it's removal.  Removing the kit from the repository may also require de\-selecting any components of that kit that are in use.  A kit cannot be removed if the components are in use.
 .LP 
@@ -45,7 +45,7 @@ Specifies the kit architecture to add or remove.
 Specifies the kit ISO file, or the mount point of the media containing the kit to add.
 .TP 
 \fB\-\-dbdriver=<Driver>\fR
-Connect to an alternate database using the driver specified.  Currently mysqland or sqlite.  This option is not needed for normal use.
+Connect to an alternate database using the driver specified.  Currently mysql and/or sqlite.  This option is not needed for normal use.
 .TP 
 \fB\-\-dbdatabase=<Database>\fR
 Connect to an alternate database to read information from.  This option is not needed for normal use.
