@@ -20,6 +20,7 @@ import sys
 import string
 import time
 from kusu.genconfig import Report
+from kusu.ipfun import *
 
 class thisReport(Report):
     
@@ -143,6 +144,9 @@ class thisReport(Report):
         if data:
             for row in data:
                 dnsname, ip = row
+                if not onNetwork(network, subnet, ip):
+                    continue
+		
                 # Need to find the protion of the IP address to print.
                 # This should support classless subnets
                 subbytes = string.split(subnet, '.')
