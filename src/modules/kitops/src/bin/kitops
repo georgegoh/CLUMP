@@ -169,7 +169,7 @@ class KitOpsApp(KusuApp):
             self.koinst.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
         except UnsupportedDriverError, e:
             sys.stderr.write('Database error: ' + e.args[0] + '\n')
-            sys.exit(1)
+            sys.exit(EDB_FAIL)
 
         # Now we will just perform a quick query from the DB to make sure the
         # DB connection we established is correct.
@@ -178,7 +178,7 @@ class KitOpsApp(KusuApp):
         except:
             sys.stderr.write("Database error. " + 
                              "Please check database configuration.\n")
-            sys.exit(1)
+            sys.exit(EDB_FAIL)
 
         if options.prefix:
             kl.debug('Setting prefix to %s', options.prefix)

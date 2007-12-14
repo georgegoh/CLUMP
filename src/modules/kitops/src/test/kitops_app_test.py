@@ -377,9 +377,9 @@ class TestMetaKit:
         self.kit = test_kits_path / self.kit_iso
         
         self.kit_members = 3
-        self.kit_rpms = ['kit-alvin-0.1-0.i386.rpm',
-                         'kit-simon-0.1-0.i386.rpm',
-                         'kit-theodore-0.1-0.i386.rpm']
+        self.kit_rpms = ['kit-alvin-0.1-0.noarch.rpm',
+                         'kit-simon-0.1-0.noarch.rpm',
+                         'kit-theodore-0.1-0.noarch.rpm']
         self.kit_names = ['alvin', 'simon', 'theodore']
         self.kit_ver = '0.1'
         self.kit_arch = 'noarch'
@@ -412,9 +412,6 @@ class TestMetaKit:
         umountP.wait()
 
     def testAddMetaKit(self):
-        # skip until buildkit fixed to place kitinfo file inside kit RPM
-        raise SkipTest
-
         # we need to be root
         assertRoot()
 
@@ -464,7 +461,7 @@ class TestMetaKit:
         # check DB for information
         kits = self.kusudb.Kits.select()
         
-        # we are expecting only one kit
+        # we are expecting self.kit_members kits in this case
         assert len(kits) == self.kit_members, \
             'Kits in DB: %d, expected: %d' % (len(kits), self.kit_members)
 
@@ -480,7 +477,7 @@ class TestMetaKit:
                    'Version: %s, expected: 0.1' % kit.version
             assert not kit.isOS, \
                    'Expected isOS to be False for kit %s' % kitname
-            assert not kit.removable, 'Expected removable to be False ' + \
+            assert kit.removable, 'Expected removable to be True' + \
                    'for kit %s' % kitname
             assert kit.arch == self.kit_arch, \
                    'Arch: %s, expected: %s' % (kit.arch, self.kit_arch)
@@ -501,11 +498,11 @@ class TestMetaKit:
             assert cmp.cname == 'component-%s' % kitname, \
                    'Component name: %s, ' % cmp.cname + \
                    'expected: component-%s' % kitname
-            assert cmp.cdesc == '%s component for Fedora Core 6.' % kitname, \
+            assert cmp.cdesc == '%s component for RHEL5.' % kitname, \
                    'Component description: ' + \
                    '%s, expected: ' % cmp.cdesc + \
-                   '%s component for Fedora Core 6.' % kitname
-            assert cmp.os == 'fedora', 'OS: %s, expected: fedora' % cmp.os
+                   '%s component for RHEL5.' % kitname
+            assert cmp.os == 'rhel', 'OS: %s, expected: rhel' % cmp.os
             # node component associated only with compute nodegroup
             #assert len(cmp.nodegroups) != 0, \
             #    'Component %s not associated with any nodegroups' % cmp.cname
@@ -726,6 +723,91 @@ class TestFedoraCore6i386:
         #    'Component %s not associated with compute nodegroup' % cmp.cname
         #assert ngnames[3] == 'installer', \
         #    'Component %s not associated with installer nodegroup' % cmp.cname
+
+class TestBadKits(object):
+    def setup(self):
+        global temp_root
+        global temp_mount
+        global kusudb
+
+        self.temp_root = temp_root
+        self.temp_mount = temp_mount
+        self.depot_dir = self.temp_root / 'depot'
+        self.kits_dir = self.depot_dir / 'kits'
+
+        self.kit_iso = 'kit-bad_post_script-0.1-0.x86_64.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
+        assert self.kit.exists(), 'Bad post script kit ISO does not exist!'
+
+        self.kit_rpm = 'kit-bad_post_script-0.1-0.x86_64.rpm'
+        self.kit_name = 'bad_post_script'
+        self.kit_ver = '0.1'
+        self.kit_arch = 'x86_64'
+        self.kit_dir_name = self.kits_dir / self.kit_name
+
+        self.kusudb = kusudb
+        self.kusudb.createTables()
+        self.kusudb.bootstrap()
+
+        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                  (self.kit, self.temp_mount), shell=True)
+        mountP.wait()
+
+    def teardown(self):
+        self.kusudb.flush()
+        self.kusudb.dropTables()
+
+        # wipe out installed files
+        if self.depot_dir.exists():
+            self.depot_dir.rmtree()
+
+        umountP = subprocess.Popen('umount %s 2> /dev/null' % self.temp_mount,
+                                   shell=True)
+        umountP.wait()
+
+    def test_bad_post_script(self):
+        # we need to be root
+        assertRoot()
+
+        cmd = 'kitops -a -m %s %s ' % (self.kit, dbinfo_str) + \
+              '-p %s &> /dev/null' % self.temp_root
+        addP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        addPo, addPe = addP.communicate()
+        rv = addP.returncode
+
+        rpm_installed = isRPMInstalled('kit-' + self.kit_name)
+        if rpm_installed:
+            # clean up after this test
+            rpmP = subprocess.Popen('rpm --quiet -e --nodeps kit-%s' %
+                                    self.kit_name, shell=True)
+
+        # Kitops will return SUCCESS even if RPM post script fails,
+        # because if kitops is instructed to install many kits (from a
+        # meta kit for instance) and only one of them fails, the other
+        # kits will still be installed, and SUCCESS returned on exit
+        #assert rv != 0, 'kitops returned success, expecting an error'
+
+        # assert RPM not installed
+        assert not rpm_installed, 'Kitops should not install bad RPM'
+
+        # assert no directories
+        assert not self.kit_dir_name.exists(), \
+            'Kitops should not create directory for bad kit'
+
+        # assert no entries in the kits table
+        assert not self.kusudb.Kits.select(), \
+            'Kitops should not create any entries in kits table'
+
+        # assert no entries in the components table
+        assert not self.kusudb.Components.select(), \
+            'Kitops should not create any entries in components table'
+
+        # assert no entries in packages table
+        assert not self.kusudb.Packages.select_by(packagename=self.kit_name), \
+            'Kitops should not create any entries in packages table'
 
 def listKits(name=''):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
