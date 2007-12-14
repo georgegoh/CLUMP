@@ -23,13 +23,22 @@ License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 Requires: lsf = 7.0.1
-BuildArchitectures: noarch
+BuildArch: noarch
+BuildRoot: %{_tmppath}/%{name}-root
+Requires: coreutils
 
 %description
 This package is a metapackage for LSF compute nodes
 
 %install
+rm -rf $RPM_BUILD_ROOT
+
+install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
+
 /usr/bin/install -m 755 %{_topdir}/S10lsf-compute-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %post
 # sqlrunner is only available on the installer node

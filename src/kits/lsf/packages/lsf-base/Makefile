@@ -21,40 +21,45 @@
 RELEASE = 1
 ROOT = 
 NAME = lsf
-VERSION = 7
-UPDATE_VERSION = 2
-BINARY_ARCH=linux2.6-glibc2.3-x86
+VERSION = 7.0
+BINARY_ARCH=linux2.6-glibc2.3-x86_64
 
 SPECFILES = `find . -maxdepth 1 -type f -name "*.spec"`
 TOPDIR = $(PWD)/../..
 ARCH=$(shell arch)
 export CLUSTERNAME=$(shell grep XXX_lsfmc_XXX /etc/hosts | sed -e "s/^[ \t]*\#.*//g")
 
-rpm:
+LSFSRCDIR=/pcc/internet/ftp.platform.com/lsfuser/distrib/7.0/platform_lsf_update2
+
+LSFINSTALL_TGZ=lsf7Update2_lsfinstall.tar.Z
+LSFPLATFORM_TGZ=lsf7Update2_$(BINARY_ARCH).tar.Z
+
+LSFDESTDIR=lsf7Update2_lsfinstall
+
+rpm: preinstall install postinstall buildrpm
+
+preinstall:
 	-mkdir -p $(TOPDIR)/BUILD
 	-mkdir -p $(TOPDIR)/SOURCES
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 	rm -rf /opt/lsf
 
-	# Copy the tarballs from PCC and put into roll automatically.
+	# Copy the tarballs from PCC and put into kit automatically.
+	-cp $(LSFSRCDIR)/$(LSFINSTALL_TGZ) $(TOPDIR)/BUILD
+	tar zxf $(TOPDIR)/BUILD/$(LSFINSTALL_TGZ) -C $(TOPDIR)/BUILD
+	-cp $(LSFSRCDIR)/$(LSFPLATFORM_TGZ) $(TOPDIR)/BUILD/$(LSFDESTDIR)
 
-	-cp -v /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION).0/platform_lsf_update$(UPDATE_VERSION)/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall.tar.Z $(TOPDIR)/BUILD
-	
-	tar zvxf $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall.tar.Z -C $(TOPDIR)/BUILD
+	@echo "LSF_TOP=/opt/lsf" > $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_MASTER_LIST=XXX_lsfmc_XXX" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_ADMINS=lsfadmin" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_CLUSTER_NAME=XXX_clustername_XXX" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_TARDIR=$(TOPDIR)/BUILD/$(LSFDESTDIR)" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "EGO_DAEMON_CONTROL=N" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_LICENSE=$(TOPDIR)/BUILD/$(LSFDESTDIR)/license.dat" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "LSF_QUIET_INST=Y" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
+	@echo "ENABLE_HPC_INST=Y" >> $(TOPDIR)/BUILD/$(LSFDESTDIR)/inst.conf
 
-	-cp -v /pcc/internet/ftp.platform.com/lsfuser/distrib/$(VERSION).0/platform_lsf_update$(UPDATE_VERSION)/lsf$(VERSION)Update$(UPDATE_VERSION)_linux2.6-glibc2.3-x86_64.tar.Z $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/
-
-	@echo "LSF_TOP=/opt/lsf" > $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_MASTER_LIST=XXX_lsfmc_XXX" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_ADMINS=lsfadmin" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_CLUSTER_NAME=XXX_clustername_XXX" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_TARDIR=$(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "EGO_DAEMON_CONTROL=N" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_LICENSE=$(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/license.dat" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "LSF_QUIET_INST=Y" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-	@echo "ENABLE_HPC_INST=Y" >> $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/inst.conf
-
-	cp license.dat $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/
+	cp license.dat $(TOPDIR)/BUILD/$(LSFDESTDIR)/
 
 	if [ -z "$(CLUSTERNAME)" ]; then \
 		echo "Appending XXX_lsfmc_XXX host entry to /etc/hosts..." ;\
@@ -71,10 +76,12 @@ rpm:
 	   adduser -u 495 -d "/home/lsfadmin" -g lsfadmin -m lsfadmin ;\
 	fi
 
-	(cd $(TOPDIR)/BUILD/lsf$(VERSION)Update$(UPDATE_VERSION)_lsfinstall/; \
+install:
+	(cd $(TOPDIR)/BUILD/$(LSFDESTDIR); \
 	 sed -i -e "/show_copyright/d" lsfinstall; \
 	 echo -e "y\n\n" | ./lsfinstall -f ./inst.conf)
 
+postinstall:
 	# Remove junk from profile.lsf introduced by lsfinstall
 	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/profile.lsf
 	sed -i -e "/::::::::::::::/,/::::::::::::::/d" /opt/lsf/conf/cshrc.lsf
@@ -89,21 +96,24 @@ rpm:
 	rm -rvf /opt/lsf/conf/*.old*
 	rm -rvf /opt/lsf/conf/lsbatch/XXX_clustername_XXX/configdir/*.old*
 
-	# Copy template cfg files
-	cp /opt/lsf/ego/kernel/conf/ego.shared $(TOPDIR)/templates/default.ego.shared
-	cp /opt/lsf/ego/kernel/conf/ego.cluster.XXX_clustername_XXX $(TOPDIR)/templates/default.ego.cluster
+	# Copy template EGO cfg files
+	[ -d $(TOPDIR)/templates/ego/default ] || mkdir -p $(TOPDIR)/templates/ego/default
+	cp -ar /opt/lsf/conf/ego/XXX_clustername_XXX/* $(TOPDIR)/templates/ego/default/
 
-	cp /opt/lsf/ego/kernel/conf/ego.conf $(TOPDIR)/templates/default.ego.conf
-
+    # LSF configuration
 	cp /opt/lsf/conf/lsf.conf $(TOPDIR)/templates/default.lsf.conf
+	cp /opt/lsf/conf/lsf.cluster.XXX_clustername_XXX $(TOPDIR)/templates/default.lsf.cluster
+	cp /opt/lsf/conf/lsf.shared $(TOPDIR)/templates/default.lsf.shared
 
 	# Build template version of the lsbatch directory/cfg files
-	[ -d $(TOPDIR)/templates/lsbatch/default/configdir ] || mkdir -p $(TOPDIR)/templates/lsbatch/default/configdir
+	/usr/bin/install -d -d $(TOPDIR)/templates/lsbatch/default/configdir
+
 	cp -ar /opt/lsf/conf/lsbatch/XXX_clustername_XXX/configdir/* $(TOPDIR)/templates/lsbatch/default/configdir/
 
 	@echo "Tarring $(NAME)"
 	tar cf - . |(cd $(TOPDIR)/BUILD/ ; tar xf - )
 
+buildrpm:
 	@if [ -f $(HOME)/.rpmmacros ] ; then \
 		mv $(HOME)/.rpmmacros $(HOME)/.rpmmacros.OFF ; \
 	fi
@@ -114,10 +124,9 @@ rpm:
 		(rpmbuild -bb $$i ) ;\
 	done
 
+cleanup:
 	# Cleanup /etc/hosts
 	sed -i -e '/^w\.x\.y\.z.*/d' /etc/hosts
-
-install::
 
 clean::
 	@echo "Cleaning up..."

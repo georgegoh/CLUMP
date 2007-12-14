@@ -32,124 +32,153 @@ APPKEY = "LSF7_0_1_ClusterName"
 COMP_MASTER = "component-LSF-Master-v7_0_1"
 
 class ClusterInfo:
-	pass
+    pass
 
 class thisReport(Report):
 
-	def toolHelp(self):
-		print self.gettext("genconfig_LSFconf_Help")
+    def toolHelp(self):
+        print self.gettext("genconfig_LSFconf_Help")
 
-	def validateCluster(self,clustername):
-		global APPKEY
-		query = ('select ngid from appglobals where kname="%s" '
-			 'and kvalue="%s"' % (APPKEY, clustername)) 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+    def validateCluster(self,clustername):
+        global APPKEY
 
-		row = self.db.fetchone()
-		if not row:
-			return None
-		if row[0] != '':
-			ci = ClusterInfo()
-			ci.masterCandidatesNgid = int(row[0])
-			return ci
-		return None
+        query = ('select ngid from appglobals where kname="%s" '
+            'and kvalue="%s"' % (APPKEY, clustername)) 
 
-	def getEgoConfDir(self, clusterName):
-	    query = ('SELECT ngname FROM nodegroups, appglobals, ng_has_comp, components '
-			'WHERE appglobals.ngid=nodegroups.ngid AND '
-			'nodegroups.ngid=ng_has_comp.ngid AND '
-			'ng_has_comp.cid=components.cid AND '
-			'components.cname="%s" AND appglobals.kvalue="%s"' % \
-			(COMP_MASTER, clusterName))
-	    try:
-	 	self.db.execute(query)
-	    except:
-		sys.stderr.write(self.gettext("DB_Query_Error\n"))
-		sys.exit(-1)
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
 
-	    egoConfDir = ''
+        row = self.db.fetchone()
 
-	    try:
-	    	row = self.db.fetchone()
+        if not row:
+            return None
 
-	  	egoConfDir = "/etc/cfm/%s/opt/lsf/ego/kernel/conf" % ( row[0] )
-	    except:
-		pass
+        if row[0] != '':
+            ci = ClusterInfo()
+            ci.masterCandidatesNgid = int(row[0])
+            return ci
 
-	    return egoConfDir
+        return None
 
-	def generateEGOConfig(self, ci, mode):
-		query = 'SELECT nodes.name FROM nodes, nodegroups WHERE nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % ( ci.masterCandidatesNgid )
+    def getLsfMasterNodegroup(self, clusterName):
+        query = ('SELECT ngname FROM '
+            'nodegroups, appglobals, ng_has_comp, components '
+            'WHERE appglobals.ngid=nodegroups.ngid AND '
+            'nodegroups.ngid=ng_has_comp.ngid AND '
+            'ng_has_comp.cid=components.cid AND '
+            'components.cname="%s" AND appglobals.kvalue="%s"' % \
+                (COMP_MASTER, clusterName))
 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            return None
 
-		l = []
-		for row in self.db.fetchall():
-			l.append(row[0])
+        try:
+            row = self.db.fetchone()
+        except:
+            return None
 
-		if not l:
-			print '# No master hosts defined for cluster'
-			sys.exit(-1)
+        return row[0]
 
-		masterList = ' '.join(l)
+    def getEgoConfDir(self, clusterName):
+        lsfMasterNodegroup = self.getLsfMasterNodegroup(clusterName)
+        if not lsfMasterNodegroup:
+            return None
 
-		fp = open('%s/ego.conf' % \
-			( self.getEgoConfDir(ci.clusterName) ), 'r')
+        return "/etc/cfm/%s/opt/lsf/conf/ego/%s/kernel" % \
+            ( lsfMasterNodegroup, clusterName )
 
-		while True:
-			instr = fp.readline()
-			if instr == '':
-				break
+    def generateEGOConfig(self, ci, mode):
+        query = ( 'SELECT nodes.name FROM '
+            'nodes, nodegroups WHERE '
+            'nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % 
+            ( ci.masterCandidatesNgid ))
 
-			if re.compile("^EGO_MASTER_LIST=").search(instr):
-				print "EGO_MASTER_LIST=\"%s\"" % masterList
-				continue
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            return False
 
-			print instr,
+        l = []
+        for row in self.db.fetchall():
+            l.append(row[0])
 
-		if mode == 'slave':
-			print """\
+        if not l:
+            print '# No master hosts defined for cluster'
+            return False
+
+        masterList = ' '.join(l)
+
+        egoConfDir = self.getEgoConfDir(ci.clusterName)
+        if not egoConfDir:
+            print "# Error: unable to determine EGO configuration directory"
+            return False
+
+        egoConfFile = egoConfDir + "/ego.conf"
+
+        try:
+            fp = open(egoConfFile, 'r')
+        except:
+            # Error: unable to read ego.conf
+            print "# Error: unable to access file", egoConfFile
+            return False
+
+        while True:
+            instr = fp.readline()
+            if instr == '':
+                break
+
+            if re.compile("^EGO_MASTER_LIST=").search(instr):
+                print "EGO_MASTER_LIST=\"%s\"" % masterList
+                continue
+
+            print instr,
+
+        if mode == 'slave':
+            print """\
 
 # Parameters related to dynamic adding/removing host
 EGO_GET_CONF=LIM
 EGO_DYNAMIC_HOST_WAIT_TIME=60
 """
 
-		fp.close()
+        fp.close()
 
-	def runPlugin(self, pluginargs):
-		if not pluginargs:
-			print "# ERROR:  No LSF cluster provided!"
-			print self.gettext("genconfig_EGOconf_Help")
-			return
+        # Success!
+        return True
 
-		if pluginargs[0] == '':
-			print "# ERROR:  No LSF cluster provided!"
-			print self.gettext("genconfig_EGOconf_Help")
-			return
+    def runPlugin(self, pluginargs):
+        if not pluginargs:
+            print "# ERROR:  No LSF cluster provided!"
+            print self.gettext("genconfig_EGOconf_Help")
+            sys.exit(-1)
 
-		ci = self.validateCluster(pluginargs[0])
+        if pluginargs[0] == '':
+            print "# ERROR:  No LSF cluster provided!"
+            print self.gettext("genconfig_EGOconf_Help")
+            sys.exit(-1)
 
-		if not ci:
-			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
-			return
+        ci = self.validateCluster(pluginargs[0])
+        if not ci:
+            print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
+            sys.exit(-1)
 
-		ci.clusterName = pluginargs[0]
+        ci.clusterName = pluginargs[0]
 
-		generate = 'master'
-		if len(pluginargs):
-			# The second argument is the type of configuration to generate
-			if pluginargs[1] == 'master':
-				generate = 'master'
-			if pluginargs[1] == 'slave':
-				generate = 'slave'
+        generate = 'master'
 
-		self.generateEGOConfig(ci, mode = generate)
+        if len(pluginargs) > 1:
+            # The second argument is the type of configuration to generate
+            if pluginargs[1] == 'master':
+                generate = 'master'
+            if pluginargs[1] == 'slave':
+                generate = 'slave'
+
+        if not self.generateEGOConfig(ci, mode = generate):
+            sys.exit(-1)

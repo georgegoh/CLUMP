@@ -3,26 +3,27 @@
 GENCONFIG=""
 LSFVERSION="7_0_1"
 EGOVERSION="1_2"
-
-LSF_CONFDIR="/opt/lsf/conf"
-EGO_CONFDIR="/opt/lsf/ego/kernel/conf"
-
-MASTER_NODEGROUP="lsf-master-candidate"
+INST="/usr/bin/install"
 
 CLUSTERNAME="$( sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname = \"PrimaryInstaller\"" )"
+
 if [ -z "$CLUSTERNAME" ]; then
 	# Unable to get default cluster name, set sane default
-	echo "Warning: unable to read global PrimaryInstaller setting"
-	CLUSTERNAME="master"
+    echo "Error: error querying cluster name; unable to proceed"
+    exit 1
 fi
+
+LSF_CONFDIR="/opt/lsf/conf"
+CFM_TMPLDIR="/etc/cfm/templates/lsf"
+EGO_CONFDIR="$LSF_CONFDIR/ego/$CLUSTERNAME"
+
+MASTER_NODEGROUP="lsf-master-candidate"
 
 # Generate LSF host configuration for installer only.
 if [ -f /opt/kusu/bin/genconfig ]; then
    export PYTHONPATH=/opt/kusu/lib/python:$PYTHONPATH
    GENCONFIG="/opt/kusu/bin/genconfig"
 fi
-
-# XXX: PYTHONPATH Differs on Fedora!!!!
 
 if [ -f /usr/bin/genconfig ]; then
    export PYTHONPATH=/usr/lib/python2.4/site-packages/kusu:$PYTHONPATH
@@ -34,7 +35,7 @@ if [ -z $GENCONFIG ]; then
 	exit 1
 fi
 
-[ -d /etc/cfm/$MASTER_NODEGROUP ] || mkdir -p /etc/cfm/$MASTER_NODEGROUP
+$INST -d /etc/cfm/$MASTER_NODEGROUP
 if [ $? -ne 0 ]; then
 	echo "Error creating directory /etc/cfm/$MASTER_NODEGROUP"
 	exit 1
@@ -53,98 +54,194 @@ fi
 
 # Create files into CFM directory
 CFM_EGO_CONFDIR="/etc/cfm/$MASTER_NODEGROUP""$EGO_CONFDIR"
-
-[ -d "$CFM_EGO_CONFDIR" ] || mkdir -p "$CFM_EGO_CONFDIR"
-if [ $? -ne 0 ]; then
-	echo "Error creating directory $CFM_EGO_CONFDIR"
-	exit 1
-fi
-
 CFM_LSF_CONFDIR="/etc/cfm/$MASTER_NODEGROUP""$LSF_CONFDIR"
 
-[ -d "$CFM_LSF_CONFDIR" ] || mkdir -p "$CFM_LSF_CONFDIR"
-if [ $? -ne 0 ]; then
-	echo "Error creating directory $CFM_LSF_CONFDIR"
-	exit 1
-fi
+updLSFCluster()
+{
+    local DSTFILE="$1"
 
-# Move template configuration files into place
-CFM_TMPLDIR="/etc/cfm/templates"
+    $GENCONFIG lsfcluster_$LSFVERSION $CLUSTERNAME cluster >$DSTFILE.new
+    if [ $? -eq 0 ]; then
+        if [ -f $DSTFILE ]; then
+            # Move the old file out of the way
+            mv $DSTFILE $DSTFILE.old
+        fi
 
-cp -a $CFM_TMPLDIR/default.ego.cluster $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME
-cp -a $CFM_TMPLDIR/default.ego.conf $CFM_EGO_CONFDIR/ego.conf
-cp -a $CFM_TMPLDIR/default.ego.shared $CFM_EGO_CONFDIR/ego.shared
-cp -a $CFM_TMPLDIR/default.lsf.conf $CFM_LSF_CONFDIR/lsf.conf
+        mv $DSTFILE.new $DSTFILE
+
+        # Remove the old file (should we do this?)
+        rm -f $DSTFILE.old
+
+        chown lsfadmin:root $DSTFILE
+    else
+        chown lsfadmin:root $DSTFILE.new
+    fi
+}
+
+updLSFShared()
+{
+    local DSTFILE="$1"
+
+    $GENCONFIG lsfshared_$LSFVERSION $CLUSTERNAME >$DSTFILE.new
+    if [ $? -eq 0 ]; then
+        if [ -f $DSTFILE ]; then
+            # Move the old file out of the way
+            mv $DSTFILE $DSTFILE.old
+        fi
+
+        mv $DSTFILE.new $DSTFILE
+
+        # Remove the old file
+        rm -f $DSTFILE.old
+
+        chown lsfadmin:root $DSTFILE
+    else
+        # Ensure lsfadmin has full rights on the file created during
+        # attempted (re)configuration.
+        chown lsfadmin:root $DSTFILE.new
+    fi
+}
+
+updLSFConf()
+{
+    local TYPE="$1"
+    local DSTFILE="$2"
+
+    $INST -o lsfadmin -d $( dirname $DSTFILE )
+    $INST -o lsfadmin $CFM_TMPLDIR/default.lsf.conf $DSTFILE
+
+    # Update lsf.conf
+    $GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME $TYPE >$DSTFILE.new
+    if [ $? -eq 0 ]; then
+        # Generation of new lsf.conf was successful!
+        if [ -f $DSTFILE ]; then
+            # Move old file out of the way
+            mv $DSTFILE $DSTFILE.old
+        fi
+
+        mv $DSTFILE.new $DSTFILE
+
+        # Remove the old file
+        rm -f $DSTFILE.old
+
+        chown lsfadmin:root $DSTFILE
+    else
+        chown lsfadmin:root $DSTFILE.new
+    fi
+
+    # Replace dummy cluster name with real cluster name
+    sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" $DSTFILE
+}
+
+# updEGOConf <nodegroup type> <dest file>
+updEGOConf()
+{
+    local TYPE="$1"
+    local DSTFILE="$2"
+    local EGO_KERN_DIR=$( dirname $DSTFILE )
+    local EGO_CLUS_CONF_DIR=$( dirname $EGO_KERN_DIR )
+    local EGO_CONF_DIR=$( dirname $EGO_CLUS_CONF_DIR )
+
+    # Create "/etc/cfm/<nodegroup>/opt/lsf/conf/ego"
+    $INST -o lsfadmin -d $EGO_CONF_DIR
+
+    if [ "$TYPE" == "master" ]; then
+        # Copy to "/etc/cfm/<nodegroup>/opt/lsf/conf/ego/<clustername>"
+        cp -ra $CFM_TMPLDIR/ego/default $EGO_CLUS_CONF_DIR
+    else
+        # Create "/etc/cfm/<nodegroup>/opt/lsf/conf/ego/<clustername>/kernel".
+        # This directory will contain ego.conf.
+        $INST -o lsfadmin -d $EGO_KERN_DIR
+
+        # Compute nodes only need the ego.conf
+        cp -a $CFM_TMPLDIR/ego/default/kernel/ego.conf $EGO_KERN_DIR
+    fi
+
+    chown -R lsfadmin:root $EGO_CONF_DIR
+
+    $GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME $NODEGROUP_TYPE >$DSTFILE.new
+    if [ $? -eq 0 ]; then
+        if [ -d $DSTFILE ]; then
+            mv $DSTFILE $DSTFILE.old
+        fi
+
+        mv $DSTFILE.new $DSTFILE
+
+        rm -f $DSTFILE.old
+
+        chown lsfadmin:root $DSTFILE
+    else
+        chown lsfadmin:root $DSTFILE.new
+    fi
+
+    # Replace dummy cluster name with real cluster name
+    sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" $DSTFILE
+}
+
+updLSFHosts()
+{
+    local DSTFILE="$1"
+
+    $INST -o lsfadmin -d $( dirname $DSTFILE )
+
+    $GENCONFIG lsfhosts_$LSFVERSION $CLUSTERNAME >$DSTFILE.new
+    if [ $? -eq 0 ]; then
+        if [ -f $DSTFILE ]; then
+            mv $DSTFILE $DSTFILE.old
+        fi
+
+        mv $DSTFILE.new $DSTFILE
+
+        rm -f $DSTFILE.old
+
+        chown lsfadmin:root $DSTFILE
+    else
+        if [ ! -s $DSTFILE.new ]; then
+            # Generated file is 0 bytes (probably means that no hosts have
+            # been installed in this cluster), so remove the empty file.
+            rm -f $DSTFILE.new
+        else
+            chown lsfadmin:root $DSTFILE.new
+        fi
+    fi
+}
 
 # Update lsf.cluster.<clustername>
-$GENCONFIG egocluster_$EGOVERSION $CLUSTERNAME cluster >$CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.new
-mv $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.old
-mv $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.new $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME
-rm -f $CFM_EGO_CONFDIR/ego.cluster.$CLUSTERNAME.old
+$INST -o lsfadmin -d $CFM_LSF_CONFDIR
+$INST -o lsfadmin $CFM_TMPLDIR/default.lsf.cluster $CFM_LSF_CONFDIR/lsf.cluster.$CLUSTERNAME
+updLSFCluster $CFM_LSF_CONFDIR/lsf.cluster.$CLUSTERNAME
 
-# Update ego.shared
-$GENCONFIG egoshared_$EGOVERSION $CLUSTERNAME >$CFM_EGO_CONFDIR/ego.shared.new
-mv $CFM_EGO_CONFDIR/ego.shared $CFM_EGO_CONFDIR/ego.shared.old
-mv $CFM_EGO_CONFDIR/ego.shared.new $CFM_EGO_CONFDIR/ego.shared
-rm -f $CFM_EGO_CONFDIR/ego.shared.old
+# Update lsf.shared
+$INST -o lsfadmin $CFM_TMPLDIR/default.lsf.shared $CFM_LSF_CONFDIR/lsf.shared
+updLSFShared $CFM_LSF_CONFDIR/lsf.shared
 
 # Update lsf.conf
-$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME master >$CFM_LSF_CONFDIR/lsf.conf.new
-mv $CFM_LSF_CONFDIR/lsf.conf $CFM_LSF_CONFDIR/lsf.conf.old
-mv $CFM_LSF_CONFDIR/lsf.conf.new $CFM_LSF_CONFDIR/lsf.conf
-rm -f $CFM_LSF_CONFDIR/lsf.conf.old
+updLSFConf master $CFM_LSF_CONFDIR/lsf.conf
 
-# Update ego.conf
-$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME master >$CFM_EGO_CONFDIR/ego.conf.new
-mv $CFM_EGO_CONFDIR/ego.conf $CFM_EGO_CONFDIR/ego.conf.old
-mv $CFM_EGO_CONFDIR/ego.conf.new $CFM_EGO_CONFDIR/ego.conf
-rm -f $CFM_EGO_CONFDIR/ego.conf.old
+# Copy EGO template files and update ego.conf
+updEGOConf master $CFM_EGO_CONFDIR/kernel/ego.conf
 
 # LSF hosts file
-$GENCONFIG lsfhosts_$LSFVERSION $CLUSTERNAME >$CFM_LSF_CONFDIR/hosts.new
-mv $CFM_LSF_CONFDIR/hosts $CFM_LSF_CONFDIR/hosts.old
-mv $CFM_LSF_CONFDIR/hosts.new $CFM_LSF_CONFDIR/hosts
-rm -f $CFM_LSF_CONFDIR/hosts.old
+updLSFHosts $CFM_LSF_CONFDIR/hosts
 
 # Copy lsbatch files into place
-[ -d $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir ] || mkdir -p $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir
-cp -ar $CFM_TMPLDIR/lsbatch/default/configdir/* $CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir/
+LSBCFDIR="$CFM_LSF_CONFDIR/lsbatch/$CLUSTERNAME/configdir"
+
+$INST -o lsfadmin -d $LSBCFDIR
+$INST -o lsfadmin $CFM_TMPLDIR/lsbatch/default/configdir/* $LSBCFDIR
 
 for ng in $( sqlrunner -q 'SELECT ngname FROM nodegroups WHERE ngid != 1 AND ngid < 5' ); do
 	CFM_LSF_CONFDIR="/etc/cfm/$ng""$LSF_CONFDIR"
 	CFM_EGO_CONFDIR="/etc/cfm/$ng""$EGO_CONFDIR"
 
-	[ -d "$CFM_LSF_CONFDIR" ] || mkdir -p "$CFM_LSF_CONFDIR"
-	if [ $? -ne 0 ]; then
-		echo "Error creating directory $CFM_LSF_CONFDIR"
-		exit 1
-	fi
-
-	[ -d "$CFM_EGO_CONFDIR" ] || mkdir -p "$CFM_EGO_CONFDIR"
-	if [ $? -ne 0 ]; then
-		echo "Error creating directory $CFM_EGO_CONFDIR"
-		exit 1
-	fi
-
 	# lsf.conf
-	$GENCONFIG lsfconf_$LSFVERSION $CLUSTERNAME slave >$CFM_LSF_CONFDIR/lsf.conf.new
-	if [ -f $CFM_LSF_CONFDIR/lsf.conf ]; then
-		mv $CFM_LSF_CONFDIR/lsf.conf $CFM_LSF_CONFDIR/lsf.conf.old
-	fi
-	mv $CFM_LSF_CONFDIR/lsf.conf.new $CFM_LSF_CONFDIR/lsf.conf
-
-	# ego.conf
-	$GENCONFIG egoconf_$EGOVERSION $CLUSTERNAME slave >$CFM_EGO_CONFDIR/ego.conf.new
-	if [ -f $CFM_EGO_CONFDIR/ego.conf ]; then
-		mv $CFM_EGO_CONFDIR/ego.conf $CFM_EGO_CONFDIR/ego.conf.old
-	fi
-	mv $CFM_EGO_CONFDIR/ego.conf.new $CFM_EGO_CONFDIR/ego.conf
+    updLSFConf slave $CFM_LSF_CONFDIR/lsf.conf
 
 	# hosts
-	$GENCONFIG lsfhosts_$LSFVERSION $CLUSTERNAME >$CFM_LSF_CONFDIR/hosts.new
-	mv $CFM_LSF_CONFDIR/hosts $CFM_LSF_CONFDIR/hosts.old
-	mv $CFM_LSF_CONFDIR/hosts.new $CFM_LSF_CONFDIR/hosts
-	rm -f $CFM_LSF_CONFDIR/hosts.old
+    updLSFHosts $CFM_LSF_CONFDIR/hosts
+
+	# ego.conf
+    updEGOConf slave $CFM_EGO_CONFDIR/kernel/ego.conf
 done
 
 rm -f /etc/rc.kusu.d/S11lsf-genconfig

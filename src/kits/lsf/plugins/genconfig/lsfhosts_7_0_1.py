@@ -36,126 +36,94 @@ import string
 
 class thisReport(Report):
 
-	def toolHelp(self):
-		print self.gettext("genconfig_LSFHosts_Help")
+    def toolHelp(self):
+        print self.gettext("genconfig_LSFHosts_Help")
 
 
-	def validateCluster(self,clustername):
-		global APPKEY
-		query = ('select agid from appglobals where kname="%s" '
-			 'and kvalue="%s"' % (APPKEY, clustername)) 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+    def validateCluster(self,clustername):
+        global APPKEY
+        query = ('select agid from appglobals where kname="%s" '
+             'and kvalue="%s"' % (APPKEY, clustername)) 
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
 
-		row = self.db.fetchone()
-		if not row:
-			return False
-		if row[0] != '':
-			return True
-		return False
+        row = self.db.fetchone()
+        if not row:
+            return False
+        if row[0] != '':
+            return True
+        return False
 
 
-	def locateHosts(self, clustername):
-		'''locateHosts - Locate the /opt/lsf/conf/hosts for this cluster
-		within the CFM then read in its contents.'''
-		query = ('SELECT ngname FROM nodegroups, appglobals, ng_has_comp, components '
-			 'WHERE appglobals.ngid=nodegroups.ngid AND '
-			 'nodegroups.ngid=ng_has_comp.ngid AND '
-			 'ng_has_comp.cid=components.cid AND '
-			 'components.cname="%s" AND appglobals.kvalue="%s"' % (COMP_MASTER, clustername))
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+    def locateHosts(self, clustername):
+        '''locateHosts - Locate the /opt/lsf/conf/hosts for this cluster
+        within the CFM then read in its contents.'''
+        query = ('SELECT ngname FROM nodegroups, appglobals, ng_has_comp, components '
+             'WHERE appglobals.ngid=nodegroups.ngid AND '
+             'nodegroups.ngid=ng_has_comp.ngid AND '
+             'ng_has_comp.cid=components.cid AND '
+             'components.cname="%s" AND appglobals.kvalue="%s"' % (COMP_MASTER, clustername))
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
 
-		for row in self.db.fetchall():
-			ngname = row[0]
-			fqfn = "/etc/cfm/%s/opt/lsf/conf/hosts" % ngname
-			return fqfn
+        for row in self.db.fetchall():
+            ngname = row[0]
+            fqfn = "/etc/cfm/%s/opt/lsf/conf/hosts" % ngname
+            return fqfn
 
-		return ""
-		
+        return ""
+        
+    def newLines(self, filename, clustername):
+        ''' newLines - Output all the hosts not found in the original file'''
+        global COMP_MASTER
 
-	def getHost(self, filename):
-		'''getHost  - Locate the /opt/lsf/conf/hosts for this cluster
-		within the CFM then read in its contents.'''
+        # Get a list os ip/nodes that are using the component
+        # and are part of the same cluster
+        query = ('SELECT nics.ip, nodes.name '
+             'FROM nics, nodes, appglobals, ng_has_comp, components '
+             'WHERE nics.nid = nodes.nid AND appglobals.ngid=nodes.ngid '
+             'AND ng_has_comp.ngid=nodes.ngid AND ng_has_comp.cid=components.cid ' 
+             'AND appglobals.kvalue="%s" AND (components.cname = "%s" OR components.cname = "%s")' % (clustername, COMP_MASTER, COMP_COMPUTE))
 
-		data = []
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            return False
 
-		try:
-			fp = file(filename, 'r')
-			while True:
-				line = fp.readline().strip()
-				if len(line) == 0:
-					break
-			
-				if line[:1] == '#':
-					continue
-			
-				longhost = string.split(line)[1]
-				shorthost = string.split(longhost, '.')[0]
-				data.append(shorthost)
-				#print "Found %s\n" % shorthost
-			
-			fp.close()
-		except:
-			# Error reading hosts file
-			pass
+        for row in self.db.fetchall():
+            ip, name = row
 
-		return data
+            # The LSF hosts file format is DIFFERENT from /etc/hosts
+            print "%s %s" % (ip, name)
 
-	def newLines(self, filename, currenthosts, clustername):
-		''' newLines - Output all the hosts not found in the original file'''
-		global COMP_MASTER
+        return True
 
-		# Get a list os ip/nodes that are using the component
-		# and are part of the same cluster
-		query = ('SELECT nics.ip, nodes.name '
-			 'FROM nics, nodes, appglobals, ng_has_comp, components '
-			 'WHERE nics.nid = nodes.nid AND appglobals.ngid=nodes.ngid '
-			 'AND ng_has_comp.ngid=nodes.ngid AND ng_has_comp.cid=components.cid ' 
-			 'AND appglobals.kvalue="%s" AND (components.cname = "%s" OR components.cname = "%s")' % (clustername, COMP_MASTER, COMP_COMPUTE))
+    def runPlugin(self, pluginargs):
+        if not pluginargs:
+            print "# ERROR:  No LSF cluster provided!"
+            sys.exit(-1)
 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+        if pluginargs[0] == '':
+            print "# ERROR:  No LSF cluster provided!"
+            sys.exit(-1)
+        
+        if not self.validateCluster(pluginargs[0]):
+            print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
+            sys.exit(-1)
 
-		for row in self.db.fetchall():
-			ip, name = row
+        # Determine hosts file name for this cluster
+        filename = self.locateHosts(pluginargs[0])
+        if not filename:
+            print 'ERROR: unable to determine location of hosts file for this cluster'
+            sys.exit(-1)
 
-			# The LSF hosts file format is DIFFERENT from
-			# /etc/hosts.
-			print "%s %s" % (ip, name)
-
-	def runPlugin(self, pluginargs):
-		if not pluginargs:
-			print "# ERROR:  No LSF cluster provided!"
-			return
-
-		if pluginargs[0] == '':
-			print "# ERROR:  No LSF cluster provided!"
-			return
-		
-		if not self.validateCluster(pluginargs[0]):
-			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
-			return
-
-		chosts = []
-
-		# Determine hosts file name for this cluster
-		filename = self.locateHosts(pluginargs[0])
-		if not filename:
-			print 'ERROR: unable to determine location of hosts file for this cluster'
-			sys.exit(-1)
-
-		# Read any existing entries (if any)
-		chosts = self.getHost(filename)
-
-		# Append any new entries.
-		self.newLines(filename, chosts, pluginargs[0])
+        # Generate file contents based on database
+        if not self.newLines(filename, pluginargs[0]):
+            sys.exit(-1)

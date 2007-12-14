@@ -19,34 +19,43 @@
 
 import re
 import os
+import sys
+import subprocess
 from syslog import syslog
 from kusu.addhost import *
 
-global VERSION
-VERSION = '7.0.1'
+global LSF_VERSION
+LSF_VERSION = '7.0.1'
 
-global VERSION_WITH_UNDERSCORES
-VERSION_WITH_UNDERSCORES = VERSION.replace('.', '_')
+global LSF_VERSION_WITH_UNDERSCORES
+LSF_VERSION_WITH_UNDERSCORES = LSF_VERSION.replace('.', '_')
 
-EGO_VERSION_WITH_UNDERSCORES = "1_2"
+global EGO_VERSION
+EGO_VERSION = '1.2'
+
+global EGO_VERSION_WITH_UNDERSCORES
+EGO_VERSION_WITH_UNDERSCORES = EGO_VERSION.replace('.', '_')
 
 global COMPONENT_NAME
-COMPONENT_NAME = "component-LSF-Master-v%s" % ( VERSION_WITH_UNDERSCORES )
+COMPONENT_NAME = "component-LSF-Master-v%s" % ( LSF_VERSION_WITH_UNDERSCORES )
 
 global CLUSTER_NAME_KEY
-CLUSTER_NAME_KEY = 'LSF%s_ClusterName' % ( VERSION_WITH_UNDERSCORES )
+CLUSTER_NAME_KEY = 'LSF%s_ClusterName' % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global EGO_CLUSTER_PLUGIN
-EGO_CLUSTER_PLUGIN = 'egocluster_%s' % ( EGO_VERSION_WITH_UNDERSCORES )
+global LSF_CLUSTER_PLUGIN
+LSF_CLUSTER_PLUGIN = 'lsfcluster_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
+
+global LSF_HOSTS_PLUGIN
+LSF_HOSTS_PLUGIN = 'lsfhosts_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
+
+global LSF_CONF_PLUGIN
+LSF_CONF_PLUGIN = 'lsfconf_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
 
 global EGO_CONF_PLUGIN
 EGO_CONF_PLUGIN = 'egoconf_%s' % ( EGO_VERSION_WITH_UNDERSCORES )
 
-global LSF_HOSTS_PLUGIN
-LSF_HOSTS_PLUGIN = 'lsfhosts_%s' % ( VERSION_WITH_UNDERSCORES )
-
-global LSF_CONF_PLUGIN
-LSF_CONF_PLUGIN = 'lsfconf_%s' % ( VERSION_WITH_UNDERSCORES )
+global LSF_SHARED_PLUGIN
+LSF_SHARED_PLUGIN = 'lsfshared_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
 
 class AddHostPlugin(AddHostPluginBase):
     """LSF cluster file updater plugin"""
@@ -58,7 +67,9 @@ class AddHostPlugin(AddHostPluginBase):
         clusterName = None
 
         try:
-            sql = 'SELECT kvalue FROM appglobals WHERE kname = \'%s\' AND ngid=%d' % ( CLUSTER_NAME_KEY, ngid )
+            sql = ('SELECT kvalue FROM appglobals WHERE '
+                'kname = \'%s\' AND ngid=%d' % 
+                    ( CLUSTER_NAME_KEY, ngid ))
 
             self.dbconn.execute(sql)
             clusterName = self.dbconn.fetchone()[0]
@@ -68,82 +79,87 @@ class AddHostPlugin(AddHostPluginBase):
         return clusterName
 
     def getNodegroupName(self, ngid):
-	ngName = None
+        ngName = None
 
-	try:
-	    sql = "SELECT ngname FROM nodegroups WHERE ngid = %d" % ngid
-	    self.dbconn.execute(sql)
-	    ngName = self.dbconn.fetchone()[0]
-	except:
-	    pass
+        try:
+            sql = "SELECT ngname FROM nodegroups WHERE ngid = %d" % ngid
+            self.dbconn.execute(sql)
+            ngName = self.dbconn.fetchone()[0]
+        except:
+            pass
 
-	return ngName
+        return ngName
 
     def getMasterNodegroup(self, clusterName):
-	"""Determine the master nodegroup name for this cluster"""
+        """Determine the master nodegroup name for this cluster"""
 
-	masterNgName = None
-	masterNgId = 0
+        sql = ("SELECT nodegroups.ngname,nodegroups.ngid FROM "
+            "nodegroups, components, ng_has_comp, appglobals WHERE "
+            "components.cname = \"component-LSF-Master-v7_0_1\" AND "
+            "components.cid = ng_has_comp.cid AND "
+            "ng_has_comp.ngid = appglobals.ngid AND "
+            "nodegroups.ngid = appglobals.ngid AND "
+            "appglobals.kvalue = \"%s\"" % ( clusterName ))
 
-	sql = "SELECT nodegroups.ngname,nodegroups.ngid FROM nodegroups, components, ng_has_comp, appglobals WHERE components.cname = \"component-LSF-Master-v7_0_1\" and components.cid = ng_has_comp.cid and ng_has_comp.ngid = appglobals.ngid and nodegroups.ngid = appglobals.ngid and appglobals.kvalue = \"%s\"" % ( clusterName )
+        try:
+            self.dbconn.execute(sql)
 
-	try:
-	    self.dbconn.execute(sql)
-	    row = self.dbconn.fetchone()
-	    masterNgName = row[0]
-	    masterNgId = row[1]
-	except:
-	    pass
+            row = self.dbconn.fetchone()
 
-	return (masterNgName, masterNgId)
+            return (row[0], row[1])
+        except:
+            return (None, 0)
 
     def initClusterInfo(self, nodename, info):
-	self.ngid = 0
-	self.clusterName = None
-	self.ngName = None
-	self.masterNgName = None
-	self.masterNgId = 0
+        self.ngid = 0
+        self.clusterName = None
+        self.ngName = None
+        self.masterNgName = None
+        self.masterNgId = 0
 
-	try:
-	    self.ngid = int(info[nodename][0]["nodegroupid"])
-	except:
-	    return False
+        try:
+            self.ngid = int(info[nodename][0]["nodegroupid"])
+        except:
+            return False
 
         self.clusterName = self.getClusterName(self.ngid)
+        self.ngName = self.getNodegroupName(self.ngid)
 
-	self.ngName = self.getNodegroupName(self.ngid)
+        # Get nodegroup name for master candidate
+        (self.masterNgName, self.masterNgId) = \
+            self.getMasterNodegroup(self.clusterName)
 
-	# Get nodegroup name for master candidate
-	(self.masterNgName, self.masterNgId) = \
-	    self.getMasterNodegroup(self.clusterName)
-
-	return True
+        return True
 
     def added(self, nodename, info, prePopulateMode):
-	if not self.initClusterInfo(nodename, info):
-	    return
+        if not self.initClusterInfo(nodename, info):
+            return
 
     def removed(self, nodename, info):
-	if not self.initClusterInfo(nodename, info):
-	    return
+        if not self.initClusterInfo(nodename, info):
+            return
 
     def finished(self, nodelist, prePopulateMode):
-	if not self.clusterName:
-		return
+        if not self.clusterName:
+            return
 
         nodelist = self.checkAvailableComponent()
         if not nodelist:
-           return
+            return
 
         self.updateLSFConfig()
 
     def checkAvailableComponent(self):
-        """Return a list of all nodegroups that have the LSF components in
-        use."""
+        """
+        Return a list of all nodegroups that have the LSF components in
+        use.
+        """
 
-        query = ('SELECT nodegroups.ngname FROM nodegroups, ng_has_comp, components WHERE '
-             'nodegroups.ngid = ng_has_comp.ngid AND ng_has_comp.cid = components.cid AND '
-             'components.cname = "%s"' % COMPONENT_NAME)
+        query = 'SELECT nodegroups.ngname FROM ' \
+            'nodegroups, ng_has_comp, components WHERE ' \
+            'nodegroups.ngid = ng_has_comp.ngid AND ' \
+            'ng_has_comp.cid = components.cid AND ' \
+            'components.cname = "%s"' % ( COMPONENT_NAME )
 
         try:
             self.dbconn.execute(query)
@@ -151,75 +167,114 @@ class AddHostPlugin(AddHostPluginBase):
         except:
             return []
 
+    # Redirect the output of 'cmd' to a temporary file, and replace the
+    # original file only if 'cmd' was successful.
+    def safeFileUpdate(self, cmd, destFileName):
+        cmdLine = cmd + " >%s.tmp 2>/dev/null" % ( destFileName )
+
+        try:
+            retcode = subprocess.call(cmdLine, shell=True)
+            if retcode != 0:
+                return False
+        except OSError, e:
+            # Error updating file
+            return False
+
+        # Copy temporary file into place
+        cmdLine = "cp %s.tmp %s" % ( destFileName, destFileName )
+
+        try:
+            retcode = subprocess.call(cmdLine, shell=True)
+        except OSError, e:
+            pass
+
+        # Remove duplicate file
+        cmdLine = "rm -f %s.tmp" % ( destFileName )
+
+        try:
+            retcode = subprocess.call(cmdLine, shell=True)
+        except OSError, e:
+            pass
+
+        return True
+
+    def updHostsFile(self, hostsFileName):
+        cmd = '/opt/kusu/bin/genconfig %s %s' % \
+            ( LSF_HOSTS_PLUGIN, self.clusterName )
+
+        return self.safeFileUpdate(cmd, hostsFileName)
+
+    def updLSFConfFile(self, lsfConfFileName, type):
+        cmd = '/opt/kusu/bin/genconfig %s %s %s' % \
+            ( LSF_CONF_PLUGIN, self.clusterName, type )
+
+        return self.safeFileUpdate(cmd, lsfConfFileName)
+
+    def updEGOConfFile(self, egoConfFileName, type):
+        cmd = '/opt/kusu/bin/genconfig %s %s %s' % \
+            ( EGO_CONF_PLUGIN, self.clusterName, type )
+
+        return self.safeFileUpdate(cmd, egoConfFileName)
+
+    def updLSFClusterFile(self, clusFileName):
+        cmd = '/opt/kusu/bin/genconfig %s %s' % \
+            ( LSF_CLUSTER_PLUGIN, self.clusterName )
+
+        return self.safeFileUpdate(cmd, clusFileName)
+
+    def updLSFSharedFile(self, sharedFileName):
+        cmd = '/opt/kusu/bin/genconfig %s %s' % \
+            ( LSF_SHARED_PLUGIN, self.clusterName )
+
+        return self.safeFileUpdate(cmd, sharedFileName)
+
     def updateLSFConfig(self):
-	"""
-	Update all LSF configuration files for the nodes in the cluster.
-	This includes the master candidates and any compute nodegroups.
-	"""
+        """
+        Update all LSF configuration files for the nodes in the cluster.
+        This includes the master candidates and any compute nodegroups.
+        """
 
-	# Find all nodegroups that have nodes in this cluster
-	sql = "SELECT nodegroups.ngname, IF(nodegroups.ngid = %d, 'master', 'slave') FROM nodegroups, appglobals WHERE kvalue = \"%s\" and kname = \"LSF7_0_1_ClusterName\" and nodegroups.ngid = appglobals.ngid" % \
-		( self.masterNgId, self.clusterName )
+        # Find all nodegroups that have nodes in this cluster
+        sql = ("SELECT nodegroups.ngname, "
+            "IF(nodegroups.ngid = %d, 'master', 'slave') FROM "
+            "nodegroups, appglobals WHERE kvalue = \"%s\" AND "
+            "kname = \"LSF7_0_1_ClusterName\" AND "
+            "nodegroups.ngid = appglobals.ngid" % \
+                ( self.masterNgId, self.clusterName ))
 
-	try:
-	    self.dbconn.execute(sql)
-	except:
-	    return False
+        try:
+            self.dbconn.execute(sql)
+        except:
+            return False
 
-	# Update the hosts file
-	for row in self.dbconn.fetchall():
-	    print 'Updating configuration for nodegroup %s' % row[0]
+        # Update the hosts file
+        for row in self.dbconn.fetchall():
+            print 'Updating configuration for nodegroup %s' % ( row[0] )
 
-	    # Update /opt/lsf/conf/hosts
-	    hostsFileName = '/etc/cfm/%s/opt/lsf/conf/hosts' % row[0]
+            cfmTopDir = "/etc/cfm/" + row[0]
 
-	    cmd = '/opt/kusu/bin/genconfig %s %s' % \
-		( LSF_HOSTS_PLUGIN, self.clusterName )
+            # Update /opt/lsf/conf/hosts
+            hostsFileName = cfmTopDir + '/opt/lsf/conf/hosts'
+            self.updHostsFile(hostsFileName)
 
-	    os.system("%s >%s.tmp 2>/dev/null" % ( cmd, hostsFileName ))
-	    os.system("cp %s.tmp %s" % ( hostsFileName, hostsFileName ))
-	    os.system("rm -f %s.tmp" % ( hostsFileName ))
+            # Update /opt/lsf/conf/lsf.conf
+            confFileName = cfmTopDir + '/opt/lsf/conf/lsf.conf'
+            self.updLSFConfFile(confFileName, row[1])
 
-	    # Update /opt/lsf/conf/lsf.conf
-	    confFileName = '/etc/cfm/%s/opt/lsf/conf/lsf.conf' % row[0]
+            # Update /opt/lsf/ego/kernel/conf/ego.conf
+            confFileName = cfmTopDir + '/opt/lsf/conf/ego/%s/kernel/ego.conf' % \
+                ( self.clusterName )
+            self.updEGOConfFile(confFileName, row[1])
 
-	    cmd = '/opt/kusu/bin/genconfig %s %s %s' % \
-		( LSF_CONF_PLUGIN, self.clusterName, row[1] )
+            if row[1] == 'master':    
+                # Update /opt/lsf/conf/lsf.cluster.<clustername>
+                clusFileName = cfmTopDir + '/opt/lsf/conf/lsf.cluster.%s' % \
+                    ( self.clusterName )
+                self.updLSFClusterFile(clusFileName)
 
-	    os.system("%s >%s.tmp 2>/dev/null" % ( cmd, confFileName ))
-	    os.system("cp %s.tmp %s" % ( confFileName, confFileName ))
-	    os.system("rm -f %s.tmp" % ( confFileName ))
+                # Update /opt/lsf/conf/lsf.shared
+                sharedFileName = cfmTopDir + '/opt/lsf/conf/lsf.shared'
+                self.updLSFSharedFile(sharedFileName)
 
-	    # Update /opt/lsf/ego/kernel/conf/ego.conf
-	    confFileName = '/etc/cfm/%s/opt/lsf/ego/kernel/conf/ego.conf' % \
-		row[0]
-
-	    cmd = '/opt/kusu/bin/genconfig %s %s %s' % \
-		( EGO_CONF_PLUGIN, self.clusterName, row[1] )
-
-	    os.system("%s >%s.tmp 2>/dev/null" % ( cmd, confFileName ))
-	    os.system("cp %s.tmp %s" % ( confFileName, confFileName ))
-	    os.system("rm -f %s.tmp" % ( confFileName ))
-
-	    if row[1] == 'master':	
-	    	# Update /opt/lsf/ego/kernel/conf/ego.cluster.<clustername>
-		clusFileName = '/etc/cfm/%s/opt/lsf/ego/kernel/conf/ego.cluster.%s' % \
-		    ( row[0], self.clusterName )
-
-	    	cmd = '/opt/kusu/bin/genconfig %s %s' % \
-		    ( EGO_CLUSTER_PLUGIN, self.clusterName )
-
-		os.system("%s >%s.tmp 2>/dev/null" % ( cmd, clusFileName ))
-		os.system("cp %s.tmp %s" % ( clusFileName, clusFileName ))
-		os.system("rm -f %s.tmp" % ( clusFileName ))
-
-		# Update /opt/lsf/ego/kernel/conf/ego.shared
-		sharedFileName = '/etc/cfm/%s/opt/lsf/ego/kernel/conf/ego.shared' % ( row[0] )
-
-		cmd = '/opt/kusu/bin/genconfig %s' % self.clusterName
-
-		os.system("%s >%s.tmp 2>/dev/null" % ( cmd, sharedFileName ))
-		os.system("cp %s.tmp %s" % ( clusFileName, sharedFileName ))
-		os.system("rm -f %s.tmp" % ( sharedFileName ))
-
-	return True
+        # Success!
+        return True

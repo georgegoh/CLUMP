@@ -1,17 +1,15 @@
 #!/bin/sh
-
+#
 # S10lsf-compute-preconf
-
+#
 # The cluster name is "@CLUSTERNAME@"
+#
 
 CLUSTERNAME="@CLUSTERNAME@"
 
 LSF_TOPDIR="/opt/lsf"
-LSF_CONFDIR="$LSF_TOPDIR/conf"
-EGO_CONFDIR="$LSF_TOPDIR/ego/kernel/conf"
 
-ln -sf $LSF_CONFDIR/hosts $EGO_CONFDIR/hosts
-
-sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" $LSF_TOPDIR/7.0/lsf_quick_admin.html
+sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" \
+    $LSF_TOPDIR/7.0/lsf_quick_admin.html
 
 rm -f /etc/rc.kusu.d/S10lsf-compute-preconf

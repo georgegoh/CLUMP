@@ -26,8 +26,9 @@ License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 Requires: lsf = %{lsf_version}
-Requires: lsf-master-config = %{lsf_version}
-BuildArchitectures: noarch
+# Requires: lsf-master-config = %{lsf_version}
+BuildArch: noarch
+BuildRoot: %{_tmppath}/%{name}-root
 
 %description
 This package is a metapackage for LSF(R)
@@ -35,6 +36,8 @@ This package is a metapackage for LSF(R)
 %prep
 
 %install
+rm -rf $RPM_BUILD_ROOT
+
 /usr/bin/install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
 /usr/bin/install -m 755 %{_topdir}/S10lsf-master-preconf $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
@@ -63,6 +66,9 @@ if [ -x /etc/rc.kusu.d/S10lsf-master-preconf ]; then
 	/etc/rc.kusu.d/S10lsf-master-preconf
 fi
 
+%clean
+rm -rf $RPM_BUILD_ROOT
+
 %postun
 # Remove user/group on removal of kit
 if [ `grep -c lsfadmin /etc/passwd ` -eq 1 ]; then
@@ -78,7 +84,5 @@ rm -rf /opt/kusu/lib/plugins/cfmclient/%{compdependency}.remove
 EOF
 
 %files
-%dir /etc/rc.kusu.d
 /etc/rc.kusu.d/S10lsf-master-preconf
-%dir /opt/kusu/lib/plugins/cfmclient
 /opt/kusu/lib/plugins/cfmclient/S01lsf-master.sh

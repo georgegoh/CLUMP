@@ -32,144 +32,159 @@ APPKEY   = "LSF7_0_1_ClusterName"
 COMP_MASTER = "component-LSF-Master-v7_0_1"
 
 class ClusterInfo:
-	pass
+    pass
 
 class thisReport(Report):
 
-    	def toolHelp(self):
-        	print self.gettext("genconfig_LSFconf_Help")
+    def toolHelp(self):
+        print self.gettext("genconfig_LSFconf_Help")
 
+    def validateCluster(self, clustername):
+        global APPKEY
 
-	def validateCluster(self, clustername):
-		global APPKEY
+        ci = ClusterInfo()
+        ci.clusterName = clustername
 
-		ci = ClusterInfo()
+        query = ('select ngid from appglobals where kname="%s" '
+             'and kvalue="%s"' % (APPKEY, ci.clusterName)) 
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
 
-		ci.clusterName = clustername
+        row = self.db.fetchone()
 
-		query = ('select ngid from appglobals where kname="%s" '
-			 'and kvalue="%s"' % (APPKEY, ci.clusterName)) 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+        if not row:
+            return None
 
-		row = self.db.fetchone()
+        if row[0] != '':
+            ci.masterCandidateNGID = int(row[0])
+            return ci
 
-		if not row:
-			return None
+        return None
 
-		if row[0] != '':
-			ci.masterCandidateNGID = int(row[0])
-			return ci
+    def getMasterCandidateList(self, ci):
+        query = 'SELECT name FROM nodes, nodegroups WHERE nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % ( ci.masterCandidateNGID )
 
-		return None
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.exit(-1)
 
-	def getMasterCandidateList(self, ci):
-		query = 'SELECT name FROM nodes, nodegroups WHERE nodes.ngid = %d AND nodes.ngid = nodegroups.ngid' % ( ci.masterCandidateNGID )
+        l = []
+        for row in self.db.fetchall():
+            l.append(row[0])
 
-		try:
-			self.db.execute(query)
-		except:
-			sys.stderr.write(self.gettext("DB_Query_Error\n"))
-			sys.exit(-1)
+        if not l:
+            print '# No master hosts defined for cluster'
+            sys.exit(-1)
 
-		l = []
-		for row in self.db.fetchall():
-			l.append(row[0])
+        return ' '.join(l)
 
-		if not l:
-			print '# No master hosts defined for cluster'
-			sys.exit(-1)
+    def getLsfMasterNodegroup(self, clusterName):
+        query = ('SELECT ngname FROM '
+            'nodegroups, appglobals, ng_has_comp, components '
+            'WHERE appglobals.ngid=nodegroups.ngid AND '
+            'nodegroups.ngid=ng_has_comp.ngid AND '
+            'ng_has_comp.cid=components.cid AND '
+            'components.cname="%s" AND appglobals.kvalue="%s"' % \
+                (COMP_MASTER, clusterName))
 
-		return ' '.join(l)
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            return None
 
-	def getLsfConfDir(self, clusterName):
-	    query = ('SELECT ngname FROM nodegroups, appglobals, ng_has_comp, components '
-			'WHERE appglobals.ngid=nodegroups.ngid AND '
-			'nodegroups.ngid=ng_has_comp.ngid AND '
-			'ng_has_comp.cid=components.cid AND '
-			'components.cname="%s" AND appglobals.kvalue="%s"' % \
-			(COMP_MASTER, clusterName))
-	    try:
-	 	self.db.execute(query)
-	    except:
-		sys.stderr.write(self.gettext("DB_Query_Error\n"))
-		sys.exit(-1)
+        try:
+            row = self.db.fetchone()
+        except:
+            return None
 
-	    lsfConfDir = ''
+        return row[0]
 
-	    try:
-	    	row = self.db.fetchone()
+    def getLsfConfDir(self, clusterName):
+        lsfMasterNodegroup = self.getLsfMasterNodegroup(clusterName)
+        if not lsfMasterNodegroup:
+            return None
 
-	  	lsfConfDir = "/etc/cfm/%s/opt/lsf/conf" % ( row[0] )
-	    except:
-		pass
+        return "/etc/cfm/%s/opt/lsf/conf" % ( lsfMasterNodegroup )
 
-	    return lsfConfDir
+    def generateLsfConfig(self, ci, mode):
+        # Determine location of the configuration file based on the
+        # nodegroup.
 
-	def generateLsfConfig(self, ci, mode):
-	    # Determine location of the configuration file based on the
-	    # nodegroup.
-	    #
-	    lsfConfFileName = "%s/lsf.conf" % \
-		( self.getLsfConfDir(ci.clusterName) )
+        lsfConfDir = self.getLsfConfDir(ci.clusterName)
+        if not lsfConfDir:
+            # Error: unable to determine LSF configuration directory
+            return False
 
-	    if not os.path.exists(lsfConfFileName):
-		return
+        lsfConfFileName = lsfConfDir + "/lsf.conf"
 
-       	    installerName = self.db.getAppglobals('PrimaryInstaller')
-            dnsZone = self.db.getAppglobals('DNSZone')
+        # Ensure LSF configuration file exists
+        if not os.path.exists(lsfConfFileName):
+            # lsf.conf does not exist
+            return False
 
-	    mcList = self.getMasterCandidateList(ci)
+        installerName = self.db.getAppglobals('PrimaryInstaller')
 
-	    fin = open(lsfConfFileName, "r")
+        dnsZone = self.db.getAppglobals('DNSZone')
 
-	    while True:
-		instr = fin.readline()
-		if instr == '':
-		    break
+        mcList = self.getMasterCandidateList(ci)
 
-		if re.compile("^LSF_MASTER_LIST=").search(instr):
-			print "LSF_MASTER_LIST=\"%s\"" % mcList
-			continue
+        try:
+            fin = open(lsfConfFileName, "r")
+        except:
+            return False
 
-		if mode == "master":
-			if re.compile("^LSB_MAILTO").search(instr):
-				print """LSB_MAILTO=!U@%s.%s
+        while True:
+            instr = fin.readline()
+            if instr == '':
+                break
+
+            if re.compile("^LSF_MASTER_LIST=").search(instr):
+                print "LSF_MASTER_LIST=\"%s\"" % mcList
+                continue
+
+            if mode == "master":
+                if re.compile("^LSB_MAILTO").search(instr):
+                    print """LSB_MAILTO=!U@%s.%s
 LSB_MAILSERVER=SMTP:%s.%s""" % ( installerName, dnsZone, installerName, dnsZone )
+                    continue
 
-				continue
+            print instr,
 
-		print instr,
+        fin.close()
 
-	    fin.close()
+        if mode == "slave":
+            print """LSF_GET_CONF=lim"""
 
-	    if mode == "slave":
-		print """LSF_GET_CONF=lim"""
+        return True
 
-	def runPlugin(self, pluginargs):
-		if not pluginargs:
-			print "# ERROR:  No LSF cluster provided!"
-			print self.gettext("genconfig_LSFconf_Help")
-			return
+    def runPlugin(self, pluginargs):
+        if not pluginargs:
+            print "# ERROR:  No LSF cluster provided!"
+            print self.gettext("genconfig_LSFconf_Help")
+            return
 
-		if pluginargs[0] == '':
-			print "# ERROR:  No LSF cluster provided!"
-			print self.gettext("genconfig_LSFconf_Help")
-			return
-		
-		ci = self.validateCluster(pluginargs[0])
-		if not ci:
-			print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
-			return
+        if pluginargs[0] == '':
+            print "# ERROR:  No LSF cluster provided!"
+            print self.gettext("genconfig_LSFconf_Help")
+            return
+        
+        ci = self.validateCluster(pluginargs[0])
+        if not ci:
+            print "# ERROR:  Invalid LSF clustername: %s" % pluginargs[0]
+            return
 
-		generate = 'master'
-		if len(pluginargs) > 1:
-			if pluginargs[1] == 'master':
-				generate = 'master'
-			if pluginargs[1] == 'slave':
-				generate = 'slave'
+        generate = 'master'
+        if len(pluginargs) > 1:
+            if pluginargs[1] == 'master':
+                generate = 'master'
+            if pluginargs[1] == 'slave':
+                generate = 'slave'
 
-		self.generateLsfConfig(ci, mode = generate)
+        if not self.generateLsfConfig(ci, mode = generate):
+            sys.exit(-1)
