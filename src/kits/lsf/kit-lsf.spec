@@ -15,6 +15,10 @@
 # 
 #
 
+# Disable automatic creation of requires/provides
+%define __find_requires %{nil}
+%define __find_provides %{nil}
+
 %define LSF_VERSION 7_0_1
 %define EGO_VERSION 1_2
 %define LSF_MASTER_COMP component-LSF-Master-v%{LSF_VERSION}
@@ -31,7 +35,6 @@ Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 BuildArch: noarch
-AutoReq: no
 
 %description
 This package is destined for the installer node and serves as an 
@@ -40,24 +43,22 @@ information container for the database.
 %prep
 
 %install
-docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
-plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
-tmpldir=$RPM_BUILD_ROOT/etc/cfm/templates
-
 rm -rf $RPM_BUILD_ROOT
 
-mkdir -p $tmpldir
-mkdir -p $docdir
-mkdir -p $RPM_BUILD_ROOT/etc/rc.kusu.d
+docdir=$RPM_BUILD_ROOT/depot/www/kits/%{name}/%{version}
+plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
+tmpldir=$RPM_BUILD_ROOT/etc/cfm/templates/lsf
 
-# Add your own plugins if needed
-mkdir -p $plugdir/addhost
-mkdir -p $plugdir/genconfig
-mkdir -p $plugdir/ngedit
+/usr/bin/install -d $tmpldir
+/usr/bin/install -d $docdir
+/usr/bin/install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
+/usr/bin/install -d $plugdir/addhost
+/usr/bin/install -d $plugdir/genconfig
+/usr/bin/install -d $plugdir/ngedit
 
 /usr/bin/install -m 755 %{_topdir}/S11lsf-genconfig $RPM_BUILD_ROOT/etc/rc.kusu.d/
-cp -r %{_topdir}/docs/LICENSE $docdir
-cp -r %{_topdir}/docs/readme.html $docdir
+/usr/bin/install %{_topdir}/docs/LICENSE $docdir
+/usr/bin/install %{_topdir}/docs/readme.html $docdir
 cp -r %{_topdir}/docs/files/* $docdir
 find $docdir -exec chmod 444 {} \;
 
@@ -70,16 +71,15 @@ find $docdir -exec chmod 444 {} \;
 /usr/bin/install -d $tmpldir/lsbatch/default/configdir
 /usr/bin/install -m 444 %{_topdir}/templates/lsbatch/default/configdir/* $tmpldir/lsbatch/default/configdir
 
+cp -ar %{_topdir}/templates/ego $tmpldir/ego
+
+chown -R lsfadmin:root $tmpldir/ego
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%dir /etc/cfm/templates
-/etc/cfm/templates/default.*
-%dir /etc/cfm/templates/lsbatch
-%dir /etc/cfm/templates/lsbatch/default
-%dir /etc/cfm/templates/lsbatch/default/configdir
-/etc/cfm/templates/lsbatch/default/configdir/*
+/etc/cfm/templates/lsf
 
 # documentation
 /depot/www/kits/%{name}/%{version}/*

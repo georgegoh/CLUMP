@@ -20,8 +20,7 @@
 TOPDIR = $(PWD)/..
 ARCH=$(shell arch)
 
-SRCDIRS = `find . -maxdepth 1 -type d -not -name .svn -not -name CVS \
-	    -not -name .`
+SRCDIRS = lsf-base
 
 default: rpm
 
