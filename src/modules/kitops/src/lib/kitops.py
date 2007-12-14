@@ -415,8 +415,10 @@ class KitOps:
             kl.debug('Mount stdout: %s', out)
             kl.debug('Mount stderr: %s', err)
             tmpmntdir.rmdir()
-            errors = self.__handleMountError(mountP.returncode)
-            raise CannotMountKitMediaError, ''.join(errors)
+            #errors = self.__handleMountError(mountP.returncode)
+            #raise CannotMountKitMediaError, ''.join(errors)
+            raise CannotMountKitMediaError, \
+                "Mount error %s: %s" % (mountP.returncode, err)
 
         self.mountpoint = tmpmntdir
         self.i_mounted = True
@@ -444,7 +446,7 @@ class KitOps:
             self.dlkitiso.remove()
             self.dlkitiso = None
 
-    def __handleMountError(self,rv):
+    def __handleMountError(self, rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
         status = os.WEXITSTATUS(rv)
 
