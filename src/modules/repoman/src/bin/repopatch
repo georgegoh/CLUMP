@@ -117,7 +117,8 @@ class RepoPatchApp(KusuApp):
         oldUpdateKits = []
         if kitRelease > 1:
             # find the previous update kit
-            oldUpdateKits = self.dbs.Kits.select_by(rname = kitName, 
+            oldUpdateKits = self.dbs.Kits.select_by(self.dbs.Kits.c.version.like('%s_r%%' % repoObj.os_version),
+                                                    rname = kitName, 
                                                     arch = kitArch)
 
         updateKit = self.dbs.Kits.select_by(rname = kitName, 
