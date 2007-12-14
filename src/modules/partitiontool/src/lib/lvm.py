@@ -205,6 +205,9 @@ class LogicalVolumeGroup(object):
             extents = extents + lv.extents
         return extents
 
+    def extentsFree(self):
+        return self.extentsTotal() - self.extentsUsed()
+
     def parsesize(self, text_size):
         """This method parses text such as '100K', '20M' into integers.
            For example, text_size=20M would return 20 * 1024 * 1024 and 
@@ -256,7 +259,7 @@ class LogicalVolumeGroup(object):
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError, 'Logical volume already exists in Volume Group'
 
-        free_extents = self.extentsTotal() - self.extentsUsed()
+        free_extents = self.extentsFree()
         extents_to_use = 1024.0 * 1024.0 * size_MB / self.extent_size
         import math
         if fill:
@@ -386,8 +389,12 @@ class LogicalVolume(object):
             queueCommand(lvm.reduceLogicalVolume, \
                          (self.path, extents, self.group.extent_size, self.fs_type))
         else:
-            queueCommand(lvm.extendLogicalVolume, \
-                         (self.path, extents, self.group.extent_size, self.fs_type))
+            extra_extents = extents - self.extents
+            if extra_extents > self.group.extentsFree():
+                return
+            else:
+                queueCommand(lvm.extendLogicalVolume, \
+                             (self.path, extents, self.group.extent_size, self.fs_type))
         self.extents = extents
         logger.debug('LV %s resized to %d extents' % (self.name, self.extents))
         logger.debug('LV %s new size=%d' % (self.name, self.size/1024/1024))
@@ -481,5 +488,3 @@ class LogicalVolume(object):
         clock_end = clock()
         elapsed_time = clock_end - clock_start
         logger.info('Elapsed time to format %s: %.3f s' % (self.path, elapsed_time))
-
-           
