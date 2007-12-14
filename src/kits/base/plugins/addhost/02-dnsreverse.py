@@ -21,13 +21,13 @@ class AddHostPlugin(AddHostPluginBase):
 
     def added(self, nodename, info, prePopulateMode):
         self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
-                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
+                             AND ng_has_net.netid=networks.netid AND networks.usingdhcp=0 AND nodes.ngid=ng_has_net.ngid" % nodename)
 
         self.networks = self.dbconn.fetchall()
  
     def removed(self, nodename, info):
         self.dbconn.execute("SELECT networks.network FROM networks, ng_has_net, nodes WHERE nodes.name='%s' \
-                             AND ng_has_net.netid=networks.netid AND nodes.ngid=ng_has_net.ngid" % nodename)
+                             AND ng_has_net.netid=networks.netid AND networks.usingdhcp=0 AND nodes.ngid=ng_has_net.ngid" % nodename)
 
         self.networks = self.dbconn.fetchall()
 
