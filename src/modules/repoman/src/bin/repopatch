@@ -128,16 +128,18 @@ class RepoPatchApp(KusuApp):
                                             version = kitVersion,
                                             arch = kitArch)[0]
 
+        ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
         # remove old update kit
         if oldUpdateKit and oldUpdateKit in repo.kits:
-            for ng in self.dbs.NodeGroups.select_by(repoid = repo.repoid):
+            for ng in ngs:
                 if oldUpdateKit.components[0] in ng.components:
                     ng.components.remove(oldUpdateKit.components[0])
-
+                    ng.save()
+                    ng.flush()
             repo.kits.remove(oldUpdateKit)
 
         # add new update kit
-        for ng in self.dbs.NodeGroups.select_by(repoid = repo.repoid):
+        for ng in ngs:
             ng.components.append(updateKit.components[0])
             ng.save()
             ng.flush()
