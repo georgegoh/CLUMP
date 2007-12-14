@@ -415,10 +415,10 @@ class KitOps:
             kl.debug('Mount stdout: %s', out)
             kl.debug('Mount stderr: %s', err)
             tmpmntdir.rmdir()
-            #errors = self.__handleMountError(mountP.returncode)
-            #raise CannotMountKitMediaError, ''.join(errors)
+            errors = self.__handleMountError(mountP.returncode)
             raise CannotMountKitMediaError, \
-                "Mount error %s: %s" % (mountP.returncode, err)
+                'Mount error(s) %d: %s' % (mountP.returncode,
+                                           ', '.join(errors)) + '\n%s' % err
 
         self.mountpoint = tmpmntdir
         self.i_mounted = True
@@ -448,8 +448,6 @@ class KitOps:
 
     def __handleMountError(self, rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
-        status = os.WEXITSTATUS(rv)
-
         errdict = { 1: 'incorrect invocation or permissions', 
                     2: 'system error (out of memory, cannot fork, no more loop devices)', 
                     4: 'internal mount bug or missing nfs support in mount',
@@ -461,9 +459,9 @@ class KitOps:
 
         errors = []
         for key in errdict.keys():
-            if status & key:
+            if rv & key:
                 kl.error('Mount fail error: %s', errdict[key])
-                errors.append(errdict[key] + '\n')
+                errors.append(errdict[key])
 
         return errors
 
