@@ -114,29 +114,29 @@ class RepoPatchApp(KusuApp):
             self.unlock()
             sys.exit(1)
 
-        oldKitComp = None
-        oldUpdateKit = None
+        oldUpdateKits = []
         if kitRelease > 1:
             # find the previous update kit
-            oldUpdateKit = self.dbs.Kits.select_by(rname = kitName, 
-                                                   version = '%s_r%s' % (repoObj.os_version, kitRelease-1),
-                                                   arch = kitArch)[0]
+            oldUpdateKits = self.dbs.Kits.select_by(rname = kitName, 
+                                                    arch = kitArch)
 
-            oldKitComp = oldUpdateKit.components[0]
-        
         updateKit = self.dbs.Kits.select_by(rname = kitName, 
                                             version = kitVersion,
                                             arch = kitArch)[0]
 
         ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+        
         # remove old update kit
-        if oldUpdateKit and oldUpdateKit in repo.kits:
-            for ng in ngs:
+        for ng in ngs:
+            for oldUpdateKit in oldUpdateKits:
                 if oldUpdateKit.components[0] in ng.components:
                     ng.components.remove(oldUpdateKit.components[0])
-                    ng.save()
-                    ng.flush()
-            repo.kits.remove(oldUpdateKit)
+                
+                if oldUpdateKit in repo.kits:
+                    repo.kits.remove(oldUpdateKit)
+                    
+            ng.save()
+            ng.flush()
 
         # add new update kit
         for ng in ngs:
