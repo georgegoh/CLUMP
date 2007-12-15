@@ -252,8 +252,7 @@ class RHN:
                 data = f.read(65536)
                 if data == '':
                     break
-
-            outfile.write(data)
+                outfile.write(data)
 
             outfile.close()
 
