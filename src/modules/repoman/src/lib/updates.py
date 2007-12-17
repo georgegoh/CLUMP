@@ -50,8 +50,8 @@ class BaseUpdate:
 
         kitName = '%s-updates' % self.os_name 
         kitRelease = self.getNextRelease(kitName)
-        kitVersion = '%s_r%s' % (self.os_version, kitRelease)
-        kitArch = self.os_arch
+        kitVersion = '%s_%s_r%s' % (self.os_version, self.os_arch, kitRelease)
+        kitArch = 'noarch'
 
         # Buildkit's kit src
         tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp/kusu')))
@@ -191,6 +191,8 @@ class BaseUpdate:
         else:
             ns['kitarch'] = self.os_arch
 
+            
+        ns['kitarch'] = 'noarch'
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
                         (self.os_name, self.os_version, self.os_arch, time.asctime())
         ns['compclass'] = compclass[self.os_name][self.os_version]
