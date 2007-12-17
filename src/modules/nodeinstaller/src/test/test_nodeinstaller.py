@@ -60,6 +60,8 @@ Node: node0000
     <partition device="1" mntpnt="" fstype="linux-swap" size="1000" options="" partition="2" preserve="0"/>
     <partition device="1" mntpnt="/" fstype="ext3" size="6000" options="fill" partition="3" preserve="0"/>
     <component>component-base-node</component>
+    <optscript>script_test.sh</optscript>
+    <optscript>script_test_404.sh</optscript>
     <optpackage>vim-enhanced</optpackage>
     <appglobals name="ClusterName" value="BadBoy"/>
     <appglobals name="DNSZone" value="myzone.company.com"/>
@@ -393,3 +395,40 @@ Node: node0000
         #adaptedSchema = adaptNIIPartition(self.niipartition3, dp)
         #assert self.expectedSchema3['disk_dict'] == adaptedSchema['disk_dict']
         #assert self.expectedSchema3['vg_dict'] == adaptedSchema['vg_dict']
+
+    def test_download_script(self):
+        """Test download of custom scripts"""
+
+        ni = NodeInstaller(self.niisource)
+        ni.parseNII()
+
+        # Passing in None as niihost because it's not used with
+        # script_dir_url present.
+        tests_url = 'http://www.osgdc.org/pub/build/tests/modules/nodeinstaller'
+        ni.download_scripts(None, prefix=self.tmpdir, script_dir_url=tests_url) 
+
+        rcdir = self.tmpdir / 'etc/rc.kusu.d'
+        assert (rcdir / 'script_test.sh').exists(), \
+            "Expected 'script_test.sh' to be downloaded successfully"
+        assert not (rcdir / 'script_test_404.sh').exists(), \
+            "'script_test_404.sh' shouldn't exist on server or be downloaded"
+
+        script_test = open(rcdir / 'script_test.sh')
+        script_contents = script_test.read()
+        script_test.close()
+
+        expected_script = '#!/bin/sh\n\necho "Nodeinstaller script success"\n'
+
+        assert script_contents == expected_script, \
+            'Downloaded script not as expected:\nDownloaded:\n' + \
+            '%s\n\nExpected:\n%s\n\n' % (script_contents, expected_script)
+
+        # Make sure execute permissions are set to 755 (everyone execute)
+        import stat
+        permissions = (rcdir / 'script_test.sh').stat()[stat.ST_MODE]
+        assert permissions & stat.S_IXUSR, \
+            "No execute permission for owner on script 'script_test.sh'"
+        assert permissions & stat.S_IXGRP, \
+            "No execute permission for group on script 'script_test.sh'"
+        assert permissions & stat.S_IXOTH, \
+            "No execute permission for world on script 'script_test.sh'"

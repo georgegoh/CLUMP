@@ -444,6 +444,27 @@ class NodeInstaller(object):
         kusu_log.copy(d)
         ks_cfg.copy(d / 'kusu-ks.cfg')
 
+    def download_scripts(self, niihost, prefix='/', script_dir_url=None):
+        prefix = path(prefix)
+        if script_dir_url is None:
+            script_dir_url = 'http://%s/repos/custom_scripts' % niihost
+
+        for script in self.scripts:
+            try:
+                dl_script = urllib2.urlopen(script_dir_url + '/%s' % script)
+                logger.info("Downloaded script '%s'", script)
+            except urllib2.HTTPError:   # Pass on 404 errors
+                logger.warning("Script '%s' not found!", script)
+                continue
+
+            rcdir = prefix / 'etc/rc.kusu.d'
+            if not rcdir.exists(): rcdir.makedirs()
+
+            script_file = open(rcdir / script, 'w')
+            script_file.write(dl_script.read())
+            script_file.close()
+            (rcdir / script).chmod(0755)
+
     def mountKusuMntPts(self, prefix):
         prefix = path(prefix)
 

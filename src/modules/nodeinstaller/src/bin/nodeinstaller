@@ -263,6 +263,12 @@ class ProgressScreen(BaseScreen):
         self.nodeinst.getDbPasswd(kusu_prefix)
         dlg.close()
 
+        kl.debug('Downloading custom scripts')
+        dlg = self.selector.popupProgress('Downloading custom scripts',
+                                          'Downloading custom scripts')
+        self.nodeinst.download_scripts(self.niihost, prefix=kusu_prefix)
+        dlg.close()
+
         kl.debug('Copying out kusu.log and ks.cfg to /root')
         dlg = self.selector.popupProgress('Backup log and config',
                                           'Copying out kusu.log and ' + \
