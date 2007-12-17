@@ -112,6 +112,11 @@ fi
 
 %post
 # POST section
+tmpldir=$RPM_BUILD_ROOT/etc/cfm/templates/lsf
+
+( cd $tmpldir; ln -s default.lsf.conf default.lsf.conf.master )
+( cd $tmpldir; ln -s default.lsf.conf default.lsf.conf.slave )
+
 PATH=$PATH:/opt/kusu/sbin
 export PATH
 if [ -d /opt/kusu/lib ]; then

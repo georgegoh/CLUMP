@@ -31,6 +31,8 @@ APPKEY   = "LSF7_0_1_ClusterName"
 
 COMP_MASTER = "component-LSF-Master-v7_0_1"
 
+LSF_TMPLDIR = "/etc/cfm/templates/lsf"
+
 class ClusterInfo:
     pass
 
@@ -105,28 +107,19 @@ class thisReport(Report):
 
         return row[0]
 
-    def getLsfConfDir(self, clusterName):
-        lsfMasterNodegroup = self.getLsfMasterNodegroup(clusterName)
-        if not lsfMasterNodegroup:
-            return None
-
-        return "/etc/cfm/%s/opt/lsf/conf" % ( lsfMasterNodegroup )
-
     def generateLsfConfig(self, ci, mode):
         # Determine location of the configuration file based on the
         # nodegroup.
 
-        lsfConfDir = self.getLsfConfDir(ci.clusterName)
-        if not lsfConfDir:
-            # Error: unable to determine LSF configuration directory
-            return False
-
-        lsfConfFileName = lsfConfDir + "/lsf.conf"
+        lsfConfFileName = LSF_TMPLDIR + "/default.lsf.conf.%s" % ( mode )
 
         # Ensure LSF configuration file exists
         if not os.path.exists(lsfConfFileName):
-            # lsf.conf does not exist
-            return False
+            # default.lsf.conf.<mode> does not exist, attempt to fallback
+            # to default.lsf.conf
+            lsfConfFileName = LSF_TMPLDIR + "/default.lsf.conf"
+            if not os.path.exists(lsfConfFileName):
+                return False
 
         installerName = self.db.getAppglobals('PrimaryInstaller')
 
@@ -145,7 +138,7 @@ class thisReport(Report):
                 break
 
             if re.compile("^LSF_MASTER_LIST=").search(instr):
-                print "LSF_MASTER_LIST=\"%s\"" % mcList
+                print "LSF_MASTER_LIST=\"%s\"" % ( mcList )
                 continue
 
             if mode == "master":
@@ -154,12 +147,22 @@ class thisReport(Report):
 LSB_MAILSERVER=SMTP:%s.%s""" % ( installerName, dnsZone, installerName, dnsZone )
                     continue
 
+            if re.compile("^LSF_EGO_ENVDIR=").search(instr):
+                print "LSF_EGO_ENVDIR=/opt/lsf/conf/ego/%s/kernel" % \
+                    ( ci.clusterName )
+                continue
+
+            if re.compile("^EGO_WORKDIR=").search(instr):
+                print "EGO_WORKDIR=/opt/lsf/work/%s/ego" % \
+                    ( ci.clusterName )
+                continue
+
             print instr,
 
         fin.close()
 
         if mode == "slave":
-            print """LSF_GET_CONF=lim"""
+            print """LSF_GET_CONF=LIM"""
 
         return True
 

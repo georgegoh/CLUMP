@@ -19,6 +19,13 @@ LSF_WORKDIR="$LSF_TOPDIR/work/$CLUSTERNAME"
 sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" \
     $LSF_TOPDIR/7.0/lsf_quick_admin.html
 
+# Update cluster name in scripts
+sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" \
+    $LSF_CONFDIR/profile.lsf
+
+sed -i -e "s/XXX_clustername_XXX/$CLUSTERNAME/g" \
+    $LSF_CONFDIR/cshrc.lsf
+
 # Initialize work directory for this cluster
 /usr/bin/install -o lsfadmin -d $LSF_WORKDIR
 
