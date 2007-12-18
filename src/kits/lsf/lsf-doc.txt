@@ -1,0 +1,125 @@
+
+--------------------------------------------------------------------------
+
+Deploying LSF 7.0.2 on OCS 5
+
+   Written by Mike Frisch <mfrisch@platform.com>
+
+   December 18th, 2007
+
+--------------------------------------------------------------------------
+
+
+Installing the OCS LSF Kit
+==========================
+
+This installation procedure assumes a functioning OCS 5 installation.
+
+1. Download the LSF kit ISO from my.platform.com or obtain from another source
+
+2. Install the kit using standard OCS kit installation procedure:
+
+        kitops --add -m kit-lsf-7.0.2-0.x86_64.iso
+
+        repoman -a --kit lsf -r "rhel5_x86_64"
+
+        repoman -u -r "rhel5_x86_64"
+
+        cfmsync -f -p
+
+Note: the default repo name for OCS 5 is "rhel5_x86_64" 
+
+This procedure will make LSF available to your OCS cluster.
+
+During the LSF kit instllation process, the nodegroup "lsf-master-candidate" is
+created.  Any nodes added to this nodegroup will become LSF master candidate
+nodes.  These nodes will be configured as "management hosts" to LSF.  See LSF
+documentation for more information about management hosts.
+
+Note: it is necessary to have at least one LSF master candidate within an LSF
+cluster.
+
+Any 'regular' OCS cluster nodes (typically added to the "rhel-compute"
+nodegroup) automatically become LSF cluster nodes.
+
+3. Install a license.dat file
+
+LSF requires a valid license file in order to function.
+
+It should be copied to the following locations:
+
+   /etc/cfm/lsf-master-candidate/opt/lsf/conf
+   /etc/cfm/rhel-compute/opt/lsf/conf
+
+This will make it available to all LSF/OCS cluster nodes.
+
+If the license file is installed later, it is necessary to restart LSF for the
+new license file to register.  Alternatively, simply reboot the node.
+
+
+Testing Your LSF Installation
+=============================
+
+The 'lsid' command should display basic cluster information (master/master candidates and the cluster name).
+
+The LSF command 'lshosts' can be used to display all hosts in the LSF cluster.  The host names displayed should match those in use by the OCS cluster.
+
+Note: it can take a while for all nodes to report to the master depending on the cluster size and network activity within the cluster
+
+
+LSF Installation location
+=========================
+
+The installation directory of LSF is "/opt/lsf"
+
+
+LSF Environment Variables
+=========================
+
+The LSF environment is automatically initialized through the following symbolic
+links:
+
+   /etc/profile.d/lsf.sh
+   /etc/profile.d/lsf.csh
+
+
+Starting LSF
+============
+
+LSF on OCS is preconfigured to start automatically when the node boots.
+
+This can be controlled by using 'chkconfig'.  The service name is "lsf_daemons"
+
+
+Default Cluster Name
+====================
+
+The default cluster name for an LSF cluster installed on OCS is the host name
+of the installer node.  This can be changed by the end-user as necessary.
+
+
+LSF Configuration Files
+=======================
+
+The subdirectory "/etc/cfm/templates/lsf" on the OCS installer node contains
+the "template" configuration files for LSF. These are files which may be
+customized with site-specific settings.
+
+"/etc/cfm/templates/lsf/default.lsf.conf.master" contains the configuration for
+master candidate nodes (all nodes in the lsf-master-candidate nodegroup).
+
+"/etc/cfm/templates/lsf/default.lsf.conf.slave" contains the configuration for
+LSF compute nodes (all nodes in the rhel-compute/rhel-diskless/rhel-imaged
+nodegroups)
+
+These are the "master" files and can be customized.  Any changes specific to
+the cluster (ie. LSF_MASTER_xxx are overwritten as part of the OCS
+integration).  Use OCS to reconfigure settings such as the admin email address.
+
+Use the command "cfmsync -f -p" to propagate the updated configuration files to
+the LSF cluster nodes.
+
+Migrating from Platform Lava to Platform LSF
+============================================
+
+TBD
