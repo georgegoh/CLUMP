@@ -19,8 +19,10 @@
 %define __find_requires %{nil}
 %define __find_provides %{nil}
 
-%define LSF_VERSION 7_0_1
+%define lsfversion 7.0.2
+%define LSF_VERSION 7_0_2
 %define EGO_VERSION 1_2
+
 %define LSF_MASTER_COMP component-LSF-Master-v%{LSF_VERSION}
 %define LSF_COMPUTE_COMP component-LSF-Compute-v%{LSF_VERSION}
 %define KNAME_CLUSTERNAME LSF%{LSF_VERSION}_ClusterName
@@ -28,7 +30,7 @@
 
 Summary: LSF Kit
 Name: kit-lsf
-Version: 7.0.1
+Version: %{lsfversion}
 Release: 0
 License: Commercial
 Group: System Environment/Base

@@ -20,15 +20,14 @@
 #
 
 NAME = lsf
-VERSION = 7.0.1
+VERSION = 7.0.2
 RELEASE = 0
 TOPDIR = $(PWD)
 ARCH = $(shell arch)
 RPMS = `find $(TOPDIR)/RPMS/ -type f |grep -v '.svn'`
 
-DOCLOC=/pcc/internet/ftp.platform.com/symlsf/distrib/7.0.1/
-DOCFILE=lsf7.0.1_documentation.tar.Z
-
+DOCPATH=/pcc/id_trusted/publish/lsf/7.0.2
+DOCFILE=lsf7Update2_documentation.tar.Z
 
 default: all
 all:	packages components kit
@@ -49,8 +48,8 @@ kit:
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	rm -rf docs/files/*
 	mkdir -p docs/files
-	@if [ -f $(DOCLOC)$(DOCFILE) ] ; then \
-		cp $(DOCLOC)$(DOCFILE) docs/files ; \
+	@if [ -f $(DOCPATH)/$(DOCFILE) ] ; then \
+		cp $(DOCPATH)/$(DOCFILE) docs/files ; \
 		cd docs/files ; tar zxf $(DOCFILE) ; \
 		cd $(VERSION) ; mv * .. ; \
 		cd .. ; rm -rf $(VERSION) ; \

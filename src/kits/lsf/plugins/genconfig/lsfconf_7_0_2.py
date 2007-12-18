@@ -26,10 +26,13 @@ import string
 import sys
 import re
 
-global APPKEY
-APPKEY   = "LSF7_0_1_ClusterName"
+LSF_VERSION = '7.0.2'
 
-COMP_MASTER = "component-LSF-Master-v7_0_1"
+LSF_VERSION_WITH_UNDERSCORES = LSF_VERSION.replace('.', '_')
+
+APPKEY   = "LSF%s_ClusterName" % ( LSF_VERSION_WITH_UNDERSCORES )
+
+COMP_MASTER = "component-LSF-Master-v%s" % ( LSF_VERSION_WITH_UNDERSCORES )
 
 LSF_TMPLDIR = "/etc/cfm/templates/lsf"
 

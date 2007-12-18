@@ -25,10 +25,14 @@ from kusu.genconfig import Report
 #
 #
 
+LSF_VERSION = '7.0.2'
+
+LSF_VERSION_WITH_UNDERSCORES = LSF_VERSION.replace('.', '_')
+
 # Change these lines for newer versions of LSF
-APPKEY   = "LSF7_0_1_ClusterName"
-COMP_MASTER = "component-LSF-Master-v7_0_1"
-COMP_COMPUTE = "component-LSF-Compute-v7_0_1"
+APPKEY   = "LSF%s_ClusterName" % ( LSF_VERSION_WITH_UNDERSCORES )
+COMP_MASTER = "component-LSF-Master-v%s" % ( LSF_VERSION_WITH_UNDERSCORES )
+COMP_COMPUTE = "component-LSF-Compute-v%s" % ( LSF_VERSION_WITH_UNDERSCORES )
 
 import os
 import sys

@@ -21,6 +21,7 @@
 %define __find_provides %{nil}
 
 %define lsf_major_version  7.0
+%define lsfversion 7.0.2
 %define lsfadmin    lsfadmin
 
 %ifarch i386
@@ -31,7 +32,7 @@
 
 Summary: Platform(R) LSF(R) binaries
 Name: lsf
-Version: 7.0.1
+Version: %{lsfversion}
 Release: 0
 License: Commercial
 Group: System Environment/Base

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 GENCONFIG=""
-LSFVERSION="7_0_1"
+LSFVERSION="7_0_2"
 EGOVERSION="1_2"
 INST="/usr/bin/install"
 

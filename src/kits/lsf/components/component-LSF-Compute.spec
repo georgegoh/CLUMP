@@ -15,14 +15,17 @@
 #
 #
 
+%define lsf_version 7.0.2
+%define lsf_version_us 7_0_2
+
 Summary: LSF Compute Component
-Name: component-LSF-Compute-v7_0_1
-Version: 7.0.1
+Name: component-LSF-Compute-v%{lsf_version_us}
+Version: %{lsf_version}
 Release: 0
 License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
-Requires: lsf = 7.0.1
+Requires: lsf = %{lsf_version}
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
 Requires: coreutils
@@ -45,7 +48,7 @@ rm -rf $RPM_BUILD_ROOT
 if [ -f /etc/profile.nii ]; then
 	. /etc/profile.nii
 
-	CNAME="$LSF7_0_1_ClusterName"
+	CNAME="$LSF%{lsf_version_us}_ClusterName"
 else
 	CNAME=$( sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller'" )
 fi

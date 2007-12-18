@@ -24,38 +24,29 @@ import subprocess
 from syslog import syslog
 from kusu.addhost import *
 
-global LSF_VERSION
-LSF_VERSION = '7.0.1'
+LSF_VERSION = '7.0.2'
 
-global LSF_VERSION_WITH_UNDERSCORES
 LSF_VERSION_WITH_UNDERSCORES = LSF_VERSION.replace('.', '_')
 
-global EGO_VERSION
 EGO_VERSION = '1.2'
 
-global EGO_VERSION_WITH_UNDERSCORES
 EGO_VERSION_WITH_UNDERSCORES = EGO_VERSION.replace('.', '_')
 
-global COMPONENT_NAME
 COMPONENT_NAME = "component-LSF-Master-v%s" % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global CLUSTER_NAME_KEY
 CLUSTER_NAME_KEY = 'LSF%s_ClusterName' % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global LSF_CLUSTER_PLUGIN
 LSF_CLUSTER_PLUGIN = 'lsfcluster_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global LSF_HOSTS_PLUGIN
 LSF_HOSTS_PLUGIN = 'lsfhosts_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global LSF_CONF_PLUGIN
 LSF_CONF_PLUGIN = 'lsfconf_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
 
-global EGO_CONF_PLUGIN
 EGO_CONF_PLUGIN = 'egoconf_%s' % ( EGO_VERSION_WITH_UNDERSCORES )
 
-global LSF_SHARED_PLUGIN
 LSF_SHARED_PLUGIN = 'lsfshared_%s' % ( LSF_VERSION_WITH_UNDERSCORES )
+
+LSF_CLUSTER_KNAME = 'LSF%s_ClusterName' % ( LSF_VERSION_WITH_UNDERSCORES )
 
 class AddHostPlugin(AddHostPluginBase):
     """LSF cluster file updater plugin"""
@@ -95,11 +86,11 @@ class AddHostPlugin(AddHostPluginBase):
 
         sql = ("SELECT nodegroups.ngname,nodegroups.ngid FROM "
             "nodegroups, components, ng_has_comp, appglobals WHERE "
-            "components.cname = \"component-LSF-Master-v7_0_1\" AND "
+            "components.cname = \"%s\" AND "
             "components.cid = ng_has_comp.cid AND "
             "ng_has_comp.ngid = appglobals.ngid AND "
             "nodegroups.ngid = appglobals.ngid AND "
-            "appglobals.kvalue = \"%s\"" % ( clusterName ))
+            "appglobals.kvalue = \"%s\"" % ( COMPONENT_NAME, clusterName ))
 
         try:
             self.dbconn.execute(sql)
@@ -238,9 +229,9 @@ class AddHostPlugin(AddHostPluginBase):
         sql = ("SELECT nodegroups.ngname, "
             "IF(nodegroups.ngid = %d, 'master', 'slave') FROM "
             "nodegroups, appglobals WHERE kvalue = \"%s\" AND "
-            "kname = \"LSF7_0_1_ClusterName\" AND "
+            "kname = \"%s\" AND "
             "nodegroups.ngid = appglobals.ngid" % \
-                ( self.masterNgId, self.clusterName ))
+                ( self.masterNgId, self.clusterName, LSF_CLUSTER_KNAME ))
 
         try:
             self.dbconn.execute(sql)

@@ -16,7 +16,7 @@
 # $Id$
 #
 
-SPECFILES = `find . -maxdepth 1 -type f -name "*.spec" | grep -vi ".svn"`
+SPECFILES = component-LSF-Compute.spec component-LSF-Master.spec
 TOPDIR = $(PWD)/..
 ARCH=$(shell arch)
 

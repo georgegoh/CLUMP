@@ -15,8 +15,8 @@
 #
 #
 
-%define lsf_version 7.0.1
-%define lsf_version_us 7_0_1
+%define lsf_version 7.0.2
+%define lsf_version_us 7_0_2
 
 Summary: LSF Master Component
 Name: component-LSF-Master-v%{lsf_version_us}
@@ -26,7 +26,6 @@ License: Commercial
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 Requires: lsf = %{lsf_version}
-# Requires: lsf-master-config = %{lsf_version}
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-root
 
@@ -49,7 +48,7 @@ rm -rf $RPM_BUILD_ROOT
 if [ -f /etc/profile.nii ]; then
 	. /etc/profile.nii
 
-	CNAME="$LSF7_0_1_ClusterName"
+	CNAME="$LSF%{lsf_version_us}_ClusterName"
 else
 	CNAME=$( sqlrunner -q "SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller'" )
 fi
