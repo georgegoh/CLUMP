@@ -73,6 +73,9 @@ find $docdir -exec chmod 444 {} \;
 /usr/bin/install -d $tmpldir/lsbatch/default/configdir
 /usr/bin/install -m 444 %{_topdir}/templates/lsbatch/default/configdir/* $tmpldir/lsbatch/default/configdir
 
+/usr/bin/install -d $RPM_BUILD_ROOT/root
+/usr/bin/install %{_topdir}/lsf-doc.html $RPM_BUILD_ROOT/root/lsf-doc.html
+
 cp -ar %{_topdir}/templates/ego $tmpldir/ego
 
 chown -R lsfadmin:root $tmpldir/ego
@@ -85,6 +88,8 @@ rm -rf $RPM_BUILD_ROOT
 
 # documentation
 /depot/www/kits/%{name}/%{version}/*
+
+/root/lsf-doc.html
 
 # plugins
 /opt/kusu/lib/plugins/addhost/*.py
