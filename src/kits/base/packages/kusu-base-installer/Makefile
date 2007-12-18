@@ -84,6 +84,7 @@ install::
 	install -m644 sbin/S02KusuUsrSkel.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S02KusuZope.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m644 sbin/S90KusuFirefox.rc.py $(ROOT)/etc/rc.kusu.d/
+	install -m644 sbin/S91KusuAutomountCFM.rc.py $(ROOT)/etc/rc.kusu.d/
 	install -m755 sbin/boothost.py $(ROOT)/opt/kusu/sbin/boothost
 	install -m755 sbin/buildimage.py $(ROOT)/opt/kusu/sbin/buildimage
 	install -m755 sbin/buildinitrd.py $(ROOT)/opt/kusu/sbin/buildinitrd

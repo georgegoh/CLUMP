@@ -21,48 +21,27 @@ class KusuRC(rcplugin.Plugin):
         """Setup /etc/exports"""
         etcexports = path('/etc/exports')
         sharedhomedir = path('/home')
-        etcnodeautomaster = path('/etc/node.auto.master')
-        etcnodeautohome = path('/etc/node.auto.home')
-
-        if not etcnodeautomaster.exists():
-            etcnodeautomaster.touch()
-
-        if not etcnodeautohome.exists():
-            etcnodeautohome.touch()
 
         myname = self.dbs.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
         nics = self.dbs.Nodes.selectfirst_by(name=myname).nics
 
-        privatenic = None
+        f = open(etcexports, 'a')
+        newline = "%s " % sharedhomedir
+        f.writelines(newline)
         for nic in nics:
             if nic.network.type == 'provision':
-                privatenic = nic
+                netname = nic.network.netname
+                newline = "%s/%s(rw,async) " % (nic.network.network, nic.network.subnet)
+                f.writelines(newline)
 
-        if not privatenic == None:
-            newline = "%s %s/%s(rw,async)\n" % (sharedhomedir, privatenic.network.network, privatenic.network.subnet)
+        f.writelines("\n")
+        f.close()
 
-            f = open(etcexports, 'a')
-            f.writelines(newline)
-            f.close()
-            
-            retcode, out, err = self.runCommand('/sbin/chkconfig nfs on')
-            retcode, out, err = self.runCommand('/etc/init.d/nfs restart')
+        retcode, out, err = self.runCommand('/sbin/chkconfig nfs on')
+        retcode, out, err = self.runCommand('/etc/init.d/nfs restart')
 
-            if retcode != 0:
-                return False
-
-            # set up automount maps for nodes
-            newline = "/home\t/etc/auto.home"
-
-            f = open(etcnodeautomaster, 'a')
-            f.writelines(newline)
-            f.close()
-
-            newline = "* %s:%s/&" % (privatenic.ip, sharedhomedir)
-
-            f = open(etcnodeautohome, 'a')
-            f.writelines(newline)
-            f.close()
+        if retcode != 0:
+            return False
 
         return True
 

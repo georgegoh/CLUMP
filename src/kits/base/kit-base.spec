@@ -76,6 +76,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/addhost/05-hostspdsh.py
 /opt/kusu/lib/plugins/addhost/06-hostsequiv.py
 /opt/kusu/lib/plugins/addhost/07-ssh.py
+/opt/kusu/lib/plugins/addhost/09-autofs.py
 /opt/kusu/lib/plugins/genconfig/__init__.py
 /opt/kusu/lib/plugins/genconfig/apache_conf.py
 /opt/kusu/lib/plugins/genconfig/debug.py
