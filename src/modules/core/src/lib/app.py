@@ -27,6 +27,7 @@ CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
 import gettext
 import os
 import sys
+import atexit
 from optparse import OptionParser
 from path import path
 
@@ -133,6 +134,18 @@ class KusuApp:
                 value.append(arg)
                 del rargs[0]
         setattr(parser.values, option.dest, value)
+
+    def force_single_instance(self):
+        if len(sys.argv) >= 1:
+            prog = path(sys.argv[0]).stripext().basename()
+
+            if self.islock():
+                sys.stderr.write('An instance of %s is already running ' % prog)
+                sys.stderr.write('(lock file: %s).\n' % self.getlockfile())
+                sys.exit(0)
+
+            atexit.register(self.unlock)
+            self.lock()
 
     def lock(self):
         if len(sys.argv) >= 1:

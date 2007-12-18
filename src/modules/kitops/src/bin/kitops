@@ -49,6 +49,9 @@ class KitOpsApp(KusuApp):
 
         KusuApp.__init__(self)
 
+        # We only want one instance of kitops running at any one time.
+        self.force_single_instance()
+
         self.koinst = koinst
 
         self.kitop = KITOP_NONE
