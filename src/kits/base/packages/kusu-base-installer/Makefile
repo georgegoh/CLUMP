@@ -116,7 +116,7 @@ install::
 	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES/
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
 	cd man ;for i in `ls *.8`; do \
-		gzip $$i ; \
+		gzip -f $$i ; \
 		cp $$i.gz $(ROOT)/opt/kusu/man/man8/ ; \
 	done
 	echo "# CFM changed file list.  Generated automatically" > $(ROOT)/opt/kusu/cfm/changedfiles.lst
