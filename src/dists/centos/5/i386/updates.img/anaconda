@@ -67,6 +67,6 @@ elif [ $EXIT_CODE -eq 2 ]; then
     echo "Exiting on request. Please standby for reboot...";
 else
     # in case of problem with the Kusu Installer, we halt
-    echo "Something has gone very wrong. Restarting!";
+    echo "Something has gone very wrong. Press any key to reboot.";
+    read -n 1
 fi
-
