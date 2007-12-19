@@ -581,6 +581,13 @@ class CFMClient:
         oldlist = self.__getFileEntries(oldfile)
         newlist = self.__getFileEntries(self.packagelst)
 
+        # Strip out duplicates
+        oldlist.sort()
+        tmplst = oldlist[:]
+        for i in xrange(1, len(tmplst)):
+            if tmplst[i-1] == tmplst[i]:
+                oldlist.remove(tmplst[i])
+
         # Scan over the newlist and oldlist for entries removing those in both
         tmp = newlist[:]
         for entry in tmp:
@@ -916,7 +923,4 @@ class CFMClient:
             
 if __name__ == '__main__':
     app = CFMClient(sys.argv)
-    if app.getProfileVal('NII_NGID') == "":
-        print "Unable to locate /profile.nii.  This must be the primary installer!"
-    
     app.run()

@@ -421,7 +421,13 @@ class PackBuilder:
             # The package list has changed.  Output the new list
             if not os.path.exists(os.path.dirname(pfile)):
                 os.system('mkdir -p \"%s\"' % os.path.dirname(pfile))
-                
+
+            # Strip out duplicates
+            tmplst = packages[:]
+            for i in xrange(1, len(tmplst)):
+                if tmplst[i-1] == tmplst[i]:
+                    packages.remove(tmplst[i])
+            
             filep = open(pfile, 'w')
             filep.write('# Generated automatically.  Do not Edit!\n')
             filep.write(string.join(packages, '\n'))
