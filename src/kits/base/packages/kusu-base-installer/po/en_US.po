@@ -188,6 +188,9 @@ msgstr "Set the node group of the hosts that are to be added"
 msgid "addhost_interface_usage"
 msgstr "Set the interface to provide DHCP on"
 
+msgid "addhost_nodeinterface_usage"
+msgstr "Select the interface from the nodes/nodegroups view different then -i which is from installers view"
+
 msgid "addhost_macfile_usage"
 msgstr "Use the following file as the source of the MAC address"
 
