@@ -26,7 +26,7 @@
 UPDATEFILE    = 1
 UPDATEPACKAGE = 2
 FORCEFILES    = 4
-
+UPDATEREPO    = 8
 
 # Set DEBUG to 1 to see debugging info in /tmp/cfm.log
 DEBUG = 0
@@ -838,6 +838,19 @@ class CFMClient:
             self.__runPlugins()
 
 
+    def updateRepo (self):
+        """updateRepo - Update all new install files in repo"""
+        self.log("Updating To New Repo Packages\n")
+        # Just running:  yum update
+        
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
+            self.__setupForYum()
+            cmd = "/usr/bin/yum -y -c /tmp/yum.conf update"
+            self.log("Running:  %s\n" % cmd)
+            for line in os.popen(cmd).readlines():
+                sys.stdout.write(line)
+
+
     def run (self):
         """run - Entry point for CFM client"""
         self.parseargs()
@@ -876,8 +889,9 @@ class CFMClient:
         global UPDATEFILE
         global UPDATEPACKAGE
         global FORCEFILES
+        global UPDATEREPO
         if not self.installers or not self.type:
-            print "Usage:  {cmd} -t [1|2|3] -i {Installer list}"
+            print "Usage:  {cmd} -t [TYPE] -i {Installer list}"
             sys.exit(-1)
 
         force = 0
@@ -890,6 +904,9 @@ class CFMClient:
 
         if self.type & UPDATEPACKAGE:
             self.updatePackages()
+
+        if self.type & UPDATEREPO:
+            self.updateRepo()
 
         print "Done"
         sys.exit(0)

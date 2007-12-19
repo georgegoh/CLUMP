@@ -22,7 +22,7 @@
 UPDATEFILE    = 1
 UPDATEPACKAGE = 2
 FORCEFILES    = 4
-
+UPDATEREPO    = 8             
 
 import os
 import sys
@@ -62,6 +62,8 @@ class UpdateApp(KusuApp):
                                dest="updatefile", default=False)
         self.parser.add_option("-p", "--packages", action="store_true",
                                dest="updatepackages", default=False)
+        self.parser.add_option("-u", "--repoupdate", action="store_true",
+                               dest="updaterepo", default=False)
         self.parser.add_option("-v", "--version", action="store_true",
                                dest="wantver", default=False)
 
@@ -84,7 +86,7 @@ class UpdateApp(KusuApp):
             self.toolVersion()
             sys.exit(0)
 
-        if not self.options.updatefile and not self.options.updatepackages:
+        if not self.options.updatefile and not self.options.updatepackages and not self.options.updaterepo:
             self.toolHelp()
 
         if self.options.nodegrp:
@@ -112,14 +114,18 @@ class UpdateApp(KusuApp):
         if self.options.updatepackages:
             global UPDATEPACKAGE
             type = type | UPDATEPACKAGE
+        if self.options.updaterepo:
+            global UPDATEREPO
+            type = type | UPDATEREPO
             
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
 
-        if self.options.updatepackages:
+        if self.options.updatepackages or self.options.updaterepo:
+            ntype = type & (UPDATEPACKAGE | UPDATEREPO)
             if os.path.exists(CFMCLIENT):
-                cmd = "%s -t %i -i self" % (CFMCLIENT, UPDATEPACKAGE)
+                cmd = "%s -t %i -i self" % (CFMCLIENT, ntype)
             else:
-                cmd = "cfmclient -t %i -i self" % UPDATEPACKAGE
+                cmd = "cfmclient -t %i -i self" % ntype
                 
             if self.options.nodegrp:
                 # Only update a given nodegroup 

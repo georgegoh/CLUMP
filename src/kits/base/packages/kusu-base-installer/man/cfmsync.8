@@ -5,7 +5,7 @@
 cfmsync \- Signals the nodes in the cluster to update their files and or packages/components.
 .SH "SYNTAX"
 .LP 
-cfmsync [\-h|\-v| \-f \-p \-n node_group]
+cfmsync [\-h|\-v| \-f \-p \-u \-n node_group]
 .LP 
 .SH "DESCRIPTION"
 .LP 
@@ -29,6 +29,9 @@ Signal that the configuration files should be updated.
 .TP 
 \fB\-p, \-\-packages\fR
 Signal that the packages/components should be updated.
+.TP 
+\fB\-u, \-\-repoupdate\fR
+Signal the node to update all packages it has installed with the newer ones from the repository.
 .TP 
 \fB\-n <\fINodegroup\fR>, \-\-nodegroup=<\fINodegroup\fR>\fR
 If this option is provided it will signal all nodes in this nodegroup that they should update files if the \fB\-f\fR option was used, and or should updat einstalled packages/components if the \fB\-p\fR option was provided.  If this option is not provided then all nodes in the cluster will be signaled to update.

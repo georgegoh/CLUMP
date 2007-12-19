@@ -453,7 +453,7 @@ msgstr "Do you want to delete the network '%s'?"
 
 # cfmsync messages
 msgid "cfmsync_Help"
-msgstr "cfmsync [-h|-v| -f -p -n node_group] \n\nThe cfmsync tool will signal the nodes in the cluster to update\nfiles and or packages.  When this tool is run the nodes in the\ncluster, or a specified node group, will contact the primary\ninstaller to determine which files and or packages need to be\nupdated.  The nodes will then download the newer files or\npackages and install them.\nThe arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -f             - Perform a configuration file update.\n  -p             - Perform a package update.\n  -n node-group  - The name of the node group to update.  If not\n                   provided update all node groups."
+msgstr "cfmsync [-h|-v| -f -p -u -n node_group] \n\nThe cfmsync tool will signal the nodes in the cluster to update\nfiles and or packages.  When this tool is run the nodes in the\ncluster, or a specified node group, will contact the primary\ninstaller to determine which files and or packages need to be\nupdated.  The nodes will then download the newer files or\npackages and install them.\nThe arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -f             - Perform a configuration file update.\n  -p             - Perform a package update.\n  -n node-group  - The name of the node group to update.  If not\n                   provided update all node groups.\n  -u             - Update all installed packages where\n                   a newer version is in the repo."
 
 msgid "cfmsync_invalid_node_group\n"
 msgstr "ERROR:  Invalid nodegroup!\n"
