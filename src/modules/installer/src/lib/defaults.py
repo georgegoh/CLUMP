@@ -11,6 +11,7 @@ from kusu.util.errors import *
 from kusu.util.structure import Struct
 from path import path
 from sets import Set
+from os.path import basename
 
 logger = kusulog.getKusuLog('installer.defaults')
 
@@ -396,7 +397,8 @@ def clearDisk(disk_profile, disk, schema):
             partition.leave_unchanged = True
             extended = None
     # then remove the extended partitions.
-    if extended:
+    if extended and disk.partition_dict.has_key(basename(extended.path)):
+        logger.debug('Removing extended partition')
         disk_profile.delete(extended, keep_in_place=True)
     # finally remove the primary partitions.
     for partition in reversed(sorted(primary)):
