@@ -401,7 +401,7 @@ For examples:
                 self.kitname = options.kit
                 kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
                 if len(kits) > 1: 
-                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture." % options.kit
                     self.unlock()
                     sys.exit(-1)
 
@@ -428,7 +428,7 @@ For examples:
                 self.kitname = options.kit
                 kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
                 if len(kits) > 1:
-                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture."
+                    print "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture." % options.kit
                     self.unlock()
                     sys.exit(-1)
            
