@@ -65,6 +65,6 @@ rpm:
 
 	@echo "Building Ntop..."
 	rpmbuild --rebuild cgilib-0.5-1.src.rpm
-	rpmbuild --rebuild rrdtool-1.2.23-1.src.rpm --define "_prefix /opt/ntop"
+	rpmbuild --rebuild rrdtool-1.2.23-1.rf.src.rpm 
 	rpmbuild --rebuild ntop-3.3-1.src.rpm  --define "dist el5" --define "_prefix /opt/ntop" --define "_initrddir /etc/init.d" --define "_sysconfdir /etc" --define "_localstatedir /var"
 clean:
