@@ -108,8 +108,10 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
         self.kiprofile[self.profile]['ntp_server'] = self.ntp.value()
 
         # now we set the system time to what we just selected
-        tzfile = path('/usr/share/zoneinfo') / self.kiprofile[self.profile]['zone']
-        tzfile.copy('/etc/localtime')
+        # FIXME: except if its fedora 8, which we still need to figure out why the zoneinfo files are missing
+        if self.kiprofile['OS'] != 'fedora' and self.kiprofile['OS_VERSION'] != '8':
+            tzfile = path('/usr/share/zoneinfo') / self.kiprofile[self.profile]['zone']
+            tzfile.copy('/etc/localtime')
 
         hwclock_args = '--hctosys'
         if self.kiprofile[self.profile]['utc']:

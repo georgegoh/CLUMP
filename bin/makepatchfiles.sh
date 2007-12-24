@@ -67,6 +67,28 @@ if [ $# != 0 ]; then
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/fedora/7/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/fedora/7/x86_64
+
+    echo "Building Fedora 8 patchfiles.."
+	mkdir -p $NIPATCHFILESDIR/fedora/8/i386
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=fedora \
+	version=8 arch=i386 \
+	patch=$NIPATCHFILESDIR/fedora/8/i386/updates.img
+	ec=`expr $ec + $?`
+
+	mkdir -p $NIPATCHFILESDIR/fedora/8/x86_64
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=fedora \
+	version=8 arch=x86_64 \
+	patch=$NIPATCHFILESDIR/fedora/8/x86_64/updates.img
+	ec=`expr $ec + $?`
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/fedora/8/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/fedora/8/i386
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/fedora/8/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/fedora/8/x86_64
+
 	
 	echo "Building Centos 5 patchfiles.."
 	mkdir -p $NIPATCHFILESDIR/centos/5/i386
