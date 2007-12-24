@@ -654,4 +654,125 @@ class TestCentOS5Detection:
         assert centosObj.getKernelPackages() == li
         assert centosObj.getKernelRpms() == li
 
+class TestFedora8Detection:
+    """Test suite for detecting Fedora 8 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupFedora()
+
+    def tearDown(self):
+        """Clean up after done"""
+
+        self.teardownFedora()
+
+    def setupFedora(self):
+        """Fedora-centric housekeeping"""
+
+
+        self.fedoraLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+        # create a directory and delete it immediately after. 
+        self.invalidFedoraLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+        self.invalidFedoraLocalPath.rmdir()
+
+        path(self.fedoraLocalPath / 'isolinux').mkdir()
+        path(self.fedoraLocalPath / 'isolinux/vmlinuz').touch()
+        path(self.fedoraLocalPath / 'isolinux/initrd.img').touch()
+        path(self.fedoraLocalPath / 'isolinux/isolinux.bin').touch()
+        path(self.fedoraLocalPath / 'images').mkdir()
+        path(self.fedoraLocalPath / 'images/stage2.img').touch()
+        path(self.fedoraLocalPath / 'Packages').mkdir()
+        path(self.fedoraLocalPath / 'repodata').mkdir()
+
+        f = open(path(self.fedoraLocalPath / '.treeinfo'), 'w')
+        data = """
+[general]
+family = Fedora
+timestamp = 1194015227.78
+variant = Fedora
+totaldiscs = 1
+version = 8
+discnum = 1
+packagedir = Packages
+arch = i386
+
+[images-i386]
+kernel = images/pxeboot/vmlinuz
+initrd = images/pxeboot/initrd.img
+boot.iso = images/boot.iso
+diskboot.img = images/diskboot.img
+
+[images-xen]
+kernel = images/xen/vmlinuz
+initrd = images/xen/initrd.img
+
+[stage2]
+instimage = images/minstg2.img
+mainimage = images/stage2.img
+"""
+        f.write(data)
+
+        f.close()
+
+        # set up some kernel packages
+        path(self.fedoraLocalPath / 'Packages/kernel-2.6.23.1-42.fc8.i586.rpm').touch()
+        path(self.fedoraLocalPath / 'Packages/kernel-devel-2.6.23.1-42.fc8.i586.rpm').touch()
+        path(self.fedoraLocalPath / 'Packages/kernel-doc-2.6.23.1-42.fc8.noarch.rpm').touch()
+
+
+    def teardownFedora(self):
+        """Fedora-centric housekeeping in reverse"""
+
+        path(self.fedoraLocalPath / 'isolinux').rmtree()
+        path(self.fedoraLocalPath / 'images').rmtree()
+        path(self.fedoraLocalPath / 'Packages').rmtree()
+        path(self.fedoraLocalPath / '.treeinfo').remove()
+        self.fedoraLocalPath.rmtree()
+
+    def test_IsFedora8DVD(self):
+        """Test if the DVD is a Fedora 8 DVD"""
+
+        dvdObj = DistroFactory(self.fedoraLocalPath)
+        assert dvdObj.ostype == "fedora"
+
+    def test_IsNotFedora8DVD(self):
+        """Test if the DVD is not a Fedora DVD"""
+
+        dvdObj = DistroFactory(self.invalidFedoraLocalPath)
+        assert dvdObj.ostype != "fedora"
+
+    def test_FedoraDVDPathExists(self):
+        """Test if the path does indeed contain Fedora 8 media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.verifyLocalSrcPath() is True
+
+    def test_FedoraCDPathNotExists(self):
+        """Test if the path does indeed contain Fedora 8 media"""
+
+        fedoraObj = DistroFactory(self.invalidFedoraLocalPath)
+        assert fedoraObj.verifyLocalSrcPath() is False
+
+    def test_FedoraDVDArch(self):
+        """Test if the arch is correct for the Fedora 8 media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getArch() == 'i386'
+
+    def test_FedoraDVDVersion(self):
+        """Test if the version is correct for the Fedora 8 media"""
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        assert fedoraObj.getVersion() == '8'
+
+    def test_RHELGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+
+        fedoraObj = DistroFactory(self.fedoraLocalPath)
+        li = [path(self.fedoraLocalPath / 'Packages/kernel-2.6.23.1-42.fc8.i586.rpm')]
+
+        assert fedoraObj.getKernelPackages() == li
+        assert fedoraObj.getKernelRpms() == li
 
