@@ -130,7 +130,12 @@ class scrNGEMain(USXBaseScreen):
             self.selector.popupMsg('Operation Disallowed', 'Installer nodegroup'+\
                                    ' is not allowed to be copied')
             return NAV_NOTHING
-            
+
+        if ngid == 5:
+            self.selector.popupMsg('Operation Disallowed', 'The Unmanaged nodegroup'+\
+                                   ' is not allowed to be copied')
+            return NAV_NOTHING
+        
         newNG = NodeGroup(ngid = ngid)
         newNG.syncFromDB(self.database)
         kl.debug("Copy Action performed. new NG record:\n%s" %str(newNG))
