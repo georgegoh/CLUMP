@@ -274,7 +274,12 @@ class CFMClient:
                 self.log("ERROR:  Unknown argument\n")
                 sys.exit(4)
             i += 1
-
+            
+        if self.type == 0 or self.installers == []:
+            # User is running this by hand
+            self.log("ERROR:  Missing arguments!\n")
+            print "ERROR:  Missing arguments.  See the manpage for help."
+            sys.exit(5)
 
     def getProfileVal(self, name):
         """getProfileVal - Returns the value of the NII property from
