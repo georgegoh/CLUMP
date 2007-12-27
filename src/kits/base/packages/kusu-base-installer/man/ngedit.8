@@ -30,7 +30,7 @@ The Nodegroup Editor (ngedit) is a textual user interface for manipulating the n
 .LP 
 When run without arguments the Textual User Interface (TUI) will run.  This interface will allow the user to copy, delete, and edit existing nodegroups.
 .LP 
-The tool does not permit setting of the network parameters.  Insteat it allows the user to select which network a node will belong to.  The networks are defined by the \fBnetedit\fR tool.
+The tool does not permit setting of the network parameters.  Instead it allows the user to select which network a node will belong to.  The networks are defined by the \fBnetedit\fR tool.
 .LP 
 When run with arguments the functionality will differ.  It will allow copying and deleting nodegroups, but will not allow editing.  The number of arguments needed to represent the nodegroup properties was too great.  In this mode the nodegroup properties and node states can be viewed.
 .LP 
@@ -39,7 +39,7 @@ The following options are available:
 .LP 
 .TP 
 \fB\-c <\fINodegroup\fR>, \-\-copy=<\fINodegroup\fR>\fR
-Copy the named nodegroup.  This option must be used in conjunction with the \fB\-n, \-\-new\fR to specify the name of the new nodegroup.  When copying a nodegroup the cfmsync process should be run to make the CFM distributed files for that nodegroup available.
+Copy the named nodegroup.  This option must be used in conjunction with the \fB\-n, \-\-new\fR to specify the name of the new nodegroup.  When copying a nodegroup the cfmsync process \fBmust\fR be run to make the CFM distributed files for that nodegroup available.
 .TP 
 \fB\-d <\fINodegroup\fR>, \-\-delete=<\fINodegroup\fR>\fR
 Delete the the named nodegroup. 
