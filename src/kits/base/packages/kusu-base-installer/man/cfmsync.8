@@ -50,15 +50,19 @@ Output version information and exit.
 .LP 
 Updating everything
 .LP 
-   cfmsync \-p \-f
+   cfmsync \-p \-f \-u
 .LP 
+Updating currently installed ones with the newer ones in the repository
+.LP 
+   cfmsync \-u
+.LP
 Updating the configuration files on nodegroup compute\-diskless\-test
 .LP 
    cfmsync \-f \-n compute\-diskless\-test
 .LP 
 Update the packages/components installed on nodegroup compute\-diskless\-test
 .LP 
-   cfmsync \-f \-n compute\-diskless\-test
+   cfmsync \-p \-n compute\-diskless\-test
 
 .SH "AUTHORS"
 .LP 
