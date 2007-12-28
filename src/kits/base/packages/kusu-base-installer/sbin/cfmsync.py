@@ -89,20 +89,25 @@ class UpdateApp(KusuApp):
         if not self.options.updatefile and not self.options.updatepackages and not self.options.updaterepo:
             self.toolHelp()
 
+        # Test Db connection
+        db = KusuDB()
+        try:
+            db.connect('kusudb', 'apache')
+        except:
+            sys.exit(-1)
+            
         if self.options.nodegrp:
             # Validate the node group name
-            db = KusuDB()
-            db.connect('kusudb', 'apache')
             query = ('select ngid from nodegroups where ngname="%s"' % self.options.nodegrp)
             try:
                 db.execute(query)
                 data = db.fetchone()
             except:
-                self.stderrout("DB_Query_Error: %s\n", query)
+                self.stderrMessage("DB_Query_Error: %s\n", query)
                 sys.exit(-1)
 
             if not data:
-                self.stdoutMessage('cfmsync_invalid_node_group\n')
+                self.stderrMessage('cfmsync_invalid_node_group\n')
                 sys.exit(-1)
 
             ngid = data[0]
