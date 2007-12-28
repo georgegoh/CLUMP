@@ -176,6 +176,15 @@ msgstr "This plugin generates a list of all nodegroups.\nUSE:  genconfig nodegro
 msgid "repoman_Help"
 msgstr "Repoman help goes here"
 
+msgid "repoman_Repo_exists.\n"
+msgstr "ERROR:  The repository already exists.\n"
+
+msgid "Kit %s has been added already.\n"
+msgstr "Kit %s has been added already.\n"
+
+msgid "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n"
+msgstr "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n"
+
 msgid "addhost_Help"
 msgstr "addhost [-hvu]\n\t       [-n {node group}]\n\t       [-r rack#]\n\t       [-i ifname -n {node group} [-r rack #]]\n\t       [-f file -j ifname -n {node group} [-r rack#]]\n\t       [-p hostname]\n\t       [-e {nodes_to_remove}]\n\t       [-s static_hostname -x ip_addr]"
 
