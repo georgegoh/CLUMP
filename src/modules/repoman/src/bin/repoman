@@ -140,7 +140,7 @@ For examples:
                         sys.exit(1)
                         
                 if kit in repo.kits:
-                    self.stderrMessage('Kit has been already added.\n')
+                    self.stderrMessage('Kit %s has been added already.\n', kname)
                     self.unlock()
                     sys.exit(1)
 
@@ -152,7 +152,7 @@ For examples:
                     repo.save()
                     repo.flush()
 
-                    self.stdoutMessage('Kit: %s %s %s added to repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    self.stdoutMessage('Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n', kname,kversion,karch,repo_name)
         else:
             self.stdoutMessage('No such kit. Please specify kit name, version and arch.\n')
             self.unlock()
