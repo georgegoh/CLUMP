@@ -115,6 +115,7 @@ install::
 	install -m644 sql/kusu_alterdb.sql $(ROOT)/opt/kusu/sql
 	install -m644 locale/en/LC_MESSAGES/kusuapps.mo $(ROOT)/opt/kusu/share/locale/en/LC_MESSAGES/
 	install -m644 sql/kusu_primedb_sample.sql $(ROOT)/opt/kusu/sql
+	install -m755 bin/loadedmodules $(ROOT)/opt/kusu/bin/loadedmodules
 	cd man ;for i in `ls *.8`; do \
 		gzip -f $$i ; \
 		cp $$i.gz $(ROOT)/opt/kusu/man/man8/ ; \
