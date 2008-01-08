@@ -93,7 +93,7 @@ For examples:
         repo = self.dbs.Repos.select_by(reponame=repo_name)
 
         if repo:
-            self.stderrMessage('Repo exists.\n')
+            self.stderrMessage('Repo: %s exists.\n', repo_name)
             self.unlock()
             sys.exit(1)
         
