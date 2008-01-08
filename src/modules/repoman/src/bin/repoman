@@ -186,7 +186,7 @@ For examples:
                             ngInUse.append(ng.ngname)
                             
                     if ngInUse:
-                        self.stdoutMessage('Kit: %s %s %s in use by nodegroup(s):\n%s\n', kname,kversion,karch, '\n'.join(ngInUse))
+                        self.stdoutMessage('Kit: %s-%s-%s in use by nodegroup(s):\n%s\n', kname,kversion,karch, '\n'.join(ngInUse))
                         self.unlock()
                         sys.exit(1)
 
@@ -203,7 +203,7 @@ For examples:
                     repo.save()
                     repo.flush()
                         
-                    self.stdoutMessage('Kit: %s %s %s removed from repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    self.stdoutMessage('Kit: %s-%s-%s removed from repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
         else:
             self.stderrMessage('No such kit. Please specify kit name, version and arch.\n')
             self.unlock()
