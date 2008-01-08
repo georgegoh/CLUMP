@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kitops.py 2412 2007-09-29 03:30:56Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -10,13 +10,23 @@ try:
 except:
     from popen5 import subprocess
 
-import sqlalchemy as sa
-import kusu.core.database as db
-
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def finished(self, nodelist, prePopulateMode):
+        # Generate the files required for configuration of Nagios nodes.
+        self.generate_nagios_config()
+        self.generate_nagios_nrpe_config()
+
+        # Now, sync the pickled file to all the nodes
+        cmds = ['cfmsync', '-f']
+        cfmsyncP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+        # We launch the cfmsync process and cross our fingers it completes;
+        # we won't wait until it's done.
+        #out, err = cfmsyncP.communicate()
+
+    def generate_nagios_config(self):
         # Select all nodes, along with their nodegroup and nodegroup type.
         self.dbconn.execute("SELECT nodegroups.ngname, nodegroups.type, " + \
                             "       nodes.name " + \
@@ -43,6 +53,7 @@ class AddHostPlugin(AddHostPluginBase):
             pickled = cPickle.dump(ngs, f)
             f.close()
 
+    def generate_nagios_nrpe_config(self):
         # Grab the IPs of any nagios monitoring nodes.
         self.dbconn.execute("SELECT nics.ip " +
                         "FROM nics, nodes, ng_has_comp, components " +
@@ -63,11 +74,3 @@ class AddHostPlugin(AddHostPluginBase):
             f = open('/etc/cfm/%s/etc/nagios_monitor_ips.cfg' % nagios_ng[0], 'w')
             f.write(nagios_ips)
             f.close()
-
-        # Now, sync the pickled file to all the nodes
-        cmds = ['cfmsync', '-f']
-        cfmsyncP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-        # We launch the cfmsync process and cross our fingers it completes;
-        # we won't wait until it's done.
-        #out, err = cfmsyncP.communicate()
