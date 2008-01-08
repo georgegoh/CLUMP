@@ -300,6 +300,15 @@ For examples:
 
                 else:
                     fail = True
+        
+        for option in self.parser.option_list:
+            if option.type == 'string':
+                val = getattr(options, option.dest, None)
+                if val and val.startswith('-'):
+                    self.parser.print_usage()
+                    sys.stderr.write('%s: error: %s/%s option requires an argument\n' % 
+                                     (path(sys.argv[0]).basename(), option._short_opts[0],option._long_opts[0]))
+                    sys.exit(1)
 
         if not options.list and not options.version: 
             if options.reponame:
@@ -322,9 +331,11 @@ For examples:
                     self.parser.print_help()
                     self.stderrMessage('No repo/kit specified.\n')
                     sys.exit(1)
-               
-                self.parser.print_help()
-                sys.exit(1)
+              
+                else: 
+                    self.parser.print_help()
+                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update\n')
+                    sys.exit(1)
 
         else:
             if options.reponame or options.new or options.snapshot or \
