@@ -230,7 +230,7 @@ For examples:
         try:
             r.refresh(repo.repoid)
         except Exception, e:
-            self.stderrMessage('Unable to refresh repo. Reason: %s\n', e)
+            self.stderrMessage('Unable to refresh repo: %s. Reason: %s\n', (repo_name,e))
             self.unlock()
             sys.exit(1)
 
@@ -241,7 +241,7 @@ For examples:
         ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
         if ng:
-            self.stderrMessage('Cannot delete repo. In used by nodegroups.\n')
+            self.stderrMessage('Cannot delete repo: %s. In used by nodegroups.\n', repo_name)
             self.unlock()
             sys.exit(1)
         else:
