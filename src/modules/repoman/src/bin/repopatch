@@ -74,7 +74,7 @@ class RepoPatchApp(KusuApp):
         else:
             repoObj.setConfig(kusu_root / 'etc' / 'updates.conf')
 
-        self.stdoutMessage('Getting updates for %s. This may take awhile...\n', repoObj.ostype)
+        self.stdoutMessage('Getting updates for %s. This may take a while...\n', repoObj.ostype)
         try:
             pkgs, newKernels = repoObj.getUpdates()
         except Exception, e:
@@ -149,7 +149,7 @@ class RepoPatchApp(KusuApp):
         repo.save_or_update()
         repo.flush()
 
-        self.stdoutMessage('Refreshing repo. This may take awhile...\n')
+        self.stdoutMessage('Refreshing repo. This may take a while...\n')
         try:
             repoObj.refresh(repoObj.repoid)
         except Exception, e:
