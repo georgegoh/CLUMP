@@ -484,19 +484,22 @@ class ConfigureIntfScreen:
             errList.append(_('IP address field is empty.'))
         elif not rv:
             errList.append(_('IP address: ') + msg)
+        valid_ip_netmask = rv
 
         rv, msg = self.netmask.verify()
         if rv is None:
             errList.append(_('Netmask field is empty.'))
         elif not rv:
             errList.append(_('Netmask: ') + msg)
+        valid_ip_netmask = valid_ip_netmask and rv
 
         # check for valid ip/netmask combination
-        try:
-            IP(self.ip_address.value() + '/' + self.netmask.value(),
-               make_net=True)
-        except ValueError:
-            errList.append(_('The address %s/%s is invalid.' %
+        if valid_ip_netmask:
+            try:
+                IP(self.ip_address.value() + '/' + self.netmask.value(),
+                   make_net=True)
+            except ValueError:
+                errList.append(_('The address %s/%s is invalid.' %
                              (self.ip_address.value(), self.netmask.value())))
 
         if errList:

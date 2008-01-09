@@ -187,14 +187,14 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
         result, msg = self.admin_email.verify()
         if result is None:
-            errList.append(_('Admin Email field is empty'))
+            errList.append(_('Admin Email field is empty.'))
         elif not result:
             errList.append(_('Default Admin Email: ') + msg)
 
         if not self.use_dhcp.value():
             result, msg = self.gateway.verify()
             if result is None:
-                errList.append(_('Default Gateway field is empty'))
+                errList.append(_('Default Gateway field is empty.'))
             elif not result:
                 errList.append(_('Default Gateway: ') + msg)
 
@@ -206,7 +206,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
 
             result, msg = self.dns1.verify()
             if result is None:
-                errList.append(_('DNS Server 1 field is empty'))
+                errList.append(_('DNS Server 1 field is empty.'))
             elif not result:
                 errList.append(_('DNS Server 1: ') + msg)
 

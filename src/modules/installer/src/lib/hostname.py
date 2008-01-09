@@ -140,7 +140,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
 
             rv, msg = self.hostname.verify()
             if rv is None:
-                errList.append(_('Host Name field is empty'))
+                errList.append(_('Host Name field is empty.'))
             elif not rv:
                 errList.append(_('Host Name: ') + msg)
 

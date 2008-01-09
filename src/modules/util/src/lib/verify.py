@@ -42,7 +42,8 @@ def verifyHostname(hostname):
     li = p.findall(hostname)
 
     if li:
-        return False, 'Host name can only contain the characters -a-zA-Z0-9'
+        return False, \
+            'Host name can only contain the characters -, a-z, A-Z, and 0-9.'
     return True, None
 
 def verifyIP(ip):
@@ -51,7 +52,7 @@ def verifyIP(ip):
     li = ip.split('.')
 
     errmsg = 'IP address must be in the form XXX.XXX.XXX.XXX, where ' + \
-               '0 <= XXX <= 255'
+               '0 <= XXX <= 255.'
 
     if len(li) != 4:
         return False, errmsg

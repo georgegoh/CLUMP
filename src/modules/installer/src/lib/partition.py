@@ -215,7 +215,7 @@ class PartitionScreen(InstallerScreen):
                     has_swap = True
                     break
         if not has_swap:
-            errList.append("swap partition is required.")
+            errList.append("A 'linux-swap' partition is required.")
 
         if not errList:
             # verify that /, /boot and /depot are to be formatted

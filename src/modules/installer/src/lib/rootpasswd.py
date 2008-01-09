@@ -62,7 +62,7 @@ class RootPasswordScreen(InstallerScreen):
         errList = []
         result, msg = self.password0.verify()
         if result is None:
-            errList.append(_('Password field is empty'))
+            errList.append(_('Password field is empty.'))
 
         if self.password0.value() != self.password1.value():
             errList.append(_('Both entries must be matching strings.'))
