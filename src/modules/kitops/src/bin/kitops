@@ -122,7 +122,7 @@ class KitOpsApp(KusuApp):
             sys.exit(1)
 
         if options.version:
-            self.stdoutMessage('Kitops ${VERSION_STR}\n')
+            self.stdoutMessage('Kitops Version ${VERSION_STR}\n')
             sys.exit(0)
 
         if options.action == 'add':
