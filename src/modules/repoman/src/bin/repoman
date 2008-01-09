@@ -309,7 +309,7 @@ For examples:
                 val = getattr(options, option.dest, None)
                 if val and val.startswith('-'):
                     self.parser.print_usage()
-                    sys.stderrMessage('%s: error: %s/%s option requires an argument\n', 
+                    self.stderrMessage('%s: error: %s/%s option requires an argument\n', 
                                       path(sys.argv[0]).basename(), option._short_opts[0],option._long_opts[0])
                     sys.exit(1)
 
