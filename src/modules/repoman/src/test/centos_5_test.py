@@ -9,8 +9,11 @@ from kusu.core import database as db
 from kusu.repoman import repo
 from kusu.util import tools
 from path import path
+from nose import SkipTest
 import tempfile
 import os
+
+raise SkipTest
 
 prefix = None
 kusudb = None

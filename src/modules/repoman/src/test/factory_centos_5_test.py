@@ -9,12 +9,15 @@ from kusu.core import database as db
 from kusu.repoman import repo
 from kusu.repoman.repofactory import RepoFactory
 from path import path
+from nose import SkipTest
 import tempfile
 import os
 
 prefix = None
 kusudb = None
 cachedir = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
+
+raise SkipTest
 
 def download(filename, dest, cache=cachedir):
     global cachedir
