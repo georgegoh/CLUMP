@@ -735,25 +735,9 @@ class TestBadKits(object):
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
-        self.kit_iso = 'kit-bad_post_script-0.1-0.x86_64.iso'
-        downloadFiles(self.kit_iso)
-
-        self.kit = test_kits_path / self.kit_iso
-        assert self.kit.exists(), 'Bad post script kit ISO does not exist!'
-
-        self.kit_rpm = 'kit-bad_post_script-0.1-0.x86_64.rpm'
-        self.kit_name = 'bad_post_script'
-        self.kit_ver = '0.1'
-        self.kit_arch = 'x86_64'
-        self.kit_dir_name = self.kits_dir / self.kit_name
-
         self.kusudb = kusudb
         self.kusudb.createTables()
         self.kusudb.bootstrap()
-
-        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                  (self.kit, self.temp_mount), shell=True)
-        mountP.wait()
 
     def teardown(self):
         self.kusudb.flush()
@@ -768,11 +752,28 @@ class TestBadKits(object):
         umountP.wait()
 
     def test_bad_post_script(self):
+        # Some setup specific to this test.
+        self.kit_iso = 'kit-bad_post_script-0.1-0.x86_64.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
+        assert self.kit.exists(), 'Bad post script kit ISO does not exist!'
+
+        self.kit_rpm = 'kit-bad_post_script-0.1-0.x86_64.rpm'
+        self.kit_name = 'bad_post_script'
+        self.kit_ver = '0.1'
+        self.kit_arch = 'x86_64'
+        self.kit_dir_name = self.kits_dir / self.kit_name
+
+        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                  (self.kit, self.temp_mount), shell=True)
+        mountP.wait()
+
         # we need to be root
         assertRoot()
 
         cmd = 'kitops -a -m %s %s ' % (self.kit, dbinfo_str) + \
-              '-p %s &> /dev/null' % self.temp_root
+              '-p %s' % self.temp_root
         addP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         addPo, addPe = addP.communicate()
@@ -792,6 +793,58 @@ class TestBadKits(object):
 
         # assert RPM not installed
         assert not rpm_installed, 'Kitops should not install bad RPM'
+
+        # assert no directories
+        assert not self.kit_dir_name.exists(), \
+            'Kitops should not create directory for bad kit'
+
+        # assert no entries in the kits table
+        assert not self.kusudb.Kits.select(), \
+            'Kitops should not create any entries in kits table'
+
+        # assert no entries in the components table
+        assert not self.kusudb.Components.select(), \
+            'Kitops should not create any entries in components table'
+
+        # assert no entries in packages table
+        assert not self.kusudb.Packages.select_by(packagename=self.kit_name), \
+            'Kitops should not create any entries in packages table'
+
+    def test_invalid_RPM_header(self):
+        # Some setup specific to this test.
+        self.kit_iso = 'kit-alvin_corrupt-0.1-0.noarch.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
+        assert self.kit.exists(), 'Bad post script kit ISO does not exist!'
+
+        self.kit_rpm = 'kit-alvin-0.1-0.noarch.rpm'
+        self.kit_name = 'alvin'
+        self.kit_ver = '0.1'
+        self.kit_arch = 'noarch'
+        self.kit_dir_name = self.kits_dir / self.kit_name
+
+        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+                                  (self.kit, self.temp_mount), shell=True)
+        mountP.wait()
+
+        # we need to be root
+        assertRoot()
+
+        cmd = 'kitops -a -m %s %s ' % (self.kit, dbinfo_str) + \
+              '-p %s' % self.temp_root
+        addP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        addPo, addPe = addP.communicate()
+        rv = addP.returncode
+
+        # assert we got the correct error message
+        assert addPe == 'Invalid RPM header: kit-alvin-0.1-0.noarch.rpm\n', \
+            'Got unexpected error message: "%s"' % addPe
+
+        # assert RPM not installed
+        assert not isRPMInstalled('kit-' + self.kit_name), \
+            'Kitops should not install bad RPM'
 
         # assert no directories
         assert not self.kit_dir_name.exists(), \

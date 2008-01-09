@@ -115,7 +115,7 @@ class KitOps:
             except CannotMountKitMediaError:
                 #if neither of the above - error
                 raise UnrecognizedKitMediaError, \
-                                    'Improper kit media location specification'
+                                    'Kit media not found or unavailable'
 
         #at this point we have the kit mounted to self.mountpoint
         try:
@@ -519,7 +519,7 @@ class KitOps:
 
         except (CopyError,FileAlreadyExists,IOError), e:
             # cleanup tmp stuff
-            if tmprd1.exists(): tmprd1.rmtree()
+            if tmprd1.exists(): tmprd1.remove()
             if tmprootfs.exists(): tmprootfs.rmtree()
 
             # consider the kernel/initrd invalidated, remove them
@@ -528,7 +528,7 @@ class KitOps:
             if path(self.pxeboot_dir / kit['initrd']).exists():
                 path(self.pxeboot_dir / kit['initrd']).remove()
 
-            raise e
+            raise
             
         return kit
 
