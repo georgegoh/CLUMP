@@ -18,6 +18,7 @@ from path import path
 import os
 import sys
 import time
+import atexit
 from optparse import SUPPRESS_HELP, OptionParser
 
 try:
@@ -57,6 +58,8 @@ class RepoPatchApp(KusuApp):
                                help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
+
+        atexit.register(self.unlock)
 
     def getVersion(self):
         self.stdoutMessage('Repopatch ${VERSION_STR}\n')

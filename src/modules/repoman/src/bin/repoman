@@ -20,6 +20,7 @@ from path import path
 import os
 import time
 import sys
+import atexit
 from optparse import SUPPRESS_HELP, OptionParser
 
 try:
@@ -84,6 +85,8 @@ For examples:
                                help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
+
+        atexit.register(self.unlock)
 
     def getVersion(self):
         self.stdoutMessage('Repoman ${VERSION_STR}\n')
@@ -230,7 +233,7 @@ For examples:
         try:
             r.refresh(repo.repoid)
         except Exception, e:
-            self.stderrMessage('Unable to refresh repo: %s. Reason: %s\n', (repo_name,e))
+            self.stderrMessage('Unable to refresh repo: %s. Reason: %s\n', repo_name, e)
             self.unlock()
             sys.exit(1)
 
@@ -306,8 +309,8 @@ For examples:
                 val = getattr(options, option.dest, None)
                 if val and val.startswith('-'):
                     self.parser.print_usage()
-                    sys.stderr.write('%s: error: %s/%s option requires an argument\n' % 
-                                     (path(sys.argv[0]).basename(), option._short_opts[0],option._long_opts[0]))
+                    sys.stderrMessage('%s: error: %s/%s option requires an argument\n', 
+                                      path(sys.argv[0]).basename(), option._short_opts[0],option._long_opts[0])
                     sys.exit(1)
 
         if not options.list and not options.version: 
