@@ -221,6 +221,8 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
             continue
         kitops.copyOSKitMedia(kit)
         prog_dlg.close()
+
+    kitops.makeContribDir(kit)
     kitops.finalizeOSKit(kit)
 
 def addKitFromURIForm(baseScreen):

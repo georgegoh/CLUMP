@@ -326,7 +326,8 @@ class KitOpsApp(KusuApp):
             res = res.strip()
             if res == 'N':
                 break
-      
+     
+        self.koinst.makeContribDir(kit) 
         self.koinst.finalizeOSKit(kit)
 
     def runListKit(self):

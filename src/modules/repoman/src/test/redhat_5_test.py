@@ -120,6 +120,7 @@ class TestRedhat5Repo:
 
         dirs = []
         dirs.append(prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch')
+        dirs.append(prefix / 'depot' / 'contrib' / 'rhel' /  '5' / 'i386')
         dirs.append(prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / 'rhel' / '5' / 'i386')
       
         for dir in dirs:
@@ -146,6 +147,15 @@ class TestRedhat5Repo:
 
         download('kernel-2.6.9-11.EL.i386.rpm', \
                  prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'kernel-2.6.9-11.EL.i386.rpm')
+
+        download('yum-updatesd-3.2.2-1.fc7.noarch.rpm', \
+                 prefix / 'depot' / 'kits' / 'base' /  '0.1' / 'noarch' / 'yum-updatesd-3.2.2-1.fc7.noarch.rpm')
+
+        download('ftp-0.17-33.fc6.i386.rpm', \
+                 prefix / 'depot' / 'contrib' / 'rhel' / '5' / 'i386' / 'ftp-0.17-33.fc6.i386.rpm')
+
+        download('yum-updatesd-3.0-6.noarch.rpm', \
+                 prefix / 'depot' / 'contrib' / 'rhel' / '5' / 'i386' / 'yum-updatesd-3.0-6.noarch.rpm')
 
     def tearDown(self):
         global prefix
@@ -274,6 +284,9 @@ class TestRedhat5Repo:
  
         assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'kernel-2.6.9-11.EL.i386.rpm').exists()
         assert not (prefix / 'depot' / 'repos' / repoid / 'Server' / 'kernel-2.6.9-22.0.1.EL.i386.rpm').exists()
+        assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'ftp-0.17-33.fc6.i386.rpm').exists()
+        assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'yum-updatesd-3.0-6.noarch.rpm').exists()
+        assert not (prefix / 'depot' / 'repos' / repoid / 'Server' / 'yum-updatesd-3.2.2-1.fc7.noarch.rpm').exists()
 
     def testDeleteRepo(self):
         global prefix
@@ -323,6 +336,12 @@ class TestRedhat5Repo:
         repoid = str(r.repoid)
         self.checkLayout(prefix / 'depot' / 'repos' / repoid)
      
+        assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'kernel-2.6.9-11.EL.i386.rpm').exists()
+        assert not (prefix / 'depot' / 'repos' / repoid / 'Server' / 'kernel-2.6.9-22.0.1.EL.i386.rpm').exists()
+        assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'ftp-0.17-33.fc6.i386.rpm').exists()
+        assert (prefix / 'depot' / 'repos' / repoid / 'Server' / 'yum-updatesd-3.0-6.noarch.rpm').exists()
+        assert not (prefix / 'depot' / 'repos' / repoid / 'Server' / 'yum-updatesd-3.2.2-1.fc7.noarch.rpm').exists()
+
     def testGetPackageFilePath(self):
         global prefix
 
@@ -331,5 +350,4 @@ class TestRedhat5Repo:
         r.make('installer nodegroup')
 
         p = r.getPackageFilePath('kernel-2.6.9-11.EL.i386.rpm') 
-        print p
         assert p == prefix / 'depot' / 'repos' / str(r.repoid) / 'Server' / 'kernel-2.6.9-11.EL.i386.rpm'

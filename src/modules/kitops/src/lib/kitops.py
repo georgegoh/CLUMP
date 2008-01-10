@@ -47,10 +47,8 @@ class KitOps:
         self.medialoc = None
         self.__db = kw.get('db', None)
 
-        self.prefix = path(kw.get('prefix', '/'))
-        self.tmpprefix = path(kw.get('tmpprefix', '/tmp'))
-        self.kits_dir = self.prefix / 'depot/kits/'
-        self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
+        self.setPrefix(path(kw.get('prefix', '/')))
+        self.setTmpPrefix(path(kw.get('tmpprefix', '/tmp')))
 
     def setKitMedia(self, kitmedia):
         self.kitmedia = kitmedia
@@ -67,6 +65,7 @@ class KitOps:
             self.prefix = path(prefix)
             self.kits_dir = self.prefix / 'depot/kits/'
             self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
+            self.contrib_dir = self.prefix / 'depot' / 'contrib'
 
     def setTmpPrefix(self, tmpprefix):
         """
@@ -551,7 +550,14 @@ class KitOps:
 
         # copy successful, don't need mounted media anymore
         self.unmountMedia()
- 
+
+    def makeContribDir(self, kit):
+        contribdir = self.contrib_dir / kit['name'] / kit['ver'] / kit['arch']
+
+        kl.debug('contrib dir: %s' % contribdir) 
+        if not contribdir.exists():
+            contribdir.makedirs()
+
     def finalizeOSKit(self, kit):
         #populate the database with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['sum'],
