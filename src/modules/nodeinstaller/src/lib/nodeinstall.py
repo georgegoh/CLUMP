@@ -138,7 +138,9 @@ class KickstartFromNIIProfile(object):
                        'use_dhcp': translateBoolean(ni.nics[nic]['dhcp']),
                        'ip_address': ni.nics[nic]['ip'],
                        'netmask': ni.nics[nic]['subnet'],
-                       'active_on_boot': translateBoolean(ni.nics[nic]['boot'])
+                       # Apparently nics.boot != active_on_boot (KUSU-602).
+                       #'active_on_boot': translateBoolean(ni.nics[nic]['boot'])
+                       'active_on_boot': True
                        }
                     
             if ni.nics[nic]['gateway']:
