@@ -83,7 +83,7 @@ class thisReport(Report):
                 print 'subnet %s netmask %s {' % (netmask, subnet)
                 print '\tdefault-lease-time %s;' % leasetime
                 print '\tmax-lease-time %s;' % leasetime
-                print '\toption routers %s;' % gateway
+                if gateway: print '\toption routers %s;' % gateway
                 print '\toption subnet-mask %s;' % subnet
                 
                 if dnsdomain:
