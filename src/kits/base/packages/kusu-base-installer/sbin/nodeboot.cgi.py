@@ -269,6 +269,7 @@ class NodeInfo:
         if not data:
             # Need to trigger a 404 error, but don't see how.
             print "Cannot find host for IP: %s" % nodeip
+            return ''
 
         return data[0]
 
@@ -323,16 +324,14 @@ class NodeBootApp(KusuApp):
         """parseargs - Parse the command line arguments and populate the
         class variables"""
         
-        self.parser.add_option("-v", "--version", action="store",
-                               type="string", dest="getversion")
+        self.parser.add_option("-v", "--version", action="store_true",
+                               dest="getversion", default=False)
         self.parser.add_option("-d", "--displaynii", action="store_true",
                                dest="getnii", default=False)
         self.parser.add_option("-f", "--displaycfm", action="store_true",
                                dest="getcfm", default=False)
         self.parser.add_option("-i", "--nodeip", action="store",
                                type="string", dest="nodeip")
-        self.parser.add_option("-n", "--nodename", action="store",
-                               type="string", dest="nodename")
         self.parser.add_option("-s", "--state", action="store",
                                type="string", dest="nodestate")
         self.parser.add_option("-b", "--bootfrom", action="store",
@@ -358,14 +357,13 @@ class NodeBootApp(KusuApp):
         # Test to see if we are running as a CGI
         if os.environ.has_key('REMOTE_ADDR'):
             runascgi = 1
+            ip = os.environ['REMOTE_ADDR']
             
             # Prepare the CGI class
             self.cgi = cgi.FieldStorage()
             
             if os.environ.has_key('REMOTE_HOST'):
                 node = os.environ['REMOTE_HOST']
-            else:
-                ip = os.environ['REMOTE_ADDR']
 
             if self.cgi.has_key('dump'):
                 if self.cgi['dump'].value[0] == '1':
@@ -398,14 +396,11 @@ class NodeBootApp(KusuApp):
                 sys.exit(0)
             else:
                 # We need the nodes name for any of the following operations
-                if self.options.nodename:
-                    node = self.options.nodename
+                if self.options.nodeip:
+                    ip = self.options.nodeip
                 else:
-                    if self.options.nodeip:
-                        ip = self.options.nodeip
-                    else:
-                        self.errorMessage('nodeboot_no_hostname_or_ip\n')
-                        sys.exit(-1)
+                    self.errorMessage('nodeboot_no_hostname_or_ip\n')
+                    sys.exit(-1)
 
                 if self.options.getnii:
                     dumpnii = 1
@@ -432,7 +427,6 @@ class NodeBootApp(KusuApp):
         print "State: %s" % state
         print "Dump CFM: %s" % dumpcfm
             
-        
         # Test to see if we need write access to the database and connect 
         if bootfrom or state:
             nodefun = NodeInfo('apache')
@@ -443,8 +437,14 @@ class NodeBootApp(KusuApp):
         if not node:
             node = nodefun.getNodeName('', ip)
 
+        print "IP: %s" % ip
         print "Node: %s" % node
         print "</debug>"
+        
+        if not node:
+            # Bail out
+            print "</nii>"
+            sys.exit(0)
         
         if dumpnii:
             nodefun.getNIInfo(node, ip)
