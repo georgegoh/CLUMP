@@ -176,7 +176,21 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write('export NII_REPOID="%s"\n' % self.repoid)
         fp.write('export NII_OSTYPE="%s"\n' % self.ostype)
         fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
-        
+
+        cnt = 0
+        fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
+        for i in self.nics.keys():
+            fp.write('export NII_NICDEF%i=%s:%s:%s:%s:%s:%s:%s:%s\n' % ( cnt, self.nics[i]['device'],
+                                                                         self.nics[i]['ip'],
+                                                                         self.nics[i]['subnet'],
+                                                                         self.nics[i]['network'],
+                                                                         self.nics[i]['suffix'],
+                                                                         self.nics[i]['gateway'],
+                                                                         self.nics[i]['dhcp'],
+                                                                         self.nics[i]['options']))
+            cnt = cnt + 1
+
+        fp.write('\n')
         for i in self.appglobal.keys():
             fp.write('export %s="%s"\n' % (i, self.appglobal[i]))
 
@@ -200,7 +214,7 @@ class NodeInstInfoHandler(ContentHandler):
 
         fp.write('%s' % self.cfmsecret.strip())
         fp.close()
-        file.chmod(0400)
+        os.chmod(file, 0400)
 
 
     def saveDbPasswd (self, filename=''):
@@ -220,7 +234,7 @@ class NodeInstInfoHandler(ContentHandler):
 
         fp.write('%s' % self.dbpasswd.strip())
         fp.close()
-        file.chmod(0400)
+        os.chmod(file, 0400)
 
 
 class NIIFun:
