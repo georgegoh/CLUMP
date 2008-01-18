@@ -484,7 +484,7 @@ class NodeFun(object, KusuApp):
                                   nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                   AND networks.device='%s'" % selectedinterface)
 
-           # Use the gui selected network interface as the installer's interface. 
+           # Use the gui selected network interface as the installer's interface.
            installer_subnet, installer_network = self._dbReadonly.fetchone()
 
         if static == False:
@@ -505,6 +505,7 @@ class NodeFun(object, KusuApp):
                   break
 
                NICInfo = interfaces[selectedinterface].split()
+
                networkID = NICInfo[0]
                subnetNetwork = NICInfo[1]
 
@@ -532,13 +533,12 @@ class NodeFun(object, KusuApp):
                          # We're a DHCP/boot interface
                          self._cachedDeviceIPs[selectedinterface] = startIP
                          self._addUsedIP(startIP)
-                         self._createNICBootEntry(nodeID, networkID, startIP, 1, macaddr)
+                         self._createNICBootEntry(nodeID, networkID, 1, startIP, macaddr)
                          self._writeDHCPLease(startIP, macaddr)
                          del interfaces[selectedinterface]
                          flag = 1
                          break
                    else:
-                      # Not a valid subnet, try the next one in the for loop.
                       break
 
            if not flag:
@@ -551,8 +551,15 @@ class NodeFun(object, KusuApp):
         # Iterate though list interface devices that are not from the installer nodegroup.
         for nicdev in interfaces:
              #print "NON MATCHED DEVICES: %s" % nicdev
+             NICInfo = []
              NICInfo = interfaces[nicdev].split()
              networkID = NICInfo[0]
+
+             # 3rd party DHCP server network interface  
+             if len(NICInfo) <= 3:
+                self._createNICBootEntry(nodeID, networkID, 0)
+                continue
+
              subnetNetwork = NICInfo[1]
 
              if self._cachedDeviceIPs.has_key(nicdev):
@@ -587,13 +594,13 @@ class NodeFun(object, KusuApp):
                 if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False:
                    # Mark the MAC as used.
                    self.addUsedMAC(macaddr)
-                   self._createNICBootEntry(nodeID, networkID, newIP, 1, macaddr)
+                   self._createNICBootEntry(nodeID, networkID, 1, newIP, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
                 else:
                    # Not a boot interface, just write out other info. 
-                   self._createNICBootEntry(nodeID, networkID, newIP, 0)
+                   self._createNICBootEntry(nodeID, networkID, 0, newIP)
              else:
-                self._createNICBootEntry(nodeID, networkID, newIP, 0)
+                self._createNICBootEntry(nodeID, networkID, 0, newIP)
         #t2=time.time()
         #print "Time Spent: createNodeEntry(): %f" % (t2-t1)
 
@@ -663,15 +670,20 @@ class NodeFun(object, KusuApp):
         #t2=time.time()
         #print "Time Spent: replaceNICBootEntry(): %f" % (t2-t1)
             
-    def _createNICBootEntry(self, nodeid, networkid, ipaddress, bootflag, macaddress=None):
+    def _createNICBootEntry(self, nodeid, networkid, bootflag, ipaddress=None, macaddress=None):
         """createNICBootEntry(nodeid, networkid, ipaddress, bootflag, macaddress)
         Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
         will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from. """
         #t1=time.time()
+
         if macaddress:
             self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
-            self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
+            if ipaddress:
+               self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
+	    else:
+               self._dbRWrite.execute("INSERT INTO nics (nid, netid, boot) VALUES ('%s', '%s', '%s')" % (nodeid, networkid, bootflag))
+
         #t2=time.time()
         #print "Time Spent: createNICBootEntry(): %f" % (t2-t1)
    
@@ -806,10 +818,9 @@ class NodeFun(object, KusuApp):
         The dictionary uses the device name as its key item[1]. """
         #t1=time.time()
         interfaceInfo = {}
-        self._dbReadonly.execute("SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc, networks.gateway FROM \
-                                  networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s AND \
-                                  networks.usingdhcp = 0" % self._nodeGroupType)
-
+        query = 'SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc, networks.gateway \
+                 FROM networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = "%s"' % self._nodeGroupType
+	self._dbReadonly.execute(query)
         data = self._dbReadonly.fetchall()
 
         for item in data:
