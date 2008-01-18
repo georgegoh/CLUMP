@@ -176,7 +176,21 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write('export NII_REPOID="%s"\n' % self.repoid)
         fp.write('export NII_OSTYPE="%s"\n' % self.ostype)
         fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
-        
+
+        cnt = 0
+        fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
+        for i in self.nics.keys():
+            fp.write('export NII_NICDEF%i=%s:%s:%s:%s:%s:%s:%s:%s\n' % ( cnt, self.nics[i]['device'],
+                                                                         self.nics[i]['ip'],
+                                                                         self.nics[i]['subnet'],
+                                                                         self.nics[i]['network'],
+                                                                         self.nics[i]['suffix'],
+                                                                         self.nics[i]['gateway'],
+                                                                         self.nics[i]['dhcp'],
+                                                                         self.nics[i]['options']))
+            cnt = cnt + 1
+
+        fp.write('\n')
         for i in self.appglobal.keys():
             fp.write('export %s="%s"\n' % (i, self.appglobal[i]))
 
@@ -200,7 +214,7 @@ class NodeInstInfoHandler(ContentHandler):
 
         fp.write('%s' % self.cfmsecret.strip())
         fp.close()
-        file.chmod(0400)
+        os.chmod(file, 0400)
 
 
     def saveDbPasswd (self, filename=''):
@@ -220,18 +234,25 @@ class NodeInstInfoHandler(ContentHandler):
 
         fp.write('%s' % self.dbpasswd.strip())
         fp.close()
-        file.chmod(0400)
+        os.chmod(file, 0400)
 
 
 class NIIFun:
     """This class is responsible for retrieving the NII"""
     
     def __init__ (self):
-        self.state   = ''
-        self.cfmflag = 0
-        self.niiflag = 0
+        self.state    = ''
+        self.cfmflag  = 0
+        self.niiflag  = 0
+        self.nextboot = ''
         
 
+    def setBootFrom(self, bootfrom):
+        """setBootFrom - Set the value of the bootfrom.  This needs to be used in
+        conjunction with the callNodeboot to actually cause the value to be set."""
+        self.nextboot = bootfrom
+
+        
     def setState(self, state):
         """setState - Set the value of the state.  This needs to be used in
         conjunction with the callNodeboot to actually cause the state to be set."""
@@ -259,7 +280,7 @@ class NIIFun:
     def callNodeboot(self, host):
         """callNodeboot  - Call the CGI script to gather the data, and return a file
         with the response in it."""
-        if not self.state and not self.cfmflag and not self.niiflag :
+        if not self.state and not self.cfmflag and not self.niiflag and not self.nextboot:
             # Do nothing
             return
         
@@ -270,7 +291,9 @@ class NIIFun:
             options += 'getindex=1&'
         if self.state:
             options += 'state=%s&' % self.state
-
+        if self.state:
+            options += 'boot=%s&' % self.nextboot
+            
         print "URL: %s" % options[:-1]
         (niidata, header) = urllib.urlretrieve(options[:-1])
         return niidata
