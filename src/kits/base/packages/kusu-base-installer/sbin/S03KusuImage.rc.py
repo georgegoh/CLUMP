@@ -13,7 +13,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'image'
-        self.desc = 'Creating images for imaged and diskless nodes'
+        self.desc = 'Creating images for imaged and diskless nodes\n      This will take some time.  Please wait'
         self.ngtypes = ['installer']
         self.delete = True
 
