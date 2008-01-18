@@ -142,7 +142,7 @@ class NodeInfo:
             sys.exit(-1)
         for row in data:
             ip, dhcp, network, subnet, dev, suffix, gw, opt, boot = row
-            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip, subnet, network, suffix, gw, dhcp, opt or '', boot)
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
 
         # Partition Info
         query = ('select device, partition, mntpnt, fstype, size, options, preserve '
