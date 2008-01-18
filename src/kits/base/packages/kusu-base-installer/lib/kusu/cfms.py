@@ -35,6 +35,9 @@ from kusu.ipfun import *
 
 CFMFILE='/etc/cfm/.cfmsecret'
 
+# Change this when the plugins are relocated
+PLUGINS='/opt/kusu/lib/plugins/cfmsync'
+
 class PackBuilder:
     """This class contains the code for generating the packaged files for
     distribution through CFM. """
@@ -267,6 +270,17 @@ class PackBuilder:
         files to manage.  When one is found process it for distribution.
         This method will return the size of the update."""
 
+        # Call the plugins to generate any dynamic config files
+        # This is to support "getent" and other tools like it.
+        global PLUGINS
+        sys.path.append(PLUGINS)
+        flist = glob.glob('%s/*' % PLUGINS)
+        if len(flist) != 0:
+            flist.sort()
+            for plugin in flist:
+                self.stdoutMessage('cfm_Running plugin:  %s\n', plugin)
+                os.system('/bin/sh %s >/dev/null 2>&1' % plugin)
+        
         pattern = os.path.join(self.origdir, '*')
         flist = glob.glob(pattern)
         if len(flist) == 0:
