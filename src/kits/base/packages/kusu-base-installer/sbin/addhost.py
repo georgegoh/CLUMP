@@ -723,7 +723,7 @@ class WindowSelectNode(NodeGroupWindow):
         # Get installer's available networks.
         try:
             self.database.connect()
-            query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+            query = "SELECT DISTINCT networks.network, networks.subnet, networks.device, networks.gateway FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
                      nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision' ORDER BY device"
             self.database.execute(query)
             installerInfo = self.database.fetchall()
