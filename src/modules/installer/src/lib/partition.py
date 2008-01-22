@@ -83,11 +83,11 @@ class PartitionScreen(InstallerScreen):
         self.screenGrid = snack.Grid(1, 1)
 
         self.listbox = kusuwidgets.ColumnListbox(height=8, 
-                                 colWidths=[15,6,6,8,9,12],
-                                 colLabels=[_('Device'), _('Start'), _('End  '),
+                                 colWidths=[16,8,14,14],
+                                 colLabels=[_('Device'),
                                             _('Size(MB) '), _('Type  '),
                                             _('Mount Point   ')],
-                                 justification=[LEFT, RIGHT, RIGHT,
+                                 justification=[LEFT,
                                                 RIGHT, LEFT, LEFT],
                                  returnExit=0)
 
@@ -106,14 +106,14 @@ class PartitionScreen(InstallerScreen):
             lvg_displayname = 'VG ' + key
             lvg_size_MB = lvg.extentsTotal() * lvg.extent_size / (1024 * 1024)
             # display volume groups first in listbox
-            self.listbox.addRow(['VG ' + key, '', '', str(lvg_size_MB), 'VolGroup',
+            self.listbox.addRow(['VG ' + key, str(lvg_size_MB), 'VolGroup',
                                  ''], lvg)
             lv_keys = lvg.lv_dict.keys()
             for lv_key in sorted(lv_keys):
                 lv = self.disk_profile.lv_dict[lv_key]
                 lv_devicename = '  LV ' + lv.name
                 # display indented logical volumes belonging to the vg.
-                self.listbox.addRow([lv_devicename, '', '', str(lv.size_MB),lv.fs_type,
+                self.listbox.addRow([lv_devicename, str(lv.size_MB),lv.fs_type,
                                     lv.mountpoint], lv)
 
         logger.debug('Partition screen: getting disk list')
@@ -121,7 +121,7 @@ class PartitionScreen(InstallerScreen):
         for key in sorted(disk_keys):
             # display device
             device = self.disk_profile.disk_dict[key]
-            self.listbox.addRow(['/dev/'+key, '', '', str(device.size/1024/1024), '', ''], device)
+            self.listbox.addRow(['/dev/'+key, str(device.size/1024/1024), '', ''], device)
             parts_dict = self.disk_profile.disk_dict[key].partition_dict
             logger.debug('Disk %s has %d partitions as reported by parted.' % (key, \
                           self.disk_profile.disk_dict[key].pedDisk.get_last_partition_num()))
@@ -140,8 +140,6 @@ class PartitionScreen(InstallerScreen):
                             mountpoint = pv.group.name
                 # display partition info
                 self.listbox.addRow([part_devicename,
-                                    str(partition.start_cylinder),
-                                    str(partition.end_cylinder),
                                     str(partition.size_MB),
                                     fs_type,
                                     mountpoint], partition)
