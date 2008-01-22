@@ -178,6 +178,7 @@ For examples:
                     # check component os whether is valid for repo
                     if not ('noarch' in comp_os or 
                             repo.ostype in comp_os or 
+                            '' in comp_os or 
                             None in comp_os):
                         self.stdoutMessage('Kit: %s, version %s, architecture %s, is not compatible with repo: %s. Not added.\n', 
                                            kname,kversion,karch,repo_name)
