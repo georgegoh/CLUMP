@@ -134,7 +134,11 @@ class NetworkRecord(object):
         # Device field cannot be empty.
         if not self._device_field:
             return False, 'netedit_validate_device'
-          
+         
+        # Suffix is required.
+        if not self._suffix_field:
+            return False, 'netedit_validate_suffix'
+ 
         if not self._description_field:
             return False, 'netedit_validate_description'
 
@@ -334,9 +338,6 @@ class NetEditApp(object, KusuApp):
         if bool(self._options.increment) == False:  # and bool(self._options.change) == False
             self._options.increment = 1
         
-        if not self._options.suffix:
-            self._options.suffix = ""
-                            
         if not self._options.opt:
             self._options.opt = ""
             
@@ -376,8 +377,8 @@ class NetEditApp(object, KusuApp):
             sys.exit(0)
             
         # Handle Adding a network with DHCP is turned OFF
-        # Handle -a, -n -s, -i, -t, -e options - Adding network
-        if (self._options.add and self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc):
+        # Handle -a, -n -s, -i, -t, -e, -x options - Adding network
+        if (self._options.add and self._options.network and self._options.subnet and self._options.startip and self._options.interface and self._options.desc and self._options.suffix):
             nettype = None
             # Next verify the record
             networkEntryInfo = []
@@ -426,7 +427,7 @@ class NetEditApp(object, KusuApp):
             sys.exit(0)
 
         # DHCP Mode
-        if self._options.add and self._options.dhcp and self._options.interface and self._options.desc:
+        if self._options.add and self._options.dhcp and self._options.interface and self._options.desc and self._options.suffix:
            nettype = None
            networkEntryInfo = []
 
@@ -475,7 +476,7 @@ class NetEditApp(object, KusuApp):
            sys.exit(0)
         elif self._options.add == True:
            if not self._options.network or not self._options.subnet or not self._options.interface or not self._options.gateway \
-                or not self._options.startip or not self._options.desc and not self._options.dhcp == True:
+                or not self._options.startip or not self._options.suffix or not self._options.desc and not self._options.dhcp == True:
                self.unlock()
                self.parser.error(self._("netedit_options_add_options_needed"))
 
@@ -520,7 +521,7 @@ class NetEditApp(object, KusuApp):
         # Handle -w: -t|-e|-r|-o|-y|-z - Changing non-destructive values
         if (self._options.changeused):
             database.connect('kusudb', 'apache')
-            if (self._options.startip or self._options.desc or self._options.opt or self._options.increment or self._options.public or self._options.provision) and not (self._options.network or self._options.subnet or self._options.gateway or self._options.interface):
+            if (self._options.startip or self._options.desc or self._options.opt or self._options.increment or self._options.public or self._options.provision) and not (self._options.network or self._options.subnet or self._options.gateway or self._options.interface or self._options.suffix):
 
                 # Check for conflicting options:
                 if self._options.provision and self._options.public:
@@ -613,8 +614,12 @@ class NetEditApp(object, KusuApp):
                                self.parser.error(self._("netedit_missing_interface"))
                             else:
                                networkEntryInfo.append(self._options.interface.strip())
- 
-                            networkEntryInfo.append(self._options.suffix)
+
+			    if len(self._options.suffix) == 0:
+                               networkEntryInfo.append("-%s" % self._options.interface.strip())
+                            else:
+                               networkEntryInfo.append(self._options.suffix)
+
                             networkEntryInfo.append(self._options.opt)
 
                             if not self._options.desc or len(self._options.desc) == 0:
