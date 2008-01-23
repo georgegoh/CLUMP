@@ -104,7 +104,7 @@ class thisReport(Report):
         print ''
 
         # Print out all the available names
-        query = ('select nodes.name,nics.ip, networks.suffix from '
+        query = ('select nodes.name,nics.ip, networks.suffix, nics.boot from '
                  'nodes,nics,networks where nodes.nid=nics.nid and '
                  'nics.netid=networks.netid and networks.usingdhcp=0 order by nodes.name')
 
@@ -118,10 +118,10 @@ class thisReport(Report):
         data = self.db.fetchall()
         if data:
             for row in data:
-                dnsname, ip, suffix = row
-                outline = '%s' % dnsname
-                if suffix and suffix != '':
-                    outline += '%s' % suffix
-                outline += '\tIN\tA\t%s' % ip
+                dnsname, ip, suffix, boot = row
+                outline = '%s%s\tIN\tA\t%s' % (dnsname, suffix, ip)
                 print '%s' % outline
-                
+                if boot:
+                    # Add the short name as well
+                    outline = '%s\tIN\tA\t%s' % (dnsname, ip)
+                    print '%s' % outline
