@@ -53,7 +53,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     source $envfile > /dev/null 2>&1 
 
     # start thttpd
-    /opt/kusu/bin/thttpd -nor -nos -p 80 -h 127.0.0.1 -u root -d /tmp/kusu/www -l /dev/null 
+    /tmp/updates/thttpd-run.sh 2>$1 > /dev/null &
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@

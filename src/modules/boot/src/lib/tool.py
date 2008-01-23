@@ -468,7 +468,15 @@ class BootMediaTool:
                         fakeanaconda.copy(tmpdir)
                         # make it excutable
                         path(tmpdir / 'anaconda').chmod(0755)
-                    
+ 
+                    # also add thttpd spawning script
+                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/updates.img/thttpd-run.sh' % (osname,osver,osarch)
+                    thttpd_run = path(p)
+                    if thttpd_run.exists(): 
+                        thttpd_run.copy(tmpdir)
+                        # make it excutable
+                        path(tmpdir / 'thttpd-run.sh').chmod(0755)
+ 
                     # clean out any unwanted stuff
                     cleanupTransient(destroot)
                     # pack the tmpdir into a patchfile with size of 10MB
