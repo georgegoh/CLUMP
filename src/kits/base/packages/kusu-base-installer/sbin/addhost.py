@@ -426,7 +426,7 @@ class AddHostApp(KusuApp):
             # Ask all plugins to call updated() function
             if pluginActions:
                pluginActions.plugins_updated()
-               #pluginActions.plugins_finished()
+               pluginActions.plugins_finished()
             self.unlock()
             sys.exit(0)
     
