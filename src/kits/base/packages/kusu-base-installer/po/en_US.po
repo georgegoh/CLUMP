@@ -143,6 +143,18 @@ msgstr "This plugin generates a list of all nodes installed by the installer.\nI
 msgid "genconfig_Hosts_Help"
 msgstr "This plugin generates the contents of the /etc/hosts file."
 
+msgid "genconfig_HostsEquiv_Help"
+msgstr "This plugin generates the contents of the /etc/hosts.equiv file."
+
+msgid "genconfig_HostsPdsh_Help"
+msgstr "This plugin generates the contents of the /etc/hosts.pdsh file."
+
+msgid "genconfig_Bashrc_Help"
+msgstr "This plugin generates the contents of .bashrc file added to new\nhome directories."
+
+msgid "genconfig_Ssh_Help"
+msgstr "This plugin generates the contents of the /etc/ssh/ssh_config file."
+
 msgid "genconfig_cannot_determine_DNS_zone\n"
 msgstr "ERROR:  Cannot determine DNS Zone from the database!\n"
 
@@ -440,7 +452,7 @@ msgstr "ERROR: Missing hostname or IP\n"
 # Netedit specific messages
 
 msgid "netedit_Help"
-msgstr "netedit [-hvl]\n\t       [-d netid#]\n\t       [-a -n network -s subnet -i ifname -t start_ipaddr [-g gateway] -e {network description} [-x suffix] [-o {network options}] [-y | -z]\n [-r increment]]\n\t       [-a -i ifname [-x suffix] -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-c netid# -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}]\n [-y | -z]] [-r increment]\n\t       [-c netid# -i ifname [-x suffix] -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-w netid# [-x suffix] [-o netoptions] [-y | -z] [-t start_ipaddr] [-e {network description}] [-r increment]]"
+msgstr "netedit [-hvl]\n\t       [-d netid#]\n\t       [-a -n network -s subnet -i ifname -t start_ipaddr [-g gateway] -e {network description} -x suffix [-o {network options}] [-y | -z]\n [-r increment]]\n\t       [-a -i ifname -x suffix -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-c netid# -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}]\n [-y | -z]] [-r increment]\n\t       [-c netid# -i ifname [-x suffix] -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-w netid# [-x suffix] [-o netoptions] [-y | -z] [-t start_ipaddr] [-e {network description}] [-r increment]]"
 
 msgid "netedit_window_title_network"
 msgstr "Network Editor"
@@ -540,6 +552,9 @@ msgstr "The subnet is not valid. Please try a different subnet value"
 msgid "netedit_validate_gateway"
 msgstr "The gateway is not valid. Please try a different gateway value"
 
+msgid "netedit_validate_suffix"
+msgstr "The suffix field must not be empty. Please specify a suffix"
+
 msgid "netedit_validate_startip"
 msgstr "The start ip is not valid. Please try a different start ip value"
 
@@ -637,7 +652,7 @@ msgid "netedit_provision_conflict"
 msgstr "Cannot specify -z and -y at same time"
 
 msgid "netedit_options_add_options_needed"
-msgstr "The -a option needs the -n, -s, -i, -t and -e specified when not using the -p option. Otherwise -a requires -i -e when using the -p option."
+msgstr "The -a option needs the -n, -s, -i, -t, -x and -e specified when not using the -p option. Otherwise -a requires -i -e when using the -p option."
 
 msgid "netedit_options_delete_options_needed"
 msgstr "The -d option needs the -n and -s options specified"
@@ -652,7 +667,7 @@ msgid "netedit_options_conflict_type"
 msgstr "Cannot specify the options -z and -y at the same time"
 
 msgid "netedit_options_illegal_usednetwork"
-msgstr "Cannot specify -s, -n, -g, -i or -p options when changing a network already assigned with ngedit (in use)"
+msgstr "Cannot specify -s, -n, -g, -i, -x or -p options when changing a network already assigned with ngedit (in use)"
 
 msgid "netedit_empty_description"
 msgstr "Cannot have an empty network description"

@@ -16,6 +16,10 @@ import pwd
 from kusu.genconfig import Report
 
 class thisReport(Report):
+    
+    def toolHelp(self):
+        print self.gettext("genconfig_HostsPdsh_Help")
+        
     def runPlugin(self, pluginargs):
         query = ("SELECT nodes.name, networks.suffix " +
                  "FROM nodes, nics, networks WHERE nics.nid = nodes.nid " +

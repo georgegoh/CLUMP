@@ -25,7 +25,7 @@ from kusu.genconfig import Report
 class thisReport(Report):
     
     def toolHelp(self):
-        pass
+        print self.gettext("genconfig_Bashrc_Help")
 
     def runPlugin(self, pluginargs):
         print "# .bashrc"
