@@ -69,8 +69,8 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile = self.kiprofile[self.profile]
 
         ### Removing DHCP temporarily, fix in KUSU-207
+        self.screenGrid = snack.Grid(1, 7)
         #self.screenGrid = snack.Grid(1, 6)
-        self.screenGrid = snack.Grid(1, 6)
         ###
         entryWidth = 28
 
@@ -105,18 +105,8 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
         ### Removing DHCP temporarily, fix in KUSU-207
-        self.screenGrid.setField(self.admin_email, col=0, row=1, anchorLeft=1,
-                                 padding=(3, 1, 0, 0))
-        self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
-                                 padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
-                                 padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
-                                 padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
-                                 padding=(3, 0, 0, 1))
-        #self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
-        #                         padding=(0, 1, 0, 0))
+        #self.screenGrid.setField(self.admin_email, col=0, row=1, anchorLeft=1,
+        #                         padding=(3, 1, 0, 0))
         #self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
         #                         padding=(3, 0, 0, 0))
         #self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
@@ -124,7 +114,19 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         #self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
         #                         padding=(3, 0, 0, 0))
         #self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
-        #                         padding=(3, 0, 0, 0))
+        #                         padding=(3, 0, 0, 1))
+        self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
+                                 padding=(0, 1, 0, 0))
+        self.screenGrid.setField(self.admin_email, col=0, row=2, anchorLeft=1,
+                                 padding=(3, 1, 0, 0))
+        self.screenGrid.setField(self.gateway, col=0, row=3, anchorLeft=1,
+                                 padding=(3, 0, 0, 0))
+        self.screenGrid.setField(self.dns1, col=0, row=4, anchorLeft=1,
+                                 padding=(3, 0, 0, 0))
+        self.screenGrid.setField(self.dns2, col=0, row=5, anchorLeft=1,
+                                 padding=(3, 0, 0, 0))
+        self.screenGrid.setField(self.dns3, col=0, row=6, anchorLeft=1,
+                                 padding=(3, 0, 0, 0))
         ###
 
         self.initializeFields()
@@ -220,11 +222,11 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
             if result is False:
                 errList.append(_('DNS Server 3: ') + msg)
 
-            if errList:
-                errMsg = _('Please correct the following errors:')
-                for i, string in enumerate(errList):
-                    errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
-                return False, errMsg
+        if errList:
+            errMsg = _('Please correct the following errors:')
+            for i, string in enumerate(errList):
+                errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
+            return False, errMsg
 
         return True, ''
 

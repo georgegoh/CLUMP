@@ -70,8 +70,8 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile = self.kiprofile[self.profile]
 
         ### Removing DHCP temporarily, fix in KUSU-207
-        #self.screenGrid = snack.Grid(1, 6)
-        self.screenGrid = snack.Grid(1, 5)
+        self.screenGrid = snack.Grid(1, 6)
+        #self.screenGrid = snack.Grid(1, 5)
         ###
         entryWidth = 22
 
@@ -111,23 +111,30 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
         ### Removing DHCP temporarily, FIXME in KUSU-207
+        #self.screenGrid.setField(snack.TextboxReflowed(text=self.hostname_msg,
+        #                                               width=self.gridWidth),
+        #                         col=0, row=1, padding=(0, 1, 0, 0),
+        #                         anchorLeft=1)
+        #self.screenGrid.setField(self.hostname, col=0, row=2,
+        #                         padding=(0, 0, 0, 1), anchorLeft=1)
+        #self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
+        #                                               width=self.gridWidth),
+        #                         col=0, row=3, anchorLeft=1)
+        #self.screenGrid.setField(self.domain, col=0, row=4,
+        #                         padding=(0, 0, 0, 0), anchorLeft=1)
+        self.screenGrid.setField(self.use_dhcp, col=0, row=1,
+                                 padding=(0, 1, 0, 0), anchorLeft=1)
         self.screenGrid.setField(snack.TextboxReflowed(text=self.hostname_msg,
                                                        width=self.gridWidth),
-                                 col=0, row=1, padding=(0, 1, 0, 0),
+                                 col=0, row=2, padding=(0, 1, 0, 0),
                                  anchorLeft=1)
-        self.screenGrid.setField(self.hostname, col=0, row=2,
+        self.screenGrid.setField(self.hostname, col=0, row=3,
                                  padding=(0, 0, 0, 1), anchorLeft=1)
         self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
                                                        width=self.gridWidth),
-                                 col=0, row=3, anchorLeft=1)
-        self.screenGrid.setField(self.domain, col=0, row=4,
+                                 col=0, row=4, anchorLeft=1)
+        self.screenGrid.setField(self.domain, col=0, row=5,
                                  padding=(0, 0, 0, 0), anchorLeft=1)
-        #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
-        #                         padding=(0, 1, 0, 0), anchorLeft=1)
-        #self.screenGrid.setField(self.hostname, col=0, row=2,
-        #                         padding=(3, 0, 0, 0), anchorLeft=1)
-        #self.screenGrid.setField(self.domain, col=0, row=3,
-        #                         padding=(4, 0, 0, 1), anchorLeft=1)
         ###
 
     def validate(self):

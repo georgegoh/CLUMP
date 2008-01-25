@@ -403,13 +403,13 @@ class ConfigureIntfScreen:
 
         ipgrid = snack.Grid(1, 4)
         ### Removing DHCP temporarily, fix in KUSU-207
-        #ipgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
+        ipgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
         ###
         ipgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
         ipgrid.setField(self.netmask, 0, 2, anchorLeft=1)
         ipgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
         subgrid.setField(ipgrid, 0, 0, (0, 1, 0, 0), anchorTop=1)
-        subgrid.setField(namegrid, 1, 0, (1, 1, 0, 0), anchorTop=1)
+        subgrid.setField(namegrid, 1, 0, (1, 3, 0, 0), anchorTop=1)
         gridForm.add(subgrid, 0, 2)
 
         # add OK and Cancel buttons
