@@ -139,6 +139,7 @@ class KickstartFactory(BaseFactory):
         fstype_dict = { 'ext2': 'ext2',
                         'ext3': 'ext3',
                         'fat32': 'vfat', 
+                        'fat16': 'vfat', 
                         'linux-swap': 'swap',
                         None: None}
 
