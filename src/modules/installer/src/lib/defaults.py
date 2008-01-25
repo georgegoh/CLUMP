@@ -365,10 +365,13 @@ def clearDisk(disk_profile, disk, schema):
 
     for partition in disk.partition_dict.values():
         if partition.part_type == 'primary':
+            logger.debug('Partition %s is primary type' % partition.path)
             primary.append(partition)
         elif partition.part_type == 'extended':
+            logger.debug('Partition %s is extended type' % partition.path)
             extended = partition
         else:
+            logger.debug('Partition %s is logical type' % partition.path)
             logical.append(partition)
 
     # remove the logical partitions first.

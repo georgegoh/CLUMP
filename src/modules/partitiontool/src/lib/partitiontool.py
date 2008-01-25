@@ -626,6 +626,7 @@ class DiskProfile(object):
     def __deleteExtendedPartition(self, disk):
         for p in disk.partition_dict.values():
             if p.type == 'extended':
+                logger.debug('delete extended partition')
                 self.deletePartition(p)
 
 

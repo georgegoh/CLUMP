@@ -10,6 +10,7 @@ from kusu.partitiontool.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import *
 from kusu.nodeinstaller.partitionfilterchain import *
+from os.path import basename
 from pprint import PrettyPrinter
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
@@ -37,6 +38,7 @@ def adaptNIIPartition(niipartition, diskprofile):
     default_preserve = partitionRulesDefaultIsPreserve(part_rules)
 
     if default_preserve:
+        logger.debug('Default Preserve')
         pefc = PartitionEntriesFilterChainDefaultPreserve()
         pefc.filter_list.append(FilterOnFileSystem())
         pefc.filter_list.append(FilterOnPartitionType())
@@ -44,6 +46,7 @@ def adaptNIIPartition(niipartition, diskprofile):
         pefc.filter_list.append(FilterOnMountpoints())
         pefc.filter_list.append(AssignMntPntForLV())
     else:
+        logger.debug('Default No Preserve')
         pefc = PartitionEntriesFilterChainDefaultNoPreserve()
         pefc.filter_list.append(AssignMntPntForLV())
         pefc.filter_list.append(FilterOnMountpointsNoPreserve())
@@ -81,24 +84,27 @@ def cleanDiskProfile(disk_profile):
     part_list = []
     extended_partition = None
     for disk in disk_profile.disk_dict.values():
+        part_list = []
+        extended_partition = None
         for p in disk.partition_dict.values():
             if p.type == 'extended':
                 extended_partition = p
             else:
                 part_list.append(p)
 
-    for p in part_list:
-        if not p.leave_unchanged:
-            try:
-                disk_profile.delete(p)
-            except PartitionIsPartOfVolumeGroupError:
-                pass
+        for p in part_list:
+            if not p.leave_unchanged:
+                try:
+                    disk_profile.delete(p)
+                except PartitionIsPartOfVolumeGroupError:
+                    pass
 
-    if extended_partition and not extended_partition.leave_unchanged:
-        try:
-            disk_profile.delete(extended_partition)
-        except CannotDeleteExtendedPartitionError:
-            pass
+        if extended_partition and not extended_partition.leave_unchanged and \
+           disk.partition_dict.has_key(basename(extended_partition.path)):
+            try:
+                disk_profile.delete(extended_partition)
+            except CannotDeleteExtendedPartitionError:
+                pass
 
     disk_profile.executeLVMFifo()
     disk_profile.commit()

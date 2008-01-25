@@ -901,13 +901,13 @@ class DB(object):
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING
 #        boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-#                          size='100', device='1', preserve='N')
+#                          size='100', device='1', preserve='0')
 #        root = Partitions(mntpnt='/', fstype='ext3', partition='2',
-#                          size='4000', device='1', preserve='N')
+#                          size='4000', device='1', preserve='0')
 #        swap = Partitions(partition='3', fstype='linux-swap',
-#                          size='2000', device='1', preserve='N')
+#                          size='2000', device='1', preserve='0')
 #        data = Partitions(mntpnt='/data', fstype='ext3', partition='4', size='4000',
-#                          options='fill', device='1', preserve='N')
+#                          options='fill', device='1', preserve='0')
 #        compute.partitions.append(boot)
 #        compute.partitions.append(root)
 #        compute.partitions.append(swap)
@@ -919,15 +919,15 @@ class DB(object):
             swap = Partitions(fstype='linux-swap', partition='2',
                               size='2000', device='1', preserve=0)
             pv = Partitions(fstype='physical volume', partition='0',
-                            size='28000', device='N', preserve=1,
+                            size='28000', device='N', preserve=0,
                             options='fill;pv;vg=VolGroup00')
-            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=1)
+            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=0)
             root = Partitions(mntpnt='/', fstype='ext3', size='12000',
                               device='ROOT', options='lv;vg=VolGroup00', preserve=0)
             var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
                              device='VAR', options='lv;vg=VolGroup00', preserve=0)
             data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
-                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=1)
+                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=0)
             dell = Partitions(options='partitionID=Dell Utility', preserve=1)
 #            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
 #            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
