@@ -58,7 +58,7 @@ class thisReport(Report):
                  'networks.gateway, networks.netid, nics.ip '
                  'from networks,nics,nodes where nodes.nid=nics.nid and '
                  'nics.netid=networks.netid and networks.usingdhcp=0 '
-                 'and nodes.name="%s"' % installer)
+                 'and nodes.name="%s" and networks.type="provision"' % installer)
         try:
             self.db.execute(query)
 
@@ -83,7 +83,11 @@ class thisReport(Report):
                 print 'subnet %s netmask %s {' % (netmask, subnet)
                 print '\tdefault-lease-time %s;' % leasetime
                 print '\tmax-lease-time %s;' % leasetime
-                if gateway: print '\toption routers %s;' % gateway
+
+                if not gateway:
+                    gateway = pxehost
+
+                print '\toption routers %s;' % gateway
                 print '\toption subnet-mask %s;' % subnet
                 
                 if dnsdomain:
