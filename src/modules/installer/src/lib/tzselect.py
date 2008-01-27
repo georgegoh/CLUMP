@@ -85,7 +85,8 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
     def validate(self):
         if not self.ntp.value():
-            return False, _('NTP server field cannot be empty.')
+            #return False, _('NTP server field cannot be empty.')
+            return True, ''
 
         # this check for IP is currently moot since any IP-like string
         # (ie 192.168.333.1234) will still pass our loose FQDN checks

@@ -195,7 +195,8 @@ def writeNTP(prefix, kiprofile):
     src = kusu_root / 'etc' / 'templates' / 'ntp.conf.tmpl'
 
     servers = []
-    servers.append(kiprofile['Timezone']['ntp_server'])
+    if kiprofile['Timezone']['ntp_server']:
+        servers.append(kiprofile['Timezone']['ntp_server'])
     
     restrictNets = {}
     for intf, v in kiprofile['Network']['interfaces'].items():
