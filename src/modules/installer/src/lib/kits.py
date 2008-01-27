@@ -20,6 +20,7 @@ from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util import profile
 from kusu.installer.finalactions import *
+from path import path
 
 kl = kusulog.getKusuLog('installer.kits')
 
@@ -177,8 +178,21 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
         kl.debug('Set the installation flag')
 
-        # Insert Eject CD code here.
+        prog_dlg = self.selector.popupProgress('Ejecting cdrom(s)', 'Ejecing cdrom(s)...')
+        from kusu.installer.kits_sourcehandlers import eject
+        import kusu.hardware.probe
+        cdrom_dict = kusu.hardware.probe.getCDROM()
+        cdrom_list = [path('/dev/' + cd) for cd in cdrom_dict.keys()]
 
+        for cdrom in cdrom_list:
+            if cdrom.exists():
+                try:
+                    eject(cdrom)  
+                    kl.info('ejected cdrom: %s', cdrom)
+                except:
+                    kl.warn('unable to eject cdrom: %s', cdrom)
+        prog_dlg.close()
+     
     def save(self, db, profile):
         ngs = db.NodeGroups.select()
         ngids = [row.ngid for row in db.NGHasComp.select()]
