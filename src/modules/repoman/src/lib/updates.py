@@ -176,7 +176,7 @@ class BaseUpdate:
         compclass = {'rhel' : {'5': 'RHEL5Component()'},
                      'centos' : {'5': 'Centos5Component()'},
                      'fedora' : {'6': 'Fedora6Component()'}}
- 
+
         dest = tempkitdir / kitName / 'build.kit'
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))

@@ -68,7 +68,13 @@ class RepoPatchApp(KusuApp):
         self.repoExists(repo_name)
 
         repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
-        repoObj = self.rfinst.getRepo(repo.repoid)
+
+        try:    
+            repoObj = self.rfinst.getRepo(repo.repoid)
+        except Exception, e:
+            self.stderrMessage('Unable to get updates. Reason: %s\n', e)
+            self.unlock()
+            sys.exit(1)
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kuus'))
 

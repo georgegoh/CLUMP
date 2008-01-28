@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 class RepoFactory(object):
 
-    class_dict = { 'fedora' : {'6': repo.Fedora6Repo,
-                               '7': repo.Fedora7Repo},
+    class_dict = { 'fedora' : {'6': repo.Fedora6Repo},
+    #                           '7': repo.Fedora7Repo},
                    'centos' : {'5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo} }
 
@@ -119,6 +119,10 @@ class RepoFactory(object):
         """Returns the repo obj for that repo"""
 
         os_name, os_version, os_arch = tools.getOS(self.db, repoid)
+
+        if not self.class_dict.has_key(os_name) or not self.class_dict[os_name].has_key(os_version):
+            raise UnsupportedOS, "%s %s not supported" % (os_name, os_version)
+        
         r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.repoid = repoid
         r.os_path = r.getOSPath()
