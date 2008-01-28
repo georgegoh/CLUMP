@@ -287,6 +287,7 @@ def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
     preserved_fs = []
     preserved_lvg = []
     preserved_lv = []
+    logger.debug('Wipe Existing Profile: %s' % wipe_existing_profile)
     if wipe_existing_profile:
         preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv = clearLVM(disk_profile, schema)
         disk_profile.executeLVMFifo()

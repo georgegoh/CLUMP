@@ -277,7 +277,7 @@ class PartitionScreen(InstallerScreen):
         missing_fs_types = []
         for vol in self.disk_profile.mountpoint_dict.values():
             if not vol.fs_type:
-                missing_fs_type.append(vol.path)
+                missing_fs_type.append(vol.path) 
 
 #        proceed = self.selector.popupYesNo(_('Really Proceed?'),
 #                       _('Proceeding beyond this screen will cause ' + \

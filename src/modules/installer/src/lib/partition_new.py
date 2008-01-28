@@ -33,8 +33,10 @@ def createNew(baseScreen):
 
     choice = snack.Listbox(4, returnExit=1)
     choice.append('partition', 'partition')
-    choice.append('volume group', 'volume group')
-    choice.append('logical volume', 'logical volume')
+    if diskProfile.pv_dict:
+        choice.append('volume group', 'volume group')
+    if diskProfile.lvg_dict:
+        choice.append('logical volume', 'logical volume')
 #    choice.append('RAID device','RAID device')
     gridForm.add(choice, 0,1, padding=(0,1,0,1))
 
@@ -84,7 +86,7 @@ class NewPartition:
     def __init__(self, screen, diskProfile):
         self.screen = screen
         self.diskProfile = diskProfile
-        self.gridForm = snack.GridForm(screen, self.title, 1, 6)
+        self.gridForm = snack.GridForm(screen, self.title, 1, 8)
 
         self.mountpoint = kusuwidgets.LabelledEntry(_('Mount Point:'), 20,
                                                     text="", hidden=0,
@@ -109,6 +111,10 @@ class NewPartition:
         self.min_size = snack.SingleRadioButton('Fill at least (MB):',
                                                 self.fixed_size)
         self.min_size_entry = snack.Entry(7)
+
+        self.fill = snack.SingleRadioButton('Fill remaining space on disk.',
+                                                self.fixed_size)
+
 
 #        self.primary_partition=snack.Checkbox('Force to be a primary partition')
         self.do_not_format_partition = snack.Checkbox('Do not format partition')
@@ -140,22 +146,33 @@ class NewPartition:
         subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
         self.gridForm.add(subgrid, 0,1)
 
+        text = "Allocatable space (MB) - "
+        for k,v in self.diskProfile.disk_dict.iteritems():
+            available_space = v.getLargestSpaceAvailable() / 1024 / 1024
+            text += '%s: %d ' % (k, available_space)
+        avail_tb = snack.Label(text)
+        self.gridForm.add(avail_tb, 0,2, anchorLeft=1, padding=(0,1,0,0))
+
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.fixed_size, 0,0)
         subgrid.setField(self.fixed_size_entry, 1,0)
-        self.gridForm.add(subgrid, 0,2, anchorLeft=1, padding=(0,1,0,0))
+        self.gridForm.add(subgrid, 0,3, anchorLeft=1, padding=(0,1,0,0))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.min_size, 0,0)
         subgrid.setField(self.min_size_entry, 1,0)
-        self.gridForm.add(subgrid, 0,3, anchorLeft=1)
+        self.gridForm.add(subgrid, 0,4, anchorLeft=1)
 
-        self.gridForm.add(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
+        subgrid = snack.Grid(1,1)
+        subgrid.setField(self.fill, 0,0)
+        self.gridForm.add(subgrid, 0,5, anchorLeft=1)
+
+        self.gridForm.add(self.do_not_format_partition, 0,6, padding=(0,1,0,1))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)
         subgrid.setField(self.cancel_button, 1,0)
-        self.gridForm.add(subgrid, 0,5)
+        self.gridForm.add(subgrid, 0,7)
 
         self.gridForm.draw()
 
@@ -170,33 +187,40 @@ class NewPartition:
     def processForm(self):
         """Process the fields."""
         fs_type = self.filesystem.current()
-        if self.diskProfile.mountable_fsType[fs_type]:
+        if fs_type in self.diskProfile.mountable_fsType.keys() and \
+           self.diskProfile.mountable_fsType[fs_type]:
             mountpoint = self.mountpoint.value()
+            if not mountpoint or mountpoint[0] != '/':
+                raise KusuError, 'Please provide an absolute path for the mountpoint.'
         else:
             mountpoint = None
         disk = self.drives.current()
 
-        size_MB, fixed_size = self.calculatePartitionSize(disk)
+        try:
+            size_MB, fixed_size = self.calculatePartitionSize()
+            if size_MB == 0 and not self.fill.selected():
+                available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+                raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+        except ValueError:
+            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         logger.debug('Fixed: %s Size: %d' % (fixed_size, size_MB))
-        fill = self.min_size.selected()
+        fill = self.min_size.selected() or self.fill.selected()
+        logger.debug('Fill value: %s' % fill)
         p = self.diskProfile.newPartition(disk, size_MB, fixed_size, fs_type, mountpoint, fill)
         p.do_not_format = self.do_not_format_partition.value()
 
-    def calculatePartitionSize(self, disk):
+    def calculatePartitionSize(self):
         """Calculate Partition size from the form's fields. Multiply by
            megabyte (1024 * 1024)"""
         if self.fixed_size.selected():
-            try:
-                value = long(self.fixed_size_entry.value())
-                return (value, 'True')
-            except ValueError:
-                return (0, 'True')
+            value = long(self.fixed_size_entry.value())
+            return (value, True)
         elif self.min_size.selected():
-            try:
-                value = long(self.min_size_entry.value())
-                return (long(self.min_size_entry.value()), 'False')
-            except ValueError:
-                return (0, 'False')
+            value = long(self.min_size_entry.value())
+            return (value, False)
+        else:
+            return (1, False)
 
 
 class NewLogicalVolume:
@@ -206,7 +230,7 @@ class NewLogicalVolume:
     def __init__(self, screen, disk_profile):
         self.screen = screen
         self.disk_profile = disk_profile
-        self.gridForm = snack.GridForm(screen, self.title, 1, 6)
+        self.gridForm = snack.GridForm(screen, self.title, 1, 8)
 
         self.mountpoint = kusuwidgets.LabelledEntry(_('Mount Point:').rjust(20),
                                                     20, text="", hidden=0,
@@ -230,6 +254,8 @@ class NewLogicalVolume:
         self.volumegroup = kusuwidgets.ColumnListbox(2, colWidths=[20],
                                                     colLabels=['Volume Group:'],
                                                     justification=[LEFT])
+
+        self.fill = snack.Checkbox('Fill remaining space on disk.')
         self.do_not_format_partition = snack.Checkbox('Do not format partition')
         self.ok_button = kusuwidgets.Button(_('OK'))
         self.cancel_button = kusuwidgets.Button(_('Cancel'))
@@ -263,12 +289,21 @@ class NewLogicalVolume:
         subgrid.setField(self.volumegroup, 1,0, padding=(2,0,0,0))
         self.gridForm.add(subgrid, 0,3, padding=(0,1,0,1))
 
-        self.gridForm.add(self.do_not_format_partition, 0,4, padding=(0,0,0,1))
+        text = "Available space (MB) - "
+        for k,v in self.disk_profile.lvg_dict.iteritems():
+            available_space = v.extentsFree() * v.extent_size / 1024 / 1024
+            text += '%s: %d ' % (k, available_space)
+        avail_tb = snack.Label(text)
+        self.gridForm.add(avail_tb, 0,4, anchorLeft=1, padding=(0,1,0,0))
+
+
+        self.gridForm.add(self.fill, 0,5, padding=(0,0,0,1))
+        self.gridForm.add(self.do_not_format_partition, 0,6, padding=(0,0,0,1))
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)
         subgrid.setField(self.cancel_button, 1,0)
-        self.gridForm.add(subgrid, 0,5)
+        self.gridForm.add(subgrid, 0,7)
 
         self.gridForm.draw()
 
@@ -283,22 +318,38 @@ class NewLogicalVolume:
     def processForm(self):
         """Process the fields."""
         fs_type = self.filesystem.current()
-        if self.disk_profile.mountable_fsType[fs_type]:
+        if fs_type in self.disk_profile.mountable_fsType.keys() and \
+           self.disk_profile.mountable_fsType[fs_type]:
             mountpoint = self.mountpoint.value()
+            if not mountpoint or mountpoint[0] != '/':
+                raise KusuError, 'Please provide an absolute path for the mountpoint.'
         else:
             mountpoint = None
 
         vol_grp = self.volumegroup.current()
         try:
             size = long(self.size.value())
+            available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
+            if (size <= 0 or size > available_space) and not self.fill.value():
+                raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
-            size = 0
+            available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
+            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         new_lv_name = self.lv_name.value()
-        lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
-                                                lvg=vol_grp,
-                                                size_MB=size,
-                                                fs_type=fs_type,
-                                                mountpoint=mountpoint)
+        if self.fill.value():
+           lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
+                                                   lvg=vol_grp,
+                                                   size_MB=size,
+                                                   fs_type=fs_type,
+                                                   mountpoint=mountpoint,
+                                                   fill=True)
+        else:
+            lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
+                                                    lvg=vol_grp,
+                                                    size_MB=size,
+                                                    fs_type=fs_type,
+                                                    mountpoint=mountpoint)
+
         lv.do_not_format = self.do_not_format_partition.value()
 
 

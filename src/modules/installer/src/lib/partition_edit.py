@@ -101,11 +101,20 @@ class EditPartition(NewPartition):
         if fs_type in self.diskProfile.mountable_fsType.keys() and \
            self.diskProfile.mountable_fsType[fs_type] is True:
             mountpoint = self.mountpoint.value()
+            if not mountpoint or mountpoint[0] != '/':
+                raise KusuError, 'Please provide an absolute path for the mountpoint.'
         else:
             mountpoint = ''
         disk = self.drives.current()
-        size_MB, fixed = self.calculatePartitionSize(disk)
-        self.diskProfile.editPartition(self.partition, size_MB, fixed,
+        try:
+            size_MB, fixed_size = self.calculatePartitionSize()
+            if size_MB == 0 and not self.fill.selected():
+                available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+                raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+        except ValueError:
+            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+        self.diskProfile.editPartition(self.partition, size_MB, fixed_size,
                                        fs_type, mountpoint)
 
 
@@ -139,21 +148,32 @@ class EditLogicalVolume(NewLogicalVolume):
 
     def processForm(self):
         """Process the fields."""
+        retVal = True
         fs_type = self.filesystem.current()
         if fs_type in self.disk_profile.mountable_fsType.keys() and \
            self.disk_profile.mountable_fsType[fs_type] is True:
-            mountpoint = self.mountpoint.value()
+           mountpoint = self.mountpoint.value()
+           if not mountpoint or mountpoint[0] != '/':
+               raise KusuError, 'Please provide an absolute path for the mountpoint.'
         else:
-            mountpoint = ''
+            mountpoint = None
+
+        vol_grp = self.volumegroup.current()
         try:
             size = long(self.size.value())
+            available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
+            if (size > (self.lv.size / 1024 / 1024) and size > available_space) or size <=0:
+                if not self.fill.value():
+                    raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
-            size = 0
+            available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
+            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
 
         logger.debug('Edit LV - size: %s fs: %s mntpnt: %s' % (str(size), str(fs_type), str(mountpoint)))
         self.disk_profile.editLogicalVolume(self.lv, size, fs_type, mountpoint)
 
         self.lv.do_not_format = self.do_not_format_partition.value()
+        return retVal 
 
 
 class EditVolumeGroup(NewVolumeGroup):

@@ -332,6 +332,77 @@ class Disk(object):
                 return True
         return False
 
+
+    def getAlignedSize(self, start_sector, end_sector):
+        start = self.__alignStartSector(start_sector)
+        end = self.__alignEndSector(end_sector)
+        return self.sector_size * (end - start)
+
+    def getLargestSpaceAvailable(self):
+        """
+        Search for, and return the largest contiguous space available on this disk.
+        """
+        if not self.partition_dict:
+            return self.getAlignedSize(self.sectors, self.length)
+        primary = []
+        extended = None
+        logical = []
+        for partition in self.partition_dict.values():
+            if partition.part_type == 'primary':
+                primary.append(partition)
+            elif partition.part_type == 'extended':
+                extended = partition
+            else:
+                logical.append(partition)
+        primary = self.__sortBySectors(primary)
+        logical = self.__sortBySectors(logical)
+
+        largest_size = 0
+        # Start after first track.
+        # search for space among primary partitions.
+        if len(primary) < 3:
+            largest_size = self.__largestFreeSpaceSearch(self.sectors, primary, largest_size)
+            if extended is None:
+                start_sector = primary[-1].end_sector + 1
+                end_sector = self.length
+                largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
+            else:
+                start_sector = primary[-1].end_sector + 1
+                end_sector = extended.start_sector
+                # search between last primary and the extended partition.
+                if end_sector > start_sector and len(primary) < 3:
+                    largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
+
+        if extended is not None:
+            # search within the extended partition.
+            if not logical:
+                largest_size = self.__getLargerSpace(extended.start_sector, extended.end_sector,
+                                                     largest_size)
+            else:
+                largest_size = self.__largestFreeSpaceSearch(extended.start_sector,
+                                                             logical, largest_size)
+                start_sector = logical[-1].end_sector + 1
+                end_sector = extended.end_sector
+                largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
+
+        return largest_size
+                    
+
+    def __largestFreeSpaceSearch(self, start_sector, sorted_parts_list, largest_so_far):
+        end_sector = start_sector - 1
+        for p in sorted_parts_list:
+            start_sector = end_sector + 1
+            end_sector = p.start_sector
+            largest_so_far = self.__getLargerSpace(start_sector, end_sector, largest_so_far)
+        return largest_so_far
+
+    def __getLargerSpace(self, start_sector, end_sector, control_size):
+        if end_sector > start_sector:
+            free_space = self.getAlignedSize(start_sector, end_sector)
+            if free_space > control_size:
+                return free_space
+        return control_size
+
     def __getStartEndSectors(self, size, fill=False):
         """For a given size(in bytes), return a tuple of (start_sector,
            end_sector, type) that will accommodate this new partition.
