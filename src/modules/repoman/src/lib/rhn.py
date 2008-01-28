@@ -81,6 +81,11 @@ class RHN:
                   -9: rhnInvalidSystemError,
                   -19: rhnNoBaseChannelError}
 
+    rhnErrorsMsg = { -1: 'This username is already taken, or the password is incorrect.',
+                     -2: 'Invalid username and password combination.',
+                     -9: 'Invalid system. Please check your subscription.',
+                     -19: 'Invalid channel. Pleae check your subscription.'}
+
     rhnProtoErrors = { 302: rhnURLNotFound,
                        404: rhnURLNotFound}
 
@@ -136,8 +141,13 @@ class RHN:
             faultCode = e.faultCode
             faultStr = e.faultString
 
-            if faultCode in self.rhnErrors.keys():
-                raise self.rhnErrors[faultCode],  (faultCode, faultStr)
+            if self.rhnErrors.has_key(faultCode):
+                if self.rhnErrorsMsg.has_key(faultCode):
+                    errMsg = self.rhnErrorsMsg[faultCode]
+                else:
+                    errMsg = faultStr
+
+                raise self.rhnErrors[faultCode],  errMsg
             else:
                 raise rhnError, (faultCode, faultStr)
 
