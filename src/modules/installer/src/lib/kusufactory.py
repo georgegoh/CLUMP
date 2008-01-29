@@ -61,14 +61,14 @@ class ScreenFactoryImpl(ScreenFactory):
     kiprofile.addDatabase(dbs)
 
     ScreenFactory.screens = \
-        [WelcomeScreen(kiprofile=kiprofile),
-         LanguageSelectionScreen(kiprofile=kiprofile),
-         KeyboardSelectionScreen(kiprofile=kiprofile),
-         NetworkScreen(kiprofile=kiprofile),
-         GatewayDNSSetupScreen(kiprofile=kiprofile),
-         FQHNScreen(kiprofile=kiprofile),
-         TZSelectionScreen(kiprofile=kiprofile),
-         RootPasswordScreen(kiprofile=kiprofile),
+        [#WelcomeScreen(kiprofile=kiprofile),
+         #LanguageSelectionScreen(kiprofile=kiprofile),
+         #KeyboardSelectionScreen(kiprofile=kiprofile),
+         #NetworkScreen(kiprofile=kiprofile),
+         #GatewayDNSSetupScreen(kiprofile=kiprofile),
+         #FQHNScreen(kiprofile=kiprofile),
+         #TZSelectionScreen(kiprofile=kiprofile),
+         #RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
          ConfirmScreen(kiprofile=kiprofile),
          KitsScreen(kiprofile=kiprofile)

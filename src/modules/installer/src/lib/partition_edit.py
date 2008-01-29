@@ -92,8 +92,7 @@ class EditPartition(NewPartition):
         self.drives.setCurrent(basename(self.partition.disk.path))
 
         # set fixed size
-        size_MB = self.partition.size / 1024 /1024
-        self.fixed_size_entry.set(str(size_MB))
+        self.fixed_size_entry.set(str(self.partition.size_MB))
 
     def processForm(self):
         """Process the fields."""
@@ -106,16 +105,18 @@ class EditPartition(NewPartition):
         else:
             mountpoint = ''
         disk = self.drives.current()
+        available_space = self.diskProfile.disk_dict[disk].availableSpaceForPartition(self.partition) / 1024 / 1024
+        available_space += self.partition.size_MB
         try:
             size_MB, fixed_size = self.calculatePartitionSize()
             if size_MB == 0 and not self.fill.selected():
-                available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+            elif self.fill.selected() and self.partition.size < available_space:
+                if self.partition.size < available_space:
+                    self.diskProfile.editPartition(self.partition, size_MB,
+                                                   fixed_size, fs_type, mountpoint)
         except ValueError:
-            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
             raise KusuError, 'Size must be between 1 and %d MB.' % available_space
-        self.diskProfile.editPartition(self.partition, size_MB, fixed_size,
-                                       fs_type, mountpoint)
 
 
 class EditLogicalVolume(NewLogicalVolume):
@@ -162,7 +163,8 @@ class EditLogicalVolume(NewLogicalVolume):
         try:
             size = long(self.size.value())
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
-            if (size > (self.lv.size / 1024 / 1024) and size > available_space) or size <=0:
+            self_size_MB = self.lv.size / 1024 /1024
+            if (size > self_size_MB and size > (available_space + self.size_MB)) or size <= 0:
                 if not self.fill.value():
                     raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:

@@ -138,6 +138,8 @@ class PartitionScreen(InstallerScreen):
                     for pv_name, pv in self.disk_profile.pv_dict.iteritems():
                         if pv.partition is partition and pv.group:
                             mountpoint = pv.group.name
+                if partition.native_type == 'Dell Utility':
+                    fs_type = 'Dell Utility'
                 # display partition info
                 self.listbox.addRow([part_devicename,
                                     str(partition.size_MB),
@@ -168,10 +170,11 @@ class PartitionScreen(InstallerScreen):
                                                  ['Use Default', 'Use Existing', 'Clear All Partitions'])
             if str(result) == 'use default':
                 logger.debug('Default chosen')
-                self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
+                self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
-                setupDiskProfile(self.disk_profile, schema)
+                setupPreservedPartitions(self.disk_profile, schema)
+                setupDiskProfile(self.disk_profile, schema, wipe_existing_profile=False)
             elif str(result) == 'clear all partitions':
                 logger.debug('Clear all partitions')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
@@ -191,6 +194,93 @@ class PartitionScreen(InstallerScreen):
                 self.disk_profile = partitiontool.DiskProfile(fresh=True)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
+                setupDiskProfile(self.disk_profile, schema)
+ 
+    def rollback(self):
+        self.prompt_for_default_schema = True
+
+    def validate(self):
+        errList = []
+        # verify that /, swap, /depot, and /boot exist.
+        mntpnts = self.disk_profile.mountpoint_dict.keys()
+        if '/' not in mntpnts:
+            errList.append("'/' partition is required.")
+        if '/depot' not in  mntpnts:
+            errList.append("'/depot' partition is required.")
+        if '/boot' not in  mntpnts:
+            errList.append("'/boot' partition is required.")
+        has_swap = False
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for part in disk.partition_dict.itervalues():
+                if part.fs_type == 'linux-swap':
+                    has_swap = True
+                    break
+        if not has_swap:
+            errList.append("A 'linux-swap' partition is required.")
+
+        if not errList:
+            # verify that /, /boot and /depot are to be formatted
+            for mntpnt in ['/', '/boot', '/depot']:
+                vol = self.disk_profile.mountpoint_dict[mntpnt]
+                if vol.do_not_format or vol.leave_unchanged:
+                    errList.append('%s is flagged as "do_not_format". ' % mntpnt + \
+                                   'Installation cannot continue until this ' + \
+                                   'flag is cleared.')
+
+        if errList:
+            errMsg = _('Please correct the following errors:')
+            for i, string in enumerate(errList):
+                errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
+            return False, errMsg
+        else:
+            return True, ''
+
+    def willBeFormatted(self, vol):
+        if vol.do_not_format or vol.leave_unchanged:
+            return False
+        else:
+            return True
+
+    def swapPartitionExists(self):
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for partition in disk.partition_dict.itervalues():
+                if partition.fs_type == 'linux-swap':
+                    return True
+        for lv in self.disk_profile.lv_dict.itervalues():
+            if lv.fs_type == 'linux-swap':
+                return True
+        return False
+ 
+    def formAction(self):
+        """
+        
+        Store to kiprofile
+        
+        """
+        try:
+            profile = self.kiprofile[self.profile]
+        except KeyError:
+            profile = {}
+            self.kiprofile[self.profile] = profile
+
+        profile['DiskProfile'] = self.disk_profile
+
+        missing_fs_types = self.checkMissingFSTypes()
+        if missing_fs_types:
+            proceed = self.selector.popupMsg('No Filesystem type defined',
+                        'The following volumes have mountpoints defined but ' + \
+                        'no filesystem type defined. The installation cannot ' + \
+                        'proceed until you have defined the filesystem for:\n' + \
+                        missing_fs_types)
+            self.selector.currentStep = self.selector.currentStep - 1
+            return
+
+    def checkMissingFSTypes(self):
+        """Check that all the mountpoints have associated mountpoints."""
+        missing_fs_types = []
+        for vol in self.disk_profile.mountpoint_dict.values():
+            if not vol.fs_type:
+                missing_fs_type.append(vol.path) 
                 setupDiskProfile(self.disk_profile, schema)
  
     def rollback(self):

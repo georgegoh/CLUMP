@@ -179,6 +179,27 @@ class Disk(object):
             raise KusuError, e
 
 
+    def availableSpaceForPartition(self, partition):
+        logger.debug('Finding out how much more partition %s can expand' % partition.path)
+        if self.partition_dict.has_key(partition.num-1):
+            prev_p = self.partition_dict[partition.num-1]
+            s1 = partition.start_sector - prev_p.end_sector - 1
+        elif partition.start_sector > self.sectors: # This partition is the first partition
+            s1 = partition.start_sector - self.sectors
+        else:
+            s1 = 0
+
+        if self.partition_dict.has_key(partition.num+1):
+            next_p = self.partition_dict[partition.num+1]
+            s2 = next_p.start_sector - partition.end_sector -1
+        elif partition.end_sector < self.length: # This partition is the last partition
+            s2 = self.length - partition.end_sector - 1
+        else:
+            s2 = 0
+
+        available_space = (s1 + s2) * self.sector_size
+        return available_space
+
     def maximizePartition(self, partition):
         logger.debug('Maximizing partition %d of disk %s' % (partition.num, self.path))
         constraint = self.pedDevice.constraint_any()

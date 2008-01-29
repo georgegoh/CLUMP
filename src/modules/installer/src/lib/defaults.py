@@ -12,6 +12,7 @@ from kusu.util.structure import Struct
 from path import path
 from sets import Set
 from os.path import basename
+import kusu.partitiontool as pt
 
 logger = kusulog.getKusuLog('installer.defaults')
 
@@ -38,7 +39,12 @@ class Disk(Struct):
         self.partition_dict[self.no_of_partitions] = partition
 
 
-class Partition(Struct): pass
+class Partition(Struct):
+    def __init__(self):
+        Struct.__init__(self)
+        self.is_pv = False
+        self.id = ''
+        self.path = ''
 
 class LVMGroup(Struct):
     def __init__(self):
@@ -46,8 +52,8 @@ class LVMGroup(Struct):
         self.pv_list = []
         self.lv_dict = {}
 
-    def addPV(self, disk, partition):
-        self.pv_list.append(Struct(disk=disk, partition=partition))
+    def addPV(self, disk, partition, id=''):
+        self.pv_list.append(Struct(disk=disk, partition=partition, id=id))
 
     def addLV(self, lv):
         self.lv_dict[lv.name] = lv
@@ -183,6 +189,8 @@ def vanillaSchemaLVM():
     d1p3.fs = 'physical volume'
     d1p3.mountpoint = None
     d1p3.fill = True
+    d1p3.is_pv = True
+    d1p3.id = 'd1p3'
     d1.addPartition(d1p3)
 
 #    dn = Disk()
@@ -200,7 +208,7 @@ def vanillaSchemaLVM():
     volgroup00.name = 'VolGroup00'
     volgroup00.extent_size = '32M'
     volgroup00.pv_span = True
-    volgroup00.addPV(disk=1, partition=3)
+    volgroup00.addPV(disk=1, partition=3, id='d1p3')
 #    volgroup00.addPV(disk='N', partition='N')
 
     # Root Logical Volume.
@@ -242,7 +250,7 @@ def vanillaSchemaLVM():
     lvm = LVMCollection()
     lvm.addVG(volgroup00)
 
-    return PartitionSchema(disks=disks, lvm=lvm)
+    return PartitionSchema(disks=disks, lvm=lvm, preserve_types=['Dell Utility'])
 
 
 def scenario22():
@@ -272,6 +280,27 @@ def scenario22():
               'vg_dict' : None }
 
     return schema
+
+def setupPreservedPartitions(disk_profile, schema):
+    preserved_types = schema['preserve_types']
+    dp = pt.DiskProfile(fresh=False, probe_fstab=False)
+    for disk_path,disk in dp.disk_dict.iteritems():
+        for p in disk.partition_dict.itervalues():
+            if p.native_type:
+                logger.debug('Found partition with type: %s' % p.native_type)
+                logger.debug('Matching with types %s' % str(preserved_types))
+                if p.native_type in preserved_types:
+                    logger.debug('Match found!')
+                    createPartition(disk_path, p, disk_profile)
+
+def createPartition(disk_path, partition, disk_profile):
+    disk = disk_profile.disk_dict[disk_path]
+    p = disk.createPartition(size=partition.size)
+    p.pedPartition = partition.pedPartition
+    p.start_sector = partition.start_sector
+    p.end_sector = partition.end_sector
+    p.boot_flag = partition.boot_flag
+    p.lvm_flag = partition.lvm_flag
 
 
 def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
@@ -308,7 +337,7 @@ def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
         if not schema.has_key('disk_dict') or not schema.has_key('vg_dict'):
             raise PartitionSchemaError, 'Schema has no disk and/or LVM description.'
 
-        createPhysicalSchema(disk_profile, schema['disk_dict'], preserved_mntpnt, preserved_fs)
+        createPhysicalSchema(disk_profile, schema['disk_dict'], schema['vg_dict'], preserved_mntpnt, preserved_fs)
         if schema['vg_dict']:
             createLVMSchema(disk_profile, schema['vg_dict'], preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv)
     logger.debug('Disk Profile set up')
@@ -430,7 +459,7 @@ def clearDisk(disk_profile, disk, schema):
             partition.leave_unchanged = True
     return preserved_mntpnt, preserved_fs
 
-def createPhysicalSchema(disk_profile, disk_schemata, preserved_mntpnt, preserved_fs):
+def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mntpnt, preserved_fs):
     # check if we have enough disks to fulfill the schema
     if len(disk_profile.disk_dict) < len(disk_schemata):
         raise PartitionSchemaError, 'Schema defines more disks than ' + \
@@ -460,12 +489,25 @@ def createPhysicalSchema(disk_profile, disk_schemata, preserved_mntpnt, preserve
                     logger.debug('Partition was preserved. Not creating')
                     continue
                 logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
-                disk_profile.newPartition(disk_key,
-                                          size_MB,
-                                          False,
-                                          fs,
-                                          mountpoint,
-                                          fill)
+                p = disk_profile.newPartition(disk_key,
+                                              size_MB,
+                                              False,
+                                              fs,
+                                              mountpoint,
+                                              fill)
+                # if new partition is physical volume, then the containing volume group
+                # should be updated with its path.
+                if fs == 'physical volume' and schema_partition.has_key('id'):
+                    logger.debug('Created physical volume, now adjusting volume group reference.')
+                    id = schema_partition['id']
+                    for vg_schema in lvg_schemata.itervalues():
+                        logger.debug('VG name: %s' % vg_schema['name'])
+                        pv_schemata = vg_schema['pv_list']
+                        for pv_schema in pv_schemata:
+                            if pv_schema.has_key('id') and pv_schema['id'] == id:
+                                logger.debug('Found PV in VG')
+                                pv_schema['path'] = p.path
+
                 logger.debug('Created new partition %d for disk %d of size %d' % (j+1, i, size_MB))
         except IndexError:
             raise PartitionSchemaError, 'Run out of disks.'
@@ -487,15 +529,19 @@ def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, 
             part_id = pv_schema['partition']
             if disk_id.__str__().lower() == 'n' or part_id.__str__().lower() == 'n':
                 pv_list.extend(getAllFreePVs(disk_profile))
-#                pv_list.extend(getPVsForVG(disk_profile))
                 break
-            disk_id = int(disk_id)
-            part_id = int(part_id)
-            disk_key = sorted_disk_keys[disk_id-1]
-            disk = disk_profile.disk_dict[disk_key]
-            logger.debug('selected disk: %s partitions: %d' % (disk_key, len(disk.partition_dict)))
-            partition = disk.partition_dict[part_id]
-            pv = disk_profile.pv_dict[partition.path]
+            if pv_schema.has_key('path'):
+                logger.debug('PV has path')
+                pv = disk_profile.pv_dict[pv_schema['path']]
+            else:
+                logger.debug('PV has no path')
+                disk_id = int(disk_id)
+                part_id = int(part_id)
+                disk_key = sorted_disk_keys[disk_id-1]
+                disk = disk_profile.disk_dict[disk_key]
+                logger.debug('selected disk: %s partitions: %d' % (disk_key, len(disk.partition_dict)))
+                partition = disk.partition_dict[part_id]
+                pv = disk_profile.pv_dict[partition.path]
             pv_list.append(pv)
 
         if vg_key in preserved_lvg or vg_key in disk_profile.lvg_dict.keys():
