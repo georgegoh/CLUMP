@@ -172,6 +172,7 @@ class DiskProfile(object):
         self.pv_dict = {}
         self.lvg_dict = {}
         self.lv_dict = {}
+        self.manual_writes = [] # hack for writing partition types to disk
 
         import lvm202
         lvm202.activateAllVolumeGroups()
@@ -739,6 +740,20 @@ class DiskProfile(object):
                 checkAndMakeNode(part.path)
         # now the partitions are actually created.
         self.executeLVMFifo()
+        self.__modifyPartitionTypeHack()
+
+    def __modifyPartitionTypeHack(self):
+        # hack for modifying partition types.
+        for (path, index, type) in self.manual_writes:
+            out_p = file(path, 'w')
+            try:
+                logger.debug('Writing preserve info to %s: %d %s' % (path, index, type))
+                out_p.seek(index)
+                out_p.write(type)
+            except Exception, e:
+                logger.debug('Exception thrown: %s' % str(e))
+                pass
+            out_p.close()
 
     def executeLVMFifo(self):
         execFifo()

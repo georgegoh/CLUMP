@@ -174,7 +174,8 @@ class PartitionScreen(InstallerScreen):
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
                 setupPreservedPartitions(self.disk_profile, schema)
-                setupDiskProfile(self.disk_profile, schema, wipe_existing_profile=False)
+                setupDiskProfile(self.disk_profile, schema,
+                                 wipe_existing_profile=False)
             elif str(result) == 'clear all partitions':
                 logger.debug('Clear all partitions')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)

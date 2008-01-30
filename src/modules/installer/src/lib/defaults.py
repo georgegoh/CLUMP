@@ -291,9 +291,35 @@ def setupPreservedPartitions(disk_profile, schema):
                 logger.debug('Matching with types %s' % str(preserved_types))
                 if p.native_type in preserved_types:
                     logger.debug('Match found!')
-                    createPartition(disk_path, p, disk_profile)
+                    t = createPartition(disk_path, p, disk_profile)
+                    if t:
+                        disk_profile.manual_writes.append(t)
+
 
 def createPartition(disk_path, partition, disk_profile):
+    # XXX
+    # Hack for transferring the native_type because
+    # cannot assign native_type using pyparted
+    import struct
+    type = partition.pedPartition.native_type
+    logger.debug('Partition type to preserve: %s' % type)
+    logger.debug('Opening disk /dev/' + disk_path)
+    in_p = file('/dev/' + disk_path)
+    index = None
+    try:
+        in_p.seek(400)
+        buf = in_p.read(1000)
+        s = struct.pack('B', type)
+        logger.debug('Looking for %s in %s' % (s, buf))
+        if s in buf:
+            index = buf.index(s) + 400
+            logger.debug('type index found: %d' % index)
+    except Exception, e:
+        logger.debug(str(e))
+        logger.debug('type index not found.')
+    in_p.close()
+    # XXX
+
     disk = disk_profile.disk_dict[disk_path]
     p = disk.createPartition(size=partition.size)
     p.pedPartition = partition.pedPartition
@@ -301,8 +327,18 @@ def createPartition(disk_path, partition, disk_profile):
     p.end_sector = partition.end_sector
     p.boot_flag = partition.boot_flag
     p.lvm_flag = partition.lvm_flag
+    p.leave_unchanged = True
+    p.do_not_format = True
+    p.on_disk = True
 
-
+    # XXX
+    # Hack for transferring the native_type because
+    # cannot assign native_type using pyparted
+    if index:
+        return ('/dev/'+disk_path, index, struct.pack('B', type))
+    return None
+    # XXX
+        
 def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
     """Set up a disk profile based on a given schema."""
     # clear LVM logical volumes and groups.
@@ -340,6 +376,7 @@ def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
         createPhysicalSchema(disk_profile, schema['disk_dict'], schema['vg_dict'], preserved_mntpnt, preserved_fs)
         if schema['vg_dict']:
             createLVMSchema(disk_profile, schema['vg_dict'], preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv)
+
     logger.debug('Disk Profile set up')
 
 

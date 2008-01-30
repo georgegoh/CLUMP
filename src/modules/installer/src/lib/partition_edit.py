@@ -46,9 +46,10 @@ def editDevice(baseScreen):
                 for disk in disk_profile.disk_dict.values():
                     if selected_device in disk.partition_dict.values():
                         checkPartOfActiveVolGroup(selected_device, disk_profile)
+                        checkIfPreserved(selected_device)
                         scr = EditPartition(screen, selected_device, disk_profile)
                         scr.start()
-
+ 
             return NAV_NOTHING
 
         except KusuError, e:
@@ -58,7 +59,13 @@ def editDevice(baseScreen):
             msgbox.add(snack.Button('Ok'), 0, 1)
             msgbox.runPopup()
             return NAV_NOTHING
-
+ 
+def checkIfPreserved(partition):
+    if partition.leave_unchanged and partition.on_disk:
+        raise KusuError, 'Partition %s cannot be edited because it has ' % \
+                         partition.path + \
+                         'been preserved from a previous installation.' 
+ 
 def checkPartOfActiveVolGroup(partition, disk_profile):
     if partition.path in disk_profile.pv_dict.keys():
         pv = disk_profile.pv_dict[partition.path]
@@ -78,7 +85,7 @@ class EditPartition(NewPartition):
         NewPartition.__init__(self, screen, disk_profile)
         self.partition = device
 
-    def draw(self):
+    def draw(self): 
         """Draw the fields onscreen."""
         NewPartition.draw(self)
 
@@ -109,14 +116,13 @@ class EditPartition(NewPartition):
         available_space += self.partition.size_MB
         try:
             size_MB, fixed_size = self.calculatePartitionSize()
-            if size_MB == 0 and not self.fill.selected():
+            if size_MB <= 0 or size_MB > available_space and not self.fill.selected():
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
-            elif self.fill.selected() and self.partition.size < available_space:
-                if self.partition.size < available_space:
-                    self.diskProfile.editPartition(self.partition, size_MB,
-                                                   fixed_size, fs_type, mountpoint)
         except ValueError:
             raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+
+        self.diskProfile.editPartition(self.partition, size_MB,
+                                       fixed_size, fs_type, mountpoint)
 
 
 class EditLogicalVolume(NewLogicalVolume):

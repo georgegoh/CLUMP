@@ -30,6 +30,10 @@ def deleteDevice(baseScreen):
     try:
         selected_device = listbox.current()
         logger.debug('Selected to delete: %s' % str(selected_device))
+        if selected_device.leave_unchanged and selected_device.on_disk:
+            raise KusuError, '%s cannot be deleted because it has been ' % \
+                             selected_device.path + \
+                             'preserved from a previous installation.'
         diskProfile.delete(selected_device)
     except CannotDeleteExtendedPartitionError, e:
         baseScreen.selector.popupMsg('Delete Logical Partitions First',
