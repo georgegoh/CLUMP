@@ -12,13 +12,13 @@ SET(KUSU_3RDPARTY
   path
   md5crypt
   cheetah
-  urlgrabber
-  wget
+  #urlgrabber
+  #wget
   thttpd
   sqlalchemy
   createrepo
   ipy
-  libxml2-python
+  #libxml2-python
 )
 
 # ## Add kusu modules to the build lists
