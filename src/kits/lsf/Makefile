@@ -48,6 +48,9 @@ kit:
 	echo "%_topdir $(TOPDIR)" > $(HOME)/.rpmmacros
 	rm -rf docs/files/*
 	mkdir -p docs/files
+	# Wakeup automounter.  Needed for PCC NFS dirs
+	-ls -l $(DOCPATH)/$(DOCFILE)
+	@sleep 1
 	@if [ -f $(DOCPATH)/$(DOCFILE) ] ; then \
 		cp $(DOCPATH)/$(DOCFILE) docs/files ; \
 		cd docs/files ; tar zxf $(DOCFILE) ; \

@@ -44,6 +44,10 @@ preinstall:
 	-mkdir -p $(TOPDIR)/RPMS/$(ARCH)
 	rm -rf /opt/lsf
 
+	# Wakeup automounter
+	-ls -l $(LSFSRCDIR)/$(LSFINSTALL_TGZ)
+	@sleep 1
+
 	# Copy the tarballs from PCC and put into kit automatically.
 	-cp $(LSFSRCDIR)/$(LSFINSTALL_TGZ) $(TOPDIR)/BUILD
 	tar zxf $(TOPDIR)/BUILD/$(LSFINSTALL_TGZ) -C $(TOPDIR)/BUILD
