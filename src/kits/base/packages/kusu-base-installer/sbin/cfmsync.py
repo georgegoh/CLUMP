@@ -126,21 +126,13 @@ class UpdateApp(KusuApp):
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
 
         if self.options.updatepackages or self.options.updaterepo:
-            ntype = type & (UPDATEPACKAGE | UPDATEREPO)
-            if os.path.exists(CFMCLIENT):
-                cmd = "%s -t %i -i self" % (CFMCLIENT, ntype)
-            else:
-                cmd = "cfmclient -t %i -i self" % ntype
-                
             if self.options.nodegrp:
                 # Only update a given nodegroup 
                 pb.getPackageList(self.options.nodegrp)
-                if ngid == 1:
-                    os.system(cmd)
+
             else:
                 # Update all node groups
                 pb.getPackageList()
-                os.system(cmd)
 
         if self.options.updatefile:
             size = pb.updateCFMdir()
@@ -149,6 +141,18 @@ class UpdateApp(KusuApp):
 
         pb.removeOldFiles()
         pb.genFileList()
+
+        # Now update the Installer if needed
+        ntype = type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
+        if ngid == 1 or ngid == 0:
+            # Run on the installer
+            ntype = type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
+            if os.path.exists(CFMCLIENT):
+                cmd = "%s -t %i -i self" % (CFMCLIENT, ntype)
+            else:
+                cmd = "cfmclient -t %i -i self" % ntype
+            self.stdoutMessage("cfm_Updating installer\n")
+            os.system(cmd)
 
         # Signal the nodes to start updating
         if self.options.nodegrp:

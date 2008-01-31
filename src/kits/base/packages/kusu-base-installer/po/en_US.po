@@ -506,6 +506,9 @@ msgstr "Removing orphaned file:  %s\n"
 msgid "cfm_Running plugin:  %s\n"
 msgstr "Running plugin:  %s\n"
 
+msgid "cfm_Updating installer\n"
+msgstr "Updating installer(s)\n"
+
 # netedit messages
 msgid "netedit_window_title_new"
 msgstr "Create new network"
