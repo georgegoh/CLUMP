@@ -42,17 +42,22 @@ def queueCommand(func, args=None):
         cmd_fifo = []
     cmd_fifo.append((func, args))
 
-def execFifo():
+def execFifo(ignore_errors=False):
     global cmd_fifo
     if cmd_fifo:
         lvm.activateAllVolumeGroups()
         for func,args in cmd_fifo:
-            if type(args) is tuple:
-                apply(func, args)
-            elif args:
-                func(args)
-            else:
-                func()
+            try:
+                if type(args) is tuple:
+                    apply(func, args)
+                elif args:
+                    func(args)
+                else:
+                    func()
+            except NotPhysicalVolumeError, e:
+                if not ignore_errors:
+                    raise e
+                logger.debug('Ignored error: %s' % str(e))
         lvm.activateAllVolumeGroups()
     cmd_fifo = None
 

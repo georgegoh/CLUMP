@@ -727,7 +727,7 @@ class DiskProfile(object):
         if self.lv_dict.has_key(lv.name):
             del self.lv_dict[lv.name]
 
-    def commit(self):
+    def commit(self, ignore_errors=False):
         p = subprocess.Popen('lvm vgchange -an',
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -739,7 +739,7 @@ class DiskProfile(object):
             for part in disk.partition_dict.itervalues():
                 checkAndMakeNode(part.path)
         # now the partitions are actually created.
-        self.executeLVMFifo()
+        self.executeLVMFifo(ignore_errors)
         self.__modifyPartitionTypeHack()
 
     def __modifyPartitionTypeHack(self):
@@ -755,8 +755,8 @@ class DiskProfile(object):
                 pass
             out_p.close()
 
-    def executeLVMFifo(self):
-        execFifo()
+    def executeLVMFifo(self, ignore_errors=False):
+        execFifo(ignore_errors)
 
     def reprLVMFifo(self):
         return reprFifo()

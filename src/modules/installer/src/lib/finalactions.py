@@ -17,7 +17,8 @@ import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.final')
 
 def setupDisks(disk_profile):
-    disk_profile.commit()
+    logger.debug('Final action: Disk commit')
+    disk_profile.commit(ignore_errors=True)
     disk_profile.formatAll()
  
 def setupNetwork():

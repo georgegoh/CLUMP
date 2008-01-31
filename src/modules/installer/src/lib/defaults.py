@@ -542,7 +542,7 @@ def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mn
                         pv_schemata = vg_schema['pv_list']
                         for pv_schema in pv_schemata:
                             if pv_schema.has_key('id') and pv_schema['id'] == id:
-                                logger.debug('Found PV in VG')
+                                logger.debug('Found PV in VG, assigning path %s' % p.path)
                                 pv_schema['path'] = p.path
 
                 logger.debug('Created new partition %d for disk %d of size %d' % (j+1, i, size_MB))

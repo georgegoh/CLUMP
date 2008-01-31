@@ -139,7 +139,7 @@ def physicalVolumeInUse(path):
     elif allocated > 0:
         return True
 
-    raise NotPhysicalVolumeError, path
+    raise NotPhysicalVolumeError, '%s is not a LVM physical volume' % path
 
 
 def createVolumeGroup(vg_name, extent_size='32M', pv_path_list=[]):
@@ -184,6 +184,7 @@ def reduceLogicalVolume(lv_path, new_extents, extent_size, fs_type):
         size_str = str(size_MB) + 'M'
         out, err = runCommand('resize2fs %s %s' % (lv_path, size_str))
     out, err = runCommand('lvm lvreduce -l%d %s -f' % (new_extents, lv_path))
+    return (out,err)
 
 def removeLogicalVolume(lv_path):
     out, err = runCommand('lvm lvremove -f %s' % lv_path)
