@@ -122,6 +122,14 @@ class NewPartition:
         self.ok_button = kusuwidgets.Button(_('OK'))
         self.cancel_button = kusuwidgets.Button(_('Cancel'))
 
+    def drawAvailableSpace(self):
+        text = "Allocatable space (MB) - "
+        for k,v in self.diskProfile.disk_dict.iteritems():
+            available_space = v.getLargestSpaceAvailable() / 1024 / 1024
+            text += '%s: %d ' % (k, available_space)
+        avail_tb = snack.Label(text)
+        return avail_tb
+
     def draw(self):
         """Draw the fields onscreen."""
         # mount point
@@ -146,11 +154,7 @@ class NewPartition:
         subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
         self.gridForm.add(subgrid, 0,1)
 
-        text = "Allocatable space (MB) - "
-        for k,v in self.diskProfile.disk_dict.iteritems():
-            available_space = v.getLargestSpaceAvailable() / 1024 / 1024
-            text += '%s: %d ' % (k, available_space)
-        avail_tb = snack.Label(text)
+        avail_tb = self.drawAvailableSpace() 
         self.gridForm.add(avail_tb, 0,2, anchorLeft=1, padding=(0,1,0,0))
 
         subgrid = snack.Grid(2,1)

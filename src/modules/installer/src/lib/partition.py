@@ -138,7 +138,7 @@ class PartitionScreen(InstallerScreen):
                     for pv_name, pv in self.disk_profile.pv_dict.iteritems():
                         if pv.partition is partition and pv.group:
                             mountpoint = pv.group.name
-                if partition.native_type == 'Dell Utility':
+                if partition.native_type == 'Dell Utility' or partition.dellUP_flag:
                     fs_type = 'Dell Utility'
                 # display partition info
                 self.listbox.addRow([part_devicename,

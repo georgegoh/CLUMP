@@ -42,6 +42,8 @@ def editDevice(baseScreen):
                 scr.start()
             elif selected_device in disk_profile.disk_dict.keys():
                 raise KusuError, 'Cannot edit the selected device because it is a physical disk in the system.'
+            elif hasattr(selected_device, 'type') and selected_device.type=='extended':
+                raise KusuError, 'Extended partitions are managed by the Partitiontool and cannot be edited.'
             else:
                 for disk in disk_profile.disk_dict.values():
                     if selected_device in disk.partition_dict.values():
@@ -49,7 +51,7 @@ def editDevice(baseScreen):
                         checkIfPreserved(selected_device)
                         scr = EditPartition(screen, selected_device, disk_profile)
                         scr.start()
- 
+  
             return NAV_NOTHING
 
         except KusuError, e:
@@ -85,6 +87,13 @@ class EditPartition(NewPartition):
         NewPartition.__init__(self, screen, disk_profile)
         self.partition = device
 
+    def drawAvailableSpace(self):
+        text = "Allocatable space (MB) - "
+        available_space = self.partition.disk.availableSpaceForPartition(self.partition) / 1024 / 1024
+        text += '%d' % available_space
+        avail_tb = snack.Label(text)
+        return avail_tb
+
     def draw(self): 
         """Draw the fields onscreen."""
         NewPartition.draw(self)
@@ -118,6 +127,8 @@ class EditPartition(NewPartition):
             size_MB, fixed_size = self.calculatePartitionSize()
             if size_MB <= 0 or size_MB > available_space and not self.fill.selected():
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+            if self.fill.selected():
+                size_MB = available_space
         except ValueError:
             raise KusuError, 'Size must be between 1 and %d MB.' % available_space
 

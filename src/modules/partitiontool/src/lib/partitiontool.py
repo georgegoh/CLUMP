@@ -542,23 +542,17 @@ class DiskProfile(object):
                 pv = self.pv_dict[partition_obj.path]
                 if pv.group and pv.group.lv_dict:
                     raise PartitionIsPartOfVolumeGroupError
-            if size_MB == partition_obj.size_MB and \
-               (partition_obj.fs_type == fs_type or \
-               fs_type in fsTypes.keys()):
-                if partition_obj.mountpoint in self.mountpoint_dict:
-                    del(self.mountpoint_dict[partition_obj.mountpoint])
+
+            fill = not fixed_size
+            partition_obj.resize(size_MB, fill)
+
+            if partition_obj.mountpoint in self.mountpoint_dict:
+                del(self.mountpoint_dict[partition_obj.mountpoint])
                 partition_obj.mountpoint = mountpoint
-                if mountpoint:
-                    self.mountpoint_dict[mountpoint] = partition_obj
+            if mountpoint:
+                self.mountpoint_dict[mountpoint] = partition_obj
                 partition_obj.fs_type = fs_type
-                return partition_obj
 
-            backup_disk_id = basename(partition_obj.disk.path)
-            backup_size = partition_obj.size_MB
-            backup_fs_type = partition_obj.fs_type
-            backup_mountpoint = partition_obj.mountpoint
-
-            self.deletePartition(partition_obj, keep_in_place=True)
         except PartitionIsPartOfVolumeGroupError:
             pv = self.pv_dict[partition_obj.path]
             if pv.group:
@@ -570,33 +564,16 @@ class DiskProfile(object):
                 'be edited because it is part of Logical Volume Group %s, ' % \
                 (group) + \
                 'which still contains allocated logical volumes.\nDelete those first.'
-        logger.debug('Original partition deleted. Remaining partitions: ' + \
-                     str(partition_obj.disk.partition_dict.keys()))
-        try:
-            edited_partition = self.newPartition(backup_disk_id,
-                                                 size_MB,
-                                                 fixed_size,
-                                                 fs_type,
-                                                 mountpoint)
-            if backup_mountpoint in self.mountpoint_dict and \
-               backup_mountpoint != mountpoint:
-                del(self.mountpoint_dict[backup_mountpoint])
-            logger.debug('New partition created')
-
+ 
         except PartitionSizeTooLargeError, e:
             logger.debug('Exception raised when trying to edit partition %s' % \
                          partition_obj.path)
             logger.debug('There is no contiguous free space on disk ' + \
                          'to fit new size')
-            self.newPartition(backup_disk_id,
-                              backup_size,
-                              False,
-                              backup_fs_type,
-                              backup_mountpoint)
             raise KusuError, "Couldn't find a contiguous free space to " + \
                              "fit the new size. Try deleting other partitions."
 
-        return edited_partition
+        return partition_obj
 
     def deletePartition(self, partition_obj, keep_in_place=False):
         """Delete an existing partition."""

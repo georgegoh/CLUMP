@@ -336,6 +336,8 @@ def createPartition(disk_path, partition, disk_profile):
     # cannot assign native_type using pyparted
     if index:
         return ('/dev/'+disk_path, index, struct.pack('B', type))
+        if partition.native_type == 'Dell Utility':
+            p.dellUP_flag = True
     return None
     # XXX
         

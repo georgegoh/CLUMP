@@ -178,25 +178,119 @@ class Disk(object):
         except parted.error, e:
             raise KusuError, e
 
+    def resize(self, partition, size_MB, fill):
+        if size_MB < (self.availableSpaceForPartition(partition) / 1024 / 1024):
+            raise PartitionSizeTooLargeError
+        if fill:
+            self.maximizePartition(partition)
+        elif size_MB < partition.size_MB:
+            self.shrink(partition, size_MB)
+        elif size_MB > partition.size_MB:
+            self.grow(partition, size_MB)
+
+    def shrink(self, partition, size_MB):
+        size = size_MB * 1024 * 1024
+        sectors = size / self.sector_size
+        logger.debug('Existing sectors: %d Shrunken sectors: %d' % (partition.end_sector-partition.start_sector, sectors))
+        end_sector = partition.start_sector + sectors
+        partition.end_sector = self.__alignEndSector(end_sector)
+
+    def grow(self, partition, size_MB):
+        size = size_MB * 1024 * 1024
+        sectors = size / self.sector_size
+        logger.debug('Existing sectors: %d Grown sectors: %d' % (partition.end_sector-partition.start_sector, sectors))
+        if partition.type == 'primary':
+            self.growPrimary(partition, sectors)
+        elif partition.type == 'logical':
+            self.growLogical(partition, sectors)
+
+    def growPrimary(self, partition, sectors):
+        part_keys = sorted(self.partition_dict.keys())
+        index = part_keys.index(partition.num)
+        if index > 0:
+            prev_p_key = part_keys[index-1]
+            prev_p = self.partition_dict[prev_p_key]
+            partition.start_sector = self.__alignStartSector(prev_p.end_sector + 1)
+        else:
+            partition.start_sector = self.__alignStartSector(self.sectors)
+        end_sector = partition.start_sector + sectors
+        partition.end_sector = self.__alignEndSector(end_sector)    
+
+    def growLogical(self, partition, sectors):
+        logical_keys = []
+        extended = None
+        for k,v in self.partition_dict.iteritems():
+            if p.type == 'logical':
+                logical_keys.append(k)
+            elif p.type == 'extended':
+                extended = p
+
+        logical_keys = sorted(logical_keys)
+        index = logical_keys.index(partition.num)
+        if index > 0:
+            prev_p_key = logical_keys[index-1]
+            prev_p = self.partition_dict[prev_p_key]
+            partition.start_sector = self.__alignStartSector(prev_p.end_sector + 1)
+        else:
+            partition.start_sector = self.__alignStartSector(extended.start_sector)
+
+        end_sector = partition.start_sector + sectors
+        partition.end_sector = self.__alignEndSector(end_sector)
 
     def availableSpaceForPartition(self, partition):
         logger.debug('Finding out how much more partition %s can expand' % partition.path)
-        if self.partition_dict.has_key(partition.num-1):
-            prev_p = self.partition_dict[partition.num-1]
+        if partition.type == 'primary':
+            return self.availableSpaceForPrimaryPartition(partition)
+        elif partition.type == 'logical':
+            return self.availableSpaceForLogicalPartition(partition)
+
+    def availableSpaceForPrimaryPartition(self, partition):
+        part_keys = sorted(self.partition_dict.keys())
+        index = part_keys.index(partition.num)
+        if index > 0:
+            prev_p_key = part_keys[index-1]
+            prev_p = self.partition_dict[prev_p_key]
             s1 = partition.start_sector - prev_p.end_sector - 1
-        elif partition.start_sector > self.sectors: # This partition is the first partition
+        else:
             s1 = partition.start_sector - self.sectors
-        else:
-            s1 = 0
 
-        if self.partition_dict.has_key(partition.num+1):
-            next_p = self.partition_dict[partition.num+1]
-            s2 = next_p.start_sector - partition.end_sector -1
-        elif partition.end_sector < self.length: # This partition is the last partition
-            s2 = self.length - partition.end_sector - 1
+        if partition.num == part_keys[-1]:
+            s2 = self.length = partition.end_sector - 1
         else:
-            s2 = 0
+            next_p_key = part_keys[index+1]
+            next_p = self.partition_dict[next_p_key]
+            s2 = next_p.start_sector - partition.end_sector - 1
 
+        if s1 < 0: s1 = 0
+        if s2 < 0: s2 = 0
+
+        available_space = (s1 + s2) * self.sector_size
+        return available_space
+
+    def availableSpaceForLogicalPartition(self, partition):
+        logical = []
+        extended = None
+        for p in self.partition_dict.values():
+            if p.type == 'logical':
+                logical.append(p)
+            elif p.type == 'extended':
+                extended = p
+
+        logical = self.__sortBySectors(logical)
+        index = logical.index(partition)
+        if index == 0:
+            s1 = partition.start_sector - extended.start_sector
+        else:
+            prev_p = logical[index-1]
+            s1 = partition.start_sector - prev_p.endsector - 1
+        if partition == logical[-1]:
+            s2 = extended.end_sector - partition.end_sector
+        else:
+            next_p = logical[index+1]
+            s2 = next_p.start_sector - partition.end_sector - 1
+
+        if s1 < 0: s1 = 0
+        if s2 < 0: s2 = 0
         available_space = (s1 + s2) * self.sector_size
         return available_space
 
@@ -369,9 +463,9 @@ class Disk(object):
         extended = None
         logical = []
         for partition in self.partition_dict.values():
-            if partition.part_type == 'primary':
+            if partition.type == 'primary':
                 primary.append(partition)
-            elif partition.part_type == 'extended':
+            elif partition.type == 'extended':
                 extended = partition
             else:
                 logical.append(partition)
@@ -382,38 +476,39 @@ class Disk(object):
         # Start after first track.
         # search for space among primary partitions.
         if len(primary) < 3:
-            largest_size = self.__largestFreeSpaceSearch(self.sectors, primary, largest_size)
-            if extended is None:
-                start_sector = primary[-1].end_sector + 1
-                end_sector = self.length
-                largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
-            else:
-                start_sector = primary[-1].end_sector + 1
-                end_sector = extended.start_sector
-                # search between last primary and the extended partition.
-                if end_sector > start_sector and len(primary) < 3:
-                    largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
-
-        if extended is not None:
+            partition_list = self.__sortBySectors(primary + logical)
+            largest_size = self.__largestFreeSpaceSearch(self.sectors,
+                                                         self.length,
+                                                         partition_list,
+                                                         largest_size)
+        if extended:
             # search within the extended partition.
             if not logical:
                 largest_size = self.__getLargerSpace(extended.start_sector, extended.end_sector,
                                                      largest_size)
             else:
-                largest_size = self.__largestFreeSpaceSearch(extended.start_sector,
+                logger.debug('Extended Start: %d, Extended End: %d' % (extended.start_sector, extended.end_sector))
+                largest_size = self.__largestFreeSpaceSearch(extended.start_sector, extended.end_sector,
                                                              logical, largest_size)
-                start_sector = logical[-1].end_sector + 1
-                end_sector = extended.end_sector
-                largest_size = self.__getLargerSpace(start_sector, end_sector, largest_size)
-
         return largest_size
                     
 
-    def __largestFreeSpaceSearch(self, start_sector, sorted_parts_list, largest_so_far):
-        end_sector = start_sector - 1
+    def __largestFreeSpaceSearch(self, start_sector, length, sorted_parts_list, largest_so_far):
+        """
+        Search in between partitions for largest free space.
+        """
         for p in sorted_parts_list:
-            start_sector = end_sector + 1
-            end_sector = p.start_sector
+            start_sector = self.__alignStartSector(start_sector)
+            logger.debug('Search start sector: %d' % start_sector)
+            end_sector = self.__alignEndSector(p.start_sector - (self.pedDisk.dev.heads * self.pedDisk.dev.sectors))
+            logger.debug('Partition start sector: %d' % end_sector)
+            largest_so_far = self.__getLargerSpace(start_sector, end_sector, largest_so_far)
+            start_sector = p.end_sector + 1
+        last_partition = sorted_parts_list[-1]
+        if (last_partition.end_sector + 1) < length:
+            logger.debug('Space remaining after last partition')
+            start_sector = last_partition.end_sector
+            end_sector = length
             largest_so_far = self.__getLargerSpace(start_sector, end_sector, largest_so_far)
         return largest_so_far
 
@@ -624,6 +719,7 @@ class Partition(object):
         self.leave_unchanged = False
         self.on_disk = False
         self.do_not_format = False
+        self.dellUP_flag = False
 
     def __lt__(self, other):
         return self.num < other.num
@@ -681,12 +777,15 @@ class Partition(object):
             finally:
                 del f
         elif name in ['disk', 'pedPartition', 'mountpoint', 'mountedpoint', 'leave_unchanged',
-                      'on_disk', 'do_not_format']:
+                      'on_disk', 'do_not_format', 'dellUP_flag']:
             object.__setattr__(self, name, value)
         else:
             raise AttributeError, "%s instance does not have or cannot " + \
                                   "modify attribute '%s'" % \
                                   (self.__class__, name)
+
+    def resize(self, size_MB, fill):
+        self.disk.resize(self, size_MB, fill)
 
     def mount(self, mountpoint=None, readonly=False):
         """Mounts this partition. If no mountpoint is given, then the
