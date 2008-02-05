@@ -133,7 +133,7 @@ class EditPartition(NewPartition):
             raise KusuError, 'Size must be between 1 and %d MB.' % available_space
 
         self.diskProfile.editPartition(self.partition, size_MB,
-                                       fixed_size, fs_type, mountpoint)
+                                        fixed_size, fs_type, mountpoint)
 
 
 class EditLogicalVolume(NewLogicalVolume):
@@ -178,18 +178,20 @@ class EditLogicalVolume(NewLogicalVolume):
 
         vol_grp = self.volumegroup.current()
         try:
-            size = long(self.size.value())
+            size_MB = long(self.size.value())
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
             self_size_MB = self.lv.size / 1024 /1024
-            if (size > self_size_MB and size > (available_space + self_size_MB)) or size <= 0:
-                if not self.fill.value():
-                    raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+            available_space += self_size_MB
+            if size_MB <= 0 or size_MB > available_space and not self.fill.value():
+                raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+            if self.fill.value():
+                size_MB = available_space
         except ValueError:
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
             raise KusuError, 'Size must be between 1 and %d MB.' % available_space
 
-        logger.debug('Edit LV - size: %s fs: %s mntpnt: %s' % (str(size), str(fs_type), str(mountpoint)))
-        self.disk_profile.editLogicalVolume(self.lv, size, fs_type, mountpoint)
+        logger.debug('Edit LV - size: %s fs: %s mntpnt: %s' % (str(size_MB), str(fs_type), str(mountpoint)))
+        self.disk_profile.editLogicalVolume(self.lv, size_MB, fs_type, mountpoint)
 
         self.lv.do_not_format = self.do_not_format_partition.value()
         return retVal 

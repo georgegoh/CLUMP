@@ -335,9 +335,10 @@ def createPartition(disk_path, partition, disk_profile):
     # Hack for transferring the native_type because
     # cannot assign native_type using pyparted
     if index:
-        return ('/dev/'+disk_path, index, struct.pack('B', type))
-        if partition.native_type == 'Dell Utility':
+        if type == 0xde:
+            logger.debug("Setting the partition's dellUP_flag to True")
             p.dellUP_flag = True
+        return ('/dev/'+disk_path, index, struct.pack('B', type))
     return None
     # XXX
         

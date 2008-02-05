@@ -179,21 +179,26 @@ class Disk(object):
             raise KusuError, e
 
     def resize(self, partition, size_MB, fill):
-        if size_MB < (self.availableSpaceForPartition(partition) / 1024 / 1024):
-            raise PartitionSizeTooLargeError
         if fill:
             self.maximizePartition(partition)
         elif size_MB < partition.size_MB:
             self.shrink(partition, size_MB)
         elif size_MB > partition.size_MB:
+            grow_size = size_MB - partition.size_MB
+            if grow_size > (self.availableSpaceForPartition(partition)/1024/1024):
+                logger.debug('Requested size(MB): %d' % size_MB)
+                logger.debug('Available size(MB): %d' % (self.availableSpaceForPartition(partition) / 1024 / 1024))
+                raise PartitionSizeTooLargeError
             self.grow(partition, size_MB)
 
     def shrink(self, partition, size_MB):
+        logger.debug('Disk %s length: %d sector size: %d' % (self.path, self.length, self.sector_size))
         size = size_MB * 1024 * 1024
         sectors = size / self.sector_size
         logger.debug('Existing sectors: %d Shrunken sectors: %d' % (partition.end_sector-partition.start_sector, sectors))
         end_sector = partition.start_sector + sectors
         partition.end_sector = self.__alignEndSector(end_sector)
+        logger.debug('Disk %s length: %d sector size: %d' % (self.path, self.length, self.sector_size))
 
     def grow(self, partition, size_MB):
         size = size_MB * 1024 * 1024
@@ -238,24 +243,26 @@ class Disk(object):
         partition.end_sector = self.__alignEndSector(end_sector)
 
     def availableSpaceForPartition(self, partition):
-        logger.debug('Finding out how much more partition %s can expand' % partition.path)
         if partition.type == 'primary':
             return self.availableSpaceForPrimaryPartition(partition)
         elif partition.type == 'logical':
             return self.availableSpaceForLogicalPartition(partition)
 
     def availableSpaceForPrimaryPartition(self, partition):
+        logger.debug('Finding out how much more partition %s can expand' % partition.path)
         part_keys = sorted(self.partition_dict.keys())
         index = part_keys.index(partition.num)
         if index > 0:
+            logger.debug('Partition has preceding partitions')
             prev_p_key = part_keys[index-1]
             prev_p = self.partition_dict[prev_p_key]
             s1 = partition.start_sector - prev_p.end_sector - 1
         else:
+            logger.debug('Partition is at the start of the disk')
             s1 = partition.start_sector - self.sectors
 
         if partition.num == part_keys[-1]:
-            s2 = self.length = partition.end_sector - 1
+            s2 = self.length - partition.end_sector - 1
         else:
             next_p_key = part_keys[index+1]
             next_p = self.partition_dict[next_p_key]
@@ -785,6 +792,8 @@ class Partition(object):
                                   (self.__class__, name)
 
     def resize(self, size_MB, fill):
+        logger.debug('Partition %s resize function called with size_MB=%d and fill=%s' % \
+                     (self.path, size_MB, str(fill)))
         self.disk.resize(self, size_MB, fill)
 
     def mount(self, mountpoint=None, readonly=False):
