@@ -181,7 +181,7 @@ class EditLogicalVolume(NewLogicalVolume):
             size = long(self.size.value())
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
             self_size_MB = self.lv.size / 1024 /1024
-            if (size > self_size_MB and size > (available_space + self.size_MB)) or size <= 0:
+            if (size > self_size_MB and size > (available_space + self_size_MB)) or size <= 0:
                 if not self.fill.value():
                     raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
