@@ -614,18 +614,18 @@ class NodeGroupWindow(USXBaseScreen):
             if result == "yes":
                 return NAV_QUIT
         else:
-            if len(myNodeInfo.nodeList):
-                if pluginActions:
-                   pluginActions.plugins_finished()
+            #if len(myNodeInfo.nodeList):
+            #    if pluginActions:
+            #       pluginActions.plugins_finished()
             return NAV_QUIT
  
     def exitAction(self, data=None):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
         """
-        if len(myNodeInfo.nodeList):
-            if pluginActions:
-               pluginActions.plugins_finished()
+        #if len(myNodeInfo.nodeList):
+            #if pluginActions:
+               #pluginActions.plugins_finished()
         return NAV_QUIT
 
     def backAction(self):
