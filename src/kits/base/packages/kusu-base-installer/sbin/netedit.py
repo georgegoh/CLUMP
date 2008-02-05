@@ -214,7 +214,8 @@ class NetworkRecord(object):
     def checkNetworkEntry(self, networkid):
         # Check if the network selected is not in use.
         netuse = 0
-        query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(networkid)
+        #query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(networkid)
+        query = "SELECT COUNT(*) from nics,networks WHERE networks.netid=%d AND nics.netid=networks.netid" % int(networkid)
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
