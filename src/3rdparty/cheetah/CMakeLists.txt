@@ -7,7 +7,7 @@
 # Configure
 PROJECT(cheetah)
 SET(LICENSE_FILE LICENSE)
-SET(VERSION_STR 2.0rc7)
+SET(VERSION_STR 2.0.1)
 SET(SRC_URL http://downloads.sourceforge.net/cheetahtemplate/${PROJECT_NAME}-${VERSION_STR}.tar.gz?modtime=1152040991&big_mirror=0)
 SET(KUSU_MODULE OFF) #Set to ON if this is a Kusu module else set to OFF.
 

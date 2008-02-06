@@ -7,7 +7,7 @@
 # Configure
 PROJECT(sqlalchemy)
 SET(LICENSE_FILE LICENSE)
-SET(VERSION_STR 0.3.7)
+SET(VERSION_STR 0.3.11)
 SET(SRC_URL http://prdownloads.sourceforge.net/sqlalchemy/SQLAlchemy-${VERSION_STR}.tar.gz?download)
 SET(KUSU_MODULE OFF) #Set to ON if this is a Kusu module else set to OFF.
 
