@@ -137,6 +137,18 @@ moduleshpclibrariespkg.version = '0.1'
 moduleshpclibrariespkg.release = '1'
 moduleshpclibrariespkg.filename = 'modules-hpc-libraries-0.1-1.src.rpm'
 
+# package gfortran
+gfortranpkg = DistroPackage()
+gfortranpkg.name = 'gcc-gfortran'
+gfortranpkg.ostype = 'rhel'
+gfortranpkg.version = '4.1.1'
+
+# package lib-gfortran
+libgfortranpkg = DistroPackage()
+libgfortranpkg.name = 'lib-gfortran'
+libgfortranpkg.ostype = 'rhel'
+libgfortranpkg.version = '4.1.1'
+
 # package modules-hpc-libraries
 modulesmpich1gnupkg = SRPMPackage()
 modulesmpich1gnupkg.name = 'modules-mpich1-gnu'
@@ -296,6 +308,8 @@ hpcLibrariesComp.addDep(hdf5pkg)
 hpcLibrariesComp.addDep(fftwpkg)
 hpcLibrariesComp.addDep(atlaspkg)
 hpcLibrariesComp.addDep(moduleshpclibrariespkg)
+hpcLibrariesComp.addDep(gfortranpkg)
+hpcLibrariesComp.addDep(libgfortranpkg)
 
 
 
