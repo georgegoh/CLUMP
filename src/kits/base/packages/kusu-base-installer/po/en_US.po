@@ -144,7 +144,7 @@ msgid "genconfig_Hosts_Help"
 msgstr "This plugin generates the contents of the /etc/hosts file."
 
 msgid "genconfig_HostsEquiv_Help"
-msgstr "This plugin generates the contents of the /etc/hosts.equiv file."
+msgstr "This plugin generates the contents of the /etc/hosts.equiv file for r* based commands such as rhosts, rdate."
 
 msgid "genconfig_HostsPdsh_Help"
 msgstr "This plugin generates the contents of the /etc/hosts.pdsh file."
