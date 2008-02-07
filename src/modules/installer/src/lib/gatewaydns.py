@@ -260,6 +260,9 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['dns2'] = self.dns2.value()
         self.netProfile['dns3'] = self.dns3.value()
 
+    def rollback(self):
+        self.formAction()
+
     def save(self, db, profile):
         if not profile['gw_dns_use_dhcp']:
             db.AppGlobals(kname='dns1', kvalue=profile['dns1'])

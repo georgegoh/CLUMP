@@ -173,6 +173,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.netProfile['fqhn_host'] = self.hostname.value()
         self.netProfile['fqhn_domain'] = self.domain.value()
 
+    def rollback(self):
+        self.formAction()
+
     def setDefaults(self):
         db = self.kiprofile.getDatabase()
 

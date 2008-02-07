@@ -213,6 +213,9 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                 else:
                     self.kiprofile[self.profile]['have_static'] = True
 
+    def rollback(self):
+        self.formAction()
+
     def save(self, db, profile):
         master = db.NodeGroups.selectfirst_by(type='installer')
         master_node = db.Nodes.selectfirst_by(ngid=master.ngid)

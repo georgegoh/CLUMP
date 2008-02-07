@@ -123,6 +123,11 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
                                     stderr=subprocess.PIPE)
         hwclockP.communicate()
 
+    def rollback(self):
+        self.kiprofile[self.profile]['zone'] = self.listbox.current()
+        self.kiprofile[self.profile]['utc'] = bool(self.utc.value())
+        self.kiprofile[self.profile]['ntp_server'] = self.ntp.value()
+
     def executeCallback(self, obj):
         if obj is self.listbox:
             return True

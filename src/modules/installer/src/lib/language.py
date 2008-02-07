@@ -106,6 +106,10 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
         self.kiprofile[self.profile] = langAttr[0]
 
+    def rollback(self):
+        langAttr = self.listbox.current()
+        self.kiprofile[self.profile] = langAttr[0]
+
     def executeCallback(self, obj):
         if obj is self.listbox:
             return True

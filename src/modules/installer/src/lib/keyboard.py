@@ -66,6 +66,9 @@ class KeyboardSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
         self.kiprofile[self.profile] = self.listbox.current()
 
+    def rollback(self):
+        self.formAction()
+
     def executeCallback(self, obj):
         if obj is self.listbox:
             return True
