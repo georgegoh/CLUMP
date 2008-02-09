@@ -20,6 +20,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.util.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
+from kusu.util.testing import runCommand
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -156,10 +157,37 @@ class PartitionScreen(InstallerScreen):
                             'system hardware to make sure that you have ' + \
                             'installed your disks correctly.'
 
+    def isDiskFormatted(self, disk):
+        if len(disk.partition_dict) != 1:
+            return False
+        p = disk.partition_dict.values()[0]
+        try:
+            logger.debug("Checking partition's type: %s" % p.native_type)
+            return False
+        except KeyError:
+            return True
+
     def promptForDefaultSchema(self):
         first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
         first_disk = self.disk_profile.disk_dict[first_disk_key]
-        if first_disk.partition_dict:
+        if self.isDiskFormatted(first_disk):
+            # tell user that disk is formatted as one, as opposed to a partition on disk.
+            msg = 'The installer has detected that %s has a loop partition layout.' % first_disk.path
+            msg += '\n\nTo use this disk for installation, it must be re-initialized, '
+            msg += 'causing the loss of ALL DATA on this drive. Do you want to '
+            msg += 'reinitialize this drive?'
+            result = self.selector.popupDialogBox('Disk partition layout',
+                                                  msg,
+                                                  ['Re-initialize', 'Quit Installation And Reboot'])
+            if str(result) == 're-initialize':
+                logger.debug('Re-initialize')
+                runCommand('dd if=/dev/zero of=%s bs=1k count=10' % first_disk.path)
+                self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
+                self.promptForDefaultSchema()
+            else:
+                raise UserExitError, 'User chose not to re-initialize disk'
+
+        elif first_disk.partition_dict:
             # tell user a schema exists and ask to proceed.
             msg = 'The installer has detected that one of the disks  ' + \
                   'is already partitioned. Do you want to use the ' + \

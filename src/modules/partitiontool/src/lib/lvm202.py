@@ -118,7 +118,7 @@ def runCommand(command):
 
 
 def createPhysicalVolume(partition_path):
-    out, err = runCommand('lvm pvcreate %s' % partition_path)
+    out, err = runCommand('lvm pvcreate %s -ff -y' % partition_path)
     return (out, err)
 
 def removePhysicalVolume(partition_path):
