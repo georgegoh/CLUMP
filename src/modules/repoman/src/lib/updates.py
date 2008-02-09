@@ -161,16 +161,17 @@ class BaseUpdate:
         ko.setKitMedia(kitdir)
         kits = ko.addKitPrepare()
 
-        if len(kits) != 1:
-            raise UnrecognizedKitMediaError, "Unable to add update kit"    
+        for kit in kits:
+            if kit[1]['name'] == '%s-updates' % self.os_name:
+                ko.addKit(kit)
+                
+                if kitdir.exists():
+                    kitdir.rmtree()
 
-        ko.addKit(kits[0])
+                return kit
+            
+        raise UnrecognizedKitMediaError, "Update kit cannot be found"    
 
-        if kitdir.exists():
-            kitdir.rmtree()
-
-        return kits[0]
- 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
 
         compclass = {'rhel' : {'5': 'RHEL5Component()'},
@@ -226,8 +227,8 @@ class BaseUpdate:
         if retcode == 0:
             return True
         else:
-            raise UnableToPrepUpdateKit, err
-
+            raise UnableToPrepUpdateKit, out
+    
     def makeKit(self, workingDir, destDir, kitName):
         cmd = 'buildkit make kit=%s dir=%s' % (kitName, destDir)
         p = subprocess.Popen(cmd,
