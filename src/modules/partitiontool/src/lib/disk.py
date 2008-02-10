@@ -903,7 +903,9 @@ class Partition(object):
         elapsed_time = clock_end - clock_start
         logger.info('Elapsed time to format %s: %.3f s' % (self.path, elapsed_time))
 
-    native_type_dict = { 0 : 'Empty',
+    native_type_dict = {
+        -1 : 'Loop',
+        0 : 'Empty',
         1 : 'FAT12',
         2 : 'XENIX root',
         3 : 'XENIX usr',

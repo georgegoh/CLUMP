@@ -341,7 +341,20 @@ def createPartition(disk_path, partition, disk_profile):
         return ('/dev/'+disk_path, index, struct.pack('B', type))
     return None
     # XXX
-        
+
+def isDiskFormatted(disk):
+    if len(disk.partition_dict) != 1:
+        return False
+    p = disk.partition_dict.values()[0]
+    try:
+        logger.debug("Checking partition's type: %s" % p.native_type)
+        if p.native_type == 'Loop':
+            return True
+        return False
+    except KeyError:
+        return True
+
+
 def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
     """Set up a disk profile based on a given schema."""
     # clear LVM logical volumes and groups.

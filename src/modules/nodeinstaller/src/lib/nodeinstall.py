@@ -9,8 +9,9 @@ from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFacto
 from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
-from kusu.installer.defaults import setupDiskProfile
+from kusu.installer.defaults import *
 from kusu.nodeinstaller import NodeInstInfoHandler
+from kusu.util.testing import runCommand
 from kusu.util.errors import *
 from kusu.hardware import probe
 from random import choice
@@ -184,6 +185,12 @@ class KickstartFromNIIProfile(object):
                 self.diskprofile = DiskProfile(False,diskimg)
             else:
                 self.diskprofile = DiskProfile(False)
+            for disk in self.diskprofile.disk_dict.values():
+                if isDiskFormatted(disk):
+                    logger.debug('Re-initialize')
+                    runCommand('dd if=/dev/zero of=%s bs=1k count=10' % disk.path)
+                    self.diskprofile = DiskProfile(fresh=False, probe_fstab=False)
+ 
             schema = None
             schema, self.diskprofile = adaptNIIPartition(ni.partitions, self.diskprofile)
             logger.debug('Adapted schema from the ni.partitions: %r' % schema)

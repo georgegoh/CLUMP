@@ -157,20 +157,10 @@ class PartitionScreen(InstallerScreen):
                             'system hardware to make sure that you have ' + \
                             'installed your disks correctly.'
 
-    def isDiskFormatted(self, disk):
-        if len(disk.partition_dict) != 1:
-            return False
-        p = disk.partition_dict.values()[0]
-        try:
-            logger.debug("Checking partition's type: %s" % p.native_type)
-            return False
-        except KeyError:
-            return True
-
     def promptForDefaultSchema(self):
         first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
         first_disk = self.disk_profile.disk_dict[first_disk_key]
-        if self.isDiskFormatted(first_disk):
+        if isDiskFormatted(first_disk):
             # tell user that disk is formatted as one, as opposed to a partition on disk.
             msg = 'The installer has detected that %s has a loop partition layout.' % first_disk.path
             msg += '\n\nTo use this disk for installation, it must be re-initialized, '
