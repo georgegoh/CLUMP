@@ -156,6 +156,7 @@ class DiskProfile(object):
     def __str__(self):
         from pprint import pformat
         s = 'Disk Dictionary:\n' + self.__diskDictStr()
+        s = s + 'Ignore disks: %s' + str(self.ignore_disk_dict.keys())
         s = s + '\nPhysical Volume Dictionary:\n' + self.__lvmStr(self.pv_dict)
         s = s + '\nLogical Volume Group Dictionary:\n' + self.__lvmStr(self.lvg_dict)
         s = s + '\nLogical Volume Dictionary:\n' + self.__lvmStr(self.lv_dict)

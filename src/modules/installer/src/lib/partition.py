@@ -200,6 +200,12 @@ class PartitionScreen(InstallerScreen):
 
         return []
 
+    def prepareIgnoreList(self, list):
+        for d in list:
+            disk = self.disk_profile.disk_dict.pop(d)
+            self.disk_profile.ignore_disk_dict[d] = disk
+        logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
+
     def promptForDefaultSchema(self):
         formatted_disks = self.findFormattedDisks()
         do_not_use_disks = list(formatted_disks)
@@ -211,10 +217,7 @@ class PartitionScreen(InstallerScreen):
                 runCommand('dd if=/dev/zero of=%s bs=1k count=10' % 
                            self.disk_profile.disk_dict[d].path)
             self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
-            for d in do_not_use_disks:
-                disk = self.disk_profile.disk_dict.pop(d)
-                self.disk_profile.ignore_disk_dict[d] = disk
-                logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
+            self.prepareIgnoreList(do_not_use_disks)
 
         first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
         first_disk = self.disk_profile.disk_dict[first_disk_key]
@@ -230,8 +233,7 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 logger.debug('Default chosen')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
-                for d in do_not_use_disks:
-                    self.disk_profile.disk_dict.pop(d)
+                self.prepareIgnoreList(do_not_use_disks)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
                 setupPreservedPartitions(self.disk_profile, schema)
@@ -240,8 +242,7 @@ class PartitionScreen(InstallerScreen):
             elif str(result) == 'clear all partitions':
                 logger.debug('Clear all partitions')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
-                for d in do_not_use_disks:
-                    self.disk_profile.disk_dict.pop(d)
+                self.prepareIgnoreList(do_not_use_disks)
             else:
                 logger.debug('Use Existing')
 
@@ -256,8 +257,7 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 logger.debug('Default chosen')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True)
-                for d in do_not_use_disks:
-                    self.disk_profile.disk_dict.pop(d)
+                self.prepareIgnoreList(do_not_use_disks)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
                 setupDiskProfile(self.disk_profile, schema)

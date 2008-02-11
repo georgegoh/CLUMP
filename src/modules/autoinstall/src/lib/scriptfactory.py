@@ -130,9 +130,19 @@ class KickstartFactory(BaseFactory):
 
         return network_lines
 
+    def _getIgnoreDisks(self):
+        disk_profile = self.profile.diskprofile
+        ignore_disks = disk_profile.ignore_disk_dict.keys()
+        return ','.join(ignore_disks)
+
     def _getPartitions(self):
 
         part_lines = []
+
+        # Get the list of ignored disks
+        ignore_disks = self._getIgnoreDisks()
+        if ignore_disks:
+            part_lines.append('ignoredisk --drives=' + ignore_disks)
 
         # Translate from parted to anaconda defn
         # parted filesystem type -> anaconda
