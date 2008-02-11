@@ -42,6 +42,11 @@ skipx
 
 #clearpart --all
 clearpart --none
+
+#if $ignoredisk
+ignoredisk --drives=$ignoredisk
+#end if
+
 #for $part in $partitions
 $part
 #end for

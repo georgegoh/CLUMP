@@ -78,6 +78,7 @@ class KickstartFactory(BaseFactory):
         self.namespace['packages'] = self.profile.packageprofile 
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
+        self.namespace['ignoredisk'] = self._getIgnoreDisks()
 
         return self.namespace
 
@@ -133,16 +134,12 @@ class KickstartFactory(BaseFactory):
     def _getIgnoreDisks(self):
         disk_profile = self.profile.diskprofile
         ignore_disks = disk_profile.ignore_disk_dict.keys()
+
         return ','.join(ignore_disks)
 
     def _getPartitions(self):
 
         part_lines = []
-
-        # Get the list of ignored disks
-        ignore_disks = self._getIgnoreDisks()
-        if ignore_disks:
-            part_lines.append('ignoredisk --drives=' + ignore_disks)
 
         # Translate from parted to anaconda defn
         # parted filesystem type -> anaconda
@@ -237,6 +234,7 @@ class RHEL5KickstartFactory(KickstartFactory):
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
         self.namespace['instnum'] = self.profile.instnum
+        self.namespace['ignoredisk'] = self._getIgnoreDisks()
 
         return self.namespace
 
@@ -253,6 +251,7 @@ class Fedora7KickstartFactory(KickstartFactory):
         self.namespace['packages'] = self.profile.packageprofile 
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
+        self.namespace['ignoredisk'] = self._getIgnoreDisks()
 
         return self.namespace
 
