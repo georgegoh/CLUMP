@@ -168,6 +168,7 @@ class DiskProfile(object):
         """
         global cmd_fifo
         self.disk_dict = {}
+        self.ignore_disk_dict = {}
         self.mountpoint_dict = {}
         self.pv_dict = {}
         self.lvg_dict = {}

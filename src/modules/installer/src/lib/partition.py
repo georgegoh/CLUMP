@@ -34,7 +34,6 @@ class PartitionScreen(InstallerScreen):
     profile = 'Partitions'
     msg = _('Please enter the following information:')
     buttons = [_('New'), _('Edit'), _('Delete')]#, _('RAID')]
-#    buttons = [_('New'), _('Delete')]#, _('RAID')]
     disk_profile = None
 
     def setCallbacks(self):
@@ -157,27 +156,69 @@ class PartitionScreen(InstallerScreen):
                             'system hardware to make sure that you have ' + \
                             'installed your disks correctly.'
 
+    def findFormattedDisks(self):
+        disks_keys = []
+        for key,disk in self.disk_profile.disk_dict.iteritems():
+            if isDiskFormatted(disk):
+                disks_keys.append(key)
+        return disks_keys
+
+    def drawReinit(self, disks):
+        msg = 'The installer has detected drive(s) on this system that have a loop '
+        msg += 'partition layout.\n\n'
+        msg += 'To use a drive for installation, it must be re-initialized, '
+        msg += 'causing the loss of ALL DATA on the drive.\n\n'
+        msg += 'Please choose the drives that you wish to re-initialize below.\n\n'
+
+        cbt = snack.CheckboxTree(3, scroll=1)
+        for d in disks:
+            cbt.append(d)
+        
+        gridForm = snack.GridForm(self.screen, _('Loop Partition Drives'),1,3)
+        tb = snack.TextboxReflowed(40, msg)
+        gridForm.add(tb, 0,0)
+
+        gridForm.add(cbt, 0,1)
+
+        reinit_button = kusuwidgets.Button(_('Re-initialize selected drive(s)'))
+        cancel_button = kusuwidgets.Button(_('Cancel'))
+        reboot_button = kusuwidgets.Button(_('Reboot'))
+        subgrid = snack.Grid(3,1)
+        subgrid.setField(reinit_button, 0,0)
+        subgrid.setField(cancel_button, 1,0)
+        subgrid.setField(reboot_button, 2,0)
+        gridForm.add(subgrid, 0,2)
+        gridForm.draw()
+        exitCmd = gridForm.run()
+        self.screen.popWindow()
+
+        if exitCmd is reboot_button:
+            raise UserExitError, 'User chose to reboot on re-init of drives.' 
+
+        if exitCmd is reinit_button:
+            return cbt.getSelection()
+
+        return []
+
     def promptForDefaultSchema(self):
+        formatted_disks = self.findFormattedDisks()
+        do_not_use_disks = list(formatted_disks)
+        if formatted_disks:
+            chosen_disks = self.drawReinit(formatted_disks)
+            logger.debug('Re-initializing disks: %s' % str(chosen_disks))
+            for d in chosen_disks:
+                do_not_use_disks.remove(d)
+                runCommand('dd if=/dev/zero of=%s bs=1k count=10' % 
+                           self.disk_profile.disk_dict[d].path)
+            self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
+            for d in do_not_use_disks:
+                disk = self.disk_profile.disk_dict.pop(d)
+                self.disk_profile.ignore_disk_dict[d] = disk
+                logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
+
         first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
         first_disk = self.disk_profile.disk_dict[first_disk_key]
-        if isDiskFormatted(first_disk):
-            # tell user that disk is formatted as one, as opposed to a partition on disk.
-            msg = 'The installer has detected that %s has a loop partition layout.' % first_disk.path
-            msg += '\n\nTo use this disk for installation, it must be re-initialized, '
-            msg += 'causing the loss of ALL DATA on this drive. Do you want to '
-            msg += 'reinitialize this drive?'
-            result = self.selector.popupDialogBox('Disk partition layout',
-                                                  msg,
-                                                  ['Re-initialize', 'Quit Installation And Reboot'])
-            if str(result) == 're-initialize':
-                logger.debug('Re-initialize')
-                runCommand('dd if=/dev/zero of=%s bs=1k count=10' % first_disk.path)
-                self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
-                self.promptForDefaultSchema()
-            else:
-                raise UserExitError, 'User chose not to re-initialize disk'
-
-        elif first_disk.partition_dict:
+        if first_disk.partition_dict:
             # tell user a schema exists and ask to proceed.
             msg = 'The installer has detected that one of the disks  ' + \
                   'is already partitioned. Do you want to use the ' + \
@@ -189,6 +230,8 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 logger.debug('Default chosen')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                for d in do_not_use_disks:
+                    self.disk_profile.disk_dict.pop(d)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
                 setupPreservedPartitions(self.disk_profile, schema)
@@ -197,6 +240,8 @@ class PartitionScreen(InstallerScreen):
             elif str(result) == 'clear all partitions':
                 logger.debug('Clear all partitions')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                for d in do_not_use_disks:
+                    self.disk_profile.disk_dict.pop(d)
             else:
                 logger.debug('Use Existing')
 
@@ -211,6 +256,8 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 logger.debug('Default chosen')
                 self.disk_profile = partitiontool.DiskProfile(fresh=True)
+                for d in do_not_use_disks:
+                    self.disk_profile.disk_dict.pop(d)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
                 setupDiskProfile(self.disk_profile, schema)
