@@ -549,10 +549,12 @@ class DiskProfile(object):
 
             if partition_obj.mountpoint in self.mountpoint_dict:
                 del(self.mountpoint_dict[partition_obj.mountpoint])
-                partition_obj.mountpoint = mountpoint
+
+            partition_obj.mountpoint = mountpoint
             if mountpoint:
                 self.mountpoint_dict[mountpoint] = partition_obj
-                partition_obj.fs_type = fs_type
+
+            partition_obj.fs_type = fs_type
 
         except PartitionIsPartOfVolumeGroupError:
             pv = self.pv_dict[partition_obj.path]
@@ -719,7 +721,13 @@ class DiskProfile(object):
         # now the partitions are actually created.
         self.executeLVMFifo(ignore_errors)
         self.__modifyPartitionTypeHack()
-
+        p = subprocess.Popen('lvm vgchange -ay',
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        logger.debug('Activate VGs: %s, %s' % (out, err))
+ 
     def __modifyPartitionTypeHack(self):
         # hack for modifying partition types.
         for (path, index, type) in self.manual_writes:

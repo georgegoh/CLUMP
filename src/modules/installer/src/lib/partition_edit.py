@@ -119,6 +119,7 @@ class EditPartition(NewPartition):
             if not mountpoint or mountpoint[0] != '/':
                 raise KusuError, 'Please provide an absolute path for the mountpoint.'
         else:
+            logger.debug('FS Type: %s is not mountable' % fs_type)
             mountpoint = ''
         disk = self.drives.current()
         available_space = self.diskProfile.disk_dict[disk].availableSpaceForPartition(self.partition) / 1024 / 1024

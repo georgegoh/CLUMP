@@ -180,11 +180,11 @@ class PartitionScreen(InstallerScreen):
 
         gridForm.add(cbt, 0,1)
 
-        reinit_button = kusuwidgets.Button(_('Re-initialize selected drive(s)'))
+        proceed_button = kusuwidgets.Button(_('Proceed: Re-initialise Selected Drives'))
         cancel_button = kusuwidgets.Button(_('Cancel'))
         reboot_button = kusuwidgets.Button(_('Reboot'))
         subgrid = snack.Grid(3,1)
-        subgrid.setField(reinit_button, 0,0)
+        subgrid.setField(proceed_button, 0,0)
         subgrid.setField(cancel_button, 1,0)
         subgrid.setField(reboot_button, 2,0)
         gridForm.add(subgrid, 0,2)
@@ -195,7 +195,7 @@ class PartitionScreen(InstallerScreen):
         if exitCmd is reboot_button:
             raise UserExitError, 'User chose to reboot on re-init of drives.' 
 
-        if exitCmd is reinit_button:
+        if exitCmd is proceed_button:
             return cbt.getSelection()
 
         return []
