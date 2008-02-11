@@ -343,16 +343,9 @@ def createPartition(disk_path, partition, disk_profile):
     # XXX
 
 def isDiskFormatted(disk):
-    if len(disk.partition_dict) != 1:
-        return False
-    p = disk.partition_dict.values()[0]
-    try:
-        logger.debug("Checking partition's type: %s" % p.native_type)
-        if p.native_type == 'Loop':
-            return True
-        return False
-    except KeyError:
+    if disk.pedDisk.type.name == 'loop':
         return True
+    return False
 
 
 def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
