@@ -62,6 +62,7 @@ class thisReport(Report):
         print "UseCanonicalName Off"
         print "ServerName %s.%s" % (installer, dnszone)
         print "CacheDisable /cfm"
+        print "CacheDisable /repos"
         print ""
         # Forget mod_python.  Does not work with MySQLDb module, and php
         # print "LoadModule python_module modules/mod_python.so"  
