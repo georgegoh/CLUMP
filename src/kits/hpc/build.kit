@@ -385,12 +385,12 @@ mvapich1Comp.addDep(scalapackmvapich1pkg)
 # package mvapich2-gnu
 mvapich2gnupkg = RPMPackage()
 mvapich2gnupkg.name = 'mvapich2-infiniband-gnu'
-mvapich2gnupkg.version = '0.9.8'
-mvapich2gnupkg.release = '15'
+mvapich2gnupkg.version = '1.0.1'
+mvapich2gnupkg.release = '1'
 if getArch() == 'x86':
-    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-0.9.8-15.i386.rpm'
+    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-1.0.1-1.i386.rpm'
 if getArch() == 'x86_64':
-    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-0.9.8-15.x86_64.rpm'
+    mvapich2gnupkg.filename = 'mvapich2-infiniband-gnu-1.0.1-1.x86_64.rpm'
 
 #define the MVAPICH2 component
 mvapich2Comp = DefaultComponent()
