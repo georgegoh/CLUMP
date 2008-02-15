@@ -95,9 +95,14 @@ def onNetwork(network, subnet, ip):
     Requires the network address, on an IP on that network, as well as
     the subnet mask, from which it checks the given ip to see if it
     is on the same network."""
-    netnum  = ip2number(network)
-    masknum = ip2number(subnet)
-    ipnum   = ip2number(ip)
+    try:
+        netnum  = ip2number(network)
+        masknum = ip2number(subnet)
+        ipnum   = ip2number(ip)
+    except:
+        # Got garbage
+        return False
+    
     minnum  = netnum & masknum
     maxnum  = minnum + (masknum ^ 0xffffffff)
     if ipnum > minnum and ipnum < maxnum:
@@ -146,7 +151,7 @@ def bestIP (myIPs, ipList):
         same network as this machine.  The 'myIPs' is the list of
         IPs produced by the getMyIPs function.  Returns a list of
         IP's from the ipList that are on the same network as this
-        machine, or an enpty list."""
+        machine, or an empty list."""
         onnet = []
         for ip in ipList:
             for network, subnet in myIPs:
