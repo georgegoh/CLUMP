@@ -1,66 +1,5 @@
 # build.kit for Nagios kit
 
-# Main Nagios package
-nagios_pkg = SRPMPackage()
-nagios_pkg.name = 'nagios'
-nagios_pkg.version = '2.9'
-nagios_pkg.release = '1'
-nagios_pkg.filename = 'nagios-2.9-1.src.rpm'
-
-# Nagios Remote Process Executor for compute nodes
-nagios_nrpe_pkg = RPMPackage()
-nagios_nrpe_pkg.name = 'nagios-nrpe'
-nagios_nrpe_pkg.version = '2.9'
-nagios_nrpe_pkg.release = '1'
-if getArch() == 'x86':
-    nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.i386.rpm'
-if getArch() == 'x86_64':
-    nagios_nrpe_pkg.filename = 'nagios-nrpe-2.9-1.x86_64.rpm'
-
-# Main Nagios plugins
-nagios_plugins_pkg = RPMPackage()
-nagios_plugins_pkg.name = 'nagios-plugins'
-nagios_plugins_pkg.version = '1.4.9'
-nagios_plugins_pkg.release = '1'
-if getArch() == 'x86':
-    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.i386.rpm'
-if getArch() == 'x86_64':
-    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.9-1.x86_64.rpm'
-
-# Nagios MySQL plugin
-nagios_plugin_mysql_pkg = RPMPackage()
-nagios_plugin_mysql_pkg.name = 'nagios-plugin-mysql'
-nagios_plugin_mysql_pkg.version = '1.4.9'
-nagios_plugin_mysql_pkg.release = '1'
-if getArch() == 'x86':
-    nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.i386.rpm'
-if getArch() == 'x86_64':
-    nagios_plugin_mysql_pkg.filename = 'nagios-plugin-mysql-1.4.9-1.x86_64.rpm'
-
-# Nagios NRPE plugin
-nagios_plugin_nrpe_pkg = RPMPackage()
-nagios_plugin_nrpe_pkg.name = 'nagios-plugin-nrpe'
-nagios_plugin_nrpe_pkg.version = '2.9'
-nagios_plugin_nrpe_pkg.release = '1'
-if getArch() == 'x86':
-    nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.i386.rpm'
-if getArch() == 'x86_64':
-    nagios_plugin_nrpe_pkg.filename = 'nagios-plugin-nrpe-2.9-1.x86_64.rpm'
-
-# perl-Crypt-DES -- a dependency unavailable from the repos, so included here
-perl_crypt_des_pkg = SRPMPackage()
-perl_crypt_des_pkg.name = 'perl-Crypt-DES'
-perl_crypt_des_pkg.version = '2.05'
-perl_crypt_des_pkg.release = '3'
-perl_crypt_des_pkg.filename = 'perl-Crypt-DES-2.05-3.rf.src.rpm'
-
-# perl-Net-SNMP -- a dependency unavailable from the repos, so included here
-perl_net_snmp_pkg = RPMPackage()
-perl_net_snmp_pkg.name = 'perl-Net-SNMP'
-perl_net_snmp_pkg.version = '5.2.0'
-perl_net_snmp_pkg.release = '1'
-perl_net_snmp_pkg.filename = 'perl-Net-SNMP-5.2.0-1.rf.noarch.rpm'
-
 # Component installed on the monitoring node
 installer_comp = DefaultComponent()
 installer_comp.name = 'installer-nagios'
@@ -68,27 +7,12 @@ installer_comp.description = 'Nagios component for installer node.'
 installer_comp.ngtypes = ['installer']
 installer_comp.addScript('installer-postun.sh', mode='postun')
 
-# Installer component contains...
-installer_comp.addDep(nagios_pkg)
-installer_comp.addDep(nagios_plugins_pkg)
-installer_comp.addDep(nagios_plugin_mysql_pkg)
-installer_comp.addDep(nagios_plugin_nrpe_pkg)
-installer_comp.addDep(perl_crypt_des_pkg)
-installer_comp.addDep(perl_net_snmp_pkg)
-
 # Component installed on the monitored nodes
 compute_comp = DefaultComponent()
 compute_comp.name = 'compute-nagios'
 compute_comp.description = 'Nagios component for compute nodes.'
 compute_comp.ngtypes = ['compute']
 compute_comp.addScript('compute-postun.sh', mode='postun')
-
-# Compute component contains...
-compute_comp.addDep(nagios_nrpe_pkg)
-compute_comp.addDep(nagios_plugins_pkg)
-compute_comp.addDep(nagios_plugin_nrpe_pkg)
-compute_comp.addDep(perl_crypt_des_pkg)
-compute_comp.addDep(perl_net_snmp_pkg)
 
 # The kit RPM
 k = DefaultKit()
@@ -99,3 +23,589 @@ k.arch = getArch()
 # Adding the installer and compute components
 k.addComponent(installer_comp)
 k.addComponent(compute_comp)
+
+# Kusu specific configuration packages.
+kusu_nagios_extras_pkg = SRPMPackage()
+kusu_nagios_extras_pkg.name = 'kusu-nagios-extras'
+kusu_nagios_extras_pkg.version = '0.1'
+kusu_nagios_extras_pkg.release = '1'
+kusu_nagios_extras_pkg.filename = 'kusu-nagios-extras-0.1-1.src.rpm'
+installer_comp.addDep(kusu_nagios_extras_pkg)
+
+kusu_nrpe_extras_pkg = SRPMPackage()
+kusu_nrpe_extras_pkg.name = 'kusu-nrpe-extras'
+kusu_nrpe_extras_pkg.version = '0.1'
+kusu_nrpe_extras_pkg.release = '1'
+kusu_nrpe_extras_pkg.filename = 'kusu-nrpe-extras-0.1-1.src.rpm'
+compute_comp.addDep(kusu_nrpe_extras_pkg)
+
+# Nagios packages obtained from EPEL.
+nagios_pkg = RPMPackage()
+nagios_pkg.name = 'nagios'
+nagios_pkg.version = '2.10'
+nagios_pkg.release = '5.el5'
+if getArch() == 'x86':
+    nagios_pkg.filename = 'nagios-2.10-5.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_pkg.filename = 'nagios-2.10-5.el5.x86_64.rpm'
+installer_comp.addDep(nagios_pkg)
+
+nrpe_pkg = RPMPackage()
+nrpe_pkg.name = 'nrpe'
+nrpe_pkg.version = '2.7'
+nrpe_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nrpe_pkg.filename = 'nrpe-2.7-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nrpe_pkg.filename = 'nrpe-2.7-3.el5.x86_64.rpm'
+compute_comp.addDep(nrpe_pkg)
+
+nagios_plugins_pkg = RPMPackage()
+nagios_plugins_pkg.name = 'nagios-plugins'
+nagios_plugins_pkg.version = '1.4.6'
+nagios_plugins_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_pkg.filename = 'nagios-plugins-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_pkg)
+compute_comp.addDep(nagios_plugins_pkg)
+
+nagios_plugins_apt_pkg = RPMPackage()
+nagios_plugins_apt_pkg.name = 'nagios-plugins-apt'
+nagios_plugins_apt_pkg.version = '1.4.6'
+nagios_plugins_apt_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_apt_pkg.filename = 'nagios-plugins-apt-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_apt_pkg.filename = 'nagios-plugins-apt-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_apt_pkg)
+compute_comp.addDep(nagios_plugins_apt_pkg)
+
+nagios_plugins_breeze_pkg = RPMPackage()
+nagios_plugins_breeze_pkg.name = 'nagios-plugins-breeze'
+nagios_plugins_breeze_pkg.version = '1.4.6'
+nagios_plugins_breeze_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_breeze_pkg.filename = 'nagios-plugins-breeze-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_breeze_pkg.filename = 'nagios-plugins-breeze-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_breeze_pkg)
+compute_comp.addDep(nagios_plugins_breeze_pkg)
+
+nagios_plugins_by_ssh_pkg = RPMPackage()
+nagios_plugins_by_ssh_pkg.name = 'nagios-plugins-by_ssh'
+nagios_plugins_by_ssh_pkg.version = '1.4.6'
+nagios_plugins_by_ssh_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_by_ssh_pkg.filename = 'nagios-plugins-by_ssh-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_by_ssh_pkg.filename = 'nagios-plugins-by_ssh-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_by_ssh_pkg)
+compute_comp.addDep(nagios_plugins_by_ssh_pkg)
+
+nagios_plugins_dhcp_pkg = RPMPackage()
+nagios_plugins_dhcp_pkg.name = 'nagios-plugins-dhcp'
+nagios_plugins_dhcp_pkg.version = '1.4.6'
+nagios_plugins_dhcp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_dhcp_pkg.filename = 'nagios-plugins-dhcp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_dhcp_pkg.filename = 'nagios-plugins-dhcp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_dhcp_pkg)
+compute_comp.addDep(nagios_plugins_dhcp_pkg)
+
+nagios_plugins_dig_pkg = RPMPackage()
+nagios_plugins_dig_pkg.name = 'nagios-plugins-dig'
+nagios_plugins_dig_pkg.version = '1.4.6'
+nagios_plugins_dig_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_dig_pkg.filename = 'nagios-plugins-dig-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_dig_pkg.filename = 'nagios-plugins-dig-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_dig_pkg)
+compute_comp.addDep(nagios_plugins_dig_pkg)
+
+nagios_plugins_disk_pkg = RPMPackage()
+nagios_plugins_disk_pkg.name = 'nagios-plugins-disk'
+nagios_plugins_disk_pkg.version = '1.4.6'
+nagios_plugins_disk_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_disk_pkg.filename = 'nagios-plugins-disk-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_disk_pkg.filename = 'nagios-plugins-disk-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_disk_pkg)
+compute_comp.addDep(nagios_plugins_disk_pkg)
+
+nagios_plugins_disk_smb_pkg = RPMPackage()
+nagios_plugins_disk_smb_pkg.name = 'nagios-plugins-disk_smb'
+nagios_plugins_disk_smb_pkg.version = '1.4.6'
+nagios_plugins_disk_smb_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_disk_smb_pkg.filename = 'nagios-plugins-disk_smb-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_disk_smb_pkg.filename = 'nagios-plugins-disk_smb-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_disk_smb_pkg)
+compute_comp.addDep(nagios_plugins_disk_smb_pkg)
+
+nagios_plugins_dns_pkg = RPMPackage()
+nagios_plugins_dns_pkg.name = 'nagios-plugins-dns'
+nagios_plugins_dns_pkg.version = '1.4.6'
+nagios_plugins_dns_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_dns_pkg.filename = 'nagios-plugins-dns-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_dns_pkg.filename = 'nagios-plugins-dns-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_dns_pkg)
+compute_comp.addDep(nagios_plugins_dns_pkg)
+
+nagios_plugins_dummy_pkg = RPMPackage()
+nagios_plugins_dummy_pkg.name = 'nagios-plugins-dummy'
+nagios_plugins_dummy_pkg.version = '1.4.6'
+nagios_plugins_dummy_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_dummy_pkg.filename = 'nagios-plugins-dummy-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_dummy_pkg.filename = 'nagios-plugins-dummy-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_dummy_pkg)
+compute_comp.addDep(nagios_plugins_dummy_pkg)
+
+nagios_plugins_file_age_pkg = RPMPackage()
+nagios_plugins_file_age_pkg.name = 'nagios-plugins-file_age'
+nagios_plugins_file_age_pkg.version = '1.4.6'
+nagios_plugins_file_age_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_file_age_pkg.filename = 'nagios-plugins-file_age-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_file_age_pkg.filename = 'nagios-plugins-file_age-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_file_age_pkg)
+compute_comp.addDep(nagios_plugins_file_age_pkg)
+
+nagios_plugins_flexlm_pkg = RPMPackage()
+nagios_plugins_flexlm_pkg.name = 'nagios-plugins-flexlm'
+nagios_plugins_flexlm_pkg.version = '1.4.6'
+nagios_plugins_flexlm_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_flexlm_pkg.filename = 'nagios-plugins-flexlm-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_flexlm_pkg.filename = 'nagios-plugins-flexlm-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_flexlm_pkg)
+compute_comp.addDep(nagios_plugins_flexlm_pkg)
+
+#nagios_plugins_game_pkg = RPMPackage()
+#nagios_plugins_game_pkg.name = 'nagios-plugins-game'
+#nagios_plugins_game_pkg.version = '1.4.6'
+#nagios_plugins_game_pkg.release = '3.el5'
+#if getArch() == 'x86':
+#    nagios_plugins_game_pkg.filename = 'nagios-plugins-game-1.4.6-3.el5.i386.rpm'
+#if getArch() == 'x86_64':
+#    nagios_plugins_game_pkg.filename = 'nagios-plugins-game-1.4.6-3.el5.x86_64.rpm'
+#installer_comp.addDep(nagios_plugins_game_pkg)
+#compute_comp.addDep(nagios_plugins_game_pkg)
+
+nagios_plugins_hpjd_pkg = RPMPackage()
+nagios_plugins_hpjd_pkg.name = 'nagios-plugins-hpjd'
+nagios_plugins_hpjd_pkg.version = '1.4.6'
+nagios_plugins_hpjd_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_hpjd_pkg.filename = 'nagios-plugins-hpjd-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_hpjd_pkg.filename = 'nagios-plugins-hpjd-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_hpjd_pkg)
+compute_comp.addDep(nagios_plugins_hpjd_pkg)
+
+nagios_plugins_http_pkg = RPMPackage()
+nagios_plugins_http_pkg.name = 'nagios-plugins-http'
+nagios_plugins_http_pkg.version = '1.4.6'
+nagios_plugins_http_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_http_pkg.filename = 'nagios-plugins-http-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_http_pkg.filename = 'nagios-plugins-http-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_http_pkg)
+compute_comp.addDep(nagios_plugins_http_pkg)
+
+nagios_plugins_icmp_pkg = RPMPackage()
+nagios_plugins_icmp_pkg.name = 'nagios-plugins-icmp'
+nagios_plugins_icmp_pkg.version = '1.4.6'
+nagios_plugins_icmp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_icmp_pkg.filename = 'nagios-plugins-icmp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_icmp_pkg.filename = 'nagios-plugins-icmp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_icmp_pkg)
+compute_comp.addDep(nagios_plugins_icmp_pkg)
+
+nagios_plugins_ide_smart_pkg = RPMPackage()
+nagios_plugins_ide_smart_pkg.name = 'nagios-plugins-ide_smart'
+nagios_plugins_ide_smart_pkg.version = '1.4.6'
+nagios_plugins_ide_smart_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ide_smart_pkg.filename = 'nagios-plugins-ide_smart-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ide_smart_pkg.filename = 'nagios-plugins-ide_smart-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ide_smart_pkg)
+compute_comp.addDep(nagios_plugins_ide_smart_pkg)
+
+nagios_plugins_ircd_pkg = RPMPackage()
+nagios_plugins_ircd_pkg.name = 'nagios-plugins-ircd'
+nagios_plugins_ircd_pkg.version = '1.4.6'
+nagios_plugins_ircd_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ircd_pkg.filename = 'nagios-plugins-ircd-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ircd_pkg.filename = 'nagios-plugins-ircd-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ircd_pkg)
+compute_comp.addDep(nagios_plugins_ircd_pkg)
+
+nagios_plugins_ldap_pkg = RPMPackage()
+nagios_plugins_ldap_pkg.name = 'nagios-plugins-ldap'
+nagios_plugins_ldap_pkg.version = '1.4.6'
+nagios_plugins_ldap_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ldap_pkg.filename = 'nagios-plugins-ldap-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ldap_pkg.filename = 'nagios-plugins-ldap-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ldap_pkg)
+compute_comp.addDep(nagios_plugins_ldap_pkg)
+
+nagios_plugins_linux_raid_pkg = RPMPackage()
+nagios_plugins_linux_raid_pkg.name = 'nagios-plugins-linux_raid'
+nagios_plugins_linux_raid_pkg.version = '1.4.6'
+nagios_plugins_linux_raid_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_linux_raid_pkg.filename = 'nagios-plugins-linux_raid-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_linux_raid_pkg.filename = 'nagios-plugins-linux_raid-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_linux_raid_pkg)
+compute_comp.addDep(nagios_plugins_linux_raid_pkg)
+
+nagios_plugins_load_pkg = RPMPackage()
+nagios_plugins_load_pkg.name = 'nagios-plugins-load'
+nagios_plugins_load_pkg.version = '1.4.6'
+nagios_plugins_load_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_load_pkg.filename = 'nagios-plugins-load-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_load_pkg.filename = 'nagios-plugins-load-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_load_pkg)
+compute_comp.addDep(nagios_plugins_load_pkg)
+
+nagios_plugins_log_pkg = RPMPackage()
+nagios_plugins_log_pkg.name = 'nagios-plugins-log'
+nagios_plugins_log_pkg.version = '1.4.6'
+nagios_plugins_log_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_log_pkg.filename = 'nagios-plugins-log-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_log_pkg.filename = 'nagios-plugins-log-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_log_pkg)
+compute_comp.addDep(nagios_plugins_log_pkg)
+
+nagios_plugins_mailq_pkg = RPMPackage()
+nagios_plugins_mailq_pkg.name = 'nagios-plugins-mailq'
+nagios_plugins_mailq_pkg.version = '1.4.6'
+nagios_plugins_mailq_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_mailq_pkg.filename = 'nagios-plugins-mailq-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_mailq_pkg.filename = 'nagios-plugins-mailq-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_mailq_pkg)
+compute_comp.addDep(nagios_plugins_mailq_pkg)
+
+nagios_plugins_mrtg_pkg = RPMPackage()
+nagios_plugins_mrtg_pkg.name = 'nagios-plugins-mrtg'
+nagios_plugins_mrtg_pkg.version = '1.4.6'
+nagios_plugins_mrtg_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_mrtg_pkg.filename = 'nagios-plugins-mrtg-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_mrtg_pkg.filename = 'nagios-plugins-mrtg-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_mrtg_pkg)
+compute_comp.addDep(nagios_plugins_mrtg_pkg)
+
+nagios_plugins_mrtgtraf_pkg = RPMPackage()
+nagios_plugins_mrtgtraf_pkg.name = 'nagios-plugins-mrtgtraf'
+nagios_plugins_mrtgtraf_pkg.version = '1.4.6'
+nagios_plugins_mrtgtraf_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_mrtgtraf_pkg.filename = 'nagios-plugins-mrtgtraf-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_mrtgtraf_pkg.filename = 'nagios-plugins-mrtgtraf-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_mrtgtraf_pkg)
+compute_comp.addDep(nagios_plugins_mrtgtraf_pkg)
+
+nagios_plugins_mysql_pkg = RPMPackage()
+nagios_plugins_mysql_pkg.name = 'nagios-plugins-mysql'
+nagios_plugins_mysql_pkg.version = '1.4.6'
+nagios_plugins_mysql_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_mysql_pkg.filename = 'nagios-plugins-mysql-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_mysql_pkg.filename = 'nagios-plugins-mysql-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_mysql_pkg)
+compute_comp.addDep(nagios_plugins_mysql_pkg)
+
+nagios_plugins_nagios_pkg = RPMPackage()
+nagios_plugins_nagios_pkg.name = 'nagios-plugins-nagios'
+nagios_plugins_nagios_pkg.version = '1.4.6'
+nagios_plugins_nagios_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_nagios_pkg.filename = 'nagios-plugins-nagios-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_nagios_pkg.filename = 'nagios-plugins-nagios-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_nagios_pkg)
+compute_comp.addDep(nagios_plugins_nagios_pkg)
+
+nagios_plugins_nrpe_pkg = RPMPackage()
+nagios_plugins_nrpe_pkg.name = 'nagios-plugins-nrpe'
+nagios_plugins_nrpe_pkg.version = '2.7'
+nagios_plugins_nrpe_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_nrpe_pkg.filename = 'nagios-plugins-nrpe-2.7-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_nrpe_pkg.filename = 'nagios-plugins-nrpe-2.7-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_nrpe_pkg)
+compute_comp.addDep(nagios_plugins_nrpe_pkg)
+
+nagios_plugins_nt_pkg = RPMPackage()
+nagios_plugins_nt_pkg.name = 'nagios-plugins-nt'
+nagios_plugins_nt_pkg.version = '1.4.6'
+nagios_plugins_nt_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_nt_pkg.filename = 'nagios-plugins-nt-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_nt_pkg.filename = 'nagios-plugins-nt-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_nt_pkg)
+compute_comp.addDep(nagios_plugins_nt_pkg)
+
+nagios_plugins_ntp_pkg = RPMPackage()
+nagios_plugins_ntp_pkg.name = 'nagios-plugins-ntp'
+nagios_plugins_ntp_pkg.version = '1.4.6'
+nagios_plugins_ntp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ntp_pkg.filename = 'nagios-plugins-ntp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ntp_pkg.filename = 'nagios-plugins-ntp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ntp_pkg)
+compute_comp.addDep(nagios_plugins_ntp_pkg)
+
+nagios_plugins_nwstat_pkg = RPMPackage()
+nagios_plugins_nwstat_pkg.name = 'nagios-plugins-nwstat'
+nagios_plugins_nwstat_pkg.version = '1.4.6'
+nagios_plugins_nwstat_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_nwstat_pkg.filename = 'nagios-plugins-nwstat-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_nwstat_pkg.filename = 'nagios-plugins-nwstat-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_nwstat_pkg)
+compute_comp.addDep(nagios_plugins_nwstat_pkg)
+
+nagios_plugins_oracle_pkg = RPMPackage()
+nagios_plugins_oracle_pkg.name = 'nagios-plugins-oracle'
+nagios_plugins_oracle_pkg.version = '1.4.6'
+nagios_plugins_oracle_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_oracle_pkg.filename = 'nagios-plugins-oracle-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_oracle_pkg.filename = 'nagios-plugins-oracle-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_oracle_pkg)
+compute_comp.addDep(nagios_plugins_oracle_pkg)
+
+nagios_plugins_overcr_pkg = RPMPackage()
+nagios_plugins_overcr_pkg.name = 'nagios-plugins-overcr'
+nagios_plugins_overcr_pkg.version = '1.4.6'
+nagios_plugins_overcr_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_overcr_pkg.filename = 'nagios-plugins-overcr-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_overcr_pkg.filename = 'nagios-plugins-overcr-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_overcr_pkg)
+compute_comp.addDep(nagios_plugins_overcr_pkg)
+
+nagios_plugins_perl_pkg = RPMPackage()
+nagios_plugins_perl_pkg.name = 'nagios-plugins-perl'
+nagios_plugins_perl_pkg.version = '1.4.6'
+nagios_plugins_perl_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_perl_pkg.filename = 'nagios-plugins-perl-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_perl_pkg.filename = 'nagios-plugins-perl-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_perl_pkg)
+compute_comp.addDep(nagios_plugins_perl_pkg)
+
+nagios_plugins_pgsql_pkg = RPMPackage()
+nagios_plugins_pgsql_pkg.name = 'nagios-plugins-pgsql'
+nagios_plugins_pgsql_pkg.version = '1.4.6'
+nagios_plugins_pgsql_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_pgsql_pkg.filename = 'nagios-plugins-pgsql-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_pgsql_pkg.filename = 'nagios-plugins-pgsql-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_pgsql_pkg)
+compute_comp.addDep(nagios_plugins_pgsql_pkg)
+
+nagios_plugins_ping_pkg = RPMPackage()
+nagios_plugins_ping_pkg.name = 'nagios-plugins-ping'
+nagios_plugins_ping_pkg.version = '1.4.6'
+nagios_plugins_ping_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ping_pkg.filename = 'nagios-plugins-ping-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ping_pkg.filename = 'nagios-plugins-ping-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ping_pkg)
+compute_comp.addDep(nagios_plugins_ping_pkg)
+
+nagios_plugins_procs_pkg = RPMPackage()
+nagios_plugins_procs_pkg.name = 'nagios-plugins-procs'
+nagios_plugins_procs_pkg.version = '1.4.6'
+nagios_plugins_procs_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_procs_pkg.filename = 'nagios-plugins-procs-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_procs_pkg.filename = 'nagios-plugins-procs-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_procs_pkg)
+compute_comp.addDep(nagios_plugins_procs_pkg)
+
+nagios_plugins_real_pkg = RPMPackage()
+nagios_plugins_real_pkg.name = 'nagios-plugins-real'
+nagios_plugins_real_pkg.version = '1.4.6'
+nagios_plugins_real_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_real_pkg.filename = 'nagios-plugins-real-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_real_pkg.filename = 'nagios-plugins-real-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_real_pkg)
+compute_comp.addDep(nagios_plugins_real_pkg)
+
+nagios_plugins_rpc_pkg = RPMPackage()
+nagios_plugins_rpc_pkg.name = 'nagios-plugins-rpc'
+nagios_plugins_rpc_pkg.version = '1.4.6'
+nagios_plugins_rpc_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_rpc_pkg.filename = 'nagios-plugins-rpc-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_rpc_pkg.filename = 'nagios-plugins-rpc-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_rpc_pkg)
+compute_comp.addDep(nagios_plugins_rpc_pkg)
+
+nagios_plugins_sensors_pkg = RPMPackage()
+nagios_plugins_sensors_pkg.name = 'nagios-plugins-sensors'
+nagios_plugins_sensors_pkg.version = '1.4.6'
+nagios_plugins_sensors_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_sensors_pkg.filename = 'nagios-plugins-sensors-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_sensors_pkg.filename = 'nagios-plugins-sensors-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_sensors_pkg)
+compute_comp.addDep(nagios_plugins_sensors_pkg)
+
+nagios_plugins_smtp_pkg = RPMPackage()
+nagios_plugins_smtp_pkg.name = 'nagios-plugins-smtp'
+nagios_plugins_smtp_pkg.version = '1.4.6'
+nagios_plugins_smtp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_smtp_pkg.filename = 'nagios-plugins-smtp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_smtp_pkg.filename = 'nagios-plugins-smtp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_smtp_pkg)
+compute_comp.addDep(nagios_plugins_smtp_pkg)
+
+nagios_plugins_snmp_pkg = RPMPackage()
+nagios_plugins_snmp_pkg.name = 'nagios-plugins-snmp'
+nagios_plugins_snmp_pkg.version = '1.4.6'
+nagios_plugins_snmp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_snmp_pkg.filename = 'nagios-plugins-snmp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_snmp_pkg.filename = 'nagios-plugins-snmp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_snmp_pkg)
+compute_comp.addDep(nagios_plugins_snmp_pkg)
+
+nagios_plugins_ssh_pkg = RPMPackage()
+nagios_plugins_ssh_pkg.name = 'nagios-plugins-ssh'
+nagios_plugins_ssh_pkg.version = '1.4.6'
+nagios_plugins_ssh_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ssh_pkg.filename = 'nagios-plugins-ssh-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ssh_pkg.filename = 'nagios-plugins-ssh-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ssh_pkg)
+compute_comp.addDep(nagios_plugins_ssh_pkg)
+
+nagios_plugins_swap_pkg = RPMPackage()
+nagios_plugins_swap_pkg.name = 'nagios-plugins-swap'
+nagios_plugins_swap_pkg.version = '1.4.6'
+nagios_plugins_swap_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_swap_pkg.filename = 'nagios-plugins-swap-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_swap_pkg.filename = 'nagios-plugins-swap-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_swap_pkg)
+compute_comp.addDep(nagios_plugins_swap_pkg)
+
+nagios_plugins_tcp_pkg = RPMPackage()
+nagios_plugins_tcp_pkg.name = 'nagios-plugins-tcp'
+nagios_plugins_tcp_pkg.version = '1.4.6'
+nagios_plugins_tcp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_tcp_pkg.filename = 'nagios-plugins-tcp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_tcp_pkg.filename = 'nagios-plugins-tcp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_tcp_pkg)
+compute_comp.addDep(nagios_plugins_tcp_pkg)
+
+nagios_plugins_time_pkg = RPMPackage()
+nagios_plugins_time_pkg.name = 'nagios-plugins-time'
+nagios_plugins_time_pkg.version = '1.4.6'
+nagios_plugins_time_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_time_pkg.filename = 'nagios-plugins-time-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_time_pkg.filename = 'nagios-plugins-time-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_time_pkg)
+compute_comp.addDep(nagios_plugins_time_pkg)
+
+nagios_plugins_udp_pkg = RPMPackage()
+nagios_plugins_udp_pkg.name = 'nagios-plugins-udp'
+nagios_plugins_udp_pkg.version = '1.4.6'
+nagios_plugins_udp_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_udp_pkg.filename = 'nagios-plugins-udp-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_udp_pkg.filename = 'nagios-plugins-udp-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_udp_pkg)
+compute_comp.addDep(nagios_plugins_udp_pkg)
+
+nagios_plugins_ups_pkg = RPMPackage()
+nagios_plugins_ups_pkg.name = 'nagios-plugins-ups'
+nagios_plugins_ups_pkg.version = '1.4.6'
+nagios_plugins_ups_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_ups_pkg.filename = 'nagios-plugins-ups-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_ups_pkg.filename = 'nagios-plugins-ups-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_ups_pkg)
+compute_comp.addDep(nagios_plugins_ups_pkg)
+
+nagios_plugins_users_pkg = RPMPackage()
+nagios_plugins_users_pkg.name = 'nagios-plugins-users'
+nagios_plugins_users_pkg.version = '1.4.6'
+nagios_plugins_users_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_users_pkg.filename = 'nagios-plugins-users-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_users_pkg.filename = 'nagios-plugins-users-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_users_pkg)
+compute_comp.addDep(nagios_plugins_users_pkg)
+
+nagios_plugins_wave_pkg = RPMPackage()
+nagios_plugins_wave_pkg.name = 'nagios-plugins-wave'
+nagios_plugins_wave_pkg.version = '1.4.6'
+nagios_plugins_wave_pkg.release = '3.el5'
+if getArch() == 'x86':
+    nagios_plugins_wave_pkg.filename = 'nagios-plugins-wave-1.4.6-3.el5.i386.rpm'
+if getArch() == 'x86_64':
+    nagios_plugins_wave_pkg.filename = 'nagios-plugins-wave-1.4.6-3.el5.x86_64.rpm'
+installer_comp.addDep(nagios_plugins_wave_pkg)
+compute_comp.addDep(nagios_plugins_wave_pkg)

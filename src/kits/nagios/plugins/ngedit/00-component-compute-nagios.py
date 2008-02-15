@@ -14,69 +14,79 @@ except:
 from path import path
 
 from kusu.ngedit.ngedit import NGEPluginBase
+#from kusu.nagios.plugins import NagiosConfigHelper
+
+### Code below comes from nagios_lib.py. Replicated here until buildkit can
+### package arbitrary files in the kit RPM.
+import cPickle
+
+NAGIOS_CFM_DIR = '/etc/cfm/%s/etc/nagios'
+NAGIOS_PICKLE_FILENAME = 'nagios.pickle'
+
+class NagiosConfigHelper(object):
+    def __init__(self, database):
+        super(NagiosConfigHelper, self).__init__()
+        self.database = database
+
+    def generate_nagios_config(self, this_host=None):
+        # Select all nodes, along with their nodegroup and nodegroup type
+        # if 'component-compute-nagios' is associated with it.
+        self.database.execute("SELECT nodegroups.ngname, nodegroups.type, " +
+                        "             nodes.name " +
+                        "FROM nodegroups, nodes, ng_has_comp, components " +
+                        "WHERE nodegroups.ngid = nodes.ngid " +
+                        "AND nodegroups.ngid = ng_has_comp.ngid " +
+                        "AND ng_has_comp.cid = components.cid " +
+                        "AND components.cname = 'component-compute-nagios'")
+        rs = self.database.fetchall()
+
+        compute_ngs = {}
+        for r in rs:
+            if r[0] not in compute_ngs:
+                compute_ngs[r[0]] = {'type': r[1], 'nodes': []}
+            compute_ngs[r[0]]['nodes'].append(r[2])
+
+        # Which nodegroups have component-installer-nagios?
+        self.database.execute("SELECT nodegroups.ngname, nodegroups.type, " +
+                        "             nodes.name " +
+                        "FROM nodegroups, nodes, ng_has_comp, components " +
+                        "WHERE nodegroups.ngid = nodes.ngid " +
+                        "AND nodegroups.ngid = ng_has_comp.ngid " +
+                        "AND ng_has_comp.cid = components.cid " +
+                        "AND components.cname = 'component-installer-nagios'")
+        installer_ngs = self.database.fetchall()
+        for installer_ng in installer_ngs:
+            # Make a copy of our nodes dictionary and add this node to it.
+            ngs = compute_ngs.copy()
+            if installer_ng[0] not in ngs:
+                ngs[installer_ng[0]] = {'type': installer_ng[1], 'nodes': []}
+            ngs[installer_ng[0]]['nodes'].append(installer_ng[2])
+
+            nagios_cfm = path(NAGIOS_CFM_DIR % installer_ng[0])
+            if not nagios_cfm.exists(): nagios_cfm.makedirs()
+            f = open(nagios_cfm / NAGIOS_PICKLE_FILENAME, 'w')
+            pickled = cPickle.dump(ngs, f)
+            f.close()
+            
+            if installer_ng[2] == this_host:
+                f = open('/etc/nagios/%s' % NAGIOS_PICKLE_FILENAME, 'w')
+                pickled = cPickle.dump(ngs, f)
+                f.close()
+### End nagios_lib content
 
 class NGPlugin(NGEPluginBase):
     def add(self):
-        # Grab the IPs of any nagios monitoring nodes.
-        self.database.execute("SELECT nics.ip " +
-                        "FROM nics, nodes, ng_has_comp, components " +
-                        "WHERE nics.nid = nodes.nid " +
-                        "AND nodes.ngid = ng_has_comp.ngid " +
-                        "AND ng_has_comp.cid = components.cid " +
-                        "AND components.cname = 'component-installer-nagios'")
-        nagios_ips = ' '.join([x[0] for x in self.database.fetchall()])
-
-        # Get the nodegroup name.
-        self.database.execute("SELECT ngname FROM nodegroups " +
-                              "WHERE ngid = %s" % self.ngid)
-        ngname = self.database.fetchall()[0][0]
-        f = open('/etc/cfm/%s/etc/nagios_monitor_ips.cfg' % ngname, 'w')
-        f.write(nagios_ips)
-        f.close()
-
         self.finish()
 
     def remove(self):
-        # Get the nodegroup name.
-        self.database.execute("SELECT ngname FROM nodegroups " +
-                              "WHERE ngid = %s" % self.ngid)
-        ngname = self.database.fetchall()[0][0]
-        f = path('/etc/cfm/%s/etc/nagios_monitor_ips.cfg' % ngname)
-        if f.exists(): f.remove()
-
         self.finish()
 
     def finish(self):
-        self.generate_nagios_config()
+        nch = NagiosConfigHelper(database=self.database)
+        nch.generate_nagios_config()
 
         # Now, sync the pickled file to all the nodes
         cmds = ['cfmsync', '-f']
         cfmsyncP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
 
-    def generate_nagios_config(self):
-        # Select all nodes, along with their nodegroup and nodegroup type.
-        self.database.execute("SELECT nodegroups.ngname, nodegroups.type, " + \
-                            "       nodes.name " + \
-                            "FROM nodegroups, nodes " + \
-                            "WHERE nodegroups.ngid = nodes.ngid")
-        rs = self.database.fetchall()
-
-        ngs = {}
-        for r in rs:
-            if r[0] not in ngs:
-                ngs[r[0]] = {'type': r[1], 'nodes': []}
-            ngs[r[0]]['nodes'].append(r[2])
-
-        # Which nodegroups have component-installer-nagios?
-        self.database.execute("SELECT nodegroups.ngname " +
-                        "FROM nodegroups, ng_has_comp, components " +
-                        "WHERE nodegroups.ngid = ng_has_comp.ngid " +
-                        "AND ng_has_comp.cid = components.cid " +
-                        "AND components.cname = 'component-installer-nagios'")
-        nagios_ngs = self.database.fetchall()
-        for nagios_ng in nagios_ngs:
-            f = open('/etc/cfm/%s/etc/nagios_pickle.cfg' % nagios_ng[0], 'w')
-            import cPickle
-            pickled = cPickle.dump(ngs, f)
-            f.close()
