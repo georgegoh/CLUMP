@@ -151,6 +151,9 @@ class NetworkRecord(object):
         if self._thisWindow:
            if self._thisWindow.dhcpCheck.value() == False:
               if not self._subnet_field == "":
+                 if kusu.ipfun.validIP(self._startip_field) == False:
+                    return False, 'netedit_validate_startip_on_network'
+
                  if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._startip_field):
                     return False, 'netedit_validate_startip_on_network'
         else:

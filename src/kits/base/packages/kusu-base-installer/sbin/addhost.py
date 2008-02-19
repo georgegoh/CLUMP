@@ -752,13 +752,14 @@ class WindowSelectNode(NodeGroupWindow):
            # Check if any node group networks match/fit in to the installer networks found if so display those only.
            for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
                for ng_gateway in set(ngInfo):
-                   if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
-                      itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
-                      if defaultFlag:
-                         networkList.append([itemName, installer_device, 1 ])
-                      else:
-                         networkList.append([itemName, installer_device, 0 ])
-                      defaultFlag = 0
+                   if ng_gateway[0]:
+                      if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
+                         itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
+                         if defaultFlag:
+                            networkList.append([itemName, installer_device, 1 ])
+                         else:
+                            networkList.append([itemName, installer_device, 0 ])
+                         defaultFlag = 0
          
            if not networkList:
               self.selector.popupMsg (self.kusuApp._("Error"), "No network interfaces were associated to the selected node group. Unable to add nodes.")
