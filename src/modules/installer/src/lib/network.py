@@ -18,6 +18,7 @@ import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from kusu.util import profile
+from kusu.util.net import nextIP
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 
@@ -251,6 +252,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     newnet.network = IP(ip).make_net(nm).strNormal(0)
                     newnet.subnet = interfaces[intf]['netmask']
                     newnet.gateway = interfaces[intf]['ip_address']
+                    newnet.startip = nextIP(newnet.network, newnet.subnet)
 
                 master.networks.append(newnet)
 

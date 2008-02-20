@@ -16,7 +16,6 @@ from kusu.installer import network
 from kusu.util.verify import *
 import kusu.util.log as kusulog
 from kusu.util import profile
-from kusu.util.net import nextIP
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 
@@ -280,9 +279,5 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
                     # if this gateway is reachable by this interface, assign it
                     if profile['default_gw'] in nw:
                         net.gateway = profile['default_gw']
-
-                    # assign the starting IP
-                    net.startip = nextIP(net.network, net.subnet, net.startip,
-                                         net.inc)
 
             db.flush()
