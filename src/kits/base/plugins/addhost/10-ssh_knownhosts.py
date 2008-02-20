@@ -29,11 +29,11 @@ class AddHostPlugin(AddHostPluginBase):
           global removedMode
           if removedMode:
              # Remove host(s) from root's .ssh/known_hosts file.
-             try:
+             if os.path.exists("/root/.ssh/known_hosts"):
                 rptr = open("/root/.ssh/known_hosts", 'r')
-             except:
-                print "Could not find /root/.ssh/known_hosts does not exist. Exiting plugin"
-                sys.exit(-1)
+             else:
+                print "Could not find /root/.ssh/known_hosts, ignoring plugin"
+                return
 
              wptr = open("/tmp/known_hosts.root", 'w')
              
