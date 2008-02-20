@@ -729,7 +729,7 @@ class WindowSelectNode(NodeGroupWindow):
             installerInfo = self.database.fetchall()
 
             # Get list of node group's available gateways.
-            query = "SELECT networks.gateway FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=0" % \
+            query = "SELECT networks.gateway, networks.startip FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=0" % \
                     myNodeInfo.nodeGroupSelected
             self.database.execute(query) 
             ngInfo = self.database.fetchall()
@@ -751,9 +751,14 @@ class WindowSelectNode(NodeGroupWindow):
         else:
            # Check if any node group networks match/fit in to the installer networks found if so display those only.
            for installer_network, installer_subnet, installer_device, installer_gateway in installerInfo:
-               for ng_gateway in set(ngInfo):
-                   if ng_gateway[0]:
-                      if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway[0]):
+               for ng_gateway, ng_startip in ngInfo:
+                   if ng_gateway:
+                      if kusu.ipfun.onNetwork(installer_network, installer_subnet, ng_gateway):
+
+                         # If starting IP is Nothing, keep looking...
+                         if not ng_startip:
+                            continue
+
                          itemName = "%s  (%s)" % (installer_device.ljust(4), installer_gateway)
                          if defaultFlag:
                             networkList.append([itemName, installer_device, 1 ])
