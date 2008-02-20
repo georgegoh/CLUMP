@@ -14,6 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+import sys
 from kusu.addhost import *
 
 global removedMode
@@ -28,7 +29,12 @@ class AddHostPlugin(AddHostPluginBase):
           global removedMode
           if removedMode:
              # Remove host(s) from root's .ssh/known_hosts file.
-             rptr = open("/root/.ssh/known_hosts", 'r')
+             try:
+                rptr = open("/root/.ssh/known_hosts", 'r')
+             except:
+                print "Could not find /root/.ssh/known_hosts does not exist. Exiting plugin"
+                sys.exit(-1)
+
              wptr = open("/tmp/known_hosts.root", 'w')
              
              data = rptr.readlines()
