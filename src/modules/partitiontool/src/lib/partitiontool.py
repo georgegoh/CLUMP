@@ -545,6 +545,11 @@ class DiskProfile(object):
                 if pv.group and pv.group.lv_dict:
                     raise PartitionIsPartOfVolumeGroupError
 
+            if mountpoint in self.mountpoint_dict and \
+               partition_obj is not self.mountpoint_dict[mountpoint]:
+                raise MountpointAlreadyUsedError, 'The selected mountpoint ' \
+                    '%s is already in use.' % mountpoint 
+
             fill = not fixed_size
             partition_obj.resize(size_MB, fill)
 
@@ -683,6 +688,11 @@ class DiskProfile(object):
 
     def editLogicalVolume(self, lv, size_MB, fs_type, mountpoint):
         """Edit size for an existing logical volume."""
+        if mountpoint in self.mountpoint_dict and \
+           lv is not self.mountpoint_dict[mountpoint]:
+            raise MountpointAlreadyUsedError, 'The selected mountpoint ' \
+                '%s is already in use.' % mountpoint 
+
         size = size_MB * 1024 * 1024
         if size != lv.size:
             lv.resize(size_MB)

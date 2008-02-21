@@ -219,9 +219,12 @@ class PartitionScreen(InstallerScreen):
             self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
             self.prepareIgnoreList(do_not_use_disks)
 
-        first_disk_key = sorted(self.disk_profile.disk_dict.keys())[0]
-        first_disk = self.disk_profile.disk_dict[first_disk_key]
-        if first_disk.partition_dict:
+        exists = False
+        for disk in self.disk_profile.disk_dict.values():
+            if disk.partition_dict:
+                exists = True
+                break
+        if exists:
             # tell user a schema exists and ask to proceed.
             msg = 'The installer has detected that one of the disks  ' + \
                   'is already partitioned. Do you want to use the ' + \

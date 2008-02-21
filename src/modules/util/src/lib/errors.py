@@ -37,6 +37,7 @@ class NameNotFoundError(KusuError): pass
 class UnknownPartitionTypeError(KusuError): pass
 class PartitionSizeTooLargeError(KusuError): pass
 class CannotDeleteExtendedPartitionError(KusuError): pass
+class MountpointAlreadyUsedError(KusuError): pass
 
 # partitiontool - LVM errors
 class PartitionIsPartOfVolumeGroupError(KusuError): pass
