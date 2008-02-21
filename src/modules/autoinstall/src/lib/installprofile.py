@@ -66,7 +66,12 @@ class BaseInstall:
 
             pkgs = [pkg.packagename for pkg in installer.packages]
 
-            return components + pkgs
+            # also add all kit RPMs
+            kitrpms = ["kit-%s" % kit.rname
+                       for kit in self.dbs.Kits.select()
+                       if not kit.isOS]
+
+            return components + pkgs + kitrpms
         except AttributeError:
             raise AttributeError, 'components: %s' % str(installer.components)
 

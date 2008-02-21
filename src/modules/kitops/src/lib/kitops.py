@@ -168,12 +168,6 @@ class KitOps:
                                 removable=kit['removable'])
         newkit.save()
         
-        # Add kit to packages table for installer nodegroup
-        installngs = self.__db.NodeGroups.select_by(type='installer')
-        for installng in installngs:
-            installng.packages.append(
-                                self.__db.Packages(packagename=kit['pkgname']))
-
         self.__db.flush()
         kl.debug('Addkit kid: %s', newkit.kid)
 
@@ -657,12 +651,6 @@ class KitOps:
                     for dpack in component.driverpacks:
                         dpack.delete()
                     component.delete()
-
-                # remove packages
-                pkgs = self.__db.Packages.select_by(packagename='kit-%s' %
-                                                    kit.rname)
-                for pkg in pkgs:
-                    pkg.delete()
 
                 # remove kit DB info
                 kit.delete()
