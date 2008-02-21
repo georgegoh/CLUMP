@@ -142,7 +142,7 @@ class KusuApp:
             if self.islock():
                 sys.stderr.write('An instance of %s is already running ' % prog)
                 sys.stderr.write('(lock file: %s).\n' % self.getlockfile())
-                sys.exit(0)
+                sys.exit(1)
 
             atexit.register(self.unlock)
             self.lock()
