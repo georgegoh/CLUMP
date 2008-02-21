@@ -193,11 +193,6 @@ class KitOpsApp(KusuApp):
     def run(self):
         '''The main body of the application.  '''
 
-        if os.getuid() != 0:
-            self.printHelp()
-            sys.stderr.write("You are not root! Please try again as root.\n")
-            sys.exit(1)
-        
         self.parseArgs()
         
         if self.kitop == KITOP_ADD:
