@@ -701,7 +701,8 @@ class Partition(object):
                        'swap_flag' : 'self.pedPartition.get_flag(parted.PARTITION_SWAP)',
                        'raid_flag' : 'self.pedPartition.get_flag(parted.PARTITION_RAID)',
                        'size' : 'self.disk.sector_size * self.length',
-                       'size_MB' : 'self.size / (1024 * 1024)'
+                       'size_MB' : 'self.size / (1024 * 1024)',
+                       'label' : 'self._label'
                       }
     __setattr_dict = { 'start_sector' : "self.pedPartition.geom.set_start(long('%s'))",
                        'end_sector' : "self.pedPartition.geom.set_end(long('%s'))",
@@ -710,7 +711,8 @@ class Partition(object):
                        'root_flag' : "self.pedPartition.set_flag(parted.PARTITION_ROOT, int('%s'))",
                        'swap_flag' : "self.pedPartition.set_flag(parted.PARTITION_SWAP, int('%s'))",
                        'raid_flag' : "self.pedPartition.set_flag(parted.PARTITION_RAID, int('%s'))",
-                       'fs_type' : "self.pedPartition.set_system(fsTypes['%s'])"
+                       'fs_type' : "self.pedPartition.set_system(fsTypes['%s'])",
+                       'label' : "self.setLabel('%s')"
                      }
 
     def __str__(self):
@@ -729,6 +731,14 @@ class Partition(object):
         self.on_disk = False
         self.do_not_format = False
         self.dellUP_flag = False
+        self._label = None
+        if self.fs_type in ['ext2', 'ext3']:
+            l = subprocess.Popen('e2label %s' % self.path, shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = l.communicate()
+            if not err:
+                self._label = out.strip()
 
     def __lt__(self, other):
         return self.num < other.num
@@ -786,7 +796,7 @@ class Partition(object):
             finally:
                 del f
         elif name in ['disk', 'pedPartition', 'mountpoint', 'mountedpoint', 'leave_unchanged',
-                      'on_disk', 'do_not_format', 'dellUP_flag']:
+                      'on_disk', 'do_not_format', 'dellUP_flag', '_label']:
             object.__setattr__(self, name, value)
         else:
             raise AttributeError, "%s instance does not have or cannot " + \
@@ -864,6 +874,7 @@ class Partition(object):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = e2label.communicate()
+        self._label = name
         logger.debug('e2label out: %s\n\n e2label err: %s' % (out, err))
 
     def format(self):
