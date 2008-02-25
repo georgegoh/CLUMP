@@ -124,6 +124,7 @@ class NewPartition:
 
     def drawAvailableSpace(self):
         text = "Allocatable space (MB) - "
+        availableSpace = 0
         for k,v in self.diskProfile.disk_dict.iteritems():
             available_space = v.getLargestSpaceAvailable() / 1024 / 1024
             text += '%s: %d ' % (k, available_space)
@@ -202,8 +203,13 @@ class NewPartition:
 
         try:
             size_MB, fixed_size = self.calculatePartitionSize()
-            if size_MB == 0 and not self.fill.selected():
-                available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
+            if available_space < 1:
+                errMsg = 'Selected disk %s does not have any ' % disk
+                errMsg += 'free space left. Please select another disk '
+                errMsg += 'with sufficient free space.'
+                raise KusuError, errMsg
+            if not self.fill.selected() and size_MB == 0:
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
             available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
@@ -264,7 +270,7 @@ class NewLogicalVolume:
         self.ok_button = kusuwidgets.Button(_('OK'))
         self.cancel_button = kusuwidgets.Button(_('Cancel'))
 
-    def draw(self):
+    def draw(self): 
         """Draw the fields onscreen."""
         # mount point
         self.gridForm.add(self.mountpoint, 0,0)
@@ -294,6 +300,7 @@ class NewLogicalVolume:
         self.gridForm.add(subgrid, 0,3, padding=(0,1,0,1))
 
         text = "Available space (MB) - "
+        available_space = 0
         for k,v in self.disk_profile.lvg_dict.iteritems():
             available_space = v.extentsFree() * v.extent_size / 1024 / 1024
             text += '%s: %d ' % (k, available_space)
@@ -334,7 +341,12 @@ class NewLogicalVolume:
         try:
             size = long(self.size.value())
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
-            if (size <= 0 or size > available_space) and not self.fill.value():
+            if available_space == 0:
+                errMsg = 'Selected volume group %s does not have any ' % vol_grp.name
+                errMsg += 'free space left. Please select another volume group '
+                errMsg += 'with sufficient free space.'
+                raise KusuError, errMsg
+            if not self.fill.value() and (size <= 0 or size > available_space):
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
@@ -354,7 +366,7 @@ class NewLogicalVolume:
                                                     fs_type=fs_type,
                                                     mountpoint=mountpoint)
 
-        lv.do_not_format = self.do_not_format_partition.value()
+        lv.do_not_format = self.do_not_format_partition.value() 
 
 
 class NewVolumeGroup:
