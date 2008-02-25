@@ -653,6 +653,8 @@ class Disk(object):
         if not self.leave_unchanged:
             for partition in self.partition_dict.itervalues():
                 partition.format()
+                if partition.fs_type in ['ext2', 'ext3']:
+                    partition.setLabel()
 
 
 class Partition(object):
@@ -847,6 +849,22 @@ class Partition(object):
         else:
             logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
             self.mountedpoint = None
+
+    def setLabel(self, name=None):
+        """Set the label for this partition. Supports ext2 only - raises exception otherwise."""
+        if self.fs_type not in ['ext2', 'ext3']:
+            errMsg = 'Cannot set label for partition %s because only ' % self.path
+            errMsg += 'ext2/3 filesystems are supported for this operation.'
+            raise CannotLabelPartitionError, errMsg
+        if name is None:
+            name = self.mountpoint
+        cmd = '/usr/sbin/e2label %s %s' % (self.path, name)
+        logger.debug('Set label cmd: %s' % cmd)
+        e2label = subprocess.Popen(cmd, shell=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        out, err = e2label.communicate()
+        logger.debug('e2label out: %s\n\n e2label err: %s' % (out, err))
 
     def format(self):
         """Format this partition with the FS type defined."""
