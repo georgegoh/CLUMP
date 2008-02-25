@@ -348,8 +348,15 @@ class LogicalVolume(object):
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
         if extents > vg_extentsFree:
-            raise InsufficientFreeSpaceInVolumeGroupError, \
-                'Insufficient free space in volume group'
+            errMsg = 'Insufficient free space in Volume Group %s.' % volumeGroup.name
+            errMsg += 'Requested %d extents, but only %d remaining.' % (extents, vg_extentsFree)
+            errMsg += 'Existing Logical Volumes in Group:\n'
+            existing_lvs = ''
+            for lv in volumeGroup.lv_dict.keys():
+                existing_lvs += '\t' + lv + '\n'
+            if not existing_lvs: existing_lvs = 'None'
+            errMsg += existing_lvs
+            raise InsufficientFreeSpaceInVolumeGroupError, errMsg
         self.name = name
         self.group = volumeGroup
         self.extents = extents
