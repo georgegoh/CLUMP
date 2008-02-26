@@ -47,15 +47,59 @@ class RPMPackage(object):
             tmpdir = path(tools.mkdtemp())
             self.unpack(tmpdir)
             
-            vmlist = [ f for f in tmpdir.walkfiles('vmlinuz*')]
+            li = [ f for f in tmpdir.walkfiles('vmlinuz*')]
             
             if tmpdir.exists(): tmpdir.rmtree()
             
-            if vmlist: return True
+            if li: return True
             
             return False
 
+        def isKernelModule(self):
+            """ Check if the package is a kernel module package or not. Basically the existence of any ko files determines this check.
+            """
+
+            tmpdir = path(tools.mkdtemp())
+            self.unpack(tmpdir)
+
+            li = [ f for f in tmpdir.walkfiles('*.ko*')]
+
+            if tmpdir.exists(): tmpdir.rmtree()
+
+            if li: return True
+
+            return False
+
+        def hasPciUpdates(self):
+            """ Check if the package has a pci.updates file or not.
+            """
+
+            tmpdir = path(tools.mkdtemp())
+            self.unpack(tmpdir)
+
+            li = [ f for f in tmpdir.walkfiles('pci.updates')]
+
+            if tmpdir.exists(): tmpdir.rmtree()
+
+            if li: return True
+
+            return False
             
+        def hasPcitable(self):
+            """ Check if the package has a pcitable file or not.
+            """
+
+            tmpdir = path(tools.mkdtemp())
+            self.unpack(tmpdir)
+
+            li = [ f for f in tmpdir.walkfiles('pcitable')]
+
+            if tmpdir.exists(): tmpdir.rmtree()
+
+            if li: return True
+
+            return False
+
         def unpack(self, destdir):
             """ Unpacks the package into destdir. 
             """
@@ -66,6 +110,37 @@ class RPMPackage(object):
             """ Returns a list of containing tuples of the kofile, kernel version and arch.
             """
             pass
+            
+        def extractPciUpdates(self, destdir):
+            """ Extracts the pci.updates file from the package into the destdir.
+            """
+            destdir = path(destdir)
+            if not destdir.exists(): raise DirDoesNotExistError, destdir
+
+            tmpdir = path(tools.mkdtemp())
+
+            self.unpack(tmpdir)
+
+            li = [f for f in tmpdir.walkfiles('pci.updates')]
+            
+            pciupdates = ''
+            if li: pciupdates = li[0] # hopefully only it contains only one instance of pci.updates
+            
+            pciupdates.copy(destdir)
+                                
+            if tmpdir.exists(): tmpdir.rmtree()            
+            
+        # syntantic sugar
+        extractPCIUpdates = extractPciUpdates
+
+        def extractPcitable(self, destdir):
+            """ Extracts the pcitable file from the package into the destdir.
+            """
+            destdir = path(destdir)
+            if not destdir.exist(): raise DirDoesNotExistError, destdir
+
+            pass
+
             
         def extractKernelModulesDir(self, destdir, kofile=''):
             """ Extracts the kernel modules directory or just one kofile to destdir. 
@@ -122,7 +197,7 @@ class RPMPackage(object):
                 
             if tmpdir.exists(): tmpdir.rmtree()
             return kname
-                
+
             
         
 
