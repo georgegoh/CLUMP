@@ -57,7 +57,7 @@ class DbReportApp(KusuApp):
         i = 0
         while i < len(args):
             if args[i] == '-v':
-                toolinst.toolVersion()
+                self.toolVersion()
             elif args[i] == '-h':
                 self.action = 'help'
             else:
