@@ -860,13 +860,13 @@ class Partition(object):
             logger.info('Unmounted %s from %s' % (self.path, self.mountedpoint))
             self.mountedpoint = None
 
-    def setLabel(self, name=None):
+    def setLabel(self, name=''):
         """Set the label for this partition. Supports ext2 only - raises exception otherwise."""
         if self.fs_type not in ['ext2', 'ext3']:
             errMsg = 'Cannot set label for partition %s because only ' % self.path
             errMsg += 'ext2/3 filesystems are supported for this operation.'
             raise CannotLabelPartitionError, errMsg
-        if name is None:
+        if not name:
             name = self.mountpoint
         cmd = '/usr/sbin/e2label %s %s' % (self.path, name)
         logger.debug('Set label cmd: %s' % cmd)
