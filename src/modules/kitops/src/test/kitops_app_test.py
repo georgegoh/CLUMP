@@ -352,7 +352,8 @@ class TestBaseKit:
 
         ng = self.kusudb.NodeGroups.selectfirst_by(ngname='installer')
         ng.components.append(component_installer)
-        ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
+        # We no longer put kit RPMs in the packages table.
+        #ng.packages.append(self.kusudb.Packages(packagename='kit-base'))
 
         newkit.save()
         self.kusudb.flush()
