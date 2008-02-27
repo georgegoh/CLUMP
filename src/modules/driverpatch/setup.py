@@ -15,5 +15,5 @@ setup(name="kusu-driverpatch",
     platforms=["any"],
     packages = ['driverpatch'],
     package_dir = {'driverpatch' : 'src/lib'},
-    scripts=['src/bin/driverpatch']
+    scripts=['src/bin/driverpatch','src/bin/patchpcitable-script']
      )

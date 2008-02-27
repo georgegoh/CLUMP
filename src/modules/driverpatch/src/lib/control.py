@@ -321,6 +321,49 @@ class DriverPatchController(object):
         
         return krpm.isKernel()
         
+    def isKernelModulePackage(self, packagerpm):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.isKernelModule()
+            
+    def hasPciUpdates(self, packagerpm):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.hasPciUpdates()
+                
+    def hasPcitable(self, packagerpm):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.hasPcitable()
+        
+    def extractPciUpdates(self, packagerpm, destdir):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.extractPciUpdates(destdir)
+            
+    def extractPcitable(self, packagerpm, destdir):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.extractPcitable(destdir)        
+
+
+    def patchPciIds(self, packagerpm, original, pciupdates):
+        """ Check if the packagerpm is a kernel package. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.patchPciIds(original, pciupdates)        
+        
     def copyKernel(self, kernelrpm, destdir, kernelname=''):
         """ Copy the kernel image found in kernelrpm to destdir.
             If kernelname is specified, copy the image as the kernelname

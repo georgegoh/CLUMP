@@ -418,13 +418,35 @@ Example operations:
         oldmodulescgz = self.controller.getKernelModulesCgz(tmpdir)
         oldmodulescgz.remove()
         
+        # get the other modules assets
+        moduleassets = self.controller.getKernelModulesAssets(tmpdir)
+        
         tmpkmoddir = path(utiltools.mkdtemp())
+        tmppcidir = path(utiltools.mkdtemp())
         
         # extract kernel modules from the driverpacks table
         for pkg in kmodlist:
             msg = self._('Extracting kernel modules from package %(packagerpm)s..' %
                     {'packagerpm':pkg.filename})
             print msg
+            # check if the package has a pci.updates
+            # FIXME: currently only handling pci.updates! we are missing the support for pcitable types of updates.
+            if self.controller.hasPciUpdates(pkg.filename): 
+                self.controller.extractPciUpdates(pkg.filename,tmppcidir)
+                pciupdates = path(tmppcidir / 'pci.updates')
+                if not pciupdates.exists():
+                    msg = self._('Error extracting pci.updates from %(packagerpm)s' %
+                                {'packagerpm':pkg.filename})
+                    self.printMsgExit(msg)
+                # get system pci.ids found in the initrd and patch it with the new pci.updates
+                syspci = moduleassets['pci.ids']
+                msg = self._('Patching pci.ids with pci.updates found in %(packagerpm)s...' %
+                            {'packagerpm':pkg.filename})
+                print msg
+                self.controller.patchPciIds(pkg.filename,syspci,pciupdates)
+                # remove old pci.updates
+                if pciupdates.exists(): pciupdates.remove()
+
             self.controller.extractKernelModulesDir(pkg.filename,tmpkmoddir)
         
         
@@ -439,9 +461,6 @@ Example operations:
             
         if not kernelfile:
             kernelfile = ngkernel
-            
-        # TODO: Handle the module assets here!
-        #self.controller.updateKernelModulesAssets(foo)
 
         msg = self._('Packing the initrd..')
         print msg
@@ -464,6 +483,7 @@ Example operations:
         # housecleaning
         if tmpkmoddir.exists(): tmpkmoddir.rmtree()
         if tmpdir.exists(): tmpdir.rmtree()
+        if tmppcidir.exists(): tmppcidir.rmtree()
 
         # update the kernel/initrd entries for this nodegroup if required
         if self.options.update:

@@ -9,7 +9,7 @@
 
 
 from path import path
-from kusu.util.errors import FileDoesNotExistError, DirDoesNotExistError
+from kusu.util.errors import FileDoesNotExistError, DirDoesNotExistError, ToolNotFound
 from kusu.util import rpmtool, tools
 
 
@@ -141,6 +141,39 @@ class RPMPackage(object):
 
             pass
 
+        
+        def patchPciIds(self, original, pciupdates):
+            """ Patches the original with new pci.updates.
+            """
+            # check if patchpcitable-script is available
+            tool = 'patchpcitable-script'
+            cmd = 'which %s > /dev/null 2>&1' % tool
+            whichP = subprocess.Popen(cmd,shell=True)
+            whichP.communicate()
+            if whichP.returncode <> 0:
+                raise ToolNotFound, tool
+            
+            tmpdir = path(tools.mkdtemp())
+            
+            origfile = path(original)
+            if not origfile.exists(): 
+                if tmpdir.exists(): tmpdir.rmtree()
+                raise FileDoesNotExistError, origfile
+
+            origfile.copy(tmpdir)
+            syspci = tmpdir / origfile.basename()
+            origfile.remove()
+            
+            updatesfile = path(pciupdates)
+            if not updatesfile.exists(): 
+                if tmpdir.exists(): tmpdir.rmtree()
+                raise FileDoesNotExistError, updatesfile
+            
+            cmd = '%s %s /dev/null %s %s /dev/null' % (tool, syspci, updatesfile, origfile)
+            patchP = subprocess.Popen(cmd,shell=True)
+            patchP.wait()
+            
+            if tmpdir.exists(): tmpdir.rmtree()
             
         def extractKernelModulesDir(self, destdir, kofile=''):
             """ Extracts the kernel modules directory or just one kofile to destdir. 
