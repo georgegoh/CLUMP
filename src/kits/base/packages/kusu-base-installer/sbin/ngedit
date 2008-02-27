@@ -2381,6 +2381,23 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                 run_driverpatch = True
 
         if run_driverpatch:
+            # Before running driverpatch, ensure we have the 'proper' initrd
+            # Create a copy of the 'master' for this repo.
+            self.database.execute('select ostype from repos where repoid = \'%s\'' % curNG['repoid'])
+            rv = self.database.fetchall()
+
+            if rv:
+                srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
+                dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( curNG['installtype'], curNG['ngid'] ))
+
+                try:
+                    shutil.copyfile(srcInitrdFileName, dstInitrdFileName)
+                except OSError, e:
+                    self.selector.popupMsg("Error copying initrd", "Error copying pristine initrd (%s to %s) for this nodegroup.  This failure will likely result in unexpected behaviour.\n%s" % ( srcInitrdFileName, dstInitrdFileName, e ))
+            else:
+                self.selector.popupMsg("Error determining initrd for nodegroup",
+                    "This nodegroup appears not to have an associated repo.  Using defaults.")
+
             #driverpatch
             self.runTool('driverpatch', " nodegroup name='%s'" %curNG['ngname'])
 
