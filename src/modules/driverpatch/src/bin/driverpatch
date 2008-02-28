@@ -449,6 +449,41 @@ Example operations:
 
             self.controller.extractKernelModulesDir(pkg.filename,tmpkmoddir)
         
+        # generate updated modules.dep / modules.alias
+        msg = self._('Generating updated modules.dep and modules.alias..')
+        print msg
+        tmpassetsdir = path(utiltools.mkdtemp())
+        self.controller.generateModulesAssets(tmpkmoddir, tmpassetsdir)
+        
+        # and normalise the modules.dep
+        modulesdep = tmpassetsdir / 'modules.dep'
+        modulesalias = tmpassetsdir / 'modules.alias'
+        if not modulesdep.exists(): 
+            msg = self._('Error generating modules.dep!')
+            self.printMsgExit(msg)
+        
+        li = self.controller.normalise_modules_dep(modulesdep)
+        # write the updated modules.dep
+        newmodulesdep = tmpassetsdir / 'modules.dep.new'
+        f = open(newmodulesdep,'w')
+        for l in li: f.write('%s\n' % l)
+        f.close()
+        
+        modulesdep.remove()
+        newmodulesdep.copy(modulesdep)
+        newmodulesdep.remove()
+        
+        # updates the assetsdict with new modules.dep / modules.alias
+
+        origmodulesdep = path(tmpdir / 'modules/modules.dep')
+        origmodulesalias = path(tmpdir / 'modules/modules.alias')
+        
+        if origmodulesdep.exists(): origmodulesdep.remove()
+        if origmodulesalias.exists(): origmodulesalias.remove()
+        
+        modulesdep.copy(origmodulesdep.dirname())
+        modulesalias.copy(origmodulesalias.dirname())
+
         
         msg = self._('Packing kernel modules as modules archive..')
         print msg
@@ -484,7 +519,8 @@ Example operations:
         if tmpkmoddir.exists(): tmpkmoddir.rmtree()
         if tmpdir.exists(): tmpdir.rmtree()
         if tmppcidir.exists(): tmppcidir.rmtree()
-
+        if tmpassetsdir.exists(): tmpassetsdir.rmtree()
+        
         # update the kernel/initrd entries for this nodegroup if required
         if self.options.update:
             msg = self._('Updating kernel/initrd entries for this nodegroup.')

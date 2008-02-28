@@ -10,9 +10,10 @@ from kusu.boot.tool import BootMediaTool
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \
                             UnknownKernelModuleAsset, DirDoesNotExistError, UnknownFileTypeError
 from kusu.driverpatch import dkms, kernel
-from kusu.util.tools import mkdtemp
+from kusu.util.tools import mkdtemp, cpio_copytree
 from path import path
 import subprocess
+import os
 
 
 # constants
@@ -447,6 +448,70 @@ class DriverPatchController(object):
             if not f.exists(): FileDoesNotExistError, f
             if f.basename() <> l: raise UnknownFileTypeError, f
             f.copy(modulespath)
+
+
+    def generateModulesAssets(self, modulesdir, destdir):
+        """ Generates new modules.alias / modules.dep based on the contents of the modulesdir and dumps the files in the destdir.
+        """
+
+        destdir = path(destdir)
+        if not destdir.exists(): raise DirDoesNotExistError, destdir
+
+        tmpdir = path(mkdtemp())
+
+        cpio_copytree(modulesdir,tmpdir)
+
+        cmd = 'depmod -b .'
+        depmodP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+        depmodP.wait()
+
+        li = [f for f in tmpdir.walkfiles('modules.dep')]
+        modulesdep = li[0]
+        li = [f for f in tmpdir.walkfiles('modules.alias')]
+        modulesalias = li[0]
+
+        if not modulesdep.exists(): 
+            if tmpdir.exists(): tmpdir.rmtree()
+            raise FileDoesNotExistError, 'modules.dep cannot be generated!'
+
+        if not modulesalias.exists(): 
+            if tmpdir.exists(): tmpdir.rmtree()
+            raise FileDoesNotExistError, 'modules.alias cannot be generated!'
+
+        # remove existing modules.dep / modules.alias if any
+        if path(destdir / 'modules.dep').exists(): path(destdir / 'modules.dep').remove()
+        if path(destdir / 'modules.alias').exists(): path(destdir / 'modules.alias').remove()
+        
+        modulesdep.copy(destdir)
+        modulesalias.copy(destdir)
+
+        if tmpdir.exists(): tmpdir.rmtree()
+
+
+    def normalise_modules_dep(self, f):
+        """ Normalises the generated modules.dep to be like how the initrd prefers it and returns it as a list
+        """
+        f = path(f)
+        if not f.exists(): raise FileDoesNotExistError, f
+
+        li = [l for l in open(f).read().split(os.linesep) if l]
+
+        modlist = []
+        for l in li:
+            t = l.split(':')
+            entry = []
+            e1 = path(t[0]).basename().split('.ko')[0]
+            entry.append(e1)
+            if len(t) > 1:
+                li2 = t[1].split()
+                for l2 in li2:
+                    entry.append(path(l2).basename().split('.ko')[0])
+
+            # construct modlist
+            s = '%s: %s' % (entry[0], ' '.join(entry[1:])) 
+            modlist.append(s)
+
+        return modlist
 
 
     def getDriverPacks(self, **kwargs):

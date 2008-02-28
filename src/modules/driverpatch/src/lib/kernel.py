@@ -176,6 +176,7 @@ class RPMPackage(object):
             
             if tmpdir.exists(): tmpdir.rmtree()
             
+            
         def extractKernelModulesDir(self, destdir, kofile=''):
             """ Extracts the kernel modules directory or just one kofile to destdir. 
             """
