@@ -277,7 +277,7 @@ For examples:
         ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
         if ng:
-            self.stderrMessage('Cannot delete repo: %s. In used by nodegroups.\n', repo_name)
+            self.stderrMessage('Cannot delete repo: %s. In use by nodegroup(s).\n', repo_name)
             self.unlock()
             sys.exit(1)
         else:

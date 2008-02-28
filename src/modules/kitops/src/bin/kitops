@@ -128,14 +128,7 @@ class KitOpsApp(KusuApp):
 
         if options.action == 'add':
             kit_media = options.media
-            if not kit_media:
-                media_choices = self.autoDetectMedia()
-                #found_kits = sorted(media_choices.keys())
-
-                if len(media_choices) == 1:
-                    kit_media = media_choices.keys()[0]
-                else:
-                    kit_media = selectKitMedia(media_choices)
+            if not kit_media: kit_media = self.determineKitMedia()
 
             # to indicate which kit to install from a metakit
             self.kit_name = options.kit
@@ -302,29 +295,43 @@ class KitOpsApp(KusuApp):
 
         res = ''
         while 1:    #loop to go through all the media disks...
+            prepare_success = True
             if res:
                 self.koinst.setKitMedia(res)
                 kl.debug('Provided additional kit media: %s', res)
-                self.koinst.addKitPrepare()
 
             try:
-                self.koinst.copyOSKitMedia(kit)
-            except CopyOSMediaError, e:
-                kl.debug('FAIL performing add operation')
-                sys.stderr.write(e.args[0])
-                sys.exit(EKITLOC_FAIL)
+                self.koinst.addKitPrepare()
+            except UnrecognizedKitMediaError, e:
+                kl.debug('FAIL adding kit media%s: %s',
+                         ' ' + res, e.args[0])
+                prepare_success = False
 
-            while not (res.lower() == 'y' or res.lower() == 'n'):
-                res = raw_input('Any more disks for this OS kit? [y/n] ')
+            if prepare_success:
+                try:
+                    self.koinst.copyOSKitMedia(kit)
+                except CopyOSMediaError, e:
+                    kl.debug('FAIL performing add operation')
+                    sys.stderr.write(e.args[0])
+                    sys.exit(EKITLOC_FAIL)
 
-            if res.lower() == 'n':
-                break
+                while not (res.lower() == 'y' or res.lower() == 'n'):
+                    res = raw_input('Any more disks for this OS kit? [y/n] ')
+
+                if res.lower() == 'n':
+                    break
+
+            # We need to clear the kit media now that we're done with it
+            self.koinst.setKitMedia('')
 
             print "Please insert next disk if installing from phys. media NOW"
+            if not prepare_success:
+                print "Copying from the media you specified was not " + \
+                      "successful. Try again..."
             res = raw_input('(URI for next ISO | blank if phys. media | N to finish): ')
             res = res.strip()
-            if res == 'N':
-                break
+            if res == 'N': break
+            elif not res: res = self.determineKitMedia()
      
         self.koinst.makeContribDir(kit) 
         self.koinst.finalizeOSKit(kit)
@@ -391,6 +398,15 @@ class KitOpsApp(KusuApp):
             print '\n'
 
         kl.debug('SUCCESS performing list operation')
+
+    def determineKitMedia(self):
+        media_choices = self.autoDetectMedia()
+        #found_kits = sorted(media_choices.keys())
+
+        if len(media_choices) == 1:
+            return media_choices.keys()[0]
+        else:
+            return selectKitMedia(media_choices)
 
     def autoDetectMedia(self):
         """
