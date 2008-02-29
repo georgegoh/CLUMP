@@ -80,6 +80,15 @@ class RootPasswordScreen(InstallerScreen):
         """
         Store
         """
-
+        if len(self.password0.value()) < 6:
+            msg = 'The root password you have chosen is less than 6 characters. '
+            msg += 'For security purposes, the recommended length is 6 or more '
+            msg += 'characters. Please press "Pick Another Password" to pick a '
+            msg += 'new password or "Proceed" to continue using the same password.'
+            result = self.selector.popupDialogBox('Root password < 6 chars',
+                                                  msg,
+                                                  ['Pick Another Password', 'Proceed'])
+            if str(result) == 'pick another password':
+                self.selector.currentStep = self.selector.currentStep - 1
+                return
         self.kiprofile[self.profile] = self.password0.value()
-
