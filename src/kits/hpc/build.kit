@@ -329,11 +329,11 @@ benchmarkingToolsComp.addDep(modulesbenchmarkingtoolspkg)
 mvapich1gnupkg = RPMPackage()
 mvapich1gnupkg.name = 'mvapich1-infiniband-gnu'
 mvapich1gnupkg.version = '0.9.9'
-mvapich1gnupkg.release = '1458'
+mvapich1gnupkg.release = '1'
 if getArch() == 'x86':
-    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.i386.rpm'
+    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1.i386.rpm'
 if getArch() == 'x86_64':
-    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1458.x86_64.rpm'
+    mvapich1gnupkg.filename = 'mvapich1-infiniband-gnu-0.9.9-1.x86_64.rpm'
     
 # package linpack-mvapich1-gnu
 # this uses an existing binary rpm
