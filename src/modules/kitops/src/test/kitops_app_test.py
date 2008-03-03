@@ -825,9 +825,9 @@ class TestBadKits(object):
         self.kit_arch = 'noarch'
         self.kit_dir_name = self.kits_dir / self.kit_name
 
-        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                  (self.kit, self.temp_mount), shell=True)
-        mountP.wait()
+        #mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+        #                          (self.kit, self.temp_mount), shell=True)
+        #mountP.wait()
 
         # we need to be root
         assertRoot()
@@ -841,6 +841,59 @@ class TestBadKits(object):
 
         # assert we got the correct error message
         assert addPe == 'Invalid RPM header: kit-alvin-0.1-0.noarch.rpm\n', \
+            'Got unexpected error message: "%s"' % addPe
+
+        # assert RPM not installed
+        assert not isRPMInstalled('kit-' + self.kit_name), \
+            'Kitops should not install bad RPM'
+
+        # assert no directories
+        assert not self.kit_dir_name.exists(), \
+            'Kitops should not create directory for bad kit'
+
+        # assert no entries in the kits table
+        assert not self.kusudb.Kits.select(), \
+            'Kitops should not create any entries in kits table'
+
+        # assert no entries in the components table
+        assert not self.kusudb.Components.select(), \
+            'Kitops should not create any entries in components table'
+
+        # assert no entries in packages table
+        assert not self.kusudb.Packages.select_by(packagename=self.kit_name), \
+            'Kitops should not create any entries in packages table'
+
+    def test_syntax_error_in_kitinfo(self):
+        self.kit_iso = 'kit-alvin_kitinfo_syntax_error-0.1-0.noarch.iso'
+        downloadFiles(self.kit_iso)
+
+        self.kit = test_kits_path / self.kit_iso
+        assert self.kit.exists(), 'Kitinfo syntax error kit ISO does not exist!'
+
+        self.kit_rpm = 'kit-alvin-0.1-0.noarch.rpm'
+        self.kit_name = 'alvin'
+        self.kit_ver = '0.1'
+        self.kit_arch = 'noarch'
+        self.kit_dir_name = self.kits_dir / self.kit_name
+
+        #mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
+        #                          (self.kit, self.temp_mount), shell=True)
+        #mountP.wait()
+
+        # we need to be root
+        assertRoot()
+
+        cmd = 'kitops -a -m %s %s ' % (self.kit, dbinfo_str) + \
+              '-p %s' % self.temp_root
+        addP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        addPo, addPe = addP.communicate()
+        rv = addP.returncode
+
+        # assert we got the correct error message
+        assert addPe.startswith('Error: invalid syntax in kitinfo file '), \
+            'Got unexpected error message: "%s"' % addPe
+        assert addPe.endswith('kitinfo at line 30, column 27\n'), \
             'Got unexpected error message: "%s"' % addPe
 
         # assert RPM not installed

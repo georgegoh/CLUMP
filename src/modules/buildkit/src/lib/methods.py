@@ -8,7 +8,7 @@
 from kusu.buildkit.kitsource import KusuComponent, KusuKit, KitSrcFactory
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
-from kusu.util.errors import UndefinedOSType, InvalidBuildProfile
+from kusu.util.errors import UndefinedOSType, InvalidBuildProfile, KitinfoSyntaxError
 from path import path
 import subprocess
 
@@ -100,7 +100,14 @@ def processKitInfo(kitinfo):
     if not kitinfo.isfile(): return ({},[])
     
     ns = {}
-    execfile(kitinfo,ns)
+
+    # If there is a syntax error in the kitinfo file, holla!
+    try:
+        execfile(kitinfo,ns)
+    except SyntaxError, e:
+        error_message = "%s in kitinfo file %s at line %s, column %s" % \
+                        (e.msg, e.filename, e.lineno, e.offset)
+        raise KitinfoSyntaxError, error_message
 
     kit = ns.get('kit',{})
     components = ns.get('components',[])

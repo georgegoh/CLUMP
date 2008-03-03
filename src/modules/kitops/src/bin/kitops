@@ -250,6 +250,10 @@ class KitOpsApp(KusuApp):
             sys.stderr.write('Invalid RPM header: %s\n' %
                              path(e.args[0]).basename())
             sys.exit(EKITLOC_FAIL)
+        except KitinfoSyntaxError, e:
+            kl.debug('FAIL performing add operation: %s', e.args[0])
+            sys.stderr.write('Error: %s\n' % e.args[0])
+            sys.exit(EKIT_BAD)
 
         if getattr(kits, 'ostype', None) is not None:
             self.runAddOSKit(kits)

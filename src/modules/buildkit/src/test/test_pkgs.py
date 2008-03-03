@@ -12,10 +12,13 @@ from kusu.buildkit import KitSrcFactory, setupprofile, Fedora6Component, Default
 from kusu.buildkit import BinaryPackage, SourcePackage, DistroPackage, RPMPackage, SRPMPackage
 from kusu.buildkit.builder import getDirName
 from path import path
+from kusu.util.errors import KitinfoSyntaxError
 from nose import SkipTest
+from nose.tools import raises
 
 
 TMPDIR = path(tools.mkdtemp(prefix='kitsrc-test-'))
+KITINFO_SYNTAX_ERROR_PATH = TMPDIR / 'kitinfo-syntax_error'
 TEST_ASSETS_URL = 'http://www.osgdc.org/pub/build/tests/modules/buildkit/'
 GOOD_PKGS = ['hello-2.3.tar.gz', 'hello-2.3.tbz2']
 BAD_PKGS = ['dummy-2.3.tar.gz']
@@ -138,7 +141,44 @@ class TestGNUBuildTarballPkg(object):
         compnames.sort()
         assert names == compnames
 
-        
+    @raises(KitinfoSyntaxError)
+    def testKitinfoSyntaxError(self):
+        """ Test exception is raised on syntax errors in kitinfo file. """
+
+        f = open(KITINFO_SYNTAX_ERROR_PATH, 'w')
+        f.write("""kit = {'arch': 'noarch',
+ 'dependencies': [],
+ 'description': 'alvin kit.',
+ 'license': 'LGPL',
+ 'name': 'alvin',
+ 'pkgname': 'kit-alvin',
+ 'release': '0',
+ 'removable': True,
+ 'scripts': {'postscript': '',
+             'postunscript': '',
+             'prescript': '',
+             'preunscript': ''},
+ 'srctype': 'kit',
+ 'version': '0.1'}
+components = [{'arch': 'noarch',
+  'comprelease': '0',
+  'compversion': '0.1',
+  'description': 'alvin component for RHEL5.',
+  'driverpacks': [],
+  'name': 'alvin',
+  'ngtypes': ['installer', 'compute'],
+  'ostype': 'rhel',
+  'osversion': '5',
+  'pkgname': 'component-alvin',
+  'scripts': {'postscript': '',
+              'postunscript': '',
+              'prescript': '',
+              'preunscript': ''},
+  'srctype': 'component'},""")
+        f.close()
+
+        processKitInfo(KITINFO_SYNTAX_ERROR_PATH)
+ 
     def testBinaryPackage(self):
         """ Test the BinaryPackage setup."""
         
