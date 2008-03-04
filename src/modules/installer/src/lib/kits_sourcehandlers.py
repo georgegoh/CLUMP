@@ -178,6 +178,10 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
                                      'the CD/DVD drive is not faulty.')
         eject(cdrom)
         return        
+    except UnrecognizedKitMediaError, e:
+        baseScreen.selector.popupMsg('Media Error', e.args[0])
+        eject(cdrom)
+        return
         
         
     if kit['name'] != baseScreen.kiprofile['OS'] or \

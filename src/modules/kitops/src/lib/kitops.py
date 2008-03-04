@@ -25,7 +25,6 @@ from kusu.util.tools import cpio_copytree
 from kusu.util import rpmtool
 from kusu.buildkit import processKitInfo
 from kusu.util.errors import *
-from kusu.util.rpmtool import RPM
 # TODO: uncomment this to call repoman's refresh
 #from kusu.repoman.repofactory import RepoFactory
 
@@ -128,7 +127,11 @@ class KitOps:
         if oskit.ostype is not None:
             return oskit
 
-        return self.getAvailableKits()
+        try:
+            return self.getAvailableKits()
+        except (InvalidRPMHeader, KitinfoSyntaxError):
+            self.unmountMedia()
+            raise
 
     def addKit(self, kitinfo):
         '''perform the add operation on the kit specified 
@@ -303,7 +306,7 @@ class KitOps:
 
             # extract the kitrpm contents into a temporary directory
             tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=self.tmpprefix))
-            rpm = RPM(str(kitrpm))
+            rpm = rpmtool.RPM(str(kitrpm))
             rpm.extract(tmpdir)
 
             kitinfos = []
@@ -426,7 +429,7 @@ class KitOps:
             umountP = subprocess.Popen('umount %s' % self.mountpoint,
                                        shell=True, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-            umountP.communicate()
+            out, err = umountP.communicate()
 
             if umountP.returncode == 0:
                 self.mountpoint.rmdir()
@@ -493,6 +496,12 @@ class KitOps:
 
         tmprootfs = path(tempfile.mkdtemp(prefix='kitops',
                                           dir=self.tmpprefix))
+        # Check whether this is disc 1.
+        if bmt.getKernelPath(self.mountpoint) is None \
+            or bmt.getInitrdPath(self.mountpoint) is None:
+            self.unmountMedia()
+            raise UnrecognizedKitMediaError, "Please supply disc 1 first!"
+
         try:
             if self.installer:
                 bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],

@@ -113,6 +113,7 @@ class RPM:
                     try:
                         self.hdr = ts.hdrFromFdno(fd)
                     except:
+                        os.close(fd)
                         raise InvalidRPMHeader, r
                     os.close(fd)
                 elif self.ext == '.hdr':

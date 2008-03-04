@@ -607,8 +607,8 @@ class TestFedoraCore6i386:
         kusudb.dropTables()
 
         # wipe out installed files
-        if self.depot_dir.exists():
-            self.depot_dir.rmtree()
+        if self.depot_dir.exists(): self.depot_dir.rmtree()
+        if self.pxe_dir.exists(): self.pxe_dir.rmtree()
 
         umountP = subprocess.Popen('umount %s 2> /dev/null' % self.temp_mount,
                                    shell=True)
@@ -656,6 +656,41 @@ class TestFedoraCore6i386:
         assert files >= 1000, 'Found %d files, expecting more than 1000' % files
 
         self.assertOSKitDBInfo()
+
+    def test_add_second_disk_first(self):
+        # we need to be root
+        assertRoot()
+
+        cmd = ['kitops', '-a', '-m', str(self.kit2), '-p', str(self.temp_root)]
+        cmd += dbinfo_str.split()
+        addP = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        addPo, addPe = addP.communicate()
+
+        #rv = addP.returncode
+        #assert rv == 0, 'kitops returned error: %s, command: %s' % (rv, cmd)
+
+        # assert we got the correct error message
+        assert addPe == 'Error: Please supply disc 1 first!\n', \
+            'Got unexpected error message: "%s"' % addPe
+
+        # assert initrd and kernel are not copied
+        assert not self.kit_initrd.exists(), \
+            'The initrd does not exist on media, why does it exist on disk?'
+        assert not self.kit_kernel.exists(), \
+            'The kernel does not exist on media, why does it exist on disk?'
+
+        # assert no directories
+        assert not self.kits_dir_name.exists(), \
+            'Kitops should not create directory'
+
+        # assert no entries in the kits table
+        assert not self.kusudb.Kits.select(), \
+            'Kitops should not create any entries in kits table'
+
+        # assert no entries in the components table
+        assert not self.kusudb.Components.select(), \
+            'Kitops should not create any entries in components table'
 
     def assertOSKitDirs(self):
         # assert all directories exist
@@ -728,11 +763,9 @@ class TestFedoraCore6i386:
 class TestBadKits(object):
     def setup(self):
         global temp_root
-        global temp_mount
         global kusudb
 
         self.temp_root = temp_root
-        self.temp_mount = temp_mount
         self.depot_dir = self.temp_root / 'depot'
         self.kits_dir = self.depot_dir / 'kits'
 
@@ -748,10 +781,6 @@ class TestBadKits(object):
         if self.depot_dir.exists():
             self.depot_dir.rmtree()
 
-        umountP = subprocess.Popen('umount %s 2> /dev/null' % self.temp_mount,
-                                   shell=True)
-        umountP.wait()
-
     def test_bad_post_script(self):
         # Some setup specific to this test.
         self.kit_iso = 'kit-bad_post_script-0.1-0.x86_64.iso'
@@ -765,10 +794,6 @@ class TestBadKits(object):
         self.kit_ver = '0.1'
         self.kit_arch = 'x86_64'
         self.kit_dir_name = self.kits_dir / self.kit_name
-
-        mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-                                  (self.kit, self.temp_mount), shell=True)
-        mountP.wait()
 
         # we need to be root
         assertRoot()
@@ -825,10 +850,6 @@ class TestBadKits(object):
         self.kit_arch = 'noarch'
         self.kit_dir_name = self.kits_dir / self.kit_name
 
-        #mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-        #                          (self.kit, self.temp_mount), shell=True)
-        #mountP.wait()
-
         # we need to be root
         assertRoot()
 
@@ -875,10 +896,6 @@ class TestBadKits(object):
         self.kit_ver = '0.1'
         self.kit_arch = 'noarch'
         self.kit_dir_name = self.kits_dir / self.kit_name
-
-        #mountP = subprocess.Popen('mount -o loop %s %s 2> /dev/null' %
-        #                          (self.kit, self.temp_mount), shell=True)
-        #mountP.wait()
 
         # we need to be root
         assertRoot()

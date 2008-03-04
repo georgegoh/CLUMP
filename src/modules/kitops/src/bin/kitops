@@ -296,6 +296,10 @@ class KitOpsApp(KusuApp):
             kl.debug('FAIL performing add operation')
             sys.stderr.write(e.args[0] + '\n')
             sys.exit(EKITLOC_FAIL)
+        except UnrecognizedKitMediaError, e:
+            kl.debug('FAIL performing add operation: %s', e.args[0])
+            sys.stderr.write('Error: %s\n' % e.args[0])
+            sys.exit(EKITADD_FAIL)
 
         res = ''
         while 1:    #loop to go through all the media disks...
@@ -304,12 +308,12 @@ class KitOpsApp(KusuApp):
                 self.koinst.setKitMedia(res)
                 kl.debug('Provided additional kit media: %s', res)
 
-            try:
-                self.koinst.addKitPrepare()
-            except UnrecognizedKitMediaError, e:
-                kl.debug('FAIL adding kit media%s: %s',
-                         ' ' + res, e.args[0])
-                prepare_success = False
+                try:
+                    self.koinst.addKitPrepare()
+                except UnrecognizedKitMediaError, e:
+                    kl.debug('FAIL adding kit media%s: %s',
+                             ' ' + res, e.args[0])
+                    prepare_success = False
 
             if prepare_success:
                 try:
