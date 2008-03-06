@@ -129,8 +129,10 @@ def getSCSI(type):
                 # block:<dev> exists
                 if dev: 
                     dev = dev[0].realpath()
-                else: # block exists
+                elif (s / 'block').exists(): # block exists, rhel4
                     dev = (s / 'block').realpath()
+                else:
+                    continue
 
                 removable = dev.realpath() / 'removable'
                 if type in ['disk']:
