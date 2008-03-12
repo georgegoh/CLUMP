@@ -255,12 +255,12 @@ class KitOpsApp(KusuApp):
             sys.stderr.write('Error: %s\n' % e.args[0])
             sys.exit(EKIT_BAD)
 
+        kitError = False
+
         if getattr(kits, 'ostype', None) is not None:
             self.runAddOSKit(kits)
         elif kits:
             # we cannot identify the distro -- treat as ordinary kit
-            kitError = False
-
             kits = self.selectKits(kits)
 
             for kit in kits:
@@ -284,8 +284,8 @@ class KitOpsApp(KusuApp):
             sys.stderr.write(msg + '\n')
             sys.exit(EKITLOC_FAIL)
             
-            if kitError:
-                sys.exit(EKITLOC_FAIL)
+        if kitError:
+            sys.exit(EKITLOC_FAIL)
 
         kl.debug('SUCCESS performing add operation')
 
