@@ -220,7 +220,7 @@ def attachPVsToVGs(disk_profile, vg_dict):
         pvs_with_vgs = [pv for pv in disk_profile.pv_dict.values() if pv.group]
         for pv in pvs_with_vgs:
             logger.debug('PV, group: %s' % str(pv.group.name))
-            if pv.group.name == vg_name:
+            if pv.group and pv.group.name == vg_name:
                 disk_no = getDiskNumber(pv.partition, disk_profile.disk_dict)
                 part_no = pv.partition.num
                 if not disk_no: continue

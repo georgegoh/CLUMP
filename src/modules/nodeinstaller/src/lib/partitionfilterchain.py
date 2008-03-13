@@ -412,7 +412,7 @@ class FilterOnFileSystemNoPreserve(FilterOnFileSystem):
         return disk_profile
 
     def applyForPhysicalVol(self, vg_name, vol, preserve):
-        if vol.group.name==vg_name and preserve=='1':
+        if vol.group and vol.group.name==vg_name and preserve=='1':
             vol.partition.leave_unchanged = True
             logger.debug('Preserve %s' % vol.partition.path)
         else:
