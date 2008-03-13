@@ -330,33 +330,46 @@ class DriverPatchController(object):
         return krpm.isKernelModule()
             
     def hasPciUpdates(self, packagerpm):
-        """ Check if the packagerpm is a kernel package. """
+        """ Check if the packagerpm has pci.updates file. """
         _krpm = path(packagerpm)
         krpm = kernel.RPMPackage(_krpm)
 
         return krpm.hasPciUpdates()
                 
     def hasPcitable(self, packagerpm):
-        """ Check if the packagerpm is a kernel package. """
+        """ Check if the packagerpm has pcitable file. """
         _krpm = path(packagerpm)
         krpm = kernel.RPMPackage(_krpm)
 
         return krpm.hasPcitable()
         
+    def hasModulesRemove(self, packagerpm):
+        """ Check if the packagerpm has modules.remove file. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.hasModulesRemove()
+    
     def extractPciUpdates(self, packagerpm, destdir):
-        """ Check if the packagerpm is a kernel package. """
+        """ Extract pci.updates if available. """
         _krpm = path(packagerpm)
         krpm = kernel.RPMPackage(_krpm)
 
         return krpm.extractPciUpdates(destdir)
             
     def extractPcitable(self, packagerpm, destdir):
-        """ Check if the packagerpm is a kernel package. """
+        """ Extract pcitable if available. """
         _krpm = path(packagerpm)
         krpm = kernel.RPMPackage(_krpm)
 
         return krpm.extractPcitable(destdir)        
 
+    def extractModulesRemoveFile(self, packagerpm, destdir):
+        """ Extract modules.remove file if available. """
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.extractModulesRemoveFile(destdir)
 
     def patchPciIds(self, packagerpm, original, pciupdates):
         """ Check if the packagerpm is a kernel package. """
@@ -379,6 +392,17 @@ class DriverPatchController(object):
         kernelrpm = path(kernelrpm)
         krpm = kernel.RPMPackage(kernelrpm)
         krpm.extractKernelModulesDir(destdir)
+        
+    def getModulesRemoveList(self, f):
+        """ Reads the modules.remove file and returns a list of modules to remove from the initrd.
+        """
+        modfile = open(f,'r')
+        li = modfile.readlines()
+        
+        # sanitise and return the list of modules
+        modlist = [l.strip() for l in li if not l.startswith('#')]
+        
+        return modlist
         
     def convertKmodDirToModulesArchive(self, kmoddir, modulearchive, arch):
         """ Converts kernel module directory into a modulearchive file 

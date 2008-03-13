@@ -423,6 +423,10 @@ Example operations:
         
         tmpkmoddir = path(utiltools.mkdtemp())
         tmppcidir = path(utiltools.mkdtemp())
+        tmpmoddir = path(utiltools.mkdtemp())
+        
+        # counter for list of modules to remove
+        modremovelist = []
         
         # extract kernel modules from the driverpacks table
         for pkg in kmodlist:
@@ -446,8 +450,22 @@ Example operations:
                 self.controller.patchPciIds(pkg.filename,syspci,pciupdates)
                 # remove old pci.updates
                 if pciupdates.exists(): pciupdates.remove()
+            # check if the packagerpm has a modules.remove file
+            if self.controller.hasModulesRemove(pkg.filename):
+                self.controller.extractModulesRemoveFile(pkg.filename,tmpmoddir)
+                modfile = path(tmpmoddir / 'modules.remove')
+                if modfile.exists():
+                    _modlist = self.controller.getModulesRemoveList(modfile)
+                    modremovelist.extend([l for l in _modlist if l not in modremovelist])
+                if tmpmoddir.exists(): tmpmoddir.rmtree()
 
             self.controller.extractKernelModulesDir(pkg.filename,tmpkmoddir)
+        
+        # remove any modules listed in modremovelist
+        for mod in modremovelist:
+            _li = tmpkmoddir.walkfiles(mod)
+            if _li:
+                for _mod in _li: _mod.remove()
         
         # generate updated modules.dep / modules.alias
         msg = self._('Generating updated modules.dep and modules.alias..')

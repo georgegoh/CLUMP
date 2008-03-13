@@ -71,6 +71,21 @@ class RPMPackage(object):
 
             return False
 
+        def hasModulesRemove(self):
+            """ Check if the package has a modules.remove file or not.
+            """
+
+            tmpdir = path(tools.mkdtemp())
+            self.unpack(tmpdir)
+
+            li = [ f for f in tmpdir.walkfiles('modules.remove')]
+
+            if tmpdir.exists(): tmpdir.rmtree()
+
+            if li: return True
+
+            return False
+
         def hasPciUpdates(self):
             """ Check if the package has a pci.updates file or not.
             """
@@ -133,6 +148,25 @@ class RPMPackage(object):
             
         # syntantic sugar
         extractPCIUpdates = extractPciUpdates
+        
+        def extractModulesRemoveFile(self, destdir):
+            """ Extracts the modules.remove file from the package into the destdir.
+            """
+            destdir = path(destdir)
+            if not destdir.exists(): raise DirDoesNotExistError, destdir
+
+            tmpdir = path(tools.mkdtemp())
+
+            self.unpack(tmpdir)
+
+            li = [f for f in tmpdir.walkfiles('modules.remove')]
+            
+            modremove = ''
+            if li: modremove = li[0] # hopefully only it contains only one instance of modules.remove
+            
+            modremove.copy(destdir)
+                                
+            if tmpdir.exists(): tmpdir.rmtree()
 
         def extractPcitable(self, destdir):
             """ Extracts the pcitable file from the package into the destdir.
