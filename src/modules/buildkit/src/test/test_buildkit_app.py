@@ -11,6 +11,7 @@ from kusu.buildkit import *
 from path import path
 from cStringIO import StringIO
 from nose import SkipTest
+from subprocess import Popen, PIPE
 
 RPMdir = path(tools.mkdtemp(prefix='buildkit-assets-'))
 URI = 'http://www.osgdc.org/pub/build/tests/modules/buildkit/'
@@ -342,6 +343,37 @@ k.addComponent(comp)
             assert path(RPMdir / baz).exists()
             
     
+    def testBuildKitLostScript(self):
+        """Test to build a kit while post script doesn't exist."""
+
+        cmd1 = 'buildkit new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test'
+
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        # delete the post script file
+        path(self.scratchdir / 'test/sources/00-post-script.sh').remove()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir, stderr=PIPE, stdout=PIPE)
+        p.wait()
+
+        _errmsg = 'Error opening file %s/test/sources/00-post-script.sh, The file does not exist.' % self.scratchdir
+        _stdstring = ''
+
+        # get output message of the buildkit command
+
+        _pipestd = p.stdout
+        for _eachline in _pipestd:
+            _stdstring += _eachline
+
+        _pipestd.close()
+
+        # check if the error occurs
+        _idx = _stdstring.index(_errmsg, 0, len(_stdstring))
+
+        assert _idx > 0
+
 
     def testBuildx86Kit(self):
         """ Test to build a kit containing x86 packages. """

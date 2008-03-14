@@ -407,6 +407,10 @@ Example operations:
             except PackageBuildError, e:
                 msg = self._('Error building kit! Please fix this and build again.')
                 self.printMsgExit(msg)
+            except FileDoesNotExistError, e:
+                msg = self._('Error opening file %(name)s, The file does not exist.' \
+                    % {'name':e})
+                self.printMsgExit(msg)
             
         # populate the packages dir
         msg = self._('Populating the packages directory with the Kit artifacts..')
