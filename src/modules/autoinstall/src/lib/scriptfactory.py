@@ -79,6 +79,8 @@ class KickstartFactory(BaseFactory):
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
+        self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
+        self.namespace['mbrbootloader'] = self._useMBR()
 
         return self.namespace
 
@@ -130,6 +132,17 @@ class KickstartFactory(BaseFactory):
                 pass
 
         return network_lines
+
+    def _useMBR(self):
+        for disk in self.profile.diskprofile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                if partition.native_type == 'Dell Utility' or partition.dellUP_flag:
+                    return False
+        return True
+
+    def _getMBRDriveOrder(self):
+        drive_list = self.profile.diskprofile.disk_dict.keys()
+        return sorted(drive_list)
 
     def _getIgnoreDisks(self):
         disk_profile = self.profile.diskprofile
@@ -235,6 +248,8 @@ class RHEL5KickstartFactory(KickstartFactory):
         self.namespace['networks'] = self._getNetworks()
         self.namespace['instnum'] = self.profile.instnum
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
+        self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
+        self.namespace['mbrbootloader'] = self._useMBR()
 
         return self.namespace
 
@@ -252,6 +267,8 @@ class Fedora7KickstartFactory(KickstartFactory):
         self.namespace['partitions'] = self._getPartitions()
         self.namespace['networks'] = self._getNetworks()
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
+        self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
+        self.namespace['mbrbootloader'] = self._useMBR()
 
         return self.namespace
 

@@ -37,7 +37,12 @@ selinux --disabled
 firstboot --disable
 authconfig --enableshadow --enablemd5
 timezone $tz
+
+#if $mbrbootloader
 bootloader --location=mbr
+#else
+bootloader --location=partition --driveorder=$mbrdriveorder
+#end if
 skipx
 
 #clearpart --all
