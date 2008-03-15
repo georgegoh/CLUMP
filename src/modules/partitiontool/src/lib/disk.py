@@ -719,7 +719,8 @@ class Partition(object):
         s = '  ' + self.path + ' size(MB): ' + str(self.size_MB) + '\n'
         s += '  start sector: ' + str(self.start_sector) + ' end sector: ' + \
              str(self.end_sector) + ' FS: ' + str(self.fs_type) + \
-             ' Leave unchanged: ' + str(self.leave_unchanged)
+             ' Leave unchanged: ' + str(self.leave_unchanged) + '\n'
+        s += ' Partition type: ' + self.type + ' dellUP_flag: ' + str(self.dellUP_flag)
         return s
 
     def __init__(self, disk, pedPartition, mountpoint=None):
