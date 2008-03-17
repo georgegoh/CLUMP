@@ -559,6 +559,73 @@ class TestMetaKit:
                            'kit-%s package associated ' % kitname + \
                            'with %s nodegroup' % ng.ngname
 
+    def testListMetaKit(self):
+        # we need to be root
+        assertRoot()
+        
+        # first, test listing no meta kits installed
+        lines = self.listMetaKits()
+        wantlines = ['[0]: alvin-0.1-noarch',
+                     '[1]: simon-0.1-noarch',
+                     '[2]: theodore-0.1-noarch',
+                     'Provide a comma separated list of kits to install,',
+                     "'all' to install all kits or ENTER to quit:"]
+        assert lines == wantlines, 'List error!\n' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines), 
+                                                   '\n'.join(wantlines))
+
+        # second, test if there are some meta kits have been installed
+        self.prepareDatabaseForMetaKit()
+
+        lines = self.listMetaKits()
+        wantlines = ['[0]: alvin-0.1-noarch [installed]',
+                     '[1]: simon-0.1-noarch',
+                     '[2]: theodore-0.1-noarch [installed]',
+                     'Provide a comma separated list of kits to install,',
+                     "'all' to install all kits or ENTER to quit:"]
+        assert lines == wantlines, 'List error!\n' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                   '\n'.join(wantlines))
+        
+    def listMetaKits(self):
+        # capture the prompt message from adding a meta kit by kitops
+        ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
+
+        echo = subprocess.Popen('echo',
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        
+        lsP = subprocess.Popen('kitops -a -m %s %s -p %s' %
+                               (self.kit, dbinfo_str, self.temp_root),
+                               shell=True, stdin=echo.stdout, stdout=ls_fd)
+        lsP.wait()
+        
+        ls_file = os.fdopen(ls_fd)
+        ls_file.seek(0)
+        lines = [line.strip() for line in ls_file.readlines()]
+        ls_file.close()
+        path(ls_fn).remove
+        
+        return lines
+
+    def prepareDatabaseForMetaKit(self):
+        # insert two meta kit records to kusudb
+        newkit1 = self.kusudb.Kits(rname=self.kit_names[0],
+                                  rdesc='alvin kit.',
+                                  version=self.kit_ver, arch=self.kit_arch,
+                                  isOS=False, removable=True)
+        
+        newkit2 = self.kusudb.Kits(rname=self.kit_names[2],
+                                   rdesc='theodore kit.',
+                                   version=self.kit_ver, arch=self.kit_arch,
+                                   isOS=False, removable=True)
+
+        newkit1.save()
+        newkit2.save()
+        self.kusudb.flush()
+        self.kusudb.ctx.del_current()
+
 class TestFedoraCore6i386:
     def setUp(self):
         global temp_root

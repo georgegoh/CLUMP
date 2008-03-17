@@ -497,9 +497,23 @@ class KitOpsApp(KusuApp):
         choice_list = []
         while 1:
             for num_kits in enumerate(sorted(kits)):
-                print '[%d]: %s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
+                msg = '[%d]: %s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
                                           num_kits[1][1]['version'],
                                           num_kits[1][1]['arch'])
+
+                cur_kit = self.koinst.listKit(num_kits[1][1]['name'],
+                                              num_kits[1][1]['version'],
+                                              num_kits[1][1]['arch'])
+
+                if len(cur_kit) >= 1:
+                    msg += ' [installed]'
+                    if len(cur_kit) > 1:
+                        kl.debug('WARNING: Kit %s-%s-%s recorded twice in the KUSU DB.' %
+                                 num_kits[1][1]['name'],
+                                 num_kits[1][1]['version'],
+                                 num_kits[1][1]['arch'])
+
+                print msg
 
             res = raw_input('Provide a comma separated list of kits ' +
                             "to install,\n'all' to install all kits " +
