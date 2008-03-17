@@ -41,7 +41,7 @@ timezone $tz
 #if $mbrbootloader
 bootloader --location=mbr
 #else
-bootloader --location=partition --driveorder=$mbrdriveorder
+bootloader --location=partition
 #end if
 skipx
 
