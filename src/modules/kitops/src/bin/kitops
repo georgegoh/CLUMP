@@ -59,6 +59,7 @@ class KitOpsApp(KusuApp):
         self.kit_ver = ''
         self.kit_arch = ''
         self.skip_confirm = False
+        self.verbose = False
 
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
@@ -105,10 +106,12 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-y', '--yes', dest='skip_confirm',
                                help=self._('kitops_usage_skip_confirm'),
                                action='store_true', default=False)
-        self.parser.add_option('-v', '--version', dest='version',
+        self.parser.add_option('-V', '--version', dest='version',
                                help=self._('Display version'),
                                action='store_true', default=False)
-
+        self.parser.add_option('-v', '--verbose', dest='verbose',
+                               help=self._('Display verbose kit information'),
+                               action='store_true', default=False)
         self.parser.add_option('-p', '--prefix', dest='prefix',
                                help=SUPPRESS_HELP)
 
@@ -147,6 +150,7 @@ class KitOpsApp(KusuApp):
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
+            self.verbose = options.verbose
 
         dbdriver = 'mysql'
         dbdatabase = 'kusudb'
@@ -357,53 +361,67 @@ class KitOpsApp(KusuApp):
 
         kits = self.koinst.listKit(self.kit_name, self.kit_ver, self.kit_arch)
 
-        for kit in kits:
-            print "%s:\t\t%s" % (headers[0], kit.rname)
-            print "%s:\t%s" % (headers[1], kit.rdesc)
-            print "%s:\t%s" % (headers[2], kit.version)
+        if self.verbose:
+            for kit in kits:
+                print "%s:\t\t%s" % (headers[0], kit.rname)
+                print "%s:\t%s" % (headers[1], kit.rdesc)
+                print "%s:\t%s" % (headers[2], kit.version)
 
-            sys.stdout.write("%s:\t" % headers[3])
-            if kit.arch:
-                sys.stdout.write(kit.arch)
-            else:
-                sys.stdout.write("noarch")
+                sys.stdout.write("%s:\t" % headers[3])
+                if kit.arch:
+                    sys.stdout.write(kit.arch)
+                else:
+                    sys.stdout.write("noarch")
 
-            sys.stdout.write("\n%s:\t\t" % headers[4])
-            if kit.isOS:
-                sys.stdout.write("Yes")
-            else:
-                sys.stdout.write("No")
+                sys.stdout.write("\n%s:\t\t" % headers[4])
+                if kit.isOS:
+                    sys.stdout.write("Yes")
+                else:
+                    sys.stdout.write("No")
 
-            sys.stdout.write("\n%s:\t" % headers[5])
-            if kit.removable:
-                sys.stdout.write("Yes")
-            else:
-                sys.stdout.write("No")
+                sys.stdout.write("\n%s:\t" % headers[5])
+                if kit.removable:
+                    sys.stdout.write("Yes")
+                else:
+                    sys.stdout.write("No")
 
-            ngnames = [ng.ngname for ng in
-                       self.koinst.getNodeGroups(kit.rname, kit.version,
-                                                 kit.arch)]
+                ngnames = [ng.ngname for ng in
+                        self.koinst.getNodeGroups(kit.rname, kit.version,
+                                                  kit.arch)]
 
-            sys.stdout.write("\n%s:\t" % headers[6])
-            ngline=""
-            count=0
-            for ng in ngnames:
-                ngline += "%s" % ng
-                if ng:
-                    ngline += ", "
+                sys.stdout.write("\n%s:\t" % headers[6])
+                ngline=""
+                count=0
+                for ng in ngnames:
+                    ngline += "%s" % ng
+                    if ng:
+                        ngline += ", "
 
-                if (count % 2):
-                    ngline +="\n\t\t"
-                count += 1
+                    if (count % 2):
+                        ngline +="\n\t\t"
+                    count += 1
 
-            if ngline[-2:-1] == ',':
-                ngline = ngline[:-2]
+                if ngline[-2:-1] == ',':
+                    ngline = ngline[:-2]
 
-            if ngline[len(ngline)-5:-4] == ',':
-                ngline = ngline[:len(ngline)-5]
+                if ngline[len(ngline)-5:-4] == ',':
+                    ngline = ngline[:len(ngline)-5]
 
-            sys.stdout.write(ngline)
-            print '\n'
+                sys.stdout.write(ngline)
+                print '\n'
+
+        else:
+            if len(kits) > 0:
+                msg = 'The following Kits have been installed:\n'
+
+                for kit in kits:
+                    msg += " '"
+                    msg += '%s-' % kit.rname
+                    msg += '%s-' % kit.version
+                    msg += "%s'" % kit.arch
+                    msg += '\n'
+
+                print msg
 
         kl.debug('SUCCESS performing list operation')
 

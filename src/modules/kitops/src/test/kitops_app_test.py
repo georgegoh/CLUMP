@@ -288,7 +288,8 @@ class TestBaseKit:
         # perform database setup
         self.prepareDatabase()
 
-        lines = listKits()
+        # test listing kits with verbose flag set
+        lines = listKits(verbose=True)
         wantlines = ['Kit:\t\tbase',
                      'Description:\tBase Kit',
                      'Version:\t0.1',
@@ -302,6 +303,41 @@ class TestBaseKit:
             'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
                                                 '\n'.join(wantlines))
 
+        # test listing kits without verbose flag set
+        lines = listKits()
+        wantlines = ['The following Kits have been installed:',
+                     "'base-0.1-noarch'",
+                    '']
+
+        assert lines == wantlines, 'List error! ' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                    '\n'.join(wantlines))
+
+        # test listing specific kit without verbose flag set
+        lines = listKits(name='base')
+        wantlines = ['The following Kits have been installed:',
+                     "'base-0.1-noarch'",
+                     '']
+
+        assert lines == wantlines, 'List error! ' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                    '\n'.join(wantlines))
+
+        # test listing specific kit with verbose flag set
+        lines = listKits(name='base', verbose=True)
+        wantlines = ['Kit:\t\tbase',
+                     'Description:\tBase Kit',
+                     'Version:\t0.1',
+                     'Architecture:\tnoarch',
+                     'OS Kit:\t\tNo',
+                     'Removable:\tYes',
+                     'Node Groups:\tinstaller, compute',
+                     '']
+        
+        assert lines == wantlines, 'List error! ' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(lines),
+                                                    '\n'.join(wantlines))
+
         new_arch = 'x86_64'
         new_isOS = True
         new_removable = False
@@ -312,7 +348,7 @@ class TestBaseKit:
         kit.removable = new_removable
         self.kusudb.flush()
 
-        lines = listKits()
+        lines = listKits(verbose=True)
         wantlines = ['Kit:\t\tbase',
                      'Description:\tBase Kit',
                      'Version:\t0.1',
@@ -1000,14 +1036,21 @@ class TestBadKits(object):
         assert not self.kusudb.Packages.select_by(packagename=self.kit_name), \
             'Kitops should not create any entries in packages table'
 
-def listKits(name=''):
+def listKits(name='', verbose=False):
     ls_fd, ls_fn = tempfile.mkstemp(prefix='kot', dir=tmp_prefix)
 
     if name:
         name = '--kit %s' % name
-    lsP = subprocess.Popen('kitops -l %s %s -p %s' %
-                           (name, dbinfo_str, temp_root),
-                           shell=True, stdout=ls_fd)
+
+    if verbose:
+        lsP = subprocess.Popen('kitops -l -v %s %s -p %s' %
+                              (name, dbinfo_str, temp_root),
+                              shell=True, stdout=ls_fd)
+    else:
+        lsP = subprocess.Popen('kitops -l %s %s -p %s' %
+                              (name, dbinfo_str, temp_root),
+                              shell=True, stdout=ls_fd)
+
     lsP.wait()
 
     ls_file = os.fdopen(ls_fd)
