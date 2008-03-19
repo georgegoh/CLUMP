@@ -117,7 +117,7 @@ For examples:
         repo.save()
         repo.flush()
 
-        self.stdoutMessage('Repo: %s created. You can now add kits, including OS kits to the new repo.\n', repo_name)
+        self.stdoutMessage('Repo: %s created. You can now add kits, including a OS kit to the new repo.\n', repo_name)
 
     def addKit(self, repo_name, kname, kversion, karch):
 
@@ -150,34 +150,39 @@ For examples:
                 else:
                     if kit.isOS:
                         repo.ostype = '%s-%s-%s' % (kname,kversion,karch)
-
-                    comp_os = [comp.os for comp in kit.components]
-
-                    if repo.ostype:
-                        # Check whether kit arch is valid for repo
-                        if ((kit.arch == 'i386' and repo.ostype.split('-')[2] == 'x86_64') or 
-                           (kit.arch == 'x86_64' and repo.ostype.split('-')[2] == 'i386')): 
-                            self.stdoutMessage('Kit: %s, version %s, architecture %s, is not compatible with repo: %s. Not added.\n', 
-                                               kname,kversion,karch,repo_name)
+                    else:
+                        if True not in [k.isOS for k in repo.kits]:
+                            self.stderrMessage('Please add an OS kit first.\n')
                             self.unlock()
                             sys.exit(1)
 
-                        if repo.ostype.split('-')[2] == 'x86_64':
-                            new_comp_os = []
-                            # handle i386 comp, they are compatible with a x86_64 repo
-                            for comp in comp_os:
-                                if comp and comp != 'noarch':
-                                    os_name, os_version, os_arch = comp.split('-')
-                                    if os_arch == 'i386':
-                                        comp = '%s-%s-%s' % (os_name, os_version, 'x86_64')
+                    comp_os = [comp.os for comp in kit.components]
 
-                                new_comp_os.append(comp)
+                    # Check whether kit arch is valid for repo
+                    if ((kit.arch == 'i386' and repo.ostype.split('-')[2] == 'x86_64') or 
+                       (kit.arch == 'x86_64' and repo.ostype.split('-')[2] == 'i386')): 
+                        self.stdoutMessage('Kit: %s, version %s, architecture %s, is not compatible with repo: %s. Not added.\n', 
+                                           kname,kversion,karch,repo_name)
+                        self.unlock()
+                        sys.exit(1)
 
-                            comp_os = new_comp_os
+                    if repo.ostype.split('-')[2] == 'x86_64':
+                        new_comp_os = []
+                        # handle i386 comp, they are compatible with a x86_64 repo
+                        for comp in comp_os:
+                            if comp and comp != 'noarch':
+                                os_name, os_version, os_arch = comp.split('-')
+                                if os_arch == 'i386':
+                                    comp = '%s-%s-%s' % (os_name, os_version, 'x86_64')
+
+                            new_comp_os.append(comp)
+
+                        comp_os = new_comp_os
 
                     # check component os whether is valid for repo
                     if not ('noarch' in comp_os or 
                             repo.ostype in comp_os or 
+                            repo.ostype.split('-')[0] in comp_os or
                             '' in comp_os or 
                             None in comp_os):
                         self.stdoutMessage('Kit: %s, version %s, architecture %s, is not compatible with repo: %s. Not added.\n', 
