@@ -11,13 +11,13 @@ import tempfile
 from path import path
 import kusu.util.log as kusulog
 
-def setUp():
+def setup():
     global tmp_prefix
 
     tmp_prefix = path(tempfile.mkdtemp(prefix='logtest',
                                        dir=os.environ.get('KUSU_TMP', '/tmp')))
 
-def tearDown():
+def teardown():
     global tmp_prefix
 
     if tmp_prefix.exists():

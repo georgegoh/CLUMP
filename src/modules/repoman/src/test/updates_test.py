@@ -19,7 +19,7 @@ from nose import SkipTest
 kusudb = None
 prefix = None
 
-def setUp():
+def setup():
     global kusudb
     global prefix
     global dbObj
@@ -28,7 +28,7 @@ def setUp():
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
     dbObj = db.DB('sqlite', kusudb)
 
-def tearDown():
+def teardown():
     global kusudb
     global prefix
 

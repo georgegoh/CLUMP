@@ -17,11 +17,11 @@ from nose.tools import assert_raises
 
 cachedir = path(tempfile.mkdtemp(prefix='yumrepo', dir=os.environ['KUSU_TMP']))
 
-def setUp():
+def setup():
     url = 'http://www.osgdc.org/pub/build/tests/modules/yumrepo/'
     tools.url_mirror_copy(url, cachedir) 
 
-def tearDown():
+def teardown():
     if cachedir.exists():
         cachedir.rmtree()
 

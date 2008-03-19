@@ -31,13 +31,13 @@ def downloadAssets():
     for p in TEST_PKGS:
         urllib.urlretrieve(TEST_ASSETS_URL + p, dlpath / p)
 
-def setUp():
+def setup():
     global TMPDIR
     if not path(TMPDIR / 'assets').exists():
         path(TMPDIR / 'assets').mkdir()
         downloadAssets()
     
-def tearDown():
+def teardown():
     global TMPDIR
     if TMPDIR.exists(): TMPDIR.rmtree()
     

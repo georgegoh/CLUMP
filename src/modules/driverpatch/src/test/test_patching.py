@@ -20,7 +20,7 @@ KRPM1 = 'kernel-2.6.18-1.2798.fc6.i586.rpm'
 def download(url,dest):
     urllib.urlretrieve(url,dest)
 
-def setUp():
+def setup():
     global RPMDIR
     global KRPM1_URL
     global KRPM1
@@ -28,7 +28,7 @@ def setUp():
     if not dest.exists(): download(KRPM1_URL,dest)
 
     
-def tearDown():
+def teardown():
     pass
     #if RPMDIR.exists(): RPMDIR.rmtree()
 

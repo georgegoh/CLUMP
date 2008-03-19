@@ -16,12 +16,12 @@ from subprocess import Popen, PIPE
 RPMdir = path(tools.mkdtemp(prefix='buildkit-assets-'))
 URI = 'http://www.osgdc.org/pub/build/tests/modules/buildkit/'
 
-def setUp():
+def setup():
     cmd = "lftp -e 'mget *.rpm && exit' %s > /dev/null 2>&1" % URI
     lftpP = subprocess.Popen(cmd,shell=True,cwd=RPMdir)
     lftpP.wait()
     
-def tearDown():
+def teardown():
     if RPMdir.exists(): RPMdir.rmtree()
 
 class TestBuildKitApp(object):

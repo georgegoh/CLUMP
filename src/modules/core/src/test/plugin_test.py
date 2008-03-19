@@ -16,7 +16,7 @@ import os
 prefix = None
 kusudb = None
 
-def setUp():
+def setup():
     global prefix
     global kusudb
 
@@ -32,7 +32,7 @@ def setUp():
     for f in prefix.listdir():
         f.chmod(0755)
 
-def tearDown():
+def teardown():
     global kusudb
     kusudb.parent.rmtree()
 

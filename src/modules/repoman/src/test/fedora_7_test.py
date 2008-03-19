@@ -38,14 +38,14 @@ def download(filename, dest, cache=cachedir):
 
     (cache / filename).copy(dest)
 
-def setUp():
+def setup():
     global prefix
     global kusudb
 
     prefix = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP']))
     kusudb = path(tempfile.mkdtemp(prefix='repoman', dir=os.environ['KUSU_TMP'])) / 'kusu.db'
 
-def tearDown():
+def teardown():
     global kusudb
     global cachedir
  

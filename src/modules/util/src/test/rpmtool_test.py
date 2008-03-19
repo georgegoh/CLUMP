@@ -17,7 +17,7 @@ from nose.tools import assert_raises
 
 cachedir = path(tempfile.mkdtemp(prefix='rpmtool', dir=os.environ['KUSU_TMP']))
 
-def setUp():
+def setup():
     url = 'http://www.osgdc.org/pub/build/tests/modules/rpmtool/'
 
     rpms = ['openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm',
@@ -74,7 +74,7 @@ def setUp():
     for r in rpms:
         testing.download(url + r, dest=cachedir)
 
-def tearDown():
+def teardown():
     if cachedir.exists():
         cachedir.rmtree()
 

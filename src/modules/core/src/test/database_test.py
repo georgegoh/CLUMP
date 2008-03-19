@@ -16,7 +16,9 @@ kusudb = path(tempdir) / 'kusu.db'
 newtempdir = tempfile.mkdtemp(prefix='dbtest')
 newkusudb = path(newtempdir) / 'newkusu.db'
 
-def tearDown():
+def setup(): pass
+
+def teardown():
     global kusudb
     global tempdir
     global newkusudb

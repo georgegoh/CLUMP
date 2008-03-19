@@ -46,7 +46,7 @@ def assertRoot():
     if os.getuid() != 0:
         raise SkipTest
 
-def setUp():
+def setup():
     global temp_mount
     global tmp_prefix
 
@@ -55,7 +55,7 @@ def setUp():
 
     temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
 
-def tearDown():
+def teardown():
     global tmp_prefix
 
     tmp_prefix.rmtree()

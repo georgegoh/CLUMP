@@ -31,7 +31,7 @@ kusudb = None
 db_driver = 'sqlite' # set to one of 'mysql' 'sqlite'
 dbinfo_str = ''
 
-def setUp():
+def setup():
     global temp_root
     global temp_mount
     global tmp_prefix
@@ -44,7 +44,7 @@ def setUp():
     temp_root = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
     temp_mount = path(tempfile.mkdtemp(prefix='kot', dir=tmp_prefix))
 
-def tearDown():
+def teardown():
     global temp_root
     global temp_mount
 
