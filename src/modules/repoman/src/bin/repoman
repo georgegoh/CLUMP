@@ -236,7 +236,7 @@ For examples:
                             break
 
                     if noOS:
-                        repo.ostpe = None
+                        repo.ostype = None
                     repo.save()
                     repo.flush()
                         
