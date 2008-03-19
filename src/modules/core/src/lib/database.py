@@ -905,10 +905,10 @@ class DB(object):
                               size='100', device='1', preserve='0')
             root = Partitions(mntpnt='/', fstype='ext3', partition='2',
                               size='12000', device='1', preserve='0')
-            swap = Partitions(fstype='linux-swap', partition='3'
+            swap = Partitions(fstype='linux-swap', partition='3',
                               size='2000', device='1', preserve='0')
             var = Partitions(mntpnt='/var', fstype='ext3', partition='4',
-                             size='2000', device='1', preserve='0'
+                             size='2000', device='1', preserve='0')
             data = Partitions(mntpnt='/data', fstype='ext3', partition='5', size='14000',
                               options='fill', device='1', preserve='0')
             dell = Partitions(options='partitionID=Dell Utility', preserve=1)
@@ -919,6 +919,7 @@ class DB(object):
             ng.partitions.append(var)
             ng.partitions.append(data)
             ng.partitions.append(dell)
+            ng.partitions.append(donotpreserve)
 # LVM PARTITIONING
 #        for ng in [compute]:
 #            boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
@@ -980,7 +981,8 @@ class DB(object):
                            device='DEPOT', options='lv;vg=VolGroup00', preserve=0)
         var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
                          device='VAR', options='lv;vg=VolGroup00', preserve=0)
-        for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve4]:
+        donotpreserve = Partitions(options='partitionID=*', preserve=0)
+        for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve]:
             installer.partitions.append(parts)
         # End Installer Partitioning Schema
 
