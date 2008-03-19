@@ -136,6 +136,3 @@ class TestPlugin:
             elif result[0] == 'fail.sh':
                 assert result[2] == False
                 assert result[3] == None
-
-
-
