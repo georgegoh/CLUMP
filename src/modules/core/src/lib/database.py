@@ -900,52 +900,59 @@ class DB(object):
 
         # Create the partition entries for the compute node
 # REGULAR PARTITIONING
-#        boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-#                          size='100', device='1', preserve='0')
-#        root = Partitions(mntpnt='/', fstype='ext3', partition='2',
-#                          size='4000', device='1', preserve='0')
-#        swap = Partitions(partition='3', fstype='linux-swap',
-#                          size='2000', device='1', preserve='0')
-#        data = Partitions(mntpnt='/data', fstype='ext3', partition='4', size='4000',
-#                          options='fill', device='1', preserve='0')
-#        compute.partitions.append(boot)
-#        compute.partitions.append(root)
-#        compute.partitions.append(swap)
-#        compute.partitions.append(data)
-# LVM PARTITIONING
         for ng in [compute]:
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-                              size='100', device='1', preserve=0)
-            swap = Partitions(fstype='linux-swap', partition='2',
-                              size='2000', device='1', preserve=0)
-            pv = Partitions(fstype='physical volume', partition='0',
-                            size='28000', device='N', preserve=0,
-                            options='fill;pv;vg=VolGroup00')
-            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=0)
-            root = Partitions(mntpnt='/', fstype='ext3', size='12000',
-                              device='ROOT', options='lv;vg=VolGroup00', preserve=0)
-            var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
-                             device='VAR', options='lv;vg=VolGroup00', preserve=0)
-            data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
-                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=0)
+                              size='100', device='1', preserve='0')
+            root = Partitions(mntpnt='/', fstype='ext3', partition='2',
+                              size='12000', device='1', preserve='0')
+            swap = Partitions(fstype='linux-swap', partition='3'
+                              size='2000', device='1', preserve='0')
+            var = Partitions(mntpnt='/var', fstype='ext3', partition='4',
+                             size='2000', device='1', preserve='0'
+            data = Partitions(mntpnt='/data', fstype='ext3', partition='5', size='14000',
+                              options='fill', device='1', preserve='0')
             dell = Partitions(options='partitionID=Dell Utility', preserve=1)
-#            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
-#            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
-#            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=0)
-            donotpreserve4 = Partitions(options='partitionID=*', preserve=0)
-
+            donotpreserve = Partitions(options='partitionID=*', preserve=0)
             ng.partitions.append(boot)
-            ng.partitions.append(swap)
-            ng.partitions.append(pv)
-            ng.partitions.append(vg)
             ng.partitions.append(root)
+            ng.partitions.append(swap)
             ng.partitions.append(var)
             ng.partitions.append(data)
             ng.partitions.append(dell)
-#            ng.partitions.append(donotpreserve1)
-#            ng.partitions.append(donotpreserve2)
-#            ng.partitions.append(donotpreserve3)
-            ng.partitions.append(donotpreserve4)
+# LVM PARTITIONING
+#        for ng in [compute]:
+#            boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
+#                              size='100', device='1', preserve=0)
+#            swap = Partitions(fstype='linux-swap', partition='2',
+#                              size='2000', device='1', preserve=0)
+#            pv = Partitions(fstype='physical volume', partition='0',
+#                            size='28000', device='N', preserve=0,
+#                            options='fill;pv;vg=VolGroup00')
+#            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=0)
+#            root = Partitions(mntpnt='/', fstype='ext3', size='12000',
+#                              device='ROOT', options='lv;vg=VolGroup00', preserve=0)
+#            var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
+#                             device='VAR', options='lv;vg=VolGroup00', preserve=0)
+#            data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
+#                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=0)
+#            dell = Partitions(options='partitionID=Dell Utility', preserve=1)
+##            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
+##            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
+##            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=0)
+#            donotpreserve4 = Partitions(options='partitionID=*', preserve=0)
+
+#            ng.partitions.append(boot)
+#            ng.partitions.append(swap)
+#            ng.partitions.append(pv)
+#            ng.partitions.append(vg)
+#            ng.partitions.append(root)
+#            ng.partitions.append(var)
+#            ng.partitions.append(data)
+#            ng.partitions.append(dell)
+##            ng.partitions.append(donotpreserve1)
+##            ng.partitions.append(donotpreserve2)
+##            ng.partitions.append(donotpreserve3)
+#            ng.partitions.append(donotpreserve4)
         
         # Imaged Partitioning
         boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
