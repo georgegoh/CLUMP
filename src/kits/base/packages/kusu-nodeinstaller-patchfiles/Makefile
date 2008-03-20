@@ -19,7 +19,7 @@
 
 # The following settings can be changed accordingly to your needs
 NAME = kusu-nodeinstaller-patchfiles
-VERSION = 0.7
+VERSION = 0.8
 RELEASE = 0
 
 

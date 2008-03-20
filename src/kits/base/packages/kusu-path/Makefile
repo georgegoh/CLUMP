@@ -20,7 +20,7 @@
 
 # Be sure to change the MODULE and VERSION to fit your needs
 MODULE = path
-VERSION = 0.7
+VERSION = 0.8
 
 
 # The following settings can be changed accordingly to your needs
