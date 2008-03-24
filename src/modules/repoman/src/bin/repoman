@@ -196,6 +196,7 @@ For examples:
                     repo.flush()
 
                     self.stdoutMessage('Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    kl.info('Added kit: %s version %s arch %s to repo: %s' % (kname,kversion,karch,repo_name))
         else:
             self.stdoutMessage('No such kit. Please specify kit name, version and arch.\n')
             self.unlock()
@@ -247,6 +248,7 @@ For examples:
                     repo.flush()
                         
                     self.stdoutMessage('Kit: %s-%s-%s removed from repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    kl.info('Deleted kit: %s version %s arch %s from repo: %s' % (kname,kversion,karch,repo_name))
         else:
             self.stderrMessage('No such kit. Please specify kit name, version and arch.\n')
             self.unlock()

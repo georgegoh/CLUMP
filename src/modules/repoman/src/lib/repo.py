@@ -169,6 +169,8 @@ class BaseRepo(object):
         self.repoid = None
         self.repo_path = None
 
+        kl.info('Delete repo: %s', repo_path)
+
     def makeAutoInstallScript(self):
         """Make the autoinstall script for the repository"""
         raise NotImplementedError
