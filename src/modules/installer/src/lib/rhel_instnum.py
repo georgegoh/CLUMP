@@ -24,7 +24,7 @@ kl = kusulog.getKusuLog('installer.instnum')
 class LicenseScreen(InstallerScreen, profile.PersistentProfile):
     name = _('Inst Number')
     profile = 'InstNum'
-    msg = _('Please enter the Installation number')
+    msg = _('Please enter the Red Hat Installation number')
     buttons = [_('Skip')]
 
     def __init__(self, kiprofile):
