@@ -118,6 +118,7 @@ For examples:
         repo.flush()
 
         self.stdoutMessage('Repo: %s created. You can now add kits, including a OS kit to the new repo.\n', repo_name)
+        kl.info('Created repo: %s' % location)
 
     def addKit(self, repo_name, kname, kversion, karch):
 
@@ -282,6 +283,7 @@ For examples:
         ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
         if ng:
+            kl.error('Cannot delete repo: %s. In use by nodegroup(s).' % repo_name)
             self.stderrMessage('Cannot delete repo: %s. In use by nodegroup(s).\n', repo_name)
             self.unlock()
             sys.exit(1)
@@ -292,6 +294,8 @@ For examples:
             repo.repos = None
             repo.delete()
             repo.flush()
+
+            kl.info('Deleted repo: %s' % p)
 
     def snapshot(self, repo_name):
         self.repoExists(repo_name)
@@ -315,6 +319,8 @@ For examples:
         src = path(self.prefix or '/') / 'depot' / 'repos' / str(oldRepo.repoid)
         dest = path(self.prefix or '/') / 'depot' / 'repos' / str(newRepo.repoid)
         tools.cpio_copytree(src, dest)
+
+        kl.info('Created repo snapshot: %s' % dest)
 
     def repoExists(self, repo_name):
         repo = self.dbs.Repos.select_by(reponame=repo_name)
