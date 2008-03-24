@@ -68,8 +68,12 @@ class BaseRepo(object):
         """Get the contrib path for the repository"""
 
         os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
-        return self.prefix / 'depot' / 'contrib' / os_name / os_version / os_arch
+        
 
+        return [self.prefix / 'depot' / 'contrib' / os_name / os_version / os_arch, \
+                self.prefix / 'depot' / 'local' / os_name / os_version / os_arch]
+              
+        
     def getKitPath(self, name, version, arch):
         """Get the kit path given the name, version and arch"""
 
@@ -286,43 +290,47 @@ class RedhatYumRepo(BaseRepo):
 
     def copyContribPackages(self):
 
-        if not self.getContribPath().exists():
-            return
+        for contribPath in  self.getContribPath():
 
-        contribFiles = self.getContribPath().listdir()
+            if not contribPath.exists():
+                kl.warn('Contrib path: %s does not exists. Skipping' % contribPath)
+                continue
 
-        if not contribFiles:
-            return
+            contribFiles = contribPath.listdir()
 
-        rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
+            if not contribFiles:
+                kl.warn('No pacakges in contrib path: %s does not exists. Skipping' % contribPath)
+                continue
 
-        ki.info('Copying contrib packages: %s' % self.getContribPath())
+            rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
 
-        for file in contribFiles:
-            rpm = rpmtool.RPM(str(file))
+            kl.info('Copying contrib packages: %s' % contribPath)
 
-            name = rpm.getName()
-            arch = rpm.getArch()
+            for file in contribFiles:
+                rpm = rpmtool.RPM(str(file))
 
-            # We will be replacing the package from the os kit when 
-            # it is provided by a kit
-            if rpmPkgs.has_key(name):
-                if arch in ['i386', 'i486', 'i586', 'i686']:
-                    for arch in ['i386', 'i486', 'i586', 'i686']:
+                name = rpm.getName()
+                arch = rpm.getArch()
+
+                # We will be replacing the package from the os kit when 
+                # it is provided by a kit
+                if rpmPkgs.has_key(name):
+                    if arch in ['i386', 'i486', 'i586', 'i686']:
+                        for arch in ['i386', 'i486', 'i586', 'i686']:
+                            if rpmPkgs[name].has_key(arch):
+                                osFile = rpmPkgs[name][arch][0].getFilename()
+                                if osFile.exists(): osFile.remove()
+
+                    else:
                         if rpmPkgs[name].has_key(arch):
                             osFile = rpmPkgs[name][arch][0].getFilename()
                             if osFile.exists(): osFile.remove()
+                    
+                dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
 
-                else:
-                    if rpmPkgs[name].has_key(arch):
-                        osFile = rpmPkgs[name][arch][0].getFilename()
-                        if osFile.exists(): osFile.remove()
-                
-            dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
+                if dest.exists(): dest.remove()
 
-            if dest.exists(): dest.remove()
-
-            (dest.parent.relpathto(file)).symlink(dest)
+                (dest.parent.relpathto(file)).symlink(dest)
 
     def makeRepoDirs(self):
         for dir in self.dirlayout.values():
@@ -786,51 +794,53 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
     def copyContribPackages(self):
 
-        if not self.getContribPath().exists():
-            return
+        for contribPath in  self.getContribPath():
 
-        contribFiles = self.getContribPath().listdir()
+            if not contribPath.exists():
+                kl.warn('Contrib path: %s does not exists. Skipping' % contribPath)
+                continue
 
-        if not contribFiles:
-            return
+            contribFiles = contribPath.listdir()
 
-        ki.info('Copying contrib packages: %s' % self.getContribPath())
+            if not contribFiles:
+                kl.warn('No pacakges in contrib path: %s does not exists. Skipping' % contribPath)
+                continue
 
-        rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
-                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
-                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['clusterstorage.rpmsdir']]),
-                   rpmtool.getLatestRPM([self.repo_path / self.dirlayout['vt.rpmsdir']])]
+            kl.info('Copying contrib packages: %s' % contribPath)
 
+            rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
+                       rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
+                       rpmtool.getLatestRPM([self.repo_path / self.dirlayout['clusterstorage.rpmsdir']]),
+                       rpmtool.getLatestRPM([self.repo_path / self.dirlayout['vt.rpmsdir']])]
 
-        for file in contribFiles:
-            if file.basename() not in ['TRANS.TBL', 'kitinfo']:
+            for file in contribFiles:
+                if file.basename() not in ['TRANS.TBL', 'kitinfo']:
 
-                rpm = rpmtool.RPM(str(file))
+                    rpm = rpmtool.RPM(str(file))
 
-                name = rpm.getName()
-                arch = rpm.getArch()
+                    name = rpm.getName()
+                    arch = rpm.getArch()
 
-                # We will be replacing the package from the os kit when 
-                # it is provided by a kit
-                for rpmPkg in rpmPkgs:
-                    if rpmPkg.has_key(name):
-                        if arch in ['i386', 'i486', 'i586', 'i686']:
-                            for arch in ['i386', 'i486', 'i586', 'i686']:
+                    # We will be replacing the package from the os kit when 
+                    # it is provided by a kit
+                    for rpmPkg in rpmPkgs:
+                        if rpmPkg.has_key(name):
+                            if arch in ['i386', 'i486', 'i586', 'i686']:
+                                for arch in ['i386', 'i486', 'i586', 'i686']:
+                                    if rpmPkg[name].has_key(arch):
+                                        osFile = rpmPkg[name][arch][0].getFilename()
+                                        if osFile.exists(): osFile.remove()
+
+                            else:
                                 if rpmPkg[name].has_key(arch):
                                     osFile = rpmPkg[name][arch][0].getFilename()
                                     if osFile.exists(): osFile.remove()
 
-                        else:
-                            if rpmPkg[name].has_key(arch):
-                                osFile = rpmPkg[name][arch][0].getFilename()
-                                if osFile.exists(): osFile.remove()
+                    dest = self.repo_path / self.dirlayout['server.rpmsdir'] / file.basename()
 
-                dest = self.repo_path / self.dirlayout['server.rpmsdir'] / file.basename()
+                    if dest.exists(): dest.remove()
 
-                if dest.exists(): dest.remove()
-
-                (dest.parent.relpathto(file)).symlink(dest)
-
+                    (dest.parent.relpathto(file)).symlink(dest)
 
 
     def makeComps(self):
