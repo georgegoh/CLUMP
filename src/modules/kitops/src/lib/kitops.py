@@ -64,7 +64,7 @@ class KitOps:
             self.prefix = path(prefix)
             self.kits_dir = self.prefix / 'depot/kits/'
             self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
-            self.contrib_dir = self.prefix / 'depot' / 'contrib'
+            self.contrib_dir = self.prefix / 'depot' / 'local'
 
     def setTmpPrefix(self, tmpprefix):
         """
