@@ -299,7 +299,7 @@ class RedhatYumRepo(BaseRepo):
             contribFiles = contribPath.listdir()
 
             if not contribFiles:
-                kl.warn('No pacakges in contrib path: %s does not exists. Skipping' % contribPath)
+                kl.warn('No pacakges in contrib path: %s. Skipping' % contribPath)
                 continue
 
             rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
@@ -803,7 +803,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
             contribFiles = contribPath.listdir()
 
             if not contribFiles:
-                kl.warn('No pacakges in contrib path: %s does not exists. Skipping' % contribPath)
+                kl.warn('No pacakges in contrib path: %s. Skipping' % contribPath)
                 continue
 
             kl.info('Copying contrib packages: %s' % contribPath)
