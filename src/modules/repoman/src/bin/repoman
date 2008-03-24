@@ -60,6 +60,10 @@ For examples:
 
     repoman -r "Example repo" -e --kit fedora
     repoman -r "Example repo" -e --kit fedora --kitversion 6 --kitarch i386
+
+    repoman -r "Example repo" -s
+
+    repoman -r "Example repo" -u 
 """
         usage = self._(usage)
         self.parser = OptionParser(usage)
