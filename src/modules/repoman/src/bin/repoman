@@ -326,6 +326,7 @@ For examples:
         dest = path(self.prefix or '/') / 'depot' / 'repos' / str(newRepo.repoid)
         tools.cpio_copytree(src, dest)
 
+        self.stdoutMessage('Created snapshot for repo: %s\n', repo_name)
         kl.info('Created repo snapshot: %s' % dest)
 
     def repoExists(self, repo_name):
