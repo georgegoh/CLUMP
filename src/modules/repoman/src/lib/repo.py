@@ -17,6 +17,9 @@ from Cheetah.Template import Template
 import sqlalchemy as sa
 import os
 
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog()
+
 try:
     import subprocess
 except:
@@ -123,13 +126,16 @@ class BaseRepo(object):
             repoid = self.getRepoID(repoid_or_reponame)
 
             if not repoid:
+                kl.error('Repo: \'%s\' not created' % repoid_or_reponame)
                 raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
             else:
                 self.repo_path = self.getRepoPath(repoid)
          
         if not self.repo_path.exists():
+            kl.error('Repo: \'%s\' not created' % repoid_or_reponame)
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
         else:
+            kl.info('Deleted Repo: %s' % self.repo_path)
             self.repo_path.rmtree()
 
     def make(self, ngname, reponame):
@@ -216,6 +222,9 @@ class RedhatYumRepo(BaseRepo):
         rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
 
         for kit in kits:
+
+            kl.info('Copying Kit: %s %s %s' % (kit.rname, kit.version, kit.arch))
+
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
 
             if not pkgdir.exists():
@@ -252,6 +261,8 @@ class RedhatYumRepo(BaseRepo):
 
         self.os_path = self.getOSPath()
         
+        kl.info('Copying OS Kit: %s' % self.os_path)
+        
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
@@ -283,6 +294,8 @@ class RedhatYumRepo(BaseRepo):
 
         rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
 
+        ki.info('Copying contrib packages: %s' % self.getContribPath())
+
         for file in contribFiles:
             rpm = rpmtool.RPM(str(file))
 
@@ -313,6 +326,7 @@ class RedhatYumRepo(BaseRepo):
         for dir in self.dirlayout.values():
             try:
                 (self.repo_path / dir).makedirs()
+                kl.info('Made repo dir: %s' % (self.repo_path / dir))
             except: pass
 
     def copyRamDisk(self):
@@ -341,6 +355,7 @@ class RedhatYumRepo(BaseRepo):
         dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
 
         if src.exists() and not dest.exists():
+            kl.info('Copy Node Installer image: %s' % src)
             (dest.realpath().parent.relpathto(src)).symlink(dest)
 
     def makeAutoInstallScript(self):
@@ -388,6 +403,8 @@ class RedhatYumRepo(BaseRepo):
 
                 f.write(str(t))
                 f.close()
+
+                kl.info('Wrote dummy ks.cfg: %s', dest)
 
     def verify(self):
         return True
@@ -485,7 +502,10 @@ class RedhatYumRepo(BaseRepo):
             if dotrepodata.exists():
                 dotrepodata.rmtree()
  
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+        kl.info('Made yum repo: %s' % self.repo_path)
 
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
@@ -701,6 +721,9 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                    rpmtool.getLatestRPM([self.repo_path / self.dirlayout['vt.rpmsdir']])]
 
         for kit in kits:
+
+            kl.info('Copying Kit: %s %s %s' % (kit.rname, kit.version, kit.arch))
+
             pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
 
             if not pkgdir.exists():
@@ -739,6 +762,8 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
         self.os_path = self.getOSPath()
         
+        kl.info('Copying OS Kit: %s' % self.os_path)
+
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
@@ -766,6 +791,8 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
         if not contribFiles:
             return
+
+        ki.info('Copying contrib packages: %s' % self.getContribPath())
 
         rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
                    rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
@@ -840,7 +867,10 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
             if dotrepodata.exists():
                 dotrepodata.rmtree()
  
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+        kl.info('Made yum repo: %s' % self.repo_path)
     
     def getPackageFilePath(self, packagename):
 
