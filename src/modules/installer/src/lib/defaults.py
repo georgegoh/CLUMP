@@ -79,6 +79,16 @@ class PartitionSchema(Struct):
         self.preserve_mntpnt=preserve_mntpnt
         self.preserve_lv=preserve_lv
 
+    def __str__(self):
+        s = 'PartitionSchema:\n'
+        s += 'Disk Schema:\n' + str(self.disk_dict) + '\n'
+        s += 'LVM Group Schema:\n' + str(self.vg_dict) + '\n'
+        s += 'Preserve Types:\n' + str(self.preserve_types) + '\n'
+        s += 'Preserve FSes:\n' + str(self.preserve_fs) + '\n'
+        s += 'Preserve Mountpoints:\n' + str(self.preserve_mntpnt) + '\n'
+        s += 'Preserve LVM Logical Volumes:\n' + str(self.preserve_lv) + '\n'
+        return s
+
     def __eq__(self, other):
         disk_keys = self.disk_dict.keys()
         other_disk_keys = other['disk_dict'].keys()
@@ -350,10 +360,9 @@ def isDiskFormatted(disk):
 
 def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
     """Set up a disk profile based on a given schema."""
+    logger.debug('setupDiskProfile called to set up schema:')
+    logger.debug('%s' % str(schema))
     # clear LVM logical volumes and groups.
-    logger.debug('PRESERVE TYPES: ' + str(schema['preserve_types']))
-    logger.debug('PRESERVE FS: ' + str(schema['preserve_fs']))
-    logger.debug('PRESERVE MNTPNT: ' + str(schema['preserve_mntpnt']))
     logger.debug(str(disk_profile.lv_dict))
     logger.debug(str(disk_profile.lvg_dict))
 
@@ -427,17 +436,10 @@ def clearLVM(disk_profile, schema):
                 logger.debug(str(e))
     return preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv
 
-def clearDisk(disk_profile, disk, schema):
-    # separate into logical, extended, and primary partitions.
+def getPartitionTuple(disk):
     primary = []
     extended = None
     logical = []
-    preserve_list = schema['preserve_types']
-    preserve_fs = schema['preserve_fs']
-    preserve_mntpnt = schema['preserve_mntpnt']
-
-    preserved_fs = []
-    preserved_mntpnt = []
 
     for partition in disk.partition_dict.values():
         if partition.part_type == 'primary':
@@ -449,6 +451,22 @@ def clearDisk(disk_profile, disk, schema):
         else:
             logger.debug('Partition %s is logical type' % partition.path)
             logical.append(partition)
+
+    return (primary, extended, logical)
+
+
+def clearDisk(disk_profile, disk, schema):
+    # separate into logical, extended, and primary partitions.
+    primary = []
+    extended = None
+    logical = []
+    preserve_list = schema['preserve_types']
+    preserve_fs = schema['preserve_fs']
+    preserve_mntpnt = schema['preserve_mntpnt']
+    preserved_fs = []
+    preserved_mntpnt = []
+
+    primary, extended, logical = getPartitionTuple(disk)
 
     # remove the logical partitions first.
     for partition in reversed(sorted(logical)):
@@ -472,6 +490,8 @@ def clearDisk(disk_profile, disk, schema):
                     preserved_fs.append('physical volume')
                 partition.leave_unchanged = True
                 logger.debug(str(e))
+            except KusuError, e:
+                logger.info(str(e))
         else:
             partition.leave_unchanged = True
             extended = None
@@ -501,6 +521,8 @@ def clearDisk(disk_profile, disk, schema):
                     preserved_fs.append('physical volume')
                 partition.leave_unchanged = True
                 logger.debug(str(e))
+            except KusuError, e:
+                logger.info(str(e))
         else:
             partition.leave_unchanged = True
     return preserved_mntpnt, preserved_fs
@@ -513,15 +535,27 @@ def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mn
 
     # do the physical disk and partitions first.
     sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
-    for i in xrange(len(disk_schemata)):
+    for i in sorted(disk_schemata.keys()):
         # for each disk in the schema.
-        schema_disk = disk_schemata[i+1]
+        if type(i) is str:
+            continue
+        if i <= 0:
+            logger.info('Schema has invalid entry(disks start at 1. Skipping.')
+            continue
+        schema_disk = disk_schemata[i]
+        logger.debug('Disk key: %s Disk Schema: %s' % (i,str(schema_disk)))
         schema_partition_dict = schema_disk['partition_dict']
         try:
-            for j in xrange(len(schema_partition_dict)):
+            for j in sorted(schema_partition_dict.keys()):
                 # for each partition in the current disk.
-                schema_partition = schema_partition_dict[j+1]
-                disk_key = sorted_disk_keys[i]
+                if type(j) is str:
+                    continue
+                schema_partition = schema_partition_dict[j]
+                target_disk_key = i-1
+                if target_disk_key > len(sorted_disk_keys):
+                    raise PartitionSchemaError, 'Schema defines more disks than ' + \
+                                                'is physically available on this system.'
+                disk_key = sorted_disk_keys[target_disk_key]
                 size_MB = schema_partition['size_MB']
                 fs = schema_partition['fs']
                 mountpoint = schema_partition['mountpoint']
@@ -534,7 +568,7 @@ def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mn
                 if mountpoint in preserved_mntpnt or fs in preserved_fs:
                     logger.debug('Partition was preserved. Not creating')
                     continue
-                logger.debug('Creating new partition %d for disk %d of size: %d' % (j+1, i, size_MB))
+                logger.debug('Creating new partition %d for disk %d of size: %d' % (j, i, size_MB))
                 p = disk_profile.newPartition(disk_key,
                                               size_MB,
                                               False,

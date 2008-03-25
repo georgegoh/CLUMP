@@ -395,8 +395,10 @@ class FilterOnLogicalVolumeNoPreserve(FilterOnLogicalVolume):
         vol = disk_profile.lv_dict[lv_name]
         if preserve == '1':
             vol.leave_unchanged = True
+            logger.debug('Preserve %s' % vol.path)
         else:
-            vol.leave_unchanged = False        
+            vol.leave_unchanged = False
+            logger.debug('Unpreserve %s' % vol.path)
         return disk_profile
 
 

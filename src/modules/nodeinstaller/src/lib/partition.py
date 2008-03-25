@@ -5,11 +5,13 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
+import sys
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import *
 from kusu.nodeinstaller.partitionfilterchain import *
+from kusu.installer.defaults import getPartitionTuple
 from os.path import basename
 from pprint import PrettyPrinter
 import kusu.util.log as kusulog
@@ -81,30 +83,52 @@ def cleanDiskProfile(disk_profile):
             logger.debug('VG: %s has LVs remaining.' % vg.name)
             pass
 
-    part_list = []
-    extended_partition = None
     for disk in disk_profile.disk_dict.values():
-        part_list = []
-        extended_partition = None
-        for p in disk.partition_dict.values():
-            if p.type == 'extended':
-                extended_partition = p
+        primary, extended, logical = getPartitionTuple(disk)
+
+        # remove the logical partitions first.
+        for partition in reversed(sorted(logical)):
+            logger.debug('Checking if partition %s is preserved:', partition.path)
+            if partition.leave_unchanged:
+                logger.debug('Yes')
             else:
-                part_list.append(p)
-
-        for p in part_list:
-            if not p.leave_unchanged:
+                logger.debug('No, deleting %s' % partition.path)
                 try:
-                    disk_profile.delete(p)
-                except PartitionIsPartOfVolumeGroupError:
-                    pass
+                    disk_profile.delete(partition, keep_in_place=True)
+                except PartitionIsPartOfVolumeGroupError, e:
+                    logger.debug(str(e))
+                    f = sys._getframe()
+                    logger.debug('Caller: %s' % (f.f_back.f_code.co_name))
+                    raise e
+                except KusuError, e:
+                    logger.info(str(e))
 
-        if extended_partition and not extended_partition.leave_unchanged and \
-           disk.partition_dict.has_key(basename(extended_partition.path)):
+        # then remove the extended partitions.
+        if extended and disk.partition_dict.has_key(basename(extended.path)):
+            logger.debug('Removing extended partition')
             try:
-                disk_profile.delete(extended_partition)
-            except CannotDeleteExtendedPartitionError:
-                pass
+                disk_profile.delete(extended, keep_in_place=True)
+            except CannotDeleteExtendedPartitionError, e:
+                logger.info(str(e))
+                f = sys._getframe()
+                logger.debug('Caller: %s' % (f.f_back.f_code.co_name))
+
+        # finally remove the primary partitions.
+        for partition in reversed(sorted(primary)):
+            logger.debug('Checking if partition %s is preserved:', partition.path)
+            if partition.leave_unchanged:
+                logger.debug('Yes')
+            else:
+                logger.debug('No, deleting %s' % partition.path)
+                try:
+                    disk_profile.delete(partition, keep_in_place=True)
+                except PartitionIsPartOfVolumeGroupError, e:
+                    logger.debug(str(e))
+                    f = sys._getframe()
+                    logger.debug('Caller: %s' % (f.f_back.f_code.co_name))
+                    raise e
+                except KusuError, e:
+                    logger.info(str(e))
 
     disk_profile.executeLVMFifo()
     disk_profile.commit()

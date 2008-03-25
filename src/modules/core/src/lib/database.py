@@ -902,15 +902,15 @@ class DB(object):
 # REGULAR PARTITIONING
         for ng in [compute]:
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-                              size='100', device='1', preserve='0')
+                              size='100', device='1', preserve=0)
             root = Partitions(mntpnt='/', fstype='ext3', partition='2',
-                              size='12000', device='1', preserve='0')
+                              size='12000', device='1', preserve=0)
             swap = Partitions(fstype='linux-swap', partition='3',
-                              size='2000', device='1', preserve='0')
+                              size='2000', device='1', preserve=0)
             var = Partitions(mntpnt='/var', fstype='ext3', partition='4',
-                             size='2000', device='1', preserve='0')
+                             size='2000', device='1', preserve=0)
             data = Partitions(mntpnt='/data', fstype='ext3', partition='5', size='14000',
-                              options='fill', device='1', preserve='0')
+                              options='fill', device='1', preserve=0)
             dell = Partitions(options='partitionID=Dell Utility', preserve=1)
             donotpreserve = Partitions(options='partitionID=*', preserve=0)
             ng.partitions.append(boot)
