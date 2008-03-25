@@ -33,6 +33,8 @@ class KitSrcBase(object):
         self.type - The type of the Kit. It should be in lowercase for consistency. May be used for comparison cases.
         self.version - Version of the Kit.
         self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
+        self.desLayoutAttributes - a dict describing the layout of key directories/files for the destination files built \
+                                   through installation source. 
 
         The keys should the logical names of each layout attribute and the value should be the relative paths of the 
         directories/files."""
@@ -43,6 +45,7 @@ class KitSrcBase(object):
         self.version = None
         self.arch = None
         self.pathLayoutAttributes = {}
+        self.desLayoutAttributes = {}
 
     def verifySrcPath(self):
         """Call the correct verify*SrcPath method."""
@@ -110,7 +113,12 @@ class GeneralKitSrc(KitSrcBase):
             'srcpkgsdir' : {'dir':'sources'},
             'pluginsdir' : {'dir':'plugins'},
             'docsdir' : {'dir':'docs'},
-            'tmpdir' : {'dir':'tmp'}
+            'tmpdir' : {'dir':'tmp'},
+            'buildfile' : {'file' : 'build.kit'}
+        }
+
+        self.desLayoutAttributes = {
+            'kitinfofile' : {'file':'kitinfo'}        
         }
         
 class BinaryKitSrc(KitSrcBase): pass

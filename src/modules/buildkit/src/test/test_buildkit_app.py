@@ -374,6 +374,67 @@ k.addComponent(comp)
 
         assert _idx > 0
 
+    def testCleanAction(self):
+        """test clean action"""
+
+        # build first 
+
+        cmd1 = 'buildkit new kit=test > /dev/null 2>&1'
+        cmd2 = 'buildkit make kit=test > /dev/null 2>&1'
+        p = subprocess.Popen(cmd1,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        p = subprocess.Popen(cmd2,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        # which directories must exsit after clean
+        exsdirs = [self.scratchdir / 'test/artifacts', self.scratchdir / 'test/docs', \
+                   self.scratchdir / 'test/packages', self.scratchdir / 'test/plugins', \
+                   self.scratchdir / 'test/sources', self.scratchdir / 'test/tmp']
+
+        # which files must exsit after clean
+        exsfiles = [self.scratchdir / 'test/build.kit']
+
+        # which files must disappear after clean
+        disfiles = [self.scratchdir / 'test/packages/component-test-0.1-0.noarch.rpm', \
+                    self.scratchdir / 'test/packages/kit-test-0.1-0.i386.rpm']
+    
+        # check files before clean
+        for _dirs in exsdirs:
+            assert path(_dirs).isdir()
+
+        for _files in exsfiles:
+            assert path(_files).isfile()
+
+        for _files in disfiles:
+            assert path(_files).isfile()
+
+        # run clean command
+        cmd3 = 'buildkit clean kit=test > /dev/null 2>&1'
+        p = subprocess.Popen(cmd3,shell=True,cwd=self.scratchdir)
+        p.wait()
+
+        # check files after clean
+        for _dirs in exsdirs:
+            assert path(_dirs).isdir()
+
+        for _files in exsfiles:
+            assert path(_files).isfile()
+
+        for _files in disfiles:
+            assert not path(_files).isfile()
+
+        # check if there are any unwanted files in source directory
+        _srcpath = path(self.scratchdir / 'test')
+        _curfilelist = _srcpath.files()
+        _curdirlist = _srcpath.dirs()
+
+        for _dirs in _curdirlist:
+                assert _dirs in exsdirs
+
+        for _files in _curfilelist:
+                assert _files in _curfilelist
+
 
     def testBuildx86Kit(self):
         """ Test to build a kit containing x86 packages. """
