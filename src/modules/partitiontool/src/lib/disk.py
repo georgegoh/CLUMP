@@ -801,9 +801,9 @@ class Partition(object):
                       'on_disk', 'do_not_format', 'dellUP_flag', '_label']:
             object.__setattr__(self, name, value)
         else:
-            raise AttributeError, "%s instance does not have or cannot " + \
-                                  "modify attribute '%s'" % \
-                                  (self.__class__, name)
+            errMsg = "%s instance does not have or cannot " % self.__class__
+            errMsg += "modify attribute '%s'" % name
+            raise AttributeError, errMsg
 
     def resize(self, size_MB, fill):
         logger.debug('Partition %s resize function called with size_MB=%d and fill=%s' % \
