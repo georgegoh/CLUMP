@@ -263,7 +263,7 @@ class PartitionScreen(InstallerScreen):
                 self.prepareIgnoreList(do_not_use_disks)
                 schema = vanillaSchemaLVM()
                 logger.debug('%s' % schema)
-                setupDiskProfile(self.disk_profile, schema)
+                setupDiskProfile(self.disk_profile, schema, wipe_existing_profile=False)
  
     def rollback(self):
         self.prompt_for_default_schema = True
