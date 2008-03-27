@@ -183,6 +183,40 @@ class TestRepoman:
         assert repo[0].reponame == 'testing'
         assert path(prefix / 'depot' / 'repos' / str(repo[0].repoid)).exists()
 
+    def testRename(self):
+        # Test Case 1: rename nonexisting repo
+        cmd = 'repoman -m testRepoNewName -r testRepoOldName --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        line = runCommand(cmd)[0]
+        wantline = "Repo 'testRepoOldName' could not be found\n"
+        assert line == wantline, 'Rename error!\n' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(line),
+                                                    '\n'.join(wantline))
+
+        # first, put dummy repo record to Repos table
+        newRepo = self.dbs.Repos(reponame='testRepoOldName', repository='', installers='')
+        newRepo.save()
+        newRepo.flush()
+
+        # Test Case 2: rename a repo with name being used
+        cmd = 'repoman -m testRepoOldName -r testRepoOldName --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        line = runCommand(cmd)[0]
+        wantline = "Repo name 'testRepoOldName' has been used\n"
+        assert line == wantline, 'Rename error!\n' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(line),
+                                                    '\n'.join(wantline))
+
+        # Test Case 3: positve case
+        cmd = 'repoman -m testRepoNewName -r testRepoOldName --dbdriver=sqlite --dbdatabase %s -p %s' % (kusudb,prefix)
+        line = runCommand(cmd)[0]
+        wantline = "Repo 'testRepoOldName' has been successfully renamed with 'testRepoNewName'\n"
+        assert line == wantline, 'Rename error!\n' + \
+                'Received:\n%s\nExpected:\n%s\n' % ('\n'.join(line),
+                                                    '\n'.join(wantline))
+        # double check kusudb with the renamed repo
+        repo_old = self.dbs.Repos.select_by(reponame='testRepoOldName')
+        repo_new = self.dbs.Repos.select_by(reponame='testRepoNewName')
+        assert not repo_old and repo_new, 'Repo rename failed!\n'
+
     def testNewWithNodeGroup(self):
         raise SkipTest
 

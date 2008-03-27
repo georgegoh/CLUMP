@@ -50,6 +50,7 @@ class RepoManApp(KusuApp):
                [-a | --add] [-k | --kit <name> [-o <version> | --kitversion <version>] [ -c <arch> | --kitarch <arch>]]
                [-e | --delete] [--kit <name> [-o <version> | --kitversion <version> ] [-c <arch> | --kitarch <arch>]]
                [-e | --delete] [-r reponame | --reponame reponame]
+               [-m | --rename <new name>]  [-r reponame | --reponame reponame]
 
 For examples:
     repoman -n -r "Example repo"
@@ -64,6 +65,8 @@ For examples:
     repoman -r "Example repo" -s
 
     repoman -r "Example repo" -u 
+
+    repoman -m "New repo name" -r "Original repo name"
 """
         usage = self._(usage)
         self.parser = OptionParser(usage)
@@ -81,6 +84,7 @@ For examples:
         self.parser.add_option('-s', '--snapshot', dest='snapshot', action="store_true", help=self._('snapshot repo'))
         self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
         self.parser.add_option('-v', '--version', dest='version', action="store_true", help=self._('Display version of tool'))
+        self.parser.add_option('-m', '--rename', dest='reponewname', help=self._('rename repo name'))
         self.parser.add_option('--dbdriver', dest='dbdriver',
                                help=self._('Database driver (sqlite, mysql)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
@@ -123,6 +127,21 @@ For examples:
 
         self.stdoutMessage('Repo: %s created. You can now add kits, including a OS kit to the new repo.\n', repo_name)
         kl.info('Created repo: %s' % location)
+
+    def renameRepo(self, new_name, old_name):
+        if old_name:
+            # check if the target repo exists
+            repo = self.dbs.Repos.select_by(reponame = old_name)
+            if repo:
+                repo[0].reponame = new_name
+                repo[0].save()
+                repo[0].flush()
+                self.stdoutMessage("Repo '%s' has been successfully renamed with '%s'\n",
+                                   old_name, new_name)
+            else:
+                self.stdoutMessage("Repo '%s' could not be found\n", old_name)
+        else:
+            self.stdoutMessage('Please specify original repo name\n')
 
     def addKit(self, repo_name, kname, kversion, karch):
 
@@ -344,7 +363,7 @@ For examples:
 
     def checkArgs(self, options):
         fail = False
-        for opt in ['new', 'snapshot', 'list', 'delete', 'add', 'update', 'version']:
+        for opt in ['new', 'snapshot', 'list', 'delete', 'add', 'reponewname','update', 'version']:
             val = getattr(options, opt)
             if val:
                 if fail:
@@ -366,7 +385,7 @@ For examples:
 
         if not options.list and not options.version: 
             if options.reponame:
-                if options.new or options.snapshot or options.delete or options.update:
+                if options.new or options.snapshot or options.delete or options.update or options.reponewname:
                     return
 
                 elif options.add or options.delete:
@@ -375,25 +394,25 @@ For examples:
                         self.stderrMessage('No kit specified.\n')
                         sys.exit(1)
 
-                elif not (options.new and options.snapshot and options.delete and options.add and options.update):
+                elif not (options.new and options.snapshot and options.delete and options.add and options.update and options.reponewname):
                     self.parser.print_help()
-                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update\n')
+                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update | rename\n')
                     sys.exit(1)
 
             else:
-                if options.new or options.snapshot or options.delete or options.add or options.update:
+                if options.new or options.snapshot or options.delete or options.add or options.update or options.reponewname:
                     self.parser.print_help()
                     self.stderrMessage('No repo/kit specified.\n')
                     sys.exit(1)
               
                 else: 
                     self.parser.print_help()
-                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update\n')
+                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update | rename\n')
                     sys.exit(1)
 
         else:
             if options.reponame or options.new or options.snapshot or \
-               options.delete or options.add or options.update:
+               options.delete or options.add or options.update or options.reponewname:
                 self.parser.print_help()
                 self.parser.error(self._('Exactly one repoman operation expected.\n'))
                 sys.exit(1)
@@ -482,6 +501,17 @@ For examples:
                 self.delKit(options.reponame, options.kit, options.kitversion, options.kitarch)
             elif options.reponame:
                 self.delete(options.reponame)
+
+        elif options.reponewname:
+            # check if the new name has been used
+            repo = self.dbs.Repos.select_by(reponame = options.reponewname)
+            if repo:
+                print "Repo name '%s' has been used" % options.reponewname
+                self.unlock()
+                sys.exit(-1)
+            else:
+                self.renameRepo(options.reponewname, options.reponame)
+
         elif options.add:
             self.kitarch = None
             self.kitversion = None
