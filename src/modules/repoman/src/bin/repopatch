@@ -76,7 +76,7 @@ class RepoPatchApp(KusuApp):
             self.unlock()
             sys.exit(1)
 
-        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kuus'))
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
 
         if self.prefix:
             repoObj.setConfig(self.prefix / 'opt' / 'kusu' / 'etc' / 'updates.conf')
