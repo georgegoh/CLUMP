@@ -369,12 +369,13 @@ class LogicalVolume(object):
             err_msg = 'Logical Volume name can only contain alphanumeric characters.'
             return (False,err_msg)
         return (True,None)
+    isValidName = staticmethod(isValidName)
 
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
-        m = re.search('[\W]', name)
-        if m:
-            err_msg = 'Logical Volume can only contain alphanumeric characters.'
-            raise InvalidLogicalVolumeNameError, err_msg
+        name_check = LogicalVolume.isValidName(name)
+        if not name_check[0]:
+            raise InvalidLogicalVolumeNameError, name_check[1]
+
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
         if extents > vg_extentsFree:
             errMsg = 'Insufficient free space in Volume Group %s.' % volumeGroup.name
