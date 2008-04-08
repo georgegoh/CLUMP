@@ -73,6 +73,21 @@ import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool')
 
 from disk import *
+
+def isExt2(dev):
+    ''' Judge if the file system of the device is EXT2. '''
+    is_ext2 = False
+    try:
+        f = open(dev, 'r')
+        sb = f.read(1082)
+        magic_str = sb[-2:]
+        magic = unpack('H', magic_str)
+        if hex(magic[0]) == hex(0xef53):
+            is_ext2 = True
+    finally:
+        f.close()
+        return is_ext2
+
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
 
@@ -392,15 +407,9 @@ class DiskProfile(object):
         mountable_lvs = []
         mntpnt = mkdtemp()
         for lv in self.lv_dict.itervalues():
-            try:
-                f = open(lv.path, 'r')
-                sb = f.read(1082)
-                magic_str = sb[-2:]
-                magic = unpack('H', magic_str)
-                if hex(magic[0]) == hex(0xef53):
-                    mountable_lvs.append(lv)
-            finally:
-                f.close()
+            if isExt2(lv.path):
+                mountable_lvs.append(lv)
+            return mountable_lvs
         return mountable_lvs
 
     def lookForFstab(self, partition, fstab_path='etc/fstab'):
@@ -627,7 +636,7 @@ class DiskProfile(object):
             raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
                                                      'Extent Size.'
         _extent_size = int(extent_size[:-1])
-        if _extent_size not in range(2, 512+1) and \
+        if _extent_size not in range(2, 512+1) or \
            _extent_size % 2:
             raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
                                                      'Extent Size.'
@@ -647,11 +656,19 @@ class DiskProfile(object):
         # deletetion pass
         for existing_pv in lvg_obj.pv_dict.itervalues():
             if existing_pv not in pv_obj_list:
-                lvg.delPhysicalVolume(existing_pv)
+                #lvg.delPhysicalVolume(existing_pv)
+                deleted_pvs.append(existing_pv)
         # insertion pass
         for pv in pv_obj_list:
             if pv.name not in lvg_obj.pv_dict.keys():
-                lvg_obj.addPhysicalVolume(pv)
+                #lvg_obj.addPhysicalVolume(pv)
+                inserted_pvs.append(pv)
+
+        for del_pv in deleted_pvs:
+            lvg_obj.delPhysicalVolume(existing_pv)
+
+        for ins_pv in inserted_pvs:
+            lvg_obj.addPhysicalVolume(ins_pv)
 
         return lvg_obj
 

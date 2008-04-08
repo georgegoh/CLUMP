@@ -6,187 +6,377 @@
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-# 
+#
+import os 
 import tempfile
 import subprocess
-from kusu.partitiontool.partitiontool import DiskProfile
-from os import stat
+from kusu.partitiontool import DiskProfile, isExt2
+from kusu.partitiontool import *
+from kusu.hardware.drive import *
+from os import stat, walk
 from os.path import basename
 from kusu.util.testing import *
-from tempfile import mkstemp
+from tempfile import mkstemp, mkdtemp
 from sets import Set
 from nose import SkipTest
 from socket import gethostname
+from path import path
+from fcntl import ioctl
+
+
+IOC_NRSHIFT = 0
+IOC_NRBITS = 8
+IOC_TYPESHIFT = (IOC_NRSHIFT + IOC_NRBITS)
+
+def ioctlNoForBLKRRPART():
+     return ((0x12 << IOC_TYPESHIFT) | \
+             (95 << IOC_NRSHIFT))
+
+def rereadPartitionTable(disk):
+    try:
+        fd = os.open(disk, os.O_RDONLY)
+    except EnvironmentError, (e, str):
+        print 'Open %s failed: %s' % (disk, str)
+        raise e
+
+    runCommand('sync')
+
+    try:
+        blkrrpart = ioctlNoForBLKRRPART()
+        ioctl(fd, blkrrpart)
+    except EnvironmentError, (e, str):
+        print 'IOCTL failed: %s' % str
+
+    os.fsync(fd)
+    os.close(fd)
+
+    runCommand('sync')
+
+
+def diskMarkedForTest(disk):
+    """
+    Check that the given disk is marked for testing. It is positively marked
+    if it passes the following criteria:
+        a. It has a loop partition layout.
+        b. It is mountable as an ext2 device.
+        c. At the root of this device is a file called 'kusu_diskprofile_test_disk'
+    """
+    if disk.pedDisk.type.name != 'loop':
+        print disk.pedDisk.type.name
+        return False
+    print "Disk is loop"
+    if isExt2(disk.path):
+        print "Disk is Ext2"
+        is_marked = False
+        mntpnt = mkdtemp(prefix='KusuDiskProfileTest')
+        stdout, stderr = runCommand('mount %s %s' % (disk.path, mntpnt))
+        if stderr:
+            raise RuntimeError, 'mount failed:\nout:%s\nerr:%s' % (stdout, stderr)
+        dir_filelist = walk(mntpnt).next()[2]
+        if 'kusu_diskprofile_test_disk' in dir_filelist:
+            print "Disk has file"
+            is_marked = True
+        runCommand('umount %s' % mntpnt)
+        runCommand('rm -rf %s' % mntpnt)
+        return is_marked
+
+
+def markTestDisk(disk):
+    """
+    !!! USE WITH CAUTION: DESTRUCTIVE OPERATION !!!
+    Mark a disk to be used for the DiskProfile test. This function is symmetrical
+    to the function diskMarkedForTest.
+    """
+    runCommand('mkfs.ext2 -F %s' % disk.path)
+    mntpnt = mkdtemp(prefix='KusuDiskProfileTest')
+    stdout, stderr = runCommand('mount %s %s' % (disk.path, mntpnt))
+    if stderr:
+        errMsg = 'mount failed:\nout:%s\nerr:%s\n' % (stdout, stderr)
+        errMsg += 'You need to mark %s for DiskProfile test manually.' % disk.path
+        raise RuntimeError, errMsg
+    stdout, stderr = runCommand('touch %s/kusu_diskprofile_test_disk' % mntpnt)
+    if stderr:
+        errMsg = 'touch failed:\nout:%s\nerr:%s\n' % (stdout, stderr)
+        errMsg += 'You need to mark %s for DiskProfile test manually.' % disk.path
+        runCommand('umount %s' % mntpnt)
+        runCommand('rm -rf %s' % mntpnt)
+        raise RuntimeError, errMsg
+    runCommand('umount %s' % mntpnt)
+    runCommand('rm -rf %s' % mntpnt)
+
+    rereadPartitionTable(disk.path)
+    print "%s successfully marked.\n" % disk.path 
+
 
 class TestDiskProfile:
     """Test cases for the DiskProfile class.
-       Create an empty loopback device.
+       Testing the DiskProfile class can be a dangerous business - an
+       accident can wipe out the existing partitions of the test
+       machine that need to stay, so we need to be extra careful to
+       identify and only use those disks that are marked in a special way.
     """
     def setup(self):
-        if not gethostname() == 'dizzy.int.osgdc.org':
-            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
-        size = 1024 * 1024 * 1024
-        self.loopback, self.tmpfile = createLoopbackDevice(size)
-        self.dp = DiskProfile(True, basename(self.loopback))
+        if os.getuid() != 0:
+            raise SkipTest, 'Partitiontool tests must be run as root user.\n'
+
+        self.dp = DiskProfile(fresh=False)
+        marked_disks = []
+        unmarked_disks = []
+        for key,disk in self.dp.disk_dict.iteritems():
+            if diskMarkedForTest(disk):
+                marked_disks.append(key)
+            else:
+                unmarked_disks.append(key)
+
+        if not marked_disks:
+            errMsg = 'No disks marked for DiskProfile test on this machine.'
+            errMsg += 'Disks marked for DiskProfile test must:\n'
+            errMsg += '\ta. Have a loop partition layout(i.e., mkfs.ext2 /dev/sdb).\n'
+            errMsg += '\tb. Be mountable as an ext2 device.\n'
+            errMsg += '\tc. At the root directory, contain a file called '
+            errMsg += '"kusu_diskprofile_test_disk".'
+            raise SkipTest, errMsg 
+
+        if self.dp.pv_dict or self.dp.lvg_dict or self.dp.lv_dict:
+            errMsg = 'The DiskProfile tests cannot be performed on a system with '
+            errMsg += 'LVM volumes.'
+            raise SkipTest, errMsg
+
+        for key in unmarked_disks:
+            self.dp.disk_dict.pop(key)
+
+        if set(marked_disks) != set(self.dp.disk_dict.keys()):
+            errMsg = 'Internal Error: DiskProfile disks are not all marked for test.'
+            raise SkipTest, errMsg
+
+        # Reasonably sure that we're not messing with any disk we actually want untouched here.
+        for disk in self.dp.disk_dict.values():
+            runCommand('dd if=/dev/zero of=%s bs=1k count=10' % disk.path)
+
+        self.dp = DiskProfile(fresh=False)
+        for key in unmarked_disks:
+            self.dp.disk_dict.pop(key)
+
+        if set(marked_disks) != set(self.dp.disk_dict.keys()):
+            errMsg = 'Internal Error: DiskProfile disks are not all marked for test.'
+            raise SkipTest, errMsg
+
 
     def teardown(self):
-        cmd = 'losetup -d %s' % self.loopback
-        runCommand(cmd)
-        cmd = 'rm -f %s' % self.tmpfile
-        runCommand(cmd)
+        self._clearLVM()
+        self.dp.commit()
+        self._checkLVMClear()
+        self._nukeDisks()
 
-    def makePartitions(self):
-        # Create 4 partitions.
-        disk_id = basename(self.loopback)
-        self.dp.newPartition(disk_id, 100, False, 'ext3', '/boot')
-        self.dp.newPartition(disk_id, 300, False, 'ext3', '/')
-        self.dp.newPartition(disk_id, 100, False, 'ext3', '/var')
-        # Will create an extended and logical partition.
-        self.dp.newPartition(disk_id, 500, False, 'ext3', '/data')
-        assert len(self.dp.disk_dict) == 1
-        self.disk = self.dp.disk_dict.values()[0]
-        assert len(self.disk.partition_dict) == 5
-        self.p1 = self.disk.partition_dict[1]
-        self.p2 = self.disk.partition_dict[2]
-        self.p3 = self.disk.partition_dict[3]
-        self.p4 = self.disk.partition_dict[4]
-        self.p5 = self.disk.partition_dict[5]
+    def _clearLVM(self):
+        for lv in self.dp.lv_dict.values():
+            self.dp.delete(lv)
+        for lvg in self.dp.lvg_dict.values():
+            self.dp.delete(lvg)
+        for pv in self.dp.pv_dict.values():
+            self.dp.delete(pv.partition)
  
-    def testRead(self):
-        keys = sorted(self.dp.disk_dict.keys())
-        assert keys[0] == basename(self.loopback), "Didn't detect disks correctly."
-        assert len(keys) == 1, "Too many disks detected."
+    def _checkLVMClear(self):
+        stdout,stderr = runCommand('lvm pvscan')
+        if not (stdout.strip().endswith('No matching physical volumes found') or \
+           stderr.strip().endswith('No matching physical volumes found')):
+            raise RuntimeError, 'LVM Physical Volumes not cleared.'
+        stdout,stderr = runCommand('lvm vgscan')
+        if not (stdout.strip().endswith('No volume groups found') or \
+           stderr.strip().endswith('No volume groups found')):
+            raise RuntimeError, 'LVM Volume Groups not cleared.'
+        stdout,stderr = runCommand('lvm lvscan')
+        if not (stdout.strip().endswith('No volume groups found') or \
+           stderr.strip().endswith('No volume groups found')):
+            raise RuntimeError, 'LVM Logical Volumes not cleared.'
+ 
+    def _nukeDisks(self):
+        disk_keys_to_mark = self.dp.disk_dict.keys()
+        for disk in self.dp.disk_dict.values():
+            markTestDisk(disk)
 
-    def testMakePartitions(self):
-        self.makePartitions()
-        assert self.p1.size_MB > 90 and self.p1.size_MB < 110,\
-                "Wrong partition size %d." % self.p1.size_MB
-        assert self.p1.num == 1, "Wrong partition number 1."
-        assert self.p1.path == self.loopback + 'p1', "Wrong path."
+        dp = DiskProfile(fresh=False)
+        probe_marked_disk_keys = []
+        for key,disk in dp.disk_dict.iteritems():
+            if diskMarkedForTest(disk):
+                probe_marked_disk_keys.append(key)
 
-        assert self.p2.size_MB > 290 and self.p2.size_MB < 310,\
-                "Wrong partition size %d." % self.p2.size_MB
-        assert self.p2.num == 2, "Wrong partition number 2."
-        assert self.p2.path == self.loopback + 'p2', "Wrong path."
-
-        assert self.p3.size_MB > 90 and self.p3.size_MB < 110,\
-                "Wrong partition size %d." % self.p3.size_MB
-        assert self.p3.num == 3, "Wrong partition number 3."
-        assert self.p3.path == self.loopback + 'p3', "Wrong path."
-
-        assert self.p4.size_MB > 490 and self.p4.size_MB < 510,\
-                "Wrong partition size %d." % self.p4.size_MB
-        assert self.p4.num == 4, "Wrong partition number 4."
-        assert self.p4.path == self.loopback + 'p4', "Wrong path."
-
-        assert self.p5.size_MB > 490 and self.p5.size_MB < 510,\
-                "Wrong partition size %d." % self.p5.size_MB
-        assert self.p5.num == 5, "Wrong partition number 5."
-        assert self.p5.path == self.loopback + 'p5', "Wrong path."
-
-    def testDeletePart(self):
-        raise SkipTest, 'This test causes segfaults on some machines.'
-        self.makePartitions()
-        self.dp.delete(self.p1)
-        assert len(self.disk.partition_dict) == 3,\
-            "Length (%d) wasn't 3 as expected. %s" %\
-            (len(self.disk.partition_dict), str(self.disk.partition_dict.keys()))
-        assert Set(self.disk.partition_dict.keys()) == Set([1,2,3]),\
-                'Unexpected keys found: %s' % str(self.disk.partition_dict.keys())
-
-        p1 = self.disk.partition_dict[1]
-        p2 = self.disk.partition_dict[2]
-        p3 = self.disk.partition_dict[3]
-        self.dp.delete(p1, keep_in_place=True)
-        assert len(self.disk.partition_dict) == 2,\
-            "Length (%d) wasn't 2 as expected. %s" %\
-            (len(self.disk.partition_dict), str(self.disk.partition_dict.keys()))
-        assert Set(self.disk.partition_dict.keys()) == Set([2,3]), \
-                'Unexpected keys found: %s' % str(self.disk.partition_dict.keys())
-
-    def testResizePart(self):
-        self.makePartitions()
-        p5 = self.dp.editPartition(self.p5, 200, False, 'ext3', '/data')
-        assert p5 == self.disk.partition_dict[5], "Edited object is different from dictionary object."
-        assert p5.size_MB > 190 and p5.size_MB < 210,\
-            "Edited size is incorrect(%d) from 200" % p5.size_MB
-
-    def testChangePartFs(self):
-        self.makePartitions()
-        p2 = self.dp.editPartition(self.p2, self.p2.size_MB, False, 'ext2', self.p2.mountpoint)
-        assert p2 == self.disk.partition_dict[2], "Edited object is different from dictionary object."
-        assert p2.fs_type == 'ext2', 'FS type not changed.'
+        to_mark_set = set(disk_keys_to_mark)
+        probed_set = set(probe_marked_disk_keys)
+        if not to_mark_set.issubset(probed_set):
+            errMsg = 'The following test disks could not be marked for testing '
+            errMsg += 'again. Please note and perform manual marking:\n'
+            errMsg += '%s' % list(to_mark_set - probed_set)
+            raise RuntimeError, errMsg
 
 
-class FakeMountableDevice:
-    def mount(self, **kwargs):
-        pass
-    def unmount(self):
-        pass
+    def _verifyPartitionSize(self, size_MB, partition):
+        diff = abs(partition.size_MB - size_MB)
+        disk = partition.disk
+        cylinder_size = disk.heads * disk.sectors * disk.sector_size
+        cylinder_size_MB = cylinder_size / 1024 / 1024
+        if diff >= cylinder_size_MB:
+            return False
+        return True
+        
 
-class TestReadFstab:
-    """Test cases for reading fstab."""
-    def setUp(self):
-        if not gethostname() == 'dizzy.int.osgdc.org':
-            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
-        fd, self.fstab_path = mkstemp(text=True)
-        self.fstab = open(self.fstab_path, 'w')
-        self.fstab.write("""# Test fstab, taken from my system
-/dev/VolGroup00/LogVol00    /           ext3    defaults        1 1
-LABEL=/boot                 /boot       ext3    defaults        1 2
-devpts                      /dev/pts    devpts  gid=5,mode=620  0 0
-tmpfs                       /dev/shm    tmpfs   defaults        0 0
-proc                        /proc       proc    defaults        0 0
-sysfs                       /sys        sysfs   defaults        0 0
-/dev/VolGroup00/LogVol01    swap        swap    defaults        0 0
-   # More from Hirwan's
-    /dev/sda6                   /hd6        ext3    acl,user_xattr  1 1
-# Mike's
+    def _makePrimaryPartitions(self, disk_id, fs_types=['ext3','linux-swap','ext3']):
+        """
+        Make 3 equally sized partitions on the disk.
+        """
+        disk_size = self.dp.disk_dict[disk_id].size / 1024 / 1024
+        p_size = disk_size / 3
+        print "Disk size: %d, Partition size: %d" % (disk_size, p_size)
+        for i in xrange(2):
+	    print "Making partition %d" % i
+            self.dp.newPartition(disk_id, p_size, True, fs_types[i], '/'+disk_id+'/%d' % i)
+        self.dp.newPartition(disk_id, 1, True, fs_types[2], '/'+disk_id+'/3', fill=True)
 
-/dev/cdroms/cdrom0          /mnt/cdrom  iso9660 noauto,ro       0 0
-       # Dirty comment here... we're all
-#over
-    # the place, but shouldn't be picked up.
-""")
-        self.fstab.flush()
-        self.fstab.close()
-        self.dp = DiskProfile(True)
+    def _makeLogicalPartitions(self, disk_id, fs_types=['ext3','linux-swap','ext3','ext3','ext2']):
+        """
+        Make 5 partitions - should result in 3 primary, 1 extended and 2 logical.
+        """
+        disk_size = self.dp.disk_dict[disk_id].size / 1024 / 1024
+        p_size = disk_size / 5
+        for i in xrange(4):
+            self.dp.newPartition(disk_id, p_size, True, fs_types[i], '/'+disk_id+'/%d' % i)
+        self.dp.newPartition(disk_id, p_size, True, fs_types[4], '/'+disk_id+'/4')
 
-    def tearDown(self):
-        cmd = 'rm -f %s' % self.fstab_path
-        runCommand(cmd)
+    def _makePrimaryPartitionsWithPV(self, disk_id):
+        self._makePrimaryPartitions(disk_id, ['ext3', 'linux-swap', 'physical volume'])
 
-    def testExtractFstab(self):
-        fmd = FakeMountableDevice()
-        dev_map = self.dp.extractFstabToDevices(fmd, self.fstab_path)
-        expected_keys = Set(['/dev/VolGroup00/LogVol00', '/dev/sda6', 'LABEL=/boot'])
-        assert Set(dev_map.keys()) == expected_keys, 'Unexpected keys found: %s' % str(dev_map.keys())
-        assert dev_map['/dev/VolGroup00/LogVol00'] == '/', "Key and Value don't match."
-        assert dev_map['/dev/sda6'] == '/hd6', "Key and Value don't match."
-        assert dev_map['LABEL=/boot'] == '/boot', "Key and Value don't match."
+    def _makeLogicalPartitionsWithPV(self, disk_id):
+        self._makePrimaryPartitions(disk_id, ['ext3', 'linux-swap', 'physical volume'])
 
-class TestLVM:
-    """
-        Test for LVM parts. ONLY RUNS ON DIZZY.
-        Assumptions for dizzy:
-            - Has an unused /dev/sdb with at least 10GB.
-    """
-    def setup(self):
-        if not gethostname() == 'dizzy.int.osgdc.org':
-            raise SkipTest, 'Test only runs on dizzy.int.osgdc.org(Internal machine)'
-        self.dp = DiskProfile(True, probe_fstab=False)
-        assert self.dp.disk_dict.has_key('sdb'), "dizzy must have a /dev/sdb!"
-        sdb = self.dp.disk_dict['sdb']
-        size_GB = sdb.length * sdb.sector_size / 1024 / 1024 / 1024
-        assert size_GB >= 10, "/dev/sdb must be larger than 10GB."
+    def _makeVolumeGroupPerPV(self):
+        for pv in self.dp.pv_dict.iterkeys():
+            self.dp.newLogicalVolumeGroup(pv, '32M',  [pv])
 
-    def makePartitions(self): 
-        self.dp.newPartition('sdb', 100, False, 'ext3', '/boot')
-        self.dp.newPartition('sdb', 1000, False, 'swap', None)
-        pv = self.dp.newPartition('sdb', 8000, False, 'physical volume', None)
+    def _makeVolumeGroupUseAllPVs(self):
+        self.dp.newLogicalVolumeGroup('Big VG', '32M', self.dp.pv_dict.keys())
 
-        nosey = self.dp.newLogicalVolumeGroup('NOSEY', '32M', [pv])
-        self.dp.newLogicalVolume('PICKY', nosey, size_MB=3000, fs_type='ext3',
-                                 mountpoint='/')
-        self.dp.newLogicalVolume('BOGEY', nosey, size_MB=4000, fs_type='ext3',
-                                 mountpoint='/data', fill=True)
+    def _makeLogicalVolumesWithVG(self, vg):
+        """
+        Make 2 logical volumes on the volume group.
+        """
+        size = vg.extentsFree() * vg.extent_size / 1024 / 1024
+        for i in xrange(2):
+            self.dp.newLogicalVolume(vg.name + '/LV%d' % i, vg, size/2,
+                                     fs_types[i], '/'+vg.name+'/lv%d' % i)
+
+
+    def testPrimaryPartitions(self):
+        for disk_id in self.dp.disk_dict.keys():
+            self._makePrimaryPartitions(disk_id)
+        self.dp.commit()
+        for key,disk in self.dp.disk_dict.iteritems():
+            parts = getSCSIPartitions(path('/sys/block') / key)
+            disk_parts = [key+str(num) for num in disk.partition_dict.keys()]
+            assert set(parts) == set(disk_parts), \
+                   "Sysfs_parts=%s, Disk_parts=%s" % (parts, disk_parts)
+
+
+    def testCreateLogicalVolumeGroup(self):
+        ''' Unit Test: testCreateLogicalVolumeGroup '''
+
+        #firstly, create a dummy partition for the test
+        partition = self.dp.newPartition('sdb', 100, False, 'physical volume', None)
+        pv = self.dp.pv_dict[partition.path]
+        
+        #if 'Big VG' not in self.dp.lvg_dict.keys():
+        try:
+            #Test Case 1: (Negative) Invalid extent size (no 'M' ended)
+            self.dp.newLogicalVolumeGroup('BigVG', '32', [pv])
+        except InvalidVolumeGroupExtentSizeError, e:
+            pass
+        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group (extent size: 32) should not be created."
+                        
+        #Test Case 2: (Negative) Invalid extent size (not in range 2~512 or not even number)
+        try:
+            self.dp.newLogicalVolumeGroup('BigVG', '1M', [pv])
+        except InvalidVolumeGroupExtentSizeError, e:
+            pass
+        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group (extent size: 1M) should not be created."
+        
+        try:
+            self.dp.newLogicalVolumeGroup('BigVG', '513M', [pv])
+        except InvalidVolumeGroupExtentSizeError, e:
+            pass
+        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group (extent size: 513M) should not be created."
+
+        try:
+            self.dp.newLogicalVolumeGroup('BigVG', '25M', [pv])
+        except InvalidVolumeGroupExtentSizeError, e:
+            pass
+        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group (extent size: 25M) should not be created."
+            
+        #Test Case 3: (Postive)
+        try:
+            self.dp.newLogicalVolumeGroup('BigVG', '32M', [pv])
+        except InvalidVolumeGroupExtentSizeError, e:
+            pass
+        assert 'BigVG' in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group (name: BigVG, extent size: 32M) was not successfully created."
+        
+        #Test Case 4: (Negative) Duplicate group name
+        try:
+            lvg = self.dp.lvg_dict['BigVG']
+            self.dp.newLogicalVolumeGroup('BigVG', '52M', [pv])
+        except DuplicateNameError, e:
+            pass
+        assert lvg.extent_size_humanreadable == '32M', \
+                "Logical Volume Group with duplicate name should not be created."
+                   
+    def testEditLogicalVolumeGroup(self):
+        ''' Unit Test: testCreateLogicalVolumeGroup '''
+
+        #firstly, create a dummy partition for the test
+        partition = self.dp.newPartition('sdb', 100, False, 'physical volume', None)
+        pv = self.dp.pv_dict[partition.path]
+        self.dp.newLogicalVolumeGroup('BigVG', '32M', [pv])
+        lvg = self.dp.lvg_dict['BigVG']
+        
+        #old_pvs keesp the original pv_list
+        old_pvs = lvg.pv_dict.keys()
+
+        partition1 = self.dp.newPartition('sdb', 80, False, 'physical volume', None)
+        pv1 = self.dp.pv_dict[partition1.path]
+        self.dp.editLogicalVolumeGroup(self.dp.lvg_dict['BigVG'], [pv1])
+        
+        #new_pvs keeps the new pv_list
+        new_pvs = lvg.pv_dict.keys()
+
+        assert 'sdb1' in old_pvs and 'sdb2' in new_pvs and old_pvs != new_pvs, \
+                "Logical Volume Group was not edited successfully."
+        
+    def testDeleteLogicalVolumeGroup(self):
+        ''' Unit Test: testDeleteLogicalVolumeGroup '''
+        
+        #firstly, create a dummy partition for the test
+        partition = self.dp.newPartition('sdb', 100, False, 'physical volume', None)
+        pv = self.dp.pv_dict[partition.path]
+
+        #create a logical volume group
+        self.dp.newLogicalVolumeGroup('BigVG', '32M', [pv])
+        lvg = self.dp.lvg_dict['BigVG']
+
+        #create a logical volume
+        lv = self.dp.newLogicalVolume('BigV', lvg, 12)
+
+        #Test case 1: (Negative) Delete a logical volume group with logical volume still in use 
+        try:
+            self.dp.deleteLogicalVolumeGroup(lvg)
+        except PhysicalVolumeStillInUseError, e:
+            pass
+        assert 'BigVG' in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group should not be deleted when there is logical volume still in use."
+
+        #Test Case 2: (Positive)
+        self.dp.deleteLogicalVolume(lv)
+        self.dp.deleteLogicalVolumeGroup(lvg)
+        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                "Logical Volume Group was not deleted successfully."
