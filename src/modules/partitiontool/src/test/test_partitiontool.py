@@ -10,8 +10,10 @@
 import os 
 import tempfile
 import subprocess
+import copy
 from kusu.partitiontool import DiskProfile, isExt2
-from kusu.partitiontool import *
+from kusu.partitiontool.lvm import PhysicalVolume
+from kusu.partitiontool.lvm202 import probeLogicalVolumeGroup, probeLVMEntity
 from kusu.hardware.drive import *
 from os import stat, walk
 from os.path import basename
@@ -249,8 +251,8 @@ class TestDiskProfile:
         self._makePrimaryPartitions(disk_id, ['ext3', 'linux-swap', 'physical volume'])
 
     def _makeVolumeGroupPerPV(self):
-        for pv in self.dp.pv_dict.iterkeys():
-            self.dp.newLogicalVolumeGroup(pv, '32M',  [pv])
+        for pv in self.dp.pv_dict.itervalues():
+            self.dp.newLogicalVolumeGroup(pv.name + '_LVG', '32M',  [pv])
 
     def _makeVolumeGroupUseAllPVs(self):
         self.dp.newLogicalVolumeGroup('Big VG', '32M', self.dp.pv_dict.keys())
@@ -259,11 +261,79 @@ class TestDiskProfile:
         """
         Make 2 logical volumes on the volume group.
         """
+        fs_types = ['ext3', 'linux-swap', 'physical volume']
         size = vg.extentsFree() * vg.extent_size / 1024 / 1024
         for i in xrange(2):
-            self.dp.newLogicalVolume(vg.name + '/LV%d' % i, vg, size/2,
+            self.dp.newLogicalVolume(vg.name + '_LV%d' % i, vg, size/2,
                                      fs_types[i], '/'+vg.name+'/lv%d' % i)
 
+    def _makeSingalLogicalVolumeWithVG(self, vg):
+        """
+        Make 1 single logical volumes on the volume group.
+        """
+        size = vg.extentsTotal() * vg.extent_size / 1024 / 1024
+        self.dp.newLogicalVolume('LV0', vg, size/2,
+                                 'ext3', '/'+vg.name+'/lv0')
+
+    def _makeLogicalVolumesWithVGPoorFreeSize(self, vg):
+        ''' 
+        Make 1 single volume which size is larger than the left free size of the VG,
+        this volume is set to fill the left disk.
+        '''
+        fs_types = ['ext3', 'linux-swap', 'physical volume']
+        size = ( vg.extentsFree() * vg.extent_size / 1024 / 1024 ) + (vg.extent_size)
+        self.dp.newLogicalVolume(vg.name + '_LV0', vg, size, 
+                                 fs_types[0], '/'+vg.name+'/lv0', True)
+
+    def _makeSinglePartitionFromDisk(self):
+        ''' Make a signle partition '''
+    
+        for disk in self.dp.disk_dict.iterkeys():
+            size = self.dp.disk_dict[disk].size / 1024 / 1024
+            self.dp.newPartition(disk, size/2, True, 'physical volume', None)
+
+    def _makeLogicalVolumeWithoutVG(self):
+        ''' Make 2 logical volumes, make volume group first. '''
+    
+        # make LVM group first
+        self._makeSinglePartitionFromDisk()
+        self._makeVolumeGroupPerPV()
+        self.dp.commit()
+    
+        # make Logical Volumes
+        for everylvg in self.dp.lvg_dict.itervalues():
+            self._makeLogicalVolumesWithVG(everylvg)
+        self.dp.commit()
+         
+        if self.dp.lv_dict == {}:
+            raise RuntimeError, 'Create Logical Volumes Failed.'
+
+    def _makeLogicalVolumeWithoutVGPoorSize(self):
+        ''' Make LV with required size larger than free size '''
+    
+        # make LVM group first
+        self._makeSinglePartitionFromDisk()
+        self._makeVolumeGroupPerPV()
+        self.dp.commit()
+
+        # make Logical Volumes
+        for everylvg in self.dp.lvg_dict.itervalues():
+            self._makeLogicalVolumesWithVGPoorFreeSize(everylvg)
+        self.dp.commit()
+
+
+    def _makeSingleLogicalVolumeWithoutVG(self):
+        ''' Make 1 single LV '''
+
+        # make LVM group first
+        self._makeSinglePartitionFromDisk()
+        self._makeVolumeGroupPerPV()
+        self.dp.commit()
+
+        # make Logical Volumes
+        for everylvg in self.dp.lvg_dict.itervalues():
+            self._makeSingalLogicalVolumeWithVG(everylvg)
+        self.dp.commit()
 
     def testPrimaryPartitions(self):
         for disk_id in self.dp.disk_dict.keys():
@@ -380,3 +450,104 @@ class TestDiskProfile:
         self.dp.deleteLogicalVolumeGroup(lvg)
         assert 'BigVG' not in self.dp.lvg_dict.keys(), \
                 "Logical Volume Group was not deleted successfully."
+
+   
+    def testLogicalVolume(self):
+        '''Test newLogicalVolume '''
+
+        self._makeLogicalVolumeWithoutVG()
+        # to see if Volumes were created
+        for everylv in self.dp.lv_dict.iterkeys():
+            probe_dict = { 'name' : 'LV Name'}
+            res_dict = probeLVMEntity('lvm lvdisplay', probe_dict)
+            assert not res_dict['name'] == None
+
+    def testLogicalVolumePoorSize(self):
+        '''Test newLogicalVolume: not enough size. '''
+        
+        excepoccur = False
+        try :
+            self._makeLogicalVolumeWithoutVGPoorSize()
+        except OutOfSpaceError, e:
+            excepoccur = True
+        assert excepoccur
+
+    def testLogicalVolumeEdit(self):
+        ''' test editLogicalVolume '''
+
+        self._makeSingleLogicalVolumeWithoutVG()
+        # larger its size.
+        dict = {'gpname' : 'VG Name',
+                'lvname' : 'LV Name',
+                'lenum' : 'Current LE'}
+        res_dict = probeLVMEntity('lvm lvdisplay', dict)
+
+        for lv in self.dp.lv_dict.itervalues():
+            orgsize = copy.copy(lv.size)
+            newsize = (lv.size * 2) / 1024 / 1024 
+            self.dp.editLogicalVolume(lv, newsize, 
+                                      lv.fs_type, lv.mountpoint)
+            self.dp.commit()
+            assert lv.size  == orgsize * 2
+            assert res_dict['gpname'] == lv.group.name
+            assert res_dict['lvname'].endswith(lv.name)
+            assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 * 2
+        
+        # shrink its size.
+        dict = {'gpname' : 'VG Name',
+                'lvname' : 'LV Name',
+                'lenum' : 'Current LE'}
+        res_dict = probeLVMEntity('lvm lvdisplay', dict)
+
+        for lv in self.dp.lv_dict.itervalues():
+            orgsize = copy.copy(lv.size)
+            newsize = (lv.size / 2) / 1024 / 1024
+            self.dp.editLogicalVolume(lv, newsize, lv.fs_type, lv.mountpoint)
+            self.dp.commit()
+            assert lv.size * 2 == orgsize
+            assert res_dict['gpname'] == lv.group.name
+            assert res_dict['lvname'].endswith(lv.name)
+            assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 / 2
+
+        # change fs type
+        fs_types = ['ext3', 'linux-swap', 'physical volume']
+        for lv in self.dp.lv_dict.itervalues():
+            for types in fs_types:
+                orgtype = copy.copy(types)
+                self.dp.editLogicalVolume(lv, lv.size, types, lv.mountpoint)
+                self.dp.commit()
+                assert orgtype == lv.fs_type
+
+        # change fs type and size at the same time
+        for lv in self.dp.lv_dict.itervalues():
+
+            for types in fs_types:
+                if types != lv.fs_type:
+                    break
+            assert not types == lv.fs_type
+
+            lvsize = copy.copy(lv.size)
+            self.dp.editLogicalVolume(lv, lv.size * 2, types, lv.mountpoint)
+            self.dp.commit()
+            assert lv.fs_type == types
+            assert lv.size == lvsize * 2
+
+    def testDeleteLogicalVolume(self):
+        ''' test deleteLogicalVolume '''
+        self._makeSingleLogicalVolumeWithoutVG()
+
+        lvdict = copy.copy(self.dp.lv_dict)
+        assert lvdict != {}
+
+        # delete action
+        for lv in lvdict.itervalues():
+            self.dp.deleteLogicalVolume(lv)
+            self.dp.commit()
+
+        assert self.dp.lv_dict == {}
+
+        probe_dict = { 'name' : 'LV Name'}
+        res_dict = probeLVMEntity('lvm lvdisplay', probe_dict)
+
+        assert res_dict == {}
+
