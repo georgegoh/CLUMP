@@ -163,6 +163,28 @@ class TestDiskProfile:
             errMsg = 'Internal Error: DiskProfile disks are not all marked for test.'
             raise SkipTest, errMsg
 
+        # for test fstab probe and parse
+        self.fscontent = """
+# Test fstab, taken from my system
+/dev/VolGroup00/LogVol00    /           ext3    defaults        1 1
+# LABEL=/boot                 /boot       ext3    defaults        1 2
+devpts                      /dev/pts    devpts  gid=5,mode=620  0 0
+tmpfs                       /dev/shm    tmpfs   defaults        0 0
+proc                        /proc       proc    defaults        0 0
+sysfs                       /sys        sysfs   defaults        0 0
+/dev/VolGroup00/LogVol01    swap        swap    defaults        0 0
+# More from Hirwan's
+    /dev/sda6                   /hd6        ext3    acl,user_xattr  1 1
+# Mike's
+
+/dev/cdroms/cdrom0          /mnt/cdrom  iso9660 noauto,ro       0 0
+       # Dirty comment here... we're all
+#over
+    # the place, but shouldn't be picked up.
+"""
+        self.fscontent_wanteddic = {'/dev/sda6': Struct({'mntpnt': '/hd6', 'fs_type': 'ext3'}), 
+                                    '/dev/VolGroup00/LogVol00': Struct({'mntpnt': '/', 'fs_type': 'ext3'})}
+
 
     def teardown(self):
         self._clearLVM()
@@ -334,6 +356,35 @@ class TestDiskProfile:
         for everylvg in self.dp.lvg_dict.itervalues():
             self._makeSingalLogicalVolumeWithVG(everylvg)
         self.dp.commit()
+
+    def _createFstabFileWithStr(self, content):
+        ''' create a fstab file '''
+
+        if not content:
+            errMsg = 'Must write something into the fstab file!'
+            raise RuntimeError, errMsg
+        for lv in self.dp.lv_dict.itervalues():
+            lv.format()
+            mountpath = path ( lv.mountpoint )
+            if not mountpath.exists():
+                mountpath.makedirs()
+            lv.mount(lv.mountpoint)
+
+            fstabdir = path(mountpath / 'etc')
+            if not fstabdir.exists():
+                fstabdir.makedirs()
+            fstabpath = path(fstabdir / 'fstab')
+            if not fstabpath.exists():
+                fstabpath.touch()
+
+            # write content
+            fstab = open(fstabpath, 'w')
+            fstab.write(content)
+            fstab.flush()
+            fstab.close()
+
+            lv.unmount()
+            mountpath.removedirs()
 
     def testPrimaryPartitions(self):
         for disk_id in self.dp.disk_dict.keys():
@@ -551,3 +602,41 @@ class TestDiskProfile:
 
         assert res_dict == {}
 
+    def testExtractFstab(self):
+        ''' test extractFstabToDevices '''
+
+        self._makeSingleLogicalVolumeWithoutVG()
+        self._createFstabFileWithStr(self.fscontent)
+
+        # call function:
+        for lv in self.dp.lv_dict.itervalues():
+            devmap = {}
+            devmap = self.dp.extractFstabToDevices(lv, loc='etc/fstab')
+            assert devmap == self.fscontent_wanteddic
+
+    def testExtractFstabWithLABEL(self):
+        raise SkipTest, 'not implemented.'
+
+    def testExtractFstabWithUUID(self):
+        raise SkipTest, 'not implemented.'
+
+    def testLookForFsTab(self):
+        '''test lookForFstab'''
+        self._makeSingleLogicalVolumeWithoutVG()
+        self._createFstabFileWithStr(self.fscontent)
+
+        # call function:
+        for lv in self.dp.lv_dict.itervalues():
+            res, path = self.dp.lookForFstab(lv, fstab_path='etc/fstab')
+            assert res == True
+            assert path == 'etc/fstab'
+
+    def testLookForFsTabNotFound(self):
+        '''test lookForFstab'''
+        self._makeSingleLogicalVolumeWithoutVG()
+
+        for lv in self.dp.lv_dict.itervalues():
+            lv.format()
+            res, path = self.dp.lookForFstab(lv, fstab_path='etc/fstab')
+            assert res == False
+            assert path == None
