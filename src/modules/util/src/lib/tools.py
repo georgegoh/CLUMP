@@ -10,9 +10,13 @@
 import os
 from path import path
 import kusu.util.log as kusulog
-from kusu.util.errors import *
 import tempfile
 
+from kusu.util.errors import CommandFailedToRunError
+from kusu.util.errors import CopyFailedError
+from kusu.util.errors import FileDoesNotExistError
+from kusu.util.errors import NotSupportedURIError
+from kusu.util.errors import ToolNotFound
 try:
     import subprocess
 except:
@@ -33,7 +37,7 @@ def getArch():
     """
     cmd = 'arch'
     archP = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
-    result, code = archP.communicate()
+    result = archP.communicate()[0] #only grab the first value, returns 2 values in a tuple
     _arch = result.strip('\n')
     
     if _arch in X86_ARCHES:
@@ -44,7 +48,6 @@ def getArch():
         
     return 'noarch'
     
-
 def checkToolDeps(tool):
     """ Check if the tool is indeed available. A ToolNotFound exception 
         will be thrown if any of the tools are missing.
@@ -55,9 +58,8 @@ def checkToolDeps(tool):
     whichP.communicate()
     if whichP.returncode <> 0:
         raise ToolNotFound, tool
-        
     return True
-            
+
 def checkAllToolsDeps():
     """ Check if the list of tools needed are indeed available. 
         A ToolNotFound exception will be thrown if any of the tools are
@@ -120,16 +122,17 @@ def url_mirror_copy(src, dst):
 
 
 
-def cpio_copytree(src,dst):
+def cpio_copytree(src,dst,cpioProg='cpio',findProg='find'): 
+#added a cpioProg and findProg parameter for testing purposes
+#this allows us to inject mock values to test error cases
     """A cpio-based copytree functionality. Only use this when shutil.copytree don't cut
        it.
     """
-
     # Taken from <unistd.h>, for file/dirs access modes
     # These can be OR'd together
     R_OK = 4   # Test for read permission.
     W_OK = 2   # Test for write permission.
-    X_OK = 1   # Test for execute permission.
+#    X_OK = 1   # Test for execute permission. Commented out as its unused.
 
     # convert paths to be absolute
     src = path(src).abspath()
@@ -146,13 +149,29 @@ def cpio_copytree(src,dst):
             raise IOError, "No read/write permissions in parent directory!"
     else:
         if not path(dst).access(R_OK|W_OK): raise IOError, "No read/write permissions in destination directory!"
+    #we are no longer using a shell
+    #therefore the program and its arguments need to be passed as a list
+    try:
+        findP = subprocess.Popen([findProg,'.'],cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    except OSError,e:
+        raise CommandFailedToRunError, "Error running %s : %s" % (findProg , os.strerror(e.errno))
+    try:
+        try:
+            cpioP =  subprocess.Popen([cpioProg, '-mpdu' , '--quiet', '%s' % (dst)],cwd=cwd,stdin=findP.stdout,stderr=subprocess.PIPE)
+            err = cpioP.communicate()[1] #required to wait for process to complete. 
+        except OSError,e:
+            raise CopyFailedError,"Error running %s: %s " % (cpioProg, os.strerror(e.errno)) 
+        except Exception,e:
+            raise CommandFailedToRunError,"Error running %s: %s" % (cpioProg,e)
+    finally:
+        findP.communicate() # we need to ensure findP is not lingering on waiting to pipe output with cwd as the mounted media dir
 
+    #even when there are no exceptions raised, sometimes cpio can fail 
+    if cpioP.returncode:
 
-    findP = subprocess.Popen('find .',cwd=cwd,shell=True,stdout=subprocess.PIPE)
-    cpioP = subprocess.Popen('cpio -mpdu --quiet %s' % dst,cwd=cwd,stdin=findP.stdout,shell=True)
-    cpioP.communicate()
+        raise CopyFailedError,"%s failed with return code %d : %s " % (cpioProg , cpioP.returncode, err)
     return cpioP.returncode
-    
+
 def mkdtemp(**kwargs):
     """ Creates a temp directory based on KUSU_TMP if available or 
         defaults to tempfile.mkdtemp behavior. The keyword arguments 
