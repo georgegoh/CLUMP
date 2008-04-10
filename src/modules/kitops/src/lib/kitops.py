@@ -546,10 +546,19 @@ class KitOps:
             rv = cpio_copytree(self.mountpoint, repodir)
             kl.debug('cpio_copytree return code: %d', rv)
         except Exception, msg:
+            mountp = self.mountpoint
             self.unmountMedia()
+            repopath = path(repodir)
+            # we remove the unwanted stuff that may have been copied over
+            # and want to prune the empty directories upward 
+            # to do this , we remove the leaf directory, recreate an empty one and prune
+            if repopath.exists():
+                repopath.rmtree()
+                repopath.mkdir()
+                repopath.removedirs()
             raise CopyOSMediaError, \
-                  'Error during copy\n%s\nmountpoint:%s, repodir:%s' % \
-                  (msg, self.mountpoint, repodir)
+                  'Error during copy:\n%smountpoint:%s, repodir:%s\n' % \
+                  (msg, mountp, repodir)
 
         # copy successful, don't need mounted media anymore
         self.unmountMedia()
