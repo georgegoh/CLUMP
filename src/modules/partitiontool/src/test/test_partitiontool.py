@@ -508,10 +508,14 @@ sysfs                       /sys        sysfs   defaults        0 0
 
         self._makeLogicalVolumeWithoutVG()
         # to see if Volumes were created
-        for everylv in self.dp.lv_dict.iterkeys():
-            probe_dict = { 'name' : 'LV Name'}
-            res_dict = probeLVMEntity('lvm lvdisplay', probe_dict)
-            assert not res_dict['name'] == None
+        dict = {'gpname' : 'VG Name',
+                'lvname' : 'LV Name',
+                'lenum' : 'Current LE'}
+        for everylv in self.dp.lv_dict.itervalues():
+            res_dict = probeLVMEntity('lvm lvdisplay %s' % everylv.path, dict)
+            assert res_dict['lvname'] == everylv.path
+            assert res_dict['gpname'] == everylv.group.name
+            assert int(res_dict['lenum']) * 32 * 1024 * 1024 == everylv.size
 
     def testLogicalVolumePoorSize(self):
         '''Test newLogicalVolume: not enough size. '''
@@ -527,38 +531,36 @@ sysfs                       /sys        sysfs   defaults        0 0
         ''' test editLogicalVolume '''
 
         self._makeSingleLogicalVolumeWithoutVG()
-        # larger its size.
+
         dict = {'gpname' : 'VG Name',
                 'lvname' : 'LV Name',
                 'lenum' : 'Current LE'}
-        res_dict = probeLVMEntity('lvm lvdisplay', dict)
-
+        # larger its size.
         for lv in self.dp.lv_dict.itervalues():
+            res_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
             orgsize = copy.copy(lv.size)
             newsize = (lv.size * 2) / 1024 / 1024 
             self.dp.editLogicalVolume(lv, newsize, 
                                       lv.fs_type, lv.mountpoint)
             self.dp.commit()
             assert lv.size  == orgsize * 2
-            assert res_dict['gpname'] == lv.group.name
-            assert res_dict['lvname'].endswith(lv.name)
             assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 * 2
-        
-        # shrink its size.
-        dict = {'gpname' : 'VG Name',
-                'lvname' : 'LV Name',
-                'lenum' : 'Current LE'}
-        res_dict = probeLVMEntity('lvm lvdisplay', dict)
 
+            res_new_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
+            assert int(res_dict['lenum']) * 2 == int(res_new_dict['lenum'])
+
+        # shrink its size.
         for lv in self.dp.lv_dict.itervalues():
+            res_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
             orgsize = copy.copy(lv.size)
             newsize = (lv.size / 2) / 1024 / 1024
             self.dp.editLogicalVolume(lv, newsize, lv.fs_type, lv.mountpoint)
             self.dp.commit()
             assert lv.size * 2 == orgsize
-            assert res_dict['gpname'] == lv.group.name
-            assert res_dict['lvname'].endswith(lv.name)
             assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 / 2
+
+            res_new_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
+            assert int(res_dict['lenum']) == int(res_new_dict['lenum']) * 2
 
         # change fs type
         fs_types = ['ext3', 'linux-swap', 'physical volume']
@@ -571,6 +573,7 @@ sysfs                       /sys        sysfs   defaults        0 0
 
         # change fs type and size at the same time
         for lv in self.dp.lv_dict.itervalues():
+            res_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
 
             for types in fs_types:
                 if types != lv.fs_type:
@@ -582,6 +585,10 @@ sysfs                       /sys        sysfs   defaults        0 0
             self.dp.commit()
             assert lv.fs_type == types
             assert lv.size == lvsize * 2
+            assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 * 2
+
+            res_new_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
+            assert int(res_dict['lenum']) * 2 == int(res_new_dict['lenum'])
 
     def testDeleteLogicalVolume(self):
         ''' test deleteLogicalVolume '''
