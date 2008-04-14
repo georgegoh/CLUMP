@@ -8,23 +8,22 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 import os 
-import tempfile
-import subprocess
 import copy
 from kusu.partitiontool import DiskProfile, isExt2
-from kusu.partitiontool.lvm import PhysicalVolume
-from kusu.partitiontool.lvm202 import probeLogicalVolumeGroup, probeLVMEntity
-from kusu.hardware.drive import *
-from os import stat, walk
-from os.path import basename
-from kusu.util.testing import *
-from tempfile import mkstemp, mkdtemp
-from sets import Set
+from kusu.partitiontool.lvm202 import  probeLVMEntity 
+from kusu.hardware.drive import getSCSIPartitions
+from os import walk 
+from kusu.util.testing import runCommand
+from tempfile import mkdtemp
 from nose import SkipTest
-from socket import gethostname
 from path import path
 from fcntl import ioctl
-
+from kusu.util.structure import Struct
+from kusu.util.errors import MountpointAlreadyUsedError
+from kusu.util.errors import KusuError
+from kusu.util.errors import PartitionIsPartOfVolumeGroupError
+from kusu.util.errors import *
+from nose.tools import assert_raises
 
 IOC_NRSHIFT = 0
 IOC_NRBITS = 8
@@ -386,16 +385,148 @@ sysfs                       /sys        sysfs   defaults        0 0
             lv.unmount()
             mountpath.removedirs()
 
+    def __verifyUpdateInSysFS(self):
+        """ For each disk eg sda, sdb , probe /sys/block/disk/ 
+        Retreive a list of strings starting with diskname 
+        Eg: for /sys/block/sda all names starting with sda are returned - sda1 sda2 etc
+        Compare the set of partitions vs the ones we have in memory """
+        for key,disk in self.dp.disk_dict.iteritems(): # sda sdb etc
+            parts = getSCSIPartitions(path('/sys/block') / key)  #sda1 sda2 etc
+            disk_parts = [key+str(num) for num in disk.partition_dict.keys()] 
+            assert set(parts) == set(disk_parts),"Sysfs_parts=%s, Disk_parts=%s" % (parts, disk_parts)
+            for v in parts:
+                # eg: cat sys/block/sda/sda1/size. Multiply result by 512 as its in 512 byte blocks
+                size = int(runCommand("cat /sys/block/%s/%s/size" % (key,v))[0].strip())*512 
+                assert size == self.dp.disk_dict[key].partition_dict[int(v[len(key):])].size
+
+            
+
     def testPrimaryPartitions(self):
         for disk_id in self.dp.disk_dict.keys():
             self._makePrimaryPartitions(disk_id)
         self.dp.commit()
-        for key,disk in self.dp.disk_dict.iteritems():
-            parts = getSCSIPartitions(path('/sys/block') / key)
-            disk_parts = [key+str(num) for num in disk.partition_dict.keys()]
-            assert set(parts) == set(disk_parts), \
-                   "Sysfs_parts=%s, Disk_parts=%s" % (parts, disk_parts)
+        self.__verifyUpdateInSysFS()
 
+    
+        
+    def testNewPartition(self):
+        """ Test for creating a new partition
+        Test1: Positive test case - create an ext2 file system without a mount point and  verify update to SysFS
+        Test2: Positive test case - create a physical volume without a mount point and verify update to SysFS
+        Test3: Positive test case - create an ext2 file system with a mount point and verify update to SysFS
+        Test4: Negative test case - create a physical volume with a mount point and verify update to SysFS """
+
+        # newPartition(self,disk_id,size_MB,fixed_size,fs_type,mountpount, fill=False)
+        # partition is a dictionary of the following
+        #     partition = {'size_MB': size, 'fill': fill,
+        #                  'fs': fs, 'mountpoint': mountpoint}
+        partition = self.dp.newPartition('sdb',100,False,'ext2',None)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+        assert not partition.mountpoint
+        assert partition.fs_type == 'ext2'
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        #Test Case 2: Positive test case create a physical volume without a mount point and verify update to SysFS
+        partition = self.dp.newPartition('sdb',100,False,'physical volume',None)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+        assert not partition.mountpoint
+        assert not partition.fs_type
+
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        #Test Case 3:
+        partition = self.dp.newPartition('sdb',100,False,'ext2',None)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+        assert partition.fs_type == 'ext2'
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+        #XXX - Test Case 4
+        #Currently the mountpoint is silently ignored so this is a redundant case
+        
+    def testEditPartiton(self):
+        """ edit a partition that is a part of a volume group
+        edit a partition that is already mounted - send an obj in pv_dict
+        there is no pv Group defined as yet. so it will error. Group = None now
+        Test Case 1: Negative test - a  partition which is part of an LVG cannot be edited
+        Test Case 2: Negative test - We cannot use a mointpount alreadt in use
+        Test Case 3: Negative test - Requested partition size too large
+        Test Case 4: Positive test - Resize existing partition and fill it all the way
+        Test Case 5: Positive test - Resize the filled parititon to a Fixed size
+        Test Case 6: Positive test - Shrink the partition, but fill is true so it expands 
+        Test Case 7: Check changes are commited to proc """
+        assert self.dp.disk_dict['sdb'],"Disk SDB required for tests"
+        partition = self.dp.newPartition('sdb',100,True,'physical volume',None)
+        #add it to a group
+        pv = self.dp.pv_dict[partition.path]
+        self.dp.newLogicalVolumeGroup('Testpart', '32M', [pv])
+        lvg = self.dp.lvg_dict['Testpart']
+        lv = self.dp.newLogicalVolume('BigV', lvg, 12)
+        self.dp.commit()
+        assert_raises(PartitionIsPartOfVolumeGroupError,self.dp.editPartition,partition,150,True,'ext2',None)
+        self.dp.deleteLogicalVolume(lv)
+        self.dp.deleteLogicalVolumeGroup(lvg)
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        #test case 2 ext2fs paritition with a mountpoint
+        #if there is a partition and current partition is not in the mountpoint list we error
+        partition1 = self.dp.newPartition('sdb',100,True,'ext2','/test')
+        partition2 = self.dp.newPartition('sdb',100,True,'ext2',None)
+        self.dp.commit()
+        assert_raises(MountpointAlreadyUsedError,self.dp.editPartition,partition2,150,False,'ext2','/test')
+        # test case 3 partition too large
+        assert_raises(KusuError,self.dp.editPartition,partition1,partition1.size_MB + (self.dp.disk_dict['sdb'].availableSpaceForPartition(partition1)/1024/1024)+100,True,'ext2','/large')
+        psize = partition2.size_MB
+        #test case 4 positive - should work 
+        self.dp.editPartition(partition2,150,False,'ext2','/test2')
+        self.dp.commit()
+        assert partition2.size_MB > psize
+        psize = partition2.size_MB
+        #test case 5 fill a partition  - also verify changes in SysFS
+        self.dp.editPartition(partition2,150,True,'ext2','/test2')
+        self.dp.commit()
+        assert partition2.size_MB < psize
+        psize = partition2.size_MB
+        self.__verifyUpdateInSysFS()
+        #test case 7 shrink a partition - the fill takes precedence - it will be bigger than 
+        assert self.dp.editPartition(partition2,100,False,'ext2','/test2') # shrink it back
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+        assert partition2.size_MB > psize
+        self.dp.deletePartition(partition1)
+        self.dp.deletePartition(partition2)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+
+    def testDeletePartition(self):
+        """create a bunch of partitions and delete it
+        Test Case 1 : Negative case - cannot delete if part of LVG
+        Test Case 2 : Positive case - deletion works
+        Test Case 3 : Check changes are comitted to proc
+        """
+        #Test case 1 : create and delete
+        partition = self.dp.newPartition('sdb',100,False,'physical volume',None)
+
+        pv = self.dp.pv_dict[partition.path]
+        self.dp.newLogicalVolumeGroup('Testpart', '32M', [pv])
+        lvg = self.dp.lvg_dict['Testpart']
+        lv = self.dp.newLogicalVolume('BigV', lvg, 12)
+        assert_raises(PartitionIsPartOfVolumeGroupError,self.dp.editPartition,partition,150,False,'ext2',None)
+        self.dp.deleteLogicalVolume(lv)
+        self.dp.deleteLogicalVolumeGroup(lvg)
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
+
+        #Test case 2 :  non volume - filesystem
+        partition = self.dp.newPartition('sdb',100,False,'ext2',None)
+        self.dp.commit()
+        self.dp.deletePartition(partition)
+        self.dp.commit()
+        self.__verifyUpdateInSysFS()
 
     def testCreateLogicalVolumeGroup(self):
         ''' Unit Test: testCreateLogicalVolumeGroup '''
