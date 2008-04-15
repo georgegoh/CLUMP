@@ -573,6 +573,25 @@ sysfs                       /sys        sysfs   defaults        0 0
             pass
         assert 'BigVG' in self.dp.lvg_dict.keys(), \
                 "Logical Volume Group (name: BigVG, extent size: 32M) was not successfully created."
+
+        self.dp.commit()
+
+        name = 'BigVG'
+        lvg = self.dp.lvg_dict[name]
+
+        # Achieve total PE, PE Size, and VG Size
+        probe_dict = { 'total_pe' : 'Total PE',
+                       'pe_size'  : 'PE Size',
+                       'vg_size'  : 'VG Size' }
+        res = probeLVMEntity('lvm vgdisplay', probe_dict)
+        total_pe = long(res['total_pe'])
+        pe_size = long(res['pe_size'][:-3])
+        vg_size = long(res['vg_size'][:-3])
+
+        # if the vg was created successfully, then :
+        # total_pe = lvg.extentsTotal and lvg.extent_size = 32M and pe_size = 32M
+        assert total_pe == lvg.extentsTotal() and lvg.extent_size == 32 * 1024 * 1024 and pe_size == 32, \
+                "Logical Volume Group (name: BigVG, extent size: 32M) was not successfully created."
         
         #Test Case 4: (Negative) Duplicate group name
         try:
@@ -582,15 +601,35 @@ sysfs                       /sys        sysfs   defaults        0 0
             pass
         assert lvg.extent_size_humanreadable == '32M', \
                 "Logical Volume Group with duplicate name should not be created."
+
+        self.dp.commit()
+
+        # Due to duplicate name, BigVG should not be recreated.
+        probe_dict = { 'vg_name' : 'VG Name',
+                       'pe_size' : 'PE Size' }
+        res = probeLVMEntity('lvm vgdisplay', probe_dict)
+        vg_name = res['vg_name']
+        pe_size = long(res['pe_size'][:-3])
+        assert vg_name == 'BigVG' and pe_size != 52, \
+                "Logical Volume Group with duplicate name should not be created."
                    
     def testEditLogicalVolumeGroup(self):
-        ''' Unit Test: testCreateLogicalVolumeGroup '''
+        ''' Unit Test: testEditLogicalVolumeGroup '''
 
         #firstly, create a dummy partition for the test
         partition = self.dp.newPartition('sdb', 100, False, 'physical volume', None)
         pv = self.dp.pv_dict[partition.path]
         self.dp.newLogicalVolumeGroup('BigVG', '32M', [pv])
         lvg = self.dp.lvg_dict['BigVG']
+
+        self.dp.commit()
+
+        # Achieve the physical volume's pv name and vg name
+        probe_dict = { 'pv_name' : 'PV Name',
+                       'vg_name' : 'VG Name' }
+        res = probeLVMEntity('lvm pvdisplay', probe_dict)
+        pv_name_old = res['pv_name']
+        vg_name_old = res['vg_name']
         
         #old_pvs keesp the original pv_list
         old_pvs = lvg.pv_dict.keys()
@@ -598,11 +637,23 @@ sysfs                       /sys        sysfs   defaults        0 0
         partition1 = self.dp.newPartition('sdb', 80, False, 'physical volume', None)
         pv1 = self.dp.pv_dict[partition1.path]
         self.dp.editLogicalVolumeGroup(self.dp.lvg_dict['BigVG'], [pv1])
+
+        self.dp.commit()
+
+        # Achieve the physical volume's pv name and vg name after the editing
+        probe_dict = { 'pv_name' : 'PV Name',
+                       'vg_name' : 'VG Name' }
+        res = probeLVMEntity('lvm pvdisplay', probe_dict)
+        pv_name_new = res['pv_name']
+        vg_name_new = res['vg_name']
         
         #new_pvs keeps the new pv_list
         new_pvs = lvg.pv_dict.keys()
 
-        assert 'sdb1' in old_pvs and 'sdb2' in new_pvs and old_pvs != new_pvs, \
+        assert old_pvs != new_pvs, \
+                "Logical Volume Group was not edited successfully."
+
+        assert vg_name_old == 'BigVG' and vg_name_old == vg_name_new and pv_name_old != pv_name_new, \
                 "Logical Volume Group was not edited successfully."
         
     def testDeleteLogicalVolumeGroup(self):
@@ -619,20 +670,43 @@ sysfs                       /sys        sysfs   defaults        0 0
         #create a logical volume
         lv = self.dp.newLogicalVolume('BigV', lvg, 12)
 
-        #Test case 1: (Negative) Delete a logical volume group with logical volume still in use 
-        try:
+        self.dp.commit()
+
+        probe_dict = { 'lv_name' : 'LV Name' }
+        res = probeLVMEntity('lvm lvdisplay', probe_dict)
+        lv_name = res['lv_name']
+
+        # if the lv was successfully created to lvg
+        if lv_name.find('BigVG/BigV'):
+            #Test case 1: (Negative) Delete a logical volume group with logical volume still in use 
+            try:
+                self.dp.deleteLogicalVolumeGroup(lvg)
+            except PhysicalVolumeStillInUseError, e:
+                pass
+            assert 'BigVG' in self.dp.lvg_dict.keys(), \
+                    "Logical Volume Group should not be deleted when there is logical volume still in use."
+
+            self.dp.commit()
+
+            probe_dict = { 'vg_name' : 'VG Name' }
+            res = probeLVMEntity('lvm vgdisplay', probe_dict)
+            
+            assert len(res) > 0 and res['vg_name'] == 'BigVG', \
+                    "Logical Volume Group should not be deleted when there is logical volume still in use."
+
+            #Test Case 2: (Positive)
+            self.dp.deleteLogicalVolume(lv)
             self.dp.deleteLogicalVolumeGroup(lvg)
-        except PhysicalVolumeStillInUseError, e:
-            pass
-        assert 'BigVG' in self.dp.lvg_dict.keys(), \
-                "Logical Volume Group should not be deleted when there is logical volume still in use."
+            assert 'BigVG' not in self.dp.lvg_dict.keys(), \
+                    "Logical Volume Group was not deleted successfully."
 
-        #Test Case 2: (Positive)
-        self.dp.deleteLogicalVolume(lv)
-        self.dp.deleteLogicalVolumeGroup(lvg)
-        assert 'BigVG' not in self.dp.lvg_dict.keys(), \
-                "Logical Volume Group was not deleted successfully."
+            self.dp.commit()
 
+            # if 'BigVG' vg record is still available, then the deleting was not successful
+            probe_dict = { 'vg_name' : 'VG Name' }
+            res = probeLVMEntity('lvm vgdisplay', probe_dict)
+            assert len(res) == 0, \
+                    "Logical Volume Group was not deleted successfully."
    
     def testLogicalVolume(self):
         '''Test newLogicalVolume '''
