@@ -161,7 +161,7 @@ For examples:
                 repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
 
                 if kit.isOS:
-                    if True in [kit.isOS for kit in repo.kits]:
+                    if True in [k.isOS for k in repo.kits]:
                         self.stderrMessage('An OS kit has been already added.\n')
                         self.unlock()
                         sys.exit(1)
