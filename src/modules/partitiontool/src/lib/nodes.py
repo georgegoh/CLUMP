@@ -10,6 +10,7 @@
 import re
 from os import *
 from path import path
+from kusu.util.errors import *
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool.nodes')
 
