@@ -872,7 +872,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 rpmsdirkey  = "server." + rpmsdirkey
 
             repopackdir = os.path.join(self.__repodir, repoinst.dirlayout[rpmsdirkey])
-            compsfile = glob.glob(os.path.join(self.__repodir, repoinst.dirlayout[repodatakey],'comps*.xml'))[0]
+            compsfile = glob.glob(os.path.join(self.__repodir, repoinst.dirlayout[repodatakey],'*comps*.xml'))[0]
 
             cwdbackup = os.getcwd()
             os.chdir(repopackdir)
@@ -2835,7 +2835,7 @@ class NGEApp(KusuApp):
                 headstr = headstr[:MAXWIDTH]
                 print "Networks:\n\t", headstr
 
-                query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP), IFNULL(netname, ''), netid from networks"
+                query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
                 self.__db.execute(query)
                 rv = self.__db.fetchall()
 

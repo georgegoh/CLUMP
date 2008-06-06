@@ -7,7 +7,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#   
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,8 +35,6 @@ from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun
 import kusu.ipfun
-
-version="-VERSION-"
 
 class boothost:
     """This is the class containing the metdods for manipulating PXE files"""
@@ -79,13 +77,6 @@ class boothost:
         sys.stderr.write(mesg)
 
         
-    def toolVersion(self):
-        """toolVersion - provide a version screen for this tool."""
-        global version
-        self.errorMessage("Version %s\n", version)
-        sys.exit(0)
-
-
     def toolHelp(self):
         """toolHelp - provide a help screen for this tool."""
         self.errorMessage("boothost_Help")
@@ -523,6 +514,13 @@ class BootHostApp(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)   # Get the Lang stuff from the kusuapp class
 
+
+    def toolVersion(self):
+        """toolVersion - provide a version screen for this tool."""
+        self.errorMessage("boothost Version %s\n", self.version)
+        sys.exit(0)
+
+
     def parseargs(self, toolinst):
         """parseargs - Parse the command line arguments and populate the
         class variables"""
@@ -543,7 +541,7 @@ class BootHostApp(KusuApp):
             if args[i] == '-h':
                 toolinst.toolHelp()
             elif args[i] == '-v':
-                toolinst.toolVersion()
+                self.toolVersion()
             elif args[i] == '-r':
                 self.reinstall  = 1
             elif args[i] == '-l':
@@ -625,8 +623,12 @@ class BootHostApp(KusuApp):
                 sys.exit(-2)
 
             print self._('boothost_reboot'),
-            for name in bhinst.updatednodes:
-                print "%s, " % name,
+
+            nodes = []
+            for items in bhinst.updatednodes:
+                nodes.append(items[0])
+
+            print ", ".join(nodes)
                 
             #sys.exit(0)
             pdshcls = syncfun()
@@ -635,4 +637,5 @@ class BootHostApp(KusuApp):
 
 app = BootHostApp()
 app.run()
+
 

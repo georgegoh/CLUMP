@@ -19,7 +19,7 @@ class KusuRC(rcplugin.Plugin):
         self.delete = False
 
     def run(self):
-        sharedhomedir = path('/home')
+        sharedhomedirs = [path('/home'), path('/opt/software')]
 
         myname = self.dbs.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
         nics = self.dbs.Nodes.selectfirst_by(name=myname).nics
@@ -54,8 +54,9 @@ class KusuRC(rcplugin.Plugin):
                 if nic.network.type == 'provision':
                     key = "%s/%s" % (network.network,network.subnet)
                     if key in masternics:
-                        newline = "* %s:%s/&\n" % (masternics[key], sharedhomedir)
-                        f1.writelines(newline)
+                        for sharedhomedir in sharedhomedirs:
+                            newline = "* %s:%s/&\n" % (masternics[key], sharedhomedir)
+                            f1.writelines(newline)
             f1.close()
         
         # Redirect all stdout, stderr

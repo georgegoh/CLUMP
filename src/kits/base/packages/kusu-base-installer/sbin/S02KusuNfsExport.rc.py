@@ -20,21 +20,22 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Setup /etc/exports"""
         etcexports = path('/etc/exports')
-        sharedhomedir = path('/home')
+        path('/opt/software').makedirs()
+        sharedhomedirs = [path('/home'), path('/opt/software')]
 
         myname = self.dbs.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
         nics = self.dbs.Nodes.selectfirst_by(name=myname).nics
 
         f = open(etcexports, 'a')
-        newline = "%s " % sharedhomedir
-        f.writelines(newline)
-        for nic in nics:
-            if nic.network.type == 'provision':
-                netname = nic.network.netname
-                newline = "%s/%s(rw,async) " % (nic.network.network, nic.network.subnet)
-                f.writelines(newline)
+        for sharedhomedir in sharedhomedirs:
+            newline = "%s " % sharedhomedir
+            f.writelines(newline)
+            for nic in nics:
+                if nic.network.type == 'provision':
+                    netname = nic.network.netname
+                    newline = "%s/%s(rw,async)\n" % (nic.network.network, nic.network.subnet)
+                    f.writelines(newline)
 
-        f.writelines("\n")
         f.close()
 
         retcode, out, err = self.runCommand('/sbin/chkconfig nfs on')
