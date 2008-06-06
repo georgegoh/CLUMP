@@ -43,14 +43,17 @@ def checkAndMakeNode(devpath):
     elif dev_basename.startswith('loop'):
         major,minor = handleLoopDevice(device_path)
     else:
-        raise UnknownDeviceError, "Cannot create %s - don't know the " + \
-                                  "major/minor number scheme." % devpath
+        errmsg = "Cannot create %s - don't know the " % devpath
+        errmsg += "major/minor number scheme."
+        raise UnknownDeviceError, errmsg
 
     logger.info('FORMAT %s: Create block device, major: %s, minor: %s, path: %s' % \
                 (devpath, major, minor, devpath))
     raw_dev_num = makedev(major, minor)
     import stat
-    mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
+
+    if not path(devpath).exists():
+        mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
     return
 
 
