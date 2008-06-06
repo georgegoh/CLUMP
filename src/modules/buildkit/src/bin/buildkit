@@ -604,8 +604,8 @@ Example operations:
         
         
 if __name__ == '__main__':
-	bkinst = BuildKit()
-	app = App(bkinst)
-	app.run()
-	sys.exit(0)
+    bkinst = BuildKit()
+    app = App(bkinst)
+    app.run()
+    sys.exit(0)
 
