@@ -5,7 +5,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 #
-#
+#  THIS IS TH REAL ONE
 
 
 from kusu.genconfig import Report
@@ -46,7 +46,8 @@ class thisReport(Report):
         # not defined, the entry is omitted from the hosts file
         publicdnszone = self.db.getAppglobals('PublicDNSZone')
 
-        query = ('SELECT nics.ip,nodes.name,networks.suffix,nics.boot,networks.type '
+
+        query = ('SELECT nics.ip,nodes.name,networks.suffix,nics.boot,networks.type,nodes.ngid '
                  'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
                  'AND nics.netid = networks.netid AND networks.usingdhcp=0 '
                  'AND nodes.ngid!=5 ORDER BY nics.ip')
@@ -57,22 +58,35 @@ class thisReport(Report):
             sys.stderr.write(self.gettext("DB_Query_Error\n"))
             sys.exit(-1)
                     
-        else:            
+        else:
+            bFirstPublicInterface = False
+            bFirstProvisionInterface = False
+
             data = self.db.fetchall()
             for row in data:
-                ip, name, suffix, boot, nettype = row
+                ip, name, suffix, boot, nettype, nngid = row
                 if suffix and suffix != '':
                     str = "%-15s\t%s%s.%s \t%s%s" % \
                         (ip, name, suffix, dnszone, name, suffix)
 
-		    if nettype == 'provision':
-			str += "\t%s.%s" % ( name, dnszone )
+                    # Display the short name for the interfaces that were booted
+                    if nngid != 1 and boot == 1:
+                        str += ' \t%s.%s \t%s' % ( name, dnszone, name )
 
-                    if boot == 1:
-                        str += ' \t%s' % ( name )
+                    else:    
+                        # provisioning interface
+                        if nettype == 'provision' and not bFirstProvisionInterface:
+                            str += "\t%s.%s" % ( name, dnszone )
+                            bFirstProvisionInterface = True
 
-                    if nettype == 'public' and publicdnszone:
-                        str += " \t%s.%s" % ( name, publicdnszone )
+                        if nettype == 'public':
+                            if publicdnszone:
+                                str += " \t%s.%s" % ( name, publicdnszone )
+
+                            # Display host name only on first public interface
+                            if not bFirstPublicInterface:
+                                str += ' \t %s' % ( name )
+                                bFirstPublicInterface = True
 
                     print str
                 else:
