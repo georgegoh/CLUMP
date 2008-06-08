@@ -11,7 +11,7 @@
 #	This file can be distributed under either the GNU General Public License
 #	(version 2 or higher) or the 3-clause BSD License.
 #
-#	Daily snapshot on Thu 2008-05-01 01:05:01
+#	Daily snapshot on Sun 2008-06-08 01:05:02
 #
 
 # Vendors, devices and subsystems. Please keep sorted.
@@ -12094,6 +12094,7 @@
 		1775 6003  Telum GE-QT
 		8086 005e  PRO/1000 PT Dual Port Server Connection
 		8086 105e  PRO/1000 PT Dual Port Network Connection
+		8086 10d5  82571PT Gigabit PT Quad Port Server ExpressModule
 		8086 115e  PRO/1000 PT Dual Port Server Adapter
 		8086 116e  PRO/1000 PT Dual Port Server Adapter
 		8086 125e  PRO/1000 PT Dual Port Server Adapter
@@ -12923,7 +12924,7 @@
 		1028 0169  Precision 470
 		1028 019a  PowerEdge SC1425
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P4P800 SE Mainboard
+		1043 80a6  P4P800 series motherboard
 		1458 24d1  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		1565 5200  P4TSV Motherboard (865G)
@@ -12942,7 +12943,7 @@
 		1028 019a  PowerEdge SC1425
 		103c 006a  NX9500
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 24d2  GA-8IPE1000/8KNXP motherboard
 		1462 7280  865PE Neo2 (MS-6728)
 		1565 3101  P4TSV Motherboard (865G)
@@ -12978,7 +12979,7 @@
 		1028 019a  PowerEdge SC1425
 		103c 006a  NX9500
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 24d2  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		1565 3101  P4TSV Motherboard (865G)
@@ -13012,7 +13013,7 @@
 		1028 0183  PowerEdge 1800
 		103c 006a  NX9500
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 24d2  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		1565 3101  P4TSV Motherboard (865G)
@@ -13031,7 +13032,7 @@
 		1028 019a  PowerEdge SC1425
 		103c 006a  NX9500
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 24d2  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		1462 7580  MSI 875P
@@ -13054,7 +13055,7 @@
 		1028 019a  PowerEdge SC1425
 		103c 006a  NX9500
 		103c 12bc  d530 CMT (DG746A)
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 5006  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		8086 3427  S875WP1-E mainboard
@@ -13064,7 +13065,7 @@
 	24de  82801EB/ER (ICH5/ICH5R) USB UHCI Controller #4
 		1014 02ed  xSeries server mainboard
 		1028 0169  Precision 470
-		1043 80a6  P5P800-MX Mainboard
+		1043 80a6  P4P800/P5P800 series motherboard
 		1458 24d2  GA-8IPE1000 Pro2 motherboard (865PE)
 		1462 7280  865PE Neo2 (MS-6728)
 		1565 3101  P4TSV Motherboard (865G)
@@ -13126,7 +13127,7 @@
 	2570  82865G/PE/P DRAM Controller/Host-Hub Interface
 		103c 006a  NX9500
 		103c 12bc  d330 uT
-		1043 80f2  P5P800-MX Mainboard
+		1043 80f2  P4P800/P5P800 series motherboard
 		1458 2570  GA-8IPE1000 Pro2 motherboard (865PE)
 	2571  82865G/PE/P PCI to AGP Controller
 	2572  82865G Integrated Graphics Controller
@@ -13412,6 +13413,7 @@
 		1014 05b7  ThinkPad Z60t
 # based on the PTGD1-LA motherboard
 		103c 2a09  PufferM-UL8E
+		1043 1173  Asus A6VC
 		1043 814e  P5GD1-VW Mainboard
 		1462 7028  915P/G Neo2
 	266a  82801FB/FBM/FR/FW/FRW (ICH6 Family) SMBus Controller
@@ -13629,6 +13631,7 @@
 		17aa 3802  Lenovo 3000 C200 audio [Realtek ALC861VD]
 		8086 1112  DeskTop Board D945GTP
 		8086 27d8  Lenovo 3000 N100 Audio (Intel HDA)
+		a102 1458  DeskTop Board Gigabyte GA-8I945PG-RH
 	27da  82801G (ICH7 Family) SMBus Controller
 		1025 006c  9814 WKMI
 		1028 01ad  OptiPlex GX620
@@ -13636,6 +13639,7 @@
 		1028 01e6  PowerEdge 860
 		10f7 8338  Panasonic CF-Y5 laptop
 		17aa 200f  ThinkPad T60/R60 series
+		5001 1458  DeskTop Board Gigabyte GA-8I945PG-RH
 		8086 544e  DeskTop Board D945GTP
 		8086 5842  DeskTop Board D975XBX
 	27dc  82801G (ICH7 Family) LAN Controller
@@ -13665,6 +13669,7 @@
 	2815  82801HEM (ICH8M) LPC Interface Controller
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
+		103c 30d9  Presario C700
 		104d 9005  Vaio VGN-FZ260E
 	2820  82801H (ICH8 Family) 4 port SATA IDE Controller
 		1028 01da  OptiPlex 745
@@ -13682,6 +13687,7 @@
 	2829  82801HBM/HEM (ICH8M/ICH8M-E) SATA AHCI Controller
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		104d 9005  Vaio VGN-FZ260E
 		17aa 20a7  ThinkPad T61
 	282a  Mobile 82801 SATA RAID Controller
@@ -13690,6 +13696,7 @@
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
 		1462 7235  P965 Neo MS-7235 mainboard
@@ -13701,6 +13708,7 @@
 		103c 30c0  Compaq 6710b
 # Name mistyped on previous submission
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
 		1462 7235  P965 Neo MS-7235 mainboard
@@ -13711,6 +13719,7 @@
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
 		17aa 20aa  ThinkPad T61
@@ -13739,6 +13748,7 @@
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
 		1462 7235  P965 Neo MS-7235 mainboard
@@ -13756,6 +13766,7 @@
 	283e  82801H (ICH8 Family) SMBus Controller
 		1028 01da  OptiPlex 745
 		1028 01f3  Inspiron 1420
+		103c 30d9  Presario C700
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
 		1462 7235  P965 Neo MS-7235 mainboard
@@ -13774,6 +13785,7 @@
 	2849  82801H (ICH8 Family) PCI Express Port 6
 	284b  82801H (ICH8 Family) HD Audio Controller
 		0690 107b  Gateway P-6825
+		1025 011f  Realtek ALC268 audio codec
 		1028 01da  OptiPlex 745
 		1028 01f3  Inspiron 1420
 		1028 01f9  Dell Latitude D630
@@ -13782,12 +13794,15 @@
 		103c 30c1  Compaq 6910p
 		1043 81ec  P5B
 		104d 9005  Vaio VGN-FZ260E
+		14f1 5051  Presario C700
 		17aa 20ac  ThinkPad T61
+		8384 7616  Dell Vostro 1400
 	284f  82801H (ICH8 Family) Thermal Reporting Device
 	2850  82801HBM/HEM (ICH8M/ICH8M-E) IDE Controller
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		104d 9005  Vaio VGN-FZ260E
 		17aa 20a6  ThinkPad T61
 		e4bf cc47  CCG-RUMBA
@@ -13815,6 +13830,7 @@
 	2929  ICH9M/M-E SATA AHCI Controller
 	292c  ICH9M-E SATA RAID Controller
 	292d  ICH9M/M-E 2 port SATA IDE Controller
+	292e  ICH9M SATA IDE Controller
 	2930  82801I (ICH9 Family) SMBus Controller
 		1028 0211  Optiplex 755
 	2932  82801I (ICH9 Family) Thermal Subsystem
@@ -13944,6 +13960,7 @@
 		1028 01f3  Inspiron 1420
 		103c 30c0  Compaq 6710b
 		103c 30c1  Compaq 6910p
+		103c 30d9  Presario C700
 		104d 9005  Vaio VGN-FZ260E
 		17aa 20b1  ThinkPad T61
 		e4bf cc47  CCG-RUMBA
@@ -13952,10 +13969,12 @@
 		1028 01f3  Inspiron 1420
 		1028 01f9  Latitude D630
 		103c 30c0  Compaq 6710b
+		103c 30d9  Presario C700
 		e4bf cc47  CCG-RUMBA
 	2a03  Mobile GM965/GL960 Integrated Graphics Controller
 		1028 01f3  Dell Inspiron 1420
 		103c 30c0  Compaq 6710b
+		103c 30d9  Presario C700
 		e4bf cc47  CCG-RUMBA
 	2a04  Mobile PM965/GM965 MEI Controller
 		103c 30c1  Compaq 6910p
@@ -14314,6 +14333,7 @@
 	4222  PRO/Wireless 3945ABG Network Connection
 		103c 135c  Compaq 6710b
 		103c 30c0  Compaq 6710b
+		8086 1000  PRO/Wireless 3945ABG Network Connection
 		8086 1005  PRO/Wireless 3945BG Network Connection
 		8086 1034  PRO/Wireless 3945BG Network Connection
 		8086 1044  PRO/Wireless 3945BG Network Connection
