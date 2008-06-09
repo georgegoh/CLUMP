@@ -52,6 +52,7 @@ class thisReport(Report):
         # Get the DNS
         dnsdomain = self.db.getAppglobals('DNSZone')
         
+        installerServeDNS = self.db.getAppglobals('InstallerServeDNS')
 
         # Now get the networks
         query = ('select networks.network, networks.subnet, '
@@ -92,7 +93,10 @@ class thisReport(Report):
                 
                 if dnsdomain:
                     print '\toption domain-name "%s";' % dnsdomain
-                    
+            
+                if installerServeDNS:
+                    print '\toption domain-name-servers %s;' % gateway
+                        
                 print '\tif substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {'
                 print '\t\tfilename  "pxelinux.0";'
                 print '\t\toption vendor-class-identifier  "PXEClient";'
@@ -118,8 +122,9 @@ class thisReport(Report):
                 if dhcpdata:
                     for row in dhcpdata:
                         # Test to see if this nodes IP lies on the same network
-                        # as this DHCP section
-                        if onNetwork(netmask, subnet, row[1]):
+                        # as this DHCP section and that there is a MAC
+                        # address for the interface.
+                        if onNetwork(netmask, subnet, row[1]) and row[2]:
                             if row[3]:
                                 print '\thost %s%s {' % (row[0], row[3])
                             else:

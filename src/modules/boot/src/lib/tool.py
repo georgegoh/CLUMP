@@ -533,7 +533,7 @@ class BootMediaTool:
                 # get the correct kusuenv.sh
                 if osname in SUPPORTED_DISTROS and osname in USES_ANACONDA:
                     # put in the kusuenv.sh
-                    p = svnsrc.srcpath / 'src/dists/%s/%s/%s/kusuenv.sh' % (osname,osver,osarch)
+                    p = kusuroot.parent / 'src/dists/%s/%s/%s/kusuenv.sh' % (osname,osver,osarch)
                     kusuenv = path(p)
 
                     if kusuenv.exists(): 

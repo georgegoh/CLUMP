@@ -129,8 +129,11 @@ def getSCSI(type):
                 # block:<dev> exists
                 if dev: 
                     dev = dev[0].realpath()
-                elif (s / 'block').exists(): # block exists, rhel4
-                    dev = (s / 'block').realpath()
+                elif (s / 'block').exists(): 
+                    if (s / 'block').islink():
+                       dev = (s / 'block').realpath()
+                    else:
+                       dev = (s / 'block').listdir('*')[0]
                 else:
                     continue
 

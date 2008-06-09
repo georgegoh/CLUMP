@@ -81,6 +81,7 @@ class KickstartFactory(BaseFactory):
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
         self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
         self.namespace['mbrbootloader'] = self._useMBR()
+        self.namespace['kernelparams'] = self._getKernelParams()
 
         return self.namespace
 
@@ -149,6 +150,9 @@ class KickstartFactory(BaseFactory):
         ignore_disks = disk_profile.ignore_disk_dict.keys()
 
         return ','.join(ignore_disks)
+
+    def _getKernelParams(self):
+        return ''
 
     def _getPartitions(self):
 
@@ -250,6 +254,7 @@ class RHEL5KickstartFactory(KickstartFactory):
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
         self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
         self.namespace['mbrbootloader'] = self._useMBR()
+        self.namespace['kernelparams'] = self._getKernelParams()
 
         return self.namespace
 
@@ -269,6 +274,47 @@ class Fedora7KickstartFactory(KickstartFactory):
         self.namespace['ignoredisk'] = self._getIgnoreDisks()
         self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
         self.namespace['mbrbootloader'] = self._useMBR()
+        self.namespace['kernelparams'] = self._getKernelParams()
+
+        return self.namespace
+
+class Fedora8KickstartFactory(KickstartFactory):
+    def __init__(self, profile, template=None):
+        KickstartFactory.__init__(self, profile, template) 
+
+    def getNameSpace(self):
+        self.namespace['url'] = self.profile.installsrc
+        self.namespace['rootpw'] = self.profile.rootpw
+        self.namespace['tz'] = self.profile.tz
+        self.namespace['lang'] = self.profile.lang
+        self.namespace['keybd'] = self.profile.keyboard
+        self.namespace['packages'] = self.profile.packageprofile 
+        self.namespace['partitions'] = self._getPartitions()
+        self.namespace['networks'] = self._getNetworks()
+        self.namespace['ignoredisk'] = self._getIgnoreDisks()
+        self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
+        self.namespace['mbrbootloader'] = self._useMBR()
+        self.namespace['kernelparams'] = self._getKernelParams()
+
+        return self.namespace
+
+class Fedora9KickstartFactory(KickstartFactory):
+    def __init__(self, profile, template=None):
+        KickstartFactory.__init__(self, profile, template) 
+
+    def getNameSpace(self):
+        self.namespace['url'] = self.profile.installsrc
+        self.namespace['rootpw'] = self.profile.rootpw
+        self.namespace['tz'] = self.profile.tz
+        self.namespace['lang'] = self.profile.lang
+        self.namespace['keybd'] = self.profile.keyboard
+        self.namespace['packages'] = self.profile.packageprofile 
+        self.namespace['partitions'] = self._getPartitions()
+        self.namespace['networks'] = self._getNetworks()
+        self.namespace['ignoredisk'] = self._getIgnoreDisks()
+        self.namespace['mbrdriveorder'] = self._getMBRDriveOrder()
+        self.namespace['mbrbootloader'] = self._useMBR()
+        self.namespace['kernelparams'] = self._getKernelParams()
 
         return self.namespace
 

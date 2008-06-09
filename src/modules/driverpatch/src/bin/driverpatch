@@ -326,7 +326,7 @@ Example operations:
             
         # get the repoid for this nodegroup
         if not repotools.repoForNodeGroupExists(self.db,ngname):
-            msg = self._('No valid repo available this nodegroup!')
+            msg = self._('No valid repo available for this nodegroup!')
             self.printMsgExit(msg)
             
         repoid = repotools.getRepoFromNodeGroup(self.db,ngname)
@@ -428,11 +428,30 @@ Example operations:
         # counter for list of modules to remove
         modremovelist = []
         
+        kver = self.controller.getKernelVersion(kernelrpm.filename) # kernel version
+       
+        cnt = 0
         # extract kernel modules from the driverpacks table
         for pkg in kmodlist:
             msg = self._('Extracting kernel modules from package %(packagerpm)s..' %
                     {'packagerpm':pkg.filename})
             print msg
+
+            if cnt != 0:
+	       dellist = []
+	       tmpextractor = path(utiltools.mkdtemp())
+	       self.controller.extractKernelModulesDir(pkg.filename,tmpextractor)
+
+	       for li in tmpextractor.walkfiles('*.ko'):
+	           dellist.append(os.path.basename(li))
+
+	       for delmod in dellist:
+	           item = tmpkmoddir.walkfiles(delmod)
+	           for li in item:
+	               print "Replacing with vendor driver:  %s" % os.path.basename(li)
+	               os.unlink(li)
+            cnt += 1
+
             # check if the package has a pci.updates
             # FIXME: currently only handling pci.updates! we are missing the support for pcitable types of updates.
             if self.controller.hasPciUpdates(pkg.filename): 
@@ -471,7 +490,7 @@ Example operations:
         msg = self._('Generating updated modules.dep and modules.alias..')
         print msg
         tmpassetsdir = path(utiltools.mkdtemp())
-        self.controller.generateModulesAssets(tmpkmoddir, tmpassetsdir)
+        self.controller.generateModulesAssets(tmpkmoddir, tmpassetsdir, kver)
         
         # and normalise the modules.dep
         modulesdep = tmpassetsdir / 'modules.dep'

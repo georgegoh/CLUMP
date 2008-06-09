@@ -9,7 +9,7 @@ IF(PYTHONINTERP_FOUND)
   ADD_CUSTOM_COMMAND(
           OUTPUT  ${SETUPPY_PATH}/build
           COMMAND ${PYTHON_EXECUTABLE}
-          ARGS    setup.py build ${SETUPPY_BUILD_ARGS}
+          ARGS    setup.py build -e "/usr/bin/env python" ${SETUPPY_BUILD_ARGS}
           DEPENDS ${SETUPPY_PATH}/setup.py
           WORKING_DIRECTORY ${SETUPPY_PATH}
           COMMENT "Running python setup.py build ${SETUPPY_BUILD_ARGS} in ${SETUPPY_PATH}"

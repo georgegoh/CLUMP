@@ -9,8 +9,8 @@
 
 install
 
-# Define the installation number.
 #if $varExists('instnum')
+# Define the installation number.
 #if $instnum 
 key $instnum
 #else
@@ -39,9 +39,9 @@ authconfig --enableshadow --enablemd5
 timezone $tz
 
 #if $mbrbootloader
-bootloader --location=mbr
+bootloader --location=mbr --append="$kernelparams"
 #else
-bootloader --location=partition
+bootloader --location=partition --append="$kernelparams"
 #end if
 skipx
 

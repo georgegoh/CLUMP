@@ -41,6 +41,13 @@ class RPMPackage(object):
             
             return self.rpmfile.version
             
+        def getKernelVersion(self):
+            """ Returns the kernel version string based on the rpm version + release.
+            """
+            version = self.rpmfile.version
+            release = self.rpmfile.release
+            return '-'.join([version,release])
+            
         def isKernel(self):
             """ Check if the package is a kernel package or not. Basically the existence of the vmlinuz file determines this check.
             """

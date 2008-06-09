@@ -158,6 +158,15 @@ class BuildKit:
         if dist == 'fedora' and distver == '6':
             compclass = 'Fedora6Component()'
             compdesc = '%s component for Fedora Core 6.' % defaultname
+        elif dist == 'fedora' and distver == '7':
+            compclass = 'Fedora7Component()'
+            compdesc = '%s component for Fedora Core 7.' % defaultname
+        elif dist == 'fedora' and distver == '8':
+            compclass = 'Fedora8Component()'
+            compdesc = '%s component for Fedora Core 8.' % defaultname
+        elif dist == 'fedora' and distver == '9':
+            compclass = 'Fedora9Component()'
+            compdesc = '%s component for Fedora Core 9.' % defaultname
         elif dist == 'centos' and distver == '5':
             compclass = 'Centos5Component()'
             compdesc = '%s component for CentOS 5.' % defaultname

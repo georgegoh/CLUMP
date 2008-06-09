@@ -667,11 +667,125 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
             else:
                 baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
 
-        core = str(baseurl / 'releases' / '7' / 'Fedora' / self.os_arch / 'os')
+        core = str(baseurl / 'releases' / '7' / 'Everything' / self.os_arch / 'os')
         updates = str(baseurl / 'updates' / '7' / self.os_arch )
 
         return [updates]
     
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
+class Fedora8Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'fedora', '8', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'fedora', '8', os_arch, prefix, db)
+
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'Packages'
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        src = self.os_path / self.dirlayout['repodatadir'] / 'Fedora-8-comps.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'Fedora-8-comps.xml'
+
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      version=self.os_version,
+                                      arch=self.os_arch)
+
+        if kits:
+            return [path(os.path.join(self.prefix, 'depot', 'kits', \
+                                      self.os_name, self.os_version, self.os_arch, \
+                                      self.dirlayout['rpmsdir']))]
+        else:
+            return []
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['fedora']['url'])
+            else:
+                baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+
+        core = str(baseurl / 'releases' / '8' / 'Everything' / self.os_arch / 'os')
+        updates = str(baseurl / 'updates' / '8' / self.os_arch )
+
+        return [updates]
+
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
+class Fedora9Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'fedora', '9', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'fedora', '9', os_arch, prefix, db)
+
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'Packages'
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        src = self.os_path / self.dirlayout['repodatadir'] / 'Fedora-9-comps.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'Fedora-9-comps.xml'
+
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      version=self.os_version,
+                                      arch=self.os_arch)
+
+        if kits:
+            return [path(os.path.join(self.prefix, 'depot', 'kits', \
+                                      self.os_name, self.os_version, self.os_arch, \
+                                      self.dirlayout['rpmsdir']))]
+        else:
+            return []
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['fedora']['url'])
+            else:
+                baseurl = path('http://download.fedora.redhat.com/pub/fedora/linux/')
+
+        core = str(baseurl / 'releases' / '9' / 'Everything' / self.os_arch / 'os')
+        updates = str(baseurl / 'updates' / '9' / self.os_arch )
+
+        return [updates]
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 

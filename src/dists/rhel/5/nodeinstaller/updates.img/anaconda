@@ -45,9 +45,12 @@ if [ $EXIT_CODE -eq 0 ]; then
     # Need a better to replace existing -m and --kickstart option in $@
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
-    if [ "$?" -eq 0 ]; then
+
+    EXIT_CODE=$?
+    if [ "$EXIT_CODE" -eq 0 ]; then
         /opt/kusu/bin/updatestate /mnt/kusu/etc/profile.nii > /dev/null 2>&1
     fi
+    exit $EXIT_CODE
 
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump

@@ -15,8 +15,10 @@ import sqlalchemy as sa
 
 class RepoFactory(object):
 
-    class_dict = { 'fedora' : {'6': repo.Fedora6Repo},
-    #                           '7': repo.Fedora7Repo},
+    class_dict = { 'fedora' : {'6': repo.Fedora6Repo,
+                               '7': repo.Fedora7Repo,
+                               '8': repo.Fedora8Repo,
+                               '9': repo.Fedora9Repo},
                    'centos' : {'5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo} }
 

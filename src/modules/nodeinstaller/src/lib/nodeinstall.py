@@ -5,7 +5,8 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
+from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
+from kusu.autoinstall.scriptfactory import Fedora7KickstartFactory, Fedora8KickstartFactory, Fedora9KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
@@ -375,6 +376,10 @@ class NodeInstaller(object):
             autoscript = Script(RHEL5KickstartFactory(self.ksprofile))
         elif kusu_dist == 'fedora' and kusu_distver == '7':
             autoscript = Script(Fedora7KickstartFactory(self.ksprofile))
+        elif kusu_dist == 'fedora' and kusu_distver == '8':
+            autoscript = Script(Fedora8KickstartFactory(self.ksprofile))
+        elif kusu_dist == 'fedora' and kusu_distver == '9':
+            autoscript = Script(Fedora9KickstartFactory(self.ksprofile))
         else:
             autoscript = Script(KickstartFactory(self.ksprofile))
 
@@ -411,7 +416,7 @@ class NodeInstaller(object):
 
     def setTimezone(self):
         tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz
-        tzfile.copy('/etc/localtime')
+        if tzfile.exists(): tzfile.copy('/etc/localtime')
 
         hwclock_args = '--hctosys'
         if self.ksprofile.tz_utc:

@@ -160,6 +160,24 @@ def Fedora6Component(**kwargs):
     kwargs['osversion'] = '6'
     return DefaultComponent(**kwargs)
 
+def Fedora7Component(**kwargs):
+    """ This is used for Fedora Core 7 components. """
+    kwargs['ostype'] = 'fedora'
+    kwargs['osversion'] = '7'
+    return DefaultComponent(**kwargs)
+
+def Fedora8Component(**kwargs):
+    """ This is used for Fedora Core 8 components. """
+    kwargs['ostype'] = 'fedora'
+    kwargs['osversion'] = '8'
+    return DefaultComponent(**kwargs)
+
+def Fedora9Component(**kwargs):
+    """ This is used for Fedora Core 9 components. """
+    kwargs['ostype'] = 'fedora'
+    kwargs['osversion'] = '9'
+    return DefaultComponent(**kwargs)
+
 def DefaultComponent(**kwargs):
     """ The default component will associate itself to both the installer and compute
         nodegroups if the ngtypes is not defined.

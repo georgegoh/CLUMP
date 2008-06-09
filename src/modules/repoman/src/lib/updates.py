@@ -176,7 +176,10 @@ class BaseUpdate:
 
         compclass = {'rhel' : {'5': 'RHEL5Component()'},
                      'centos' : {'5': 'Centos5Component()'},
-                     'fedora' : {'6': 'Fedora6Component()'}}
+                     'fedora' : {'6': 'Fedora6Component()',
+                                 '7': 'Fedora7Component()',
+                                 '8': 'Fedora8Component()',
+                                 '8': 'Fedora9Component()'}}
 
         dest = tempkitdir / kitName / 'build.kit'
 
@@ -327,8 +330,7 @@ class YumUpdate(BaseUpdate):
                 downloadPkgs.append(r)
                             
         # Download the packages
-        for r in downloadPkgs:
-            filename = r.getFilename()
+        for filename in sorted([r.getFilename() for r in downloadPkgs]):
             dest = path(dir / filename.basename())
             
             if dest.exists():
