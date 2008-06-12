@@ -215,7 +215,7 @@ def vanillaSchemaLVM():
 
     # LVM disks.
     volgroup00 = LVMGroup()
-    volgroup00.name = 'VolGroup00'
+    volgroup00.name = 'KusuVolGroup00'
     volgroup00.extent_size = '32M'
     volgroup00.pv_span = True
     volgroup00.addPV(disk=1, partition=3, id='d1p3')
@@ -358,7 +358,7 @@ def isDiskFormatted(disk):
     return False
 
 
-def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
+def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True, disk_order=[]):
     """Set up a disk profile based on a given schema."""
     logger.debug('setupDiskProfile called to set up schema:')
     logger.debug('%s' % str(schema))
@@ -391,7 +391,7 @@ def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True):
         if not schema.has_key('disk_dict') or not schema.has_key('vg_dict'):
             raise PartitionSchemaError, 'Schema has no disk and/or LVM description.'
 
-        createPhysicalSchema(disk_profile, schema['disk_dict'], schema['vg_dict'], preserved_mntpnt, preserved_fs)
+        createPhysicalSchema(disk_profile, schema['disk_dict'], schema['vg_dict'], preserved_mntpnt, preserved_fs, disk_order)
         if schema['vg_dict']:
             createLVMSchema(disk_profile, schema['vg_dict'], preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv)
 
@@ -527,14 +527,16 @@ def clearDisk(disk_profile, disk, schema):
             partition.leave_unchanged = True
     return preserved_mntpnt, preserved_fs
 
-def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mntpnt, preserved_fs):
+def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mntpnt, preserved_fs, disk_order=[]):
     # check if we have enough disks to fulfill the schema
     if len(disk_profile.disk_dict) < len(disk_schemata):
         raise PartitionSchemaError, 'Schema defines more disks than ' + \
                                     'is physically available on this system.'
 
     # do the physical disk and partitions first.
-    sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
+    sorted_disk_keys = disk_order
+    if not sorted_disk_keys:
+        sorted_disk_keys = sorted(disk_profile.disk_dict.keys())
     for i in sorted(disk_schemata.keys()):
         # for each disk in the schema.
         if type(i) is str:
@@ -592,8 +594,10 @@ def createPhysicalSchema(disk_profile, disk_schemata, lvg_schemata, preserved_mn
         except IndexError:
             raise PartitionSchemaError, 'Run out of disks.'
         except PartitionSizeTooLargeError:
-            raise OutOfSpaceError, 'Available size not enough to fit partition of size %d MB' % \
-                                    size_MB
+            disk = disk_profile.disk_dict[sorted_disk_keys[i-1]]
+            raise OutOfSpaceError, 'Disk %s has %d MB of available space.\
+ This is insufficient to support a partition of size %d MB.'\
+                % (disk.path, (disk.size/1024/1024) ,  size_MB) 
 
 
 def createLVMSchema(disk_profile, lvm_schemata, preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv):

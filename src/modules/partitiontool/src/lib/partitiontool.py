@@ -61,8 +61,8 @@ from lvm import *
 from filesystems import *
 from common import *
 from path import path
-from struct import unpack
-import kusu.hardware.probe
+from struct import pack,unpack
+import kusu.hardware.probe as probe
 from os.path import basename, exists
 from kusu.util.errors import *
 from kusu.util.tools import mkdtemp
@@ -73,21 +73,6 @@ import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool')
 
 from disk import *
-
-def isExt2(dev):
-    ''' Judge if the file system of the device is EXT2. '''
-    is_ext2 = False
-    try:
-        f = open(dev, 'r')
-        sb = f.read(1082)
-        magic_str = sb[-2:]
-        magic = unpack('H', magic_str)
-        if hex(magic[0]) == hex(0xef53):
-            is_ext2 = True
-    finally:
-        f.close()
-        return is_ext2
-
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
 
@@ -178,7 +163,7 @@ class DiskProfile(object):
         s = s + '\nMountpoints:\n' + self.__mntStr()
         return s
 
-    def __init__(self, fresh, test=None, probe_fstab=True):
+    def __init__(self, fresh, test=None, probe_fstab=True, ignore_errors=True):
         """Initialises a DiskProfile object by doing the following:
            
         """
@@ -192,7 +177,14 @@ class DiskProfile(object):
         self.manual_writes = [] # hack for writing partition types to disk
 
         import lvm202
-        lvm202.activateAllVolumeGroups()
+        out, err = lvm202.activateAllVolumeGroups()
+        real_errors = []
+        for l in err.split('\n'):
+            l = l.strip()
+            if not l.startswith('File descriptor ') and not l.startswith('No volume groups found') and l:
+                real_errors.append(l)
+        if real_errors and not ignore_errors:
+            raise LVMInconsistencyError, '\n'.join(real_errors)
         
         if test:
             self.populateDiskProfileTest(fresh, test)
@@ -285,7 +277,7 @@ class DiskProfile(object):
     def __findDisksAndCreateDictionary(self, fresh):
         logger.debug('Finding disks.')
         disk_dict = {}
-        disks_str = kusu.hardware.probe.getDisks().keys()
+        disks_str = probe.getDisks().keys()
         for disk_str in disks_str:
             logger.debug('Disk: %s' % disk_str)
             disk_dict[disk_str] = Disk('/dev/'+disk_str, self, fresh)
@@ -392,6 +384,53 @@ class DiskProfile(object):
 
         return None
 
+    def getMBRSignatureByBIOSOrder(self):
+        if not exists('/sys/firmware/edd'):
+            logger.debug('EDD module not found. BIOS disk order cannot be determined.')
+            return []
+
+        logger.debug('Starting EDD detection of BIOS disk order:')
+        # EDD keeps list of MBR signatures by BIOS order
+        bios_mbrsig_list = []
+        # anaconda looks at first sixteen only, so we follow
+        for disk_no in xrange(80,95):
+            edd_path = '/sys/firmware/edd/int13_dev%d/mbr_signature' % disk_no
+            if exists(edd_path):
+                mbrsig = int(open(edd_path).read().strip(), 16)
+                logger.debug('Disk %d MBR signature: %d' % (disk_no, mbrsig))
+                bios_mbrsig_list.append(pack('I', mbrsig))
+        return bios_mbrsig_list
+
+
+    def getBIOSDiskOrder(self, bios_mbrsig_list=None):
+        """
+        Return the list of disks in the system ordered according to how the
+        BIOS sees them. This method depends on the Enhanced Disk Drive (EDD)
+        Services support available in RedHat and SuSE distros.
+        Returns an empty list if EDD is not available.
+
+        MBR signatures are assumed to be unique across all disks in a system.
+
+        See http://linux.dell.com/installermagic.shtml
+        """
+        if not bios_mbrsig_list:
+            bios_mbrsig_list = self.getMBRSignatureByBIOSOrder()
+
+        disk_dict_cp = dict(self.disk_dict)
+        disks = self.disk_dict.keys()
+        bios_driveorder = []
+        for mbrsig in bios_mbrsig_list:
+            found = None
+            for k,v in disk_dict_cp.iteritems():
+                if v.mbr_signature == mbrsig:
+                    found = k
+                    break
+            if found:
+                disk_dict_cp.pop(found)
+                bios_driveorder.append(found)
+        return bios_driveorder
+
+
     def getMountablePartitions(self):
         logger.debug('get mountable partitions')
         mountable_parts = []
@@ -407,9 +446,15 @@ class DiskProfile(object):
         mountable_lvs = []
         mntpnt = mkdtemp()
         for lv in self.lv_dict.itervalues():
-            if isExt2(lv.path):
-                mountable_lvs.append(lv)
-            return mountable_lvs
+            try:
+                f = open(lv.path, 'r')
+                sb = f.read(1082)
+                magic_str = sb[-2:]
+                magic = unpack('H', magic_str)
+                if hex(magic[0]) == hex(0xef53):
+                    mountable_lvs.append(lv)
+            finally:
+                f.close()
         return mountable_lvs
 
     def lookForFstab(self, partition, fstab_path='etc/fstab'):
@@ -636,7 +681,7 @@ class DiskProfile(object):
             raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
                                                      'Extent Size.'
         _extent_size = int(extent_size[:-1])
-        if _extent_size not in range(2, 512+1) or \
+        if _extent_size not in range(2, 512+1) and \
            _extent_size % 2:
             raise InvalidVolumeGroupExtentSizeError, 'Invalid Volume Group ' + \
                                                      'Extent Size.'
@@ -656,19 +701,11 @@ class DiskProfile(object):
         # deletetion pass
         for existing_pv in lvg_obj.pv_dict.itervalues():
             if existing_pv not in pv_obj_list:
-                #lvg.delPhysicalVolume(existing_pv)
-                deleted_pvs.append(existing_pv)
+                lvg.delPhysicalVolume(existing_pv)
         # insertion pass
         for pv in pv_obj_list:
             if pv.name not in lvg_obj.pv_dict.keys():
-                #lvg_obj.addPhysicalVolume(pv)
-                inserted_pvs.append(pv)
-
-        for del_pv in deleted_pvs:
-            lvg_obj.delPhysicalVolume(existing_pv)
-
-        for ins_pv in inserted_pvs:
-            lvg_obj.addPhysicalVolume(ins_pv)
+                lvg_obj.addPhysicalVolume(pv)
 
         return lvg_obj
 
@@ -757,6 +794,7 @@ class DiskProfile(object):
         logger.debug('Activate VGs: %s, %s' % (out, err))
  
     def __modifyPartitionTypeHack(self):
+        # XXX
         # hack for modifying partition types.
         for (path, index, type) in self.manual_writes:
             out_p = file(path, 'w')

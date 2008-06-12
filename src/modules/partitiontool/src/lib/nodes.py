@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: nodes.py 1309 2008-06-05 09:23:21Z ggoh $
 #
 # Kusu Text Installer Partition Tool handle nodes.
 #
@@ -51,9 +51,7 @@ def checkAndMakeNode(devpath):
                 (devpath, major, minor, devpath))
     raw_dev_num = makedev(major, minor)
     import stat
-
-    if not path(devpath).exists():
-        mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
+    mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
     return
 
 

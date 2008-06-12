@@ -91,9 +91,46 @@ class PartitionScreen(InstallerScreen):
                                                 RIGHT, LEFT, LEFT],
                                  returnExit=0)
 
+        self.lvm_inconsistent = False
         if not self.disk_profile:
-            self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True)
-            self.prompt_for_default_schema = True
+            try_again = True
+            while try_again:
+                try:
+                    self.lvm_inconsistent = False
+                    self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True, ignore_errors=False)
+                    self.prompt_for_default_schema = True
+                    try_again = False
+                except LVMInconsistencyError, e:
+                    self.lvm_inconsistent = True
+                    errMsg = 'An LVM inconsistency has occurred that the OCS Installer may not '
+                    errMsg += 'be able to recover from. Press Ctrl-Alt-F2 to access the command '
+                    errMsg += 'prompt to fix this, and press Ctrl-Alt-F1 to return to the screen '
+                    errMsg += "when you're done.(Recommended)\n"
+                    errMsg += 'Alternatively, you may choose to ignore this message, and OCS '
+                    errMsg += 'will try to install anyway.'
+                    errMsg += 'The specific trace from the command that raised this error is '
+                    errMsg += 'shown below.\n\n'
+                    errMsg += str(e)
+                    retVal = self.selector.popupDialogBox('LVM Inconsistency', errMsg,
+                                                          ['Retry Detection', 'Ignore', 'Reboot'])
+                    if str(retVal) == 'retry detection':
+                        try_again = True
+                    elif str(retVal) == 'ignore':
+                        self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True)
+                        self.prompt_for_default_schema=True
+                        try_again = False
+                    else:
+                        raise UserExitError, 'Rebooting on user request.'
+                except Exception, e:
+                    err_msg = 'An error occurred while scanning the disks in the system. '
+                    err_msg += 'Kusu installer will try to proceed, but will wipe out any '
+                    err_msg += 'existing data on the disks. If you wish to continue, press '
+                    err_msg += '"OK". Otherwise, please poweroff the machine now.'
+                    self.selector.popupMsg('Disk Probe Error', err_msg)
+                    self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                    self.prompt_for_default_schema = True
+                    try_again = False
+
 
         if self.prompt_for_default_schema:
             self.promptForDefaultSchema()
@@ -163,7 +200,7 @@ class PartitionScreen(InstallerScreen):
                 disks_keys.append(key)
         return disks_keys
 
-    def drawReinit(self, disks):
+    def drawReinit(self, disks): 
         msg = 'The installer has detected drive(s) on this system that have a loop '
         msg += 'partition layout.\n\n'
         msg += 'To use a drive for installation, it must be re-initialized, '
@@ -206,6 +243,25 @@ class PartitionScreen(InstallerScreen):
             self.disk_profile.ignore_disk_dict[d] = disk
         logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
 
+    def useDefaultSchema(self, ignore_disks):
+        logger.debug('Default chosen')
+        self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+        self.prepareIgnoreList(ignore_disks)
+        schema = vanillaSchemaLVM()
+        logger.debug('%s' % schema)
+        setupPreservedPartitions(self.disk_profile, schema)
+        self.disk_order = self.disk_profile.getBIOSDiskOrder()
+        try:
+            setupDiskProfile(self.disk_profile, schema,
+                             wipe_existing_profile=False,
+                             disk_order=self.disk_order)
+        except OutOfSpaceError,e:
+            self.selector.popupDialogBox('Out of Space error', 
+                                         "%s\nThe installer will now\
+ exit." % (e) , ['Ok'])
+            raise UserExitError, 'Rebooting due to error'
+
+
     def promptForDefaultSchema(self):
         formatted_disks = self.findFormattedDisks()
         do_not_use_disks = list(formatted_disks)
@@ -225,27 +281,42 @@ class PartitionScreen(InstallerScreen):
                 exists = True
                 break
         if exists:
-            # tell user a schema exists and ask to proceed.
-            msg = 'The installer has detected that one of the disks  ' + \
-                  'is already partitioned. Do you want to use the ' + \
-                  'default schema, edit the existing schema, or ' + \
-                  'clear all partitions on the system?'
+            if self.lvm_inconsistent:
+                buttons_list = ['Use Default', 'Clear All Partitions']
+                msg = 'OCS installer can install using its default '
+                msg += 'partition schema. Alternatively, you may choose '
+                msg += 'to clear all partitions and create your own schema.'
+            else:
+                buttons_list = ['Use Default', 'Use Existing', 'Clear All Partitions']
+                # tell user a schema exists and ask to proceed.
+                msg = 'The installer has detected that one of the disks  ' + \
+                      'is already partitioned. Do you want to use the ' + \
+                      'default schema, edit the existing schema, or ' + \
+                      'clear all partitions on the system?'
             result = self.selector.popupDialogBox('Partitions exist',
                                                   msg,
-                                                 ['Use Default', 'Use Existing', 'Clear All Partitions'])
+                                                  buttons_list)
+            self.disk_order = self.disk_profile.getBIOSDiskOrder()
             if str(result) == 'use default':
-                logger.debug('Default chosen')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
-                self.prepareIgnoreList(do_not_use_disks)
-                schema = vanillaSchemaLVM()
-                logger.debug('%s' % schema)
-                setupPreservedPartitions(self.disk_profile, schema)
-                setupDiskProfile(self.disk_profile, schema,
-                                 wipe_existing_profile=False)
+                self.useDefaultSchema(do_not_use_disks)
             elif str(result) == 'clear all partitions':
-                logger.debug('Clear all partitions')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
-                self.prepareIgnoreList(do_not_use_disks)
+                msg = 'Really clear all existing partitions? You cannot retrieve your '
+                msg += 'existing partitions after proceeding.'
+                result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
+                if result:
+                    logger.debug('Clear all partitions')
+                    self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                    self.prepareIgnoreList(do_not_use_disks)
+                else:
+                    msg = 'Do you want to use the default schema, or edit '
+                    msg += 'the existing schema?'
+                    result = self.selector.popupDialogBox('Partitions exist',
+                                                          msg,
+                                                         ['Use Default', 'Use Existing'])
+                    if str(result) == 'use default':
+                        self.useDefaultSchema(do_not_use_disks)
+                    else:
+                        logger.debug('Use Existing')
             else:
                 logger.debug('Use Existing')
 
@@ -258,13 +329,8 @@ class PartitionScreen(InstallerScreen):
                                                   msg,
                                                  ['Use Default', "Don't Use Default"])
             if str(result) == 'use default':
-                logger.debug('Default chosen')
-                self.disk_profile = partitiontool.DiskProfile(fresh=True)
-                self.prepareIgnoreList(do_not_use_disks)
-                schema = vanillaSchemaLVM()
-                logger.debug('%s' % schema)
-                setupDiskProfile(self.disk_profile, schema, wipe_existing_profile=False)
- 
+                self.useDefaultSchema(do_not_use_disks)
+
     def rollback(self):
         self.prompt_for_default_schema = True
 
@@ -283,6 +349,7 @@ class PartitionScreen(InstallerScreen):
             for part in disk.partition_dict.itervalues():
                 if part.fs_type == 'linux-swap':
                     has_swap = True
+                    part.setLabel()
                     break
         if not has_swap:
             errList.append("A 'linux-swap' partition is required.")
@@ -333,6 +400,7 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
+        profile['disk_order'] = self.disk_order
 
         missing_fs_types = self.checkMissingFSTypes()
         if missing_fs_types:
@@ -420,6 +488,7 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
+        profile['disk_order'] = self.disk_order
 
         missing_fs_types = self.checkMissingFSTypes()
         if missing_fs_types:

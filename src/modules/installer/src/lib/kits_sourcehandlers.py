@@ -194,34 +194,35 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
                                      baseScreen.kiprofile['OS'])
         return
 
-    disks_cksum = []
+    #disks_cksum = []
     # Achieve the checksum of the very first Kit CD
-    p = subprocess.Popen('cksum %s' % cdrom,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-    cur_disk_cksum, error = p.communicate()
-    while error:
-        title = _('Failed reading this CD/DVD')
-        msg = _('Failed reading this CD/DVD, please press OK to proceed the installation for this OS kit')
-        buttons = [_('OK')]
-        result = baseScreen.selector.popupDialogBox(title, msg, buttons)
-        if result == buttons[0].lower():
-            # unmount and eject.
-            out, err = eject(cdrom)
-            if err:
-                baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
-            baseScreen.selector.popupMsg('Insert the current disk again', 'Please insert the current disk again.')
-            closeTray(cdrom)
-            # Achieve the checksum of the very first Kit CD again
-            p = subprocess.Popen('cksum %s' % cdrom,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
-            cur_disk_cksum, error = p.communicate()
+    #p = subprocess.Popen('cksum %s' % cdrom,
+    #        shell=True,
+    #        stdout=subprocess.PIPE,
+    #        stderr=subprocess.PIPE)
+    #cur_disk_cksum, error = p.communicate()
+
+    #while error:
+    #    title = _('Failed reading this CD/DVD')
+    #    msg = _('Failed reading this CD/DVD, please press OK to proceed the installation for this OS kit')
+    #    buttons = [_('OK')]
+    #    result = baseScreen.selector.popupDialogBox(title, msg, buttons)
+    #    if result == buttons[0].lower():
+    #        # unmount and eject.
+    #        out, err = eject(cdrom)
+    #        if err:
+    #            baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
+    #       baseScreen.selector.popupMsg('Insert the current disk again', 'Please insert the current disk again.')
+    #       closeTray(cdrom)
+    #        # Achieve the checksum of the very first Kit CD again
+    #        p = subprocess.Popen('cksum %s' % cdrom,
+    #                shell=True,
+    #                stdout=subprocess.PIPE,
+    #                stderr=subprocess.PIPE)
+    #        cur_disk_cksum, error = p.communicate()
     # if there is no error from getting checksum of the current kit CD,
     # then append the current checksum to disks_cksum
-    disks_cksum.append(cur_disk_cksum)
+    #disks_cksum.append(cur_disk_cksum)
     
     baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
     baseScreen.kiprofile[baseScreen.profile]['kernel'] = kit['kernel']

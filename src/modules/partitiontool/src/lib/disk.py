@@ -27,6 +27,7 @@ class Disk(object):
           a. profile - reference to the DiskProfile object that owns this disk.
           b. pedDisk - encapsulated instance of parted.PedDisk.
           c. partition_dict - dictionary of partitions on this disk.
+          d. mbr_signature - the MBR signature of this disk.
        A PedDisk instance encapsulates an instance of parted.PedDevice, and thus
        Disk has the following additional(hidden) attributes, which can be 
        read(-only) :
@@ -39,6 +40,8 @@ class Disk(object):
           g. sectors
           h. cylinders
     """
+    MBRSIG_OFFSET = 440
+    MBRSIG_LEN = 4
     __getattr_dict = { 'length' : 'self.pedDevice.length',
                        'model' : 'self.pedDevice.model',
                        'path' : 'self.pedDevice.path',
@@ -48,7 +51,8 @@ class Disk(object):
                        'heads' : 'self.pedDevice.heads',
                        'sectors' : 'self.pedDevice.sectors',
                        'cylinders' : 'self.pedDevice.cylinders',
-                       'pedDevice' : 'self.pedDisk.dev'
+                       'pedDevice' : 'self.pedDisk.dev',
+                       'mbr_signature' : 'self.getMBRSignature()'
                      }
 
     def __str__(self):
@@ -106,13 +110,24 @@ class Disk(object):
         new_partition = Partition(self, pedPartition, mountpoint)
         self.partition_dict[pedPartition.num] = new_partition
         return new_partition
-        
+
+    def getMBRSignature(self):
+        try:
+            fh = open(self.path)
+            fh.seek(Disk.MBRSIG_OFFSET)
+            mbrsig = fh.read(Disk.MBRSIG_LEN)
+        finally:
+            fh.close()
+        return mbrsig
+
     def createPartition(self, size, fs_type=None, mountpoint=None, fill=False):
         """Add a partition to this disk.
            Parameters:
               1. size in bytes.
               2. type of partition(see partitionTypes).
               3. optional fs type(defaults to None).
+              4. intended mountpoint(defaults to None).
+              5. fill remaining space on disk(defaults to False).
            Returns an instance of Partition that represents the partition just
            created.
         """
@@ -120,7 +135,6 @@ class Disk(object):
         new_pedPartition = None
 
         try:
-            
             constraint = self.pedDevice.constraint_any()
             if next_partition_type == 'PRIMARY':
                 logger.debug('Creating new primary partition size=%d, fs=%s, mntpt=%s' %
@@ -562,8 +576,9 @@ class Disk(object):
 
         logger.debug('new start: %d end: %d' % (start_sector, end_sector))
         if end_sector > self.length:
-            msg = "Requested partition size is too large to fit into " + \
-                  "the remaining space available on the disk."
+            avail_space = (self.length - start_sector) * self.sector_size
+            msg = "Requested partition size(%d MB) is too large to fit into " % (size/(1024*1024))
+            msg += "the remaining space available on the disk(%d MB)." % (avail_space/(1024*1024))
             raise PartitionSizeTooLargeError, msg
  
         if len(primary) < (self.pedDisk.max_primary_partition_count-1):
@@ -652,9 +667,17 @@ class Disk(object):
     def formatAll(self):
         if not self.leave_unchanged:
             for partition in self.partition_dict.itervalues():
-                partition.format()
-                if partition.fs_type in ['ext2', 'ext3']:
+                #we want to label swap, but mkswap requires the label to be
+                #supplied with the -L arg, so we set the label first
+                if partition.fs_type == 'linux-swap':
                     partition.setLabel()
+                    partition.format()
+                else:    
+                    partition.format()
+                #for other partitions like ext2 we format and call e2label
+                #after we format partition    
+                    if partition.fs_type in ['ext2', 'ext3']:
+                        partition.setLabel()
 
 
 class Partition(object):
@@ -864,10 +887,18 @@ class Partition(object):
 
     def setLabel(self, name=''):
         """Set the label for this partition. Supports ext2 only - raises exception otherwise."""
-        if self.fs_type not in ['ext2', 'ext3']:
+        if self.fs_type not in ['ext2', 'ext3', 'linux-swap']:
             errMsg = 'Cannot set label for partition %s because only ' % self.path
-            errMsg += 'ext2/3 filesystems are supported for this operation.'
+            errMsg += 'ext2/3 and swap filesystems are supported for this operation.'
             raise CannotLabelPartitionError, errMsg
+        if self.fs_type == 'linux-swap':
+            if name:
+                self._label = name
+            else:
+                self._label = 'SWAP-' + basename(self.getpath())
+                logger.debug('set swap label to default value %s' % (self.label))
+            return
+
         if not name:
             name = self.mountpoint
         cmd = '/usr/sbin/e2label %s %s' % (self.path, name)
@@ -920,7 +951,7 @@ class Partition(object):
         elif self.fs_type == 'linux-swap':
             logger.info('FORMAT %s: Making swap fs on %s' % \
                         (self.path, self.path))
-            mkfs = subprocess.Popen('mkswap %s' % self.path,
+            mkfs = subprocess.Popen('mkswap -L %s %s' % (self.label, self.path),
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)

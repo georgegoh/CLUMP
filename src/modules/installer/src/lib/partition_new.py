@@ -201,19 +201,7 @@ class NewPartition:
             mountpoint = None
         disk = self.drives.current()
 
-        try:
-            size_MB, fixed_size = self.calculatePartitionSize()
-            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
-            if available_space < 1:
-                errMsg = 'Selected disk %s does not have any ' % disk
-                errMsg += 'free space left. Please select another disk '
-                errMsg += 'with sufficient free space.'
-                raise KusuError, errMsg
-            if not self.fill.selected() and size_MB == 0:
-                raise KusuError, 'Size must be between 1 and %d MB.' % available_space
-        except ValueError:
-            available_space = self.diskProfile.disk_dict[disk].getLargestSpaceAvailable() / 1024 / 1024
-            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+        size_MB, fixed_size = self.calculatePartitionSize()
         logger.debug('Fixed: %s Size: %d' % (fixed_size, size_MB))
         fill = self.min_size.selected() or self.fill.selected()
         logger.debug('Fill value: %s' % fill)

@@ -25,7 +25,6 @@
       b) name collisions with an existing LV; and
       c) mountpoint collisions with an existing volume.
 """
-import re
 import subprocess
 from time import *
 from kusu.util.errors import *
@@ -168,15 +167,6 @@ class LogicalVolumeGroup(object):
         queueCommand(lvm.removeVolumeGroup, (name))
     remove = staticmethod(remove)
 
-    def isValidName(name):
-        """Check if given name is valid for LVM Volume Group."""
-        m = re.search('[\W]', name)
-        if m:
-            err_msg = 'Volume Group name can only contain alphanumeric characters.'
-            return (False,err_msg)
-        return (True,None)
-    isValidName = staticmethod(isValidName)
-
     def __str__(self):
         s = self.name + ' Extent Size: ' + self.extent_size_humanreadable + \
             ' Total Extents: ' + str(self.extentsTotal()) + \
@@ -190,10 +180,6 @@ class LogicalVolumeGroup(object):
         if not pv_list:
             raise VolumeGroupMustHaveAtLeastOnePhysicalVolumeError, \
                 'Volume group must have at least one physical volume'
-        name_check = LogicalVolumeGroup.isValidName(name)
-        if not name_check[0]:
-            raise InvalidVolumeGroupNameError, name_check[1]
-
         self.name = name
         self.pv_dict = {}
         self.lv_dict = {}
@@ -274,12 +260,9 @@ class LogicalVolumeGroup(object):
 
     def createLogicalVolume(self, name, size_MB, fs_type, mountpoint, fill=False):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
-        logger.info('Creating logical volume %s from volume group %s size %d M' % (name, self.name, size_MB))
+        logger.info('Creating logical volume %s from volume group %s size %d' % (name, self.name, size_MB))
         if name in self.lv_dict.keys():
             raise LogicalVolumeAlreadyInLogicalGroupError, 'Logical volume already exists in Volume Group'
-        name_check = LogicalVolume.isValidName(name)
-        if not name_check[0]:
-            raise InvalidLogicalVolumeNameError, name_check[1]
 
         free_extents = self.extentsFree()
         extents_to_use = 1024.0 * 1024.0 * size_MB / self.extent_size
@@ -362,20 +345,7 @@ class LogicalVolume(object):
             ' MntPnt: ' + str(self.mountpoint) + ' Leave Unchanged: ' + str(self.leave_unchanged)
         return s
 
-    def isValidName(name):
-        """Check if given name is valid for LVM Logical Volume."""
-        m = re.search('[\W]', name)
-        if m:
-            err_msg = 'Logical Volume name can only contain alphanumeric characters.'
-            return (False,err_msg)
-        return (True,None)
-    isValidName = staticmethod(isValidName)
-
     def __init__(self, name, volumeGroup, extents, fs_type=None, mountpoint=None):
-        name_check = LogicalVolume.isValidName(name)
-        if not name_check[0]:
-            raise InvalidLogicalVolumeNameError, name_check[1]
-
         vg_extentsFree = volumeGroup.extentsTotal() - volumeGroup.extentsUsed()
         if extents > vg_extentsFree:
             errMsg = 'Insufficient free space in Volume Group %s.' % volumeGroup.name
