@@ -4,7 +4,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-SET(KUSU_VERSION 0.8)
+SET(KUSU_VERSION 0.9)
 
 # ## Add 3rd party modules to the build lists
 SET(KUSU_3RDPARTY
@@ -18,7 +18,7 @@ SET(KUSU_3RDPARTY
   sqlalchemy
   createrepo
   ipy
-  #libxml2-python
+  libxml2-python
 )
 
 # ## Add kusu modules to the build lists

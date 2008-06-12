@@ -36,6 +36,9 @@ EXEC_PROGRAM(${SVN} ${CMAKE_SOURCE_DIR}
 CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/installer
                ${SETUPPY_PATH}/src/bin/installer)
 
+CONFIGURE_FILE(${SETUPPY_PATH}/src/lib/welcome.py
+               ${SETUPPY_PATH}/src/lib/welcome.py)
+
 CONFIGURE_FILE(${SETUPPY_PATH}/src/bin/test
                ${SETUPPY_PATH}/src/bin/test)
 

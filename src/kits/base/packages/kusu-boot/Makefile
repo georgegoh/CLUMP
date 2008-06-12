@@ -19,7 +19,7 @@
 
 # Be sure to change the MODULE and VERSION to fit your needs
 MODULE = boot
-VERSION = 0.8
+VERSION = 0.9
 
 
 # The following settings can be changed accordingly to your needs

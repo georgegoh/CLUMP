@@ -7,7 +7,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-#   
+# 	
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -431,7 +431,7 @@ class boothost:
             self.errorMessage("boothost_unable_to_get_nodegroup %s\n", nodegroup)
             sys.exit(-1)
 
-        self.updatednodes = hostlist
+        self.updatednodes = [ host[0] for host in hostlist ]
 
         # If a kernel, initrd, or kparams is specified all nodes are expired
         # and need to install.  If they are not specified, only those nodes
@@ -624,11 +624,7 @@ class BootHostApp(KusuApp):
 
             print self._('boothost_reboot'),
 
-            nodes = []
-            for items in bhinst.updatednodes:
-                nodes.append(items[0])
-
-            print ", ".join(nodes)
+            print ", ".join([ nodename for nodename in bhinst.updatednodes ])
                 
             #sys.exit(0)
             pdshcls = syncfun()
@@ -637,5 +633,4 @@ class BootHostApp(KusuApp):
 
 app = BootHostApp()
 app.run()
-
 
