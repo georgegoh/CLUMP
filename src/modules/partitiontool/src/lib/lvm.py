@@ -205,7 +205,7 @@ class LogicalVolumeGroup(object):
 
     def extentsUsed(self):
         if self.deleted: raise VolumeGroupHasBeenDeletedError, 'Volume Group has already been deleted'
-        extents = 1
+        extents = 0
         for lv in self.lv_dict.itervalues():
             extents = extents + lv.extents
         return extents
