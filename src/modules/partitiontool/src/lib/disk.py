@@ -77,9 +77,8 @@ class Disk(object):
                 self.__populateInitialPartitions()
                 logger.debug('Partitions dict: %s' % self.partition_dict)
             except parted.error, e:
-                if str(e).endswith('unrecognised disk label.'):
-                    pedDiskType = parted.disk_type_get('msdos')
-                    self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
+                pedDiskType = parted.disk_type_get('msdos')
+                self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
 
     def __populateInitialPartitions(self):
         for i in xrange(self.pedDisk.get_last_partition_num()):
