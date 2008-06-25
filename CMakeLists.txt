@@ -19,6 +19,10 @@ SET(KUSU_3RDPARTY
   createrepo
   ipy
   libxml2-python
+  popen5
+  compat-rhpl
+  compat-anaconda-runtime
+  compat-genhdlist
 )
 
 # ## Add kusu modules to the build lists

@@ -30,6 +30,7 @@ import sys
 import atexit
 from optparse import OptionParser
 from path import path
+from kusu.util import compat
 
 class KusuApp:
     """ This is the class for all OCS applications to inherit from """

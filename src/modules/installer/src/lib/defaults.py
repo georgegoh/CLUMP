@@ -9,6 +9,7 @@
 import kusu.util.log as kusulog
 from kusu.util.errors import *
 from kusu.util.structure import Struct
+from kusu.util import compat
 from path import path
 from sets import Set
 from os.path import basename

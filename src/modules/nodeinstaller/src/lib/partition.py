@@ -10,6 +10,7 @@ from kusu.partitiontool import DiskProfile
 from kusu.partitiontool.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import *
+from kusu.util import compat
 from kusu.nodeinstaller.partitionfilterchain import *
 from kusu.installer.defaults import getPartitionTuple
 from os.path import basename

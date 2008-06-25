@@ -8,6 +8,7 @@
 # 
 
 from kusu.util.errors import *
+from kusu.util import compat
 from path import path
 from Cheetah.Template import Template
 

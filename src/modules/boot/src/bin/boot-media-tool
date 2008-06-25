@@ -14,6 +14,7 @@ from kusu.boot.distro import SUPPORTED_ARCH, SUPPORTED_DISTROS
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.image import checkAllToolsDeps
 from kusu.util.errors import *
+from kusu.util import compat
         
         
 class BootMediaApp(KusuApp):

@@ -17,7 +17,7 @@
 #
 
 NAME = base
-VERSION = 0.1
+VERSION = 0.9
 RELEASE = 0
 TOPDIR = $(PWD)
 ARCH = $(shell arch)

@@ -19,6 +19,7 @@ from kusu.kitops.kitops import KitOps
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util import profile
+from kusu.util import compat
 from kusu.installer.finalactions import *
 from path import path
 

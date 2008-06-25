@@ -51,7 +51,9 @@ def checkAndMakeNode(devpath):
                 (devpath, major, minor, devpath))
     raw_dev_num = makedev(major, minor)
     import stat
-    mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
+
+    if not path(devpath).exists():
+        mknod(devpath, (stat.S_IFBLK | 0644), raw_dev_num)
     return
 
 

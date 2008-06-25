@@ -9,12 +9,16 @@
 # 
 
 import tempfile
-import subprocess
 import os
 from path import path
 from os import stat
 from os.path import basename
 import kusu.util.log as kusulog
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 logger = kusulog.getKusuLog('util.testing')
 

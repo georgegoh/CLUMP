@@ -9,13 +9,19 @@
 
 from path import path
 from kusu.boot.distro import DistroFactory
+from kusu.util import compat
 from kusu.util.tools import cpio_copytree
 from kusu.util.errors import FilePathError, InvalidInstallSource, ToolNotFound, \
                             UnsupportedPackingType, NotPriviledgedUser
 import os
 import re
 import tempfile
-import subprocess
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 
 ROOTIMG_PACKING_TYPE = ['cpio','ext2', 'gzip']
 

@@ -7,13 +7,19 @@
 """ This module contains several classes and functions for dealing with boot media and boot environments. """
 
 from path import path
-import subprocess
 import os
 from kusu.boot.distro import DistroFactory, SUPPORTED_DISTROS, USES_ANACONDA
 from kusu.boot.image import *
 from kusu.util.errors import *
 from kusu.util.tools import cpio_copytree
+from kusu.util import compat
 import tempfile
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 
 SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX', 
                         'KUSU_BUILD_DISTVER', 'KUSU_BUILD_ARCH',

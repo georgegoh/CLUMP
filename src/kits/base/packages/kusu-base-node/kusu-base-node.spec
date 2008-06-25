@@ -21,7 +21,7 @@
 
 Summary: Base Kit for Nodes
 Name: kusu-base-node
-Version: 1.0
+Version: 0.9
 Release: 0
 License: Copyright 2007 Platform Computing Inc
 Group: System Environment/Base

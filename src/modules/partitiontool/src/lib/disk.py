@@ -10,16 +10,21 @@
 import sys
 import math
 import parted
-import subprocess
 from common import *
 from time import *
 import kusu.hardware.probe
 import kusu.util.log as kusulog
 from os.path import basename, exists
+from kusu.util import compat
 from kusu.util.errors import *
 from nodes import checkAndMakeNode
 
 logger = kusulog.getKusuLog('partitiontool.disk')
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 class Disk(object):
     """Disk class represents a physical disk in the system.

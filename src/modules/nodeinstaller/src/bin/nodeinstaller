@@ -8,6 +8,7 @@
 import sys
 import os
 import re
+import StringIO
 import kusu.util.log as kusulog
 # Sets up kusu logging
 kl = kusulog.getKusuLog()
@@ -15,6 +16,7 @@ kl.addFileHandler()
 
 from kusu.core.app import KusuApp
 from kusu.util.errors import *
+from kusu.util import compat
 from kusu.nodeinstaller import NodeInstaller, retrieveNII
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
@@ -195,7 +197,14 @@ actions:
 def exceptionHandler(error):
     kl.debug('General Exception caught')
     import traceback
-    tb = traceback.format_exc()
+
+    if hasattr(traceback, "format_exc"): # new in python 2.4
+        tb = traceback.format_exc()
+    else:
+        fp = StringIO.StringIO()
+        traceback.print_exc(file=fp)
+        tb = fp.getvalue()
+
     kl.debug(tb)
     sys.exit(1)
 

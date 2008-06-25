@@ -8,6 +8,7 @@
 #
 
 from kusu.hardware import drive, net
+from kusu.util import compat
 
 def getDisks():
     """Probes for a disk type device. CDROMs and portable

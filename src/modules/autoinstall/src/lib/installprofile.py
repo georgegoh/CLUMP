@@ -8,6 +8,7 @@
 # 
 
 from kusu.util.errors import *
+from kusu.util import compat
 import time
 import os
 from path import path

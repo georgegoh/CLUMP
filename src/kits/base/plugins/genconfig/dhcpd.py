@@ -129,7 +129,12 @@ class thisReport(Report):
                                 print '\thost %s%s {' % (row[0], row[3])
                             else:
                                 print '\thost %s-%s {' % (row[0], row[4])
-                            print '\t\thardware ethernet %s;' % row[2]
+
+                            # Handle interfaces that may not have a MAC
+                            # address (such as Infiniband)
+                            if row[2]:
+                                print '\t\thardware ethernet %s;' % row[2]
+                            
                             print '\t\toption host-name "%s";' % row[0]
                             print '\t\tfixed-address %s;' % row[1]
                             print '\t}'

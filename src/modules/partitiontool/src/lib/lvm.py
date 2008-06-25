@@ -25,12 +25,17 @@
       b) name collisions with an existing LV; and
       c) mountpoint collisions with an existing volume.
 """
-import subprocess
 from time import *
 from kusu.util.errors import *
 import lvm202 as lvm
 from kusu.util.log import getKusuLog
 from os.path import basename, exists
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 
 logger = getKusuLog('partitiontool.lvm')
 

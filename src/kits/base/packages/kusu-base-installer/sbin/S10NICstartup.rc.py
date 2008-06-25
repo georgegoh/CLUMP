@@ -69,7 +69,7 @@ class KusuRC(rcplugin.Plugin):
                     continue
 
                 fp = open(ifcfg, 'w')
-                fp.write('# Added by OCS/Kusu\n')
+                fp.write('# Added by Kusu\n')
                 fp.write('DEVICE=%s\n' % dev)
                 fp.write('ONBOOT=yes\n')
                 if dhcp == '0':

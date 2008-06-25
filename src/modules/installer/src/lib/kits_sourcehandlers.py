@@ -9,6 +9,7 @@
 #
 from gettext import gettext as _
 from kusu.util.errors import *
+from kusu.util import compat
 from kusu.ui.text.navigator import NAV_BACK
 import kusu.util.log as kusulog
 import os

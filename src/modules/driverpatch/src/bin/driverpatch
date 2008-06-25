@@ -12,6 +12,7 @@ from kusu.core.app import KusuApp
 from kusu.core import database as db
 from kusu.util import tools as utiltools
 from kusu.util import rpmtool
+from kusu.util import compat
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \

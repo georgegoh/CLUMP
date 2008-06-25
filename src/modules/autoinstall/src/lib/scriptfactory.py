@@ -10,6 +10,7 @@
 import os
 from path import path
 from kusu.util.errors import *
+from kusu.util import compat
 
 class BaseFactory:
     namespace = {}

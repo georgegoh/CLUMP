@@ -26,6 +26,7 @@ from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
 from kusu.boot.distro import DistroInstallSrcBase
 from kusu.util.errors import *
+from kusu.util import compat
 
 EMOUNT_FAIL     = -1
 EKITLOC_FAIL    = -2

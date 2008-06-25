@@ -21,6 +21,7 @@ import string
 import urllib2
 import os
 import kusu.util.log as kusulog
+from kusu.util import compat
 from xml.sax import make_parser, SAXParseException
 from path import path
 from kusu.nodeinstaller.partition import *

@@ -18,6 +18,7 @@ import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
 from kusu.util import profile
+from kusu.util import compat
 from kusu.util.net import nextIP
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING

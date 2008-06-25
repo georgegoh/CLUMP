@@ -8,6 +8,7 @@
 #
 
 from kusu.repoman import repo, tools
+from kusu.util import compat
 from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
@@ -20,7 +21,8 @@ class RepoFactory(object):
                                '8': repo.Fedora8Repo,
                                '9': repo.Fedora9Repo},
                    'centos' : {'5': repo.Centos5Repo},
-                   'rhel'   : {'5': repo.Redhat5Repo} }
+                   'rhel'   : {'5': repo.Redhat5Repo, 
+                               '4': repo.Redhat4Repo} }
 
     def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.

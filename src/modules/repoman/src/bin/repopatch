@@ -8,6 +8,7 @@
 #
 
 from kusu.util.errors import *
+from kusu.util import compat
 from kusu.core import database as db
 from kusu.core.app import KusuApp
 from kusu.repoman import repofactory

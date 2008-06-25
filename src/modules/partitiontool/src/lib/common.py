@@ -28,6 +28,9 @@ partitionTypes = {
     'METADATA' : parted.PARTITION_METADATA
 }
 
+#os.environ.get('KUSU_DIST')
+#os.environ.get('KUSU_DISTVER')
+
 partitionFlags = {
     'BOOT' : parted.PARTITION_BOOT,
     'ROOT' : parted.PARTITION_ROOT,
@@ -35,13 +38,20 @@ partitionFlags = {
     'HIDDEN' : parted.PARTITION_HIDDEN,
     'RAID' : parted.PARTITION_RAID,
     'LVM' : parted.PARTITION_LVM,
-    'LBA' : parted.PARTITION_LBA,
-    'HPSERVICE' : parted.PARTITION_HPSERVICE,
-    'PALO' : parted.PARTITION_PALO,
-    'PREP' : parted.PARTITION_PREP,
-    'MSFT_RESERVED' : parted.PARTITION_MSFT_RESERVED
+    'LBA' : parted.PARTITION_LBA
 }
 
+if hasattr(parted, "PARTITION_HPSERVICE"):
+    partitionFlags['HPSERVICE'] = parted.PARTITION_HPSERVICE
+
+if hasattr(parted, "PARTITION_PALO"):
+   partitionFlags['PALO'] = parted.PARTITION_PALO
+
+if hasattr(parted, "PARTITION_PREP"):
+   partitionFlags['PREP'] = parted.PARTITION_PREP
+
+if hasattr(parted, "PARTITION_MSFT_RESERVED"):
+   partitionFlags['MSFT_RESERVED'] = parted.PARTITION_MSFT_RESERVED
 
 def getPartitions(disk_path):
     import commands

@@ -110,6 +110,27 @@ if [ $# != 0 ]; then
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/fedora/9/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/fedora/9/x86_64
 
+    echo "Building Centos 4 patchfiles.."
+	mkdir -p $NIPATCHFILESDIR/centos/4/i386
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=centos \
+	version=4 arch=i386 \
+	patch=$NIPATCHFILESDIR/centos/4/i386/updates.img
+	ec=`expr $ec + $?`
+
+	mkdir -p $NIPATCHFILESDIR/centos/4/x86_64
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=centos \
+	version=4 arch=x86_64 \
+	patch=$NIPATCHFILESDIR/centos/4/x86_64/updates.img
+	ec=`expr $ec + $?`
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/centos/4/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/centos/4/i386
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/centos/4/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/centos/4/x86_64
+
 	echo "Building Centos 5 patchfiles.."
 	mkdir -p $NIPATCHFILESDIR/centos/5/i386
 	$KUSU_BUILD_ARTEFACTS make-ni-patch \
@@ -130,6 +151,27 @@ if [ $# != 0 ]; then
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/centos/5/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/centos/5/x86_64
+	
+    echo "Building RHEL 4 patchfiles.."
+	mkdir -p $NIPATCHFILESDIR/rhel/4/i386
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=rhel \
+	version=4 arch=i386 \
+	patch=$NIPATCHFILESDIR/rhel/4/i386/updates.img
+	ec=`expr $ec + $?`
+
+	mkdir -p $NIPATCHFILESDIR/rhel/4/x86_64
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=rhel \
+	version=4 arch=x86_64 \
+	patch=$NIPATCHFILESDIR/rhel/4/x86_64/updates.img
+	ec=`expr $ec + $?`
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/rhel/4/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/rhel/4/i386
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/rhel/4/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/rhel/4/x86_64
 	
     echo "Building RHEL 5 patchfiles.."
 	mkdir -p $NIPATCHFILESDIR/rhel/5/i386

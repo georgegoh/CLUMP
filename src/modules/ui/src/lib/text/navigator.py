@@ -19,6 +19,7 @@ import os
 import sys
 import time
 import snack
+import StringIO
 from kusuwidgets import *
 from kusu.core.app import KusuApp
 import kusu.util.log as kusulog
@@ -286,7 +287,14 @@ class Navigator(object, KusuApp):
             raise e
         except Exception, e:
             import traceback
-            tb = traceback.format_exc()
+
+            if hasattr(traceback, "format_exc"): # new in python 2.4
+                tb = traceback.format_exc()
+            else:
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                tb = fp.getvalue()
+
             kusu_tmp = os.environ.get('KUSU_TMP', None)
            
             if not kusu_tmp: 

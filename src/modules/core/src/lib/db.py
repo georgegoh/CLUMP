@@ -27,6 +27,7 @@ except ImportError:
 #from Crypto.Cipher import Blowfish
 import sys
 from kusu.util.testing import isFileExists
+from kusu.util import compat
 from pysqlite2 import dbapi2 as sqlite
 
         

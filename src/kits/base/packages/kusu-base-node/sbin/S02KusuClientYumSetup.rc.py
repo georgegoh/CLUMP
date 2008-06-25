@@ -21,6 +21,9 @@ class KusuRC(rcplugin.Plugin):
         """ Disable all other repos. """
         etcyumeposd = path('/etc/yum.repos.d')
 
+        if not etcyumeposd.exists():
+            return False
+
         """ Set up kusu.repo """
         kusurepo = path(etcyumeposd / 'kusu-%s.repo' % self.ngtypes[0])
 

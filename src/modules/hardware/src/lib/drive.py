@@ -9,6 +9,7 @@
 
 import os
 from kusu.util.errors import *
+from kusu.util import compat
 from path import path
 from kusu.hardware.pci import PCI
 from kusu.util.structure import Struct

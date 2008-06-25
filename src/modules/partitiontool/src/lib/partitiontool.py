@@ -56,7 +56,7 @@
 import re
 import math
 import parted
-import subprocess
+import StringIO
 from lvm import *
 from filesystems import *
 from common import *
@@ -64,6 +64,7 @@ from path import path
 from struct import pack,unpack
 import kusu.hardware.probe as probe
 from os.path import basename, exists
+from kusu.util import compat
 from kusu.util.errors import *
 from kusu.util.tools import mkdtemp
 from kusu.util.testing import runCommand
@@ -73,6 +74,13 @@ import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('partitiontool')
 
 from disk import *
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
+
 class DiskProfile(object):
     """DiskProfile contains all information about the disks in a machine.
 
@@ -196,7 +204,13 @@ class DiskProfile(object):
                              "scanning the disks/LVM. Clearing the disk " + \
                              "profile and starting without probing fstab.")
                 import traceback
-                tb = traceback.format_exc()
+                if hasattr(traceback, "format_exc"): # new in python 2.4
+                    tb = traceback.format_exc()
+                else:
+                    fp = StringIO.StringIO()
+                    traceback.print_exc(file=fp)
+                    tb = fp.getvalue()
+
                 logger.debug("Traceback: %s" % tb)
                 self.populateDiskProfile(fresh, probe_fstab=False)
         logger.debug('State after scan:\n%s' % self.__str__())

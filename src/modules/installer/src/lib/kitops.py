@@ -11,6 +11,7 @@ import snack
 from gettext import gettext as _
 from kusu.ui.text import kusuwidgets
 from kusu.util.errors import *
+from kusu.util import compat
 import kits_sourcehandlers
 from kusu.ui.text.navigator import NAV_NOTHING, NAV_BACK
 

@@ -8,6 +8,7 @@
 """
 
 from kusu.util.errors import KitscriptValidateError
+from kusu.util import compat
 
 SUPPORTED_SRCTYPES = ['base', 'autotools', 'srpm', 'binary', 'distro', 'rpm', 'component', 'kit']
 

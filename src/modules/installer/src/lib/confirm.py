@@ -18,6 +18,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.installer.language import getLangMap
 from kusu.installer.keyboard import modelDict as keyboardDict
 import kusu.util.log as kusulog
+from kusu.util import compat
 logger = kusulog.getKusuLog('installer.confirm')
 
 class ConfirmScreen(InstallerScreen):

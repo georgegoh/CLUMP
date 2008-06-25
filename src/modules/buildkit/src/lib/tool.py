@@ -7,15 +7,19 @@
 
 import os
 import pwd
-import subprocess
 from kusu.buildkit.kitsource import KitSrcFactory, KusuKit, KusuComponent
 from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKitTemplate, getScriptTemplate
 from kusu.buildkit.methods import *
 from path import path
 from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty, PackageBuildError
 from kusu.util.tools import mkdtemp, cpio_copytree, getArch
+from kusu.util import compat
 from Cheetah.Template import Template
 
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
 
 class BuildKit:
     """This is a convenience class for the buildkit app as well as other external apps or libs to use.

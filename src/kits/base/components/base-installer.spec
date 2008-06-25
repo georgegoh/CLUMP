@@ -19,7 +19,7 @@
 
 Summary: Component for Kusu Installer Base
 Name: component-base-installer
-Version: 0.1
+Version: 0.9
 Release: 0
 License: GPLv2
 Group: System Environment/Base
@@ -42,6 +42,10 @@ Requires: kusu-sqlalchemy
 Requires: kusu-ui 
 Requires: kusu-util 
 Requires: kusu-nodeinstaller-patchfiles 
+Requires: kusu-compat-rhpl
+Requires: kusu-compat-anaconda-runtime
+Requires: kusu-compat-genhdlist
+Requires: kusu-popen5
 Requires: mysql
 Requires: mysql-server
 Requires: dhcp

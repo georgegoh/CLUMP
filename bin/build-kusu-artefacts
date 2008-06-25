@@ -39,7 +39,8 @@ KUSU_MODULES = ['autoinstall','boot','core','util','ui',
     'hardware','kitops','repoman', 'buildkit', 'driverpatch']
 
 KUSU_3RDPARTY = ['pysqlite','path','md5crypt','cheetah','urlgrabber',
-    'wget','thttpd','sqlalchemy','createrepo','ipy']
+    'wget','thttpd','sqlalchemy','createrepo','ipy', 'compat-rhpl', 'compat-anaconda-runtime', 'compat-genhdlist',
+    'popen5']
     
 SUPPORTED_KUSU_ENVARS = ['KUSU_BUILD_DIST', 'KUSU_INSTALL_PREFIX', 
                         'KUSU_BUILD_DISTVER', 'KUSU_BUILD_ARCH',

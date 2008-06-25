@@ -8,11 +8,13 @@
 #
 
 import kusu.util.log as kusulog
+from kusu.util import compat
 from path import path
 import os
 import socket
 import sys
 import traceback
+import StringIO
 
 try:
     import subprocess
@@ -145,7 +147,16 @@ class PluginRunner:
                         self.failure()
                         results.append( (plugin.name, fname, 0, e) )
                         kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
-                        kl.error('Plugin traceback:\n%s', traceback.format_exc())
+
+
+                        if hasattr(traceback, "format_exc"): # new in python 2.4
+                            tb = traceback.format_exc()
+                        else:
+                            fp = StringIO.StringIO()
+                            traceback.print_exc(file=fp)
+                            tb = fp.getvalue()
+
+                        kl.error('Plugin traceback:\n%s', tb)
                            
                     if plugin.delete and fname.exists():
                         fname.remove()

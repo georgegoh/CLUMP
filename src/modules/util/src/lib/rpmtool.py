@@ -17,6 +17,7 @@ import tempfile
 from path import path
 
 from kusu.util.errors import *
+from kusu.util import compat
 from kusu.util.structure import Struct
 
 try:

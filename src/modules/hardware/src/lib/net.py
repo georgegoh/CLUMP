@@ -10,6 +10,7 @@
 import re
 from path import path
 from kusu.hardware.pci import PCI
+from kusu.util import compat
 
 def getAllInterfaces():
     sys_net = path('/sys/class/net/')

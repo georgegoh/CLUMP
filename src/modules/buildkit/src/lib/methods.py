@@ -9,8 +9,14 @@ from kusu.buildkit.kitsource import KusuComponent, KusuKit, KitSrcFactory
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, InvalidBuildProfile, KitinfoSyntaxError
+from kusu.util import compat
 from path import path
-import subprocess
+
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
+
 
 def setupprofile(basedir=''):
     """ Convenience method to setup buildprofile. 

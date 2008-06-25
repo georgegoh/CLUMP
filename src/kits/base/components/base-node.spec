@@ -18,7 +18,7 @@
 
 Summary: Component for Kusu Node Base
 Name: component-base-node
-Version: 0.1
+Version: 0.9
 Release: 0
 License: GPLv2
 Group: System Environment/Base
@@ -35,6 +35,7 @@ Requires: modules
 Requires: kusu-core
 Requires: kusu-path
 Requires: kusu-util
+Requires: kusu-popen5
 Requires: xinetd
 Requires: rsh-server
 Requires: rsh

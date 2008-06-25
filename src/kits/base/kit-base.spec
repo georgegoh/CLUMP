@@ -16,7 +16,7 @@
 #
 Summary: Base Kit
 Name: kit-base
-Version: 0.1
+Version: 0.9
 Release: 0
 License: GPLv2
 Group: System Environment/Base

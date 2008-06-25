@@ -10,6 +10,7 @@ from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType, Unsupported
 from kusu.util.structure import Struct
 from kusu.util.tools import cpio_copytree
 from kusu.util.rpmtool import RPM
+from kusu.util import compat
 from kusu.buildkit.builder import RPMBuilder, getTemplateSpec, stripShebang
 import pprint
 

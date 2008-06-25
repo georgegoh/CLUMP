@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+#
+# $Id: kusurc 2437 2007-10-03 12:09:34Z ltsai $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+
+import sys
+import os
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
+kusu_root = os.environ.get('KUSU_ROOT', '/opt/kusu')
+
+PATH = ['%s/lib/python/classic/anaconda' % kusu_root,
+        '%s/lib/python/classic/' % kusu_root]
+
+PYTHONPATH=':'.join(PATH)
+
+cmd = sys.argv[1:]
+env = os.environ
+env['PYTHONPATH'] = PYTHONPATH
+
+if len(cmd):
+    p = subprocess.Popen(' '.join(cmd),
+                         env=env,
+                         shell=True)
+    p.communicate()
+ 

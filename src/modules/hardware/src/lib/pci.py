@@ -21,6 +21,7 @@
 import os
 import re
 from path import path
+from kusu.util import compat
 
 class PCI:
     ids = {}

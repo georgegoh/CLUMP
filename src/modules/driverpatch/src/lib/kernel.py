@@ -11,7 +11,13 @@
 from path import path
 from kusu.util.errors import FileDoesNotExistError, DirDoesNotExistError, ToolNotFound
 from kusu.util import rpmtool, tools
-import subprocess
+from kusu.util import compat
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 
 
 class RPMPackage(object):

@@ -11,10 +11,14 @@ from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArg
                             UnknownKernelModuleAsset, DirDoesNotExistError, UnknownFileTypeError
 from kusu.driverpatch import dkms, kernel
 from kusu.util.tools import mkdtemp, cpio_copytree
+from kusu.util import compat
 from path import path
-import subprocess
 import os
 
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
 
 # constants
 IMAGE_FORMAT_TYPES = ['cpio','gzip']

@@ -20,5 +20,7 @@ setup(name="kusu-core",
     packages=['core'],
     package_dir={'core':'src/lib'},
     data_files=[('etc', ['src/etc/kusu-release'])],
-    scripts=['src/bin/kusuenv.sh', 'src/bin/kusurc']
+    scripts=['src/bin/kusuenv.sh', 'src/bin/kusurc', 
+             'src/bin/classic-anaconda-runner',
+             'src/bin/kusu-debug']
      )

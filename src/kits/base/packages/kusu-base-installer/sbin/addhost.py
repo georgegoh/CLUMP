@@ -490,7 +490,7 @@ class AddHostApp(KusuApp):
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 0.9", showTrail=False)
         ks.run()
 
         if len(myNodeInfo.nodeList):
@@ -680,7 +680,7 @@ class NodeGroupWindow(USXBaseScreen):
            myNodeInfo.optionStaticHostMode = True
            screenList = [ WindowUnmanaged(database=database, kusuApp=kusuApp) ]
            screenFactory = ScreenFactoryImpl(screenList)
-           ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 5.0", showTrail=False)
+           ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 0.9", showTrail=False)
            result = ks.run()
            if not myNodeInfo.optionDHCPMode:
               raise UserExitError

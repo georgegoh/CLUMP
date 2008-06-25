@@ -8,13 +8,17 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 import snack
-import subprocess
 from gettext import gettext as _
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.util.errors import *
 from screen import InstallerScreen
 from util import isDiskOrderAmbiguous, remarkMBRs
 from kusu.partitiontool import DiskProfile
+
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
 
 class WelcomeScreen(InstallerScreen):
     """This is the welcome screen."""

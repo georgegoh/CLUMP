@@ -11,6 +11,7 @@ from path import path
 import os
 import re
 from kusu.util.errors import FileAlreadyExists, CopyError
+from kusu.util import compat
 from ConfigParser import ConfigParser
 
 
@@ -70,6 +71,24 @@ class DistroInstallSrcBase(object):
         
         return True  
 
+    def verifyVersion(self):
+        if self.isRemote:
+            return self.verifyRemoteVersion()
+        else:
+            return self.verifyLocalVersion()
+
+    def verifyOSType(self):
+        if self.isRemote:
+            return self.verifyRemoteOSType()
+        else:
+            return self.verifyLocalOSType()
+
+    def verifyRemoteVersion(self):
+        pass
+
+    def verifyLocalVersion(self):
+        pass
+    
     def verifyRemoteSrcPath(self):
         """Verify the path for attributes that describes a valid remote installation source"""
 
@@ -183,15 +202,16 @@ def DistroFactory(srcPath):
                CentOS5AdditionalInstallSrc(srcPath),
                CentOS4InstallSrc(srcPath),
                CentOS4AdditionalInstallSrc(srcPath),
-               FedoraInstallSrc(srcPath),
-               FedoraAdditionalInstallSrc(srcPath),
-               Fedora7InstallSrc(srcPath),
-               RHELInstallSrc(srcPath),
+               Fedora6InstallSrc(srcPath),
+               Fedora6AdditionalInstallSrc(srcPath),
+               RHEL4InstallSrc(srcPath),
                RHEL5InstallSrc(srcPath),
                RHEL5AdditionalInstallSrc(srcPath),
-               Fedora8InstallSrc(srcPath)]
+               Fedora7InstallSrc(srcPath),
+               Fedora8InstallSrc(srcPath),
+               Fedora9InstallSrc(srcPath)]
     for d in distros:
-        if d.verifySrcPath():
+        if d.verifySrcPath() and d.verifyVersion():
             return d
     return DistroInstallSrcBase()
 
@@ -221,7 +241,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
             'initrd' : 'isolinux/initrd.img',
             'isolinuxbin' : 'isolinux/isolinux.bin',
             'imagesdir' : 'images',
-            'stage2' : 'images/stage2.img',
+            'stage2' : 'CentOS/base/stage2.img',
             'baseosdir' : 'CentOS',
             'packagesdir' : 'CentOS/RPMS',
             'metainfodir' : 'CentOS/base'
@@ -237,7 +257,22 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
     def getVersion(self):
         '''CentOS specific way of getting the distro version'''
         return self.version
-        
+       
+    def getArch(self):
+        '''CentOS specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+  
     def getIsolinuxbinPath(self):
         """Get the isolinux.bin path object"""
 
@@ -330,6 +365,28 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
+    def verifyLocalVersion(self):
+        version = None
+        discinfo = self.srcPath + '/.discinfo'
+
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] #second line is usually the arch
+            version = line.strip().split()[0].split('-')[1].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+      
+            
+        if self.version == version:
+            return True
+        else:
+            return False
+
+
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
@@ -388,14 +445,35 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
+    def verifyLocalVersion(self):
+        version = None
+        discinfo = self.srcPath + '/.discinfo'
+
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] 
+            version = line.strip().split()[0].split('-')[1].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        
+        if self.version == version:
+            return True
+        else:
+            return False
+
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
-class FedoraInstallSrc(DistroInstallSrcBase):
+
+class Fedora6InstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
 
     def __init__(self, srcPath):
-        super(FedoraInstallSrc,self).__init__()
+        super(Fedora6InstallSrc,self).__init__()
         if srcPath.startswith('http://'):
             self.srcPath = srcPath
             self.isRemote = True
@@ -407,7 +485,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
 
         self.ostype = 'fedora'
-        self.version = '0'
+        self.version = '6'
         self.arch = 'noarch'
 
         # These should describe the key directories that identify a Fedora Core installation source layout.
@@ -506,8 +584,12 @@ class FedoraInstallSrc(DistroInstallSrcBase):
                 raise CopyError
 
     def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
         '''Fedora specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
+        version = None
         if os.path.exists(discinfo):
             fp = file(discinfo, 'r')
             linelst = fp.readlines()
@@ -518,12 +600,16 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
-        return self.version
+
+        if self.version == version:
+            return True
+        else:
+            return False
 
     def getArch(self):
         '''Fedora specific way of getting the distro architecture'''
@@ -561,11 +647,11 @@ class FedoraInstallSrc(DistroInstallSrcBase):
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
-class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
+class Fedora6AdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a Fedora installation source should be and the operations that can work on it."""
 
     def __init__(self, srcPath):
-        super(FedoraAdditionalInstallSrc,self).__init__()
+        super(Fedora6AdditionalInstallSrc,self).__init__()
         if srcPath.startswith('http://'):
             self.srcPath = srcPath
             self.isRemote = True
@@ -577,7 +663,7 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
 
         self.ostype = 'fedora'
-        self.version = '0'
+        self.version = '6'
         self.arch = 'noarch'
         self.isAdditionalType = True
 
@@ -600,8 +686,12 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
         raise CopyError
 
     def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
         '''Fedora specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
+        version = None
         if os.path.exists(discinfo):
             fp = file(discinfo, 'r')
             linelst = fp.readlines()
@@ -612,12 +702,16 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
-        return self.version
+
+        if self.version == version: 
+            return True
+        else:
+            return False
 
     def getArch(self):
         '''Fedora specific way of getting the distro architecture'''
@@ -656,181 +750,11 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
-class Fedora7InstallSrc(DistroInstallSrcBase):
-    """This class describes how a Fedora 7 installation source should be and the operations that can work on it."""
-
-    def __init__(self, srcPath):
-        super(Fedora7InstallSrc,self).__init__()
-        if srcPath.startswith('http://'):
-            self.srcPath = srcPath
-            self.isRemote = True
-        elif srcPath.startswith('file://'):
-            self.srcPath = path(srcPath.split('file://')[1])
-            self.isRemote = False
-        else:
-            self.srcPath = path(srcPath)
-            self.isRemote = False
-
-        self.ostype = 'fedora'
-        self.version = '0'
-        self.arch = 'noarch'
-
-        # These should describe the key directories that identify a Fedora Core installation source layout.
-        self.pathLayoutAttributes = {
-            'isolinuxdir' : 'isolinux',
-            'kernel' : 'isolinux/vmlinuz',
-            'initrd' : 'isolinux/initrd.img',
-            'isolinuxbin' : 'isolinux/isolinux.bin',
-            'imagesdir' : 'images',
-            'stage2' : 'images/stage2.img',
-            'baseosdir' : 'Fedora',
-            'packagesdir' : 'Fedora',
-        }
-
-        # The following determines the patchfile layout for Fedora
-        self.patchLayoutAttributes = {
-            'patchdir' : 'images',
-            'patchimage' : 'images/updates.img'
-        }
-
-
-    def getIsolinuxbinPath(self):
-        """Get the isolinux.bin path object"""
-
-        if self.pathLayoutAttributes.has_key('isolinuxbin'):
-            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
-        else:
-            return None 
-
-    def copyIsolinuxbin(self, dest, overwrite=False):
-        """Copy the isolinuxbin file to a destination"""
-
-        if path(dest).isdir():
-            if path(dest).access(os.W_OK):
-                # check if the destpath already contains the same name as the isolinuxbinPath
-                filepath = path(dest) / self.getIsolinuxbinPath().basename()
-                if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
-                    self.getIsolinuxbinPath().copy(filepath)
-                elif not filepath.exists():
-                    self.getIsolinuxbinPath().copy(filepath)
-                else:
-                    raise FileAlreadyExists                
-            else:
-                raise CopyError
-        else:
-            if path(dest).parent.access(os.W_OK):
-                # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
-                    path(dest).chmod(0644)
-                    self.getIsolinuxbinPath().copy(dest)
-                if not path(dest).exists():
-                    self.getIsolinuxbinPath().copy(dest)
-                else:
-                    raise FileAlreadyExists
-            else:
-                raise CopyError
-
-    def getStage2Path(self):
-        """Get the stage2 path object"""
-
-        if self.pathLayoutAttributes.has_key('stage2'):
-            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
-        else:
-            return None
-
-
-    def copyStage2(self, dest, overwrite=False):
-        """Copy the stage2 file to a destination"""
-
-        if path(dest).isdir():
-            if path(dest).access(os.W_OK):
-                # check if the destpath already contains the same name as the stage2Path
-                filepath = path(dest) / self.getStage2Path().basename()
-                if filepath.exists() and overwrite:
-                    filepath.chmod(0644)
-                    self.getStage2Path().copy(filepath)
-                elif not filepath.exists():
-                    self.getStage2Path().copy(filepath)
-                else:
-                    raise FileAlreadyExists
-            else:
-                raise CopyError
-        else:
-            if path(dest).parent.access(os.W_OK):
-                # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite:
-                    path(dest).chmod(0644)
-                    self.getStage2Path().copy(dest)
-                if not path(dest).exists():
-                    self.getStage2Path().copy(dest)
-                else:
-                    raise FileAlreadyExists
-            else:
-                raise CopyError
-
-    def getVersion(self):
-        '''Fedora specific way of getting the distro version'''
-        discinfo = self.srcPath + '/.discinfo'
-        if os.path.exists(discinfo):
-            fp = file(discinfo, 'r')
-            linelst = fp.readlines()
-            fp.close()
-
-            line = linelst[1] #second line is usually the name/version
-            words = line.split()
-            for i in range(0,len(words)):
-                if words[i].isdigit():
-                    break
-            self.version = words[i].strip('"')
-        else:
-            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
-            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
-            pass
-        return self.version
-
-    def getArch(self):
-        '''Fedora specific way of getting the distro architecture'''
-        discinfo = self.srcPath + '/.discinfo'
-        if os.path.exists(discinfo):
-            fp = file(discinfo, 'r')
-            linelst = fp.readlines()
-            fp.close()
-
-            line = linelst[2] #third line is usually the arch
-            self.arch = line.strip().split()[0].lower()
-        else:
-            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
-            pass
-        return self.arch
-        
-    def getKernelPackages(self):
-        # set up pattern to match fedora kernel packages
-        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
-
-        # get the packagesdir as the starting point
-        keys = [k for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
-        kpkgs = []
-
-        try:
-            for k in keys:
-                root = path(self.srcPath) / self.pathLayoutAttributes[k]
-                li = [f for f in root.walkfiles('kernel*rpm')]
-                kpkgs.extend([l for l in li if re.findall(pat,l)])
-        except OSError:
-            pass
-
-        return kpkgs
-
-    # syntatic sugar
-    getKernelRpms = getKernelPackages
-
-
-class RHELInstallSrc(DistroInstallSrcBase):
+class RHEL4InstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL installation source should be and the operations that can work on it."""
 
     def __init__(self, srcPath):
-        super(RHELInstallSrc,self).__init__()
+        super(RHEL4InstallSrc,self).__init__()
         if srcPath.startswith('http://'):
             self.srcPath = srcPath
             self.isRemote = True
@@ -895,8 +819,49 @@ class RHELInstallSrc(DistroInstallSrcBase):
 
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
-        return self.version     #for now
-        
+        return self.version     
+    
+    def getArch(self):
+        '''RHEL specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+  
+    def verifyLocalVersion(self):
+        '''Redhat specific way of getting the distro version'''
+        discinfo = self.srcPath + '/.discinfo'
+        version = None
+
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[1] #second line is usually the name/version
+            words = line.split()
+            for i in range(0,len(words)):
+                if words[i].isdigit():
+                    break
+            version = words[i]
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
+            pass
+
+        if self.version == version:
+            return True
+        else:
+            return False
+
     def getKernelPackages(self):
         # set up pattern to match rhel kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -955,6 +920,9 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             'patchimage' : 'images/updates.img'
         }
 
+
+    def verifyLocalVersion(self):
+        return True
 
     def getVersion(self):
         '''CentOS specific way of getting the distro version'''
@@ -1161,6 +1129,26 @@ class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
+    def verifyLocalVersion(self):
+        version = None
+        discinfo = self.srcPath + '/.discinfo'
+
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[3] #third line is usually the arch
+            version = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        
+        if self.version ==version:
+            return True
+        else:
+            return False
+
 
 class RHEL5InstallSrc(DistroInstallSrcBase):
     """This class describes how a RHEL 5 installation source should be and the operations that can work on it."""
@@ -1279,8 +1267,13 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 raise CopyError
 
     def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
         '''Redhat specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
+        version = None
+
         if os.path.exists(discinfo):
             fp = file(discinfo, 'r')
             linelst = fp.readlines()
@@ -1291,12 +1284,16 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
-        return self.version
+
+        if self.version == version:
+            return True
+        else:
+            return False
 
     def getArch(self):
         '''Redhat specific way of getting the distro architecture'''
@@ -1358,7 +1355,7 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
             self.isRemote = False
 
         self.ostype = 'rhel'
-        self.version = '0'
+        self.version = '5'
         self.arch = 'noarch'
         self.isAdditionalType = True
 
@@ -1383,8 +1380,12 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
         raise CopyError
 
     def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
         '''Redhat specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
+        version = None
         if os.path.exists(discinfo):
             fp = file(discinfo, 'r')
             linelst = fp.readlines()
@@ -1395,12 +1396,16 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
-        return self.version
+
+        if self.version == version:
+            return True
+        else:
+            return False
 
     def getArch(self):
         '''Redhat specific way of getting the distro architecture'''
@@ -1412,6 +1417,178 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
 
             line = linelst[2] #third line is usually the arch
             self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
+
+class Fedora7InstallSrc(DistroInstallSrcBase):
+    """This class describes how a Fedora 7 installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(Fedora7InstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'fedora'
+        self.version = '7'
+
+        # These should describe the key directories that identify a RHEL 5 installation source layout.
+        self.pathLayoutAttributes = {
+            '.treeinfo' : '.treeinfo',
+            'kernel' : 'isolinux/vmlinuz',
+            'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
+            'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
+            'packagesdir' : 'Fedora',
+            'repodatadir' : 'repodata',
+        }
+
+        # The following determines the patchfile layout for RHEL5
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
+    def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
+        '''Fedora 7 specific way of getting the distro version'''
+        treeinfo = self.srcPath + '/.treeinfo'
+        version = None
+        if os.path.exists(treeinfo):
+            config = ConfigParser()
+            config.read([str(treeinfo)])
+            version = config.get('general','version')
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
+            pass
+           
+        if self.version == version:
+            return True
+        else:
+            return False
+
+    def getArch(self):
+        '''Fedora 7 specific way of getting the distro architecture'''
+        treeinfo = self.srcPath + '/.treeinfo'
+        if os.path.exists(treeinfo):
+            config = ConfigParser()
+            config.read([str(treeinfo)])
+            self.arch = config.get('general','arch')
         else:
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
@@ -1557,20 +1734,200 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 raise CopyError
 
     def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
         '''Fedora 8 specific way of getting the distro version'''
         treeinfo = self.srcPath + '/.treeinfo'
+        version = None
         if os.path.exists(treeinfo):
             config = ConfigParser()
             config.read([str(treeinfo)])
-            self.version = config.get('general','version')
+            version = config.get('general','version')
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
             pass
-        return self.version
+            
+        if self.version == version:
+            return True
+        else:
+            return False
 
     def getArch(self):
         '''Fedora 8 specific way of getting the distro architecture'''
+        treeinfo = self.srcPath + '/.treeinfo'
+        if os.path.exists(treeinfo):
+            config = ConfigParser()
+            config.read([str(treeinfo)])
+            self.arch = config.get('general','arch')
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
+    def getKernelPackages(self):
+        # set up pattern to match rhel kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
+
+class Fedora9InstallSrc(DistroInstallSrcBase):
+    """This class describes how a Fedora 9 installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(Fedora9InstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'fedora'
+        self.version = '9'
+
+        # These should describe the key directories that identify a RHEL 5 installation source layout.
+        self.pathLayoutAttributes = {
+            '.treeinfo' : '.treeinfo',
+            'kernel' : 'isolinux/vmlinuz',
+            'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
+            'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
+            'packagesdir' : 'Packages',
+            'repodatadir' : 'repodata',
+        }
+
+        # The following determines the patchfile layout for RHEL5
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                raise CopyError
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError
+
+    def getVersion(self):
+        return self.version
+
+    def verifyLocalVersion(self):
+        '''Fedora 9 specific way of getting the distro version'''
+        treeinfo = self.srcPath + '/.treeinfo'
+        version = None
+        if os.path.exists(treeinfo):
+            config = ConfigParser()
+            config.read([str(treeinfo)])
+            version = config.get('general','version')
+        else:
+            #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
+            pass
+            
+        if self.version == version:
+            return True
+        else:
+            return False
+
+    def getArch(self):
+        '''Fedora 9 specific way of getting the distro architecture'''
         treeinfo = self.srcPath + '/.treeinfo'
         if os.path.exists(treeinfo):
             config = ConfigParser()

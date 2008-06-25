@@ -5,7 +5,6 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-import subprocess
 from path import path
 from Cheetah.Template import Template
 import tarfile
@@ -17,6 +16,12 @@ from kusu.util.tools import cpio_copytree
 from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined, UnsupportedScriptMode
 from kusu.util.structure import Struct
 from kusu.util import rpmtool
+from kusu.util import compat
+
+try:
+    import subprocess 
+except: 
+    from popen5 import subprocess
 
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2','.zip','.tar']

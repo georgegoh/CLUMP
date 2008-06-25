@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.sessioncontext import SessionContext
 from sqlalchemy.ext.assignmapper import assign_mapper
 from kusu.util.errors import *
+from kusu.util import compat
 import kusu.util.log as kusulog
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 

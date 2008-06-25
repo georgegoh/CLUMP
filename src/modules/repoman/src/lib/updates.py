@@ -15,6 +15,7 @@ from path import path
 from Cheetah.Template import Template
 
 from kusu.util import rpmtool
+from kusu.util import compat
 from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
 from kusu.repoman.tools import getFile, getConfig, getKernelPackages
