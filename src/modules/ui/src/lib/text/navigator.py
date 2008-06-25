@@ -320,9 +320,13 @@ class Navigator(object, KusuApp):
         for key in hotkeysDict.keys():
             form.addHotKey(key)
         form.addHotKey("F12")
+        form.addHotKey("ESC")
         while True:
             result = form.run()
             #kl.debug('Result: %s' % result)
+            # Ignore the "Esc" key.
+            if result is "ESC":
+                return NAV_NOTHING
             if result is "F12":
                 return NAV_QUIT
             if result in hotkeysDict.keys():
