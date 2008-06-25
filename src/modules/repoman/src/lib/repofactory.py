@@ -20,7 +20,8 @@ class RepoFactory(object):
                                '7': repo.Fedora7Repo,
                                '8': repo.Fedora8Repo,
                                '9': repo.Fedora9Repo},
-                   'centos' : {'5': repo.Centos5Repo},
+                   'centos' : {'4': repo.Centos4Repo,
+                               '5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo, 
                                '4': repo.Redhat4Repo} }
 

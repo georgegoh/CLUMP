@@ -575,6 +575,119 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
             kl.info('Copy Node Installer image: %s' % src)
             (dest.realpath().parent.relpathto(src)).symlink(dest)
 
+class Centos4Repo(RedhatRepo, YumUpdate):
+    
+    def __init__(self, os_arch, prefix, db):    
+        RedhatRepo.__init__(self, prefix, db)
+        YumUpdate.__init__(self, 'centos', '4', os_arch, prefix, db)
+ 
+        self.os_name = 'centos'
+        self.os_version = '4'
+        self.os_arch = os_arch
+ 
+        self.ostype = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
+
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'CentOS/RPMS'
+        self.dirlayout['basedir'] = 'CentOS/base'
+
+    def copyRamDisk(self):
+        pass
+
+    def makeComps(self):
+        pass
+ 
+    def verify(self):
+        return True
+
+    def copyOSKit(self):
+
+        self.os_path = self.getOSPath()
+        
+        kl.info('Copying OS Kit: %s' % self.os_path)
+        
+        # Validate OS layout
+        for dir in self.dirlayout.values():
+            dir = self.os_path / dir
+            if not dir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % dir
+             
+        for key, dir in self.dirlayout.items():
+            if key != 'repodatadir':
+               for file in (self.os_path / dir).listdir():
+                    if not file.isdir() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
+                        dest = self.repo_path / dir / file.basename()
+                        (dest.parent.relpathto(file)).symlink(dest)
+
+        file = self.os_path / self.dirlayout['basedir'] / 'stage2.img'
+        dest = self.repo_path / self.dirlayout['basedir'] / 'netstg2.img'
+        if dest.exists(): dest.remove()
+        (dest.parent.relpathto(file)).symlink(dest)
+
+        discinfo = self.os_path / '.discinfo'
+        if discinfo.exists():
+            dest = self.repo_path / '.discinfo' 
+            (dest.parent.relpathto(discinfo)).symlink(dest)
+
+ 
+    def makeMetaInfo(self):
+        """Creates a hdlist repository"""
+
+        pkgorder = self.repo_path / 'pkgorder'
+
+        cmd = 'genhdlist --withnumbers --productpath CentOS %s && ' % self.repo_path
+        cmd = cmd + 'classic-anaconda-runner pkgorder %s %s CentOS > %s && ' % (self.repo_path, self.os_arch, pkgorder)
+        cmd = cmd + 'genhdlist --fileorder %s --withnumbers --productpath CentOS %s' % (pkgorder, self.repo_path)
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except: 
+            raise CommandFailedToRunError, 'genhdlist/pkgorder failed'
+
+        if retcode:
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
+            raise RepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+        if pkgorder.exists(): pkgorder.remove()
+
+        kl.info('Made repo: %s' % self.repo_path)
+
+    def copyKusuNodeInstaller(self):
+        """copy the kusu installer to the repository"""
+
+        kusu_root = os.environ.get('KUSU_ROOT', None)
+
+        if not kusu_root:
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # since /opt/kusu is absolute
+            kusu_root = 'opt/kusu' 
+
+        # Testing mode
+        if self.test:
+            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # during testing and updates.img will not be present.
+            src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+        else:
+            src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+    
+        dest = self.repo_path / self.dirlayout['basedir'] / 'updates.img'
+
+        if src.exists() and not dest.exists():
+            kl.info('Copy Node Installer image: %s' % src)
+            (dest.realpath().parent.relpathto(src)).symlink(dest)
+
+
 class RedhatYumRepo(RedhatRepo):
     """Base Redhat repository class"""
 
