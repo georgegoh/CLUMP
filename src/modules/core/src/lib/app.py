@@ -19,7 +19,7 @@
 #
 #
 
-__version__ = "5.0"
+__version__ = "0.9"
 
 CFMSYNC    = '/opt/kusu/sbin/cfmsync'
 CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
@@ -33,7 +33,7 @@ from path import path
 from kusu.util import compat
 
 class KusuApp:
-    """ This is the class for all OCS applications to inherit from """
+    """ This is the class for all Kusu applications to inherit from """
 
     def __init__(self):
         """ Initialize Class variables.  Extend as needed (if needed) """

@@ -103,11 +103,11 @@ class PartitionScreen(InstallerScreen):
                     try_again = False
                 except LVMInconsistencyError, e:
                     self.lvm_inconsistent = True
-                    errMsg = 'An LVM inconsistency has occurred that the OCS Installer may not '
+                    errMsg = 'An LVM inconsistency has occurred that the Kusu Installer may not '
                     errMsg += 'be able to recover from. Press Ctrl-Alt-F2 to access the command '
                     errMsg += 'prompt to fix this, and press Ctrl-Alt-F1 to return to the screen '
                     errMsg += "when you're done.(Recommended)\n"
-                    errMsg += 'Alternatively, you may choose to ignore this message, and OCS '
+                    errMsg += 'Alternatively, you may choose to ignore this message, and Kusu '
                     errMsg += 'will try to install anyway.'
                     errMsg += 'The specific trace from the command that raised this error is '
                     errMsg += 'shown below.\n\n'
@@ -284,7 +284,7 @@ class PartitionScreen(InstallerScreen):
         if exists:
             if self.lvm_inconsistent:
                 buttons_list = ['Use Default', 'Clear All Partitions']
-                msg = 'OCS installer can install using its default '
+                msg = 'Kusu installer can install using its default '
                 msg += 'partition schema. Alternatively, you may choose '
                 msg += 'to clear all partitions and create your own schema.'
             else:
