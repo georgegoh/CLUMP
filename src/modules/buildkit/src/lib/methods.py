@@ -147,10 +147,21 @@ def DefaultKit(**kwargs):
 
     return kit
 
+def Centos4Component(**kwargs):
+    """ This is used for Centos5Component 5 components. """
+    kwargs['ostype'] = 'centos'
+    kwargs['osversion'] = '4'
+    return DefaultComponent(**kwargs)
 
 def Centos5Component(**kwargs):
     """ This is used for Centos5Component 5 components. """
     kwargs['ostype'] = 'centos'
+    kwargs['osversion'] = '5'
+    return DefaultComponent(**kwargs)
+
+def RHEL4Component(**kwargs):
+    """ This is used for RHEL 5 components. """
+    kwargs['ostype'] = 'rhel'
     kwargs['osversion'] = '5'
     return DefaultComponent(**kwargs)
 

@@ -175,8 +175,10 @@ class BaseUpdate:
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
 
-        compclass = {'rhel' : {'5': 'RHEL5Component()'},
-                     'centos' : {'5': 'Centos5Component()'},
+        compclass = {'rhel' : {'4': 'RHEL4Component()',
+                               '5': 'RHEL5Component()'},
+                     'centos' : {'4': 'Centos4Component()',
+                                 '5': 'Centos5Component()'},
                      'fedora' : {'6': 'Fedora6Component()',
                                  '7': 'Fedora7Component()',
                                  '8': 'Fedora8Component()',

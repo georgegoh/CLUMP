@@ -687,6 +687,48 @@ class Centos4Repo(RedhatRepo, YumUpdate):
             kl.info('Copy Node Installer image: %s' % src)
             (dest.realpath().parent.relpathto(src)).symlink(dest)
 
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      arch=self.os_arch)
+        if not kits:
+            return []
+
+        if len(kits) == 1:
+            min_version = kits[0].version
+        else:
+            min_version = '4.999'
+
+            for kit in kits:
+                if self.getOSMajorVersion(kit.version) == '4' and kit.version < min_version:
+                    min_version = kit.version
+
+        return [path(os.path.join(self.prefix, 'depot', 'kits', \
+                                  self.os_name, min_version, self.os_arch, \
+                                  self.dirlayout['rpmsdir']))]
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://mirror.centos.org/centos')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('fedora'):
+                baseurl = path(cfg['centos']['url'])
+            else:
+                baseurl = path('http://mirror.centos.org/centos')
+
+        os = str(baseurl / '4' / 'os' / self.os_arch)
+        updates = str(baseurl / '4' / 'updates' / self.os_arch)
+
+        return [os,updates]
+
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
 
 class RedhatYumRepo(RedhatRepo):
     """Base Redhat repository class"""
