@@ -51,7 +51,7 @@ class LicenseScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid = snack.Grid(1, 2)
         entryWidth = 20
         self.license = kusuwidgets.LabelledEntry(
-                       labelTxt=_('Installation number ').rjust(26), 
+                       labelTxt=_('Red Hat Installation number ').rjust(26), 
                        width=entryWidth, text=self.kiprofile[self.profile])
 
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
