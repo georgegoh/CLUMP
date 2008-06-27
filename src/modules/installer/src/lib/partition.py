@@ -21,7 +21,6 @@ from kusu.util.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.testing import runCommand
-from kusu.util import compat
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -401,7 +400,7 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
-        profile['disk_order'] = self.disk_order
+        profile['disk_order'] = self.disk_profile.getBIOSDiskOrder()
 
         missing_fs_types = self.checkMissingFSTypes()
         if missing_fs_types:
@@ -489,7 +488,7 @@ class PartitionScreen(InstallerScreen):
             self.kiprofile[self.profile] = profile
 
         profile['DiskProfile'] = self.disk_profile
-        profile['disk_order'] = self.disk_order
+        profile['disk_order'] = self.disk_profile.getBIOSDiskOrder()
 
         missing_fs_types = self.checkMissingFSTypes()
         if missing_fs_types:
