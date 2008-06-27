@@ -215,9 +215,12 @@ class BaseRepo(object):
 
 class RedhatRepo(BaseRepo):
 
+    comps_file = None
+
     def __init__(self, prefix, db):
         BaseRepo.__init__(self, prefix, db)
  
+
     def copyKitsPackages(self):
         # Need a better method for this
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
@@ -462,7 +465,40 @@ class RedhatRepo(BaseRepo):
 
         return self
 
+    def makeMetaInfo(self):
+        self.makeYumMetaData(self)
+
+    def makeYumMetaData(self):
+        """Creates a yum repoistory"""
+
+        dotrepodata = self.repo_path / '.repodata'
+        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except: 
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+            
+            raise CommandFailedToRunError, 'createrepo failed'
+
+        if retcode:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
  
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
+            raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+        kl.info('Made yum repo: %s' % self.repo_path)
+
+
 class Redhat4Repo(RedhatRepo, RHNUpdate):
     
     def __init__(self, os_arch, prefix, db):    
@@ -476,6 +512,7 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
         self.ostype = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
 
         # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'RedHat/RPMS'
@@ -484,9 +521,12 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
     def copyRamDisk(self):
         pass
 
+    
     def makeComps(self):
-        pass
- 
+        """Makes the necessary comps xml file"""
+
+        self.comps_file = self.os_path / self.dirlayout['basedir'] / 'comps.xml'
+
     def verify(self):
         return True
 
@@ -498,6 +538,9 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
         
         # Validate OS layout
         for dir in self.dirlayout.values():
+            if dir == 'repodata': # does not exist in rhel4 kit
+                continue
+
             dir = self.os_path / dir
             if not dir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % dir
@@ -548,6 +591,8 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
         if pkgorder.exists(): pkgorder.remove()
 
         kl.info('Made repo: %s' % self.repo_path)
+        
+        self.makeYumMetaData()
 
     def copyKusuNodeInstaller(self):
         """copy the kusu installer to the repository"""
@@ -575,6 +620,26 @@ class Redhat4Repo(RedhatRepo, RHNUpdate):
             kl.info('Copy Node Installer image: %s' % src)
             (dest.realpath().parent.relpathto(src)).symlink(dest)
 
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      arch=self.os_arch)
+
+        if not kits:
+            return []
+
+        if len(kits) == 1:
+            min_version = kits[0].version
+        else:
+            min_version = '4.999'
+
+            for kit in kits:
+                if self.getOSMajorVersion(kit.version) == '4' and kit.version < min_version:
+                    min_version = kit.version
+
+        return [path(os.path.join(self.prefix / 'depot', 'kits', self.os_name, min_version, self.os_arch, p))
+                for p in [self.dirlayout['rpmsdir']]]
+
+
 class Centos4Repo(RedhatRepo, YumUpdate):
     
     def __init__(self, os_arch, prefix, db):    
@@ -588,6 +653,7 @@ class Centos4Repo(RedhatRepo, YumUpdate):
         self.ostype = '%s-%s-%s' % (self.os_name, self.os_version, self.os_arch)
 
         # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'CentOS/RPMS'
@@ -597,8 +663,10 @@ class Centos4Repo(RedhatRepo, YumUpdate):
         pass
 
     def makeComps(self):
-        pass
- 
+        """Makes the necessary comps xml file"""
+
+        self.comps_file = self.os_path / self.dirlayout['basedir'] / 'comps.xml'
+
     def verify(self):
         return True
 
@@ -660,6 +728,8 @@ class Centos4Repo(RedhatRepo, YumUpdate):
         if pkgorder.exists(): pkgorder.remove()
 
         kl.info('Made repo: %s' % self.repo_path)
+
+        self.makeYumMetaData()
 
     def copyKusuNodeInstaller(self):
         """copy the kusu installer to the repository"""
@@ -758,36 +828,6 @@ class RedhatYumRepo(RedhatRepo):
         (dest.parent.relpathto(src)).symlink(dest)
 
         self.comps_file = dest
-
-    def makeMetaInfo(self):
-        """Creates a yum repoistory"""
-
-        dotrepodata = self.repo_path / '.repodata'
-        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
-
-        try:
-            p = subprocess.Popen(cmd,
-                                 cwd=self.repo_path,
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            retcode = p.returncode
-
-        except: 
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
-            
-            raise CommandFailedToRunError, 'createrepo failed'
-
-        if retcode:
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
- 
-            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
-            raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
-
-        kl.info('Made yum repo: %s' % self.repo_path)
 
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
