@@ -982,6 +982,7 @@ class DB(object):
                            device='DEPOT', options='lv;vg=VolGroup00', preserve=0)
         var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
                          device='VAR', options='lv;vg=VolGroup00', preserve=0)
+        dell = Partitions(options='partitionID=Dell Utility', preserve=1)
         donotpreserve = Partitions(options='partitionID=*', preserve=0)
         for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve]:
             installer.partitions.append(parts)
