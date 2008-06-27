@@ -19,15 +19,12 @@
 TOPDIR = $(PWD)/..
 ARCH=$(shell arch)
 
-SRCDIRS = `find . -maxdepth 1 -type d -not -name .svn -not -name CVS \
-	    -not -name .`
+SRCDIRS := $(wildcard */Makefile)
 
 default: rpm
 
 rpm:
-	@for i in $(SRCDIRS) ; do \
-		(cd $$i; make $@) ; \
-	done
+	$(foreach i, $(dir $(SRCDIRS)), cd $i && $(MAKE) && cd $(PWD);)
 
 clean:
 	find $(TOPDIR)/RPMS -type f -name "*.rpm" -exec rm -f {} \;
