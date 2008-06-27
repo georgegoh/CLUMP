@@ -21,6 +21,7 @@ from kusu.util.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.testing import runCommand
+from kusu.util import compat
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
