@@ -182,7 +182,7 @@ class BaseUpdate:
                      'fedora' : {'6': 'Fedora6Component()',
                                  '7': 'Fedora7Component()',
                                  '8': 'Fedora8Component()',
-                                 '8': 'Fedora9Component()'}}
+                                 '9': 'Fedora9Component()'}}
 
         dest = tempkitdir / kitName / 'build.kit'
 
