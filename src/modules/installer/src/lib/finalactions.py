@@ -40,7 +40,7 @@ def makeRepo(kiprofile):
     db = kiprofile.getDatabase()
     rfactory = RepoFactory(db, kiprofile['Kusu Install MntPt'])
     ngname = 'installer' + '-' + kiprofile['Kits']['longname']
-    reponame = 'Repo for ' + kiprofile['Kits']['longname']
+    reponame = kiprofile['Kits']['longname']
 
     logger.debug('Making repo')
 
