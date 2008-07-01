@@ -521,7 +521,7 @@ class DB(object):
             sa.Column('reponame', sa.String(255), unique=True),
             sa.Column('repository', sa.String(255)),
             sa.Column('installers', sa.String(255)),
-            sa.Column('ostype', sa.String(20)),
+            sa.Column('ostype', sa.String(255)),
             mysql_engine='InnoDB')
         self.__dict__['repos'] = repos
 
