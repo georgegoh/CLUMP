@@ -372,8 +372,12 @@ class SelectNodesWindow(USXBaseScreen):
         needRack = False
         nodeRecord = NodeFun()
 
-        if self.nodeCheckbox.getSelection() == [] or self.nodegroupRadio.getSelection() == None:
+        if self.nodeCheckbox.getSelection() == [] or self.nodegroupCheckbox.getSelection() == []:
             self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected"))
+            return NAV_NOTHING
+
+        if self.nodeCheckbox.getSelection() == [] or len(self.nodegroupCheckbox.getSelection()) > 1:
+            self.selector.popupMsg(self.kusuApp._("Error"), "Too many destination nodegroups selected. Choose only one")
             return NAV_NOTHING
 
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
@@ -381,15 +385,15 @@ class SelectNodesWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupRadio.getSelection())
+            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodes(self.nodeCheckbox.getSelection(), self.nodegroupCheckbox.getSelection()[0])
 
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
             if not moveList:
-               self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.nodegroupRadio.getSelection())
+               self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.nodegroupCheckbox.getSelection()[0])
 
             else:
-               nodeRecord.setNodegroupByName(self.nodegroupRadio.getSelection())
+               nodeRecord.setNodegroupByName(self.nodegroupCheckbox.getSelection()[0])
                nodeRecord.getNodeFormat()
                # Check if the selected node format has a rack if so, prompt for it.
                if nodeRecord.isNodenameHasRack():
@@ -415,7 +419,7 @@ class SelectNodesWindow(USXBaseScreen):
                           flag = 1
 
                if badList and len(moveList) > 0:
-                  self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupRadio.getSelection()))
+                  self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.nodegroupCheckbox.getSelection()[0]))
 
                # Create Temp file
                (fd, tmpfile) = tempfile.mkstemp()
@@ -432,9 +436,9 @@ class SelectNodesWindow(USXBaseScreen):
 
                # Add these back using mac file
                if needRack:
-                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection(), rack))
+                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupCheckbox.getSelection()[0], rack))
                else:
-                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupRadio.getSelection()))
+                  os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.nodegroupCheckbox.getSelection()[0]))
 
                # Remove temp file
                os.remove(tmpfile)
@@ -442,7 +446,7 @@ class SelectNodesWindow(USXBaseScreen):
                progDialog.close()
 
                # If the user wants to reinstall the nodes check if the option is selected or not.
-               if self.reinstcheckbox.value() and self.nodegroupRadio.getSelection() != "unmanaged":
+               if self.reinstcheckbox.value() and self.nodegroupCheckbox.getSelection()[0] != "unmanaged":
                   progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                                self.kusuApp._("nghosts_reinstall_nodes_progress"))
                   # Call PDSH here
@@ -466,9 +470,10 @@ class SelectNodesWindow(USXBaseScreen):
     
     def drawImpl(self):
         count = 0
-        nodegroupList = []
+        haveNodes = False
         self.screenGrid  = snack.Grid(1, 6)
-        self.nodeCheckbox = snack.CheckboxTree(height=8, width=30, scroll=1)
+        self.nodeCheckbox = snack.CheckboxTree(height=8, width=35, scroll=1)
+        self.nodegroupCheckbox = snack.CheckboxTree(height=8, width=40, scroll=1)
         instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
         labeltokens = self.kusuApp._("nghosts_source_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(29),labeltokens[1])))
@@ -482,8 +487,8 @@ class SelectNodesWindow(USXBaseScreen):
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
-            self.unlock()
-            sys.exit(-1)
+            self.kusuApp.unlock()
+            os._exit(-1)
     
         for nodegroup in nodegroups:
             query = "SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
@@ -497,34 +502,39 @@ class SelectNodesWindow(USXBaseScreen):
             except:
                 self.screen.finish()
                 print self.kusuApp._("DB_Query_Error\n")
-                self.unlock()
-                sys.exit(-1)
+                self.kusuApp.unlock()
+                os._exit(-1)
 
             # If the node group is empty don't display it.
             if len(nodes) > 0 and nodegroup[0] != "unmanaged":
+                haveNodes = True
                 self.nodeCheckbox.append(nodegroup[0])
                 self.nodeGroupNames.append(nodegroup[0])
                 self.nodegroupDict[nodegroup[0]] = []
-            
-            for node in nodes:
-                if nodegroup[0] != "unmanaged":
-                   self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
-                   self.nodegroupDict[nodegroup[0]].append(node[0])
+                
+                for node in nodes:
+                    if nodegroup[0] != "unmanaged":
+                       self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
+                       self.nodegroupDict[nodegroup[0]].append(node[0])
 
-            if len(nodes) > 0:
                 count += 1
- 
-        for group in nodegroups:
-            nodegroupList.append([group[0].ljust(17), group[0], 0])
-       
-        self.nodegroupRadio = snack.RadioBar(self.screenGrid, nodegroupList) 
         
+        for group in nodegroups:
+            self.nodegroupCheckbox.append(group[0])
+       
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(label, 0, 1, padding=(6,0,0,0), anchorLeft=1)
-        self.screenGrid.setField(self.nodeCheckbox, 0, 2, padding=(0,0,40,0))
-        self.screenGrid.setField(self.nodegroupRadio, 0, 3, padding=(33,-8,0,0))
+        self.screenGrid.setField(self.nodeCheckbox, 0, 2, padding=(0,0,40,0),anchorLeft=1)
+        self.screenGrid.setField(self.nodegroupCheckbox, 0, 3, padding=(0,-8,-1,0),anchorRight=1)
         self.screenGrid.setField(self.reinstcheckbox, 0, 4, padding=(0,1,0,0), anchorLeft=1)
-                
+           
+        # If there's no other nodes besides installer, then exit gracefully.
+        if haveNodes == False:
+           self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("There are no nodes available. Exiting."))
+           self.kusuApp.unlock()
+           self.screen.finish()
+           os._exit(-1)
+     
 class SelectNodegroupsWindow(USXBaseScreen):
     name = "nghosts_window_title_select_nodegroup"
     msg = "nghosts_instruction_select_nodegroup"
@@ -560,8 +570,12 @@ class SelectNodegroupsWindow(USXBaseScreen):
         needRack = False
         nodeRecord = NodeFun()
 
-        if self.srcNodegroupsCheckbox.getSelection() == [] or self.destNodegroupRadio.getSelection() == None:
+        if self.srcNodegroupsCheckbox.getSelection() == [] or self.destNodegroupCheckbox.getSelection() == []:
             self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("nghosts_nothing_selected_groups"))
+            return NAV_NOTHING
+
+        if self.srcNodegroupsCheckbox.getSelection() == [] or len(self.destNodegroupCheckbox.getSelection()) > 1:
+            self.selector.popupMsg(self.kusuApp._("Error"), "Too many destination nodegroups selected. Choose only one")
             return NAV_NOTHING
 
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_move_prompt"), \
@@ -569,15 +583,15 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodegroups(self.srcNodegroupsCheckbox.getSelection(), self.destNodegroupRadio.getSelection())
+            moveList, moveIPList, macList, badList, interface = nodeRecord.moveNodegroups(self.srcNodegroupsCheckbox.getSelection(), self.destNodegroupCheckbox.getSelection()[0])
 
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
             if not moveList:
-                self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.destNodegroupRadio.getSelection())
+                self.selector.popupMsg(self.kusuApp._("Error"), self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.destNodegroupCheckbox.getSelection())
 
             else:
-                nodeRecord.setNodegroupByName(self.destNodegroupRadio.getSelection())
+                nodeRecord.setNodegroupByName(self.destNodegroupCheckbox.getSelection()[0])
                 nodeRecord.getNodeFormat()
                 # Check if the selected node format has a rack if so, prompt for it.
                 if nodeRecord.isNodenameHasRack():
@@ -602,7 +616,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
                           flag = 1
 
             if badList and len(moveList) > 0:
-                self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupRadio.getSelection()))
+                self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'.") % (len(moveList), len(badList), string.join(badList, " "), self.destNodegroupCheckbox.getSelection()[0]))
 
             if len(moveList) > 0:
                 # Create Temp file
@@ -619,9 +633,9 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Add these back using mac file
                 if needRack:
-                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection(), rack))
+                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s' --rack=%s >&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupCheckbox.getSelection()[0], rack))
                 else:
-                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupRadio.getSelection()))
+                   os.system("/opt/kusu/sbin/addhost --file=%s --node-interface=%s --nodegroup='%s'>&2 /dev/null >& /dev/null" % (tmpfile, interface, self.destNodegroupCheckbox.getSelection()[0]))
 
                 # Remove temp file
                 os.remove(tmpfile)
@@ -629,7 +643,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
                 progDialog.close()
  
                 # If the user wants to reinstall the nodes check if the option is selected or not.
-                if self.reinstcheckbox.value() and self.destNodegroupRadio.getSelection() != "unmanaged":
+                if self.reinstcheckbox.value() and self.destNodegroupCheckbox.getSelection()[0] != "unmanaged":
                     progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                                  self.kusuApp._("nghosts_reinstall_nodes_progress"))
                     # Call PDSH here
@@ -654,9 +668,11 @@ class SelectNodegroupsWindow(USXBaseScreen):
         
     def drawImpl(self):
         destNodegroupList = []
+        haveNodes = False
         self.screenGrid  = snack.Grid(1, 7)
-        self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=32, scroll=1)
-        instruction = snack.Textbox(65, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
+        self.srcNodegroupsCheckbox = snack.CheckboxTree(height=8, width=35, scroll=1)
+        self.destNodegroupCheckbox = snack.CheckboxTree(height=8, width=40, scroll=1)
+        instruction = snack.Textbox(75, 1, self.kusuApp._(self.msg), scroll=0, wrap=1)
         labeltokens = self.kusuApp._("nghosts_nodegroup_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(28),labeltokens[1])))
         self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
@@ -669,11 +685,11 @@ class SelectNodegroupsWindow(USXBaseScreen):
         except:
             self.screen.finish()
             print self.kusuApp._("DB_Query_Error\n")
-            self.unlock()
-            sys.exit(-1)
+            self.kusuApp.unlock()
+            os._exit(-1)
 
         for group in nodegroups:
-           destNodegroupList.append([group[0].strip(), group[0].strip(), 0])
+           self.destNodegroupCheckbox.append(group[0])
 
            query = "SELECT COUNT(*) from nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group[0]
            try:
@@ -684,9 +700,9 @@ class SelectNodegroupsWindow(USXBaseScreen):
            except:
                self.screen.finish()
                print self.kusuApp._("DB_Query_Error\n")
-               self.unlock()
-               sys.exit(-1)
- 
+               self.kusuApp.unlock()
+               sys._exit(-1)
+
            # Only display node groups that are not empty when moving.
            # Installer is special case, we can't move the installer group if there's only the master installer left.
            if group[1] == 1:  
@@ -694,16 +710,21 @@ class SelectNodegroupsWindow(USXBaseScreen):
                   self.srcNodegroupsCheckbox.append(group[0])
            else:     
                if int(nodes[0]) > 0 and group[0] != "unmanaged":
+                  haveNodes = True
                   self.srcNodegroupsCheckbox.append(group[0])
-
-        self.destNodegroupRadio = snack.RadioBar(self.screenGrid, destNodegroupList)
 
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(label, 0, 1, padding=(7,0,0,0), anchorLeft=1)
         self.screenGrid.setField(self.srcNodegroupsCheckbox, 0, 2, padding=(0,0,0,0), anchorLeft=1)
-        self.screenGrid.setField(self.destNodegroupRadio, 0, 3, padding=(33,-8,0,0), anchorRight=1)
+        self.screenGrid.setField(self.destNodegroupCheckbox, 0, 3, padding=(0,-8,-1,0), anchorRight=1)
         self.screenGrid.setField(self.reinstcheckbox, 0, 4, padding=(0,1,0,0), anchorLeft=1)
 
+        # If there's no other nodes besides installer, then exit gracefully.
+        if haveNodes == False:
+           self.selector.popupMsg(self.kusuApp._("Notice"), self.kusuApp._("There are no nodes available. Exiting."))
+           self.kusuApp.unlock()
+           self.screen.finish()
+           os._exit(-1)
 
     def validate(self):
         return True, 'Success'

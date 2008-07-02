@@ -189,7 +189,10 @@ class DiskProfile(object):
         real_errors = []
         for l in err.split('\n'):
             l = l.strip()
-            if not l.startswith('File descriptor ') and not l.startswith('No volume groups found') and l:
+            if not l.startswith('File descriptor ') \
+               and not l.startswith('No volume groups found') \
+               and not l.startswith('device-mapper: reload ioctl failed: Invalid argument') \
+               and l:
                 real_errors.append(l)
         if real_errors and not ignore_errors:
             raise LVMInconsistencyError, '\n'.join(real_errors)

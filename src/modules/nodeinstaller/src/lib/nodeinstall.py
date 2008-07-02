@@ -84,9 +84,9 @@ class KickstartFromNIIProfile(object):
                      'tz_utc': None,
                      'installsrc': None,
                      'lang': None,
-                     'keyboard' : None}
-    
-    
+                     'keyboard' : None,
+                     'diskorder' : None}
+
     def __init__(self):
         """ ni is an instance of the NodeInstaller class. """
         super(KickstartFromNIIProfile, self).__init__()
@@ -175,7 +175,7 @@ class KickstartFromNIIProfile(object):
         
         self.networkprofile = nw
         
-    def prepareKickstartDiskProfile(self,ni, testmode=False, diskimg=None):
+    def prepareKickstartDiskProfile(self,ni, testmode=False, diskimg=None, disk_order=None):
         """ Reads in the NII instance and fills up the diskprofile. """
 
         logger.debug('Preparing disk profile')
@@ -196,8 +196,12 @@ class KickstartFromNIIProfile(object):
             schema = None
             schema, self.diskprofile = adaptNIIPartition(ni.partitions, self.diskprofile)
             logger.debug('Adapted schema from the ni.partitions: %r' % schema)
-            logger.debug('Calling setupDiskProfile to apply schema to the diskprofile..')    
-            setupDiskProfile(self.diskprofile, schema)
+            if not disk_order:
+                logger.debug('Getting order of disks according to the BIOS.')
+                disk_order = self.diskprofile.getBIOSDiskOrder()
+            logger.debug('Calling setupDiskProfile to apply schema to the diskprofile..')
+            setupDiskProfile(self.diskprofile, schema, disk_order=disk_order)
+            self.diskorder = disk_order
         except InvalidPartitionSchema, e:
             logger.debug('Invalid partition schema! schema: %r' % schema)
             raise e
@@ -208,6 +212,7 @@ class KickstartFromNIIProfile(object):
             raise OutOfSpaceError, s
         return self.diskprofile
        
+
     def prepareKickstartPackageProfile(self,ni):
         """ Reads in the NII instance and fills up the packageprofile. """
         
@@ -349,7 +354,7 @@ class NodeInstaller(object):
             logger.error(msg)
             raise ParseNIISourceError, msg
         
-    def setup(self, autoinstallfile, niihost):
+    def setup(self, autoinstallfile, niihost, disk_order):
         """ Preparing attributes needed for automatic provisioning.
             A distro-specific autoinstallation configuration filename
             needs to be provided.
@@ -360,7 +365,7 @@ class NodeInstaller(object):
         self.ksprofile = KickstartFromNIIProfile()
         self.ksprofile.prepareKickstartSiteProfile(self)
         self.ksprofile.prepareKickstartNetworkProfile(self, niihost)
-        self.diskprofile = self.ksprofile.prepareKickstartDiskProfile(self)
+        self.diskprofile = self.ksprofile.prepareKickstartDiskProfile(self, disk_order=disk_order)
         self.ksprofile.prepareKickstartPackageProfile(self)
         self.generateAutoinstall()
         

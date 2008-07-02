@@ -27,6 +27,7 @@ import glob
 import string
 import re
 import subprocess
+import select
 import tempfile
 import shutil
 from sets import Set
@@ -39,6 +40,9 @@ from kusu.ngedit.ngedit import *
 from kusu.ngedit.partition import *
 import kusu.util.log as kusulog
 from kusu.nodefun import validateNodeFormat
+import popen2
+import termios
+import fcntl
 
 global curNG, origNG
 
@@ -53,7 +57,71 @@ BootDir = "/tftpboot/kusu/"
 CFMBaseDir = "/etc/cfm"
 ImageDir = "/depot/images"
 
-class scrNGEMain(USXBaseScreen):
+class ExecDialog:
+    """
+    Generic class implementing runTool() to execute a command and display
+    the output in a dialog on a USXNavigator screen
+    """
+
+    def runTool(self, tool, argstr):
+        """Run the specifed tool/argstr and display output in a dialog"""
+
+        kl.info("Final Actions: Running %s:" %tool)
+        cmd = "%s %s" %(tool,argstr)
+
+        p = popen2.Popen4(cmd)
+
+        prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
+            '%s progress' %tool, msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
+        output = ''
+
+        # Close STDIN on the child
+        p.tochild.close()
+
+        t1 = time.time()
+        while True:
+            ready = select.select([p.fromchild], [], [])
+            if p.fromchild in ready[0]:
+                line = p.fromchild.readline()
+
+                if line:
+                    output += line
+                    prog_out.setText(output)
+                    prog_out.draw()
+                    prog_out.refresh()
+
+                if p.poll() != -1:
+                    break
+
+        p.fromchild.close()
+
+        prog_out.close()
+
+        prog_simple = self.selector.popupProgress("%s" %tool, \
+            "waiting for %s to terminate" %tool)
+
+        prog_simple.close()
+        t2 = time.time()
+
+        retcode = p.poll()
+
+        if not retcode:
+            _title = "%s - success" %tool
+            _msg = "%s reported successful return. Please inspect its output:\n" %tool
+        else:
+            _title = "%s - error" %tool
+            _msg = tool + " returned an error, so its operation may be incomplete."  +\
+                   " Please refer to ngedit log file"+\
+                   " for more detail. You can rerun the command manually as follows:\n"+\
+                   cmd + "\nPlease inspect the output below:\n"
+        _msg += output
+
+        self.selector.popupMsg(_title, _msg, width = 65)
+        kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
+
+
+
+class scrNGEMain(USXBaseScreen, ExecDialog):
     name= 'Node Group Editor'
     msg = 'Select the Node Group to operate on from the list below'
     buttons = ['edit_button', 'copy_button', 'delete_button', 'exit_button']
@@ -74,52 +142,6 @@ class scrNGEMain(USXBaseScreen):
 
     def F12Action(self):
         return NAV_IGNORE
-
-    def runTool(self, tool, argstr):
-        
-        kl.info("Final Actions: Running %s:" %tool)
-        cmd = "%s %s" %(tool,argstr)
-        p = subprocess.Popen(   cmd, shell=True,
-                                stdout = subprocess.PIPE,
-                                stderr = subprocess.STDOUT
-                            )
-
-        prog_out = kusuwidgets.ProgressOutputWindow(self.selector.mainScreen, \
-            '%s progress' %tool, msg='',width=MAXWIDTH+3,height=MAXHEIGHT,scroll=0)
-        output = ''
-
-        t1 = time.time()
-        line = p.stdout.readline()
-        while line:
-            output += line
-            prog_out.setText(output)
-            prog_out.draw()
-            prog_out.refresh()
-            line = p.stdout.readline()
-        time.sleep(2)
-        prog_out.close()
-
-        prog_simple = self.selector.popupProgress("%s" %tool, \
-            "waiting for %s to terminate" %tool)
-        sts = os.waitpid(p.pid,0)
-        prog_simple.close()
-        t2 = time.time()
-
-        retcode = p.returncode
-
-        if not retcode:
-            _title = "%s - success" %tool
-            _msg = "%s reported successful return. Please inspect its output:\n" %tool
-        else:
-            _title = "%s - error" %tool
-            _msg = tool + " returned an error, so its operation may be incomplete."  +\
-                   " Please refer to ngedit log file"+\
-                   " for more detail. You can rerun the command manually as follows:\n"+\
-                   cmd + "\nPlease inspect the output below:\n"
-        _msg += output
-
-        self.selector.popupMsg(_title, _msg, width = 60)
-        kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
 
 
     def doCopyAction(self):
@@ -236,6 +258,10 @@ class scrNGEMain(USXBaseScreen):
         global curNG,origNG
 
         ngid = self.__nglistbox.current()
+        if ngid == 5:  # unmanaged
+            self.selector.popupMsg("Node Group Editing", "Cannot currently modify the unmanaged nodegroup.")
+            return NAV_NOTHING
+
         curNG = NodeGroup(ngid=ngid)
         curNG.syncFromDB(self.database)
 
@@ -263,7 +289,7 @@ class scrNGEMain(USXBaseScreen):
 
         #pass on the db and kusuApp handles to other screens
         #they will all share one instance of each
-        ScreenFactory.screens = [
+        screenFactory = ScreenFactoryImpl([
                                  scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
@@ -274,9 +300,12 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
                                  #scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
-                                ]
+                                scrNGEEdit_End(database=self.database, kusuApp=self.kusuApp)
+                                ])
 
-        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Edit", showTrail=False)
+        ks = USXNavigator(screenFactory, screenTitle="Node Group Edit",
+             showTrail=False)
+
         ks.run()
 
         return NAV_NOTHING
@@ -318,17 +347,6 @@ class scrNGEMain(USXBaseScreen):
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0), growx=1,anchorLeft=1)
         self.screenGrid.setField(self.__nglistbox, 0,1, padding=(0,0,0,0), growx=1)
-
-
-    def validate(self):
-        """Validation code goes here. Activated when 'Next' button is pressed."""
-        return True, 'Success'
-
-    def formAction(self):
-        ''' Actions taken once the form data was successfully validated.
-            Timeline: Next_callback, validation, formAction
-        '''
-        pass
 
 #end class scrNGEMain
 
@@ -1210,24 +1228,24 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         if button != 'cancel':
             if item == 'partition':
-                ScreenFactory.screens = [
+                screenList = [
                     scrPartSchema_PartEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
                                         ]
-                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-                ks.run()
+
             elif item == 'log_vol':
-                ScreenFactory.screens = [
+                screenList = [
                     scrPartSchema_LVEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
                                         ]
-                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-                ks.run()
 
             elif item == "vol_grp":
-                ScreenFactory.screens = [
+                screenList = [
                     scrPartSchema_VGEdit(self.PartSchema,id=None,database=self.database, kusuApp=self.kusuApp)
                                         ]
-                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-                ks.run()
+
+            screenFactory = ScreenFactoryImpl(screenList)
+
+            ks = USXNavigator(screenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+            ks.run()
 
 
         return NAV_NOTHING
@@ -1235,29 +1253,22 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
     def doEditAction(self):
         id = self.listbox.current()
         if self.PartSchema.isPartition(id):
-            ScreenFactory.screens = [
-               scrPartSchema_PartEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
-                                    ]
-            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-            ks.run()
-
-
+            screenList = [
+               scrPartSchema_PartEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)]
         elif self.PartSchema.isLV(id):
-            ScreenFactory.screens = [
-               scrPartSchema_LVEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
-                                    ]
-            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-            ks.run()
-
+            screenList = [
+               scrPartSchema_LVEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)]
         elif self.PartSchema.isVG(id):
-            ScreenFactory.screens = [
-               scrPartSchema_VGEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)
-                                    ]
-            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
-            ks.run()
-
+            screenList = [
+               scrPartSchema_VGEdit(self.PartSchema,id=id,database=self.database, kusuApp=self.kusuApp)]
         else:
-            self.selector.popupMsg('Error', 'Modification allowed for partitions, VGs, & LVs only')
+            self.selector.popupMsg('Error', 'Select a partition, VG, or LV for modification')
+            return NAV_NOTHING
+        
+        screenFactory = ScreenFactoryImpl(screenList)
+
+        ks = USXNavigator(screenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+        ks.run()
 
         return NAV_NOTHING
 
@@ -1566,7 +1577,29 @@ class scrPartSchema_PartEdit(USXBaseScreen):
                 return False, "Partition size must be a positive integer"
         except:
             return False, "Partition size must be a positive integer"
-        
+        # we have added a new partition.
+        # It can be a fill - if it is, then its the last for sure. However we must check if a partition has been filled prior
+        # if so we must ask them to delete it prior to creating this.
+        # FIXME - we must warn them when they hit new , not here but its better than nothing
+        # note that we have not performed form action yet
+        filtered_partlist = filter(lambda x: x['partition'] != None , self.PartSchemaObj.PartRecList)
+        if not self.partition:
+            partlist  = filtered_partlist
+            for part in partlist :
+                if translatePartitionOptions(part['options'] , 'fill')[0]:
+                    return False, "A partition has already filled the entire disk.Please re-configure partition %s mounted at %s before attempting to add new partitions" % (part['partition'] , part['mntpnt'])
+         # its an update, we can only fill the last one
+        if self.min_size.selected() and self.partition:
+            if self.partition['instid'] != filtered_partlist[-1:][0].PKval:
+                return False,"You cannot fill a partition which is not the last, please delete subsequent partitions before trying to fill this."
+        elif self.partition:
+            # double sanity check, even if we are not filling, just ensure that nothing has filled before. In the normal case we should
+            # never be here. This can only happen if someone edits the DB
+            partlist  = filtered_partlist[:-1]
+            for part in partlist :
+                if translatePartitionOptions(part['options'], 'fill')[0]:
+                    return False, "A partition other than the last has filled the disk, and a new partition has been inserted after. Partition schema is inconsistent! Delete and recreate this and partition  %s mounted at %s to fix schema. " % (part['partition'] , part['mntpnt'])
+
         return True, 'Success'
 
     def formAction(self):
@@ -2009,7 +2042,7 @@ class scrPartSchema_VGEdit(USXBaseScreen):
             self.PartSchemaObj.addPartRec(partrec)
 
 
-class scrNGEEdit_Finalize(USXBaseScreen):
+class scrNGEEdit_Finalize(USXBaseScreen, ExecDialog):
     name = 'Summary of Changes'
     buttons = [ 'accept_button', 'back_button', 'cancel_button' ]
 
@@ -2055,7 +2088,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
             #no exceptions up to this point: successful
             self.database.endTransaction()
-            self.selector.popupMsg("DB Update", "Database was successfully updated")
+            # self.selector.popupMsg("DB Update", "Database was successfully updated")
 
             #1. clean up scripts
             try:
@@ -2094,6 +2127,8 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                 srcNGcfmdir = os.path.join(CFMBaseDir,origNG['ngname'])
                 dstNGcfmdir = os.path.join(CFMBaseDir,curNG['ngname'])
                 shutil.move(srcNGcfmdir, dstNGcfmdir)
+
+        self._formAction()
 
         return NAV_FORWARD
 
@@ -2249,15 +2284,11 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                     "inspect the error below and/or the logs:\n%s" %msg)
 
             if PlugInstList_draw:
-                ScreenFactory.screens = PlugInstList_draw
-                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
-                try:
-                    ks.run()
-                except Exception,msg:
-                    self.selector.popupMsg("Interactive component plugins", "There was an error running " +\
-                    "interactive component plugins. Some interactive plugins may not have run. Please " +\
-                    "inspect the error below and/or the logs:\n%s" %msg)
+                screenFactory = ScreenFactoryImpl(PlugInstList_draw)
 
+                # Append the screens from the interactive plugins
+                for item in PlugInstList_draw:
+                    self.selector.screens.insert(-1, item)
 
         elif action == 'remove':
             for inst in PlugInstList_run:
@@ -2268,7 +2299,142 @@ class scrNGEEdit_Finalize(USXBaseScreen):
                     "the plugins threw an exception. Will proceed, skipping the erroneous plugin. Please "+\
                     "inspect the error below and/or the logs:\n%s" %msg)
 
+
+    def expireNodes(self):
+        diff_keys = Set(self.__diffNG.keys())
+        if not diff_keys:
+            return
+
+        reinst_keys = Set(['installtype', 'repoid', 'parts', 'nets', 'modules',
+                           'scripts', 'kernel', 'kparams'
+                          ])
+        expire_keys = reinst_keys | Set(['packs', 'comps'])
+        reinst = diff_keys & reinst_keys
+        expire = diff_keys & expire_keys
+
+        update_vallst = []
+        if reinst:
+            update_vallst.append("bootfrom=0")
+        if expire:
+            update_vallst.append("state='Expired'")
+        if update_vallst:
+            query = "update nodes set " + string.join(update_vallst,',') + " where ngid = %s" %curNG.PKval
+            try:
+                self.database.execute(query)
+            except:
+                self.selector.popupMsg("Node state update", "Failed updating node state " +\
+                                       "- they may require a reinstall")
+
+    def _formAction(self):
+
+        #1. FinalActions: node state update
+        self.expireNodes()
+
+        #2. run second-party tools:
+        # * if imaged (both disked & diskless)
+        #        if changes in (components or packages or repo)
+        #            run buildimage (buildimage -n $ngid)
+        #  * if imaged (both disked & diskless)
+        #        if changes in (modules or repo)
+        #            buildinitrd -n $ngid
+        #  * all install types
+        #    if changes in packages or components
+        #        call cfmsync -n $ngid -p
+        #  * if package-based and adding a component with drivers
+        #       driverpatch to patch initrd w/ new drivers
+        #       driverpatch nodegroup id=curNG['ngid']
+
+        key_lst = self.__diffNG.keys()
+        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['modules','repoid','initrd']):
+            #buildinitrd
+            self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
+
+        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['comps','packs','repoid','scripts']): 
+            #buildimage
+            self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
+
+        s1 = Set(curNG['comps'])
+        s2 = Set(origNG['comps'])
+        addedComps = list(s1 - s2)
+        removedComps = list(s2 - s1)
+        addedComps = [int(x) for x in addedComps]
+        if curNG['installtype'] == 'package' and addedComps:
+            query = "select dpid from driverpacks where cid in %s" %seq2tplstr(addedComps)
+            self.database.execute(query)
+            rv = self.database.fetchall()
+            if len(rv) >= 1:
+                # Before running driverpatch, ensure we have the 'proper' initrd
+                # Create a copy of the 'master' for this repo.
+                self.database.execute('select ostype from repos where repoid = \'%s\'' % curNG['repoid'])
+                rv = self.database.fetchall()
+
+                if rv:
+                    srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
+                    dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( curNG['installtype'], curNG['ngid'] ))
+
+                    try:
+                        shutil.copyfile(srcInitrdFileName, dstInitrdFileName)
+                    except OSError, e:
+                        self.selector.popupMsg("Error copying initrd", "Error copying pristine initrd (%s to %s) for this nodegroup.  This failure will likely result in unexpected behaviour.\n%s" % ( srcInitrdFileName, dstInitrdFileName, e ))
+                else:
+                    self.selector.popupMsg("Error determining initrd for nodegroup",
+                        "This nodegroup appears not to have an associated repo.  Using defaults.")
+
+                #driverpatch
+                self.runTool('driverpatch', " nodegroup name='%s'" %curNG['ngname'])
+
+        #3. handle component plugins
+        if self.__plugdir not in sys.path:
+            sys.path.append(self.__plugdir)
+        self.handleCompPlug(removedComps, 'remove')
+        self.handleCompPlug(addedComps, 'add')
+
+        if not ('packs' in key_lst or 'comps' in key_lst):
+            # Remove the last screen
+            del self.selector.screens[-1]
+
+class scrNGEEdit_End(USXBaseScreen):
+    name = 'cfmsync Update'
+    msg = 'Update nodegroup with cfmsync'
+
+    buttons = ['yes_button', 'no_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp,
+             gridWidth=gridWidth)
+
+    def setCallbacks(self):
+        self.buttonsDict['yes_button'].setCallback_(self.doYesAction)
+        self.buttonsDict['no_button'].setCallback_(self.doNoAction)
+
+    def doYesAction(self):
+        self.runTool('cfmsync', "-f -n '%s' -p" %curNG['ngname'])
+
+        return NAV_FORWARD
+
+    def doNoAction(self):
+        # There is no option to back out at this point; all settings have 
+        # been applied, so simply return to the main screen.
+
+        cmd = 'cfmsync'+ " -f -n '%s' -p" %curNG['ngname']
+        self.selector.popupMsg("cfmsync reminder",
+            "Please update the nodes manually" + \
+            " at your earliest convenience by running\n%s" %cmd)
+
+        return NAV_FORWARD
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 1)
+
+        lblheader = snack.Label("\
+Do you wish to update the nodes in this nodegroup now?")
+
+        self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
+             growx=1, anchorLeft=1)
+
     def runTool(self,tool, argstr):
+        # I am totally against copying this function from another class,
+        # however now is not the time to refactor...
 
         kl.info("Final Actions: Running %s:" %tool)
         cmd = "%s %s" %(tool,argstr)
@@ -2313,111 +2479,6 @@ class scrNGEEdit_Finalize(USXBaseScreen):
 
         self.selector.popupMsg(_title, _msg, width = 65)
         kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
-
-    def expireNodes(self):
-        diff_keys = Set(self.__diffNG.keys())
-        if not diff_keys:
-            return
-
-        reinst_keys = Set(['installtype', 'repoid', 'parts', 'nets', 'modules',
-                           'scripts', 'kernel', 'kparams'
-                          ])
-        expire_keys = reinst_keys | Set(['packs', 'comps'])
-        reinst = diff_keys & reinst_keys
-        expire = diff_keys & expire_keys
-
-        update_vallst = []
-        if reinst:
-            update_vallst.append("bootfrom=0")
-        if expire:
-            update_vallst.append("state='Expired'")
-        if update_vallst:
-            query = "update nodes set " + string.join(update_vallst,',') + " where ngid = %s" %curNG.PKval
-            try:
-                self.database.execute(query)
-            except:
-                self.selector.popupMsg("Node state update", "Failed updating node state " +\
-                                       "- they may require a reinstall")
-
-    def formAction(self):
-
-        #1. FinalActions: node state update
-        self.expireNodes()
-
-        #2. run second-party tools:
-        # * if imaged (both disked & diskless)
-        #        if changes in (components or packages or repo)
-        #            run buildimage (buildimage -n $ngid)
-        #  * if imaged (both disked & diskless)
-        #        if changes in (modules or repo)
-        #            buildinitrd -n $ngid
-        #  * all install types
-        #    if changes in packages or components
-        #        call cfmsync -n $ngid -p
-        #  * if package-based and adding a component with drivers
-        #       driverpatch to patch initrd w/ new drivers
-        #       driverpatch nodegroup id=curNG['ngid']
-
-        key_lst = self.__diffNG.keys()
-        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['modules','repoid','initrd']):
-            #buildinitrd
-            self.runTool('buildinitrd', " -n '%s'" %curNG['ngname'])
-
-        if curNG['installtype'] != 'package' and Set(key_lst) & Set(['comps','packs','repoid','scripts']): 
-            #buildimage
-            self.runTool("buildimage", " -n '%s'" %curNG['ngname'])
-
-        run_driverpatch = False
-        s1 = Set(curNG['comps'])
-        s2 = Set(origNG['comps'])
-        addedComps = list(s1 - s2)
-        removedComps = list(s2 - s1)
-        addedComps = [int(x) for x in addedComps]
-        if curNG['installtype'] == 'package' and addedComps:
-            query = "select dpid from driverpacks where cid in %s" %seq2tplstr(addedComps)
-            self.database.execute(query)
-            rv = self.database.fetchall()
-            if len(rv) >= 1:
-                run_driverpatch = True
-
-        if run_driverpatch:
-            # Before running driverpatch, ensure we have the 'proper' initrd
-            # Create a copy of the 'master' for this repo.
-            self.database.execute('select ostype from repos where repoid = \'%s\'' % curNG['repoid'])
-            rv = self.database.fetchall()
-
-            if rv:
-                srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
-                dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( curNG['installtype'], curNG['ngid'] ))
-
-                try:
-                    shutil.copyfile(srcInitrdFileName, dstInitrdFileName)
-                except OSError, e:
-                    self.selector.popupMsg("Error copying initrd", "Error copying pristine initrd (%s to %s) for this nodegroup.  This failure will likely result in unexpected behaviour.\n%s" % ( srcInitrdFileName, dstInitrdFileName, e ))
-            else:
-                self.selector.popupMsg("Error determining initrd for nodegroup",
-                    "This nodegroup appears not to have an associated repo.  Using defaults.")
-
-            #driverpatch
-            self.runTool('driverpatch', " nodegroup name='%s'" %curNG['ngname'])
-
-        if 'packs' in key_lst or 'comps' in key_lst:
-            #cfmsync
-            run_update = self.selector.popupYesNo("CFM Sync", "Do you wish to update "+\
-                        "the nodes in this nodegroup now?", defaultNo=True)
-            if run_update:
-                self.runTool('cfmsync', "-n '%s' -p" %curNG['ngname'])
-            else:
-                cmd = 'cfmsync'+ " -n '%s' -p" %curNG['ngname']
-                self.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
-                    " at your earliest convenience by running\n%s" %cmd)
-
-
-        #3. handle component plugins
-        if self.__plugdir not in sys.path:
-            sys.path.append(self.__plugdir)
-        self.handleCompPlug(removedComps, 'remove')
-        self.handleCompPlug(addedComps, 'add')
 
 class scrNGEEdit_Scripts(USXBaseScreen):
     name = 'Custom Scripts'
@@ -2631,11 +2692,11 @@ class NGEApp(KusuApp):
 
     def run(self):
         if self.action == NGE_TUI:
-            ScreenFactory.screens = [
-                                        scrNGEMain(database=self.__db, kusuApp=self),
-                                    ]
+            screenFactory = ScreenFactoryImpl([
+                scrNGEMain(database=self.__db, kusuApp=self),
+            ])
 
-            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Editor", showTrail=False)
+            ks = USXNavigator(screenFactory, screenTitle="Node Group Editor", showTrail=False)
             ks.run()
 
         elif self.action == NGE_CPY:
@@ -2854,7 +2915,10 @@ class NGEApp(KusuApp):
                     print '\t' + entrystr
             else:
                 print "Networks: ".ljust(justval), None
-                        
+
+class ScreenFactoryImpl(ScreenFactory):
+    def __init__(self, screenlist):
+        ScreenFactory.screens = screenlist
 
 if __name__ == '__main__':
     if os.geteuid() != 0:

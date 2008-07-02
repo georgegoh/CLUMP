@@ -505,17 +505,18 @@ class NetEditApp(object, KusuApp):
                         sys.exit(0)
                     else:
                         try:
-                            database.connect('kusudb', 'apache')
-                            database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
-                            if not network[1]:
-                               print self._("Deleting DHCP network: %s\n" % self._options.delete)
-                            else:
-                               print self._("Deleting network: %s\n" % network[1])
+                           database.connect('kusudb', 'apache')
+                           database.execute("DELETE FROM ng_has_net WHERE netid = %d" % int(self._options.delete)) 
+                           database.execute("DELETE FROM networks WHERE netid = %d" % int(self._options.delete))
+                           if not network[1]:
+                              print self._("Deleting DHCP network: %s\n" % self._options.delete)
+                           else:
+                              print self._("Deleting network: %s\n" % network[1])
 
                         except:
-                            print self._("DB_Query_Error\n")
-                            self.unlock()
-                            sys.exit(-1)
+                           print self._("DB_Query_Error\n")
+                           self.unlock()
+                           sys.exit(-1)
             if invalidID: 
                 self.unlock()
                 self.parser.error(self._("netedit_error_invalid_id"))
@@ -1184,6 +1185,7 @@ class NetworkMainWindow(USXBaseScreen):
                 flag = 0                    
             elif prompt == "yes":
                 self.database.connect('kusudb', 'apache')
+                self.database.execute("DELETE FROM ng_has_net WHERE netid = %d" % int(currNetwork[0]))
                 self.database.execute("DELETE FROM networks WHERE netid = %d" % int(currNetwork[0]))
 
         return NAV_NOTHING

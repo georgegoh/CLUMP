@@ -22,7 +22,9 @@ class KusuRC(rcplugin.Plugin):
         self.delete = True
         self.allowed_ports = [('tcp', 22),
                               ('tcp', 53),
-                              ('udp', 53)]
+                              ('udp', 53),
+                              ('tcp', 80),
+                              ('tcp', 443)]
 
     def run(self):
         self.setupSysCtl()
@@ -122,8 +124,6 @@ class KusuRC(rcplugin.Plugin):
         for proto, port in self.allowed_ports:
             filter += '-A INPUT -i %s -m state --state NEW -p %s --dport %d -j ACCEPT\n' % \
                         (public, proto, port)
-        filter += '-A INPUT -i eth1 -m state --state NEW -p tcp --dport 80 -j ACCEPT\n'
-        filter += '-A INPUT -i eth1 -m state --state NEW -p tcp --dport 443 -j ACCEPT\n'
 
         for dev in private_nics:
             filter += '-A FORWARD -i %s ' % dev + \

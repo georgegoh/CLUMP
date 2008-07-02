@@ -192,6 +192,16 @@ class AddHostApp(KusuApp):
            print kusuApp._("addhost_nghosts_lock")
            sys.exit(-1)
 
+        # Check if repoman is in use, if so abort running addhost.
+	if os.path.isfile("/var/lock/subsys/repoman"):
+	   print kusuApp._("ERROR:   Cannot run addhost because repoman is running. Please wait for repoman to finish first")
+	   sys.exit(-1)
+
+        # Check if repopatch is in use, if so abort running addhost.
+        if os.path.isfile("/var/lock/subsys/repopatch"):
+	   print kusuApp._("ERROR:   Cannot run addhost because repopatch is running. Please wait for repopatch to finish first")
+	   sys.exit(-1)
+	   
         if self.islock():
            print kusuApp._("addhost_already_inuse")
            sys.exit(-1)
@@ -342,7 +352,7 @@ class AddHostApp(KusuApp):
             myNode.setRackNumber(myNodeInfo.nodeRackNumber)
             #myNode.setNodegroupByName(myNodeInfo.nodeGroupSelected)
             for macaddr in macfileList:
-                 if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[-:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
+                 if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
                     print kusuApp._("Skipping '%s'. Not a MAC address" % macaddr.strip())
                     continue
 
@@ -496,7 +506,6 @@ class AddHostApp(KusuApp):
         if len(myNodeInfo.nodeList):
             if pluginActions:
                pluginActions.plugins_finished()
-
         self.unlock()
  
 class PluginActions(object, KusuApp):
@@ -729,7 +738,7 @@ class WindowSelectNode(NodeGroupWindow):
             installerInfo = self.database.fetchall()
 
             # Get list of node group's available gateways.
-            query = "SELECT networks.gateway, networks.startip FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=0" % \
+            query = "SELECT networks.gateway, networks.startip FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=0 AND NOT networks.device = 'bmc'" % \
                     myNodeInfo.nodeGroupSelected
             self.database.execute(query) 
             ngInfo = self.database.fetchall()
@@ -917,6 +926,7 @@ class WindowUnmanaged(NodeGroupWindow):
            myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname.strip(), myNodeInfo.staticIPAddress.strip())
            myNodeInfo.forceQuitflag = True
            if pluginActions:
+              self.screen.finish()
               pluginActions.plugins_add(myNodeInfo.staticHostname.strip())
               pluginActions.plugins_finished()
         return NAV_QUIT
@@ -996,6 +1006,8 @@ class WindowNodeStatus(NodeGroupWindow):
                            self.myNode.replaceNICBootEntry (myNodeInfo.replaceNodeName, macAddress)
                            # Call Replace mode plugins
                            if pluginActions:
+                              self.screen.finish()
+                              myNodeInfo.nodeList.append(myNodeInfo.replaceNodeName)
                               pluginActions.plugins_replaced(myNodeInfo.replaceNodeName)
                            return NAV_QUIT
  
@@ -1006,8 +1018,8 @@ class WindowNodeStatus(NodeGroupWindow):
                           self.myNode.addUnmanagedDHCPDevice(myNodeInfo.selectedInterface, myNodeInfo.staticHostname, macAddress)
                           
                           if pluginActions:
+                             myNodeInfo.nodeList.append(myNodeInfo.staticHostname)
                              pluginActions.plugins_add(myNodeInfo.staticHostname)
-                             pluginActions.plugins_finished()
                           return NAV_QUIT
 
                     del self.myNode

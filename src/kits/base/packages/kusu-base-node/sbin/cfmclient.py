@@ -490,7 +490,7 @@ class CFMClient:
         if self.ostype[:4] == 'rhel' :
             dirname = '/Server/'
         if self.ostype[:6] == 'centos':
-            dirname = '/CentOS/'
+            dirname = ''
 
         yumconf = '/tmp/yum.conf'
         fp = file(yumconf, 'w')

@@ -36,7 +36,8 @@ class KickstartFactory(BaseFactory):
             'tz', \
             'installsrc', \
             'lang', \
-            'keyboard']
+            'keyboard', \
+            'diskorder']
     
     def __init__(self, profile, template=None):
     
@@ -194,7 +195,10 @@ class KickstartFactory(BaseFactory):
                 else:
                     # Ignore other bits like empty mount point
                     continue 
-                
+               
+                if p.label:
+                    str = str + ' --label=%s' % p.label
+
                 str = str + ' --fstype=%s' % fs_type
 
                 # Drop the /dev 

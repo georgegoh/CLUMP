@@ -128,7 +128,8 @@ class DistroInstallSrcBase(object):
                     else:
                         raise FileAlreadyExists
                 else:
-                    raise CopyError
+                    errmsg = 'Write permission denied: %s' % path(dest)
+                    raise CopyError, errmsg
             else:
                 if path(dest).parent.access(os.W_OK):
                     # make sure that the existing destpath is accessible and writable
@@ -143,7 +144,8 @@ class DistroInstallSrcBase(object):
                     else:
                         raise FileAlreadyExists
                 else:
-                    raise CopyError
+                    errmsg = 'Write permission denied: %s' % path(dest).parent
+                    raise CopyError, errmsg
         except IOError, e:
             raise e
     
@@ -165,7 +167,8 @@ class DistroInstallSrcBase(object):
                     else:
                         raise FileAlreadyExists                
                 else:
-                    raise CopyError
+                    errmsg = "Write permission denied: %s" % path(dest)
+                    raise CopyError, errmsg
             else:
                 if path(dest).parent.access(os.W_OK):
                     # make sure that the existing destpath is accessible and writable
@@ -180,7 +183,8 @@ class DistroInstallSrcBase(object):
                     else:
                         raise FileAlreadyExists
                 else:
-                    raise CopyError
+                    errmsg = "Write permission denied: %s" % path(dest).parent
+                    raise CopyError, errmsg
         except IOError, e:
             raise e
 
@@ -296,7 +300,8 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -308,7 +313,8 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -333,7 +339,8 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -345,7 +352,8 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
                 
     def getKernelPackages(self):
         # set up pattern to match centos kernel packages
@@ -422,10 +430,10 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
         return None
             
     def copyKernel(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError, dest
         
     def copyInitrd(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError, dest
         
     def getKernelPackages(self):
         # set up pattern to match centos kernel packages
@@ -531,7 +539,8 @@ class Fedora6InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -543,7 +552,8 @@ class Fedora6InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -569,7 +579,8 @@ class Fedora6InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -581,7 +592,8 @@ class Fedora6InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getVersion(self):
         return self.version
@@ -680,10 +692,10 @@ class Fedora6AdditionalInstallSrc(DistroInstallSrcBase):
         return None
             
     def copyKernel(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError, dest
         
     def copyInitrd(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError, dest
 
     def getVersion(self):
         return self.version
@@ -803,7 +815,8 @@ class RHEL4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -815,7 +828,8 @@ class RHEL4InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
@@ -951,7 +965,8 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -963,7 +978,8 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -988,7 +1004,8 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,dest
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1000,7 +1017,8 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
 
     def getArch(self):
         '''Centos specific way of getting the distro architecture'''
@@ -1080,10 +1098,10 @@ class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
         return None
             
     def copyKernel(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError,dest
         
     def copyInitrd(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError,dest
 
     def getArch(self):
         '''Redhat specific way of getting the distro architecture'''
@@ -1215,7 +1233,8 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1227,7 +1246,8 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -1252,7 +1272,8 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1264,7 +1285,8 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError,errmsg
 
     def getVersion(self):
         return self.version
@@ -1374,10 +1396,10 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
         return None
             
     def copyKernel(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError, dest
         
     def copyInitrd(self, dest, overwrite=False):
-        raise CopyError
+        raise CopyError,dest
 
     def getVersion(self):
         return self.version
@@ -1510,7 +1532,8 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1522,7 +1545,8 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -1547,7 +1571,8 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1559,7 +1584,8 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getVersion(self):
         return self.version
@@ -1682,7 +1708,8 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1694,7 +1721,8 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -1719,7 +1747,8 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1731,7 +1760,8 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError,errmsg
 
     def getVersion(self):
         return self.version
@@ -1854,7 +1884,8 @@ class Fedora9InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1866,7 +1897,8 @@ class Fedora9InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getStage2Path(self):
         """Get the stage2 path object"""
@@ -1891,7 +1923,8 @@ class Fedora9InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists                
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
@@ -1903,7 +1936,8 @@ class Fedora9InstallSrc(DistroInstallSrcBase):
                 else:
                     raise FileAlreadyExists
             else:
-                raise CopyError
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
 
     def getVersion(self):
         return self.version

@@ -466,7 +466,7 @@ class RedhatRepo(BaseRepo):
         return self
 
     def makeMetaInfo(self):
-        self.makeYumMetaData(self)
+        self.makeYumMetaData()
 
     def makeYumMetaData(self):
         """Creates a yum repoistory"""

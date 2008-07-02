@@ -23,7 +23,7 @@ Release: 0
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
-Requires: kusu-base-node 
+Requires: kusu-base-node
 
 BuildArchitectures: noarch
 Requires: python

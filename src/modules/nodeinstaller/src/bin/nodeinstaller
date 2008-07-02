@@ -9,6 +9,11 @@ import sys
 import os
 import re
 import StringIO
+import struct
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 import kusu.util.log as kusulog
 # Sets up kusu logging
 kl = kusulog.getKusuLog()
@@ -18,10 +23,12 @@ from kusu.core.app import KusuApp
 from kusu.util.errors import *
 from kusu.util import compat
 from kusu.nodeinstaller import NodeInstaller, retrieveNII
+from kusu.installer.util import remarkMBRs
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
 from kusu.ui.text.navigator import Navigator
 from kusu.partitiontool.nodes import checkAndMakeNode
+from kusu.partitiontool import DiskProfile
 
 class NodeInstallerApp(KusuApp):
     
@@ -225,6 +232,53 @@ class ProgressScreen(BaseScreen):
         self.selector.popupMsg('Internal Partitiontool State', s, width=60)
         return NAV_NOTHING
 
+    def disambiguateDiskOrder(self, disk_profile, interactive=True, fix=True):
+        """
+        If there are disks which share the same MBR signature, disambiguate
+        them by rewriting the duplicate signatures with unique ones.
+        System needs to be rebooted for the kernel EDD code to read the MBR
+        signatures by BIOS order.
+        """
+        disk_order = disk_profile.getBIOSDiskOrder()
+        disk0 = disk_profile.disk_dict[disk_order[0]]
+        disk0_mbrsig = disk0.mbr_signature
+
+        duplicates = []
+        for k in disk_order[1:]:
+            d = disk_profile.disk_dict[k]
+            if d.mbr_signature == disk0.mbr_signature:
+                duplicates.append(k)
+
+        if not duplicates:
+            return disk_order
+
+        if interactive:
+            if fix:
+                msg = 'The Kusu installer cannot automatically determine the first '
+                msg += 'disk that this system boots from due to duplicate MBR '
+                msg += 'signatures on some disks.\n\n'
+                msg += 'To proceed, Kusu needs to make changes to the MBR signature '
+                msg += 'of the affected disks and reboot. On reboot, Kusu will then '
+                msg += 'be able to determine which disk the system boots from.\n\n'
+                msg += 'Please click "OK" to proceed, or power off now to stop the '
+                msg += 'installation'
+                self.selector.popupMsg('Cannot determine the first disk', msg,60)
+                remarkMBRs(dp)
+                subprocess.call(['reboot'])
+            else:
+                msg = 'The Kusu installer cannot automatically determine the first '
+                msg += 'disk that this system boots from due to duplicate MBR '
+                msg += 'signatures on some disks.\n\n'
+                msg += 'Please refer to the installation guide for more information.'
+                self.selector.popupDialogBox('Cannot determine the first disk', msg, ['Reboot'])
+                subprocess.call(['reboot'])
+
+        # else not interactive
+        if fix:
+            remarkMBRs(disk_profile)
+        subprocess.call(["reboot"])
+
+
     def drawImpl(self):
         kl.debug('Downloading NII..')
         dlg = self.selector.popupProgress('Node Install Info', 'Downloading Node install info...')
@@ -234,7 +288,10 @@ class ProgressScreen(BaseScreen):
 
         kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg.')
         dlg = self.selector.popupProgress('Preparing Kickstart', 'Preparing Kickstart files...')
-        self.nodeinst.setup(self.ksfile, self.niihost)
+        tmp_disk_profile = DiskProfile(True)
+        disk_order = self.disambiguateDiskOrder(tmp_disk_profile)
+        kl.debug('Disk order: %s' % str(disk_order))
+        self.nodeinst.setup(self.ksfile, self.niihost, disk_order)
         dlg.close()
 
         kl.debug('Setting timezone')
@@ -293,4 +350,5 @@ if __name__ == '__main__':
 
     app = NodeInstallerApp()
     app.run()
+
 

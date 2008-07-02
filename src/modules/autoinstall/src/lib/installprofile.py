@@ -24,7 +24,8 @@ class BaseInstall:
                      'lang': None,
                      'dbs': None,
                      'prefix': None, 
-                     'keyboard': None}
+                     'keyboard': None,
+                     'diskorder' : None}
 
     def __init__(self, db, ngname, prefix=None):
         """prefix for the root directory"""

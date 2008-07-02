@@ -278,6 +278,7 @@ class DataModel(object):
             
         # get the list of nodegroups
         ngs = self.dbinst.NodeGroups.select()
+        comps = []
         if 'id' in kwargs and ngid:
             # get the components based on ngid
             comps = [ng.components for ng in ngs if ng.ngid == ngid and \
@@ -417,11 +418,13 @@ class DriverPatchController(object):
         col.unpack(tmpdir)
         col.pack(tmpdir,modulearchive)
         
-    def getKernelVersion(self, kmoddir, arch):
+    def getKernelVersion(self, packagerpm):
         """ Returns the kernel version.
         """
-        col = KernelModulesCollection(kmoddir, arch)
-        return col.getKernelVersion()
+        _krpm = path(packagerpm)
+        krpm = kernel.RPMPackage(_krpm)
+
+        return krpm.getKernelVersion()
         
     def getKernelModulesCgz(self, dirpath):
         """ Locate the modules.cgz in the dirpath. """
@@ -478,7 +481,7 @@ class DriverPatchController(object):
             f.copy(modulespath)
 
 
-    def generateModulesAssets(self, modulesdir, destdir):
+    def generateModulesAssets(self, modulesdir, destdir, kver):
         """ Generates new modules.alias / modules.dep based on the contents of the modulesdir and dumps the files in the destdir.
         """
 
@@ -489,9 +492,11 @@ class DriverPatchController(object):
 
         cpio_copytree(modulesdir,tmpdir)
 
-        cmd = 'depmod -b .'
-        depmodP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+        cmd = 'depmod -b . -v %s' % kver
+        devnull = open('/dev/null','r')
+        depmodP = subprocess.Popen(cmd,shell=True,cwd=tmpdir,stderr=devnull,stdout=devnull)
         depmodP.wait()
+        devnull.close()
 
         li = [f for f in tmpdir.walkfiles('modules.dep')]
         modulesdep = li[0]

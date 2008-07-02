@@ -397,14 +397,14 @@ class NodeFun(object, KusuApp):
                  if self._nodeList.has_key(self._nodeName):
                      self._rankCount += 1
                  else:
-                     self._createNodeEntry(macaddr, selectedinterface, installer, snackinstance=snackInstance)
+                     self._createNodeEntry(macaddr, selectedinterface, False, installer, snackinstance=snackInstance)
                      #t2=time.time()
                      #print "Time Spent: addNode(): %f" % (t2-t1)
                      return self._nodeName
 
         # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
         self._hostNameParse()
-        self._createNodeEntry(macaddr, selectedinterface, installer, snackinstance=snackInstance)
+        self._createNodeEntry(macaddr, selectedinterface, False, installer, snackinstance=snackInstance)
         #t2=time.time()
         #print "Time Spent: addNode(): %f" % (t2-t1)
         return self._nodeName
@@ -449,7 +449,7 @@ class NodeFun(object, KusuApp):
         #print "Time Spent: isUPUsed(): %f" % (t2-t1)
         return False
         
-    def _createNodeEntry(self, macaddr, selectedinterface, installer=True, static=False, snackinstance=None):
+    def _createNodeEntry(self, macaddr, selectedinterface, dhcpUnmanaged=False, installer=True, static=False, snackinstance=None):
         """createNodeEntry()
         Create a node in the database. """
         #t1=time.time()
@@ -508,11 +508,18 @@ class NodeFun(object, KusuApp):
 
                networkID = NICInfo[0]
                subnetNetwork = NICInfo[1]
-
+               
                if self._cachedDeviceIPs.has_key(selectedinterface):
                     startIP = self._cachedDeviceIPs[selectedinterface]
                else:
-                    startIP = NICInfo[2]
+                    try: 
+                         startIP = NICInfo[2]
+                    except:
+                         print "ERROR: Cannot add a host to a interface that uses DHCP. Please choose a different network."
+                         self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
+                         if os.path.isfile("/var/lock/subsys/addhost"):
+                            os.unlink("/var/lock/subsys/addhost")
+                         sys.exit(-1)
 
                IPincrement = int(NICInfo[3])
                ngGateway = NICInfo[4]
@@ -568,7 +575,11 @@ class NodeFun(object, KusuApp):
                 newIP = NICInfo[2]
 
              IPincrement = int(NICInfo[3])
-             ngGateway = NICInfo[4]
+             try:
+                 ngGateway = NICInfo[4]
+             except:
+                 ngGateway = None
+                 pass  # For nodes without a gateway
              
              while True:
                  if self.isIPUsed(newIP):
@@ -582,6 +593,7 @@ class NodeFun(object, KusuApp):
                            print "ERROR:  IP Address overflow, please use a different subnetwork"
                            raise UserExitError
                         else:
+                           print "ERROR:  IP Address overflow, please use a different subnetwork"
                            sys.exit(-1)
                  else:
                     # Add the used IP to cache list
@@ -591,14 +603,20 @@ class NodeFun(object, KusuApp):
 
              if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
                 # We're a DHCP/boot interface
-                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False:
+
+                # If gateway is empty, use the newIP instead.
+                if not ngGateway:
+                   ngGateway = newIP
+
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False and nicdev != 'bmc':
                    # Mark the MAC as used.
                    self.addUsedMAC(macaddr)
                    self._createNICBootEntry(nodeID, networkID, 1, newIP, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
                 else:
                    # Not a boot interface, just write out other info. 
-                   self._createNICBootEntry(nodeID, networkID, 0, newIP)
+                   if dhcpUnmanaged == False : # Dont create other boot entries when using unmanaged DHCP
+                      self._createNICBootEntry(nodeID, networkID, 0, newIP)
              else:
                 self._createNICBootEntry(nodeID, networkID, 0, newIP)
         #t2=time.time()
@@ -613,9 +631,21 @@ class NodeFun(object, KusuApp):
 
         nid = self.getNodeID(nodename)
         if not self._isMasterInstaller:
+	    # Delete the /tftpboot/kusu/pxelinux.cfg/macfile so node will pxe properly.
+	    self._dbRWrite.execute("SELECT mac FROM nics, nodes WHERE nics.nid=nodes.nid AND nodes.name='%s'" % nodename)
+	    macNodeInfo = self._dbRWrite.fetchall()
+	    for macaddr in macNodeInfo:
+                if macaddr[0]:
+                   macfile = "/tftpboot/kusu/pxelinux.cfg/01-%s" % macaddr[0].replace(':','-')
+	           if os.path.isfile(macfile):
+                      try:
+                          os.unlink(macfile)
+                      except:
+                          pass
+
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
-            self._dbRWrite.execute("UPDATE nodes SET state='Expired' WHERE nid='%s'" % nid)
+            self._dbRWrite.execute("UPDATE nodes SET state='Expired', bootfrom=0 WHERE nid='%s'" % nid)
             #t2=time.time()
             #print "replaceNodeEntry(): %f" % (t2-t1)
             return True
@@ -654,7 +684,7 @@ class NodeFun(object, KusuApp):
         self._nodeName = devicename
         self.setNodegroupByID(1)
         self._nodegroupInterfaces = self._findInterfaces()
-        self._createNodeEntry(mac, interface, installer=True, static=True)
+        self._createNodeEntry(mac, interface, dhcpUnmanaged=True, installer=True, static=True)
            
     def replaceNICBootEntry(self, nodename, macaddress):
         """replaceNICBootEntry(nodename, macaddress)
@@ -665,6 +695,9 @@ class NodeFun(object, KusuApp):
         self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
         data = self._dbReadonly.fetchone()[0]
         self._nodeName = nodename
+        # call boothost to generate PXE file immediately before we accept new lease.
+        os.system("/opt/kusu/sbin/boothost -m %s" % self._nodeName)
+
         # Recreate DHCP lease, this time using the new mac address found
         self._writeDHCPLease(data, macaddress)
         #t2=time.time()

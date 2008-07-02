@@ -123,6 +123,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
     k.lang = kiprofile['Language']
     k.installsrc = 'http://127.0.0.1/' 
     k.keyboard = kiprofile['Keyboard']
+    k.diskorder = kiprofile['Partitions']['disk_order']
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
         script = Script(RHEL5KickstartFactory(k))
@@ -163,8 +164,11 @@ def mountKusuMntPts(prefix, disk_profile):
     d = disk_profile.mountpoint_dict
     mounted = []
 
-    # Mount and create in order
-    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits']:
+    # Mount and create in order 
+    # fix bug where partition is mounted over lockfile dir - add /var to the list 
+    # so that the lock file is touched
+    # in the mounted partition if it exists. 
+    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits','/var']:
         mntpnt = prefix + m
 
         if not mntpnt.exists():
@@ -219,15 +223,10 @@ def writeNTP(prefix, kiprofile):
 
 def setInstallFlag(prefix, kiprofile):
     prefix = path(prefix)
-
-    tmpdir = prefix / 'tmp'
-    tmpdir.makedirs()
-
-    if kiprofile['OS'] in ['rhel', 'fedora', 'centos']:
-        tmpdir.chmod(1777)
-
-    flag = tmpdir /  'kusu' / 'installer_running'
-    flag.parent.makedirs()
+    flag = prefix / 'var' / 'lock' / 'subsys' /  'kusu-installer'
+    # fix issue where the lock dir can already exist, causing an expection
+    if not flag.parent.exists():
+        flag.parent.makedirs()
     flag.touch()
 
 

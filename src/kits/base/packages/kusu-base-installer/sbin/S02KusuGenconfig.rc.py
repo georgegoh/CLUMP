@@ -13,7 +13,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'genhosts'
-        self.desc = 'Generating /etc/hosts and /etc/hosts.equiv'
+        self.desc = 'Generating hosts, hosts.equiv, and resolv.conf'
         self.ngtypes = ['installer']
         self.delete = False
 
@@ -34,6 +34,16 @@ class KusuRC(rcplugin.Plugin):
 
         retcode, out, err = self.runCommand("genconfig hostsequiv > " +
                                             etchostsequiv)
+
+        if not retcode == 0:
+            return False
+
+        resolv = path('/etc/resolv.conf')
+
+        if not resolv.exists():
+            resolv.touch()
+
+        retcode, out, err = self.runCommand("genconfig resolv > " + resolv)
 
         if not retcode == 0:
             return False

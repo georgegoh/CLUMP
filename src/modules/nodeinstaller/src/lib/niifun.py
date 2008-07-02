@@ -180,7 +180,7 @@ class NodeInstInfoHandler(ContentHandler):
         cnt = 0
         fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
         for i in self.nics.keys():
-            fp.write('export NII_NICDEF%i=%s|%s|%s|%s|%s|%s|%s|%s\n' % ( cnt, self.nics[i]['device'],
+            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
                                                                          self.nics[i]['ip'],
                                                                          self.nics[i]['subnet'],
                                                                          self.nics[i]['network'],
