@@ -30,8 +30,8 @@ class InvalidKusuSource(Exception): pass
 class ToolNotFound(Exception): pass
 
 # constants
-SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel']
-USES_ANACONDA = ['centos', 'fedora', 'rhel']
+SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel', 'scientificlinux']
+USES_ANACONDA = ['centos', 'fedora', 'rhel', 'scientificlinux']
 SUPPORTED_ARCH = ['i386', 'x86_64']
 
 KUSU_MODULES = ['autoinstall','boot','core','util','ui',

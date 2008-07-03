@@ -145,7 +145,7 @@ class boothost:
             
         ostype      = data[0].split('-')[0]
 
-        if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel']:
+        if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel', 'scientificlinux']:
             # Find the best IP address to use
             for netdata in self.installerIPs:
                 instip, instsub = netdata

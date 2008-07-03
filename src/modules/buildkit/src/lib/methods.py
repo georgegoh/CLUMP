@@ -195,6 +195,13 @@ def Fedora9Component(**kwargs):
     kwargs['osversion'] = '9'
     return DefaultComponent(**kwargs)
 
+def ScientificLinux5Component(**kwargs):
+    """ This is used for ScientificLinux5Component 5 components. """
+    kwargs['ostype'] = 'scientificlinux'
+    kwargs['osversion'] = '5'
+    return DefaultComponent(**kwargs)
+
+
 def DefaultComponent(**kwargs):
     """ The default component will associate itself to both the installer and compute
         nodegroups if the ngtypes is not defined.

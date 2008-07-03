@@ -1321,4 +1321,131 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
             if p.exists():
                 return p
  
-        return None 
+        return None
+
+class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'scientificlinux', '5', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'scientificlinux', '5', os_arch, prefix, db)
+        
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'SL/repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'SL'
+ 
+    def getOSMajorVersion(self, os_version):
+        """Returns the major number"""
+        return os_version.split('.')[0]
+
+    def getSources(self):
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      arch=self.os_arch)
+        
+        if not kits:
+            return []
+
+        if len(kits) == 1:
+            min_version = kits[0].version 
+        else:
+            min_version = '5.999'
+
+            for kit in kits:
+                if self.getOSMajorVersion(kit.version) == '5' and kit.version < min_version:
+                    min_version = kit.version
+
+        return [path(os.path.join(self.prefix, 'depot', 'kits', \
+                                  self.os_name, min_version, self.os_arch, \
+                                  self.dirlayout['rpmsdir']))]
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://ftp.scientificlinux.org/linux/scientific')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('scientificlinux'):
+                baseurl = path(cfg['scientificlinux']['url'])
+            else:
+                baseurl = path('http://ftp.scientificlinux.org/linux/scientific')
+
+        os = str(baseurl / '5x' / self.os_arch / 'SL')
+        updates = str(baseurl / '5x' / self.os_arch / 'updates' / 'security')
+        
+        return [os,updates]
+    
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        src = self.os_path / self.dirlayout['repodatadir'] / 'comps-sl.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'comps-sl.xml'
+
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
+    def makeYumMetaData(self):
+        """Creates a yum repoistory"""
+
+        dotrepodata = self.repo_path / '.repodata'
+        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path / 'SL')
+
+        try:
+            p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except: 
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+            
+            raise CommandFailedToRunError, 'createrepo failed'
+
+        if retcode:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+ 
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
+            raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
+
+        kl.info('Made yum repo: %s' % self.repo_path)
+
+    def copyKusuNodeInstaller(self):
+        """copy the kusu installer to the repository"""
+
+        kusu_root = os.environ.get('KUSU_ROOT', None)
+
+        if not kusu_root:
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # since /opt/kusu is absolute
+            kusu_root = 'opt/kusu' 
+
+        # Testing mode
+        if self.test:
+            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # during testing and updates.img will not be present.
+            src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+        else:
+            src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+    
+        dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
+
+        if dest.exists(): dest.remove()
+
+        if src.exists():
+            kl.info('Copy Node Installer image: %s' % src)
+            (dest.realpath().parent.relpathto(src)).symlink(dest)

@@ -193,12 +193,34 @@ if [ $# != 0 ]; then
 	
 	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/rhel/5/nodeinstaller/ks.cfg.tmpl \
 	$NIPATCHFILESDIR/rhel/5/x86_64
+
+	echo "Building Scientific Linux 5 patchfiles.."
+	mkdir -p $NIPATCHFILESDIR/scientificlinux/5/i386
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=scientificlinux \
+	version=5 arch=i386 \
+	patch=$NIPATCHFILESDIR/scientificlinux/5/i386/updates.img
+	ec=`expr $ec + $?`
+
+	mkdir -p $NIPATCHFILESDIR/scientificlinux/5/x86_64
+	$KUSU_BUILD_ARTEFACTS make-ni-patch \
+	kususrc=${CMAKE_CURRENT_SOURCE_DIR} os=scientificlinux \
+	version=5 arch=x86_64 \
+	patch=$NIPATCHFILESDIR/scientificlinux/5/x86_64/updates.img
+	ec=`expr $ec + $?`
 	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/scientificlinux/5/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/scientificlinux/5/i386
+	
+	cp -f ${CMAKE_CURRENT_SOURCE_DIR}/src/dists/scientificlinux/5/nodeinstaller/ks.cfg.tmpl \
+	$NIPATCHFILESDIR/scientificlinux/5/x86_64
+
 	if [ ! $ec -eq 0 ]; then
 		echo "Failure building NodeInstaller patchfiles!"
 		rm -rf $NIPATCHFILESDIR/fedora
 		rm -rf $NIPATCHFILESDIR/centos
 		rm -rf $NIPATCHFILESDIR/rhel
+		rm -rf $NIPATCHFILESDIR/scientificlinux
 		exit 2
 	fi
 	
