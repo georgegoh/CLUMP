@@ -23,8 +23,6 @@ export LANG="en_US.UTF-8"
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
 
-python -c "import sys; print sys.path"
-
 # launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/nodeinstaller
 EXIT_CODE=$?
