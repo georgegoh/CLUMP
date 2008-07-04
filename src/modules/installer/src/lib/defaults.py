@@ -204,15 +204,9 @@ def vanillaSchemaLVM():
     d1p3.id = 'd1p3'
     d1.addPartition(d1p3)
 
-#    dn = Disk()
-#    dnpn = Partition()
-#    dnpn.fill = 'N'
-#    dn.addPartition(dnpn)
-
     # Create disk collection and add disk 1 to it.
     disks = DiskCollection()
     disks.addDisk(d1)
-#    disks.addDisk(dn)
 
     # LVM disks.
     volgroup00 = LVMGroup()
@@ -263,34 +257,6 @@ def vanillaSchemaLVM():
 
     return PartitionSchema(disks=disks, lvm=lvm, preserve_types=['Dell Utility'])
 
-
-def scenario22():
-    """This corresponds to Scenario 2.2 of the Client Node Partitioning Report,
-       Appendix:
-          a. /boot - ext3, 100:
-          b. swap - 1000M
-          c. / - ext3, 6000M (fill)
-    """
-    # define the physical disk and partitions first
-    disk_dict = { 1: { 'partition_dict': {} } }
-    disk1_partition_dict = disk_dict[1]['partition_dict']
-    disk1_partition_dict[1] = { 'size_MB': 100,
-                                'fs': 'ext3',
-                                'mountpoint': '/boot',
-                                'fill': False}
-    disk1_partition_dict[2] = { 'size_MB': 1000,
-                                'fs': 'linux-swap',
-                                'mountpoint': None,
-                                'fill': False}
-    disk1_partition_dict[3] = { 'size_MB': 6000,
-                                'fs': 'ext3',
-                                'mountpoint': '/',
-                                'fill': True}
-
-    schema = {'disk_dict' : disk_dict,
-              'vg_dict' : None }
-
-    return schema
 
 def setupPreservedPartitions(disk_profile, schema):
     preserved_types = schema['preserve_types']
