@@ -129,6 +129,10 @@ def genAutoInstallScript(disk_profile, kiprofile):
         script = Script(RHEL5KickstartFactory(k))
     elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '7':
         script = Script(Fedora7KickstartFactory(k))
+    elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '8':
+        script = Script(Fedora8KickstartFactory(k))
+    elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '9':
+        script = Script(Fedora9KickstartFactory(k))
     else:
         script = Script(KickstartFactory(k))
 

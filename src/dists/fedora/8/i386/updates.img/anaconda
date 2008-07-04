@@ -24,9 +24,9 @@ source /opt/kusu/bin/kusuenv.sh
 /usr/bin/mkdir -p $KUSU_TMP
 
 # migrate stage2.img
-/usr/bin/cp /mnt/source/images/stage2.img /tmp/stage2.img 
+/usr/bin/cp /mnt/source/images/stage2.img /tmp/ramfs/stage2.img 
 python -c "import sys; sys.path.append('/usr/lib/anaconda'); \
-           import isys; isys.lochangefd('/dev/loop0', '/tmp/stage2.img')"
+           import isys; isys.lochangefd('/tmp/loop0', '/tmp/ramfs/stage2.img')"
 /usr/bin/umount /mnt/source
 
 # launch the Kusu Installer
