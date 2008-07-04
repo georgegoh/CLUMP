@@ -23,7 +23,8 @@ class RepoFactory(object):
                    'centos' : {'4': repo.Centos4Repo,
                                '5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo, 
-                               '4': repo.Redhat4Repo} }
+                               '4': repo.Redhat4Repo},
+                   'scientificlinux' : { '5': repo.ScientificLinux5Repo}}
 
     def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.
