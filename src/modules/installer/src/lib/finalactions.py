@@ -79,7 +79,8 @@ def makeRepo(kiprofile):
     db.flush()
 
 def genAutoInstallScript(disk_profile, kiprofile):
-    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
+    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory
+    from kusu.autoinstall.scriptfactory import Fedora7KickstartFactory, Fedora8KickstartFactory, Fedora9KickstartFactory
     from kusu.autoinstall.autoinstall import Script
     from kusu.autoinstall.installprofile import Kickstart, RHEL5Kickstart
 
