@@ -32,12 +32,18 @@ def testgetArch():
     arch = 'fictitious'
     assert tools.getArch() != arch
     try:
-        subP =  subprocess.Popen(["uname","-p"],stdout=subprocess.PIPE, stderr = subprocess.PIPE)
+        subP =  subprocess.Popen(["uname","-m"],stdout=subprocess.PIPE, stderr = subprocess.PIPE)
     except OSError,e:
-        assert 'Test failed - unable to get arch. uname -p failed with error: %s ' % os.strerror(e.errno)
+        assert 'Test failed - unable to get arch. uname -m failed with error: %s ' % os.strerror(e.errno)
     out,err = subP.communicate()
     assert err == ''
-    assert out.rstrip()  == tools.getArch()
+    if out.rstrip() == 'x86_64':
+        arch = 'x86_64'
+    elif arch in tools.X86_ARCHES:
+        arch='x86'
+    else:
+        arch = 'noarch'
+    assert arch  == tools.getArch()
     
     
 def testcheckToolDeps():
