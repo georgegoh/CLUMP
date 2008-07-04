@@ -263,7 +263,7 @@ class ProgressScreen(BaseScreen):
                 msg += 'Please click "OK" to proceed, or power off now to stop the '
                 msg += 'installation'
                 self.selector.popupMsg('Cannot determine the first disk', msg,60)
-                remarkMBRs(dp)
+                remarkMBRs(disk_profile)
                 subprocess.call(['reboot'])
             else:
                 msg = 'The Kusu installer cannot automatically determine the first '
