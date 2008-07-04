@@ -748,7 +748,7 @@ sysfs                       /sys        sysfs   defaults        0 0
             self.dp.editLogicalVolume(lv, newsize, 
                                       lv.fs_type, lv.mountpoint)
             self.dp.commit()
-            assert lv.size  == orgsize * 2
+            assert lv.size == orgsize * 2
             assert lv.size == int(res_dict['lenum']) * 32 * 1024 * 1024 * 2
 
             res_new_dict = probeLVMEntity('lvm lvdisplay %s' % lv.path, dict)
