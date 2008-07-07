@@ -275,10 +275,14 @@ class LogicalVolumeGroup(object):
         if fill:
             if extents_to_use > free_extents:
                 raise OutOfSpaceError, 'Cannot fulfill minimum size requirements for LV %s.' % name
-            extents = free_extents
+            extents = free_extents - 1
+            if extents < 0: extents = 0
         else:
             if extents_to_use == free_extents:
-                extents = free_extents
+                if free_extents > 0:
+                    extents = free_extents - 1
+                else:
+                    extents = 0
             elif free_extents > extents_to_use:
                 extents = int(math.ceil(extents_to_use))
             else:
