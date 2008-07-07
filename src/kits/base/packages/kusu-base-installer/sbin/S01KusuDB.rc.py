@@ -39,7 +39,7 @@ class KusuRC(rcplugin.Plugin):
         dbs = db.DB('mysql', 'kusudb', 'root', entity_name='alt')
 
         sqliteDB.copyTo(dbs)
-        os.unlink('/root/kusu.db')
+        #os.unlink('/root/kusu.db')
     
         # Set db.passwd permission correctly
         apache = pwd.getpwnam('apache')
