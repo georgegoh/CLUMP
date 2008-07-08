@@ -275,14 +275,10 @@ class LogicalVolumeGroup(object):
         if fill:
             if extents_to_use > free_extents:
                 raise OutOfSpaceError, 'Cannot fulfill minimum size requirements for LV %s.' % name
-            extents = free_extents - 1
-            if extents < 0: extents = 0
+            extents = free_extents
         else:
             if extents_to_use == free_extents:
-                if free_extents > 0:
-                    extents = free_extents - 1
-                else:
-                    extents = 0
+                extents = free_extents
             elif free_extents > extents_to_use:
                 extents = int(math.ceil(extents_to_use))
             else:
@@ -291,7 +287,7 @@ class LogicalVolumeGroup(object):
         lv = LogicalVolume(name, self, extents, fs_type, mountpoint)
         self.lv_dict[name] = lv
 
-        queueCommand(lvm.createLogicalVolume, (self.name, name, extents))
+        queueCommand(lvm.createLogicalVolume, (self.name, name, extents, fill))
         queueCommand(lvm.makeNodes, None)
         return lv
 

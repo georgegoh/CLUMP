@@ -87,15 +87,23 @@ def probePhysicalVolume(path):
 
 
 def probeLogicalVolumeGroup(name):
-    probe_dict = { 'extent_size' : 'PE Size' }
-    results_dict = probeLVMEntity('lvm vgdisplay %s --units b' % name, probe_dict)
-    extent = long(results_dict['extent_size'])
+    results_dict = {}
+    out, err = subprocess.Popen(['lvm', 'vgdisplay', '-c'],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE).communicate()
+    out_list = out.split(':')
+
+    # parse extent size to human-readable strings
+    extent = long(out_list[12])
     if extent < (1024*1024):
         extent = extent / 1024
         results_dict['extent_size'] = str(extent) + 'K'
     else:
         extent = extent / 1024 / 1024
         results_dict['extent_size'] = str(extent) + 'M'
+
+    # parse free extents
+    results_dict['extents_free'] = long(out_list[15])
     return results_dict
 
 
@@ -165,7 +173,10 @@ def activateAllVolumeGroups():
     out, err = runCommand('lvm vgchange -ay')
     return (out, err)
 
-def createLogicalVolume(vg_name, lv_name, lv_extents):
+def createLogicalVolume(vg_name, lv_name, lv_extents, fill=False):
+    extents_free = probeLogicalVolumeGroup(vg_name)['extents_free']
+    if fill or lv_extents >= extents_free:
+        lv_extents = extents_free
     out, err = runCommand('lvm lvcreate -l%d -n%s %s' % (lv_extents, lv_name, vg_name))
     return (out, err)
 
