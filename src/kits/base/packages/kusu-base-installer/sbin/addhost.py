@@ -181,6 +181,7 @@ class AddHostApp(KusuApp):
         screenList = []
 
         global kusuApp
+        global database
         
         haveInterface = False
         haveNodeInterface = False
@@ -299,6 +300,11 @@ class AddHostApp(KusuApp):
             else:
                 # Check for valid nodegroup. if not return an error.
                 result, ngid = myNode.validateNodegroup(self._options.nodegroup)
+
+                query = "SELECT ngid FROM nodegroups where type !='installer' and ngid = %s" % ngid
+                database.execute(query)
+                result  = database.fetchall()
+
                 if result:
                     myNodeInfo.nodeGroupSelected = ngid
                     haveNodegroup = True
@@ -480,7 +486,6 @@ class AddHostApp(KusuApp):
                 myNodeInfo.nodeRackNumber = 0
 
         # Screen ordering
-        global database
 
         if replaceMode:
             screenList = [ WindowNodeStatus(database=database, kusuApp=kusuApp) ]
@@ -660,7 +665,7 @@ class NodeGroupWindow(USXBaseScreen):
            self.screen.finish()
            raise UserExitError
 
-        query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngid"
+        query = "SELECT ngname, ngid FROM nodegroups where type !='installer' ORDER BY ngid"
         try:
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
