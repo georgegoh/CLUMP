@@ -204,8 +204,9 @@ class KickstartFactory(BaseFactory):
                 # Drop the /dev 
                 str = str + ' --onpart=%s' % \
                       os.path.sep.join((path(p.path).splitall()[2:])) 
-                
-                str = str + ' --noformat'
+               
+                if fs_type != 'swap': 
+                    str = str + ' --noformat'
 
                 part_lines.append(str) 
 
