@@ -301,13 +301,17 @@ class AddHostApp(KusuApp):
                 # Check for valid nodegroup. if not return an error.
                 result, ngid = myNode.validateNodegroup(self._options.nodegroup)
 
-                query = "SELECT ngid FROM nodegroups where type !='installer' and ngid = %s" % ngid
-                database.execute(query)
-                result  = database.fetchall()
-
                 if result:
-                    myNodeInfo.nodeGroupSelected = ngid
-                    haveNodegroup = True
+                    query = "SELECT ngid FROM nodegroups where type !='installer' and ngid = %s" % ngid
+                    database.execute(query)
+                    result  = database.fetchall()
+            
+                    if result:
+                        myNodeInfo.nodeGroupSelected = ngid
+                        haveNodegroup = True
+                    else:
+                        self.unlock()
+                        self.parser.error(kusuApp._("options_invalid_nodegroup"))
                 else:
                     self.unlock()
                     self.parser.error(kusuApp._("options_invalid_nodegroup"))
