@@ -266,6 +266,9 @@ class BuildImage:
             #   /depot/repos/1000/Server/repodata
         if self.ostype[:6] == 'centos':
             dirname = 'CentOS'
+        if self.ostype[:15] == 'scientificlinux':
+            dirname = 'SL'
+            repopref = '/SL'
 
         # Create the yum config file
         #yumconf = os.path.join(self.imagedir, 'etc/yum.conf')

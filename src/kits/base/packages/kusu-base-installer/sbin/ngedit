@@ -1103,6 +1103,8 @@ class scrNGEEdit_Modules(USXBaseScreen):
             repopackdir = self.__repodir + '/Server'
         elif ostype.lower().startswith('centos'):
             repopackdir = self.__repodir + '/CentOS'
+        elif ostype.lower().startswith('scientificlinux'):
+            repopackdir = self.__repodir + '/SL'
         #additional repo os types here
         else:
             raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype

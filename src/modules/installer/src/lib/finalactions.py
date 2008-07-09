@@ -88,7 +88,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
     kusu_dist = os.environ.get('KUSU_DIST', None)
     kusu_tmp = os.environ.get('KUSU_TMP', '/tmp')
 
-    if kusu_dist in ['fedora', 'centos', 'rhel']:
+    if kusu_dist in ['fedora', 'centos', 'rhel', 'scientificlinux']:
         install_script = path(kusu_tmp) / 'kusu-ks.cfg'
     else:
         install_script = path(kusu_tmp) / 'install_script'

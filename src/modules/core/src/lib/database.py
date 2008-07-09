@@ -679,7 +679,7 @@ class DB(object):
 
         kusu_dist = os.environ.get('KUSU_DIST', None)
 
-        if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel']:
+        if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel', 'scientificlinux']:
             installer.kparams = 'text noipv6 kssendmac selinux=0'
             compute.kparams = 'text noipv6 kssendmac selinux=0'
             
@@ -756,10 +756,13 @@ class DB(object):
         diskless.packages.append(Packages(packagename='SysVinit'))
         diskless.packages.append(Packages(packagename='basesystem'))
         diskless.packages.append(Packages(packagename='bash'))
-        if kusu_dist and kusu_dist == 'fedora':
-            diskless.packages.append(Packages(packagename='fedora-release'))
-        else:
-            diskless.packages.append(Packages(packagename='redhat-release'))
+        if kusu_dist:
+            if kusu_dist == 'fedora':
+                diskless.packages.append(Packages(packagename='fedora-release'))
+            elif kusu_dist == 'scientificlinux':
+                diskless.packages.append(Packages(packagename='sl-release'))
+            else:
+                diskless.packages.append(Packages(packagename='redhat-release'))
         diskless.packages.append(Packages(packagename='chkconfig'))
         diskless.packages.append(Packages(packagename='coreutils'))
         diskless.packages.append(Packages(packagename='db4'))
@@ -830,10 +833,13 @@ class DB(object):
         imaged.packages.append(Packages(packagename='bash'))
         imaged.packages.append(Packages(packagename='kernel'))
         imaged.packages.append(Packages(packagename='grub'))
-        if kusu_dist and kusu_dist == 'fedora':
-            imaged.packages.append(Packages(packagename='fedora-release'))
-        else:
-            imaged.packages.append(Packages(packagename='redhat-release'))
+        if kusu_dist:
+            if kusu_dist == 'fedora':
+                imaged.packages.append(Packages(packagename='fedora-release'))
+            elif kusu_dist == 'scientificlinux':
+                imaged.packages.append(Packages(packagename='sl-release'))
+            else:
+                imaged.packages.append(Packages(packagename='redhat-release'))
         imaged.packages.append(Packages(packagename='chkconfig'))
         imaged.packages.append(Packages(packagename='coreutils'))
         imaged.packages.append(Packages(packagename='db4'))

@@ -62,6 +62,14 @@ class KusuRC(rcplugin.Plugin):
                     fh.write(enabled)
                     fh.write(gpgcheck)
                     fh.write(gpgkey+"\n")
+            elif self.os_name == "scientificlinux" and self.os_version == "5":
+                baseurl = "baseurl=http://%s/repos/%s/SL\n" % (self.niihost[0], self.repoid)
+                fh.write(header)
+                fh.write(name)
+                fh.write(baseurl)
+                fh.write(enabled)
+                fh.write(gpgcheck)
+                fh.write(gpgkey)
             else:
                 fh = open(kusurepo, 'w')
                 fh.write(header)

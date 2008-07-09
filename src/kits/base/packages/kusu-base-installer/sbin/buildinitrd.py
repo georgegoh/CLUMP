@@ -318,6 +318,8 @@ class BuildInitrd:
                 pattern = '%s/*/%s' % (self.repodir, row[0])
             elif self.ostype[:6] == 'centos':
                 pattern = '%s/*/%s' % (self.repodir, row[0])
+            elif self.ostype[:15] == 'scientificlinux':
+                pattern = '%s/SL/%s' % (self.repodir, row[0])
                 
             flist = glob.glob(pattern)
 

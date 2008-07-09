@@ -491,7 +491,10 @@ class CFMClient:
             dirname = '/Server/'
         if self.ostype[:6] == 'centos':
             dirname = ''
-
+        if self.ostype[:15] == 'scientificlinux':
+            dirname = 'SL'
+            repopref = '/SL'
+        
         yumconf = '/tmp/yum.conf'
         fp = file(yumconf, 'w')
         out = ( '[main]\n'
@@ -548,7 +551,8 @@ class CFMClient:
             self.log("Nothing to remove\n")
             return
         
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or \
+           self.ostype[:6] == 'centos' or self.ostype[:15] == 'scientificlinux':
             self.__setupForYum()
             cmd = "/usr/bin/yum -y remove "
             for i in self.oldpackages:
