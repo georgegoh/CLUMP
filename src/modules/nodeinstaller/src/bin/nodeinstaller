@@ -280,6 +280,14 @@ class ProgressScreen(BaseScreen):
 
 
     def drawImpl(self):
+        kl.debug('Checking disks')
+        dp = DiskProfile(True)
+        if not dp.disk_dict:
+            msg = 'Kusu node installer cannot find any hard disks to install '
+            msg += 'on. Please correct this and restart.'
+            self.selector.popupMsg('No Usable Disks Found', msg, ['Reboot'])
+            subprocess.call(['reboot'])
+
         kl.debug('Downloading NII..')
         dlg = self.selector.popupProgress('Node Install Info', 'Downloading Node install info...')
         self.niisource = retrieveNII(self.niihost)
