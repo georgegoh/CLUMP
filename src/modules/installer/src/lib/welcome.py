@@ -43,10 +43,24 @@ class WelcomeScreen(InstallerScreen):
     def prechecks(self):
         dp = DiskProfile(fresh=False, probe_fstab=False)
         if not dp.disk_dict:
-            raise NoDisksFoundError, 'This system cannot be set up because ' + \
-                      'no disks could be found. Please check your system ' + \
-                      'hardware to make sure that you have installed your ' + \
-                      'disks correctly.'
+            msg = 'This system cannot be set up because no disks could be found. '
+            msg += 'Please check your system hardware to make sure that you have '
+            msg += 'installed your disks correctly.'
+            self.selector.popupDialogBox('No Disks Found', msg, ['Power Off'])
+            subprocess.call(['poweroff'])
+
+        # Get first disk, sorted by alphabetical order.
+        first_disk = dp.disk_dict[sorted(dp.disk_dict.keys())[0]]
+        # If EDD kernel module is available, use BIOS drive order.
+        if dp.getMBRSignatureByBIOSOrder():
+            first_disk = dp.disk_dict[dp.getBIOSDiskOrder()[0]]
+        # Raise exception if disk is smaller than 40GB.
+        if first_disk.size < (40 * 1024 * 1024 * 1024):
+            msg = 'Kusu requires the first hard disk to be at least 40GB. Please '
+            msg += 'ensure that your first hard disk meets this requirement.'
+            self.selector.popupDialogBox('Require Bigger Disk', msg, ['Power Off'])
+            subprocess.call(['poweroff'])
+
         if self.dupMBR_prompt and isDiskOrderAmbiguous(dp):
             if self.fix_dupMBR:
                 msg = 'The Kusu installer cannot automatically determine the first '
