@@ -17,6 +17,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.errors import *
 import kusu.util.log as kusulog
+from kusu.util import compat
 logger = kusulog.getKusuLog('installer.partition')
 
 def createNew(baseScreen):
