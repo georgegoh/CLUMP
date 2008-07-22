@@ -175,7 +175,7 @@ def activateAllVolumeGroups():
 
 def createLogicalVolume(vg_name, lv_name, lv_extents, fill=False):
     extents_free = probeLogicalVolumeGroup(vg_name)['extents_free']
-    if fill or lv_extents >= extents_free:
+    if lv_extents >= extents_free:
         lv_extents = extents_free
     out, err = runCommand('lvm lvcreate -l%d -n%s %s' % (lv_extents, lv_name, vg_name))
     return (out, err)

@@ -16,7 +16,6 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.errors import *
-from kusu.util import compat
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -114,7 +113,7 @@ class NewPartition:
         self.min_size_entry = snack.Entry(7)
 
         self.fill = snack.SingleRadioButton('Fill remaining space on disk.',
-                                                self.fixed_size)
+                                                self.min_size)
 
 
 #        self.primary_partition=snack.Checkbox('Force to be a primary partition')
@@ -138,9 +137,7 @@ class NewPartition:
         self.gridForm.add(self.mountpoint, 0,0, padding=(0,0,0,1))
 
         # query filesystems
-        fs_types = self.diskProfile.fsType_dict.keys()
-        fs_types.sort()
-        for fs in fs_types:
+        for fs in ['ext2', 'ext3', 'linux-swap', 'physical volume']:
             self.filesystem.addRow([fs], fs)
 
         self.filesystem.setCallback_(partition.fileSystemCallback,
@@ -179,8 +176,8 @@ class NewPartition:
         subgrid.setField(self.ok_button, 0,0)
         subgrid.setField(self.cancel_button, 1,0)
         self.gridForm.add(subgrid, 0,7)
-
         self.gridForm.draw()
+        
 
     def start(self):
         self.draw()
@@ -201,8 +198,12 @@ class NewPartition:
         else:
             mountpoint = None
         disk = self.drives.current()
-
-        size_MB, fixed_size = self.calculatePartitionSize()
+        try:
+            size_MB, fixed_size = self.calculatePartitionSize()
+            if (fixed_size or self.min_size.selected()) and  size_MB <= 0:
+                raise KusuError, 'Please provide a positive integer partition size.'
+        except ValueError: #catch potential conversion problem with wrong inputs
+            raise KusuError,'Please provide a numeric minimum partition size'
         logger.debug('Fixed: %s Size: %d' % (fixed_size, size_MB))
         fill = self.min_size.selected() or self.fill.selected()
         logger.debug('Fill value: %s' % fill)
@@ -271,9 +272,7 @@ class NewLogicalVolume:
         self.gridForm.add(self.size, 0,2)
 
         # query filesystems
-        fs_types = self.disk_profile.fsType_dict.keys()
-        fs_types.sort()
-        for fs in fs_types:
+        for fs in ['ext2', 'ext3', 'linux-swap']:
             self.filesystem.addRow([fs], fs)
 
         self.filesystem.setCallback_(partition.fileSystemCallback,
@@ -304,7 +303,6 @@ class NewLogicalVolume:
         subgrid.setField(self.ok_button, 0,0)
         subgrid.setField(self.cancel_button, 1,0)
         self.gridForm.add(subgrid, 0,7)
-
         self.gridForm.draw()
 
     def start(self):
@@ -317,6 +315,13 @@ class NewLogicalVolume:
 
     def processForm(self):
         """Process the fields."""
+        verified, msg = self.lv_name.verify()
+        if not verified:
+            if msg:
+                raise KusuError, msg
+            else:
+                # we can fail in verify() before the callback is fired - no input entered
+                raise KusuError, 'Please enter a name for the Logical Volume.'
         fs_type = self.filesystem.current()
         if fs_type in self.disk_profile.mountable_fsType.keys() and \
            self.disk_profile.mountable_fsType[fs_type]:
@@ -328,7 +333,10 @@ class NewLogicalVolume:
 
         vol_grp = self.volumegroup.current()
         try:
-            size = long(self.size.value())
+            if not self.fill.value():
+                size = long(self.size.value())
+            else:
+                size = 1  #dummy
             available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
             if available_space == 0:
                 errMsg = 'Selected volume group %s does not have any ' % vol_grp.name
@@ -338,8 +346,7 @@ class NewLogicalVolume:
             if not self.fill.value() and (size <= 0 or size > available_space):
                 raise KusuError, 'Size must be between 1 and %d MB.' % available_space
         except ValueError:
-            available_space = vol_grp.extentsFree() * vol_grp.extent_size / 1024 / 1024
-            raise KusuError, 'Size must be between 1 and %d MB.' % available_space
+            raise KusuError, 'Please provide a numeric size'
         new_lv_name = self.lv_name.value()
         if self.fill.value():
            lv = self.disk_profile.newLogicalVolume(name=new_lv_name,
@@ -365,7 +372,7 @@ class NewVolumeGroup:
     def __init__(self, screen, disk_profile):
         self.screen = screen
         self.disk_profile = disk_profile
-        self.gridForm = snack.GridForm(screen, self.title, 1, 5)
+        self.gridForm = snack.GridForm(screen, self.title, 1, 4)
 
         self.vg_name = kusuwidgets.LabelledEntry(
                                        _('Volume Group Name:').rjust(21),
@@ -373,11 +380,6 @@ class NewVolumeGroup:
                                        scroll=0, returnExit=0
                                    )
         self.vg_name.addCheck(LVMNameCheck)
-        self.phys_extent = kusuwidgets.LabelledEntry(
-                                           _('Physical Extent (MB):').rjust(21),
-                                           21, text="32", hidden=0, password=0,
-                                           scroll=0, returnExit=0
-                                       )
         self.phys_to_use_lbl = snack.Label('Physical Volumes to Use:')
         self.phys_to_use = snack.CheckboxTree(height=3, scroll=1)
         self.ok_button = kusuwidgets.Button(_('OK'))
@@ -387,10 +389,8 @@ class NewVolumeGroup:
         """Draw the fields onscreen."""
         # volume group name
         self.gridForm.add(self.vg_name, 0,0)
-        # physical extent
-        self.gridForm.add(self.phys_extent, 0,1)
         # physical volume to use
-        self.gridForm.add(self.phys_to_use_lbl, 0,2)
+        self.gridForm.add(self.phys_to_use_lbl, 0,1)
 
         # list of available physical volumes
         pv_list = self.disk_profile.pv_dict.keys()
@@ -398,13 +398,12 @@ class NewVolumeGroup:
             pv = self.disk_profile.pv_dict[pv_key]
             if pv.group is None:
                 self.phys_to_use.append(pv_key, pv)
-        self.gridForm.add(self.phys_to_use, 0,3)
+        self.gridForm.add(self.phys_to_use, 0,2)
 
         subgrid = snack.Grid(2,1)
         subgrid.setField(self.ok_button, 0,0)
         subgrid.setField(self.cancel_button, 1,0)
-        self.gridForm.add(subgrid, 0,4)
-
+        self.gridForm.add(subgrid, 0,3)
         self.gridForm.draw()
 
     def start(self):
@@ -419,9 +418,13 @@ class NewVolumeGroup:
         """Process the fields."""
         verified, msg = self.vg_name.verify()
         if not verified:
-            raise KusuError, msg
-        vol_grp_name = self.vg_name.value() 
-        phys_extent = self.phys_extent.value() + 'M' 
+            if msg:
+                raise KusuError, msg
+            else:
+                # we can fail in verify() before the callback is fired - no input entered
+                raise KusuError,'Please enter a name for the Logical Volume Group.'
+        vol_grp_name = self.vg_name.value()
+        phys_extent = '32M' 
         phys_vols = self.phys_to_use.getSelection()
 
         self.disk_profile.newLogicalVolumeGroup(vol_grp_name,
@@ -429,10 +432,10 @@ class NewVolumeGroup:
                                                 phys_vols)
 
 import re
-def LVMNameCheck(string):
-    """Verifies that the string is a valid LVM name."""
+def LVMNameCheck(input):
+    """Verifies that the input string is a valid LVM name."""
     p = re.compile('[^a-zA-Z0-9]')
-    li = p.findall(string)
+    li = p.findall(input)
     if li:
         return False, 'Valid LVM names contain only letters and numbers.'
     return True, None

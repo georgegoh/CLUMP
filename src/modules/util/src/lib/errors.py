@@ -52,11 +52,11 @@ class NotPhysicalVolumeError(KusuError): pass
 class InvalidVolumeGroupExtentSizeError(KusuError): pass
 class PhysicalVolumeStillInUseError(KusuError): pass
 class LogicalVolumeStillInUseError(KusuError): pass
+class LogicalVolumeGroupStillInUseError(KusuError): pass
 class MountFailedError(KusuError): pass
 class VolumeGroupHasBeenDeletedError(KusuError): pass
 class CannotDeleteVolumeGroupError(KusuError): pass
-class InvalidVolumeGroupNameError(KusuError): pass
-class InvalidLogicalVolumeNameError(KusuError): pass
+class LVMInconsistencyError(KusuError): pass
 
 # util.tools
 class CopyFailedError(KusuError): pass

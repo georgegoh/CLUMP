@@ -631,7 +631,9 @@ class DiskProfile(object):
             if mountpoint:
                 self.mountpoint_dict[mountpoint] = partition_obj
 
-            partition_obj.fs_type = fs_type
+            if fs_type in ['ext2', 'ext3', 'linux-swap']:
+                partition_obj.fs_type = fs_type
+ 
 
         except PartitionIsPartOfVolumeGroupError:
             pv = self.pv_dict[partition_obj.path]
@@ -718,7 +720,7 @@ class DiskProfile(object):
         # deletetion pass
         for existing_pv in lvg_obj.pv_dict.itervalues():
             if existing_pv not in pv_obj_list:
-                lvg.delPhysicalVolume(existing_pv)
+                lvg_obj.delPhysicalVolume(existing_pv)
         # insertion pass
         for pv in pv_obj_list:
             if pv.name not in lvg_obj.pv_dict.keys():
@@ -731,8 +733,8 @@ class DiskProfile(object):
         """Delete an existing logical volume group."""
         # sanity checks
         if lvg.lv_dict:
-            raise PhysicalVolumeStillInUseError, 'Cannot delete Volume ' + \
-                                       'Group. Delete Logical Volumes first.'
+            raise LogicalVolumeGroupStillInUseError, 'Cannot delete Volume ' + \
+                                        'Group. Delete Logical Volumes first.'
         pv_list = lvg.pv_dict.values()
         for pv in pv_list:
             lvg.delPhysicalVolume(pv)

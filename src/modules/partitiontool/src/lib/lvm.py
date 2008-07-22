@@ -59,7 +59,7 @@ def execFifo(ignore_errors=False):
                     func(args)
                 else:
                     func()
-            except NotPhysicalVolumeError, e:
+            except Exception, e:
                 if not ignore_errors:
                     raise e
                 logger.debug('Ignored error: %s' % str(e))
@@ -145,6 +145,8 @@ class PhysicalVolume(object):
             return self.__extents()
         elif name == 'size':
             return self.partition.size
+        elif name == 'leave_unchanged':
+            return self.partition.leave_unchanged
         else:
             raise AttributeError, "%s instance has no attribute '%s'" % \
                                   (self.__class__, name)
@@ -152,6 +154,8 @@ class PhysicalVolume(object):
     def __setattr__(self, name, value):
         if name in ['name', 'partition', 'group', 'on_disk', 'delete_flag']:
             object.__setattr__(self, name, value)
+        elif name == 'leave_unchanged':
+            self.partition.leave_unchanged = value
         else:
             raise AttributeError, "%s instance does not have or cannot modify attribute %s" % \
                                   (self.__class__, name)
@@ -193,6 +197,7 @@ class LogicalVolumeGroup(object):
         self.extent_size = self.parsesize(extent_size)
         self.on_disk = False
         if exists('/dev/' + name): self.on_disk = True
+        self.leave_unchanged = False
         self.deleted = False
         for pv in pv_list:
             self.pv_dict[pv.name] = pv
