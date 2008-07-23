@@ -16,6 +16,14 @@ class FilesystemViewer(object):
     match = classmethod(match)
 
 class Ext2Viewer(FilesystemViewer):
+    """ This class probes the label and UUID of a ext2 filesystem.
+        Example:
+            >>> sda1 = Ext2Viewer('/dev/sda1')
+            >>> sda1.uuid
+            '0f646aa9-9a0d-4b73-86fe-a31179b9b7a0'
+            >>> sda1.label
+            '/boot'
+    """
     sb_offset = 1024
     sb_len = 200
 
