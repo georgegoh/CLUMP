@@ -434,12 +434,22 @@ class NewVolumeGroup:
 
 import re
 def LVMNameCheck(input):
-    """Verifies that the input string is a valid LVM name."""
-    p = re.compile('[^a-zA-Z0-9]')
-    li = p.findall(input)
-    if li:
-        return False, 'Valid LVM names contain only letters and numbers.'
-    return True, None
+    ''' This function is the python port of validate_name() in
+    LVM 2.02 codebase. Function lib/misc/lvm-string.c : validate_name()
+    It can also be used for LV Group names.
+        '''
+    #This comes pre-cehcked in verify() will never hit this if.
+    #Its there to support direct calls of LVMNameCheck()
+    if not input:
+        return False,"A logical volume requires a name."
+    if input[0] == '-':
+        return False,' LVM names cannot begin with a "-".'
+    if input == '.' or input == '..':
+        return False, ' LVM names cannot be "." or ".."'
+    found =  re.match(r'[a-zA-Z0-9_\-+]+$', input)
+    if not found:
+        return False,'Please enter a valid LVM name'
+    return True,None
 
 class NewRAIDDevice:
     """Form for specifying a new RAID device."""
