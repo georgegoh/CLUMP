@@ -74,6 +74,9 @@ def getAnacondaScript(distro, version, arch=None):
     if not arch:
         archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
         arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86')match(arch, 1):
+        arch = 'i386'
     trunk = getKusuTrunk()
     distspath = 'src/dists/%(distro)s/%(version)s/%(arch)s' % {'distro':distro,
                 'version':version, 'arch':arch}
@@ -85,6 +88,9 @@ def getThttpdRunScript(distro, version, arch=None):
     if not arch:
         archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
         arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86')match(arch, 1):
+        arch = 'i386'
     trunk = getKusuTrunk()
     distspath = 'src/dists/%(distro)s/%(version)s/%(arch)s' % {'distro':distro,
                 'version':version, 'arch':arch}
