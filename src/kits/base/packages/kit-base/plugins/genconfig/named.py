@@ -1,4 +1,4 @@
-# $Id: named.py 2845 2007-11-26 17:08:55Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

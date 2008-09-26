@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: buildinitrd.py 2840 2007-11-26 02:47:47Z ltsai $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

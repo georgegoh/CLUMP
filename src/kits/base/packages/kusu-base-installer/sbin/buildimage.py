@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: buildimage.py 2838 2007-11-25 07:51:30Z hirwan $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

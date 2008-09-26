@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S10NICstartup.rc.py 469 2008-01-24 22:32:44Z mblack $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

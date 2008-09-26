@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: test_pkgs.py 944 2008-03-05 03:08:33Z mike $ 
+# $Id$ 
 #
 # Copyright 2007 Platform Computing Inc.
 #

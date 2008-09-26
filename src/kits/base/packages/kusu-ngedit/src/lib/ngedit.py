@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: ngedit.py 524 2008-01-30 06:14:21Z hirwan $
+# $Id$
 #
 # Node Group Editor Library
 #

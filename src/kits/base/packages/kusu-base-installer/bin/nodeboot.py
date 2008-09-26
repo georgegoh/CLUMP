@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: nodeboot.py 1641 2007-07-13 13:44:05Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

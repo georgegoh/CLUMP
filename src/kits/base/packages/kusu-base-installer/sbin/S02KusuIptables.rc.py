@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuIptables.rc.py 2672 2007-11-07 02:55:42Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

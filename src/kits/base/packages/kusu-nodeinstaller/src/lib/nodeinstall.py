@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: nodeinstall.py 1283 2008-05-30 08:10:53Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

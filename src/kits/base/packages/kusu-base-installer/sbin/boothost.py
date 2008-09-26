@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: boothost.py 2852 2007-11-27 16:01:52Z spstarr $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

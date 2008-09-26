@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: welcome.py 1314 2008-06-06 07:22:57Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Welcome Screen.
 #

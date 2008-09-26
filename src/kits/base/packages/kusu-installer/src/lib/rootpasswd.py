@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: rootpasswd.py 925 2008-02-29 09:11:04Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Root Password Setup Screen.
 #

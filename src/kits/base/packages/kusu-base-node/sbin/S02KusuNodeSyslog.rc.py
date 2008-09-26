@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuNodeSyslog.rc.py 2101 2007-08-22 10:18:52Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

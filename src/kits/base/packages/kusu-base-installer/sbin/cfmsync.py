@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: cfmsync.py 2683 2007-11-07 22:31:00Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

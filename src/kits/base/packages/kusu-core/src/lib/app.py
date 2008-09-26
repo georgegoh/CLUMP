@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: app.py 1655 2008-09-08 18:52:57Z mfrisch $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: keyboard.py 710 2008-02-07 16:11:37Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Keyboard Selection Screen.
 #

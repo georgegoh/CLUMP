@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition.py 1560 2008-08-01 03:08:29Z hsaliak $
+# $Id$
 #
 # Kusu Text Installer Partition Setup Screen.
 #

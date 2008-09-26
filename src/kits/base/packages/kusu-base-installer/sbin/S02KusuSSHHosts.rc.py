@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuSSHHosts.rc.py 2334 2007-09-24 07:44:22Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

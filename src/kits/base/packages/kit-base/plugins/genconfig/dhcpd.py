@@ -1,4 +1,4 @@
-# $Id: dhcpd.py 1501 2007-06-21 07:31:35Z ltsai $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

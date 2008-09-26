@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-#  $Id: db.py 1531 2008-07-24 15:52:42Z mfrisch $
+#  $Id$
 #
 #  Copyright 2007 Platform Computing Corporation
 #

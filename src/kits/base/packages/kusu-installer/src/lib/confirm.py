@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: confirm.py 1490 2008-07-14 09:55:07Z hsaliak $
+# $Id$
 #
 # Kusu Text Installer Setup Confirmation Screen.
 #

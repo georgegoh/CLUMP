@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: USXscreenfactory.py 1196 2007-06-06 22:33:14Z atumanov $
+# $Id$
 #
 # Kusu Text UI Screen Factory.
 #

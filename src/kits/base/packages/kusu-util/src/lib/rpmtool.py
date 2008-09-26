@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# $Id: rpmtool.py 945 2008-03-05 03:11:46Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

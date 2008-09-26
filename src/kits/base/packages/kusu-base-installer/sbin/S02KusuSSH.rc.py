@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuSSH.rc.py 2338 2007-09-24 11:18:56Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

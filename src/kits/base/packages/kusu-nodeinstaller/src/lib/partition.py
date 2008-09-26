@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition.py 1010 2008-03-25 09:13:42Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

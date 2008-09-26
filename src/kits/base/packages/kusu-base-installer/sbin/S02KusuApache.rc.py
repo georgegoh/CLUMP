@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuApache.rc.py 2870 2007-11-30 09:43:01Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

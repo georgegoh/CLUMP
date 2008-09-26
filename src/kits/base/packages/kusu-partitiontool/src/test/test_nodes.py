@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: test_nodes.py 476 2008-01-25 12:36:55Z hirwan $
+# $Id$
 #
 # Kusu Partition tool nodes test cases.
 #

@@ -1,4 +1,4 @@
-# $Id: genconfig.py 1980 2007-08-13 18:40:40Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

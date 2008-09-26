@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: lvm202.py 1544 2008-07-31 06:53:25Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Partition Tool LVM module.
 #

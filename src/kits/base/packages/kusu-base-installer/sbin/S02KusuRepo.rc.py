@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuRepo.rc.py 2190 2007-09-10 07:54:35Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

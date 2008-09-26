@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: verify.py 1347 2008-06-11 10:49:27Z hsaliak $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: hostsequiv.py 2064 2007-08-17 07:57:57Z mike $
+# $Id$
 #
 # Kusu Text Installer Network Screen.
 #

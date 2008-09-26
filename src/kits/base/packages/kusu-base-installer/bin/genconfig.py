@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: genconfig.py 2594 2007-10-29 20:41:31Z mfrisch $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

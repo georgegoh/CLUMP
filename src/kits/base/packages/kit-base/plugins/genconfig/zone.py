@@ -1,4 +1,4 @@
-# $Id: zone.py 2202 2007-09-10 17:34:37Z ltsai $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

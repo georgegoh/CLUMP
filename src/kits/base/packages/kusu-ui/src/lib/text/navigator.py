@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: navigator.py 1425 2008-06-25 15:20:28Z ggoh $
+# $Id$
 #
 # Kusu snack screens Navigator Framework.
 #

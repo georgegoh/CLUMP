@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: database.py 1584 2008-08-18 04:04:05Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

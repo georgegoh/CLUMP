@@ -1,4 +1,4 @@
-# $Id: debug.py 1255 2007-06-08 21:29:43Z atumanov $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

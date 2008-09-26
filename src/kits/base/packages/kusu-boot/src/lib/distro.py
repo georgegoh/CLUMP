@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: distro.py 686 2008-02-06 19:27:08Z mfrisch $
+# $Id$
 # 
 # Copyright 2007 Platform Computing Inc.
 #

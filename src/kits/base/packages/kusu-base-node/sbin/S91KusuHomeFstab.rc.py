@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S91KusuHomeFstab.rc.py 135 2007-12-18 07:38:41Z hirwan $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

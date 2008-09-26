@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: log.py 1509 2008-07-16 17:15:26Z sstarr $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

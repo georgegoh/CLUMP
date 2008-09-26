@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: hostspdsh.py 2255 2007-09-17 08:08:39Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

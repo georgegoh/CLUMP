@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id: cfms.py 2766 2007-11-16 21:01:19Z mblack $
+# $Id$
 
 # cfms.py - The Cluster File Management Server library 
 

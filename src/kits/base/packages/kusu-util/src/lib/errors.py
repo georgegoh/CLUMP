@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: errors.py 1479 2008-07-10 06:17:41Z ggoh $
+# $Id$
 #
 # Kusu Exceptions.
 #

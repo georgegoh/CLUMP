@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partitiontool.py 1561 2008-08-01 11:20:06Z hsaliak $
+# $Id$
 #
 # Kusu Text Installer Partition Tool.
 #

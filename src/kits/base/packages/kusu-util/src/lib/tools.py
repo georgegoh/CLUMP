@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: tools.py 1651 2008-09-08 14:57:10Z mfrisch $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

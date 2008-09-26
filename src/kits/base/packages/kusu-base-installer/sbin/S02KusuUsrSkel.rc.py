@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuUsrSkel.rc.py 2348 2007-09-25 07:41:08Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

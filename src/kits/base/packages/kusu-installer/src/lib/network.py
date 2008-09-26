@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: network.py 1034 2008-03-29 08:26:03Z nninaba $
+# $Id$
 #
 # Kusu Text Installer Network Screen.
 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: setup.py 523 2008-01-30 05:50:31Z hirwan $
+# $Id$
 #
 # Kusu boot generator
 #

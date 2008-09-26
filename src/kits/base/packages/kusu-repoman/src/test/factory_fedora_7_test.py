@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: factory_fedora_7_test.py 590 2008-02-01 03:51:13Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

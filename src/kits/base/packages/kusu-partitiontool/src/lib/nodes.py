@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: nodes.py 1335 2008-06-09 09:10:59Z hsaliak $
+# $Id$
 #
 # Kusu Text Installer Partition Tool handle nodes.
 #

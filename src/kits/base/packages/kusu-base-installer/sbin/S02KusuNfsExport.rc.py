@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S02KusuNfsExport.rc.py 2956 2007-12-18 07:30:40Z hirwan $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

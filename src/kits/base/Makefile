@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: Makefile 1347 2008-06-11 10:49:27Z hsaliak $
+# $Id$
 #
 include ../../../config.mk
 

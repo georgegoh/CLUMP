@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: control.py 1613 2008-08-22 15:33:05Z mblack $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

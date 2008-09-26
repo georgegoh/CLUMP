@@ -1,4 +1,4 @@
-# $Id: nodegroups.py 2503 2007-10-12 20:26:58Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

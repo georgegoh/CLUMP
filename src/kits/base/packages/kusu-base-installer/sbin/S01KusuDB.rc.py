@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S01KusuDB.rc.py 2526 2007-10-17 02:50:41Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

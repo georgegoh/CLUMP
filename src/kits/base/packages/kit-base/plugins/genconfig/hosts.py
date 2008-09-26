@@ -1,4 +1,4 @@
-# $Id: hosts.py 2894 2007-12-05 05:42:13Z hirwan $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

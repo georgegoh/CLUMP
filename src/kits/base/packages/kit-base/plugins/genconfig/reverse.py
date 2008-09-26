@@ -1,4 +1,4 @@
-# $Id: reverse.py 2873 2007-11-30 20:31:55Z mblack $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition.py 2153 2007-09-01 21:47:43Z atumanov $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

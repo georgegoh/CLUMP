@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S50GenerateUpdatesImg.rc.py 1597 2008-08-20 20:35:24Z mfrisch $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

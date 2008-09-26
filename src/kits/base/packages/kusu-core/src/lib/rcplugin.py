@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: rcplugin.py 1090 2008-04-23 20:43:13Z mblack $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

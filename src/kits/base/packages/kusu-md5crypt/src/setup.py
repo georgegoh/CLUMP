@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: setup.py 501 2008-01-29 04:51:15Z hirwan $
+# $Id$
 #
 
 from distutils.core import setup

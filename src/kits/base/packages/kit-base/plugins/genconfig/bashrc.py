@@ -1,4 +1,4 @@
-# $Id: bashrc.py 2992 2007-12-29 03:18:46Z hirwan $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

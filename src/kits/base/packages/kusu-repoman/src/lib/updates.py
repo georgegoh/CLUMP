@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: updates.py 1668 2008-09-18 15:42:19Z sstarr $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #
