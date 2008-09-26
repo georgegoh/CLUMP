@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: kits.mk 1101 2008-04-24 13:33:57Z mblack $
+# $Id$
 #
 
 # Setting some defaults.

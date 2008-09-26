@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: config.mk 453 2008-01-24 04:46:23Z mike $
+# $Id$
 #
 
 ### Kit Configuration File
