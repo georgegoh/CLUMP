@@ -1,8 +1,0 @@
-Index: bin/createrepo
-===================================================================
---- bin/createrepo	(revision 751)
-+++ bin/createrepo	(working copy)
-@@ -1,2 +1,2 @@
- #!/bin/sh
--exec /usr/share/createrepo/genpkgmetadata.py "$@"
-+exec $KUSU_ROOT/lib/python/createrepo/genpkgmetadata.py "$@"

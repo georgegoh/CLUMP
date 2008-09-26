@@ -1,5 +1,0 @@
-config BR2_PACKAGE_PYPARTED
-	bool "pyparted"
-	default n
-	help
-	  Pyparted is a python binding for parted
