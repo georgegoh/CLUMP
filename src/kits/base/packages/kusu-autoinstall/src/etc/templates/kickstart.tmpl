@@ -1,0 +1,69 @@
+# Redhat kickstart template
+#
+# \$Id: kickstart.tmpl 3140 2008-03-15 17:13:11Z ggoh $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+# 
+
+install
+
+# Define the installation number.
+#if $varExists('instnum')
+#if $instnum 
+key $instnum
+#else
+key --skip
+#end if
+#end if
+
+url --url $url
+rootpw --iscrypted $rootpw
+
+lang $lang
+#if $varExists('langsupport')
+langsupport --default=$langsupport $langsupport
+#end if
+
+keyboard $keybd
+
+#for $net in $networks
+$net
+#end for
+
+firewall --disabled
+selinux --disabled
+firstboot --disable
+authconfig --enableshadow --enablemd5
+timezone $tz
+
+#if $mbrbootloader
+bootloader --location=mbr --driveorder=$mbrdriveorder
+#else
+bootloader --location=partition --driveorder=$mbrdriveorder
+#end if
+skipx
+
+#clearpart --all
+clearpart --none
+
+#if $ignoredisk
+ignoredisk --drives=$ignoredisk
+#end if
+
+#for $part in $partitions
+$part
+#end for
+
+reboot
+
+%packages
+#for $pkg in $packages
+$pkg
+#end for
+@base
+ntp
+
+%post
+

@@ -1,0 +1,19 @@
+Index: setup.py
+===================================================================
+--- setup.py	(revision 2089)
++++ setup.py	(working copy)
+@@ -151,10 +151,10 @@
+ 
+ if with_xslt == 1:
+     xslt_includes=""
+-    for dir in includes_dir:
+-	if not missing(dir + "/libxslt/xsltconfig.h"):
+-	    xslt_includes=dir + "/libxslt"
+-	    break;
++    #for dir in includes_dir:
++	#if not missing(dir + "/libxslt/xsltconfig.h"):
++	#    xslt_includes=dir + "/libxslt"
++	#    break;
+ 
+     if xslt_includes == "":
+ 	print "failed to find headers for libxslt: update includes_dir"

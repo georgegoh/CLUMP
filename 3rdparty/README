@@ -1,0 +1,11 @@
+These are third-party packages retrieved from EPEL to satisfy
+some dependencies.
+
+Be sure to import the Fedora EPEL key before working with them:
+
+   wget -q http://download.fedora.redhat.com/pub/epel/RPM-GPG-KEY-EPEL
+
+   rpm --import RPM-GPG-KEY-EPEL
+
+--- Mike Frisch <mfrisch@platform.com>
+    January 11/2008

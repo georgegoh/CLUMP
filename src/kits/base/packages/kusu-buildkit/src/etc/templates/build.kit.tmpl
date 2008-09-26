@@ -1,0 +1,41 @@
+# build.kit template
+
+# Define your packages here by using a correct packageprofile class.
+# Available types are SourcePackage(), RPMPackage(), SRPMPackage(),
+# DistroPackage(), BinaryPackage()
+
+#pkg1 = SourcePackage()
+#pkg1.name = 'foo'
+#pkg1.version = '1.0'
+#pkg1.release = '0'
+#pkg1.installroot = '/opt/foo'
+#pkg1.filename = 'foo-1.0.tar.gz'
+
+# Define a default component
+comp = $compclass
+comp.name = '$compname'
+comp.description = '$compdesc'
+
+# Add any packages defined earlier by using the comp.addDep method
+#comp.addDep(pkg1)
+
+
+# Define a default kit
+# Change arch if needed to fit your needs (x86, x86_64, noarch)
+k = $kitclass
+k.name = '$kitname'
+k.description = '$kitdesc'
+k.arch = $kitarch
+
+# Adding the component defined earlier
+k.addComponent(comp)
+
+
+# Add post install script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-post-script.sh',mode='post')
+
+# Add post uninstall script. You can modify this shell script or add new ones in the
+# sources directory
+k.addScript('00-postun-script.sh',mode='postun')
+

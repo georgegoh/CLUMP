@@ -1,0 +1,74 @@
+.\" Copyright (c) 2007 Platform Computing Inc
+.TH "kitops" "8" "0.7" "Mark Black" "Kusu Base"
+.SH "NAME"
+.LP 
+kitops \- Kusu/OCS kit management tool.
+.SH "SYNTAX"
+.LP 
+\fBkitops\fR [\-h|\-v|\-l]    \- Kit information
+.LP 
+\fBkitops\fR [\-a \-m \fIMedia\fR [{\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]]]       \- Adding a Kit
+.LP 
+\fBkitops\fR [\-e {\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]                 \- Kit removal
+.SH "DESCRIPTION"
+.LP 
+Kitops is the kit operations tool.  It is for adding and removing kits.  Once a kit is added with \fBkitops\fR is must be associated with one or more repositories with the \fBrepoman\fR before the kit can be used.
+.LP 
+Adding a kit to the installer cause the packages to be copied to the /depot/kits directory.  The kit is not yet available for installation on the nodes.  The kit then needs to be associated with a repository using \fBrepoman\fR.
+.LP 
+Kits can be deleted from the installer, however the kit must not be associated with any repository prior to it's removal.  Removing the kit from the repository may also require de\-selecting any components of that kit that are in use.  A kit cannot be removed if the components are in use.
+.LP 
+Upgrading a kit is performed by deleting the old kit and adding the new one.  However this is not desirable.  A snapshot should be taken of the repository using the kit so that it can be reverted back to in the event of a problem.
+
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-a, \-\-add\fR
+Add a kit.
+.TP 
+\fB\-e, \-\-remove\fR
+Remove a kit.  The kit must not be associated with any repositories, and the components provided by that kit should not be used in any nodegroups.  If this condition is not met the kit will not be removed.
+.TP 
+\fB\-h, \-\-help\fR
+Print the help information and exit.
+.TP 
+\fB\-k, \-\-kit=<\fIKit Name\fR>\fR
+Specifies the name of the kit to add or remove.
+.TP 
+\fB\-o, \-\-kitversion=<\fIKit Version\fR>\fR
+Specifies the kit version to add or remove.  
+.TP 
+\fB\-c, \-\-kitarch=<\fIKit Arch\fR>\fR
+Specifies the kit architecture to add or remove. 
+.TP 
+\fB\-m <\fIMedia\fR>\fR
+Specifies the kit ISO file, or the mount point of the media containing the kit to add.
+.TP 
+\fB\-\-dbdriver=<Driver>\fR
+Connect to an alternate database using the driver specified.  Currently mysql and/or sqlite.  This option is not needed for normal use.
+.TP 
+\fB\-\-dbdatabase=<Database>\fR
+Connect to an alternate database to read information from.  This option is not needed for normal use.
+.TP 
+\fB\-\-dbuser=<User>\fR
+Connect to an alternate database as user <User> to read information from.  This option is not needed for normal use.
+.TP 
+\fB\-\-dbpassword=<Password>\fR
+Connect to an alternate database using the password provided  to read information from.  This option is not needed for normal use.
+.TP 
+\fB\-v, \-\-version\fR
+Print the version information and exit.
+.TP 
+\fB\-y, \-\-yes\fR
+Skip the confirmation when deleting a kit.
+.SH "FILES"
+.LP 
+.TP 
+/depot/kits/*
+.SH "AUTHORS"
+.LP 
+Alexey Tumanov, <atumanov_at_platform_dot_com>
+Mike Mazur, <mmazur_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP 
+repoman(8), ngedit(8)  

@@ -1,0 +1,62 @@
+
+           Kusu Tool Test Environment Setup
+           --------------------------------
+
+
+The steps below outline how to create a test/dev environment for
+the Kusu tools.  These steps will be reduced once a repository 
+containing the base kit is available.  Installing the 
+
+1. Install a Fedora 6 machine.
+
+2. Install the following additional packages:
+	   mysql
+	   mysql-server
+	   dhcp
+	   xinetd
+	   tftp-server
+	   syslinux
+	   httpd
+	   python
+	   python-devel
+	   MySQL-python
+	   createrepo
+   Run:  service mysqld start 
+   
+3. Check-out the Kusu source
+
+4. Goto: kusu/sandbox/kusu/trunk/src/kits/base/packages/kusu-base-installer/sql
+   and run:  prepdb.sh
+   Several of the tools can now be run if the PYTHONPATH is set.
+
+5. Build the kit.  Goto: kusu/sandbox/kusu/trunk/src/kits/base/  and run
+	 make
+
+6. Go to the RPM directory and install:
+      kusu-base-node
+      kusu-base-installer
+      initrd-templates
+
+7. Goto: kusu/sandbox/kusu/trunk/src/kits/base/packages/kusu-base-installer/sbin/
+   Run:  /bin/sh S01KusuSetup
+
+8. For running the imaging tools it is necessary to setup a fake repository.
+   Make the directory:   /depot/repos/1/Fedora6/RPMS
+   Copy the RPMs from the Fedora DVD into this directory.
+   Copy the RPMs from the base kit into this directory.
+   Goto /depot/repos/1/Fedora6/  and run:  createrepo RPMS/
+
+9. It is also necessary to modify the database so that the installer node is
+   your machine.  Run the following:
+	# mysql kusudb
+	mysql>  update appglobals set kvalue='{Your Machine}' where kname='PrimaryInstaller' ;
+	mysql>  update networks set network='172.25.243.0', subnet='255.255.255.0', gateway='172.25.243.2', startip='172.25.243.200' where netid=1;         (Use your own network settings)
+
+   Other changes may be needed in the netorks, and nics tables depending on your setup. 
+	
+
+10. Run:  export PYTHONPATH=/opt/kusu/lib
+
+11. The tools in /opt/kusu/bin, and /opt/kusu/sbin should now run.
+   
+ 

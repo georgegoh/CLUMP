@@ -1,0 +1,535 @@
+#!/usr/bin/env python
+# $Id: buildkit 2575 2007-10-26 07:00:41Z najib $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
+import sys
+import os
+import pwd
+import atexit
+from kusu.core.app import KusuApp
+from kusu.buildkit import BuildKit, getSyntaxValidator
+from path import path
+from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined, PackageBuildError
+from kusu.util.tools import checkToolDeps, mkdtemp, getArch
+import subprocess
+        
+        
+class App(KusuApp):
+    """ Application class for buildkit. """
+
+    def __init__(self, bminst):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+
+        self.actions = {'new':['kit'], 
+            'make':['kit','dir'],
+            'make-meta':['dir','iso']}
+
+        # self.action and self.actionargs will hold the current action and its arguments            
+        self.action = None 
+        self.actionargs = None
+
+        # an instance of the BuildKit for managing the actions        
+        self.bkinst = bkinst
+        self.usagestr = self._("""\
+buildkit [-h|-v] <action> arg1=val1 arg2=val2 ...
+
+buildkit is used to construct new Kusu Kits.
+
+actions:
+
+    new             - Create a new Kit directory. Available arguments for 
+                      this action:
+
+                      REQUIRED ARGS:
+                        kit=<name of kit source directory to create>
+
+    make            - Make a Kit iso. If the dir argument is given,
+                      a kit directory will be created instead. Available 
+                      arguments for this action:
+
+                      REQUIRED ARGS:
+                        kit=<path of kit source directory>
+                        
+                      OPTIONAL ARGS:
+                        dir=<path of kit directory to make>
+                        
+    make-meta       - Make a meta Kit iso in the current working 
+                      directory. The dir argument should point to 
+                      a directory containing already-built kit 
+                      directories or isos. Available arguments for
+                      this action:
+                      
+                      REQUIRED ARGS:
+                        dir=<path of the directory containing kits>
+                        
+                      OPTIONAL ARGS:
+                        iso=<path of iso file to make>
+
+                 
+""")
+        self.examples = self._("""\
+Example operations:
+
+    To prepare a new Kit called test:
+    # buildkit new kit=test
+
+    To make the test Kit iso:
+    # buildkit make kit=test
+    
+    To make the test Kit dir:
+    # buildkit make kit=test dir=testdir
+    
+    To make a meta Kit iso:
+    # buildkit make-meta dir=testdir
+    
+""")
+        self.parser.set_usage(self.usagestr)
+
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        self.stdoutMessage(self.usagestr)
+        sys.stdout.write(os.linesep)
+        sys.exit(0)
+
+    def printExamplesExit(self):
+        """ Print examples text and exit. """
+        self.stdoutMessage(self.examples)
+        sys.exit(0)
+
+    def printMsgExit(self, msg, exitcode=1):
+        """ Print msg and exit. """
+        self.stdoutMessage(msg)
+        sys.stdout.write(os.linesep)
+        sys.exit(exitcode)
+
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+
+        li = []
+        d = {}
+
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+
+        return d
+
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+
+        self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
+        self.parser.add_option('-s','--kitscript', action='store', dest='kitscript')
+        self.parser.add_option('-a','--arch', action='store', type='choice', 
+                            choices=['x86_64','x86','noarch'], dest='arch')
+        self.parser.add_option('-d','--keep-debuginfo', action='store_true', dest='debuginfo')
+        self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.set_defaults(verbose=False,showexamples=False,arch=getArch(),
+            kitscript='build.kit',debuginfo=False)
+        self.options, self.args = self.parser.parse_args()
+
+
+        if self.options.showexamples:
+            self.printExamplesExit()
+
+        if len(self.args) < 2:
+            self.printUsageExit()
+
+
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
+
+
+        if action not in self.actions.keys():
+            self.printUsageExit()
+        d = self.handleArgPairs(self.args[1:])
+
+        if not d:
+            self.printUsageExit()
+
+        # iterate keys in d and validate against the commands'
+        # list of keys
+        for k in d.keys():
+            if k not in self.actions[action]:
+                self.printUsageExit()
+
+        self.action = action
+        self.actionargs = d
+
+    def run(self):
+        """ Main launcher. """
+        self.parseargs()
+
+        # set verbosity
+        self.bkinst.verbose = self.options.verbose
+        
+        # how are we handling debuginfo, to keep or remove
+        self.bkinst.debuginfo = self.options.debuginfo
+        
+        # flag to determine the creation of iso
+        self.makeiso = False
+        
+        # first check if mkisofs and rpmbuild is installed
+        for tool in ['mkisofs','rpmbuild']:            
+            try:
+                checkToolDeps(tool)
+            except ToolNotFound:
+                msg = self._('Unable to locate %(toolname)s! Please ensure that it is available.' \
+                            % {'toolname':tool})
+                self.printMsgExit(msg)
+
+        # call the correct sub-handler for the action
+        m = '_' + self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]])
+
+        handler = getattr(self,m)
+
+        handler(self.actionargs)
+    
+    def restoreRpmMacros(self, oldrpmmacros):
+        """ Restore the old .rpmmacros
+        """
+        rpmmacros = oldrpmmacros.splitext()[0]
+        if oldrpmmacros.exists():
+            if rpmmacros.exists(): rpmmacros.remove()
+            oldrpmmacros.rename(rpmmacros)
+            msg = self._('Original .rpmmacros restored.')
+            print msg
+            
+    def removeRpmMacros(self):
+        userhome = path(pwd.getpwuid(os.getuid())[5])
+        rpmmacros = userhome / '.rpmmacros'
+        if rpmmacros.exists(): rpmmacros.remove()
+
+    def _new(self, args):
+        """ Handler for new action. args is a dict of supported key-value pairs for this action. """
+        dirname = path(args['kit'])
+        
+        # get the current arch
+        arch = getArch()
+        
+        if self.options.arch != arch and self.options.arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s is not possible on this system. The possible architectures are noarch and %(curArch)s.' \
+                % {'arch':self.options.arch,'curArch':arch})
+            self.printMsgExit(msg)
+        
+        if dirname.exists():
+            msg = self._('There is already a directory called %(dirname)s. Please remove it and try again.' % {'dirname':dirname})
+            self.printMsgExit(msg)          
+
+        msg = self._('Creating %(kitname)s directory..' % {'kitname':dirname.basename()})
+        print msg
+        # get the arch
+        if self.options.arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s architecture..' % {'arch':self.options.arch})
+            self.bkinst.newKitSrc(dirname)
+        else:
+            msg = self._('Creating kit for all architectures..' % {'arch':self.options.arch})
+            self.bkinst.newKitSrc(dirname,self.options.arch)
+        print msg
+
+        msg = self._('%(kitname)s directory created.' % {'kitname':dirname.basename()})
+        print msg
+
+    def _make(self, args):
+        """ Handler for make action. args is a dict of supported key-value pairs for this action. """
+        kitsrc = path(args['kit']).abspath()
+        _kitdir = args.get('dir','')
+
+        if not _kitdir: 
+            self.makeiso = True
+        else:
+            kitdir = path(_kitdir).abspath()
+
+        
+        # get the kitsrc
+        msg = self._('Verifying the Kit Source directory found in %(kitsrc)s..' % {'kitsrc':kitsrc})
+        print msg
+        _kitsrc = self.bkinst.getKitSrc(kitsrc)
+        
+        if not _kitsrc.verifySrcPath():
+            msg = self._('Unable to use %(kitsrc)s as a Kit Source directory!' % {'kitsrc':kitsrc})
+            self.printMsgExit(msg)
+            
+        bp = None
+        try:
+            msg = self._('Setting up BuildProfile for this kit..')
+            print msg
+            bp = self.bkinst.getBuildProfile(kitsrc)
+        except InvalidBuildProfile:
+            msg = self._('Unable to create a BuildProfile based on this Kit Source directory!')
+            self.printMsgExit(msg)
+            
+        if not bp.builddir or not bp.pkgdir or not bp.srcdir or not bp.tmpdir:
+            msg = self._('Unable to create a BuildProfile based on this Kit Source directory!')
+            self.printMsgExit(msg)
+
+        # set up the .rpmmacros
+        msg = self._('Setting up a proper .rpmmacros for building this kit')
+        print msg
+        rpmmacrosExist, oldrpmmacros = self.bkinst.setupRPMMacros(bp)
+        if rpmmacrosExist: 
+            atexit.register(self.restoreRpmMacros,oldrpmmacros)
+        else:
+            atexit.register(self.removeRpmMacros)
+
+        # get the kitscript
+        _ks = self.options.kitscript
+        kitscript = ''
+        try:
+            msg = self._('Looking for the kitscript %(kitscript)s..' % {'kitscript':_ks})
+            print msg
+            kitscript = self.bkinst.getKitScript(kitsrc,_ks)
+        except FileDoesNotExistError:
+            msg = self._('kitscript %(kitscript)s not found!' % {'kitscript':_ks})
+            self.printMsgExit(msg)
+            
+        # looks like everything is down pat, now the hard stuff
+        msg = self._('Found kitscript. Loading it..')
+        print msg
+        kit, components, packages = self.bkinst.loadKitScript(kitscript)
+        
+        # get the current arch
+        curArch = getArch()
+        arch = kit['arch']
+                
+        if arch != curArch and arch != 'noarch':
+            msg = self._('Creating kit for %(arch)s is not possible on this system. The allowed architectures are noarch and %(curArch)s.' \
+                % {'arch':arch,'curArch':curArch})
+            self.printMsgExit(msg)
+
+
+        if arch != 'noarch':
+            msg = self._('Building kit for %(arch)s architecture..' % {'arch':arch})
+        else:
+            msg = self._('Building kit for all architectures..' % {'arch':arch})
+        print msg
+        
+        # validate the syntax
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # first the packages
+        for pkg in packages:
+            sv = getSyntaxValidator(pkg)
+            if not sv.validate():
+                for a in sv.getMissingAttributes():
+                    if not a in missingAttributes: missingAttributes.append(a)
+                c += 1
+                
+        if c > 0:
+            msg = self._('There are missing attributes for the package(s): %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
+            
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # second the comps
+        for comp in components:
+            sv = getSyntaxValidator(comp)
+            if not sv.validate():
+                for a in sv.getMissingAttributes():
+                    if not a in missingAttributes: missingAttributes.append(a)
+                c += 1
+
+        if c > 0:
+            msg = self._('There are missing attributes for the component(s): %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
+
+        # set up a counter
+        c = 0
+        missingAttributes = []
+        # lastly the kit
+        sv = getSyntaxValidator(kit)
+        if not sv.validate():
+            for a in sv.getMissingAttributes():
+                if not a in missingAttributes: missingAttributes.append(a)
+            c += 1
+
+        if c > 0:
+            msg = self._('There are missing attributes for the kit: %(missinglist)r' %
+                        {'missinglist':missingAttributes})
+            print msg
+            msg = self._('Please fix this and build again.')
+            self.printMsgExit(msg)
+        
+        # lets build the packages if any:
+        if packages:
+            try:
+                msg = self._('Building the package(s)..')
+                print msg
+                self.bkinst.handlePackages(packages,bp)
+            except FileDoesNotExistError, e:
+                msg = self._('File %(filename)s not found! Please fix this and build again.' \
+                    % {'filename':e})
+                self.printMsgExit(msg)
+            except PackageAttributeNotDefined, e:
+                msg = self._('Package attribute %(attribute)s is not defined! Please fix this and build again.' \
+                    % {'attribute':e})
+                self.printMsgExit(msg)
+            except PackageBuildError, e:
+                msg = self._('Error building package %(name)s! Please fix this and build again.' \
+                    % {'name':e})
+                self.printMsgExit(msg)
+            
+        if components:
+            try:
+                msg = self._('Building the packages for component(s)..')
+                self.bkinst.handleComponents(components,bp)
+                print msg
+            except PackageBuildError, e:
+                msg = self._('Error building component %(name)s! Please fix this and build again.' \
+                    % {'name':e})
+                self.printMsgExit(msg)
+            
+        if kit:
+            try:
+                msg = self._('Building the package for the kit..')
+                self.bkinst.handleKit(kit,bp)
+                print msg
+            except PackageBuildError, e:
+                msg = self._('Error building kit! Please fix this and build again.')
+                self.printMsgExit(msg)
+            
+        # populate the packages dir
+        msg = self._('Populating the packages directory with the Kit artifacts..')
+        print msg
+        self.bkinst.populatePackagesDir(bp,arch)
+        
+        # generate the kitinfo file
+        msg = self._('Generating kitinfo..')
+        print msg
+        kitinfo = '%s/kitinfo' % kitsrc
+        self.bkinst.generateKitInfo(kit,kitinfo)
+        
+        # finally, make the kit artifact
+        if self.makeiso:
+            msg = self._('Creating the Kit iso..')
+            print msg
+            kitiso = self.bkinst.makeKitISO(kitsrc)
+        
+            if not kitiso:
+                msg = self._('Error creating Kit ISO!')
+                self.printMsgExit(msg)
+                
+            msg = self._('Kit ISO created.')
+            print msg
+            msg = self._('ISO file is at %(isofile)s.' % {'isofile':kitiso})
+            print msg
+        else:
+            msg = self._('Creating the Kit dir..')
+            print msg
+            self.bkinst.makeKitDir(kitsrc,kitdir)
+            msg = self._('Kit directory created..')
+            print msg
+            msg = self._('Kit directory is at %(kitdir)s.' % {'kitdir':kitdir})
+            print msg
+        
+ 
+    def _makeMeta(self, args):
+        """ Handler for make-meta action. args is a dict of supported key-value pairs for this action. """
+
+        _dirname = args.get('dir','')
+        _isofile = args.get('iso','')
+
+        if os.getuid() <> 0:
+            msg = self._('This operation requires root access.')
+            self.printMsgExit(msg)
+
+        if not _dirname: self.printUsageExit()
+        dirname = path(_dirname).abspath()
+        
+        if not dirname.exists():
+            msg = self._('Unable to locate %(dirname)s!')
+            self.printMsgExit(msg)
+            
+        msg = self._('Locating kits in %(dirname)s..' % {'dirname':dirname})
+        li = dirname.files('*.iso')
+        # FIXME: This works only for RPM-based distros!
+        kdirs = [f.dirname() for f in dirname.walkfiles('kit-*.rpm')]
+        
+        isoroot = path(mkdtemp(prefix='buildkit-isoroot-'))
+        
+        # handle the isos
+        tmpdir = path(mkdtemp(prefix='buildkit-meta-'))
+        mntlist = []
+        for l in li:
+            mntpnt = path(tmpdir / l.namebase)
+            mntpnt.mkdir()
+            mntlist.append(mntpnt)
+            cmd = 'mount -o loop,ro %s %s' % (l,mntpnt)
+            mountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+            mountP.wait()
+            # FIXME: This works only for RPM-based distros!
+            kdirs.extend([f.dirname() for f in mntpnt.walkfiles('kit-*.rpm')])
+            
+        if not kdirs:
+            # no kits found. cleanup and exit
+            for mntpnt in mntlist:
+                cmd = 'umount %s' % mntpnt
+                umountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+                umountP.wait()
+                
+            msg = self._('No kits found in %(kitdir)s!' % {'kitdir':dirname})
+            self.printMsgExit(msg)    
+            
+        for kdir in kdirs:
+            msg = self._('Found %(kit)s. Including it..' % {'kit':kdir.basename()})
+            print msg
+
+        # create the symlinks
+        cmd = 'ln -sf %s .'
+        for kdir in kdirs:
+            symlinkP = subprocess.Popen(cmd % kdir,shell=True,cwd=isoroot)
+            symlinkP.wait()
+            
+        # make the iso
+        kdirs.sort()
+        if not _isofile:
+            _isofile = '%s.iso' % '+'.join([kdir.basename() for kdir in kdirs])
+        isofile = path(_isofile).abspath()
+
+        msg = self._('Creating iso..')
+        print msg
+        cmd = 'mkisofs -quiet -V "Meta Kit" -r -T -f -o %s . > /dev/null 2>&1' % isofile
+        mkisofsP = subprocess.Popen(cmd,shell=True,cwd=isoroot)
+        mkisofsP.wait()
+
+        # clean up
+        msg = self._('Cleaning up artifacts..')
+        for mntpnt in mntlist:
+            cmd = 'umount %s' % mntpnt
+            umountP = subprocess.Popen(cmd,shell=True,cwd=tmpdir)
+            umountP.wait()
+
+        if tmpdir.exists(): tmpdir.rmtree()
+        if isoroot.exists(): isoroot.rmtree()
+        
+        msg = self._('Created meta Kit at %(isofile)s' % {'isofile':isofile})
+        print msg
+        
+        
+        
+if __name__ == '__main__':
+	bkinst = BuildKit()
+	app = App(bkinst)
+	app.run()
+	sys.exit(0)
+

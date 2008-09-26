@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+# $Id: kusu_installer.py 247 2007-04-10 09:34:34Z ggoh $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+
+import urllib2
+import sys
+import os
+
+def getNIIHost(nii, key):
+
+    if not os.path.exists(nii):
+        return None
+
+    f = open(nii, 'r')
+    lines = f.readlines()
+    f.close()
+
+    for line in lines:
+        lst = line.split('=')
+
+        if len(lst) >= 2:
+            value = lst[1].strip()
+
+        lst = lst[0].split()
+        if len(lst) == 2:
+            if key == lst[1].strip():
+                return value.strip('"')
+       
+    return None 
+
+def update(niihost, state, bootfrom):
+    url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1&state=%s&boot=%s' % (niihost, state, bootfrom)
+
+    try:
+        f = urllib2.urlopen(url)
+    except urllib2.HTTPError, e:
+        pass
+
+if __name__ == '__main__':
+    args = sys.argv
+
+    if len(args) > 1:
+        profileNII = args[1]
+    else:
+        profileNII = '/etc/profile.nii'
+
+    niihost = getNIIHost(profileNII, 'NII_INSTALLERS')
+
+    if niihost:
+        update(niihost, 'Installed', 'disk')

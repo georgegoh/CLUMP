@@ -1,0 +1,1775 @@
+#!/usr/bin/env python
+#
+# $Id$
+#
+# Node Group Editor
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE file for details.
+#
+# Author: Alexey Tumanov (atumanov)
+
+import snack
+import sys
+import os
+import glob
+import string
+import re
+import subprocess
+import tempfile
+import shutil
+from sets import Set
+from kusu.ngedit.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
+from kusu.ngedit.ui.text.USXnavigator import *
+from kusu.ui.text import kusuwidgets
+from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
+from kusu.core.app import KusuApp
+from kusu.core.db import KusuDB
+from kusu.ngedit.ngedit import *
+from kusu.ngedit.partition import *
+
+global curNG, origNG
+MAXWIDTH = 70
+
+class scrNGEMain(USXBaseScreen):
+    name= 'Node Group Editor'
+    msg = 'Select the Node Group to operate on from the list below'
+    buttons = ['edit_button', 'copy_button', 'delete_button', 'exit_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.setHelpLine('Select the Node Group to operate on and choose desired operation')
+        self.__nglistbox = None #Listbox for Node Group Selection
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
+        self.buttonsDict['copy_button'].setCallback_(self.doCopyAction)
+        self.buttonsDict['delete_button'].setCallback_(self.doDeleteAction)
+        #for hotkeys
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def doCopyAction(self):
+
+        ngid = self.__nglistbox.current()
+
+        # comment out for testing
+        #if ngid == 1:
+        #    self.selector.popupMsg('Operation Disallowed', 'Installer nodegroup'+\
+        #                           ' is not allowed to be copied')
+        #    return NAV_NOTHING
+            
+        newNG = NodeGroup(ngid = ngid)
+        newNG.syncFromDB(self.database)
+        self.selector.popupMsg('DEBUG: copyAction',str(newNG))
+        newNG['ngid'] = None    #give it new identity
+
+
+        query = "select ngname from nodegroups where ngname like '%s Copy %%'" %newNG['ngname']
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        if rv == ():
+            suffix = 1
+        else:
+            suffix = int(max(filter((lambda x: x.isdigit()), [string.split(x[0])[-1] for x in rv]))) + 1
+        ngname = '%s Copy %s' %(newNG['ngname'], suffix)
+        newNG['ngname'] = ngname
+
+        self.selector.popupMsg('DEBUG','check the DB for ngid = %s' %ngid)
+        newNG.syncToDB(self.database)
+       
+        return NAV_NOTHING
+
+    def doDeleteAction(self):
+        ngid = self.__nglistbox.current()
+
+        #TODO: check if the nodegroup is in use by any nodes
+
+        tmpNG = NodeGroup(ngid = ngid)
+        tmpNG.syncFromDB(self.database) #to get all the links
+        msg = "You are about to delete the selected nodegroup. Do you wish to proceed?"
+        rv = self.selector.popupYesNo('Node Group Deletion Alert', msg, defaultNo=True)
+        if rv:
+            tmpNG.eraseFromDB(self.database)
+
+        return NAV_NOTHING
+
+    def doEditAction(self, data=None):
+        global curNG,origNG
+
+        ngid = self.__nglistbox.current()
+        curNG = NodeGroup(ngid=ngid)
+        curNG.syncFromDB(self.database)
+
+        #construct query string
+        #query = 'SELECT %s' + ', %s'*(len(NodeGroup.fields)-1) + ' from nodegroups where %s = %s'
+        #query = query % (NodeGroup.fields + (NodeGroup.fields[0], ngid)) #tuple concat...
+
+        #self.database.execute(query)
+        #rv = self.database.fetchone() #returns a tuple
+        #rv = [ ifelse(x==None,'',x) for x in rv ]
+
+        #replace all Null values
+        for f in NodeGroup.fields[1:]:
+            if curNG[f] == None:
+                curNG[f] = ''
+
+        origNG = curNG.copy()
+        assert(curNG == origNG)
+
+        #pass on the db and kusuApp handles to other screens
+        #they will all share one instance of each
+        ScreenFactory.screens = [
+                                 scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
+                                 scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
+                                ]
+
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Edit", showTrail=False)
+        ks.run()
+
+        return NAV_NOTHING
+
+    def drawImpl(self):
+
+        cols = [ ['NODE GROUP', 'DESCRIPTION'] ]
+        self.database.execute('''select max(char_length(ngname)), max(char_length(ngdesc))
+                                 from nodegroups''')
+        rv = self.database.fetchone()
+        rv = [ ifelse(x==None,0,x) for x in rv ] #replace all Null values
+        cols.append([int(x) for x in rv]) #justification values
+
+        headstr = ''
+        for i in xrange(len(cols[0])): #for all columns
+            cols[1][i] = max(cols[1][i], len(cols[0][i]))+1 #make room for the label
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__nglistbox = snack.Listbox(height=10, scroll=1, width=MAXWIDTH,returnExit=1, showCursor=0)
+
+        self.database.execute('select ngname,ngdesc,ngid from nodegroups')
+        rv = self.database.fetchall()
+        #Null value replacement magic
+        rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+
+        for record in rv:
+            ngid = record.pop()
+            entrystr = ''
+            for i in xrange(len(record)): #construct an entry string
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+
+            self.__nglistbox.append(entrystr, item = ngid)
+
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0), growx=1,anchorLeft=1)
+        self.screenGrid.setField(self.__nglistbox, 0,1, padding=(0,0,0,0), growx=1)
+
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        pass
+
+#end class scrNGEMain
+
+class scrNGEEdit_General(USXBaseScreen):
+    name = 'General Info'
+    msg = 'General Info about the selected node'
+    buttons = ['next_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        labeltxt1 = 'Node Group Name: '
+        labeltxt2 = 'Node Group Desc: '
+        labeltxt3 = 'Node Name Format: '
+
+        labellen = max(len(labeltxt1), len(labeltxt2), len(labeltxt3))
+
+        self.__entries = {}
+        self.__entries['ngname'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt1.rjust(labellen),\
+                     text = curNG['ngname'], width=30, password=0, returnExit = 0)
+        self.__entries['ngdesc'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt2.rjust(labellen),\
+                     text = curNG['ngdesc'], width=30, password=0, returnExit = 0)
+        self.__entries['nameformat'] = kusuwidgets.LabelledEntry(labelTxt=labeltxt3.rjust(labellen),\
+                     text = curNG['nameformat'], width=30, password=0, returnExit = 0)
+ 
+        self.screenGrid = snack.Grid(1, 3)
+        self.screenGrid.setField(self.__entries['ngname'], col=0,row=0)
+        self.screenGrid.setField(self.__entries['ngdesc'], col=0,row=1)
+        self.screenGrid.setField(self.__entries['nameformat'], col=0,row=2)
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        #TODO: ensure uniqueness of ngname
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        #update curNG with entry values
+        curNG['ngname'] = self.__entries['ngname'].value()
+        curNG['ngdesc'] = self.__entries['ngdesc'].value()
+        curNG['nameformat'] = self.__entries['nameformat'].value()
+        
+
+class scrNGEEdit_Repo(USXBaseScreen):
+    name = 'Repository'
+    msg = 'Repository selection for the Node Group specified'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doQuitAction)
+
+    def doQuitAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def drawImpl(self):
+
+        cols = [ ['RepoName','Repository','OSType'] ]
+
+        #extract all possible repos from table 'repos' and display
+        self.database.execute('''select max(char_length(reponame)),max(char_length(repository))
+                                 , max(char_length(ostype)) from repos''')
+        rv = self.database.fetchone()
+        rv = [ ifelse(x==None,0,x) for x in rv ]
+        cols.append([int(x) for x in rv]) #justification values
+
+        headstr = ''
+        for i in xrange(len(cols[0])):
+            cols[1][i] = max(cols[1][i], len(cols[0][i])) + 1
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__repolistbox = snack.Listbox(height=10,scroll=1,width=MAXWIDTH,returnExit=1,showCursor=0)
+
+        self.database.execute('select reponame,repository,ostype,repoid from repos')
+        rv = self.database.fetchall()
+        rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+
+        for record in rv:
+            repoid = record.pop()
+            entrystr = ''
+            for i in xrange(len(record)):
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+            self.__repolistbox.append(entrystr, item = repoid)
+            if repoid == curNG['repoid']:
+                self.__repolistbox.setCurrent(repoid)
+
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), growx=1, anchorLeft=1)
+        self.screenGrid.setField(self.__repolistbox, 0,1, (0,0,0,0), growx=1)
+
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        curNG['repoid'] = self.__repolistbox.current()
+
+
+
+class scrNGEEdit_Boot(USXBaseScreen):
+    name = 'Boot Time Parameters'
+    msg = 'Boot Time Parameters'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        self.selector.popupMsg('debug info','installtype = %s' %str(curNG['installtype']))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        installtype = {'package':'Package Based', 'diskless':'Diskless', 
+                       'disked': 'Imaged Disked'
+                      }
+        self.screenGrid = snack.Grid(2, 3)
+
+        lbl1 = snack.Label('Kernel: ')
+        lbl2 = snack.Label('Kernel Params: ')
+        lbl3 = snack.Label('Install Type: ')
+        w = min(max(len(curNG['kernel']), len(curNG['kparams']))+1, 60)
+        self.__entries = {}
+        self.__entries['kernel'] = snack.Entry(width=w, text=curNG['kernel'])
+        self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
+
+        rblist = []
+        for key,val in installtype.items():
+            isOn = int(curNG['installtype'] == key) #cast bool to int
+            rblist.append((val,key,isOn))
+
+        self.__InstallTypeRb = snack.RadioBar(self.screen, rblist)
+
+        self.screenGrid.setField(lbl1,0,0,anchorRight=1)
+        self.screenGrid.setField(lbl2,0,1,anchorRight=1)
+        self.screenGrid.setField(lbl3,0,2,(0,1,0,0),anchorRight=1)
+        self.screenGrid.setField(self.__entries['kernel'], 1,0,anchorLeft=1)
+        self.screenGrid.setField(self.__entries['kparams'],1,1,anchorLeft=1)
+        self.screenGrid.setField(self.__InstallTypeRb,1,2,(0,1,0,0),anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: drawImpl, Next_callback, validation, formAction
+        '''
+        curNG['kernel'] = self.__entries['kernel'].value()
+        curNG['kparams'] = self.__entries['kparams'].value()
+        curNG['installtype'] = self.__InstallTypeRb.getSelection()
+
+
+class scrNGEEdit_Components(USXBaseScreen):
+    name = 'Components'
+    msg = 'Please select components from the list below'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        self.screenGrid = snack.Grid(1, 2)
+
+        query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
+                   repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
+                   AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
+                   concat(c.os,'%%') OR isnull(c.os)) ORDER BY c.kid''' % curNG['repoid']
+        self.database.execute(query)
+        rv = self.database.fetchall()
+
+        if not rv:
+            #no components to display
+            self.msg = 'No components were found to match the selected repo'
+            self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
+                                     width=self.gridWidth),0,0)
+            return
+
+        if curNG.has_key('comps') and curNG['comps'] <> None:
+            cidlst = curNG['comps']
+        else:
+            if not origNG.has_key('comps') or origNG['comps'] == None:
+                #first time - get the component list
+                query = "select cid from ng_has_comp where ngid = %s" %curNG['ngid']
+                self.database.execute(query)
+                tplrv = self.database.fetchall()
+                origNG['comps'] = [x[0] for x in tplrv]
+            cidlst = origNG['comps']
+
+        self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
+        curkid = rv[0][0]
+        self.__ct.append(rv[0][1])
+        i = 0
+        for kid,rname,cid,cname in rv:
+            if kid <> curkid:
+                #new kid encountered - append it
+                i += 1
+                curkid = kid
+                self.__ct.append(rname)
+            if cid in cidlst:
+                isSel = 1
+            else:
+                isSel = 0
+            self.__ct.addItem(cname,(i,snack.snackArgs['append']), item=cid,selected=isSel)
+
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,width=self.gridWidth),
+                                 0,0,growx=1,growy=1)
+        self.screenGrid.setField(self.__ct,0,1,(0,1,0,0),growx=1,growy=1,anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['comps'] = [int(x) for x in self.__ct.getSelection()] #convert from long
+
+class scrNGEEdit_Networks(USXBaseScreen):
+    name = 'Networks'
+    msg = 'Please select the networks from the list below'
+    buttons = ['next_button', 'back_button','restore_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['restore_button'].setCallback_(self.RestoreAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        return NAV_IGNORE
+
+    def RestoreAction(self):
+        curNG['nets'] = origNG['nets'][:]
+        return NAV_NOTHING
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        if curNG.has_key('nets') and curNG['nets'] <> None:
+            netlst = curNG['nets']
+        else:
+            if not origNG.has_key('nets') or origNG['nets'] == None:
+                #first time - get the network list
+                query = "select netid from ng_has_net where ngid = %s" %curNG['ngid']
+                self.database.execute(query)
+                tplrv = self.database.fetchall()
+                origNG['nets'] = [x[0] for x in tplrv]
+            netlst = origNG['nets']
+
+        cols = [ ['DEVICE','NETWORK','SUBNET','DESCRIPTION'] ]
+        self.database.execute('''select max(char_length(device)),max(char_length(network))
+                                 , max(char_length(subnet)), max(char_length(netname))
+                                 from networks''')
+
+        rv = self.database.fetchone()
+        cols.append([int(x) for x in rv]) #justification values
+        headstr = '    ' #padding to align with checkboxtree items
+        for i in xrange(len(cols[0])): #for all columns
+            cols[1][i] = max(cols[1][i], len(cols[0][i]))+1 #make room for the label
+            headstr += cols[0][i].ljust(cols[1][i])
+        if len(headstr) > MAXWIDTH:
+            headstr = headstr[:MAXWIDTH]
+
+        lblheader = snack.Label(headstr)
+        self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
+
+        query = "select device, network, subnet, netname, netid from networks"
+        self.database.execute(query)
+        rv = self.database.fetchall()
+
+        for record in rv:
+            record = list(record) #convert to list
+            netid = record.pop()
+            if netid in netlst:
+                isSel = 1
+            else:
+                isSel = 0
+            entrystr = ''
+            for i in xrange(len(record)): #construct an entry string
+                entrystr += record[i].ljust(cols[1][i])
+            if len(entrystr) > MAXWIDTH:
+                entrystr = entrystr[:MAXWIDTH - len('...')] + '...'
+                
+            self.__ct.append(entrystr, item=netid, selected=isSel)
+
+        #render
+        self.screenGrid = snack.Grid(1, 2)
+        self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), anchorLeft=1)
+        self.screenGrid.setField(self.__ct, 0,1, (0,0,0,0), anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: drawImpl, Next_callback, validation, formAction
+        '''
+        curNG['nets'] = [int(x) for x in self.__ct.getSelection()] #convert from long
+
+
+class scrNGEEdit_Packages(USXBaseScreen):
+    name = 'Optional Packages'
+    msg = 'Please select optional packages to install'
+    buttons = ['next_button', 'back_button', 'toggleview_button', 'cancel_button']
+    OldRepoId = None
+    __ct_alpha = None #checkbox tree of alphabetized packages
+    __ct_ctgry = None #checkbox tree of categorized packages
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.alphaview = True #alphabetical view by default, categorized view o.w.
+        self.__ct = None #pointer to the current checkbox tree structure
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['toggleview_button'].setCallback_(self.TogglePackageView)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+        self.hotkeysDict['F10'] = self.TogglePackageView
+
+    def TogglePackageView(self):
+        assert(self.__ct)
+        self.alphaview = not self.alphaview
+        curNG['packs'] = self.__ct.getSelection()
+        time.sleep(0.5) #snack chokes if toggling too fast
+        return NAV_NOTHING
+
+    def F12Action(self):
+        self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def drawImpl(self):
+
+        self.screenGrid = snack.Grid(1, 1)
+        timediff = []
+
+        #rebuild flag logic
+        rebuild =  curNG['repoid'] <> self.OldRepoId
+        if rebuild:
+            self.__ct_alpha = self.__ct_ctgry = self.OldRepoId = None #reset all
+        else:
+            if self.alphaview and self.__ct_alpha:
+                self.__ct = self.__ct_alpha
+            elif (not self.alphaview) and self.__ct_ctgry:
+                self.__ct = self.__ct_ctgry
+            else:
+                rebuild = True
+
+        if rebuild:
+            self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
+            query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
+            self.database.execute(query)
+            self.__repodir, ostype  = self.database.fetchone()
+            self.__repodir = self.__repodir.strip()
+    
+            if ostype.lower().startswith('fedora'):
+                repopackdir = self.__repodir + '/Fedora/RPMS'
+                compsfile = glob.glob(self.__repodir + '/repodata/comps*.xml')[0]
+            elif ostype.lower().startswith('rhel'):
+                repopackdir = self.__repodir + '/Server'
+                compsfile = glob.glob(repopackdir + '/repodata/comps*.xml')[0]
+            #additional repo os types here
+            else:
+                raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+    
+            cwdbackup = os.getcwd()
+            os.chdir(repopackdir)
+            repopacklst = glob.glob('*.[rR][pP][mM]') #only basenames returned
+            repopacklst = [ RpmNameSplit(x)[0] for x in repopacklst ] #get the RPM names
+    
+            repopackset = Set(repopacklst) #work with the set
+    
+            #remove packages coming from kits available through the current repo
+            rmpacklst = []
+            query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+                       repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
+                       k.isOS = 0 AND r.repoid = %s ''' %curNG['repoid']
+            self.database.execute(query)
+            rv = self.database.fetchall()
+
+            for kitname,kitver,kitarch in rv:
+                path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
+                os.chdir(path)
+                kitpacklst = glob.glob('*.[rR][pP][mM]')
+                kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
+                rmpacklst.extend(kitpacklst)
+    
+            repopackset -= Set(rmpacklst)
+            os.chdir(cwdbackup)
+            #repopackset ready
+    
+            if self.alphaview: #alphabetic view
+
+                curletter = None
+                i = -1
+                for p in sorted(repopackset):
+                    letter = p[0]
+                    if letter != curletter:
+                        self.__ct.append(letter)
+                        i += 1
+                        curletter = letter
+                    self.__ct.addItem(p,(i,snack.snackArgs['append']), item=p)
+
+                self.__ct_alpha = self.__ct
+                self.OldRepoId = curNG['repoid']
+
+            else: #category view
+                import yum.comps
+                from kusu.kitops.package import PackageFactory
+
+                prog_dlg = self.selector.popupProgress('Categorized view', 'Generating categorized view ...')
+
+                t1 = time.time()
+                #instantiate comps
+                compsinst = yum.comps.Comps()
+                compsinst.add(compsfile)
+
+                tmpcnt = 0
+                ci = 0 #category index
+                for c in compsinst.categories:
+                    self.__ct.append(c.name, item=c.categoryid)
+                    gi = 0
+                    for g in sorted(c.groups):
+                        ginst = compsinst.return_group(g)
+                        set2show = None
+                        if ginst: #some groups don't have any packages
+                            set2show = repopackset & Set(ginst.packages)
+                        if set2show:  # do we have a non-empty intersection?
+                            self.__ct.addItem(g, path=(ci,-1), item=ginst.groupid)
+                            for p in sorted(set2show):
+                                tmpcnt+=1
+                                self.__ct.addItem(p, path=(ci,gi,-1), item=p)
+                            #done package
+                            repopackset -= set2show
+                            gi += 1
+                    #done group
+                    ci += 1
+                #done category
+
+                t2 = time.time()
+        
+                #construct group dictionary for remaining packages
+                groupdict = {}
+                self.__ct.append("Other")
+                for p in repopackset:
+                    #reconstruct the full package name to pass to PackageFactory
+                    tmplst = glob.glob("%s/%s-[0-9]*" % (repopackdir, p))
+                    if not tmplst: #corner case
+                        tmplst = glob.glob("%s/%s-*.rpm" % (repopackdir, p))
+                    pfile = tmplst[0]
+                    #get group through my package library -> RPMTAG_GROUP
+                    pinst = PackageFactory(pfile)
+                    group = pinst.getGroup()
+                    if group not in groupdict.keys():
+                        groupdict[group] = [] #initialize
+                    groupdict[group].append(p)
+               
+                t3 = time.time()
+ 
+                # display remaining packages
+                tmpcnt2 = 0
+                gi = 0
+                for g in sorted(groupdict):
+                    self.__ct.addItem(g,path=(ci,-1), item=g)
+                    for p in sorted(groupdict[g]):
+                        tmpcnt2 += 1
+                        self.__ct.addItem(p, path=(ci,gi,-1), item = p)
+                    gi += 1
+                #done remaining packages
+
+                t4 = time.time()
+                prog_dlg.close()
+
+                self.selector.popupMsg("DEBUG", "comps: %d, unlisted: %d\ntcomps=%f\n\
+                   time to build d.s. for other=%f\ntime to add other = %f " %(tmpcnt, tmpcnt2,t2-t1,t3-t2,t4-t3))
+
+                self.__ct_ctgry = self.__ct
+                self.OldRepoId = curNG['repoid']
+
+        
+        #mark currently selected packages
+        s1 = Set(self.__ct.getSelection())
+        curpacklst = [] #require selection
+        if curNG['packs']:
+            curpacklst = curNG['packs']
+        s2 = Set(curpacklst)
+        #self.selector.popupMsg('DEBUG', 's1=%s, s2=%s\npacksFromDB = %s' %(s1,s2,str(curNG['packs'])))
+
+        for p in s1-s2:
+            self.__ct.setEntryValue(item=p, selected=0)
+
+        #note: the user may have changed the repo, hence some packages in
+        #curNG['packs'] (a.k.a s2) may not be in the currently selected repo
+        for p in s2-s1:
+            try:
+                self.__ct.setEntryValue(item=p, selected=1)
+            except KeyError,msg:
+                continue
+
+        #at this point self.__ct is ready to be displayed
+        self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['packs'] = self.__ct.getSelection()
+
+        ###CONTINUE HERE
+        #if curNG['installtype'] and curNG['installtype'].lower() <> 'package':
+        #    if not isinstance(self.selector.screens[self.selector.currentStep+1], scrNGEEdit_General):
+        #        self.selector.screens.insert(self.selector.currentStep+1,\
+        #                    scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp))
+        #self.selector.popupMsg('DEBUG', str(self.selector.screens))
+
+
+class scrNGEEdit_Modules(USXBaseScreen):
+    name = 'Modules'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        return NAV_IGNORE
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def seq2tplstr(self,seq):
+        '''convert a sequence to a tuple string representation without a trailing comma
+        '''
+        if not seq:
+            return None
+        try:
+            if len(seq) == 1:
+                tplstr = '(%s)' % str(seq[0])
+            else:
+                tplstr = str(tuple(seq))
+            return tplstr
+        except:
+            return None
+
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 1)
+        self.__ct = snack.CheckboxTree(height = 13, width=MAXWIDTH, scroll = 1)
+
+        if not curNG['comps']:
+            #no components chosen for this nodegroup
+            msg = 'No components associated with this nodegroup. No modules to display.'
+            self.screenGrid.setField(snack.TextboxReflowed(text=msg,width=self.gridWidth),
+                                 0,0,growx=1,growy=1)
+            return
+        
+        assert(len(curNG['comps']))
+
+        #get repository information
+        query = "select repository,ostype from repos where repoid = %s" %curNG['repoid']
+        self.database.execute(query)
+        self.__repodir, ostype  = self.database.fetchone()
+        self.__repodir = self.__repodir.strip()
+
+        if ostype.lower().startswith('fedora'):
+            repopackdir = self.__repodir + '/Fedora/RPMS'
+        elif ostype.lower().startswith('rhel'):
+            repopackdir = self.__repodir + '/Server'
+        #additional repo os types here
+        else:
+            raise UnsupportedOSType,"Repo ostype = %s support not yet implemented" % ostype
+
+        assert(repopackdir)
+
+        #2. obtain the name of driverpacks to examine
+        query = "SELECT dpname from driverpacks where cid in " + self.seq2tplstr(curNG['comps'])
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        dpacklst = [ x for x, in rv]
+        # create a temp dir for ko files
+        tmpdir = tempfile.mkdtemp()
+
+        prog_dlg = self.selector.popupProgress('Driver Package Extraction', 'Generating module list...')
+
+        t1 = time.time()
+        for dpack in dpacklst:
+            dpackfull = "%s/%s" %(repopackdir,dpack)
+            if not os.path.exists(dpackfull):
+                self.selector.popupMsg('WARNING', 'Driver package %s not found in repo %s'\
+                                        %(dpack,self.__repodir))
+            else:
+                #3. extract the driverpack's ko files (can't use rpmtool.extract)
+                cmd = "rpm2cpio %s | cpio -id *.ko" %dpackfull
+                p = subprocess.Popen(   cmd, shell=True, 
+                                        cwd = tmpdir,
+                                        stdout = subprocess.PIPE,
+                                        stderr = subprocess.PIPE
+                                     )
+                p.communicate()
+
+        t2 = time.time()
+
+        #4. populate the module dictionary with description
+        moddict = {}    #dictionary of modules & their description
+        cmd = 'find %s -name "*.ko" | xargs modinfo | egrep "^filename|^description"'  %tmpdir
+        p = subprocess.Popen(cmd, shell=True, cwd = tmpdir,
+                                     stdout = subprocess.PIPE,
+                                     stderr = subprocess.PIPE
+                             )
+        rv = p.communicate()[0]
+        fname = None
+        for line in rv.split('\n'):
+            if line.startswith('filename:'):
+                fname = line.split(':',1)[1].strip() #path/file.ext
+                fname = os.path.splitext(os.path.split(fname)[1])[0]
+                moddict[fname] = ''
+            elif line.startswith('description:'):
+                if not moddict[fname]: #only one description - posible >1 desc field per module
+                    moddict[fname] = line.split(':',1)[1].strip()
+
+        t3 = time.time()
+        prog_dlg.close()
+        shutil.rmtree(tmpdir)
+        self.selector.popupMsg('DEBUG', 'driver rpm extraction: %f\ndesc info extraction: %f\nmoddict len = %d' %(t2-t1,t3-t2, len(moddict)))
+
+
+        curletter = None
+        i = -1
+        for m in sorted(moddict):
+            letter = m[0]
+            if letter != curletter:
+                maxlen = max(map(len, filter(lambda x : x[0] == letter, moddict.keys())))
+                self.__ct.append(letter)
+                i += 1
+                curletter = letter
+            str2add = (m.ljust(maxlen+1) + moddict[m])[:MAXWIDTH]
+            isSel = 0
+            if m in curNG['modules']:
+                isSel = 1
+            self.__ct.addItem(str2add,(i,snack.snackArgs['append']), item=m, selected=isSel)
+
+        self.screenGrid.setField(self.__ct,0,0,(0,0,0,0),growx=1,growy=1,anchorLeft=1)
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        curNG['modules'] = self.__ct.getSelection()
+        self.selector.popupMsg('selected modules', str(curNG['modules']))
+
+class scrNGEEdit_PartSchema(USXBaseScreen):
+    name = 'Partition Schema'
+    buttons = [ 'next_button', 'back_button', 'new_button','edit_button', 
+                'delete_button', 'cancel_button'
+              ]
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.disk_profile = None
+        self.schema = None  # stores the partition schema information
+
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.buttonsDict['new_button'].setCallback_(self.doNewAction)
+        self.buttonsDict['edit_button'].setCallback_(self.doEditAction)
+        self.hotkeysDict['F12'] = self.F12Action
+
+    def F12Action(self):
+        id = self.listbox.current()
+        self.selector.popupMsg('DEBUG', 'currently pointing to id = %s' %id)
+        #self.selector.popupMsg('DEBUG', str(self.__ct.getSelection()))
+        return NAV_IGNORE
+
+    def doNewAction(self):
+        button,item = self.selector.popupListBox('Select type of device', "Please select what you'd like to create",\
+                 [('Partition', 'partition'), ('Logical Volume', 'log_vol')])
+
+        if button != 'cancel':
+            if item == 'partition':
+                partrec = PartitionRec()
+                ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
+                                        ]
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+                ks.run()
+            elif item == 'log_vol':
+                partrec = PartitionRec()
+                ScreenFactory.screens = [ scrPartSchema_LVEdit(partrec,database=self.database, kusuApp=self.kusuApp)
+                                        ]
+                ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+                ks.run()
+
+        return NAV_NOTHING
+
+    def doEditAction(self):
+        #determine what the user is trying to edit
+        #if partition:
+        #    partrec = None
+        #    for p in curNG['parts']:
+        #        if p.PKval == selected PKval:
+        #            partrec = p
+        #            break
+        #    assert(partrec)
+        #    ScreenFactory.screens = [ scrPartSchema_PartEdit(self,partrec,database=self.database, kusuApp=self.kusuApp)
+        #                            ]
+        #    ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Partition Schema Modification", showTrail=False)
+        #    ks.run()
+
+        return NAV_NOTHING
+
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+
+    def createSchema(self, part_rules, diskprofile):
+        ''' creates a partition schema compatible with nodeinstaller's with addition
+            of 'inst' to LVs, VGs, Partitions, and PVs. Largely builds on 
+            nodeinstaller's partition API
+        '''
+
+        schema = {'disk_dict':{},'vg_dict':{}}
+        vg_list = getVGList(part_rules, diskprofile)
+        part_list = getPartList(part_rules, diskprofile)
+        lv_list = getLVList(part_rules, diskprofile)
+
+        # create the volume groups first.
+        try:
+            for vginfo in vg_list:
+                vgname = vginfo['device']
+                vg_extent_size = translatePartitionOptions(vginfo['options'], 'vg')[1]
+                schema['vg_dict'][vgname] = {'pv_list':[], 'lv_dict':{},
+                                             'extent_size':vg_extent_size,
+                                             'name':vgname, 'instid': vginfo.PKval}
+    
+            # create the normal volumes.
+            for partinfo in part_list:
+                fs = translateFSTypes(partinfo['fstype'])
+                self.createPartition(partinfo, schema['disk_dict'], schema['vg_dict'])
+                pv, vg_name = translatePartitionOptions(partinfo['options'], 'pv')
+                if pv:
+                    handlePV(partinfo, vg_name, schema['vg_dict'])
+            # renumber spanning partitions - resolve 'N'
+            for disk in schema['disk_dict'].itervalues():
+                part_dict = disk['partition_dict']
+                if part_dict.has_key('N'):
+                    partition = part_dict['N']
+                    part_dict[len(part_dict)] = partition
+                    del part_dict['N']
+    
+            # create the logical volumes.
+            for lvinfo in lv_list:
+                lv, vg_name = translatePartitionOptions(lvinfo['options'],'lv')
+                if lv: 
+                    handleLV(lvinfo, vg_name, schema['vg_dict'])
+                    #associate with corresponding PartitionRec instance
+                    vg = schema['vg_dict'][vg_name.strip()]
+                    lv_name = lvinfo['device']
+                    vg['lv_dict'][lv_name]['instid'] = lvinfo.PKval
+    
+            attachPVsToVGs(diskprofile, schema['vg_dict'])
+    
+            preserve_types = Partition.native_type_dict.values()
+            preserve_fs = DiskProfile.fsType_dict.keys()
+            preserve_mntpnt = diskprofile.mountpoint_dict.keys()
+            preserve_lv = [lv.name for lv in diskprofile.lv_dict.values()]
+            schema['preserve_types'] = preserve_types
+            schema['preserve_fs'] = preserve_fs
+            schema['preserve_mntpnt'] = preserve_mntpnt
+            schema['preserve_lv'] = preserve_lv
+    
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the lines."
+    
+        return schema
+
+    def createPartition(self, partinfo, disk_dict, vg_dict):
+        """ Create a new partition and add it to the supplied disk dictionary."""
+        try:
+            disknum = int(partinfo['device'])
+            part_no = translatePartitionNumber(partinfo['partition'])
+        except ValueError:
+            if partinfo['device'].lower() == 'n':
+                handleSpanningPartition(partinfo, disk_dict, vg_dict)
+                disknum = 1
+                part_no = 'N'
+            else:
+                raise InvalidPartitionSchema, "Couldn't translate the disknum/partition number."
+        try:
+            size = translatePartitionSize(partinfo['size'])
+            fs = translateFSTypes(partinfo['fstype'])
+            mountpoint = translateMntPnt(partinfo['mntpnt'])
+            fill = translatePartitionOptions(partinfo['options'], 'fill')[0]
+        except ValueError:
+            raise InvalidPartitionSchema, "Couldn't parse one of the Partition fields. " + \
+                                          "disknum=%s, size=%s, fs=%s, mntpnt=%s, fill=%s, " + \
+                                          "part_no=%s" % (partinfo['device'], partinfo['size'], \
+                                          partinfo['fstype'], partinfo['mntpnt'], \
+                                          partinfo['options'], partinfo['partition'])
+     
+        if part_no != 'N' and part_no <= 0:
+            raise InvalidPartitionSchema, "Partition number cannot be less than 1."
+        partition = {'size_MB': size, 'fill': fill,
+                     'fs': fs, 'mountpoint': mountpoint, 'instid':partinfo.PKval} #the only change
+    
+        if disk_dict.has_key(disknum): disk = disk_dict[disknum]
+        else: disk = {'partition_dict': {}}
+        disk['partition_dict'][part_no] = partition
+        disk_dict[disknum] = disk
+
+
+    def drawImpl(self):
+        #from kusu.ngedit.defaults import setupDiskProfile #Disk,Partition,LVMCollection, etc
+        #import kusu.util.log as kusulog
+        from kusu.partitiontool import partitiontool
+
+        if not self.disk_profile:
+            self.disk_profile = partitiontool.DiskProfile(fresh=True)
+
+        self.screenGrid = snack.Grid(1, 1)
+
+        self.listbox = kusuwidgets.ColumnListbox(height=8,
+                                 colWidths=[15,15,15,15],
+                                 colLabels=['Device', 'Size(MB) ', 'Type  ',
+                                            'Mount Point   '],
+                                 justification=[LEFT, RIGHT, LEFT, LEFT], 
+                                 returnExit=0)
+
+        partdictlst = curNG['parts']
+        for p in curNG['parts']:
+            if p['options'] == None:
+                p['options'] = ''
+            if p['mntpnt'] == None:
+                p['mntpnt'] = ''
+            if p['device'] == None:
+                p['device'] = ''
+
+        t1 = time.time()
+        self.schema = self.createSchema(partdictlst,self.disk_profile)
+        schema = self.schema
+        #setupDiskProfile(self.disk_profile, schema)
+        t2 = time.time()
+
+        #str2display = ''
+        #for d in schema.keys():
+        #    if type(schema[d]) == type({}):
+        #        str2display += d.upper()+'\n'
+        #        for k in schema[d].keys():
+        #            if type(schema[d][k]) == type({}):
+        #                str2display += "\t%s\n" %str(k).upper()
+        #                for k2 in schema[d][k].keys():
+        #                    str2display += "\t\t%s : %s\n" % (k2, schema[d][k][k2])
+        #            else:
+        #                str2display += "\t%s : %s\n" %(k, schema[d][k])
+        #    else:
+        #        str2display += '%s : %s\n' %(d.upper(), schema[d])
+        #str2display+='\npopulated disk profile in %f' %(t2-t1)
+        #self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
+
+        # retrieve info about logical volumes and lv groups
+        lvg_keys = schema['vg_dict'].keys()
+
+        for key in sorted(lvg_keys):
+            lvg = schema['vg_dict'][key] 
+            lvg_displayname = 'VG ' + key
+            lvg_size_MB = ''
+            # display volume groups first in listbox
+            self.listbox.addRow(['VG ' + key,  str(lvg_size_MB), 'VolGroup',
+                                 ''], objRef=lvg['instid'])
+
+            lv_keys = lvg['lv_dict'].keys()
+            for lv_key in sorted(lv_keys):
+                lv =  lvg['lv_dict'][lv_key] 
+                lv_devicename = '  LV ' + lv_key
+                lv_size_MB = lv['size_MB']   
+                # display indented logical volumes belonging to the vg.
+                self.listbox.addRow([lv_devicename, str(lv_size_MB),lv['fs'],
+                                    lv['mountpoint']], objRef=lv['instid'])
+
+
+        disk_keys = schema['disk_dict'].keys()
+        for key in sorted(disk_keys):
+            # display device
+            device = schema['disk_dict'][key]
+            self.listbox.addRow(['Disk '+str(key),  '', '', ''] ) 
+            parts_dict =  device['partition_dict']          
+            parts_keys = parts_dict.keys()
+            for part_key in sorted(parts_keys):
+                partition = parts_dict[part_key]
+                part_devicename = '  ' +'d'+ str(key) +'p'+ str(part_key)
+                # indent one more level if logical partition.
+                #if partition.part_type == 'logical': part_devicename = '  ' + part_devicename
+                fs_type = partition['fs']
+                mountpoint = partition['mountpoint']
+                #if partition.lvm_flag:
+                #    fs_type = 'phys_vol'
+                #    for pv_name, pv in self.disk_profile.pv_dict.iteritems():
+                #        if pv.partition is partition and pv.group:
+                #            mountpoint = pv.group.name
+                # display partition info
+                self.listbox.addRow([part_devicename,
+                                    str(partition['size_MB']),
+                                    fs_type,
+                                    #mountpoint], partition['instid'])
+                                    mountpoint], partition['instid'])
+
+#        prog_dlg.close()
+
+        if self.listbox.length < 1:
+            msg = 'no partition schema associated with the current Node Group'
+            self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
+                text=msg), 0,0, (0,0,0,0), anchorLeft=1)
+        else:
+            self.screenGrid.setField(self.listbox, col=0, row=0, anchorLeft=1,
+                                 padding=(0,0,0,0))
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def formAction(self):
+        #curNG['parts'] = 'something'
+        self.selector.popupMsg('partition schema', str(curNG['parts']))
+
+class scrPartSchema_PartEdit(USXBaseScreen):
+    ''' This screen class allows to edit existing or create new Partitions. 
+        More specifically, it exposes PartRec to the user for modification.
+    '''
+    name = "Partition Modification"
+    buttons = [ 'ok_button', 'cancel_button' ]
+
+    def __init__(self,parentScreen, PartRec, database, kusuApp=None,gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.PartRec = PartRec  #a reference to the DB record we're working with
+        self.disk_profile = parentScreen.disk_profile
+        self.schema = parentScreen.schema
+        self.partition = None
+        self.disk_key = None
+        if PartRec and PartRec.PKval != None:
+            #we're editing - get a partition_dict handle
+            done = False
+            for disk_key in self.schema['disk_dict']:
+                for part_key in self.schema['disk_dict'][disk_key]:
+                    part_dict = self.schema['disk_dict'][disk_key][part_key]
+                    if part_dict['instid'] == PartRec.PKval:
+                        self.disk_key = disk_key
+                        self.partition = part_dict
+                        done = True
+                        break
+                if done:
+                    break
+
+
+    def setCallbacks(self):
+        #for the buttons
+        self.buttonsDict['ok_button'].setCallback_(self.doOkAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doOkAction(self):
+        #perform preparation required for validation and subsequent formAction
+        return NAV_FORWARD
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 5)
+
+        #mntpnt
+        self.mountpoint = kusuwidgets.LabelledEntry('Mount Point:', 20,
+                                                    text="", hidden=0,
+                                                    password=0, scroll=0,
+                                                    returnExit=0
+                                                   )
+        if self.partition and self.partition['mountpoint']:
+            self.mountpoint.setEntry(self.partition['mountpoint'])
+
+        #fs
+        self.filesystem = kusuwidgets.ColumnListbox(2, colWidths=[20], 
+                                                    colLabels=['File System type:'],
+                                                    justification=[LEFT],
+                                                    returnExit=0)
+
+        fs_types = self.disk_profile.fsType_dict.keys()
+        fs_types.sort()
+        for fs in fs_types:
+            self.filesystem.addRow([fs], fs)
+        if self.partition and self.partition['fs'] and self.partition['fs'] in fs_types:
+            self.filesystem.setCurrent(self.partition['fs'])
+
+        #disks
+        self.drives = kusuwidgets.ColumnListbox(2, colWidths=[20],
+                                                colLabels=['Allowable Drives:'],
+                                                justification=[LEFT],
+                                                returnExit=0)
+
+        disks = self.schema['disk_dict'].keys()
+        disks = ['Disk %s' %x for x in disks]
+        for disk in disks:
+            self.drives.addRow([disk], disk)
+        if self.disk_key:
+            self.drives.setCurrent('Disk %s' %self.disk_key)
+
+        #size
+        fill = False
+        size = ''
+        if self.partition:
+            fill = self.partition['fill']
+            size = self.partition['size_MB']
+            
+        self.fixed_size = snack.SingleRadioButton('Fixed Size (MB):', None,
+                                                  isOn=not fill)
+        self.fixed_size_entry = snack.Entry(7)
+
+        self.min_size = snack.SingleRadioButton('Fill at least (MB):',
+                                                self.fixed_size, isOn = fill)
+        self.min_size_entry = snack.Entry(7)
+        if fill:
+            self.min_size_entry.set(size)
+        else:
+            self.fixed_size_entry.set(size)
+
+        #preserve
+        self.do_not_format_partition = snack.Checkbox('Do not format partition')
+        if self.partition and self.PartRec['preserve'] == '1':
+            self.do_not_format_partition.setValue(True)
+                
+
+        # position widgets on screen
+
+        self.screenGrid.setField(self.mountpoint, 0,0, padding=(0,0,0,1))
+        subgrid = snack.Grid(2,1)
+
+        subgrid.setField(self.filesystem, 0,0, padding=(0,0,2,0))
+        subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
+        self.screenGrid.setField(subgrid, 0,1)
+
+        subgrid = snack.Grid(2,1)
+        subgrid.setField(self.fixed_size, 0,0)
+        subgrid.setField(self.fixed_size_entry, 1,0)
+        self.screenGrid.setField(subgrid, 0,2, anchorLeft=1, padding=(0,1,0,0))
+
+        subgrid = snack.Grid(2,1)
+        subgrid.setField(self.min_size, 0,0)
+        subgrid.setField(self.min_size_entry, 1,0)
+        self.screenGrid.setField(subgrid, 0,3, anchorLeft=1)
+
+        self.screenGrid.setField(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
+        
+
+    def validate(self):
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        #collect widget data into self.PartRec <- passed by ref
+        pass
+
+
+class scrNGEEdit_Finalize(USXBaseScreen):
+    name = 'Summary of Changes'
+    buttons = [ 'accept_button', 'back_button', 'cancel_button' ]
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        self.__diffNG = None
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
+
+    def setCallbacks(self):
+        #for the buttons
+        self.buttonsDict['accept_button'].setCallback_(self.doAcceptAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doAcceptAction(self):
+        #construct a diff NG object from dict
+        diffNGobj = NodeGroup(**self.__diffNG)
+        diffNGobj['ngid'] = curNG['ngid']
+
+        self.database.beginTransaction()
+        try:
+            self.selector.popupMsg('DEBUG: prior to DBsync', str(diffNGobj))
+            diffNGobj.syncToDB(self.database)
+        except Exception,msg:
+            self.selector.popupMsg('DB Error', 'DB Update failed with msg = %s' %msg)
+            self.database.undoTransaction()
+            raise #for testing
+            return NAV_NOTHING
+
+        #no exceptions up to this point: successful
+        self.database.endTransaction()
+        self.selector.popupMsg("DB Update", "Database was successfully updated")
+        return NAV_FORWARD
+
+        # * commit everything to the database
+        # * if imaged (both disked & diskless)
+        #        if changes in (components or packages)
+        #            run buildimage (buildimage -n $ngid)
+        #            send buildimage output to log file
+
+        #  * if imaged (both disked & diskless)
+        #        if modules changes
+        #            buildinitrd -n $ngid
+
+        #  * all install types
+        #    if changes in packages or components
+        #        call update -n $ngid -p (nothing after -p)
+
+        #  * if package-based
+        #       boot-media-tool to patch initrd w/ new drivers
+
+
+    def drawImpl(self):
+        self.__diffNG = curNG - origNG
+        diffNG = self.__diffNG
+
+        msg = ''
+        for field in NodeGroupRec.fields[2:] : #skip the keys
+            if field in diffNG.keys():
+                msg += "%s: \t%s\n" %(field.upper(),diffNG[field])
+
+        if 'repoid' in diffNG.keys():
+            query = '''SELECT reponame,repository,ostype from repos where
+                       repoid = %s ''' % diffNG['repoid']
+            self.database.execute(query)
+            rv = self.database.fetchone()
+            rv = [ ifelse(x==None,'',x) for x in rv ]
+            msg += "REPO:\n\t| %s | %s | %s |\n" %tuple(rv)
+
+        # go through comps, nets, packs, modules, scripts, parts
+        if 'comps' in diffNG.keys():
+            compsstr = ''
+            if diffNG['comps']:
+                if len(diffNG['comps']) == 1:
+                    #tuples have a trailing comma when only one element
+                    tplstr = "(%s)" %diffNG['comps'][0]
+                else:
+                    tplstr = str(tuple(diffNG['comps']))
+                query = "select cname from components where cid in %s" %tplstr
+                self.database.execute(query)
+                rv = self.database.fetchall()
+                compslst = [x for x, in rv]
+                compsstr = '%s' + ', %s'*(len(compslst)-1)
+                compsstr = compsstr % tuple(compslst)
+            msg += "COMPONENTS SELECTED:\n\t%s\n" %compsstr
+
+        if 'nets' in diffNG.keys():
+            netsstr = ''
+            if diffNG['nets']:
+                if len(diffNG['nets']) == 1:
+                    tplstr = "(%s)" %diffNG['nets'][0]
+                else:
+                    tplstr = str(tuple(diffNG['nets']))
+                query = ''' select device,network,netname from networks where
+                            netid in %s''' %tplstr
+                self.database.execute(query)
+                rv = self.database.fetchall()
+                rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
+                for record in rv:
+                    netsstr += "\t| %s | %s | %s |\n" %tuple(record)
+            msg += "NETWORKS SELECTED:\n%s\n" % netsstr
+            
+        caption = { 'packs': 'OPTIONAL PACKAGES',
+                    'scripts': 'OPTIONAL SCRIPTS',
+                    'modules': 'MODULES'
+                  }
+        for link in caption.keys():
+            if link in diffNG.keys():
+                tmpstr = ''
+                if diffNG[link]: #one or more elements
+                    if link == 'scripts':
+                        #format scripts one per line
+                        tmpstr = '%s' + '\n\t%s'*(len(diffNG[link])-1)
+                    else:
+                        tmpstr = '%s' + ', %s'*(len(diffNG[link])-1)
+                    tmpstr = tmpstr % tuple(diffNG[link])
+                msg += "%s:\n\t%s\n" %(caption[link],tmpstr)
+
+        if 'parts' in diffNG.keys():
+            msg += "PARTITIONS: schema changed\n"
+
+        self.selector.popupMsg("diffNG", str(diffNG))
+
+        self.screenGrid = snack.Grid(1, 1)
+        self.screenGrid.setField(snack.TextboxReflowed(width=MAXWIDTH, maxHeight=10, 
+                text=msg), 0,0, (0,0,0,0), anchorLeft=1)
+
+
+    def validate(self):
+        return True, 'Success'
+
+    def handleCompPlug(self, CompIdList, action):
+        if not CompIdList:
+            return
+        CompIdList = [ int(x) for x in CompIdList ]
+        if len(CompIdList) == 1: #special case
+            tplstr = '(%s)' % str(CompIdList[0])
+        else:
+            tplstr = str(tuple(CompIdList))
+
+        query = 'select cname from components where cid in %s' % tplstr
+        self.database.execute(query)
+        rv = self.database.fetchall()
+        CompNameList = [x for x, in rv]
+
+        CompPlugList = []
+        for comp in CompNameList:
+            flist = glob.glob('%s/*-%s.py' %(self.__plugdir,comp))
+            CompPlugList.extend(flist)
+        CompPlugList.sort()
+
+        PlugInstList_draw = []
+        PlugInstList_run = []
+        for plugfile in CompPlugList:
+            plugmname = os.path.splitext(os.path.basename(plugfile))[0] #module name
+            plugminst = __import__(plugmname)           #module instance
+            plugcname = getattr(plugminst, 'NGPlugin')  #class name
+            if not issubclass(plugcname, NGEPluginBase):
+                raise Exception, 'Invalid NG Plugin Screen class encountered: %s' %plugcname
+
+            plugcinst = plugcname(self.database, self.kusuApp)  #class instance
+            plugcinst.ngid = curNG['ngid']
+            if action == 'add':
+                if plugcinst.isInteractive():
+                    PlugInstList_draw.append(plugcinst)
+                else:
+                    PlugInstList_run.append(plugcinst)
+            elif action == 'remove':
+                PlugInstList_run.append(plugcinst)
+
+        if PlugInstList_draw:
+            ScreenFactory.screens = PlugInstList_draw
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Component Plugin Sequence", showTrail=False)
+            ks.run()
+
+        if action == 'add':
+            for inst in PlugInstList_run:
+                inst.add()
+        elif action == 'remove':
+            for inst in PlugInstList_run:
+                inst.remove()
+
+
+    def formAction(self):
+        if self.__plugdir not in sys.path:
+            sys.path.append(self.__plugdir)
+
+        s1 = Set(curNG['comps'])
+        s2 = Set(origNG['comps'])
+        addedComps = list(s1 - s2)
+        removedComps = list(s2 - s1)
+
+        self.handleCompPlug(addedComps, 'add')
+        self.handleCompPlug(removedComps, 'remove')
+
+
+class scrNGEEdit_Scripts(USXBaseScreen):
+    name = 'Custom Scripts'
+    msg = 'Enter the custom script path'
+    buttons = ['next_button', 'back_button', 'cancel_button']
+    MAXSCRIPTS = 10
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+
+    def setCallbacks(self):
+
+        #for the buttons
+        self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
+        self.buttonsDict['back_button'].setCallback_(self.doBackAction)
+        self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+
+    def doCancelAction(self):
+        return NAV_QUIT
+
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def doBackAction(self):
+        return NAV_BACK
+
+    def drawImpl(self):
+
+        self.screenGrid = snack.Grid(1, self.MAXSCRIPTS)
+
+        n = 0
+        if curNG['scripts']:
+            n = len(curNG['scripts'])
+
+        self.__entries = []
+        for i in xrange(self.MAXSCRIPTS):
+            labeltxt = 'Script %d:' %i
+            entrytxt = ''
+            if i < n:
+                entrytxt = curNG['scripts'][i]
+
+            entry = kusuwidgets.LabelledEntry(labelTxt = labeltxt, text = entrytxt,\
+                    width=MAXWIDTH, password=0, returnExit=0)
+            self.__entries.append(entry)
+            self.screenGrid.setField(entry, col=0,row=i)
+
+
+    def validate(self):
+        ###CONTINUE HERE#########################
+        query = ""
+        # * ensure the file exists and isfile()
+        # * ensure the uniqueness of the name
+        return True, 'Success'
+
+    def formAction(self):
+        ''' Actions taken once the form data was successfully validated.
+            Timeline: Next_callback, validation, formAction
+        '''
+        vallst = []
+        for i in xrange(self.MAXSCRIPTS):
+            val = self.__entries[i].value().strip()
+            if val:
+                vallst.append(val)
+
+        if not curNG['scripts'] and not vallst: #nothing to do
+            return
+
+        curNG['scripts'] = vallst
+        
+
+class NGEApp(KusuApp):
+
+    def __init__(self):
+        KusuApp.__init__(self)
+
+        self.__db = KusuDB()
+        self.action = NGE_TUI
+        self.ng = None
+        self.ngnew = None
+
+        try:
+            # FIXME: this wil only work in Kusu Installer environment!
+            self.__db.connect('/tmp/kusu/kusu.db', driver='sqlite')
+        except Exception,msg:
+            sys.stderr.write('Problems establishing database connection. Error: %s' %msg)
+            sys.exit(1)
+
+        # setup the CL parser
+        self.parser.add_option('-d', '--delete',    dest='ngdel')
+        self.parser.add_option('-c', '--copy',      dest='ngsrc')
+        self.parser.add_option('-n', '--new',       dest='ngnew')
+        self.parser.add_option('-s', '--stale',     dest='ngstale')
+        self.parser.add_option('-l', '--list',      dest='list', action="store_true")
+        self.parser.add_option('-p', '--print',     dest='ngprint')
+        
+    def printHelp(self):
+        self.parser.print_help()
+
+    def parse(self):
+        ''' parse the CL, populate options dict, & define self.action
+        '''
+        (options, args) = self.parser.parse_args()
+        print 'options = ', options
+        print 'args = ', args
+        print 'class(options) = ', options.__class__
+
+        if args:
+            self.stderrMessage('ngedit: No arguments expected - encountered args = %s\n',
+                                string.join(args,', '))
+            self.printHelp()
+            sys.exit(1)
+
+        if bool(options.ngsrc) ^ bool(options.ngnew):
+            #exactly one of them was specified
+            self.stderrMessage('ngedit: both ngsrc and ngdst must be specified to copy a node group\n')
+            self.printHelp()
+            sys.exit(1)
+
+        if options.list:
+            self.action = NGE_PRNALL
+        elif options.ngdel:
+            self.action = NGE_DEL
+            self.ng = options.ngdel
+        elif options.ngsrc:
+            self.action = NGE_CPY
+            self.ng = options.ngsrc
+            self.ngnew = options.ngnew
+        elif options.ngstale:
+            self.action = NGE_PRNSTL
+            self.ng = options.ngstale
+        elif options.ngprint:
+            self.action = NGE_PRNONE
+            self.ng = options.ngprint
+
+    def run(self):
+        if self.action == NGE_TUI:
+            ScreenFactory.screens = [
+                                        scrNGEMain(database=self.__db, kusuApp=self),
+                                    ]
+
+            ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Group Editor", showTrail=False)
+            ks.run()
+
+        elif self.action == NGE_CPY:
+            query = "select ngid from nodegroups where ngname = '%s'" %self.ng
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+
+            query = "select ngid from nodegroups where ngname = '%s'" %self.ngnew
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' already exists. Please change.\n", self.ngnew)
+                sys.exit(self.action)
+
+            ngsrc = NodeGroup(ngid = ngid)
+            ngsrc.syncFromDB(self.__db)
+            ngsrc[ngsrc.PKfld] = None    #give it new identity
+            ngsrc['ngname'] = self.ngnew
+            ngsrc.syncToDB(self.__db)
+
+        elif self.action == NGE_DEL:
+            query = "select ngid from nodegroups where ngname= '%s'" %self.ng
+            self.__db.execute(query)
+            rv = self.__db.fetchone()
+            if not rv:
+                self.stdoutMessage("ngedit: nodegroup '%s' not found in the database\n", self.ng)
+                sys.exit(self.action)
+            ngid = rv[0]
+
+            #delete only if no hosts using it
+            query = "select nid from nodes where ngid = %s" % ngid
+            self.__db.execute(query)
+            rv = self.__db.fetchall()
+            if len(rv) > 0:
+                self.stdoutMessage("ngedit: %s node(s) are still using nodegroup '%s'." +\
+                                    " Deletion disallowed\n", len(rv),self.ng)
+                sys.exit(self.action)
+
+            #beauty
+            ngdel = NodeGroup(ngid = ngid)
+            ngdel.syncFromDB(self.__db)
+            ngdel.eraseFromDB(self.__db)
+
+
+
+if __name__ == '__main__':
+    NGEinst = NGEApp()
+    NGEinst.parse()
+    NGEinst.run()

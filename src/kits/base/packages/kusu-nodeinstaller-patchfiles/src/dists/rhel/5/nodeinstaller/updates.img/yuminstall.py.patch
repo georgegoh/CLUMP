@@ -1,0 +1,37 @@
+--- yuminstall.py.old	2008-09-01 13:50:48.000000000 -0400
++++ yuminstall.py	2008-09-01 14:06:14.000000000 -0400
+@@ -20,6 +20,7 @@ import warnings
+ import types
+ import glob
+ import re
++import time
+ 
+ import rpm
+ import rpmUtils
+@@ -262,7 +263,8 @@ class AnacondaYumRepo(YumRepository):
+         if url is not None:
+             ug = URLGrabber(keepalive = False,
+                             bandwidth = self.bandwidth,
+-                            retry = self.retries,
++                            retry = 0,
++                            retrycodes = [-1,2,4,5,6,7,12],
+                             throttle = self.throttle,
+                             progres_obj = self.callback,
+                             copy_local = copy_local,
+@@ -294,6 +296,8 @@ class AnacondaYumRepo(YumRepository):
+                 result = self.grab.urlgrab(relative, local,
+                                            keepalive = False,
+                                            text = text,
++                                           retrycodes = [-1,2,4,5,6,7,12],
++                                           retry = 0,
+                                            range = (start, end),
+                                            copy_local=copy_local,
+                                            reget = reget,
+@@ -643,6 +647,7 @@ class AnacondaYum(YumSorter):
+ 
+     def urlgrabberFailureCB (self, obj, *args, **kwargs):
+         log.warning("Try %s/%s for %s failed" % (obj.tries, obj.retry, obj.url))
++        time.sleep(60)
+ 
+     def getDownloadPkgs(self):
+         downloadpkgs = []

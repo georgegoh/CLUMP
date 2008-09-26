@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+# $Id: setup.py 524 2008-01-30 06:14:21Z hirwan $
+#
+# Copyright 2007 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+__version__ = "$Revision$"
+
+from distutils.core import setup
+setup(name="kusu-sqlrunner",
+    version="0.2",
+    author="Shawn Starr",
+    author_email="sstarr@platform.com",
+    url="http://www.osgdc.org/project/kusu",
+    platforms=["any"],
+    scripts=['src/sbin/sqlrunner']
+     )
