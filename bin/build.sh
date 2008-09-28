@@ -38,8 +38,8 @@ ec=$?
 umount $MNT && rmdir $MNT
 
 if [ $ec -eq 0 ]; then
-    mv `basename iso/*.iso .iso`.iso kusu-`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`-`date +%Y%m%d`-`svn info | grep 'Last Changed Rev:' | awk '{print $4}'`.iso; 
+    mv `basename *.iso .iso`.iso kusu-`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`-`date +%Y%m%d`-`svn info | grep 'Last Changed Rev:' | awk '{print $4}'`.iso; 
 
-    echo "scp *.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH"; 
+    scp *.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH 
 fi
 
