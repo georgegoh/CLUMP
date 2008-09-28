@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# $Id:$
+# $Id$
 
 if [ -z "$KUSU_BUILD_DIST" ]; then
     KUSU_BUILD_DIST=centos
@@ -11,7 +11,7 @@ if [ -z "$KUSU_BUILD_DISTVER" ]; then
 fi
 
 if [ -z "$KUSU_BUILD_ARCH" ]; then
-    KUSU_BUILD_ARCH=i386
+    KUSU_BUILD_ARCH=x86_64
 fi
 
 if [ "$KUSU_BUILD_DIST" = "centos" ]; then
@@ -38,8 +38,8 @@ ec=$?
 umount $MNT && rmdir $MNT
 
 if [ $ec -eq 0 ]; then
-    mv iso/`basename iso/*.iso .iso`.iso iso/kusu-`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`-`date +%Y%m%d`-`svn info | grep 'Last Changed Rev:' | awk '{print $4}'`.iso; 
+    mv `basename iso/*.iso .iso`.iso kusu-`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`-`date +%Y%m%d`-`svn info | grep 'Last Changed Rev:' | awk '{print $4}'`.iso; 
 
-    echo "scp iso/*.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH"; 
+    echo "scp *.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH"; 
 fi
 
