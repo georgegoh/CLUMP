@@ -21,7 +21,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-DEFAULT_DNSZONE = 'ocs5'
+DEFAULT_DNSZONE = 'kusu'
 DEFAULT_PUBLIC_DNSZONE = 'example.com'
 
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
