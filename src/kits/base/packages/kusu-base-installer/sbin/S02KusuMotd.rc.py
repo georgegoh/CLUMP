@@ -10,8 +10,6 @@ from path import path
 from kusu.core import rcplugin
 import sys
 
-VERSION = 1.0
-
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
@@ -38,7 +36,7 @@ class KusuRC(rcplugin.Plugin):
             motdlines.append(-1)
 
         for motdline in motdlines:
-            lines[motdline] = 'Kusu %s Installer Node\n' % VERSION
+            lines[motdline] = 'Kusu "%s" %s (build %s) Installer Node\n' % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_REVISION}')
 
         f = open('/etc/motd', 'w')
         f.writelines(lines)
