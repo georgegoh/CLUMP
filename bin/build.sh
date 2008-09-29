@@ -24,6 +24,11 @@ sed -e "s%@KUSU_BUILD_DIST@%$KUSU_BUILD_DIST%" \
     -e "s%@KUSU_BUILD_DISTVER@%$KUSU_BUILD_DISTVER%" \
     -e "s%@KUSU_BUILD_ARCH@%$KUSU_BUILD_ARCH%" config.mk > ../config.mk
 
+sed -e "s%@KUSU_BUILD_DIST@%$KUSU_BUILD_DIST%" \
+    -e "s%@KUSU_BUILD_DISTVER@%$KUSU_BUILD_DISTVER%" \
+    -e "s%@KUSU_BUILD_ARCH@%$KUSU_BUILD_ARCH%" kusuenv.sh > ../src/kits/base/packages/kusu-core/src/bin/kusuenv.sh
+chmod 755 ../src/kits/base/packages/kusu-core/src/bin/kusuenv.sh
+
 MNT=/mnt/share/$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER-$KUSU_BUILD_ARCH
 
 cd ../ && \
