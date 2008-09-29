@@ -146,11 +146,21 @@ def packExt2FS(dirname, rootimgpath, size=5000):
         
 
 if __name__ == '__main__':
+
+    archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
+    arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86').match(arch):
+        arch = 'i386'
+
     # get the base kit RPMS directory
-    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS')
+    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/noarch')
     os.path.walk(basekitRPMSdir,getRPM,None)
 
-    anacondaScript = getAnacondaScript('rhel','5')
+    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
+    os.path.walk(basekitRPMSdir,getRPM,None)
+
+    anacondaScript = getAnacondaScript('rhel','5', arch)
     if not os.path.exists(anacondaScript):
         print "Unable to get 'faux' anaconda script from SVN source tree! Please ensure the source tree is complete!"
         sys.exit(-1)
