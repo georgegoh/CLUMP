@@ -55,7 +55,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
-    /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu/kusu-ks.cfg ;
+    /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu-ks.cfg ;
     EXIT_CODE=$?
     if [ -f "/mnt/kusu/var/lock/subsys/kusu-installer " ]; then
         /usr/bin/rm -f /mnt/kusu/var/lock/subsys/kusu-installer > /dev/null 2>&1
@@ -66,8 +66,8 @@ if [ $EXIT_CODE -eq 0 ]; then
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump
     echo "An internal program error has occurred."
-    echo "A log of the session can be found in /tmp/kusu/kusu.log"
-    echo "A dump of the error can be found in /tmp/kusu/exception.dump";
+    echo "A log of the session can be found in /tmp/kusu.log"
+    echo "A dump of the error can be found in /tmp/exception.dump";
 elif [ $EXIT_CODE -eq 2 ]; then
     # exit code 2 means user chose to exit
     echo "Exiting on request. Please standby for reboot...";
