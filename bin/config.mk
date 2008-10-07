@@ -26,7 +26,7 @@ KUSU_RPM_TMPPATH=/tmp/kusu
 
 KUSU_RELEASE_NAME=Kramat
 KUSU_VERSION = 0.10
-KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk '{print $$4}')
+KUSU_REVISION = @KUSU_REVISION@
 
 # lists of kits to build
 KUSU_KITS_LISTS=\
