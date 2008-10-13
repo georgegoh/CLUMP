@@ -20,8 +20,8 @@
 
 Summary: kusu-nodeinstaller-patchfiles 
 Name: kusu-nodeinstaller-patchfiles
-Version: 0.10
-Release: 10
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -85,35 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/man/man8/genupdatesimg.8
 
 %changelog
-* Fri Sep 5 2008 Kailash Sethuraman <hsaliak@platform.com> 5.1-9
-- Introduce patch for anaconda's yum installer to improve scalability (#114909)
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Sep 4 2008 Mike Frisch <mfrisch@platform.com> 5.1-8
-- Remove reboot message displayed in %post section (#114782)
-
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-7
-- Reving tar file for RH
-
-* Wed Aug 20 2008 Mike Frisch <mfrisch@platform.com> 5.1-6
-- Implemented standalone app to generate updates.img files (#111489)
-
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-5
-- Reset version/revision after switching build to trunk
-
-* Fri Jul 4 2008 Mike Frisch <mfrisch@platform.com>
-- Merged fix for removing kusu-ipy (replaced with python-IPy) (#108341)
-
-* Fri May 23 2008 Najib Ninaba <najib@platform.com>
-- Moved updates.img generation to post install
-
-* Wed May 21 2008 Najib Ninaba <najib@platform.com>
-- Revamped updates.img generation
-
-* Fri Apr 4 2008 Mike Frisch <mfrisch@platform.com>
-- Incorporate kusu-autoinstall updates
-
-* Fri Feb 1 2008 Najib Ninaba <najib@platform.com>
-- Fix path to nodeinstaller patchfiles directory
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
-- Initial release

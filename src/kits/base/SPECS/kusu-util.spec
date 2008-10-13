@@ -20,8 +20,8 @@
 
 Summary: kusu-util module runtime
 Name: kusu-util
-Version: 0.10
-Release: 7
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -77,20 +77,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc /opt/kusu/share/doc/util-%{version}/README-log.txt
 
 %changelog
-* Fri Sep 5 2008 Mike Frisch <mfrisch@platform.com> 5.7-7
-- Add 'kusu-' prefix to temporary directories created by OCS (#113889)
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-6
-- Reving tar file for RH
-
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-5
-- Reset version/revision after switching build to trunk
-
-* Wed Jun 4 2008 Shawn Starr <spstarr@platform.com> 5.1-4
-- Fixed error message when entering invalid email address (#109791)
-
-* Thu Apr 3 2008 Mike Frisch <mfrisch@platform.com> 5.1-3
-- Partitioning related fixes
-
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

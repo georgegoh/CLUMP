@@ -20,8 +20,8 @@
 
 Summary: kusu-nodeinstaller module runtime
 Name: kusu-nodeinstaller
-Version: 0.10
-Release: 8
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -70,15 +70,7 @@ rm -rf %{buildroot}
 %{_approot}
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-7
-- Reving tar file for RH
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-6
-- Reset version/revision after switching build to trunk
-
-* Fri May 30 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
-- Detect duplicate MBRs and disambiguate them for both master and node
-  (#108240)
-
-* Thu Apr 3 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Fixes for partitioning related issues

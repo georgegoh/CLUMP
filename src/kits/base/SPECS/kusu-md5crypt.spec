@@ -20,8 +20,8 @@
 
 Summary: kusu-md5crypt module runtime
 Name: kusu-md5crypt
-Version: 0.10
-Release: 2
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -63,3 +63,4 @@ rm -rf %{buildroot}
 
 %files
 %{_approot}
+

@@ -21,8 +21,8 @@
 
 Summary: Kusu core libraries and system scripts
 Name: kusu-core
-Version: 0.10
-Release: 10
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
@@ -97,25 +97,7 @@ fi
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Sep 18 2008 Mike Frisch <mfrisch@platform.com> 5.1-10
-- Sync with RH HPC
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Fri Sep 5 2008 Mike Frisch <mfrisch@platform.com> 5.1-9
-- Fixes problem with boothost failing when being called from CGI script
-  (#114570)
-- Change KUSU_TMP to be /tmp (#113889)
-
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-8
-- Reset version/revision after switching build to trunk
-
-* Wed Jun 11 2008 Mike Frisch <mfrisch@platform.com> 5.1-11
-- Added 'netutil.py' module
-
-* Wed Apr 16 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
-- Partitioning issues resolved (#104419)
-
-* Thu Apr 10 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Bug fixes
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
-- Initial release

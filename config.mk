@@ -24,8 +24,8 @@ KUSU_DISTRO_ARCH=x86_64
 KUSU_TOPDIR=`pwd`
 KUSU_RPM_TMPPATH=/tmp/kusu
 
-KUSU_RELEASE_NAME=Kramat
-KUSU_VERSION = 0.10
+KUSU_RELEASE_NAME="Gong Gong"
+KUSU_VERSION = 1.1
 KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk '{print $$4}')
 
 # lists of kits to build

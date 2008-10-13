@@ -574,7 +574,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
             baseurl = path('http://mirror.centos.org/centos')
         else:
             cfg = self.getConfig(self.configFile)
-            if cfg.has_key('fedora'):
+            if cfg.has_key('centos'):
                 baseurl = path(cfg['centos']['url'])
             else:
                 baseurl = path('http://mirror.centos.org/centos')

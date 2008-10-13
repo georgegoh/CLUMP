@@ -21,8 +21,8 @@
 
 Summary: Repository Management
 Name: kusu-repoman
-Version: 0.10
-Release: 7
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
@@ -81,17 +81,7 @@ install -m644 etc/templates/update.kit.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templat
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Sep 18 2008 Mark Black <mblack@platform.com> 5.1-6
-- Do not use /tmp/kusu for tmp dirs. Bugzilla 461781
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-6
-- Reving tar file for RH
-
-* Thu Jul 31 2008 Mark Black <sstarr@platform.com> 5.1-5
-- Reset version/revision after switching build to trunk
-
-* Thu Apr 3 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Minor repoman fix
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
-- Initial release

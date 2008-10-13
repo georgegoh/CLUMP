@@ -21,8 +21,8 @@
 
 Summary: Kusu Base Installer
 Name: kusu-base-installer
-Version: 0.10
-Release: 28
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
@@ -235,52 +235,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Wed Sep 17 2008 Mike Frisch <mfrisch@platform.com> 5.1-28
-- Updated firewall script to block all ports by default (#115604)
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Fri Sep 5 2008 Mike Frisch <mfrisch@platform.com> 5.1-27
-- Added friendly error message when invalid nodegroup specified (#114488)
-- Modified to generate unique temporary directory under /tmp (#113889)
-
-* Tue Sep 1 2008 Mark Black <mblack@platform.com> 5.1-26
-- Fix buildimage for RHEL 5.2 yum differences 
-
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-25
-- Reving tar file for RH
-
-* Wed Aug 20 2008 Shawn Starr <sstarr@platform.com> 5.1-24
-- Add new option for addhost to allow user to change rank number
-- Fix some addhost bug issues
-- Fix a traceback in nghosts when using '-' for increment
-- Fix nghosts remove -r option, by default reinstall now
-
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-23
-- Reset version/revision after switching build to trunk
-- Fixed typo in manpage and help (#113249)
-- Fixes Firefox plugin (#110920)
-- Fix problem related to kusurc plugins running out of sequence (#112954)
-- cfmsync adheres to specified nodegroup to be updated (#113277)
-- Move log file from /tmp/kusu (#113531)
-
-* Fri Jul 18 2008 Shawn Starr <sstarr@platform.com> 5.1.1-3
-- Fix some minor issues in addhost behavour
-- Fix boothost to ignore unmanaged nodes
-
-* Wed Jun 18 2008 Shawn Starr <sstarr@platform.com> 5.1.1-2
-- Fix addhost, handle case if two devices exist on same network range
-
-* Fri Jun 6 2008 Mike Frisch <mfrisch@platform.com> 5.1-21
-- Fix for issue related to boothost (#109939)
-- Fix addhost check for locking if repoman or repopatch are running and abort
-
-* Wed May 27 2008 Shawn Starr <sstarr@platform.com> 5.1-19
-- Fix exception if no nodes exist in nghosts. #109204
-
-* Wed May 27 2008 Mike Frisch <mfrisch@platform.com> 5.1-18
-- Fixed exception related to fix for #109054 (#109306)
-
-* Tue May 20 2008 Mike Frisch <mfrisch@platform.com> 5.1-17
-- Fixed display of 'boothost -r' (#109054)
-
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

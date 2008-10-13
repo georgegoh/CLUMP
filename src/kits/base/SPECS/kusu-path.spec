@@ -20,8 +20,8 @@
 
 Summary: kusu-path module runtime
 Name: kusu-path
-Version: 0.10
-Release: 2
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.

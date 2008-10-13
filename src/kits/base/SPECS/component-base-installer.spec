@@ -19,8 +19,8 @@
 
 Summary: Component for Kusu Installer Base
 Name: component-base-installer
-Version: 0.10
-Release: 5
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 URL: http://www.osgdc.org
@@ -104,14 +104,7 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section
 
 %changelog
-* Fri Aug 22 2008 Mark Black <mblack@platform.com> 5.1-5
-- Removed 'kusu-net-tool'
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Fri Jul 25 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Added 'kusu-net-tool'
-
-* Fri Jul 4 2008 Najib Ninaba <najib@platform.com>
-- Replaced kusu-ipy with python-IPy
-
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

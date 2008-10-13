@@ -21,8 +21,8 @@
 
 Summary: Base components for nodes
 Name: kusu-base-node
-Version: 0.10
-Release: 16
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
@@ -106,18 +106,7 @@ fi
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-16
-- Reving tar file for RH
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-15
-- Reset version/revision after switching build to trunk
-- Fix issue with 'cfmclient' redirecting output (#113716)
-
-* Wed Jul 16 2008 Mike Frisch <mfrisch@platform.com> 5.1-14
-- Added 'mount all filesystems' CFM plugin (#112022)
-
-* Fri May 30 2008 Mike Frisch <mfrisch@platform.com> 5.1-13
-- Cleanup CFM debugging info (#109586)
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
-- Initial release

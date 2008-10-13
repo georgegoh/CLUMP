@@ -20,8 +20,8 @@
 
 Summary: Kusu Autoinstall module runtime
 Name: kusu-autoinstall
-Version: 0.10
-Release: 4
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -71,8 +71,7 @@ rm -rf %{buildroot}
 %{_approot}
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-4
-- Reving tar file for RH
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Jul 17 2008 Mike Frisch <mfrisch@platform.com> 5.1-3
-- Change method of initializing swap space (#111560)

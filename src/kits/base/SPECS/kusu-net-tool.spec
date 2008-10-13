@@ -21,7 +21,7 @@
 
 Summary: Network configuration tool for sysadmins
 Name: kusu-net-tool
-Version: 0.10
+Version: 1.1
 Release: 1
 License: GPLv2
 Group: System Environment/Base
@@ -64,5 +64,7 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/kusu-net-tool-%{ver
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Wed Jun 6 2008 Mike Frisch <mfrisch@platform.com> 5.1-1
-- Initial release
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
+

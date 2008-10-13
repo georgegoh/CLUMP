@@ -19,8 +19,8 @@
 
 Summary: Component for GNOME Desktop
 Name: component-gnome-desktop
-Version: 0.10
-Release: 2
+Version: 1.1
+Release: 1
 License: GPLv2
 URL: http://www.osgdc.org
 Group: System Environment/Base
@@ -134,8 +134,7 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section
 
 %changelog
-* Thu Jul 31 2008 Mike Frisch <mfrisch@platform.com> 5.1.1-2
-- Removed non-essential dependencies (#109704)
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

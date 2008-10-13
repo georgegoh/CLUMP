@@ -20,8 +20,8 @@
 
 Summary: kit-base package
 Name: kit-base
-Version: 0.10
-Release: 18
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
@@ -120,29 +120,7 @@ rm -rf $RPM_BUILD_ROOT
 # Code necessary to cleanup the database from any entries inserted by the %post
 
 %changelog
-* Thu Sep 15 2008 Mark Black <mblack@platform.com> 5.1-18
-- Remove offensive words
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-17
-- Fixing revisions for RH
-
-* Fri Jul 18 2008 Shawn Starr <sstarr@platform.com> 5.1.1-4
-- Fix addhost boothost plugin, ignore unmanaged nodes
-
-* Wed Jun 18 2008 Shawn Starr <sstarr@platform.com> 5.1.1-2
-- Fix genconfig plugins when two devices share same network range
-
-* Mon Jun 2 2008 Mike Frisch <mfrisch@platform.com> 5.1-13
-- Add missing copyright messages
-
-* Thu May 29 2008 Mike Frisch <mfrisch@platform.com> 5.1-12
-- Added cfmsync addhost plugin (#109560)
-
-* Tue Apr 8 2008 Mike Frisch <mfrisch@platform.com> 5.1-10
-- Fixed problem with modules initialization in .bashrc (#106511)
-
-* Fri Apr 4 2008 Mike Frisch <mfrisch@platform.com> 5.1-9
-- Fix for DHCP plugin (#106308)
-
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

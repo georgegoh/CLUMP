@@ -3,7 +3,7 @@
 # 
 msgid ""
 ""
-msgstr "Project-Id-Version: 0.10\n"
+msgstr "Project-Id-Version: 1.1\n"
 "POT-Creation-Date: 2007-04-10 18:03+SGT\n"
 "PO-Revision-Date: 2007-04-10 18:03+SGT\n"
 "Last-Translator: Najib Ninaba <najib@osgdc.org>\n"

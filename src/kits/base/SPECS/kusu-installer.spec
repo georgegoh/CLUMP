@@ -20,8 +20,8 @@
 
 Summary: kusu-installer module runtime
 Name: kusu-installer
-Version: 0.10
-Release: 7
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -100,11 +100,7 @@ rm -rf %{buildroot}
 %{_approot}
 
 %changelog
-* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-7
-- Reset version/revision after switching build to trunk
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Apr 3 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Fixes for partitioning related problems
-
-* Thu Mar 20 2008 Mike Frisch <mfrisch@platform.com> 5.1-3
-- Change location of Kusu installer lock file

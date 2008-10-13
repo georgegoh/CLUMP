@@ -21,8 +21,8 @@
 
 Summary: Boot Media tool
 Name: kusu-boot
-Version: 0.10
-Release: 3
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
@@ -71,9 +71,7 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/boot-%{version}
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-3
-- Reving tar file for RH
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
-- Initial release
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 

@@ -20,8 +20,8 @@
 
 Summary: kusu-networktool module runtime
 Name: kusu-networktool
-Version: 0.10
-Release: 3
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
@@ -69,8 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc /opt/kusu/share/doc/networktool-5.0/LICENSE
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-3
-- Reving tar file for RH
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.

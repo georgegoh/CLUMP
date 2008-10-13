@@ -21,8 +21,8 @@
 
 Summary: Kit building for Kusu
 Name: kusu-buildkit
-Version: 0.10
-Release: 5
+Version: 1.1
+Release: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
@@ -79,14 +79,7 @@ install -m644 etc/templates/*.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-5
-- Reving tar file for RH
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
 
-* Thu Mar 27 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
-- Remove AutoReq tag at the request of Red Hat
-
-* Thu Mar 20 2008 Mike Frisch <mfrisch@platform.com> 5.1-3
-- Change location of Kusu installer lock file in templates
-
-* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com> 5.1-0
-- Initial release

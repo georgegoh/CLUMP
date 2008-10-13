@@ -18,8 +18,8 @@
 
 Summary: Component for Kusu Node Base
 Name: component-base-node
-Version: 0.10
-Release: 3
+Version: 1.1
+Release: 1
 License: GPLv2
 URL: http://www.osgdc.org
 Group: System Environment/Base
@@ -69,5 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section for the client
 
 %changelog
-* Thu Jan 10 2008 Platform Computing <support@platform.com>
-- Initial release.
+* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
+- Sync with OCS (r1609)
+- Initial 1.0 release
+
