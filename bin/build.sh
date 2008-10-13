@@ -23,6 +23,9 @@ fi
 KUSU_REVISION=`svn info ../ | grep 'Last Changed Rev:' | awk '{print $4}'`
 KUSU_VERSION=`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`
 
+svn info ../ | grep URL | grep tags/RELEASE
+RELEASE_BUILD=$?
+
 sed -e "s%@KUSU_BUILD_DIST@%$KUSU_BUILD_DIST%" \
     -e "s%@KUSU_BUILD_DISTVER@%$KUSU_BUILD_DISTVER%" \
     -e "s%@KUSU_BUILD_ARCH@%$KUSU_BUILD_ARCH%" \
@@ -50,8 +53,7 @@ umount $MNT && rmdir $MNT
 if [ $ec -eq 0 ]; then
     mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
 
-    svn info ../ | grep URL | grep tags/RELEASE
-    if [ "$?" -eq 0 ]; then
+    if [ "$RELEASE_BUILD" -eq 0 ]; then
         scp *.iso build@ronin:build/release/$KUSU_VERSION
     else
         scp *.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH 
