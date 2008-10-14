@@ -54,10 +54,10 @@ if [ $ec -eq 0 ]; then
 
     if [ "$RELEASE_BUILD" -eq 0 ]; then
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
-        scp *.iso build@ronin:build/release/$KUSU_VERSION
+        scp *.iso build@ronin:build/kusu/release/$KUSU_VERSION
     else
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
-        scp *.iso build@ronin:build/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH 
+        scp *.iso build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/$KUSU_BUILD_ARCH 
     fi
 fi
 
