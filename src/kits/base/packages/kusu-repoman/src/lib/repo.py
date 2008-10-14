@@ -32,10 +32,21 @@ class BaseRepo(object):
     test = False
     ostype = None
     
-    def __init__(self, prefix, db):
+    def __init__(self, prefix, db, repos_root = '/depot/repos', kits_root = '/depot/kits'):
         self.prefix = prefix
         self.db = db
         self.provision = 'KUSU'
+        self.repos_root = repos_root
+        self.kits_root = kits_root 
+
+        row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_ROOT')
+        if row: self.repos_root =  row[0].kvalue
+        
+        row = self.db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
+        if row: self.kits_root =  row[0].kvalue
+
+        if self.repos_root[0] == '/': self.repos_root = self.repos_root[1:]
+        if self.kits_root[0] == '/': self.kits_root = self.kits_root[1:]
 
         row = self.db.AppGlobals.select_by(kname = 'PROVISION')
         if row: self.provision =  row[0].kvalue
@@ -74,15 +85,15 @@ class BaseRepo(object):
     def getKitPath(self, name, version, arch):
         """Get the kit path given the name, version and arch"""
 
-        return self.prefix / 'depot' / 'kits' / name / version / arch
+        return self.prefix / self.kits_root / name / version / arch
        
     def getRepoPath(self, repoid = None):
         """Returns the repository path"""
 
         if repoid:
-            return self.prefix / 'depot' / 'repos' / str(repoid)
+            return self.prefix / self.repos_root / str(repoid)
         else:
-            return self.prefix / 'depot' / 'repos' / str(self.repoid)
+            return self.prefix / self.repos_root / str(self.repoid)
 
 
     def getInstallerIP(self):
@@ -107,7 +118,7 @@ class BaseRepo(object):
         repo.save()
         repo.flush()
         
-        repo.repository='/depot/repos/%s' % repo.repoid
+        repo.repository='/' + self.repos_root  + '/%s' % repo.repoid
         repo.save()
         repo.flush()
  
@@ -387,12 +398,9 @@ class RedhatYumRepo(BaseRepo):
                 niihost = 'http://' + nic.ip
 
                 # web server root is different: /repos/<repoid>
-                index = self.repo_path.splitall().index('repos')
-                repodir = os.path.sep.join(self.repo_path.splitall()[index:])
-
                 f = open(dest, 'w')
                 try:
-                    t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': repodir}])  
+                    t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': 'repos/' + str(self.repoid)}])  
                 except:
                     f.close()
                     raise UnableToGenerateFileFromTemplateError, 'Cannot create \'%s\'' % dest

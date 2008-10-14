@@ -122,8 +122,8 @@ For examples:
         repo.save()
         repo.flush()
 
-        location = path('/depot/repos/%s' % repo.repoid)
-        path(path(self.prefix or '/') / 'depot' / 'repos' / str(repo.repoid)).makedirs()
+        location = path('/' + self.repos_root + '/%s' % repo.repoid)
+        path(path(self.prefix or '/') / self.repos_root / str(repo.repoid)).makedirs()
         repo.repository = str(location)
         
         repo.save()
@@ -251,9 +251,18 @@ For examples:
             sys.exit(1)
 
         try:
+            location = path('/' + self.repos_root + '/%s' % repo.repoid)
+            if not path(path(self.prefix or '/') / self.repos_root / str(repo.repoid)).exists():
+                path(path(self.prefix or '/') / self.repos_root / str(repo.repoid)).makedirs()
+            repo.repository = str(location)
+            
+            repo.save()
+            repo.flush()
+
             r = self.rfinst.getRepo(repo.repoid)
             self.stdoutMessage('Refreshing repo: %s. This may take a while...\n', repo_name)
             r.refresh(repo.repoid)
+
         except Exception, e:
             self.logErrorEvent('Unable to refresh repo: %s. Reason: %s' % (repo_name, e))
             self.unlock()
@@ -275,7 +284,7 @@ For examples:
             self.unlock()
             sys.exit(1)
         else:
-            p = path(self.prefix or '/') / 'depot' / 'repos' / str(repo.repoid)
+            p = path(self.prefix or '/') / self.repos_root / str(repo.repoid)
             if p.exists(): p.rmtree()
 
             repo.repos = None
@@ -438,7 +447,20 @@ For examples:
         except:
             self.logErrorEvent('Unable to connect to the database. Please check database configuration.')
             sys.exit(1)
+       
+
+        self.repos_root = '/depot/repos'
+        self.kits_root = '/depot/kits'
+
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_ROOT')
+        if row: self.repos_root =  row[0].kvalue
         
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
+        if row: self.kits_root =  row[0].kvalue
+
+        if self.repos_root[0] == '/': self.repos_root = self.repos_root[1:]
+        if self.kits_root[0] == '/': self.kits_root = self.kits_root[1:]
+
         self.kitops = KitOps()
         self.kitops.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
         
