@@ -31,10 +31,14 @@ class BaseRepo(object):
     repoid = None
     test = False
     ostype = None
-
+    
     def __init__(self, prefix, db):
         self.prefix = prefix
         self.db = db
+        self.provision = 'KUSU'
+
+        row = self.db.AppGlobals.select_by(kname = 'PROVISION')
+        if row: self.provision =  row[0].kvalue
 
     def getRepoID(self, repoid_or_reponame):
         """Get the repoid for the repository"""
@@ -321,6 +325,9 @@ class RedhatYumRepo(BaseRepo):
     def copyKusuNodeInstaller(self):
         """copy the kusu installer to the repository"""
 
+        if self.provision != 'KUSU':
+            return
+
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
@@ -344,6 +351,10 @@ class RedhatYumRepo(BaseRepo):
             (dest.realpath().parent.relpathto(src)).symlink(dest)
 
     def makeAutoInstallScript(self):
+
+        if self.provision != 'KUSU':
+            return
+
         # kickstart
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
