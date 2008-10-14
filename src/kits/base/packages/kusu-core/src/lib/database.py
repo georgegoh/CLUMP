@@ -48,7 +48,7 @@ except:
 class BaseTable(object):
     cols = []
     def __init__(self, **kwargs):
-         for col, value in kwargs.items():
+        for col, value in kwargs.items():
             if col not in self.cols:
                 raise NoSuchColumnError, '%s not found' % col 
             else:
@@ -993,8 +993,13 @@ class DB(object):
         AppGlobals(kname='InstallerServeNIS', kvalue='0')
         AppGlobals(kname='InstallerServeNTP', kvalue='1')
         AppGlobals(kname='InstallerServeNFS', kvalue='1')
-        AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
-
+#        AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
+        AppGlobals(kname='DEPOT_KITS_ROOT', kvalue='/depot/kits')
+        AppGlobals(kname='DEPOT_IMAGES_ROOT', kvalue='/depot/images')
+        AppGlobals(kname='DEPOT_REPOS_ROOT', kvalue='/depot/repos')
+        AppGlobals(kname='DEPOT_CONTRIB_ROOT', kvalue='/depot/contrib')
+        AppGlobals(kname='PIXIE_ROOT', kvalue='/tftpboot/kusu')
+        AppGlobals(kname='PROVISION', kvalue='KUSU')
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
 

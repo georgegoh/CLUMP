@@ -369,7 +369,12 @@ insert into appglobals values (17, 'DHCPLeaseTime', '2400', NULL) ;
 insert into appglobals values (18, 'InstallerServeSMTP', 'False', NULL) ;
 insert into appglobals values (19, 'SMTPServer', 'mailserver.myzone.company.com', NULL) ;
 insert into appglobals values (20, 'CFMBaseDir', '/opt/kusu/cfm', NULL) ;
-insert into appglobals values (21, 'ImageBaseDir', '/depot/images', 1) ;
+insert into appglobals values (21, 'DEPOT_KITS_ROOT', '/depot/kits', 1) ;
+insert into appglobals values (22, 'DEPOT_IMAGES_ROOT', '/depot/images', 1) ;
+insert into appglobals values (23, 'DEPOT_REPOS_ROOT', '/depot/repos', 1) ;
+insert into appglobals values (24, 'DEPOT_CONTRIB_ROOT', '/depot/contrib', 1) ;
+insert into appglobals values (25, 'PIXIE_ROOT', '/tftpboot/kusu', 1) ;
+insert into appglobals values (26, 'PROVISION', 'KUSU', 1) ;
 
 # Custom Scripts
 insert into scripts values (1, 3, '/depot/repos/custom_scripts/bogus.sh') ;

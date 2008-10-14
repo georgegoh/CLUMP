@@ -153,7 +153,7 @@ class BuildImage:
     def __mkImageDir(self):
         """__mkImageDir - get the name of the directory to store the image in
         and make that directory."""
-        idir = self.db.getAppglobals('ImageBaseDir')
+        idir = self.db.getAppglobals('DEPOT_IMAGES_ROOT')
         if not idir:
             idir = '/depot/images'
 

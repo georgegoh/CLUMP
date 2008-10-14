@@ -170,7 +170,7 @@ class BuildInitrd:
         """mkInitrdDir - Make a directory to store the initrd in and expand
         the template initrd into that directory."""
 
-        idir = self.db.getAppglobals('ImageBaseDir')
+        idir = self.db.getAppglobals('DEPOT_IMAGES_ROOT')
         if not idir:
             idir = '/depot/images'
 
