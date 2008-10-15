@@ -624,7 +624,8 @@ class NodeGroup(NodeGroupRec):
         kernel = self.data['kernel']
         if not kernel:
             raise NGEValidationError, "A kernel file must be selected for a Node Group."
-        
+
+        BootDir = db.getAppglobals('PIXIE_ROOT')
         if not BootDir: BootDir = '/tftpboot/kusu'
         kernelpath = os.path.join(BootDir,kernel)
         if not os.path.exists(kernelpath):
@@ -1717,6 +1718,7 @@ class NodeGroup(NodeGroupRec):
                     query = "select ngid from nodegroups where initrd = '%s'" %prevNG['initrd']
                     db.execute(query)
                     rv = db.fetchone()
+                    BootDir = db.getAppglobals('PIXIE_ROOT')
                     if not BootDir: BootDir = '/tftpboot/kusu'
                     if not rv and os.path.isfile(os.path.join(BootDir, prevNG['initrd'])):
                         os.remove(os.path.join(BootDir, prevNG['initrd']))
@@ -2052,6 +2054,7 @@ class NodeGroup(NodeGroupRec):
                 rv = db.fetchall()                
 
                 if rv:
+                    BootDir = db.getAppglobals('PIXIE_ROOT')
                     if not BootDir: BootDir = '/tftpboot/kusu'
                     srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
                     dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( self['installtype'], self['ngid'] ))
