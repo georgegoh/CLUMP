@@ -997,6 +997,7 @@ class DB(object):
         AppGlobals(kname='DEPOT_KITS_ROOT', kvalue='/depot/kits')
         AppGlobals(kname='DEPOT_IMAGES_ROOT', kvalue='/depot/images')
         AppGlobals(kname='DEPOT_REPOS_ROOT', kvalue='/depot/repos')
+        AppGlobals(kname='DEPOT_REPOS_SCRIPTS', kvalue='/depot/repos/custom_scripts/')
         AppGlobals(kname='DEPOT_CONTRIB_ROOT', kvalue='/depot/contrib')
         AppGlobals(kname='PIXIE_ROOT', kvalue='/tftpboot/kusu')
         AppGlobals(kname='PROVISION', kvalue='KUSU')

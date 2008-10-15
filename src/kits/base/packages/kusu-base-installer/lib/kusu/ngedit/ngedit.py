@@ -68,9 +68,9 @@ LockDir = "/var/lock/ngedit"
 # TODO: initialize logging
 kl = kusulog.getKusuLog()
 if os.geteuid() == 0:
-   kl.addFileHandler("/var/log/kusu/kusu-ngedit.log")
-   kl = kusulog.getKusuLog('ngedit')
-   kel = kusulog.getKusuEventLog()
+    kl.addFileHandler("/var/log/kusu/kusu-ngedit.log")
+    kl = kusulog.getKusuLog('ngedit')
+    kel = kusulog.getKusuEventLog()
 
 class UnsupportedOSType(Exception):             pass
 #NGE Exception hierarchy
@@ -628,6 +628,7 @@ class NodeGroup(NodeGroupRec):
         if not kernel:
             raise NGEValidationError, "A kernel file must be selected for a Node Group."
         
+        if not BootDir: BootDir = '/tftpboot/kusu'
         kernelpath = os.path.join(BootDir,kernel)
         if not os.path.exists(kernelpath):
             raise NGEValidationError, "Specified kernel file '%s' does not exist." % kernel
@@ -862,7 +863,8 @@ class NodeGroup(NodeGroupRec):
            Throws: NGEValidationError
         '''
     
-        destDir = CustomScriptDir
+        destDir = db.getAppglobals('DEPOT_REPOS_SCRIPTS')
+        if not destDir: destDir = '/depot/repos/custom_scripts'
         scripts = self.data['scripts']
         
         # Check if all of the scripts exist in the script repo
@@ -1701,7 +1703,9 @@ class NodeGroup(NodeGroupRec):
                         dbScripts = Set([x for x, in rv])   #scripts in use
                         delScripts -= dbScripts
                         for script in delScripts:
-                            delscr = os.path.join(CustomScriptDir, script)
+                            destDir = db.getAppglobals('DEPOT_REPOS_SCRIPTS')
+                            if not destDir: destDir = '/depot/repos/custom_scripts'
+                            delscr = os.path.join(destDir, script)
                             if os.path.isfile(delscr):
                                 os.remove(delscr)
             except:
@@ -1716,6 +1720,7 @@ class NodeGroup(NodeGroupRec):
                     query = "select ngid from nodegroups where initrd = '%s'" %prevNG['initrd']
                     db.execute(query)
                     rv = db.fetchone()
+                    if not BootDir: BootDir = '/tftpboot/kusu'
                     if not rv and os.path.isfile(os.path.join(BootDir, prevNG['initrd'])):
                         os.remove(os.path.join(BootDir, prevNG['initrd']))
             except:
@@ -2050,6 +2055,7 @@ class NodeGroup(NodeGroupRec):
                 rv = db.fetchall()                
 
                 if rv:
+                    if not BootDir: BootDir = '/tftpboot/kusu'
                     srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
                     dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( self['installtype'], self['ngid'] ))
 
@@ -3358,8 +3364,9 @@ def getAvailModules(db, ngid):
 def delScripts(db, scripts=[]):
     '''Delete scripts from the script repo only if it's currently 
      not used by any node groups'''
-
-    destDir = CustomScriptDir
+ 
+    destDir = db.getAppglobals('DEPOT_REPOS_SCRIPTS')
+    if not destDir: destDir = '/depot/repos/custom_scripts'
     for script in scripts:
         scriptPath = os.path.join(destDir,script)
         if os.path.isfile(scriptPath):
@@ -3377,7 +3384,8 @@ def copyScripts(db, scriptPaths=[]):
        scripts will be removed before returning. 
     '''
 
-    destDir = CustomScriptDir
+    destDir = db.getAppglobals('DEPOT_REPOS_SCRIPTS')
+    if not destDir: destDir = '/depot/repos/custom_scripts'
     errMsg = None
     copiedScripts = []
 

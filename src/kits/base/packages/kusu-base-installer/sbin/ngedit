@@ -46,10 +46,7 @@ LEFT=kusuwidgets.LEFT
 CENTER=kusuwidgets.CENTER
 RIGHT=kusuwidgets.RIGHT
 
-CustomScriptDir = "/depot/repos/custom_scripts/"
-BootDir = "/tftpboot/kusu/"
 CFMBaseDir = "/etc/cfm"
-ImageDir = "/depot/images"
 LockDir = "/var/lock/ngedit"
 
 class scrNGEMain(USXBaseScreen):
@@ -162,6 +159,8 @@ class scrNGEMain(USXBaseScreen):
         tmpNG = NodeGroup(ngid=newNG.PKval, initrd=imagename)
         tmpNG.syncToDB(self.database)
         #copy initrd, assuming it exists for original NG
+        BootDir = self.database.getAppglobals('PIXIE_ROOT')
+        if not BootDir: BootDir = '/tftpboot/kusu'
         if os.path.isfile(os.path.join(BootDir, newNG['initrd'])):
             shutil.copyfile(os.path.join(BootDir, newNG['initrd']), os.path.join(BootDir,imagename))
         else:
@@ -170,6 +169,8 @@ class scrNGEMain(USXBaseScreen):
         # Copy the original image to the new image (Faster than rebuilding)
         oldImage = '%s.img.tar.bz2' % ngid
         newImage = '%s.img.tar.bz2' % newNG.PKval
+        ImageDir = self.database.getAppglobals('DEPOT_IMAGES_ROOT')
+        if not ImageDir: ImageDir = '/depot/images'
         if os.path.isfile(os.path.join(ImageDir, oldImage)):
             shutil.copyfile(os.path.join(ImageDir, oldImage), os.path.join(ImageDir, newImage))
             # Apache must own it
@@ -220,11 +221,15 @@ class scrNGEMain(USXBaseScreen):
 
             # Remove Images
             oldImage = '%s.img.tar.bz2' % ngid
+            ImageDir = self.database.getAppglobals('DEPOT_IMAGES_ROOT')
+            if not ImageDir: ImageDir = '/depot/images'
             if os.path.isfile(os.path.join(ImageDir, oldImage)):
                 os.unlink(os.path.join(ImageDir, oldImage))
 
             # Remove Initrd's
             oldInitrd = 'initrd.diskless.%s.img' % ngid
+            BootDir = self.database.getAppglobals('PIXIE_ROOT')
+            if not BootDir: BootDir = '/tftpboot/kusu'
             if os.path.isfile(os.path.join(BootDir, oldInitrd)):
                 os.unlink(os.path.join(BootDir, oldInitrd))
             oldInitrd = 'initrd.disked.%s.img' % ngid
@@ -503,6 +508,8 @@ class scrNGEEdit_Boot(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        BootDir = database.getAppglobals('PIXIE_ROOT')
+        if not BootDir: BootDir = '/tftpboot/kusu'
         self.__kerneldir = BootDir
 
     def setCallbacks(self):
@@ -2017,7 +2024,9 @@ class scrNGEEdit_Scripts(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
-        self.__allscrpath = CustomScriptDir
+
+        self.__allscrpath = database.getAppglobals('DEPOT_REPOS_SCRIPTS')
+        if not self.__allscrpath: self.__allscrpath = '/depot/repos/custom_scripts'
         self.__copiedfiles = []
 
     def setCallbacks(self):
