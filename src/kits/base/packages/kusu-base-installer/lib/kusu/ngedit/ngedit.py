@@ -57,10 +57,7 @@ NGE_TEST    = 0x100
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
 
 # TODO: consolidate constants in one place
-CustomScriptDir = "/depot/repos/custom_scripts/"
-BootDir = "/tftpboot/kusu/"
 CFMBaseDir = "/etc/cfm"
-ImageDir = "/depot/images"
 PluginsDir = "/opt/kusu/lib/plugins/ngedit"
 PluginsLibDir = PluginsDir + "/lib"
 LockDir = "/var/lock/ngedit"
