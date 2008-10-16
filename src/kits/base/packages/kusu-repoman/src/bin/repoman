@@ -62,6 +62,7 @@ class RepoManApp(KusuApp):
                [-a | --add] [-k | --kit <name> [-o <version> | --kitversion <version>] [ -c <arch> | --kitarch <arch>]]
                [-e | --delete] [--kit <name> [-o <version> | --kitversion <version> ] [-c <arch> | --kitarch <arch>]]
                [-e | --delete] [-r reponame | --reponame reponame]
+               [--flush-cache] [-r reponame | --reponame reponame]
 
 For examples:
     repoman -n -r "Example repo"
@@ -97,6 +98,8 @@ For examples:
                                help=self._('Database username'))
         self.parser.add_option('--dbpassword', dest='dbpassword',
                                help=self._('Database password'))
+        self.parser.add_option('--flush-cache', dest='flush_cache', action="store_true",
+                               help=self._('flush repository cache'))
 
     def getVersion(self):
         self.stdoutMessage('Repoman 5\n')
@@ -268,7 +271,25 @@ For examples:
             self.unlock()
             sys.exit(1)
             
-        self.logEvent("Finished updating repo %s" % repo_name, toStdout=False)           
+        self.logEvent("Finished deleting repo %s" % repo_name, toStdout=False)
+ 
+    def flushCache(self, repo_name):
+        
+        self.logEvent("Deleting cache for '%s' repo" % repo_name, toStdout=False)
+        
+        self.repoExists(repo_name)
+        repo = self.dbs.Repos.select_by(reponame=repo_name)
+        repo = repo[0]
+        
+        try:
+            r = self.rfinst.getRepo(repo.repoid)
+            r.flushCache()
+        except Exception, e:
+            self.logErrorEvent('Unable to delete cache for repo: %s. Reason: %s' % (repo_name, e))
+            self.unlock()
+            sys.exit(1)
+        
+        self.logEvent("Finished deleting cache for repo %s" % repo_name, toStdout=False)
 
     def delete(self, repo_name):
         
@@ -324,7 +345,7 @@ For examples:
 
     def repoExists(self, repo_name):
         repo = self.dbs.Repos.select_by(reponame=repo_name)
-
+        
         if not repo:
             self.logErrorEvent('No such repo: %s' % repo_name)
             self.unlock()
@@ -356,14 +377,14 @@ For examples:
 
     def checkArgs(self, options):
         fail = False
-        for opt in ['new', 'snapshot', 'list', 'delete', 'add', 'update', 'version']:
+        for opt in ['new', 'snapshot', 'list', 'delete', 'add', 'update', 'version', 'flush_cache']:
             val = getattr(options, opt)
             if val:
                 if fail:
                     self.parser.print_help()
                     sys.stderr.write('Exactly one repoman operation expected.\n')
                     sys.exit(1)
-
+        
                 else:
                     fail = True
         
@@ -375,41 +396,41 @@ For examples:
                     self.stderrMessage('%s: error: %s/%s option requires an argument\n', 
                                       path(sys.argv[0]).basename(), option._short_opts[0],option._long_opts[0])
                     sys.exit(1)
-
+        
         if not options.list and not options.version: 
             if options.reponame:
                 if options.new or options.snapshot or options.delete or options.update:
                     return
-
+                
                 elif options.add or options.delete:
                     if not options.kit:
                         self.parser.print_help()
                         self.stderrMessage('No kit specified.\n')
                         sys.exit(1)
-
-                elif not (options.new and options.snapshot and options.delete and options.add and options.update):
+                
+                elif not (options.new and options.snapshot and options.delete and options.add and options.update and options.flush_cache):
                     self.parser.print_help()
-                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update\n')
+                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update | flush-cache\n')
                     sys.exit(1)
-
+            
             else:
-                if options.new or options.snapshot or options.delete or options.add or options.update:
+                if options.new or options.snapshot or options.delete or options.add or options.update or options.flush_cache:
                     self.parser.print_help()
                     self.stderrMessage('No repo/kit specified.\n')
                     sys.exit(1)
-              
+                
                 else: 
                     self.parser.print_help()
-                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update\n')
+                    self.stderrMessage('No action specified. Requires: new | snapshot | delete | add | update | flush-cache\n')
                     sys.exit(1)
-
+        
         else:
             if options.reponame or options.new or options.snapshot or \
-               options.delete or options.add or options.update:
+               options.delete or options.add or options.update or options.flush_cache:
                 self.parser.print_help()
                 self.parser.error(self._('Exactly one repoman operation expected.\n'))
                 sys.exit(1)
-
+        
         if options.dbdriver and options.dbdriver not in ['sqlite', 'mysql','postgres']:
             self.parser.print_help()
             self.stderrMessage('Invalid database driver.\n')
@@ -547,7 +568,9 @@ For examples:
             self.update(options.reponame)
         elif options.version:
             self.getVersion()
-
+        elif options.flush_cache:
+            self.flushCache(options.reponame)
+        
         self.unlock()
 
     def list(self):

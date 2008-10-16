@@ -76,6 +76,14 @@ class BaseRepo(object):
         os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
         return self.getKitPath(os_name, os_version, os_arch)
 
+    def getRepoCachePath(self, repoid = None):
+        """Returns the repository cache path"""
+
+        if repoid:
+            return self.prefix / 'depot' / 'repos' / '.repocache' / str(repoid)
+        else:
+            return self.prefix / 'depot' / 'repos' / '.repocache' / str(self.repoid)
+
     def getContribPath(self):
         """Get the contrib path for the repository"""
 
@@ -95,6 +103,13 @@ class BaseRepo(object):
         else:
             return self.prefix / self.repos_root / str(self.repoid)
 
+    def getRepoCachePath(self, repoid = None):
+        """Returns the repository cache path"""
+        
+        if repoid:
+            return self.prefix / 'depot' / 'repos' / '.repocache' / str(repoid)
+        else:
+            return self.prefix / 'depot' / 'repos' / '.repocache' / str(self.repoid)
 
     def getInstallerIP(self):
         """Returns a list of installer ips"""
@@ -131,6 +146,25 @@ class BaseRepo(object):
 
         self.repo_path = self.getRepoPath(self.repoid)
 
+    def flushCache(self, repoid_or_reponame=None):
+        """Remove the repository cache from local disk"""
+        
+        cache_path = None
+        if not self.repo_path:
+            repoid = self.getRepoID(repoid_or_reponame)
+            
+            if not repoid:
+                raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+            else:
+                cache_path = self.getRepoCachePath(repoid)
+        
+        if not self.repo_path.exists():
+            raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+        else:
+            cache_path = self.getRepoCachePath()
+        
+        if cache_path.exists(): cache_path.rmtree()
+
     def clean(self, repoid_or_reponame):
         """Remove the repository from local disk"""
         
@@ -163,10 +197,11 @@ class BaseRepo(object):
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
 
         repo_path = self.getRepoPath(repoid)
+        cache_path = self.getRepoCachePath(repoid)
 
         # Removes files
-        if repo_path.exists():
-            repo_path.rmtree()
+        if repo_path.exists(): repo_path.rmtree()
+        if cache_path.exists(): repo_path.rmtree()
 
         # clean up database: repos and repos_have_kit table
         repos_have_kits = self.db.ReposHaveKits.select_by(repoid=repoid)
@@ -482,8 +517,10 @@ class RedhatYumRepo(BaseRepo):
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
 
-        dotrepodata = self.repo_path / '.repodata'
-        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path)
+        repocache_path = self.getRepoCachePath()
+        if (not repocache_path.exists()):
+            repocache_path.makedirs()
+        cmd = 'createrepo -c %s -g %s %s' % (repocache_path, self.comps_file, self.repo_path)
 
         try:
             p = subprocess.Popen(cmd,
@@ -495,14 +532,12 @@ class RedhatYumRepo(BaseRepo):
             retcode = p.returncode
 
         except: 
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
+            if repocache_path.exists(): repocache_path.rmtree()
             
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
+            if repocache_path.exists(): repocache_path.rmtree()
  
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
@@ -837,8 +872,10 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     def makeMetaInfo(self):
         """Creates a yum repoistory"""
 
-        dotrepodata = self.repo_path / '.repodata'
-        cmd = 'createrepo -g %s %s' % (self.comps_file, self.repo_path / 'Server')
+        repocache_path = self.getRepoCachePath()
+        if (not repocache_path.exists()):
+            repocache_path.makedirs()
+        cmd = 'createrepo -c %s  -g %s %s' % (repocache_path, self.comps_file, self.repo_path / 'Server')
 
         try:
             p = subprocess.Popen(cmd,
@@ -850,14 +887,12 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
             retcode = p.returncode
 
         except:
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
+            if repocache_path.exists(): repocache_path.rmtree()
  
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
-            if dotrepodata.exists():
-                dotrepodata.rmtree()
+            if repocache_path.exists(): repocache_path.rmtree()
  
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
     
