@@ -57,7 +57,7 @@ class RepoPatchApp(KusuApp):
         self.parser.add_option('-v', '--version', dest='version', action="store_true", help=self._('Display version of tool'))
         self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                               help=self._('Database driver (sqlite, mysql)'))
+                               help=self._('Database driver (sqlite, mysql,postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -203,8 +203,10 @@ class RepoPatchApp(KusuApp):
             sys.stderr.write("No more arguments expected. Remaining args: %s" %
                              args)
             sys.exit(1)
-      
-        dbdriver = 'mysql'
+
+        dbdriver = os.getenv('KUSU_DB_ENGINE')
+        if not dbdriver or dbdriver not in ['mysql','postgres']:
+            dbdriver = 'mysql' # default to mysql
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None

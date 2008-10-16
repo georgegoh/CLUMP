@@ -61,7 +61,7 @@ class boothost:
         self.installerIPs = []
         query = ('SELECT nics.ip, networks.subnet FROM nics, nodes, networks '
                  'WHERE nodes.nid=nics.nid AND nics.netid=networks.netid '
-                 'AND networks.usingdhcp=0 '
+                 'AND networks.usingdhcp=False '
                  'AND nodes.name=(select kvalue from appglobals where '
                  'kname="PrimaryInstaller")')
             
@@ -195,7 +195,7 @@ class boothost:
                  'from nodes,nodegroups,nics  where name="%s" '
                  'and nodes.ngid=nodegroups.ngid '
                  'and nics.nid=nodes.nid '
-                 'and nics.boot=1' % nodename)
+                 'and nics.boot=True' % nodename)
     
         try:
             self.db.execute(query)
@@ -224,7 +224,7 @@ class boothost:
             
             if kparams == None :
                 kparams = data[9]
-            if bootfrom == 1:
+            if bootfrom:
                 bootfrom = 'Disk'
             else:
                 bootfrom = 'Network'
@@ -302,9 +302,9 @@ class boothost:
                 setstr = setstr + 'state=\'%s\', ' % state
         if localboot != '':
             if localboot == '1':
-                setstr = setstr + 'bootfrom=1, '
+                setstr = setstr + 'bootfrom=True, '
             else:
-                setstr = setstr + 'bootfrom=0, '
+                setstr = setstr + 'bootfrom=False, '
 
         if setstr != '':
             return setstr[:-2]
@@ -350,7 +350,7 @@ class boothost:
                  'from nodes,nodegroups,nics where nodes.name="%s" '
                  'and nodes.ngid=nodegroups.ngid '
                  'and nics.nid=nodes.nid '
-                 'and nics.boot=1' % nodename)        
+                 'and nics.boot=True' % nodename)        
         try:
             self.db.execute(query)
         except:
@@ -365,7 +365,7 @@ class boothost:
             kernel   = data[1]
             initrd   = data[2]
             kparams  = data[3]
-            bootfrom = data[4]
+            bootfromb = data[4]
             if kernel  == None :
                 kernel  = data[5]
             if initrd  == None :
@@ -374,6 +374,10 @@ class boothost:
                 kparams = data[7]
             mac      = data[8]
             state    = data[9]
+            if bootfromb:
+                bootfrom = 1
+            else:
+                bootfrom = 0
 
             self.mkPXEFile(mac, kernel, initrd, kparams, bootfrom, name)
         else:
@@ -490,7 +494,7 @@ class boothost:
 
             # Reset those nodes that have a custom kernel, initrd, and kernel params
             query = ('update nodes set '
-                     'bootfrom=0, kernel=NULL, initrd=NULL, kparams=NULL, state="Expired" '
+                     'bootfrom=False, kernel=NULL, initrd=NULL, kparams=NULL, state="Expired" '
                      'where (kernel is not null or initrd is not null or kparams is not null) '
                      'and ngid=(select ngid from nodegroups where ngname="%s")' % (nodegroup))
 

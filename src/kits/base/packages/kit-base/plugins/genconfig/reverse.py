@@ -49,7 +49,7 @@ class thisReport(Report):
         _ = self.gettext
             
         # Test the network given
-        query = ('select subnet, suffix from networks where network="%s"' % network)
+        query = ('select subnet, suffix from networks where network=\'%s\'' % network)
         try:
             self.db.execute(query)
 
@@ -105,7 +105,7 @@ class thisReport(Report):
         query = ('select nodes.name, nics.ip, networks.suffix from '
                  'nodes, nics, networks where '
                  'nodes.ngid=1 and nics.nid=nodes.nid and '
-                 'networks.netid=nics.netid and networks.usingdhcp=0')
+                 'networks.netid=nics.netid and networks.usingdhcp=False')
         try:
             self.db.execute(query)
 
@@ -129,7 +129,7 @@ class thisReport(Report):
         # Print out all the available names for this network
         query = ('select nodes.name, nics.ip, networks.suffix from '
                  'nodes,nics,networks where nodes.nid=nics.nid and '
-                 'nics.netid=networks.netid and networks.network="%s" '
+                 'nics.netid=networks.netid and networks.network=\'%s\' '
                  'order by nics.ip' % network)
 
         try:

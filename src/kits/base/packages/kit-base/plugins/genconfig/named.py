@@ -68,7 +68,7 @@ class thisReport(Report):
         query = ('select nics.ip from nics,nodes where '
                  'nics.nid=nodes.nid and '
                  'nodes.name=(select kvalue from appglobals '
-                 'where kname="PrimaryInstaller")')
+                 'where kname=\'PrimaryInstaller\')')
         try:
             self.db.execute(query)
 
@@ -185,7 +185,7 @@ zone "0.in-addr.arpa" IN {
         print ''
 
         # Generate the in-addr.arpa entries for all subnets
-        query = ('select distinct network,subnet from ng_has_net,networks where ng_has_net.netid=networks.netid and networks.usingdhcp=0')
+        query = ('select distinct network,subnet from ng_has_net,networks where ng_has_net.netid=networks.netid and networks.usingdhcp=False')
         try:
             self.db.execute(query)
 

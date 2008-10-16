@@ -31,7 +31,15 @@ class thisReport(Report):
     def runPlugin(self, pluginargs):
         """runPlugin - This method provides the database report for this
         plugin.  All plugins must implement this method."""
+        engine = os.getenv("KUSU_DB_ENGINE")
+        if engine == 'mysql':
+            os.system('mysqldump kusudb')
+        elif engine == 'postgres':
+            os.system('pg_dump -Upostgres kusudb')
+        else:
+            print('Unknown engine - %s.  Giving up .. ' % engine)
 
-        os.system('mysqldump kusudb')
+            
+
                 
         

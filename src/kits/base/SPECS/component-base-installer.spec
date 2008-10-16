@@ -55,6 +55,7 @@ Requires: httpd
 Requires: python
 Requires: python-devel
 Requires: MySQL-python
+Requires: python-psycopg2
 Requires: createrepo
 Requires: rsync
 Requires: bind
@@ -67,6 +68,8 @@ Requires: pdsh-mod-machines
 # Can't use pdsh-mod-dshgroup and pdsh-mod-netgroup at the same time
 # Requires: pdsh-mod-dshgroup
 Requires: pdsh-mod-netgroup
+Requires: postgresql
+Requires: postgresql-server
 # Requires: pdsh-debuginfo
 Requires: environment-modules
 Requires: python-cheetah

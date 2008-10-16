@@ -49,7 +49,7 @@ class thisReport(Report):
 
         query = ('SELECT nics.ip,nodes.name,networks.suffix,nics.boot,networks.type,nodes.ngid '
                  'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
-                 'AND nics.netid = networks.netid AND networks.usingdhcp=0 '
+                 'AND nics.netid = networks.netid AND networks.usingdhcp=False '
                  'AND nodes.ngid!=5 ORDER BY nics.ip')
 
         try:
@@ -115,7 +115,7 @@ class thisReport(Report):
         # Create the unmanaged hosts entries
         query = ('SELECT nics.ip,nodes.name '
                  'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
-                 'AND nics.netid = networks.netid AND networks.usingdhcp=0 '
+                 'AND nics.netid = networks.netid AND networks.usingdhcp=False '
                  'AND nodes.ngid=5 ORDER BY nics.ip')
 
         try:

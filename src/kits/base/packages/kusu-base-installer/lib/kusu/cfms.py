@@ -118,7 +118,7 @@ class PackBuilder:
         """getInstallers - Get a list of all of the available installer IP's"""
         query = ('select nics.ip from nics, nodes, nodegroups, networks where '
                  'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid and '
-                 'networks.netid=nics.netid and networks.usingdhcp=0 '
+                 'networks.netid=nics.netid and networks.usingdhcp=False '
                  'and nodegroups.type="installer" and networks.type="provision"')
         installers = []
         try:
@@ -137,7 +137,7 @@ class PackBuilder:
 
     def __getBroadcasts(self):
         """getBroadcasts - Get a list of all of the available netowk broadcast addresses"""
-        query = ('select distinct network, subnet from networks where type="provision" and usingdhcp=0')
+        query = ('select distinct network, subnet from networks where type="provision" and usingdhcp=False')
 
         bc = []
         try:

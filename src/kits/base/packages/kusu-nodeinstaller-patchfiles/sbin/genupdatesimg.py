@@ -5,10 +5,14 @@ from kusu.core import database
 from path import path
 import tempfile
 import subprocess
-
+import os
 class GenUpdatesImg(KusuApp):
     def __init__(self):
-        dbdriver = 'mysql'
+        engine =  os.getenv('KUSU_DB_ENGINE')
+        if engine == 'mysql':
+            dbdriver = 'mysql'
+        else:
+            dbdriver = 'postgres'
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None

@@ -208,19 +208,24 @@ class KusuDBRec(UserDict):
             itemlst = dbdict.items()
             keylst = [k for k,v in itemlst]
             vallst = ["'%s'" %str(v) for k,v in itemlst]
-            query = 'INSERT into %s (%s) values (%s)' %(self.table, \
-                        string.join(keylst,',') , string.join(vallst,','))
+            query = 'INSERT into %s (%s) values (%s)' %\
+                    (self.table, string.join(keylst,',') , string.join(vallst,','))
 
         try:
-            db.execute(query)
+           kl.info(query)
+           db.execute(query)
         except Exception,msg:
-            raise NGEDBWriteFail,msg
+           raise NGEDBWriteFail,msg
 
         if mode == 'insert':
             #get the PK for the record just inserted
             try:
-                db.execute("SELECT last_insert_id()")
-                rv = db.fetchone()
+               if db.driver == 'mysql':
+                  db.execute("SELECT last_insert_id()")
+               else:
+                  db.execute("SELECT last_value from %s_%s_seq" % (self.table,self.fields[0]))
+               rv = db.fetchone()
+               kl.info("the rv value is :%d len : %d, data = %s " % (rv[0], len(rv), self.data))
             except Exception,msg:
                 raise NGEDBReadFail,msg
     
@@ -423,24 +428,36 @@ class NodeGroup(NodeGroupRec):
                 p[p.PKfld] = None       #give the Partition record new identity
                 p['ngid'] = self.PKval  #if copied from other N.G. - correct ngid field
                 p.syncToDB(db)
-                db.execute('select last_insert_id()')
+                if db.driver == 'mysql' :
+                   db.execute('select last_insert_id()') # revisit later for emulating this behaviour in postgres
+                else:
+                   #XXX hardcoded values here
+                   db.execute("SELECT last_value from nodegroups_ngid_seq")
                 rv = db.fetchone()
                 p[p.PKfld] = rv[0]
 
         else:
-            query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
-                        self.linksDBmap[link][1])
-            query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
+           if db.driver == 'mysql':
+              query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
+                                                             self.linksDBmap[link][1])
+              query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
+           else: # postgres
+              query = "INSERT into %s (ngid, %s)" % (self.linksDBmap[link][0], \
+                                                     self.linksDBmap[link][1])
+              query+=" values (%s, '%s'); " 
+              query = query*(len(self.data[link]))
+              
 
-            tpl = ()
-            for v in self.data[link]:
-                tpl += self.PKval,v
-            query = query % tpl
+           tpl = ()
+           for v in self.data[link]:
+              tpl += self.PKval,v
+           query = query % tpl
 
-            try:
-                db.execute(query)
-            except Exception,msg:
-                raise NGEDBWriteFail,'Failed syncing link=%s to DB with msg = %s\nQuery=%s' %(link,str(msg),query)
+           try:
+              kl.info(query)
+              db.execute(query)
+           except Exception,msg:
+              raise NGEDBWriteFail,'Failed syncing link=%s to DB with msg = %s\nQuery=%s' %(link,str(msg),query)
 
     def __runSingleRowQuery(self, db, query):
         db.execute(query)
@@ -1590,8 +1607,13 @@ class NodeGroup(NodeGroupRec):
                     tplstr = "(%s)" % int(diffNG['nets'][0])
                 else:
                     tplstr = str(tuple([int(x) for x in diffNG['nets']]))
-                query = ''' select device,IFNULL(network, 'DHCP'),IFNULL(netname, '') from networks where
-                            netid in %s''' %tplstr
+                if db.driver == 'mysql':
+                   query = ''' select device,IFNULL(network, 'DHCP'),IFNULL(netname, '') from networks where
+                netid in %s''' %tplstr
+
+                else:
+                   query = ''' select device,COALESCE(network, 'DHCP'),COALESCE(netname, '') from networks where
+                netid in %s''' %tplstr
                 db.execute(query)
                 rv = db.fetchall()
                 rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
@@ -1998,7 +2020,7 @@ class NodeGroup(NodeGroupRec):
 
         update_vallst = []
         if reinst:
-            update_vallst.append("bootfrom=0")
+            update_vallst.append("bootfrom=False")
         if expire:
             update_vallst.append("state='Expired'")
             
@@ -2784,7 +2806,7 @@ class PartSchema:
         return None
 
     def addPartRec(self,record):
-        ''' adds a new PartitionRec object to the PartRecList - assumes it's not there yet '''
+        ''' adds a new PartitionRec object to the PartRecList - assumes it\'s not there yet '''
         if not self.PartRecList:
             self.PartRecList = []
         self.PartRecList.append(record)
@@ -3131,8 +3153,11 @@ def getAvailPkgs(db, ngid, categorized=False):
 
     import kusu.repoman.repofactory as repofactory
     from kusu.core import database as sadb
-
-    dbinst = sadb.DB(driver='mysql',db='kusudb',username='nobody')
+    engine = os.getenv('KUSU_DB_ENGINE')
+    if engine == 'mysql':
+        dbinst = sadb.DB(driver='mysql',db='kusudb',username='nobody')
+    else: # xxx only postgres for now
+        dbinst = sadb.DB(driver='postgres',db='kusudb',username='nobody')
     rf = repofactory.RepoFactory(db=dbinst)
     try:
         repoinst = rf.getRepo(repoid)
@@ -3158,10 +3183,17 @@ def getAvailPkgs(db, ngid, categorized=False):
 
     #remove packages coming from kits available through the current repo
     rmpacklst = []
-    query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
-                repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
-                k.isOS = 0 AND r.repoid = %s ''' %repoid
-    db.execute(query)
+    if db.driver == 'mysql':
+       query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+       repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
+       k.isOS = False AND r.repoid = %s ''' %repoid
+       db.execute(query)
+    else: # postgres for now
+       query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+       repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
+       k."isOS" = False AND r.repoid = %s ''' %repoid
+       db.execute(query,postgres_replace=False)
+
     rv = db.fetchall()
 
     for kitname,kitver,kitarch in rv:

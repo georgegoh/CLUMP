@@ -41,7 +41,7 @@ class thisReport(Report):
         query = ('select nics.ip,nodes.name,networks.suffix,nics.boot '
                  'from nics,nodes,networks where nics.nid = nodes.nid '
                  'and nics.netid = networks.netid and '
-                 'networks.usingdhcp = 0 order by nics.ip')
+                 'networks.usingdhcp = False order by nics.ip')
 
         try:
             self.db.execute(query)

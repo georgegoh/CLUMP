@@ -216,7 +216,6 @@ class Scripts(BaseTable):
                (self.__class__.__name__, self.ngid, self.script)
 
 class DB(object):
-
     tableClasses = {'ReposHaveKits' : ReposHaveKits,
                     'AppGlobals' : AppGlobals,
                     'Components' : Components,
@@ -253,7 +252,6 @@ class DB(object):
         elif driver == 'mysql':
             if not port:
                 port = '3306'
-
             engine_src = 'mysql://'
 
             if username:
@@ -273,12 +271,12 @@ class DB(object):
             else:
                 engine_src += '@%s:%s/%s' % (host, port, db)
  
-        #elif driver == 'postgres':
-        #    if not port:
-        #        port = '5432'
-        #
-        #    self.engine_src = 'postgres://%s:%s@%s:%s/%s' % \
-        #                      (username, password, host, port, db)
+        elif driver == 'postgres':
+           if not port:
+               port = '5432'
+        
+               engine_src = 'postgres://%s:%s@%s:%s/%s' % \
+                             (username, password, host, port, db)
 
         else:
             raise UnsupportedDriverError, 'Invalid driver: %s' % driver
@@ -668,6 +666,10 @@ class DB(object):
             self.createTables()
         except Exception: pass
 
+        true = sa.literal(True)
+        false = sa.literal(False)
+
+
         # Create the nodegroups
         # #R - rack, #N - rank
         installer = NodeGroups(ngname='installer', # VERSION+ARCH
@@ -681,7 +683,6 @@ class DB(object):
         if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel']:
             installer.kparams = 'text noipv6 kssendmac selinux=0'
             compute.kparams = 'text noipv6 kssendmac selinux=0'
-            
         # more nodegroups
         imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
                             installtype='disked', type='compute')
@@ -692,7 +693,7 @@ class DB(object):
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        master_node = Nodes(name='master', state='Installed', lastupdate=now, bootfrom=1)
+        master_node = Nodes(name='master', state='Installed', lastupdate=now, bootfrom=true)
         installer.nodes.append(master_node)
 
         # creates the necessary modules for image and diskless nodes
@@ -899,20 +900,23 @@ class DB(object):
         imaged.packages.append(Packages(packagename='ntp'))
 
         # Create the partition entries for the compute node
-# REGULAR PARTITIONING
+        # REGULAR PARTITIONING
+
+        # use literals so we can overcome mysql and postgres specifics
+
         for ng in [compute]:
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-                              size='100', device='1', preserve=0)
+                              size='100', device='1', preserve=false)
             root = Partitions(mntpnt='/', fstype='ext3', partition='2',
-                              size='12000', device='1', preserve=0)
+                              size='12000', device='1', preserve=false)
             swap = Partitions(fstype='linux-swap', partition='3',
-                              size='2000', device='1', preserve=0)
+                              size='2000', device='1', preserve=false)
             var = Partitions(mntpnt='/var', fstype='ext3', partition='5',
-                             size='2000', device='1', preserve=0)
+                             size='2000', device='1', preserve=false)
             data = Partitions(mntpnt='/data', fstype='ext3', partition='6', size='14000',
-                              options='fill', device='1', preserve=0)
-            dell = Partitions(options='partitionID=Dell Utility', preserve=1)
-            donotpreserve = Partitions(options='partitionID=*', preserve=0)
+                              options='fill', device='1', preserve=false)
+            dell = Partitions(options='partitionID=Dell Utility', preserve=true)
+            donotpreserve = Partitions(options='partitionID=*', preserve=false)
             ng.partitions.append(boot)
             ng.partitions.append(root)
             ng.partitions.append(swap)
@@ -923,24 +927,24 @@ class DB(object):
 # LVM PARTITIONING
 #        for ng in [compute]:
 #            boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-#                              size='100', device='1', preserve=0)
+#                              size='100', device='1', preserve=false)
 #            swap = Partitions(fstype='linux-swap', partition='2',
-#                              size='2000', device='1', preserve=0)
+#                              size='2000', device='1', preserve=false)
 #            pv = Partitions(fstype='physical volume', partition='0',
-#                            size='28000', device='N', preserve=0,
+#                            size='28000', device='N', preserve=false,
 #                            options='fill;pv;vg=VolGroup00')
-#            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=0)
+#            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=false)
 #            root = Partitions(mntpnt='/', fstype='ext3', size='12000',
-#                              device='ROOT', options='lv;vg=VolGroup00', preserve=0)
+#                              device='ROOT', options='lv;vg=VolGroup00', preserve=false)
 #            var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
-#                             device='VAR', options='lv;vg=VolGroup00', preserve=0)
+#                             device='VAR', options='lv;vg=VolGroup00', preserve=false)
 #            data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
-#                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=0)
-#            dell = Partitions(options='partitionID=Dell Utility', preserve=1)
-##            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=0)
-##            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=0)
-##            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=0)
-#            donotpreserve4 = Partitions(options='partitionID=*', preserve=0)
+#                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=false)
+#            dell = Partitions(options='partitionID=Dell Utility', preserve=true)
+##            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=false)
+##            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=false)
+##            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=false)
+#            donotpreserve4 = Partitions(options='partitionID=*', preserve=false)
 
 #            ng.partitions.append(boot)
 #            ng.partitions.append(swap)
@@ -954,35 +958,34 @@ class DB(object):
 ##            ng.partitions.append(donotpreserve2)
 ##            ng.partitions.append(donotpreserve3)
 #            ng.partitions.append(donotpreserve4)
-        
         # Imaged Partitioning
         boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
-                          size='100', device='1', preserve=0)
+                          size='100', device='1', preserve=false)
         swap = Partitions(fstype='linux-swap', partition='2',
-                          size='8000', device='1', preserve=0)
+                          size='8000', device='1', preserve=false)
         root = Partitions(mntpnt='/', fstype='ext3', partition='3',
-                          size='24000', device='1', preserve=0)
+                          size='24000', device='1', preserve=false)
         imaged.partitions.append(boot)
         imaged.partitions.append(swap)
         imaged.partitions.append(root)
 
         # Installer Partitioning Schema
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-                          size='100', device='1', preserve=0)
+                          size='100', device='1', preserve=false)
         swap = Partitions(fstype='linux-swap', partition='2',
-                          size='2000', device='1', preserve=0)
+                          size='2000', device='1', preserve=false)
         pv = Partitions(fstype='physical volume', partition='0',
-                        size='28000', device='N', preserve=0,
+                        size='28000', device='N', preserve=false,
                         options='fill;pv;vg=KusuVolGroup00')
-        vg = Partitions(device='KusuVolGroup00', options='vg;extent=32M', preserve=0)
+        vg = Partitions(device='KusuVolGroup00', options='vg;extent=32M', preserve=false)
         root = Partitions(mntpnt='/', fstype='ext3', size='12000',
-                          device='ROOT', options='lv;vg=KusuVolGroup00', preserve=0)
+                          device='ROOT', options='lv;vg=KusuVolGroup00', preserve=false)
         depot = Partitions(mntpnt='/depot', fstype='ext3', size='10000',
-                           device='DEPOT', options='lv;vg=KusuVolGroup00', preserve=0)
+                           device='DEPOT', options='lv;vg=KusuVolGroup00', preserve=false)
         var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
-                         device='VAR', options='lv;vg=KusuVolGroup00', preserve=0)
-        dell = Partitions(options='partitionID=Dell Utility', preserve=1)
-        donotpreserve = Partitions(options='partitionID=*', preserve=0)
+                         device='VAR', options='lv;vg=KusuVolGroup00', preserve=false)
+        dell = Partitions(options='partitionID=Dell Utility', preserve=true)
+        donotpreserve = Partitions(options='partitionID=*', preserve=false)
         for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve]:
             installer.partitions.append(parts)
         # End Installer Partitioning Schema
@@ -1003,6 +1006,8 @@ class DB(object):
         AppGlobals(kname='PROVISION', kvalue='KUSU')
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
+        if self.driver =='postgres':
+            self.postgres_update_sequences(self.postgres_get_seq_list())
 
     def createDatabase(self):
         """Creates the database"""
@@ -1024,10 +1029,23 @@ class DB(object):
                 retcode = p.returncode
             except:
                 raise CommandFailedToRunError
-
+        elif self.driver == 'postgres':
+            try:
+                # ignore self.password for now
+                # expect to have a psql create role apache with superuser login to be run
+                # already.
+                cmd = 'psql -p %s  postgres %s   -c "create database %s with owner = %s;"'\
+                      % (self.port, self.username, self.db, self.username)
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+            except:
+                raise CommandFailedToRunError
             if retcode:
                 raise FailedToCreateDatabase, 'Unable to create database: %s' % self.db
-
         else:
             raise NotSupportedDatabaseCreationError, 'Database creation not supported for %s' % self.driver
 
@@ -1051,6 +1069,23 @@ class DB(object):
                 retcode = p.returncode
             except:
                 raise CommandFailedToRunError
+            if retcode:
+                raise FailedToDropDatabase, 'Unable to drop database: %s' % self.db
+        elif self.driver == 'postgres':
+            try:
+                # disconnect from the database
+                # ignore self.password for now
+                self.flush()
+                cmd = 'psql -p %s postgres   %s  -c "drop database %s;'\
+                      % (self.port,self.username, self.db)
+                p = subprocess.Popen(cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+            except:
+                    raise CommandFailedToRunError
 
             if retcode:
                 raise FailedToDropDatabase, 'Unable to drop database: %s' % self.db
@@ -1085,8 +1120,12 @@ class DB(object):
             try:
                 other_db.dropDatabase()
             except: pass
-
-            other_db.createDatabase()
+        if other_db.driver == 'postgres':
+            try:
+                other_db.dropDatabase()
+            except:
+                pass
+        other_db.createDatabase()
 
         other_db.dropTables()
 
@@ -1102,27 +1141,65 @@ class DB(object):
                       'Nics', 'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
             for obj in getattr(self, table).select():
                 try:
-                    obj.expunge(entity_name=self.entity_name)
+                    #obj.expunge(entity_name=self.entity_name)
+                    obj.expunge()
                 except: pass
 
                 # Fully detatch the object
                 if hasattr(obj, '_instance_key'):
                     delattr(obj, '_instance_key')
-
                 try:
                     obj.save_or_update(entity_name=other_db.entity_name)
                     obj.flush()
-                except:
+                except Exception ,e :
                     raise UnableToSaveDataError, obj
+            if other_db.driver =='postgres':
+                other_db.postgres_update_sequences(other_db.postgres_get_seq_list())
 
+    def postgres_exec_raw_stmt(self,str):
+        """Postgres raw statements execution function
+        Returns a list of lists, with each list representing a row"""
+        if self.metadata.engine.name != 'postgres':
+            return None
+        res = self.metadata.engine.execute(str)
+        if res.rowcount > 0: # -1 for grant etc..
+            return [ list(name) for name in res]
+        else:
+            return []
+
+    def postgres_get_table_list(self):
+        sql = "select table_name from information_schema.tables"\
+        " where table_schema='public';"
+        res = self.postgres_exec_raw_stmt(sql)
+        if res:
+            return [ tupl[0] for tupl in res]
+        else:
+            return None
+
+    def postgres_get_seq_list(self):
+        sql = "SELECT relname FROM pg_class WHERE relkind = 'S'"\
+            " AND relnamespace IN ( SELECT oid FROM pg_namespace" \
+            " WHERE  nspname = 'public')"
+        res = self.postgres_exec_raw_stmt(sql)
+        if res:
+            return [ tupl[0] for tupl in res]
+        else:
+            return None # programatically, there can be no sequences.
+
+    def postgres_update_sequences(self,seq):
+        tbl_column_pairs = [  tuple(l.split('_')[:2])   for l in seq ]
+        for t,c in tbl_column_pairs :
+            sql =  "SELECT setval('%s_%s_seq', (SELECT MAX(%s) from %s))" %\
+              ( t , c , c , t)
+            res = self.postgres_exec_raw_stmt(sql)
             # We are flushing once per object. Flushing the entire database
             # causes an exception to be raised, as described in KUSU-507.
-            #try:
-            #    other_db.flush()
-            #except sa.exceptions, e: 
-            #    raise UnableToCommitDataError, e
-            #except Exception, e:
-            #    raise KusuError, e
+#             try:
+#                other_db.flush()
+#             except sa.exceptions, e: 
+#                raise UnableToCommitDataError, e
+#             except Exception, e:
+#                raise KusuError, e
 
 def findNodeGroupsFromKit(db, columns=[], ngargs={}, kitargs={}):
     """

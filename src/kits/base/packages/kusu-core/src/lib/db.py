@@ -17,17 +17,32 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-
+# both the MySQLdb and psycopg2 modules are db 2.0 compliant
+# see  http://www.python.org/peps/pep-0249.html
+supported_backends = []
 try:
-    from MySQLdb import *
+    import MySQLdb  as mysqldb
+    supported_backends.append('mysql')
 except ImportError:
     # FIXME: let's hope this happens during the Kusu Installer environment
     pass
 #commenting this out for now as it's only avail. on my dev. box
 #from Crypto.Cipher import Blowfish
+try:
+    import psycopg2 as postgresdb
+    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT,ISOLATION_LEVEL_READ_COMMITTED
+    supported_backends.append('postgres')
+except ImportError:
+    pass
+import os 
 import sys
 from kusu.util.testing import isFileExists
-from pysqlite2 import dbapi2 as sqlite
+try:
+    from pysqlite2 import dbapi2 as sqlite
+    supported_backends.append('sqlite')
+except ImportError:
+    pass
+
 
         
 class KusuDB:
@@ -37,12 +52,13 @@ class KusuDB:
 
     def __init__(self):
         self.dbname	= 'kusudb'
-        self.dbuser	= 'nobody'
+        self.dbuser	= 'nobody' # why not apache
         self.dbpasswd	= ''
         self.__passfile	= '/opt/kusu/etc/db.passwd'
 
         self.__dbconn	= None
         self.__dbcursor	= None
+        self.driver = None
 
     def __del__(self):
         self.disconnect()
@@ -63,10 +79,21 @@ class KusuDB:
         self.__dbconn = sqlite.connect(db_file)
         self.__dbcursor = self.__dbconn.cursor()
 
-    def connect(self, dbname=None, user=None, passwd=None, driver='mysql'):
+    def connect(self, dbname=None, user=None, passwd=None, driver=None):
+        if not driver:
+            driver = os.getenv('KUSU_DB_ENGINE')
+
+
+            if not driver:
+                driver = 'postgres'
+                from psycopg2 import OperationalError
+        if driver not in supported_backends:
+            raise OperationalError,"Unable to find a suitable db driver"
+
         if driver=='sqlite':
             self.connectSQLite(dbname)
             return
+        self.driver = driver
 
         if dbname:
             self.dbname = dbname
@@ -83,9 +110,15 @@ class KusuDB:
         if not tmppass: #could be either None or ''
             tmppass = self.dbpasswd
         try:
-            # print "KusuDB: connecting as %s:%s@%s" % (self.dbuser, tmppass, self.dbname)
-            self.__dbconn = connect(user='%s' %self.dbuser, passwd='%s' %tmppass, \
-                                    db='%s' %self.dbname)
+            if driver == 'mysql':
+                from MySQLdb import OperationalError
+                # print "KusuDB: connecting as %s:%s@%s" % (self.dbuser, tmppass, self.dbname)
+                self.__dbconn = mysqldb.connect(user='%s' %self.dbuser, passwd='%s' %tmppass, \
+                                                db='%s' %self.dbname)
+            else: # postgres
+                self.__dbconn = postgresdb.connect(user='%s' %self.dbuser, password='%s' %tmppass, \
+                                                   database ='%s' %self.dbname)
+
         except OperationalError,msg:
             print "KusuDB: Operational Error occurred when connecting to the DB\n"+\
                   "       Most likely cause: insufficient permissions for user=%s" %self.dbuser
@@ -94,8 +127,11 @@ class KusuDB:
         else:
             #no exception occurred - obtain cursor
             self.__dbcursor = self.__dbconn.cursor()
-            self.__dbconn.autocommit(True)
-
+            if driver == 'mysql':
+                self.__dbconn.autocommit(True)
+            elif driver == 'postgres':
+                self.__dbconn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
         tmppass = ''
             
     def disconnect(self):
@@ -105,7 +141,12 @@ class KusuDB:
         self.__dbconn.close()
         self.__dbconn = self.__dbcursor = None
 
-    def execute(self, query, args=None):
+    def execute(self, query, args=None, postgres_replace=True):
+        ''' THe argument postgres_replace will replace " with \' if set
+        otherwise, it disables. This is required for queries where " is actually
+        used to provide quoted identifiers. such as "isOS"'''
+        if  self.driver == 'postgres' and postgres_replace==True:
+            query = query.replace('"','\'') # compat - replace " with \'
         if not self.isconnected():
             print "KusuDB: Connect to the Database first using connect([db,[user,[pass]]])"
             return None
@@ -170,7 +211,10 @@ class KusuDB:
         """ Returns True if transaction was successfully started and False otherwise"""
 
         try:
+            if self.driver == 'postgres':
+                self.__dbconn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
             self.execute('START TRANSACTION')
+            
         except OperationalError,msg:
             print "KusuDB: DB user used did not have proper permissions to start transaction" 
             print msg
@@ -184,6 +228,9 @@ class KusuDB:
         return False
 
     def endTransaction(self):
+        if self.driver == 'postgres':
+            self.execute('END TRANSACTION')
+            self.__dbconn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         return self.__commit()
 
     def undoTransaction(self):
@@ -193,7 +240,9 @@ class KusuDB:
         if not self.isconnected():
             print "KusuDB: Connect to the Database first using connect([db,[user,[pass]]])"
             return None
-        return self.__dbconn.commit()
+        retval = self.__dbconn.commit()
+
+        return retval 
 
     def __rollback(self):
         if not self.isconnected():
@@ -222,7 +271,7 @@ class KusuDB:
         return self.__dbcursor.description
 
     def printDebugInfo(self):
-        if self.isconnected():
+        if self.isconnected() and self.driver =='mysql':
             print "KusuDB: Server capabilities: 0x%x" % self.__dbconn.server_capabilities
             print "KusuDB: capabilities & transactional_flag = 0x%x" % self.__dbconn._transactional
             print 'KusuDB: DB connection info: %s' % self.__dbconn.get_host_info()
@@ -231,20 +280,23 @@ class KusuDB:
         
 
 def printKusudbInfo():
-    print 'DB-API Level = %s' %apilevel
-    print 'DB-API Thread Safety = %d' %threadsafety
-    print 'DB-API Parameter Formatting: %s' %paramstyle
-    print 'MySQL client version = %s' %get_client_info()
+    pass
+#    print 'DB-API Level = %s' %apilevel
+#    print 'DB-API Thread Safety = %d' %threadsafety
+#    print 'DB-API Parameter Formatting: %s' %paramstyle
+#    print 'MySQL client version = %s' %get_client_info()
 
 if __name__ == "__main__":
-    printKusudbInfo()
+
     mydb = KusuDB()
     mydb.connect('kusudb','apache')
+    printKusudbInfo()
     #mydb.connect()
     mydb.printDebugInfo()
 
     try:
         mydb.execute("select * from appglobals")
+        print mydb.fetchall()
         #mydb.execute("insert into appglobals (kname,kvalue) values ('AlexTest','BirchTree')")
     except OperationalError,msg:
         print "MAIN: DB user used did not have proper permissions to execute the query" 

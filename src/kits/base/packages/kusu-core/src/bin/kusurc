@@ -12,7 +12,7 @@ import kusu.util.log as kusulog
 from path import path
 
 import sys
-
+import os
 kl = kusulog.getKusuLog()
 
 if __name__ == '__main__':
@@ -29,7 +29,11 @@ if __name__ == '__main__':
     else:        
         from kusu.core import database as db
 
-        dbdriver = 'mysql'
+        engine = os.getenv('KUSU_DB_ENGINE')
+        if engine == 'mysql':
+            dbdriver = 'mysql'
+        else: #default to postgres
+            dbdriver = 'postgres'
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None

@@ -84,11 +84,11 @@ class NodeInfo:
         #         'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' + 
         #         'and netid = (select netid from nodes,nics where nodes.nid=nics.nid and nodes.name="%s" and nics.ip="%s")' % (nodename,nodeip))
         query = ('SELECT ip FROM nics, nodes, networks WHERE nics.nid=nodes.nid AND nics.netid=networks.netid ' +
-                 'AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") ' +
+                 'AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname=\'PrimaryInstaller\') ' +
                  'AND networks.network=(SELECT network FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
-                                        'AND networks.netid=nics.netid AND nodes.name="%s" AND nics.ip="%s") ' % (nodename, nodeip) +
+                                        'AND networks.netid=nics.netid AND nodes.name=\'%s\' AND nics.ip=\'%s\') ' % (nodename, nodeip) +
                  'AND networks.subnet=(SELECT subnet FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
-                                       'AND networks.netid=nics.netid AND nodes.name="%s" AND nics.ip="%s")' % (nodename, nodeip))
+                                       'AND networks.netid=nics.netid AND nodes.name=\'%s\' AND nics.ip=\'%s\')' % (nodename, nodeip))
 
         try:
             self.db.execute(query)
@@ -120,7 +120,7 @@ class NodeInfo:
             f = open(cfmsecretfile, 'r')
             cfmsecret = f.read().strip()
             f.close()
-        
+        #Line 1
         print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s" cfmsecret="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd, cfmsecret)
 
         # NICinfo section
@@ -128,11 +128,12 @@ class NodeInfo:
                  'networks.subnet, networks.device, networks.suffix, '
                  'networks.gateway, networks.options, nics.boot '
                  'from nics,networks where networks.netid=nics.netid '
-                 'and nics.nid="%i"' % nid)
+                 'and nics.nid=\'%s\'' % nid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
         except:
+
             # Return 500
             print "Oops! again"
             sys.exit(-1)
@@ -141,12 +142,22 @@ class NodeInfo:
             print "Oops!"
             sys.exit(-1)
         for row in data:
-            ip, dhcp, network, subnet, dev, suffix, gw, opt, boot = row
-            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
-
+            ip, dhcpb, network, subnet, dev, suffix, gw, opt, bootb = row
+            if dhcpb:
+                dhcp = 1
+            else:
+                dhcp = 0
+            if bootb:
+                boot=1
+            else:
+                boot=0
+            #Line 2
+                print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
+                
         # Partition Info
+        #default is 7 lines
         query = ('select device, partition, mntpnt, fstype, size, options, preserve '
-                 'from partitions where ngid="%i"' % ngid )
+                 'from partitions where ngid=\'%i\'' % ngid )
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -156,16 +167,30 @@ class NodeInfo:
             sys.exit(-1)
         if data:
             for row in data:
-                device, partition, mntpnt, fstype, size, options, preserve = row
+
+                device, partition, mntpnt, fstype, size, options, preserveb = row
+                if preserveb: # convert from boolean to digit.
+                    preserve = 1
+                else:
+                    preserve = 0
                 print '    <partition device="%s" partition="%s" mntpnt="%s" fstype="%s" size="%s" options="%s" preserve="%s"></partition>' % (device or '', partition or '', mntpnt or '', fstype or '', size, options or '', preserve)
 
         # Component Info
-        query = ('select components.cname from components, kits, ng_has_comp '
-                 'where components.cid=ng_has_comp.cid and '
-                 'kits.kid=components.kid and kits.isOS=0 and '
-                 'ng_has_comp.ngid="%i"' % ngid )
+
         try:
-            self.db.execute(query)
+
+            if self.db.driver == 'mysql':
+                query = ('select components.cname from components, kits, ng_has_comp '
+                         'where components.cid=ng_has_comp.cid and '
+                         'kits.kid=components.kid and kits.isOS=False and '
+                         'ng_has_comp.ngid=\'%i\'' % ngid )
+                self.db.execute(query)
+            else: # postgres
+                query = ('select components.cname from components, kits, ng_has_comp '
+                         'where components.cid=ng_has_comp.cid and '
+                         'kits.kid=components.kid and kits."isOS"=False and '
+                         'ng_has_comp.ngid=\'%i\'' % ngid )
+                self.db.execute(query,postgres_replace=False)
             data = self.db.fetchall()
         except:
             # Return 500
@@ -178,7 +203,7 @@ class NodeInfo:
 
         # Optional packages
         query = ('select packagename from packages '
-                 'where ngid="%i"' % ngid )
+                 'where ngid=\'%i\'' % ngid )
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -193,7 +218,7 @@ class NodeInfo:
 
         # Optional scripts
         query = ('select script from scripts '
-                 'where ngid="%i"' % ngid )
+                 'where ngid=\'%i\'' % ngid )
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -208,7 +233,7 @@ class NodeInfo:
 
         # Appglobals 
         query = ('select kname, kvalue from appglobals where '
-                 'ngid is NULL or ngid="%i"' % ngid )
+                 'ngid is NULL or ngid=\'%i\'' % ngid )
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -257,7 +282,7 @@ class NodeInfo:
             return
         
         query = ('select nodes.name from nodes,nics where '
-                 'nodes.nid = nics.nid and nics.ip = "%s"' % nodeip)
+                 'nodes.nid = nics.nid and nics.ip = \'%s\'' % nodeip)
         try:
             self.db.execute(query)
 
@@ -279,15 +304,17 @@ class NodeInfo:
         used to reduce the DB calls."""
         if not state and bootfrom == -1 and not timestamp:
             return
-
+        bf = False
+        if bootfrom:
+            bf = True
         cmdstr = 'update nodes set'
         if state:
-            cmdstr = cmdstr + ' state="%s",' % state
+            cmdstr = cmdstr + ' state=\'%s\',' % state
         if bootfrom != -1:
-            cmdstr = cmdstr + ' bootfrom=%i,' % bootfrom
+            cmdstr = cmdstr + ' bootfrom=%s,' % bf
         if timestamp:
-            cmdstr = cmdstr + ' lastupdate="%s",' % timestamp
-        query = cmdstr[:-1] + ' where name="%s"' % nodename
+            cmdstr = cmdstr + ' lastupdate=\'%s\',' % timestamp
+        query = cmdstr[:-1] + ' where name=\'%s\'' % nodename
 
         try:
             self.db.execute(query)
@@ -354,7 +381,7 @@ class NodeBootApp(KusuApp):
         timestamp   = ''        # The timestamp to go in the nodes table
         runascgi    = 0         # Flag to indicate this is running as a CGI 
         
-        # Test to see if we are running as a CGI
+        # Test to see if we are running as a CGIless
         if os.environ.has_key('REMOTE_ADDR'):
             runascgi = 1
             ip = os.environ['REMOTE_ADDR']

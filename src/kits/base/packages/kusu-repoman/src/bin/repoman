@@ -90,7 +90,7 @@ For examples:
         self.parser.add_option('-p', '--prefix', dest='prefix', help=SUPPRESS_HELP)
         self.parser.add_option('-v', '--version', dest='version', action="store_true", help=self._('Display version of tool'))
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                               help=self._('Database driver (sqlite, mysql)'))
+                               help=self._('Database driver (sqlite, mysql,postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -410,7 +410,7 @@ For examples:
                 self.parser.error(self._('Exactly one repoman operation expected.\n'))
                 sys.exit(1)
 
-        if options.dbdriver and options.dbdriver not in ['sqlite', 'mysql']:
+        if options.dbdriver and options.dbdriver not in ['sqlite', 'mysql','postgres']:
             self.parser.print_help()
             self.stderrMessage('Invalid database driver.\n')
             sys.exit(1)
@@ -421,8 +421,11 @@ For examples:
         kl.debug("args: %s", args)
 
         self.checkArgs(options)
- 
-        dbdriver = 'mysql'
+
+        dbdriver = os.getenv('KUSU_DB_ENGINE')
+        if not dbdriver or dbdriver not in ['mysql','postgres']:
+            dbdriver = 'mysql' # default to mysql
+
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None

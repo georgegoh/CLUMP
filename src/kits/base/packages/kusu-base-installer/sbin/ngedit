@@ -647,11 +647,17 @@ class scrNGEEdit_Components(USXBaseScreen):
     def drawImpl(self):
 
         self.screenGrid = snack.Grid(1, 2)
-
-        query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
-                   repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
-                   AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
-                   concat(c.os,'%%') OR isnull(c.os)) ORDER BY c.kid''' % curNG['repoid']
+        if self.database.driver == 'mysql':
+            query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
+            repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
+            AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
+            concat(c.os,'%%') OR isnull(c.os)) ORDER BY c.kid''' % curNG['repoid']
+        else: # postgres for now
+            query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
+            repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
+            AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
+            c.os || '%%' OR c.os = NULL) ORDER BY c.kid''' % curNG['repoid']
+            
         self.database.execute(query)
         rv = self.database.fetchall()
 
@@ -674,9 +680,16 @@ class scrNGEEdit_Components(USXBaseScreen):
             cidlst = origNG['comps']
 
         #ensure cidlst contains the OS component
-        query = ''' select c.cid from repos_have_kits rk, kits k, components c where
-                    rk.kid = k.kid and k.kid = c.kid and k.isOS = 1 and rk.repoid = %s''' %curNG['repoid']
-        self.database.execute(query)
+        if self.database.driver == 'mysql':
+            query = ''' select c.cid from repos_have_kits rk, kits k, components c where
+            rk.kid = k.kid and k.kid = c.kid and k.isOS = True and rk.repoid = %s''' %curNG['repoid']
+            self.database.execute(query)
+        else: # Only postgres for now
+            query = ''' select c.cid from repos_have_kits rk, kits k, components c where
+            rk.kid = k.kid and k.kid = c.kid and k."isOS" = True and rk.repoid = %s''' %curNG['repoid']
+            self.database.execute(query,postgres_replace=False)
+
+
         oscidtpl = self.database.fetchone()
         cidlst = list(Set(cidlst) | Set(oscidtpl))
 
@@ -775,8 +788,10 @@ class scrNGEEdit_Networks(USXBaseScreen):
 
         lblheader = snack.Label(headstr)
         self.__ct = snack.CheckboxTree(height = 10, scroll = 1)
-
-        query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
+        if self.database.driver =='mysql':
+            query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
+        else : # postgres only for now
+            query = "select device, COALESCE(network,'DHCP'), COALESCE(subnet,'DHCP') , COALESCE(netname,''), netid from networks"         
         self.database.execute(query)
         rv = self.database.fetchall()
 
@@ -2554,8 +2569,11 @@ class NGEApp(KusuApp):
                     headstr += cols[0][i].ljust(cols[1][i])
                 headstr = headstr[:MAXWIDTH]
                 print "Networks:\n\t", headstr
-
-                query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
+                
+                if self.__db.driver == 'mysql':
+                    query = "select device, IFNULL(network, 'DHCP'), IFNULL(subnet, 'DHCP'), IFNULL(netname, ''), netid from networks"
+                else:
+                    query = "select device, COALESCE(network, 'DHCP'), COALESCE(subnet, 'DHCP'), COALESCE(netname, ''), netid from networks"
                 self.__db.execute(query)
                 rv = self.__db.fetchall()
 

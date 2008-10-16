@@ -98,7 +98,7 @@ class KitOpsApp(KusuApp):
                                help=self._('kitarch'))
 
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                               help=self._('Database driver (sqlite, mysql)'))
+                               help=self._('Database driver (sqlite, mysql,postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -166,7 +166,10 @@ class KitOpsApp(KusuApp):
             self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
 
-        dbdriver = 'mysql'
+        dbdriver = os.getenv('KUSU_DB_ENGINE')
+        if not dbdriver or dbdriver not in ['mysql','postgres']:
+            dbdriver = 'mysql' # default to mysql
+
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None

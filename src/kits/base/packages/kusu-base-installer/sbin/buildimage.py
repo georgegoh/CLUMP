@@ -172,7 +172,7 @@ class BuildImage:
 
         # Get the list of all the optional packages to add.
         self.packages = []
-        query = ('select packagename from packages where ngid="%s"' % self.ngid)
+        query = ('select packagename from packages where ngid=%s' % self.ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -187,9 +187,12 @@ class BuildImage:
                 self.packages.append(row[0])
 
         # Add all the components to the list of packages
-        query = ('select cname from components c, ng_has_comp n, kits k where k.kid=c.kid and k.isOS=0 and n.cid=c.cid and ngid="%s"' % self.ngid)
+        if self.db.driver =='mysql':
+            query = ('select cname from components c, ng_has_comp n, kits k where k.kid=c.kid and k.isOS=0 and n.cid=c.cid and ngid=%s' % self.ngid)
+        else: #postgres
+            query = ('select cname from components c, ng_has_comp n, kits k where k.kid=c.kid and k."isOS"=False and n.cid=c.cid and ngid=%s' % self.ngid)
         try:
-            self.db.execute(query)
+            self.db.execute(query,postgres_replace=False)
             data = self.db.fetchall()
         except:
             if self.stderrout:
@@ -206,7 +209,7 @@ class BuildImage:
         """__getRepoInfo - Gather the info for the repo we are going to use.
         """
         query = ('select repository, ostype from repos,nodegroups where '
-                 'repos.repoid=nodegroups.repoid and ngid="%s"' % self.ngid)
+                 'repos.repoid=nodegroups.repoid and ngid=%s' % self.ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchone()
@@ -304,7 +307,7 @@ class BuildImage:
         fp.writelines(fstabent)
         fp.close()
         
-        query = ('select script from scripts where ngid="%s"' % self.ngid)
+        query = ('select script from scripts where ngid=%s' % self.ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()

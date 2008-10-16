@@ -6,6 +6,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 import re
+import os
 from path import path
 from kusu.core import rcplugin
 from kusu.hardware import probe 
@@ -73,7 +74,11 @@ class KusuRC(rcplugin.Plugin):
 
     def queryDBForMasterNICs(self):
         """Get from kusudb the NICs related to the master node."""
-        dbs = db.DB('mysql', 'kusudb', 'root')
+        engine = os.getenv('KUSU_DB_ENGINE')
+        if engine == 'mysql':
+            dbs = db.DB('mysql', 'kusudb', 'root')
+        else: # postgres
+            dbs = db.DB('postgres', 'kusudb', 'apache')
         nodes = dbs.nodes
         nics = dbs.nics
         networks = dbs.networks

@@ -1042,12 +1042,12 @@ class BatchSelectNode:
         # Get installer's available networks.
         try:
             query = "SELECT DISTINCT networks.network, networks.subnet, networks.device, networks.gateway FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                     nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision' ORDER BY device"
+                     nics.netid=networks.netid AND networks.usingdhcp=False AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND networks.type = 'provision' ORDER BY device"
             self.database.execute(query)
             installerInfo = self.database.fetchall()
 
             # Get list of node group's available gateways.
-            query = "SELECT networks.gateway, networks.startip FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=0 AND NOT networks.device = 'bmc'" % \
+            query = "SELECT networks.gateway, networks.startip FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=False AND NOT networks.device = 'bmc'" % \
                     myNodeInfo.ngid
             self.database.execute(query) 
             ngInfo = self.database.fetchall()

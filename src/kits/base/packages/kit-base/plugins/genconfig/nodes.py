@@ -35,11 +35,11 @@ class thisReport(Report):
         if pluginargs and pluginargs[0] != '':
             query = ('select nodes.name from nodes,nodegroups where '
                      'nodes.ngid=nodegroups.ngid and '
-                     'nodegroups.ngname="%s" order by nodes.name' % pluginargs[0])
+                     'nodegroups.ngname=\'%s\' order by nodes.name' % pluginargs[0])
         else:
             query = ('select nodes.name from nodes,nodegroups where '
                      'nodes.ngid=nodegroups.ngid and '
-                     'nodegroups.ngname!="Unmanaged" order by nodes.name')
+                     'nodegroups.ngname!=\'Unmanaged\' order by nodes.name')
         try:
             self.db.execute(query)
 

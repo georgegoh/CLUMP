@@ -79,8 +79,8 @@ class NodeFun(object, KusuApp):
 
     def _getInstallerNetworks(self):
         # Get the installer's subnet and network information.
-        self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                 nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')")
+        self._dbReadonly.execute('SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
+                                 nics.netid=networks.netid AND networks.usingdhcp=False AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
         return self._dbReadonly.fetchall()
 
     def setRackNumber(self, rack):
@@ -477,12 +477,14 @@ class NodeFun(object, KusuApp):
 
         if static == True:
            unmanagedID = self.getNodegroupByName('unmanaged')
-           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Installed', 0, '%s', '%s')" %                                               (unmanagedID, self._nodeName, self._rackNumber, self._rankCount))
+           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Installed', False, '%s', '%s')" %                                               (unmanagedID, self._nodeName, self._rackNumber, self._rankCount))
         else:
-           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', 0, '%s', '%s')" %
+           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank) VALUES ('%s', '%s', 'Expired', False, '%s', '%s')" %
                                    (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount))
- 
-        self._dbRWrite.execute("SELECT last_insert_id()")
+        if self._dbRWrite.driver == 'mysql':
+            self._dbRWrite.execute("SELECT last_insert_id()")
+        else: #hardcode to postgres for now
+            self._dbRWrite.execute("SELECT last_value from nodes_nid_seq")
         nodeID = self._dbRWrite.fetchone()[0]
 
         # Add the node to the 'used' list of nodes in db.
@@ -493,7 +495,7 @@ class NodeFun(object, KusuApp):
 
         if installer:
            self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                  nics.netid=networks.netid AND networks.usingdhcp=0 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
+                                  nics.netid=networks.netid AND networks.usingdhcp=False AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
                                   AND networks.device='%s'" % selectedinterface)
 
            # Use the gui selected network interface as the installer's interface.
@@ -552,7 +554,7 @@ class NodeFun(object, KusuApp):
                          # We're a DHCP/boot interface
                          self._cachedDeviceIPs[selectedinterface] = startIP
                          self._addUsedIP(startIP)
-                         self._createNICBootEntry(nodeID, networkID, 1, startIP, macaddr)
+                         self._createNICBootEntry(nodeID, networkID, True, startIP, macaddr)
                          self._writeDHCPLease(startIP, macaddr)
                          del interfaces[selectedinterface]
                          flag = 1
@@ -575,14 +577,14 @@ class NodeFun(object, KusuApp):
 
              # 3rd party DHCP server network interface  
              if len(NICInfo) <= 3:
-                self._createNICBootEntry(nodeID, networkID, 0)
+                self._createNICBootEntry(nodeID, networkID, False)
                 continue
 
              subnetNetwork = NICInfo[1]
 
 	     # If the interface has no subnet (maybe DHCP based) 
 	     if subnetNetwork == "None":
-	        self._createNICBootEntry(nodeID, networkID, 0)
+	        self._createNICBootEntry(nodeID, networkID, False)
 		continue
 
              if self._cachedDeviceIPs.has_key(nicdev):
@@ -628,14 +630,14 @@ class NodeFun(object, KusuApp):
                 if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False and nicdev != 'bmc':
                    # Mark the MAC as used.
                    self.addUsedMAC(macaddr)
-                   self._createNICBootEntry(nodeID, networkID, 1, newIP, macaddr)
+                   self._createNICBootEntry(nodeID, networkID, True, newIP, macaddr)
                    self._writeDHCPLease(newIP, macaddr)
                 else:
                    # Not a boot interface, just write out other info. 
                    if dhcpUnmanaged == False : # Dont create other boot entries when using unmanaged DHCP
-                      self._createNICBootEntry(nodeID, networkID, 0, newIP)
+                      self._createNICBootEntry(nodeID, networkID, False, newIP)
              else:
-                self._createNICBootEntry(nodeID, networkID, 0, newIP)
+                self._createNICBootEntry(nodeID, networkID, False, newIP)
         #t2=time.time()
         #print "Time Spent: createNodeEntry(): %f" % (t2-t1)
 
@@ -662,7 +664,7 @@ class NodeFun(object, KusuApp):
 
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
-            self._dbRWrite.execute("UPDATE nodes SET state='Expired', bootfrom=0 WHERE nid='%s'" % nid)
+            self._dbRWrite.execute("UPDATE nodes SET state='Expired', bootfrom=False WHERE nid='%s'" % nid)
             #t2=time.time()
             #print "replaceNodeEntry(): %f" % (t2-t1)
             return True
@@ -690,11 +692,13 @@ class NodeFun(object, KusuApp):
 
         ngid, netid = self._dbReadonly.fetchone()
 
-        self._dbRWrite.execute('INSERT INTO nodes SET ngid="%s", name="%s", state="Installed", bootfrom=0' % (ngid, devicename))
-
-        self._dbRWrite.execute("SELECT last_insert_id()")
+        self._dbRWrite.execute('INSERT INTO nodes SET ngid="%s", name="%s", state="Installed", bootfrom=False' % (ngid, devicename))
+        if self._dbRWrite.driver == 'mysql':
+            self._dbRWrite.execute("SELECT last_insert_id()")
+        else: # xxx postgres for now
+            self._dbRWrite.execute("SELECT last_value from nodes_nid_seq")
         nid = self._dbRWrite.fetchone()[0]
-        self._dbRWrite.execute('INSERT INTO nics SET netid="%s", nid="%s", ip="%s", boot=0' % (netid, nid,ip))
+        self._dbRWrite.execute('INSERT INTO nics SET netid="%s", nid="%s", ip="%s", boot=False' % (netid, nid,ip))
         return True, "Success"
 
     def addUnmanagedDHCPDevice(self, interface, devicename, mac):
@@ -708,8 +712,8 @@ class NodeFun(object, KusuApp):
         Replaces nics table containing new mac address for replaced node """
         #t1=time.time()
         nid = self.getNodeID(nodename)
-        self._dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = 1" % (macaddress, nid))
-        self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = 1" % nid)
+        self._dbRWrite.execute("UPDATE nics SET mac='%s' WHERE nid='%s' AND boot = True" % (macaddress, nid))
+        self._dbReadonly.execute("SELECT nics.ip FROM nics WHERE nics.nid=%s AND boot = True" % nid)
         data = self._dbReadonly.fetchone()[0]
         self._nodeName = nodename
         # call boothost to generate PXE file immediately before we accept new lease.
@@ -725,14 +729,18 @@ class NodeFun(object, KusuApp):
         Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
         will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from. """
         #t1=time.time()
+        if bootflag:# needed to coerce 0s and 1s to True or false
+            bootflag = True
+        else:
+            bootflag = False
 
         if macaddress:
-            self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', '%s')" % (nodeid, networkid, macaddress, ipaddress, bootflag))
+            self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', %s)" % (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
             if ipaddress:
-               self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', '%s')" % (nodeid, networkid, ipaddress, bootflag))
+               self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', %s)" % (nodeid, networkid, ipaddress, bootflag))
 	    else:
-               self._dbRWrite.execute("INSERT INTO nics (nid, netid, boot) VALUES ('%s', '%s', '%s')" % (nodeid, networkid, bootflag))
+               self._dbRWrite.execute("INSERT INTO nics (nid, netid, boot) VALUES ('%s', '%s', %s)" % (nodeid, networkid, bootflag))
 
         #t2=time.time()
         #print "Time Spent: createNICBootEntry(): %f" % (t2-t1)
@@ -892,7 +900,7 @@ class NodeFun(object, KusuApp):
         installerInfo = self._dbReadonly.fetchall()
 
         # Get list of node available gateway
-        query = 'SELECT nics.ip FROM nics,nodes WHERE nodes.nid=nics.nid AND nics.boot = 1 AND nodes.name = "%s"' % nodename
+        query = 'SELECT nics.ip FROM nics,nodes WHERE nodes.nid=nics.nid AND nics.boot = True AND nodes.name = "%s"' % nodename
         self._dbReadonly.execute(query)
         nodeIP = self._dbReadonly.fetchone()[0]
 
@@ -906,7 +914,7 @@ class NodeFun(object, KusuApp):
         return None
 
         #try:
-        #    self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = 1" % nid)
+        #    self._dbReadonly.execute("SELECT networks.device FROM networks,nics WHERE networks.netid=nics.netid AND nics.nid=%s and nics.boot = True" % nid)
         #except:
         #    return None
         #try:
@@ -1024,7 +1032,7 @@ class NodeFun(object, KusuApp):
                requestedNodes.remove(dupenode)
 
         for node in requestedNodes:
-            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=1 AND nodegroups.ngid=nodes.ngid AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
+            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=True AND nodegroups.ngid=nodes.ngid AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
             data = self._dbReadonly.fetchone()
             if data:
                dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])

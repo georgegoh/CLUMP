@@ -156,7 +156,7 @@ class BuildInitrd:
     def makeInitrdName(self):
         """makeInitrdName - generate a name for the initrd."""
         initrd = "initrd.%s.%s.img" % (self.installtype, self.ngid)
-        query = ('update nodegroups set initrd="%s" where ngid="%s"'
+        query = ('update nodegroups set initrd="%s" where ngid=%s'
                  % (initrd, self.ngid) )
         try:
             self.db.execute(query)
@@ -175,13 +175,20 @@ class BuildInitrd:
             idir = '/depot/images'
 
         # Get the architecture from the kits that are part of the repo
-        query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
-                 'where nodegroups.repoid=repos.repoid and '
-                 'repos.repoid=repos_have_kits.repoid and '
-                 'repos_have_kits.kid=kits.kid and kits.isOS=1 ' 
-                 'and nodegroups.ngid="%s"' % self.ngid)
+        if self.db.driver == 'mysql':
+            query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
+                     'where nodegroups.repoid=repos.repoid and '
+                     'repos.repoid=repos_have_kits.repoid and '
+                     'repos_have_kits.kid=kits.kid and kits.isOS=1 ' 
+                     'and nodegroups.ngid=%s' % self.ngid)
+        else:
+            query = ('select kits.arch from kits,repos_have_kits,repos,nodegroups '
+                     'where nodegroups.repoid=repos.repoid and '
+                     'repos.repoid=repos_have_kits.repoid and '
+                     'repos_have_kits.kid=kits.kid and kits."isOS"=True ' 
+                     'and nodegroups.ngid=%s' % self.ngid)
         try:
-            self.db.execute(query)
+            self.db.execute(query,postgres_replace=False)
             data = self.db.fetchone()
         except:
             if self.stderrout:
@@ -250,7 +257,7 @@ class BuildInitrd:
 
         # Get the list of all the optional packages to add.
         self.modules = []
-        query = ('select distinct module from modules where ngid="%s" '
+        query = ('select distinct module,loadorder from modules where ngid="%s" '
                  'order by loadorder' % self.ngid )
         try:
             self.db.execute(query)
@@ -272,23 +279,38 @@ class BuildInitrd:
 
         if oskernel:
             # First look for the OS kit kernel RPM package.
-            query = ('select dpname from '
-                     'nodegroups, repos_have_kits, kits, components, driverpacks '
-                     'where nodegroups.repoid=repos_have_kits.repoid and '
-                     'repos_have_kits.kid=components.kid and '
-                     'kits.isOS="1" and driverpacks.cid=components.cid and '
-                     'nodegroups.ngid="%s"' % self.ngid)
+            if self.db.driver == 'mysql':
+                query = ('select dpname from '
+                         'nodegroups, repos_have_kits, kits, components, driverpacks '
+                         'where nodegroups.repoid=repos_have_kits.repoid and '
+                         'repos_have_kits.kid=components.kid and '
+                         'kits.isOS="1" and driverpacks.cid=components.cid and '
+                         'nodegroups.ngid=%s' % self.ngid)
+            else:
+                query = ('select dpname from '
+                         'nodegroups, repos_have_kits, kits, components, driverpacks '
+                         'where nodegroups.repoid=repos_have_kits.repoid and '
+                         'repos_have_kits.kid=components.kid and '
+                         'kits."isOS"=True and driverpacks.cid=components.cid and '
+                         'nodegroups.ngid=%s' % self.ngid)
 
         else:
             # Look for vendor kernel modules.
-            query = ('select dpname from ng_has_comp, components, driverpacks, kits '
-                     'where ng_has_comp.cid=components.cid and '
-                     'components.kid=kits.kid and kits.isOS<>"1" and '
-                     'driverpacks.cid=components.cid and '
-                     'ng_has_comp.ngid="%s"' % self.ngid)
+            if self.db.driver == 'mysql':
+                query = ('select dpname from ng_has_comp, components, driverpacks, kits '
+                         'where ng_has_comp.cid=components.cid and '
+                         'components.kid=kits.kid and kits.isOS<>"1" and '
+                         'driverpacks.cid=components.cid and '
+                         'ng_has_comp.ngid=%s' % self.ngid)
+            else:
+                query = ('select dpname from ng_has_comp, components, driverpacks, kits '
+                         'where ng_has_comp.cid=components.cid and '
+                         'components.kid=kits.kid and kits."isOS" = False and '
+                         'driverpacks.cid=components.cid and '
+                         'ng_has_comp.ngid=%s' % self.ngid)
 
         try:
-            self.db.execute(query)
+            self.db.execute(query,postgres_replace=False)
             data = self.db.fetchall()
         except:
             if self.stderrout:
@@ -370,7 +392,7 @@ class BuildInitrd:
         """getRepoInfo - Gather the info for the repo we are going to use.
         """
         query = ('select repository, ostype from repos,nodegroups where '
-                 'repos.repoid=nodegroups.repoid and ngid="%s"' % self.ngid)
+                 'repos.repoid=nodegroups.repoid and ngid=%s' % self.ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchone()
@@ -414,7 +436,7 @@ class BuildInitrd:
         kernname = 'kernel.%s.%s' % (self.installtype, self.ngid)
         if kernname != self.kernel:
             # Update database
-            query = ('update nodegroups set kernel="%s" where ngid="%s"' % (kernname,self.ngid))
+            query = ('update nodegroups set kernel=\'%s\' where ngid=%s' % (kernname,self.ngid))
             try:
                 self.db.execute(query)
                 data = self.db.fetchone()

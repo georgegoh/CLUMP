@@ -126,7 +126,7 @@ class thisReport(Report):
 
         query = ("SELECT nics.ip "
                  "FROM nics, nodes, networks WHERE nics.nid = nodes.nid "
-                 "AND nics.netid = networks.netid AND networks.usingdhcp=0 "
+                 "AND nics.netid = networks.netid AND networks.usingdhcp=False "
                  "AND networks.type = 'public' AND nodes.ngid!=5 ORDER BY nics.ip")
 
         try:
