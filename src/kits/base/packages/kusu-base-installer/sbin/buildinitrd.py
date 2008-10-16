@@ -257,7 +257,7 @@ class BuildInitrd:
 
         # Get the list of all the optional packages to add.
         self.modules = []
-        query = ('select distinct module,loadorder from modules where ngid="%s" '
+        query = ('select distinct module,loadorder from modules where ngid=%s '
                  'order by loadorder' % self.ngid )
         try:
             self.db.execute(query)
