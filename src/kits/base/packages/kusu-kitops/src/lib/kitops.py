@@ -59,12 +59,30 @@ class KitOps:
         """
         Provide a new prefix.
         """
+    
+        kits_root = 'depot/kits/'
+        pixie_root = 'tftpboot/kusu/'
+        contrib_root = 'depot/contrib'
+
+        if self.__db:
+            row = self.__db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
+            if row: kits_root =  row[0].kvalue
+
+            row = self.__db.AppGlobals.select_by(kname = 'PIXIE_ROOT')
+            if row: pixie_root =  row[0].kvalue
+
+            row = self.__db.AppGlobals.select_by(kname = 'DEPOT_CONTRIB_ROOT')
+            if row: contrib_root =  row[0].kvalue
+
+        if kits_root[0] == '/': kits_root = kits_root[1:]
+        if pixie_root[0] == '/': pixie_root = pixie_root[1:]
+        if contrib_root[0] == '/': contrib_root = contrib_root[1:]
 
         if prefix:
             self.prefix = path(prefix)
-            self.kits_dir = self.prefix / 'depot/kits/'
-            self.pxeboot_dir = self.prefix / 'tftpboot/kusu/'
-            self.contrib_dir = self.prefix / 'depot' / 'contrib'
+            self.kits_dir = self.prefix / kits_root
+            self.pxeboot_dir = self.prefix / pixie_root
+            self.contrib_dir = self.prefix / contrib_root
 
     def setTmpPrefix(self, tmpprefix):
         """

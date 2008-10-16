@@ -201,6 +201,9 @@ class KitOpsApp(KusuApp):
         if options.prefix:
             kl.debug('Setting prefix to %s', options.prefix)
             self.koinst.setPrefix(options.prefix)
+        else:
+            self.koinst.setPrefix('/')
+      
 
     def getActionDesc(self):
         if self.kitop == KITOP_ADD:
