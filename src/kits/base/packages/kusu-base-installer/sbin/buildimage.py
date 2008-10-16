@@ -26,10 +26,6 @@ KUSUUSCRIPTS='/etc/rc.kusu.custom.d'
 # This file is used to determine if the base kit is installed
 KUSUBASEFILE='/opt/kusu/sbin/cfmd'
 
-# This is the location of the custom scripts
-CUSTOMSCRIPTDIR='/depot/repos/custom_scripts'
-
-
 import os
 import shutil
 import sys
@@ -320,7 +316,8 @@ class BuildImage:
         if data:
             # Copy the script over
             global KUSUUSCRIPTS
-            global CUSTOMSCRIPTDIR
+            CUSTOMSCRIPTDIR = self.db.getAppglobals('DEPOT_REPOS_CUSTOM_SCRIPTS')
+            if not CUSTOMSCRIPTDIR: CUSTOMSCRIPTDIR = '/depot/repos/custom_scripts'
             # sloc = os.path.join(self.imagedir, KUSUUSCRIPTS)   # This line failed!
             sloc = "%s/%s" % (self.imagedir, KUSUUSCRIPTS)
             for line in data:
