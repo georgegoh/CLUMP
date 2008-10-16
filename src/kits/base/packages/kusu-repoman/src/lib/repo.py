@@ -32,12 +32,13 @@ class BaseRepo(object):
     test = False
     ostype = None
     
-    def __init__(self, prefix, db, repos_root = '/depot/repos', kits_root = '/depot/kits'):
+    def __init__(self, prefix, db, repos_root = '/depot/repos', kits_root = '/depot/kits', contrib_root='/depot/contrib'):
         self.prefix = prefix
         self.db = db
         self.provision = 'KUSU'
         self.repos_root = repos_root
         self.kits_root = kits_root 
+        self.contrib_root = contrib_root
 
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_ROOT')
         if row: self.repos_root =  row[0].kvalue
@@ -45,8 +46,12 @@ class BaseRepo(object):
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
         if row: self.kits_root =  row[0].kvalue
 
+        row = self.db.AppGlobals.select_by(kname = 'DEPOT_CONTRIB_ROOT')
+        if row: self.contrib_root =  row[0].kvalue
+
         if self.repos_root[0] == '/': self.repos_root = self.repos_root[1:]
         if self.kits_root[0] == '/': self.kits_root = self.kits_root[1:]
+        if self.contrib_root[0] == '/': self.contrib_root = self.contrib_root[1:]
 
         row = self.db.AppGlobals.select_by(kname = 'PROVISION')
         if row: self.provision =  row[0].kvalue
@@ -88,7 +93,7 @@ class BaseRepo(object):
         """Get the contrib path for the repository"""
 
         os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
-        return self.prefix / 'depot' / 'contrib' / os_name / os_version / os_arch
+        return self.prefix / self.contrib_root / os_name / os_version / os_arch
 
     def getKitPath(self, name, version, arch):
         """Get the kit path given the name, version and arch"""
@@ -107,9 +112,9 @@ class BaseRepo(object):
         """Returns the repository cache path"""
         
         if repoid:
-            return self.prefix / 'depot' / 'repos' / '.repocache' / str(repoid)
+            return self.prefix / self.repos_root / '.repocache' / str(repoid)
         else:
-            return self.prefix / 'depot' / 'repos' / '.repocache' / str(self.repoid)
+            return self.prefix / self.repos_root / '.repocache' / str(self.repoid)
 
     def getInstallerIP(self):
         """Returns a list of installer ips"""

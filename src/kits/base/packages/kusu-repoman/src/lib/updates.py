@@ -28,7 +28,7 @@ except:
     from popen5 import subprocess
 
 class BaseUpdate:
-    def __init__(self, os_name, os_version, os_arch, prefix, db):
+    def __init__(self, os_name, os_version, os_arch, prefix, db, updates_root = '/depot/updates'):
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
@@ -36,6 +36,11 @@ class BaseUpdate:
         self.prefix = prefix
         self.db = db
         self.configFile = None
+
+        self.updates_root = updates_root 
+        row = self.db.AppGlobals.select_by(kname = 'DEPOT_UPDATES_ROOT')
+        if row: self.updates_root = row[0].kvalue
+        if self.updates_root[0] == '/': self.updates_root = self.updates_root[1:]
 
     def getLatestRPM(self, dirs=[]):
         """Returns a list of the latest rpms"""
@@ -292,7 +297,7 @@ class YumUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
     
-        dir = path(self.prefix) / 'depot' / 'updates' / self.os_name / self.os_version / self.os_arch
+        dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
@@ -408,7 +413,7 @@ class RHNUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
 
-        dir = path(self.prefix) / 'depot' / 'updates' / \
+        dir = path(self.prefix) / self.updates_root / \
               self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
         if not dir.exists():
             dir.makedirs()

@@ -1002,6 +1002,7 @@ class DB(object):
         AppGlobals(kname='DEPOT_REPOS_ROOT', kvalue='/depot/repos')
         AppGlobals(kname='DEPOT_REPOS_SCRIPTS', kvalue='/depot/repos/custom_scripts/')
         AppGlobals(kname='DEPOT_CONTRIB_ROOT', kvalue='/depot/contrib')
+        AppGlobals(kname='DEPOT_UPDATES_ROOT', kvalue='/depot/updates')
         AppGlobals(kname='PIXIE_ROOT', kvalue='/tftpboot/kusu')
         AppGlobals(kname='PROVISION', kvalue='KUSU')
         Repos(repoid=999, reponame="DELETEME")
