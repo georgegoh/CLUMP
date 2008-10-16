@@ -160,7 +160,7 @@ class BuildInitrd:
                  % (initrd, self.ngid) )
         try:
             self.db.execute(query)
-            data = self.db.fetchone()
+            #data = self.db.fetchone() - no need to fetch after update
             self.initrd = initrd
         except:
             return False
@@ -433,13 +433,13 @@ class BuildInitrd:
 
         # Fedora has kernel packages with the exact same name.  We have
         # to use our own naming convention.
-        kernname = 'kernel.%s.%s' % (self.installtype, self.ngid)
+        kernname = "kernel.%s.%s" % (self.installtype, self.ngid)
         if kernname != self.kernel:
             # Update database
-            query = ('update nodegroups set kernel=\'%s\' where ngid=%s' % (kernname,self.ngid))
+            query = ('update nodegroups set kernel="%s" where ngid=%s' % (kernname,self.ngid))
             try:
                 self.db.execute(query)
-                data = self.db.fetchone()
+                #data = self.db.fetchone() - update after exec causes postgres to error
             except:       
                 if self.stderrout:
                     self.stderrout("DB_Query_Error: %s\n", query)
