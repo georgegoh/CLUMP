@@ -51,7 +51,7 @@ class KusuRC(rcplugin.Plugin):
 
         sqliteDB = db.DB('sqlite', '/root/kusu.db')
         if engine == 'mysql':
-            dbs = db.DB(engine, 'kusudb', 'postgres', entity_name='alt')
+            dbs = db.DB(engine, 'kusudb', 'root', entity_name='alt')
         else: #postgres only for now 
             dbs = db.DB(engine, 'kusudb', 'postgres', entity_name='alt')
             
