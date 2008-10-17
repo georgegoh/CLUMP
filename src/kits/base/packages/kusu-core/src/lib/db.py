@@ -74,7 +74,7 @@ class KusuDB:
         'create_db_if_absent' flag is set to True.
         """
         if not isFileExists(db_file):
-            raise OperationalError, "Specified DB file does not exist."
+            raise sqlite.OperationalError, "Specified DB file does not exist."
 
         self.__dbconn = sqlite.connect(db_file)
         self.__dbcursor = self.__dbconn.cursor()
