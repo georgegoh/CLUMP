@@ -46,10 +46,21 @@ class NodeInfo:
     """This class will provide the functions for getting the Node Installation
     Information, and for setting the database fields for a node """
 
-    def __init__(self, user='nobody'):
+    def __init__(self, user='nobody',cgi=False):
         """__init__ - initializer for the class"""
         self.db = KusuDB()
-        self.db.connect('kusudb', user)
+        #in a CGI environment, we do not have access to the environment
+        # so we try postgres first then mysql. This is less than ideal
+        # but is the simplest fix until hot migration can be supported
+        if cgi:
+            try:
+                self.db.connect('kusudb',user,driver='postgres')
+                self.driver = 'postgres'
+            except:
+                self.db.connect('kusudb',user,driver='mysql')
+                self.driver='mysql' # if it fails here, nodeboot.cgi will fail altogether
+        else:
+            self.db.connect('kusudb', user) # connect will handle the driver 
 
         
     def getNIInfo(self, nodename, nodeip):
@@ -456,7 +467,7 @@ class NodeBootApp(KusuApp):
             
         # Test to see if we need write access to the database and connect 
         if bootfrom or state:
-            nodefun = NodeInfo('apache')
+            nodefun = NodeInfo('apache',cgi=runascgi)
             updatepxe = 1
         else:
             nodefun = NodeInfo()

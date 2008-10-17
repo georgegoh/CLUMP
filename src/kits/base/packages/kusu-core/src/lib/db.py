@@ -82,13 +82,11 @@ class KusuDB:
     def connect(self, dbname=None, user=None, passwd=None, driver=None):
         if not driver:
             driver = os.getenv('KUSU_DB_ENGINE')
-
-
-            if not driver:
+            if not driver or driver == 'postgres':
                 driver = 'postgres'
                 from psycopg2 import OperationalError
         if driver not in supported_backends:
-            raise OperationalError,"Unable to find a suitable db driver"
+            raise Exception,"Unable to find a suitable db driver"
 
         if driver=='sqlite':
             self.connectSQLite(dbname)
