@@ -39,7 +39,8 @@ DESTDIR="/opt/kusu/initrds"
 OVERLAYDIR="/opt/kusu/share/initrd-templates/overlay"
 
 ## Default file name of initrd-template
-FILENAME="rootfs.x86_64.cpio.gz"
+ARCH=`echo \`arch\` | sed 's/i[3456]86/i386/'`
+FILENAME="rootfs.$ARCH.cpio.gz"
 
 ## Parse command-line arguments
 while true; do
@@ -102,8 +103,8 @@ echo "Getting packages via yum.  Please wait..."
 
 PKGLIST="python busybox e2fsprogs device-mapper parted pyparted udev lvm2 rng-utils"
 
-## Ensure we're using x86-64 packages
-for pkg in $PKGLIST; do NEWPKGLIST="$NEWPKGLIST $pkg.x86_64"; done
+## Ensure we're using packages for the right architecture
+for pkg in $PKGLIST; do NEWPKGLIST="$NEWPKGLIST $pkg.$ARCH"; done
 
 PKGLIST="$NEWPKGLIST"
 
@@ -144,7 +145,10 @@ rm -rf "$FAKEROOT/usr/lib/locale"
 rm -rf "$FAKEROOT/usr/lib/pkgconfig"
 rm -rf "$FAKEROOT/usr/share/i18n"
 rm -rf "$FAKEROOT/usr/lib/gconv"
-rm -rf "$FAKEROOT/usr/lib64/gconv"
+
+if [ "$ARCH" = "x86_64" ]; then
+	rm -rf "$FAKEROOT/usr/lib64/gconv"
+fi
 
 echo "Removing unnecessary packages"
 rpm --root "$FAKEROOT" -e --nodeps mingetty tzdata SysVinit
@@ -410,9 +414,15 @@ rm -f $FAKEROOT/etc/rc{0..6}.d
 rm -rf $FAKEROOT/etc/rc.d/rc{0..6}.d
 
 ## These files exist from kusu-base-installer and kusu-base-node
-mkdir -p $FAKEROOT/usr/lib64/python2.4
-cp -a /opt/kusu/lib/python/kusu/ipfun.py $FAKEROOT/usr/lib64/python2.4
-cp -a /opt/kusu/lib/python/kusu/niifun.py* $FAKEROOT/usr/lib64/python2.4
+if [ "$ARCH" = "x86_64" ]; then
+    mkdir -p $FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py $FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/kusu/lib/python/kusu/niifun.py* $FAKEROOT/usr/lib64/python2.4
+else
+    mkdir -p $FAKEROOT/usr/lib/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py $FAKEROOT/usr/lib/python2.4
+    cp -a /opt/kusu/lib/python/kusu/niifun.py* $FAKEROOT/usr/lib/python2.4
+fi
 
 ## Copy overlay files
 echo -n "Copying overlay files... "

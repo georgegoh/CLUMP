@@ -50,7 +50,7 @@ class BuildInitrd:
         self.kernel      = ''     # The name of the kernel to use from db
         self.initrd      = ''     # The name of the initrd
         self.initrd64    = '/opt/kusu/initrds/rootfs.x86_64.cpio.gz'   # 64bit image
-        self.initrd32    = '/opt/kusu/initrds/rootfs.i686.cpio.gz'     # 32bit image
+        self.initrd32    = '/opt/kusu/initrds/rootfs.i386.cpio.gz'     # 32bit image
         self.gettext     = 0
         self.imagedir    = ''     # Location of the initial ram disk image
         self.moduledir   = ''     # Location of the temporary module directory
