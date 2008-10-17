@@ -20,4 +20,4 @@ export KUSU_LOGFILE=/var/log/kusu/kusu.log
 export KUSU_MAXLOGSIZE=10485760
 export KUSU_MAXLOGNUM=10
 export KUSU_EVENT_LOGFILE=/var/log/kusu/kusu-events.log
-export KUSU_DB_ENGINE = 'postgres' # other valid option - postgres
+export KUSU_DB_ENGINE=postgres # options are mysql, postgres
