@@ -7,9 +7,9 @@ http://software.inl.fr/trac/trac.cgi/wiki/IPy
 """
 
 # $HeadURL: https://svn.inl.fr/inl-svn/src/tools/ipy/tags/IPy-0.54/IPy.py $
-# $Id: IPy.py 1546 2007-06-22 10:59:42Z mike $
+# $Id$
 
-__rcsid__ = '$Id: IPy.py 1546 2007-06-22 10:59:42Z mike $'
+__rcsid__ = '$Id$'
 __version__ = '0.54'
 
 import types

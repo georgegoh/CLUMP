@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: rc.kusu.sh 1903 2007-08-07 09:05:41Z ltsai $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc.
 #

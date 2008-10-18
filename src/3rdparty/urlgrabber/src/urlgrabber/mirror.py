@@ -86,7 +86,7 @@ CUSTOMIZATION
 
 """
 
-# $Id: mirror.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 import random
 import thread  # needed for locking to make this threadsafe

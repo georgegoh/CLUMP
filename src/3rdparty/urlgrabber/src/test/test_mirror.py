@@ -21,7 +21,7 @@
 
 """mirror.py tests"""
 
-# $Id: test_mirror.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 import sys
 import os

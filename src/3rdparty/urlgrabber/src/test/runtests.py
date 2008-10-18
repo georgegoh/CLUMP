@@ -14,7 +14,7 @@ OPTIONS:
                          or 0 to disable status output completely.
 """
   
-# $Id: runtests.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 import sys
 from os.path import dirname, join as joinpath

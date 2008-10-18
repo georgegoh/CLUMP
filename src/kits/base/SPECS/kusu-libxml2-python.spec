@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id: kusu-libxml2-python.spec 1335 2007-06-14 11:06:48Z najib $
+# $Id$
 #
 %define python_ver %(python -c "import sys; v=sys.version_info[:2]; print '%d.%d'%v")
 

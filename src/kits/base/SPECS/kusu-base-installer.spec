@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id: kusu-base-installer.spec 2870 2007-11-30 09:43:01Z ltsai $
+# $Id$
 # 
 
 %define subversion 17

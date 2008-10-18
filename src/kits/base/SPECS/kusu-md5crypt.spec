@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id: kusu-md5crypt.spec 1335 2007-06-14 11:06:48Z najib $
+# $Id$
 #
 
 %define subversion 1

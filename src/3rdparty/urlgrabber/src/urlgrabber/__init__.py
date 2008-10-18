@@ -14,7 +14,7 @@
 
 # Copyright 2002-2006 Michael D. Stenner, Ryan Tomayko
 
-# $Id: __init__.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 """A high-level cross-protocol url-grabber.
 

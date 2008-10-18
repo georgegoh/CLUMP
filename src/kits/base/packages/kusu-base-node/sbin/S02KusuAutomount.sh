@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: automount.sh 2435 2007-10-03 10:19:46Z hirwan $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

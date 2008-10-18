@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: imageinit.sh 2590 2007-10-29 19:23:02Z mblack $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

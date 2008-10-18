@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: base-node.spec 2352 2007-09-25 09:34:34Z mike $
+# $Id$
 #
 
 Summary: Component for Kusu Node Base

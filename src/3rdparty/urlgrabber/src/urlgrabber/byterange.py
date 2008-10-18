@@ -17,7 +17,7 @@
 # This file is part of urlgrabber, a high-level cross-protocol url-grabber
 # Copyright 2002-2004 Michael D. Stenner, Ryan Tomayko
 
-# $Id: byterange.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 import os
 import stat

@@ -99,7 +99,7 @@ EXTRA ATTRIBUTES AND METHODS
 
 """
 
-# $Id: keepalive.py 270 2007-04-12 04:14:43Z ltsai $
+# $Id$
 
 import urllib2
 import httplib

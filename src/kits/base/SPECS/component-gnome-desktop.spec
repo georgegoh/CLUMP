@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id: base-installer.spec 2197 2007-09-10 14:32:27Z spstarr $
+# $Id$
 # 
 
 Summary: Component for GNOME Desktop

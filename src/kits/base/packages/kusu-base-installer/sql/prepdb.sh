@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: prepdb.sh 1438 2007-06-19 12:41:44Z ltsai $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

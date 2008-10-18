@@ -731,7 +731,9 @@ class PluginActions(object, KusuApp):
 
         for plugin in self._pluginInstances:
             #t1=time.time()
-            plugin.added(nodename, info, prePopulateMode)
+            try:
+                plugin.added(nodename, info, prePopulateMode)
+            except: pass
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: added(): %f" % (plugin, t2-t1)
       
@@ -748,7 +750,9 @@ class PluginActions(object, KusuApp):
         info = self._nodeHandler.getNodeInformation(nodename)
         for plugin in self._pluginInstances:
             #t1=time.time()
-            plugin.removed(nodename, info)
+            try:
+                plugin.removed(nodename, info)
+            except: pass
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: removed(): %f" % (plugin, t2-t1)
 
@@ -766,7 +770,9 @@ class PluginActions(object, KusuApp):
             info = self._nodeHandler.getNodeInformation(nodename)
             for plugin in self._pluginInstances:
                 #t1=time.time()
-                plugin.replaced(nodename, info)
+                try:
+                    plugin.replaced(nodename, info)
+                except: pass
                 #t2=time.time()
                 #print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
         else:
@@ -779,12 +785,14 @@ class PluginActions(object, KusuApp):
         """plugins_finished()
         Call all Add host plugins finished() method
         """
-	global myNodeInfo
+        global myNodeInfo
         #pt1=time.time()
         #print "DEBUG: Calling finished() method from plugins"
         for plugin in self._pluginInstances:
             #t1=time.time()
-            plugin.finished(myNodeInfo.nodeList, prePopulateMode)
+            try:
+                plugin.finished(myNodeInfo.nodeList, prePopulateMode)
+            except: pass
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
         #t2=time.time()
@@ -798,7 +806,9 @@ class PluginActions(object, KusuApp):
         #pt1=time.time()
         for plugin in self._pluginInstances:
             #t1=time.time()
-            plugin.updated()
+            try:
+                plugin.updated()
+            except: pass
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: updated(): %f" % (plugin, t2-t1)
         #t2=time.time()
