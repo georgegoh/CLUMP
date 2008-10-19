@@ -184,7 +184,7 @@ Example operations:
         self.parser.add_option('-u','--update', action='store_true', dest='update',
                                 help=self._('Update the kernel/initrd entries in database.'))
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                                help=self._('Database driver (sqlite, mysql)'))
+                                help=self._('Database driver (sqlite, mysql,postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                 help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -232,7 +232,12 @@ Example operations:
             self.printMsgExit(msg)
 
         # get the db instance
-        dbdriver = 'mysql'
+        #source engine from environment variable, explicit cmndline arg
+        # takes preference over environment variable
+        engine = os.getenv('KUSU_DB_ENGINE')
+        if not engine: #default to postgres
+            engine = 'postgres'
+        dbdriver = engine
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None
