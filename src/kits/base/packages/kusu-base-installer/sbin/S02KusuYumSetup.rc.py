@@ -45,7 +45,7 @@ class KusuRC(rcplugin.Plugin):
         baseurl = "baseurl=http://%s/repos/%s\n" % (self.niihost[0], self.repoid)
         enabled = "enabled=1\n"
         gpgcheck = "gpgcheck=0\n"
-        gpgkey = "gpgkey=http://%s/repos/%s/RPM-GPG-KEY-kusu-release\n" % (self.niihost[0], self.repoid)
+        gpgkey = "gpgkey=http://%s/repos/%s/RPM-GPG-KEY-KUSU\n" % (self.niihost[0], self.repoid)
 
         try:
             fh = open(kusurepo, 'w')
@@ -68,6 +68,14 @@ class KusuRC(rcplugin.Plugin):
                 fh.write(gpgcheck)
                 fh.write(gpgkey)
             fh.close()
-            return True
         except:
             return False
+
+        self.runCommand('/bin/rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-KUSU')
+        
+        if self.os_name == "centos":
+            self.runCommand('/bin/rpm --import /depot/kits/%s/%s/%s/RPM-GPG-KEY*' % (self.os_name, self.os_version, self.os_arch))
+        elif self.os_name == "rhel": 
+            self.runCommand('/bin/rpm --import /depot/kits/%s/%s/%s/RPM-GPG-KEY*' % (self.os_name, self.os_version, self.os_arch))
+
+        return True
