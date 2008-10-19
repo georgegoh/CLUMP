@@ -55,7 +55,7 @@ class thisReport(Report):
 
         # Get the DNS Forwarders.  This might be optional
         dnsforwarders = []
-        for key in ['DNS1', 'DNS2', 'DNS3']:
+        for key in ['dns1', 'dns2', 'dn3']:
             val = self.db.getAppglobals(key)
             if val: dnsforwarders.append(val)
         dnsforwarders = ','.join(dnsforwarders)
