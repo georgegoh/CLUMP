@@ -1,0 +1,246 @@
+#!/bin/sh
+#
+# $Id$
+
+BASE_DIR=/tmp
+MODULES=etc/modprobe.conf
+
+usage() {
+    echo "Usage:"
+    echo "$0 [OPTIONS]"
+    echo "Debug utility that packages log files and other information"
+    echo
+    echo "  OPTIONS:"
+    echo "    --help                Display usage and exit"
+    echo "    --dir                 Destination directory for the tarball ($BASE_DIR)"
+    exit $1
+}
+
+while [ $# -ne 0 ]; do
+    arg="$1"
+    case "$arg" in
+        --help)
+            usage 0
+            ;;
+        --dir)
+            shift
+            BASE_DIR=$1
+            ;;
+        --*)
+            echo "Unknown option $arg (use --help)"
+            exit 1
+            ;;
+        *)
+            echo "Too many arguments (use --help)"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [ "`id -u`" -ne "0" ]; then
+    echo 'Must run as root user'
+    exit 1
+fi
+
+if [ ! -d "$BASE_DIR" ]; then
+    mkdir -p "$BASE_DIR"
+    [ $? != 0 ] && echo "Unable to create directory $BASE_DIR" && exit 1
+fi
+
+# Make sure BASE_DIR is not relative
+BASE_DIR=`cd $BASE_DIR && pwd`
+
+DIR=$BASE_DIR/kusu-debug-$$/kusu-debug
+TARBALL=$BASE_DIR/kusu-debug-`date +'%Y%m%d%H%M%S%Z'`.tar.gz
+
+/bin/mkdir -p $DIR
+if [ $? != 0 ] ; then
+  echo "Unable to create directory $DIR"
+  exit
+fi
+
+chmod 700 $DIR
+cd $DIR
+
+echo 
+echo "Collecting and packaging relevant diagnostic information."
+echo "Warning: this may take some time..."
+
+mkdir -p $DIR/kusu
+mkdir -p $DIR/rpms
+mkdir -p $DIR/root
+mkdir -p $DIR/tmp
+mkdir -p $DIR/genconfig
+mkdir -p $DIR/etc/httpd/conf
+mkdir -p $DIR/etc/sysconfig/network-scripts
+mkdir -p $DIR/var/log/httpd
+mkdir -p $DIR/var/log/kusu
+mkdir -p $DIR/dbdump
+mkdir -p $DIR/etc/profile.d
+mkdir -p $DIR/etc/skel
+mkdir -p $DIR/etc/rc.d
+mkdir -p $DIR/var/named
+
+echo "    * copying services runlevel configuration"
+/sbin/chkconfig --list >                                $DIR/chkconfig
+
+if [ -d /etc/samba ]; then
+
+    echo "    * copying Samba configuration"
+    mkdir -p $DIR/etc/samba
+    cp -a /etc/samba                                  $DIR/etc/
+
+fi
+
+if [ -f /etc/netgroup ]; then
+    cp -a /etc/netgroup                           $DIR/etc/netgroup
+fi
+
+if [ -f /etc/hosts.equiv ]; then
+    cp -a /etc/hosts.equiv                        $DIR/etc/hosts.equiv
+fi
+
+echo "    * copying profiles directory"
+cp -a /etc/profile.d                              $DIR/etc/
+
+echo "    * copying skeleton directory"
+cp -a /etc/skel                                   $DIR/etc/
+
+echo "    * copying startup scripts (rc.d files)"
+cp -a /etc/rc.d                                   $DIR/etc/
+
+echo "    * copying configuration information"
+cp -a /etc/httpd/conf/*.conf                      $DIR/etc/httpd/conf
+cp -a /etc/auto.*                                 $DIR/etc/
+cp -a /etc/exports                                $DIR/etc/
+cp -a /etc/dhcpd.conf                             $DIR/etc/dhcpd.conf
+cp -a /etc/resolv.conf                            $DIR/etc/resolv.conf
+cp -a /etc/named.conf                             $DIR/etc/named.conf
+cp -a /etc/hosts                                  $DIR/etc/hosts
+cp -a /tftpboot                                   $DIR/
+cp -a /etc/sysconfig/network-scripts/ifcfg-eth?   $DIR/etc/sysconfig/network-scripts/
+cp -a /etc/sysconfig/network                      $DIR/etc/sysconfig/network
+cp -a /etc/sysconfig/iptables                     $DIR/etc/sysconfig/iptables
+cp -a /$MODULES                                   $DIR/$MODULES
+cp -a /etc/fstab                                  $DIR/etc/fstab
+cp -a /etc/ld.so.conf                             $DIR/etc/ld.so.conf
+cp -a /var/named/*                                $DIR/var/named/
+if [ -d /etc/ld.so.conf.d ]; then
+    cp -a /etc/ld.so.conf.d                           $DIR/etc/ld.so.conf.d
+fi
+
+echo "    * copying user/group information"
+python -c "import pwd; import pprint; pprint.pprint(pwd.getpwall())"  > $DIR/etc/passwd
+cp -a /etc/group     $DIR/etc/group
+
+echo "    * copying logs"
+cp -a /root/anaconda-ks.cfg             $DIR/root
+cp -a /root/kusu.log                    $DIR/root
+cp -a /root/kusu-ks.cfg                 $DIR/root
+cp -a /root/install.log                 $DIR/root
+cp -a /var/log/messages*                $DIR/var/log/
+cp -a /var/log/dmesg*                   $DIR/var/log/
+cp -a /var/log/httpd/*                  $DIR/var/log/httpd/
+cp -a /var/log/kusu/*                   $DIR/var/log/kusu/
+
+echo "    * querying RPM database"
+rpm -qa | sort      > $DIR/rpms/rpm-manifest
+
+echo "    * querying genconfig"
+genconfig bashrc          > $DIR/genconfig/bashrc
+genconfig apache_conf     > $DIR/genconfig/apache_conf
+genconfig hostspdsh       > $DIR/genconfig/hostspdsh
+genconfig nodegroups      > $DIR/genconfig/nodegroups
+genconfig hostsequiv      > $DIR/genconfig/hostsequiv
+genconfig debug           > $DIR/genconfig/debug
+genconfig named           > $DIR/genconfig/named
+genconfig ssh             > $DIR/genconfig/ssh
+genconfig dhcpd           > $DIR/genconfig/dhcpd
+genconfig nodes           > $DIR/genconfig/nodes
+genconfig zone            > $DIR/genconfig/zone
+#genconfig reverse <network>            > $DIR/genconfig/reverse
+genconfig hosts           > $DIR/genconfig/hosts
+
+echo "    * get iptables information"
+service iptables status > $DIR/iptables
+
+echo "    * get route information"
+route -n > $DIR/route
+
+echo "    * get env information"
+env > $DIR/env
+
+echo "    * get dmesg information"
+dmesg > $DIR/dmesg
+
+echo "    * get memory information"
+free -m > $DIR/free
+
+echo "    * get exportfs information"
+exportfs -v > $DIR/exportfs
+
+echo "    * get last information"
+last > $DIR/last
+
+echo "    * get lspci information"
+lspci -vvv > $DIR/lspci
+
+echo "    * get dmidecode information"
+dmidecode > $DIR/dmidecode
+
+echo "    * get mount information"
+mount     > $DIR/mount
+
+echo "    * get ifconfig information"
+ifconfig -a > $DIR/ifconfig
+
+echo "    * get ldconfig information"
+ldconfig -p > $DIR/ldconfig
+
+echo "    * get diskspace available"
+df -h > $DIR/diskinfo
+
+echo "    * get uptime/load average"
+uptime > $DIR/uptime
+
+echo "    * get uname"
+uname -a > $DIR/uname
+
+echo "    * get hostname"
+hostname > $DIR/hostname
+
+echo "    * get Kusu release"
+cat /etc/kusu-release > $DIR/kusu-release
+
+echo "    * get redhat-release"
+if [ -f /etc/redhat-release ]; then
+    cat /etc/redhat-release > $DIR/redhat-release
+fi
+
+echo "    * get Kusu db"
+genconfig debug > $DIR/dbdump/kusu.sql
+
+echo "    * get ps list"
+ps auwwwwx > $DIR/ps
+
+echo "    * get Kusu information"
+kitops -l    > $DIR/kusu/kits
+repoman -l   > $DIR/kusu/repoman
+ngedit -l    > $DIR/kusu/ngedit
+boothost -l  > $DIR/kusu/boothost
+
+echo "    * timestamping"
+echo "Kusu debug created on `date`" > $DIR/timestamp
+
+echo "    * creating tarball (may take some time): $TARBALL"
+cd $BASE_DIR/kusu-debug-$$ && tar -czf $TARBALL kusu-debug
+
+echo "    * removing temporary debug tree"
+cd /
+rm -rf $BASE_DIR/kusu-debug-$$
+
+echo
+echo "Debug dump created, stored in $TARBALL"
+
+

@@ -61,6 +61,7 @@ install -m644 lib/netutil.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/core-%{version}
 install -m755 bin/kusurc $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusuenv.sh $RPM_BUILD_ROOT/opt/kusu/bin
+install -m755 bin/kusu-debug $RPM_BUILD_ROOT/opt/kusu/bin
 
 %pre
 
@@ -86,6 +87,7 @@ fi
 /opt/kusu/lib/python/kusu/core/*
 /opt/kusu/bin/kusuenv.sh
 /opt/kusu/bin/kusurc
+/opt/kusu/bin/kusu-debug
 %doc /opt/kusu/share/doc/core-%{version}/COPYING
 
 %clean
