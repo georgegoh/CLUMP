@@ -61,22 +61,17 @@ install -m644 lib/netutil.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/core-%{version}
 install -m755 bin/kusurc $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusuenv.sh $RPM_BUILD_ROOT/opt/kusu/bin
-install -m644 etc/kusu-release $RPM_BUILD_ROOT/opt/kusu/etc
 
 %pre
 
 %post
 if [ $1 -eq 1 ]; then
     ln -sf /opt/kusu/bin/kusuenv.sh /etc/profile.d/kusuenv.sh
-    ln -sf /opt/kusu/etc/kusu-release /etc/kusu-release
 fi
 
 %preun
 
 %postun
-if [ $1 -eq 0 ]; then
-    rm -f /etc/profile.d/kusuenv.sh /etc/kusu-release
-fi
 
 %files
 %dir /opt/kusu
@@ -91,7 +86,6 @@ fi
 /opt/kusu/lib/python/kusu/core/*
 /opt/kusu/bin/kusuenv.sh
 /opt/kusu/bin/kusurc
-/opt/kusu/etc/kusu-release
 %doc /opt/kusu/share/doc/core-%{version}/COPYING
 
 %clean

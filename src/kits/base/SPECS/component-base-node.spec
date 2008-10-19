@@ -37,6 +37,7 @@ Requires: environment-modules
 Requires: kusu-core
 Requires: kusu-path
 Requires: kusu-util
+Requires: kusu-release
 Requires: xinetd
 Requires: rsh-server
 Requires: rsh

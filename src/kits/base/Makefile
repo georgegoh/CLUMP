@@ -18,10 +18,10 @@
 include ../../../config.mk
 
 init:
-	@cp -pf packages/kusu-core/src/etc/kusu-release packages/kusu-core/src/etc/kusu-release.in
+	@cp -pf packages/kusu-release/src/kusu-release packages/kusu-release/src/kusu-release.in
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -e 's%$${KUSU_REVISION}%$(KUSU_REVISION)%g' \
 	-e 's%$${KUSU_RELEASE_NAME}%$(KUSU_RELEASE_NAME)%g' \
-	packages/kusu-core/src/etc/kusu-release.in > packages/kusu-core/src/etc/kusu-release
+	packages/kusu-release/src/kusu-release.in > packages/kusu-release/src/kusu-release
 	@cp -pf packages/kusu-installer/src/lib/welcome.py packages/kusu-installer/src/lib/welcome.py.in
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' \
 	packages/kusu-installer/src/lib/welcome.py.in > packages/kusu-installer/src/lib/welcome.py 
