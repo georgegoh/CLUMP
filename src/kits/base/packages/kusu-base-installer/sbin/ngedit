@@ -144,7 +144,7 @@ class scrNGEMain(USXBaseScreen):
         query = "select ngname from nodegroups where ngname like '%s Copy %%'" %newNG['ngname']
         self.database.execute(query)
         rv = self.database.fetchall()
-        if rv == ():
+        if not rv:
             suffix = 1
         else:
             suffix = int(max(filter((lambda x: x.isdigit()), [string.split(x[0])[-1] for x in rv]))) + 1
