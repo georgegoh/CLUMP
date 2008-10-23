@@ -26,6 +26,7 @@ import sys
 import tempfile
 import shutil
 import string
+import commands
 
 # This is the list of components found in src/kits/base/packages that are
 # required to build the kusu installer runtime
@@ -42,6 +43,7 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'kusu-kitops',
                 'kusu-md5crypt',
                 'kusu-networktool',
+                'primitive',
                 'kusu-partitiontool',
                 'kusu-path',
                 'python-sqlite2',
@@ -160,12 +162,44 @@ if __name__ == '__main__':
     basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
     os.path.walk(basekitRPMSdir,getRPM,None)
 
-    anacondaScript = getAnacondaScript('rhel','5', arch)
+    if os.path.exists('/etc/fedora-release'):
+        dist = 'fedora'
+        distP = subprocess.Popen("[[ `head -n 1 /etc/fedora-release` =~ '[0-9]+' ]]; echo $BASH_REMATCH",shell=True,stdout=subprocess.PIPE)
+        distver = distP.stdout.read().strip(os.linesep)
+        
+    elif os.path.exists('/etc/redhat-release'):
+        distP = subprocess.Popen("head -n 1 /etc/redhat-release | awk '{print $1}'",shell=True,stdout=subprocess.PIPE)
+        dist = distP.stdout.read().strip(os.linesep)
+        if re.compile('^Red').match(dist):
+            dist = 'rhel'
+        elif re.compile('^Scientific').match(dist):
+            dist = 'scientificlinux'
+        elif re.compile('^CentOS').match(dist):
+            dist = 'centos'
+            
+        distP = subprocess.Popen("[[ `head -n 1 /etc/redhat-release` =~ '[0-9]+' ]]; echo $BASH_REMATCH",shell=True,stdout=subprocess.PIPE)
+        distver = distP.stdout.read().strip(os.linesep)
+        
+    elif os.path.exists('/etc/SuSE-release'):
+        distP = subprocess.Popen("head -n 1 /etc/SuSE-release | awk '{print $1}'",shell=True,stdout=subprocess.PIPE)
+        dist = distP.stdout.read().strip(os.linesep)
+        if re.compile('^SUSE').match(dist):
+            dist = 'sles'
+        elif re.compile('^openSUSE').match(dist):
+            dist = 'opensuse'
+            
+        distP = subprocess.Popen("grep VERSION /etc/SuSE-release | awk -F' = ' '{print $2}' | sed 's/\.//'",shell=True,stdout=subprocess.PIPE)
+        distver = distP.stdout.read().strip(os.linesep)
+    
+    print 'KUSU_DIST=%s' % dist
+    print 'KUSU_DISTVER=%s' % distver
+    
+    anacondaScript = getAnacondaScript(dist, distver, arch)
     if not os.path.exists(anacondaScript):
         print "Unable to get 'faux' anaconda script from SVN source tree! Please ensure the source tree is complete!"
         sys.exit(-1)
         
-    thttpdRunScript = getThttpdRunScript('rhel','5')
+    thttpdRunScript = getThttpdRunScript(dist, distver)
     if not os.path.exists(thttpdRunScript):
         print "Unable to get thttpd-run.sh script from SVN source tree! Please ensure the source tree is complete!"
         sys.exit(-1)

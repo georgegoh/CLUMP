@@ -18,6 +18,8 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 export LANG="en_US.UTF-8"
 
 # setups our environment
+export KUSU_DIST=rhel
+export KUSU_DISTVER=5
 source /opt/kusu/bin/kusuenv.sh
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib64/python2.4/site-packages
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib/python2.4/site-packages

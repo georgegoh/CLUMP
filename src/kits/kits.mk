@@ -71,9 +71,30 @@ PKG_PREFIX_TARBALL_NAME = $(SOURCEDIR)/$($(1)_NAME)-$($(1)_VERSION)$(if $($(1)_T
 
 PKG_RPMBUILD_OPTIONS = $(if $($(1)_RPMBUILD_OPTIONS),$($(1)_RPMBUILD_OPTIONS))
 
+#get package from url
+PKG_RPM_URL = $(if $($(1)_RPM_URL),$($(1)_RPM_URL))
+define PKG_GET_RPM_FROM_URL
+ifdef $(1)_RPM_URL
+_$(1)_rpmurl_tgt = $(call PKG_PREFIX_RPM_NAME,$(1))
+RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
+$$(_$(1)_rpmurl_tgt):
+	wget -nd -O $(call PKG_PREFIX_RPM_NAME,$(1)) $(call PKG_RPM_URL,$(1))
+endif
+endef
+
+PKG_SRPM_URL = $(if $($(1)_SRPM_URL),$($(1)_SRPM_URL))
+define PKG_GET_SRPM_FROM_URL
+ifdef $(1)_SRPM_URL
+_$(1)_rpmurl_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
+RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
+$$(_$(1)_rpmurl_tgt):
+	wget -nd -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))
+endif
+endef
+
 #_$(1)_tar_tgt = $(call PKG_PREFIX_SPEC_NAME,$(1))
 #TGZ_ARTIFACTS += $(call PKG_PREFIX_TARBALL_NAME,$(1))
-	# cp -pf $(call PKG_PREFIX_SRCDIR,$(1))/$($(1)_NAME).spec $(SPECDIR)/.
+# cp -pf $(call PKG_PREFIX_SRCDIR,$(1))/$($(1)_NAME).spec $(SPECDIR)/.
 define PACK_PKG_SRC_TARBALL
 _$(1)_tar_tgt = $(call PKG_PREFIX_TARBALL_NAME,$(1))
 _$(1)_TARBALL_FILENAME += $$(_$(1)_tar_tgt)
@@ -156,9 +177,9 @@ PARENT_MODE_RULES = PKG_ARTIFACT_FROM_SUBRPM PKG_SUBRPM_FROM_PARENT
 SPEC_MODE_PKGS = $(strip $(foreach pkg,$(KIT_PKGS),$(if $($(pkg)_SPEC),$(pkg))))
 SPEC_MODE_RULES = PKG_ARTIFACT_FROM_RPM PKG_RPM_FROM_SPEC PKG_SRPM_FROM_SPEC
 SRPM_MODE_PKGS = $(strip $(foreach pkg,$(KIT_PKGS),$(if $($(pkg)_SRPM),$(pkg))))
-SRPM_MODE_RULES = PKG_ARTIFACT_FROM_RPM PKG_RPM_FROM_SRPM
+SRPM_MODE_RULES = PKG_GET_SRPM_FROM_URL PKG_ARTIFACT_FROM_RPM PKG_RPM_FROM_SRPM
 RPM_MODE_PKGS = $(strip $(foreach pkg,$(KIT_PKGS),$(if $($(pkg)_RPM),$(pkg))))
-RPM_MODE_RULES = PKG_ARTIFACT_FROM_RPM
+RPM_MODE_RULES = PKG_GET_RPM_FROM_URL PKG_ARTIFACT_FROM_RPM
 
 # The order of the targets is important here. The target `iso' is first,
 # so it is chosen as the default target when `make' is run without targets
