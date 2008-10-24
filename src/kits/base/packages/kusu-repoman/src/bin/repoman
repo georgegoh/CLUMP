@@ -21,6 +21,7 @@ import os
 import time
 import sys
 import atexit
+import re
 from optparse import SUPPRESS_HELP, OptionParser
 
 try:
@@ -102,10 +103,16 @@ For examples:
                                help=self._('flush repository cache'))
 
     def getVersion(self):
-        self.stdoutMessage('Repoman 5\n')
+        self.stdoutMessage('Repoman 1.1\n')
 
     def new(self, repo_name):
 
+        li = re.compile("^[a-zA-Z0-9-_.]+").findall(repo_name)
+        if not li or (len(li[0]) != len(repo_name)):
+            self.stderrMessage('Invalid repo name. Repo name can only contain a-z, A-Z, 0-9, _-.\n')
+            self.unlock()
+            sys.exit(1)
+        
         self.logEvent("Creating new repository: %s" % repo_name, toStdout=False)
 
         repo = self.dbs.Repos.select_by(reponame=repo_name)
