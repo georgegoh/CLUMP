@@ -287,7 +287,7 @@ class scrNGEMain(USXBaseScreen):
         screenFactory = NGEScreenFactory([
                                  scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
+#                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
@@ -297,7 +297,9 @@ class scrNGEMain(USXBaseScreen):
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_End(database=self.database, kusuApp=self.kusuApp)
                                  ])
-        
+        provision = self.database.getAppglobals('PROVISION')
+        if provision == 'KUSU':
+            screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))       
         ks = USXNavigator(screenFactory, screenTitle="Node Group Edit", showTrail=False)
         ks.run()
 
@@ -546,23 +548,32 @@ class scrNGEEdit_Boot(USXBaseScreen):
         self.screenGrid = snack.Grid(2, 4)
 
         lbl1 = snack.Label('Kernel: ')
-        lbl2 = snack.Label('Kernel Params: ')
-        lbl3 = snack.Label('Initrd: ')
+        lbl2 = snack.Label('Initrd: ')
+        lbl3 = snack.Label('Kernel Params: ')
         lbl4 = snack.Label('Install Type: ')
 
         w = min(max(len(curNG['kernel']), len(curNG['kparams']), MAXWIDTH*1/2), MAXWIDTH)
 
         self.__kernellb = snack.Listbox(height=3, scroll=1,width=w,returnExit=1)
-        for kernel in map(os.path.basename, glob.glob(os.path.join(self.__kerneldir,'kernel*'))):
-            if os.path.isfile(os.path.join(self.__kerneldir, kernel)):
-                self.__kernellb.append(kernel,item=kernel)
-                if curNG['kernel'] == kernel:
-                    self.__kernellb.setCurrent(kernel)
+        self.__initrdlb = snack.Listbox(height=3, scroll=1,width=w,returnExit=1)
+        kernels = glob.glob(os.path.join(self.__kerneldir,'kernel*'))
+        kernels.extend( glob.glob(os.path.join(self.__kerneldir,'vmlinu*')))
+        for kernel in  kernels:
+            if os.path.isfile(kernel):
+                self.__kernellb.append(os.path.basename(kernel),item=os.path.basename(kernel))
+                if curNG['kernel'] == kernel or curNG['kernel'] == os.path.basename(kernel):
+                    self.__kernellb.setCurrent(os.path.basename(kernel))
+        initrds = glob.glob(os.path.join(self.__kerneldir,'initrd*'))
+        for initrd in initrds:
+            if os.path.isfile(initrd):
+                self.__initrdlb.append(os.path.basename(initrd),item=os.path.basename(initrd))
+                if curNG['initrd'] == initrd or curNG['initrd'] == os.path.basename(initrd):
+                    self.__initrdlb.setCurrent(os.path.basename(initrd))
 
         self.__entries = {}
         self.__entries['kparams'] = snack.Entry(width=w, text=curNG['kparams'])
-        self.__entries['initrd'] = snack.Entry(width=w, text=curNG['initrd'])
-        self.__entries['initrd'].setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
+#        self.__entries['initrd'] = snack.Entry(width=w, text=curNG['initrd'])
+#        self.__entries['initrd'].setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
 
         rblist = []
         for key,val in installtype.items():
@@ -577,8 +588,8 @@ class scrNGEEdit_Boot(USXBaseScreen):
         self.screenGrid.setField(lbl3,0,2,anchorRight=1)
         self.screenGrid.setField(lbl4,0,3,anchorRight=1)
         self.screenGrid.setField(self.__kernellb, 1,0, (0,0,0,1), anchorLeft=1)
-        self.screenGrid.setField(self.__entries['kparams'],1,1,anchorLeft=1)
-        self.screenGrid.setField(self.__entries['initrd'], 1,2,anchorLeft=1)
+        self.screenGrid.setField(self.__initrdlb, 1,1,anchorLeft=1)
+        self.screenGrid.setField(self.__entries['kparams'],1,2,anchorLeft=1)
         self.screenGrid.setField(self.__InstallTypeRb,1,3,anchorLeft=1)
 
     def validate(self):
@@ -588,7 +599,7 @@ class scrNGEEdit_Boot(USXBaseScreen):
         tmpNG['kparams'] = self.__entries['kparams'].value().strip()
         
         # Fixed
-        tmpNG['initrd'] = curNG['initrd']
+        tmpNG['initrd'] = self.__initrdlb.current()
         tmpNG['installtype'] = self.__InstallTypeRb.getSelection() 
         tmpNG['type'] = curNG['type']
         
@@ -602,11 +613,15 @@ class scrNGEEdit_Boot(USXBaseScreen):
     def formAction(self):
 
         curNG['kernel'] = self.__kernellb.current()
+        curNG['initrd'] = self.__initrdlb.current()
         curNG['kparams'] = self.__entries['kparams'].value().strip()
         installtype = self.__InstallTypeRb.getSelection()
         if installtype <> curNG['installtype']:
-            #change initrd name
-            curNG['initrd'] = "initrd.%s.%s.img" %(installtype, curNG.PKval)
+            if curNG['initrd'] == self.__initrdlb.current():
+                #installtype has changed but initrd has not been changed.
+                #change it for the user
+                curNG['initrd'] = "initrd.%s.%s.img" %(installtype, curNG.PKval)
+        
         curNG['installtype'] = installtype
 
 class scrNGEEdit_Components(USXBaseScreen):

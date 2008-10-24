@@ -652,10 +652,14 @@ class NodeGroup(NodeGroupRec):
         initrd = self.data['initrd']
         if not initrd:
             raise NGEValidationError, "An initrd file must be selected for a Node Group."        
-        
+        BootDir = db.getAppglobals('PIXIE_ROOT')
+        if not BootDir: BootDir = '/tftpboot/kusu'
+        initrdpath = os.path.join(BootDir,initrd)
+        if not os.path.exists(initrdpath):
+            raise NGEValidationError, "Specified initrd file '%s' does not exist." % initrd
         # validate installtype
         installtype = self.data['installtype']
-        if not installtype:
+        if not installtype:  
             raise NGEValidationError, "Install type is required for Node Group."
         
         # validate type
@@ -664,14 +668,14 @@ class NodeGroup(NodeGroupRec):
             raise NGEValidationError, "Node type is required for Node Group."        
         
         
-        # ensure that read-only fields (initrd, installtype, type) have not changed 
+        # ensure that read-only fields (ngname, installtype, type) have not changed 
         
-        query = "select ngname,initrd,installtype,type from nodegroups where ngid = %s" % self.PKval
+        query = "select ngname,installtype,type from nodegroups where ngid = %s" % self.PKval
         db.execute(query)
-        (ngname,curInitrd,curInstType,curType) = db.fetchone()        
+        (ngname,curInstType,curType) = db.fetchone()        
         
-        if not initrd == curInitrd:
-            raise NGEValidationError, "Initrd for Node Group '%s' cannot be changed." % ngname
+#         if not initrd == curInitrd:
+#             raise NGEValidationError, "Initrd for Node Group '%s' cannot be changed." % ngname
         
         if not installtype == curInstType:
             raise NGEValidationError, "Install type for Node Group '%s' cannot be changed." % ngname
