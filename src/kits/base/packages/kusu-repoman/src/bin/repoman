@@ -20,6 +20,7 @@ from path import path
 import os
 import time
 import sys
+import stat
 import atexit
 import re
 from optparse import SUPPRESS_HELP, OptionParser
@@ -54,7 +55,7 @@ class RepoManApp(KusuApp):
                [-v | --version]
                [-l |  --list]
                [-s | --snapshot]
-               [-u | --update]
+               [-u | --update] [-s DIRECTORY | --script DIRECTORY]
                [--dbdriver]
                [--dbdatabase]
                [--dbuser]
@@ -101,6 +102,7 @@ For examples:
                                help=self._('Database password'))
         self.parser.add_option('--flush-cache', dest='flush_cache', action="store_true",
                                help=self._('flush repository cache'))
+        self.parser.add_option('-d', '--script', dest='scriptpath', help=self._('script directory'))
 
     def getVersion(self):
         self.stdoutMessage('Repoman 1.1\n')
@@ -242,7 +244,7 @@ For examples:
             self.unlock()
             sys.exit(1)
 
-    def update(self, repo_name):
+    def update(self, repo_name, scriptpath):
         
         self.logEvent("Updating repo %s" % repo_name, toStdout=False)
         
@@ -277,8 +279,12 @@ For examples:
             self.logErrorEvent('Unable to refresh repo: %s. Reason: %s' % (repo_name, e))
             self.unlock()
             sys.exit(1)
-            
-        self.logEvent("Finished deleting repo %s" % repo_name, toStdout=False)
+        
+
+        if scriptpath:
+            self.callScripts(scriptpath, repo)
+    
+        self.logEvent("Finished updating repo %s" % repo_name, toStdout=False)
  
     def flushCache(self, repo_name):
         
@@ -331,8 +337,9 @@ For examples:
         oldRepo = oldRepo[0]
 
         newRepo = self.dbs.Repos()
-        newRepo.reponame = oldRepo.reponame + '(snapshot %s)' % time.asctime() 
+        newRepo.reponame = oldRepo.reponame + '-snapshot %s' % time.asctime() 
         newRepo.reponame = newRepo.reponame.replace(':', '.')
+        newRepo.reponame = newRepo.reponame.replace(' ', '_')
         newRepo.installers = oldRepo.installers
         newRepo.ostype = oldRepo.ostype
         newRepo.kits = oldRepo.kits
@@ -350,6 +357,50 @@ For examples:
 
         self.logEvent("Finished creating snapshot for repo: %s" % repo_name, toStdout=False)
 
+    def callScripts(self, scriptpath, repo):
+       
+        scriptpath = path(scriptpath)
+
+        if not scriptpath.isdir():
+            return
+
+        env = os.environ.copy()
+        env['REPO_NAME'] = repo.reponame
+        env['REPO_ID'] = str(repo.repoid)
+        env['REPO_REPOSITORY'] = repo.repository
+        env['REPO_OSTYPE'] = repo.ostype 
+
+        for f in scriptpath.listdir():
+            if not f.isfile():
+                continue
+
+            st = f.stat()
+            mode = st[stat.ST_MODE]
+            if not (mode & stat.S_IEXEC):   # not executable
+                continue
+ 
+            cwd = scriptpath
+            cmd = f
+
+            retcode = 0
+            try:
+                p = subprocess.Popen(cmd,
+                                     cwd=cwd,
+                                     env = env,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+
+            except:
+                self.stderrMessage("Script: %s failed to run\n", f.basename())
+                self.logEvent("Script: %s failed to run" % f.basename()) 
+
+            if retcode:
+                self.stderrMessage("@ Script: %s failed to run\n", f.basename())
+                self.logEvent("@ Script: %s failed to run" % f.basename()) 
+     
     def repoExists(self, repo_name):
         repo = self.dbs.Repos.select_by(reponame=repo_name)
         
@@ -572,7 +623,7 @@ For examples:
                 self.addKit(options.reponame, options.kit, options.kitversion, options.kitarch)
         elif options.update:
             self.action = REPOMAN_UPDATE
-            self.update(options.reponame)
+            self.update(options.reponame, options.scriptpath)
         elif options.version:
             self.getVersion()
         elif options.flush_cache:
