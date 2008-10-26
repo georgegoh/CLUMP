@@ -56,7 +56,7 @@ class boothost:
         except:
             self.logErrorEvent(self._('DB_Query_Error'))
             sys.exit(-1)        
-        
+       
         # Get the installers here so it can be cached for other hosts
         self.installerIPs = []
         query = ('SELECT nics.ip, networks.subnet FROM nics, nodes, networks '
@@ -548,7 +548,12 @@ class boothost:
         
         self.kusuApp.logEvent(self._("boothost_event_finish_update_nodes"), toStdout=False)
         
-
+    def checkKusuProvision(self):
+        provision = self.db.getAppglobals('PROVISION')
+        if provision and provision != 'KUSU':
+            sys.stderr.write('Kusu provisioning has been disabled. boothost will not run.\n')
+            sys.exit(-1)        
+ 
 class BootHostApp(KusuApp):
 
     def __init__(self):
@@ -656,7 +661,7 @@ class BootHostApp(KusuApp):
             return "Update PXE config (nodegroup)"
         else:
             return KusuApp.getActionDesc(self)
-
+       
     def run(self):
         """run - Run the application"""
 
@@ -681,12 +686,15 @@ class BootHostApp(KusuApp):
             self.validateInitrd(self.newinitrd)
             
         if self.updatewhat == 'NodeList':
+            bhinst.checkKusuProvision()
             bhinst.genNodeListPXE(self.nodelist, self.newkernel,
                                   self.newinitrd, self.newkparms, self.state, self.localboot)
         elif self.updatewhat == 'NodeGroup':
+            bhinst.checkKusuProvision()
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
                                  self.newinitrd, self.newkparms, self.state, self.localboot)
         elif self.updatewhat == 'NodeUnSynced':
+            bhinst.checkKusuProvision()
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
                                  self.newinitrd, self.newkparms, self.state, self.localboot, 1)
         else:
