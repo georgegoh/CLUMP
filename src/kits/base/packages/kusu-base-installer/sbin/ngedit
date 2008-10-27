@@ -1108,15 +1108,17 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
     def doNewAction(self):
         # populate list of items to pick
         optionList = [('Partition', 'partition')]
-        pv_dict  = self.PartSchema.getPVMap()
-        #getpvmap returns a pv key and vg value. the value is none if
-        # the PV is unassociated, in which case we can add a new VG
-        # To add new LVs we check that there is at least 1 pv that is
-        # associated with a VG.
-        if pv_dict and [ vg for vg in pv_dict.values() if vg]:
-            optionList.append(('Logical Volume','log_vol'))
-        if pv_dict and [ vg for vg in pv_dict.values() if not vg]:
-            optionList.append(('Volume Group', 'vol_grp'))
+        provision = self.database.getAppglobals('PROVISION')
+        if provision == 'KUSU':
+            pv_dict  = self.PartSchema.getPVMap()
+           #getpvmap returns a pv key and vg value. the value is none if
+           # the PV is unassociated, in which case we can add a new VG
+           # To add new LVs we check that there is at least 1 pv that is
+           # associated with a VG.
+            if pv_dict and [ vg for vg in pv_dict.values() if vg]:
+                optionList.append(('Logical Volume','log_vol'))
+            if pv_dict and [ vg for vg in pv_dict.values() if not vg]:
+                optionList.append(('Volume Group', 'vol_grp'))
 
         button,item = self.selector.popupListBox(
             'Select type of device',
@@ -1195,7 +1197,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
 
     def drawImpl(self):
-
+        provision = self.database.getAppglobals('PROVISION')
         if not self.PartSchema:
             self.PartSchema = PartSchema() #triggers disk_profile creation (slow!)
             schema = self.PartSchema.mycreateSchema(curNG['parts'])
@@ -1204,55 +1206,45 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
         self.screenGrid = snack.Grid(1, 1)
 
-        self.listbox = kusuwidgets.ColumnListbox(height=8,
-                                 colWidths=[15,15,15,15],
-                                 colLabels=['Device', 'Size(MB) ', 'Type  ',
-                                            'Mount Point   '],
-                                 justification=[LEFT, RIGHT, LEFT, LEFT], 
-                                 returnExit=0)
+        if provision == 'KUSU':
+            self.listbox = kusuwidgets.ColumnListbox(height=8,
+                                                     colWidths=[15,15,15,15],
+                                                     colLabels=['Device ', 'Size(MB) ', 'Type  ',
+                                                                'Mount Point   '],
+                                                     justification=[LEFT,LEFT, LEFT, LEFT])
 
+            lvg_keys = schema['vg_dict'].keys()
 
-        #str2display = ''
-        #for d in schema.keys():
-        #    if type(schema[d]) == type({}):
-        #        str2display += d.upper()+'\n'
-        #        for k in schema[d].keys():
-        #            if type(schema[d][k]) == type({}):
-        #                str2display += "\t%s\n" %str(k).upper()
-        #                for k2 in schema[d][k].keys():
-        #                    str2display += "\t\t%s : %s\n" % (k2, schema[d][k][k2])
-        #            else:
-        #                str2display += "\t%s : %s\n" %(k, schema[d][k])
-        #    else:
-        #        str2display += '%s : %s\n' %(d.upper(), schema[d])
-        #self.selector.popupMsg("DEBUG", str2display, width = MAXWIDTH )
-
-        # retrieve info about logical volumes and lv groups
-        lvg_keys = schema['vg_dict'].keys()
-
-        for key in sorted(lvg_keys):
-            lvg = schema['vg_dict'][key] 
-            lvg_displayname = 'VG ' + key
-            lvg_size_MB = ''
+            for key in sorted(lvg_keys):
+                lvg = schema['vg_dict'][key] 
+                lvg_displayname = 'VG ' + key
+                lvg_size_MB = ''
             # display volume groups first in listbox
-            self.listbox.addRow(['VG ' + key,  str(lvg_size_MB), 'VolGroup',
-                                 ''], objRef=lvg['instid'])
+                self.listbox.addRow(['VG ' + key,  str(lvg_size_MB), 'VolGroup',
+                                     ''], objRef=lvg['instid'])
+                
+                lv_keys = lvg['lv_dict'].keys()
+                for lv_key in sorted(lv_keys):
+                    lv =  lvg['lv_dict'][lv_key] 
+                    lv_devicename = '  LV ' + lv_key
+                    lv_size_MB = lv['size_MB']   
+                    # display indented logical volumes belonging to the vg.
+                    self.listbox.addRow([lv_devicename, str(lv_size_MB),lv['fs'],
+                                         lv['mountpoint']], objRef=lv['instid'])
 
-            lv_keys = lvg['lv_dict'].keys()
-            for lv_key in sorted(lv_keys):
-                lv =  lvg['lv_dict'][lv_key] 
-                lv_devicename = '  LV ' + lv_key
-                lv_size_MB = lv['size_MB']   
-                # display indented logical volumes belonging to the vg.
-                self.listbox.addRow([lv_devicename, str(lv_size_MB),lv['fs'],
-                                    lv['mountpoint']], objRef=lv['instid'])
-
-
+	else:
+            self.listbox = kusuwidgets.ColumnListbox(height=8,
+                                 colWidths=[15,15,15],
+                                 colLabels=['Size(MB) ', 'Type  ',
+                                            'Mount Point   '],
+                                 justification=[LEFT, LEFT, LEFT], 
+                                 returnExit=0)
         disk_keys = schema['disk_dict'].keys()
         for key in sorted(disk_keys):
             # display device
             device = schema['disk_dict'][key]
-            self.listbox.addRow(['Disk '+str(key),  '', '', ''] ) 
+	    if provision == 'KUSU':
+            	self.listbox.addRow(['Disk '+str(key),  '', '', ''] ) 
             parts_dict =  device['partition_dict']          
             parts_keys = parts_dict.keys()
             for part_key in sorted(parts_keys):
@@ -1268,11 +1260,18 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                     if ispv and vg:
                         mountpoint = vg
                 # display partition info
-                self.listbox.addRow([part_devicename,
-                                    str(partition['size_MB']),
-                                    fs_type,
-                                    #mountpoint], partition['instid'])
-                                    mountpoint], partition['instid'])
+		if provision == 'KUSU':
+                    self.listbox.addRow([part_devicename,
+                                         str(partition['size_MB']),
+                                         fs_type,
+                                         #mountpoint], partition['instid'])
+                                         mountpoint], partition['instid'])
+		else:
+                    self.listbox.addRow([
+                            str(partition['size_MB']),
+                            fs_type,
+                            #mountpoint], partition['instid'])
+                            mountpoint], partition['instid'])
 
 
         if self.listbox.length < 1:
@@ -1373,10 +1372,12 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         self.PartRec = PartSchemaObj.getPartRecByPK(id)
         self.disk_key = None
         self.part_key = None
+        self.provision = self.database.getAppglobals('PROVISION')
         schema = PartSchemaObj.schema
         self.validationHelper =_screenValidationHelper(
             unmountable_partitions = ['physical volume','software RAID',\
                                           'linux-swap'])
+        self.kusu_specific_partitions = ['physical volume','software RAID','ntfs','fat32']
         self.__mntStore = self.validationHelper.NO_MNTPT
         if id != None:
             #we're editing - get the disk_key we belong to
@@ -1444,6 +1445,8 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         self.filesystem.setCallback_(self.fsToggleMountPoint)
 
         fs_types = self.PartSchemaObj.disk_profile.fsType_dict.keys()
+        if self.provision != 'KUSU':
+            fs_types = [fs for fs in fs_types if fs not in self.kusu_specific_partitions ] 
         fs_types.sort()
         for fs in fs_types:
             self.filesystem.addRow([fs], fs)
@@ -1485,7 +1488,7 @@ class scrPartSchema_PartEdit(USXBaseScreen):
 
         #preserve
         isOn = 0
-        if self.partition and self.partition['preserve'] == 1:
+        if self.provision == 'KUSU' and self.partition and self.partition['preserve'] == 1:
             isOn = 1
         self.do_not_format_partition = snack.Checkbox('Do not format partition', isOn = isOn)
                 
@@ -1496,7 +1499,8 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         subgrid = snack.Grid(2,1)
 
         subgrid.setField(self.filesystem, 0,0, padding=(0,0,2,0))
-        subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
+        if self.provision =='KUSU':
+            subgrid.setField(self.drives, 1,0, padding=(2,0,0,0))
         self.screenGrid.setField(subgrid, 0,1)
 
         subgrid = snack.Grid(2,1)
@@ -1508,8 +1512,8 @@ class scrPartSchema_PartEdit(USXBaseScreen):
         subgrid.setField(self.min_size, 0,0)
         subgrid.setField(self.min_size_entry, 1,0)
         self.screenGrid.setField(subgrid, 0,3, anchorLeft=1)
-
-        self.screenGrid.setField(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
+	if self.provision == 'KUSU':
+           self.screenGrid.setField(self.do_not_format_partition, 0,4, padding=(0,1,0,1))
     
     def collectFieldsIntoRec(self):
         partDataRec = PartDataRec()
