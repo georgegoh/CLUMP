@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 #
-# $Id:$
+# $Id$
 #
 
+from kusu.util.errors import *
 from kusu.core.app import KusuApp
 from kusu.core import database as db
 from kusu.hardware import probe
@@ -93,10 +94,10 @@ class App(KusuApp):
             self.getVersion()
             sys.exit(0)
 
-        verbose = False
-        if options.verbose: verbose = True
+        self.verbose = False
+        if options.verbose: self.verbose = True
 
-        self.submit(verbose)
+        self.submit()
             
 
     def getVersion(self):
@@ -207,6 +208,12 @@ class App(KusuApp):
 
     def getNetwork(self):
         net =  probe.getPhysicalInterfaces()
+
+        for k,v in net.iteritems():
+            if not v['device']: v['device'] = ''
+            if not v['vendor']: v['vendor'] = ''
+           
+            net[k] = v
         return net
 
     def getInterconnect(self):
@@ -259,7 +266,7 @@ class App(KusuApp):
 
         return {'verison': ver, 'build': build}
 
-    def prompt(self, data):
+    def prompt(self):
         msg = """Project Kusu respect your privacy. By registering your cluster...
 
 Do you wish to continue (y/n)?
@@ -274,25 +281,23 @@ Do you wish to continue (y/n)?
     def run(self):
         self.parseArgs()
 
-    def submit(self, verbose=False):
+    def getSysInfo(self):
         d = {}
 
-        self.prompt(d)
-
-        if verbose:
+        if self.verbose:
             print "Gathering kits information..."
         d['kits'] = self.getKits()
         
-        if verbose:
+        if self.verbose:
             print "Gathering distro information..."
         d['os'] = self.getDistro()
 
-        if verbose:
+        if self.verbose:
             print "Gathering Kusu version..."
         d['kusu version'] = {}
         d['kusu version'].update(self.getKusuRelease())
 
-        if verbose:
+        if self.verbose:
             print "Gathering system information..."
 
         d['sysinfo'] = {}
@@ -311,12 +316,16 @@ Do you wish to continue (y/n)?
             d['sysinfo']['cpu'].update(self.getCPU())
         except: pass
 
-        if verbose:
-            print "Registering your system..."
+        return d
 
+    def submit(self):
+
+        self.prompt()
+        
         try:
             errStr = ''
-            clusterid = self.svr.register(d) 
+            clusterid = self.svr.register(self.getSysInfo()) 
+            print
             print "Thank you for registering with Project Kusu."
             print "You are cluster #%s." % clusterid
 
