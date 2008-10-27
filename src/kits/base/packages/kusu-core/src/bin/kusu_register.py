@@ -101,7 +101,7 @@ class App(KusuApp):
             
 
     def getVersion(self):
-        self.stdoutMessage('kusu_register 1.0\n')
+        self.stdoutMessage('kusu_register 1.1\n')
  
     def getKits(self):
         kits = self.dbs.Kits.select()
@@ -338,6 +338,7 @@ Do you wish to continue (y/n)?
  
         if errStr:
             sys.stderr.write('Unable to register your system. Reason: %s\n' % errStr)
+            sys.stderr.write('Please try again later.\n')
             sys.exit(1)
 
 if __name__ == '__main__':
