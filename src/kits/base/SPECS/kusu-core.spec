@@ -62,6 +62,7 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/core-%{version}
 install -m755 bin/kusurc $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusuenv.sh $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusu-debug $RPM_BUILD_ROOT/opt/kusu/bin
+install -m755 bin/kusu_register.py $RPM_BUILD_ROOT/opt/kusu/bin/kusu_register
 
 %pre
 
@@ -88,6 +89,7 @@ fi
 /opt/kusu/bin/kusuenv.sh
 /opt/kusu/bin/kusurc
 /opt/kusu/bin/kusu-debug
+/opt/kusu/bin/kusu_register
 %doc /opt/kusu/share/doc/core-%{version}/COPYING
 
 %clean
