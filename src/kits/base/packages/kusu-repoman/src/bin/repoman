@@ -55,7 +55,7 @@ class RepoManApp(KusuApp):
                [-v | --version]
                [-l |  --list]
                [-s | --snapshot]
-               [-u | --update] [-s DIRECTORY | --script DIRECTORY]
+               [-u | --update]
                [--dbdriver]
                [--dbdatabase]
                [--dbuser]
@@ -102,7 +102,6 @@ For examples:
                                help=self._('Database password'))
         self.parser.add_option('--flush-cache', dest='flush_cache', action="store_true",
                                help=self._('flush repository cache'))
-        self.parser.add_option('-d', '--script', dest='scriptpath', help=self._('script directory'))
 
     def getVersion(self):
         self.stdoutMessage('Repoman 1.1\n')
@@ -244,7 +243,7 @@ For examples:
             self.unlock()
             sys.exit(1)
 
-    def update(self, repo_name, scriptpath):
+    def update(self, repo_name):
         
         self.logEvent("Updating repo %s" % repo_name, toStdout=False)
         
@@ -281,8 +280,10 @@ For examples:
             sys.exit(1)
         
 
-        if scriptpath:
-            self.callScripts(scriptpath, repo)
+		row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
+        if row: 
+			script_path =  row[0].kvalue
+			self.callScripts(scriptpath, repo)
     
         self.logEvent("Finished updating repo %s" % repo_name, toStdout=False)
  
@@ -623,7 +624,7 @@ For examples:
                 self.addKit(options.reponame, options.kit, options.kitversion, options.kitarch)
         elif options.update:
             self.action = REPOMAN_UPDATE
-            self.update(options.reponame, options.scriptpath)
+            self.update(options.reponame)
         elif options.version:
             self.getVersion()
         elif options.flush_cache:
