@@ -2,7 +2,7 @@
 .TH "addhost" "8" "Version: 1.1" "Mark Black" "Kusu Base"
 .SH "NAME"
 .LP 
-addhost \- Add hosts to the Kusu/OCS cluster.
+addhost \- Add hosts to the Kusu cluster.
 .SH "SYNTAX"
 .LP 
 \fBaddhost\fR [\-h|\-v|\-u]
@@ -37,7 +37,7 @@ You use \-b with any of the usages above to run addhost in batch mode.
 .LP 
 Addhost is a tool for adding/removing nodes (hosts) from the cluster.  The tool provides a Textual User Interface (TUI) when run with no arguments.  The tool will prompt for the information it needs to add hosts.  The use of this tool can be scripted and allows for the bulk addition of files through a MAC file.
 .LP 
-The nodes in the cluster that are managed by Kusu/OCS must be configured to boot from the network using PXE.  When adding nodes the \fBaddhost\fR tool should be run prior to booting the new nodes.
+The nodes in the cluster that are managed by Kusu must be configured to boot from the network using PXE.  When adding nodes the \fBaddhost\fR tool should be run prior to booting the new nodes.
 .LP 
 When adding nodes to the cluster interactively the tool will prompt for the nodegroup to add the hosts to and the network to listen on.  If the name format used by the nodegroup uses the rack number it will also prompt for the rack number.  The nodegroup the node is added to will control the installation of the node.  The network to listen on will control which network the installer node will listen for DHCP requests on.  The installer can install nodes from more than one NIC.
 .LP 
