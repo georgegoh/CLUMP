@@ -280,10 +280,10 @@ For examples:
             sys.exit(1)
         
 
-		row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
+        row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
         if row: 
-			script_path =  row[0].kvalue
-			self.callScripts(scriptpath, repo)
+            script_path =  row[0].kvalue
+            self.callScripts(scriptpath, repo)
     
         self.logEvent("Finished updating repo %s" % repo_name, toStdout=False)
  
