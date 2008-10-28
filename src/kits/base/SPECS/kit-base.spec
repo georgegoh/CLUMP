@@ -71,8 +71,7 @@ rm -rf $RPM_BUILD_ROOT
 # documentation
 /depot/www/kits/%{_name}/%{version}/*.html
 /depot/www/kits/%{_name}/%{version}/COPYING
-/depot/www/kits/%{_name}/%{version}/images/*/*
-/depot/www/kits/%{_name}/%{version}/styles/site.css
+/depot/www/kits/%{_name}/%{version}/kit_base_doc_source/*
 /depot/kits/%{_name}/%{version}/%{arch}/kitinfo
 
 # plugins
