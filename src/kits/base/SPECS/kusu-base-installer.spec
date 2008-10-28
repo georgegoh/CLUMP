@@ -22,7 +22,7 @@
 Summary: Kusu Base Installer
 Name: kusu-base-installer
 Version: 1.1
-Release: 1
+Release: 2
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
@@ -85,7 +85,7 @@ install -d $RPM_BUILD_ROOT/tftpboot/kusu/pxelinux.cfg
 install -d $RPM_BUILD_ROOT/opt/kusu/sbin
 install -d $RPM_BUILD_ROOT/opt/kusu/bin
 install -d $RPM_BUILD_ROOT/opt/kusu/cfm
-install -d $RPM_BUILD_ROOT/opt/kusu/etc
+install -d $RPM_BUILD_ROOT/opt/kusu/etc/templates
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/ui/text
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/ngedit
 install -d $RPM_BUILD_ROOT/opt/kusu/share/locale/en/LC_MESSAGES
@@ -118,6 +118,8 @@ install -m644 sbin/S02KusuNamed.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S02KusuUsrSkel.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S90KusuFirefox.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuCFMSync.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
+install -m644 sbin/S99KusuMigrateAppGlobals.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
+install -m644 sbin/S99KusuNoPreservePartition.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m755 sbin/boothost.py $RPM_BUILD_ROOT/opt/kusu/sbin/boothost
 install -m755 sbin/buildimage.py $RPM_BUILD_ROOT/opt/kusu/sbin/buildimage
 install -m755 sbin/buildinitrd.py $RPM_BUILD_ROOT/opt/kusu/sbin/buildinitrd
@@ -150,6 +152,7 @@ install -m644 sql/kusu_dbperms.sql $RPM_BUILD_ROOT/opt/kusu/sql
 install -m644 sql/kusu_alterdb.sql $RPM_BUILD_ROOT/opt/kusu/sql
 install -m644 locale/en/LC_MESSAGES/kusuapps.mo $RPM_BUILD_ROOT/opt/kusu/share/locale/en/LC_MESSAGES/
 install -m644 sql/kusu_primedb_sample.sql $RPM_BUILD_ROOT/opt/kusu/sql
+install -m644 etc/templates/kickstart.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 
 for i in `ls man/*.8`; do
     gzip -c $i >$RPM_BUILD_ROOT/opt/kusu/man/man8/`basename $i`.gz
@@ -178,6 +181,8 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /etc/rc.kusu.d/S90KusuCFM.rc.py*
 /etc/rc.kusu.d/S90KusuFirefox.rc.py*
 /etc/rc.kusu.d/S99KusuCFMSync.rc.py*
+/etc/rc.kusu.d/S99KusuMigrateAppGlobals.rc.py*
+/etc/rc.kusu.d/S99KusuNoPreservePartition.rc.py*
 /opt/kusu/bin/genconfig
 /opt/kusu/lib/python/kusu/addhost.py*
 /opt/kusu/lib/python/kusu/cfmnet.py*
@@ -224,6 +229,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/man/man8/repoman.8.gz
 /opt/kusu/man/man8/repopatch.8.gz
 /opt/kusu/man/man8/sqlrunner.8.gz
+/opt/kusu/etc/templates/kickstart.tmpl
 %defattr(-,apache,apache)
 /depot/repos/nodeboot.cgi
 /depot/kits
@@ -235,6 +241,9 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Tue Oct 28 2008 George Goh <ggoh@osgdc.org> 1.1-2
+- Added kickstart.tmpl
+- Added rc scripts to remove preserved partition rules and migrate AppGlobal values
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

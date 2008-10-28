@@ -21,7 +21,7 @@
 Summary: kit-base package
 Name: kit-base
 Version: 1.1
-Release: 1
+Release: 2
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
@@ -103,6 +103,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/zone.py*
 /opt/kusu/lib/plugins/genconfig/ssh.py*
 /opt/kusu/lib/plugins/genconfig/bashrc.py*
+/opt/kusu/lib/plugins/genconfig/kickstart.py*
 /opt/kusu/lib/plugins/cfmsync/getent-data.sh
 /opt/kusu/lib/plugins/ngedit/01-component-base-installer.py*
 /opt/kusu/lib/plugins/ngedit/02-component-base-installer.py*
@@ -120,6 +121,8 @@ rm -rf $RPM_BUILD_ROOT
 # Code necessary to cleanup the database from any entries inserted by the %post
 
 %changelog
+* Tue Oct 28 2008 George Goh <ggoh@osgdc.org> 1.1-2
+- Added kickstart plugin.
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release
