@@ -154,4 +154,4 @@ class thisReport(Report):
             t = Template(file='/opt/kusu/etc/templates/dhcpd.tmpl', searchList=[ns])  
             print str(t)
         else:
-	        print "# This machine is not the primary installer" 
+            print "# This machine is not the primary installer" 
