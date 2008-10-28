@@ -48,15 +48,14 @@ plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
 kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{arch}
 
 mkdir -p $docdir
-mkdir -p $docdir/images/border
-mkdir -p $docdir/styles
+mkdir -p $docdir/kit_base_doc_source
 mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit $plugdir/cfmsync
 mkdir -p $kitinfodir
 
+
 /usr/bin/install -m 444 docs/*.html    $docdir
-/usr/bin/install -m 444 docs/images/border/spacer.gif   $docdir/images/border/spacer.gif
-/usr/bin/install -m 444 docs/styles/site.css   $docdir/styles/site.css
 /usr/bin/install -m 444 docs/COPYING       $docdir
+/usr/bin/install -m 444 docs/kit_base_doc_source/* -t $docdir/kit_base_doc_source
 
 /usr/bin/install -m 444 plugins/addhost/*.py     $plugdir/addhost
 /usr/bin/install -m 444 plugins/genconfig/*.py    $plugdir/genconfig
