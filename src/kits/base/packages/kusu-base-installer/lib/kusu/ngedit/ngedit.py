@@ -1819,8 +1819,8 @@ class NodeGroup(NodeGroupRec):
         '''
                 
         # Run genconfig
-        plugin = "dhcpd" # plugin to generate kickstart
-        cmd = "genconfig %s" % plugin
+        plugin = "kickstart" # plugin to generate kickstart
+        cmd = "genconfig %s %s" % (plugin, self.PKval)
         try:
             p = subprocess.Popen(cmd, shell=True,
                                  stdout = subprocess.PIPE,
