@@ -241,9 +241,6 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Tue Oct 28 2008 George Goh <ggoh@osgdc.org> 1.1-2
-- Added kickstart.tmpl
-- Added rc scripts to remove preserved partition rules and migrate AppGlobal values
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

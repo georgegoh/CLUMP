@@ -121,8 +121,6 @@ rm -rf $RPM_BUILD_ROOT
 # Code necessary to cleanup the database from any entries inserted by the %post
 
 %changelog
-* Tue Oct 28 2008 George Goh <ggoh@osgdc.org> 1.1-2
-- Added kickstart plugin.
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release
