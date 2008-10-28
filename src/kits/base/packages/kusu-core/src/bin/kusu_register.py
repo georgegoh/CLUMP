@@ -188,7 +188,7 @@ class App(KusuApp):
                     try: txt = s[1].strip()
                     except: txt = ''
                     
-                    if key in ['Manufacturer', 'Product Name', 'Version', 'Serial Number']:
+                    if key in ['Manufacturer', 'Product Name', 'Version']:
                         if not dmiInfo.has_key('system'): dmiInfo['system']= {}
                         dmiInfo['system'][key.lower()] = txt
 
@@ -200,7 +200,7 @@ class App(KusuApp):
                     try: txt = s[1].strip()
                     except: txt = ''
                     
-                    if key in ['Manufacturer', 'Product Name', 'Version', 'Serial Number']:
+                    if key in ['Manufacturer', 'Product Name', 'Version']:
                         if not dmiInfo.has_key('mainboard'): dmiInfo['mainboard']= {}
                         dmiInfo['mainboard'][key.lower()] = txt
             
@@ -212,7 +212,8 @@ class App(KusuApp):
         for k,v in net.iteritems():
             if not v['device']: v['device'] = ''
             if not v['vendor']: v['vendor'] = ''
-           
+            if v.has_key('hwaddr'): del v['hwaddr']
+ 
             net[k] = v
         return net
 
