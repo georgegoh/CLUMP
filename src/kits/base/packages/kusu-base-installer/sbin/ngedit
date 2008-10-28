@@ -299,8 +299,10 @@ class scrNGEMain(USXBaseScreen):
                                  ])
         provision = self.database.getAppglobals('PROVISION')
         if provision == 'KUSU':
-            screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))       
+            screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))
+
         ks = USXNavigator(screenFactory, screenTitle="Node Group Edit", showTrail=False)
+
         ks.run()
 
         return NAV_NOTHING
@@ -1211,7 +1213,7 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                                      colWidths=[15,15,15,15],
                                                      colLabels=['Device ', 'Size(MB) ', 'Type  ',
                                                                 'Mount Point   '],
-                                                     justification=[LEFT,LEFT, LEFT, LEFT])
+                                                     justification=[LEFT,RIGHT, LEFT, LEFT])
 
             lvg_keys = schema['vg_dict'].keys()
 
@@ -1233,6 +1235,9 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
                                          lv['mountpoint']], objRef=lv['instid'])
 
 	else:
+            # add kickstart gen screen to sequence
+            self.selector.screens.insert(self.selector.currentStep+1,\
+                        scrNGEEdit_GenKickstart(database=self.database, kusuApp=self.kusuApp))
             self.listbox = kusuwidgets.ColumnListbox(height=8,
                                  colWidths=[15,15,15],
                                  colLabels=['Size(MB) ', 'Type  ',
@@ -2044,11 +2049,44 @@ class scrNGEEdit_End(USXBaseScreen):
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
-
         lblheader = snack.Label("Do you wish to update the nodes in this nodegroup now?")
-
         self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
              growx=1, anchorLeft=1)
+
+class scrNGEEdit_GenKickstart(USXBaseScreen):
+    name = 'Kickstart generation'
+    msg = 'Kickstart file generated -  please inspect:'
+    buttons = ['Update Kickstart', 'Do not update Kickstart']
+    def doForwardAction(self):
+        return NAV_FORWARD
+
+    def doUpdateAction(self):
+        ngid = curNG.PKval
+        autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+        if not os.path.exists(autoinst) : os.makedirs(autoinst)
+        ngpath = os.path.join(autoinst, str(ngid))
+        if not os.path.exists(ngpath) : os.makedirs(ngpath)
+        ksfile = os.path.join(ngpath, 'kickstart.cfg')
+        ks  = open(ksfile,'w') # overwrite
+        ks.write(self.output)
+        return NAV_FORWARD
+
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp,
+             gridWidth=gridWidth)
+        self.output = ''
+
+    def setCallbacks(self):
+         self.buttonsDict['Do not update Kickstart'].setCallback_(self.doForwardAction)
+         self.buttonsDict['Update Kickstart'].setCallback_(self.doUpdateAction)
+
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 1)
+        self.output  = curNG.genKickstart()
+        self.screenGrid.setField(snack.TextboxReflowed(text=self.output,maxHeight=10,
+                                                       width=self.gridWidth),0,0)
+        
 
 
 class scrNGEEdit_Scripts(USXBaseScreen):

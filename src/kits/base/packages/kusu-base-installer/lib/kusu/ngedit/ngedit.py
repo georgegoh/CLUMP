@@ -1814,6 +1814,25 @@ class NodeGroup(NodeGroupRec):
                     " at your earliest convenience by running\n%s" %cmd)
             else:
                 sys.stdout.write("Please update the nodes manually by running: %s\n" % cmd)
+    def genKickstart(self):
+        '''Generates kickstart file for nodes in the nodegroup and returns the string
+        '''
+                
+        # Run genconfig
+        plugin = "dhcpd" # plugin to generate kickstart
+        cmd = "genconfig %s" % plugin
+        try:
+            p = subprocess.Popen(cmd, shell=True,
+                                 stdout = subprocess.PIPE,
+                                 stderr = subprocess.PIPE)
+            (stdout,stderr) = p.communicate()
+        except OSError,e:
+            raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % e
+        if p.returncode != 0:
+            raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % stderr
+        return stdout
+
+        
 
     def __compHasInteractivePlugin(self, db, compId):                
         plugcinst = self.__importPlugin(compId, db)
@@ -2008,6 +2027,7 @@ class NodeGroup(NodeGroupRec):
             sys.stdout.write(_msg)
             
         kl.info("%s finished in %f sec. Output:\n%s" %(tool, (t2-t1),output))
+        return output #return output so this can be saved.
 
     def __expireNodes(self, db, diffNG):
         
