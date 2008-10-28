@@ -15,6 +15,8 @@ import sys
 import re
 import base64
 import xmlrpclib
+import StringIO
+import pprint
 from optparse import SUPPRESS_HELP, OptionParser
 
 try:
@@ -88,6 +90,7 @@ class App(KusuApp):
         try:
             self.dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
         except (UnsupportedDriverError, NoSuchDBError):
+            sys.stderr.write('Unable to connect to database.\n')
             sys.exit(1)
 
         if options.version:
@@ -96,9 +99,6 @@ class App(KusuApp):
 
         self.verbose = False
         if options.verbose: self.verbose = True
-
-        self.submit()
-            
 
     def getVersion(self):
         self.stdoutMessage('kusu_register 1.1\n')
@@ -267,11 +267,56 @@ class App(KusuApp):
 
         return {'verison': ver, 'build': build}
 
-    def prompt(self):
-        msg = """Project Kusu respect your privacy. By registering your cluster...
+    def prompt(self, data):
+         
+        sysinfo = StringIO.StringIO()
+        pprint.pprint(data, sysinfo)
+        sysinfo = sysinfo.getvalue()
 
-Do you wish to continue (y/n)?
-"""
+        msg = """Please register your Kusu Cluster to support Project Kusu.
+
+We are collecting the below information to track and display the growth of
+Kusu clusters globally. This registration is fully optional, but we would
+appreciate it very much if you will register and help support Project Kusu.
+The collected information will be collated and displayed at
+http://www.hpccommunity.org/kusu/knowncluster
+
+The following information will be collected from your master node:
+- Version of Kusu installed
+- The OS that you are running
+- The list of kits that are installed
+- CPU information
+- Total memory installed
+- Network interfaces installed
+- Motherboard information
+- Make/model of the system
+- IP
+
+Collected information:
+%s
+
+
+Project Kusu respects your privacy:
+
+Platform Computing only collects your personal information for the
+specific purpose stated at the time the information is requested from
+you. The personal information is not used for other purposes or sold or
+rented to third parties. Platform Computing reserves the right to
+disclose personal information in the following circumstances:
+
+     * to third parties who deliver Platform Computing publications to
+you- Platform may contract with a third party to assist us in managing
+certain functions on our Web, such as sending out our newsletters.
+Platform will only provide third party service providers with the
+information necessary to carry out the service
+
+     * in order to comply with laws and other legal procedures
+
+     * to protect the rights of Platform Computing
+
+
+
+Do you wish to continue (y/n)?""" % sysinfo
         print msg, 
         res = ''
         while not (res.lower() == 'y' or res.lower() == 'n'):
@@ -281,6 +326,7 @@ Do you wish to continue (y/n)?
 
     def run(self):
         self.parseArgs()
+        self.submit()
 
     def getSysInfo(self):
         d = {}
@@ -321,11 +367,12 @@ Do you wish to continue (y/n)?
 
     def submit(self):
 
-        self.prompt()
+        sysinfo = self.getSysInfo()
+        self.prompt(sysinfo)
         
         try:
             errStr = ''
-            clusterid = self.svr.register(self.getSysInfo()) 
+            clusterid = self.svr.register(sysinfo) 
             print
             print "Thank you for registering with Project Kusu."
             print "You are cluster #%s." % clusterid
