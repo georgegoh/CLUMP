@@ -287,19 +287,18 @@ class scrNGEMain(USXBaseScreen):
         screenFactory = NGEScreenFactory([
                                  scrNGEEdit_General(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Repo(database=self.database, kusuApp=self.kusuApp),
-#                                 scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Components(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Networks(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Packages(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_Modules(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Scripts(database=self.database, kusuApp=self.kusuApp),
-                                 #scrNGEEdit_PartSchema(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                  scrNGEEdit_End(database=self.database, kusuApp=self.kusuApp)
                                  ])
         provision = self.database.getAppglobals('PROVISION')
         if provision == 'KUSU':
             screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))
+        else:
+            screenFactory.screens.insert(7,scrNGEEdit_GenKickstart(database=self.database, kusuApp=self.kusuApp))
 
         ks = USXNavigator(screenFactory, screenTitle="Node Group Edit", showTrail=False)
 
@@ -1236,8 +1235,8 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
 
 	else:
             # add kickstart gen screen to sequence
-            self.selector.screens.insert(self.selector.currentStep+1,\
-                        scrNGEEdit_GenKickstart(database=self.database, kusuApp=self.kusuApp))
+#             self.selector.screens.insert(self.selector.currentStep+1,\
+#                         scrNGEEdit_GenKickstart(database=self.database, kusuApp=self.kusuApp))
             self.listbox = kusuwidgets.ColumnListbox(height=8,
                                  colWidths=[15,15,15],
                                  colLabels=['Size(MB) ', 'Type  ',
@@ -2092,10 +2091,10 @@ class scrNGEEdit_GenKickstart(USXBaseScreen):
 
 
     def drawImpl(self):
-         self.screenGrid = snack.Grid(1, 1)
+        self.screenGrid = snack.Grid(1, 2)
         lblheader = snack.Label("Do you wish to (re)generate the kickstart files for this nodegroup?")
         self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
-             growx=1, anchorLeft=1)
+                                 growx=1, anchorLeft=1)
 
 
 class scrNGEEdit_Scripts(USXBaseScreen):
