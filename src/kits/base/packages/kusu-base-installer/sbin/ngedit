@@ -2057,26 +2057,35 @@ class scrNGEEdit_GenKickstart(USXBaseScreen):
     name = 'Kickstart generation'
     msg = 'Kickstart file generated -  please inspect:'
     buttons = ['Yes', 'No']
+    def __init__(self, database, kusuApp=None, gridWidth=45):
+        USXBaseScreen.__init__(self, database, kusuApp=kusuApp,
+                               gridWidth=gridWidth)
+        self.update = False
     def doForwardAction(self):
-        curNG.genKickstart(self,False)
+        self.update = False
+        return NAV_FORWARD
+    def validate(self):
+        return True,'Success'
+
+    def formAction(self):
+        windowInst = self
+        ngid = curNG.PKval
+        output = curNG.genKickstart(self,self.update)
+        if self.update:
+            autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+            if not os.path.exists(autoinst) : os.makedirs(autoinst)
+            ngpath = os.path.join(autoinst, str(ngid))
+            if not os.path.exists(ngpath) : os.makedirs(ngpath)
+            ksfile = os.path.join(ngpath, 'kickstart.cfg')
+            ks  = open(ksfile,'w') # overwrite
+            ks.write(output)
+	    ks.close()
         return NAV_FORWARD
 
     def doUpdateAction(self):
-        self.output = curNG.genKickstart(self,True)
-        ngid = curNG.PKval
-        autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
-        if not os.path.exists(autoinst) : os.makedirs(autoinst)
-        ngpath = os.path.join(autoinst, str(ngid))
-        if not os.path.exists(ngpath) : os.makedirs(ngpath)
-        ksfile = os.path.join(ngpath, 'kickstart.cfg')
-        ks  = open(ksfile,'w') # overwrite
-        ks.write(self.output)
+        self.update = True
         return NAV_FORWARD
 
-    def __init__(self, database, kusuApp=None, gridWidth=45):
-        USXBaseScreen.__init__(self, database, kusuApp=kusuApp,
-             gridWidth=gridWidth)
-        self.output = ''
 
     def setCallbacks(self):
          self.buttonsDict['No'].setCallback_(self.doForwardAction)
