@@ -2056,11 +2056,13 @@ class scrNGEEdit_End(USXBaseScreen):
 class scrNGEEdit_GenKickstart(USXBaseScreen):
     name = 'Kickstart generation'
     msg = 'Kickstart file generated -  please inspect:'
-    buttons = ['Update Kickstart', 'Do not update Kickstart']
+    buttons = ['Yes', 'No']
     def doForwardAction(self):
+        curNG.genKickstart(self,False)
         return NAV_FORWARD
 
     def doUpdateAction(self):
+        self.output = curNG.genKickstart(self,True)
         ngid = curNG.PKval
         autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
         if not os.path.exists(autoinst) : os.makedirs(autoinst)
@@ -2077,16 +2079,16 @@ class scrNGEEdit_GenKickstart(USXBaseScreen):
         self.output = ''
 
     def setCallbacks(self):
-         self.buttonsDict['Do not update Kickstart'].setCallback_(self.doForwardAction)
-         self.buttonsDict['Update Kickstart'].setCallback_(self.doUpdateAction)
+         self.buttonsDict['No'].setCallback_(self.doForwardAction)
+         self.buttonsDict['Yes'].setCallback_(self.doUpdateAction)
 
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
-        self.output  = curNG.genKickstart()
-        self.screenGrid.setField(snack.TextboxReflowed(text=self.output,maxHeight=10,
-                                                       width=self.gridWidth),0,0)
-        
+        self.screenGrid = snack.Grid(1, 1)
+        lblheader = snack.Label("Do you wish to (re)generate the kickstart files for this nodegroup?")
+        self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
+             growx=1, anchorLeft=1)
 
 
 class scrNGEEdit_Scripts(USXBaseScreen):

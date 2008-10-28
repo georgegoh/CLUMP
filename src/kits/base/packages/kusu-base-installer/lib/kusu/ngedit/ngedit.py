@@ -1814,23 +1814,36 @@ class NodeGroup(NodeGroupRec):
                     " at your earliest convenience by running\n%s" %cmd)
             else:
                 sys.stdout.write("Please update the nodes manually by running: %s\n" % cmd)
-    def genKickstart(self):
+
+    def genKickstart(self,windowInst,generateKS):
         '''Generates kickstart file for nodes in the nodegroup and returns the string
         '''
                 
         # Run genconfig
         plugin = "kickstart" # plugin to generate kickstart
         cmd = "genconfig %s %s" % (plugin, self.PKval)
-        try:
-            p = subprocess.Popen(cmd, shell=True,
-                                 stdout = subprocess.PIPE,
-                                 stderr = subprocess.PIPE)
-            (stdout,stderr) = p.communicate()
-        except OSError,e:
-            raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % e
-        if p.returncode != 0:
-            raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % stderr
-        return stdout
+        if generateKS:
+            return self.__runTool('genconfig','%s %s' % ( plugin , self.PKval) ,windowInst)
+        else:
+            cmd = "genconfig %s %s" % (plugin, self.PKval)
+            if windowInst:
+                autoinst = windowInst.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+                windowInst.selector.popupMsg("kickstart reminder", "To update the nodes manually,"+\
+                                                 " please run the command:\n%s >> %s/%s/kickstart.cfg\n" % (cmd, autoinst, self.PKval))
+            else:
+                sys.stdout.write("Please update the nodes manually by running: %s\n and saving the output to the kickstart.cfg location" % cmd)
+                
+        
+#         try:
+#             p = subprocess.Popen(cmd, shell=True,
+#                                  stdout = subprocess.PIPE,
+#                                  stderr = subprocess.PIPE)
+#             (stdout,stderr) = p.communicate()
+#         except OSError,e:
+#             raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % e
+#         if p.returncode != 0:
+#             raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % stderr
+#         return stdout
 
         
 
