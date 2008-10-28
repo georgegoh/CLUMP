@@ -1,0 +1,139 @@
+# $Id$
+#
+#   Copyright 2008 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#   
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#
+#
+import os
+from kusu.genconfig import Report
+from kusu.core import database
+from primitive.installtool.commands import GenerateAutoInstallScriptCommand
+
+def createDB():
+    engine = os.getenv('KUSU_DB_ENGINE')
+    if engine == 'mysql':
+        dbdriver = 'mysql'
+    else:
+        dbdriver = 'postgres'
+    dbdatabase = 'kusudb'
+    dbuser = 'apache'
+    dbpassword = 'None'
+
+    return database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
+
+class thisReport(Report):
+    
+    def toolHelp(self):
+        print "Generates kickstart file for a nodegroup. Run via: # genconfig kickstart <ngid>"
+
+    def runPlugin(self, pluginargs):
+        """ Retrieve the required information to generate a kickstart file."""
+        if not pluginargs:
+            self.toolHelp()
+            return
+        else:
+            db = createDB()
+            # get the nodegroup ID.
+            ngid = pluginargs[0]
+            # work only if a valid nodegroup ID is given.
+            valid_ng = [x.ngid for x in db.NodeGroups.select()]
+            if int(ngid) not in valid_ng:
+                print "Supplied <ngid> %s  not found in database." % ngid
+                return
+            else:
+                # Retrieve NodeGroup object.
+                try:
+                    ng_obj = db.NodeGroups.selectfirst_by(ngid=ngid)
+                except Exception, e:
+                    print "Could not retrieve the NodeGroup object from database."
+                    return
+                # Retrieve os name, ver and arch.
+                try:
+                    # WARNING: Potentially breakable as this relies on the
+                    # format <os>-<ver>-<arch>.
+                    os,ver,arch = db.Repos.selectfirst_by(repoid=ng_obj.repoid).ostype.split('-')
+                except Exception, e:
+                    print "Could not retrieve the OS type and version."
+                    return
+                # Retrieve partition rules.
+                try:
+                    partition_rules = db.Partitions.select_by(ngid=ngid)
+                except Exception, e:
+                    print "Could not retrieve partition rules from database."
+                    return
+
+                # Retrieve Installation url.
+                try:
+                    # Get the Primary Installer's IP.
+                    pi_name = db.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
+                    pi_nics = db.Nodes.selectfirst_by(name=pi_name).nics
+                    pi_ip = filter(lambda x: x.network.type=='provision', pi_nics)[0].ip
+                    # Set up the installsrc.
+                    installsrc = 'http://%s/repo/%s' % (pi_ip, ng_obj.repoid)
+                except Exception, e:
+                    print "Could not get installation URL."
+                    return
+
+                # Retrieve network profile.
+                networkprofile = {}
+
+                # Retrieve root password. TODO: REPLACE DUMMY PASSWORD
+                try:
+                    rootpw = '$1$R0u07JQv$LDKTlairsxqxnAxC5Yfbe/'
+                except Exception, e:
+                    print "Could not retrieve root password from database."
+                    return
+                # Retrieve timezone.
+                try:
+                    tz = db.AppGlobals.selectfirst_by(kname='Timezone_zone').kvalue
+                except Exception, e:
+                    print "Could not retrieve timezone from database."
+                    return
+                # Retrieve language.
+                try:
+                    lang = db.AppGlobals.selectfirst_by(kname='Language').kvalue
+                except Exception, e:
+                    print "Could not retrieve language from database."
+                    return
+                # Retrieve keyboard.
+                try:
+                    keyb = db.AppGlobals.selectfirst_by(kname='Keyboard').kvalue
+                except Exception, e:
+                    print "Could not retrieve keyboard from database."
+                    return
+                # Retrieve package list.
+                try:
+                    packages = [x.packagename for x in db.Packages.select_by(ngid=ngid)]
+                except Exception, e:
+                    print "Could not retrieve package list from database."
+                    return
+
+            ic = GenerateAutoInstallScriptCommand(os={'name': os, 'version':ver},
+                                                  diskprofile=None,
+                                                  partitionrules=partition_rules,
+                                                  installsrc=installsrc,
+                                                  networkprofile=networkprofile,
+                                                  rootpw=rootpw,
+                                                  tz=tz,
+                                                  lang=lang,
+                                                  keyboard=keyb,
+                                                  packageprofile=packages,
+                                                  diskorder=[],
+                                                  instnum='',
+                                                  template_uri='file:///opt/kusu/etc/templates/kickstart.tmpl',
+                                                  outfile='/dev/stdout')
+            ic.execute()
