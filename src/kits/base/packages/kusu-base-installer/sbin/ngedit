@@ -2080,7 +2080,6 @@ class scrNGEEdit_GenKickstart(USXBaseScreen):
             ks  = open(ksfile,'w') # overwrite
             ks.write(output)
 	    ks.close()
-        return NAV_FORWARD
 
     def doUpdateAction(self):
         self.update = True
@@ -2093,8 +2092,7 @@ class scrNGEEdit_GenKickstart(USXBaseScreen):
 
 
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 1)
-        self.screenGrid = snack.Grid(1, 1)
+         self.screenGrid = snack.Grid(1, 1)
         lblheader = snack.Label("Do you wish to (re)generate the kickstart files for this nodegroup?")
         self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
              growx=1, anchorLeft=1)
