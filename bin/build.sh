@@ -65,19 +65,21 @@ if [ $ec -eq 0 ]; then
         scp *.iso build@ronin:build/kusu/release/$KUSU_VERSION
     else
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
-        mdkir -p $KUSU_REVISION
-        mkdir -p $KUSU_REVISION/ISO
-        mkdir -p $KUSU_REVISION/RPMS/{i386,noarch,x86_64}
-        mkdir -p $KUSU_REVISION/SRPMS
+        
+        DEST_PATH=$KUSU_VERSION/$KUSU_REVISION
+        mdkir -p $DEST_PATH
+        mkdir -p $DEST_PATH/ISO
+        mkdir -p $DEST_PATH/RPMS/{i386,noarch,x86_64}
+        mkdir -p $DEST_PATH/SRPMS
 
-        mv *.iso $KUSU_REVISION/ISO
-        cp src/kits/base/SRPMS/*.src.rpm $KUSU_REVISION/SRPMS
+        mv *.iso $DEST_PATH/ISO
+        cp src/kits/base/SRPMS/*.src.rpm $DEST_PATH/SRPMS
 
-        cp -r src/kits/base/RPMS/i386/*.rpm $KUSU_REVISION/RPMS/i386
-        cp -r src/kits/base/RPMS/noarch/*.rpm $KUSU_REVISION/RPMS/noarch
-        cp -r src/kits/base/RPMS/x86_64/*.rpm $KUSU_REVISION/RPMS/x86_64
+        cp -r src/kits/base/RPMS/i386/*.rpm $DEST_PATH/RPMS/i386
+        cp -r src/kits/base/RPMS/noarch/*.rpm $DEST_PATH/RPMS/noarch
+        cp -r src/kits/base/RPMS/x86_64/*.rpm $DEST_PATH/RPMS/x86_64
 
-        scp -r $KUSU_REVISION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
+        scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
     fi
 fi
 
