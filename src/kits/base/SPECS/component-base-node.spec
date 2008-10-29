@@ -42,6 +42,7 @@ Requires: primitive
 Requires: xinetd
 Requires: rsh-server
 Requires: rsh
+Requires: vim-enhanced
 
 %description
 This component provides the nodes with the Kusu tools for the 
