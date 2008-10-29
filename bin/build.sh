@@ -67,7 +67,7 @@ if [ $ec -eq 0 ]; then
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
         
         DEST_PATH=$KUSU_VERSION/$KUSU_REVISION
-        mdkir -p $DEST_PATH
+        mkdir -p $DEST_PATH
         mkdir -p $DEST_PATH/ISO
         mkdir -p $DEST_PATH/RPMS/{i386,noarch,x86_64}
         mkdir -p $DEST_PATH/SRPMS
