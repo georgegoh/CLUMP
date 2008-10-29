@@ -21,6 +21,7 @@
 import sys
 from path import path
 from kusu.genconfig import Report
+from kusu.core import database
 from kusu.ipfun import *
 from Cheetah.Template import Template
 
@@ -40,6 +41,17 @@ class thisReport(Report):
         plugin.  All plugins must implement this method.  This plugin will
         generate the dhcpd.conf file contents."""
 
+        engine = os.getenv('KUSU_DB_ENGINE')
+        if engine == 'mysql':
+            dbdriver = 'mysql'
+        else:
+            dbdriver = 'postgres'
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = 'None'
+
+        dbs = database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
         _ = self.gettext
         
         # Need to get the name of the primary installer so we can see which networks
@@ -49,6 +61,12 @@ class thisReport(Report):
             sys.stderr.write(_("genconfig_cannot_determine_primary_installer\n"))
             sys.exit(-1)
 
+        # Get the Primary Installer's IP.
+        try:
+            pi_nics = dbs.Nodes.selectfirst_by(name=installer).nics
+            pi_ip = filter(lambda x: x.network.type=='provision', pi_nics)[0].ip
+        except: pi_ip = ''
+ 
         # Get the max lease time
         leasetime = self.db.getAppglobals('DHCPLeaseTime')
         if not leasetime:
@@ -150,7 +168,8 @@ class thisReport(Report):
  
             ns = {'leasetime': leasetime, 
                   'dnsdomain': dnsdomain,
-                  'networks': networks}
+                  'networks': networks,
+                  'installerip': pi_ip}
             t = Template(file='/opt/kusu/etc/templates/dhcpd.tmpl', searchList=[ns])  
             print str(t)
         else:

@@ -6,7 +6,7 @@ option PXE.mtftp-ip code 1 = ip-address;
 
 # option-140 is the IP address of your SystemImager image server
 option option-140 code 140 = text;
-#option option-140 "$installerip";
+option option-140 "$installerip";
 
 #for $network in $networks
 subnet $network.subnet netmask $network.netmask {
