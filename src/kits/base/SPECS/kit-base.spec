@@ -26,7 +26,7 @@ License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
-BuildArch: noarch
+#BuildArch: noarch
 AutoReq: no
 Source: %{name}-%{version}.12.tar.gz
 URL: http://www.osgdc.org

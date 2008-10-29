@@ -38,7 +38,7 @@ KIT_PROPER_NAME = base
 KIT_VERSION = 1.1
 KIT_RELEASE = 1
 KIT_NAME = $(shell echo $(KIT_PROPER_NAME) | tr A-Z a-z)
-KIT_ARCH = noarch
+KIT_ARCH = $(shell uname -i)
 
 #
 # Section 2: Package Definitions
