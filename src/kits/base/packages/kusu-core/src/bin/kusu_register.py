@@ -372,6 +372,7 @@ Do you wish to continue (y/n)?""" % sysinfo
         
         try:
             errStr = ''
+            errCode = ''
             clusterid = self.svr.register(sysinfo) 
             print
             print "Thank you for registering with Project Kusu."
@@ -379,13 +380,14 @@ Do you wish to continue (y/n)?""" % sysinfo
 
         except xmlrpclib.Fault, err:
             errStr = err.faultString
+            errCode = err.faultCode
         except xmlrpclib.ProtocolError, err:
             errStr = err.errmsg
         except Exception, e:
             errStr = str(e)
  
         if errStr:
-            sys.stderr.write('Unable to register your system. Reason: %s\n' % errStr)
+            sys.stderr.write('Unable to register your system. Reason: %s %s\n' % (errCode,errStr))
             sys.stderr.write('Please try again later.\n')
             sys.exit(1)
 
