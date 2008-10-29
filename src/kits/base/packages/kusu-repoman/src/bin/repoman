@@ -280,7 +280,7 @@ For examples:
             sys.exit(1)
         
 
-        row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
         if row: 
             script_path =  row[0].kvalue
             self.callScripts(scriptpath, repo)
@@ -347,7 +347,7 @@ For examples:
         newRepo.save()
         newRepo.flush()
         
-        location = path('/depot/repos/%s' % newRepo.repoid)
+        location = path('/' + self.repos_root + '/%s' % newRepo.repoid)
         newRepo.repository = str(location)
         newRepo.save()
         newRepo.flush()
