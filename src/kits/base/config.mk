@@ -35,8 +35,8 @@
 #                     CPU architecture. This variable can be overriden.
 #
 KIT_PROPER_NAME = base
-KIT_VERSION = 5.1
-KIT_RELEASE = 18
+KIT_VERSION = 1.1
+KIT_RELEASE = 1
 KIT_NAME = $(shell echo $(KIT_PROPER_NAME) | tr A-Z a-z)
 KIT_ARCH = noarch
 
