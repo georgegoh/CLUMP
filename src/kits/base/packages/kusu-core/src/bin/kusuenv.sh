@@ -22,7 +22,7 @@ if [ -f /etc/fedora-release ]; then
     [[ `head -n 1 /etc/fedora-release` =~ '[0-9]+' ]]
     export KUSU_DISTVER=$BASH_REMATCH
 elif [ -f /etc/redhat-release ]; then
-    BUILD_DIST=`head -n 1 /etc/redhat-release | awk '{print $1}'`
+    KUSU_DIST=`head -n 1 /etc/redhat-release | awk '{print $1}'`
     case "$KUSU_DIST" in 
     "Red" )
         export KUSU_DIST=rhel
