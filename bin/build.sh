@@ -77,7 +77,7 @@ if [ $ec -eq 0 ]; then
         cp -r src/kits/base/RPMS/noarch/*.rpm $KUSU_REVISION/RPMS/noarch
         cp -r src/kits/base/RPMS/x86_64/*.rpm $KUSU_REVISION/RPMS/x86_64
 
-        scp -r $KUSU_REVISION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/
+        scp -r $KUSU_REVISION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
     fi
 fi
 
