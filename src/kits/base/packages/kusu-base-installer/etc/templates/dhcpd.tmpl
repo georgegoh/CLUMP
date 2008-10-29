@@ -3,6 +3,11 @@ omapi-port 7911;
 ddns-update-style none;
 option space PXE;
 option PXE.mtftp-ip code 1 = ip-address;
+
+# option-140 is the IP address of your SystemImager image server
+option option-140 code 140 = text;
+#option option-140 "$installerip";
+
 #for $network in $networks
 subnet $network.subnet netmask $network.netmask {
         default-lease-time $leasetime;
@@ -13,10 +18,6 @@ subnet $network.subnet netmask $network.netmask {
         #if $dnsdomain
         option domain-name "$dnsdomain";
         #end if
-
-        # option-140 is the IP address of your SystemImager image server
-        option option-140 code 140 = text;
-        option option-140 "$network.gateway";
 
         if substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {
                 filename  "pxelinux.0";
