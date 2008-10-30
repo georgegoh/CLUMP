@@ -10,8 +10,8 @@ from os.path import basename
 from socket import gethostname
 from kusu.util.testing import *
 from kusu.installer.defaults import *
-from kusu.partitiontool.partitiontool import DiskProfile
-import kusu.partitiontool.disk as disk
+from primitive.system.hardware.partitiontool import DiskProfile
+import primitive.system.hardware.disk as disk
 from nose import SkipTest
 
 class PartedPartition(object):

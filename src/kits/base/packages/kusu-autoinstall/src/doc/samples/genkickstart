@@ -10,7 +10,7 @@
 from kusu.autoinstall.scriptfactory import KickstartFactory
 from kusu.autoinstall.autoinstall import Script
 from kusu.autoinstall.installprofile import Kickstart
-from kusu.partitiontool.partitiontool import DiskProfile
+from primitive.system.hardware.partitiontool import DiskProfile
 from kusu.core import database as db
 
 def returnBytes(mega):

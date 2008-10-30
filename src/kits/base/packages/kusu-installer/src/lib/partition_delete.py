@@ -14,7 +14,6 @@ import partition
 from gettext import gettext as _
 from partition_new import *
 from kusu.util.errors import *
-import kusu.partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING

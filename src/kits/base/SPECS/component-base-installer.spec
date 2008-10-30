@@ -39,7 +39,6 @@ Requires: kusu-kitops
 Requires: kusu-networktool 
 Requires: kusu-path 
 Requires: primitive 
-Requires: kusu-partitiontool 
 Requires: kusu-repoman 
 Requires: python-sqlalchemy
 Requires: kusu-ui 

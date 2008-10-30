@@ -14,7 +14,7 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.util.errors import *
 from screen import InstallerScreen
 from util import isDiskOrderAmbiguous, remarkMBRs
-from kusu.partitiontool import DiskProfile
+from primitive.system.hardware.partitiontool import DiskProfile
 
 class WelcomeScreen(InstallerScreen):
     """This is the welcome screen."""

@@ -12,7 +12,7 @@ from kusu.util.structure import Struct
 from path import path
 from sets import Set
 from os.path import basename
-import kusu.partitiontool as pt
+import primitive.system.hardware.partitiontool as pt
 
 logger = kusulog.getKusuLog('installer.defaults')
 

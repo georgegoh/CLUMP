@@ -23,6 +23,8 @@ import os
 import pwd
 import string
 import sys
+from primitive.fetchtool.commands import FetchCommand
+from primitive.core.errors import CommandException
 
 sys.path.append("/opt/kusu/bin")
 sys.path.append("/opt/kusu/lib")
@@ -36,8 +38,6 @@ from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun
 import kusu.ipfun
 
-BootDir = '/tftpboot/kusu'
-
 class boothost:
     """This is the class containing the metdods for manipulating PXE files"""
     updatednodes = []    # This list will contain a list of the nodes acted on
@@ -46,9 +46,9 @@ class boothost:
     badnodes = []     # Keep track of invalid nodes
                          
     def __init__(self, gettext, kusuApp):
-        self.db           = KusuDB()            
+        self.db = KusuDB()            
         self._ = gettext
-        self.passdata     = pwd.getpwnam('apache')     # Cache this for later
+        self.passdata = pwd.getpwnam('apache')     # Cache this for later
         self.kusuApp = kusuApp
                 
         try:
@@ -559,6 +559,28 @@ class BootHostApp(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)   # Get the Lang stuff from the kusuapp class
         self.updatewhat = ''
+        self._retrieveDBData()
+
+    def _retrieveDBData(self):
+        self.db = KusuDB()            
+        try:
+            self.db.connect('kusudb', 'apache')
+        except:
+            self.logErrorEvent('DB_Query_Error')
+            sys.exit(-1)        
+        
+        # Get the installers here so it can be cached for other hosts
+        self.installerIPs = []
+        query = ('SELECT kvalue FROM appglobals where kname="PIXIE_ROOT"')
+        try:
+            self.db.execute(query)
+            self.BootDir = self.db.fetchone()
+        except:
+            self.logErrorEvent('DB_Query_Error')
+            sys.exit(-1)
+        if not self.BootDir:
+            self.logErrorEvent('DB_Query_Error')
+            sys.exit(-1)
 
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
@@ -643,16 +665,42 @@ class BootHostApp(KusuApp):
 
 
     def validateKernel(self, newkernel):
-        newkernelpath = os.path.join(BootDir, newkernel)
-        if not os.path.isfile(newkernelpath):
+        newkernelpath = os.path.join(self.BootDir, newkernel)
+        if not os.path.isfile(newkernelpath) and not os.path.isfile(newkernel):
             self.logErrorEvent(self._('boothost_no_such_kernel') % newkernel)
             sys.exit(-1)
     
+    def placeTFTPBootFile(self, file):
+        p = os.path.realpath(file)
+        if not p.startswith(os.path.realpath(self.BootDir)):
+            d,f = os.path.split(p)
+            if d:
+                try:
+                    # ignore leading '/'s
+                    end_slash = 0
+                    for i,v in enumerate(d):
+                        if v != '/':
+                            end_slash = i
+                            break
+                    d = d[end_slash:]
+                    destdir = os.path.join(self.BootDir, d)
+                    if not os.path.exists(destdir):
+                        os.makedirs(destdir)
+                    fc = FetchCommand(uri='file://' + p,
+                                      fetchdir=False,
+                                      destdir=os.path.join(self.BootDir, d),
+                                      overwrite=True)
+                    fc.execute()
+                except CommandException, e:
+                    self.logErrorEvent("Couldn't place kernel in tftpboot directory. %s" % str(e))
+
+
     def validateInitrd(self, newinitrd):
-        newinitrdpath = os.path.join(BootDir, newinitrd)
-        if not os.path.isfile(newinitrdpath):
+        newinitrdpath = os.path.join(self.BootDir, newinitrd)
+        if not os.path.isfile(newinitrdpath) and not os.path.isfile(newinitrd):
             self.logErrorEvent(self._('boothost_no_such_initrd') % newinitrd)
             sys.exit(-1)
+
 
     def getActionDesc(self):
         if self.updatewhat == 'NodeList':
@@ -681,10 +729,16 @@ class BootHostApp(KusuApp):
 
         if self.newkernel:
             self.validateKernel(self.newkernel)
+            # place kernel if absolute path given.
+            if os.path.split(self.newkernel)[0]:
+                self.placeTFTPBootFile(self.newkernel)
         
         if self.newinitrd:
             self.validateInitrd(self.newinitrd)
-            
+            # place initrd if absolute path given.
+            if os.path.split(self.newinitrd)[0]:
+                self.placeTFTPBootFile(self.newinitrd)
+           
         if self.updatewhat == 'NodeList':
             bhinst.checkKusuProvision()
             bhinst.genNodeListPXE(self.nodelist, self.newkernel,

@@ -9,8 +9,8 @@
 #
 
 import snack
+import primitive.system.hardware.partitiontool
 from gettext import gettext as _
-from kusu.partitiontool import partitiontool
 from kusu.ui.text import screenfactory
 from kusu.installer.finalactions import *
 from screen import InstallerScreen

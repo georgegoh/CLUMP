@@ -7,8 +7,8 @@
 
 from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
 from kusu.autoinstall.autoinstall import Script
-from kusu.partitiontool import DiskProfile
-from kusu.partitiontool.disk import Partition
+from primitive.system.hardware.partitiontool import DiskProfile
+from primitive.system.hardware.disk import Partition
 from kusu.installer.defaults import *
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.testing import runCommand

@@ -9,7 +9,7 @@ import re
 import os
 from path import path
 from kusu.core import rcplugin
-from kusu.hardware import probe 
+from primitive.system.hardware import probe 
 import sqlalchemy as sa
 import kusu.core.database as db
 from kusu.util.structure import Struct

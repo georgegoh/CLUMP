@@ -16,7 +16,7 @@ import subprocess
 import tempfile
 from path import path
 import os
-from kusu.partitiontool import DiskProfile
+from primitive.system.hardware.partitiontool import DiskProfile
 from kusu.util.errors import ParseNIISourceError
 
 def checkToolExists(tool):

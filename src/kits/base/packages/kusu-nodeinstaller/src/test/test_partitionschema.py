@@ -16,7 +16,8 @@ import subprocess
 import tempfile
 from path import path
 import os
-from kusu.partitiontool import DiskProfile, Disk, Partition
+from primitive.system.hardware.partitiontool import DiskProfile
+from primitive.sytem.hardware.disk import Disk, Partition
 from kusu.installer.defaults import Disk as SchemaDisk
 from kusu.installer.defaults import Partition as SchemaPartition
 from kusu.installer.defaults import LVMGroup as SchemaLVMGroup

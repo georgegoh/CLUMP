@@ -55,7 +55,6 @@ NGE_TEST    = 0x100
 
 #emulate ternary cond. expression - only avail. in 2.5 & up :(
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
-
 # TODO: consolidate constants in one place
 CFMBaseDir = "/etc/cfm"
 PluginsDir = "/opt/kusu/lib/plugins/ngedit"
@@ -2654,7 +2653,7 @@ def nxor(*args):
     return len([x for x in args if x]) == 1
 
 from kusu.ngedit.partition import *
-from kusu.partitiontool import partitiontool
+from primitive.system.hardware.partitiontool import DiskProfile
 
 LEFT    = -1
 CENTER  = 0
@@ -2668,7 +2667,7 @@ class PartSchema:
         if diskprofile:
             self.disk_profile = diskprofile
         else:
-            self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+            self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
 
         self.schema = None
         self.PartRecList = None

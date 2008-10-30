@@ -38,8 +38,8 @@ def closeTray(path):
  
 def addKitFromCDForm(baseScreen, kitops):
     """Add kit from CD. This displays the form."""
-    import kusu.hardware.probe
-    cdrom_dict = kusu.hardware.probe.getCDROM()
+    import primitive.system.hardware.probe
+    cdrom_dict = primitive.system.hardware.probe.getCDROM()
     cdrom_list = sorted(cdrom_dict.keys())
     cdrom_tulist = []
 

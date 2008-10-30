@@ -13,7 +13,7 @@ import snack
 from gettext import gettext as _
 from IPy import IP
 from kusu.ui.text import kusuwidgets
-from kusu.hardware import probe
+from primitive.system.hardware import probe
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *

@@ -6,8 +6,8 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 import sys
-from kusu.partitiontool import DiskProfile
-from kusu.partitiontool.disk import Partition
+from primitive.system.hardware.partitiontool import DiskProfile
+from primitive.system.hardware.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import *
 from kusu.nodeinstaller.partitionfilterchain import *

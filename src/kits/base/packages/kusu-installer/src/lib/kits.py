@@ -82,8 +82,8 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
     def installKitsOnBootMedia(self):
         """Install the kits on boot media (most likely base kit only)."""
 
-        import kusu.hardware.probe
-        cdrom_dict = kusu.hardware.probe.getCDROM()
+        import primitive.system.hardware.probe
+        cdrom_dict = primitive.system.hardware.probe.getCDROM()
         cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
 
         kl.debug('Media device list: %s', cdrom_list)
@@ -180,8 +180,8 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
 
         prog_dlg = self.selector.popupProgress('Ejecting cdrom(s)', 'Ejecing cdrom(s)...')
         from kusu.installer.kits_sourcehandlers import eject
-        import kusu.hardware.probe
-        cdrom_dict = kusu.hardware.probe.getCDROM()
+        import primitive.system.hardware.probe
+        cdrom_dict = primitive.system.hardware.probe.getCDROM()
         cdrom_list = [path('/dev/' + cd) for cd in cdrom_dict.keys()]
 
         for cdrom in cdrom_list:

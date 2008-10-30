@@ -470,8 +470,8 @@ class KitOpsApp(KusuApp):
         Attemp to find kit media.
         """
 
-        import kusu.hardware.probe
-        cdrom_dict = kusu.hardware.probe.getCDROM()
+        import primitive.system.hardware.probe
+        cdrom_dict = primitive.system.hardware.probe.getCDROM()
         cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
 
         kl.debug('Media device list: %s', cdrom_list)

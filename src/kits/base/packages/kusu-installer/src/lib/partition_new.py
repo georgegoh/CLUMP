@@ -11,7 +11,7 @@
 import snack
 import partition
 from gettext import gettext as _
-import kusu.partitiontool
+import primitive.system.hardware.partitiontool as partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING

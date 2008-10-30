@@ -14,13 +14,13 @@ from partition_new import *
 from partition_edit import *
 from partition_delete import *
 from defaults import *
-from kusu.partitiontool import partitiontool
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.util.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.testing import runCommand
+from primitive.system.hardware.partitiontool import DiskProfile
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -97,7 +97,7 @@ class PartitionScreen(InstallerScreen):
             while try_again:
                 try:
                     self.lvm_inconsistent = False
-                    self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True, ignore_errors=False)
+                    self.disk_profile = DiskProfile(fresh=False, probe_fstab=True, ignore_errors=False)
                     self.prompt_for_default_schema = True
                     try_again = False
                 except LVMInconsistencyError, e:
@@ -116,7 +116,7 @@ class PartitionScreen(InstallerScreen):
                     if str(retVal) == 'retry detection':
                         try_again = True
                     elif str(retVal) == 'ignore':
-                        self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=True)
+                        self.disk_profile = DiskProfile(fresh=False, probe_fstab=True)
                         self.prompt_for_default_schema=True
                         try_again = False
                     else:
@@ -127,7 +127,7 @@ class PartitionScreen(InstallerScreen):
                     err_msg += 'existing data on the disks. If you wish to continue, press '
                     err_msg += '"OK". Otherwise, please poweroff the machine now.'
                     self.selector.popupMsg('Disk Probe Error', err_msg)
-                    self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                    self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
                     self.prompt_for_default_schema = True
                     try_again = False
 
@@ -245,7 +245,7 @@ class PartitionScreen(InstallerScreen):
 
     def useDefaultSchema(self, ignore_disks):
         logger.debug('Default chosen')
-        self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+        self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
         self.prepareIgnoreList(ignore_disks)
         schema = vanillaSchemaLVM()
         logger.debug('%s' % schema)
@@ -272,7 +272,7 @@ class PartitionScreen(InstallerScreen):
                 do_not_use_disks.remove(d)
                 runCommand('dd if=/dev/zero of=%s bs=1k count=10' % 
                            self.disk_profile.disk_dict[d].path)
-            self.disk_profile = partitiontool.DiskProfile(fresh=False, probe_fstab=False)
+            self.disk_profile = DiskProfile(fresh=False, probe_fstab=False)
             self.prepareIgnoreList(do_not_use_disks)
 
         exists = False
@@ -305,7 +305,7 @@ class PartitionScreen(InstallerScreen):
                 result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
                 if result:
                     logger.debug('Clear all partitions')
-                    self.disk_profile = partitiontool.DiskProfile(fresh=True, probe_fstab=False)
+                    self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
                     self.prepareIgnoreList(do_not_use_disks)
                 else:
                     msg = 'Do you want to use the default schema, or edit '

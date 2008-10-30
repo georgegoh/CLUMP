@@ -44,13 +44,13 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'kusu-md5crypt',
                 'kusu-networktool',
                 'kusu-nodeinstaller',
-                'kusu-partitiontool',
                 'kusu-path',
                 'python-sqlite2',
                 'kusu-repoman',
                 'python-sqlalchemy',
                 'kusu-ui',
-                'kusu-util']
+                'kusu-util',
+                'primitive']
                 
 CURRENT_PKGS = []
 

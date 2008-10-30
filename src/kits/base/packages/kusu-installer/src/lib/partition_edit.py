@@ -13,7 +13,6 @@ import partition
 from gettext import gettext as _
 from partition_new import *
 from os.path import basename
-import kusu.partitiontool
 from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog

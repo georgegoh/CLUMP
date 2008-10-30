@@ -22,8 +22,8 @@ from kusu.installer.util import remarkMBRs
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
 from kusu.ui.text.navigator import Navigator
-from kusu.partitiontool.nodes import checkAndMakeNode
-from kusu.partitiontool import DiskProfile
+from primitive.system.hardware.nodes import checkAndMakeNode
+from primitive.system.hardware.partitiontool import DiskProfile
 
 class NodeInstallerApp(KusuApp):
     

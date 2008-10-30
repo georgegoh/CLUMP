@@ -96,8 +96,7 @@ updatesimg: init
 	bin/gen-updatesimg ;
 	@if [ -f ./updates.img ]; then \
 		echo "Generated updates.img"; \
-	fi; \
-	
+	fi;
 
 clean:
 	@echo "====================================================================" ;

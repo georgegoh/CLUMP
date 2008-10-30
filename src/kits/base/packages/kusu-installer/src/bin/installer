@@ -28,7 +28,7 @@ from kusu.core.app import KusuApp
 from kusu.ui.text.navigator import Navigator
 from kusu.installer.kusufactory import ScreenFactoryImpl
 from kusu.util.errors import *
-from kusu.partitiontool.nodes import checkAndMakeNode
+from primitive.system.hardware.nodes import checkAndMakeNode
 
 class KusuInstaller(Navigator, KusuApp):
     """Framework for displaying installation steps and screens.
@@ -60,12 +60,12 @@ if __name__ == '__main__':
         kl.addFileHandler('/dev/tty3')
 
     # setup disks.
-    import kusu.hardware.probe
-    disks_dict = kusu.hardware.probe.getDisks()
+    import primitive.system.hardware.probe
+    disks_dict = primitive.system.hardware.probe.getDisks()
     disks_str = disks_dict.keys()
     for d in disks_dict.values():
         disks_str += d['partitions']
-    disks_str += kusu.hardware.probe.getCDROM().keys()
+    disks_str += primitive.system.hardware.probe.getCDROM().keys()
   
     for dev in disks_str:
        checkAndMakeNode('/dev/' + dev)

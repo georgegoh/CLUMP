@@ -5,8 +5,8 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.partitiontool import DiskProfile
-from kusu.partitiontool.disk import Partition
+from primitive.system.hardware.partitiontool import DiskProfile
+from primitive.system.hardware.disk import Partition
 from kusu.installer.defaults import setupDiskProfile
 #from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
