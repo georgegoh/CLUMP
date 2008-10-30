@@ -59,6 +59,7 @@ include ../kits.mk
 
 BASE_KIT_VERSION_STR=$(shell grep "^Version: " SPECS/$(PKG_KIT_SPEC) | awk '{print $$2}')
 BASE_KIT_RELEASE_STR=$(shell grep "^Release: " SPECS/$(PKG_KIT_SPEC) | awk '{print $$2}')
+BASE_KIT_ARCH_STR=$(shell uname -i)
 
 COMPONENT_BASE_INSTALLER_VERSION_STR=$(shell grep "^Version: " SPECS/$(PKG_COMPONENT_BASE_INSTALLER_SPEC) | awk '{print $$2}')
 COMPONENT_BASE_INSTALLER_RELEASE_STR=$(shell grep "^Release: " SPECS/$(PKG_COMPONENT_BASE_INSTALLER_SPEC) | awk '{print $$2}')
@@ -78,6 +79,7 @@ kitinfo:
     -e 's%$${COMPONENT_GNOME_DESKTOP_VERSION_STR}%$(COMPONENT_GNOME_DESKTOP_VERSION_STR)%g' \
     -e 's%$${COMPONENT_GNOME_DESKTOP_RELEASE_STR}%$(COMPONENT_GNOME_DESKTOP_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_VERSION_STR}%$(BASE_KIT_VERSION_STR)%g' \
+    -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
 	packages/kit-base/kitinfo.in >packages/kit-base/kitinfo
 
