@@ -80,6 +80,6 @@ kitinfo:
     -e 's%$${COMPONENT_GNOME_DESKTOP_RELEASE_STR}%$(COMPONENT_GNOME_DESKTOP_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_VERSION_STR}%$(BASE_KIT_VERSION_STR)%g' \
     -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
-    -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
+    -e 's%$${BASE_KIT_ARCH_STR}%$(BASE_KIT_ARCH_STR)%g' \
 	packages/kit-base/kitinfo.in >packages/kit-base/kitinfo
 
