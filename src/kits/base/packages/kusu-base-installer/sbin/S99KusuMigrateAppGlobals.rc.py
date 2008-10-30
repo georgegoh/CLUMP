@@ -22,6 +22,7 @@ class KusuRC(rcplugin.Plugin):
                        'DEPOT_IMAGES_ROOT': '/depot/images',
                        'DEPOT_REPOS_ROOT': '/depot/repos',
                        'DEPOT_REPOS_SCRIPTS': '/depot/repos/custom_scripts',
+                       'DEPOT_REPOS_POST': '/depot/repos/post_scripts',
                        'DEPOT_CONTRIB_ROOT': '/depot/contrib',
                        'DEPOT_UPDATES_ROOT': '/depot/updates',
                        'DEPOT_AUTOINST_ROOT': '/depot/repos/instconf',

@@ -279,7 +279,7 @@ For examples:
             sys.exit(1)
         
 
-        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POSTSCRIPT')
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POST')
         if row: 
             script_path =  row[0].kvalue
             self.callScripts(scriptpath, repo)
