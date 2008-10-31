@@ -250,6 +250,35 @@ class App(KusuApp):
             
         return cpuDict
 
+    def getTotalNodes(self):
+        try:
+            nodes = len(self.dbs.Nodes.select())
+        except: nodes = 0
+
+        return nodes
+
+    def getTotalCPU(self):
+
+        totalcpu = 0
+        nodecpu = 0
+        try:
+            cmd = "pdsh -N -a 'grep -i processor /proc/cpuinfo'"
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+            if out:
+                nodecpu = len(out.strip().split('\n'))
+        except:
+            pass
+
+        totalcpu = len(self.getCPU().keys()) + nodecpu
+    
+        return totalcpu
+
     def getKusuRelease(self):
         release = path('/etc/kusu-release')
         ver = ''
@@ -362,6 +391,14 @@ Do you wish to continue (y/n)?""" % sysinfo
             d['sysinfo']['cpu'] = {}
             d['sysinfo']['cpu'].update(self.getCPU())
         except: pass
+
+        if self.verbose:
+            print "Gathering total nodes count..."
+        d['total nodes'] = self.getTotalNodes()
+
+        if self.verbose:
+            print "Gathering total cpu count..."
+        d['total cpu'] = self.getTotalCPU()
 
         return d
 
