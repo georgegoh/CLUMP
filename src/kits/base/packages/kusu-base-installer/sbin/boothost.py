@@ -574,7 +574,7 @@ class BootHostApp(KusuApp):
         query = ('SELECT kvalue FROM appglobals where kname="PIXIE_ROOT"')
         try:
             self.db.execute(query)
-            self.BootDir = self.db.fetchone()
+            self.BootDir = self.db.fetchone()[0]
         except:
             self.logErrorEvent('DB_Query_Error')
             sys.exit(-1)
