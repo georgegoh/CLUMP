@@ -38,6 +38,7 @@ Requires: kusu-hardware
 Requires: kusu-kitops 
 Requires: kusu-networktool 
 Requires: kusu-path 
+Requires: kusu-md5crypt
 Requires: primitive 
 Requires: kusu-repoman 
 Requires: python-sqlalchemy

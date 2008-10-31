@@ -18,6 +18,11 @@
 #
 #
 import os
+import md5crypt
+import time
+import string
+from random import choice
+
 from kusu.genconfig import Report
 from kusu.core import database
 from primitive.installtool.commands import GenerateAutoInstallScriptCommand
@@ -39,6 +44,10 @@ class thisReport(Report):
     
     def toolHelp(self):
         print "Generates kickstart file for a nodegroup. Run via: # genconfig kickstart <ngid>"
+
+    def getRandomSeq(self, length=8, chars=string.letters + string.digits):
+        """Return a random sequence length chars long."""
+        return ''.join([choice(chars) for i in range(length)])
 
     def runPlugin(self, pluginargs):
         """ Retrieve the required information to generate a kickstart file."""
@@ -91,11 +100,10 @@ class thisReport(Report):
                 # Retrieve network profile.
                 networkprofile = {}
 
-                # Retrieve root password. TODO: REPLACE DUMMY PASSWORD
                 try:
-                    rootpw = '$1$R0u07JQv$LDKTlairsxqxnAxC5Yfbe/'
+                    rootpw = md5crypt.md5crypt(str(self.getRandomSeq()), str(time.time()));
                 except Exception, e:
-                    print "Could not retrieve root password from database."
+                    print "Could not generate root password."
                     return
                 # Retrieve timezone.
                 try:
