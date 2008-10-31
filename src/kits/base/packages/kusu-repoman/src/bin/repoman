@@ -282,7 +282,7 @@ For examples:
         row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POST')
         if row: 
             script_path =  row[0].kvalue
-            self.callScripts(scriptpath, repo)
+            self.callScripts(script_path, repo)
     
         self.logEvent("Finished updating repo %s" % repo_name, toStdout=False)
  
