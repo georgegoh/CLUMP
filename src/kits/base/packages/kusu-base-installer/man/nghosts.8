@@ -5,11 +5,11 @@
 nghosts \- Tool for switching nodes into different nodegroups.
 .SH "SYNTAX"
 .LP 
-\fBnghost\fR  \- For interactive menues
+\fBnghosts\fR  \- For interactive menus
 .LP 
-\fBnghost\fR [ \-h | \-l | \-v |\-g <Nodegroup>]  \- For information
+\fBnghosts\fR [ \-h | \-l | \-v |\-g <Nodegroup>]  \- For information
 .LP 
-\fBnghost\fR [\-f <SrcNG>|\-m <HostList>] \-t <DestNG> \-a <Rack> \- To move nodes
+\fBnghosts\fR [\-f <SrcNG>|\-m <HostList>] \-t <DestNG> \-a <Rack> \- To move nodes
 .SH "DESCRIPTION"
 .LP 
 The Nodegroup Hosts Editor (nghosts) is a textual user interface for manipulating the nodegroup the hosts belong to.  The tool can be run interactively, or from the command line.  If no arguments are given the Textual User Interface (TUI) will start.  
@@ -22,7 +22,7 @@ The following options are available:
 .SH "OPTIONS"
 .LP 
 .TP 
-\fB\-a <\fIRankNumber\fR>, \-\-rack=<\fIRackNumber\fR>\fR
+\fB\-a <\fIRackNumber\fR>, \-\-rack=<\fIRackNumber\fR>\fR
 Some destination nodegroups may be using a host naming scheme that incorporates the rack number into it.  This option specified the rack number to be used when naming these nodes. 
 .TP 
 \fB\-m <\fIHostList\fR>, \-\-move\-hosts=<\fIHostList\fR>\fR
@@ -59,6 +59,9 @@ Listing the nodes in nodegroup compute\-diskless\-test
    nghosts \-g compute\-diskless\-test
 .LP 
 Move nodegroup compute\-diskless\-test nodes to compute\-diskless\-New.
+.LP
+   nghosts \-f compute\-diskless\-test \-t compute\-diskless\-New
+.LP
 
 .SH "AUTHORS"
 .LP 
