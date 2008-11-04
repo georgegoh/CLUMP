@@ -27,16 +27,10 @@ svn info ../ | grep URL | grep tags/RELEASE
 RELEASE_BUILD=$?
 
 if [ "$RELEASE_BUILD" -eq 0 ]; then 
-    sed -e "s%@KUSU_BUILD_DIST@%$KUSU_BUILD_DIST%" \
-        -e "s%@KUSU_BUILD_DISTVER@%$KUSU_BUILD_DISTVER%" \
-        -e "s%@KUSU_BUILD_ARCH@%$KUSU_BUILD_ARCH%" \
-        -e "s%@KUSU_REVISION@%$KUSU_REVISION%" \
+    sed -e "s%@KUSU_REVISION@%$KUSU_REVISION%" \
         config.mk > ../config.mk
 else
-    sed -e "s%@KUSU_BUILD_DIST@%$KUSU_BUILD_DIST%" \
-        -e "s%@KUSU_BUILD_DISTVER@%$KUSU_BUILD_DISTVER%" \
-        -e "s%@KUSU_BUILD_ARCH@%$KUSU_BUILD_ARCH%" \
-        -e "s%@KUSU_REVISION@%$KUSU_REVISION.daily%" \
+    sed  -e "s%@KUSU_REVISION@%$KUSU_REVISION.daily%" \
         config.mk > ../config.mk
 fi
 
