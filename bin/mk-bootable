@@ -191,7 +191,7 @@ def mkISOLinuxDir(rootdir, buildprofile):
         
     # grab the ks.cfg
     kscfg = os.path.join(trunk, \
-                    'src/dists/%(distro)s/%(version)s/%(arch)s/ks.cfg' %
+                    'src/dists/%(distro)s/%(version)s/%(arch)s/initrd/ks.cfg' %
                     {'distro':buildprofile.distro,
                     'version':buildprofile.version,
                     'arch':buildprofile.arch})
@@ -208,7 +208,7 @@ def mkISOLinuxDir(rootdir, buildprofile):
                     {'distro':buildprofile.distro,
                     'version':buildprofile.version,
                     'arch':buildprofile.arch})
-
+    print 'Using %s.' % bootmsg
     if not os.path.exists(bootmsg):
         print 'Cannot find %s! Please ensure that the SVN source is correct!' % bootmsg
         sys.exit(-1)

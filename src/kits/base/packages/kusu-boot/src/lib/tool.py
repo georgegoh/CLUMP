@@ -354,13 +354,13 @@ class BootMediaTool:
                 self.mkImagesDir(srcpath,imagesdir,patchfile)
 
                 # put in the ks.cfg
-                p = kususrc.srcpath / 'src/dists/%s/%s/%s/ks.cfg' % (d.ostype,d.getVersion(),arch)
+                p = kususrc.srcpath / 'src/dists/%s/%s/%s/initrd/ks.cfg' % (d.ostype,d.getVersion(),arch)
                 kscfg = path(p)
                 if kscfg.exists(): 
                     kscfg.copy(tmpdir)
                 
                 # put in the isolinux.cfg
-                p = kususrc.srcpath / 'src/dists/%s/%s/%s/isolinux.cfg' % (d.ostype,d.getVersion(),arch)
+                p = kususrc.srcpath / 'src/dists/%s/%s/%s/initrd/isolinux.cfg' % (d.ostype,d.getVersion(),arch)
                 isocfg = path(p)
                 if isocfg.exists(): 
                     path(isolinuxdir / 'isolinux.cfg').remove()

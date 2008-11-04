@@ -189,6 +189,12 @@ if __name__ == '__main__':
             
         distP = subprocess.Popen("grep VERSION /etc/SuSE-release | awk -F' = ' '{print $2}' | sed 's/\.//'",shell=True,stdout=subprocess.PIPE)
         distver = distP.stdout.read().strip(os.linesep)
+        
+    if 'KUSU_BUILD_DIST' in os.environ.keys():
+        dist = os.environ['KUSU_BUILD_DIST']
+        
+    if 'KUSU_BUILD_DISTVER' in os.environ.keys():
+        distver = os.environ['KUSU_BUILD_DISTVER']
     
     print 'KUSU_DIST=%s' % dist
     print 'KUSU_DISTVER=%s' % distver
