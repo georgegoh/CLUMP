@@ -163,7 +163,7 @@ class NodeInfo:
             else:
                 boot=0
             #Line 2
-                print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
                 
         # Partition Info
         #default is 7 lines
