@@ -17,7 +17,6 @@
 #
 
 # global kusu build params.
-KUSU_DISTRO_SRC=/mnt/share/@KUSU_BUILD_DIST@-@KUSU_BUILD_DISTVER@-@KUSU_BUILD_ARCH@
 
 # global kusu build params.
 ifdef KUSU_BUILD_DIST
@@ -35,6 +34,8 @@ KUSU_DISTRO_ARCH=$(KUSU_BUILD_ARCH)
 else
 KUSU_DISTRO_ARCH=x86_64
 endif
+
+KUSU_DISTRO_SRC=/mnt/share/$(KUSU_DISTR_NAME)-$(KUSU_DISTRO_VERSION)-$(KUSU_DISTRO_ARCH)
 
 KUSU_TOPDIR=`pwd`
 KUSU_RPM_TMPPATH=/tmp/kusu
