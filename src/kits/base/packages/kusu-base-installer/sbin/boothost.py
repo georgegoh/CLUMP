@@ -23,13 +23,14 @@ import os
 import pwd
 import string
 import sys
+
+sys.path.append("/opt/primitive/libexec")
+sys.path.append("/opt/primitive/lib")
 from primitive.fetchtool.commands import FetchCommand
 from primitive.core.errors import CommandException
 
 sys.path.append("/opt/kusu/bin")
 sys.path.append("/opt/kusu/lib")
-sys.path.append("/opt/primitive/libexec")
-sys.path.append("/opt/primitive/lib")
 import platform
 if platform.machine() == "x86_64":
     sys.path.append("/opt/kusu/lib64/python")
