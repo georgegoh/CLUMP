@@ -31,7 +31,7 @@ FILTERED_KITS = ['base',
                  'ntop', 'ganglia', 'cacti']
 
 class Server:
-    def __init__(self, url='http://www.hpccommunity.org/xmlrpc.php'):
+    def __init__(self, url='http://www.hpccommunity.org/XMLRPC'):
         self.server = xmlrpclib.Server(url)
 
     def register(self, data):
@@ -406,7 +406,7 @@ Do you wish to continue (y/n)?""" % sysinfo
 
         sysinfo = self.getSysInfo()
         self.prompt(sysinfo)
-        
+                
         try:
             errStr = ''
             errCode = ''
@@ -414,6 +414,13 @@ Do you wish to continue (y/n)?""" % sysinfo
             print
             print "Thank you for registering with Project Kusu."
             print "You are cluster #%s." % clusterid
+            print "Your hardware information has been saved to /tmp/kusu_register.txt."
+
+
+            f = open('/tmp/kusu_register.txt', 'w')
+            f.write('%s\n\n' % clusterid)
+            pprint.pprint(sysinfo, f)
+            f.close()
 
         except xmlrpclib.Fault, err:
             errStr = err.faultString
@@ -423,6 +430,7 @@ Do you wish to continue (y/n)?""" % sysinfo
         except Exception, e:
             errStr = str(e)
  
+
         if errStr:
             sys.stderr.write('Unable to register your system. Reason: %s %s\n' % (errCode,errStr))
             sys.stderr.write('Please try again later.\n')
