@@ -317,13 +317,14 @@ For examples:
             self.logErrorEvent('Cannot delete repo: %s. In use by nodegroup(s).' % repo_name)
             self.unlock()
             sys.exit(1)
-        else:
-            p = path(self.prefix or '/') / self.repos_root / str(repo.repoid)
-            if p.exists(): p.rmtree()
-
-            repo.repos = None
-            repo.delete()
-            repo.flush()
+        
+        try:
+            r = self.rfinst.getRepo(repo.repoid)
+            r.delete()
+        except Exception, e:
+            self.logErrorEvent('Unable to delete repo: %s. Reason: %s' % (repo_name, e))
+            self.unlock()
+            sys.exit(1)
             
         self.logEvent("Finished deleting repo %s" % repo_name, toStdout=False)            
 

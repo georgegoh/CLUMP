@@ -197,7 +197,11 @@ class BaseRepo(object):
     def delete(self, repoid_or_reponame=None):
         """delete the repository from disk and database"""
 
-        repoid = self.getRepoID(repoid_or_reponame)
+        if not self.repo_path:
+            repoid = self.getRepoID(repoid_or_reponame)
+        else:
+            repoid = self.repoid
+        
         if not repoid:
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
 
@@ -206,7 +210,7 @@ class BaseRepo(object):
 
         # Removes files
         if repo_path.exists(): repo_path.rmtree()
-        if cache_path.exists(): repo_path.rmtree()
+        if cache_path.exists(): cache_path.rmtree()
 
         # clean up database: repos and repos_have_kit table
         repos_have_kits = self.db.ReposHaveKits.select_by(repoid=repoid)
