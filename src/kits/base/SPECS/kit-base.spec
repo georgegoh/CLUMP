@@ -16,7 +16,6 @@
 #
 %define _unpackaged_files_terminate_build 0
 %define _name base
-%define arch noarch
 
 Summary: kit-base package
 Name: kit-base
@@ -45,7 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 
 docdir=$RPM_BUILD_ROOT/depot/www/kits/%{_name}/%{version}
 plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
-kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{arch}
+kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{_arch}
 
 mkdir -p $docdir
 mkdir -p $docdir/kit_base_doc_source
@@ -72,7 +71,7 @@ rm -rf $RPM_BUILD_ROOT
 /depot/www/kits/%{_name}/%{version}/*.html
 /depot/www/kits/%{_name}/%{version}/COPYING
 /depot/www/kits/%{_name}/%{version}/kit_base_doc_source/*
-/depot/kits/%{_name}/%{version}/%{arch}/kitinfo
+/depot/kits/%{_name}/%{version}/%{_arch}/kitinfo
 
 # plugins
 /opt/kusu/lib/plugins/addhost/00-boothost.py*
