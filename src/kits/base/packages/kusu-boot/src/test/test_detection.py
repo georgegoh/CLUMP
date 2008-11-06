@@ -10,7 +10,21 @@ import os
 from kusu.boot.distro import DistroFactory
 from path import path
 import tempfile
+import urllib
 
+url = 'http://www.osgdc.org/pub/build/tests/modules/boot/'
+centos_release = {'0': 'centos-release-notes-5.0.0-2.i386.rpm',
+                  '1': 'centos-release-notes-5.1.0-2.i386.rpm',
+                  '2': 'centos-release-notes-5.2-2.i386.rpm'}
+rhel_release = {'0': 'redhat-release-5Server-5.0.0.9.i386.rpm', 
+                '1': 'redhat-release-5Server-5.1.0.2.i386.rpm', 
+                '2': 'redhat-release-5Server-5.2.0.4.i386.rpm'}
+
+def downloadFiles(fn):
+    global url
+
+    urllib.urlretrieve(url + fn.basename(), fn)
+                                                                     
 class TestCentOS4Detection:
     """Test suite for detecting CentOS installation sources"""
     
@@ -507,6 +521,38 @@ class TestRHEL5Detection:
         rhelObj = DistroFactory(self.rhelLocalPath)
         assert rhelObj.getVersion() == '5'
 
+    def test_RHELCDMajorVersion (self):
+        """Test if the version is correct for the RHEL media"""
+
+        rhelObj = DistroFactory(self.rhelLocalPath)
+        assert rhelObj.getMajorVersion() == '5'
+       
+    def test_RHELCDMinorVersion (self):
+        """Test if the version is correct for the RHEL media"""
+
+        global rhel_release
+
+        for minor in ['0', '1', '2']:
+            downloadFiles(self.rhelLocalPath / 'Server' / rhel_release[minor])
+
+            rhelObj = DistroFactory(self.rhelLocalPath)
+            assert rhelObj.getMinorVersion() == minor
+
+            (self.rhelLocalPath / 'Server' / rhel_release[minor]).remove()
+
+    def test_RHELCDVersionString (self):
+        """Test if the version is correct for the RHEL media"""
+
+        global rhel_release
+
+        for minor in ['0', '1', '2']:
+            downloadFiles(self.rhelLocalPath / 'Server' / rhel_release[minor])
+
+            rhelObj = DistroFactory(self.rhelLocalPath)
+            assert rhelObj.getVersionString() == '5.' + minor
+
+            (self.rhelLocalPath / 'Server' / rhel_release[minor]).remove()
+
     def test_RHELGetKernelPackages(self):
         """ Test to get the kernel packages. """
 
@@ -644,7 +690,39 @@ class TestCentOS5Detection:
         
         centosObj = DistroFactory(self.centosLocalPath)
         assert centosObj.getVersion() == '5'
-        
+       
+    def test_test_CentOSCDMajorVersion (self):
+        """Test if the version is correct for the CentOS media"""
+
+        centosObj = DistroFactory(self.centosLocalPath)
+        assert centosObj.getMajorVersion() == '5'
+       
+    def test_CentOSCDMinorVersion (self):
+        """Test if the version is correct for the CentOS media"""
+
+        global centos_release
+
+        for minor in ['0', '1', '2']:
+            downloadFiles(self.centosLocalPath / 'CentOS' / centos_release[minor])
+
+            centosObj = DistroFactory(self.centosLocalPath)
+            assert centosObj.getMinorVersion() == minor
+
+            (self.centosLocalPath / 'CentOS' / centos_release[minor]).remove()
+
+    def test_CentOSCDVersionString (self):
+        """Test if the version is correct for the CentOS media"""
+
+        global centos_release
+
+        for minor in ['0', '1', '2']:
+            downloadFiles(self.centosLocalPath / 'CentOS' / centos_release[minor])
+
+            centosObj = DistroFactory(self.centosLocalPath)
+            assert centosObj.getVersionString() == '5.' + minor
+
+            (self.centosLocalPath / 'CentOS' / centos_release[minor]).remove()
+
     def test_CentOSGetKernelPackages(self):
         """ Test to get the kernel packages. """
 

@@ -11,6 +11,7 @@ from path import path
 import os
 import re
 from kusu.util.errors import FileAlreadyExists, CopyError
+from kusu.util.rpmtool import RPM
 from ConfigParser import ConfigParser
 
 
@@ -40,6 +41,9 @@ class DistroInstallSrcBase(object):
         self.isAdditionalType = False
         self.ostype = None
         self.version = None
+        self.versionString = None
+        self.majorVersion = None
+        self.minorVersion = None
         self.arch = None
         self.pathLayoutAttributes = {}
         self.patchLayoutAttributes = {}
@@ -172,6 +176,18 @@ class DistroInstallSrcBase(object):
     def getVersion(self):
         '''virtual function to be implemented by specific distro children'''
         return self.version
+
+    def getMajorVerson(self):
+        '''virtual function to be implemented by specific distro children'''
+        return self.majorVersion
+
+    def getMinorVersion(self):
+        '''virtual function to be implemented by specific distro children'''
+        return self.minorVersion
+
+    def getVersionString(self):
+        '''virtual function to be implemented by specific distro children'''
+        return self.versionString
 
     def getArch(self):
         return self.arch
@@ -974,6 +990,28 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
         }
 
 
+    def getMajorVersion(self):
+        '''CentOS specific way of getting the distro version'''
+
+        self.majorVersion = self.getVersion()
+        return self.majorVersion
+
+    def getMinorVersion(self):
+        '''CentOS specific way of getting the distro version'''
+
+        r = RPM(str(self.getReleasePkg()))
+        self.minorVersion = r.getVersion().split('.')[1]
+ 
+        return self.minorVersion
+
+    def getVersionString(self):
+        '''CentOS specific way of getting the distro version'''
+         
+        r = RPM(str(self.getReleasePkg()))
+        self.versionString = '.'.join(r.getVersion().split('.')[:2])
+
+        return self.versionString
+ 
     def getVersion(self):
         '''CentOS specific way of getting the distro version'''
         return self.version
@@ -1097,6 +1135,30 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
+    def getReleasePkg(self):
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+
+                kpkgs =  [f for f in root.walkfiles('centos-release-notes*rpm')]
+                if kpkgs: return kpkgs[0]
+        except OSError:
+            pass
+
+ 
     # syntatic sugar
     getKernelRpms = getKernelPackages
 
@@ -1304,6 +1366,28 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 errmsg = 'Write permission denied: %s' % path(dest).parent
                 raise CopyError, errmsg
 
+    def getMajorVersion(self):
+        '''Redhat specific way of getting the distro version'''
+
+        self.majorVersion = self.getVersion()
+        return self.majorVersion
+
+    def getMinorVersion(self):
+        '''Redhat specific way of getting the distro version'''
+
+        r = RPM(str(self.getReleasePkg()))
+        self.minorVersion = r.getRelease().split('.')[1]
+ 
+        return self.minorVersion
+
+    def getVersionString(self):
+        '''Redhat specific way of getting the distro version'''
+         
+        r = RPM(str(self.getReleasePkg()))
+        self.versionString = '.'.join(r.getRelease().split('.')[:2])
+
+        return self.versionString
+ 
     def getVersion(self):
         '''Redhat specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
@@ -1364,6 +1448,30 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             pass
 
         return kpkgs
+
+    def getReleasePkg(self):
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('redhat-release-5Server*rpm')]
+                kpkgs.extend(li)
+        except OSError:
+            pass
+
+        return kpkgs[0]
 
     # syntatic sugar
     getKernelRpms = getKernelPackages
