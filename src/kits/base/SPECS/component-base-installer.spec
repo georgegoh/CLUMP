@@ -46,8 +46,8 @@ Requires: kusu-ui
 Requires: kusu-util 
 Requires: kusu-nodeinstaller-patchfiles
 Requires: kusu-nodeinstaller 
-Requires: mysql
-Requires: mysql-server
+#Requires: mysql
+#Requires: mysql-server
 Requires: dhcp
 Requires: xinetd
 Requires: tftp-server
@@ -55,7 +55,7 @@ Requires: syslinux
 Requires: httpd
 Requires: python
 Requires: python-devel
-Requires: MySQL-python
+#Requires: MySQL-python
 Requires: python-psycopg2
 Requires: createrepo
 Requires: rsync

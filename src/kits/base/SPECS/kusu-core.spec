@@ -29,7 +29,7 @@ Vendor: Project Kusu
 BuildArch: noarch
 Source: %{name}-%{version}.%{subversion}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: MySQL-python
+#Requires: MySQL-python
 Requires: python-psycopg2
 BuildRequires: python
 URL: http://www.osgdc.org
