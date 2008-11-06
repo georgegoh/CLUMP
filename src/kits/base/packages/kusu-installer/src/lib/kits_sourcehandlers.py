@@ -12,6 +12,8 @@ from kusu.util.errors import *
 from kusu.ui.text.navigator import NAV_BACK
 import kusu.util.log as kusulog
 import os
+import re
+
 try:
     import subprocess
 except:
@@ -146,13 +148,14 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     """
     verified = True
     err_list = []
-    if kiprofile['OS'] != distro.ostype:
+    ostype = re.compile('[a-z]+').findall(distro.ostype)[0]    
+    if kiprofile['OS'] != ostype:
         err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
-                                               distro.ostype or 'Unknown'))
+                                               ostype or 'Unknown'))
         verified = False
 
     distro_ver = distro.getVersion() or 'Unknown'
-    if distro.ostype in ['rhel', 'centos'] and distro_ver != 'Unknown':
+    if ostype in ['rhel', 'centos'] and distro_ver != 'Unknown':
         distro_ver = distro_ver.split('.')[0]
     if kiprofile['OS_VERSION'] != distro_ver:
         err_list.append('Version:%s Media Version:%s' % (kiprofile['OS_VERSION'].ljust(5),
@@ -183,8 +186,8 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         eject(cdrom)
         return
         
-        
-    if kit['name'] != baseScreen.kiprofile['OS'] or \
+    kit_name = re.compile('[a-z]+').findall(kit['name'])[0]
+    if kit_name != baseScreen.kiprofile['OS'] or \
        kit['ver'] != baseScreen.kiprofile['OS_VERSION'] or \
        kit['arch'] != baseScreen.kiprofile['OS_ARCH']:
         out, err = eject(cdrom)

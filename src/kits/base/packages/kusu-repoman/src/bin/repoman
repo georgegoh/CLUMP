@@ -174,7 +174,8 @@ For examples:
 
                 else:
                     if kit.isOS:
-                        repo.ostype = '%s-%s-%s' % (kname,kversion,karch)
+                        real_kname = re.compile('[a-z]+').findall(kname)[0]
+                        repo.ostype = '%s-%s-%s' % (real_kname,kversion,karch)
 
                     repo.kits.append(kit)
                     repo.save()

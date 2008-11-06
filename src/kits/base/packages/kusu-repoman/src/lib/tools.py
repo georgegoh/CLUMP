@@ -72,7 +72,7 @@ def kitInUse(dbs, kid):
     else:
         return False
 
-def getOS(dbs, repoid_or_ngname):
+def getOS(dbs, repoid_or_ngname, major=True):
     """Returns OS (rname, version, arch) tuple from database 
        based on the repoid or nodegroup name"""
 
@@ -101,8 +101,12 @@ def getOS(dbs, repoid_or_ngname):
         raise RepoOSKitError, '\'%s\' has more than 1 OS Kit' % key
     else:
         kit = kit[0]
-   
-    return (kit.rname, kit.version, kit.arch)
+
+    if major: 
+        real_kname = re.compile('[a-z]+').findall(kit.rname)[0]
+    else:
+        real_kname = kit.rname
+    return (real_kname, kit.version, kit.arch)
 
 def getKits(dbs, ngname):
     """Returns a list of kits for a nodegroup"""

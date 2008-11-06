@@ -483,7 +483,7 @@ class KitOps:
         kit = {} #a struct to hold the kit info for the distro
         kit['ver'] = osdistro.getVersion()          #os kit version in the db
         kit['arch'] = osdistro.getArch()            #os kit arch in the db
-        kit['name'] = osdistro.ostype.lower()
+        kit['name'] = osdistro.ostype.lower() + osdistro.getVersionString()
         kit['longname'] = '%s-%s-%s' % (kit['name'], kit['ver'], kit['arch'])
         kit['sum'] = 'OS kit for %s %s %s' % \
                         (kit['name'], kit['ver'], kit['arch'])

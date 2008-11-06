@@ -77,8 +77,8 @@ class BaseRepo(object):
 
     def getOSPath(self):
         """Get the OS path for the repository"""
-
-        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
+        
+        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid, False)
         return self.getKitPath(os_name, os_version, os_arch)
 
     def getRepoCachePath(self, repoid = None):
