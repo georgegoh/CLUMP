@@ -188,8 +188,8 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
        kit['ver'] != baseScreen.kiprofile['OS_VERSION'] or \
        kit['arch'] != baseScreen.kiprofile['OS_ARCH']:
         out, err = eject(cdrom)
-        baseScreen.selector.popupMsg('Wrong OS disk', 'Inserted OS disk does ' + \
-                                     'not match selected operating system: %s.' + \
+        baseScreen.selector.popupMsg('Wrong OS disk', 'Inserted OS disk does ' \
+                                     'not match selected operating system: %s.' \
                                      ' Please insert the correct disc.' % \
                                      baseScreen.kiprofile['OS'])
         return
