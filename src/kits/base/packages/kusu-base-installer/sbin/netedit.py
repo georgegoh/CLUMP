@@ -231,7 +231,7 @@ class NetworkRecord(object):
            query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
-                self._description_field, self._startip_field, int(self._inc_field), str(bool(int(self._dhcp_checkbox))), self._type_field)
+                self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox), self._type_field
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
