@@ -226,7 +226,7 @@ class NetworkRecord(object):
         if not self._subnet_field and not self._network_field and not self._startip_field:
            query = "INSERT INTO networks (device, suffix, options, netname, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._device_field, self._suffix_field, self._option_field, \
-                self._description_field, 1, 'True', self._type_field)
+                self._description_field, 1, 1, self._type_field)
         else:
            query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
                 ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
