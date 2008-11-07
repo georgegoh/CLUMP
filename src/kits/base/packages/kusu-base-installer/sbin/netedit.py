@@ -205,10 +205,10 @@ class NetworkRecord(object):
     def updateNetworkEntry(self, currentItem):
         
         query = "UPDATE networks SET network='%s',subnet='%s',device='%s',suffix='%s',gateway='%s',options='%s',netname='%s', \
-                 startip='%s',inc=%d,usingdhcp=%d,type='%s' WHERE netid=%d" % (self._network_field, self._subnet_field, \
+                 startip='%s',inc=%d,usingdhcp=%s,type='%s' WHERE netid=%d" % (self._network_field, self._subnet_field, \
                  self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
                  self._description_field, self._startip_field, int(self._inc_field), \
-                 str(bool(int(self._dhcp_checkbox))), self._type_field, int(currentItem))
+                 bool(int(self._dhcp_checkbox)), self._type_field, int(currentItem))
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
@@ -225,13 +225,13 @@ class NetworkRecord(object):
 
         if not self._subnet_field and not self._network_field and not self._startip_field:
            query = "INSERT INTO networks (device, suffix, options, netname, inc, usingdhcp, type) VALUES \
-                ('%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._device_field, self._suffix_field, self._option_field, \
-                self._description_field, 1, 1, self._type_field)
+                ('%s', '%s', '%s', '%s', '%d', '%s', '%s')" % (self._device_field, self._suffix_field, self._option_field, \
+                self._description_field, 1, True, self._type_field)
         else:
            query = "INSERT INTO networks (network, subnet, device, suffix, gateway, options, netname, startip, inc, usingdhcp, type) VALUES \
-                ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')" % (self._network_field, \
+                ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s')" % (self._network_field, \
                 self._subnet_field, self._device_field, self._suffix_field, self._gateway_field, self._option_field, \
-                self._description_field, self._startip_field, int(self._inc_field), int(self._dhcp_checkbox), self._type_field
+                self._description_field, self._startip_field, int(self._inc_field), bool(int(self._dhcp_checkbox)), self._type_field)
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
