@@ -26,6 +26,7 @@ import time
 import signal
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
+from kusu.core import database
 import snack
 from kusu.ui.text.USXscreenfactory import USXBaseScreen, ScreenFactory
 from kusu.ui.text.USXnavigator import *
@@ -44,6 +45,18 @@ ADDHOST_ADD_STATIC_IP = 0x02
 ADDHOST_IMPORT_MACS = 0x04
 ADDHOST_DEL = 0x08
 ADDHOST_UPDATE = 0x10
+
+def createDB():
+    engine = os.getenv('KUSU_DB_ENGINE')
+    if engine == 'mysql':
+        dbdriver = 'mysql'
+    else:
+        dbdriver = 'postgres'
+    dbdatabase = 'kusudb'
+    dbuser = 'apache'
+    dbpassword = 'None'
+
+    return database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
 
 class NodeData:
@@ -104,6 +117,7 @@ class AddHostApp(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)
 
+        self._db = createDB()
         self.__db = KusuDB()
         self.action = ADDHOST_LISTEN
         self.haveInterface = False
@@ -497,11 +511,12 @@ class AddHostApp(KusuApp):
             msg = kusuApp._("addhost_options_invalid_interface")
             return False, msg            
                          
-        # Read in list of mac addresses
-        
-        macfileList = [line for line in open(myNodeInfo.macfile,'r') if len(line.strip()) > 0]
+        # Read in list of mac addresses, each line follows the format(optional parameters in enclosed in []):
+        # MAC [Desired IP] [Desired Hostname]
+        macfileList = [line.split() for line in open(myNodeInfo.macfile,'r') if len(line.strip()) > 0]
     
-        for macaddr in macfileList:
+        for line in macfileList:
+             macaddr = line[0]
              if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
                 self.stdoutMessage(kusuApp._("Skipping '%s'. Not a MAC address") + "\n", macaddr.strip())
                 continue
@@ -509,8 +524,22 @@ class AddHostApp(KusuApp):
              macaddr = macaddr.lower().strip()
              checkMacAddr = myNode.findMACAddress(macaddr)
              if checkMacAddr == False:
-		 myNode.setRankNumber(myNodeInfo.nodeRankNumber)
-                 nodeName = myNode.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False, snackInstance=False)
+                 myNode.setRankNumber(myNodeInfo.nodeRankNumber)
+                 ng = self._db.NodeGroups.selectfirst_by(ngid=ngid)
+                 if ng.installtype == 'unmanaged':
+                     unmanaged=True
+                 else:
+                     unmanaged=False
+                 # Get optional parameters from mac line
+                 ipaddr = None
+                 hostname = None
+                 # don't process the rest of the line on the first error
+                 if len(line) > 1 and kusu.ipfun.validIP(line[1]):
+                     ipaddr = line[1]
+                     if len(line) > 2:
+                         hostname = line[2]
+
+                 nodeName = myNode.addNode(macaddr, myNodeInfo.selectedNodeInterface, installer=False, unmanaged=unmanaged, snackInstance=False, ipaddr=ipaddr, hostname=hostname)
                  msg = kusuApp._("addhost_imported_mac") % (macaddr,nodeName)
                  self.logEvent(msg)
                  

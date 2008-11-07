@@ -223,9 +223,11 @@ class NodeFun(object, KusuApp):
 
     def _getAllNodes(self):
         nodes = []
+#        sqlquery = 'SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
+#                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") AND NOT \
+#                    nodes.ngid=(SELECT ngid FROM nodegroups WHERE ngname = "unmanaged")'
         sqlquery = 'SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
-                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") AND NOT \
-                    nodes.ngid=(SELECT ngid FROM nodegroups WHERE ngname = "unmanaged")'
+                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")'
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
         for node in data:
@@ -337,7 +339,7 @@ class NodeFun(object, KusuApp):
         #print "Time Spent: getNodeInformation(): %f" % (t2-t1)
         return info
         
-    def addNode (self, macaddr, selectedinterface, installer=True, snackInstance=None):
+    def addNode (self, macaddr, selectedinterface, installer=True, unmanaged=False, snackInstance=None, ipaddr=None, hostname=None):
         """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
       
@@ -409,14 +411,14 @@ class NodeFun(object, KusuApp):
                  if self._nodeList.has_key(self._nodeName):
                      self._rankCount += 1
                  else:
-                     self._createNodeEntry(macaddr, selectedinterface, False, installer, snackinstance=snackInstance)
+                     self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr)
                      #t2=time.time()
                      #print "Time Spent: addNode(): %f" % (t2-t1)
                      return self._nodeName
 
         # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
         self._hostNameParse()
-        self._createNodeEntry(macaddr, selectedinterface, False, installer, snackinstance=snackInstance)
+        self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr)
         #t2=time.time()
         #print "Time Spent: addNode(): %f" % (t2-t1)
         return self._nodeName
@@ -461,7 +463,7 @@ class NodeFun(object, KusuApp):
         #print "Time Spent: isUPUsed(): %f" % (t2-t1)
         return False
         
-    def _createNodeEntry(self, macaddr, selectedinterface, dhcpUnmanaged=False, installer=True, static=False, snackinstance=None):
+    def _createNodeEntry(self, macaddr, selectedinterface, dhcpUnmanaged=False, installer=True, unmanaged=False, static=False, snackinstance=None, ipaddr=None):
         """createNodeEntry()
         Create a node in the database. """
         #t1=time.time()
@@ -512,7 +514,7 @@ class NodeFun(object, KusuApp):
         #   print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
         #   sys.exit(-1)
 
-        if not installer: 
+        if not installer:
            for subnet, network in self._installerNetworks:
                # We don't need to check other subnets only one needs to pass
                if flag:
@@ -539,10 +541,23 @@ class NodeFun(object, KusuApp):
                ngGateway = NICInfo[4]
 
                while True:
-                   if kusu.ipfun.onNetwork(network, subnet, startIP):
+                   # if the desired ip address of the node is provided, then
+                   # try to assign it. Must not fail if moving to unmanaged
+                   if ipaddr:
+                         if (kusu.ipfun.onNetwork(network, subnet, ipaddr) and not self.isIPUsed(ipaddr)) or \
+                            unmanaged:
+                             self._cachedDeviceIPs[selectedinterface] = ipaddr
+                             self._addUsedIP(ipaddr)
+                             self._createNICBootEntry(nodeID, networkID, True, ipaddr, macaddr)
+                             self._writeDHCPLease(ipaddr, macaddr)
+                             del interfaces[selectedinterface]
+                             flag = 1
+                             break
+                   # If desired ip address is not provided, then try to provide an IP. 
+                   elif kusu.ipfun.onNetwork(network, subnet, startIP) or unmanaged:
                       if self.isIPUsed(startIP):
                          try:
-		              startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
+                             startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
                          except:
                               # Delete the bogus entry created
                               print "ERROR:  Too many hosts specified for network. Choose a bigger network."
@@ -685,20 +700,22 @@ class NodeFun(object, KusuApp):
         # Check if the IP is already used.
         if self.isIPUsed(ip):
            return False, "IP Address already used"
-   
-        self._dbReadonly.execute('SELECT nodegroups.ngid, networks.netid FROM nodegroups,networks,ng_has_net \
+
+        self._dbReadonly.execute('SELECT ngid FROM nodegroups WHERE ngname="unmanaged"')
+        ngid = self._dbReadonly.fetchone()[0]
+ 
+        self._dbReadonly.execute('SELECT networks.netid FROM nodegroups,networks,ng_has_net \
                                   WHERE ng_has_net.netid=networks.netid AND nodegroups.ngid=ng_has_net.ngid AND \
-                                  ng_has_net.ngid=(SELECT ngid FROM nodegroups WHERE ngname="unmanaged")') 
+                                  ng_has_net.ngid=%s' % ngid) 
+        netid = self._dbReadonly.fetchone()[0]
 
-        ngid, netid = self._dbReadonly.fetchone()
-
-        self._dbRWrite.execute('INSERT INTO nodes SET ngid="%s", name="%s", state="Installed", bootfrom=False' % (ngid, devicename))
+        self._dbRWrite.execute('INSERT INTO nodes (ngid, name, state, bootFrom) VALUES ("%s", "%s", "Installed", "False")' % (ngid, devicename))
         if self._dbRWrite.driver == 'mysql':
             self._dbRWrite.execute("SELECT last_insert_id()")
         else: # xxx postgres for now
             self._dbRWrite.execute("SELECT last_value from nodes_nid_seq")
         nid = self._dbRWrite.fetchone()[0]
-        self._dbRWrite.execute('INSERT INTO nics SET netid="%s", nid="%s", ip="%s", boot=False' % (netid, nid,ip))
+        self._dbRWrite.execute('INSERT INTO nics (netid, nid, ip, boot) VALUES ("%s", "%s", "%s", "False")' % (netid, nid, ip))
         return True, "Success"
 
     def addUnmanagedDHCPDevice(self, interface, devicename, mac):
@@ -812,6 +829,9 @@ class NodeFun(object, KusuApp):
     def validateInterface(self, interface, installer=True, nodegroup=None):
         """validateInterface(self, interface)
         Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
+        self._dbReadonly.execute("SELECT installtype FROM nodegroups WHERE ngid='%s'" % nodegroup)
+        if self._dbReadonly.fetchone()[0] == 'unmanaged':
+            return True
         #t1=time.time()
         if installer: 
            self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
@@ -997,10 +1017,10 @@ class NodeFun(object, KusuApp):
                continue
             else:
                #print "Node does not exist: %s" % requestNode
-               badList.append(requestNode)
+               badList.append((requestNode, 'Node does not exist'))
 
         for node in badList:
-            requestedNodes.remove(node)
+            requestedNodes.remove(node[0])
 
         # Check for valid nodegroup.
         if not self._nodeGroupType:
@@ -1031,18 +1051,28 @@ class NodeFun(object, KusuApp):
            for dupenode in dupeList:
                requestedNodes.remove(dupenode)
 
+        self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
+        provision_networkdev = [x[0] for x in self._dbReadonly.fetchall()]
         for node in requestedNodes:
-            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=True AND nodegroups.ngid=nodes.ngid AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
+            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=True AND nodegroups.ngid=nodes.ngid" % node) 
+# AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
             data = self._dbReadonly.fetchone()
+            print data
             if data:
-               dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
-               macList["%s" % node] = "%s" % data[0]
+               # Make sure MAC address is not empty
+               if not data[0]:
+                   badList.append((node, 'No valid MAC address'))
+               elif data[2] not in provision_networkdev:
+                   badList.append((node, 'No network device available for provision(Available:%s Required:%s' % (data[2], provision_networkdev)))
+               else:
+                   dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
+                   macList["%s" % node] = "%s" % data[0]
             else:
-               badList.append(node)
+               badList.append((node, 'No network device available for provision(Available:%s Required:%s' % (data[2], provision_networkdev)))
 
-        for node in badList: 
-            if node in requestedNodes:
-               requestedNodes.remove(node)
+        for node in badList:
+            if node[0] in requestedNodes:
+               requestedNodes.remove(node[0])
 
         # Get the new nodegroups network and device table list
         self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
@@ -1057,22 +1087,24 @@ class NodeFun(object, KusuApp):
               #print "NODE: %s, IP = %s, Destination network/subnet: %s, %s: Source Dev: %s, Destination Device: %s" % (node, nodeData[1], network, subnet, nodeData[2], device)
               interfaceName = device
               # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
-              if kusu.ipfun.onNetwork(network, subnet, nodeData[1]):
+              self._dbReadonly.execute('SELECT installtype FROM nodegroups WHERE ngname=\'%s\'' % nodegroupname)
+              ng_installtype = self._dbReadonly.fetchone()[0]
+              if kusu.ipfun.onNetwork(network, subnet, nodeData[1]) or ng_installtype=='unmanaged':
                  badflag = 0
                  ipList.append(nodeData[1])
                  break
               else:
                  badflag = 1
            if badflag:
-               badList.append(node)
+               badList.append((node,'Existing IP on different network'))
                badflag = 0
 
         if badList:
            for badnode in badList:
-               if badnode in nodeList:
-                  nodeList.remove(badnode)
-                  requestedNodes.remove(badnode)
-
+               if badnode[0] in nodeList:
+                  nodeList.remove(badnode[0])
+                  if badnode[0] in requestedNodes:
+                      requestedNodes.remove(badnode[0])
         if newngdata == []:
            return [], ipList, macList, requestedNodes, None
 

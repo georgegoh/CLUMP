@@ -64,7 +64,6 @@ class NodeMemberApp(object, KusuApp):
         """
         parseargs()
         Parse the command line arguments. """
-
         global database
 
         self.parser.add_option("-v", "--version", action="callback",
@@ -206,7 +205,6 @@ class NodeMemberApp(object, KusuApp):
                     macsList = {}
                     myinterface = ""
                     nodeRecord = NodeFun()
-
                     self.logEvent(self._("nghosts_event_move_nodes") % self._options.togroup, 
                                   toStdout=False)
 
@@ -246,7 +244,11 @@ class NodeMemberApp(object, KusuApp):
                         nodesList += moveList 
                         moveIPList += ipList
                         myinterface = interface
-
+                        if badList:
+                            msg = ''
+                            for node in badList:
+                                msg += '%s (%s)\n' % (node[0], node[1])
+                            print self._('The following nodes cannot be moved:\n') + msg
                         macsList.update(macList)
            
                     if bool(self._options.movehosts):
@@ -264,7 +266,6 @@ class NodeMemberApp(object, KusuApp):
                            self.unlock()
                            sys.exit(-1)
                         else:
-
                            moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.movehosts, self._options.togroup, rack=self._options.racknumber)
                            nodesList += moveList
                            moveIPList += ipList
@@ -282,13 +283,19 @@ class NodeMemberApp(object, KusuApp):
                        sys.exit(-1)
                     else:
                        if badList:
-                          print self._("Only can move %d nodes because other nodes do not have a valid network boot device. Could not move %d nodes (%s) to the node group '%s'." % (len(nodesList), len(badList), string.join(badList, " "), self._options.togroup))
-
+                            msg = ''
+                            for node in badList:
+                                msg += '%s (%s)\n' % (node[0], node[1])
+                            print self._('The following nodes cannot be moved:\n') + msg
                     # Create Temp file
                     (fd, tmpfile) = tempfile.mkstemp()
                     tmpname = os.fdopen(fd, 'w')
                     for node in Set(nodesList):
-                       tmpname.write("%s\n" % macsList[node])
+                       mac = macsList[node]
+                       database.connect()
+                       database.execute("SELECT ip FROM nics,nodes WHERE nics.nid=nodes.nid AND nodes.name=\'%s\'" % node)
+                       ip = database.fetchone()[0]
+                       tmpname.write("%s %s\n" % (mac, ip))
                     tmpname.close()
 
                     print self._("nghosts_moving_nodes_progress")
