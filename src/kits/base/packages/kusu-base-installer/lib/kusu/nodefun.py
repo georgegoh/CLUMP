@@ -342,7 +342,6 @@ class NodeFun(object, KusuApp):
     def addNode (self, macaddr, selectedinterface, installer=True, unmanaged=False, snackInstance=None, ipaddr=None, hostname=None):
         """addNode()
         Returns a valid node not present in the kusu database. Use this function to create a new node. """
-      
         if not self._nodeList and not self._ngConflicts:
             #t2=time.time()
             #print "Time Spent: addNode(): %f" % (t2-t1)
@@ -361,7 +360,6 @@ class NodeFun(object, KusuApp):
         
         # Build SQL query based on the node groups sharing the same node format.
         sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
-        
         if self._ngConflicts:
             sqlquery += " AND ("
             for ngid in self._ngConflicts:
@@ -377,7 +375,6 @@ class NodeFun(object, KusuApp):
 
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
- 
         # If there's no RANK data found in query, then the rank starts from 0 otherwise if setRankCount called, use that rank number as starting point.
         if not len(data):
             # We may not be a matching node format, but the node format may have a rack and rank check the rack and rank to verify
@@ -390,8 +387,7 @@ class NodeFun(object, KusuApp):
                 if data == 0: 
                    break
                 else:
-                   self._rankCount += 1  
-
+                   self._rankCount += 1
         else:
             # Iterate though the list, increment the rack count if a previous number exists.
             for rankInfo in data:
@@ -553,6 +549,10 @@ class NodeFun(object, KusuApp):
                              del interfaces[selectedinterface]
                              flag = 1
                              break
+                         else:
+                             # we cannot use the desired IP address, so nuke the desired IP
+                             # and skip the 'if ipaddr' branch of code.
+                             ipaddr = None
                    # If desired ip address is not provided, then try to provide an IP. 
                    elif kusu.ipfun.onNetwork(network, subnet, startIP) or unmanaged:
                       if self.isIPUsed(startIP):
@@ -576,7 +576,6 @@ class NodeFun(object, KusuApp):
                          break
                    else:
                       break
-
            if not flag:
               self._dbRWrite.execute("DELETE FROM nodes where nodes.ngid=%s AND nodes.name='%s'" % (self._nodeGroupType, self._nodeName))
               print "ERROR:  Could not create nodes on interface '%s'. Please try a different interface\n" % selectedinterface
