@@ -24,6 +24,7 @@ from kusu.genconfig import Report
 from kusu.core import database
 from kusu.ipfun import *
 from Cheetah.Template import Template
+from IPy import IP
 
 class Network(object): pass
 class Host(object): pass
@@ -74,7 +75,10 @@ class thisReport(Report):
 
         # Get the DNS
         dnsdomain = self.db.getAppglobals('DNSZone')
-        
+       
+        # Get the PROVISION type
+        provision = dbs.AppGlobals.select_by(kname = 'PROVISION')[0].kvalue
+
 
         # Now get the networks
         query = ('select networks.network, networks.subnet, '
@@ -108,6 +112,27 @@ class thisReport(Report):
                 if not gateway:
                     gateway = pxehost
 
+                iprange = IP('%s/%s' % (subnet, netmask))
+                gw = IP(gateway)
+                
+                if gw not in iprange: # this shouldn't happen
+                    network.ipranges = [ (iprange[1],iprange[-2]) ]
+                elif gw == iprange[1]: # gateway is first ip
+                    network.ipranges = [ (iprange[2],iprange[-2]) ]
+                elif gw == iprange[-2]: # gateway is last ip
+                    network.ipranges = [ (iprange[1],iprange[-3]) ]
+                else:
+                    # partition free lease range
+                    ip = [ip for ip in iprange]
+                    idx = ip.index(gw) 
+
+                    if idx == 2: # gateway = 2nd ip
+                        network.ipranges = [ (iprange[1],None), (iprange[idx+1],iprange[-2]) ]
+                    elif idx == len(ip)-3: # gateway = 2nd last ip
+                        network.ipranges = [ (iprange[1],iprange[idx-1]), (None,iprange[-2]) ]
+                    else:     
+                        network.ipranges = [ (iprange[1],iprange[idx-1]), (iprange[idx+1],iprange[-2]) ]
+                    
                 #print '\toption routers %s;' % gateway
                 #print '\toption subnet-mask %s;' % subnet
                 
@@ -124,44 +149,45 @@ class thisReport(Report):
 
 
                 # Now cycle through the nodes on for this
-                query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
-                         'from networks,nics,nodes where nodes.nid=nics.nid and '
-                         'nics.netid=networks.netid and nics.boot=True and networks.usingdhcp=False')
+                network.hosts = []
+                if provision == 'KUSU':
+                    query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
+                             'from networks,nics,nodes where nodes.nid=nics.nid and '
+                             'nics.netid=networks.netid and nics.boot=True and networks.usingdhcp=False')
 
-                try:
-                    self.db.execute(query)
+                    try:
+                        self.db.execute(query)
 
-                except:
-                    sys.stderr.write(_("DB_Query_Error\n"))
-                    sys.exit(-1)
+                    except:
+                        sys.stderr.write(_("DB_Query_Error\n"))
+                        sys.exit(-1)
 
-                dhcpdata = self.db.fetchall()
-                if dhcpdata:
-                    network.hosts = []
-                    for row in dhcpdata:
-                        # Test to see if this nodes IP lies on the same network
-                        # as this DHCP section and that there is a MAC
-                        # address for the interface.
-                        if onNetwork(netmask, subnet, row[1]) and row[2]:
-                            host = Host()
-                            if row[3]:
-                            #    print '\thost %s%s {' % (row[0], row[3])
-                                host.name = '%s%s' % (row[0], row[3])
-                            else:
-                            #    print '\thost %s-%s {' % (row[0], row[4])
-                                host.name = '%s-%s' % (row[0], row[3])
+                    dhcpdata = self.db.fetchall()
+                    if dhcpdata:
+                        for row in dhcpdata:
+                            # Test to see if this nodes IP lies on the same network
+                            # as this DHCP section and that there is a MAC
+                            # address for the interface.
+                            if onNetwork(netmask, subnet, row[1]) and row[2]:
+                                host = Host()
+                                if row[3]:
+                                #    print '\thost %s%s {' % (row[0], row[3])
+                                    host.name = '%s%s' % (row[0], row[3])
+                                else:
+                                #    print '\thost %s-%s {' % (row[0], row[4])
+                                    host.name = '%s-%s' % (row[0], row[3])
 
-                            # Handle interfaces that may not have a MAC
-                            # address (such as Infiniband)
-                            #if row[2]:
-                            #    print '\t\thardware ethernet %s;' % row[2]
-                            host.mac = row[2]
-                            host.hostname = row[0]
-                            host.ip = row[1]
-                            #print '\t\toption host-name "%s";' % row[0]
-                            #print '\t\tfixed-address %s;' % row[1]
-                            #print '\t}'
-                            network.hosts.append(host)
+                                # Handle interfaces that may not have a MAC
+                                # address (such as Infiniband)
+                                #if row[2]:
+                                #    print '\t\thardware ethernet %s;' % row[2]
+                                host.mac = row[2]
+                                host.hostname = row[0]
+                                host.ip = row[1]
+                                #print '\t\toption host-name "%s";' % row[0]
+                                #print '\t\tfixed-address %s;' % row[1]
+                                #print '\t}'
+                                network.hosts.append(host)
 
                 #print '}'
                 networks.append(network)
@@ -169,7 +195,8 @@ class thisReport(Report):
             ns = {'leasetime': leasetime, 
                   'dnsdomain': dnsdomain,
                   'networks': networks,
-                  'installerip': pi_ip}
+                  'installerip': pi_ip,
+                  'provision': provision}
             t = Template(file='/opt/kusu/etc/templates/dhcpd.tmpl', searchList=[ns])  
             print str(t)
         else:
