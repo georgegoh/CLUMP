@@ -92,6 +92,7 @@ install -d $RPM_BUILD_ROOT/opt/kusu/share/locale/en/LC_MESSAGES
 install -d $RPM_BUILD_ROOT/opt/kusu/sql
 install -d $RPM_BUILD_ROOT/opt/kusu/man/man8
 install -d $RPM_BUILD_ROOT/depot/repos/custom_scripts
+install -d $RPM_BUILD_ROOT/depot/repos/post_scripts
 install -d $RPM_BUILD_ROOT/depot/kits
 install -d $RPM_BUILD_ROOT/depot/images
 
@@ -232,6 +233,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/man/man8/sqlrunner.8.gz
 /opt/kusu/etc/templates/kickstart.tmpl
 /opt/kusu/etc/templates/dhcpd.tmpl
+/depot/repos/post_scripts
 %defattr(-,apache,apache)
 /depot/repos/nodeboot.cgi
 /depot/kits
