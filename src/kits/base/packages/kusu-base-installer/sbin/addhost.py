@@ -617,7 +617,12 @@ class AddHostApp(KusuApp):
         except KusuError, e:
             self.logErrorEvent(e)
             sys.exit(-1)
-        
+      
+        provision = self.__db.getAppglobals('PROVISION')
+        if provision and provision != 'KUSU' and self.action == ADDHOST_LISTEN:
+            sys.stderr.write('Kusu provisioning has been disabled. addhost will not run.\n')
+            self.exitFailedAndUnlock()
+ 
         # Do Action
         (success,errMsg) = action()
         
