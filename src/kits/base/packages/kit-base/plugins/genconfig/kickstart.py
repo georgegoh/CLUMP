@@ -126,6 +126,8 @@ class thisReport(Report):
                 # Retrieve package list.
                 try:
                     packages = [x.packagename for x in db.Packages.select_by(ngid=ngid)]
+                    ng = db.NodeGroups.select_by(ngid=ngid)[0]
+                    packages.extend([x.cname for x in ng.components if not x.kit.isOS])
                 except Exception, e:
                     print "Could not retrieve package list from database."
                     return
