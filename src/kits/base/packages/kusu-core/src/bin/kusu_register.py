@@ -294,7 +294,7 @@ class App(KusuApp):
                 build = re.compile('[0-9]+').findall(s)[-1]
             except: pass
 
-        return {'verison': ver, 'build': build}
+        return {'version': ver, 'build': build}
 
     def prompt(self, data):
          
