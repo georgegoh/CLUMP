@@ -67,6 +67,9 @@ The name of the repository to act on.
 \fB\-s, \-\-snapshot\fR
 Creates a copy of an existing repository.  This option is useful for testing out patches before deploying them on the entire cluster.
 .TP 
+\fB\-\-flush\-cache\fR
+Delete the checksum cache of the repository specified with the \fB\-r\fR option. Note repoman has to be run again with the \fB\-u\fR option to rebuild the checksum cache.
+.TP 
 \fB\-\-dbdriver=<Driver>\fR
 Connect to an alternate database using the driver specified.  Currently mysql and or sqlite.  This option is not needed for normal use.
 .TP 
