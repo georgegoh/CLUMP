@@ -21,7 +21,7 @@
 
 Summary: Kusu Base Installer
 Name: kusu-base-installer
-Version: 1.1
+Version: 1.2
 Release: 2
 License: GPLv2
 Group: System Environment/Base

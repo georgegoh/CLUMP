@@ -893,7 +893,7 @@ class NetEditApp(object, KusuApp):
         screenList = [ NetworkMainWindow(database=database, kusuApp=kusuApp) ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Network Edit - Version 1.1", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Network Edit - Version 1.2", showTrail=False)
         ks.run()
         self.unlock()
 
@@ -1311,7 +1311,7 @@ class NetworkMainWindow(USXBaseScreen):
         ScreenFactory.screens = \
                         [ NetworkNewWindow(database=database, kusuApp=kusuApp) ]
                         
-        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 1.1", showTrail=False)
+        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 1.2", showTrail=False)
         ks.run()
         return NAV_NOTHING    
     
@@ -1341,7 +1341,7 @@ class NetworkMainWindow(USXBaseScreen):
         ScreenFactory.screens = \
                         [ NetworkEditWindow(database=database, kusuApp=kusuApp) ]
                         
-        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 1.1", showTrail=False)
+        ks = USXNavigator(ScreenFactory,screenTitle="Network Edit - Version 1.2", showTrail=False)
         ks.run()
         return NAV_NOTHING
     

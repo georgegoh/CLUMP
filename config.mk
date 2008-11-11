@@ -36,8 +36,8 @@ endif
 KUSU_TOPDIR=`pwd`
 KUSU_RPM_TMPPATH=/tmp/kusu
 
-KUSU_RELEASE_NAME=Gong Gong
-KUSU_VERSION = 1.1
+KUSU_RELEASE_NAME=Parrot Fish
+KUSU_VERSION = 1.2
 KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk '{print $$4}')
 
 # lists of kits to build

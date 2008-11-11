@@ -101,7 +101,7 @@ class App(KusuApp):
         if options.verbose: self.verbose = True
 
     def getVersion(self):
-        self.stdoutMessage('kusu_register 1.1\n')
+        self.stdoutMessage('kusu_register 1.2\n')
  
     def getKits(self):
         kits = self.dbs.Kits.select()
