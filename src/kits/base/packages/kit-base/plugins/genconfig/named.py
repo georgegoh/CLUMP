@@ -53,15 +53,38 @@ class thisReport(Report):
             sys.stderr.write(_("genconfig_cannot_determine_DNS_zone\n"))
             sys.exit(-1)
 
-        # Get the DNS Forwarders.  This might be optional
+        # Get the DNS Forwarders.  This is optional for dhcp public network.
+        query = ('select networks.usingdhcp from networks, nodes, ng_has_net where '
+                 'nodes.ngid = ng_has_net.ngid and '
+                 'ng_has_net.netid = networks.netid and '
+                 'networks.type = \'public\' and '
+                 'nodes.name = (select appglobals.kvalue from appglobals where '
+                 'appglobals.kname = \'PrimaryInstaller\')')
+        
+        try:
+            self.db.execute(query)
+        
+        except:
+            sys.stderr.write(_("DB_Query_Error\n"))
+            sys.exit(-1)
+        
+        data = self.db.fetchall()
+        
+        usingDHCP = True;
+        if data:
+            # Checking for all public interfaces using iterative and.
+            for row in data:
+                usingDHCP = row[0] and usingDHCP
+        
         dnsforwarders = []
         for key in ['dns1', 'dns2', 'dns3']:
             val = self.db.getAppglobals(key)
             if val: dnsforwarders.append(val)
         dnsforwarders = ','.join(dnsforwarders)
-        if not dnsforwarders:
-            sys.stderr.write(_("genconfig_cannot_determine_DNS_forwarders\n"))
-            sys.exit(-1)
+        
+        if not dnsforwarders and not usingDHCP:
+            sys.stderr.write(_("genconfig_cannot_determine_DNS_forwarders.\nIgnoring...\n"))
+            #sys.exit(-1) No need to exit here. Can generate the rest of the config.
 
         # Get a list of installers IPs.  These will be DNS slave servers
         primaryIPs = []
