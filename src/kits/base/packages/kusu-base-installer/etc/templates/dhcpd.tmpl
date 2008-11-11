@@ -14,19 +14,13 @@ subnet $network.subnet netmask $network.netmask {
         max-lease-time $leasetime;
         option routers $network.gateway;
         option subnet-mask $network.netmask;
-
         #if $provision != 'KUSU'
-            #for $iprange in $network.ipranges
-                #if $iprange[0] and $iprange[1]
-        range $iprange[0] $iprange[1];
-                #elif not $iprange[1]
-        range $iprange[0];
-                #elif not $iprange[0]
-        range $iprange[1];
-                #end if
-            #end for
+			#if $network.ranges
+				#for $range in $network.ranges
+        range $range[0] $range[1];
+		        #end for
+			#end if
         #end if
-
         #if $dnsdomain
         option domain-name "$dnsdomain";
         #end if
@@ -38,8 +32,6 @@ subnet $network.subnet netmask $network.netmask {
                 vendor-option-space PXE;
                 next-server $network.pxehost;
         }
-
-        
         #for $host in $network.hosts
         host $host.name {
                 #if $host.mac

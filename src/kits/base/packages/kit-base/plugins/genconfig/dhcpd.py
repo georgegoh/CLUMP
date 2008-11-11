@@ -112,27 +112,6 @@ class thisReport(Report):
                 if not gateway:
                     gateway = pxehost
 
-                iprange = IP('%s/%s' % (subnet, netmask))
-                gw = IP(gateway)
-                
-                if gw not in iprange: # this shouldn't happen
-                    network.ipranges = [ (iprange[1],iprange[-2]) ]
-                elif gw == iprange[1]: # gateway is first ip
-                    network.ipranges = [ (iprange[2],iprange[-2]) ]
-                elif gw == iprange[-2]: # gateway is last ip
-                    network.ipranges = [ (iprange[1],iprange[-3]) ]
-                else:
-                    # partition free lease range
-                    ip = [ip for ip in iprange]
-                    idx = ip.index(gw) 
-
-                    if idx == 2: # gateway = 2nd ip
-                        network.ipranges = [ (iprange[1],None), (iprange[idx+1],iprange[-2]) ]
-                    elif idx == len(ip)-3: # gateway = 2nd last ip
-                        network.ipranges = [ (iprange[1],iprange[idx-1]), (None,iprange[-2]) ]
-                    else:     
-                        network.ipranges = [ (iprange[1],iprange[idx-1]), (iprange[idx+1],iprange[-2]) ]
-                    
                 #print '\toption routers %s;' % gateway
                 #print '\toption subnet-mask %s;' % subnet
                 
@@ -150,44 +129,48 @@ class thisReport(Report):
 
                 # Now cycle through the nodes on for this
                 network.hosts = []
-                if provision == 'KUSU':
-                    query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
-                             'from networks,nics,nodes where nodes.nid=nics.nid and '
-                             'nics.netid=networks.netid and nics.boot=True and networks.usingdhcp=False')
+                query = ('select nodes.name, nics.ip, nics.mac, networks.suffix, networks.device '
+                         'from networks,nics,nodes where nodes.nid=nics.nid and '
+                         'nics.netid=networks.netid and nics.boot=True and networks.usingdhcp=False')
 
-                    try:
-                        self.db.execute(query)
+                try:
+                    self.db.execute(query)
 
-                    except:
-                        sys.stderr.write(_("DB_Query_Error\n"))
-                        sys.exit(-1)
+                except:
+                    sys.stderr.write(_("DB_Query_Error\n"))
+                    sys.exit(-1)
 
-                    dhcpdata = self.db.fetchall()
-                    if dhcpdata:
-                        for row in dhcpdata:
-                            # Test to see if this nodes IP lies on the same network
-                            # as this DHCP section and that there is a MAC
-                            # address for the interface.
-                            if onNetwork(netmask, subnet, row[1]) and row[2]:
-                                host = Host()
-                                if row[3]:
-                                #    print '\thost %s%s {' % (row[0], row[3])
-                                    host.name = '%s%s' % (row[0], row[3])
-                                else:
-                                #    print '\thost %s-%s {' % (row[0], row[4])
-                                    host.name = '%s-%s' % (row[0], row[3])
+                dhcpdata = self.db.fetchall()
+                if dhcpdata:
+                    for row in dhcpdata:
+                        # Test to see if this nodes IP lies on the same network
+                        # as this DHCP section and that there is a MAC
+                        # address for the interface.
+                        if onNetwork(netmask, subnet, row[1]) and row[2]:
+                            host = Host()
+                            if row[3]:
+                            #    print '\thost %s%s {' % (row[0], row[3])
+                                host.name = '%s%s' % (row[0], row[3])
+                            else:
+                            #    print '\thost %s-%s {' % (row[0], row[4])
+                                host.name = '%s-%s' % (row[0], row[3])
 
-                                # Handle interfaces that may not have a MAC
-                                # address (such as Infiniband)
-                                #if row[2]:
-                                #    print '\t\thardware ethernet %s;' % row[2]
-                                host.mac = row[2]
-                                host.hostname = row[0]
-                                host.ip = row[1]
-                                #print '\t\toption host-name "%s";' % row[0]
-                                #print '\t\tfixed-address %s;' % row[1]
-                                #print '\t}'
-                                network.hosts.append(host)
+                            # Handle interfaces that may not have a MAC
+                            # address (such as Infiniband)
+                            #if row[2]:
+                            #    print '\t\thardware ethernet %s;' % row[2]
+                            host.mac = row[2]
+                            host.hostname = row[0]
+                            host.ip = row[1]
+                            #print '\t\toption host-name "%s";' % row[0]
+                            #print '\t\tfixed-address %s;' % row[1]
+                            #print '\t}'
+                            network.hosts.append(host)
+
+                network.ranges = getNetworkRanges(network.subnet,
+                                                  network.netmask,
+                                                  network.gateway,
+                                                  [x.ip for x in network.hosts])
 
                 #print '}'
                 networks.append(network)
@@ -200,4 +183,76 @@ class thisReport(Report):
             t = Template(file='/opt/kusu/etc/templates/dhcpd.tmpl', searchList=[ns])  
             print str(t)
         else:
-            print "# This machine is not the primary installer" 
+            print "# This machine is not the primary installer"
+
+def getNetworkRanges(subnet, netmask, gateway, hosts):
+    """ Returns a list of usable ranges in the the given subnet/netmask,
+        while taking into account the IPs that are used up by the gateway
+        and the list of hosts.
+        subnet,netmask,gateway: dotted IP format(xxx.xxx.xxx.xxx)
+        hosts: list of dotted IP format
+
+        Note: This function DOES NOT check for validity of the saneness
+        of the input values. It is assumed that the gateway and hosts
+        are valid IPs for the subnet/netmask given.
+    """
+    # Use IPy to create the range of IP addresses, and subtract the hosts.
+    ip_hosts = [IP(x) for x in hosts]
+    ip_range = [x for x in IP('%s/%s' % (subnet, netmask))]
+    used_idx = [0,len(ip_range)-1] # first and last are reserved.
+
+    # Add gateway IP to list of used indices.
+    if gateway:
+        ip = IP(gateway)
+        index = ip_range.index(ip)
+        if index not in used_idx:
+            used_idx.append(index)
+    # Each host must be added as used.
+    for h in ip_hosts:
+        index = ip_range.index(h)
+        if index not in used_idx:
+            used_idx.append(index)
+    used_idx = sorted(used_idx)
+
+    last_reserved_idx = getIndexOfLastConsecutiveNum(used_idx, from_back=True)
+    last_usable_ip = used_idx[last_reserved_idx] - 1
+    range_boundaries = []
+    i = 0 # index of the last ip of the usable range search
+    range_end = 0
+    # Don't go beyond end of usage range
+    while range_end < last_usable_ip and i < len(used_idx):
+        # look for the last consecutive number in the used indexes,
+        # and offset the starting search by i.
+        idx = getIndexOfLastConsecutiveNum(used_idx[i:]) + i
+        range_start = used_idx[idx] + 1
+        range_end = used_idx[idx+1] - 1
+        range_boundaries.append((ip_range[range_start], ip_range[range_end]))
+        i = idx + 1
+    return range_boundaries
+
+def getIndexOfLastConsecutiveNum(series, from_back=False):
+    if from_back:
+        last_val = series[-1]
+        for i,v in enumerate(reversed(series)):
+            if v != last_val-i:
+                return len(series)-i
+    else: 
+        first_val = series[0]
+        for i,v in enumerate(series):
+            if v != first_val+i:
+                return i-1
+    return 0
+
+if __name__ == '__main__':
+    print 'Testing getNetworkRanges'
+    r1 = getNetworkRanges('10.10.10.0', '255.255.255.0', '10.10.10.1', ['10.10.10.2', '10.10.10.3', '10.10.10.4'])
+    assert r1 == [(IP('10.10.10.5'), IP('10.10.10.254'))]
+    r2 = getNetworkRanges('10.10.10.0', '255.255.255.0', '10.10.10.1', ['10.10.10.2', '10.10.10.3', '10.10.10.40']) 
+    assert r2 == [(IP('10.10.10.4'), IP('10.10.10.39')),
+                  (IP('10.10.10.41'), IP('10.10.10.254'))]
+    r3 = getNetworkRanges('192.168.0.0', '255.255.255.0', '192.168.0.100', ['192.168.0.1', '192.168.0.3', '192.168.0.110']) 
+    assert r3 == [(IP('192.168.0.2'), IP('192.168.0.2')),
+                  (IP('192.168.0.4'), IP('192.168.0.99')),
+                  (IP('192.168.0.101'), IP('192.168.0.109')),
+                  (IP('192.168.0.111'), IP('192.168.0.254'))]
+    print 'OK'
