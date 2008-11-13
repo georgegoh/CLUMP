@@ -24,8 +24,7 @@ import pwd
 import string
 import sys
 
-sys.path.append("/opt/primitive/libexec")
-sys.path.append("/opt/primitive/lib")
+sys.path.append("/opt/primitive/lib/python2.4/site-packages")
 from primitive.fetchtool.commands import FetchCommand
 from primitive.core.errors import CommandException
 
