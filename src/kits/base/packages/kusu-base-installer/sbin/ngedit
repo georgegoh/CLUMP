@@ -672,7 +672,7 @@ class scrNGEEdit_Components(USXBaseScreen):
             query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
             repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
             AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
-            c.os || '%%' OR c.os = NULL) ORDER BY c.kid''' % curNG['repoid']
+            c.os || '%%' OR c.os is NULL) ORDER BY c.kid''' % curNG['repoid']
             
         self.database.execute(query)
         rv = self.database.fetchall()
