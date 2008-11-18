@@ -97,10 +97,10 @@ class thisReport(Report):
         networks = []
         if data:
             for netinfo in data:
-                subnet, netmask, gateway, netid, pxehost = netinfo
+                netwrk, subnet, gateway, netid, pxehost = netinfo
                 network = Network()
-                network.netmask = netmask
-                network.subnet = subnet
+                network.netmask = subnet
+                network.subnet = netwrk
                 network.gateway = gateway
                 network.pxehost = pxehost
 
@@ -146,7 +146,7 @@ class thisReport(Report):
                         # Test to see if this nodes IP lies on the same network
                         # as this DHCP section and that there is a MAC
                         # address for the interface.
-                        if onNetwork(netmask, subnet, row[1]) and row[2]:
+                        if onNetwork(netwrk, subnet, row[1]) and row[2]:
                             host = Host()
                             if row[3]:
                             #    print '\thost %s%s {' % (row[0], row[3])
