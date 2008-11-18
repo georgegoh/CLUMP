@@ -535,11 +535,15 @@ class NodeFun(object, KusuApp):
 
                IPincrement = int(NICInfo[3])
                ngGateway = NICInfo[4]
+               if ipaddr:
+                   iphint = True
+               else:
+                   iphint = False
 
                while True:
                    # if the desired ip address of the node is provided, then
                    # try to assign it. Must not fail if moving to unmanaged
-                   if ipaddr:
+                   if iphint:
                          if (kusu.ipfun.onNetwork(network, subnet, ipaddr) and not self.isIPUsed(ipaddr)) or \
                             unmanaged:
                              self._cachedDeviceIPs[selectedinterface] = ipaddr
@@ -552,7 +556,7 @@ class NodeFun(object, KusuApp):
                          else:
                              # we cannot use the desired IP address, so nuke the desired IP
                              # and skip the 'if ipaddr' branch of code.
-                             ipaddr = None
+                             iphint = False
                    # If desired ip address is not provided, then try to provide an IP. 
                    elif kusu.ipfun.onNetwork(network, subnet, startIP) or unmanaged:
                       if self.isIPUsed(startIP):
