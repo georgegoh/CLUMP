@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile SYSTEM "/usr/share/autoinstall/dtd/profile.dtd">
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+    <general>
+        <mode>
+            <confirm config:type="boolean">false</confirm>
+        </mode>
+        <signature-handling>
+            <accept_file_without_checksum config:type="boolean">true</accept_file_without_checksum>
+            <accept_non_trusted_gpg_key config:type="boolean">true</accept_non_trusted_gpg_key>
+            <accept_unknown_gpg_key config:type="boolean">true</accept_unknown_gpg_key>
+            <accept_unsigned_file config:type="boolean">true</accept_unsigned_file>
+            <accept_verification_failed config:type="boolean">false</accept_verification_failed>
+            <import_gpg_key config:type="boolean">true</import_gpg_key>
+        </signature-handling>
+    </general>
+
+    <networking>
+        <dhcp_options>
+            <dhclient_additional_options></dhclient_additional_options>
+            <dhclient_client_id></dhclient_client_id>
+            <dhclient_hostname_option>AUTO</dhclient_hostname_option>
+        </dhcp_options>
+        <dns>
+            <dhcp_hostname config:type="boolean">$dhcp</dhcp_hostname>
+            <dhcp_resolv config:type="boolean">true</dhcp_resolv>
+            <domain>site</domain>
+            <hostname>linux-dzcg</hostname>
+            <nameservers config:type="list">
+                #for $ns in $nameservers    
+                <nameserver>$ns</nameserver>
+                #end for
+            </nameservers>
+        </dns>
+        <interfaces config:type="list">
+            #for $net in $networks
+            $net
+            #end for
+        </interfaces>
+        <managed config:type="boolean">false</managed>
+        <routing>
+            <ip_forward config:type="boolean">false</ip_forward>
+        </routing>
+    </networking>
+
+    ## Partitioning takes in a DiskProfile-type object in the partitions namespace.
+    <partitioning config:type="list">
+        #for $disk in $partitions.disk_dict.values()
+        <drive>
+            <device>$disk.path</device>
+            <partitions config:type="list">
+            #for $part in $disk.partition_dict.values()
+                <partition>
+                    ## If already on-disk, then don't create.
+                    #if $part.on_disk
+                    <create config:type="boolean">false</create>
+                    #else
+                    <create config:type="boolean">true</create>
+                    #end if
+                    #* swap and reiserfs must be treated specially as they have
+                       different string representations for different distros.
+                    *#
+                    #if $part.fs_type=='linux-swap'
+                    <filesystem config:type="symbol">swap</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>swap</mount>
+                    #elif $part.fs_type=='reiserfs'
+                    <filesystem config:type="symbol">reiser</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>$part.mountpoint</mount>
+                    #else
+                    <filesystem config:type="symbol">$part.fs_type</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>$part.mountpoint</mount>
+                    #end if
+                    <mountby config:type="symbol">device</mountby>
+                    ## Need the native type number(e.g, 0x82, 0x83, etc)
+                    <partition_id config:type="integer">$part.pedPartition.native_type</partition_id>
+                    <partition_nr config:type="integer">$part.num</partition_nr>
+                    <size>$part.size</size>
+                </partition>
+            #end for
+            </partitions>
+            <use>all</use>
+        </drive>
+        #end for
+    </partitioning>
+    <users config:type="list">
+        <user>
+            <encrypted config:type="boolean">false</encrypted>
+            <user_password>$rootpw</user_password>
+            <username>root</username>
+        </user>
+    </users>
+
+    <software>
+        <packages config:type="list">
+            #for $pkg in $packages
+            <package>$pkg</package>
+            #end for
+        </packages>
+        <patterns config:type="list">
+            <pattern>base</pattern>
+        </patterns>
+    </software>
+
+    <timezone>
+        <hwclock>localtime</hwclock>
+        <timezone>$tz</timezone>
+    </timezone>
+
+</profile>
