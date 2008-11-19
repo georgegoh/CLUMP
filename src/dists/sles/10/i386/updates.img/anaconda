@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# $Id: anaconda 737 2007-05-10 10:39:02Z ggoh $
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+# Kusu 'faux anaconda' loader
+
+# Preserve the current environment 
+envfile="/tmp/anaconda-current-environment.$$.tmp"
+/usr/bin/env > $envfile
+
+# links the kusu runtime to /opt
+/usr/bin/ln -sf /tmp/updates/opt /opt
+
+# Sets the LANG to a valid value to avoid the garbled text ui
+export LANG="en_US.UTF-8"
+
+# setups our environment
+export KUSU_DIST=centos
+export KUSU_DISTVER=5
+export KUSU_DIST_ARCH=i386
+source /opt/kusu/bin/kusuenv.sh
+export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib64/python2.4/site-packages
+export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib/python2.4/site-packages
+
+# setup /tmp/kusu
+/usr/bin/mkdir -p $KUSU_TMP
+
+# Migrate stage2.img
+/usr/bin/cp /mnt/source/images/stage2.img /tmp/ramfs/stage2.img 
+python -c "import sys; sys.path.append('/usr/lib/anaconda'); \
+           import isys; isys.lochangefd('/tmp/loop0', '/tmp/ramfs/stage2.img')"
+/usr/bin/umount /mnt/source
+
+# launch the Kusu Installer
+/usr/bin/python /opt/kusu/bin/installer
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then 
+    # Unset kusu bits
+    for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 
+        unset $key > /dev/null 2>&1
+    done
+    unset LANG > /dev/null 2>&1
+    unset PYTHONPATH  > /dev/null 2>&1
+    #clean up temporary net info such as --gateway
+    if [ -f "/tmp/netinfo" ];then 
+	/usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
+    fi
+ 
+    
+    # Restore the environment when we are done
+    source $envfile > /dev/null 2>&1 
+
+    # start thttpd
+    /tmp/updates/thttpd-run.sh > /dev/null 2>&1 &
+    # exec the real anaconda
+    # Need a better to replace existing -m and --kickstart option in $@
+    /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu-ks.cfg ;
+    EXIT_CODE=$?
+    if [ -f "/mnt/kusu/var/lock/subsys/kusu-installer " ]; then
+        /usr/bin/rm -f /mnt/kusu/var/lock/subsys/kusu-installer > /dev/null 2>&1
+    fi
+    exit $EXIT_CODE
+
+elif [ $EXIT_CODE -eq 1 ]; then
+    # an unknown exception has occurred. Give user an option to copy out log+dump
+    echo "An internal program error has occurred."
+    echo "A log of the session can be found in /tmp/kusu.log"
+    echo "A dump of the error can be found in /tmp/exception.dump";
+elif [ $EXIT_CODE -eq 2 ]; then
+    # exit code 2 means user chose to exit
+    echo "Exiting on request. Please standby for reboot...";
+else
+    # in case of problem with the Kusu Installer, we halt
+    echo "Something has gone very wrong. Press any key to reboot.";
+    read -n 1
+fi

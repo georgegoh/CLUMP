@@ -54,7 +54,19 @@ ISO_ARTIFACTS += init kitinfo
 
 
 # include user-defined kit-specific information
+ifeq ($(KUSU_DISTRO_NAME), sles)
+include config.mk.sles
+endif
+ifeq ($(KUSU_DISTRO_NAME), opensuse)
+include config.mk.sles
+endif
+ifeq ($(KUSU_DISTRO_NAME), centos)
 include config.mk
+endif
+ifeq ($(KUSU_DISTRO_NAME), rhel)
+include config.mk
+endif
+
 include ../kits.mk
 
 BASE_KIT_VERSION_STR=$(shell grep "^Version: " SPECS/$(PKG_KIT_SPEC) | awk '{print $$2}')

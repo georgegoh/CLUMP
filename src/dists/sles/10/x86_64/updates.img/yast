@@ -1,0 +1,21 @@
+#!/bin/sh
+export TERM=linux
+export LANG="en_US.UTF-8"
+source /opt/kusu/bin/kusuenv.sh
+
+# The following should go into kusuenv.sh
+export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib/python2.4/site-packages
+
+# kusuenv.sh does not detect the following properly yet
+export KUSU_DIST="sles"
+export KUSU_DISTVER="10"
+
+# Force hardware detection so that network devices are discovered
+echo "Detecting network cards ..."
+/detect_network_cards.py
+
+echo "Installing device mapper kernel module ..."
+echo "modprobe dm_mod"
+modprobe dm_mod
+
+/opt/kusu/bin/installer

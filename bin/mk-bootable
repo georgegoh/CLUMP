@@ -122,6 +122,103 @@ def unpackRHELInitrd(rootimgpath, dirname):
 
 unpackCentOSInitrd = unpackRHELInitrd
 
+def makeSuseBootDir(rootdir, buildprofile):
+    """Creates a boot directory in rootdir with prefilled settings for the distro"""
+    # look for the distro's boot dir
+    bootdir = os.path.join(buildprofile.instsource,'boot')
+    if not os.path.exists(bootdir):
+        print 'No boot directory found in %s !' % buildprofile.instsource
+        sys.exit(-1)
+    print 'Found %s ..' % bootdir
+
+    # copy the contents over to the newly made ext2fs filesystem
+    cmd = '(find boot | cpio -mpdu %s) >/dev/null 2>&1'
+    cpioP = subprocess.Popen(cmd % rootdir,shell=True,cwd=buildprofile.instsource,stdout=subprocess.PIPE)
+    cpioP.wait()
+    
+    bootloaddir = os.path.join(rootdir,'boot/%s/loader' % buildprofile.arch)
+    if not os.path.exists(bootdir):
+        print 'Copy from %s to %s failed!' % ( bootdir, rootdir)
+        sys.exit(-1)
+    print 'Using %s ..' % bootdir
+    
+    rootimg = os.path.join(rootdir,'boot/%s/root' % buildprofile.arch)
+    if not os.path.exists(rootimg):
+        print 'No root img found in %s/boot/%s !' % (rootdir, buildprofile.arch)
+        sys.exit(-1)
+    print 'Using %s as the root image..' % rootimg
+    
+    # get the svn trunk layout
+    trunk = getKusuTrunk()
+    
+    # grab the isolinux.cfg
+    isolinuxcfg = os.path.join(trunk, \
+                    'src/dists/%(distro)s/%(version)s/%(arch)s/initrd/isolinux.cfg' %
+                    {'distro':buildprofile.distro,
+                    'version':buildprofile.version,
+                    'arch':buildprofile.arch})                    
+    if not os.path.exists(isolinuxcfg):
+        print 'Cannot find %s! Please ensure that the SVN source is correct!' % isolinuxcfg
+        sys.exit(-1)
+
+    print 'Using %s as the isolinux.cfg file..' % isolinuxcfg
+    
+    shutil.copy(isolinuxcfg,bootloaddir)
+        
+    # grab the boot.msg
+    bootmsg = os.path.join(trunk, \
+                    'src/dists/%(distro)s/%(version)s/%(arch)s/boot.msg' %
+                    {'distro':buildprofile.distro,
+                    'version':buildprofile.version,
+                    'arch':buildprofile.arch})
+    print 'Using %s.' % bootmsg
+    if not os.path.exists(bootmsg):
+        print 'Cannot find %s! Please ensure that the SVN source is correct!' % bootmsg
+        sys.exit(-1)
+    
+    shutil.copy(bootmsg,bootloaddir)
+    
+    # grab the splash.lss
+    splashlss = os.path.join(trunk, \
+                    'src/dists/common/splash.lss')
+    print 'Using %s.' % splashlss
+    if not os.path.exists(splashlss):
+        print 'Cannot find %s! Please ensure that the SVN source is correct!' % splash
+        sys.exit(-1)
+        
+    shutil.copy(splashlss,bootloaddir)
+    
+    updatesimg = os.path.join(trunk,'updates.img')
+    print 'Using %s.' % updatesimg
+    if not os.path.exists(updatesimg):
+        print 'Cannot find %s. Please regenerate it again!' % updatesimg
+        sys.exit(-1)
+    
+    # create a temp holding directory
+    pdir = tempfile.mkdtemp(prefix='primitive-')
+    atexit.register(cleanup,pdir)
+    
+    print 'Merging root img with updates.img..'
+    cmd = 'sleep 2 && mount -o loop,ro %s %s' % (updatesimg, pdir)
+    mountP = subprocess.Popen(cmd,shell=True)
+    mountP.wait()
+    
+    sys.path.append(os.path.abspath(os.path.join(pdir,'opt/kusu/lib/python')))
+    sys.path.append(os.path.abspath(os.path.join(pdir,'opt/kusu/lib64/python')))
+    sys.path.append(os.path.abspath(os.path.join(pdir,'opt/primitive/lib/python2.4/site-packages')))
+    sys.path.append(os.path.abspath(os.path.join(pdir,'opt/primitive/lib64/python2.4/site-packages')))
+    sys.path.append(os.path.abspath(os.path.join(pdir,'opt/primitive/libexec')))
+    
+    from path import path
+    from primitive.repo.yast import YastRepo
+    from primitive.fetchtool.commands import FetchCommand
+    
+    y = YastRepo(rootdir)
+    y.handleUpdates('file://' + str(os.path.abspath(updatesimg)))
+    
+    cmd = 'umount %s' % pdir
+    umountP = subprocess.Popen(cmd,shell=True)
+    umountP.wait()
 
 def mkISOLinuxDir(rootdir, buildprofile):
     """Creates a isolinux directory in rootdir with prefilled settings for the distro"""
@@ -312,7 +409,10 @@ def mkMetaISO(rootdir, buildprofile):
     _isofile = '%s.iso' % '+'.join([os.path.basename(kdir) for kdir in kdirs])
     isofile = os.path.abspath(_isofile)
     
-    makeBootISO(rootdir,isofile)
+    if buildprofile.distro == 'sles' or buildprofile.distro == 'opensuse':
+        makeSuSEBootISO(rootdir,isofile,buildprofile.arch)
+    else:
+        makeBootISO(rootdir,isofile)
     print "Generated meta kit:", isofile
     
     for mntpnt in mntlist:
@@ -345,6 +445,33 @@ def makeBootISO(rootdir, isofile, volname="kusu"):
     isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True,cwd=rootdir)
     isoP.wait()
 
+def makeSuSEBootISO(rootdir, isofile, arch, volname="kusu"):
+    """Create a bootable ISO isoname out of the directory rootdir. The volname can be used to specify
+       the ISO label name.
+    """
+
+    if not os.path.exists(rootdir):
+        print '%s not found!' % rootdir
+
+    # nuke existing iso file if any
+    if os.path.exists(isofile): os.remove(isofile)
+
+    options = '-c boot/%s/loader/boot.cat \
+    -b boot/%s/loader/isolinux.bin \
+    -V %s\
+    -quiet \
+    -no-emul-boot \
+    -boot-load-size 4 \
+    -boot-info-table \
+    -graft-points \
+    -iso-level 4 \
+    -pad \
+    -allow-leading-dots \
+    -r -J -l \
+    -o %s %s' %  (arch, arch, volname,isofile,rootdir)
+
+    isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True,cwd=rootdir)
+    isoP.wait()
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
@@ -363,7 +490,7 @@ if __name__ == '__main__':
         print 'Please specify the version!'
         sys.exit(-1)
             
-    if not options.arch: 
+    if not options.arch:
         print 'Please specify the arch!'
         sys.exit(-1)
         
@@ -385,13 +512,16 @@ if __name__ == '__main__':
     tdir = tempfile.mkdtemp(prefix='emerald-')
     atexit.register(cleanup,tdir)
 
-    mkISOLinuxDir(tdir, buildprofile)
-    mkImagesDir(tdir, buildprofile)
-    
-    # stamp .discinfo
-    discinfo = os.path.join(tdir,'.discinfo')
-    f = open(discinfo,'w')
-    f.close()
+    if buildprofile.distro == 'sles' or buildprofile.distro == 'opensuse':
+        makeSuseBootDir(tdir, buildprofile)
+    else:
+        mkISOLinuxDir(tdir, buildprofile)
+        mkImagesDir(tdir, buildprofile)
+        
+        # stamp .discinfo
+        discinfo = os.path.join(tdir,'.discinfo')
+        f = open(discinfo,'w')
+        f.close()
     
     mkMetaISO(tdir, buildprofile)
     sys.exit(0)

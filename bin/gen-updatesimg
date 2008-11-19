@@ -52,6 +52,25 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'kusu-ui',
                 'kusu-util']
                 
+SLES_PKGS = ['libnewt0_52',
+      'newt',
+      'python-newt',
+      'python',
+      'slang',
+      'python-xml',
+      'grub',
+      'mkinitrd',
+      'coreutils',
+      'parted',
+      'pyparted',
+      'rpm',
+      'rpm-python',
+      'yast2-python-bindings',
+      'sqlite',
+      'python-elementtree',
+      'libreiserfs'
+      ]
+                
 CURRENT_PKGS = []
 
 def getKusuTrunk():
@@ -69,7 +88,8 @@ def getRPM(arg, dirname, names):
         li.extend([name for name in names if name.startswith(pkg) and name.endswith('.rpm')])
         
     if li:
-        for l in li: CURRENT_PKGS.append(os.path.abspath(os.path.join(dirname,l)))
+        for l in li:
+            CURRENT_PKGS.append(os.path.abspath(os.path.join(dirname,l)))
         
 def getAnacondaScript(distro, version, arch=None):
     """Returns the 'faux' anaconda script from the SVN sources."""
@@ -98,12 +118,72 @@ def getThttpdRunScript(distro, version, arch=None):
                 'version':version, 'arch':arch}
     thttpdRunScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/thttpd-run.sh')))
     return thttpdRunScript
+    
+def getYastScript(distro, version, arch=None):
+    """Returns the 'faux' anaconda script from the SVN sources."""
+    if not (distro == 'sles' or distro == 'opensuse'):
+        return None
+    if not arch:
+        archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
+        arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86').match(arch):
+        arch = 'i386'
+    trunk = getKusuTrunk()
+    distspath = 'src/dists/%(distro)s/%(version)s/%(arch)s' % {'distro':distro,
+                'version':version, 'arch':arch}
+    yastScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/yast')))
+    return yastScript
+    
+def getRealYastScript(distro, version, arch=None):
+    """Returns the 'faux' anaconda script from the SVN sources."""
+    if not (distro == 'sles' or distro == 'opensuse'):
+        return None
+    if not arch:
+        archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
+        arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86').match(arch):
+        arch = 'i386'
+    trunk = getKusuTrunk()
+    distspath = 'src/dists/%(distro)s/%(version)s/%(arch)s' % {'distro':distro,
+                'version':version, 'arch':arch}
+    yastScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/yast.real')))
+    return yastScript
+
+def getRebootScript(distro, version, arch=None):
+    """Returns the 'faux' anaconda script from the SVN sources."""
+    if not (distro == 'sles' or distro == 'opensuse'):
+        return None
+    if not arch:
+        archP = subprocess.Popen("arch",shell=True,stdout=subprocess.PIPE)
+        arch = archP.stdout.read().strip(os.linesep)
+    # collapse all ix86 to i386.
+    if re.compile('i[3456]86').match(arch):
+        arch = 'i386'
+    trunk = getKusuTrunk()
+    distspath = 'src/dists/%(distro)s/%(version)s/%(arch)s' % {'distro':distro,
+                'version':version, 'arch':arch}
+    rebootScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img')))
+    
+    if not os.path.exists(os.path.join(rebootScript,'reboot')):
+        # Custom reboot
+        cp = subprocess.Popen(['make'],
+                            cwd=rebootScript,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        stdout, stderr = cp.communicate()
+        if cp.returncode:
+            raise IOError, stderr
+
+    return os.path.join(rebootScript,'reboot')
+
 
 def generateUpdatesImg(updatesdir, updatesimgpath):
     """ Generate the updates.img file. updatesdir points to the directory containing the contents that
         should be included in the updates.img file.
     """
-    packExt2FS(updatesdir, updatesimgpath, 20000)
+    packExt2FS(updatesdir, updatesimgpath, 100000)
 
 def packExt2FS(dirname, rootimgpath, size=5000):
     """Packs the directory dir into an ext2fs rootimgpath. The size of the image can be passed as well.
@@ -155,11 +235,11 @@ if __name__ == '__main__':
         arch = 'i386'
 
     # get the base kit RPMS directory
-    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/noarch')
-    os.path.walk(basekitRPMSdir,getRPM,None)
+    #basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/noarch')
+    #os.path.walk(basekitRPMSdir,getRPM,None)
 
-    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
-    os.path.walk(basekitRPMSdir,getRPM,None)
+    #basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
+    #os.path.walk(basekitRPMSdir,getRPM,None)
 
     if os.path.exists('/etc/fedora-release'):
         dist = 'fedora'
@@ -188,6 +268,7 @@ if __name__ == '__main__':
             dist = 'opensuse'
             
         distP = subprocess.Popen("grep VERSION /etc/SuSE-release | awk -F' = ' '{print $2}' | sed 's/\.//'",shell=True,stdout=subprocess.PIPE)
+        
         distver = distP.stdout.read().strip(os.linesep)
         
     if 'KUSU_BUILD_DIST' in os.environ.keys():
@@ -198,6 +279,24 @@ if __name__ == '__main__':
     
     print 'KUSU_DIST=%s' % dist
     print 'KUSU_DISTVER=%s' % distver
+    
+    if dist == 'sles' or dist == 'opensuse':
+        KUSU_RUNTIME = KUSU_RUNTIME + SLES_PKGS
+    
+    # get the base kit RPMS directory
+    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/noarch')
+    os.path.walk(basekitRPMSdir,getRPM,None)
+
+    if arch == 'i386' and (dist == 'sles' or dist == 'opensuse'):
+        basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/i586')
+        os.path.walk(basekitRPMSdir,getRPM,None)
+        
+        basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/i686')
+        os.path.walk(basekitRPMSdir,getRPM,None)
+    
+    else:
+        basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
+        os.path.walk(basekitRPMSdir,getRPM,None)
     
     anacondaScript = getAnacondaScript(dist, distver, arch)
     if not os.path.exists(anacondaScript):
@@ -250,6 +349,60 @@ if __name__ == '__main__':
     # copy the thttpd-run.sh script
     shutil.copy(thttpdRunScript, tdir)
     os.chmod(os.path.join(tdir,'thttpd-run.sh'),0755)
+    
+    if dist == 'sles' or dist == 'opensuse':
+        yastScript = getYastScript(dist, distver, arch)
+        if not os.path.exists(yastScript):
+            print "Unable to get 'faux' yast script from SVN source tree! Please ensure the source tree is complete!"
+            sys.exit(-1)
+        # copy the 'faux' yast script
+        cp = subprocess.Popen(['cp', yastScript, os.path.abspath(os.path.join(tdir,'sbin/yast'))],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+        stdout, stderr = cp.communicate()
+        if cp.returncode:
+            raise IOError, stderr
+        os.chmod(os.path.join(tdir,'sbin/yast'),0755)
+        
+        #realYastScript = getRealYastScript(dist, distver, arch)
+        realYastScript = os.path.abspath(os.path.join(os.path.dirname(yastScript),'yast.real'))
+        if not os.path.exists(realYastScript):
+            print "Unable to get 'real' yast script from SVN source tree! Please ensure the source tree is complete!"
+            sys.exit(-1)
+        # copy the 'real' real script
+        cp = subprocess.Popen(['cp', realYastScript, os.path.abspath(os.path.join(tdir,'sbin/yast.real'))],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+        stdout, stderr = cp.communicate()
+        if cp.returncode:
+            raise IOError, stderr
+        os.chmod(os.path.join(tdir,'sbin/yast.real'),0755)
+        
+        detectNetCardScript = os.path.abspath(os.path.join(os.path.dirname(yastScript),'detect_network_cards.py'))
+        if not os.path.exists(detectNetCardScript):
+            print "Unable to get 'real' yast script from SVN source tree! Please ensure the source tree is complete!"
+            sys.exit(-1)
+        # copy the 'real' real script
+        cp = subprocess.Popen(['cp', detectNetCardScript, os.path.abspath(os.path.join(tdir,'detect_network_cards.py'))],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+        stdout, stderr = cp.communicate()
+        if cp.returncode:
+            raise IOError, stderr
+        os.chmod(os.path.join(tdir,'detect_network_cards.py'),0755)
+        
+        rebootScript = getRebootScript(dist, distver, arch)
+        if not os.path.exists(rebootScript):
+            print "Unable to get reboot script from SVN source tree! Please ensure the source tree is complete!"
+            sys.exit(-1)
+        # copy the reboot script
+        cp = subprocess.Popen(['cp', rebootScript, os.path.abspath(os.path.join(tdir,'sbin/reboot'))],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+        stdout, stderr = cp.communicate()
+        if cp.returncode:
+            raise IOError, stderr
+    
     
     generateUpdatesImg(tdir,'./updates.img')
     

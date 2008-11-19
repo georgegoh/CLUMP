@@ -78,7 +78,7 @@ ifdef $(1)_RPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_RPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
-	wget -nd -O $(call PKG_PREFIX_RPM_NAME,$(1)) $(call PKG_RPM_URL,$(1))
+	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_RPM_NAME,$(1)) $(call PKG_RPM_URL,$(1))
 endif
 endef
 
@@ -88,7 +88,7 @@ ifdef $(1)_SRPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
-	wget -nd -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))
+	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))
 endif
 endef
 
@@ -180,6 +180,8 @@ SRPM_MODE_PKGS = $(strip $(foreach pkg,$(KIT_PKGS),$(if $($(pkg)_SRPM),$(pkg))))
 SRPM_MODE_RULES = PKG_GET_SRPM_FROM_URL PKG_ARTIFACT_FROM_RPM PKG_RPM_FROM_SRPM
 RPM_MODE_PKGS = $(strip $(foreach pkg,$(KIT_PKGS),$(if $($(pkg)_RPM),$(pkg))))
 RPM_MODE_RULES = PKG_GET_RPM_FROM_URL PKG_ARTIFACT_FROM_RPM
+INSTALLER_MODE_PKGS = $(strip $(foreach pkg,$(INSTALLER_MODE_PKGS),$(if $($(pkg)_RPM),$(pkg))))
+INSTALLER_MODE_RULES = PKG_GET_RPM_FROM_URL
 
 # The order of the targets is important here. The target `iso' is first,
 # so it is chosen as the default target when `make' is run without targets
@@ -187,7 +189,7 @@ RPM_MODE_RULES = PKG_GET_RPM_FROM_URL PKG_ARTIFACT_FROM_RPM
 # before their variables (SRPM_ARTIFACTS, ISO_ARTIFACTS, etc) are used.
 
 .PHONY: iso
-iso: $(KIT_ISO_FILENAME)
+iso: rpms $(KIT_ISO_FILENAME)
 
 .PHONY: all
 all: iso srpms
@@ -201,6 +203,7 @@ $(foreach pkg,$(PARENT_MODE_PKGS),$(foreach rule,$(PARENT_MODE_RULES),$(eval $(c
 $(foreach pkg,$(SPEC_MODE_PKGS),$(foreach rule,$(SPEC_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(SRPM_MODE_PKGS),$(foreach rule,$(SRPM_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(RPM_MODE_PKGS),$(foreach rule,$(RPM_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
+$(foreach pkg,$(INSTALLER_PKGS),$(foreach rule,$(INSTALLER_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 
 .PHONY: tgzs
 tgzs: $(TGZ_ARTIFACTS)
