@@ -171,12 +171,8 @@ class PluginRunner:
                         kl.error('Plugin traceback:\n%s', traceback.format_exc())
                            
                     if plugin.delete and fname.exists():
-                        # Remove byte-compiled files first...
-                        bcFiles = [ path("%sc" % fname), path("%so" % fname) ]
-                        for file in bcFiles:
-                            if file.exists():
-                                file.remove()
-
+                        self.removeByteCompiledFiles(fname)
+                                    
                         firstrun = path('/etc/rc.kusu.d/firstrun')
                         if not firstrun.exists():
                             firstrun.makedirs()
@@ -239,6 +235,7 @@ class PluginRunner:
 
                     if self.ngtype not in m.ngtypes:
                         if m.delete and plugin.exists():
+                            self.removeByteCompiledFiles(plugin)
                             plugin.remove()
                         continue
 
@@ -358,3 +355,9 @@ class PluginRunner:
                     return value.strip('"')
            
         return None 
+
+    def removeByteCompiledFiles(self, fname):
+        bcFiles = [ path("%sc" % fname), path("%so" % fname) ]
+        for file in bcFiles:
+            if file.exists():
+                file.remove()
