@@ -45,48 +45,14 @@
 
     ## Partitioning takes in a DiskProfile-type object in the partitions namespace.
     <partitioning config:type="list">
-        #for $disk in $partitions.disk_dict.values()
-        <drive>
-            <device>$disk.path</device>
-            <partitions config:type="list">
-            #for $part in $disk.partition_dict.values()
-                #if not $part.type=='extended'
-                <partition>
-                    ## If already on-disk, then don't create.
-                    #if $part.on_disk
-                    <create config:type="boolean">false</create>
-                    #else
-                    <create config:type="boolean">true</create>
-                    #end if
-                    #* swap and reiserfs must be treated specially as they have
-                       different string representations for different distros.
-                    *#
-                    #if $part.fs_type=='linux-swap'
-                    <filesystem config:type="symbol">swap</filesystem>
-                    <format config:type="boolean">$part.do_not_format</format>
-                    <mount>swap</mount>
-                    #elif $part.fs_type=='reiserfs'
-                    <filesystem config:type="symbol">reiser</filesystem>
-                    <format config:type="boolean">$part.do_not_format</format>
-                    <mount>$part.mountpoint</mount>
-                    #else
-                    <filesystem config:type="symbol">$part.fs_type</filesystem>
-                    <format config:type="boolean">$part.do_not_format</format>
-                    <mount>$part.mountpoint</mount>
-                    #end if
-                    <mountby config:type="symbol">device</mountby>
-                    ## Need the native type number(e.g, 0x82, 0x83, etc)
-                    <partition_id config:type="integer">$part.pedPartition.native_type</partition_id>
-                    <partition_nr config:type="integer">$part.num</partition_nr>
-                    <size>$part.size</size>
-                </partition>
-                #end if
-            #end for
-            </partitions>
-            <use>all</use>
-        </drive>
-        #end for
+    #for $disk in $partitions.disk_dict.values()
+        $generateDisk($disk)
+    #end for
+    #for $vg in $partitions.lvg_dict.values()
+        $generateLVMVolumeGroup($vg)
+    #end for
     </partitioning>
+
     <users config:type="list">
         <user>
             <encrypted config:type="boolean">false</encrypted>
@@ -112,3 +78,110 @@
     </timezone>
 
 </profile>
+
+## Partitioning
+#def generatePartitionFS($part)
+    ## This function generates XML rules for one partition's fs type.
+    ## for LVM physical volumes, swap, and reiserfs partitions,
+    ## their partition entries in the xml have different descriptions.
+
+                #if $part.path in $part.disk.profile.pv_dict.keys()
+                    #set $pv = $part.disk.profile.pv_dict[$part.path]
+                    <lvm_group>$pv.group.name</lvm_group>
+                    ##del $pv
+                #elif $part.fs_type=='linux-swap'
+                    <filesystem config:type="symbol">swap</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>swap</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #elif $part.fs_type=='reiserfs'
+                    <filesystem config:type="symbol">reiser</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>$part.mountpoint</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #else
+                    <filesystem config:type="symbol">$part.fs_type</filesystem>
+                    <format config:type="boolean">$part.do_not_format</format>
+                    <mount>$part.mountpoint</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #end if
+#end def
+
+#def generatePartition($part)
+## This function generates an XML entity for one partition.
+
+                <partition>
+                ## If already on-disk, then don't create.
+                #if $part.on_disk
+                    <create config:type="boolean">false</create>
+                #else
+                    <create config:type="boolean">true</create>
+                #end if
+                    $generatePartitionFS($part)
+                    ## Need the native type number(e.g, 0x82, 0x83, etc)
+                    <partition_id config:type="integer">$part.pedPartition.native_type</partition_id>
+                    <partition_nr config:type="integer">$part.num</partition_nr>
+                    <size>$part.size</size>
+                </partition>
+#end def
+
+#def generateDisk($disk)
+
+        <drive>
+            <device>$disk.path</device>
+            <partitions config:type="list">
+            #for $part in $disk.partition_dict.values()
+                #if not $part.type=='extended'
+                    $generatePartition($part)
+                #end if
+            #end for
+            </partitions>
+            <use>all</use>
+        </drive>
+#end def
+
+##LVM
+#def generateLVMLogicalVolumes($lv)
+    ## This function generates an XML entity for one logical volume.
+
+                <partition>
+                    <create config:type="boolean">true</create>
+                #if $lv.fs_type=='linux-swap'
+                    <filesystem config:type="symbol">swap</filesystem>
+                    <format config:type="boolean">true</format>
+                    <lv_name>$lv.name</lv_name>
+                    <mount>swap</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #elif $lv.fs_type=='reiserfs'
+                    <filesystem config:type="symbol">reiser</filesystem>
+                    <format config:type="boolean">true</format>
+                    <lv_name>$lv.name</lv_name>
+                    <mount>$lv.mountpoint</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #else
+                    <filesystem config:type="symbol">$lv.fs_type</filesystem>
+                    <format config:type="boolean">true</format>
+                    <lv_name>$lv.name</lv_name>
+                    <mount>$lv.mountpoint</mount>
+                    <mountby config:type="symbol">device</mountby>
+                #end if
+                    <size>$lv.size</size>
+                </partition>
+#end def
+
+#def generateLVMVolumeGroup($vg)
+    ## This function generates an XML entity for a named LVM Logical Volume Group.
+
+        <drive>
+            <device>/dev/$vg.name</device>
+            <lvm2 config:type="boolean">true</lvm2>
+            <partitions config:type="list">
+                #for $lv in $vg.lv_dict.values()
+                    $generateLVMLogicalVolumes($lv)
+                #end for
+            </partitions>
+            <pesize>$vg.extent_size_humanreadable</pesize>
+            <type config:type="symbol">CT_LVM</type>
+            <use>all</use>
+        </drive>
+#end def
