@@ -12,6 +12,7 @@ from kusu.core import database as db
 from kusu.repoman import tools
 from kusu.repoman.updates import YumUpdate, RHNUpdate
 from kusu.util import rpmtool
+from primitive.repo.yast import YastRepo
 from path import path
 from Cheetah.Template import Template
 import sqlalchemy as sa
@@ -92,7 +93,7 @@ class BaseRepo(object):
     def getContribPath(self):
         """Get the contrib path for the repository"""
 
-        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
+        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid, False)
         return self.prefix / self.contrib_root / os_name / os_version / os_arch
 
     def getKitPath(self, name, version, arch):
@@ -253,6 +254,234 @@ class BaseRepo(object):
     def makeRepoDirs(self):
         """creates the necessary repository directories"""
         raise NotImplementedError
+
+class SuseYastRepo(BaseRepo):
+    """Base yast repository class"""
+
+    def __init__(self, os_name, os_version, os_arch, prefix, db):
+        BaseRepo.__init__(self, prefix, db)
+    
+        self.os_name = os_name
+        self.os_version = os_version
+        self.os_arch = os_arch
+ 
+        self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
+
+    def getPackagesDir(self):
+        
+        packagesDir = []
+        for k, p in self.dirlayout.iteritems():
+            if k.startswith('packagesdir'):
+                packagesDir.append(self.repo_path / p)
+
+        return packagesDir
+
+    def copyKitsPackages(self):
+        # Need a better method for this
+        kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
+                                      self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
+                                      self.db.Kits.c.isOS==False)
+
+
+        rpmPkgs = []
+        for d in self.getPackagesDir():
+            rpmPkgs.append(rpmtool.getLatestRPM([d]))
+
+        for kit in kits:
+            pkgdir = self.getKitPath(kit.rname, kit.version, kit.arch)
+
+            if not pkgdir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
+   
+            for file in pkgdir.listdir():
+                if file.basename() not in ['TRANS.TBL', 'kitinfo']:
+
+                    rpm = rpmtool.RPM(str(file))
+
+                    name = rpm.getName()
+                    r_arch = rpm.getArch()
+
+                    # We will be replacing the package from the os kit when 
+                    # it is provided by a kit
+                    for rpmPkg in rpmPkgs:
+                        if rpmPkg.has_key(name):
+                            if r_arch in ['i386', 'i486', 'i586', 'i686']:
+                                for arch in ['i386', 'i486', 'i586', 'i686']:
+                                    if rpmPkg[name].has_key(arch):
+                                        osFile = rpmPkg[name][arch][0].getFilename()
+                                        if osFile.exists(): osFile.remove()
+
+                            else:
+                                if rpmPkg[name].has_key(r_arch):
+                                    osFile = rpmPkg[name][r_arch][0].getFilename()
+                                    if osFile.exists(): osFile.remove()
+
+                    if not (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).exists():
+                        (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).makedirs()
+
+                    dest = self.repo_path / self.dirlayout['packagesdir.' + r_arch] / file.basename()
+
+                    if dest.exists(): dest.remove()
+
+                    (dest.parent.relpathto(file)).symlink(dest)
+
+    def copyOSKit(self):
+
+        self.os_path = self.getOSPath()
+        
+        # Validate OS layout
+        for dir in self.dirlayout.values():
+            dir = self.os_path / dir
+            if dir.endswith('suse/i386') or dir.endswith('suse/i486') :
+                continue #default suse repo does not have these dir            
+            elif not dir.exists():
+                raise InvalidPathError, 'Path \'%s\' not found' % dir
+             
+        for key, dir in self.dirlayout.items():
+            
+            if dir.endswith('suse/i386') or dir.endswith('suse/i486') :
+                continue #default suse repo does not have these dir            
+
+            for file in (self.os_path / dir).listdir():
+                if not file.isdir() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
+                        dest = self.repo_path / dir / file.basename()
+                        (dest.parent.relpathto(file)).symlink(dest)
+
+        for file in ['content', 'content.asc', 'content.key', 'control.xml', 'directory.yast']:
+            file = self.os_path / file
+      
+            if file.exists(): 
+                dest = self.repo_path / file.basename()
+                file.copy(dest)
+
+        for file in (self.os_path / self.dirlayout['descrdir']).glob('packages*'):
+            dest = self.repo_path / self.dirlayout['descrdir'] / file.basename()
+
+            if dest.exists():
+                dest.remove()
+
+            file.copy(dest)
+
+    def copyContribPackages(self):
+
+        if not self.getContribPath().exists():
+            return
+
+        contribFiles = self.getContribPath().listdir()
+
+        if not contribFiles:
+            return
+
+        rpmPkgs = []
+        for d in self.getPackagesDir():
+            rpmPkgs.append(rpmtool.getLatestRPM([d]))
+
+        for file in contribFiles:
+            if file.basename() not in ['TRANS.TBL', 'kitinfo']:
+
+                rpm = rpmtool.RPM(str(file))
+
+                name = rpm.getName()
+                r_arch = rpm.getArch()
+
+                # We will be replacing the package from the os kit when 
+                # it is provided by a kit
+                for rpmPkg in rpmPkgs:
+                    if rpmPkg.has_key(name):
+                        if r_arch in ['i386', 'i486', 'i586', 'i686']:
+                            for arch in ['i386', 'i486', 'i586', 'i686']:
+                                if rpmPkg[name].has_key(arch):
+                                    osFile = rpmPkg[name][arch][0].getFilename()
+                                    if osFile.exists(): osFile.remove()
+
+                        else:
+                            if rpmPkg[name].has_key(r_arch):
+                                osFile = rpmPkg[name][r_arch][0].getFilename()
+                                if osFile.exists(): osFile.remove()
+
+
+                if not (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).exists():
+                    (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).makedirs()
+                   
+                dest = self.repo_path / self.dirlayout['packagesdir.' + r_arch] / file.basename()
+                (dest.parent.relpathto(file)).symlink(dest)
+
+
+    def makeRepoDirs(self):
+        for dir in self.dirlayout.values():
+            try:
+                (self.repo_path / dir).makedirs()
+            except: pass
+
+    def make(self, ngname):
+        """makes the repository"""
+
+        try:
+            self.UpdateDatabase(ngname)
+            self.makeRepoDirs()
+            self.copyOSKit()
+            self.copyKitsPackages()
+            self.copyContribPackages()
+            #self.copyRamDisk()
+            #self.copyKusuNodeInstaller()
+            #self.makeComps()
+            self.makeMetaInfo()
+            #self.makeAutoInstallScript()
+            self.verify()
+        except Exception, e:
+            # Don't use self.delete(), since is unsure state
+
+            if self.repoid: #repo have been inserted into database
+                repos_have_kits = self.db.ReposHaveKits.select_by(repoid = self.repoid)
+                repo = self.db.Repos.get(self.repoid)
+                
+                for obj in repos_have_kits + [repo]:
+                    obj.delete()
+                    obj.flush()         
+
+            if self.repo_path and self.repo_path.exists():
+                self.repo_path.rmtree()
+
+            raise e
+
+        return self
+
+    def refresh(self, repoid_or_reponame):
+        """refresh the repository"""
+
+        self.repoid = self.getRepoID(repoid_or_reponame)
+        if not self.repoid:
+            raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
+       
+        try:
+            self.clean(self.repoid)
+            self.makeRepoDirs()
+            self.copyOSKit()
+            self.copyKitsPackages()
+            self.copyContribPackages()
+            #self.copyRamDisk()
+            #self.copyKusuNodeInstaller()
+            #self.makeComps()
+            self.makeMetaInfo()
+            #self.makeAutoInstallScript()
+            self.verify()
+        except Exception, e:
+            raise e
+
+        return self
+
+    def makeMetaInfo(self):
+        
+        for p in [self.dirlayout['descrdir']]:
+            md5sum = self.repo_path / p / 'MD5SUMS'
+            if md5sum.exists():
+                md5sum.remove()
+
+        yastRepo = YastRepo(self.repo_path)
+        yastRepo.make()
+
+    def verify(self):
+        return True
 
 class RedhatYumRepo(BaseRepo):
     """Base Redhat repository class"""
@@ -917,3 +1146,33 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 return p
  
         return None 
+
+class SLES10Repo(SuseYastRepo):
+    def __init__(self, os_arch, prefix, db):
+        SuseYastRepo.__init__(self, 'sles', '10', os_arch, prefix, db)
+            
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
+        self.dirlayout['mediadir'] = 'media.1' 
+        self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
+        self.dirlayout['descrdir'] = 'suse/setup/descr' 
+        self.dirlayout['patchesdir'] = 'patches/repodata'
+        
+        self.dirlayout['packagesdir.noarch'] = 'suse/noarch' 
+        self.dirlayout['packagesdir.i386'] = 'suse/i386';
+        self.dirlayout['packagesdir.i486'] = 'suse/i486';
+        self.dirlayout['packagesdir.i586'] = 'suse/i586';
+        self.dirlayout['packagesdir.i686'] = 'suse/i686';
+        self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
+
+    def getPackageFilePath(self, packagename):
+
+        for dirlayout in self.getPackagesDir():
+            p = (self.repo_path / dirlayout / packagename)
+
+            if p.exists():
+                return p
+
+        return None 
+
+

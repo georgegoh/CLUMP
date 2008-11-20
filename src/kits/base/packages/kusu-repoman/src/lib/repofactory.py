@@ -18,7 +18,8 @@ class RepoFactory(object):
     class_dict = { 'fedora' : {'6': repo.Fedora6Repo},
     #                           '7': repo.Fedora7Repo},
                    'centos' : {'5': repo.Centos5Repo},
-                   'rhel'   : {'5': repo.Redhat5Repo} }
+                   'rhel'   : {'5': repo.Redhat5Repo},
+                   'sles'   : {'10': repo.SLES10Repo} }
 
     def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.
