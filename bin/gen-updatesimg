@@ -402,7 +402,10 @@ if __name__ == '__main__':
         stdout, stderr = cp.communicate()
         if cp.returncode:
             raise IOError, stderr
-    
+        
+        # remove parted and partprobe.
+        os.remove(os.path.abspath(os.path.join(tdir, 'usr/sbin/parted')))
+        os.remove(os.path.abspath(os.path.join(tdir, 'usr/sbin/partprobe')))
     
     generateUpdatesImg(tdir,'./updates.img')
     
