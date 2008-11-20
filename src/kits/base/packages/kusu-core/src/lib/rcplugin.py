@@ -175,8 +175,12 @@ class PluginRunner:
                         bcFiles = [ path("%sc" % fname), path("%so" % fname) ]
                         for file in bcFiles:
                             if file.exists():
-                                os.unlink(file)
-                        fname.remove()
+                                file.remove()
+
+                        firstrun = path('/etc/rc.kusu.d/firstrun')
+                        if not firstrun.exists():
+                            firstrun.makedirs()
+                        fname.move(firstrun / fname.basename())
 
         return results
 
@@ -205,6 +209,10 @@ class PluginRunner:
 
         pluginsData = {}
         for plugin in plugins:
+
+            if not plugin.isfile():
+                continue
+
             if plugin.endswith('.pyc') or plugin.endswith('.pyo'):
                 continue
 
