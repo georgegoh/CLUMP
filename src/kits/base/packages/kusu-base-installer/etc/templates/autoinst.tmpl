@@ -50,6 +50,7 @@
             <device>$disk.path</device>
             <partitions config:type="list">
             #for $part in $disk.partition_dict.values()
+                #if not $part.type=='extended'
                 <partition>
                     ## If already on-disk, then don't create.
                     #if $part.on_disk
@@ -79,6 +80,7 @@
                     <partition_nr config:type="integer">$part.num</partition_nr>
                     <size>$part.size</size>
                 </partition>
+                #end if
             #end for
             </partitions>
             <use>all</use>
