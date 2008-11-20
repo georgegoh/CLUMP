@@ -20,6 +20,10 @@ rhel_release = {'0': 'redhat-release-5Server-5.0.0.9.i386.rpm',
                 '1': 'redhat-release-5Server-5.1.0.2.i386.rpm', 
                 '2': 'redhat-release-5Server-5.2.0.4.i386.rpm'}
 
+sles_content = {'0': 'PRODUCT SUSE SLES\nVERSION 10\n',
+                '1': 'PRODUCT SUSE_SLES_SP1\nVERSION 10.1-0\n',
+                '2': 'PRODUCT SUSE_SLES_SP2\nVERSION 10.2-0\n'}
+
 def downloadFiles(fn):
     global url
 
@@ -853,4 +857,158 @@ mainimage = images/stage2.img
 
         assert fedoraObj.getKernelPackages() == li
         assert fedoraObj.getKernelRpms() == li
+
+
+
+class TestSLES10Detection:
+    """Test suite for detecting SLES 10 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupSLES(10)
+
+    def tearDown(self):
+        """Clean up after done"""
+
+        self.teardownSLES(10)
+
+    def setupSLES(self, version):
+        """SLES-centric housekeeping"""
+
+        self.slesLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+        # create a directory and delete it immediately after. 
+        self.invalidSLESLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+        self.invalidSLESLocalPath.rmdir()
+
+        path(self.slesLocalPath / 'boot').mkdir()
+        path(self.slesLocalPath / 'boot/i386').mkdir()
+        path(self.slesLocalPath / 'boot/i386/loader').mkdir()
+        path(self.slesLocalPath / 'boot/i386/loader/isolinux.bin').touch()
+        path(self.slesLocalPath / 'boot/i386/loader/initrd').touch()
+        path(self.slesLocalPath / 'boot/i386/loader/linux').touch()
+        path(self.slesLocalPath / 'suse').mkdir()
+        path(self.slesLocalPath / 'suse/i586').mkdir()
+        path(self.slesLocalPath / 'suse/i686').mkdir()
+        path(self.slesLocalPath / 'suse/noarch').mkdir()
+
+        # set up some kernel packages
+        path(self.slesLocalPath / 'suse/i586/kernel-smp-2.6.16.60-0.21.i586.rpm').touch()
+        path(self.slesLocalPath / 'suse/i586/kernel-source-2.6.16.60-0.21.i586.rpm').touch()
+        path(self.slesLocalPath / 'suse/i586/kernel-xen-2.6.16.60-0.21.i586.rpm').touch()
+        path(self.slesLocalPath / 'suse/i586/kernel-default-2.6.16.60-0.21.i586.rpm').touch()
+
+    def setupContent(self, minorVersion):
+
+        global sles_content
+
+        content = self.slesLocalPath / 'content'
+            
+        f = open(content, 'w')
+        f.write(sles_content[minorVersion])
+        f.close()
+
+        return content
+
+    def teardownSLES(self, version):
+        """RHEL-centric housekeeping in reverse"""
+
+        path(self.slesLocalPath).rmtree()
+        #self.rhelLocalPath.rmdir()
+
+    def test_IsSLESCD(self):
+        """Test if the CD is a SLES CD"""
+
+        cdObj = DistroFactory(self.slesLocalPath)
+        assert cdObj.ostype == "sles"
+
+            
+    def test_IsAdditionalSLESCD(self):
+        """Test if the CD is an additional SLES CD"""
+        
+        #cdObj = DistroFactory(self.additionalRHELMedia)
+        #assert cdObj.ostype == "rhel"
+        #assert cdObj.getVersion() == "5"
+        #assert cdObj.getArch() == "i386"
+        return
+
+        
+    def test_IsNotSLESCD(self):
+        """Test if the CD is not a SLES CD"""
+
+        cdObj = DistroFactory(self.invalidSLESLocalPath)
+        assert cdObj.ostype != "sles"
+
+    def test_SLESCDPathExists(self):
+        """Test if the path does indeed contain SLES media"""
+
+        slesObj = DistroFactory(self.slesLocalPath)
+        assert slesObj.verifyLocalSrcPath() is True
+
+    def test_SLESCDPathNotExists(self):
+        """Test if the path does indeed contain SLES media"""
+
+        slesObj = DistroFactory(self.invalidSLESLocalPath)
+        assert slesObj.verifyLocalSrcPath() is False
+
+    def test_SLESCDArch(self):
+        """Test if the arch is correct for the SLES media"""
+        
+        slesObj = DistroFactory(self.slesLocalPath)
+
+        assert slesObj.getArch() == 'i386'
+
+    def test_SLESCDVersion(self):
+        """Test if the version is correct for the SLES media"""
+        
+        for minor in ['0', '1', '2']:
+            content = self.setupContent(minor)
+
+            slesObj = DistroFactory(self.slesLocalPath)
+            assert slesObj.getVersion() == '10'
+            
+            content.remove()
+
+    def test_SLESCDMajorVersion (self):
+        """Test if the version is correct for the SLES media"""
+
+        
+        for minor in ['0', '1', '2']:
+            content = self.setupContent(minor)
+            slesObj = DistroFactory(self.slesLocalPath)
+            assert slesObj.getMajorVersion() == '10'
+            content.remove()
+       
+    def test_SLESCDMinorVersion (self):
+        """Test if the version is correct for the SLES media"""
+
+        for minor in ['0', '1', '2']:
+            content = self.setupContent(minor)
+
+            slesObj = DistroFactory(self.slesLocalPath)
+
+            assert slesObj.getMinorVersion() == minor
+
+            content.remove()
+
+    def test_SLESCDVersionString (self):
+        """Test if the version is correct for the SLES media"""
+
+        for minor in ['0', '1', '2']:
+        
+            content = self.setupContent(minor)
+            slesObj = DistroFactory(self.slesLocalPath)
+            assert slesObj.getVersionString() == '10.' + minor
+            content.remove()
+
+    def test_SLESGetKernelPackages(self):
+        """ Test to get the kernel packages. """
+       
+        slesObj = DistroFactory(self.slesLocalPath)
+
+        li = [path(self.slesLocalPath / 'suse/i586/kernel-default-2.6.16.60-0.21.i586.rpm')]
+
+        assert slesObj.getKernelPackages() == li
+        assert slesObj.getKernelRpms() == li
 
