@@ -300,6 +300,16 @@ class NodeMemberApp(object, KusuApp):
 
                     print self._("nghosts_moving_nodes_progress")
 
+                    # Check provision type. If not Kusu, then don't reboot on moving
+                    # when the source or destination nodegroup is 'unmanaged'.
+                    database.connect()
+                    database.execute("SELECT kvalue from appglobals WHERE kname=\'PROVISION\'")
+                    provision_type = database.fetchone()
+                    if provision_type != 'KUSU':
+                        rebootList = getRebootList(moveIPList, self._options.togroup)
+                    else:
+                        rebootList = moveIPList
+
                     self.unlock() 
                     os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(Set(nodesList), ' '))
                
@@ -314,9 +324,13 @@ class NodeMemberApp(object, KusuApp):
                     #if bool(self._options.reinstall):
                     #    if self._options.togroup != "unmanaged":
                     #       print self._("nghosts_reinstall_nodes_progress")
-                    # Call PDSH here
-                    rn = syncfun()
-                    rn.runPdsh(list(Set(moveIPList)), "reboot")
+
+                    # Call PDSH reboot here if the move does not involve the
+                    # unmanaged nodegroup as the source or destination.
+                    #
+                    if rebootList: 
+                        rn = syncfun()
+                        rn.runPdsh(list(Set(rebootList)), "reboot")
                     os.remove(tmpfile)
                     
                     self.logEvent(self._("nghosts_event_finish_move_nodes") % self._options.togroup, 
@@ -354,6 +368,23 @@ class NodeMemberApp(object, KusuApp):
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 1.2", showTrail=False)
         ks.run()
         self.unlock()
+
+
+def getRebootList(from_list, to_group):
+    """Generate a list of nodes which are not moving from/to unmanaged."""
+    database.execute("SELECT installtype FROM nodegroups WHERE ngname=\'%s\'" % to_group)
+    to_installtype = database.fetchone()[0]
+    rebootList = []
+    if to_installtype != 'unmanaged':
+        for ip in from_list:
+            database.execute("SELECT installtype from nics,nodes,nodegroups " + \
+                             "WHERE nics.nid=nodes.nid " + \
+                             "AND nodes.ngid=nodegroups.ngid and nics.ip=\'%s\'" % ip)
+            from_installtype = database.fetchone()[0]
+            if from_installtype != 'unmanaged':
+                rebootList.append(ip)
+    return rebootList
+
 
 class SelectNodesWindow(USXBaseScreen):
     name = "nghosts_window_title_select_node"
