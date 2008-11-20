@@ -352,9 +352,11 @@ class ConfigureIntfScreen:
         gridForm = snack.GridForm(self.screen,
                                   _('Configuring [%s]' % intf), 1, 4)
 
+        intfVendor = self.interface['vendor']
+        intfDevice = self.interface['device']
         device = snack.Textbox(40, 1, 'Device: ' + intf)
-        vendor = snack.Textbox(40, 1, 'Vendor: ' + self.interface['vendor'])
-        model = snack.Textbox(40, 1, 'Model: ' + self.interface['device'])
+        vendor = snack.Textbox(40, 1, 'Vendor: ' + (intfVendor == None and 'Unknown' or intfVendor))
+        model = snack.Textbox(40, 1, 'Model: ' + (intfDevice == None and 'Unknown' or intfDevice))
         module = snack.Textbox(40, 1, 'Module: ' + self.interface['module'])
 
         subgrid = snack.Grid(1, 4)
