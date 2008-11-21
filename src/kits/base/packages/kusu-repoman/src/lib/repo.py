@@ -332,14 +332,19 @@ class SuseYastRepo(BaseRepo):
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
-            if dir.endswith('suse/i386') or dir.endswith('suse/i486') :
-                continue #default suse repo does not have these dir            
+            
+            if self.os_arch == 'i386' and (dir.endswith('suse/i386') or dir.endswith('suse/i486')):
+                    continue #default suse repo does not have these dir            
+            elif self.os_arch == 'x86_64' and (dir.endswith('suse/i386') or dir.endswith('suse/i486') or dir.endswith('suse/i686')):
+                    continue #default suse repo does not have these dir
+
             elif not dir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % dir
              
         for key, dir in self.dirlayout.items():
-            
-            if dir.endswith('suse/i386') or dir.endswith('suse/i486') :
+            if self.os_arch == 'i386' and (dir.endswith('suse/i386') or dir.endswith('suse/i486')):
+                continue #default suse repo does not have these dir            
+            elif self.os_arch == 'x86_64' and (dir.endswith('suse/i386') or dir.endswith('suse/i486') or dir.endswith('suse/i686')):
                 continue #default suse repo does not have these dir            
 
             for file in (self.os_path / dir).listdir():
