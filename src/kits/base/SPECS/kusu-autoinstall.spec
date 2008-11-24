@@ -46,6 +46,7 @@ mkdir -p $RPM_BUILD_ROOT/%{_approot}
 
 install -d $RPM_BUILD_ROOT/%{_approot}/etc/templates
 install -m644 etc/templates/kickstart.tmpl $RPM_BUILD_ROOT/%{_approot}/etc/templates
+install -m644 etc/templates/autoinst.tmpl $RPM_BUILD_ROOT/%{_approot}/etc/templates
 
 install -d $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/autoinstall
 install -m755 lib/autoinstall.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/autoinstall
