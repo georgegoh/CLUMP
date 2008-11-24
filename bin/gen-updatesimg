@@ -300,16 +300,6 @@ if __name__ == '__main__':
         basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/' + arch)
         os.path.walk(basekitRPMSdir,getRPM,None)
     
-    anacondaScript = getAnacondaScript(dist, distver, arch)
-    if not os.path.exists(anacondaScript):
-        print "Unable to get 'faux' anaconda script from SVN source tree! Please ensure the source tree is complete!"
-        sys.exit(-1)
-        
-    thttpdRunScript = getThttpdRunScript(dist, distver)
-    if not os.path.exists(thttpdRunScript):
-        print "Unable to get thttpd-run.sh script from SVN source tree! Please ensure the source tree is complete!"
-        sys.exit(-1)
-    
     if len(CURRENT_PKGS) <> len(KUSU_RUNTIME):
         #print 'There are missing packages from the Base kit. Please rebuild the Base kit!'
         tmplst = KUSU_RUNTIME[:]
@@ -343,11 +333,12 @@ if __name__ == '__main__':
     initpy = os.path.join(tdir,'opt/kusu/lib/python/kusu/__init__.py')
     f = open(initpy,'w')
     f.close()
-        
-    # copy the 'faux' anaconda script
-    shutil.copy(anacondaScript, tdir)
-    os.chmod(os.path.join(tdir,'anaconda'),0755)
-
+    
+    thttpdRunScript = getThttpdRunScript(dist, distver)
+    if not os.path.exists(thttpdRunScript):
+        print "Unable to get thttpd-run.sh script from SVN source tree! Please ensure the source tree is complete!"
+        sys.exit(-1)
+    
     # copy the thttpd-run.sh script
     shutil.copy(thttpdRunScript, tdir)
     os.chmod(os.path.join(tdir,'thttpd-run.sh'),0755)
@@ -408,6 +399,15 @@ if __name__ == '__main__':
         # remove parted and partprobe.
         os.remove(os.path.abspath(os.path.join(tdir, 'usr/sbin/parted')))
         os.remove(os.path.abspath(os.path.join(tdir, 'usr/sbin/partprobe')))
+    else:
+        anacondaScript = getAnacondaScript(dist, distver, arch)
+        if not os.path.exists(anacondaScript):
+            print "Unable to get 'faux' anaconda script from SVN source tree! Please ensure the source tree is complete!"
+            sys.exit(-1)
+    
+        # copy the 'faux' anaconda script
+        shutil.copy(anacondaScript, tdir)
+        os.chmod(os.path.join(tdir,'anaconda'),0755)
     
     generateUpdatesImg(tdir,'./updates.img')
     
