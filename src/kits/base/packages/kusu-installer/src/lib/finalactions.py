@@ -79,60 +79,99 @@ def makeRepo(kiprofile):
     db.flush()
 
 def genAutoInstallScript(disk_profile, kiprofile):
-    from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
-    from kusu.autoinstall.autoinstall import Script
-    from kusu.autoinstall.installprofile import Kickstart, RHEL5Kickstart
+    from primitive.installtool.commands import GenerateAutoInstallScriptCommand
 
-    # redhat based for now
+    kusu_tmp = path(os.environ.get('KUSU_TMP', '/tmp'))
+    kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
     kusu_dist = os.environ.get('KUSU_DIST', None)
-    kusu_tmp = os.environ.get('KUSU_TMP', '/tmp')
+    kusu_distver = os.environ.get('KUSU_DISTVER', None)
 
     if kusu_dist in ['fedora', 'centos', 'rhel']:
-        install_script = path(kusu_tmp) / 'kusu-ks.cfg'
+        install_script = kusu_tmp / 'kusu-ks.cfg'
+    elif kusu_dist == "sles":
+        install_script = kusu_tmp / 'kusu-autoinst.xml'
     else:
-        install_script = path(kusu_tmp) / 'install_script'
-
-    # Build kickstart object
-    # Retrieve all the data required
-    ngname = 'installer-' + kiprofile['Kits']['longname']
-
-    if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
-        k = RHEL5Kickstart(kiprofile.getDatabase(), ngname)
-        k.instnum = kiprofile['InstNum']
-    else:
-        k = Kickstart(kiprofile.getDatabase(), ngname)
-        logger.debug('Created Kickstart object(k) successfully')
-        logger.debug('k.packageprofile: %s' % k.packageprofile)
-
-    k.rootpw = kiprofile['RootPasswd'] 
+        install_script = kusu_tmp / 'install_script'
 
     if kiprofile.has_key('Network'):
-        k.networkprofile = kiprofile['Network']
+        networkprofile = kiprofile['Network']
 
         row = kiprofile.getDatabase().AppGlobals.select_by(kname = 'InstallerServeDNS')[0]
         if row.kvalue == '1':
-            k.networkprofile['dns1'] = '127.0.0.1'
-            if k.networkprofile.has_key('dns2'): del k.networkprofile['dns2']
-            if k.networkprofile.has_key('dns3'): del k.networkprofile['dns3']
+            networkprofile['dns1'] = '127.0.0.1'
+            if networkprofile.has_key('dns2'): del networkprofile['dns2']
+            if networkprofile.has_key('dns3'): del networkprofile['dns3']
 
     else:
-        k.networkprofile = {}
+        networkprofile = {}
 
-    k.diskprofile = disk_profile
-    k.tz = kiprofile['Timezone']['zone']
-    k.lang = kiprofile['Language']
-    k.installsrc = 'http://127.0.0.1/' 
-    k.keyboard = kiprofile['Keyboard']
-    k.diskorder = kiprofile['Partitions']['disk_order']
-
-    if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
-        script = Script(RHEL5KickstartFactory(k))
-    elif kiprofile['OS'] == 'fedora' and kiprofile['OS_VERSION'] == '7':
-        script = Script(Fedora7KickstartFactory(k))
+    if kusu_dist == "sles":
+        packages = ['giflib',
+                    'libnl',
+                    'fontconfig',
+                    'perl-Digest-MD4',
+                    'yast2-trans-en_US',
+                    'perl-Compress-Zlib',
+                    'limal-nfs-server',
+                    'perl-Date-Calc',
+                    'libicu',
+                    'boost',
+                    'dbus-1-mono',
+                    'mono-web',
+                    'dbus-1-python',
+                    'libzypp-zmd-backend',
+                    'zypper',
+                    'libxml2-python',
+                    'mpt-firmware',
+                    'perl-Bootloader',
+                    'python',
+                    'tcl',
+                    'perl-URI',
+                    'update-alternatives',
+                    'limal-nfs-server-perl',
+                    'libgdiplus',
+                    'perl-X500-DN',
+                    'glib',
+                    'perl-Config-IniFiles',
+                    'pciutils-ids',
+                    'mono-winforms',
+                    'perl-Carp-Clan',
+                    'perl-Config-Crontab',
+                    'perl-Digest-SHA1',
+                    'perl-Parse-RecDescent',
+                    'perl-gettext',
+                    'perl-XML-Parser',
+                    'perl-Crypt-SmbHash',
+                    'perl-Bit-Vector',
+                    'perl-XML-Writer',
+                    'xorg-x11-libs']
+        template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
     else:
-        script = Script(KickstartFactory(k))
+        packages = kiprofile['packageprofile']
+        template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')
 
-    script.write(install_script)
+    if kiprofile.has_key('InstNum'):
+        instnum = kiprofile['InstNum']
+    else:
+        instnum = None
+
+
+    # Note: installsrc is needed for rhel/centos but not for sles
+    ic = GenerateAutoInstallScriptCommand(os={'name':kusu_dist, 'version':kusu_distver},
+                                          diskprofile=disk_profile,
+                                          networkprofile=networkprofile,
+                                          installsrc='http://127.0.0.1/',
+                                          rootpw=kiprofile['RootPasswd'],
+                                          tz=kiprofile['Timezone']['zone'],
+                                          lang=kiprofile['Language'],
+                                          keyboard=kiprofile['Keyboard'],
+                                          packageprofile=packages,
+                                          instnum=instnum,
+                                          diskorder=kiprofile['Partitions']['disk_order'],
+                                          template_uri=template_uri,
+                                          outfile=install_script)
+
+    ic.execute()
 
 def migrate(prefix):
     dest = path(prefix) + '/root'

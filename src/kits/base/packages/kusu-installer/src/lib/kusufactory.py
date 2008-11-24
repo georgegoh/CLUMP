@@ -32,7 +32,7 @@ from kusu.core import database as db
 
 # we start with a blank kusu installer profile
 kiprofile = Profile()
-kiprofile['Kusu Install MntPt'] = '/mnt/kusu'
+kiprofile['Kusu Install MntPt'] = '/kusu/mnt'
 kiprofile['OS'] = os.environ['KUSU_DIST']
 kiprofile['OS_VERSION'] = os.environ['KUSU_DISTVER']
 kiprofile['OS_ARCH'] = os.environ['KUSU_DIST_ARCH']

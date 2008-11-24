@@ -126,7 +126,9 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         names = [kit.rname for kit in kit_list]
         os = [kit.rname for kit in kit_list if kit.isOS]
         missing = []
-        if 'base' not in names:
+
+        ### FIXME: Disable check for 'base' kit for sles for now.
+        if 'base' not in names and kiprofile['OS'] != 'sles':
             missing.append('base')
         if not os:
             missing.append(self.kiprofile['OS'])
