@@ -68,7 +68,9 @@ SLES_PKGS = ['libnewt0_52',
       'yast2-python-bindings',
       'sqlite',
       'python-elementtree',
-      'libreiserfs'
+      'libreiserfs',
+      'inst-source-utils',
+      'perl'
       ]
                 
 CURRENT_PKGS = []
