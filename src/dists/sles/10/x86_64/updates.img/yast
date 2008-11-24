@@ -1,21 +1,43 @@
 #!/bin/sh
+# $Id$
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+# Kusu 'faux yast' loader
+
 export TERM=linux
 export LANG="en_US.UTF-8"
 source /opt/kusu/bin/kusuenv.sh
 
 # The following should go into kusuenv.sh
-export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib/python2.4/site-packages
+export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib64/python2.4/site-packages
 
 # kusuenv.sh does not detect the following properly yet
 export KUSU_DIST="sles"
 export KUSU_DISTVER="10"
+export PRIMITIVE_LOCKDIR="/tmp"
 
 # Force hardware detection so that network devices are discovered
 echo "Detecting network cards ..."
-/detect_network_cards.py
+/mounts/instsys/detect_network_cards.py
 
 echo "Installing device mapper kernel module ..."
 echo "modprobe dm_mod"
 modprobe dm_mod
 
 /opt/kusu/bin/installer
+
+echo "Starting thttpd..."
+/mounts/instsys/thttpd-run.sh > /dev/null 2>&1  &
+
+echo "Modifying /etc/install.inf ..."
+# Need to modify /etc/install.inf. install.inf is written out by linuxrc 
+# for yast. Documented in README.linuxrc in linuxrc src
+/bin/egrep -v 'Server:|Serverdir:|InstMode:|SourceType:' /etc/install.inf > /tmp/install.inf.tmp
+echo -e "Server: 127.0.0.1\nServerdir: /repos/1000\nAutoYaST: file:///tmp/kusu-autoinst.xml\nInstMode: http" >> /tmp/install.inf.tmp
+/bin/cp -f /tmp/install.inf.tmp /etc/install.inf
+
+echo "Starting the real yast..."
+/sbin/yast.real "$@"
