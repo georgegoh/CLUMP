@@ -832,9 +832,11 @@ class NodeFun(object, KusuApp):
     def validateInterface(self, interface, installer=True, nodegroup=None):
         """validateInterface(self, interface)
         Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
-        self._dbReadonly.execute("SELECT installtype FROM nodegroups WHERE ngid='%s'" % nodegroup)
-        if self._dbReadonly.fetchone()[0] == 'unmanaged':
-            return True
+        if nodegroup:
+            # if the nodegroup's installtype is 'unmanaged', interface is always valid.
+            self._dbReadonly.execute("SELECT installtype FROM nodegroups WHERE ngid='%s'" % nodegroup)
+            if self._dbReadonly.fetchone()[0] == 'unmanaged':
+                return True
         #t1=time.time()
         if installer: 
            self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
