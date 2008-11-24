@@ -17,6 +17,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.util.verify import verifyFQDN, verifyIP
 import kusu.util.log as kusulog
 from screen import InstallerScreen
+from kusu.installer.timezones import tzMap, tzDefault
 
 try:
     import subprocess
@@ -24,6 +25,9 @@ except:
     from popen5 import subprocess
 
 kl = kusulog.getKusuLog('installer.kits')
+
+def getTzMap():
+    return tzMap
 
 class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
     """This screen asks for timezone."""
@@ -47,8 +51,7 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
             self.utc.setValue('*')
 
         self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
-        self.getTZ()
-        tzList = self.tz_dict.keys()
+        tzList = getTzMap().keys()
         tzList.sort()
         for name in tzList:
             self.listbox.append(name, name)
@@ -68,20 +71,7 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['utc'] = False
         self.kiprofile[self.profile]['ntp_server'] = 'pool.ntp.org'
-        self.kiprofile[self.profile]['zone'] = 'Asia/Singapore'
-
-    def getTZ(self):
-        f = file('/usr/share/zoneinfo/zone.tab')
-        line = f.readline()
-        while line != '':
-            if line.strip()[0] != '#':
-                li = line.split('\t')
-                if len(li) > 3:
-                    self.tz_dict[li[2].strip()] = [li[0], li[1], li[3]]
-                else:
-                    self.tz_dict[li[2].strip()] = [li[0], li[1], '']
-            line = f.readline()
-        f.close()
+        self.kiprofile[self.profile]['zone'] = tzDefault
 
     def validate(self):
         if not self.ntp.value():

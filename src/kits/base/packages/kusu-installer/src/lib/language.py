@@ -16,23 +16,11 @@ from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from screen import InstallerScreen
+from kusu.installer.languages import langMap, langDefault
 
 kl = kusulog.getKusuLog('installer.language')
 
 def getLangMap():
-    kusuroot = os.environ.get('KUSU_ROOT', None)
-    if kusuroot and os.path.exists('%s/etc/lang-table' % kusuroot):     
-        langTable = open('%s/etc/lang-table' % kusuroot)
-
-    rows = langTable.readlines()
-    langTable.close()
-    langMap = {}
-    for row in rows:
-        attr = row.split('\t')
-        if len(attr) < 6:
-            raise Exception, "Row in lang-table has < 6 elements\n"+ \
-                             row
-        langMap[attr[0]] = (attr[1], attr[2], attr[3], attr[4], attr[5])
     return langMap
  
 class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
@@ -61,15 +49,15 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
         if not self.kiprofile.has_key(self.profile): self.setDefaults()
         for k, v in self.langMap.iteritems():
-            if v[0] == self.kiprofile[self.profile]:
-                self.kiprofile[self.profile] = v
+            if k == self.kiprofile[self.profile]:
+                self.kiprofile[self.profile] = k
         self.listbox.setCurrent(self.kiprofile[self.profile])
 
         self.screenGrid.setField(self.listbox, col=0, row=1,
                                  padding=(0,1,0,-1))
 
     def setDefaults(self):
-        self.kiprofile[self.profile] = 'en'
+        self.kiprofile[self.profile] = langDefault
 
     def validate(self):
         errList = []
@@ -92,10 +80,10 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         langAttr = self.listbox.current()
-        if langAttr[0] != 'en':
+        if langAttr not in ['en', 'en_US', 'en_GB']:
             try:
                 t = gettext.translation('kusu', 'locale',
-                                        languages=[langAttr[0]])
+                                        languages=[langAttr])
                 t.install()
             except IOError, e:
                 snack.ButtonChoiceWindow(self.screen,
@@ -104,11 +92,11 @@ class LanguageSelectionScreen(InstallerScreen, profile.PersistentProfile):
                                      ' on this display. This installation ' + \
                                      'will proceed in English.', buttons=['Ok'])
 
-        self.kiprofile[self.profile] = langAttr[0]
+        self.kiprofile[self.profile] = langAttr
 
     def rollback(self):
         langAttr = self.listbox.current()
-        self.kiprofile[self.profile] = langAttr[0]
+        self.kiprofile[self.profile] = langAttr
 
     def executeCallback(self, obj):
         if obj is self.listbox:

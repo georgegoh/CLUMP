@@ -201,7 +201,7 @@ PKG_AUTOINSTALL_TARBALL_SUBVER = 3
 
 # Kusu Installer package.
 KIT_PKGS += PKG_INSTALLER
-PKG_INSTALLER_SPEC = kusu-installer.spec
+PKG_INSTALLER_SPEC = kusu-installer.rhel.spec
 PKG_INSTALLER_SOURCES = src/doc src/bin src/etc src/lib src/po
 PKG_INSTALLER_TARBALL_SUBVER = 4
 

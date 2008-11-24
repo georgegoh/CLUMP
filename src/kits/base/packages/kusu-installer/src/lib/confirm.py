@@ -15,8 +15,8 @@ from kusu.ui.text import screenfactory
 from kusu.installer.finalactions import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
-from kusu.installer.language import getLangMap
-from kusu.installer.keyboard import modelDict as keyboardDict
+from kusu.installer.languages import langMap
+from kusu.installer.keyboards import kbMap
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.confirm')
 
@@ -96,15 +96,17 @@ class ConfirmScreen(InstallerScreen):
     def renderKeyboard(self):
         keyb_key = self.kiprofile['Keyboard']
         dispTxt = '\n[Keyboard]\n'
-        dispTxt += keyboardDict[keyb_key][0] + '\n'
+        for k,v in kbMap.iteritems():
+            if v == keyb_key:
+                dispTxt += k + '\n'
+                break
         return dispTxt
 
     def renderLanguage(self):
         lang_key = self.kiprofile['Language']
         dispTxt = '\n[Language]\n'
-        langMap = getLangMap()
         for k,v in langMap.iteritems():
-            if v[0] == lang_key:
+            if v == lang_key:
                 dispTxt += k + '\n'
                 break
         return dispTxt
