@@ -210,6 +210,7 @@ def DistroFactory(srcPath):
                RHEL5InstallSrc(srcPath),
                RHEL5AdditionalInstallSrc(srcPath),
                Fedora8InstallSrc(srcPath),
+               OPENSUSE103InstallSrc(srcPath),
                SLES10InstallSrc(srcPath)]
     for d in distros:
         if d.verifySrcPath():
@@ -1880,6 +1881,172 @@ class SLES10InstallSrc(DistroInstallSrcBase):
         # VERSION 10.2-0
         version = lines[1] # 2nd line
         self.version = re.compile('\d+').findall(version)[0]
+
+        return self.version
+
+    def getArch(self):
+        '''SLES specific way of getting the distro architecture'''
+        if (self.srcPath / 'boot' / 'i386').exists():
+            self.arch = 'i386'
+        elif (self.srcPath / 'boot' / 'x86_64').exists():
+            self.arch = 'x86_64'
+        
+        return self.arch
+        
+    def getKernelPackages(self):
+        # set up pattern to match sles kernel packages
+        pat = re.compile(r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.startswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+                
+        return kpkgs
+
+    # syntatic sugar
+    getKernelRpms = getKernelPackages
+
+
+class OPENSUSE103InstallSrc(DistroInstallSrcBase):
+    """This class describes how a openSUSE 10 installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(OPENSUSE103InstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'opensuse'
+        self.version = '10.3'
+
+        self.getArch()
+
+        # These should describe the key directories that identify a SLES 10 installation source layout.
+        self.pathLayoutAttributes = {
+            'isolinuxdir' : 'boot/%s/loader' % self.arch,
+            'kernel' : 'boot/%s/loader/linux' % self.arch,
+            'initrd' : 'boot/%s/loader/initrd' % self.arch,
+            'isolinuxbin' : 'boot/%s/loader/isolinux.bin' % self.arch,
+            'exe' : 'openSUSE10_3_LOCAL.exe',
+            'packagesdir.noarch' : 'suse/noarch',
+        }
+
+        if self.arch == 'i386':
+            self.pathLayoutAttributes['packagesdir.i586'] = 'suse/i586';
+            self.pathLayoutAttributes['packagesdir.i686'] = 'suse/i686';
+        elif self.arch == 'x86_64':
+            self.pathLayoutAttributes['packagesdir.x86_64'] = 'suse/x86_64';
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None 
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)            
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists                
+            else:
+                errmsg = 'Write permission denied: %s' % path(dest)
+                raise CopyError, errmsg
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite: 
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                errmsg = 'Write permission denied: %s' % path(dest).parent
+                raise CopyError, errmsg
+
+    def getMajorVersion(self):
+        '''SLES specific way of getting the distro version'''
+
+        f = open(self.srcPath / 'content', 'r')
+        lines = f.readlines()
+        f.close()
+
+        # VERSION 10.3
+        version = lines[1] # 2nd line
+        self.majorVersion = re.compile('\d+').findall(version)[0]
+
+        return self.majorVersion
+
+    def getMinorVersion(self):
+        '''SLES specific way of getting the distro version'''
+
+        f = open(self.srcPath / 'content', 'r')
+        lines = f.readlines()
+        f.close()
+
+        # VERSION 10.3
+        version = lines[1] # 2nd line
+        self.minorVersion = re.compile('\d+').findall(version)[1]
+            
+        return self.minorVersion
+
+    def getVersionString(self):
+        '''SLES specific way of getting the distro version'''
+
+        f = open(self.srcPath / 'content', 'r')
+        lines = f.readlines()
+        f.close()
+
+        version = lines[1] # 2nd line
+        self.versionString = '.'.join(re.compile('\d+').findall(version)[:2])
+
+        return self.versionString
+ 
+    def getVersion(self):
+        '''SLES specific way of getting the distro version'''
+
+        f = open(self.srcPath / 'content', 'r')
+        lines = f.readlines()
+        f.close()
+
+        # VERSION 10.2-0
+        version = lines[1] # 2nd line
+        self.version = '.'.join(re.compile('\d+').findall(version)[:2])
 
         return self.version
 

@@ -24,6 +24,8 @@ sles_content = {'0': 'PRODUCT SUSE SLES\nVERSION 10\n',
                 '1': 'PRODUCT SUSE_SLES_SP1\nVERSION 10.1-0\n',
                 '2': 'PRODUCT SUSE_SLES_SP2\nVERSION 10.2-0\n'}
 
+opensuse_content = {'3': 'PRODUCT openSUSE-DVD5-download\nVERSION 10.3\n'}
+
 def downloadFiles(fn):
     global url
 
@@ -1011,4 +1013,147 @@ class TestSLES10Detection:
 
         assert slesObj.getKernelPackages() == li
         assert slesObj.getKernelRpms() == li
+
+class TestOpenSUSE103Detection:
+    """Test suite for detecting openSUSE 10.3 installation sources"""
+
+    def setUp(self):
+        """Sets up mock paths"""
+
+        self.setupOpenSUSE103('10.3')
+
+    def tearDown(self):
+        """Clean up after done"""
+        
+        self.teardownOpenSUSE103('10.3')
+
+    def setupOpenSUSE103(self, version):
+        """openSUSE-centric housekeeping"""
+
+        self.suseLocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+
+        # create a directory and delete it immediately after. 
+        self.invalidSUSELocalPath = path(tempfile.mkdtemp(dir='/tmp'))
+        self.invalidSUSELocalPath.rmdir()
+
+        path(self.suseLocalPath / 'boot').mkdir()
+        path(self.suseLocalPath / 'boot/i386').mkdir()
+        path(self.suseLocalPath / 'boot/i386/loader').mkdir()
+        path(self.suseLocalPath / 'boot/i386/loader/isolinux.bin').touch()
+        path(self.suseLocalPath / 'boot/i386/loader/initrd').touch()
+        path(self.suseLocalPath / 'boot/i386/loader/linux').touch()
+        path(self.suseLocalPath / 'suse').mkdir()
+        path(self.suseLocalPath / 'suse/i586').mkdir()
+        path(self.suseLocalPath / 'suse/i686').mkdir()
+        path(self.suseLocalPath / 'suse/noarch').mkdir()
+        path(self.suseLocalPath / 'openSUSE10_3_LOCAL.exe').touch()
+
+        # set up some kernel packages
+        path(self.suseLocalPath / 'suse/i586/kernel-bigsmp-2.6.22.5-31.i586.rpm').touch()
+        path(self.suseLocalPath / 'suse/i586/kernel-source-2.6.22.5-31.i586.rpm').touch()
+        path(self.suseLocalPath / 'suse/i586/kernel-xen-2.6.22.5-31.i586.rpm').touch()
+        path(self.suseLocalPath / 'suse/i586/kernel-default-2.6.22.5-31.i586.rpm').touch()
+
+    def setupContent(self, minorVersion):
+
+        global opensuse_content
+
+        content = self.suseLocalPath / 'content'
+            
+        f = open(content, 'w')
+        f.write(opensuse_content[minorVersion])
+        f.close()
+
+        return content
+
+    def teardownOpenSUSE103(self, version):
+        """openSUSE-centric housekeeping in reverse"""
+
+        path(self.suseLocalPath).rmtree()
+
+    def test_IsOpenSUSE103CD(self):
+        """Test if the CD is a SLES CD"""
+
+        cdObj = DistroFactory(self.suseLocalPath)
+        assert cdObj.ostype == "opensuse"
+
+            
+    def test_IsAdditionalOpenSUSE103CD(self):
+        """Test if the CD is an additional open SUSE CD"""
+        
+        #cdObj = DistroFactory(self.additionalRHELMedia)
+        #assert cdObj.ostype == "rhel"
+        #assert cdObj.getVersion() == "5"
+        #assert cdObj.getArch() == "i386"
+        return
+
+        
+    def test_IsNotOpenSUSE103CD(self):
+        """Test if the CD is not a open SUSE CD"""
+
+        cdObj = DistroFactory(self.invalidSUSELocalPath)
+        assert cdObj.ostype != "opensuse"
+
+    def test_OpenSUSE103CDPathExists(self):
+        """Test if the path does indeed contain openSUSE media"""
+
+        obj = DistroFactory(self.suseLocalPath)
+        assert obj.verifyLocalSrcPath() is True
+
+    def test_OpenSUSE103CDPathNotExists(self):
+        """Test if the path does indeed contain openSUSE media"""
+
+        obj = DistroFactory(self.invalidSUSELocalPath)
+        assert obj.verifyLocalSrcPath() is False
+
+    def test_OpenSUSE103CDArch(self):
+        """Test if the arch is correct for the openSUSE media"""
+        
+        obj = DistroFactory(self.suseLocalPath)
+
+        assert obj.getArch() == 'i386'
+
+    def test_OpenSUSE103CDVersion(self):
+        """Test if the version is correct for the openSUSE media"""
+        
+        content = self.setupContent('3')
+
+        obj = DistroFactory(self.suseLocalPath)
+        assert obj.getVersion() == '10.3'
+        
+        content.remove()
+
+    def test_OpenSUSE103CDMajorVersion (self):
+        """Test if the version is correct for the openSUSE media"""
+
+        content = self.setupContent('3')
+        obj = DistroFactory(self.suseLocalPath)
+        assert obj.getMajorVersion() == '10'
+        content.remove()
+       
+    def test_OpenSUSE103CDMinorVersion (self):
+        """Test if the version is correct for the openSUSE media"""
+
+        content = self.setupContent('3')
+        obj = DistroFactory(self.suseLocalPath)
+        assert obj.getMinorVersion() == '3'
+        content.remove()
+
+    def test_OpenSUSECDVersionString (self):
+        """Test if the version is correct for the openSUSE media"""
+
+        content = self.setupContent('3')
+        obj = DistroFactory(self.suseLocalPath)
+        assert obj.getVersionString() == '10.3'
+        content.remove()
+
+    def test_OpenSUSE103GetKernelPackages(self):
+        """ Test to get the kernel packages. """
+       
+        obj = DistroFactory(self.suseLocalPath)
+
+        li = [path(self.suseLocalPath / 'suse/i586/kernel-default-2.6.22.5-31.i586.rpm')]
+
+        assert obj.getKernelPackages() == li
+        assert obj.getKernelRpms() == li
 
