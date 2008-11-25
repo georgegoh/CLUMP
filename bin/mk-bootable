@@ -468,7 +468,7 @@ def makeSuSEBootISO(rootdir, isofile, arch, volname="kusu"):
     -iso-level 4 \
     -pad \
     -allow-leading-dots \
-    -R -r -T -f -J -l \
+    -R -r -T -J -l \
     -o %s %s' %  (arch, arch, volname,isofile,rootdir)
 
     isoP = subprocess.Popen('mkisofs %s > /dev/null 2>&1' % options,shell=True,cwd=rootdir)
