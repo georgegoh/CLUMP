@@ -78,6 +78,25 @@ def makeRepo(kiprofile):
     db.Repos.selectfirst_by(repoid=999).delete()
     db.flush()
 
+def getPackageProfile(dbs, ngname):
+    # Code adapted from autoinstall/installprofile.py.
+    # There can only be 1 installer. Guaranteed by the db. 
+    installer = dbs.NodeGroups.select_by(ngname=ngname)[0]
+    try:
+        components = [component.cname for component in installer.components \
+                      if not component.kit.isOS]
+
+        pkgs = [pkg.packagename for pkg in installer.packages]
+
+        # also add all kit RPMs
+        kitrpms = ["kit-%s" % kit.rname
+                   for kit in dbs.Kits.select()
+                   if not kit.isOS]
+
+        return components + pkgs + kitrpms
+    except AttributeError:
+        raise AttributeError, 'components: %s' % str(installer.components)
+
 def genAutoInstallScript(disk_profile, kiprofile):
     from primitive.installtool.commands import GenerateAutoInstallScriptCommand
 
@@ -147,7 +166,9 @@ def genAutoInstallScript(disk_profile, kiprofile):
                     'xorg-x11-libs']
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
     else:
-        packages = kiprofile['packageprofile']
+        dbs = kiprofile.getDatabase()
+        ngname = 'installer-' + kiprofile['Kits']['longname']
+        packages = getPackageProfile(dbs, ngname)
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')
 
     if kiprofile.has_key('InstNum'):
@@ -189,7 +210,7 @@ def migrate(prefix):
             logger.info('Moved %s -> %s' % (f, dest))
             f.move(dest)
 
-    files = ['kusu-ks.cfg', 'install_script']
+    files = ['kusu-ks.cfg', 'install_script', 'kusu-autoinst.xml']
     files = [ kusu_tmp / f for f in files] 
     for f in files:
         if f.exists():
