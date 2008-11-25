@@ -67,7 +67,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
-    /usr/bin/anaconda "$@" -m http://127.0.0.1 --kickstart /tmp/kusu-ks.cfg ;
+    /usr/bin/anaconda "$@" -m http://127.0.0.1/repos/1000 --kickstart /tmp/kusu-ks.cfg ;
     EXIT_CODE=$?
     if [ -f "/mnt/kusu/var/lock/subsys/kusu-installer " ]; then
         /usr/bin/rm -f /mnt/kusu/var/lock/subsys/kusu-installer > /dev/null 2>&1

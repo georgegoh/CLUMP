@@ -71,7 +71,7 @@ def makeRepo(kiprofile):
     logger.debug('Making symlink to $KUSU_TMP/www.')
     #Makes symlink in $KUSU_TMP/www
     kusu_tmp = os.environ.get('KUSU_TMP', None)
-    (path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / str(repo.repoid)).symlink(path(kusu_tmp) / 'www')
+    (path(kiprofile['Kusu Install MntPt']) / 'depot').symlink(path(kusu_tmp) / 'www')
 
     logger.debug('Finalising repo.')
     # workaround for starting repoIDs at 1000
