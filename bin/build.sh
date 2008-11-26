@@ -77,6 +77,11 @@ if [ $ec -eq 0 ]; then
         cp -r src/kits/base/RPMS/noarch/*.rpm $DEST_PATH/RPMS/noarch
         cp -r src/kits/base/RPMS/x86_64/*.rpm $DEST_PATH/RPMS/x86_64
 
+        if [ -d src/kits/base/RPMS/i586 ]; then
+            mdkir -p $DEST_PATH/RPMS/i586
+            cp -r src/kits/base/RPMS/i586/*.rpm $DEST_PATH/RPMS/i586
+        fi
+
         scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
     fi
 fi
