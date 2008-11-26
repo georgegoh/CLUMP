@@ -60,9 +60,14 @@ class KusuRC(rcplugin.Plugin):
         os.unlink('/root/kusu.db')
     
         # Set db.passwd permission correctly
-        apache = pwd.getpwnam('apache')
-        uid = apache[2]
-        gid = apache[3]
+        if self.os_name in ['suse', 'opensuse', 'sles']:
+            wwwrun = pwd.getpwnam('wwwrun')
+            uid = wwwrun[2]
+            gid = wwwrun[3]
+        else:
+            apache = pwd.getpwnam('apache')
+            uid = apache[2]
+            gid = apache[3]
 
         # Write new db.passwd
         import random
