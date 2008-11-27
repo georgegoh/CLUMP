@@ -8,6 +8,8 @@
 
 from path import path
 from kusu.core import rcplugin
+from primitive.system.software.probe import OS
+from primitive.system.software.dispatcher import Dispatcher 
 
 try:
     import subprocess
@@ -47,8 +49,7 @@ class KusuRC(rcplugin.Plugin):
             return False
 
         # place our public key in web root
-        webdir = path('/var/www/html')
-
+        webdir = path(Dispatcher.get('webserver_docroot'))
         if not webdir.exists():
             webdir.makedirs()
 
