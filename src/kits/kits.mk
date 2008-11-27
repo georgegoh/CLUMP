@@ -39,6 +39,10 @@ TMPDIR = /tmp
 # Command options passed to mkisofs.
 MKISOFS_OPTS = -r -T -f -quiet
 
+# Python variables
+PYTHON_VERSION = $(shell python -c 'import sys ; print sys.version[:3]')
+PYTHON_SITELIB = $(shell python -c 'from distutils.sysconfig import get_python_lib; print get_python_lib()')
+
 # Derived variables.
 KIT_NAME_VER = $(KIT_NAME)-$(KIT_VERSION)-$(KIT_RELEASE)
 KIT_NAME_VER_ARCH = $(KIT_NAME_VER).$(KIT_ARCH)

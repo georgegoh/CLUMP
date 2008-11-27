@@ -163,7 +163,10 @@ def genAutoInstallScript(disk_profile, kiprofile):
                     'perl-Crypt-SmbHash',
                     'perl-Bit-Vector',
                     'perl-XML-Writer',
-                    'xorg-x11-libs']
+                    'xorg-x11-libs',
+                    'kit-base',
+                    'component-base-installer',
+                    'component-base-node']
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
     else:
         dbs = kiprofile.getDatabase()
