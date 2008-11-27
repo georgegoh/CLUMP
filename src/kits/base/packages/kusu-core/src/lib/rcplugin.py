@@ -14,7 +14,14 @@ import socket
 import sys
 import traceback
 import time
-
+from primitive.svctool.commands import SvcStartCommand
+from primitive.svctool.commands import SvcStatusCommand
+from primitive.svctool.commands import SvcStopCommand
+from primitive.svctool.commands import SvcRestartCommand
+from primitive.svctool.commands import SvcReloadCommand
+from primitive.svctool.commands import SvcEnableCommand
+from primitive.svctool.commands import SvcDisableCommand
+from primitive.svctool.commands import SvcListCommand
 try:
     import subprocess
 except:
@@ -63,6 +70,29 @@ class Plugin:
         fptr.close()
         
         return retval, '', ''
+
+    def service(self, service, action, **kwargs):
+        """ Perform an action on a service.
+            Input args:
+                service - name of service
+                action - one of [start, stop, status,
+                                 restart, reload, enable,
+                                 disable, list]
+                **kwargs - any other keyword/args relevant to the service
+        """
+        command_dict = { 'start' : SvcStartCommand,
+                         'stop' : SvcStopCommand,
+                         'status' : SvcStatusCommand,
+                         'restart' : SvcRestartCommand,
+                         'reload' : SvcReloadCommand,
+                         'enable' : SvcEnableCommand,
+                         'disable' : SvcDisableCommand,
+                         'list' : SvcListCommand }
+        if action in command_dict.keys():
+            # exceptions are handled in the PluginRunner.
+            svc = command_dict[action](service=service, **kwargs)
+            return svc.execute()
+
 
 class PluginRunner:
     def __init__(self, classname, p, dbs, debug=False):
