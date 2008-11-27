@@ -78,7 +78,7 @@ if [ $ec -eq 0 ]; then
         cp -r src/kits/base/RPMS/x86_64/*.rpm $DEST_PATH/RPMS/x86_64
 
         if [ -d src/kits/base/RPMS/i586 ]; then
-            mdkir -p $DEST_PATH/RPMS/i586
+            mkdir -p $DEST_PATH/RPMS/i586
             cp -r src/kits/base/RPMS/i586/*.rpm $DEST_PATH/RPMS/i586
         fi
 
