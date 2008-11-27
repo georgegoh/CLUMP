@@ -25,17 +25,20 @@ class KusuRC(rcplugin.Plugin):
              
         from kusu.core import database as db
         import sqlalchemy as sa
-            
-
 
         if not path('/root/kusu.db').exists():
             return True
         engine = os.getenv('KUSU_DB_ENGINE')
         if engine == 'mysql':
-            self.runCommand('/etc/init.d/mysqld start')
+            success, (out,retcode,err) = self.service('mysqld', 'start')
+            if not success:
+                raise Exception, err
+
         else: # default this 
             engine = 'postgres'
-            self.runCommand('/etc/init.d/postgresql stop') 
+            success, (out,retcode,err) = self.service('postgresql', 'stop')
+            if not success:
+                raise Exception, err
             pg_data_path = path('/var/lib/pgsql/data')
             pg_data_path.rmtree()
             self.runCommand("su -l postgres -c \'initdb --pgdata=/var/lib/pgsql/data >> /dev/null  2>&1\'")
@@ -43,7 +46,9 @@ class KusuRC(rcplugin.Plugin):
             pg_log_path.makedirs()
             self.runCommand('chown postgres:postgres %s' % pg_log_path)
             self.runCommand ('chmod go-rwx %s' % pg_log_path)
-            self.runCommand('service postgresql start')
+            success, (out,retcode,err) = self.service('postgresql', 'start')
+            if not success:
+                raise Exception, err
 
         # Clear all mappers and init them
         for key in sa.orm.mapper_registry.keys():
@@ -121,9 +126,13 @@ create role nobody with login;"""
 
         # chkconfig
         if engine == 'mysql':
-            self.runCommand('/sbin/chkconfig mysqld on')
+            success, (out,retcode,err) = self.service('mysqld', 'enable')
+            if not success:
+                raise Exception, err
         else: # XXX postgres only for now 
-            self.runCommand('/sbin/chkconfig postgresql on')
+            success, (out,retcode,err) = self.service('postgresql', 'enable')
+            if not success:
+                raise Exception, err
 
         # Clear all mappers and init them
         for key in sa.orm.mapper_registry.keys():
