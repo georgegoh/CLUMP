@@ -275,6 +275,17 @@ class ProgressScreen(BaseScreen):
         self.nodeinst = NodeInstaller(self.niisource)
         dlg.close()
 
+        if self.nodeinst.installtype != 'diskless':
+            kl.debug('Checking if disks are available')
+            dlg = self.selector.popupProgress('Checking for Disks',
+                                              'Checking for the presence of usable disks...')
+            dp = DiskProfile(fresh=False)
+            dlg.close()
+            if not dp.disk_dict:
+                self.selector.popupMsg('No Disk Found',
+                                       'No disk was found for installation. Press "OK" to reboot.')
+                raise UserExitError
+
         kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg.')
         dlg = self.selector.popupProgress('Preparing Kickstart', 'Preparing Kickstart files...')
         tmp_disk_profile = DiskProfile(False)
