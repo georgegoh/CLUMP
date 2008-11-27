@@ -109,7 +109,7 @@ class PluginRunner:
         sys.stdout.flush()
 
     def failure(self):
-        cmd = 'source /etc/init.d/functions && failure'
+        cmd = 'source /lib/lsb/init-functions && log_failure_msg "$@"'
         failureP = subprocess.Popen(cmd,
                                     shell=True)
         failureP.communicate()
@@ -117,7 +117,7 @@ class PluginRunner:
         sys.stdout.flush()
 
     def success(self):
-        cmd = 'source /etc/init.d/functions && success'
+        cmd = 'source /lib/lsb/init-functions && log_success_msg "$@"'
         successP = subprocess.Popen(cmd,
                                     shell=True)
         successP.communicate()
