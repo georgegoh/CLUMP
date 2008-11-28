@@ -113,7 +113,6 @@ class PluginRunner:
         failureP = subprocess.Popen(cmd,
                                     shell=True)
         failureP.communicate()
-        print
         sys.stdout.flush()
 
     def success(self):
@@ -121,7 +120,6 @@ class PluginRunner:
         successP = subprocess.Popen(cmd,
                                     shell=True)
         successP.communicate()
-        print
         sys.stdout.flush()
 
     def run(self, ignoreFiles=[]):
