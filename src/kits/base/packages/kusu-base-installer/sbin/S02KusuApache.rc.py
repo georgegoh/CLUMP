@@ -9,6 +9,8 @@
 from path import path
 from kusu.core import rcplugin
 
+from primitive.system.software.dispatcher import Dispatcher 
+
 import os
 import pwd
 
@@ -23,6 +25,9 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Setup Apache"""
 
+        wwwroot = path(Dispatcher.get('webserver_docroot'))
+
+        apache = Dispatcher.get('webserver_usergroup')[0]
         apache = pwd.getpwnam('apache')
         uid = apache[2]
         gid = apache[3]
@@ -43,27 +48,31 @@ class KusuRC(rcplugin.Plugin):
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
 
-        if path('/var/www/html').exists():
+        if wwwroot.exists():
+            if not (wwwroot / 'cfm').exists():
+                path(kusu_root / 'cfm').symlink(wwwroot / 'cfm')
 
-            if not path('/var/www/html/cfm').exists():
-                path(kusu_root / 'cfm').symlink('/var/www/html/cfm')
+            if not (wwwroot / 'repos').exists():
+                path('/depot/repos').symlink(wwwroot / 'repos')
 
-            if not path('/var/www/html/repos').exists():
-                path('/depot/repos').symlink('/var/www/html/repos')
+            if not (wwwroot / 'images').exists():
+                path('/depot/images').symlink(wwwroot / 'images')
 
-            if not path('/var/www/html/images').exists():
-                path('/depot/images').symlink('/var/www/html/images')
+            if not (wwwroot / 'kits').exists():
+                path('/depot/www/kits').symlink(wwwroot / 'kits')
 
-            if not path('/var/www/html/kits').exists():
-                path('/depot/www/kits').symlink('/var/www/html/kits')
-
-            self.runCommand('/sbin/chkconfig httpd on')
+            success, (out,retcode,err) = self.service('webserver', 'enable')
+            if not success:
+                raise Exception, err
     	    
-            retval = self.runCommand('$KUSU_ROOT/bin/genconfig apache_conf > /etc/httpd/conf.d/kusu.conf')[0]
+            webserver_confdir = path(Dispatcher.get('webserver_confdir'))
+            kusu_conf =  webserver_confdir / 'kusu.conf'
+            retval = self.runCommand('$KUSU_ROOT/bin/genconfig apache_conf > ' + kusu_conf)[0]
             if retval != 0: return False
 
-            retval = self.runCommand('/etc/init.d/httpd restart')[0]
-            if retval != 0: return False
+            success, (out,retcode,err) = self.service('webserver', 'restart')
+            if not success:
+                raise Exception, err
 
             return True
         else:
