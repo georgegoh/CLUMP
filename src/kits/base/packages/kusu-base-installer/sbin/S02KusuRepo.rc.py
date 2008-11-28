@@ -26,7 +26,8 @@ class KusuRC(rcplugin.Plugin):
         rfactory = RepoFactory(self.dbs) 
         repoObj = rfactory.getRepo(repoid)
 
-        repoObj.copyKusuNodeInstaller()
-        repoObj.makeAutoInstallScript()
+        if self.os_name in ['rhel', 'centos', 'fedora']:
+            repoObj.copyKusuNodeInstaller()
+            repoObj.makeAutoInstallScript()
  
         return True
