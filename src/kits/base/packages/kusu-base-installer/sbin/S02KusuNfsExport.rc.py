@@ -8,7 +8,7 @@
 
 from path import path
 from kusu.core import rcplugin
-
+from primitive.system.software.dispatcher import Dispatcher
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
@@ -36,11 +36,13 @@ class KusuRC(rcplugin.Plugin):
 
         f.writelines("\n")
         f.close()
-
-        retcode, out, err = self.runCommand('/sbin/chkconfig nfs on')
-        retcode, out, err = self.runCommand('/etc/init.d/nfs restart')
-
-        if retcode != 0:
+        
+        nfsserver = Dispatcher.get('nfsserver')
+        if not nfsserver:
+            return False
+        if not self.service(nfsserver,'enable')[0]:
+            return False
+        if not self.service(nfsserver,'restart')[0]:
             return False
 
         return True
