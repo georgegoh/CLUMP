@@ -22,7 +22,6 @@ class KusuRC(rcplugin.Plugin):
         for ng in compute_ngs:
             for p in self.dbs.Partitions.select_by(ngid=ng.ngid,
                                                    options='partitionID=Dell Utility'):
-                print p.ngid,p
                 p.delete()
                 p.flush()
         return True
