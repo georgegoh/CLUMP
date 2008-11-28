@@ -58,6 +58,7 @@ mkdir -p $kitinfodir
 
 /usr/bin/install -m 444 plugins/addhost/*.py     $plugdir/addhost
 /usr/bin/install -m 444 plugins/genconfig/*.py    $plugdir/genconfig
+/usr/bin/install -m 444 plugins/genconfig/*.tmpl    $plugdir/genconfig
 /usr/bin/install -m 444 plugins/ngedit/*.py      $plugdir/ngedit
 /usr/bin/install -m 444 plugins/cfmsync/*.sh      $plugdir/cfmsync
 
@@ -99,6 +100,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/resolv.py*
 /opt/kusu/lib/plugins/genconfig/zone.py*
 /opt/kusu/lib/plugins/genconfig/ssh.py*
+/opt/kusu/lib/plugins/genconfig/ssh_config.tmpl*
 /opt/kusu/lib/plugins/genconfig/bashrc.py*
 /opt/kusu/lib/plugins/genconfig/kickstart.py*
 /opt/kusu/lib/plugins/cfmsync/getent-data.sh
