@@ -8,6 +8,7 @@
 
 from path import path
 from kusu.core import rcplugin
+from primitive.system.software.dispatcher import Dispatcher
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -16,6 +17,7 @@ class KusuRC(rcplugin.Plugin):
         self.desc = 'Setting up named'
         self.ngtypes = ['installer']
         self.delete = True
+        self.named_dir = Dispatcher.get('named_dir')
 
     def run(self):
 
@@ -25,12 +27,18 @@ class KusuRC(rcplugin.Plugin):
             domain = self.dbs.AppGlobals.select_by(kname = 'DNSZone')[0].kvalue
            
             self.runCommand('/opt/kusu/bin/genconfig named > /etc/named.conf')
-            self.runCommand('/opt/kusu/bin/genconfig zone > /var/named/%s.zone' % domain)
+            self.runCommand('/opt/kusu/bin/genconfig zone > %s/%s.zone' % (self.named_dir, domain))
 
             for net in self.dbs.Networks.select():
-                self.runCommand('/opt/kusu/bin/genconfig reverse %s > /var/named/%s.rev' % (net.network,net.network))
+                self.runCommand('/opt/kusu/bin/genconfig reverse %s > %s/%s.rev' % (net.network, self.named_dir, net.network))
 
-            self.runCommand('/etc/init.d/named start')
-            self.runCommand('/sbin/chkconfig named on')
-            
+            success, (out, retcode, err) = self.service('named', 'start')
+            if not success:
+                raise Exception, err
+               
+            success, (out, retcode, err) = self.service('named', 'enable')
+            if not success:
+                raise Exception, err
+
         return True
+

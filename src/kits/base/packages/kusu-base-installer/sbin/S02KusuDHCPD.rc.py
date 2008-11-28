@@ -8,6 +8,7 @@
 
 from path import path
 from kusu.core import rcplugin
+from primitive.system.software.probe import OS
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -16,6 +17,10 @@ class KusuRC(rcplugin.Plugin):
         self.desc = 'Setting up dhcpd'
         self.ngtypes = ['installer']
         self.delete = True
+
+        self.interfaceKey = "DHCPDARGS"
+        if OS()[0].lower() in ["sles", "opensuse", "suse"]:
+            self.interfaceKey = "DHCPD_INTERFACE"
 
     def run(self):
 
@@ -41,7 +46,7 @@ class KusuRC(rcplugin.Plugin):
                 argline = -1
                 for x in xrange(len(dhcpd)):
                     # returns 0 when string begins with find term
-                    if not dhcpd[x].find('DHCPDARGS='):
+                    if not dhcpd[x].find('%s=' % self.interfaceKey):
                         argline = x
                         break
 
@@ -49,19 +54,22 @@ class KusuRC(rcplugin.Plugin):
                 if argline == -1:
                     dhcpd.append('')
 
-                dhcpd[argline] = 'DHCPDARGS="%s"\n' % ' '.join(dhcpdnics)
+                dhcpd[argline] = '%s="%s"\n' % (self.interfaceKey, ' '.join(dhcpdnics))
 
                 f = open('/etc/sysconfig/dhcpd', 'w')
                 f.writelines(dhcpd)
                 f.close()
 
-                retval, out, err = self.runCommand('/sbin/chkconfig dhcpd on')
-                retval, out, err = self.runCommand('/etc/init.d/dhcpd restart')
+                success, (out, retcode, err) = self.service('dhcpd', 'restart')
+                if not success:
+                    raise Exception, err
+                   
+                success, (out, retcode, err) = self.service('dhcpd', 'enable')
+                if not success:
+                    raise Exception, err
 
-                if retval == 0:
-                    return True
-                else:
-                    return False
-
+                return True
+                    
         else:
             return False
+
