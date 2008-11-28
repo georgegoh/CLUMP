@@ -27,7 +27,7 @@
 # chkconfig: 2345 98 98
 # description: RC scripts for Kusu
 
-. /etc/init.d/functions
+#. /etc/init.d/functions
 . /etc/profile.d/kusuenv.sh
 
 KUSURCDIR=/etc/rc.kusu.d
