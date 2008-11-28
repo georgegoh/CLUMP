@@ -948,7 +948,7 @@ class NetworkEditWindow(USXBaseScreen):
         # Fill in missing fields as needed
             if not self.startIPEntry.value():
                 # Calculate the new IP Address
-                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet
+                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet + 1
                 self.startIPEntry.setEntry(kusu.ipfun.number2ip(xip))
             
             if self.hasGateway:
@@ -1186,7 +1186,7 @@ class NetworkNewWindow(USXBaseScreen):
         # Fill in missing fields as needed
             if not self.startIPEntry.value():
                 # Calculate the new IP Address
-                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet
+                xip = (((calcsub >> 1) ^ calcsub) & 0xfffffff) | calcnet + 1
                 self.startIPEntry.setEntry(kusu.ipfun.number2ip(xip))
             
             if not self.gatewayEntry.value():
