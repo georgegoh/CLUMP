@@ -55,7 +55,9 @@
     ## Partitioning takes in a DiskProfile-type object in the partitions namespace.
     <partitioning config:type="list">
     #for $disk in $partitions.disk_dict.values()
-        $generateDisk($disk)
+        #if $disk.partition_dict:
+            $generateDisk($disk)
+        #end if
     #end for
     #for $vg in $partitions.lvg_dict.values()
         $generateLVMVolumeGroup($vg)
