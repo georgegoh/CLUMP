@@ -101,7 +101,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/zone.py*
 /opt/kusu/lib/plugins/genconfig/ssh.py*
 /opt/kusu/lib/plugins/genconfig/ssh_config.tmpl*
-/opt/kusu/lib/plugins/genconfig/apache_config.tmpl
+/opt/kusu/lib/plugins/genconfig/apache_conf.tmpl
 /opt/kusu/lib/plugins/genconfig/bashrc.py*
 /opt/kusu/lib/plugins/genconfig/kickstart.py*
 /opt/kusu/lib/plugins/cfmsync/getent-data.sh

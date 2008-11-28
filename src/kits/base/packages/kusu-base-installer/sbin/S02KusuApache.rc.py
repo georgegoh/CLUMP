@@ -28,7 +28,7 @@ class KusuRC(rcplugin.Plugin):
         wwwroot = path(Dispatcher.get('webserver_docroot'))
 
         apache = Dispatcher.get('webserver_usergroup')[0]
-        apache = pwd.getpwnam('apache')
+        apache = pwd.getpwnam(apache)
         uid = apache[2]
         gid = apache[3]
 
