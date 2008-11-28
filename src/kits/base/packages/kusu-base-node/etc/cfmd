@@ -24,7 +24,7 @@
 # chkconfig: - 99 99
 # description: Cluster File Manager for Kusu
 
-. /etc/init.d/functions
+. /lib/lsb/init-functions
 
 prog='cfmd'
 
@@ -36,7 +36,7 @@ start() {
     # Is the CFMD running
     if [ -n "`/sbin/pidof -o %PPID $prog`" ]; then
 	echo -n "$prog: already running"
-	failure
+	log_failure_msg
 	echo
 	return 1
     fi
@@ -44,7 +44,7 @@ start() {
     if [ ! -f /etc/profile.nii ]; then
 	echo
 	echo -n "Cannot run CFMd on the primary installer. "
-	success	
+	log_success_msg	
 	echo
 	return 0
     fi
@@ -57,7 +57,7 @@ start() {
 	RETVAL=1
     fi
     
-    [ $RETVAL -eq 0 ] && success || failure
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
     echo
     return $RETVAL
 }
@@ -72,7 +72,7 @@ stop() {
 	RETVAL=$?
     fi;
 
-    [ $RETVAL -eq 0 ] && success || failure
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
     echo
     return $RETVAL
 }

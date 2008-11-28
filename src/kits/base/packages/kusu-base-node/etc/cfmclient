@@ -22,7 +22,7 @@
 # chkconfig: - 97 97
 # description: Cluster File Manager for Kusu - Client synchronization
 
-. /etc/init.d/functions
+. /lib/lsb/init-functions
 
 prog='cfmclient'
 
@@ -51,7 +51,7 @@ start() {
 	RETVAL=1
     fi
     
-    [ $RETVAL -eq 0 ] && success || failure
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
     echo
     return $RETVAL
 }
@@ -65,7 +65,7 @@ stop() {
 	RETVAL=$?
     fi;
 
-    [ $RETVAL -eq 0 ] && success || failure
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
     echo
     return $RETVAL
 }
