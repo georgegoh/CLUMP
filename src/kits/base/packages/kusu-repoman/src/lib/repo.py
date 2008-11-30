@@ -354,7 +354,7 @@ class SuseYastRepo(BaseRepo):
 
         for file in ['content', 'content.asc', 'content.key', 'control.xml', 'directory.yast']:
             file = self.os_path / file
-      
+    
             if file.exists(): 
                 dest = self.repo_path / file.basename()
                 file.copy(dest)
@@ -366,6 +366,12 @@ class SuseYastRepo(BaseRepo):
                 dest.remove()
 
             file.copy(dest)
+
+        for file in self.os_path.glob('gpg-pubkey-*'):
+            dest = self.repo_path / file.basename()
+            (dest.parent.relpathto(file)).symlink(dest)
+
+
 
     def copyContribPackages(self):
 
@@ -1162,6 +1168,7 @@ class SLES10Repo(SuseYastRepo):
         self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
         self.dirlayout['descrdir'] = 'suse/setup/descr' 
         self.dirlayout['patchesdir'] = 'patches/repodata'
+        self.dirlayout['docdudir'] = 'docu'
         
         self.dirlayout['packagesdir.noarch'] = 'suse/noarch' 
         self.dirlayout['packagesdir.i386'] = 'suse/i386';
@@ -1179,5 +1186,53 @@ class SLES10Repo(SuseYastRepo):
                 return p
 
         return None 
+
+class OpenSUSE103Repo(SuseYastRepo):
+    def __init__(self, os_arch, prefix, db):
+        SuseYastRepo.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
+            
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
+        self.dirlayout['mediadir'] = 'media.1' 
+        self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
+        self.dirlayout['descrdir'] = 'suse/setup/descr' 
+        self.dirlayout['docdudir'] = 'docu'
+        
+        self.dirlayout['packagesdir.noarch'] = 'suse/noarch' 
+        self.dirlayout['packagesdir.i386'] = 'suse/i386';
+        self.dirlayout['packagesdir.i486'] = 'suse/i486';
+        self.dirlayout['packagesdir.i586'] = 'suse/i586';
+        self.dirlayout['packagesdir.i686'] = 'suse/i686';
+
+        if os_arch == 'x86_64':
+            self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
+
+    def getPackageFilePath(self, packagename):
+
+        for dirlayout in self.getPackagesDir():
+            p = (self.repo_path / dirlayout / packagename)
+
+            if p.exists():
+                return p
+
+        return None 
+
+    def makeMetaInfo(self):
+        
+        for p in [self.dirlayout['descrdir']]:
+            md5sum = self.repo_path / p / 'MD5SUMS'
+            if md5sum.exists():
+                md5sum.remove()
+
+        yastRepo = YastRepo(self.repo_path)
+        yastRepo.make()
+
+
+        for file in ['content.asc', 'content.key']:
+            file = self.os_path / file
+    
+            if file.exists(): 
+                dest = self.repo_path / file.basename()
+                file.copy(dest)
 
 

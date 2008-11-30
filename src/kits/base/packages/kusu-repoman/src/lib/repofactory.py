@@ -19,7 +19,8 @@ class RepoFactory(object):
     #                           '7': repo.Fedora7Repo},
                    'centos' : {'5': repo.Centos5Repo},
                    'rhel'   : {'5': repo.Redhat5Repo},
-                   'sles'   : {'10': repo.SLES10Repo} }
+                   'sles'   : {'10': repo.SLES10Repo},
+                   'opensuse' : {'10.3': repo.OpenSUSE103Repo}}
 
     def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.

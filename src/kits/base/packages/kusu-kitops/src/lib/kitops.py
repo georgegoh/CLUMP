@@ -521,18 +521,8 @@ class KitOps:
             raise UnrecognizedKitMediaError, "Please supply disc 1 first!"
 
         try:
-            if self.installer:
-                bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],
-                               overwrite=True)
-            else:
-                bmt.copyInitrd(self.mountpoint, tmprd1, True)
-                bmt.unpackRootImg(tmprd1, tmprootfs)
-                tmprd1.remove()
-                #patch tmprootfs with necessary pieces HERE
-                #pack up the patched rootfs & put it under tftpboot
-                bmt.packRootImg(tmprootfs, self.pxeboot_dir / kit['initrd'])
-                tmprootfs.rmtree()
-
+            bmt.copyInitrd(self.mountpoint, self.pxeboot_dir / kit['initrd'],
+                           overwrite=True)
 
             #copy kernel to tftpboot & rename
             bmt.copyKernel(self.mountpoint, self.pxeboot_dir / kit['kernel'], True)
