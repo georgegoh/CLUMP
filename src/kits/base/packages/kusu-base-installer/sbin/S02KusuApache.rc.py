@@ -61,7 +61,8 @@ class KusuRC(rcplugin.Plugin):
             if not (wwwroot / 'kits').exists():
                 path('/depot/www/kits').symlink(wwwroot / 'kits')
 
-            success, (out,retcode,err) = self.service('webserver', 'enable')
+            webserver = Dispatcher.get('webserver')
+            success, (out,retcode,err) = self.service(webserver, 'enable')
             if not success:
                 raise Exception, err
     	    
@@ -70,7 +71,7 @@ class KusuRC(rcplugin.Plugin):
             retval = self.runCommand('$KUSU_ROOT/bin/genconfig apache_conf > ' + kusu_conf)[0]
             if retval != 0: return False
 
-            success, (out,retcode,err) = self.service('webserver', 'restart')
+            success, (out,retcode,err) = self.service(webserver, 'restart')
             if not success:
                 raise Exception, err
 
