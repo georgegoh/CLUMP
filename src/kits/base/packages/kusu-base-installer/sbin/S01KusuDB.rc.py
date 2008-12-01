@@ -36,9 +36,12 @@ class KusuRC(rcplugin.Plugin):
 
         else: # default this 
             engine = 'postgres'
-            success, (out,retcode,err) = self.service('postgresql', 'stop')
-            if not success:
-                raise Exception, err
+            success, (out,retcode,err) = self.service('postgresql', 'status')
+            # retcode will be 0 if postgresql service is already running.
+            if retcode == 0:
+                success, (out,retcode,err) = self.service('postgresql', 'stop')
+                if not success:
+                    raise Exception, err
             pg_data_path = path('/var/lib/pgsql/data')
             pg_data_path.rmtree()
             self.runCommand("su -l postgres -c \'initdb --pgdata=/var/lib/pgsql/data >> /dev/null  2>&1\'")
