@@ -9,7 +9,7 @@ import re
 import os
 from path import path
 from kusu.core import rcplugin
-from primitive.system.hardware import probe 
+from primitive.system.hardware.probe import getAllInterfaces
 import sqlalchemy as sa
 import kusu.core.database as db
 from kusu.util.structure import Struct
@@ -32,10 +32,15 @@ class KusuRC(rcplugin.Plugin):
         self.runCommand('/sbin/sysctl -p')[0]
 
         self.setupIPTableConf()
-        self.runCommand('/etc/init.d/iptables restart')[0]
-
-        self.runCommand('/sbin/chkconfig iptables on')
-
+        
+        success, (out, retcode, err) = self.service('firewall', 'restart')
+        if not success:
+            raise Exception, err
+        
+        success, (out, retcode, err) = self.service('firewall', 'enable')
+        if not success:
+            raise Exception, err
+        
         return True
 
     def setupSysCtl(self, conf='/etc/sysctl.conf'):
@@ -54,9 +59,8 @@ class KusuRC(rcplugin.Plugin):
 
     def setupIPTableConf(self, conf='/etc/sysconfig/iptables'):
         """Set up the iptables configuration."""
-        conf = path(conf)
-
-        all_intf_dict = probe.getAllInterfaces()
+        
+        all_intf_dict = getAllInterfaces()
         db_nics = self.queryDBForMasterNICs()
         nics = [nic for nic in db_nics if (nic['device'] in all_intf_dict.keys())]
         self.verifyNICs(nics, all_intf_dict)
@@ -64,8 +68,15 @@ class KusuRC(rcplugin.Plugin):
         devices_by_network_name = Struct(public=self.getNICsOfType(nics, 'public'),
                                          provision=self.getNICsOfType(nics, 'provision'),
                                          others=self.getNICsOfType(nics, 'others'))
-
-        s = self.generateIPTablesConfig(devices_by_network_name)
+        
+        s = ''
+        if self.os_name in ["sles", "opensuse", "suse"]:
+            s = self.generateSuSEfirewall2Config(devices_by_network_name)
+            conf = '/etc/sysconfig/SuSEfirewall2'
+        elif self.os_name in ["rhel", "redhat", "centos"]:
+            s = self.generateIPTablesConfig(devices_by_network_name)
+        conf = path(conf)
+        
         f = open(conf, 'w')
         f.write(s)
         f.close()
@@ -143,3 +154,49 @@ class KusuRC(rcplugin.Plugin):
         filter += 'COMMIT\n'
 
         return nat + filter
+
+    def generateSuSEfirewall2Config(self, devices_by_network_name):
+        public = devices_by_network_name.public[0]['device']
+
+        # get all non-public interfaces.
+        provision_devices = devices_by_network_name.provision
+        private_nics = [nic['device'] for nic in provision_devices]
+        other_devices = devices_by_network_name.others
+        private_nics += [nic['device'] for nic in other_devices]
+        private = ''
+        for dev in private_nics:
+            private = str(dev) + ' '
+        
+        conf = 'FW_DEV_EXT="%s"\n' % public
+        conf += 'FW_DEV_INT="%s"\n' % private
+        conf += 'FW_ROUTE="yes"\n'
+        conf += 'FW_MASQUERADE="yes"\n'
+        conf += 'FW_PROTECT_FROM_INT="no"\n'
+        
+        conf_ext_tcp = ''
+        conf_ext_udp = ''
+        conf_ext_rpc = ''
+        conf_ext_ip = ''
+        for proto, port in self.allowed_ports:
+            if 'tcp' == proto:
+                conf_ext_tcp += '%s ' % port
+            elif 'udp' == proto:
+                conf_ext_udp += '%s ' % port
+            elif 'rpc' == proto:
+                conf_ext_rpc += '%s ' % port
+            elif 'ip' == proto:
+                conf_ext_ip += '%s ' % port
+        
+        conf += 'FW_SERVICES_EXT_TCP="%s"\n' % conf_ext_tcp
+        conf += 'FW_SERVICES_EXT_UDP="%s"\n' % conf_ext_udp
+        conf += 'FW_SERVICES_EXT_RPC="%s"\n' % conf_ext_rpc
+        conf += 'FW_SERVICES_EXT_IP="%s"\n' % conf_ext_ip
+        
+        conf_forward = '' 
+        for dev in private_nics:
+            conf_forward += "%s,%s,,, " % (dev, public)
+        conf += 'FW_FORWARD="%s%s,0/0,,,"\n' % (conf_forward, dev)
+        conf += 'FW_TRUSTED_NETS="127.0.0.1 0/0,icmp"\n'
+        
+        return conf
+
