@@ -18,6 +18,10 @@ class KusuRC(rcplugin.Plugin):
         self.delete = False
 
     def run(self):
+        # Bypass this rc script for sles
+        if self.os_name in ['sles', 'opensuse', 'suse']:
+            return True
+
         """ Disable all other repos. """
         etcyumeposd = path('/etc/yum.repos.d')
 

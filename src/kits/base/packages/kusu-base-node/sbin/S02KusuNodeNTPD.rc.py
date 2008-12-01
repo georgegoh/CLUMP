@@ -8,6 +8,7 @@
 
 from path import path
 from kusu.core import rcplugin
+from primitive.system.software.dispatcher import Dispatcher
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -35,10 +36,13 @@ class KusuRC(rcplugin.Plugin):
         f.writelines(conf)
         f.close()
 
-        retcode, out, err = self.runCommand('/sbin/chkconfig ntpd on')
-        retcode, out, err = self.runCommand('/etc/init.d/ntpd restart')
+        ntp_server = Dispatcher.get('ntp_server')
 
-        if retcode != 0:
-            return False
+        success, (retcode, out, err) = self.service(ntp_server, 'restart')
+        if not success:
+            raise Exception, err
+        success, (retcode, out, err) = self.service(ntp_server, 'enable')
+        if not success:
+            raise Exception, err
 
         return True

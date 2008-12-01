@@ -8,7 +8,6 @@
 
 from path import path
 from kusu.core import rcplugin
-from primitive.system.software.probe import OS
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -19,7 +18,7 @@ class KusuRC(rcplugin.Plugin):
         self.delete = True
 
         self.interfaceKey = "DHCPDARGS"
-        if OS()[0].lower() in ["sles", "opensuse", "suse"]:
+        if self.os_name in ["sles", "opensuse", "suse"]:
             self.interfaceKey = "DHCPD_INTERFACE"
 
     def run(self):
