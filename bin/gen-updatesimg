@@ -185,7 +185,7 @@ def generateUpdatesImg(updatesdir, updatesimgpath):
     """ Generate the updates.img file. updatesdir points to the directory containing the contents that
         should be included in the updates.img file.
     """
-    packExt2FS(updatesdir, updatesimgpath, 100000)
+    packExt2FS(updatesdir, updatesimgpath, 120000)
 
 def packExt2FS(dirname, rootimgpath, size=5000):
     """Packs the directory dir into an ext2fs rootimgpath. The size of the image can be passed as well.
@@ -361,6 +361,7 @@ if __name__ == '__main__':
         realYastScript = os.path.abspath(os.path.join(os.path.dirname(yastScript),'yast.real'))
         if not os.path.exists(realYastScript):
             print "Unable to get 'real' yast script from SVN source tree! Please ensure the source tree is complete!"
+            print "%s" % realYastScript
             sys.exit(-1)
         # copy the 'real' real script
         cp = subprocess.Popen(['cp', realYastScript, os.path.abspath(os.path.join(tdir,'sbin/yast.real'))],
@@ -373,7 +374,8 @@ if __name__ == '__main__':
         
         detectNetCardScript = os.path.abspath(os.path.join(os.path.dirname(yastScript),'detect_network_cards.py'))
         if not os.path.exists(detectNetCardScript):
-            print "Unable to get 'real' yast script from SVN source tree! Please ensure the source tree is complete!"
+            print "Unable to get detect_network_cards.py script from SVN source tree! Please ensure the source tree is complete!"
+            print "%s" % detectNetCardScript
             sys.exit(-1)
         # copy the 'real' real script
         cp = subprocess.Popen(['cp', detectNetCardScript, os.path.abspath(os.path.join(tdir,'detect_network_cards.py'))],

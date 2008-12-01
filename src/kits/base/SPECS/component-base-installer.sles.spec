@@ -77,9 +77,10 @@ Requires: python-cheetah
 Requires: python-sqlite2
 Requires: python-IPy
 Requires: initrd-templates
-#Requires: pyparted
+Requires: pyparted
 Requires: rsh
 #Requires: kusu-net-tool
+Requires: dhcp-server
 
 %description
 This component provides the node with the Kusu management tools for the 

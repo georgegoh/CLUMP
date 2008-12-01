@@ -44,3 +44,4 @@ KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk 
 KUSU_KITS_LISTS=\
 base
 
+ARCH = $(shell uname -i)

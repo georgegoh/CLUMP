@@ -82,6 +82,7 @@ ifdef $(1)_RPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_RPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
+	@echo running make $$(_$(1)_rpmurl_tgt)
 	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_RPM_NAME,$(1)) $(call PKG_RPM_URL,$(1))
 endif
 endef
@@ -92,6 +93,7 @@ ifdef $(1)_SRPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
+	@echo running make $$(_$(1)_rpmurl_tgt)
 	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))
 endif
 endef
@@ -104,6 +106,7 @@ _$(1)_tar_tgt = $(call PKG_PREFIX_TARBALL_NAME,$(1))
 _$(1)_TARBALL_FILENAME += $$(_$(1)_tar_tgt)
 TGZ_ARTIFACTS += $$(_$(1)_tar_tgt)
 $$(_$(1)_tar_tgt):	$(call PKG_PREFIX_SRCDIR,$(1))
+	@echo running make $$(_$(1)_tar_tgt)
 	mkdir -p $(TMPDIR)/$($(1)_NAME)-build/$($(1)_NAME)
 	(cd $(call PKG_PREFIX_SRCDIR,$(1)) && rsync -a $(call PKG_SOURCES,$(1)) $(TMPDIR)/$($(1)_NAME)-build/$($(1)_NAME)/. --exclude .svn)
 	(cd $(TMPDIR)/$($(1)_NAME)-build && tar czf $(KIT_TOPDIR)/$(call PKG_PREFIX_TARBALL_NAME,$(1)) $($(1)_NAME))
@@ -132,6 +135,7 @@ define PKG_SRPM_FROM_SPEC
 _$(1)_srpm_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
 SRPM_ARTIFACTS += $$(_$(1)_srpm_tgt)
 $$(_$(1)_srpm_tgt): $(call PKG_PREFIX_SPEC_NAME,$(1)) $(_$(1)_TARBALL_FILENAME)
+	@echo running make $$(_$(1)_srpm_tgt)
 	$(RPMBUILD) -bs $$(strip $$(word 1,$$^))
 endef
 
@@ -139,6 +143,7 @@ define PKG_RPM_FROM_SPEC
 _$(1)_rpmspec_tgt = $(call PKG_PREFIX_RPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmspec_tgt)
 $$(_$(1)_rpmspec_tgt): $(call PKG_PREFIX_SPEC_NAME,$(1)) $(_$(1)_TARBALL_FILENAME)
+	@echo running make $$(_$(1)_rpmspec_tgt)
 	$(RPMBUILD) -bb $(call PKG_RPMBUILD_OPTIONS,$(1)) $$(strip $$(word 1,$$^))
 endef
 
@@ -146,6 +151,7 @@ define PKG_RPM_FROM_SRPM
 _$(1)_rpmsrpm_tgt = $(call PKG_PREFIX_RPM_NAME,$(1))
 RPM_ARTIFACTS += $$(_$(1)_rpmsrpm_tgt)
 $$(_$(1)_rpmsrpm_tgt): $(call PKG_PREFIX_SRPM_NAME,$(1))
+	@echo running make $$(_$(1)_rpmsrpm_tgt)
 	$(RPMBUILD) --rebuild $(call PKG_RPMBUILD_OPTIONS,$(1)) $$^
 endef
 

@@ -42,6 +42,13 @@ init:
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -e 's%$${KUSU_REVISION}%$(KUSU_REVISION)%g' \
 	-e 's%$${KUSU_RELEASE_NAME}%$(KUSU_RELEASE_NAME)%g' \
 	packages/kusu-base-installer/sbin/S02KusuMotd.rc.py.in > packages/kusu-base-installer/sbin/S02KusuMotd.rc.py
+ifeq ($(KUSU_DISTRO_NAME), sles)
+	@echo 'Removing EPEL and Fedora packages from source tree'
+	@find ./RPMS -type f -name '*.el5.i386.rpm' | xargs rm -f
+	@find ./RPMS -type f -name '*.el5.x86_64.rpm' | xargs rm -f
+	@find ./RPMS -type f -name '*.fc9.i386.rpm' | xargs rm -f
+	@find ./RPMS -type f -name '*.fc9.x86_64.rpm' | xargs rm -f
+endif
 
 TGZ_ARTIFACTS += init kitinfo
 SRPM_ARTIFACTS += init kitinfo
