@@ -240,13 +240,16 @@ PKG_KUSU_CREATEREPO_SOURCES = custom src
 
 # Kusu libxml2 package.
 KIT_PKGS += PKG_LIBXML2
+PKG_LIBXML2_NAME = libxml2-python
+PKG_LIBXML2_VERSION = 2.6.23
+PKG_LIBXML2_RELEASE = 15.6
 ifeq ($(strip $(ARCH)), x86_64)
 PKG_LIBXML2_ARCH = $(ARCH)
 else
 PKG_LIBXML2_ARCH = i586
 endif
-PKG_LIBXML2_RPM = libxml2-python-2.6.23-15.6.i586.rpm
-PKG_LIBXML2_RPM_URL = http://fserv/repo/sles/10/SP2/i386/suse/i586/libxml2-python-2.6.23-15.6.i586.rpm
+PKG_LIBXML2_RPM = $(PKG_LIBXML2_NAME)-$(PKG_LIBXML2_VERSION)-$(PKG_LIBXML2_RELEASE).$(PKG_LIBXML2_ARCH).rpm
+PKG_LIBXML2_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_LIBXML2_ARCH)/$(PKG_LIBXML2_RPM)
 
 # Kusu MD5 crypt package.
 KIT_PKGS += PKG_MD5CRYPT

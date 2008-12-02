@@ -16,7 +16,7 @@ export LANG="en_US.UTF-8"
 source /opt/kusu/bin/kusuenv.sh
 
 # The following should go into kusuenv.sh
-export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib64/python2.4/site-packages
+export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib64/python2.4/site-packages:/mounts/instsys/usr/lib/python2.4/site-packages
 
 # kusuenv.sh does not detect the following properly yet
 export KUSU_DIST="sles"
