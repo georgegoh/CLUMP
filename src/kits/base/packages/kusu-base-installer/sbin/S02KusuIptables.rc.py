@@ -172,6 +172,8 @@ class KusuRC(rcplugin.Plugin):
         conf += 'FW_ROUTE="yes"\n'
         conf += 'FW_MASQUERADE="yes"\n'
         conf += 'FW_PROTECT_FROM_INT="no"\n'
+        conf += 'FW_MASQ_DEV="$FW_DEV_EXT"\n'
+        conf += 'FW_MASQ_NETS="0/0"\n'
         
         conf_ext_tcp = ''
         conf_ext_udp = ''
@@ -192,10 +194,6 @@ class KusuRC(rcplugin.Plugin):
         conf += 'FW_SERVICES_EXT_RPC="%s"\n' % conf_ext_rpc
         conf += 'FW_SERVICES_EXT_IP="%s"\n' % conf_ext_ip
         
-        conf_forward = '' 
-        for dev in private_nics:
-            conf_forward += "%s,%s,,, " % (dev, public)
-        conf += 'FW_FORWARD="%s%s,0/0,,,"\n' % (conf_forward, dev)
         conf += 'FW_TRUSTED_NETS="127.0.0.1 0/0,icmp"\n'
         
         return conf
