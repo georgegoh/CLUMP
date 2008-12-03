@@ -10,6 +10,16 @@ ServerName $installer.$dnszone
 CacheDisable /cfm
 #end if
 
+<Directory "$wwwdir">
+    Options FollowSymLinks Indexes
+    AllowOverride None
+    Order deny,allow
+    #for $list in $allowlist
+    Allow from $list
+    #end for
+    Deny from all
+</Directory>
+ 
 <Directory "$reposdir">
     Options FollowSymLinks Indexes ExecCGI
     SetEnv PYTHONPATH /opt/kusu/lib/python

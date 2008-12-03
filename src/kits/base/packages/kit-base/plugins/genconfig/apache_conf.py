@@ -106,5 +106,6 @@ class thisReport(Report):
                                        'reposdir': reposdir, 
                                        'imagesdir': imagesdir, 
                                        'cfmdir': cfmdir,
+                                       'wwwdir': wwwroot,
                                        'disableCache': disableCache})
         print c.execute()
