@@ -24,9 +24,9 @@ import pwd
 import string
 import sys
 
-sys.path.append("/opt/primitive/lib/python2.4/site-packages")
 from primitive.fetchtool.commands import FetchCommand
 from primitive.core.errors import CommandException
+from primitive.system.software.dispatcher import Dispatcher
 
 sys.path.append("/opt/kusu/bin")
 sys.path.append("/opt/kusu/lib")
@@ -50,7 +50,8 @@ class boothost:
     def __init__(self, gettext, kusuApp):
         self.db = KusuDB()            
         self._ = gettext
-        self.passdata = pwd.getpwnam('apache')     # Cache this for later
+        webserver_user = Dispatcher.get('webserver_usergroup')[0]
+        self.passdata = pwd.getpwnam(webserver_user)     # Cache this for later
         self.kusuApp = kusuApp
                 
         try:
