@@ -48,3 +48,4 @@ KUSU_REVISION = @KUSU_REVISION@
 KUSU_KITS_LISTS=\
 base
 
+ARCH = $(shell uname -i)
