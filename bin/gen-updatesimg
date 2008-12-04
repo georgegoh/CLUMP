@@ -70,7 +70,8 @@ SLES_PKGS = ['libnewt0_52',
       'python-elementtree',
       'libreiserfs',
       'inst-source-utils',
-      'perl'
+      'perl',
+      'yast2-users'
       ]
                 
 CURRENT_PKGS = []
