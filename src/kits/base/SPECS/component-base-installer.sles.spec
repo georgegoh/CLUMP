@@ -81,6 +81,11 @@ Requires: pyparted
 Requires: rsh
 #Requires: kusu-net-tool
 Requires: dhcp-server
+Requires: newt
+Requires: libnewt0_52
+Requires: python-newt
+Requires: slang
+Requires: python-xml
 
 %description
 This component provides the node with the Kusu management tools for the 
