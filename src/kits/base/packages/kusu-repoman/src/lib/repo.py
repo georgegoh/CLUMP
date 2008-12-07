@@ -358,7 +358,18 @@ class SuseYastRepo(BaseRepo):
             if file.exists(): 
                 dest = self.repo_path / file.basename()
                 file.copy(dest)
+       
+        for file in ['root']:
+            file = self.os_path / self.dirlayout['imagesdir'] / file
 
+            if file.exists(): 
+                dest = self.repo_path / self.dirlayout['imagesdir'] / file.basename()
+
+                if dest.exists():
+                    dest.remove()
+
+                file.copy(dest)
+ 
         for file in (self.os_path / self.dirlayout['descrdir']).glob('packages*'):
             dest = self.repo_path / self.dirlayout['descrdir'] / file.basename()
 
@@ -433,11 +444,8 @@ class SuseYastRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
-            #self.copyRamDisk()
-            #self.copyKusuNodeInstaller()
-            #self.makeComps()
+            self.copyKusuNodeInstaller()
             self.makeMetaInfo()
-            #self.makeAutoInstallScript()
             self.verify()
         except Exception, e:
             # Don't use self.delete(), since is unsure state
@@ -470,11 +478,8 @@ class SuseYastRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
-            #self.copyRamDisk()
-            #self.copyKusuNodeInstaller()
-            #self.makeComps()
+            self.copyKusuNodeInstaller()
             self.makeMetaInfo()
-            #self.makeAutoInstallScript()
             self.verify()
         except Exception, e:
             raise e
@@ -494,6 +499,32 @@ class SuseYastRepo(BaseRepo):
     def verify(self):
         return True
 
+    def copyKusuNodeInstaller(self):
+        """copy the kusu installer to the repository"""
+
+        if self.provision != 'KUSU':
+            return
+
+        kusu_root = os.environ.get('KUSU_ROOT', None)
+
+        if not kusu_root:
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # since /opt/kusu is absolute
+            kusu_root = 'opt/kusu' 
+
+        # Testing mode
+        if self.test:
+            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # during testing and updates.img will not be present.
+            src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+        else:
+            src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
+                  self.os_name / self.os_version / self.os_arch / 'updates.img'
+    
+        yastRepo = YastRepo(self.repo_path)
+        yastRepo.handleUpdates('file://' + src)
+ 
 class RedhatYumRepo(BaseRepo):
     """Base Redhat repository class"""
 
@@ -1163,6 +1194,7 @@ class SLES10Repo(SuseYastRepo):
         SuseYastRepo.__init__(self, 'sles', '10', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['bootdir'] = 'boot'
         self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
         self.dirlayout['mediadir'] = 'media.1' 
         self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
