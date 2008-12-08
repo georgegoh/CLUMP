@@ -154,6 +154,7 @@ install -m644 sql/kusu_alterdb.sql $RPM_BUILD_ROOT/opt/kusu/sql
 install -m644 locale/en/LC_MESSAGES/kusuapps.mo $RPM_BUILD_ROOT/opt/kusu/share/locale/en/LC_MESSAGES/
 install -m644 sql/kusu_primedb_sample.sql $RPM_BUILD_ROOT/opt/kusu/sql
 install -m644 etc/templates/kickstart.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
+install -m644 etc/templates/autoinst.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 install -m644 etc/templates/dhcpd.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 
 for i in `ls man/*.8`; do
@@ -232,6 +233,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/man/man8/repopatch.8.gz
 /opt/kusu/man/man8/sqlrunner.8.gz
 /opt/kusu/etc/templates/kickstart.tmpl
+/opt/kusu/etc/templates/autoinst.tmpl
 /opt/kusu/etc/templates/dhcpd.tmpl
 /depot/repos/post_scripts
 %defattr(-,apache,apache)

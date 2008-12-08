@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kickstart.py 3725 2008-11-10 15:37:59Z ltsai $
 #
 #   Copyright 2008 Platform Computing Inc
 #
@@ -28,7 +28,9 @@ from kusu.core import database
 from kusu.repoman.tools import getOS
 from primitive.installtool.commands import GenerateAutoInstallScriptCommand
 
-SUPPORTED_OS = ['rhel', 'fedora', 'centos', 'scientificlinux']
+# If the OS of the requested nodegroup is not any of the following,
+# The the plugin will fail.
+SUPPORTED_OS = ['sles', 'opensuse']
 
 def createDB():
     engine = os.getenv('KUSU_DB_ENGINE')
@@ -53,7 +55,7 @@ class thisReport(Report):
         return ''.join([choice(chars) for i in range(length)])
 
     def runPlugin(self, pluginargs):
-        """ Retrieve the required information to generate a kickstart file."""
+        """ Retrieve the required information to generate an autoinst file."""
         if not pluginargs:
             self.toolHelp()
             return
@@ -61,6 +63,8 @@ class thisReport(Report):
             db = createDB()
             # get the nodegroup ID.
             ngid = pluginargs[0]
+            # get the nodegroup name.
+            ngname = db.NodeGroups.selectfirst_by(ngid=ngid).ngname
             # work only if a valid nodegroup ID is given.
             valid_ng = [x.ngid for x in db.NodeGroups.select()]
             if int(ngid) not in valid_ng:
@@ -75,9 +79,9 @@ class thisReport(Report):
                     return
                 # Retrieve os name, ver and arch.
                 try:
-                    os,ver,arch = getOS(db, ng_obj.ngname)
+                    os,ver,arch = getOS(db, ngname)
                     if os not in SUPPORTED_OS:
-                        print "Cannot generate kickstart.cfg for unsupported OS '%s'" % os
+                        print "Cannot generate autoinst.xml for unsupported OS '%s'" % os
                         return
                 except Exception, e:
                     print "Could not retrieve the OS type and version."
@@ -148,6 +152,6 @@ class thisReport(Report):
                                                   packageprofile=packages,
                                                   diskorder=[],
                                                   instnum='',
-                                                  template_uri='file:///opt/kusu/etc/templates/kickstart.tmpl',
+                                                  template_uri='file:///opt/kusu/etc/templates/autoinst.tmpl',
                                                   outfile='/dev/stdout')
             ic.execute()

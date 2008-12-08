@@ -104,6 +104,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/apache_conf.tmpl
 /opt/kusu/lib/plugins/genconfig/bashrc.py*
 /opt/kusu/lib/plugins/genconfig/kickstart.py*
+/opt/kusu/lib/plugins/genconfig/autoinst.py*
 /opt/kusu/lib/plugins/cfmsync/getent-data.sh
 /opt/kusu/lib/plugins/ngedit/01-component-base-installer.py*
 /opt/kusu/lib/plugins/ngedit/02-component-base-installer.py*
