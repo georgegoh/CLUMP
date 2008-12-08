@@ -137,7 +137,7 @@ class NodeInfo:
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '
                  'networks.subnet, networks.device, networks.suffix, '
-                 'networks.gateway, networks.options, nics.boot '
+                 'networks.gateway, networks.options, nics.boot, nics.mac '
                  'from nics,networks where networks.netid=nics.netid '
                  'and nics.nid=\'%s\'' % nid)
         try:
@@ -153,7 +153,7 @@ class NodeInfo:
             print "Oops!"
             sys.exit(-1)
         for row in data:
-            ip, dhcpb, network, subnet, dev, suffix, gw, opt, bootb = row
+            ip, dhcpb, network, subnet, dev, suffix, gw, opt, bootb, mac = row
             if dhcpb:
                 dhcp = 1
             else:
@@ -163,7 +163,7 @@ class NodeInfo:
             else:
                 boot=0
             #Line 2
-            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot)
+            print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s" mac="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot, mac or '')
                 
         # Partition Info
         #default is 7 lines
