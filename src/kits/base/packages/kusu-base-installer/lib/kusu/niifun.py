@@ -106,7 +106,8 @@ class NodeInstInfoHandler(ContentHandler):
                                   'gateway' : attrs.get('gateway',""),
                                   'dhcp'    : attrs.get('dhcp',""),
                                   'options' : attrs.get('options',""),
-                                  'boot'    : attrs.get('boot',"") }
+                                  'boot'    : attrs.get('boot',""),
+                                  'mac'     : attrs.get('mac',"") }
         elif name == 'component':
             self.compstart = 1
 
@@ -180,14 +181,15 @@ class NodeInstInfoHandler(ContentHandler):
         cnt = 0
         fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
         for i in self.nics.keys():
-            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
+            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
                                                                          self.nics[i]['ip'],
                                                                          self.nics[i]['subnet'],
                                                                          self.nics[i]['network'],
                                                                          self.nics[i]['suffix'],
                                                                          self.nics[i]['gateway'],
                                                                          self.nics[i]['dhcp'],
-                                                                         self.nics[i]['options']))
+                                                                         self.nics[i]['options'],
+                                                                         self.nics[i]['mac']))
             cnt = cnt + 1
 
         fp.write('\n')
