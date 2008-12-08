@@ -16,6 +16,7 @@
 import os
 import kusu.core.db
 from kusu.addhost import *
+from primitive.system.software.dispatcher import Dispatcher
 
 class AddHostPlugin(AddHostPluginBase):
 
@@ -32,11 +33,14 @@ class AddHostPlugin(AddHostPluginBase):
         self.networks = self.dbconn.fetchall()
 
     def finished(self, nodelist, prePopulateMode):
+
+        named_dir = Dispatcher.get('named_dir')
+
         try:
            if self.networks:
              for net in self.networks:
                  # Run genconfig for each network
-                 os.system("/opt/kusu/bin/genconfig reverse %s > /var/named/%s.rev" % (net[0], net[0]))
+                 os.system("/opt/kusu/bin/genconfig reverse %s > %s/%s.rev" % (net[0], named_dir, net[0]))
                  os.system("kill -HUP `pidof named`")
         except:
-           pass
+            pass

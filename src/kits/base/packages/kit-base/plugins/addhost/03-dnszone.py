@@ -16,14 +16,21 @@
 import os
 from kusu.addhost import *
 import kusu.core.db
+from primitive.system.software.dispatcher import Dispatcher
  
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
+        
+        named_dir = Dispatcher.get('named_dir')
+
+        os.system("/opt/kusu/bin/genconfig zone > %s/%s.zone" % (named_dir,dnsZone))
         os.system("kill -HUP `pidof named`")
 
     def finished(self, nodelist, prePopulateMode):
         dnsZone = self.dbconn.getAppglobals('DNSZone')
-        os.system("/opt/kusu/bin/genconfig zone > /var/named/%s.zone" % dnsZone)
+        
+        named_dir = Dispatcher.get('named_dir')
+
+        os.system("/opt/kusu/bin/genconfig zone > %s/%s.zone" % (named_dir, dnsZone))
         os.system("kill -HUP `pidof named`")
