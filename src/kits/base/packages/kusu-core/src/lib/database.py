@@ -680,9 +680,9 @@ class DB(object):
 
         kusu_dist = os.environ.get('KUSU_DIST', None)
 
-        if kusu_dist and kusu_dist in ['fedora', 'centos', 'rhel']:
-            installer.kparams = 'text noipv6 kssendmac selinux=0'
-            compute.kparams = 'text noipv6 kssendmac selinux=0'
+        if kusu_dist:
+            compute.kparams = installer.kparams = Dispatcher.get('kparams', default='')
+
         # more nodegroups
         imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
                             installtype='disked', type='compute')

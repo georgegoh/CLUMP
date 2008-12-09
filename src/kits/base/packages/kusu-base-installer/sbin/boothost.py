@@ -165,14 +165,18 @@ class boothost:
             
         ostype      = data[0].split('-')[0]
 
-        if installtype == 'package' and ostype in ['fedora', 'centos', 'rhel']:
+        if installtype == 'package':
             # Find the best IP address to use
             for netdata in self.installerIPs:
                 instip, instsub = netdata
                 if kusu.ipfun.onNetwork(instip, instsub, nodesip):
-                    kickstart_file = 'http://%s/repos/%s/ks.cfg.%s' % (instip, repoid, instip)
-                    fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
-                             (initrd, instip, instip, kickstart_file, ksdevice, kparams or ''))
+                    if ostype in ['fedora', 'centos', 'rhel']:
+                        kickstart_uri = 'http://%s/repos/%s/ks.cfg.%s' % (instip, repoid, instip)
+                        fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
+                                 (initrd, instip, instip, kickstart_uri, ksdevice, kparams or ''))
+                    elif ostype in ['sles', 'opensuse', 'suse']:
+                        fp.write('        append initrd=%s niihost=%s install=http://%s/repos/%s %s\n' % \
+                                 (initrd, instip, instip, repoid, kparams or ''))
         else:
             # Diskless and imaged do not care.  They can find the best one.
             niihost = ""
