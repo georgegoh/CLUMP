@@ -478,7 +478,7 @@ class SuseYastRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
-            self.copyKusuNodeInstaller()
+            # self.copyKusuNodeInstaller()
             self.makeMetaInfo()
             self.verify()
         except Exception, e:
