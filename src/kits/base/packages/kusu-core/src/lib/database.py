@@ -14,6 +14,8 @@ from sqlalchemy.ext.sessioncontext import SessionContext
 from sqlalchemy.ext.assignmapper import assign_mapper
 from kusu.util.errors import *
 import kusu.util.log as kusulog
+from primitive.system.software.dispatcher import Dispatcher
+
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
 # it seems these must be told to be quiet individually...
