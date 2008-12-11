@@ -107,7 +107,6 @@ For examples:
         self.stdoutMessage('Repoman 1.2\n')
 
     def new(self, repo_name):
-
         li = re.compile("^[a-zA-Z0-9-_.]+").findall(repo_name)
         if not li or (len(li[0]) != len(repo_name)):
             self.stderrMessage('Invalid repo name. Repo name can only contain a-z, A-Z, 0-9, _-.\n')
@@ -351,14 +350,21 @@ For examples:
         newRepo.save()
         newRepo.flush()
         
-        location = path('/' + self.repos_root + '/%s' % newRepo.repoid)
-        newRepo.repository = str(location)
+        newrepo_path = path('/' + self.repos_root + '/%s' % newRepo.repoid)
+        newRepo.repository = str(newrepo_path)
         newRepo.save()
         newRepo.flush()
 
-        src = path(self.prefix or '/') / 'depot' / 'repos' / str(oldRepo.repoid)
-        dest = path(self.prefix or '/') / 'depot' / 'repos' / str(newRepo.repoid)
-        tools.cpio_copytree(src, dest)
+        # use values from DB instead of hardcoded path.
+        oldrepo_path = path(oldRepo.repository)
+        tools.cpio_copytree(oldrepo_path, newrepo_path)
+
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POST')
+        if row: 
+            script_path =  row[0].kvalue
+        else:
+            script_path = path('/depot/repos/post_scripts')
+        self.callScripts(script_path, newRepo)
 
         self.logEvent("Finished creating snapshot for repo: %s" % repo_name, toStdout=False)
 
