@@ -33,8 +33,8 @@
         <dns>
             <dhcp_hostname config:type="boolean">$dhcp</dhcp_hostname>
             <dhcp_resolv config:type="boolean">true</dhcp_resolv>
-            <domain>site</domain>
-            <hostname>linux-dzcg</hostname>
+            <domain>$domain</domain>
+            <hostname>$hostname</hostname>
             <nameservers config:type="list">
                 #for $ns in $nameservers    
                 <nameserver>$ns</nameserver>
@@ -49,6 +49,14 @@
         <managed config:type="boolean">false</managed>
         <routing>
             <ip_forward config:type="boolean">false</ip_forward>
+            #if not $dhcp
+            <route>
+                <destination>default</destination>
+                <device>-</device>
+                <gateway>$defaultgw</gateway>
+                <netmask>-</netmask>
+            </route>
+            #end if
         </routing>
     </networking>
 
