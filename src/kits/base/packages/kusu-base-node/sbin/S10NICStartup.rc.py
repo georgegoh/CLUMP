@@ -21,6 +21,9 @@ from kusu.core import rcplugin
 import os
 import string
 
+from path import path
+from primitive.system.software.dispatcher import Dispatcher
+
 class KusuRC(rcplugin.Plugin):
 
     def __init__(self):
@@ -35,8 +38,8 @@ class KusuRC(rcplugin.Plugin):
         """Creating config files for all devices.
         The data comes from the profile.nii and looks like:
            # NIC Definitions Device:IP:Subnet:Network:suffix:gateway:dhcp:options
-           export NII_NICDEF0="eth2|10.10.0.1|255.255.0.0|10.10.0.0|-eth2:10.10.0.1|0|"
-           export NII_NICDEF1="eth1|172.25.243.23|255.255.255.0|172.25.243.0|-eth1|172.25.243.2|0|"
+           export NII_NICDEF0="eth2|10.10.0.1|255.255.0.0|10.10.0.0|-eth2:10.10.0.1|0|00:0C:29:5A:48:AD|"
+           export NII_NICDEF1="eth1|172.25.243.23|255.255.255.0|172.25.243.0|-eth1|172.25.243.2|0|08:00:27:f0:59:9a|"
         """
         
         profile = '/etc/profile.nii'
@@ -62,7 +65,7 @@ class KusuRC(rcplugin.Plugin):
             try:
                 val = val.rstrip()
                 val = val.strip('"')
-                dev,ip,sn,net,suf,gw,dhcp,opts = string.split(val, '|', 7)
+                dev,ip,sn,net,suf,gw,dhcp,opts,mac = string.split(val, '|', 8)
             except:
                 continue
             
@@ -72,8 +75,14 @@ class KusuRC(rcplugin.Plugin):
 
             if dev != 'bmc':
                 # It's a normal NIC
-                ifcfg = '/etc/sysconfig/network-scripts/ifcfg-%s' % dev
-                if os.path.exists(ifcfg):
+                network_path = path(Dispatcher.get('networkscripts_path'))
+
+                if self.os_name in ['rhel', 'centos', 'fedora']:
+                    ifcfg = path(network_path / 'ifcfg-%s' % dev)
+                elif self.os_name in ['suse', 'sles', 'opensuse']:
+                    ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
+
+                if ifcfg.exists():
                     print "\n      Configuration for %s already exists!  Skipping.\n" % dev
                     continue
 
@@ -94,7 +103,8 @@ class KusuRC(rcplugin.Plugin):
                 fp.close()
 
                 # Bring up NIC
-                cmd = '/etc/sysconfig/network-scripts/ifup %s' % dev
+                ifup_path = path(Dispatcher.get('ifup_path'))
+                cmd = '%s %s' % (ifup_path / 'ifup', dev)
                 os.system(cmd)
                 
             else:
