@@ -478,7 +478,7 @@ class SuseYastRepo(BaseRepo):
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
-            # self.copyKusuNodeInstaller()
+            self.copyKusuNodeInstaller()
             self.makeMetaInfo()
             self.verify()
         except Exception, e:
@@ -521,7 +521,10 @@ class SuseYastRepo(BaseRepo):
         else:
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
-    
+ 
+        if not src.exists():
+            return
+            
         yastRepo = YastRepo(self.repo_path)
         yastRepo.handleUpdates('file://' + src)
  
