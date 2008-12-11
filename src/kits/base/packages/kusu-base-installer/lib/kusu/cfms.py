@@ -33,6 +33,8 @@ from kusu.core.db import KusuDB
 from kusu.cfmnet import CFMNet
 from kusu.ipfun import *
 
+from primitive.system.software.dispatcher import Dispatcher
+
 CFMFILE='/etc/cfm/.cfmsecret'
 
 # Change this when the plugins are relocated
@@ -68,7 +70,8 @@ class PackBuilder:
             sys.exit(1)
 
         try:
-            self.apacheuser  = pwd.getpwnam('apache')
+            apache = Dispatcher.get('webserver_usergroup')[0]
+            self.apacheuser = pwd.getpwnam(apache)
         except:
             self.errorMessage('cfm_No_apache_user\n')
             sys.exit(1)
@@ -338,7 +341,7 @@ class PackBuilder:
 
                         if not os.path.exists(os.path.dirname(cfmfqfn)):
                             os.system('mkdir -p \"%s\"' % os.path.dirname(cfmfqfn))
-                            os.system('chown -R apache \"%s\"' % cfmloc)
+                            os.system('chown -R %s \"%s\"' % (self.apacheuser[2], cfmloc))
 
                         for line in os.popen(cmd).readlines():
                             if line:
@@ -391,7 +394,7 @@ class PackBuilder:
             # Make the node group directory if necessary
             if not os.path.exists(os.path.join(self.cfmbasedir, "%i" % ngid)):
                 os.system('mkdir -p \"%s/%i\"' % (self.cfmbasedir, ngid))
-                os.system('chown -R apache \"%s\"' % self.cfmbasedir)
+                os.system('chown -R %s \"%s\"' % (self.apacheuser[2], self.cfmbasedir))
 
             # Now check the file to see if there are actually any changes needed
             # pfile = os.path.join(self.cfmbasedir, "%i" % ngid, self.pkgfile)  # DOES NOT WORK!
