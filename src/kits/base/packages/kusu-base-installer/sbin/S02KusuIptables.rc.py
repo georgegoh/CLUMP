@@ -49,7 +49,10 @@ class KusuRC(rcplugin.Plugin):
             f = open(conf)
             s = f.read()
             p = re.compile('net.ipv4.ip_forward\s*=\s*0')
-            s = p.sub('net.ipv4.ip_forward = 1', s)
+            if p.match(s):
+                s = p.sub('net.ipv4.ip_forward = 1', s)
+            else:
+                s += "\nnet.ipv4.ip_forward = 1\n"
             f.close()
         except IOError:
             s = 'net.ipv4.ip_forward = 1'
