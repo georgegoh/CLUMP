@@ -23,6 +23,7 @@ export KUSU_DISTVER=5
 source /opt/kusu/bin/kusuenv.sh
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib64/python2.4/site-packages
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib/python2.4/site-packages
+export PRIMITIVE_LOCKDIR="/tmp"
 
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
@@ -50,7 +51,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
     if [ "$?" -eq 0 ]; then
-        /opt/kusu/bin/updatestate /mnt/kusu/etc/profile.nii > /dev/null 2>&1
+        /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
     fi
 
 elif [ $EXIT_CODE -eq 1 ]; then

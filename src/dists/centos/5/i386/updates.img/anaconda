@@ -24,6 +24,7 @@ export KUSU_DIST_ARCH=i386
 source /opt/kusu/bin/kusuenv.sh
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib64/python2.4/site-packages
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib/python2.4/site-packages
+export PRIMITIVE_LOCKDIR="/tmp"
 
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
@@ -59,8 +60,8 @@ if [ $EXIT_CODE -eq 0 ]; then
     # Need a better to replace existing -m and --kickstart option in $@
     /usr/bin/anaconda "$@" -m http://127.0.0.1/repos/1000 --kickstart /tmp/kusu-ks.cfg ;
     EXIT_CODE=$?
-    if [ -f "/mnt/kusu/var/lock/subsys/kusu-installer " ]; then
-        /usr/bin/rm -f /mnt/kusu/var/lock/subsys/kusu-installer > /dev/null 2>&1
+    if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer " ]; then
+        /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
     fi
     exit $EXIT_CODE
 

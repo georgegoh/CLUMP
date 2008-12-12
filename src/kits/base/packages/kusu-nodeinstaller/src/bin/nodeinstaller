@@ -24,6 +24,7 @@ from kusu.ui.text.screenfactory import *
 from kusu.ui.text.navigator import Navigator
 from primitive.system.hardware.nodes import checkAndMakeNode
 from primitive.system.hardware.partitiontool import DiskProfile
+from primitive.system.software.dispatcher import Dispatcher
 
 class NodeInstallerApp(KusuApp):
     
@@ -164,10 +165,10 @@ actions:
             checkAndMakeNode('/dev/' + dev)
 
         if not niihost: sys.exit(2)
-        ksfile = '/tmp/kusu/ks.cfg'
+        autoinstall_conf = '/tmp/kusu/%s' % Dispatcher.get('autoinstall_conf')
         class NIIScreenFactory(ScreenFactory):
             name = 'nodeinstaller'
-            ScreenFactory.screens = [ProgressScreen(niihost, ksfile)]
+            ScreenFactory.screens = [ProgressScreen(niihost, autoinstall_conf)]
         feedback = Navigator(screenFactory=NIIScreenFactory, screenTitle='Installing Node',
                              showTrail=True, showNavButtons=False)
         try:
@@ -207,11 +208,12 @@ import snack
 from kusu.util.errors import UserExitError
 class ProgressScreen(BaseScreen):
 
-    def __init__(self, niihost, ksfile):
+    def __init__(self, niihost, autoinstall_conf):
         BaseScreen.__init__(self)
         kl.debug('niihost: %s' % niihost)
         self.niihost = niihost
-        self.ksfile = ksfile
+        self.autoinstall_conf = autoinstall_conf
+        self.autoinstall_type = Dispatcher.get('autoinstall_type')
 
     def displayDiskProfileState(self, diskprofile):
         s = str(diskprofile) + '\n\n'
@@ -286,24 +288,24 @@ class ProgressScreen(BaseScreen):
                                        'No disk was found for installation. Press "OK" to reboot.')
                 raise UserExitError
 
-        kl.debug('Writing profile into kickstart file /tmp/kusu/ks.cfg.')
-        dlg = self.selector.popupProgress('Preparing Kickstart', 'Preparing Kickstart files...')
+        dlg = self.selector.popupProgress('Preparing %s' % self.autoinstall_type, \
+                                          'Preparing %s files...' % self.autoinstall_type)
         tmp_disk_profile = DiskProfile(False)
         disk_order = self.disambiguateDiskOrder(tmp_disk_profile, interactive=False)
         kl.debug('Disk order: %s' % str(disk_order))
 
         # Ensure parent directory already exists
-        if not os.path.exists(os.path.dirname(self.ksfile)):
-            os.makedirs(os.path.dirname(self.ksfile))
+        if not os.path.exists(os.path.dirname(self.autoinstall_conf)):
+            os.makedirs(os.path.dirname(self.autoinstall_conf))
 
-        self.nodeinst.setup(self.ksfile, self.niihost, disk_order)
+        self.nodeinst.setup(self.autoinstall_conf, self.niihost, disk_order)
         dlg.close()
 
         kl.debug('Setting timezone')
         dlg = self.selector.popupProgress('Setting Timezone', 'Setting the timezone...')
         self.nodeinst.setTimezone()
         dlg.close()
- 
+
         kl.debug('Committing disk profile')
         dlg = self.selector.popupProgress('Partitioning Disks', 'Initializing disks...')
 #        self.displayDiskProfileState(self.nodeinst.ksprofile.diskprofile)
@@ -312,7 +314,12 @@ class ProgressScreen(BaseScreen):
 #        self.selector.popupMsg('Partitioning', 'Finished Partitioning disks.')
         kl.debug('Finished partitioning disks')
 
-        kusu_prefix = '/mnt/kusu'
+        # We need to perform the generation of the autoinstall configuration file after
+        # disk profile is committed to the disk.
+        kl.debug('Writing profile into %s file %s.' % (self.autoinstall_type, self.autoinstall_conf))
+        self.nodeinst.generateAutoinstall()
+
+        kusu_prefix = '/kusu/mnt'
 
         kl.debug('Mounting filesystem')
         dlg = self.selector.popupProgress('Mounting Filesystem', 'Mounting filesystem...')
@@ -340,11 +347,11 @@ class ProgressScreen(BaseScreen):
         self.nodeinst.download_scripts(self.niihost, prefix=kusu_prefix)
         dlg.close()
 
-        kl.debug('Copying out kusu.log and ks.cfg to /root')
+        kl.debug('Copying out kusu.log and %s to /root' % Dispatcher.get('autoinstall_conf'))
         dlg = self.selector.popupProgress('Backup log and config',
                                           'Copying out kusu.log and ' + \
-                                          'ks.cfg to /root')
-        self.nodeinst.saveLogs(destdir='/mnt/kusu/root', prefix='/tmp/kusu')
+                                          '%s to /root' % Dispatcher.get('autoinstall_conf'))
+        self.nodeinst.saveLogs(destdir='%s/root' % kusu_prefix, prefix='/tmp/kusu')
         dlg.close()
         raise UserExitError
 

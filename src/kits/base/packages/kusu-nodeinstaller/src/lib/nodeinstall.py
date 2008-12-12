@@ -5,8 +5,6 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.autoinstall.scriptfactory import KickstartFactory, RHEL5KickstartFactory, Fedora7KickstartFactory
-from kusu.autoinstall.autoinstall import Script
 from primitive.system.hardware.partitiontool import DiskProfile
 from primitive.system.hardware.disk import Partition
 from kusu.installer.defaults import *
@@ -23,6 +21,8 @@ import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
 from path import path
 from kusu.nodeinstaller.partition import *
+from primitive.system.software.dispatcher import Dispatcher
+from primitive.installtool.commands import GenerateAutoInstallScriptCommand
 
 try:
     import subprocess
@@ -365,25 +365,41 @@ class NodeInstaller(object):
         self.ksprofile.prepareKickstartNetworkProfile(self, niihost)
         self.diskprofile = self.ksprofile.prepareKickstartDiskProfile(self, disk_order=disk_order)
         self.ksprofile.prepareKickstartPackageProfile(self)
-        self.generateAutoinstall()
         
     def generateAutoinstall(self):
         """ Generates a distro-specific autoinstallation configuration file.
-            FIXME: Except that it doesnt.. this needs to be handled per
-            distro-specific!
         """
-
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
         kusu_dist = os.environ['KUSU_DIST']
         kusu_distver = os.environ['KUSU_DISTVER']
 
-        if kusu_dist == 'rhel' and kusu_distver == '5':
-            autoscript = Script(RHEL5KickstartFactory(self.ksprofile))
-        elif kusu_dist == 'fedora' and kusu_distver == '7':
-            autoscript = Script(Fedora7KickstartFactory(self.ksprofile))
+        if kusu_dist == "sles":
+            template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
         else:
-            autoscript = Script(KickstartFactory(self.ksprofile))
+            template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')
 
-        autoscript.write(self.autoinstallfile)
+        try:
+            instnum = self.ksprofile.instnum
+        except AttributeError:
+            instnum = None
+
+        # Note: installsrc is needed for rhel/centos but not for sles
+        ic = GenerateAutoInstallScriptCommand(os={'name':kusu_dist, 'version':kusu_distver},
+                                              diskprofile=self.diskprofile,
+                                              networkprofile=self.ksprofile.networkprofile,
+                                              installsrc=self.ksprofile.installsrc,
+                                              rootpw=self.ksprofile.rootpw,
+                                              tz=self.ksprofile.tz,
+                                              lang=self.ksprofile.lang,
+                                              keyboard=self.ksprofile.keyboard,
+                                              packageprofile=self.ksprofile.packageprofile,
+                                              instnum=instnum,
+                                              diskorder=self.ksprofile.diskorder,
+                                              template_uri=template_uri,
+                                              outfile=self.autoinstallfile)
+
+        ic.execute()
+
         
     def commit(self):
         """ This starts the automatic provisioning """
@@ -446,17 +462,18 @@ class NodeInstaller(object):
 
         authorized_keys.chmod(0600)
 
-    def saveLogs(self, destdir='/mnt/kusu/root', prefix='/tmp/kusu/'):
-        """Save the kusu.log and kusu-ks.cfg to /root."""
+    def saveLogs(self, destdir='/kusu/mnt/root', prefix='/tmp/kusu/'):
+        """Save the kusu.log and kusu.cfg/autoinst.xml to /root."""
+        autoinstall_conf = Dispatcher.get('autoinstall_conf')
         kusu_log = path(os.environ.get('KUSU_LOGFILE', '/var/log/kusu/kusu.log'))
-        ks_cfg = path(prefix) / path('ks.cfg')
+        autoinstall_file = path(prefix) / path(autoinstall_conf)
         d = path(destdir)
 
         if not d.exists():
             d.makedirs()
 
         kusu_log.copy(d)
-        ks_cfg.copy(d / 'kusu-ks.cfg')
+        autoinstall_file.copy(d / 'kusu-%s' % autoinstall_conf)
 
     def download_scripts(self, niihost, prefix='/', script_dir_url=None):
         prefix = path(prefix)
