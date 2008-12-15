@@ -1062,7 +1062,6 @@ class NodeFun(object, KusuApp):
             self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=True AND nodegroups.ngid=nodes.ngid" % node) 
 # AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
             data = self._dbReadonly.fetchone()
-            print data
             if data:
                # Make sure MAC address is not empty
                if not data[0]:
