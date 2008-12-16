@@ -114,7 +114,7 @@ KIT_PKGS += PKG_COMPONENT_BASE_NODE
 PKG_COMPONENT_BASE_NODE_SPEC = component-base-node.sles.spec
 
 KIT_PKGS += PKG_COMPONENT_GNOME_DESKTOP
-PKG_COMPONENT_GNOME_DESKTOP_SPEC = component-gnome-desktop.spec
+PKG_COMPONENT_GNOME_DESKTOP_SPEC = component-gnome-desktop.sles.spec
 
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
