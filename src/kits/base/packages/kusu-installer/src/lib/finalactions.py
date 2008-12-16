@@ -124,6 +124,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
     else:
         networkprofile = {}
 
+    dbs = kiprofile.getDatabase()
     packages = getPackageProfile(dbs, ngname)
 
     if kusu_dist == "sles":
