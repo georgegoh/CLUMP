@@ -130,7 +130,6 @@ def genAutoInstallScript(disk_profile, kiprofile):
     if kusu_dist == "sles":
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
     else:
-        dbs = kiprofile.getDatabase()
         ngname = 'installer-' + kiprofile['Kits']['longname']
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')
 
