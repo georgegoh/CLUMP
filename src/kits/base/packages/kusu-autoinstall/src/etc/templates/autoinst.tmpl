@@ -49,12 +49,14 @@
         <routing>
             <ip_forward config:type="boolean">false</ip_forward>
             #if not $dhcp
-            <route>
-                <destination>default</destination>
-                <device>-</device>
-                <gateway>$defaultgw</gateway>
-                <netmask>-</netmask>
-            </route>
+            <routes config:type="list">
+                <route>
+                    <destination>default</destination>
+                    <device>-</device>
+                    <gateway>$defaultgw</gateway>
+                    <netmask>-</netmask>
+                </route>
+            </routes>
             #end if
         </routing>
     </networking>
