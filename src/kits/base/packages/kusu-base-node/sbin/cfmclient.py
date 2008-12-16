@@ -28,7 +28,7 @@ UPDATEPACKAGE = 2
 FORCEFILES    = 4
 UPDATEREPO    = 8
 
-# Set DEBUG to 1 to see debugging info in /tmp/cfm.log
+# Set DEBUG to 1 to see debugging info in /var/log/cfmclient.log
 DEBUG = 0
 
 import os
@@ -39,12 +39,19 @@ import grp
 import urllib
 import random
 import glob
+import subprocess
 from kusu.ipfun import *
 
 
 PLUGINS='/opt/kusu/lib/plugins/cfmclient'
 CFMFILE='/etc/cfm/.cfmsecret'
 YUMCONF='/var/cache/yum/yum.conf'
+LOGFILE='/var/log/cfmclient.log'
+
+# When the cfmclient is updating files on itself it will
+# not replace the files in the IGNORELST
+IGNORELST = ['/etc/passwd', '/etc/shadow', '/etc/group', '/etc/gshadow']
+
 
 class Merger:
     """ The Merger Class is responsible for dealing with merging
@@ -229,6 +236,7 @@ class CFMClient:
         self.type   = 0
         self.installers = []
         self.bestinstaller = ''   # The IP of the installer to get files from
+        self.selfupdate  = False  # Flag to indicate that this is on an installer
 
 
     def log(self, mesg):
@@ -236,7 +244,7 @@ class CFMClient:
         global DEBUG
         if DEBUG:
             try:
-                fp = file('/tmp/cfm.log', 'a')
+                fp = file(LOGFILE, 'a')
                 fp.write(mesg)
                 fp.close()
             except:
@@ -330,8 +338,7 @@ class CFMClient:
         # Test for local access
         filetest = "%s/cfmfiles.lst" % (self.CFMBaseDir)
         self.log("++  Testing for: %s\n" % filetest)
-        self.log("++  CFMBaseDir: %s\n" % self.CFMBaseDir)
-        self.log("++  NGID = %i\n" % self.ngid)
+        self.log("++  NGID = %i, CFMBaseDir: %s\n" % (self.ngid, self.CFMBaseDir))
         if os.path.exists(filetest):
             return True
 
@@ -555,13 +562,6 @@ class CFMClient:
         if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
             self.__setupForYum()
 
-            cmd = "/usr/bin/yum -y -c %s clean metadata" % YUMCONF
-            self.log("Running:  %s\n" % cmd)
-            proc = os.popen(cmd)
-            for line in proc.readlines():
-                self.log(line)
-            proc.close()
-
             cmd = "/usr/bin/yum -y -c %s clean all" % YUMCONF
             self.log("Running:  %s\n" % cmd)
             proc = os.popen(cmd)
@@ -571,14 +571,22 @@ class CFMClient:
             
             cmd = "/usr/bin/yum -y -c %s install " % YUMCONF
             for i in self.newpackages:
-                cmd2 = "%s %s" % (cmd, i)
+                # Using redirection here because the p.communicate deadlocks
+                cmd2 = "%s %s >>/var/log/cfmclient.log 2>&1" % (cmd, i)
 
                 self.log("Running:  %s\n" % cmd2)
-                proc = os.popen(cmd2)
-                for line in proc.readlines():
-                    self.log(line)
-                proc.close()
-
+                p = subprocess.Popen(cmd2, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+                (sout, serr) = p.communicate()
+                try:
+                    p.wait()
+                except:
+                    pass
+                try:
+                    p.stdin.close()
+                    p.stdout.close()
+                except:
+                    pass
+                
 
     def __removePackages(self):
         """__removePackages - Remove the packages in the list."""
@@ -591,13 +599,22 @@ class CFMClient:
             self.__setupForYum()
             cmd = "/usr/bin/yum -y remove "
             for i in self.oldpackages:
-                cmd = "/usr/bin/yum -y -c %s remove %s" % (YUMCONF, i)
+                cmd = "/usr/bin/yum -y -c %s remove %s >>/var/log/cfmclient.log 2>&1" % (YUMCONF, i)
 
                 self.log("Running:  %s\n" % cmd)
-                proc = os.popen(cmd)
-                for line in proc.readlines():
-                    self.log(line)
-                proc.close()
+
+                p = subprocess.Popen(cmd, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+                (sout, serr) = p.communicate()
+                try:
+                    p.wait()
+                except:
+                    pass
+                try:
+                    p.stdin.close()
+                    p.stdout.close()
+                except:
+                    pass
+
                 
 
     def __getFileEntries(self, filename):
@@ -686,6 +703,13 @@ class CFMClient:
 
         # Now strip off the leading CFMBaseDir, and NGID
         fn = fn[(len(self.CFMBaseDir) + len("%i" % self.ngid) + 1):]
+        
+        if self.selfupdate and action != 'ignore':
+            # Set this to ignore if this is the installer and it is one
+            # of the files not to replace
+            if fn in IGNORELST:
+                action = 'ignore'
+                self.log("Not replacing: %s\n" % fn)
 
         return (fn, action)
 
@@ -849,7 +873,12 @@ class CFMClient:
         if os.path.exists(self.packagelst):
             os.rename(self.packagelst, '%s.ORIG' % self.packagelst)
         attr = (self.packagelst, 'root', 'root', 0600)
-        self.__getFile('%i.%s' % (self.ngid, self.pkglstpost), attr, 1)
+        if self.__getFile('%i.%s' % (self.ngid, self.pkglstpost), attr, 1):
+            # Download failed
+            self.log("Failed to download package list.  Aborting!\n")
+            if os.path.exists('%s.ORIG' % self.packagelst):
+                os.rename('%s.ORIG' % self.packagelst, self.packagelst)
+                return -1
 
         # Test the package file to see if it is valid
         testdata = self.__getFileEntries(self.packagelst)
@@ -936,6 +965,7 @@ class CFMClient:
         if self.installers[0] != 'self':
             self.setupNIIVars()
         else:
+            self.selfupdate = True
             # This is the installer to try the database
             self.ngid = 1
             #try:
@@ -1002,7 +1032,6 @@ class CFMClient:
         if self.type & UPDATEREPO:
             self.updateRepo()
 
-        print "Done"
         sys.exit(0)
 
 
