@@ -124,15 +124,13 @@ def genAutoInstallScript(disk_profile, kiprofile):
     else:
         networkprofile = {}
 
+    packages = getPackageProfile(dbs, ngname)
+
     if kusu_dist == "sles":
-        packages = ['kit-base',
-                    'component-base-installer',
-                    'component-base-node']
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
     else:
         dbs = kiprofile.getDatabase()
         ngname = 'installer-' + kiprofile['Kits']['longname']
-        packages = getPackageProfile(dbs, ngname)
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')
 
     if kiprofile.has_key('InstNum'):
