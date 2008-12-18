@@ -240,7 +240,7 @@ if __name__ == '__main__':
         tmplst = KUSU_RUNTIME[:]
         NEW_CURRENT_PKGS = []
         
-	for i in CURRENT_PKGS:
+        for i in CURRENT_PKGS:
             n = string.join(string.split(os.path.basename(i), '-')[:-2], '-')
             if n in tmplst:
                 NEW_CURRENT_PKGS.append(i)
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     
     fedora6AnacondaScript = getAnacondaScript('fedora','6')
     fedora6kscfgTemplate = getKSTemplate('fedora','6')
-        
+    
     # get the nodeinstaller patchfiles directory
     tardir = tempfile.mkdtemp(prefix='emerald-')
     atexit.register(cleanup,tardir)
@@ -416,10 +416,5 @@ if __name__ == '__main__':
     cpioP = subprocess.Popen(cmd,shell=True,cwd=tardir,stdout=subprocess.PIPE,stderr=err)
     cpioP.wait()
     err.close()
-    
-    print 'Generate nodeinstaller patchfile in', nidir
 
     sys.exit(0)
-
-
-

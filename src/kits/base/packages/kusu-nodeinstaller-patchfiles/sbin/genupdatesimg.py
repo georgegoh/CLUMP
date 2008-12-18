@@ -6,6 +6,8 @@ from path import path
 import tempfile
 import subprocess
 import os
+from primitive.system.software.dispatcher import Dispatcher
+
 class GenUpdatesImg(KusuApp):
     def __init__(self):
         engine =  os.getenv('KUSU_DB_ENGINE')
@@ -55,8 +57,9 @@ class GenUpdatesImg(KusuApp):
         scratchdir = path(tempfile.mkdtemp('patchfiles-'))
         
         dest = path('/opt/kusu/lib/nodeinstaller')
-
-        self._runCommand('$KUSU_ROOT/lib/nodeinstaller/bin/gen-nodeinstaller-updatesimg -d %s' % scratchdir)
+        
+        updatesimg = Dispatcher.get('gen-nodeinstaller-updatesimg')
+        self._runCommand('$KUSU_ROOT/lib/nodeinstaller/bin/%s -d %s' % (updatesimg, scratchdir))
         self._runCommand('cd %s/nodeinstaller && find . | cpio -mpdu %s' % (scratchdir,dest))
         
         if scratchdir.exists(): scratchdir.rmtree()

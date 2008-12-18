@@ -1220,7 +1220,11 @@ class SLES10Repo(SuseYastRepo):
             if p.exists():
                 return p
 
-        return None 
+        return None
+    
+    def makeAutoInstallScript(self):
+        """Make the autoinstall script for the repository"""
+        pass #Sles nodeinstaller does not require fake autoinst.xml
 
 class OpenSUSE103Repo(SuseYastRepo):
     def __init__(self, os_arch, prefix, db):

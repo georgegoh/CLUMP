@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+# $Id: gen-nodeinstaller-updatesimg 1649 2008-09-05 16:47:33Z hsaliak $
+#
+# Copyright (C) 2007 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+# 
+# This bootstrap script will create the nodeinstaller updates.img files
+#
+import os
+import subprocess
+import sys
+import tempfile
+import shutil
+import optparse
+import atexit
+import string
+from kusu.genupdates.downloader import Downloader
+from optparse import OptionParser
+
+# This is the list of components that are
+# required to build the kusu installer runtime
+KUSU_RUNTIME = ['kusu-autoinstall',
+                'kusu-boot',
+                'kusu-buildkit',
+                'python-cheetah',
+                'kusu-core',
+                'kusu-createrepo',
+                'kusu-driverpatch',
+                'kusu-hardware',
+                'kusu-installer',
+                'python-IPy',
+                'kusu-kitops',
+                'kusu-md5crypt',
+                'kusu-networktool',
+                'kusu-nodeinstaller',
+                'kusu-path',
+                'python-sqlite2',
+                'kusu-repoman',
+                'python-sqlalchemy',
+                'kusu-ui',
+                'kusu-util',
+                'primitive']
+                
+SLES_PKGS = ['libnewt0_52',
+      'newt',
+      'python-newt',
+      'python',
+      'slang',
+      'python-xml',
+      'grub',
+      'mkinitrd',
+      'coreutils',
+      'parted',
+      'pyparted',
+      'rpm',
+      'rpm-python',
+      'yast2-python-bindings',
+      'sqlite',
+      'python-elementtree',
+      'libreiserfs',
+      'inst-source-utils',
+      'perl',
+      'yast2-users']
+
+def visitor_binary_rpms(rpms, dirname, names):
+    """"""
+    li = []
+    if '.svn' in names: names.remove('.svn')
+    for pkg in KUSU_RUNTIME:
+        li.extend([name for name in names if name.startswith(pkg) and name.endswith('.rpm')])
+        
+    if li:
+        for l in li: rpms.append(os.path.abspath(os.path.join(dirname,l)))
+
+
+def getAndVerifyRPMS(rpms, destdir):
+    downloadRPMS(rpms, destdir)
+
+    rpms = []
+    # get the RPMS directory
+    os.path.walk(destdir, visitor_binary_rpms, rpms)
+
+    # take out kusu-nodeinstaller-patchfiles
+    nipkg = [p for p in rpms if os.path.basename(p).startswith('kusu-nodeinstaller-patchfiles')]
+
+    for p in nipkg:
+        rpms.remove(p)
+    
+    if len(rpms) <> len(KUSU_RUNTIME):
+        tmplst = KUSU_RUNTIME[:]
+        new_rpms = []
+        
+        for i in rpms:
+            n = string.join(string.split(os.path.basename(i), '-')[:-2], '-')
+            if n in tmplst:
+                new_rpms.append(i)
+                tmplst.remove(n)
+        
+        rpms = new_rpms[:]
+        if len(tmplst) > 0:
+            print 'There are missing packages. Please ensure these packages are available in the repositories!'
+            print 'Missing packages:'
+	    for i in tmplst:
+                print '    %s' % i
+            sys.exit(-1)
+    return rpms
+
+
+def downloadRPMS(rpms, dldir):
+    """ Download the list of packages required to create Kusu Runtime.
+        The packages will be downloaded into dldir directory.
+    """
+    dldir = os.path.abspath(dldir)
+    
+    do = Downloader(dldir)
+    do.downloadPackages(rpms)
+
+
+def unpackRPMS(rpm_paths, destdir):
+    err = open('/dev/null','w')
+    for rpm in rpm_paths:
+        rpm2cpioP = subprocess.Popen('rpm2cpio %s' % rpm, shell=True, cwd=destdir, stdout=subprocess.PIPE, stderr=err)
+        cpioP = subprocess.Popen('cpio -id', shell=True, cwd=destdir,stdin=rpm2cpioP.stdout,stdout=subprocess.PIPE, stderr=err)
+        cpioP.wait()
+    err.close()
+
+
+def generateUpdatesImg(dirname, outputpath, size=0):
+    mkfsP = subprocess.Popen(['/sbin/mkfs.cramfs', dirname, outputpath],
+                            stderr = subprocess.PIPE)
+    mkfsP.communicate()
+    if mkfsP.returncode:
+        print mkfsP.stderr
+        sys.exit(1)
+
+
+def cleanup(tdir):
+    """Housekeeping routines"""
+    if os.path.exists(tdir): shutil.rmtree(tdir)
+
+
+def doIt(nidir):
+    # create a scratchdir to hold the downloaded RPMS.
+    rpmsdir = tempfile.mkdtemp(prefix='rpmsdir-')
+    atexit.register(cleanup,rpmsdir)
+    rpmlist = getAndVerifyRPMS(KUSU_RUNTIME + SLES_PKGS, rpmsdir)
+
+    # create a temp holding directory and unpack RPMS there.
+    unpacked_dir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup, unpacked_dir)
+    unpackRPMS(rpmlist, unpacked_dir)
+
+    # create patchfiles subdirectories for SLES.
+    updates_dir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup, updates_dir)
+    niPatchfilesDir = updates_dir
+    sles10PatchfilesDir = os.path.join(niPatchfilesDir,'nodeinstaller/sles/10')
+    os.makedirs(sles10PatchfilesDir)
+    os.mkdir(os.path.join(sles10PatchfilesDir,'i386'))
+    os.mkdir(os.path.join(sles10PatchfilesDir,'x86_64'))
+
+    # generate the updates.img and place in the i386 and x86_64 directories.
+    updatesimg_path = os.path.join(sles10PatchfilesDir,'i386/updates.img')
+    generateUpdatesImg(unpacked_dir, updatesimg_path) 
+    shutil.copy(updatesimg_path, os.path.join(sles10PatchfilesDir,'x86_64/updates.img'))
+
+    # remove temp holding directory
+    shutil.rmtree(unpacked_dir, ignore_errors=True)
+
+    # remove existing nidir if any
+    if os.path.exists(nidir): shutil.rmtree(nidir)
+    os.mkdir(nidir)
+
+    # copy from the temporary updates directory to specified directory
+    err = open('/dev/null','w')
+    cmd = 'find . | cpio -mpdu %s' % nidir
+    cpioP = subprocess.Popen(cmd,shell=True,cwd=updates_dir,stdout=subprocess.PIPE,stderr=err)
+    cpioP.wait()
+    err.close()
+
+    print 'Generate nodeinstaller patchfile in', nidir
+
+if '__main__' == __name__:
+    parser = OptionParser(usage="usage: %prog [options]")
+    parser.add_option('-d', dest='dest', default=tempfile.mkdtemp(prefix='genupdates-'), help='Destination directory')
+    (options, args) = parser.parse_args()
+    
+    if not os.path.exists(options.dest):
+        os.makedirs(options.dest)
+    doIt(options.dest)
