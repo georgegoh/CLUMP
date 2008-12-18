@@ -2114,7 +2114,9 @@ class NodeGroup(NodeGroupRec):
                 if rv:
                     BootDir = db.getAppglobals('PIXIE_ROOT')
                     if not BootDir: BootDir = '/tftpboot/kusu'
-                    srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
+                    
+                    #srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
+                    srcInitrdFileName = os.path.join(BootDir,self['initrd'])
                     dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( self['installtype'], self['ngid'] ))
 
                     try:

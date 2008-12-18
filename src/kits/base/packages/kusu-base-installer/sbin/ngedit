@@ -499,9 +499,26 @@ class scrNGEEdit_Repo(USXBaseScreen):
             Timeline: Next_callback, validation, formAction
         '''
         curNG['repoid'] = self.__repolistbox.current()
+        # reset kernel and initrd to sane values 
         if curNG['repoid'] <> origNG['repoid']:
-            curNG['kernel'] = ''
-
+            if self.database.driver == 'mysql':
+                query = '''select k.rname ,k.version, k.arch  from kits k join repos_have_kits rk
+                on k.kid = rk.kid where k.isOS = True and rk.repoid = %s ''' %curNG['repoid']
+            else: # Only postgres for now
+                query = '''select k.rname ,k.version, k.arch  from kits k join repos_have_kits rk
+                on k.kid = rk.kid where k."isOS" = True and rk.repoid = %s ''' %curNG['repoid']
+            self.database.execute(query,postgres_replace=False)
+            rv = self.database.fetchone()
+            rname = rv[0]
+            version =rv[1]
+            arch = rv[2]
+            curNG['kernel'] = "kernel-%s-%s-%s" % (rname , version , arch)
+            curNG['initrd'] = "initrd-%s-%s-%s.img" % (rname , version , arch)
+        else:
+            # Handle case where user backs out repoID change.
+            curNG['initrd'] = origNG['initrd']
+            curNG['kernel'] = origNG['kernel']
+                                     
 
 
 class scrNGEEdit_Boot(USXBaseScreen):
