@@ -101,6 +101,4 @@ kitinfo:
     -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_ARCH_STR}%$(BASE_KIT_ARCH_STR)%g' \
 	packages/kit-base/kitinfo.in >packages/kit-base/kitinfo
-	@mkdir -p $(KIT_ARTIFACT_DIR)
-	@ln -sf ../../packages/kit-base/kitinfo $(KIT_ARTIFACT_DIR)/kitinfo
 
