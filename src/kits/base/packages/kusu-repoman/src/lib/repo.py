@@ -382,8 +382,17 @@ class SuseYastRepo(BaseRepo):
             dest = self.repo_path / file.basename()
             (dest.parent.relpathto(file)).symlink(dest)
 
+        for file in ['media']:
+            file = self.os_path / 'media.1' / file
+    
+            if file.exists(): 
+                dest = self.repo_path / 'media.1' / file.basename()
 
+                if dest.exists():
+                    dest.remove()
 
+                file.copy(dest)
+ 
     def copyContribPackages(self):
 
         if not self.getContribPath().exists():
@@ -495,6 +504,9 @@ class SuseYastRepo(BaseRepo):
 
         yastRepo = YastRepo(self.repo_path)
         yastRepo.make()
+        
+        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid, True)
+        yastRepo.writeMedia(vendor='Kusu %s-%s-%s repository' % (os_name, os_version, os_arch))
 
     def verify(self):
         return True
