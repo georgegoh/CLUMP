@@ -46,13 +46,13 @@ patches that contain the Kusu NodeInstaller runtime.
 rm -rf $RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/{bin,kusurc}
+mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/genupdates
 
 install -m755 bin/* $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/bin
 install -m644 kusurc/S50GenerateUpdatesImg.rc.py $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/kusurc
-find src/ | cpio -mpdu $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/
-
-install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/genupdates
 install -m755 lib/* $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/genupdates
+
+find src/ | cpio -mpdu $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/
 
 install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
 install -m644 kusurc/S50GenerateUpdatesImg.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d
