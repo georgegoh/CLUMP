@@ -32,6 +32,15 @@ subnet $network.subnet netmask $network.netmask {
                 vendor-option-space PXE;
                 next-server $network.pxehost;
         }
+
+        if substring (option  vendor-class-identifier, 0, 9)  = "Etherboot" {
+            filename  "pxelinux.0";
+            option vendor-class-identifier  "Etherboot";
+            option PXE.mtftp-ip 0.0.0.0;
+            vendor-option-space PXE;
+            next-server $network.pxehost;
+        }
+
         #for $host in $network.hosts
         host $host.name {
                 #if $host.mac
