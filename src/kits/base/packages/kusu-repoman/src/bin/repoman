@@ -324,6 +324,21 @@ For examples:
         try:
             r = self.rfinst.getRepo(repo.repoid)
             r.delete()
+        except RepoOSKitError: # no OS kit provided, cannot use specific repo delete
+            repo_path = path(self.prefix or '/') / self.repos_root / str(repo.repoid)
+            cache_path = path(self.prefix or '/') / self.repos_root / '.repocache' / str(repo.repoid)
+
+            # Removes files
+            if repo_path.exists(): repo_path.rmtree()
+            if cache_path.exists(): cache_path.rmtree()
+
+            # clean up database: repos and repos_have_kit table
+            repos_have_kits = self.dbs.ReposHaveKits.select_by(repoid=repo.repoid)
+            repo = self.dbs.Repos.get(repo.repoid)
+            for obj in repos_have_kits + [repo]:
+                obj.delete()
+                obj.flush()         
+
         except Exception, e:
             self.logErrorEvent('Unable to delete repo: %s. Reason: %s' % (repo_name, e))
             self.unlock()
@@ -542,17 +557,17 @@ For examples:
             sys.exit(1)
 
 
-        self.repos_root = '/depot/repos'
-        self.kits_root = '/depot/kits'
+        self.repos_root = path('/depot/repos')
+        self.kits_root = path('/depot/kits')
 
         row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_ROOT')
-        if row: self.repos_root = row[0].kvalue
+        if row: self.repos_root = path(row[0].kvalue)
         
         row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
-        if row: self.kits_root =  row[0].kvalue
+        if row: self.kits_root = path(row[0].kvalue)
 
-        if self.repos_root[0] == '/': self.repos_root = self.repos_root[1:]
-        if self.kits_root[0] == '/': self.kits_root = self.kits_root[1:]
+        if self.repos_root[0] == '/': self.repos_root = path(self.repos_root[1:])
+        if self.kits_root[0] == '/': self.kits_root = path(self.kits_root[1:])
 
         self.kitops = KitOps()
         self.kitops.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
