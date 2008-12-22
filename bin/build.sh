@@ -15,9 +15,9 @@ if [ -z "$KUSU_BUILD_ARCH" ]; then
 fi
 
 if [ "$KUSU_BUILD_DIST" = "centos" ]; then
-    ISO=CentOS-5.1-$KUSU_BUILD_ARCH-bin-DVD.iso
+    ISO=CentOS-5.2-$KUSU_BUILD_ARCH-bin-DVD.iso
 elif [ "$KUSU_BUILD_DIST" = "rhel" ]; then
-    ISO=rhel-5.1-server-$KUSU_BUILD_ARCH-dvd.iso
+    ISO=rhel-5.2-server-$KUSU_BUILD_ARCH-dvd.iso
 elif [ "$KUSU_BUILD_DIST" = "sles" ]; then
     ISO=SLES-10-SP2-DVD-$KUSU_BUILD_ARCH-GM-DVD1.iso
 elif [ "$KUSU_BUILD_DIST" = "opensuse" ]; then
