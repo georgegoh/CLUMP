@@ -20,6 +20,11 @@
 
 # Author: Mike Frisch <mfrisch@platform.com>
 
+if [ "$KUSU_DIST" == "sles" -o "$KUSU_DIST" == "opensuse" -o "$KUSU_DIST" == "suse" ]; then
+    echo "Skipping mkinitrd-templates for $KUSU_DIST distribution"
+    exit 0
+fi
+
 ##
 ## Generate initrd templates
 ##

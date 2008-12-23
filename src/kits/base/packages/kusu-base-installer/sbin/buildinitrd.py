@@ -616,6 +616,13 @@ class BuildInitrdApp(KusuApp):
 
     def run(self):
         """run - Run the application"""
+        
+        # Skip Buildinitrd for sles/opensuse
+        dist = os.getenv('KUSU_DIST')
+        if dist.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutMessage('Skipping BuildInitrd for  %s distribution\n' % dist)
+            sys.exit(0)
+        
         self.parseargs()
         image = ''
 

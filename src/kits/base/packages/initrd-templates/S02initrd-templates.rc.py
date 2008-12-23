@@ -11,6 +11,10 @@ class KusuRC(rcplugin.Plugin):
         self.delete = True
 
     def run(self):
+        # Bypass this rc script for sles
+        if self.os_name in ['sles', 'opensuse', 'suse']:
+            return True
+        
         self.runCommand('/opt/kusu/sbin/mkinitrd-templates')
         return True
 

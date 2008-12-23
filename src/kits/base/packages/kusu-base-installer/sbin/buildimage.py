@@ -420,6 +420,13 @@ class BuildImageApp(KusuApp):
 
     def run(self):
         """run - Run the application"""
+        
+        # Skip Buildimage for sles/opensuse
+        dist = os.getenv('KUSU_DIST')
+        if dist.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutMessage('Skipping BuildImage for  %s distribution\n' % dist)
+            sys.exit(0)
+        
         self.parseargs()
         image = ''
 
