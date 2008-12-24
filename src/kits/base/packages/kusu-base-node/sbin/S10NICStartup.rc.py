@@ -77,10 +77,13 @@ class KusuRC(rcplugin.Plugin):
                 # It's a normal NIC
                 network_path = path(Dispatcher.get('networkscripts_path'))
 
-                if self.os_name in ['rhel', 'centos', 'fedora']:
+                if dev.startswith('ib'):
                     ifcfg = path(network_path / 'ifcfg-%s' % dev)
-                elif self.os_name in ['suse', 'sles', 'opensuse']:
-                    ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
+                else:
+                    if self.os_name in ['rhel', 'centos', 'fedora']:
+                        ifcfg = path(network_path / 'ifcfg-%s' % dev)
+                    elif self.os_name in ['suse', 'sles', 'opensuse']:
+                        ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
 
                 if ifcfg.exists():
                     print "\n      Configuration for %s already exists!  Skipping.\n" % dev
