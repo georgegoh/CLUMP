@@ -723,7 +723,8 @@ class BootHostApp(KusuApp):
 
         if os.getuid() != 0:
             # Apache is allowed for nodeboot.cgi
-            apache = pwd.getpwnam('apache')
+            apache = Dispatcher.get('webserver_usergroup')[0]
+            apache = pwd.getpwnam(apache)
             if os.getuid() != apache[2]:
                 self.errorMessage("nonroot_execution\n")
                 sys.exit(-1)
