@@ -106,6 +106,17 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
         pass
 
     if ostype is not None:
+        kit_list = kitops.listKit()
+        os = [kit.rname for kit in kit_list if kit.isOS]
+
+        if os:
+            
+            baseScreen.selector.popupMsg('Cannot Add Additional OS Kit', 'Cannot add more than one OS kit ' + \
+                                         'during installation. ' + \
+                                         'You can add additional OS kit using kitops later.')
+            
+            return
+
         kl.debug('Add OS Kit')
         kl.debug('Check that OS is the right distro, arch, version')
         verified, err_list = verifyDistroVersionAndArch(baseScreen.kiprofile, kits)
@@ -149,11 +160,20 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     verified = True
     err_list = []
     ostype = re.compile('[a-z]+').findall(distro.ostype)[0]    
-    if kiprofile['OS'] != ostype:
+
+    if kiprofile['OS'] in ['rhel', 'centos']:
+        if ostype in ['rhel', 'centos']:
+            pass
+        else:
+            err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
+                                                   ostype or 'Unknown'))
+            verified = False
+
+    elif kiprofile['OS'] != ostype: # ostype != os kit when os kit provided is not rhel/centos
         err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
                                                ostype or 'Unknown'))
         verified = False
-
+    
     distro_ver = distro.getVersion() or 'Unknown'
     if ostype in ['rhel', 'centos'] and distro_ver != 'Unknown':
         distro_ver = distro_ver.split('.')[0]
@@ -187,6 +207,9 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         return
         
     kit_name = re.compile('[a-z]+').findall(kit['name'])[0]
+    if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
+        kit_name = baseScreen.kiprofile['OS']
+
     if kit_name != baseScreen.kiprofile['OS'] or \
        kit['ver'] != baseScreen.kiprofile['OS_VERSION'] or \
        kit['arch'] != baseScreen.kiprofile['OS_ARCH']:
@@ -218,8 +241,13 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         kitops.setKitMedia(cdrom)
         kitops.addKitPrepare()
         d = kitops.getOSDist()
+
+        kit_name = re.compile('[a-z]+').findall(d.ostype)[0]
+        if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
+            kit_name = baseScreen.kiprofile['OS']
+
         if not d.ostype or not d.getVersion() or not d.getArch() or \
-           d.ostype.lower() != baseScreen.kiprofile['OS'] or \
+           kit_name != baseScreen.kiprofile['OS'] or \
            d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
            d.getArch() != baseScreen.kiprofile['OS_ARCH']:
             prog_dlg.close()

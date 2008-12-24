@@ -63,6 +63,14 @@ if [ $EXIT_CODE -eq 0 ]; then
         /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
     fi
 
+	# centos iso provided
+	if [ -f "/tmp/kusu.fake.files" ]; then
+		for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -f $f > /dev/null 2>&1; done
+
+		# Change grub title to rhel 
+		/usr/bin/sed -i 's/Red Hat Enterprise Linux Server/CentOS/g' /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
+	fi
+
     exit $EXIT_CODE
 
 elif [ $EXIT_CODE -eq 1 ]; then

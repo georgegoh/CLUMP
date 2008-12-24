@@ -8,6 +8,7 @@
 #
 
 import os
+import re
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
@@ -50,7 +51,13 @@ def makeRepo(kiprofile):
     masterNode = db.Nodes.select_by(name=row.kvalue)[0]
     repo.installers = ';'.join([nic.ip for nic in masterNode.nics if nic.ip])
     repo.kits = db.Kits.select()
-    repo.ostype = '%s-%s-%s' % (kiprofile['OS'], kiprofile['OS_VERSION'], kiprofile['OS_ARCH'])
+
+    oskit = db.Kits.select_by(isOS = True)[0]
+    oskitname = re.compile('[a-z]+').findall(oskit.rname)[0]    
+    oskitversion = oskit.version
+    oskitarch = oskit.arch
+ 
+    repo.ostype = '%s-%s-%s' % (oskitname, oskitversion, oskitarch)
     repo.save()
     repo.flush()
 
@@ -77,6 +84,44 @@ def makeRepo(kiprofile):
     # workaround for starting repoIDs at 1000
     db.Repos.selectfirst_by(repoid=999).delete()
     db.flush()
+
+    # Fake rhel/centos repo
+    # Temp symlinks to be cleaned up in faux anaconda script later
+    if kiprofile['OS'] in ['rhel', 'centos'] and \
+        oskitname != kiprofile['OS']:
+        files = []
+        repodir = path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / '1000'
+
+        if kiprofile['OS'] == 'centos' and not (repodir / 'repodata').exists(): # rhel iso provided
+
+            (repodir / 'Server' / 'repodata').symlink(repodir / 'repodata')    
+            files.append(repodir / 'repodata')
+
+            packagedir = repodir / 'Server'
+            destdir = repodir 
+
+        elif kiprofile['OS'] == 'rhel' and not (repodir / 'Server' / 'repodata').exists(): # centos iso provided
+
+            (repodir / 'Server').makedirs()
+            files.append(repodir / 'Server')
+            
+            (repodir / 'Server' / 'CentOS').makedirs()
+            files.append(repodir / 'Server' / 'CentOS')
+ 
+            (repodir / 'repodata').symlink(repodir / 'Server' / 'repodata')    
+            files.append(repodir / 'Server' / 'repodata')
+ 
+            packagedir = repodir / 'CentOS'
+            destdir = repodir / 'Server' / 'CentOS'
+
+        for r in [ r for r in packagedir.glob('*.rpm') ]:
+            dest = destdir / r.basename()
+            r.symlink(dest)
+            files.append(dest)
+        
+        f = open('/tmp/kusu.fake.files', 'w')
+        f.write('\n'.join(files) + '\n')
+        f.close()
 
 def getPackageProfile(dbs, ngname):
     # Code adapted from autoinstall/installprofile.py.
@@ -189,7 +234,7 @@ def mountKusuMntPts(prefix, disk_profile):
     # Mount and create in order 
     # fix bug 107818 - add /var to the list so that the lock file is touched
     # in the mounted partition if it exists. 
-    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits','/var']:
+    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits','/var', '/boot']:
         mntpnt = prefix + m
 
         if not mntpnt.exists():
