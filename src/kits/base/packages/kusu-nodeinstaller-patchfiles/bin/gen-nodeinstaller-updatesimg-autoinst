@@ -79,7 +79,7 @@ def visitor_binary_rpms(rpms, dirname, names):
     """"""
     li = []
     if '.svn' in names: names.remove('.svn')
-    for pkg in KUSU_RUNTIME:
+    for pkg in KUSU_RUNTIME + SLES_PKGS:
         li.extend([name for name in names if name.startswith(pkg) and name.endswith('.rpm')])
         
     if li:
@@ -99,8 +99,8 @@ def getAndVerifyRPMS(rpms, destdir):
     for p in nipkg:
         rpms.remove(p)
     
-    if len(rpms) <> len(KUSU_RUNTIME):
-        tmplst = KUSU_RUNTIME[:]
+    if len(rpms) <> len(KUSU_RUNTIME + SLES_PKGS):
+        tmplst = KUSU_RUNTIME[:] + SLES_PKGS[:]
         new_rpms = []
         
         for i in rpms:
@@ -152,6 +152,23 @@ def cleanup(tdir):
     if os.path.exists(tdir): shutil.rmtree(tdir)
 
 
+def getSrcDir():
+    """Returns the source directory for this script"""
+    script = sys.argv[0]
+    bindir = os.path.dirname(script)
+    trunk = os.path.normpath(bindir + '/..')
+    return trunk
+
+
+def getYastScript(distro, version):
+    """Returns the 'faux' yast script"""
+    trunk = getSrcDir()
+    distspath = 'src/dists/%(distro)s/%(version)s/nodeinstaller' % {'distro':distro,
+                'version':version}
+    yastScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/yast')))
+    return yastScript
+
+
 def doIt(nidir):
     # create a scratchdir to hold the downloaded RPMS.
     rpmsdir = tempfile.mkdtemp(prefix='rpmsdir-')
@@ -159,7 +176,7 @@ def doIt(nidir):
     rpmlist = getAndVerifyRPMS(KUSU_RUNTIME + SLES_PKGS, rpmsdir)
 
     # create a temp holding directory and unpack RPMS there.
-    unpacked_dir = tempfile.mkdtemp(prefix='emerald-')
+    unpacked_dir = tempfile.mkdtemp(prefix='unpackeddir-')
     atexit.register(cleanup, unpacked_dir)
     unpackRPMS(rpmlist, unpacked_dir)
 
@@ -172,13 +189,23 @@ def doIt(nidir):
     os.mkdir(os.path.join(sles10PatchfilesDir,'i386'))
     os.mkdir(os.path.join(sles10PatchfilesDir,'x86_64'))
 
+    # Create a 'sbin' directory where the RPMS are unpacked
+    # and copy the fake yast there.
+    unpacked_dir_sbin = os.path.join(unpacked_dir, 'sbin')
+    if not os.path.exists(unpacked_dir_sbin): os.mkdir(unpacked_dir_sbin)
+    sles10YastScript = getYastScript('sles','10')
+    shutil.copy(sles10YastScript, unpacked_dir_sbin)
+    os.chmod(os.path.join(unpacked_dir_sbin,'yast'),0755)
+
+    # Remove the parted and partprobe binaries or autoyast
+    # will fail at its partitioning stage.
+    os.unlink(os.path.join(unpacked_dir, 'usr', 'sbin', 'parted'))
+    os.unlink(os.path.join(unpacked_dir, 'usr', 'sbin', 'partprobe'))
+    
     # generate the updates.img and place in the i386 and x86_64 directories.
     updatesimg_path = os.path.join(sles10PatchfilesDir,'i386/updates.img')
     generateUpdatesImg(unpacked_dir, updatesimg_path) 
     shutil.copy(updatesimg_path, os.path.join(sles10PatchfilesDir,'x86_64/updates.img'))
-
-    # remove temp holding directory
-    shutil.rmtree(unpacked_dir, ignore_errors=True)
 
     # remove existing nidir if any
     if os.path.exists(nidir): shutil.rmtree(nidir)
