@@ -28,7 +28,9 @@
 
 prog='cfmd'
 
-export PYTHONPATH=/opt/kusu/lib/python
+## For cfmd, the following is not respected when it spawns
+## cfmclient child processes.
+# export PYTHONPATH=/opt/kusu/lib/python
 
 start() {
     echo -n $"Starting $prog. "	

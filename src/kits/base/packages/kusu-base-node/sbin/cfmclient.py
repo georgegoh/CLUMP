@@ -41,7 +41,19 @@ import random
 import glob
 import subprocess
 from kusu.ipfun import *
+import tempfile
+from path import path
+import atexit
 
+# Add primitive to the python path. This is needed for cfmd to spawn
+# cfmclient child processes properly since we are going to import
+# primitive modules in cfmclient.py. Currently cfmd only adds
+# /opt/kusu/lib/python to PYTHONPATH before spawning cfmclient.
+sys.path.append('/opt/primitive/lib/python2.4/site-packages')
+sys.path.append('/opt/primitive/lib64/python2.4/site-packages')
+
+from primitive.system.software.probe import OS
+from primitive.system.software.dispatcher import Dispatcher
 
 PLUGINS='/opt/kusu/lib/plugins/cfmclient'
 CFMFILE='/etc/cfm/.cfmsecret'
@@ -223,7 +235,7 @@ class CFMClient:
     def __init__(self, argv):
         self.args        = argv
         self.CFMBaseDir  = ''
-        self.ostype      = ''
+        self.osname      = OS()[0].lower()
         self.ngid        = 0
         self.repoid      = 0
         self.pkglstpost  = 'package.lst'
@@ -312,7 +324,6 @@ class CFMClient:
     def setupNIIVars(self):
         """setupNIIVars - Read in the needed variables from the profile.nii"""
         self.CFMBaseDir = self.getProfileVal("CFMBaseDir")
-        self.ostype     = self.getProfileVal("NII_OSTYPE")
         val             = self.getProfileVal("NII_REPO")
         if val:
             self.repoid = os.path.basename(val)
@@ -521,13 +532,7 @@ class CFMClient:
 
     def __setupForYum(self):
         """__setupForYum  - Make a yum.conf pointing to the installer that is closest"""
-        dirname = 'Server'
-        if self.ostype[:6] == 'fedora':
-            dirname = ''
-        if self.ostype[:4] == 'rhel' :
-            dirname = '/Server/'
-        if self.ostype[:6] == 'centos':
-            dirname = ''
+        dirname = Dispatcher.get('yum_repo_subdir', 'Server')
 
         global YUMCONF
         yumconf = YUMCONF
@@ -544,77 +549,140 @@ class CFMClient:
                 'tolerant=1\n\n'
                 '[kusu-installer]\n'
                 'name=%s - Booger\n'
-                'baseurl=http://%s/repos/%s%s\n' % (self.ostype, self.bestinstaller, self.repoid, dirname)
+                'baseurl=http://%s/repos/%s%s\n' % (self.osname, self.bestinstaller, self.repoid, dirname)
                 )
 
         fp.write(out)
         fp.close()
         
+    def __runCommand(self, cmd):
+        self.log("Running:  %s\n" % cmd)
+        proc = os.popen(cmd)
+        for line in proc.readlines():
+            self.log(line)
+        proc.close()
+
+    def __runCommand2(self, cmd):
+        self.log("Running:  %s\n" % cmd)
+        p = subprocess.Popen(cmd, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+        (sout, serr) = p.communicate()
+        try:
+            p.wait()
+        except:
+            pass
+        try:
+            p.stdin.close()
+            p.stdout.close()
+        except:
+            pass
+
+    def __setupZypperSource(self):
+        """
+        Backup existing sources and caches and create just one source that points
+        to the closest installer.
+        """
+        atexit.register(self.__restoreZypperSources)
+
+        sources_dir = path(Dispatcher.get('zypper_sources_dir'))
+        cache_dir = path(Dispatcher.get('zypper_cache_dir'))
+
+        if sources_dir.exists():
+            self.temp_dir = path(tempfile.mkdtemp(prefix=self.__class__.__name__, 
+                                                  dir=Dispatcher.get('zypper_base_dir', default='/tmp')))
+            (self.temp_dir / 'sources').mkdir()
+            (self.temp_dir / 'cache').mkdir()
+
+            # Move all source files to the temp_dir
+            cmd = "mv %s/* %s/sources" % (sources_dir, self.temp_dir)
+            self.__runCommand(cmd)
+
+            # Move all directories in the cache_dir to the temp_dir
+            cmd = "mv %s/* %s/cache" % (cache_dir, self.temp_dir)
+            self.__runCommand(cmd)
+
+            # Add the installer as the only source
+            cmd = "echo y | /usr/bin/zypper service-add http://%s/repos/%s %s >> %s 2>&1" % (self.bestinstaller, self.repoid, self.osname, LOGFILE)
+            self.__runCommand2(cmd)
         
+    def __restoreZypperSources(self):
+        """
+        Restore the sources that were backed up earlier in __setupZypperSource.
+        """
+        sources_dir = path(Dispatcher.get('zypper_sources_dir'))
+        cache_dir = path(Dispatcher.get('zypper_cache_dir'))
+
+        if sources_dir.exists() and \
+                cache_dir.exists() and \
+                hasattr(self, 'temp_dir') and \
+                (self.temp_dir / 'sources').exists() and \
+                (self.temp_dir / 'cache').exists():
+
+            # Remove the installer source added earlier
+            cmd = "echo y | /usr/bin/zypper service-delete http://%s/repos/%s >> %s 2>&1" % (self.bestinstaller, self.repoid, LOGFILE)
+            self.__runCommand2(cmd)
+
+            # Move the original zypper sources back
+            cmd = "mv %s/sources/* %s" % (self.temp_dir, sources_dir)
+            self.__runCommand(cmd)
+
+            # Delete cache directories
+            for dir in cache_dir.dirs():
+                dir.rmtree()
+
+            # Move the original zypper caches back
+            cmd = "mv %s/cache/* %s" % (self.temp_dir, cache_dir)
+            self.__runCommand(cmd)
+
+            self.temp_dir.rmtree()
+
     def __installPackages(self):
         """__installPackages - Install the packages in the list."""
 
-        global YUMCONF
         if not self.newpackages:
             self.log("Nothing to add\n")
             return
         
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
+        cmd = ''
+        if self.osname in ['rhel', 'fedora', 'centos']:
+            global YUMCONF
             self.__setupForYum()
 
-            cmd = "/usr/bin/yum -y -c %s clean all" % YUMCONF
-            self.log("Running:  %s\n" % cmd)
-            proc = os.popen(cmd)
-            for line in proc.readlines():
-                self.log(line)
-            proc.close()
+            cmd = "/usr/bin/yum -y -c %s clean all >> %s 2>&1" % (YUMCONF, LOGFILE)
+            self.__runCommand2(cmd)
             
             cmd = "/usr/bin/yum -y -c %s install " % YUMCONF
+
+        elif self.osname in ['sles', 'opensuse', 'suse']:
+            self.__setupZypperSource()
+            cmd = "echo y | /usr/bin/zypper --non-interactive --no-gpg-checks install --no-confirm --auto-agree-with-licenses"
+    
+        if cmd:
             for i in self.newpackages:
                 # Using redirection here because the p.communicate deadlocks
-                cmd2 = "%s %s >>/var/log/cfmclient.log 2>&1" % (cmd, i)
-
-                self.log("Running:  %s\n" % cmd2)
-                p = subprocess.Popen(cmd2, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-                (sout, serr) = p.communicate()
-                try:
-                    p.wait()
-                except:
-                    pass
-                try:
-                    p.stdin.close()
-                    p.stdout.close()
-                except:
-                    pass
-                
+                cmd2 = "%s %s >> %s 2>&1" % (cmd, i, LOGFILE)
+                self.__runCommand2(cmd2)
 
     def __removePackages(self):
         """__removePackages - Remove the packages in the list."""
-        global YUMCONF
         if not self.oldpackages:
             self.log("Nothing to remove\n")
             return
-        
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
+       
+        cmd = ''
+        if self.osname in ['rhel', 'fedora', 'centos']:
+            global YUMCONF
             self.__setupForYum()
-            cmd = "/usr/bin/yum -y remove "
+            cmd = "/usr/bin/yum -y -c %s remove" % YUMCONF
+
+        elif self.osname in ['sles', 'opensuse', 'suse']:
+            self.__setupZypperSource()
+            cmd = "/usr/bin/zypper --non-interactive --no-gpg-checks remove --no-confirm"
+
+        if cmd:
             for i in self.oldpackages:
-                cmd = "/usr/bin/yum -y -c %s remove %s >>/var/log/cfmclient.log 2>&1" % (YUMCONF, i)
-
-                self.log("Running:  %s\n" % cmd)
-
-                p = subprocess.Popen(cmd, shell=True, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-                (sout, serr) = p.communicate()
-                try:
-                    p.wait()
-                except:
-                    pass
-                try:
-                    p.stdin.close()
-                    p.stdout.close()
-                except:
-                    pass
-
+                # Using redirection here because the p.communicate deadlocks
+                cmd2 = "%s %s >> %s 2>&1" % (cmd, i, LOGFILE)
+                self.__runCommand2(cmd2)
                 
 
     def __getFileEntries(self, filename):
@@ -925,33 +993,28 @@ class CFMClient:
     def updateRepo (self):
         """updateRepo - Update all new install files in repo"""
         self.log("Updating To New Repo Packages\n")
+
+        self.__haveLocalAccess()
+
         # Just running:  yum update
-        global YUMCONF
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
-            self.__haveLocalAccess()
+        if self.osname in ['rhel', 'fedora', 'centos']:
+            global YUMCONF
             self.__setupForYum()
 
-            cmd = "/usr/bin/yum -y -c %s clean metadata" % YUMCONF
-            self.log("Running:  %s\n" % cmd)
-            proc = os.popen(cmd)
-            for line in proc.readlines():
-                self.log(line)
-            proc.close()
+            cmd = "/usr/bin/yum -y -c %s clean metadata >> %s 2>&1" % (YUMCONF, LOGFILE)
+            self.__runCommand2(cmd)
 
-            cmd = "/usr/bin/yum -y -c %s clean all" % YUMCONF
-            self.log("Running:  %s\n" % cmd)
-            proc = os.popen(cmd)
-            for line in proc.readlines():
-                self.log(line)
-            proc.close()
+            cmd = "/usr/bin/yum -y -c %s clean all >> %s 2>&1" % (YUMCONF, LOGFILE)
+            self.__runCommand2(cmd)
             
-            cmd = "/usr/bin/yum -y -c %s update" % YUMCONF
-            self.log("Running:  %s\n" % cmd)
-            proc = os.popen(cmd)
-            for line in proc.readlines():
-                self.log(line)
-            proc.close()
+            cmd = "/usr/bin/yum -y -c %s update >> %s 2>&1" % (YUMCONF, LOGFILE)
+            self.__runCommand2(cmd)
 
+        elif self.osname in ['sles', 'opensuse', 'suse']:
+            self.__setupZypperSource()
+
+            cmd = "echo y | /usr/bin/zypper --non-interactive --no-gpg-checks update -t package --no-confirm --auto-agree-with-licenses >> %s 2>&1" % LOGFILE
+            self.__runCommand2(cmd)
 
     def run (self):
         """run - Entry point for CFM client"""
@@ -991,23 +1054,11 @@ class CFMClient:
             # XXX: Workaround until we have a profile.nii on installer
             self.repoid = 1000
 
-	    if os.path.isfile("/etc/redhat-release"):
-	       fptr = open("/etc/redhat-release",'r')
-	       ostring = fptr.readline().split(' ')[0]
-	       fptr.close()
-               if ostring.lower() == "fedora":
-	          self.ostype = 'fedora-x-xxxxxx'
-	       elif ostring.lower() == "centos":
-	          self.ostype = 'centos-x-xxxxxx'
-               elif ostring.lower() == "red":
-	          self.ostype = 'rhel-x-xxxxxx'
-	       else:
-	          sys.exit(-1)
+            # Exit if os is not supported
+            if not (self.osname in ['rhel', 'centos', 'fedora', 'sles', 'opensuse', 'suse']):
+                sys.exit(-1)
 
-            else:
-	       sys.exit(-1)
-
-	    self.CFMBaseDir = '/opt/kusu/cfm'
+            self.CFMBaseDir = '/opt/kusu/cfm'
             self.bestinstaller = '127.0.0.1'
             
         global UPDATEFILE
@@ -1036,7 +1087,6 @@ class CFMClient:
 
 
 
-            
 if __name__ == '__main__':
     app = CFMClient(sys.argv)
     app.run()
