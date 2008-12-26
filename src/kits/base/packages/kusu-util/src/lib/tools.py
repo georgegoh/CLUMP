@@ -160,4 +160,8 @@ def mkdtemp(**kwargs):
     """
     if 'KUSU_TMP' in os.environ and 'dir' not in kwargs:
         kwargs['dir'] = os.environ['KUSU_TMP']
-    return tempfile.mkdtemp('', 'kusu-', **kwargs)
+
+    if kwargs.has_key('prefix'):
+        return tempfile.mkdtemp('', **kwargs)
+    else:
+        return tempfile.mkdtemp('', 'kusu-', **kwargs)
