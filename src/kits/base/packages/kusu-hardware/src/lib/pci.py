@@ -38,6 +38,7 @@ class PCI:
     def _getIDSFile(self):
 
         ids_files = [path('/usr/share/hwdata/pci.ids'), \
+                     path('/usr/share/pci.ids'), \
                      path('/etc/pci.ids'), \
                      path('./pci_ids')]
 

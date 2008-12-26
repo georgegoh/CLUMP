@@ -6,8 +6,9 @@
 from kusu.util.errors import *
 from kusu.core.app import KusuApp
 from kusu.core import database as db
-from kusu.hardware import probe
 import kusu.util.log as kusulog
+
+from primitive.system.hardware import probe
 
 from path import path
 import os
