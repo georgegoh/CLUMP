@@ -139,21 +139,35 @@ class thisReport(Report):
         print "// "
         print 'options {'
         print '\tdirectory "%s";' % named_dir
-        print '\tdump-file "%s/data/cache_dump.db";' % named_dir
-        print '\tstatistics-file "%s/data/named_stats.txt";' % named_dir
+
+        if OS()[0].lower() in ['sles', 'opensuse', 'suse']:
+            print ''
+            print '\t# Write dump and statistics file to the log subdirectory.'
+            print '\t# The path names are relative to the chroot jail.'
+            print '\tdump-file "/var/log/named_dump.db";'
+            print '\tstatistics-file "/var/log/named.stats";'
+        else:
+            print '\tdump-file "%s/data/cache_dump.db";' % named_dir
+            print '\tstatistics-file "%s/data/named_stats.txt";' % named_dir
+
         if dnsforwarders != '':
             print '\tforwarders { %s; };' % string.join(string.split(dnsforwarders, ','), ';')
         print '};'
         print ''
+
+        if OS()[0].lower() in ['sles', 'opensuse', 'suse']:
+            rndckey = "rndc-key"
+        else:
+            rndckey = "rndckey"
 
         print """
 //
 // a caching only nameserver config
 //
 controls {
-        inet 127.0.0.1 allow { localhost; } keys { rndckey; };
+        inet 127.0.0.1 allow { localhost; } keys { %s; };
 };
-"""
+""" % rndckey
 
         if OS()[0].lower() in ['sles', 'opensuse', 'suse']:
             print """
