@@ -24,6 +24,16 @@
 # chkconfig: - 99 99
 # description: Cluster File Manager for Kusu
 
+### BEGIN INIT INFO
+# Provides: cfmd
+# Required-Start: $local_fs $remote_fs $network
+# Should-Start: $time postgresql mysql
+# Required-Stop:
+# Default-Start:  3 5
+# Default-Stop:   
+# description: Cluster File Manager for Kusu
+### END INIT INFO 
+
 . /lib/lsb/init-functions
 
 prog='cfmd'

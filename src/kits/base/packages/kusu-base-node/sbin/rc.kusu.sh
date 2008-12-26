@@ -27,6 +27,16 @@
 # chkconfig: 2345 98 98
 # description: RC scripts for Kusu
 
+### BEGIN INIT INFO
+# Provides: kusu
+# Required-Start: $local_fs $remote_fs $network
+# Should-Start: $time postgresql mysql
+# Required-Stop:
+# Default-Start:  3 5
+# Default-Stop:   
+# description: RC scripts for Kusu
+### END INIT INFO 
+
 #. /etc/init.d/functions
 . /etc/profile.d/kusuenv.sh
 
