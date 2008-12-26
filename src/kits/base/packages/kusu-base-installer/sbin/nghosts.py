@@ -2,7 +2,7 @@
 #
 # Kusu nghosts
 #
-# Copyright (C) 2007 Platform Computing Inc.
+# Copyright (C) 2009 Platform Computing Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -45,6 +45,36 @@ reallyQuit = False
 NOCANCEL    = 0
 ALLOWCANCEL = 1
 
+PROVISION_TYPE_KUSU = 'KUSU'
+DEFAULT_PROVISION_TYPE = PROVISION_TYPE_KUSU
+
+def getProvisionType(db):
+    db.connect()
+    db.execute("SELECT kvalue from appglobals WHERE kname=\'PROVISION\'")
+    row = db.fetchone()
+    if not row:
+        return DEFAULT_PROVISION_TYPE
+
+    return row[0]
+
+def getNodegroupType(db, ngname):
+    db.execute("SELECT type from nodegroups WHERE ngname=\'%s\'" % ngname)
+    return db.fetchone()[0].lower()
+
+def filterUnmanagedNodes(nodes, nodefun):
+    """
+    Given a list of nodes, return a list of nodes that
+    belong to the unmanaged node group.
+    """
+    unmanaged_nodes = []
+    for node in nodes:
+        node_info = nodefun.getNodeInformation(node)
+        ngid = node_info[node][0]['nodegroupid']
+        ngname = nodefun.getNodegroupNameByID(ngid)
+        if "unmanaged" == ngname:
+            unmanaged_nodes.append(node)
+    return unmanaged_nodes
+
 class NodeMemberApp(object, KusuApp):
 
     def __init__(self):
@@ -56,7 +86,7 @@ class NodeMemberApp(object, KusuApp):
         Prints out the version of the tool to screen. 
         """
 
-        print "Nghosts Version %s\n" % self.version
+        print "Nghosts Version %s" % self.version
         self.unlock()
         sys.exit(0)
 
@@ -219,6 +249,12 @@ class NodeMemberApp(object, KusuApp):
                        self.logErrorEvent(self._("options_invalid_nodegroup"))
                        self.exitFailedAndUnlock(-1)                       
 
+                    # Get provision type.
+                    provision_type = getProvisionType(database)
+
+                    # Find out the type of the destination nodegroup
+                    togroup_type = getNodegroupType(database, self._options.togroup.strip())
+
                     nodeRecord.setNodegroupByName(self._options.togroup)
                     nodeRecord.getNodeFormat()
                     # Check if the selected node format has a rack if so, prompt for it.
@@ -240,6 +276,13 @@ class NodeMemberApp(object, KusuApp):
                               flag = 1
 
                     if bool(self._options.movegroups):
+                        # Do not allow moving nodes from "unmanaged" to "installer" nodegroup
+                        # for HP-ICE environment.
+                        if provision_type != PROVISION_TYPE_KUSU and togroup_type == 'installer' and \
+                                'unmanaged' in self._options.movegroups:
+                            print self._("Error: Moving nodes from unmanaged to installer nodegroup is not allowed.")
+                            self.exitFailedAndUnlock(-1)                       
+
                         moveList, ipList, macList, badList, interface = nodeRecord.moveNodegroups(self._options.movegroups, self._options.togroup)
                         nodesList += moveList 
                         moveIPList += ipList
@@ -265,13 +308,24 @@ class NodeMemberApp(object, KusuApp):
                            self.logErrorEvent(msg)
                            self.unlock()
                            sys.exit(-1)
+
                         else:
-                           moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.movehosts, self._options.togroup, rack=self._options.racknumber)
-                           nodesList += moveList
-                           moveIPList += ipList
-                           if getinterface:
-                              myinterface = getinterface
-                           macsList.update(macList)
+                            # Do not allow moving nodes from "unmanaged" to "installer" nodegroup
+                            # for HP-ICE environment.
+                            if provision_type != PROVISION_TYPE_KUSU and togroup_type == "installer":
+                                unmanaged_nodes = filterUnmanagedNodes(self._options.movehosts, nodeRecord)
+                                if unmanaged_nodes:
+                                    print self._("Error: The following nodes are not allowed to move from unmanaged to installer nodegroup:")
+                                    for node in unmanaged_nodes:
+                                        print self._("    %s" % node)
+                                    self.exitFailedAndUnlock(-1)                       
+
+                            moveList, ipList, macList, badList, getinterface = nodeRecord.moveNodes(self._options.movehosts, self._options.togroup, rack=self._options.racknumber)
+                            nodesList += moveList
+                            moveIPList += ipList
+                            if getinterface:
+                                myinterface = getinterface
+                            macsList.update(macList)
 
                     if nodesList:
                         print self._("Will move the following hosts: [%s] to the node group '%s'" % (string.join(Set(nodesList), ", "), self._options.togroup))
@@ -300,16 +354,6 @@ class NodeMemberApp(object, KusuApp):
 
                     print self._("nghosts_moving_nodes_progress")
 
-                    # Check provision type. If not Kusu, then don't reboot on moving
-                    # when the source or destination nodegroup is 'unmanaged'.
-                    database.connect()
-                    database.execute("SELECT kvalue from appglobals WHERE kname=\'PROVISION\'")
-                    provision_type = database.fetchone()
-                    if provision_type != 'KUSU':
-                        rebootList = getRebootList(moveIPList, self._options.togroup)
-                    else:
-                        rebootList = moveIPList
-
                     self.unlock() 
                     os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(Set(nodesList), ' '))
                
@@ -328,9 +372,11 @@ class NodeMemberApp(object, KusuApp):
                     # Call PDSH reboot here if the move does not involve the
                     # unmanaged nodegroup as the source or destination.
                     #
-                    if rebootList: 
+
+                    # Check provision type. Only reboot for Kusu.
+                    if provision_type == PROVISION_TYPE_KUSU:
                         rn = syncfun()
-                        rn.runPdsh(list(Set(rebootList)), "reboot")
+                        rn.runPdsh(moveIPList, "reboot")
                     os.remove(tmpfile)
                     
                     self.logEvent(self._("nghosts_event_finish_move_nodes") % self._options.togroup, 
@@ -365,25 +411,9 @@ class NodeMemberApp(object, KusuApp):
         screenList = [ MembershipMainWindow(database=database, kusuApp=kusuApp) ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 1.2", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 5.2", showTrail=False)
         ks.run()
         self.unlock()
-
-
-def getRebootList(from_list, to_group):
-    """Generate a list of nodes which are not moving from/to unmanaged."""
-    database.execute("SELECT installtype FROM nodegroups WHERE ngname=\'%s\'" % to_group)
-    to_installtype = database.fetchone()[0]
-    rebootList = []
-    if to_installtype != 'unmanaged':
-        for ip in from_list:
-            database.execute("SELECT installtype from nics,nodes,nodegroups " + \
-                             "WHERE nics.nid=nodes.nid " + \
-                             "AND nodes.ngid=nodegroups.ngid and nics.ip=\'%s\'" % ip)
-            from_installtype = database.fetchone()[0]
-            if from_installtype != 'unmanaged':
-                rebootList.append(ip)
-    return rebootList
 
 
 class SelectNodesWindow(USXBaseScreen):
@@ -393,7 +423,7 @@ class SelectNodesWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2009 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
         self.nodegroupDict = {}
         self.nodeGroupNames = []
 
@@ -476,6 +506,21 @@ class SelectNodesWindow(USXBaseScreen):
                   self.kusuApp.logErrorEvent(msg, toStderr=False)  
                   self.selector.popupMsg(self.kusuApp._("Notice"), msg)
 
+               # Get provision type
+               provision_type = getProvisionType(self.database)
+
+               # Get type of destination nodegroup
+               destNodegroupType = getNodegroupType(self.database, self.nodegroupCheckbox.getSelection()[0])
+
+               # Do not allow moving nodes from "unmanaged" to "installer" nodegroup
+               # for HP-ICE environment.
+               if provision_type != PROVISION_TYPE_KUSU and destNodegroupType == "installer":
+                   unmanaged_nodes = filterUnmanagedNodes(moveList, nodeRecord)
+                   if unmanaged_nodes:
+                       msg = "Moving of the following nodes from unmanaged to an installer nodegroup is not allowed:\n\n%s" % "\n".join(unmanaged_nodes)
+                       self.selector.popupMsg(self.kusuApp._("Error"), msg)
+                       return NAV_NOTHING
+
                # Create Temp file
                (fd, tmpfile) = tempfile.mkstemp()
                tmpname = os.fdopen(fd, 'w')
@@ -504,9 +549,12 @@ class SelectNodesWindow(USXBaseScreen):
                # if self.reinstcheckbox.value() and self.nodegroupCheckbox.getSelection()[0] != "unmanaged":
                #    progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                #                 self.kusuApp._("nghosts_reinstall_nodes_progress"))
+
                # Call PDSH here
-               rn = syncfun()
-               rn.runPdsh(moveIPList, "reboot")
+               if provision_type == PROVISION_TYPE_KUSU:
+                   rn = syncfun()
+                   rn.runPdsh(moveIPList, "reboot")
+
                progDialog.close()
                    
                self.kusuApp.logEvent(self.kusuApp._("nghosts_event_finish_move_nodes") % self.nodegroupCheckbox.getSelection()[0], 
@@ -566,18 +614,19 @@ class SelectNodesWindow(USXBaseScreen):
                 sys.exit(-1)
 
             # If the node group is empty don't display it.
-            if len(nodes) > 0 and nodegroup[0] != "unmanaged":
-                haveNodes = True
-                self.nodeCheckbox.append(nodegroup[0])
-                self.nodeGroupNames.append(nodegroup[0])
-                self.nodegroupDict[nodegroup[0]] = []
-                
-                for node in nodes:
-                    if nodegroup[0] != "unmanaged":
-                       self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
-                       self.nodegroupDict[nodegroup[0]].append(node[0])
+            provision_type = getProvisionType(self.database)
+            if len(nodes) > 0:
+                if not (nodegroup[0] == "unmanaged" and provision_type == PROVISION_TYPE_KUSU):
+                    haveNodes = True
+                    self.nodeCheckbox.append(nodegroup[0])
+                    self.nodeGroupNames.append(nodegroup[0])
+                    self.nodegroupDict[nodegroup[0]] = []
+                    
+                    for node in nodes:
+                        self.nodeCheckbox.addItem(node[0], (count, snack.snackArgs['append']))
+                        self.nodegroupDict[nodegroup[0]].append(node[0])
 
-                count += 1
+                    count += 1
 
         for group in nodegroups:
             self.nodegroupCheckbox.append(group[0])
@@ -604,7 +653,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
     
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
+        self.setHelpLine("Copyright(C) 2009 Platform Computing Inc.\t%s" % self.kusuApp._("helpline_instructions"))
           
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
@@ -638,6 +687,18 @@ class SelectNodegroupsWindow(USXBaseScreen):
             self.selector.popupMsg(self.kusuApp._("Error"), "Too many destination nodegroups selected choose only one")
             return NAV_NOTHING
 
+        # Get provision type
+        provision_type = getProvisionType(self.database)
+
+        # Get type of destination nodegroup
+        destNodegroupType = getNodegroupType(self.database, self.destNodegroupCheckbox.getSelection()[0])
+
+        # For HP-ICE, do no allow moving of nodes from unmanaged to installer nodegroup
+        if provision_type != PROVISION_TYPE_KUSU and destNodegroupType == 'installer' and \
+                'unmanaged' in self.srcNodegroupsCheckbox.getSelection():
+            self.selector.popupMsg(self.kusuApp._("Error"), "Moving nodes from unmanaged to an installer nodegroup is not allowed")
+            return NAV_NOTHING
+
         self.kusuApp.logEvent(self.kusuApp._("nghosts_event_move_nodes") % self.destNodegroupCheckbox.getSelection()[0], 
                                   toStdout=False)
 
@@ -651,7 +712,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
             # None of the nodes could be moved at all. This maybe because the nodes are already in the node group or the nodes networks do not map
             # to the new destination node group.
             if not moveList:
-                msg = self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.destNodegroupCheckbox.getSelection()
+                msg = self.kusuApp._("Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group.") % self.destNodegroupCheckbox.getSelection()[0]
                 self.kusuApp.logErrorEvent(msg, toStderr=False)
                 self.selector.popupMsg(self.kusuApp._("Error"), msg)                
             else:
@@ -712,9 +773,12 @@ class SelectNodegroupsWindow(USXBaseScreen):
                 #if self.reinstcheckbox.value() and self.destNodegroupCheckbox.getSelection()[0] != "unmanaged":
                 #    progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_reinstalling_nodes"), \
                 #                 self.kusuApp._("nghosts_reinstall_nodes_progress"))
+
                 # Call PDSH here
-                rn = syncfun()
-                rn.runPdsh(moveIPList, "reboot")
+                if provision_type == PROVISION_TYPE_KUSU:
+                    rn = syncfun()
+                    rn.runPdsh(moveIPList, "reboot")
+
                 progDialog.close()
                     
                 self.kusuApp.logEvent(self.kusuApp._("nghosts_event_finish_move_nodes") % self.destNodegroupCheckbox.getSelection()[0], 
@@ -777,12 +841,14 @@ class SelectNodegroupsWindow(USXBaseScreen):
            # Only display node groups that are not empty when moving.
            # Installer is special case, we can't move the installer group if there's only the master installer left.
            if group[1] == 1:  
-              if not int(nodes[0]) == 1:
-                  self.srcNodegroupsCheckbox.append(group[0])
+               if not int(nodes[0]) == 1:
+                   self.srcNodegroupsCheckbox.append(group[0])
            else:     
-               if int(nodes[0]) > 0 and group[0] != "unmanaged":
-                  haveNodes = True
-                  self.srcNodegroupsCheckbox.append(group[0])
+                provision_type = getProvisionType(self.database)
+                if int(nodes[0]) > 0:
+                    if not (group[0] == "unmanaged" and provision_type == PROVISION_TYPE_KUSU):
+                        haveNodes = True
+                        self.srcNodegroupsCheckbox.append(group[0])
 
         self.screenGrid.setField(instruction, 0, 0, padding=(0,0,0,1))
         self.screenGrid.setField(label, 0, 1, padding=(7,0,0,0), anchorLeft=1)
@@ -810,7 +876,7 @@ class MembershipMainWindow(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         self.kusuApp = KusuApp()
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
-        self.setHelpLine("Copyright(C) 2007 Platform Computing Inc.\t%s" % self.kusuApp._("nghosts_helpline_intro"))
+        self.setHelpLine("Copyright(C) 2009 Platform Computing Inc.\t%s" % self.kusuApp._("nghosts_helpline_intro"))
 
     def F12Action(self):
         result = self.selector.popupDialogBox(self.kusuApp._("nghosts_window_title_exit"), self.kusuApp._("nghosts_instructions_exit"),
@@ -840,7 +906,7 @@ class MembershipMainWindow(USXBaseScreen):
             ScreenFactory.screens = \
                             [ SelectNodegroupsWindow(database=database, kusuApp=kusuApp) ]
         
-        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 1.2", showTrail=False)
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 5.2", showTrail=False)
         ks.run()
         if reallyQuit:
            return NAV_QUIT
