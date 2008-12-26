@@ -32,6 +32,7 @@ from optparse import OptionParser
 from path import path
 import kusu.util.log as kusulog
 import errno
+from primitive.system.software.probe import OS
 
 class KusuApp:
     """ This is the class for all Kusu applications to inherit from """
@@ -82,15 +83,32 @@ class KusuApp:
         # If the language is not defined within the environment, use
         # sane default.  This fixes the problem with calling a KusuApp
         # derivative from a CGI script (ie. nodeboot.cgi)
-        lenv = ['LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG']
+        lenv = ['LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG', 'LC_CTYPE']
+
+        # In a SLES console, LANG is always set to 'POSIX'. However,
+        # it will set LC_CTYPE when you subsequently change the language
+        # settings using yast. For instance,
+        #   LANG="POSIX"
+        #   LC_CTYPE="zh_CN.UTF-8"
+        # Hence we remove LANG="POSIX" and keep LC_CTYPE for SLES.
+        if OS()[0].lower() in ['sles', 'opensuse', 'suse'] and \
+                os.environ.get('LANG') == 'POSIX':
+            lenv.remove('LANG')
 
         envfound = [ x in os.environ for x in lenv ]
 
-        # If 'langs' is None, the language is picked up from the
-        # environment
-        langs = None
-        if not _any(envfound):
-            langs = ['en_US.UTF-8']
+        langs = []
+        if _any(envfound):
+            # Add the languages found in environment to langs
+            env = zip(lenv, envfound)
+            for key, val in env:
+                if val:
+                    langs.append(os.environ.get(key))
+
+        # Add sane default as fallback if we do not have the translation
+        # files for the languages found in the environment.
+        if not 'en_US.UTF-8' in langs:
+            langs.append('en_US.UTF-8')
 
         try:
             self.trans = gettext.translation(langdomain, localedir, langs)
