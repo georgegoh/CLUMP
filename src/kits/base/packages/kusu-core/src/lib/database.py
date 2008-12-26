@@ -1009,6 +1009,7 @@ class DB(object):
         AppGlobals(kname='DEPOT_AUTOINST_ROOT', kvalue='/depot/repos/instconf')
         AppGlobals(kname='PIXIE_ROOT', kvalue='/tftpboot/kusu')
         AppGlobals(kname='PROVISION', kvalue='KUSU')
+        AppGlobals(kname='KUSU_VERSION', kvalue='1.2')
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
         if self.driver =='postgres':
