@@ -36,7 +36,7 @@ modprobe dm_mod
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then 
     # Unset kusu bits
-    for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 
+    for key in `/usr/bin/env | /bin/awk -F= '{print $1}' | grep KUSU`; do 
         unset $key > /dev/null 2>&1
     done
     unset LANG > /dev/null 2>&1
