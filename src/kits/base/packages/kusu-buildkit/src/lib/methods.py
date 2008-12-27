@@ -160,6 +160,12 @@ def Fedora6Component(**kwargs):
     kwargs['osversion'] = '6'
     return DefaultComponent(**kwargs)
 
+def SLES10Component(**kwargs):
+    """ This is used for SLES 10 components. """
+    kwargs['ostype'] = 'sles'
+    kwargs['osversion'] = '10'
+    return DefaultComponent(**kwargs)
+
 def DefaultComponent(**kwargs):
     """ The default component will associate itself to both the installer and compute
         nodegroups if the ngtypes is not defined.
