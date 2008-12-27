@@ -134,6 +134,9 @@ class rhnInvalidServerID(KusuError): pass
 class rhnNoAccountInformationProvidedError(KusuError): pass
 class rhnSystemNotRegisterd(KusuError): pass
 
+# repoman.you
+class youNoAccountInformationProvidedError(KusuError): pass
+
 # repoman.yum
 class repodataChecksumError(KusuError): pass
 
