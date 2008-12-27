@@ -14,13 +14,16 @@ import time
 from path import path
 from Cheetah.Template import Template
 
-from kusu.util import rpmtool
 from kusu.repoman.rhn import RHN
 from kusu.repoman.yum import YumRepo
-from kusu.repoman.tools import getFile, getConfig, getKernelPackages
+from kusu.repoman.tools import getFile, getConfig
 from kusu.driverpatch import DriverPatchController
 from kusu.util import tools as utiltools
 from kusu.util.errors import *
+
+from primitive.updatetool.commands import YouUpdateCommand
+from primitive.fetchtool.commands import FetchCommand
+from primitive.support import rpmtool
 
 try:
     import subprocess
@@ -28,6 +31,12 @@ except:
     from popen5 import subprocess
 
 class BaseUpdate:
+
+    compclass = {'rhel' : {'5': 'RHEL5Component()'},
+                 'centos' : {'5': 'Centos5Component()'},
+                 'sles' : {'10': 'SLES10Component()'},
+                 'fedora' : {'6': 'Fedora6Component()'}}
+
     def __init__(self, os_name, os_version, os_arch, prefix, db, updates_root = '/depot/updates'):
         self.os_name = os_name
         self.os_version = os_version
@@ -49,6 +58,20 @@ class BaseUpdate:
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
         raise NotImplementedError
+
+    def getKernelPackagesList(self, srcPath, pattern=r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?'):
+        pat = re.compile(pattern)
+
+        kpkgs = []
+
+        try:
+            root = path(srcPath)
+            li = [f for f in root.walkfiles('kernel*rpm')]
+            kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
 
     def makeUpdateKit(self, pkgs):
         """Makes the update kit"""
@@ -179,10 +202,6 @@ class BaseUpdate:
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
 
-        compclass = {'rhel' : {'5': 'RHEL5Component()'},
-                     'centos' : {'5': 'Centos5Component()'},
-                     'fedora' : {'6': 'Fedora6Component()'}}
- 
         dest = tempkitdir / kitName / 'build.kit'
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
@@ -201,9 +220,10 @@ class BaseUpdate:
         ns['kitarch'] = 'noarch'
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
                         (self.os_name, self.os_version, self.os_arch, time.asctime())
-        ns['compclass'] = compclass[self.os_name][self.os_version]
 
-        kpkgs = getKernelPackages(tempkitdir)
+        ns['compclass'] = self.compclass[self.os_name][self.os_version]
+
+        kpkgs = self.getKernelPackagesList(tempkitdir)
         ns['kernels'] = []
         for kpkg in kpkgs:
             kpkg = rpmtool.RPM(str(kpkg))            
@@ -338,7 +358,7 @@ class YumUpdate(BaseUpdate):
             
             if dest.exists():
                 try:
-                    rpmtool.RPM(dest)
+                    rpmtool.RPM(str(dest))
                     continue
                 except:
                     # corrupted/incomplete/etc
@@ -456,7 +476,7 @@ class RHNUpdate(BaseUpdate):
                 
                 if dest.exists():
                     try:
-                        rpmtool.RPM(dest)
+                        rpmtool.RPM(str(dest))
                         continue
                     except:
                         # corrupted/incomplete/etc
@@ -486,3 +506,157 @@ class RHNUpdate(BaseUpdate):
                 newKernels.add(newKernelPkg)
 
         return (pkgs, newKernels)
+
+class YouUpdate(BaseUpdate):
+    def __init__(self, os_version, os_arch, prefix, db):
+        BaseUpdate.__init__(self, 'sles', os_version, os_arch, prefix, db)
+
+        kits = self.db.Kits.select_by(self.db.Kits.c.rname.like('%s10%%' % self.os_name),
+                                      arch=self.os_arch)
+        
+        pat = re.compile('\d+\.\d+')
+        self.os_version_full = pat.findall(kits[0].rname)[0]
+
+    def getYouCred(self):
+        if self.configFile:
+            cfg = self.getConfig(self.configFile)['sles']
+            username = cfg['username']
+            password = cfg['password']
+
+            if not (username and password):
+               raise youNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
+        else:
+            raise youNoAccountInformationProvidedError, 'No config file provided'
+
+        return (username, password)
+
+    def getChannel(self):
+
+        channels = {'10.0': 'SLES10-Updates',
+                    '10.1': 'SLES10-SP1-Updates',
+                    '10.2': 'SLES10-SP2-Updates',
+                    '10.3': 'SLES10-SP3-Updates' }
+
+        return channels[self.os_version_full]
+
+    def getUpdates(self):
+        """Gets the updates and writes them into the destination dir"""
+    
+        dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version_full / self.os_arch
+        if not dir.exists():
+            dir.makedirs()
+
+        username, password = self.getYouCred()
+
+        if self.os_arch == 'i386':
+            os_arch = 'i586'
+
+        c = YouUpdateCommand(username = username, password = password,
+                             channel=self.getChannel(), arch=os_arch,
+                             repopath=self.getSources()[0])
+
+        downloadPkgs = c.execute()
+
+        # Download the packages
+        for r in downloadPkgs:
+            filename = r.getFilename()
+            dest = path(dir / filename.basename())
+        
+            if dest.exists():
+                try:
+                    rpmtool.RPM(str(dest))
+                    continue
+                except:
+                    # corrupted/incomplete/etc
+                    dest.remove()
+
+            fc = FetchCommand(uri=filename,
+                             fetchdir=False,
+                             destdir=dir,
+                             overwrite=False)
+            status , dest = fc.execute()
+ 
+        rpmPkgs = rpmtool.getLatestRPM([dir], True)
+        pkgs = rpmPkgs.getList()
+        
+        newKernels = rpmtool.RPMCollection()
+        for pkg in pkgs:
+            if pkg.getName().startswith('kernel'):
+                newKernelPkg = rpmtool.RPM(name = pkg.getName(),
+                                           version = pkg.getVersion(),
+                                           release = pkg.getRelease(),
+                                           arch = pkg.getArch(),
+                                           epoch = pkg.getEpoch())
+                newKernelPkg.filename = dir / pkg.getFilename().basename()
+                newKernels.add(newKernelPkg)
+
+        return (pkgs, newKernels)
+    
+    def makeUpdateKit(self, pkgs):
+        """Makes the update kit"""
+
+        kitName = '%s-updates' % self.os_name 
+        kitRelease = self.getNextRelease(kitName)
+        kitVersion = '%s_%s_r%s' % (self.os_version_full, self.os_arch, kitRelease)
+        kitArch = 'noarch'
+
+        # Buildkit's kit src
+        tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp')))
+        # Used by kitops to add the kit from
+        kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp')))
+
+        self.prepKit(tempkitdir, kitName)
+
+        for p in pkgs:
+            file = p.getFilename()
+            dest = tempkitdir / kitName / 'sources' / file.basename()
+
+            # Use abs symlink. Relative links does not work
+            # when buildkit prepares temp new directory for
+            # making kit
+            file.symlink(dest) 
+    
+        kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
+        self.makeKit(tempkitdir, kitdir, kitName)
+        
+        return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
+
+    def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
+
+        dest = tempkitdir / kitName / 'build.kit'
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        template = kusu_root / 'etc' / 'templates' / 'update.kit.tmpl'
+
+        ns = {}
+        ns['kitname'] = kitName
+        ns['kitver'] = kitVersion
+        ns['kitrel'] = kitRelease
+        if self.os_arch in ['i386', 'i486', 'i586', 'i686']:
+            ns['kitarch'] = 'x86'
+        else:
+            ns['kitarch'] = self.os_arch
+
+        ns['kitarch'] = 'noarch'
+        ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
+                        (self.os_name, self.os_version_full, self.os_arch, time.asctime())
+
+        ns['compclass'] = self.compclass[self.os_name][self.os_version]
+
+        kpkgs = self.getKernelPackagesList(tempkitdir, r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+        ns['kernels'] = []
+        for kpkg in kpkgs:
+            kpkg = rpmtool.RPM(str(kpkg))            
+            filename = kpkg.getFilename().basename() 
+            desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
+            ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
+                                  'release':kpkg.release, 'filename':filename})
+ 
+        t = Template(file=str(template), searchList=[ns])  
+        f = open(dest, 'w')
+        f.write(str(t))
+        f.close()
+   
+        return kpkgs 
+
+

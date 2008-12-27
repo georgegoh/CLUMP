@@ -10,7 +10,7 @@
 from kusu.util.errors import *
 from kusu.core import database as db
 from kusu.repoman import tools
-from kusu.repoman.updates import YumUpdate, RHNUpdate
+from kusu.repoman.updates import YumUpdate, RHNUpdate, YouUpdate
 from kusu.util import rpmtool
 from primitive.repo.yast import YastRepo
 from path import path
@@ -253,6 +253,31 @@ class BaseRepo(object):
 
     def makeRepoDirs(self):
         """creates the necessary repository directories"""
+        raise NotImplementedError
+
+    def getPackageFilePath(self, packagename):
+        """get the path to a package"""
+        raise NotImplementedError
+        
+    def getKernelPackages(self):
+        """get a list of kernel packages"""
+        raise NotImplementedError
+
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        kpkgs = []
+
+        try:
+            root = path(srcPath)
+            li = [f for f in root.walkfiles('kernel*rpm')]
+            kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+    def getPackagesDir(self):
+        """get the list of path of packages directories"""
         raise NotImplementedError
 
 class SuseYastRepo(BaseRepo):
@@ -539,7 +564,22 @@ class SuseYastRepo(BaseRepo):
             
         yastRepo = YastRepo(self.repo_path)
         yastRepo.handleUpdates('file://' + src)
- 
+     
+    def getKernelPackages(self):
+        """get a list of kernel packages"""
+        
+        pat = re.compile(r'kernel-default[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        kpkgs = []
+        try:
+            li = [f for f in self.repo_path.walkfiles('kernel*rpm')]
+            kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
+
 class RedhatYumRepo(BaseRepo):
     """Base Redhat repository class"""
 
@@ -836,6 +876,20 @@ class RedhatYumRepo(BaseRepo):
  
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
+    def getKernelPackages(self):
+        """get a list of kernel packages"""
+        
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+
+        kpkgs = []
+        try:
+            li = [f for f in self.repo_path.walkfiles('kernel*rpm')]
+            kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+
+        return kpkgs
+
 class Fedora6Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'fedora', '6', os_arch, prefix, db)
@@ -883,6 +937,9 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         else:
             return None
 
+    def getPackagesDir(self):
+        return [self.repo_path / self.dirlayout['rpmsdir']]
+ 
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
@@ -899,6 +956,8 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         return os_version.split('.')[0]
 
     def getSources(self):
+
+        # FIXME: does not work correctly because of kit name changes
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       arch=self.os_arch)
         
@@ -941,6 +1000,9 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
         else:
             return None
 
+    def getPackagesDir(self):
+        return [self.repo_path / self.dirlayout['rpmsdir']]
+ 
 class Fedora7Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'fedora', '7', os_arch, prefix, db)
@@ -999,6 +1061,9 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
         else:
             return None
 
+    def getPackagesDir(self):
+        return [self.repo_path / self.dirlayout['rpmsdir']]
+ 
 class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'rhel', '5', os_arch, prefix, db)
@@ -1017,6 +1082,8 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         self.dirlayout['vt.repodatadir'] = 'VT/repodata'
 
     def getSources(self):
+        
+        # FIXME: does not work correctly because of kit name changes
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       arch=self.os_arch)
 
@@ -1204,9 +1271,13 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
  
         return None 
 
-class SLES10Repo(SuseYastRepo):
+    def getPackagesDir(self):
+        return [self.repo_path / self.dirlayout['server.rpmsdir']]
+ 
+class SLES10Repo(SuseYastRepo, YouUpdate):
     def __init__(self, os_arch, prefix, db):
         SuseYastRepo.__init__(self, 'sles', '10', os_arch, prefix, db)
+        YouUpdate.__init__(self, '10', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['bootdir'] = 'boot'
@@ -1223,6 +1294,14 @@ class SLES10Repo(SuseYastRepo):
         self.dirlayout['packagesdir.i586'] = 'suse/i586';
         self.dirlayout['packagesdir.i686'] = 'suse/i686';
         self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
+
+    def getOSMajorVersion(self, os_version):
+        """Returns the major number"""
+        return os_version.split('.')[0]
+
+    def getSources(self):
+        
+        return [self.getRepoPath()]
 
     def getPackageFilePath(self, packagename):
 

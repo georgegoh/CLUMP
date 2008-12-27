@@ -154,7 +154,7 @@ def getConfig(file):
     sections = configParser.sections()
 
     for sec in sections:
-        if sec in ['fedora', 'centos', 'rhel']:
+        if sec in ['fedora', 'centos', 'rhel', 'sles']:
             cfg[sec] = {}
             for opt in configParser.items(sec):
                key = opt[0]
@@ -204,17 +204,24 @@ def getPackageFilePath(dbs, repoid, packagename):
     else:
         raise FileDoesNotExistError
 
-def getKernelPackages(srcPath):
-    # set up pattern to match centos kernel packages
-    pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+def getKernelPackages(dbs, repoid):
+    '''Returns a list of kernels'''
 
-    kpkgs = []
+    if not repoExists(dbs, repoid):
+        raise RepoNotFoundError, repoid
 
-    try:
-        root = path(srcPath)
-        li = [f for f in root.walkfiles('kernel*rpm')]
-        kpkgs.extend([l for l in li if re.findall(pat,l)])
-    except OSError:
-        pass
+    from kusu.repoman import repofactory
+    rfactory = repofactory.RepoFactory(dbs)
+    repo = rfactory.getRepo(repoid)
+    return repo.getKernelPackages()
 
-    return kpkgs
+def getPackagePath(dbs, repoid):
+    '''Returns a list of path where packages are located in'''
+  
+    if not repoExists(dbs, repoid):
+        raise RepoNotFoundError, repoid
+
+    from kusu.repoman import repofactory
+    rfactory = repofactory.RepoFactory(dbs)
+    repo = rfactory.getRepo(repoid)
+    return repo.getPackagesDir()
