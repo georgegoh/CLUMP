@@ -164,7 +164,7 @@ class scrNGEMain(USXBaseScreen):
         if os.path.isfile(os.path.join(BootDir, newNG['initrd'])):
             shutil.copyfile(os.path.join(BootDir, newNG['initrd']), os.path.join(BootDir,imagename))
         else:
-            kl.info("WARNING: initrd '%s' does not exist for nodegroup '%s'" %(imagename,newNG['ngname']))
+            kl.info("WARNING: initrd '%s' does not exist for nodegroup '%s'" %(imagename,ngname))
 
         # Copy the original image to the new image (Faster than rebuilding)
         oldImage = '%s.img.tar.bz2' % ngid
@@ -176,20 +176,40 @@ class scrNGEMain(USXBaseScreen):
             # Apache must own it
             os.system('chown apache:apache \"%s\"' % os.path.join(ImageDir, newImage))
         else:
-            kl.info("WARNING: Image for '%s' does not exist!" %(newNG['ngname']))
-            
+            kl.info("WARNING: Image for '%s' does not exist!" % ngname)
+        
+        ### FIXME: Ice-integration kit should handle this for copied node groups.
+        if 'ice' == self.database.getAppglobals('PROVISION').lower():
+            output = newNG.genKickstart(self, True)
+            autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+            ngpath = os.path.join(autoinst, str(newNG['ngid']))
+            if not os.path.exists(ngpath) : os.makedirs(ngpath)
+
+            # Convert ngname to an ICE acceptable version
+            r = re.compile('[^\w.-]')
+            nname = r.sub('_',ngname)
+
+            ksfile = os.path.join(ngpath, '%s.cfg' % nname)
+            ks  = open(ksfile,'w') # overwrite
+            ks.write(output)
+            ks.close()
+
+            # Generate the XML for HP-ICE
+            icle_path = '/opt/repository/.icle'
+            os.system("genconfig ICEintegration instconf '%s' > %s/%s.xml" %  (ngname, icle_path, nname))
+        
         #copy CFM directory
         srcNGcfmdir = os.path.join(CFMBaseDir,old_ngname)
-        dstNGcfmdir = os.path.join(CFMBaseDir,newNG['ngname'])
+        dstNGcfmdir = os.path.join(CFMBaseDir,ngname)
         if os.path.isdir(srcNGcfmdir):
             if not os.path.exists(dstNGcfmdir):
                 #copy the tree
                 shutil.copytree(srcNGcfmdir,dstNGcfmdir,True)
             else:
                 self.selector.popupMsg('CFM Directory Copy', "CFM Directory for nodegroup "+\
-                    "'%s' already exists. It was left intact." %newNG['ngname'])
+                    "'%s' already exists. It was left intact." % ngname)
             # Run the cfmsync so nodes will install properly
-            self.runTool('cfmsync', "-n '%s' -f" %newNG['ngname'])
+            self.runTool('cfmsync', "-n '%s' -f" % ngname)
             # self.selector.popupMsg('CFM Update', "Preparing CFM for node installation" )
 
         return NAV_NOTHING
@@ -213,9 +233,10 @@ class scrNGEMain(USXBaseScreen):
         msg = "You are about to delete the selected nodegroup. Do you wish to proceed?"
         rv = self.selector.popupYesNo('Node Group Deletion Alert', msg, defaultNo=True)
         if rv:
+            ngname = tmpNG['ngname']
             tmpNG.eraseFromDB(self.database)
             #purge the CFM directory
-            delNGcfmdir = os.path.join(CFMBaseDir, tmpNG['ngname'])
+            delNGcfmdir = os.path.join(CFMBaseDir, ngname)
             if os.path.isdir(delNGcfmdir):
                 shutil.rmtree(delNGcfmdir)
 
@@ -235,7 +256,21 @@ class scrNGEMain(USXBaseScreen):
             oldInitrd = 'initrd.disked.%s.img' % ngid
             if os.path.isfile(os.path.join(BootDir, oldInitrd)):
                 os.unlink(os.path.join(BootDir, oldInitrd))
-                
+            
+            ### FIXME: Ice-integration kit should manage integration related files.
+            if 'ice' == self.database.getAppglobals('PROVISION').lower():
+                # Deleting the install configuration file
+                autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+                ngpath = os.path.join(autoinst, str(ngid))
+                if os.path.isdir(ngpath):
+                    shutil.rmtree(ngpath)
+
+                # Deleting the HP-ICE XML file for the nodegroup
+                icle_path = '/opt/repository/.icle'
+                r = re.compile('[^\w.-]')
+                nname = r.sub('_',ngname)
+                if os.path.isfile(os.path.join(icle_path, '%s.xml' % nname)):
+                    os.unlink(os.path.join(icle_path, '%s.xml' % nname))    
 
         return NAV_NOTHING
 
@@ -297,8 +332,6 @@ class scrNGEMain(USXBaseScreen):
         provision = self.database.getAppglobals('PROVISION')
         if provision == 'KUSU':
             screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))
-        else:
-            screenFactory.screens.insert(7,scrNGEEdit_GenKickstart(database=self.database, kusuApp=self.kusuApp))
 
         ks = USXNavigator(screenFactory, screenTitle="Node Group Edit", showTrail=False)
 
@@ -2056,10 +2089,29 @@ class scrNGEEdit_End(USXBaseScreen):
         self.buttonsDict['no_button'].setCallback_(self.doNoAction)
 
     def doYesAction(self):
+        if 'ice' == self.database.getAppglobals('PROVISION').lower():
+            self.genKS()
         curNG.syncNodes(self, True)
         return NAV_FORWARD
 
+    def genKS(self):
+        output = curNG.genKickstart(self,True)
+        ngid = curNG.PKval
+        autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
+        ngpath = os.path.join(autoinst, str(ngid))
+        if not os.path.exists(ngpath) : os.makedirs(ngpath)
+        nname = curNG['ngname']
+        # Convert ngname to an ICE acceptable version
+        r = re.compile('[^\w.-]')
+        nname = r.sub('_',curNG['ngname'])
+        ksfile = os.path.join(ngpath, '%s.cfg' % nname)
+        ks  = open(ksfile,'w') # overwrite
+        ks.write(output)
+        ks.close()
+
     def doNoAction(self):
+        if 'ice' == self.database.getAppglobals('PROVISION').lower():
+            self.genKS()
         curNG.syncNodes(self, False)
         return NAV_FORWARD
 
@@ -2068,50 +2120,6 @@ class scrNGEEdit_End(USXBaseScreen):
         lblheader = snack.Label("Do you wish to update the nodes in this nodegroup now?")
         self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
              growx=1, anchorLeft=1)
-
-class scrNGEEdit_GenKickstart(USXBaseScreen):
-    name = 'Kickstart generation'
-    msg = 'Kickstart file generated -  please inspect:'
-    buttons = ['Yes', 'No']
-    def __init__(self, database, kusuApp=None, gridWidth=45):
-        USXBaseScreen.__init__(self, database, kusuApp=kusuApp,
-                               gridWidth=gridWidth)
-        self.update = False
-    def doForwardAction(self):
-        self.update = False
-        return NAV_FORWARD
-    def validate(self):
-        return True,'Success'
-
-    def formAction(self):
-        windowInst = self
-        ngid = curNG.PKval
-        output = curNG.genKickstart(self,self.update)
-        if self.update:
-            autoinst = self.database.getAppglobals('DEPOT_AUTOINST_ROOT')
-            if not os.path.exists(autoinst) : os.makedirs(autoinst)
-            ngpath = os.path.join(autoinst, str(ngid))
-            if not os.path.exists(ngpath) : os.makedirs(ngpath)
-            ksfile = os.path.join(ngpath, 'kickstart.cfg')
-            ks  = open(ksfile,'w') # overwrite
-            ks.write(output)
-	    ks.close()
-
-    def doUpdateAction(self):
-        self.update = True
-        return NAV_FORWARD
-
-
-    def setCallbacks(self):
-         self.buttonsDict['No'].setCallback_(self.doForwardAction)
-         self.buttonsDict['Yes'].setCallback_(self.doUpdateAction)
-
-
-    def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 2)
-        lblheader = snack.Label("Do you wish to (re)generate the kickstart files for this nodegroup?")
-        self.screenGrid.setField(lblheader, 0,0, padding=(0,0,0,0),
-                                 growx=1, anchorLeft=1)
 
 
 class scrNGEEdit_Scripts(USXBaseScreen):
@@ -2451,6 +2459,23 @@ class NGEApp(KusuApp):
             ngsrc['ngname'] = self.ngnew
             ngsrc.syncToDB(self.__db)
 
+            if 'ice' == self.__db.getAppglobals('PROVISION').lower():
+                autoinst = self.__db.getAppglobals('DEPOT_AUTOINST_ROOT')
+                ngpath = os.path.join(autoinst, str(ngsrc['ngid']))
+                if not os.path.exists(ngpath) : os.makedirs(ngpath)
+
+                nname = ngsrc['ngname']
+                # Convert ngname to an ICE acceptable version
+                r = re.compile('[^\w.-]')
+                nname = r.sub('_',ngsrc['ngname'])
+
+                # Generate kickstart file
+                ksfile = os.path.join(ngpath, '%s.cfg' % nname)
+                os.system("genconfig kickstart %s > %s" %  (ngsrc.PKval, ksfile))
+                # Generate the XML for kickstart file
+                icle_path = '/opt/repository/.icle'
+                os.system("genconfig ICEintegration instconf '%s' > %s/%s.xml" %  (ngsrc['ngname'], icle_path, nname))
+
             #copy CFM directory
             srcNGcfmdir = os.path.join(CFMBaseDir, self.ng)
             dstNGcfmdir = os.path.join(CFMBaseDir, self.ngnew)
@@ -2512,7 +2537,19 @@ class NGEApp(KusuApp):
             #beauty
             ngdel = NodeGroup(ngid = ngid)
             ngdel.syncFromDB(self.__db)
+            ngname = ngdel['ngname']
             ngdel.eraseFromDB(self.__db)
+
+            if 'ice' == self.__db.getAppglobals('PROVISION').lower():
+                autoinst = self.__db.getAppglobals('DEPOT_AUTOINST_ROOT')
+                ngpath = os.path.join(autoinst, str(ngid))
+                if os.path.isdir(ngpath):
+                    shutil.rmtree(ngpath) # del kickstart file
+                icle_path = '/opt/repository/.icle'
+                r = re.compile('[^\w.-]')
+                nname = r.sub('_',ngname)
+                if os.path.isfile(os.path.join(icle_path, '%s.xml' % nname)):
+                    os.unlink(os.path.join(icle_path, '%s.xml' % nname)) # del kickstart xml file
 
             #purge the CFM directory
             delNGcfmdir = os.path.join(CFMBaseDir, ngdel['ngname'])

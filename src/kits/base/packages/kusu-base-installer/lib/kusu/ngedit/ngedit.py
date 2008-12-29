@@ -36,6 +36,8 @@ from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
 from kusu.ui.text.USXnavigator import *
 from kusu.ui.text import USXkusuwidgets as kusuwidgets
 
+from primitive.system.software.dispatcher import Dispatcher
+
 MAXWIDTH = 70
 MAXHEIGHT = 18
 LEFT=kusuwidgets.LEFT
@@ -1819,7 +1821,22 @@ class NodeGroup(NodeGroupRec):
         '''
                 
         # Run genconfig
-        plugin = "kickstart" # plugin to generate kickstart
+        db = windowInst.database # first detect target os
+        repoid = self.data['repoid']
+        query_start = 'select rname, version, arch from kits, repos_have_kits where ' +\
+                      'repos_have_kits.repoid=%s and repos_have_kits.kid = kits.kid' % repoid
+        if db.driver == 'mysql':
+            query = query_start + ' and kits.isOS'
+            db.execute(query)
+        else: # postgres for now
+            query = query_start + ' and kits."isOS"'
+            db.execute(query, postgres_replace=False)
+        
+        full_os, ver, arch = db.fetchall()[0]
+        os = re.compile('[a-z]+').findall(full_os)[0]
+        target_os = (os, ver, arch)
+        plugin = Dispatcher.get('inst_conf_plugin', os_tuple=target_os) # get os context plugin
+        
         cmd = "genconfig %s %s" % (plugin, self.PKval)
         if generateKS:
             return self.__runTool('genconfig','%s %s' % ( plugin , self.PKval) ,windowInst)
