@@ -2114,7 +2114,6 @@ class NodeGroup(NodeGroupRec):
                 if rv:
                     BootDir = db.getAppglobals('PIXIE_ROOT')
                     if not BootDir: BootDir = '/tftpboot/kusu'
-                    
                     #srcInitrdFileName = os.path.join(BootDir, 'initrd-%s.img' % rv[0])
                     srcInitrdFileName = os.path.join(BootDir,self['initrd'])
                     dstInitrdFileName = os.path.join(BootDir, 'initrd.%s.%d.img' % ( self['installtype'], self['ngid'] ))
@@ -3163,6 +3162,25 @@ def removeNGLockFile(ngid):
         lock = path.path(lockFile)
         lock.remove()
 
+def getRPMSDirKeys(ostype, arch):
+    if ostype.lower().startswith('fedora') or \
+       ostype.lower().startswith('centos'):
+        repodatakey = "repodatadir"
+        rpmsdirkeys = ['rpmsdir']
+    elif ostype.lower().startswith('rhel'):
+        repodatakey = 'server.repodatadir'
+        rpmsdirkeys = ['server.packagesdir']
+    elif ostype.lower().startswith('sles'):
+        repodatakey = ""
+        rpmsdirkeys = ['packagesdir.noarch',
+                       'packagesdir.i386',
+                       'packagesdir.i486',
+                       'packagesdir.i586',
+                       'packagesdir.i686']
+        if arch in ['x86_64']:
+            rpmsdirkeys.append('packagesdir.x86_64')
+    return repodatakey, rpmsdirkeys
+
 
 def getAvailPkgs(db, ngid, categorized=False):
     '''Returns a dictionary containing info for all of the packages 
@@ -3191,11 +3209,8 @@ def getAvailPkgs(db, ngid, categorized=False):
 
     import kusu.repoman.repofactory as repofactory
     from kusu.core import database as sadb
-    engine = os.getenv('KUSU_DB_ENGINE')
-    if engine == 'mysql':
-        dbinst = sadb.DB(driver='mysql',db='kusudb',username='nobody')
-    else: # xxx only postgres for now
-        dbinst = sadb.DB(driver='postgres',db='kusudb',username='nobody')
+    engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+    dbinst = sadb.DB(engine, db='kusudb',username='nobody')
     rf = repofactory.RepoFactory(db=dbinst)
     try:
         repoinst = rf.getRepo(repoid)
@@ -3203,20 +3218,19 @@ def getAvailPkgs(db, ngid, categorized=False):
         raise NodeGroupError, "Cannot retrieve package info from selected " \
             "repository (ostype=%s) because it cannot be used at this time. " %ostype
 
-    repodatakey = "repodatadir"
-    rpmsdirkey = 'rpmsdir'
-    if ostype.lower().startswith('rhel'):
-        repodatakey = "server." + repodatakey
-        rpmsdirkey  = "server." + rpmsdirkey
+    repodatakey, rpmsdirkeys = getRPMSDirKeys(ostype, repoinst.os_arch)
 
-    repopackdir = os.path.join(repodir, repoinst.dirlayout[rpmsdirkey])
-    compsfile = glob.glob(os.path.join(repodir, repoinst.dirlayout[repodatakey],'comps*.xml'))[0]
+    repopackdirs = [os.path.join(repodir, repoinst.dirlayout[x]) for x in rpmsdirkeys]
+    if not ostype.lower().startswith('sles'):
+        compsfile = glob.glob(os.path.join(repodir, repoinst.dirlayout[repodatakey],'comps*.xml'))[0]
 
     cwdbackup = os.getcwd()
-    os.chdir(repopackdir)
-    repopacklst = glob.glob('*.[rR][pP][mM]') #only basenames returned
-    repopacklst = [ RpmNameSplit(x)[0] for x in repopacklst ] #get the RPM names
+    repopacklst = []
+    for d in repopackdirs:
+        os.chdir(d)
+        repopacklst += glob.glob('*.[rR][pP][mM]') #only basenames returned
 
+    repopacklst = [ RpmNameSplit(x)[0] for x in repopacklst ] #get the RPM names
     repopackset = Set(repopacklst) #work with the set
 
     #remove packages coming from kits available through the current repo
@@ -3233,9 +3247,10 @@ def getAvailPkgs(db, ngid, categorized=False):
        db.execute(query,postgres_replace=False)
 
     rv = db.fetchall()
-
+    
+    kits_root = db.getAppglobals('DEPOT_KITS_ROOT')
     for kitname,kitver,kitarch in rv:
-        path = '/depot/kits/%s/%s/%s' % (kitname,kitver,kitarch )
+        path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
         os.chdir(path)
         kitpacklst = glob.glob('*.[rR][pP][mM]')
         kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
@@ -3258,7 +3273,7 @@ def getAvailPkgs(db, ngid, categorized=False):
                 curletter = letter
             result[letter].append(p)
 
-    else: #category view
+    elif not ostype.lower().startswith('sles'): #category view
         
         import yum.comps
         from kusu.kitops.package import PackageFactory
@@ -3299,23 +3314,73 @@ def getAvailPkgs(db, ngid, categorized=False):
         tmpcnt2 = 0
         for p in repopackset:
             #reconstruct the full package name to pass to PackageFactory
-            tmplst = glob.glob("%s/%s-[0-9]*" % (repopackdir, p))
-            if not tmplst: #corner case
-                tmplst = glob.glob("%s/%s-*.rpm" % (repopackdir, p))
-            pfile = tmplst[0]
-            #get group through my package library -> RPMTAG_GROUP
-            pinst = PackageFactory(pfile)
-            group = pinst.getGroup()
-            if group not in groupdict.keys():
-                groupdict[group] = [] #initialize
-            tmpcnt2 += 1
-            groupdict[group].append(p)
+            for d in repopackdirs:
+                tmplst = glob.glob("%s/%s-[0-9]*" % (d, p))
+                if not tmplst: #corner case
+                    tmplst = glob.glob("%s/%s-*.rpm" % (d, p))
+                pfile = tmplst[0]
+                #get group through my package library -> RPMTAG_GROUP
+                pinst = PackageFactory(pfile)
+                group = pinst.getGroup()
+                if group not in groupdict.keys():
+                    groupdict[group] = [] #initialize
+                tmpcnt2 += 1
+                groupdict[group].append(p)
                
         t3 = time.time()
 
         kl.debug("Optional Packages: comps: %d, unlisted: %d;\ntcomps=%f;\t" %(tmpcnt, tmpcnt2,t2-t1) +\
             "time to build d.s. for other=%f" %(t3-t2,))
 
+    else: # Categorized view for sles
+        from primitive.support.rpmtool import RPM, RPMCollection
+        from kusu.kitops.package import PackageFactory
+
+        t1 = time.time()
+        #build list of packages
+        cwdbackup = os.getcwd()
+        repopathlist = []
+        for d in repopackdirs:
+            os.chdir(d)
+            repopathlist.extend([os.path.join(d, x) for x in glob.glob('*.[rR][pP][mM]')])
+
+        kitpacks = RPMCollection()
+        for kitname,kitver,kitarch in rv:
+            path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
+            os.chdir(path)
+            kitpacklist = glob.glob('*.[rR][pP][mM]')
+            for rpm_file in [os.path.join(path, x) for x in kitpacklist]:
+                kitpacks.add(RPM(rpm_file))
+
+        os.chdir(cwdbackup)
+        repopacklist = [RPM(x) for x in repopathlist]
+        repopackset = RPMCollection()
+        for rpm in repopacklist:
+            if not kitpacks.RPMExists(rpm.getName(), rpm.getArch()):
+                repopackset.add(rpm)
+        
+        for pack in repopackset.getList():
+            pack_path, pack_name = pack.getSplitfilename()
+            hdr = pack.getGroup()
+            if hdr and hdr != '':
+                try:
+                    cat, grp = hdr.split('/',1)
+                except ValueError:
+                    if hdr not in result:
+                        result[hdr] = []
+                    result[hdr].append(pack_name)
+                
+                if cat not in result:
+                    result[cat] = {}
+                if grp not in result[cat]:
+                    result[cat][grp] = []
+                result[cat][grp].append(pack_name)
+            
+            else:
+                if 'others' not in result:
+                    result['others'] = []
+                result['others'].append(pack_name)
+        
     return result
 
 
@@ -3335,27 +3400,34 @@ def getAvailModules(db, ngid):
     if not ngid:
         raise NodeGroupError, "Must specify a node group to retrieve the module list."
 
-
-
     #get repository information
-    query = "select r.repository,r.ostype from repos r, nodegroups n " \
+    query = "select r.repoid, r.repository, r.ostype from repos r, nodegroups n " \
         "where r.repoid = n.repoid and n.ngid = %s" % ngid
 
     if ngid == 5:
        raise NodeGroupError, "Unmanaged nodegroup is not supported."
 
     db.execute(query)
-    repodir, ostype  = db.fetchone()
+    repoid, repodir, ostype  = db.fetchone()
     repodir = repodir.strip()
 
-    if ostype.lower().startswith('fedora'):
-        repopackdir = repodir + '/Fedora/RPMS'
-    elif ostype.lower().startswith('rhel'):
-        repopackdir = repodir + '/Server'
-    elif ostype.lower().startswith('centos'):
-        repopackdir = repodir + '/CentOS'
-    else:
-        raise NodeGroupError, "Repository with ostype = %s is not supported." %ostype
+    import kusu.repoman.repofactory as repofactory
+    from kusu.core import database as sadb
+    engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+    dbinst = sadb.DB(engine, db='kusudb',username='nobody')
+    rf = repofactory.RepoFactory(db=dbinst)
+    try:
+        repoinst = rf.getRepo(repoid)
+    except:
+        raise NodeGroupError, "Cannot retrieve package info from selected " \
+            "repository (ostype=%s) because it cannot be used at this time. " %ostype
+
+    repodatakey, rpmsdirkeys = getRPMSDirKeys(ostype, repoinst.os_arch)
+    repopackdirs = []
+    try:
+        repopackdirs = [os.path.join(repodir, repoinst.dirlayout[x]) for x in rpmsdirkeys]
+    except KeyError:
+        raise NodeGroupError, "Repository with ostype = %s is not supported." % ostype
 
     #2. obtain the name of driverpacks to examine
     query = "select d.dpname from driverpacks d, ng_has_comp n where " \
@@ -3369,7 +3441,6 @@ def getAvailModules(db, ngid):
     tmpdir = "%s" % tmprootdir + '/modules'
     if not os.path.exists(tmpdir):
          os.mkdir(tmpdir)
-    
 
     tmpdir = "%s" % tmpdir + "/%s" % ngid 
     if not os.path.exists(tmpdir):
@@ -3378,7 +3449,12 @@ def getAvailModules(db, ngid):
     t1 = time.time()
 
     for dpack in dpacklst:
-        dpackfull = "%s/%s" %(repopackdir,dpack)
+        dpackfull = ""
+        for repopackdir in repopackdirs:
+            dpackfull = "%s/%s" %(repopackdir,dpack)
+            if os.path.exists(dpackfull):
+                break
+        
         if not os.path.exists(dpackfull):
             kl.warn('Driver package %s not found in repo %s'\
                                     %(dpack,repodir))

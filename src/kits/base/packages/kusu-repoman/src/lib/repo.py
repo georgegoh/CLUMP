@@ -1293,7 +1293,8 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
         self.dirlayout['packagesdir.i486'] = 'suse/i486';
         self.dirlayout['packagesdir.i586'] = 'suse/i586';
         self.dirlayout['packagesdir.i686'] = 'suse/i686';
-        self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
+        if os_arch == 'x86_64':
+            self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
 
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
