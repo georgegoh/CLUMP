@@ -189,10 +189,10 @@ def bestPackageFromList(pkglist, target_arch=None):
     arch86_best = returnBestX86Package(arch86, myarch)
     
     if noarch_best is None:
-        if arch86_best is not None:
-            return arch86_best
-        else:
+        if arch64_best is not None and 'x86_64' == myarch:
             return arch64_best
+        else:
+            return arch86_best
     else:
         return noarch_best
 

@@ -64,7 +64,7 @@ class Downloader(object):
                 self.logger.error("Cannot copy %s from %s to %s. Error was: %s" % (pkg.fullName(), pkg.path, self.destdir, e))
                 continue
 
-if __name__ == '__main__':
+if __name__ == '__main__': #simple test
     util = Downloader()
     util.downloadPackages(['xen', 'crap', 'e*'])
 
