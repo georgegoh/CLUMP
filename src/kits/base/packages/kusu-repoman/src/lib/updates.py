@@ -550,6 +550,8 @@ class YouUpdate(BaseUpdate):
 
         if self.os_arch == 'i386':
             os_arch = 'i586'
+        else:    
+            os_arch = self.os_arch
 
         c = YouUpdateCommand(username = username, password = password,
                              channel=self.getChannel(), arch=os_arch,
