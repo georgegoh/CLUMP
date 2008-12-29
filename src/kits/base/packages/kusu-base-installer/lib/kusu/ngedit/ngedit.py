@@ -3186,7 +3186,7 @@ def getRPMSDirKeys(ostype, arch):
         rpmsdirkeys = ['rpmsdir']
     elif ostype.lower().startswith('rhel'):
         repodatakey = 'server.repodatadir'
-        rpmsdirkeys = ['server.packagesdir']
+        rpmsdirkeys = ['server.rpmsdir']
     elif ostype.lower().startswith('sles'):
         repodatakey = ""
         rpmsdirkeys = ['packagesdir.noarch',
