@@ -51,6 +51,8 @@ install -m755 bin/patchpcitable-script $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/control.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
 install -m644 lib/dkms.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
 install -m644 lib/kernel.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
+install -m644 lib/modules.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
+install -m644 lib/modulesfactory.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/driverpatch
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/driverpatch-%{version}
 
