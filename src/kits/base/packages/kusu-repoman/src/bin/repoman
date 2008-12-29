@@ -312,8 +312,7 @@ For examples:
         self.logEvent("Deleting repo %s" % repo_name, toStdout=False)
         
         self.repoExists(repo_name)
-        repo = self.dbs.Repos.select_by(reponame=repo_name)
-        repo = repo[0]    
+        repo = self.dbs.Repos.select_by(reponame=repo_name)[0]
         ng = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
         if ng:
@@ -343,6 +342,13 @@ For examples:
             self.logErrorEvent('Unable to delete repo: %s. Reason: %s' % (repo_name, e))
             self.unlock()
             sys.exit(1)
+
+        row = self.dbs.AppGlobals.select_by(kname = 'DEPOT_REPOS_POST')
+        if row:
+            script_path =  row[0].kvalue
+        else:
+            script_path = path('/depot/repos/post_scripts')
+        self.callScripts(script_path, repo, action='DELETE')
             
         self.logEvent("Finished deleting repo %s" % repo_name, toStdout=False)            
 
@@ -383,7 +389,7 @@ For examples:
 
         self.logEvent("Finished creating snapshot for repo: %s" % repo_name, toStdout=False)
 
-    def callScripts(self, scriptpath, repo):
+    def callScripts(self, scriptpath, repo, action='CREATE'):
        
         scriptpath = path(scriptpath)
 
@@ -395,6 +401,8 @@ For examples:
         env['REPO_ID'] = str(repo.repoid)
         env['REPO_REPOSITORY'] = repo.repository
         env['REPO_OSTYPE'] = repo.ostype 
+        env['REPOMAN_ACTION']=action
+ 
 
         for f in scriptpath.listdir():
             if not f.isfile():
