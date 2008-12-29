@@ -1403,7 +1403,11 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             for i in range(0,len(words)):
                 if words[i].isdigit():
                     break
-            self.version = words[i]
+            # sometimes, such as with rhel 5.3, the last value is 5.3 and not 5.
+            # make it default to 5. Only if the last part is a digit, do we
+            # use it.
+            if words[i].isdigit():
+                self.version = words[i]
         else:
             #try the fedora-release RPM under self.pathLayoutAttributes[packagesdir]
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{version}' 2> /dev/null
