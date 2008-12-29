@@ -515,14 +515,15 @@ class DriverPatchController(object):
         devnull.close()
 
         li = [f for f in tmpdir.walkfiles('modules.dep')]
+        if not li: li[0] = tmpdir / 'lib' / 'modules' / kver / 'modules.dep'
         modulesdep = li[0]
-        li = [f for f in tmpdir.walkfiles('modules.alias')]
-        modulesalias = li[0]
-
         if not modulesdep.exists(): 
             if tmpdir.exists(): tmpdir.rmtree()
             raise FileDoesNotExistError, 'modules.dep cannot be generated!'
 
+        li = [f for f in tmpdir.walkfiles('modules.alias')]
+        if not li: li[0] = modulesalias = tmpdir / 'lib' / 'modules' / kver / 'modules.alias'
+        modulesalias = li[0]
         if not modulesalias.exists(): 
             if tmpdir.exists(): tmpdir.rmtree()
             raise FileDoesNotExistError, 'modules.alias cannot be generated!'

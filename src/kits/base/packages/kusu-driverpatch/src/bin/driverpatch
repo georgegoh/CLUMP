@@ -15,6 +15,7 @@ from kusu.util import tools as utiltools
 from kusu.util import rpmtool
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
+from kusu.driverpatch.modulesfactory import InitrdModulesFactory
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \
                             UnknownKernelModuleAsset, DirDoesNotExistError, UnknownFileTypeError, \
                             RepoNotFoundError
@@ -425,10 +426,6 @@ Example operations:
         # FIXME: Hardcoding for now
         if not path('/var/cache/kusu-driverpatch').exists(): path('/var/cache/kusu-driverpatch').mkdir()
         atexit.register(removeTempDir,'/var/cache/kusu-driverpatch')
-        
-        scratchdir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-
-        tmpdir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
 
         # get the existing initrd
         initrdpath = tftpbootdir / nginitrd
@@ -437,140 +434,19 @@ Example operations:
                         {'initrdpath':initrdpath})
             self.printMsgExit(msg)
             
-        self.controller.unpackInitrdImage(initrdpath,tmpdir)
-        # get the modules cgz
-        oldmodulescgz = self.controller.getKernelModulesCgz(tmpdir)
-        oldmodulescgz.remove()
-        
-        # get the other modules assets
-        moduleassets = self.controller.getKernelModulesAssets(tmpdir)
-        
-        tmpkmoddir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-        tmppcidir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-        tmpmoddir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-
-        
-        # counter for list of modules to remove
-        modremovelist = []
-        
-        kver = self.controller.getKernelVersion(kernelrpm.filename) # kernel version
-       
-        #cnt = 0
-        # extract kernel modules from the driverpacks table
-        for pkg in kmodlist:
-            msg = self._('Extracting kernel modules from package %(packagerpm)s..' %
-                    {'packagerpm':pkg.filename})
-            print msg
-
-            #if cnt != 0: 
-            dellist = []
-	       
-            tmpextractor = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-			
-            self.controller.extractKernelModulesDir(pkg.filename,tmpextractor)
-
-            for li in tmpextractor.walkfiles('*.ko'):
-                dellist.append(os.path.basename(li))
-
-            for delmod in dellist:
-                item = tmpkmoddir.walkfiles(delmod)
-                for li in item:
-                    print "Replacing with vendor driver:  %s" % os.path.basename(li)
-                    os.unlink(li)
-            #cnt += 1
-
-            # check if the package has a pci.updates
-            # FIXME: currently only handling pci.updates! we are missing the support for pcitable types of updates.
-            if self.controller.hasPciUpdates(pkg.filename): 
-                self.controller.extractPciUpdates(pkg.filename,tmppcidir)
-                pciupdates = path(tmppcidir / 'pci.updates')
-                if not pciupdates.exists():
-                    msg = self._('Error extracting pci.updates from %(packagerpm)s' %
-                                {'packagerpm':pkg.filename})
-                    self.printMsgExit(msg)
-                # get system pci.ids found in the initrd and patch it with the new pci.updates
-                syspci = moduleassets['pci.ids']
-                msg = self._('Patching pci.ids with pci.updates found in %(packagerpm)s...' %
-                            {'packagerpm':pkg.filename})
-                print msg
-                self.controller.patchPciIds(pkg.filename,syspci,pciupdates)
-                # remove old pci.updates
-                if pciupdates.exists(): pciupdates.remove()
-            # check if the packagerpm has a modules.remove file
-            if self.controller.hasModulesRemove(pkg.filename):
-                self.controller.extractModulesRemoveFile(pkg.filename,tmpmoddir)
-                modfile = path(tmpmoddir / 'modules.remove')
-                if modfile.exists():
-                    _modlist = self.controller.getModulesRemoveList(modfile)
-                    modremovelist.extend([l for l in _modlist if l not in modremovelist])
-                if tmpmoddir.exists(): tmpmoddir.rmtree()
-
-            self.controller.extractKernelModulesDir(pkg.filename,tmpkmoddir)
-        
-        # remove any modules listed in modremovelist
-        for mod in modremovelist:
-            _li = tmpkmoddir.walkfiles(mod)
-            if _li:
-                for _mod in _li: _mod.remove()
-        
-        # generate updated modules.dep / modules.alias
-        msg = self._('Generating updated modules.dep and modules.alias..')
-        print msg
-        tmpassetsdir = path(utiltools.mkdtemp(dir='/var/cache/kusu-driverpatch'))
-        self.controller.generateModulesAssets(tmpkmoddir, tmpassetsdir, kver)
-        
-        # and normalise the modules.dep
-        modulesdep = tmpassetsdir / 'modules.dep'
-        modulesalias = tmpassetsdir / 'modules.alias'
-        if not modulesdep.exists(): 
-            msg = self._('Error generating modules.dep!')
-            self.printMsgExit(msg)
-        
-        li = self.controller.normalise_modules_dep(modulesdep)
-        # write the updated modules.dep
-        newmodulesdep = tmpassetsdir / 'modules.dep.new'
-        f = open(newmodulesdep,'w')
-        for l in li: f.write('%s\n' % l)
-        f.close()
-        
-        modulesdep.remove()
-        newmodulesdep.copy(modulesdep)
-        newmodulesdep.remove()
-        
-        # updates the assetsdict with new modules.dep / modules.alias
-
-        origmodulesdep = path(tmpdir / 'modules/modules.dep')
-        origmodulesalias = path(tmpdir / 'modules/modules.alias')
-        
-        if origmodulesdep.exists(): origmodulesdep.remove()
-        if origmodulesalias.exists(): origmodulesalias.remove()
-        
-        modulesdep.copy(origmodulesdep.dirname())
-        modulesalias.copy(origmodulesalias.dirname())
-
-        
-        msg = self._('Packing kernel modules as modules archive..')
-        print msg
-        self.controller.convertKmodDirToModulesArchive(tmpkmoddir,oldmodulescgz, kernelrpm.getArch())
-        
         if not initrdfile:
             newinitrd = nginitrd
         else:
             newinitrd = initrdfile
-            
+
         if not kernelfile:
             kernelfile = ngkernel
 
-        msg = self._('Packing the initrd..')
-        print msg
+        os_name, os_version, os_arch = repotools.getOS(self.db, repoid)
+        moduleHandler = InitrdModulesFactory().getModuleHandler(os_name, os_version)(self.db, initrdpath)
         newinitrdpath = tftpbootdir / newinitrd
-        if newinitrdpath.exists(): newinitrdpath.remove()
-        self.controller.packInitrdImage(newinitrdpath,tmpdir)
-        msg = self._('Initrd image saved as /tftpboot/kusu/%(initrd)s' %
-                    {'initrd':newinitrd})
-        print msg
-        
-        
+        moduleHandler.updateInitrd(newinitrdpath, kernelrpm, kmodlist)
+
         msg = self._('Extracting kernel image to /tftpboot/kusu..')
         print msg
         # expects kernelrpm filepath, not an instance of rpmtool.RPM
@@ -578,12 +454,6 @@ Example operations:
         msg = self._('Kernel image saved as /tftpboot/kusu/%(kernelname)s' %
                     {'kernelname':kernelname})
         print msg
-        
-        # housecleaning
-        if tmpkmoddir.exists(): tmpkmoddir.rmtree()
-        if tmpdir.exists(): tmpdir.rmtree()
-        if tmppcidir.exists(): tmppcidir.rmtree()
-        if tmpassetsdir.exists(): tmpassetsdir.rmtree()
         
         # update the kernel/initrd entries for this nodegroup if required
         if self.options.update:
@@ -595,6 +465,7 @@ Example operations:
             ng.initrd = newinitrd
             ng.flush()
         
+        moduleHandler.cleanup()
 
     def _list(self, args):
         """ Handler for list action. args is a dict of supported key-value pairs for this action. """
