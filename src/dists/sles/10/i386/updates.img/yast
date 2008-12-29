@@ -31,6 +31,11 @@ echo "Installing device mapper kernel module ..."
 echo "modprobe dm_mod"
 modprobe dm_mod
 
+# sysfs interface to BIOS EDD information
+echo "Installing BIOS EDD kernel module ..."
+echo "modprobe edd"
+modprobe edd
+
 /opt/kusu/bin/installer
 
 EXIT_CODE=$?

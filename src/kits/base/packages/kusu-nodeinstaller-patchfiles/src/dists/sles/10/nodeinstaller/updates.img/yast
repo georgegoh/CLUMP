@@ -23,6 +23,11 @@ export KUSU_DIST="sles"
 export KUSU_DISTVER="10"
 export PRIMITIVE_LOCKDIR="/tmp"
 
+# sysfs interface to BIOS EDD information
+echo "Installing BIOS EDD kernel module ..."
+echo "modprobe edd"
+modprobe edd
+
 /usr/bin/python /opt/kusu/bin/nodeinstaller
 
 EXIT_CODE=$?
