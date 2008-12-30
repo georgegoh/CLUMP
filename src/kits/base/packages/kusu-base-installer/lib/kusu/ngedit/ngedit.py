@@ -3252,6 +3252,7 @@ def getAvailPkgs(db, ngid, categorized=False):
 
     #remove packages coming from kits available through the current repo
     rmpacklst = []
+    rmpackpathlist = []
     if db.driver == 'mysql':
        query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
        repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
@@ -3267,9 +3268,14 @@ def getAvailPkgs(db, ngid, categorized=False):
     
     kits_root = db.getAppglobals('DEPOT_KITS_ROOT')
     for kitname,kitver,kitarch in rv:
+        
+        if kitname.endswith('-updates'):
+            continue
+        
         path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
         os.chdir(path)
         kitpacklst = glob.glob('*.[rR][pP][mM]')
+        rmpackpathlist.extend([os.path.join(path, x) for x in kitpacklst])
         kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
         rmpacklst.extend(kitpacklst)
    
@@ -3362,12 +3368,8 @@ def getAvailPkgs(db, ngid, categorized=False):
             repopathlist.extend([os.path.join(d, x) for x in glob.glob('*.[rR][pP][mM]')])
 
         kitpacks = RPMCollection()
-        for kitname,kitver,kitarch in rv:
-            path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
-            os.chdir(path)
-            kitpacklist = glob.glob('*.[rR][pP][mM]')
-            for rpm_file in [os.path.join(path, x) for x in kitpacklist]:
-                kitpacks.add(RPM(rpm_file))
+        for rpm_file in rmpackpathlist:
+            kitpacks.add(RPM(rpm_file))
 
         os.chdir(cwdbackup)
         repopacklist = [RPM(x) for x in repopathlist]

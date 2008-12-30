@@ -765,8 +765,12 @@ class CFMClient:
         #    fn = filename
 
         # Test to see if this is in the same node group
-        ng = string.atoi(string.split(fn[(len(self.CFMBaseDir)):], '/')[1])
-        if ng != self.ngid:
+        try:
+            ng = string.atoi(string.split(fn[(len(self.CFMBaseDir)):], '/')[1])
+            if ng != self.ngid:
+                action = 'ignore'
+        except ValueError:
+            self.log('Path does not match expected format. This may be due to wrong or unset CFMBaseDir')
             action = 'ignore'
 
         # Now strip off the leading CFMBaseDir, and NGID
