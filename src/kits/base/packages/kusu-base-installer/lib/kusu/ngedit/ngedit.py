@@ -3268,18 +3268,18 @@ def getAvailPkgs(db, ngid, categorized=False):
     
     kits_root = db.getAppglobals('DEPOT_KITS_ROOT')
     for kitname,kitver,kitarch in rv:
-        
-        if kitname.endswith('-updates'):
-            continue
-        
         path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
         os.chdir(path)
         kitpacklst = glob.glob('*.[rR][pP][mM]')
+        
+        if kitname.endswith('-updates'):
+            kitpacklst = [x for x in kitpacklst if (x.startswith('component-') or x.startswith('kit-'))]
+        
         rmpackpathlist.extend([os.path.join(path, x) for x in kitpacklst])
         kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
         rmpacklst.extend(kitpacklst)
-   
-    rmpacklst = [ x for x in rmpacklst if not x.startswith('kit-') ]
+    
+    #rmpacklst = [ x for x in rmpacklst if not x.startswith('kit-') ]
  
     repopackset -= Set(rmpacklst)
     os.chdir(cwdbackup)
