@@ -3379,7 +3379,7 @@ def getAvailPkgs(db, ngid, categorized=False):
                 repopackset.add(rpm)
         
         for pack in repopackset.getList():
-            pack_path, pack_name = pack.getSplitfilename()
+            pack_name = pack.getName()
             hdr = pack.getGroup()
             if hdr and hdr != '':
                 try:
