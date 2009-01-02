@@ -149,6 +149,10 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
                 baseScreen.selector.popupMsg('Cannot Identify Disk',
                                              'The inserted disk cannot be identified.')
 
+        # No kits found
+        if not kits:
+            baseScreen.selector.popupMsg('Cannot Add Kit(s)', 'No Kit(s) detected in media')
+    
         kitops.unmountMedia()
 
 
