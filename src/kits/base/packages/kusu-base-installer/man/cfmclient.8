@@ -5,7 +5,7 @@
 cfmclient \- Cluster File Manager (CFM) client updater.
 .SH "SYNTAX"
 .LP 
-\fBcfmclient\fR \-t [0\-4] \-i <\fIInstallers\fR> 
+\fBcfmclient\fR \-t [1\-15] \-i <\fIInstallers\fR> 
 
 .SH "DESCRIPTION"
 .LP 
@@ -17,11 +17,28 @@ The following options are available, however the command is typically invoked by
 .SH "OPTIONS"
 .LP 
 .TP 
-\fB\-t [1\-3]\fR
-Dont create a daemon.  This is helpful in debugging.
+\fB\-t [1\-15]\fR
+An integer value in the range of 1 to 15 associated with a simple or combined cfm operation.
+
+The integer values for the 4 simple cfm actions are listed below:
+
+1 - Update files: Updates files with newer versions from the installers.
+
+2 - Update packages: Uninstalls delisted packages and installs added packages from the installers.
+
+4 - Force files: Downloads all files from the installers regardless of the versions already downloaded.
+
+8 - Updates repository: Updates all existing packages in the local repository from the installers.
+
+Bit-wise OR these values to use them in combination with one another.
+For example: -t 3 results in Update of files and packages
+
+Note: Force files option must be used in conjunction with the update files option.
+
 .TP 
 \fB\-i <\fIInstallers\fR>\fR
 A comma-separated list of the IPs of all of the NICs on all of the installers.
+On the master installer, this argument should be 'self'.
 
 .SH "FILES"
 .LP 
@@ -29,7 +46,7 @@ A comma-separated list of the IPs of all of the NICs on all of the installers.
 /opt/kusu/etc/package.lst
 .SH "AUTHORS"
 .LP 
-Mark Black <mblack_at_platform_dot_com>
+Kunal Chowdhury <kunalc_at_platform_dot_com>
 .SH "SEE ALSO"
 .LP 
-cfmsync(8) cfmd(8)  
+cfmsync(8) cfmd(8)
