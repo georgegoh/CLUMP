@@ -24,6 +24,8 @@ License: GPLv2
 URL: http://www.osgdc.org
 Group: System Environment/Base
 Vendor: Platform Computing Inc
+# The following "Provides" is a workaround for KUSU-1103.
+Provides: /etc/localtime
 Requires: kusu-base-node >= 0.1
 
 BuildArch: noarch
