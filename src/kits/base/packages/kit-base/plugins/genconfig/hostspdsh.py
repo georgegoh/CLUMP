@@ -26,7 +26,10 @@ class thisReport(Report):
                  "AND nics.netid = networks.netid " +
                  "AND nodes.name != (SELECT kvalue FROM appglobals WHERE " +
                  "                  kname='PrimaryInstaller') " +
-                 "AND networks.type = 'provision' AND NOT networks.device = 'bmc'")
+                 "AND networks.type = 'provision' " +
+                 "AND NOT networks.device = 'bmc' " +
+                 "AND nodes.ngid NOT IN (SELECT ngid FROM nodegroups WHERE " +
+                 "                       installtype='unmanaged')")
 
         try:
             self.db.execute(query)
