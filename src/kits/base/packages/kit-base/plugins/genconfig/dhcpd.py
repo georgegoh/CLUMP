@@ -19,11 +19,11 @@
 #
 
 import sys
-from path import path
 from kusu.genconfig import Report
 from kusu.core import database
 from kusu.ipfun import *
 from Cheetah.Template import Template
+from sets import Set
 from IPy import IP
 
 class Network(object): pass
@@ -104,28 +104,8 @@ class thisReport(Report):
                 network.gateway = gateway
                 network.pxehost = pxehost
 
-                # Generate the section of the file for this network
-                #print 'subnet %s netmask %s {' % (netmask, subnet)
-                #print '\tdefault-lease-time %s;' % leasetime
-                #print '\tmax-lease-time %s;' % leasetime
-
                 if not gateway:
                     gateway = pxehost
-
-                #print '\toption routers %s;' % gateway
-                #print '\toption subnet-mask %s;' % subnet
-                
-                #if dnsdomain:
-                #    print '\toption domain-name "%s";' % dnsdomain
-                    
-                #print '\tif substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {'
-                #print '\t\tfilename  "pxelinux.0";'
-                #print '\t\toption vendor-class-identifier  "PXEClient";'
-                #print '\t\toption PXE.mtftp-ip 0.0.0.0;'
-                #print '\t\tvendor-option-space PXE;'
-                #print '\t\tnext-server %s;' % pxehost
-                #print '\t}'
-
 
                 # Now cycle through the nodes on for this
                 network.hosts = []
@@ -149,22 +129,15 @@ class thisReport(Report):
                         if onNetwork(netwrk, subnet, row[1]) and row[2]:
                             host = Host()
                             if row[3]:
-                            #    print '\thost %s%s {' % (row[0], row[3])
                                 host.name = '%s%s' % (row[0], row[3])
                             else:
-                            #    print '\thost %s-%s {' % (row[0], row[4])
                                 host.name = '%s-%s' % (row[0], row[3])
 
                             # Handle interfaces that may not have a MAC
                             # address (such as Infiniband)
-                            #if row[2]:
-                            #    print '\t\thardware ethernet %s;' % row[2]
                             host.mac = row[2]
                             host.hostname = row[0]
                             host.ip = row[1]
-                            #print '\t\toption host-name "%s";' % row[0]
-                            #print '\t\tfixed-address %s;' % row[1]
-                            #print '\t}'
                             network.hosts.append(host)
 
                 network.ranges = getNetworkRanges(network.subnet,
@@ -172,7 +145,6 @@ class thisReport(Report):
                                                   network.gateway,
                                                   [x.ip for x in network.hosts])
 
-                #print '}'
                 networks.append(network)
  
             ns = {'leasetime': leasetime, 
@@ -184,6 +156,7 @@ class thisReport(Report):
             print str(t)
         else:
             print "# This machine is not the primary installer"
+
 
 def getNetworkRanges(subnet, netmask, gateway, hosts):
     """ Returns a list of usable ranges in the the given subnet/netmask,
@@ -197,62 +170,60 @@ def getNetworkRanges(subnet, netmask, gateway, hosts):
         are valid IPs for the subnet/netmask given.
     """
     # Use IPy to create the range of IP addresses, and subtract the hosts.
-    ip_hosts = [IP(x) for x in hosts]
-    ip_range = [x for x in IP('%s/%s' % (subnet, netmask))]
-    used_idx = [0,len(ip_range)-1] # first and last are reserved.
+    ip_hosts = [IP(x).int() for x in hosts]
+    network = IP('%s/%s' % (subnet, netmask))
+    used_ips = Set([network[0], network[-1]])
 
-    # Add gateway IP to list of used indices.
     if gateway:
-        ip = IP(gateway)
-        index = ip_range.index(ip)
-        if index not in used_idx:
-            used_idx.append(index)
-    # Each host must be added as used.
+        used_ips.add(IP(gateway))
     for h in ip_hosts:
-        index = ip_range.index(h)
-        if index not in used_idx:
-            used_idx.append(index)
-    used_idx = sorted(used_idx)
+        used_ips.add(IP(h))
 
-    last_reserved_idx = getIndexOfLastConsecutiveNum(used_idx, from_back=True)
-    last_usable_ip = used_idx[last_reserved_idx] - 1
-    range_boundaries = []
-    i = 0 # index of the last ip of the usable range search
-    range_end = 0
-    # Don't go beyond end of usage range
-    while range_end < last_usable_ip and i < len(used_idx):
-        # look for the last consecutive number in the used indexes,
-        # and offset the starting search by i.
-        idx = getIndexOfLastConsecutiveNum(used_idx[i:]) + i
-        range_start = used_idx[idx] + 1
-        range_end = used_idx[idx+1] - 1
-        range_boundaries.append((ip_range[range_start], ip_range[range_end]))
-        i = idx + 1
-    return range_boundaries
+    # Convert IPs to integers for easier manipulation.
+    ip_ints = sorted([x.int() for x in used_ips])
+    used_ranges = splitConsecutiveRanges(ip_ints)
+    range_startings = [x[-1] for x in used_ranges] [:-1]
+    range_endings = [x[0] for x in used_ranges] [1:]
 
-def getIndexOfLastConsecutiveNum(series, from_back=False):
-    if from_back:
-        last_val = series[-1]
-        for i,v in enumerate(reversed(series)):
-            if v != last_val-i:
-                return len(series)-i
-    else: 
-        first_val = series[0]
-        for i,v in enumerate(series):
-            if v != first_val+i:
-                return i-1
-    return 0
+    # Create a list of (start IP, end IP) tuples to return to dhcpd config.
+    allocatable_ranges = []
+    for i,s in enumerate(range_startings):
+        start = s+1
+        end = range_endings[i]-1
+        allocatable_ranges.append((IP(start), IP(end)))
+    return allocatable_ranges
+
+
+def splitConsecutiveRanges(li):
+    """ Look for ranges within the list that contain consecutive numbers."""
+    consecutive_ranges = []
+    last = li[0]
+    _range = li[0:1]
+    for x in li[1:]:
+        if x == (_range[-1] + 1):
+            _range.append(x)
+        else:
+            consecutive_ranges.append(_range)
+            _range = [x]
+    consecutive_ranges.append(_range)
+    return consecutive_ranges
+
 
 if __name__ == '__main__':
     print 'Testing getNetworkRanges'
     r1 = getNetworkRanges('10.10.10.0', '255.255.255.0', '10.10.10.1', ['10.10.10.2', '10.10.10.3', '10.10.10.4'])
-    assert r1 == [(IP('10.10.10.5'), IP('10.10.10.254'))]
+    assert r1 == [(IP('10.10.10.5'), IP('10.10.10.254'))], 'Bad r1: %s' % r1
     r2 = getNetworkRanges('10.10.10.0', '255.255.255.0', '10.10.10.1', ['10.10.10.2', '10.10.10.3', '10.10.10.40']) 
     assert r2 == [(IP('10.10.10.4'), IP('10.10.10.39')),
-                  (IP('10.10.10.41'), IP('10.10.10.254'))]
+            (IP('10.10.10.41'), IP('10.10.10.254'))], 'Bad r2: %s' % r2
     r3 = getNetworkRanges('192.168.0.0', '255.255.255.0', '192.168.0.100', ['192.168.0.1', '192.168.0.3', '192.168.0.110']) 
     assert r3 == [(IP('192.168.0.2'), IP('192.168.0.2')),
                   (IP('192.168.0.4'), IP('192.168.0.99')),
                   (IP('192.168.0.101'), IP('192.168.0.109')),
-                  (IP('192.168.0.111'), IP('192.168.0.254'))]
+                  (IP('192.168.0.111'), IP('192.168.0.254'))], 'Bad r3: %s' % r3
+    r4 = getNetworkRanges('10.0.0.0', '255.0.0.0', '10.0.0.100', ['10.0.0.1', '10.0.0.3', '10.0.0.110']) 
+    assert r4 == [(IP('10.0.0.2'), IP('10.0.0.2')),
+                  (IP('10.0.0.4'), IP('10.0.0.99')),
+                  (IP('10.0.0.101'), IP('10.0.0.109')),
+                  (IP('10.0.0.111'), IP('10.255.255.254'))], 'Bad r4: %s' % r4
     print 'OK'
