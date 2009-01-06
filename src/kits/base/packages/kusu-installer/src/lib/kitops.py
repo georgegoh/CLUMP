@@ -50,6 +50,12 @@ def kitRemove(kitScreen):
     """Remove the current selected kit."""
     selected_kit = kitScreen.listbox.current()
     if selected_kit:
+        title = _('Confirm kit remove?')
+        msg = _('Are you sure you want to remove the kit "%s"?' % selected_kit.rname)
+        buttons = [_('Yes'), _('No')]
+        result = kitScreen.selector.popupDialogBox(title, msg, buttons)
+        if result == buttons[1].lower(): return NAV_NOTHING # No
+
         kitops = kitScreen.kitops
         kitops.deleteKit(selected_kit.rname)
     return NAV_NOTHING
