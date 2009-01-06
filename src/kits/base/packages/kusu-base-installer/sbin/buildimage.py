@@ -33,7 +33,7 @@ from optparse import OptionParser
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 
-
+from primitive.system.software.dispatcher import Dispatcher
 
 class BuildImage:
     """This class will provide the image management functions"""
@@ -56,8 +56,9 @@ class BuildImage:
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
-
-        
+ 
+        self.apacheuser, self.apachegrp = Dispatcher.get('webserver_usergroup')
+       
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""
         self.database = database
@@ -357,7 +358,7 @@ class BuildImage:
 
         os.chdir(self.imagedir)
         os.system('tar cfj \"../%s.img.tar.bz2\" .' % self.ngid )
-        os.system('chown apache:apache \"../%s.img.tar.bz2\"' % self.ngid )
+        os.system('chown %s:%s \"../%s.img.tar.bz2\"' % (self.apacheuser, self.apachegrp, self.ngid))
         os.chdir('/tmp')
         os.system('rm -rf \"%s\"' %  self.imagedir)
 
