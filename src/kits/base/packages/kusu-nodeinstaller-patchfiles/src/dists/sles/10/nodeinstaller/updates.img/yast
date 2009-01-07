@@ -60,6 +60,10 @@ elif [ $EXIT_CODE -eq 1 ]; then
     echo "An internal program error has occurred."
     echo "A log of the session can be found in /tmp/kusu.log"
     echo "A dump of the error can be found in /tmp/exception.dump";
+    echo
+    echo "Press any key to reboot.";
+    read -n 1
+    echo b > /proc/sysrq-trigger
 elif [ $EXIT_CODE -eq 2 ]; then
     # exit code 2 means user chose to exit
     echo "Exiting on request. Please standby for reboot...";
