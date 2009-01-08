@@ -232,34 +232,37 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
     kitops.copyOSKitMedia(kit)
     prog_dlg.close()
 
-    while baseScreen.selector.popupYesNo('Any More Disks?',
-                         'Any more disks for this OS kit?'):
-        # unmount and eject.
-        out, err = eject(cdrom)
-        if err:
-            baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
-        baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
-        closeTray(cdrom)
-        prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
+    kitdir = kitops.kits_dir / kit['name'] / kit['ver'] / kit['arch']
 
-        kitops.setKitMedia(cdrom)
-        kitops.addKitPrepare()
-        d = kitops.getOSDist()
+    if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
+        while baseScreen.selector.popupYesNo('Any More Disks?',
+                             'Any more disks for this OS kit?'):
+            # unmount and eject.
+            out, err = eject(cdrom)
+            if err:
+                baseScreen.selector.popupMsg('CD/DVD Drive Eject Error', err)
+            baseScreen.selector.popupMsg('Insert Next Disk', 'Please insert the next disk.')
+            closeTray(cdrom)
+            prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
 
-        kit_name = re.compile('[a-z]+').findall(d.ostype)[0]
-        if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
-            kit_name = baseScreen.kiprofile['OS']
+            kitops.setKitMedia(cdrom)
+            kitops.addKitPrepare()
+            d = kitops.getOSDist()
 
-        if not d.ostype or not d.getVersion() or not d.getArch() or \
-           kit_name != baseScreen.kiprofile['OS'] or \
-           d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
-           d.getArch() != baseScreen.kiprofile['OS_ARCH']:
+            kit_name = re.compile('[a-z]+').findall(d.ostype)[0]
+            if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
+                kit_name = baseScreen.kiprofile['OS']
+
+            if not d.ostype or not d.getVersion() or not d.getArch() or \
+               kit_name != baseScreen.kiprofile['OS'] or \
+               d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
+               d.getArch() != baseScreen.kiprofile['OS_ARCH']:
+                prog_dlg.close()
+                baseScreen.selector.popupMsg('Wrong OS Disk', 'Disk does not ' + \
+                                             'match selected OS.')
+                continue
+            kitops.copyOSKitMedia(kit)
             prog_dlg.close()
-            baseScreen.selector.popupMsg('Wrong OS Disk', 'Disk does not ' + \
-                                         'match selected OS.')
-            continue
-        kitops.copyOSKitMedia(kit)
-        prog_dlg.close()
 
     kitops.makeContribDir(kit)
     kitops.finalizeOSKit(kit)
