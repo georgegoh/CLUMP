@@ -22,7 +22,7 @@ logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm.attributes').setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy.orm.attributes.InstrumentedAttribute').           setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm.attributes.InstrumentedAttribute').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm.mapper').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm.mapper.Mapper').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm.properties').setLevel(logging.WARNING)
@@ -77,10 +77,10 @@ class AppGlobals(BaseTable):
                (self.__class__.__name__, self.kname, self.kvalue, self.ngid)
 
 class Components(BaseTable): 
-    cols = ['kid', 'cname', 'cdesc', 'os']
+    cols = ['kid', 'cname', 'cdesc', 'os', 'ctype']
     def __repr__(self):
-        return '%s(%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.kid, self.cname, self.os,
+        return '%s(%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.kid, self.cname, self.os, self.ctype,
                 self.cdesc)
 
 class DriverPacks(BaseTable): 
@@ -91,7 +91,7 @@ class DriverPacks(BaseTable):
 
 class Kits(BaseTable): 
     cols = ['rname', 'rdesc', 'version', \
-            'isOS', 'removable', 'arch']
+            'isOS', 'removable', 'arch', 'osid']
 
     def prepNameVerArch(self, char):
         rname = ''
@@ -115,16 +115,12 @@ class Kits(BaseTable):
     def getLongName(self):
         return '%s%s%s' % self.prepNameVerArch('-') 
 
-    def getPath(self):
-        return '/depot/kits/%s%s%s' % self.prepNameVerArch('/')
-
     longname = property(getLongName)
-    path = property(getPath)
 
     def __repr__(self):
-        return '%s(%r,%r,%r,%r,%r,%r)' % \
+        return '%s(%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.rname, self.version, self.arch,
-               self.rdesc, self.isOS, self.removable)
+               self.rdesc, self.isOS, self.osid, self.removable)
 
 class Modules(BaseTable): 
     cols = ['ngid', 'module', 'loadorder']
@@ -200,6 +196,15 @@ class Partitions(BaseTable):
 class Repos(BaseTable):
     cols = ['repoid', 'reponame', 'repository', 'installers', \
             'ostype']
+
+    def getOS(self):
+        for kit in self.kits:
+             if kit.isOS:
+                 return kit.os
+        return None
+
+    os = property(getOS)
+
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.reponame, \
@@ -217,6 +222,13 @@ class Scripts(BaseTable):
         return '%s(%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.script)
 
+class OS(BaseTable):
+    cols = ['osid', 'name', 'major', 'minor', 'arch']
+    def __repr__(self):
+        return '%s(%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.osid, self.name, \
+                self.major, self.minor, self.arch)
+
 class DB(object):
     tableClasses = {'ReposHaveKits' : ReposHaveKits,
                     'AppGlobals' : AppGlobals,
@@ -233,7 +245,8 @@ class DB(object):
                     'Packages' : Packages, 
                     'Partitions' : Partitions,
                     'Scripts' : Scripts,
-                    'Repos' : Repos}
+                    'Repos' : Repos,
+                    'OS' : OS}
 
     __passfile = os.environ.get('KUSU_ROOT', '') + '/etc/db.passwd'
 
@@ -358,6 +371,7 @@ class DB(object):
             sa.Column('cname', sa.String(255)),
             sa.Column('cdesc', sa.String(255)),
             sa.Column('os', sa.String(20)),
+            sa.Column('ctype', sa.String(20)),
             mysql_engine='InnoDB')
         sa.Index('components_FKIndex1', components.c.kid)
         self.__dict__['components'] = components
@@ -379,7 +393,10 @@ class DB(object):
             sa.Column('isOS', sa.Boolean, sa.PassiveDefault('0')),
             sa.Column('removeable', sa.Boolean, sa.PassiveDefault('0')),
             sa.Column('arch', sa.String(20)),
+            sa.Column('osid', sa.Integer),
+            sa.ForeignKeyConstraint(['osid'], ['os.osid']),
             mysql_engine='InnoDB')
+        sa.Index('kits_FKIndex1', kits.c.osid)
         self.__dict__['kits'] = kits
 
         modules = sa.Table('modules', self.metadata,
@@ -545,6 +562,16 @@ class DB(object):
         sa.Index('scripts_FKIndex1', scripts.c.ngid)
         self.__dict__['scripts'] = scripts
 
+        os = sa.Table('os', self.metadata,
+            sa.Column('osid', sa.Integer, primary_key=True,
+                      autoincrement=True),
+            sa.Column('name', sa.String(20)),
+            sa.Column('major', sa.String(20)),
+            sa.Column('minor', sa.String(20)),
+            sa.Column('arch', sa.String(20)),
+            mysql_engine='InnoDB')
+        self.__dict__['os'] = os
+
         self._assignMappers()
 
     def _assignMappers(self):
@@ -559,6 +586,9 @@ class DB(object):
 #            self.ctx.set_current(sa.orm.mapper_registry.get(ClassKey(ReposHaveKits, self.entity_name)).get_session())
             return
         #else:
+
+        os = sa.Table('os', self.metadata, autoload=True)
+        assign_mapper(self.ctx, OS, os, entity_name=self.entity_name)
 
         repos_have_kits = sa.Table('repos_have_kits', self.metadata,
                                    autoload=True)
@@ -591,6 +621,7 @@ class DB(object):
         assign_mapper(self.ctx, Kits, kits,
           properties={'components': sa.relation(Components,
                                                 entity_name=self.entity_name),
+                      'os': sa.relation(OS, entity_name=self.entity_name),
                       'removable': kits.c.removeable},
           entity_name=self.entity_name)
 
@@ -1141,7 +1172,7 @@ class DB(object):
         # Copy them in order to preserve relationship
         # Order by primary, secondary(1-M) and 
         # junction tables(M-N)
-        for table in ['AppGlobals', 'Repos', 'Kits', 'Networks', \
+        for table in ['AppGlobals', 'Repos', 'OS', 'Kits', 'Networks', \
                       'Components', 'NodeGroups', 'Modules', \
                       'Nodes', 'Packages', 'Partitions', 'Scripts', 'DriverPacks', \
                       'Nics', 'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
@@ -1154,11 +1185,11 @@ class DB(object):
                 # Fully detatch the object
                 if hasattr(obj, '_instance_key'):
                     delattr(obj, '_instance_key')
-                try:
-                    obj.save_or_update(entity_name=other_db.entity_name)
-                    obj.flush()
-                except Exception ,e :
-                    raise UnableToSaveDataError, obj
+                #try:
+                obj.save_or_update(entity_name=other_db.entity_name)
+                obj.flush()
+                #except Exception ,e :
+                    #raise UnableToSaveDataError, obj
             if other_db.driver =='postgres':
                 other_db.postgres_update_sequences(other_db.postgres_get_seq_list())
 
