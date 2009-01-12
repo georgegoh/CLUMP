@@ -154,7 +154,7 @@ def getConfig(file):
     sections = configParser.sections()
 
     for sec in sections:
-        if sec in ['fedora', 'centos', 'rhel', 'sles']:
+        if sec in ['fedora', 'centos', 'rhel', 'sles', 'rhel-5-i386', 'rhel-5-x86_64']:
             cfg[sec] = {}
             for opt in configParser.items(sec):
                key = opt[0]

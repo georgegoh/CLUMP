@@ -79,7 +79,8 @@ class RHN:
     rhnErrors = { -1: rhnUnknownMethodError,
                   -2: rhnInvalidLoginError,
                   -9: rhnInvalidSystemError,
-                  -19: rhnNoBaseChannelError}
+                  -19: rhnNoBaseChannelError,
+                  -208: rhnInvalidSystemError}
 
     rhnErrorsMsg = { -1: 'This username is already taken, or the password is incorrect.',
                      -2: 'Invalid username and password combination.',
@@ -89,7 +90,7 @@ class RHN:
     rhnProtoErrors = { 302: rhnURLNotFound,
                        404: rhnURLNotFound}
 
-    def __init__(self, username, password, yumrhnURL=None, rhnURL=None):
+    def __init__(self, username, password, yumrhnURL=None, rhnURL=None, serverid=None):
     
         self.yumrhnURL = 'https://rhn.redhat.com/rpc/api'
         self.up2dateURL = 'https://xmlrpc.rhn.redhat.com/XMLRPC'
@@ -116,6 +117,7 @@ class RHN:
 
         self.username = username
         self.password = password
+        self.serverid = serverid
 
     def call(self, method, *args):
         """Make the call"""
@@ -197,28 +199,20 @@ class RHN:
         return pkgs
        
     def getSystemID(self):
+        """Get the systemid xml"""
 
-        systemidFile = path('/etc/sysconfig/rhn/systemid')
-        if systemidFile.exists():
-            f = open(systemidFile, 'r')
-            systemid = f.read()
-            f.close()
-        else:
-            raise rhnSystemNotRegisterd, 'System not registered with rhn'
+        try:
+            systemid = self.call('self.rhnServer.system.downloadSystemId', self.session, self.serverid) 
+        except:
+            raise rhnSystemNotRegisterd, 'System (%s) not registered with rhn' % self.serverid
 
         return systemid
 
     def getServerID(self):
-        """Get the sever ID"""
-        systemID = xmlrpclib.loads(self.getSystemID())[0][0]['system_id']
+        """Get the server ID"""
 
-        mt = re.compile('\d+').search(systemID)
-    
-        if mt:
-            return int(mt.group())
-        else:
-            raise rhnInvalidServerID, 'Invalid systemid file'
-    
+        return self.serverid
+
     def getPackage(self, rpm, channelLabel, dest):
         """Get a RPM from the channel"""
 

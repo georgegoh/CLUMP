@@ -423,9 +423,17 @@ class RHNUpdate(BaseUpdate):
             url = cfg['url']
             yumrhn = cfg['yumrhn']
 
-            if not (username and password and url and yumrhn):
+            # new key in kusu 1.2
+            if not self.getConfig(self.configFile).has_key('rhel-%s-%s' % (self.os_version, self.os_arch)):
+               raise rhnNoAccountInformationProvidedError, 'Missing section in /opt/kusu/etc/updates.conf'
+
+            cfg = self.getConfig(self.configFile)['rhel-%s-%s' % (self.os_version, self.os_arch)]
+            serverid = cfg['serverid']
+
+            if not (username and password and url and yumrhn and serverid):
                raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
-            return RHN(username, password, yumrhn, url)
+
+            return RHN(username, password, yumrhn, url, int(serverid))
 
         else:
             raise rhnNoAccountInformationProvidedError, 'No config file provided'
@@ -442,7 +450,14 @@ class RHNUpdate(BaseUpdate):
             self.rhn = self.getRHN()
         self.rhn.login()
         channels = self.rhn.getChannels(self.rhn.getServerID())
- 
+
+        # 'rhel-x86_64-server-5'
+        # 'rhel-x86_64-server-hpc-5'
+        # 'rhel-x86_64-server-5-mrg-grid-1'
+        for channel in channels:
+            if not re.compile('^rhel-%s-(.*)-%s(.*)' % (self.os_arch, self.os_version)).match(channel['channel_label']):
+                raise rhnInvalidServerID, 'Invalid Server ID given. Please check /opt/kusu/etc/updates.conf'
+
         # Get the latest list of rpms from os kits and the
         # updates dir
         searchPaths = []
