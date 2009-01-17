@@ -100,6 +100,7 @@ class LicenseScreen(InstallerScreen, profile.PersistentProfile):
         self.kiprofile[self.profile] = self.license.value()
 
     def save(self, db, profile):
-        newag = db.AppGlobals(kname=self.profile, kvalue=profile)
+        newag = db.AppGlobals.select_by(kname=self.profile)[0]
+        newag.kvalue = profile
         newag.save()
         db.flush()
