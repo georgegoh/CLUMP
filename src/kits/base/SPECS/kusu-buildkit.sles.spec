@@ -51,10 +51,15 @@ install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
 
 install -m755 bin/buildkit $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/builder.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/buildkit_makehandlers.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/buildkit_newhandlers.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/checker.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
-install -m644 lib/kitsource.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/kitsource01.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/kitsource02.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/methods.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/tool.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/tool01.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/tool02.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
 install -m644 doc/buildkit.txt $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
