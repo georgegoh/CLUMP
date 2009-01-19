@@ -107,5 +107,3 @@ class KitValidator(BaseValidator):
 
     def __init__(self, obj):
         super(KitValidator, self).__init__(obj)        
-
-

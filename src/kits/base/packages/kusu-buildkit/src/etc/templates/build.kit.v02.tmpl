@@ -23,9 +23,12 @@ comp.description = '$compdesc'
 # Define a default kit
 # Change arch if needed to fit your needs (x86, x86_64, noarch)
 k = $kitclass
+k.api = '0.2'
 k.name = '$kitname'
 k.description = '$kitdesc'
 k.arch = $kitarch
+k.release = '1'
+k.filenames = []
 
 # Adding the component defined earlier
 k.addComponent(comp)

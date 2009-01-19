@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: kitsource.py 4056 2009-01-16 02:16:38Z ggoh $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -127,6 +127,7 @@ class KusuComponent(Struct):
         self.arch = 'noarch'
         self.compversion = '0.1'
         self.comprelease = '0'
+        self.os = []
         Struct.__init__(self,kwargs)
         self._queuecmds = []
 
@@ -196,6 +197,9 @@ class KusuComponent(Struct):
         if 'docsdir' in d: del d['docsdir']
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['dependencies']
+
+        if 'ostype' in d: del d['ostype']
+        if 'osversion' in d: del d['osversion']
         
         return d
         
@@ -270,6 +274,9 @@ class KusuKit(Struct):
         self.version = '0.1' 
         self.release = '0'
         self.arch = 'noarch'
+        self.api = '0.2'
+        self.conflicts = []
+        self.filenames = []
         Struct.__init__(self,kwargs)
         self._queuecmds = []
 
@@ -285,42 +292,9 @@ class KusuKit(Struct):
         self.docsdir = path(self.buildprofile.docsdir)
         self.pluginsdir = path(self.buildprofile.pluginsdir)
 
-        self.scripts = {}
-        self.scripts['postscript'] = ''
-        self.scripts['postunscript'] = ''
-        self.scripts['preunscript'] = ''
-        self.scripts['prescript'] = ''
-
     def verify(self):
         # FIXME: needs to be fill out
         pass
-
-    def _processAddScripts(self):
-        """ Process any queued commands.
-        """
-        for cmd in self._queuecmds:
-            if len(cmd) > 1:
-                func = cmd[0]
-                args = cmd[1:]
-            else:
-                func = cmd[0]
-                args = []
-
-            func(*args)
-
-    def addScript(self, script, mode='post'):
-        """ Add script for this component. Available modes are
-            post, pre, postun and preun. 
-        """
-        self._queuecmds.append((self._addScript,script,mode))
-
-    def _addScript(self, script, mode='post'):
-
-        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
-        scriptfile = self.srcdir / script
-        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
-        key = '%sscript' % mode
-        self.scripts[key] = stripShebang(scriptfile)
 
 
     def generate(self):
@@ -345,6 +319,8 @@ class KusuKit(Struct):
             d['arch'] = 'i386'
         else:
             d['arch'] = self.arch
+
+        if 'scripts' in d: del d['scripts']
 
         return d
 
@@ -440,11 +416,6 @@ class KusuKit(Struct):
         _ns['pkgrelease'] = self.release       
         _ns['license'] = self.license
         _ns['description'] = self.description
-        _ns['prescript'] = self.scripts['prescript']
-        _ns['preunscript'] = self.scripts['preunscript']
-        _ns['postscript'] = self.scripts['postscript']
-        _ns['postunscript'] = self.scripts['postunscript']
-        
         
         return _ns
 
@@ -479,6 +450,3 @@ class KusuKit(Struct):
 
         if pkgtype == 'rpm':
             return self._packRPM(verbose)
-
-
-            

@@ -125,14 +125,13 @@ def getPackageSpecTmpl(templatesdir):
     
     return spectmpl
     
-def getBuildKitTemplate(templatedir=None):
+def getBuildKitTemplate(template, templatedir=None):
     """ Get the specfile for components. """
     if not templatedir:
         kusuroot = path(os.environ.get('KUSU_ROOT','/opt/kusu'))
         templatedir = kusuroot / 'etc/templates'
     tmpldir = path(templatedir)
-    _t = 'build.kit.tmpl'
-    tmpl = tmpldir / _t
+    tmpl = tmpldir / template
 
     if not tmpl.exists(): raise FileDoesNotExistError
     return tmpl    

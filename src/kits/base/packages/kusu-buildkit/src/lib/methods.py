@@ -5,12 +5,23 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.buildkit.kitsource import KusuComponent, KusuKit, KitSrcFactory
+from kusu.buildkit.kitsource01 import KusuComponent as KusuComponent01
+from kusu.buildkit.kitsource01 import KusuKit as KusuKit01
+from kusu.buildkit.kitsource01 import KitSrcFactory as KitSrcFactory01
+from kusu.buildkit.kitsource02 import KusuComponent as KusuComponent02
+from kusu.buildkit.kitsource02 import KusuKit as KusuKit02
+from kusu.buildkit.kitsource02 import KitSrcFactory as KitSrcFactory02
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
 from kusu.util.errors import UndefinedOSType, InvalidBuildProfile, KitinfoSyntaxError
 from path import path
 import subprocess
+
+KIT_API='0.1'
+
+KusuKitFactory = { '0.1': KusuKit01, '0.2': KusuKit02 }
+KusuComponentFactory = { '0.1': KusuComponent01, '0.2': KusuComponent02 }
+KitSrcAbstractFactory = { '0.1': KitSrcFactory01, '0.2': KitSrcFactory02 }
 
 def setupprofile(basedir=''):
     """ Convenience method to setup buildprofile. 
@@ -18,7 +29,7 @@ def setupprofile(basedir=''):
     if not basedir:
         # check if the current directory looks like a build environment
         _basedir = path.getcwd()
-        _kitsrc = KitSrcFactory(_basedir)
+        _kitsrc = KitSrcAbstractFactory[KIT_API](_basedir)
         if _kitsrc.verifyLocalSrcPath():
             builddir = _basedir / 'artifacts'
             pkgdir = _basedir / 'packages'
@@ -31,7 +42,7 @@ def setupprofile(basedir=''):
         else:
             raise InvalidBuildProfile
     _basedir = path(basedir)
-    _kitsrc = KitSrcFactory(_basedir)
+    _kitsrc = KitSrcAbstractFactory[KIT_API](_basedir)
     if _kitsrc.verifyLocalSrcPath():        
         builddir = _basedir / 'artifacts'
         srcdir = _basedir / 'sources'
@@ -137,7 +148,7 @@ def DefaultKit(**kwargs):
     
     if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
-    kit = KusuKit(**kwargs)
+    kit = KusuKitFactory[KIT_API](**kwargs)
 
     return kit
 
@@ -183,7 +194,7 @@ def DefaultComponent(**kwargs):
     if not 'ostype' in kwargs: kwargs['ostype'] = ''
     if not 'osversion' in kwargs: kwargs['osversion'] = ''
     
-    component = KusuComponent(**kwargs)
+    component = KusuComponentFactory[KIT_API](**kwargs)
   
     return component
 

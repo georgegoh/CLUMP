@@ -9,19 +9,22 @@
 
 import os
 import re
+import subprocess
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
 from IPy import IP
 from Cheetah.Template import Template
 import kusu.util.log as kusulog
+from primitive.system.hardware.lvm202 import activateAllVolumeGroups
+
 logger = kusulog.getKusuLog('installer.final')
 
 def setupDisks(disk_profile):
     logger.debug('Final action: Disk commit')
     disk_profile.commit(ignore_errors=True)
     disk_profile.formatAll()
- 
+
 def setupNetwork():
     # Use dhcpc from busybox
     # Assume eth0 for now
@@ -227,7 +230,7 @@ def migrate(prefix):
 
 def mountKusuMntPts(prefix, disk_profile):
     prefix = path(prefix)
-
+    activateAllVolumeGroups()
     d = disk_profile.mountpoint_dict
     mounted = []
 

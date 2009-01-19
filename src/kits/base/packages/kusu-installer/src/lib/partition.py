@@ -243,11 +243,11 @@ class PartitionScreen(InstallerScreen):
             self.disk_profile.ignore_disk_dict[d] = disk
         logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
 
-    def useDefaultSchema(self, ignore_disks):
-        logger.debug('Default chosen')
+
+    def useSchema(self, schema, ignore_disks):
         self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
         self.prepareIgnoreList(ignore_disks)
-        schema = vanillaSchemaLVM()
+        schema = schema
         logger.debug('%s' % schema)
         setupPreservedPartitions(self.disk_profile, schema)
         self.disk_order = self.disk_profile.getBIOSDiskOrder()
@@ -298,15 +298,14 @@ class PartitionScreen(InstallerScreen):
                                                   buttons_list)
             self.disk_order = self.disk_profile.getBIOSDiskOrder()
             if str(result) == 'use default':
-                self.useDefaultSchema(do_not_use_disks)
+                self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
             elif str(result) == 'clear all partitions':
                 msg = 'Really clear all existing partitions? You cannot retrieve your '
                 msg += 'existing partitions after proceeding.'
                 result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
                 if result:
                     logger.debug('Clear all partitions')
-                    self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
-                    self.prepareIgnoreList(do_not_use_disks)
+                    self.useSchema(clearSchemaPreserveUP(), do_not_use_disks)
                 else:
                     msg = 'Do you want to use the default schema, or edit '
                     msg += 'the existing schema?'
@@ -314,7 +313,7 @@ class PartitionScreen(InstallerScreen):
                                                           msg,
                                                          ['Use Default', 'Use Existing'])
                     if str(result) == 'use default':
-                        self.useDefaultSchema(do_not_use_disks)
+                        self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
                     else:
                         logger.debug('Use Existing')
             else:
@@ -329,7 +328,7 @@ class PartitionScreen(InstallerScreen):
                                                   msg,
                                                  ['Use Default', "Don't Use Default"])
             if str(result) == 'use default':
-                self.useDefaultSchema(do_not_use_disks)
+                self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
 
     def rollback(self):
         self.prompt_for_default_schema = True
