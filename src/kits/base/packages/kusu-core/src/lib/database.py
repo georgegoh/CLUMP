@@ -7,6 +7,7 @@
 
 import os
 import time
+import path
 import warnings
 import logging
 import sqlalchemy as sa
@@ -15,6 +16,8 @@ from sqlalchemy.ext.assignmapper import assign_mapper
 from kusu.util.errors import *
 import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
+from primitive.support.osfamily import getOSNames, matchTuple
+from kusu.buildkit import processKitInfo
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
@@ -77,10 +80,17 @@ class AppGlobals(BaseTable):
                (self.__class__.__name__, self.kname, self.kvalue, self.ngid)
 
 class Components(BaseTable): 
-    cols = ['kid', 'cname', 'cdesc', 'os', 'ctype']
+    cols = ['kid', 'cname', 'cdesc', 'os', 'ngtypes']
+
+    def getNGTypes(self):
+        if '*' == self.ngtypes:
+            return ['installer','compute','other']
+        else:
+            return self.ngtypes.split(';')
+
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.kid, self.cname, self.os, self.ctype,
+               (self.__class__.__name__, self.kid, self.cname, self.os, self.ngtypes,
                 self.cdesc)
 
 class DriverPacks(BaseTable): 
@@ -90,8 +100,57 @@ class DriverPacks(BaseTable):
                (self.__class__.__name__, self.dpid, self.cid, self.dpname, self.dpdesc)
 
 class Kits(BaseTable): 
-    cols = ['rname', 'rdesc', 'version', \
-            'isOS', 'removable', 'arch', 'osid']
+    cols = ['rname', 'rdesc', 'version', 'isOS', \
+            'removable', 'arch', 'osid', 'release']
+
+    def getMatchingComponents(self, target_os):
+        components_list = []
+        os_string = '%s-%s-%s' % (target_os.name, target_os.major, target_os.arch)
+        os_string = os_string.lower()
+
+        repo_os = (target_os.name, target_os.major, target_os.minor, target_os.arch)
+
+        try:
+            kits_root = AppGlobals.selectfirst_by(kname='DEPOT_KITS_ROOT').kvalue
+        except AttributeError:
+            kits_root = 'depot/kits'
+
+        kit_path = path.path(kits_root)
+        kitinfo = kit_path.joinpath('%s/kitinfo' % str(self.kid))
+        infokit, infocomps = processKitInfo(kitinfo)
+
+        if '0.1' == infokit['api'] or 0 == len(infokit):
+            lst = [comp for comp in self.components if comp.os.lower() == os_string or \
+                   '' == comp.os.strip() or comp.os.lower() == os.name.lower()]
+            components_list.extend(lst)
+
+        elif '0.2' == infokit['api']:
+            comp_dict = {}
+            for db_comp in self.components:
+                comp_dict[db_comp.cname] = db_comp
+
+            for comp in infocomps:
+                os_tuples = []
+
+                try:
+                    for tup in comp['os']:
+                        for os_name in getOSNames(tup['name'], default=[tup['name']]):
+                            os_tuples.append((os_name, tup['major'], tup['minor'], tup['arch']))
+                except KeyError:
+                    break
+
+                try:
+                    if comp['pkgname'] in comp_dict and matchTuple(repo_os, os_tuples):
+                        components_list.append(comp_dict[comp['pkgname']])
+                except KeyError: pass
+
+        return components_list
+
+    def is_os(self):
+        if self.osid is not None or self.isOS:
+            return True
+        else:
+            return False
 
     def prepNameVerArch(self, char):
         rname = ''
@@ -118,9 +177,9 @@ class Kits(BaseTable):
     longname = property(getLongName)
 
     def __repr__(self):
-        return '%s(%r,%r,%r,%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.rname, self.version, self.arch,
-               self.rdesc, self.isOS, self.osid, self.removable)
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.rname, self.version, self.release,
+                self.arch, self.rdesc, self.isOS, self.osid, self.removable)
 
 class Modules(BaseTable): 
     cols = ['ngid', 'module', 'loadorder']
@@ -163,6 +222,26 @@ class NodeGroups(BaseTable):
             'ngdesc', 'nameformat', 'kernel', 'initrd', \
             'kparams', 'type']
     types = ['installer', 'compute', 'other']
+
+    def getEligibleComponents(self):
+        """Returns a list of components eligible for a nodegroup"""
+
+        if self.repoid is None:
+            return []
+
+        components_list = []
+
+        for kit in self.repo.kits:
+            if kit.is_os():
+                components_list.extend(kit.components)
+                continue
+            else:
+                matched = kit.getMatchingComponents(self.repo.os)
+                eligible = [comp for comp in matched if self.type in comp.getNGTypes()]
+                components_list.extend(eligible)
+            
+        return components_list
+
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.ngname, self.repoid,
@@ -199,7 +278,7 @@ class Repos(BaseTable):
 
     def getOS(self):
         for kit in self.kits:
-             if kit.isOS:
+             if kit.is_os():
                  return kit.os
         return None
 
@@ -371,7 +450,7 @@ class DB(object):
             sa.Column('cname', sa.String(255)),
             sa.Column('cdesc', sa.String(255)),
             sa.Column('os', sa.String(20)),
-            sa.Column('ctype', sa.String(20)),
+            sa.Column('ngtypes', sa.String(20)),
             mysql_engine='InnoDB')
         sa.Index('components_FKIndex1', components.c.kid)
         self.__dict__['components'] = components
@@ -390,6 +469,7 @@ class DB(object):
             sa.Column('rname', sa.String(45)),
             sa.Column('rdesc', sa.String(255)),
             sa.Column('version', sa.String(20)),
+            sa.Column('release', sa.Integer, default=1),
             sa.Column('isOS', sa.Boolean, sa.PassiveDefault('0')),
             sa.Column('removeable', sa.Boolean, sa.PassiveDefault('0')),
             sa.Column('arch', sa.String(20)),
@@ -656,7 +736,8 @@ class DB(object):
                       'modules': sa.relation(Modules,
                                            entity_name=self.entity_name),
                       'packages': sa.relation(Packages,
-                                           entity_name=self.entity_name)},
+                                           entity_name=self.entity_name),
+                      'repo': sa.relation(Repos, entity_name=self.entity_name)},
 
           entity_name=self.entity_name)
 
