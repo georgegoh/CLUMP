@@ -80,6 +80,8 @@ Requires: initrd-templates
 Requires: pyparted
 Requires: rsh
 #Requires: kusu-net-tool
+Requires: libxcrypt
+Requires: pam_unix2
 
 %description
 This component provides the node with the Kusu management tools for the 

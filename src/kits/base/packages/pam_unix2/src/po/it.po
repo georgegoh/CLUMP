@@ -1,0 +1,225 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Thorsten Kukuk
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pam-unix2\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2008-03-31 21:51+0100\n"
+"Last-Translator: Alberto Passalacqua <alberto.passalacqua@tin.it>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr "login: "
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "Password: "
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "La password è scaduta. Sceglierne una nuova."
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "Richiesta modifica password. Sceglierne una nuova."
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "La password scadrà tra %ld giorni."
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "La password scadrà domani."
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "La password scadrà tra 24 ore."
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr ""
+"È possibile che le autorizzazioni per il database delle password siano "
+"troppo restrittive."
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "Parola d'ordine precedente: "
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "Nuova parola d'ordine: "
+
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "Reinserire nuova parola d'ordine: "
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "È possibile modificare solo password locali."
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "Meno di %d settimane dall'ultima modifica."
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "Meno di %d giorni dall'ultima modifica."
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "Modifica password interrotta."
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "Le password non corrispondono."
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "Errore: password NON modificata"
+
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "Password modificata."
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "Impossibile trovare ypserver principale: %s"
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr "yppasswdd non in esecuzione su NIS principale %s"
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "Daemon yppasswd in esecuzione su porta non valida."
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "Impossibile aprire %s per lettura: %s"
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "Impossibile ottenere entropia da %s"
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr ""
+"Impossibile generare un valore salt. Controllare le impostazioni di "
+"cifratura."
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "Impossibile creare valore salt per cifratura standard"
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "Impossibile creare valore salt per cifratura MD5"
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "Impossibile creare valore salt per bigcrypt"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "Nessun supporto per bigcrypt incluso"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "Impossibile creare valore salt per cifratura blowfish"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "Nessun supporto per blowfish incluso"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "crypt_r() restituisce puntatore nullo"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "Impossibile bloccare file password: già bloccato."
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "Impossibile aprire %s: %m"
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "Impossibile avviare %s: %m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "Impossibile creare file temp (%s): %m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr "Impossibile cambiare le autorizzazioni di %s: %m"
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr "Impossibile cambiare il proprietario/gruppo di %s: %m"
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "Errore durante la scrittura del nuovo file shadow: %m"
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "Errore durante la chiusura file shadow obsoleto: %m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "Errore durante la chiusura file shadow temporaneo: %m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "Impossibile creare il file di backup di %s: %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "Errore durante la scrittura del nuovo file password: %m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "Errore durante la chiusura file password obsoleto: %m"
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "Errore durante la chiusura file password temporaneo: %m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "Modifica password NIS per %s su %s."
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "Errore durante la modifica della password NIS."

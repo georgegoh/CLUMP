@@ -1,0 +1,229 @@
+# translation of pam_unix2.ru.po to Russian
+# translation of pam_unix2.ru.po to
+# @TITLE@
+# Copyright (C) 2006, SUSE Linux GmbH, Nuremberg
+#
+# This file is distributed under the same license as @PACKAGE@ package. FIRST
+#
+# Aleksey Osipov <aliks-os@yandex.ru>, 2005, 2006, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: pam_unix2.ru\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2008-05-02 13:25+0300\n"
+"Last-Translator: Aleksey Osipov <aliks-os@yandex.ru>\n"
+"Language-Team: Russian <opensuse-translation-ru@opensuse.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr "Имя пользователя: "
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "Пароль: "
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "Срок действия вашего пароля истек. Выберите новый пароль."
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "Запрошено изменение пароля. Выберите новый пароль."
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "До истечения срока действия вашего пароля осталось %ld дней."
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "Срок действия вашего пароля истекает завтра."
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "Срок действия вашего пароля истечет в течении 24 часов."
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr "Права доступа на базу данных паролей может быть слишком ограниченная."
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "Старый пароль: "
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "Новый пароль: "
+
+# Keep the newlines and spaces after ':'!
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "Повторите Новый пароль: "
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "Вы можете изменять только локальные пароли."
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "Прошло менее чем %d недель с последнего изменения."
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "Прошло менее чем %d дней с последнего изменения."
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "Изменение пароля прервано."
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "Пароли не совпадают."
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "Ошибка: Пароль не изменен."
+
+# password dialog title
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "Пароль изменен."
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "Не возможно найти основной ypserver: %s"
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr "yppasswdd не запущен на NIS основном %s"
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "Демон yppasswd запущен на нверном порту."
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "Невозможно открыть %s для чтения: %s"
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "Невозможно получить энтропию из %s"
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr "Невозможно сгенерировать хеш. Проверьте настройки шифрования."
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "Невозможно создать хеш для стандартного шифрования"
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "Невозможно создать хеш для MD5 шифрования"
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "Невозможно создать хеш для bigcrypt"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "Подержка bigcrypt отсутствует"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "Невозможно создать хеш для blowfish шифрования"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "Поддержка blowfish отсутствует"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "crypt_r() вернул NULL указатель"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "Невозможно заблокировать файл пароля: уже заблокирован."
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "Невозможно открыть %s: %m"
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "Не удалось получить атрибуты %s: %m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "Невозможно создать временный файл (%s): %m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr "Невозможно изменить права %s: %m"
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr "Невозможно изменить владельца/группу %s: %m"
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "Ошибка при записи нового теневого файла: %m"
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "Ошибка при закрытии старого теневого файла: %m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "Ошибка при закрытии временного теневого файла: %m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "Невозможно создать резервный фай %s: %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "Ошибка при записи нового файла пароля: %m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "Ошибка при закрытии старого файла пароля: %m"
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "Ошибка при закрытии временного файла пароля: %m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "Изменяется NIS пароль %s в %s."
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "Ошибка при измененияя NIS пароля."

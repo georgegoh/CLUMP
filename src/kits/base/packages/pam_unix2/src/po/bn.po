@@ -1,0 +1,217 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: @PACKAGE@\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2004-08-09 10:24+0200\n"
+"Last-Translator: xxx <yyy@example.org>\n"
+"Language-Team: Bengali <i18n@suse.de>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr ""
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "পাসওয়ার্ডঃ"
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "আপনার পাসওয়ার্ডের মেয়াদ ফুরিয়ে গিয়েছে৷ নতুন পাসওয়ার্ড বেছে নিন৷"
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "পাসওয়ার্ড পরিবর্তনের অনুরোধ করা হয়েছে৷ নতুন পাসওয়ার্ড বেছে নিন৷"
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "%ld দিনে আপনার পাসওয়ার্ড ফুরিয়ে যাবে৷"
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "আগামীকাল আপনার পাসওয়ার্ড ফুরিয়ে যাবে৷"
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "24 ঘন্টায় আপনার পাসওয়ার্ড ফুরিয়ে যাবে৷"
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr "পাসওয়ার্ড ডেটাবেসের অনুমতি খুব সীমাবদ্ধকর হতে পারে৷"
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "পুরানো পাসওয়ার্ডঃ"
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "নতুন পাসওয়ার্ডঃ"
+
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "নতুন পাসওয়ার্ড আবার জানানঃ"
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "আপনি শুধু স্থানীয় পাসওয়ার্ড বদলাতে পারেন৷"
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "শেষ পরিবর্তনের পর %d র চেয়ে কম সপ্তাহ৷"
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "শেষ পরিবর্তনের পর %d র চেয়ে কম দিন৷"
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "পাসওয়ার্ড পরিবর্তন বন্ধ করে দেওয়া হয়েছে৷"
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "পাসওয়ার্ড মানানসই নয়৷"
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "ত্রুটিঃ পাসওয়ার্ডে পরিবর্তন হয় নি৷"
+
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "পাসওয়ার্ড পরিবর্তন হয়েছে৷"
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "মাস্টার ypserver পাওয়া যায় নিঃ %s "
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr " NIS মাস্টারে yppasswdd চলছে না %s "
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "অবৈধ পোর্টে yppasswd ডিমন চলছে৷"
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "পঠনের জন্য %s খোলা যাচ্ছে নাঃ %s "
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "%s থেকে এনট্রপি পাওয়া যাচ্ছে না "
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr "সল্ট তৈরী করা যাচ্ছে না৷ আপনার ক্রিপ্ট সেটিং যাচাই করে দেখুন৷"
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "স্ট্যান্ডার্ড ক্রিপ্টের জন্য সল্ট তৈরী করা যাচ্ছে না "
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "MD5 ক্রিপ্টের জন্য সল্ট তৈরী করা যাচ্ছে না "
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "বিগক্রিপ্টের জন্য সল্ট তৈরী করা যাচ্ছে না"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "বিগক্রিপ্টের জন্য কোনো সমর্থন রাখা হয় নি"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "ব্লোফিশ ক্রিপ্টের জন্য সল্ট তৈরী করা যাচ্ছে না"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "ব্লোফিশের জন্য কোনো সমর্থন রাখা হয় নি"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "ক্রিপ্ট_r() NULL পয়েন্টার ফেরত দিয়েছে"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "পাসওয়ার্ড ফাইল বন্ধ করা যাচ্ছে নাঃ আগে থেক বন্ধ৷"
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "%s খোলা যাচ্ছে নাঃ %m "
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "%s শুরু করা যাচ্ছে নাঃ %m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "অস্থায়ী ফাইল (%s) তৈরী করা যাচ্ছে নাঃ %m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr ""
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr ""
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "নতুন শ্যাডো ফাইল লিখতে গিয়ে ত্রুটিঃ %m "
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "পুরানো শ্যাডো ফাইল বন্ধ করতে গিয়ে ত্রুটিঃ %m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "অস্থায়ী শ্যাডো ফাইল বন্ধ করতে গিয়ে ত্রুটিঃ %m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "%s এর ব্যাকআপ (সমর্থক) ফাইল তৈরী করা যাচ্ছে নাঃ %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "নতুন পায়ওয়ার্ড ফাইল লিখতে গিয়ে ত্রুটিঃ %m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "পুরানো পাসওয়ার্ড ফাইল বন্ধ করতে গিয়ে ত্রুটিঃ %m "
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "অস্থায়ী পাসওয়ার্ড ফাইল বন্ধ করতে গিয়ে ত্রুটিঃ %m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "%s এর জন্য %s এ NIS পাসওয়ার্ড পরিবর্তন করা হচ্ছে৷"
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "NIS পাসওয়ার্ড বন্ধ করতে গিয়ে ত্রুটি৷"

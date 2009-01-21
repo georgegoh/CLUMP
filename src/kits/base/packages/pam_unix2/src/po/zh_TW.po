@@ -1,0 +1,221 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Thorsten Kukuk
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pam_unix\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2005-08-18 14:02+0000\n"
+"Last-Translator: Novell Language <language@novell.com>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr "登入： "
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "密碼： "
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "您的密碼已過期。請選擇新的密碼。"
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "已申請變更密碼。請選擇新的密碼。"
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "您的密碼將在 %ld 天之後逾期。"
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "您的密碼將在明天逾期。"
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "您的密碼將在 24 小時之內逾期。"
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr "密碼資料庫上的許可權可能限制太多。"
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "舊密碼： "
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "新密碼： "
+
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "再次輸入新密碼： "
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "您只能變更本機密碼。"
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "從上次變更以來尚未超過 %d 週。"
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "從上次變更以來尚未超過 %d 天。"
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "密碼變更已中止。"
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "密碼不符合。"
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "錯誤：密碼未變更。"
+
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "密碼已變更。"
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "找不到主要 ypserver：%s"
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr "NIS 主要 %s 上未執行 yppasswdd"
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "違法埠上正在執行 yppasswd 精靈。"
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "無法開啟 %s 以進行讀取：%s"
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "無法從 %s 獲得熵 (Entropy)"
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr "無法產生 salt。請檢查 crypt 設定。"
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "無法為標準 crypt 建立 salt。"
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "無法為 MD5 crypt 建立 salt。"
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "無法為 bigcryp 建立 salt。"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "不支援包含的 bigcrypt"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "無法為 blowfish crypt 建立 salt。"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "不支援包含的 blowfish"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "crypt_r() 傳回空指標"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "無法鎖定密碼檔案：已鎖定。"
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "無法開啟 %s：%m"
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "無法宣告 %s：%m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "無法建立暫存檔 (%s)：%m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr "無法變更 %s 的權限：%m"
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr "無法變更 %s 的擁有人/群組：%m"
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "寫入新的陰影檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "關閉舊的陰影檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "關閉暫存陰影檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "無法建立 %s 備份檔： %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "寫入新的密碼檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "關閉舊的密碼檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "關閉暫存密碼檔案時發生錯誤：%m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "正在為 %s 上的 %s 變更 NIS 密碼。"
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "變更 NIS 密碼時發生錯誤。"

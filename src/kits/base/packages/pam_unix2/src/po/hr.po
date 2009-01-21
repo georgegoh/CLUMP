@@ -1,0 +1,226 @@
+# translation of pam_unix2.hr.po to Croatian
+# @TITLE@
+# Copyright (C) 2006, SUSE Linux GmbH, Nuremberg
+#
+# This file is distributed under the same license as @PACKAGE@ package. FIRST
+#
+# Krešimir Jozić <kjozic@gmail.com>, 2006.
+msgid ""
+msgstr ""
+"Project-Id-Version: pam_unix2.hr\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2006-12-09 12:43+0000\n"
+"Last-Translator: Krešimir Jozić <kjozic@gmail.com>\n"
+"Language-Team: Croatian <en@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr "prijava: "
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "Lozinka: "
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "Lozinka vam je istekla. Izaberite novu."
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "Potrebna je promjena lozinke. Izaberite novu."
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "Vaša lozinka će isteći za %ld dana."
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "Vaša lozinka će isteći sutra."
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "Vaša lozinka će isteći u slijedeća 24 sata."
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr "Dozvole za bazu lozinki su možda previše stroge."
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "Stara lozinka: "
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "Nova lozinka: "
+
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "Ponovno nova lozinka: "
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "Možete promijeniti samo lokalne lozinke."
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "Manje od %d tjedana od zadnje promjene."
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "Manje od %d dana od zadnje promjene."
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "Promjena lozinke je otkazana."
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "Lozinke se ne podudaraju."
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "Greška: Lozinka NIJE promijenjena."
+
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "Lozinka je promijenjena."
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "Ne mogu pronaći glavni ypserver: %s"
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr "yppasswdd ne radi na NIS glavnom %s"
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "yppasswd daemon radi na neispravnom portu."
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "Ne mogu otvoriti %s za čitanje: %s"
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "Ne mogu dobaviti entropiju iz %s"
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr "Ne mogu generirati sjeme. Provjerite postavke šifriranja."
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "Ne mogu stvoriti sjeme za standardno šifriranje"
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "Ne mogu stvoriti sjeme za MD5 šifriranje"
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "Ne mogu svoriti sjeme za bigcrypt"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "Podrška za bigcrypt nije uključena"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "Ne mogu stvoriti sjeme za blowfish šifriranje"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "Podrška za blowfish nije uključena"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "crypt_r() vraća NULL pokazivač"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "Ne mogu zaključati datoteku s lozinkom: već je zaključana."
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "Ne mogu otvoriti %s: %m"
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "Ne mogu obaviti operaciju stat %s: %m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "Ne mogu napraviti privremenu datoteku (%s): %m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr "Ne mogu promijeniti dozvole od %s: %m"
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr "Ne mogu promijeniti vlasnika/grupu od %s: %m"
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "Greška prilikom zapisivanja nove shadow datoteke: %m"
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "Greška prilikom zatvaranja stare shadow datoteke: %m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "Greška prilikom zatvaranja privremene shadow datoteke: %m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "Ne mogu napraviti sigurnosnu kopiju od %s: %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "Greška prilikom zapisivanja nove password datoteke: %m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "Greška prilikom zatvaranja stare password datoteke: %m"
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "Greška prilikom zatvaranja privremene password  datoteke: %m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "Mijenjam NIS lozinku za %s na %s."
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "Greška prilikom promjene NIS lozinke."

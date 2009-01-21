@@ -1,0 +1,226 @@
+# translation of pam_unix2.po to
+# @TITLE@
+# Copyright (C) 2006, SUSE Linux GmbH, Nuremberg
+#
+# This file is distributed under the same license as @PACKAGE@ package. FIRST
+#
+# Jan Madsen <jan.madsen.pt(a)gmail.com>, 2006.
+# Ib Larsen <i.la@tele2adsl.dk>, 2006, 2007.
+# Martin Schlander <suse@linuxin.dk>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: pam_unix2\n"
+"Report-Msgid-Bugs-To: kukuk@suse.de\n"
+"POT-Creation-Date: 2008-03-31 15:10+0200\n"
+"PO-Revision-Date: 2007-08-24 12:22+0200\n"
+"Last-Translator: Martin Schlander <suse@linuxin.dk>\n"
+"Language-Team:  <opensuse-translation@opensuse.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: src/support.c:153
+msgid "login: "
+msgstr "login: "
+
+#: src/support.c:167 src/support.c:212
+msgid "Password: "
+msgstr "Adgangskode: "
+
+#: src/unix_acct.c:102 src/unix_acct.c:150
+msgid "Your password has expired. Choose a new password."
+msgstr "Din adgangskode er udløbet. Vælg en ny adgangskode."
+
+#: src/unix_acct.c:129
+msgid "Password change requested. Choose a new password."
+msgstr "Anmodning om ændring af adgangskode. Vælg en ny adgangskode."
+
+#: src/unix_acct.c:288
+#, c-format
+msgid "Your password will expire in %ld days."
+msgstr "Din adgangskode udløber om %ld dage."
+
+#: src/unix_acct.c:292
+msgid "Your password will expire tomorrow."
+msgstr "Din adgangskode udløber i morgen."
+
+#: src/unix_acct.c:295
+msgid "Your password will expire within 24 hours."
+msgstr "Din adgangskode udløber indenfor 24 timer."
+
+#: src/unix_auth.c:312
+msgid "Permissions on the password database may be too restrictive."
+msgstr "Tilladelser i databasen for adgangskoder kan være for restriktive."
+
+#: src/unix_passwd.c:83
+msgid "Old Password: "
+msgstr "Gammel adgangskode: "
+
+#: src/unix_passwd.c:84
+msgid "New Password: "
+msgstr "Ny adgangskode: "
+
+#: src/unix_passwd.c:85
+msgid "Reenter New Password: "
+msgstr "Gentag ny adgangskode: "
+
+#: src/unix_passwd.c:214
+msgid "You can only change local passwords."
+msgstr "Du kan kun ændre lokale adgangskoder."
+
+#: src/unix_passwd.c:284
+#, c-format
+msgid "Less then %d weeks since the last change."
+msgstr "Mindre end %d uger siden den sidste ændring."
+
+#: src/unix_passwd.c:288
+#, c-format
+msgid "Less then %d days since the last change."
+msgstr "Mindre end %d dage siden den sidste ændring."
+
+#: src/unix_passwd.c:340 src/unix_passwd.c:355
+msgid "Password change aborted."
+msgstr "Adgangskodeændring afbrudt."
+
+#: src/unix_passwd.c:369
+msgid "Passwords do not match."
+msgstr "Adgangskoderne stemmer ikke overens."
+
+#: src/unix_passwd.c:394
+msgid "Error: Password NOT changed."
+msgstr "FEJL: Adgangskoden blev IKKE ændret."
+
+#: src/unix_passwd.c:402
+msgid "Password changed."
+msgstr "Adgangskode ændret."
+
+#: src/unix_passwd.c:419
+#, c-format
+msgid "Cannot find the master ypserver: %s"
+msgstr "Kan ikke finde master ypserver: %s"
+
+#: src/unix_passwd.c:427
+#, c-format
+msgid "yppasswdd not running on NIS master %s"
+msgstr "yppasswdd kører ikke på NIS master %s"
+
+#: src/unix_passwd.c:433
+msgid "yppasswd daemon running on illegal port."
+msgstr "yppasswd-dæmonen kører på en ulovlig port."
+
+#: src/unix_passwd.c:484
+#, c-format
+msgid "Cannot open %s for reading: %s"
+msgstr "Kan ikke åbne %s til læsning: %s"
+
+#: src/unix_passwd.c:493
+#, c-format
+msgid "Unable to obtain entropy from %s"
+msgstr "Kunne ikke opnå entropi fra %s"
+
+#: src/unix_passwd.c:508
+msgid "Unable to generate a salt. Check your crypt settings."
+msgstr "Ikke i stand til at generere en salt. Tjek dine crypt-indstillinger."
+
+#: src/unix_passwd.c:634
+msgid "Cannot create salt for standard crypt"
+msgstr "Kan ikke oprette salt for standardkryptering"
+
+#: src/unix_passwd.c:646
+msgid "Cannot create salt for MD5 crypt"
+msgstr "Kan ikke oprette salt for MD5-kryptering"
+
+#: src/unix_passwd.c:659
+msgid "Cannot create salt for bigcrypt"
+msgstr "Kan ikke oprette salt for bigcrypt"
+
+#: src/unix_passwd.c:665
+msgid "No support for bigcrypt included"
+msgstr "Understøttelse af bigcrypt er ikke inkluderet"
+
+#: src/unix_passwd.c:677
+msgid "Cannot create salt for blowfish crypt"
+msgstr "Kan ikke oprette salt for blowfish-kryptering"
+
+#: src/unix_passwd.c:683
+msgid "No support for blowfish included"
+msgstr "Understøttelse af blowfish er ikke inkluderet"
+
+#: src/unix_passwd.c:695
+msgid "crypt_r() returns NULL pointer"
+msgstr "crypt_r() returnerer NULL pointer"
+
+#: src/unix_passwd.c:718
+msgid "Cannot lock password file: already locked."
+msgstr "Kan ikke låse adgangskodefilen. Er allerede låst."
+
+#: src/unix_passwd.c:745 src/unix_passwd.c:806 src/unix_passwd.c:889
+#: src/unix_passwd.c:950
+#, c-format
+msgid "Cannot open %s: %m"
+msgstr "Kan ikke åbne %s: %m"
+
+#: src/unix_passwd.c:752 src/unix_passwd.c:896
+#, c-format
+msgid "Cannot stat %s: %m"
+msgstr "Kan ikke starte %s: %m"
+
+#: src/unix_passwd.c:780 src/unix_passwd.c:924
+#, c-format
+msgid "Cannot create temp file (%s): %m"
+msgstr "Kan ikke oprette midlertidig fil (%s): %m"
+
+#: src/unix_passwd.c:788 src/unix_passwd.c:932
+#, c-format
+msgid "Cannot change permssions of %s: %m"
+msgstr "Kan ikke ændre rettigheder for %s: %m"
+
+#: src/unix_passwd.c:793 src/unix_passwd.c:936
+#, c-format
+msgid "Cannot change owner/group of %s: %m"
+msgstr "Kan ikke ændre ejer/gruppe for %s: %m"
+
+#: src/unix_passwd.c:836
+#, c-format
+msgid "Error while writing new shadow file: %m"
+msgstr "Fejl under skrivning af ny shadow-fil: %m"
+
+#: src/unix_passwd.c:846
+#, c-format
+msgid "Error while closing old shadow file: %m"
+msgstr "Fejl under lukning af gammel shadow-fil: %m"
+
+#: src/unix_passwd.c:854
+#, c-format
+msgid "Error while closing temporary shadow file: %m"
+msgstr "Fejl under lukning af midlertidig shadow-fil: %m"
+
+#: src/unix_passwd.c:861 src/unix_passwd.c:1001
+#, c-format
+msgid "Cannot create backup file of %s: %m"
+msgstr "Kan ikke oprette backup-fil af %s: %m"
+
+#: src/unix_passwd.c:976
+#, c-format
+msgid "Error while writing new password file: %m"
+msgstr "Fejl under skrivning af ny adgangskode-fil: %m"
+
+#: src/unix_passwd.c:986
+#, c-format
+msgid "Error while closing old password file: %m"
+msgstr "Fejl under lukning af gammel adgangskode-fil: %m"
+
+#: src/unix_passwd.c:994
+#, c-format
+msgid "Error while closing temporary password file: %m"
+msgstr "Fejl under lukning af midlertidig adgangskode-fil: %m"
+
+#: src/unix_passwd.c:1033
+#, c-format
+msgid "Changing NIS password for %s on %s."
+msgstr "Ændrer NIS-adgangskode for %s på %s."
+
+#: src/unix_passwd.c:1048
+msgid "Error while changing the NIS password."
+msgstr "Fejl under ændring af NIS-adgangskoden."
