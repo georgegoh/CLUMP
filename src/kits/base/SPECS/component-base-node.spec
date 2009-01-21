@@ -43,6 +43,8 @@ Requires: xinetd
 Requires: rsh-server
 Requires: rsh
 Requires: vim-enhanced
+Requires: libxcrypt
+Requires: pam_unix2
 
 %description
 This component provides the nodes with the Kusu tools for the 
