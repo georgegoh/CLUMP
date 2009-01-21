@@ -3112,8 +3112,9 @@ class NGPluginLibBase:
         self.database.execute(query)
         ostype, = self.database.fetchone()
 
-        query = '''select cid from components where ('%s' like concat(os,'%%')
-                       or isnull(os))  and cname = '%s' ''' %(ostype, compName)
+        query = '''select cid from components where ('%s' like textcat(os,'%%')
+                       or os is null) and cname = '%s' ''' %(ostype, compName)
+
         self.database.execute(query)
         rv = self.database.fetchall()
         assert(len(rv)==1)  #exactly one component must match
