@@ -282,7 +282,14 @@ class Repos(BaseTable):
                  return kit.os
         return None
 
+    def getOSKit(self):
+        for kit in self.kits:
+             if kit.is_os():
+                 return kit
+        return None
+
     os = property(getOS)
+    oskit = property(getOSKit)
 
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
