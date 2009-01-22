@@ -397,7 +397,7 @@ class KitOpsApp(KusuApp):
     def runListKit(self):
         kl.debug('Performing list operation')
 
-        headers = ['Kit', 'Description', 'Version', 'Architecture', 'OS Kit',
+        headers = ['Kit', 'Kid', 'Description', 'Version', 'Architecture', 'OS Kit',
                    'Removable', 'Node Groups']
 
         max_lengths = []
@@ -408,22 +408,23 @@ class KitOpsApp(KusuApp):
 
         for kit in kits:
             print "%s:\t\t%s" % (headers[0], kit.rname)
-            print "%s:\t%s" % (headers[1], kit.rdesc)
-            print "%s:\t%s" % (headers[2], kit.version)
+            print "%s:\t\t%s" % (headers[1], kit.kid)
+            print "%s:\t%s" % (headers[2], kit.rdesc)
+            print "%s:\t%s" % (headers[3], kit.version)
 
-            sys.stdout.write("%s:\t" % headers[3])
+            sys.stdout.write("%s:\t" % headers[4])
             if kit.arch:
                 sys.stdout.write(kit.arch)
             else:
                 sys.stdout.write("noarch")
 
-            sys.stdout.write("\n%s:\t\t" % headers[4])
+            sys.stdout.write("\n%s:\t\t" % headers[5])
             if kit.isOS:
                 sys.stdout.write("Yes")
             else:
                 sys.stdout.write("No")
 
-            sys.stdout.write("\n%s:\t" % headers[5])
+            sys.stdout.write("\n%s:\t" % headers[6])
             if kit.removable:
                 sys.stdout.write("Yes")
             else:
@@ -433,7 +434,7 @@ class KitOpsApp(KusuApp):
                        self.koinst.getNodeGroups(kit.rname, kit.version,
                                                  kit.arch)]
 
-            sys.stdout.write("\n%s:\t" % headers[6])
+            sys.stdout.write("\n%s:\t" % headers[7])
             ngline=""
             count=0
             for ng in ngnames:
@@ -452,6 +453,7 @@ class KitOpsApp(KusuApp):
                 ngline = ngline[:len(ngline)-5]
 
             sys.stdout.write(ngline)
+            
             print '\n'
 
         kl.debug('SUCCESS performing list operation')
