@@ -21,9 +21,10 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Setting up CFM"""
 
-        files = [path('/etc/shadow'),
-                 path('/etc/passwd'),
-                 path('/etc/group'),
+        files = [path('/etc/cfm/shadow.merge'),
+                 path('/etc/cfm/passwd.merge'),
+                 path('/etc/cfm/group.merge'),
+                 path('/etc/pam.d/system-auth-ac'),
                  path('/etc/hosts'),
                  path('/etc/hosts.equiv'),
                  path('/etc/ssh/ssh_config'),
@@ -33,6 +34,16 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/ssh/ssh_host_dsa_key.pub'),
                  path('/etc/ssh/ssh_host_key.pub'),
                  path('/etc/ssh/ssh_host_rsa_key.pub')]
+
+        # FIXME: Rightfully /etc/pam.d/system-auth-ac only needs to be
+        # distributed to rhel/centos nodes. However, we currently do
+        # not have a clean way to do this based on the OS of each
+        # nodegroup. We can handle that issue partly in this script but
+        # should the user make a copy of a nodegroup using ngedit and
+        # changes the OS (say from centos to sles), the CFM symlinks
+        # are going to be wrong. In this particular instance, having
+        # /etc/pam.d/system-auth-ac in SLES is OK since it is not
+        # referenced by other pam config files.
 
         ngs = self.dbs.NodeGroups.select()
 
@@ -47,7 +58,15 @@ class KusuRC(rcplugin.Plugin):
             if not dest.exists(): dest.makedirs()
 
             for file in files:
-                newDir = dest + file.parent
+                if file in ['/etc/cfm/shadow.merge', 
+                            '/etc/cfm/passwd.merge', 
+                            '/etc/cfm/group.merge']:
+                    # We want to leave the symlinks for these
+                    # special files within /etc/cfm/<ngname>/etc
+                    newDir = dest / 'etc'
+                else:
+                    newDir = dest + file.parent
+
                 if not newDir.exists():
                     newDir.makedirs()
 
@@ -62,7 +81,6 @@ class KusuRC(rcplugin.Plugin):
                 f.write('# Entries below this come from the CFM\'s fstab.append\n')
                 f.close()
 
-
         # Redirect all stdout, stderr
         oldOut = sys.stdout
         oldErr = sys.stderr
@@ -76,14 +94,13 @@ class KusuRC(rcplugin.Plugin):
         kApp = app.KusuApp()
         _ = kApp.langinit()
         pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
+        pb.genMergeFiles()
         size = pb.updateCFMdir()
         pb.genFileList()
 
         # Restore stdout and stderr
         sys.stdout = oldOut
         sys.stderr = oldErr
-
-
 
         return True
 

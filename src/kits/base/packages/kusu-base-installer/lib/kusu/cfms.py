@@ -28,6 +28,7 @@ import glob
 import pwd
 import grp
 from stat import *
+from path import path
 
 from kusu.core.db import KusuDB
 from kusu.cfmnet import CFMNet
@@ -91,7 +92,25 @@ class PackBuilder:
                 name, ngid = line
                 self.nodegrplst[name] = ngid
 
+    def __isFileAuthScheme(self):
+        """
+        Returns True if we are using file-based authentication scheme.
+        """
+        query = """
+          SELECT * FROM appglobals 
+          WHERE kname='KusuAuthScheme' AND 
+                kvalue='files'
+        """
+        count = 0
+        try:
+            self.db.execute(query)
+            count = self.db.rowcount
+        except:
+            self.errorMessage('DB_Query_Error: %s\n', query)
+            sys.exit(-1)
 
+        return count == 1
+                 
     def __getNodeNameFromNGID(self, ngid):
         """__getNodeNameFromNGID - Get the name of the node group from the
         NGID."""
@@ -139,7 +158,7 @@ class PackBuilder:
                 
 
     def __getBroadcasts(self):
-        """getBroadcasts - Get a list of all of the available netowk broadcast addresses"""
+        """getBroadcasts - Get a list of all of the available network broadcast addresses"""
         query = ('select distinct network, subnet from networks where type="provision" and usingdhcp=False')
 
         bc = []
@@ -159,7 +178,7 @@ class PackBuilder:
 
 
     def __getFileInfo(self,cfmfile):
-        """__getFileInfo - Returns a tupple containing the filename,
+        """__getFileInfo - Returns a tuple containing the filename,
         username, groupname, mode, mtime and md5sum of the original
         file (not the one if the cfmdir)."""
         
@@ -207,10 +226,72 @@ class PackBuilder:
         retval = (cfmfile, user, group, mode, mtime, md5sum)
         return retval
 
+    def genMergeFiles(self):
+        """
+        Generates /etc/cfm/group.merge, /etc/cfm/passwd.merge and /etc/cfm/shadow.merge
+        by comparing the current file (e.g. /etc/group) against a version of it that was
+        previously saved (e.g. /etc/cfm/group.OS). These .merge files are distributed 
+        to the nodes to be merged by cfmclient.py.
+        """
+        for f in ["group", "passwd", "shadow"]:
+            curr_file = path('/etc/%s' % f)
+            os_file = path('%s/%s.OS' % (self.origdir, f))
+            merge_file = path('%s/%s.merge' % (self.origdir, f))
+
+            # For the unlikely case where the .merge file was removed by some user
+            if not merge_file.exists():
+                merge_file.touch()
+                merge_file.chmod(0400)
+
+            # If the saved OS copy does not exist, 
+            # 1. Make a copy from the current file, keeping same file permissions
+            # 2. Remove the entry for 'root' user in the OS copy for shadow
+            #    i.e. /etc/cfm/shadow.OS
+            # 3. Ensure that the .merge file is empty since we are starting from
+            #    scratch.
+            if not os_file.exists():
+                curr_file.copy2(os_file)
+                os_file.chmod(0400)
+
+                if f == 'shadow':
+                    # Remove root user entry
+                    entries = [entry for entry in os_file.lines() \
+                            if not entry.split(':')[0] == 'root']
+                    os_file.write_lines(entries)
+
+                if merge_file.text():
+                    # Empty it
+                    merge_file.write_text('')
+
+                # We're done here for this file.
+                continue
+
+            # Compare contents of cur_file with os_file using set operations.
+            # In this case we handle the case where lines were added to the
+            # curr_file. The (orig - curr) case where lines are removed from the
+            # curr_file (when compared to os_file) is not handled.
+            curr = set(curr_file.lines())
+            orig = set(os_file.lines())
+            diff = curr - orig
+
+            # Remove any comments in the difference
+            diff = [line for line in diff if not line[0] == '#']
+
+            if f == 'group':
+                # Remove system groups (i.e. gid < 500) from the diff
+                # Sample line: "video:x:33:"
+                diff = [line for line in diff if not int(line.split(':')[2]) < 500]
+
+            # Only update the .merge file if the difference has changed
+            if not set(merge_file.lines()) == diff:
+                merge_file.write_lines(diff)
+
         
     def genFileList(self):
-        """__genFileList - Generate the cfmfiles.lst file.  This file contains a list
-        of all the files managed by the CFM. """
+        """
+        Generates the cfmfiles.lst file.  This file contains a list
+        of all the files managed by the CFM. 
+        """
         filename = os.path.join(self.cfmbasedir, 'cfmfiles.lst')
         filep = open(filename, 'w')
         
@@ -223,6 +304,11 @@ class PackBuilder:
                 if not files:
                     continue
                 for file in files:
+                    if file in ['passwd.merge', 'shadow.merge', 'group.merge'] and \
+                            not self.__isFileAuthScheme():
+                        # Skip these special merge files since we are not using
+                        # file-based authentication.
+                        continue
                     fn = "%s/%s" % (root, file)
                     fqfn, user, group, mode, mtime, md5sum = self.__getFileInfo(fn)
                     filep.write('%s %s %s %o %i %s\n' % (fqfn, user, group, mode, mtime, md5sum))
@@ -232,7 +318,7 @@ class PackBuilder:
 
     def removeOldFiles(self):
         """removeOldFiles - Use the existing cfmfiles.lst and the self.cfmdirfiles to
-        determine which files are no longer needed in hte CFM distribution directory
+        determine which files are no longer needed in the CFM distribution directory
         and delete them"""
         filename = os.path.join(self.cfmbasedir, 'cfmfiles.lst')
         if not os.path.exists(filename):
@@ -468,9 +554,11 @@ class PackBuilder:
 
 
 if __name__ == '__main__':
-    app = UpdateApp(sys.argv)
-    _ = app.langinit()
-    pb = PackBuilder(app.errorMessage, app.stdoutMessage)
+    from kusu.core import app 
+    kApp = app.KusuApp()
+    _ = kApp.langinit()
+    pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
+    pb.genMergeFiles()
     pb.getPackageList()
     pb.updateCFMdir()
     pb.removeOldFiles()

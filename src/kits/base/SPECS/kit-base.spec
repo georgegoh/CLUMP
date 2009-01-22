@@ -96,6 +96,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/kusu/lib/plugins/genconfig/named.py*
 /opt/kusu/lib/plugins/genconfig/nodes.py*
 /opt/kusu/lib/plugins/genconfig/nodegroups.py*
+/opt/kusu/lib/plugins/genconfig/pam_conf.py*
+/opt/kusu/lib/plugins/genconfig/pam_conf_rhelfamily.tmpl
 /opt/kusu/lib/plugins/genconfig/reverse.py*
 /opt/kusu/lib/plugins/genconfig/resolv.py*
 /opt/kusu/lib/plugins/genconfig/zone.py*

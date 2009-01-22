@@ -137,6 +137,7 @@ class UpdateApp(KusuApp):
         self.logEvent(msg, toStdout=False)
         
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
+        pb.genMergeFiles()
 
         if self.options.updatepackages or self.options.updaterepo:
             pb.getPackageList(self.options.nodegrp)

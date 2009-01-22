@@ -1110,6 +1110,7 @@ class DB(object):
         AppGlobals(kname='InstallerServeNIS', kvalue='0')
         AppGlobals(kname='InstallerServeNTP', kvalue='1')
         AppGlobals(kname='InstallerServeNFS', kvalue='1')
+        AppGlobals(kname='KusuAuthScheme', kvalue='files')
 #        AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
         AppGlobals(kname='DEPOT_KITS_ROOT', kvalue='/depot/kits')
         AppGlobals(kname='DEPOT_IMAGES_ROOT', kvalue='/depot/images')

@@ -44,6 +44,7 @@ from kusu.ipfun import *
 import tempfile
 from path import path
 import atexit
+import time
 
 # Add primitive to the python path. This is needed for cfmd to spawn
 # cfmclient child processes properly since we are going to import
@@ -62,8 +63,18 @@ LOGFILE='/var/log/cfmclient.log'
 
 # When the cfmclient is updating files on itself it will
 # not replace the files in the IGNORELST
-IGNORELST = ['/etc/passwd', '/etc/shadow', '/etc/group', '/etc/gshadow']
+IGNORELST = ['/etc/passwd.merge', '/etc/shadow.merge', '/etc/group.merge', '/etc/gshadow.merge']
 
+def log(mesg):
+    """log - Output messages to a log file"""
+    global DEBUG
+    if DEBUG:
+        try:
+            fp = file(LOGFILE, 'a')
+            fp.write('%s %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), mesg))
+            fp.close()
+        except:
+            print "Logging unavailable!"   
 
 class Merger:
     """ The Merger Class is responsible for dealing with merging
@@ -72,161 +83,96 @@ class Merger:
     def __init__(self):
         pass
 
+    def log(self, mesg):
+        log('%s: %s' % (self.__class__.__name__, mesg))
+
     def mergeFile(self, filename):
-        """mergeFile - This function is for merging the group, password,
-        and shadow files.  It will involve a lot of work"""
+        """
+        This function is for merging the group, password, and 
+        shadow files only.
+        """
+        if filename in ['/etc/group', '/etc/passwd', '/etc/shadow']:
 
-        osfile   = "/opt/kusu/etc/cfm/%s.OS" % filename
-        t0file   = "/opt/kusu/etc/cfm/%s.T0" % filename
-        apndfile = "%s.append" % filename
-        
-        # Make the original file if it does not exist.
-        if not os.path.exists(osfile):
-            os.system('mkdir -p \"%s\"' % os.path.dirname(osfile))
-            os.system('cp \"%s\" \"%s\"' % (filename, osfile))
+            # Set up files as path objects
+            osfile   = path("/opt/kusu/etc/cfm/%s.OS" % filename)
+            t0file   = path("/opt/kusu/etc/cfm/%s.T0" % filename)
+            currfile = path(filename)
+            apndfile = currfile + '.merge'
+            
+            # If the saved OS copy does not exist:
+            # 1. Make a copy from the current file, keeping same file permissions
+            # 2. Remove the entry for 'root' user in the OS copy for shadow
+            #    i.e. /opt/kusu/etc/cfm/shadow.OS
+            if not osfile.exists():
+                if not osfile.dirname().exists():
+                    osfile.dirname().makedirs()
+                currfile.copy2(osfile)
 
-        # Which file are we dealing with
-        if filename == '/etc/group':
-            # Check for changes in the local file first
-            added, removed = self.__checkLineChanges(filename, t0file)
+                if currfile == '/etc/shadow':
+                    # Remove the password entry for root from the OS file 
+                    self.__removeSelectedLine(osfile, 'root', ':')
 
-            # Merge the changes into the OS file
-            # Remove the lines that have been locally removed 
+            # The t0 file is the state of the file since the last merge
+            # operation was executed. The current file is then the state at
+            # t+X. Hence, the following finds out what has been added and 
+            # removed since the last merge operation.
+            added, removed = self.__getLineChanges(currfile, t0file)
+
+            # Remove from OS copy the lines that have been removed since t0
             for line in removed:
-                key = string.split(line, ':')[0]
+                key = line.split(':')[0]
                 self.__removeSelectedLine(osfile, key, ':')
 
-            # Add in the lines that that are local
-            self.__addLines(osfile, added)
+            # Add to OS copy the lines that were added since t0
+            if added:
+                osfile.write_lines(added, append=True)
             
-            # Merge the OS file and append file
-            os.system('cat \"%s\" \"%s\" > \"%s\"' % (osfile, apndfile, filename))
-            os.unlink(apndfile)
+            # Overwrite the current file with contents of the OS file and append file
+            self.log("Merging %s and %s into %s\n" % (osfile, apndfile, currfile))
+            os.system('cat "%s" "%s" > "%s"' % (osfile, apndfile, currfile))
+            apndfile.remove()
 
-            # Make a copy of the file for checking for changes
-            os.system('cp \"%s\" \"%s\"' % (filename, t0file))
+            # Update t0 file using copy2 which also preserves permissions
+            currfile.copy2(t0file)
 
-        elif filename == '/etc/passwd':
-            # Merge the password file
-            print "Merging passwd"
-            # Check for changes in the local file first
-            added, removed = self.__checkLineChanges(filename, t0file)
-
-            # Merge the changes into the OS file
-            # Remove the lines that have been locally removed 
-            for line in removed:
-                key = string.split(line, ':')[0]
-                self.__removeSelectedLine(osfile, key, ':')
-
-            # Add in the lines that that are local
-            self.__addLines(osfile, added)
-            
-            # Merge the OS file and append file
-            os.system('cat \"%s\" \"%s\" > \"%s\"' % (osfile, apndfile, filename))
-            os.unlink(apndfile)
-
-            # Make a copy of the file for checking for changes
-            os.system('cp \"%s\" \"%s\"' % (filename, t0file))
-
-        elif filename == '/etc/shadow':
-            # Merge the shadow file
-            print "Merging shadow"
-            # Check for changes in the local file first
-            added, removed = self.__checkLineChanges(filename, t0file)
-
-            # Merge the changes into the OS file
-            # Remove the lines that have been locally removed 
-            for line in removed:
-                key = string.split(line, ':')[0]
-                self.__removeSelectedLine(osfile, key, ':')
-
-            # Add in the lines that that are local
-            self.__addLines(osfile, added)
-
-            # Remove the password entry for root from the OS file 
-            self.__removeSelectedLine(osfile, 'root', ':')
-            
-            # Merge the OS file and append file
-            os.system('cat \"%s\" \"%s\" > \"%s\"' % (osfile, apndfile, filename))
-            os.unlink(apndfile)
-
-            # Make a copy of the file for checking for changes
-            os.system('cp \"%s\" \"%s\"' % (filename, t0file))
         else:
-            print "WARNING:  Unhandled file merge for file:  %s.  Ignoring" % filename 
+            print "WARNING:  Unhandled file merge for file:  %s.  Ignoring" % currfile 
 
 
-    def __checkLineChanges(self, origfile, t0file):
-        """__checkLinesChanges - Examine the original, and time=0 file for
-        added and removed lines.  Return a list of the added and removed lines.
+    def __removeComments(self, lines):
+        return [line for line in lines if not line[0] == '#']
+
+    def __getLineChanges(self, origfile, t0file):
+        """
+        Compare the original and time=0 file for added and removed lines.
+        Returns a list of the added and removed lines.
         """
         added = []
         removed = []
-        if not os.path.exists(t0file):
+        if not t0file.exists():
             return [[], []]
 
-        infiledata = []
-        fin = open(origfile, 'r')
-        for line in fin.readlines():
-            if line[0] == '#':
-                continue
-            if line:
-                infiledata.append(line)
-        fin.close()
-        
-        t0filedata = []
-        fout = open(t0file, 'r')
-        for line in fout.readlines():
-            if line[0] == '#':
-                continue
-            if line:
-                infiledata.append(line)
-        fout.close()
+        curr = set(self.__removeComments(origfile.lines()))
+        t0   = set(self.__removeComments(t0file.lines()))
 
-        # Scan through the infiledata removing any entries that appear in the t0filedata
-        inf = infiledata[:]   # Need to work with a copy to prevent weirdness
-        for line in inf:
-            if line in t0filedata:
-                t0filedata.remove(line)
-                infiledata.remove(line)
-
-        # Anything left in infiledata has been added locally by the user
-        # Anything left in the t0data has been removed locally by the user
-        return [infiledata, t0filedata]
+        # curr - t0 ==> added since t0
+        # t0 - curr ==> removed since t0
+        return [curr - t0, t0 - curr]
         
 
-    def __removeSelectedLine(self, filename, key, seperator):
-        """removeSelectedLine - Search through a file removing the line that
-        starts with the key, and is seperated by seperator."""
-        tmpfile = "%s.tmp" % filename
+    def __removeSelectedLine(self, infile, key, separator):
+        """
+        Search through a file removing the line that starts with 
+        the given key. Entries in that file are delimited by given
+        separator.
+        """
         try:
-            fin  = open(filename, 'r')
-            fout = open(tmpfile, 'w')
-            for line in fin.readlines():
-                bits = string.split(line, seperator)
-                if bits[0] != key:
-                    fout.writeline(line)
+            lines = [line for line in infile.lines() \
+                    if not line.split(separator)[0] == key]
                 
-            fin.close()
-            fout.close()
-            os.rename(tmpfile, filename)
+            infile.write_lines(lines)
         except:
-            print "Failed to remove localy removed lines from %s / %s" % (filename, tmpfile)
-
-
-    def __addLines(self, filename, newlines):
-        """__addLines - Add the newlines to the specified file."""
-        try:
-            fout = open(filename, 'a')
-        except:
-            print "Failed to open: %s for appending" % filename
-            return
-        
-        for line in newlines:
-            outline = "%s\n" % line
-            fpout.writeline(outline)
-
-        fout.close()
+            print "Failed to remove line with key %s from %s" % (key, infile)
 
 
 
@@ -252,16 +198,7 @@ class CFMClient:
 
 
     def log(self, mesg):
-        """log - Output messages to a log file"""
-        global DEBUG
-        if DEBUG:
-            try:
-                fp = file(LOGFILE, 'a')
-                fp.write(mesg)
-                fp.close()
-            except:
-                print "Logging unavailable!"   
-
+        log('%s: %s' % (self.__class__.__name__, mesg))
     
     def parseargs(self):
         """parseargs - Parse the command line arguments and populate the
@@ -748,8 +685,8 @@ class CFMClient:
     def __processFileName(self, filename):
         """__processFileName - The filename from the cfmfile list contains
         additional information on how the file should be treated.  This
-        function returns a tupple with:  "filename.action", "action"
-        The action will be ignore if it is from another node group."""
+        function returns a tuple with:  "filename.action", "action"
+        The action will be ignored if it is from another node group."""
 
         # Determine is any special processing is needed
         action = ''
@@ -787,7 +724,7 @@ class CFMClient:
 
 
     def __findOlderFiles(self, force=0):
-        """__findOlderFiles  - This function will read the cfmfilelst, and
+        """__findOlderFiles  - This function will read the cfmfiles.lst, and
         locate files in that list that are older than the timestamp in the
         file, then populate the self.newfiles with the list of files to
         update.  If the force option is provided and is non-zero then all

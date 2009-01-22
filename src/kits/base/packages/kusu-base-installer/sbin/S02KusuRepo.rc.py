@@ -18,7 +18,7 @@ class KusuRC(rcplugin.Plugin):
         self.delete = True
 
     def run(self):
-        """Makes the repoistory for compute and installer nodes."""
+        """Makes the repository for compute and installer nodes."""
 
         repoid = self.dbs.Repos.select()[0].repoid
 
