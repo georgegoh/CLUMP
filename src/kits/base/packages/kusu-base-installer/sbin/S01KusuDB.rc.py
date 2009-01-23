@@ -65,7 +65,7 @@ class KusuRC(rcplugin.Plugin):
             
 
         sqliteDB.copyTo(dbs)
-        os.unlink('/root/kusu.db')
+        # os.unlink('/root/kusu.db') Keep for debugging purpose
     
         # Set db.passwd permission correctly
         if self.os_name in ['suse', 'opensuse', 'sles']:
