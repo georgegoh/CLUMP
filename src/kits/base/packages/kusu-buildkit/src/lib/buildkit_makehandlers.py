@@ -34,7 +34,7 @@ def restoreRpmMacros(oldrpmmacros):
         print msg
 
 
-def removeRpmMacros(self):
+def removeRpmMacros():
     userhome = path(pwd.getpwuid(os.getuid())[5])
     rpmmacros = userhome / '.rpmmacros'
     if rpmmacros.exists(): rpmmacros.remove()
