@@ -107,7 +107,8 @@ class NodeInstInfoHandler(ContentHandler):
                                   'dhcp'    : attrs.get('dhcp',""),
                                   'options' : attrs.get('options',""),
                                   'boot'    : attrs.get('boot',""),
-                                  'mac'     : attrs.get('mac',"") }
+                                  'mac'     : attrs.get('mac',""), 
+                                  'type'    : attrs.get('type',"") }
         elif name == 'component':
             self.compstart = 1
 
@@ -179,9 +180,9 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
 
         cnt = 0
-        fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
+        fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options:mac:type\n')
         for i in self.nics.keys():
-            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
+            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
                                                                          self.nics[i]['ip'],
                                                                          self.nics[i]['subnet'],
                                                                          self.nics[i]['network'],
@@ -189,7 +190,8 @@ class NodeInstInfoHandler(ContentHandler):
                                                                          self.nics[i]['gateway'],
                                                                          self.nics[i]['dhcp'],
                                                                          self.nics[i]['options'],
-                                                                         self.nics[i]['mac']))
+                                                                         self.nics[i]['mac'],
+                                                                         self.nics[i]['type']))
             cnt = cnt + 1
 
         fp.write('\n')
