@@ -71,7 +71,6 @@ cp -ar --parents overlay/ $RPM_BUILD_ROOT/opt/kusu/share/initrd-templates
 install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 
 install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
-install S02initrd-templates.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 
 %files
 %dir /opt/kusu/initrds
@@ -81,9 +80,9 @@ install S02initrd-templates.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 /opt/kusu/etc/imageinit.pyc
 /opt/kusu/etc/imageinit.pyo
 /opt/kusu/etc/imageinit.sh
+/opt/kusu/etc/templates/mkinitrd-templates.tmpl
 /opt/kusu/sbin/mkinitrd-templates
 /opt/kusu/share/initrd-templates
-/etc/rc.kusu.d/S02initrd-templates.rc.py*
 
 %clean
 rm -rf $RPM_BUILD_ROOT

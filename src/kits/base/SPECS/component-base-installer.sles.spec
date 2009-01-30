@@ -87,6 +87,7 @@ Requires: python-newt
 Requires: slang
 Requires: python-xml
 Requires: inst-source-utils
+Requires: makedev
 
 %description
 This component provides the node with the Kusu management tools for the 

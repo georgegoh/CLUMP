@@ -32,8 +32,11 @@ import sys
 from optparse import OptionParser
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
+from kusu.core import database
 
 from primitive.system.software.dispatcher import Dispatcher
+from primitive.system.software.probe import OS
+from path import path
 
 class BuildImage:
     """This class will provide the image management functions"""
@@ -59,6 +62,9 @@ class BuildImage:
  
         self.apacheuser, self.apachegrp = Dispatcher.get('webserver_usergroup')
        
+        engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+        self.dbs = database.DB(engine, db='kusudb',username='apache')
+
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""
         self.database = database
@@ -89,10 +95,22 @@ class BuildImage:
                 self.stderrout("ERROR: Invalid node group type: %s\n", self.installtype)
             return
 
+        # Skip Buildimage for sles/opensuse
+        ng = self.dbs.NodeGroups.select_by(ngname = nodegroup)[0]
+        os_name = ng.repo.os.name
+        if os_name.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutMessage('Skipping BuildImage for %s distribution\n' % os_name)
+            sys.exit(0)
+
+        system_arch = OS()[2].lower()
+        if system_arch == 'i386' and os_arch == 'x86_64':
+            self.stdoutout('Skipping BuildInitrd for %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
+            sys.exit(0)
+
         self.__getPackages()
         if len(self.packages) == 0:
             if self.stderrout:
-                self.stderrout("ERROR: No packages selected for the image!\n")
+                self.stdoutout("ERROR: No packages selected for the image!\n")
             sys.exit(-1)
         
         self.__mkImageDir()
@@ -382,8 +400,7 @@ class BuildImageApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
-
-
+            
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
         global version
@@ -422,12 +439,6 @@ class BuildImageApp(KusuApp):
     def run(self):
         """run - Run the application"""
         
-        # Skip Buildimage for sles/opensuse
-        dist = os.getenv('KUSU_DIST')
-        if dist.lower() in ['sles', 'opensuse', 'suse']:
-            self.stdoutMessage('Skipping BuildImage for  %s distribution\n' % dist)
-            sys.exit(0)
-        
         self.parseargs()
         image = ''
 
@@ -435,6 +446,7 @@ class BuildImageApp(KusuApp):
         if os.geteuid():
             print self._("nonroot_execution\n")
             sys.exit(-1)
+
 
         imgfun = BuildImage()
         imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)

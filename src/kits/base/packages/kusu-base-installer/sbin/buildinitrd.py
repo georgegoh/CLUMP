@@ -28,6 +28,16 @@ import glob
 from optparse import OptionParser
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
+from kusu.core import database
+
+from primitive.system.software.probe import OS
+from path import path
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 
 CFMFILE = '/etc/cfm/.cfmsecret'
 
@@ -60,7 +70,9 @@ class BuildInitrd:
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
 
-        
+        engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+        self.dbs = database.DB(engine, db='kusudb',username='apache')
+
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""
         self.database = database
@@ -91,6 +103,21 @@ class BuildInitrd:
                 self.stderrout("ERROR: Invalid node group type: %s\n", self.installtype)
             return
 
+        # Skip Buildinitrd for sles/opensuse
+        ng = self.dbs.NodeGroups.select_by(ngname =nodegroup)[0]
+        os_name = ng.repo.os.name
+        os_arch = ng.repo.os.arch
+
+        if os_name.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutout('Skipping BuildInitrd for %s distribution\n' % os_name)
+            sys.exit(0)
+
+        system_arch = OS()[2].lower()
+        if system_arch == 'i386' and os_arch == 'x86_64':
+            self.stdoutout('Skipping BuildInitrd for %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
+            sys.exit(0)
+
+     
         # Get a list of modules to add
         self.getModules()
         if len(self.modules) == 0:
@@ -205,6 +232,22 @@ class BuildInitrd:
             template = self.initrd64
         else:
             template = self.initrd32
+
+        # check for template existent, if not found, create it
+        if not path(template).exists():
+            cmd = 'mkinitrd-templates -r %s' % self.repoid
+
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+            if retcode:
+                self.stderrout('Unable to build ' + template)
+                sys.exit(1)
+        
 
         self.imagedir  = os.path.join(idir, '%s-initrd' % self.nodegroup)
         self.moduledir = os.path.join(idir, '%s-modules' % self.nodegroup)
@@ -576,7 +619,6 @@ class BuildInitrdApp(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)
 
-
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
         global version
@@ -617,12 +659,6 @@ class BuildInitrdApp(KusuApp):
     def run(self):
         """run - Run the application"""
         
-        # Skip Buildinitrd for sles/opensuse
-        dist = os.getenv('KUSU_DIST')
-        if dist.lower() in ['sles', 'opensuse', 'suse']:
-            self.stdoutMessage('Skipping BuildInitrd for  %s distribution\n' % dist)
-            sys.exit(0)
-        
         self.parseargs()
         image = ''
 
@@ -656,7 +692,7 @@ class BuildInitrdApp(KusuApp):
                 type = 'initrd'
                 
         if self.options.nodegrp:
-            # Generate the node group
+           # Generate the node group
             imgfun.makeInitrd(self.options.nodegrp, image, type)
             
         else:

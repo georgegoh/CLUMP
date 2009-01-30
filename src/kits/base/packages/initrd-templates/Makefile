@@ -24,7 +24,7 @@ TOPDIR = $(PWD)/../..
 include ../../../../rhn/params.inc.mak
 
 preprpm:
-	rsync -a ../../SPECS/initrd-templates.spec S02initrd-templates.rc.py \
+	rsync -a ../../SPECS/initrd-templates.spec mkinitrd-templates \
         ./overlay ./etc $(RPMSRCROOT) --exclude .svn/
 
 clean:

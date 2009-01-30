@@ -80,6 +80,7 @@ Requires: initrd-templates
 Requires: pyparted
 Requires: rsh
 #Requires: kusu-net-tool
+Requires: MAKEDEV
 Requires: libxcrypt
 Requires: pam_unix2
 

@@ -190,7 +190,7 @@ PKG_UTIL_TARBALL_SUBVER = 5
 # Initrd Templates package.
 KIT_PKGS += PKG_INITRD_TEMPLATES
 PKG_INITRD_TEMPLATES_SPEC = initrd-templates.spec
-PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates S02initrd-templates.rc.py
+PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates 
 PKG_INITRD_TEMPLATES_TARBALL_SUBVER = 5
 
 # Kusu Autoinstall package.
