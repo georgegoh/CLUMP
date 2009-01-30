@@ -157,6 +157,7 @@ install -m644 sql/kusu_primedb_sample.sql $RPM_BUILD_ROOT/opt/kusu/sql
 install -m644 etc/templates/kickstart.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 install -m644 etc/templates/autoinst.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 install -m644 etc/templates/dhcpd.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
+install -m644 etc/templates/pxefile.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 
 for i in `ls man/*.8`; do
     gzip -c $i >$RPM_BUILD_ROOT/opt/kusu/man/man8/`basename $i`.gz
@@ -237,6 +238,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/etc/templates/kickstart.tmpl
 /opt/kusu/etc/templates/autoinst.tmpl
 /opt/kusu/etc/templates/dhcpd.tmpl
+/opt/kusu/etc/templates/pxefile.tmpl
 /depot/repos/post_scripts
 %defattr(-,apache,apache)
 /depot/repos/nodeboot.cgi

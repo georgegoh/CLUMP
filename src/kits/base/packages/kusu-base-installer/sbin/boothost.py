@@ -41,6 +41,9 @@ from kusu.core.db import KusuDB
 from kusu.syncfun import syncfun
 import kusu.ipfun
 
+from path import path
+from primitive.pixietool.commands import GeneratePXEConfCommand
+
 class boothost:
     """This is the class containing the metdods for manipulating PXE files"""
     updatednodes = []    # This list will contain a list of the nodes acted on
@@ -48,12 +51,13 @@ class boothost:
 
     badnodes = []     # Keep track of invalid nodes
                          
-    def __init__(self, gettext, kusuApp):
+    def __init__(self, gettext, kusuApp, bootdir):
         self.db = KusuDB()            
         self._ = gettext
         webserver_user = Dispatcher.get('webserver_usergroup')[0]
         self.passdata = pwd.getpwnam(webserver_user)     # Cache this for later
         self.kusuApp = kusuApp
+        self.tftpdir = bootdir
                 
         try:
             self.db.connect('kusudb', 'apache')
@@ -110,23 +114,7 @@ class boothost:
         generated will attempt to boot from the local disk first."""
 
         newmac = '01-%s' % mac.replace(':', '-')
-        filename = os.path.join('/tftpboot','kusu','pxelinux.cfg',newmac)
-        fp = file(filename, 'w')
-        if hostname != '':
-            fp.write("# PXE file for: %s\n" % hostname)
-            
-        if localboot == True :
-            fp.write("default localdisk\n")
-            fp.write("prompt 0\n")
-            fp.write("\nlabel localdisk\n")
-            fp.write("        localboot 0\n")
-        else:
-            fp.write("default Reinstall\n")
-            fp.write("prompt 0\n")
-            
-        fp.write("label Reinstall\n")
-        fp.write("        kernel %s\n" % kernel)
-            
+
         # Determine which niihost to give to the node.
         # If it is diskless or imaged, then just give it a list.  It will
         # determine the best one to use.  If it is package based then
@@ -165,31 +153,63 @@ class boothost:
             
         ostype      = data[0].split('-')[0]
 
+        niihost = instip = ''
         if installtype == 'package':
             # Find the best IP address to use
             for netdata in self.installerIPs:
                 instip, instsub = netdata
                 if kusu.ipfun.onNetwork(instip, instsub, nodesip):
-                    if ostype in ['fedora', 'centos', 'rhel']:
-                        kickstart_uri = 'http://%s/repos/%s/ks.cfg.%s' % (instip, repoid, instip)
-                        fp.write("        append initrd=%s syslog=%s:514 niihost=%s ks=%s ksdevice=%s %s\n" % \
-                                 (initrd, instip, instip, kickstart_uri, ksdevice, kparams or ''))
-                    elif ostype in ['sles', 'opensuse', 'suse']:
-                        fp.write('        append initrd=%s niihost=%s install=http://%s/repos/%s %s\n' % \
-                                 (initrd, instip, instip, repoid, kparams or ''))
+                    break
         else:
             # Diskless and imaged do not care.  They can find the best one.
-            niihost = ""
             for line in self.installerIPs:
                 niihost = niihost + "%s," % line[0]
             niihost = niihost[:-1]
-            fp.write("        append initrd=%s niihost=%s %s\n" % (initrd, niihost, kparams or ''))
 
-        fp.close()
+        kname = kpath = kernel
+        iname = ipath = initrd
+        # If kernel/initrd provided is not full path, assume 
+        # that they are found under self.tftpdir.
+        if kernel is not None and path(kernel).dirname() == '':
+            kpath = path(self.tftpdir) / kernel
+        if initrd is not None and path(initrd).dirname() == '':
+            ipath = path(self.tftpdir) / initrd
 
+        kusu_root = os.getenv('KUSU_ROOT', '/opt/kusu')
+        template = kusu_root / 'etc/templates/pxefile.tmpl'
+
+        # Note: Strictly speaking kpath and ipath is not necessary
+        # since noUpdate=True. Will leave it in for completeness.
+        c = GeneratePXEConfCommand(name='GeneratePXEConf',
+                                   template=template,
+                                   identifierList=[newmac],
+                                   preamble='# PXE file for: %s' % hostname,
+                                   tftpdir=self.tftpdir,
+                                   localboot=localboot,
+                                   kname=kname,
+                                   kpath=kpath,
+                                   iname=iname,
+                                   ipath=ipath,
+                                   params=kparams or '',
+                                   instIP=instip,
+                                   noUpdate=True,
+                                   ksdevice=ksdevice,
+                                   ostype=ostype,
+                                   niihost=niihost,
+                                   repoid=repoid,
+                                   installtype=installtype,
+                                   logged=False)
+
+        results = c.execute()
+        # The list of files generated by GeneratePXEConfCommand is
+        # returned in results[3]
+        fnames = results[3]
+            
         # The PXE file needs to be owned by apache, so the nodeboot.cgi can update it.
-        os.chmod(filename, 0644)
-        os.chown(filename, self.passdata[2], self.passdata[3])
+        for fname in fnames:
+            pxefile = path(fname)
+            pxefile.chmod(0644)
+            pxefile.chown(self.passdata[2], self.passdata[3])
     
 
 
@@ -577,8 +597,9 @@ class BootHostApp(KusuApp):
             self.logErrorEvent('DB_Query_Error')
             sys.exit(-1)        
         
-        # Get the installers here so it can be cached for other hosts
         self.installerIPs = []
+
+        # Set self.BootDir to PIXIE_ROOT (db.appglobals)
         query = ('SELECT kvalue FROM appglobals where kname="PIXIE_ROOT"')
         try:
             self.db.execute(query)
@@ -729,7 +750,7 @@ class BootHostApp(KusuApp):
                 self.errorMessage("nonroot_execution\n")
                 sys.exit(-1)
         
-        bhinst = boothost(self.gettext, self)
+        bhinst = boothost(self.gettext, self, self.BootDir)
         self.parseargs(bhinst)
 
         if self.reinstall == 1:
@@ -751,15 +772,18 @@ class BootHostApp(KusuApp):
         if self.updatewhat == 'NodeList':
             bhinst.checkKusuProvision()
             bhinst.genNodeListPXE(self.nodelist, self.newkernel,
-                                  self.newinitrd, self.newkparms, self.state, self.localboot)
+                                  self.newinitrd, self.newkparms, 
+                                  self.state, self.localboot)
         elif self.updatewhat == 'NodeGroup':
             bhinst.checkKusuProvision()
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms, self.state, self.localboot)
+                                 self.newinitrd, self.newkparms,
+                                 self.state, self.localboot)
         elif self.updatewhat == 'NodeUnSynced':
             bhinst.checkKusuProvision()
             bhinst.genNodeGrpPXE(self.nodegroup, self.newkernel,
-                                 self.newinitrd, self.newkparms, self.state, self.localboot, 1)
+                                 self.newinitrd, self.newkparms,
+                                 self.state, self.localboot, 1)
         else:
             bhinst.toolHelp()
 

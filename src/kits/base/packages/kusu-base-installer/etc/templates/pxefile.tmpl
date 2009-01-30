@@ -1,0 +1,25 @@
+#if $varExists('preamble')
+$preamble
+#end if
+#if $localboot
+default localdisk
+prompt 0
+
+label localdisk
+        localboot 0
+#else
+default Reinstall
+prompt 0
+#end if
+
+label Reinstall
+        kernel $kernelName
+#if $kwargs.installtype == 'package'
+    #if $kwargs.ostype in ('sles', 'opensuse', 'suse')
+        append initrd=$initrdName niihost=$instIP install=http://$instIP/repos/$kwargs.repoid $params
+    #else
+        append initrd=$initrdName syslog=$instIP:514 niihost=$instIP ks=http://$instIP/repos/$kwargs.repoid/ks.cfg.$instIP ksdevice=$kwargs.ksdevice $params
+    #end if
+#else
+        append niihost=$kwargs.niihost $params
+#end if
