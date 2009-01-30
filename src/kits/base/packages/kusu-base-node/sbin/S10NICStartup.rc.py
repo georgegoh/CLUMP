@@ -37,9 +37,9 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Creating config files for all devices.
         The data comes from the profile.nii and looks like:
-           # NIC Definitions Device:IP:Subnet:Network:suffix:gateway:dhcp:options
-           export NII_NICDEF0="eth2|10.10.0.1|255.255.0.0|10.10.0.0|-eth2:10.10.0.1|0|00:0C:29:5A:48:AD|"
-           export NII_NICDEF1="eth1|172.25.243.23|255.255.255.0|172.25.243.0|-eth1|172.25.243.2|0|08:00:27:f0:59:9a|"
+           # NIC Definitions Device:IP:Subnet:Network:suffix:gateway:dhcp:options:mac:type
+           export NII_NICDEF0="eth2|10.10.0.1|255.255.0.0|10.10.0.0|-eth2|10.10.0.1|0||00:0C:29:5A:48:AD|public"
+           export NII_NICDEF1="eth1|172.25.243.23|255.255.255.0|172.25.243.0|-eth1|172.25.243.2|0||08:00:27:f0:59:9a|provision"
         """
         
         profile = '/etc/profile.nii'
@@ -49,6 +49,8 @@ class KusuRC(rcplugin.Plugin):
         fp = open(profile, 'r')
         lines = fp.readlines()
         fp.close()
+
+        mcast_static_route_added = False
 
         for line in lines:
             if line[0] == "#" or line.isspace():
@@ -65,7 +67,7 @@ class KusuRC(rcplugin.Plugin):
             try:
                 val = val.rstrip()
                 val = val.strip('"')
-                dev,ip,sn,net,suf,gw,dhcp,opts,mac = string.split(val, '|', 8)
+                dev,ip,sn,net,suf,gw,dhcp,opts,mac,network_type = string.split(val, '|', 9)
             except:
                 continue
             
@@ -109,6 +111,14 @@ class KusuRC(rcplugin.Plugin):
                 ifup_path = path(Dispatcher.get('ifup_path'))
                 cmd = '%s %s' % (ifup_path / 'ifup', dev)
                 os.system(cmd)
+
+                # The following adds a static route for the multicast network
+                # on the first nic on the 'provision' network.
+                # Needed for apps like ganglia v3.1.1 to work properly when it
+                # tries to send out multicast UDP packets.
+                if network_type == 'provision' and not mcast_static_route_added:
+                    self.runCommand('/sbin/route add -net 239.0.0.0 netmask 255.0.0.0 %s' % dev)
+                    mcast_static_route_added = True
                 
             else:
                 # Put the code to configure BMC here
