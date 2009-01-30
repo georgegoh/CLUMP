@@ -702,27 +702,34 @@ class DB(object):
           entity_name=self.entity_name)
 
         driverpacks = sa.Table('driverpacks', self.metadata, autoload=True)
-        assign_mapper(self.ctx, DriverPacks, driverpacks, entity_name=self.entity_name)
+        assign_mapper(self.ctx, DriverPacks, driverpacks, 
+          properties={'component': sa.relation(Components, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         kits = sa.Table('kits', self.metadata, autoload=True)
         assign_mapper(self.ctx, Kits, kits,
           properties={'components': sa.relation(Components,
                                                 entity_name=self.entity_name),
                       'os': sa.relation(OS, entity_name=self.entity_name),
+                      'repos': sa.relation(Repos, secondary=repos_have_kits, 
+                                           entity_name=self.entity_name),
                       'removable': kits.c.removeable},
           entity_name=self.entity_name)
 
         modules = sa.Table('modules', self.metadata, autoload=True)
-        assign_mapper(self.ctx, Modules, modules, entity_name=self.entity_name)
+        assign_mapper(self.ctx, Modules, modules,
+          properties={'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         networks = sa.Table('networks', self.metadata, autoload=True)
         assign_mapper(self.ctx, Networks, networks,
-                      entity_name=self.entity_name)
+          properties={'nics': sa.relation(Nics, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         nics = sa.Table('nics', self.metadata, autoload=True)
         assign_mapper(self.ctx, Nics, nics,
-          properties={'network': sa.relation(Networks,
-                                             entity_name=self.entity_name)},
+          properties={'network': sa.relation(Networks, entity_name=self.entity_name),
+                      'node': sa.relation(Nodes, entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
         ng_has_net = sa.Table('ng_has_net', self.metadata, autoload=True)
@@ -741,10 +748,13 @@ class DB(object):
                       'nodes': sa.relation(Nodes,
                                            entity_name=self.entity_name),
                       'modules': sa.relation(Modules,
-                                           entity_name=self.entity_name),
+                                             entity_name=self.entity_name),
                       'packages': sa.relation(Packages,
-                                           entity_name=self.entity_name),
-                      'repo': sa.relation(Repos, entity_name=self.entity_name)},
+                                              entity_name=self.entity_name),
+                      'scripts': sa.relation(Scripts,
+                                             entity_name=self.entity_name),
+                      'repo': sa.relation(Repos, 
+                                          entity_name=self.entity_name)},
 
           entity_name=self.entity_name)
 
@@ -753,20 +763,24 @@ class DB(object):
 
         nodes = sa.Table('nodes', self.metadata, autoload=True)
         assign_mapper(self.ctx, Nodes, nodes,
-          properties={'nics': sa.relation(Nics, entity_name=self.entity_name)},
+          properties={'nics': sa.relation(Nics, entity_name=self.entity_name),
+                      'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
         packages = sa.Table('packages', self.metadata, autoload=True)
         assign_mapper(self.ctx, Packages, packages,
-                      entity_name=self.entity_name)
+          properties={'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         partitions = sa.Table('partitions', self.metadata, autoload=True)
         assign_mapper(self.ctx, Partitions, partitions,
-                      entity_name=self.entity_name)
+          properties={'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         scripts = sa.Table('scripts', self.metadata, autoload=True)
         assign_mapper(self.ctx, Scripts, scripts,
-                      entity_name=self.entity_name)
+          properties={'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
+          entity_name=self.entity_name)
 
         repos = sa.Table('repos', self.metadata, autoload=True)
         assign_mapper(self.ctx, Repos, repos,
