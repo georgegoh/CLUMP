@@ -125,6 +125,7 @@ class RepoPatchApp(KusuApp):
         try:
             kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs = repoObj.makeUpdateKit(pkgs)
             repoObj.addUpdateKit(kitdir)
+            repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
         except Exception, e:
             self.logErrorEvent('Unable to add update kit. Reason: %s' % e)
             self.unlock()
