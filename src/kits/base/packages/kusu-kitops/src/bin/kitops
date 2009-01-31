@@ -432,7 +432,7 @@ class KitOpsApp(KusuApp):
                 sys.stdout.write("No")
 
             ngnames = [ng.ngname for ng in
-                       self.koinst.getNodeGroups(kit.rname, kit.version,
+                       self.koinst.getNodeGroups(kit.rname, kit.version, kit.release,
                                                  kit.arch)]
 
             sys.stdout.write("\n%s:\t" % headers[8])

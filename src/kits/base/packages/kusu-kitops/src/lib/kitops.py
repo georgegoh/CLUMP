@@ -812,10 +812,11 @@ class KitOps:
         else:
             return self.__db.Kits.select()
 
-    def getNodeGroups(self, kitname, kitver=None, kitarch=None):
+    def getNodeGroups(self, kitname, kitver=None, kitrel=None, kitarch=None):
         import kusu.core.database as db
         return db.findNodeGroupsFromKit(self.__db, kitargs={'rname': kitname,
                                                             'version': kitver,
+                                                            'release': kitrel,
                                                             'arch': kitarch})
 
     def findKits(self, name, version, arch):
