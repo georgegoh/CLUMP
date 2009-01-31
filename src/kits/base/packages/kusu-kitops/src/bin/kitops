@@ -581,7 +581,7 @@ class KitOpsApp(KusuApp):
         self.parser.print_help()
 
 def confirm(kits, msg, skip=True):
-    headers = ['Kit', 'Version', 'Architecture']
+    headers = ['Kit', 'Version', 'Release', 'Architecture']
     max_lengths = []
     for x in xrange(len(headers)):
         max_lengths.append(len(headers[x]))
@@ -591,6 +591,7 @@ def confirm(kits, msg, skip=True):
         kitline = []
         kitline.append(kit.rname)
         kitline.append(kit.version)
+        kitline.append(str(kit.release))
         kitline.append(kit.arch or 'noarch')
 
         for x in xrange(len(kitline)):
