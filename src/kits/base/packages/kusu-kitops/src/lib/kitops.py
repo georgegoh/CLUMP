@@ -185,7 +185,7 @@ class KitOps:
 
         # populate the kit DB table with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['description'],
-                                version=kit['version'], arch=kit['arch'],
+                                version=kit['version'], arch=kit['arch'], release=kit['release']
                                 removable=kit['removable'])
         newkit.save()
         
