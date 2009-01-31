@@ -160,11 +160,11 @@ class KitOps:
         kitrpm = '%s-%s-%s.%s.rpm' % (kit['pkgname'], kit['version'],
                                       kit['release'], kit['arch'])
         
-        #check if this kit is already installed - by name and version
-        if self.checkKitInstalled(kit['name'], kit['version'], kit['arch']):
+        #check if this kit is already installed - by name, version, release
+        if self.checkKitInstalled(kit['name'], kit['version'], kit['release'], kit['arch']):
             raise KitAlreadyInstalledError, \
-                    "Kit '%s-%s-%s' already installed" % \
-                    (kit['name'], kit['version'], kit['arch'])
+                    "Kit '%s-%s-%s-%s' already installed" % \
+                    (kit['name'], kit['version'], kit['release'], kit['arch'])
 
         # copy the RPMS
         repodir = self.kits_dir / kit['name'] / kit['version'] / kit['arch']
@@ -185,7 +185,7 @@ class KitOps:
 
         # populate the kit DB table with info
         newkit = self.__db.Kits(rname=kit['name'], rdesc=kit['description'],
-                                version=kit['version'], arch=kit['arch'], release=kit['release']
+                                version=kit['version'], arch=kit['arch'], release=kit['release'],
                                 removable=kit['removable'])
         newkit.save()
         
@@ -262,6 +262,8 @@ class KitOps:
         #if updated_ngtypes:
         #    rfactory = RepoFactory(self.__db, self.prefix)
         #    rfactory.refresh(ngtype=updated_ngtypes)
+
+        return newkit.kid
 
     def updateComponents(self, kid, components):
         """
@@ -401,12 +403,12 @@ class KitOps:
 
         return kit, components
 
-    def checkKitInstalled(self, kitname, kitver, kitarch):
+    def checkKitInstalled(self, kitname, kitver, kitrel, kitarch):
         """
         Returns True if specified kit is already in the DB, False otherwise.
         """
 
-        return [] != self.__db.Kits.select_by(rname=kitname, version=kitver,
+        return [] != self.__db.Kits.select_by(rname=kitname, version=kitver, release=kitrel,
                                               arch=kitarch)
 
     def mountMedia(self, media, isISO=False):
