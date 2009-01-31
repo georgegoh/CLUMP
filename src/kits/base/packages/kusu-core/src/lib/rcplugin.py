@@ -7,13 +7,21 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-import kusu.util.log as kusulog
 from path import path
 import os
 import socket
 import sys
 import traceback
 import time
+
+sys.path.append("/opt/kusu/lib")
+import platform
+if platform.machine() == "x86_64":
+    sys.path.append("/opt/kusu/lib64/python")
+sys.path.append("/opt/kusu/lib/python")
+sys.path.append('/opt/primitive/lib/python2.4/site-packages')
+
+import kusu.util.log as kusulog
 from primitive.svctool.commands import SvcStartCommand
 from primitive.svctool.commands import SvcStatusCommand
 from primitive.svctool.commands import SvcStopCommand
