@@ -176,7 +176,7 @@ class boothost:
             ipath = path(self.tftpdir) / initrd
 
         kusu_root = os.getenv('KUSU_ROOT', '/opt/kusu')
-        template = kusu_root / 'etc/templates/pxefile.tmpl'
+        template = path(kusu_root) / 'etc/templates/pxefile.tmpl'
 
         # Note: Strictly speaking kpath and ipath is not necessary
         # since noUpdate=True. Will leave it in for completeness.
