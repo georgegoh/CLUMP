@@ -12,7 +12,6 @@ from kusu.util.errors import *
 from kusu.ui.text.navigator import NAV_BACK
 import kusu.util.log as kusulog
 import os
-import re
 
 try:
     import subprocess
@@ -163,7 +162,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     """
     verified = True
     err_list = []
-    ostype = re.compile('[a-z]+').findall(distro.ostype)[0]    
+    ostype = distro.ostype    
 
     if kiprofile['OS'] in ['rhel', 'centos']:
         if ostype in ['rhel', 'centos']:
@@ -210,7 +209,7 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         eject(cdrom)
         return
         
-    kit_name = re.compile('[a-z]+').findall(kit['name'])[0]
+    kit_name = kit['name']
     if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
         kit_name = baseScreen.kiprofile['OS']
 
@@ -249,7 +248,7 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
             kitops.addKitPrepare()
             d = kitops.getOSDist()
 
-            kit_name = re.compile('[a-z]+').findall(d.ostype)[0]
+            kit_name = d.ostype
             if kit_name in ['rhel', 'centos'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos']:
                 kit_name = baseScreen.kiprofile['OS']
 
