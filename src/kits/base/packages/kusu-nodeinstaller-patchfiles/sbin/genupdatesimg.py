@@ -6,7 +6,7 @@ from path import path
 import tempfile
 import subprocess
 import os
-from primitive.system.software.dispatcher import Dispatcher
+from primitive.system.software.probe import OS
 
 class GenUpdatesImg(KusuApp):
     def __init__(self):
@@ -58,8 +58,13 @@ class GenUpdatesImg(KusuApp):
         
         dest = path('/opt/kusu/lib/nodeinstaller')
         
-        updatesimg = Dispatcher.get('gen-nodeinstaller-updatesimg')
-        self._runCommand('$KUSU_ROOT/lib/nodeinstaller/bin/%s -d %s' % (updatesimg, scratchdir))
+        updatesimg_type = ''
+        os = OS()[0]
+        if os in ['sles','opensuse','suse']:
+            updatesimg_type = 'autoinst'
+        else:
+            updatesimg_type = 'ks'
+        self._runCommand('$KUSU_ROOT/lib/nodeinstaller/bin/gen-nodeinstaller-updatesimg-%s -d %s' % (updatesimg_type, scratchdir))
         self._runCommand('cd %s/nodeinstaller && find . | cpio -mpdu %s' % (scratchdir,dest))
         
         if scratchdir.exists(): scratchdir.rmtree()
