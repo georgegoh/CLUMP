@@ -88,6 +88,7 @@ Requires: slang
 Requires: python-xml
 Requires: inst-source-utils
 Requires: makedev
+Requires: python-bcrypt
 
 %description
 This component provides the node with the Kusu management tools for the 

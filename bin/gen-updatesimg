@@ -50,7 +50,8 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'python-sqlalchemy',
                 'thttpd',
                 'kusu-ui',
-                'kusu-util']
+                'kusu-util',
+                'python-bcrypt']
                 
 SLES_PKGS = ['libnewt0_52',
       'newt',
