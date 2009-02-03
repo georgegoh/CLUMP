@@ -740,4 +740,4 @@ ifeq ($(strip $(ARCH)), x86_64)
 PKG_PYTHON_BCRYPT_ARCH = $(ARCH)
 else
 PKG_PYTHON_BCRYPT_ARCH = i586
-
+endif
