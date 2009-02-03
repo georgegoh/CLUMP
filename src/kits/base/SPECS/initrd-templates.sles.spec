@@ -31,7 +31,6 @@ Vendor: Platform Computing Inc
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Requires: kusu-base-installer kusu-base-node
-BuildRequires: yum
 Source: initrd-templates-%{version}.%{subversion}.tar.gz
 
 %description
