@@ -26,15 +26,24 @@ def buildPkgRefDict(pkgs):
     for pkg in pkgs:
         if pkg.name is None:
             continue
-        (n, v, r, a) = pkg.packageTuple()
+        (n, e, v, r, a) = pkg.packageTuple()
         name = n
         nameArch = '%s.%s' % (n, a)
         nameVerRelArch = '%s-%s-%s.%s' % (n, v, r, a)
         nameVer = '%s-%s' % (n, v)
         nameVerRel = '%s-%s-%s' % (n, v, r)
+        nameEpochVerRel = '%s-%s-%s-%s' % (n, e, v, r)
+        nameEpochVerRelArch = '%s-%s-%s-%s.%s' % (n, e, v, r, a)
+        
         for item in [name, nameArch, nameVerRelArch, nameVer, nameVerRel]:
             if not pkgdict.has_key(item):
                 pkgdict[item] = []
+            pkgdict[item].append(pkg)
+        
+        if pkg.epoch is not None:
+            for item in [nameEpochVerRel, nameEpochVerRelArch]:
+                if not pkgdict.has_key(item):
+                    pkgdict[item] = []
             pkgdict[item].append(pkg)
     
     return pkgdict
@@ -110,11 +119,16 @@ def unique(s):
     return list(Set(s))
 
 def comparePackageVersions(pkg1, pkg2):
-    ver1_list = pkg1.ver.split('.')
-    ver2_list = pkg2.ver.split('.')
+    if pkg1.epoch > pkg2.epoch:
+        return pkg1 # epoch has first priority
+    elif pkg2.epoch > pkg1.epoch:
+        return pkg2
     
-    stop = len(ver1_list)
+    ver1_list = pkg1.ver.split('.')
+    ver2_list = pkg2.ver.split('.') 
+    stop = len(ver1_list) 
     pkg = pkg2
+     
     if stop > len(ver2_list):
         stop = len(ver2_list)
         pkg = pkg1 #longer version is greater if all common version parts are equal (5.2.1 > 5.2)

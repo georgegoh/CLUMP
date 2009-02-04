@@ -135,6 +135,9 @@ class RPMPackage(BasePackage):
     def getGroup(self):
         return self.rpm.getGroup()
 
+    def getFileList(self):
+        return self.rpm.getFileList()
+
 
 class DebPackage(BasePackage):
     '''near future'''

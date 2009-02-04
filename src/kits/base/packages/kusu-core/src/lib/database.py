@@ -116,10 +116,10 @@ class Kits(BaseTable):
             kits_root = 'depot/kits'
 
         kit_path = path.path(kits_root)
-        kitinfo = kit_path.joinpath('%s/kitinfo' % str(self.kid))
-        infokit, infocomps = processKitInfo(kitinfo)
+        kitinfo = kit_path / str(self.kid) / 'kitinfo'
+        infokit, infocomps = processKitInfo(str(kitinfo))
 
-        if '0.1' == infokit['api'] or 0 == len(infokit):
+        if len(infokit) == 0 or 'api' not in infokit or '0.1' == infokit['api']:
             lst = [comp for comp in self.components if comp.os.lower() == os_string or \
                    '' == comp.os.strip() or comp.os.lower() == os.name.lower()]
             components_list.extend(lst)
@@ -229,22 +229,11 @@ class NodeGroups(BaseTable):
         if self.repoid is None:
             return []
 
-        components_list = []
-
-        for kit in self.repo.kits:
-            if kit.is_os():
-                components_list.extend(kit.components)
-                continue
-            else:
-                matched = kit.getMatchingComponents(self.repo.os)
-                eligible = [comp for comp in matched if self.type in comp.getNGTypes()]
-                components_list.extend(eligible)
-            
-        return components_list
+        return self.repo.getEligibleComponents(ngtype=self.type)
 
     def __repr__(self):
-        return '%s(%r,%r,%r,%r,%r,%r,%r,%r)' % \
-               (self.__class__.__name__, self.ngname, self.repoid,
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
+               (self.__class__.__name__, self.ngname, self.repoid, self.type,
                 self.installtype, self.ngdesc, self.nameformat, self.kernel,
                 self.initrd, self.kparams)
 
@@ -282,14 +271,34 @@ class Repos(BaseTable):
                  return kit.os
         return None
 
+    os = property(getOS)
+
     def getOSKit(self):
         for kit in self.kits:
              if kit.is_os():
                  return kit
         return None
 
-    os = property(getOS)
     oskit = property(getOSKit)
+
+    def getEligibleComponents(self, ngtype=None):
+        """Returns a list of components eligible for a nodegroup type.
+           If ngtype is None, it returns all components in the repo.
+        """
+
+        components_list = []
+
+        for kit in self.kits:
+            if kit.is_os():
+                components_list.extend(kit.components)
+            else:
+                matched = kit.getMatchingComponents(self.os)
+                eligible = matched
+                if ngtype is not None:
+                    eligible = [comp for comp in matched if ngtype in comp.getNGTypes()]
+                components_list.extend(eligible)
+
+        return components_list
 
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
@@ -832,207 +841,18 @@ class DB(object):
         installer.nodes.append(master_node)
 
         # creates the necessary modules for image and diskless nodes
-        diskless.modules.append(Modules(loadorder=1,module='uhci-hcd'))
-        diskless.modules.append(Modules(loadorder=2,module='ohci-hcd'))
-        diskless.modules.append(Modules(loadorder=3,module='ehci-hcd'))
-        diskless.modules.append(Modules(loadorder=4,module='jbd'))
-        diskless.modules.append(Modules(loadorder=5,module='nfs'))
-        diskless.modules.append(Modules(loadorder=6,module='ext3'))
-        diskless.modules.append(Modules(loadorder=7,module='tg3'))
-        diskless.modules.append(Modules(loadorder=8,module='bnx2'))
-        diskless.modules.append(Modules(loadorder=9,module='e1000'))
-        diskless.modules.append(Modules(loadorder=10,module='mii'))
-        diskless.modules.append(Modules(loadorder=11,module='e100'))
-        diskless.modules.append(Modules(loadorder=12,module='lockd'))
-        diskless.modules.append(Modules(loadorder=13,module='fscache'))
-        diskless.modules.append(Modules(loadorder=14,module='nfs_acl'))
-        diskless.modules.append(Modules(loadorder=15,module='sunrpc'))
-        diskless.modules.append(Modules(loadorder=16,module='mii'))
-        diskless.modules.append(Modules(loadorder=17,module='pcnet32'))
-        diskless.modules.append(Modules(loadorder=18,module='forcedeth'))
-        diskless.modules.append(Modules(loadorder=19,module='autofs4'))
- 
-        imaged.modules.append(Modules(loadorder=1,module='uhci-hcd'))
-        imaged.modules.append(Modules(loadorder=2,module='ohci-hcd'))
-        imaged.modules.append(Modules(loadorder=3,module='ehci-hcd'))
-        imaged.modules.append(Modules(loadorder=4,module='jbd'))
-        imaged.modules.append(Modules(loadorder=5,module='nfs'))
-        imaged.modules.append(Modules(loadorder=6,module='ext3'))
-        imaged.modules.append(Modules(loadorder=7,module='bonding'))
-        imaged.modules.append(Modules(loadorder=8,module='tg3'))
-        imaged.modules.append(Modules(loadorder=9,module='bnx2'))
-        imaged.modules.append(Modules(loadorder=10,module='e1000'))
-        imaged.modules.append(Modules(loadorder=11,module='scsi_mod'))
-        imaged.modules.append(Modules(loadorder=12,module='sd_mod'))
-        imaged.modules.append(Modules(loadorder=13,module='libata'))
-        imaged.modules.append(Modules(loadorder=14,module='ata_piix'))
-        imaged.modules.append(Modules(loadorder=15,module='sata_svw'))
-        imaged.modules.append(Modules(loadorder=16,module='sata_nv'))
-        imaged.modules.append(Modules(loadorder=17,module='ahci'))
-        imaged.modules.append(Modules(loadorder=18,module='mptbase'))
-        imaged.modules.append(Modules(loadorder=19,module='mptscsih'))
-        imaged.modules.append(Modules(loadorder=20,module='scsi_transport_sas'))
-        imaged.modules.append(Modules(loadorder=21,module='scsi_transport_fc'))
-        imaged.modules.append(Modules(loadorder=22,module='scsi_transport_spi'))
-        imaged.modules.append(Modules(loadorder=23,module='mptsas'))
-        imaged.modules.append(Modules(loadorder=24,module='mptfc'))
-        imaged.modules.append(Modules(loadorder=25,module='mptspi'))
-        imaged.modules.append(Modules(loadorder=26,module='lockd'))
-        imaged.modules.append(Modules(loadorder=27,module='fscache'))
-        imaged.modules.append(Modules(loadorder=28,module='nfs_acl'))
-        imaged.modules.append(Modules(loadorder=29,module='sunrpc'))
-        imaged.modules.append(Modules(loadorder=30,module='mii'))
-        imaged.modules.append(Modules(loadorder=31,module='e100'))
-        imaged.modules.append(Modules(loadorder=32,module='pcnet32'))
-        imaged.modules.append(Modules(loadorder=33,module='forcedeth'))
-        imaged.modules.append(Modules(loadorder=34,module='autofs4'))
+        for index, mod in enumerate(Dispatcher.get('diskless_modules', default=[])):
+            diskless.modules.append(Modules(loadorder=index+1, module=mod))
+
+        for index, mod in enumerate(Dispatcher.get('imaged_modules', default=[])):
+            imaged.modules.append(Modules(loadorder=index+1, module=mod)) 
 
         # Creates the necessary pkg list for image and diskless nodes
-        diskless.packages.append(Packages(packagename='SysVinit'))
-        diskless.packages.append(Packages(packagename='basesystem'))
-        diskless.packages.append(Packages(packagename='bash'))
-        if kusu_dist and kusu_dist == 'fedora':
-            diskless.packages.append(Packages(packagename='fedora-release'))
-        else:
-            diskless.packages.append(Packages(packagename='redhat-release'))
-        diskless.packages.append(Packages(packagename='chkconfig'))
-        diskless.packages.append(Packages(packagename='coreutils'))
-        diskless.packages.append(Packages(packagename='db4'))
-        diskless.packages.append(Packages(packagename='e2fsprogs'))
-        diskless.packages.append(Packages(packagename='filesystem'))
-        diskless.packages.append(Packages(packagename='findutils'))
-        diskless.packages.append(Packages(packagename='gawk'))
-        diskless.packages.append(Packages(packagename='cracklib-dicts'))
-        diskless.packages.append(Packages(packagename='glibc'))
-        diskless.packages.append(Packages(packagename='glibc-common'))
-        diskless.packages.append(Packages(packagename='initscripts'))
-        diskless.packages.append(Packages(packagename='iproute'))
-        diskless.packages.append(Packages(packagename='iputils'))
-        diskless.packages.append(Packages(packagename='krb5-libs'))
-        diskless.packages.append(Packages(packagename='libacl'))
-        diskless.packages.append(Packages(packagename='libattr'))
-        diskless.packages.append(Packages(packagename='libgcc'))
-        diskless.packages.append(Packages(packagename='libstdc++'))
-        diskless.packages.append(Packages(packagename='libtermcap'))
-        diskless.packages.append(Packages(packagename='mingetty'))
-        diskless.packages.append(Packages(packagename='mktemp'))
-        diskless.packages.append(Packages(packagename='ncurses'))
-        diskless.packages.append(Packages(packagename='net-tools'))
-        diskless.packages.append(Packages(packagename='nfs-utils'))
-        diskless.packages.append(Packages(packagename='pam'))
-        diskless.packages.append(Packages(packagename='pcre'))
-        diskless.packages.append(Packages(packagename='popt'))
-        diskless.packages.append(Packages(packagename='portmap'))
-        diskless.packages.append(Packages(packagename='procps'))
-        diskless.packages.append(Packages(packagename='psmisc'))
-        diskless.packages.append(Packages(packagename='rdate'))
-        diskless.packages.append(Packages(packagename='rsh'))
-        diskless.packages.append(Packages(packagename='rsh-server'))
-        diskless.packages.append(Packages(packagename='rsync'))
-        diskless.packages.append(Packages(packagename='sed'))
-        diskless.packages.append(Packages(packagename='setup'))
-        diskless.packages.append(Packages(packagename='shadow-utils'))
-        diskless.packages.append(Packages(packagename='openssh'))
-        diskless.packages.append(Packages(packagename='openssh-server'))
-        diskless.packages.append(Packages(packagename='openssh-clients'))
-        diskless.packages.append(Packages(packagename='sysklogd'))
-        diskless.packages.append(Packages(packagename='tcp_wrappers'))
-        diskless.packages.append(Packages(packagename='termcap'))
-        diskless.packages.append(Packages(packagename='tzdata'))
-        diskless.packages.append(Packages(packagename='util-linux'))
-        diskless.packages.append(Packages(packagename='words'))
-        diskless.packages.append(Packages(packagename='xinetd'))
-        diskless.packages.append(Packages(packagename='zlib'))
-        diskless.packages.append(Packages(packagename='tar'))
-        diskless.packages.append(Packages(packagename='mkinitrd'))
-        diskless.packages.append(Packages(packagename='less'))
-        diskless.packages.append(Packages(packagename='gzip'))
-        diskless.packages.append(Packages(packagename='which'))
-        diskless.packages.append(Packages(packagename='util-linux'))
-        diskless.packages.append(Packages(packagename='module-init-tools'))
-        diskless.packages.append(Packages(packagename='udev'))
-        diskless.packages.append(Packages(packagename='cracklib'))
-        diskless.packages.append(Packages(packagename='yum'))
-        diskless.packages.append(Packages(packagename='vim-minimal'))
-        diskless.packages.append(Packages(packagename='vim-common'))
-        diskless.packages.append(Packages(packagename='vim-enhanced'))
-        diskless.packages.append(Packages(packagename='rootfiles'))
-        diskless.packages.append(Packages(packagename='autofs'))
-        diskless.packages.append(Packages(packagename='ntp'))
+        for pkg in Dispatcher.get('diskless_packages', default=[]):
+            diskless.packages.append(Packages(packagename=pkg))
 
-        imaged.packages.append(Packages(packagename='SysVinit'))
-        imaged.packages.append(Packages(packagename='basesystem'))
-        imaged.packages.append(Packages(packagename='bash'))
-        imaged.packages.append(Packages(packagename='kernel'))
-        imaged.packages.append(Packages(packagename='grub'))
-        if kusu_dist and kusu_dist == 'fedora':
-            imaged.packages.append(Packages(packagename='fedora-release'))
-        else:
-            imaged.packages.append(Packages(packagename='redhat-release'))
-        imaged.packages.append(Packages(packagename='chkconfig'))
-        imaged.packages.append(Packages(packagename='coreutils'))
-        imaged.packages.append(Packages(packagename='db4'))
-        imaged.packages.append(Packages(packagename='e2fsprogs'))
-        imaged.packages.append(Packages(packagename='filesystem'))
-        imaged.packages.append(Packages(packagename='findutils'))
-        imaged.packages.append(Packages(packagename='gawk'))
-        imaged.packages.append(Packages(packagename='cracklib-dicts'))
-        imaged.packages.append(Packages(packagename='glibc'))
-        imaged.packages.append(Packages(packagename='glibc-common'))
-        imaged.packages.append(Packages(packagename='initscripts'))
-        imaged.packages.append(Packages(packagename='iproute'))
-        imaged.packages.append(Packages(packagename='iputils'))
-        imaged.packages.append(Packages(packagename='krb5-libs'))
-        imaged.packages.append(Packages(packagename='libacl'))
-        imaged.packages.append(Packages(packagename='libattr'))
-        imaged.packages.append(Packages(packagename='libgcc'))
-        imaged.packages.append(Packages(packagename='libstdc++'))
-        imaged.packages.append(Packages(packagename='libtermcap'))
-        imaged.packages.append(Packages(packagename='mingetty'))
-        imaged.packages.append(Packages(packagename='mktemp'))
-        imaged.packages.append(Packages(packagename='ncurses'))
-        imaged.packages.append(Packages(packagename='net-tools'))
-        imaged.packages.append(Packages(packagename='nfs-utils'))
-        imaged.packages.append(Packages(packagename='pam'))
-        imaged.packages.append(Packages(packagename='pcre'))
-        imaged.packages.append(Packages(packagename='popt'))
-        imaged.packages.append(Packages(packagename='portmap'))
-        imaged.packages.append(Packages(packagename='procps'))
-        imaged.packages.append(Packages(packagename='psmisc'))
-        imaged.packages.append(Packages(packagename='rdate'))
-        imaged.packages.append(Packages(packagename='rsh'))
-        imaged.packages.append(Packages(packagename='rsh-server'))
-        imaged.packages.append(Packages(packagename='rsync'))
-        imaged.packages.append(Packages(packagename='sed'))
-        imaged.packages.append(Packages(packagename='setup'))
-        imaged.packages.append(Packages(packagename='shadow-utils'))
-        imaged.packages.append(Packages(packagename='openssh'))
-        imaged.packages.append(Packages(packagename='openssh-server'))
-        imaged.packages.append(Packages(packagename='openssh-clients'))
-        imaged.packages.append(Packages(packagename='sysklogd'))
-        imaged.packages.append(Packages(packagename='tcp_wrappers'))
-        imaged.packages.append(Packages(packagename='termcap'))
-        imaged.packages.append(Packages(packagename='tzdata'))
-        imaged.packages.append(Packages(packagename='util-linux'))
-        imaged.packages.append(Packages(packagename='words'))
-        imaged.packages.append(Packages(packagename='xinetd'))
-        imaged.packages.append(Packages(packagename='zlib'))
-        imaged.packages.append(Packages(packagename='tar'))
-        imaged.packages.append(Packages(packagename='mkinitrd'))
-        imaged.packages.append(Packages(packagename='less'))
-        imaged.packages.append(Packages(packagename='gzip'))
-        imaged.packages.append(Packages(packagename='which'))
-        imaged.packages.append(Packages(packagename='util-linux'))
-        imaged.packages.append(Packages(packagename='module-init-tools'))
-        imaged.packages.append(Packages(packagename='udev'))
-        imaged.packages.append(Packages(packagename='cracklib'))
-        imaged.packages.append(Packages(packagename='yum'))
-        imaged.packages.append(Packages(packagename='vim-minimal'))
-        imaged.packages.append(Packages(packagename='vim-common'))
-        imaged.packages.append(Packages(packagename='vim-enhanced'))
-        imaged.packages.append(Packages(packagename='rootfiles'))
-        imaged.packages.append(Packages(packagename='autofs'))
-        imaged.packages.append(Packages(packagename='ntp'))
+        for pkg in Dispatcher.get('imaged_packages', default=[]):
+            imaged.packages.append(Packages(packagename=pkg))
 
         # Create the partition entries for the compute node
         # REGULAR PARTITIONING

@@ -45,17 +45,13 @@ patches that contain the Kusu NodeInstaller runtime.
 %install
 rm -rf $RPM_BUILD_ROOT
 
-mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/{bin,kusurc}
+mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/bin
 mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/genupdates
 
 install -m755 bin/* $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/bin
-install -m644 kusurc/S50GenerateUpdatesImg.rc.py $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/kusurc
 install -m755 lib/* $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/genupdates
 
 find src/ | cpio -mpdu $RPM_BUILD_ROOT/opt/kusu/lib/nodeinstaller/
-
-install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
-install -m644 kusurc/S50GenerateUpdatesImg.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d
 
 install -d $RPM_BUILD_ROOT/opt/kusu/sbin
 install -m755 sbin/genupdatesimg.py $RPM_BUILD_ROOT/opt/kusu/sbin/genupdatesimg
@@ -81,10 +77,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 /opt/kusu/lib/nodeinstaller/bin
-/opt/kusu/lib/nodeinstaller/kusurc
 /opt/kusu/lib/nodeinstaller/src
 /opt/kusu/lib/python/kusu/genupdates
-/etc/rc.kusu.d/S50GenerateUpdatesImg.rc.py*
 /opt/kusu/sbin/genupdatesimg
 /opt/kusu/man/man8/genupdatesimg.8
 

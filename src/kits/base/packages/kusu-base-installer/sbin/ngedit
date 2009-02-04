@@ -37,7 +37,8 @@ from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 import kusu.util.log as kusulog
 from kusu.nodefun import validateNodeFormat
-
+import kusu.core.database as db
+from primitive.system.software.dispatcher import Dispatcher
 global curNG, origNG
 
 MAXWIDTH = 70
@@ -460,6 +461,14 @@ class scrNGEEdit_Repo(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+       
+        dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres') 
+        try:
+            self.dbs = db.DB(dbdriver, 'kusudb', 'nobody')
+        except UnsupportedDriverError, e:
+            msg = 'Problems establishing database connection. Error: %s' % e
+            self.logErrorEvent('Database error: ' + msg)
+            sys.exit(1)
 
     def setCallbacks(self):
 
@@ -547,13 +556,31 @@ class scrNGEEdit_Repo(USXBaseScreen):
             arch = rv[2]
             curNG['kernel'] = "kernel-%s-%s-%s" % (rname , version , arch)
             curNG['initrd'] = "initrd-%s-%s-%s.img" % (rname , version , arch)
+            try:
+                os = self.dbs.Repos.selectone_by(repoid=int(curNG['repoid'])).os
+            except ValueError:
+                msg = "Repository id '%s' could not be converted to integer" % curNG['repoid']
+                self.logErrorEvent('Validation error: ' + msg)
+
+            os_tup = (os.name, os.major+'.'+os.minor, os.arch)
+
+            curNG['kparams'] = Dispatcher.get('kparams', default='', os_tuple=os_tup)
+            curNG['comps'] = []
+            if curNG['installtype'] == 'disked':
+                curNG['packs'] = Dispatcher.get('imaged_packages', default=[], os_tuple=os_tup)
+                curNG['modules'] = Dispatcher.get('imaged_modules', default=[], os_tuple=os_tup)
+
+            elif curNG['installtype'] == 'diskless':
+                curNG['packs'] = Dispatcher.get('diskless_packages', default=[], os_tuple=os_tup)
+                curNG['modules'] = Dispatcher.get('diskless_modules', default=[], os_tuple=os_tup)
         else:
             # Handle case where user backs out repoID change.
             curNG['initrd'] = origNG['initrd']
             curNG['kernel'] = origNG['kernel']
-                                     
-
-
+            curNG['kparams'] = origNG['kparams']
+            curNG['packs'] = origNG['packs']
+            curNG['modules'] = origNG['modules']
+        
 class scrNGEEdit_Boot(USXBaseScreen):
     name = 'Boot Time Parameters'
     msg = 'Boot Time Parameters'
@@ -682,6 +709,14 @@ class scrNGEEdit_Components(USXBaseScreen):
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
+        
+        dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres')
+        try:
+            self.dbs = db.DB(dbdriver, 'kusudb', 'nobody')
+        except UnsupportedDriverError, e:
+            msg = 'Problems establishing database connection. Error: %s' % e
+            self.logErrorEvent('Database error: ' + msg)
+            sys.exit(1)
 
         self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
         
@@ -711,21 +746,11 @@ class scrNGEEdit_Components(USXBaseScreen):
         return NAV_FORWARD
 
     def drawImpl(self):
-
         self.screenGrid = snack.Grid(1, 2)
-        if self.database.driver == 'mysql':
-            query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
-            repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
-            AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
-            concat(c.os,'%%') OR isnull(c.os)) ORDER BY c.kid''' % curNG['repoid']
-        else: # postgres for now
-            query = '''SELECT c.kid,k.rname,c.cid,c.cname FROM components c, kits k,
-            repos_have_kits rk, repos r WHERE c.kid = k.kid AND k.kid = rk.kid
-            AND rk.repoid = r.repoid AND r.repoid = %s AND (r.ostype like 
-            c.os || '%%' OR c.os is NULL) ORDER BY c.kid''' % curNG['repoid']
-            
-        self.database.execute(query)
-        rv = self.database.fetchall()
+       
+        repo = self.dbs.Repos.selectone_by(repoid=curNG['repoid'])
+        comps = repo.getEligibleComponents(curNG['type'])
+        rv = [(c.kid, c.kit.rname, c.cid, c.cname) for c in comps]
 
         if not rv:
             #no components to display
@@ -969,7 +994,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
             if self.alphaview: #alphabetic view
                 
                 # pkgDict[letter] => package name
-                pkgDict = getAvailPkgs(self.database, curNG['ngid'], categorized=False)
+                pkgDict = getAvailPkgs(self.database, curNG['repoid'], categorized=False)
                 
                 i = -1
                 for letter in sorted(pkgDict.keys()):
@@ -987,7 +1012,7 @@ class scrNGEEdit_Packages(USXBaseScreen):
                 
                 # pkgDict[category][group] => [package,package,...]
                 t1 = time.time()
-                pkgDict = getAvailPkgs(self.database, curNG['ngid'], categorized=True)
+                pkgDict = getAvailPkgs(self.database, curNG['repoid'], categorized=True)
                 
                 ci = 0 #category index
                 for c in sorted(pkgDict.keys()):
@@ -1095,7 +1120,7 @@ class scrNGEEdit_Modules(USXBaseScreen):
         assert(len(curNG['comps']))
 
         prog_dlg = self.selector.popupProgress('Driver Package Extraction', 'Generating module list...')
-        modDict = getAvailModules(self.database, curNG['ngid'])
+        modDict = getAvailModules(self.database, curNG['ngid'], curNG['repoid'], curNG['comps'])
         prog_dlg.close()
         
         i = -1
@@ -1119,7 +1144,7 @@ class scrNGEEdit_Modules(USXBaseScreen):
         return True, 'Success'
 
     def formAction(self):
-        curNG['modules'] = self.__ct.getSelection()
+        curNG['modules'] = [x for x in curNG['modules'] if x in self.__ct.getSelection()]
         kl.debug("MODULES Selected: %s" %str(curNG['modules']))
         #self.selector.popupMsg('selected modules', str(curNG['modules']))
 

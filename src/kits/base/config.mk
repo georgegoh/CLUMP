@@ -214,7 +214,7 @@ PKG_NODEINSTALLER_TARBALL_SUBVER = 6
 # Kusu Node Installer Patchfiles package.
 KIT_PKGS += PKG_NODEINSTALLER_PATCHFILES
 PKG_NODEINSTALLER_PATCHFILES_SPEC = kusu-nodeinstaller-patchfiles.spec
-PKG_NODEINSTALLER_PATCHFILES_SOURCES = src sbin bin kusurc man lib
+PKG_NODEINSTALLER_PATCHFILES_SOURCES = src sbin bin man lib
 PKG_NODEINSTALLER_PATCHFILES_TARBALL_SUBVER = 6
 
 # Kusu Node Installer Patchfiles package.

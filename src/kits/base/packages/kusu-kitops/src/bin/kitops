@@ -92,6 +92,10 @@ class KitOpsApp(KusuApp):
 
         self.parser.add_option('-k', '--kit', dest='kit',
                                help=self._('kit'))
+
+        self.parser.add_option('-i', '--kid', dest='kid',
+                               help=self._('kid'))
+
         self.parser.add_option('-o', '--kitversion', dest='kitversion',
                                help=self._('kitversion'))
         self.parser.add_option('-c', '--kitarch', dest='kitarch',
@@ -157,11 +161,13 @@ class KitOpsApp(KusuApp):
             self.kitop = KITOP_ADD
         elif options.action == 'delete':
             self.kit_name = options.kit
+            self.kit_id = options.kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_DEL
         elif options.action == 'list':
             self.kit_name = options.kit
+            self.kit_id = options.kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
@@ -192,7 +198,7 @@ class KitOpsApp(KusuApp):
         # Now we will just perform a quick query from the DB to make sure the
         # DB connection we established is correct.
         try:
-            self.koinst.findKits('not expecting', 'a result', 'at all')
+            self.koinst.findKits('not expecting', 1, 'result', 'at all')
         except:
             self.logErrorEvent("Database error. " + \
                                "Please check database configuration.")
@@ -226,8 +232,8 @@ class KitOpsApp(KusuApp):
         elif self.kitop == KITOP_DEL:
             kl.debug('Performing delete operation')
 
-            kits = self.koinst.findKits(self.kit_name, self.kit_ver,
-                                        self.kit_arch)
+            kits = self.koinst.findKits(self.kit_name, self.kit_id,
+                                        self.kit_ver, self.kit_arch)
 
             msg = 'The above kits will be removed.\n'
 
@@ -242,8 +248,8 @@ class KitOpsApp(KusuApp):
                 sys.exit(EKITDEL_FAIL)
             elif confirm(kits, msg, self.skip_confirm):
                 try:
-                    self.koinst.deleteKit(self.kit_name, self.kit_ver,
-                                          self.kit_arch)
+                    self.koinst.deleteKit(self.kit_name, self.kit_id,
+                                          self.kit_ver, self.kit_arch)
                 except (AssertionError, KitNotInstalledError), e:
                     kl.debug('FAIL performing delete operation')
                     self.logErrorEvent(e.args[0])
@@ -302,7 +308,8 @@ class KitOpsApp(KusuApp):
 
             for kit in kits:
                 try:
-                    self.koinst.addKit(kit)
+                    api = kit[4]
+                    self.koinst.addKit(kit, api)
                     kl.debug('SUCCESS performing add operation: %s(%s)',
                              kit[0], kit[1]['name'])
                     kit_str = "%s-%s-%s" % (kit[1]['name'],
@@ -404,14 +411,16 @@ class KitOpsApp(KusuApp):
         for x in xrange(len(headers)):
             max_lengths.append(len(headers[x]))
 
-        kits = self.koinst.listKit(self.kit_name, self.kit_ver, self.kit_arch)
+        kits = self.koinst.listKit(self.kit_name, self.kit_id, self.kit_ver, self.kit_arch)
 
         for kit in kits:
             print "%s:\t\t%s" % (headers[0], kit.rname)
             print "%s:\t\t%s" % (headers[1], kit.kid)
             print "%s:\t%s" % (headers[2], kit.rdesc)
             print "%s:\t%s" % (headers[3], kit.version)
-            print "%s:\t%s" % (headers[4], kit.release)
+
+            if not kit.is_os():
+                print "%s:\t%s" % (headers[4], kit.release)
 
             sys.stdout.write("%s:\t" % headers[5])
             if kit.arch:
@@ -432,8 +441,8 @@ class KitOpsApp(KusuApp):
                 sys.stdout.write("No")
 
             ngnames = [ng.ngname for ng in
-                       self.koinst.getNodeGroups(kit.rname, kit.version, kit.release,
-                                                 kit.arch)]
+                       self.koinst.getNodeGroups(kit.rname, kit.version,
+                                                 kit.release, kit.arch)]
 
             sys.stdout.write("\n%s:\t" % headers[8])
             ngline=""

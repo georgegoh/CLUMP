@@ -132,29 +132,38 @@ class RepoPatchApp(KusuApp):
             sys.exit(1)
 
         oldUpdateKits = []
+        if repoObj.os_name in ['sles', 'opensuse', 'suse']:
+            # sles doesn't seem to be upgradable from SPX->SPY easily unlike rhel.
+            effectiveOSVer =  repoObj.os_version_full
+        else:
+            effectiveOSVer =  repoObj.os_version
+
         if kitRelease > 1:
             # find the previous update kit
-            oldUpdateKits = self.dbs.Kits.select_by(self.dbs.Kits.c.version.like('%s%%_%s_r%%' % (repoObj.os_version, repoObj.os_arch)),
+            oldUpdateKits = self.dbs.Kits.select_by(version = effectiveOSVer,
                                                     rname = kitName, 
-                                                    arch = 'noarch')
+                                                    arch = repoObj.os_arch)
 
         updateKit = self.dbs.Kits.select_by(rname = kitName, 
-                                            version = kitVersion,
-                                            arch = 'noarch')[0]
+                                            version = effectiveOSVer,
+                                            release = kitRelease,
+                                            arch = repoObj.os_arch)[0]
 
         ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
+        repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
         
         # remove old update kit
         for ng in ngs:
             for oldUpdateKit in oldUpdateKits:
-                if oldUpdateKit.components[0] in ng.components:
-                    ng.components.remove(oldUpdateKit.components[0])
-                
-                if oldUpdateKit in repo.kits:
-                    repo.kits.remove(oldUpdateKit)
+                if oldUpdateKit.release != kitRelease:
+                    if oldUpdateKit.components[0] in ng.components:
+                        ng.components.remove(oldUpdateKit.components[0])
                     
-            ng.save()
-            ng.flush()
+                    if oldUpdateKit in repo.kits:
+                        repo.kits.remove(oldUpdateKit)
+                        
+                    ng.save()
+                    ng.flush()
 
         # add new update kit
         for ng in ngs:

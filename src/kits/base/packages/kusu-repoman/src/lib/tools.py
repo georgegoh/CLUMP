@@ -8,9 +8,7 @@
 #
 
 from kusu.util.errors import *
-from kusu.core import database as db
 from path import path
-import sqlalchemy as sa
 import re
 
 def repoExists(dbs, repoid):
@@ -72,7 +70,7 @@ def kitInUse(dbs, kid):
     else:
         return False
 
-def getOS(dbs, repoid_or_ngname, major=True):
+def getOS(dbs, repoid_or_ngname):
     """Returns OS (rname, version, arch) tuple from database 
        based on the repoid or nodegroup name"""
 
@@ -102,11 +100,8 @@ def getOS(dbs, repoid_or_ngname, major=True):
     else:
         kit = kit[0]
 
-    if major: 
-        real_kname = re.compile('[a-z]+').findall(kit.rname)[0]
-    else:
-        real_kname = kit.rname
-    return (real_kname, kit.version, kit.arch)
+    oskit = kit.os
+    return (oskit.name, oskit.major, oskit.arch)
 
 def getKits(dbs, ngname):
     """Returns a list of kits for a nodegroup"""

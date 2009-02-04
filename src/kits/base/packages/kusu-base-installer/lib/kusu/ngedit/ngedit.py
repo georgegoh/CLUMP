@@ -436,29 +436,44 @@ class NodeGroup(NodeGroupRec):
                    db.execute("SELECT last_value from nodegroups_ngid_seq")
                 rv = db.fetchone()
                 p[p.PKfld] = rv[0]
-
         else:
-           if db.driver == 'mysql':
-              query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
+            if link == 'modules': # special case for modules to respect loadorder column
+                if db.driver == 'mysql':
+                    query = "INSERT into %s (ngid, %s, loadorder) values " % (self.linksDBmap[link][0], \
                                                              self.linksDBmap[link][1])
-              query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
-           else: # postgres
-              query = "INSERT into %s (ngid, %s)" % (self.linksDBmap[link][0], \
+                    query += "(%s, '%s', %s) " + ", (%s, '%s', %s)"*(len(self.data[link])-1)
+                else: # postgres
+                    query = "INSERT into %s (ngid, %s, loadorder)" % (self.linksDBmap[link][0], \
+                                                             self.linksDBmap[link][1])
+                    query+=" values (%s, '%s', %s); "
+                    query = query*(len(self.data[link]))
+
+                tpl = ()
+                for i,v in enumerate(self.data[link]):
+                    tpl += self.PKval, v, i + 1
+                query = query % tpl
+
+            else:
+                if db.driver == 'mysql':
+                    query = "INSERT into %s (ngid, %s) values " % (self.linksDBmap[link][0], \
+                                                             self.linksDBmap[link][1])
+                    query += "(%s, '%s') " + ", (%s, '%s')"*(len(self.data[link])-1)
+                else: # postgres
+                    query = "INSERT into %s (ngid, %s)" % (self.linksDBmap[link][0], \
                                                      self.linksDBmap[link][1])
-              query+=" values (%s, '%s'); " 
-              query = query*(len(self.data[link]))
-              
+                    query+=" values (%s, '%s'); " 
+                    query = query*(len(self.data[link]))
 
-           tpl = ()
-           for v in self.data[link]:
-              tpl += self.PKval,v
-           query = query % tpl
+                tpl = ()
+                for v in self.data[link]:
+                    tpl += self.PKval,v
+                query = query % tpl
 
-           try:
-              kl.info(query)
-              db.execute(query)
-           except Exception,msg:
-              raise NGEDBWriteFail,'Failed syncing link=%s to DB with msg = %s\nQuery=%s' %(link,str(msg),query)
+            try:
+                kl.info(query)
+                db.execute(query)
+            except Exception,msg:
+                raise NGEDBWriteFail,'Failed syncing link=%s to DB with msg = %s\nQuery=%s' %(link,str(msg),query)
 
     def __runSingleRowQuery(self, db, query):
         db.execute(query)
@@ -3200,7 +3215,7 @@ def getRPMSDirKeys(ostype, arch):
     return repodatakey, rpmsdirkeys
 
 
-def getAvailPkgs(db, ngid, categorized=False):
+def getAvailPkgs(db, repoid, categorized=False):
     '''Returns a dictionary containing info for all of the packages 
        contained in the specified repository. Note: it takes time to 
        generate the package list.
@@ -3216,13 +3231,12 @@ def getAvailPkgs(db, ngid, categorized=False):
     timediff = []
     result = {}
 
-    if not ngid:
-        raise NodeGroupError, "Must specify a node group to get the list of available packages"
+    if repoid is not None:
+        raise NodeGroupError, "Must specify a repository to get the list of available packages"
 
-    query = "select r.repoid,r.repository,r.ostype from repos r, nodegroups n " \
-        "where r.repoid = n.repoid and n.ngid = %s" % ngid
+    query = "select r.repository, r.ostype from repos r where r.repoid = %s" % repoid
     db.execute(query)
-    repoid,repodir,ostype = db.fetchone()
+    repodir, ostype = db.fetchone()
     repodir = repodir.strip()
 
     import kusu.repoman.repofactory as repofactory
@@ -3404,7 +3418,7 @@ def getAvailPkgs(db, ngid, categorized=False):
     return result
 
 
-def getAvailModules(db, ngid):
+def getAvailModules(db, ngid, repoid=None, comps=None):
     '''Returns a dictionary containing info for all of the modules 
        included in the driver packs for a specified list of components.
        Note: it takes time to generate the modules list.
@@ -3420,15 +3434,21 @@ def getAvailModules(db, ngid):
     if not ngid:
         raise NodeGroupError, "Must specify a node group to retrieve the module list."
 
-    #get repository information
-    query = "select r.repoid, r.repository, r.ostype from repos r, nodegroups n " \
-        "where r.repoid = n.repoid and n.ngid = %s" % ngid
-
     if ngid == 5:
        raise NodeGroupError, "Unmanaged nodegroup is not supported."
 
-    db.execute(query)
-    repoid, repodir, ostype  = db.fetchone()
+    #get repository information
+
+    if repoid is None:
+        query = "select r.repoid, r.repository, r.ostype from repos r, nodegroups n " \
+                "where r.repoid = n.repoid and n.ngid = %s" % ngid
+        db.execute(query)
+        repoid, repodir, ostype  = db.fetchone()
+    else:
+        query = "select r.repository, r.ostype from repos r where r.repoid = %s" % repoid
+        db.execute(query)
+        repodir, ostype  = db.fetchone()
+
     repodir = repodir.strip()
 
     import kusu.repoman.repofactory as repofactory
@@ -3450,11 +3470,17 @@ def getAvailModules(db, ngid):
         raise NodeGroupError, "Repository with ostype = %s is not supported." % ostype
 
     #2. obtain the name of driverpacks to examine
-    query = "select d.dpname from driverpacks d, ng_has_comp n where " \
-        "d.cid = n.cid and n.ngid = %s" % ngid
+    if not comps:
+        query = "select d.dpname from driverpacks d, ng_has_comp n where " \
+                "d.cid = n.cid and n.ngid = %s" % ngid
+    else:
+        comps_lst = [str(comp) for comp in comps]
+        comps_str = ','.join(comps_lst)
+        query = "select d.dpname from driverpacks d where d.cid in (%s)" % comps_str
+   
     db.execute(query)
     rv = db.fetchall()
-    dpacklst = [ x for x, in rv]
+    dpacklst = [x[0] for x in rv]
     # create a temp dir for ko files
     tmprootdir = mkdtemp()
 

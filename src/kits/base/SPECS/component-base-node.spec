@@ -45,6 +45,7 @@ Requires: rsh
 Requires: vim-enhanced
 Requires: libxcrypt
 Requires: pam_unix2
+Requires: python-bcrypt
 
 %description
 This component provides the nodes with the Kusu tools for the 

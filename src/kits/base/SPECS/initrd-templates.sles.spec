@@ -31,6 +31,7 @@ Vendor: Platform Computing Inc
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Requires: kusu-base-installer kusu-base-node
+BuildRequires: yum
 Source: initrd-templates-%{version}.%{subversion}.tar.gz
 
 %description
@@ -68,8 +69,6 @@ mkdir -p $RPM_BUILD_ROOT/opt/kusu/share/initrd-templates
 cp -ar --parents overlay/ $RPM_BUILD_ROOT/opt/kusu/share/initrd-templates
 
 install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
-
-install -d $RPM_BUILD_ROOT/etc/rc.kusu.d
 
 %files
 %dir /opt/kusu/initrds

@@ -62,7 +62,9 @@ class RepoManApp(KusuApp):
                [--dbpassword]
                [-n | --new] [-r reponame | --reponame reponame]
                [-a | --add] [-k | --kit <name> [-o <version> | --kitversion <version>] [ -c <arch> | --kitarch <arch>]]
+               [-a | --add] [-i | --kid <kid>]
                [-e | --delete] [--kit <name> [-o <version> | --kitversion <version> ] [-c <arch> | --kitarch <arch>]]
+               [-e | --delete] [-i | --kid <kid>]
                [-e | --delete] [-r reponame | --reponame reponame]
                [--flush-cache] [-r reponame | --reponame reponame]
 
@@ -82,6 +84,7 @@ For examples:
         # setup command line parser
         self.parser.add_option('-n', '--new', dest='new', action="store_true", help=self._('creates a new repo'))
         self.parser.add_option('-r', '--reponame', dest='reponame', help=self._('repo name'))
+        self.parser.add_option('-i', '--kid', dest='kid', help=self._('kit id'))
         self.parser.add_option('-k', '--kit', dest='kit', help=self._('kit name'))
         self.parser.add_option('-o', '--kitversion', dest='kitversion', help=self._('kit version'))
         self.parser.add_option('-c', '--kitarch', dest='kitarch', help=self._('kit arch'))
@@ -142,13 +145,13 @@ For examples:
         self.logEvent("Finished creating new repository: %s" % repo_name, toStdout=False)
         self.stdoutMessage('Repo: %s created. You can now add kits, including OS kits to the new repo.\n', repo_name)
 
-    def addKit(self, repo_name, kname, kversion, karch):
+    def addKit(self, repo_name, kid, kname, kversion, karch):
 
         self.logEvent("Adding Kit %s-%s-%s to Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
 
         self.repoExists(repo_name)
 
-        kits = self.dbs.Kits.select_by(rname = kname, version=kversion, arch=karch)
+        kits = self.dbs.Kits.select_by(kid = kid, rname = kname, version=kversion, arch=karch)
 
         if kits:
             kit = kits[0]
@@ -174,8 +177,7 @@ For examples:
 
                 else:
                     if kit.isOS:
-                        real_kname = re.compile('[a-z]+').findall(kname)[0]
-                        repo.ostype = '%s-%s-%s' % (real_kname,kversion,karch)
+                        repo.ostype = '%s-%s-%s' % (kname,kversion,karch)
 
                     repo.kits.append(kit)
                     repo.save()
@@ -188,13 +190,13 @@ For examples:
             self.unlock()
             sys.exit(1)
 
-    def delKit(self, repo_name, kname, kversion, karch):
+    def delKit(self, repo_name, kid, kname, kversion, karch):
         
         self.logEvent("Deleting Kit %s-%s-%s from Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
         
         self.repoExists(repo_name)
 
-        kits = self.dbs.Kits.select_by(rname = kname, version=kversion, arch=karch)
+        kits = self.dbs.Kits.select_by(kid = kid, rname = kname, version=kversion, arch=karch)
 
         if kits:
             kit = kits[0]
@@ -495,7 +497,7 @@ For examples:
                     return
 
                 elif options.add or options.delete:
-                    if not options.kit:
+                    if not options.kit and not options.kid:
                         self.parser.print_help()
                         self.stderrMessage('No kit specified.\n')
                         sys.exit(1)
@@ -599,15 +601,20 @@ For examples:
             self.list()
         elif options.delete:
             self.action = REPOMAN_DELKIT
+            self.kid = None
+            self.kitname = None
             self.kitarch = None
             self.kitversion = None
+            if options.kid:
+                self.kid = options.kid
             if options.kitversion:
                 self.kitversion = options.kitversion
             if options.kitarch:
                 self.kitarch = options.kitarch
             if options.kit:
                 self.kitname = options.kit
-                kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
+            if options.kit or options.kid:
+                kits = self.kitops.findKits(self.kitname, self.kid, self.kitversion, self.kitarch)
                 if len(kits) > 1: 
                     self.logErrorEvent(
                         "There are multiple '%s' kits installed. Please specify the kit version and kit architecture." % options.kit)
@@ -621,23 +628,30 @@ For examples:
                 else:
                     self.kitversion = kits[0].version
                     self.kitarch =  kits[0].arch
-                    self.delKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
+                    self.kid = kits[0].kid
+                    self.kitname = kits[0].rname
+                    self.delKit(options.reponame, self.kid, self.kitname, self.kitversion, self.kitarch)
             elif options.kit or options.kitversion or options.kitarch:
-                self.delKit(options.reponame, options.kit, options.kitversion, options.kitarch)
+                self.delKit(options.reponame, options.kid, options.kitversion, options.kitarch)
             elif options.reponame:
                 self.action = REPOMAN_DELREPO
                 self.delete(options.reponame)
         elif options.add:
             self.action = REPOMAN_ADDKIT
+            self.kid = None
+            self.kitname = None
             self.kitarch = None
             self.kitversion = None
+            if options.kid:
+                self.kid = options.kid
             if options.kitversion:
                 self.kitversion = options.kitversion
             if options.kitarch:
                 self.kitarch = options.kitarch
             if options.kit:
                 self.kitname = options.kit
-                kits = self.kitops.findKits(self.kitname, self.kitversion, self.kitarch)
+            if options.kit or options.kid:
+                kits = self.kitops.findKits(self.kitname, self.kid, self.kitversion, self.kitarch)
                 if len(kits) > 1:
                     self.logErrorEvent(
                         "Error: There are multiple '%s' kits installed. Please specify the kit version and kit architecture." % options.kit)
@@ -652,9 +666,11 @@ For examples:
                 else:
                     self.kitversion = kits[0].version
                     self.kitarch = kits[0].arch
-                    self.addKit(options.reponame, self.kitname, self.kitversion, self.kitarch)
+                    self.kid = kits[0].kid
+                    self.kitname = kits[0].rname
+                    self.addKit(options.reponame, self.kid, self.kitname, self.kitversion, self.kitarch)
             else: 
-                self.addKit(options.reponame, options.kit, options.kitversion, options.kitarch)
+                self.addKit(options.reponame, options.kid, options.kit, options.kitversion, options.kitarch)
         elif options.update:
             self.action = REPOMAN_UPDATE
             self.update(options.reponame)
@@ -675,7 +691,7 @@ For examples:
             print "%s:\t%s" % (headers[2], repo.installers)
             print "%s:\t\t%s" % (headers[3], (repo.ostype or ''))
 
-            kitnames = ['%s %s %s' % (kit.rname, kit.version, kit.arch) for kit in 
+            kitnames = ['%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch) for kit in 
                        self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits]
 
             sys.stdout.write("%s:\t\t" % headers[4])

@@ -55,6 +55,7 @@ install -m644 lib/rhn.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
 install -m644 lib/tools.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
 install -m644 lib/updates.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
 install -m644 lib/yum.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
+install -m644 lib/genupdates.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/repoman
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/repoman-%{version}
 install -m644 etc/updates.conf $RPM_BUILD_ROOT/opt/kusu/etc

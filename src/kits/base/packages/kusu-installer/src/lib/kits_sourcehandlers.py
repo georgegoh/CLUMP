@@ -136,7 +136,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             kitname = kit[1]['name']
             try:
                 prog_dlg = baseScreen.selector.popupProgress('Adding kit', "Adding a Kit: '%s'..." % kitname)
-                kitops.addKit(kit)
+                kitops.addKit(kit, api=str(kit[4]))
                 prog_dlg.close()
             except KitAlreadyInstalledError:
                 prog_dlg.close()
@@ -218,9 +218,15 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
        kit['arch'] != baseScreen.kiprofile['OS_ARCH']:
         out, err = eject(cdrom)
         baseScreen.selector.popupMsg('Wrong OS disk', 'Inserted OS disk does ' \
-                                     'not match selected operating system: %s.' \
-                                     ' Please insert the correct disc.' % \
-                                     baseScreen.kiprofile['OS'])
+                                     'not match selected operating system: %s. ' \
+                                     'Please insert the correct disc.\n\n' \
+                                     'Expected name: %s ver: %s arch: %s\n' \
+                                     'Given name: %s ver: %s arch: %s' % \
+                                     (baseScreen.kiprofile['OS'],
+                                      baseScreen.kiprofile['OS'],
+                                      baseScreen.kiprofile['OS_VERSION'],
+                                      baseScreen.kiprofile['OS_ARCH'],
+                                      kit_name, kit['ver'], kit['arch']))
         return
 
     baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
@@ -228,10 +234,8 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
     baseScreen.kiprofile[baseScreen.profile]['longname'] = kit['longname']
 
     prog_dlg = baseScreen.selector.popupProgress('Copying Kit', 'Copying OS kit (%s)' % kit['name'])
-    kitops.copyOSKitMedia(kit)
+    kitdir = kitops.copyOSKitMedia(kit)
     prog_dlg.close()
-
-    kitdir = kitops.kits_dir / kit['name'] / kit['ver'] / kit['arch']
 
     if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
         while baseScreen.selector.popupYesNo('Any More Disks?',

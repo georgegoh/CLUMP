@@ -58,9 +58,9 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid = snack.Grid(1, 1)
 
         self.listbox = kusuwidgets.ColumnListbox(height=8, 
-                                 colWidths=[15,7,8],
-                                 colLabels=[_('Kit Name'), _('Version'), _('Arch  ')],
-                                 justification=[LEFT, RIGHT, RIGHT],
+                                 colWidths=[12,7,3,8],
+                                 colLabels=[_('Kit Name'), _('Ver'), _('Rel'), ('Arch  ')],
+                                 justification=[LEFT, RIGHT, RIGHT, RIGHT],
                                  returnExit=0)
 
         if not self.installedBootMediaKits:
@@ -77,7 +77,12 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
 
         kit_list = self.kitops.listKit()
         for kit in kit_list:
-            self.listbox.addRow([kit.rname, kit.version, kit.arch], kit)
+            if kit.is_os():
+                version = '%s.%s' % (kit.os.major,kit.os.minor)
+            else:
+                version = kit.version
+
+            self.listbox.addRow([kit.rname, version, str(kit.release), kit.arch], kit)
 
     def installKitsOnBootMedia(self):
         """Install the kits on boot media (most likely base kit only)."""
@@ -151,6 +156,9 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Network time set up.')
         prog_dlg.close()
 
+        setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        kl.debug('Set the installation flag')
+
         kl.debug('Making repository')
         prog_dlg = self.selector.popupProgress('Making Repository', 'Making repository...')
         try:
@@ -175,10 +183,7 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         migrate(self.kiprofile['Kusu Install MntPt'])
         kl.debug('Migrated kusu.db and kusu.log')
         prog_dlg.close()
-
-        setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
-        kl.debug('Set the installation flag')
-
+                
         prog_dlg = self.selector.popupProgress('Ejecting cdrom(s)', 'Ejecing cdrom(s)...')
         from kusu.installer.kits_sourcehandlers import eject
         import primitive.system.hardware.probe

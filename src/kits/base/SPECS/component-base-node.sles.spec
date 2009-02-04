@@ -44,6 +44,7 @@ Requires: primitive
 Requires: xinetd
 Requires: rsh-server
 Requires: rsh
+Requires: python-bcrypt
 #Requires: vim-enhanced
 
 %description

@@ -59,12 +59,17 @@ class ListPkgApp(KusuApp):
             self.categorized = True
             
     def run(self):
-        query = "select ngid from nodegroups where ngname = '%s'" % self.ngname
+        query = "select repoid from nodegroups where ngname = '%s'" % self.ngname
         self.__db.execute(query)
-        ngid = self.__db.fetchone()
+        reporec = self.__db.fetchone()
+
+        if not reporec:
+            self.stderrMessage('No repository could be found for the given node group name.\n')
+            sys.exit(1)
         
+        repoid = reporec[0]
         try:
-            pkgDict = getAvailPkgs(self.__db, ngid, self.categorized)
+            pkgDict = getAvailPkgs(self.__db, repoid, self.categorized)
         except NodeGroupError,e:
             self.stderrMessage(str(e) + "\n")
             sys.exit(1)

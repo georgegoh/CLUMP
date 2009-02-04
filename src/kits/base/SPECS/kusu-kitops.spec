@@ -48,6 +48,8 @@ install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
 
 install -m755 bin/kitops $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/kitops.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
+install -m644 lib/addkit_strategies.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
+install -m644 lib/deletekit_strategies.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/package.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}

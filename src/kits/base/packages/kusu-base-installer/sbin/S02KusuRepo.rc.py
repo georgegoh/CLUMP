@@ -13,7 +13,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'repos'
-        self.desc = 'Setting up additional repository'
+        self.desc = 'Preparing repository for compute nodes provisioning'
         self.ngtypes = ['installer']
         self.delete = True
 
@@ -26,8 +26,7 @@ class KusuRC(rcplugin.Plugin):
         rfactory = RepoFactory(self.dbs) 
         repoObj = rfactory.getRepo(repoid)
 
-        if self.os_name in ['rhel', 'centos', 'fedora']:
-            repoObj.copyKusuNodeInstaller()
-            repoObj.makeAutoInstallScript()
+        repoObj.copyKusuNodeInstaller()
+        repoObj.makeAutoInstallScript()
  
         return True

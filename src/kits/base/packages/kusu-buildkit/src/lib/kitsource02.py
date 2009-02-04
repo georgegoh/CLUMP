@@ -346,7 +346,7 @@ class KusuKit(Struct):
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
         if not buildroot.exists(): buildroot.makedirs()
-        docsdir = '/depot/www/kits/%s/%s' % (ns['name'], ns['pkgversion'])
+        docsdir = '/www'
         docsdir = path(docsdir)
         destdir = buildroot / str(docsdir)[1:]
         if not destdir.exists(): destdir.makedirs()
@@ -373,7 +373,7 @@ class KusuKit(Struct):
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
         if not buildroot.exists: buildroot.makedirs()
-        plugdir = path('/opt/kusu/lib/plugins')
+        plugdir = path('/')
         destdir = buildroot / str(plugdir)[1:]
         if not destdir.exists(): destdir.makedirs()
         cpio_copytree(srcdir,destdir)
@@ -389,7 +389,7 @@ class KusuKit(Struct):
         """
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
-        kiroot = '/depot/kits/%s/%s/%s' % (ns['name'],ns['pkgversion'],ns['arch'])
+        kiroot = '/'
         destdir = buildroot / kiroot[1:]
         if not destdir.exists(): destdir.makedirs()
         kifile = path(destdir / 'kitinfo')

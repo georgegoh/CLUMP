@@ -42,9 +42,9 @@ information container for the database.
 %install
 rm -rf $RPM_BUILD_ROOT
 
-docdir=$RPM_BUILD_ROOT/depot/www/kits/%{_name}/%{version}
-plugdir=$RPM_BUILD_ROOT/opt/kusu/lib/plugins
-kitinfodir=$RPM_BUILD_ROOT/depot/kits/%{_name}/%{version}/%{_arch}
+docdir=$RPM_BUILD_ROOT/www
+plugdir=$RPM_BUILD_ROOT/plugins
+kitinfodir=$RPM_BUILD_ROOT/
 
 mkdir -p $docdir
 mkdir -p $docdir/kit_base_doc_source
@@ -69,48 +69,48 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 # documentation
-/depot/www/kits/%{_name}/%{version}/*.html
-/depot/www/kits/%{_name}/%{version}/COPYING
-/depot/www/kits/%{_name}/%{version}/kit_base_doc_source/*
-/depot/kits/%{_name}/%{version}/%{_arch}/kitinfo
+/www/*.html
+/www/COPYING
+/www/kit_base_doc_source/*
+/kitinfo
 
 # plugins
-/opt/kusu/lib/plugins/addhost/00-boothost.py*
-/opt/kusu/lib/plugins/addhost/01-hosts.py*
-/opt/kusu/lib/plugins/addhost/02-dnsreverse.py*
-/opt/kusu/lib/plugins/addhost/03-dnszone.py*
-/opt/kusu/lib/plugins/addhost/04-dhcp.py*
-/opt/kusu/lib/plugins/addhost/05-hostspdsh.py*
-/opt/kusu/lib/plugins/addhost/06-hostsequiv.py*
-/opt/kusu/lib/plugins/addhost/07-ssh.py*
-/opt/kusu/lib/plugins/addhost/09-autofs.py*
-/opt/kusu/lib/plugins/addhost/10-ssh_knownhosts.py*
-/opt/kusu/lib/plugins/addhost/99-cfmsync.py*
-/opt/kusu/lib/plugins/genconfig/__init__.py*
-/opt/kusu/lib/plugins/genconfig/apache_conf.py*
-/opt/kusu/lib/plugins/genconfig/debug.py*
-/opt/kusu/lib/plugins/genconfig/dhcpd.py*
-/opt/kusu/lib/plugins/genconfig/hostsequiv.py*
-/opt/kusu/lib/plugins/genconfig/hostspdsh.py*
-/opt/kusu/lib/plugins/genconfig/hosts.py*
-/opt/kusu/lib/plugins/genconfig/named.py*
-/opt/kusu/lib/plugins/genconfig/nodes.py*
-/opt/kusu/lib/plugins/genconfig/nodegroups.py*
-/opt/kusu/lib/plugins/genconfig/pam_conf.py*
-/opt/kusu/lib/plugins/genconfig/pam_conf_rhelfamily.tmpl
-/opt/kusu/lib/plugins/genconfig/reverse.py*
-/opt/kusu/lib/plugins/genconfig/resolv.py*
-/opt/kusu/lib/plugins/genconfig/zone.py*
-/opt/kusu/lib/plugins/genconfig/ssh.py*
-/opt/kusu/lib/plugins/genconfig/ssh_config.tmpl*
-/opt/kusu/lib/plugins/genconfig/apache_conf.tmpl
-/opt/kusu/lib/plugins/genconfig/bashrc.py*
-/opt/kusu/lib/plugins/genconfig/kickstart.py*
-/opt/kusu/lib/plugins/genconfig/autoinst.py*
-/opt/kusu/lib/plugins/cfmsync/getent-data.sh
-/opt/kusu/lib/plugins/ngedit/01-component-base-installer.py*
-/opt/kusu/lib/plugins/ngedit/02-component-base-installer.py*
-/opt/kusu/lib/plugins/ngedit/03-component-base-node.py*
+/plugins/addhost/00-boothost.py*
+/plugins/addhost/01-hosts.py*
+/plugins/addhost/02-dnsreverse.py*
+/plugins/addhost/03-dnszone.py*
+/plugins/addhost/04-dhcp.py*
+/plugins/addhost/05-hostspdsh.py*
+/plugins/addhost/06-hostsequiv.py*
+/plugins/addhost/07-ssh.py*
+/plugins/addhost/09-autofs.py*
+/plugins/addhost/10-ssh_knownhosts.py*
+/plugins/addhost/99-cfmsync.py*
+/plugins/genconfig/__init__.py*
+/plugins/genconfig/apache_conf.py*
+/plugins/genconfig/debug.py*
+/plugins/genconfig/dhcpd.py*
+/plugins/genconfig/hostsequiv.py*
+/plugins/genconfig/hostspdsh.py*
+/plugins/genconfig/hosts.py*
+/plugins/genconfig/named.py*
+/plugins/genconfig/nodes.py*
+/plugins/genconfig/nodegroups.py*
+/plugins/genconfig/pam_conf.py*
+/plugins/genconfig/pam_conf_rhelfamily.tmpl
+/plugins/genconfig/reverse.py*
+/plugins/genconfig/resolv.py*
+/plugins/genconfig/zone.py*
+/plugins/genconfig/ssh.py*
+/plugins/genconfig/ssh_config.tmpl*
+/plugins/genconfig/apache_conf.tmpl
+/plugins/genconfig/bashrc.py*
+/plugins/genconfig/kickstart.py*
+/plugins/genconfig/autoinst.py*
+/plugins/cfmsync/getent-data.sh
+/plugins/ngedit/01-component-base-installer.py*
+/plugins/ngedit/02-component-base-installer.py*
+/plugins/ngedit/03-component-base-node.py*
 
 %pre
 

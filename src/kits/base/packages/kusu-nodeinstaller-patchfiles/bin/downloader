@@ -44,5 +44,7 @@ if not os.path.exists(options.dest):
 destdir = options.dest
 
 do = Downloader(destdir, target_os=myos)
-do.downloadPackages(args)
-
+try:
+    do.downloadPackages(args)
+except Exception, e:
+    print e

@@ -77,8 +77,8 @@ class BaseUpdate:
         """Makes the update kit"""
 
         kitName = '%s-updates' % self.os_name 
-        kitRelease = self.getNextRelease(kitName)
-        kitVersion = '%s_%s_r%s' % (self.os_version, self.os_arch, kitRelease)
+        kitVersion = self.os_version
+        kitRelease = self.getNextRelease(kitName, kitVerson, self.os_arch)
         kitArch = 'noarch'
 
         # Buildkit's kit src
@@ -102,22 +102,15 @@ class BaseUpdate:
         
         return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
 
-    def getNextRelease(self, kitName):
-        # Find max version
-        kits = [kit.version for kit in self.db.Kits.select_by(rname = kitName)]
-        if kits:
-            maxRelease = 0
+    def getNextRelease(self, kitName, kitVersion, kitArch):
 
-            for kitversion in kits:
-                c = re.compile('r[\d]+') 
-                matches = c.findall(kitversion)
-                if matches:
-                    # Takw away rXXX
-                    release = int(matches[0][1:])
-                    if release > maxRelease:
-                        maxRelease = release
-        else:
-            maxRelease = 0
+        # Find max version
+        kits = self.db.Kits.select_by(rname = kitName, version=kitVersion, arch=kitArch)
+       
+        maxRelease = 0
+        for kit in kits:
+            if kit.release > maxRelease:
+                maxRelease = kit.release
 
         return maxRelease + 1
 
@@ -190,14 +183,21 @@ class BaseUpdate:
         kits = ko.addKitPrepare()
 
         for kit in kits:
-            if kit[1]['name'] == '%s-updates' % self.os_name:
-                ko.addKit(kit)
+            
+            kitName = '%s-updates' % self.os_name
+            if kit[1]['name'] == kitName:
+                kid = ko.addKit(kit)
                 
                 if kitdir.exists():
                     kitdir.rmtree()
 
-                return kit
-            
+                updateKit = self.db.Kits.get(kid)
+                updateKit.arch = self.os_arch
+                updateKit.save_or_update()
+                updateKit.flush()
+        
+                return updateKit
+    
         raise UnrecognizedKitMediaError, "Update kit cannot be found"    
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
@@ -408,12 +408,8 @@ class YumUpdate(BaseUpdate):
 
 class RHNUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
-        BaseUpdate.__init__(self, 'rhel', self.getOSMajorVersion(os_version), os_arch, prefix, db)
+        BaseUpdate.__init__(self, 'rhel', os_version, os_arch, prefix, db)
         self.rhn = None
-
-    def getOSMajorVersion(self, os_version):
-        """Returns the major number"""
-        return os_version.split('.')[0]
 
     def getRHN(self):
         if self.configFile:
@@ -441,8 +437,7 @@ class RHNUpdate(BaseUpdate):
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
 
-        dir = path(self.prefix) / self.updates_root / \
-              self.os_name / self.getOSMajorVersion(self.os_version) / self.os_arch
+        dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
@@ -526,12 +521,7 @@ class YouUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, 'sles', os_version, os_arch, prefix, db)
 
-        kits = self.db.Kits.select_by(self.db.Kits.c.rname.like('%s10%%' % self.os_name),
-                                      arch=self.os_arch)
         
-        pat = re.compile('\d+\.\d+')
-        self.os_version_full = pat.findall(kits[0].rname)[0]
-
     def getYouCred(self):
         if self.configFile:
             cfg = self.getConfig(self.configFile)['sles']
@@ -556,7 +546,13 @@ class YouUpdate(BaseUpdate):
 
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
-    
+   
+        repo = self.db.Repos.get(self.repoid)        
+        major = repo.os.major
+        minor = repo.os.minor
+
+        self.os_version_full = '%s.%s' % (major,minor)
+
         dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version_full / self.os_arch
         if not dir.exists():
             dir.makedirs()
@@ -613,8 +609,8 @@ class YouUpdate(BaseUpdate):
         """Makes the update kit"""
 
         kitName = '%s-updates' % self.os_name 
-        kitRelease = self.getNextRelease(kitName)
-        kitVersion = '%s_%s_r%s' % (self.os_version_full, self.os_arch, kitRelease)
+        kitVersion = self.os_version_full
+        kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
         # Buildkit's kit src

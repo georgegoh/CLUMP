@@ -119,6 +119,7 @@ class RepoNotFoundError(KusuError): pass
 class ReposIntegrityError(KusuError): pass
 class RepoCannotDeleteError(KusuError): pass
 class NodeGroupHasRepoAlreadyError(KusuError): pass
+class UpdatesImgNotCreatedError(KusuError): pass
 
 # repoman.rhn
 class rhnError(KusuError): pass

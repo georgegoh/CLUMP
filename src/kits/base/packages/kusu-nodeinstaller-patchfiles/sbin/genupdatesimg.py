@@ -6,45 +6,37 @@ from path import path
 import tempfile
 import subprocess
 import os
-from primitive.system.software.probe import OS
+from primitive.system.software.dispatcher import Dispatcher
+from kusu.repoman.repofactory import RepoFactory
+from kusu.repoman.genupdates import GenUpdatesFactory
 
 class GenUpdatesImg(KusuApp):
     def __init__(self):
-        engine =  os.getenv('KUSU_DB_ENGINE')
-        if engine == 'mysql':
-            dbdriver = 'mysql'
-        else:
-            dbdriver = 'postgres'
+        KusuApp.__init__(self)
+        
+        dbdriver =  os.getenv('KUSU_DB_ENGINE', 'postgres')
         dbdatabase = 'kusudb'
         dbuser = 'apache'
-        dbpassword = None
+        
+        self.dbs = database.DB(dbdriver, dbdatabase, dbuser)
 
-        self.dbs = database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+        self.parser.add_option('-r', '--repoid', action='store', help='Target repository id')
 
+    def parse(self):
+        options, args = self.parser.parse_args()
+        try:
+            self.repoid = int(options.repoid)
+        except ValueError:
+            print 'Non-integer repository id is not supported.'
+            return False
+        return True
 
-    def _updateRepos(self):
-        """
-        Updates the repos to include the patchfiles and prepare the 
-        autoinstall script
-        """
-
-        repoid = self.dbs.Repos.select()[0].repoid
-
-        ngs = self.dbs.NodeGroups.select()
-        for ng in ngs:
-            if ng.ngname == 'unmanaged':
-                continue
-
-            ng.repoid = repoid
-            ng.save()
-            ng.flush()
-
-        from kusu.repoman.repofactory import RepoFactory
-        rfactory = RepoFactory(self.dbs) 
-        repoObj = rfactory.getRepo(repoid)
-
-        repoObj.copyKusuNodeInstaller()
-        repoObj.makeAutoInstallScript()
+    def verify(self):
+        try:
+            self.dbs.Repos.selectone_by(repoid=self.repoid)
+        except Exception, e:
+            print e
+            return False
 
 
     def _runCommand(self, cmd):
@@ -53,23 +45,41 @@ class GenUpdatesImg(KusuApp):
         return retval
 
     def run(self):
+        if not self.parse():
+            return
+
+        if self.repoid is None:
+            self.repoid = self.dbs.Repos.select()[0].repoid
+        
+        elif not self.verify():
+            return
+        
         # create scratchdir
         scratchdir = path(tempfile.mkdtemp('patchfiles-'))
         
         dest = path('/opt/kusu/lib/nodeinstaller')
+       
+        os = self.dbs.Repos.selectone_by(repoid=self.repoid).os
+        target = (os.name, os.major+'.'+os.minor, os.arch)
         
-        updatesimg_type = ''
-        os = OS()[0]
-        if os in ['sles','opensuse','suse']:
-            updatesimg_type = 'autoinst'
-        else:
-            updatesimg_type = 'ks'
-        self._runCommand('$KUSU_ROOT/lib/nodeinstaller/bin/gen-nodeinstaller-updatesimg-%s -d %s' % (updatesimg_type, scratchdir))
-        self._runCommand('cd %s/nodeinstaller && find . | cpio -mpdu %s' % (scratchdir,dest))
+        updater = GenUpdatesFactory().getUpdatesClass(target_os=target)
+        try:
+            updater.doGenUpdates(str(scratchdir))
+        except Exception, e:
+            print e
+            if scratchdir.exists():
+                scratchdir.rmtree()
+            return
+       
+        self._runCommand('cd %s/nodeinstaller && find . | cpio -mpdu %s' % (scratchdir, dest))
         
-        if scratchdir.exists(): scratchdir.rmtree()
-        
-        self._updateRepos()
+        if scratchdir.exists():
+            scratchdir.rmtree()
+       
+        rfactory = RepoFactory(self.dbs)
+        repoObj = rfactory.getRepo(self.repoid)
+        repoObj.copyKusuNodeInstaller()
+        repoObj.makeAutoInstallScript()
 
 if __name__ == "__main__":
     app = GenUpdatesImg()

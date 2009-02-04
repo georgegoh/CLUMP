@@ -127,21 +127,15 @@ def makeRepo(kiprofile):
         f.close()
 
 def getPackageProfile(dbs, ngname):
-    # Code adapted from autoinstall/installprofile.py.
-    # There can only be 1 installer. Guaranteed by the db. 
+ 
     installer = dbs.NodeGroups.select_by(ngname=ngname)[0]
     try:
         components = [component.cname for component in installer.components \
-                      if not component.kit.isOS]
+                      if component.kit.rname == 'base']
 
         pkgs = [pkg.packagename for pkg in installer.packages]
 
-        # also add all kit RPMs
-        kitrpms = ["kit-%s" % kit.rname
-                   for kit in dbs.Kits.select()
-                   if not kit.isOS]
-
-        return components + pkgs + kitrpms
+        return components + pkgs 
     except AttributeError:
         raise AttributeError, 'components: %s' % str(installer.components)
 
