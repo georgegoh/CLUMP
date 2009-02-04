@@ -38,6 +38,7 @@ class GenUpdatesImg(KusuApp):
             print e
             return False
 
+        return True
 
     def _runCommand(self, cmd):
         p = subprocess.Popen(cmd, shell=True)
