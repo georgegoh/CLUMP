@@ -122,7 +122,7 @@ class Kits(BaseTable):
         if len(infokit) == 0 or 'api' not in infokit or '0.1' == infokit['api']:
             lst = [comp for comp in self.components if not comp.os or \
                    comp.os.lower() == os_string or comp.os.lower() == os.name.lower() or \
-                   comp.os.strip() == '' or comp.os == '*' or comp.os == 'NULL']
+                   comp.os.strip() == '' or comp.os == 'NULL']
             components_list.extend(lst)
 
         elif '0.2' == infokit['api']:
