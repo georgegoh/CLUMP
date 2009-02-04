@@ -98,6 +98,8 @@ class BuildImage:
         # Skip Buildimage for sles/opensuse
         ng = self.dbs.NodeGroups.select_by(ngname = nodegroup)[0]
         os_name = ng.repo.os.name
+        os_arch = ng.repo.os.arch
+
         if os_name.lower() in ['sles', 'opensuse', 'suse']:
             self.stdoutMessage('Skipping BuildImage for %s distribution\n' % os_name)
             sys.exit(0)
