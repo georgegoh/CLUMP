@@ -691,8 +691,12 @@ For examples:
             print "%s:\t%s" % (headers[2], repo.installers)
             print "%s:\t\t%s" % (headers[3], (repo.ostype or ''))
 
-            kitnames = ['%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch) for kit in 
-                       self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits]
+            kitnames = []
+            for kit in self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits:
+                if kit.is_os():
+                    kitnames.append('%s-%s-%s' % (kit.rname, kit.os.major, kit.arch)) 
+                else:
+                    kitnames.append('%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch)) 
 
             sys.stdout.write("%s:\t\t" % headers[4])
 
