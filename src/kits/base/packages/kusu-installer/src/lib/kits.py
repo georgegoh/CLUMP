@@ -79,10 +79,12 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         for kit in kit_list:
             if kit.is_os():
                 version = '%s.%s' % (kit.os.major,kit.os.minor)
+                release = ''
             else:
                 version = kit.version
+                release = str(kit.release)
 
-            self.listbox.addRow([kit.rname, version, str(kit.release), kit.arch], kit)
+            self.listbox.addRow([kit.rname, version, release, kit.arch], kit)
 
     def installKitsOnBootMedia(self):
         """Install the kits on boot media (most likely base kit only)."""
