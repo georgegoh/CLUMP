@@ -747,7 +747,7 @@ class scrNGEEdit_Components(USXBaseScreen):
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 2)
-       
+
         repo = self.dbs.Repos.selectone_by(repoid=curNG['repoid'])
         comps = repo.getEligibleComponents(curNG['type'])
         rv = [(c.kid, c.kit.rname, c.cid, c.cname) for c in comps]

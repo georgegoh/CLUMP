@@ -3231,7 +3231,7 @@ def getAvailPkgs(db, repoid, categorized=False):
     timediff = []
     result = {}
 
-    if repoid is not None:
+    if repoid is None:
         raise NodeGroupError, "Must specify a repository to get the list of available packages"
 
     query = "select r.repository, r.ostype from repos r where r.repoid = %s" % repoid
@@ -3269,12 +3269,12 @@ def getAvailPkgs(db, repoid, categorized=False):
     rmpacklst = []
     rmpackpathlist = []
     if db.driver == 'mysql':
-       query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+       query = '''SELECT k.kid, k.rname FROM kits k, repos_have_kits rk,
        repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
        k.isOS = False AND r.repoid = %s ''' %repoid
        db.execute(query)
     else: # postgres for now
-       query = '''SELECT k.rname, k.version, k.arch FROM kits k, repos_have_kits rk,
+       query = '''SELECT k.kid, k.rname FROM kits k, repos_have_kits rk,
        repos r WHERE r.repoid = rk.repoid AND rk.kid = k.kid AND
        k."isOS" = False AND r.repoid = %s ''' %repoid
        db.execute(query,postgres_replace=False)
@@ -3282,15 +3282,15 @@ def getAvailPkgs(db, repoid, categorized=False):
     rv = db.fetchall()
     
     kits_root = db.getAppglobals('DEPOT_KITS_ROOT')
-    for kitname,kitver,kitarch in rv:
-        path = os.path.join(kits_root, '%s/%s/%s' % (kitname,kitver,kitarch ))
-        os.chdir(path)
+    for kitid, kitname in rv:
+        kit_path = path.path(kits_root) / str(kitid)
+        os.chdir(str(kit_path))
         kitpacklst = glob.glob('*.[rR][pP][mM]')
         
         if kitname.endswith('-updates'):
             kitpacklst = [x for x in kitpacklst if (x.startswith('component-') or x.startswith('kit-'))]
         
-        rmpackpathlist.extend([os.path.join(path, x) for x in kitpacklst])
+        rmpackpathlist.extend([str(kit_path / x) for x in kitpacklst])
         kitpacklst = [ RpmNameSplit(x)[0] for x in kitpacklst ]
         rmpacklst.extend(kitpacklst)
     

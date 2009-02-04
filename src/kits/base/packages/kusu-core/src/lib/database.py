@@ -83,7 +83,7 @@ class Components(BaseTable):
     cols = ['kid', 'cname', 'cdesc', 'os', 'ngtypes']
 
     def getNGTypes(self):
-        if '*' == self.ngtypes:
+        if not self.ngtypes or self.ngtypes == '*' or self.ngtypes.strip() == '':
             return ['installer','compute','other']
         else:
             return self.ngtypes.split(';')
@@ -120,8 +120,9 @@ class Kits(BaseTable):
         infokit, infocomps = processKitInfo(str(kitinfo))
 
         if len(infokit) == 0 or 'api' not in infokit or '0.1' == infokit['api']:
-            lst = [comp for comp in self.components if comp.os.lower() == os_string or \
-                   '' == comp.os.strip() or comp.os.lower() == os.name.lower()]
+            lst = [comp for comp in self.components if not comp.os or \
+                   comp.os.lower() == os_string or comp.os.lower() == os.name.lower() or \
+                   comp.os.strip() == '' or comp.os == '*' or comp.os == 'NULL']
             components_list.extend(lst)
 
         elif '0.2' == infokit['api']:

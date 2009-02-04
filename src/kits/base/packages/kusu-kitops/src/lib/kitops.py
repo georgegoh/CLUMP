@@ -186,13 +186,9 @@ class KitOps:
                 # NOTE: storing pkgname as component name, since that's the
                 # RPM package to be installed.
                 if comp.has_key('os'):
-                    for tup in comp['os']:
-                        for os_name in getOSNames(tup['name'], default=[tup['name']]):
-                            os = os_name + '-' + str(tup['major']) + '-' + tup['arch']
-                            newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
-                                                           cdesc=comp['description'],
-                                                           os=os)
-                            newcomp.save()
+                    newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
+                                                   cdesc=comp['description'])
+                    newcomp.save()
                 else:
                     os = comp['ostype']
                     newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
