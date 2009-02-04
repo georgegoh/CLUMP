@@ -109,6 +109,14 @@ For examples:
     def getVersion(self):
         self.stdoutMessage('Repoman 1.2\n')
 
+    def getKitFriendlyName(self, kit):
+
+        if kit.is_os():
+            version = '%s.%s' % (kit.os.major,kit.os.minor)
+            return '%s-%s-%s' % (kit.os.name, version, kit.os.arch)
+        else:
+            return '%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch)
+
     def new(self, repo_name):
         li = re.compile("^[a-zA-Z0-9-_.]+").findall(repo_name)
         if not li or (len(li[0]) != len(repo_name)):
@@ -147,7 +155,6 @@ For examples:
 
     def addKit(self, repo_name, kid, kname, kversion, karch):
 
-        self.logEvent("Adding Kit %s-%s-%s to Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
 
         self.repoExists(repo_name)
 
@@ -155,6 +162,8 @@ For examples:
 
         if kits:
             kit = kits[0]
+            
+            self.logEvent("Adding Kit %s to Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
 
             if len(kits) > 1:
                 self.logErrorEvent('There is more than 1 kit.')
@@ -183,8 +192,7 @@ For examples:
                         # validate kit
                         # At least 1 component must be valid for the repo os type
                         if not kit.getMatchingComponents(repo.os):
-                            self.logErrorEvent('Kit is not compatible with repo: %s\n' % repo_name)
-                            self.stderrMessage('Kit is not compatible with repo: %s\n' % repo_name)
+                            self.stderrMessage('Kit %s is not compatible with repo: %s\n' % (self.getKitFriendlyName(kit), repo_name))
                             self.unlock()
                             sys.exit(1)
         
@@ -192,8 +200,8 @@ For examples:
                     repo.save()
                     repo.flush()
 
-                    self.logEvent("Finished adding Kit %s-%s-%s to Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
-                    self.stdoutMessage('Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    self.logEvent("Finished adding Kit %s to Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
+                    self.stdoutMessage('Kit: %s has been added to repo: %s.  Remember to refresh with -u\n', self.getKitFriendlyName(kit),repo_name)
         else:
             self.logErrorEvent('No such kit. Please specify kit name, version and arch.')
             self.unlock()
@@ -201,7 +209,6 @@ For examples:
 
     def delKit(self, repo_name, kid, kname, kversion, karch):
         
-        self.logEvent("Deleting Kit %s-%s-%s from Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
         
         self.repoExists(repo_name)
 
@@ -209,6 +216,8 @@ For examples:
 
         if kits:
             kit = kits[0]
+
+            self.logEvent("Deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
 
             if len(kits) > 1:
                 self.logErrorEvent('More than 1 kit is available.')
@@ -230,7 +239,7 @@ For examples:
                             ngInUse.append(ng.ngname)
                             
                     if ngInUse:
-                        self.logErrorEvent('Kit: %s-%s-%s in use by nodegroup(s): %s' % (kname,kversion,karch, ', '.join(ngInUse)) )
+                        self.logErrorEvent('Kit: %s in use by nodegroup(s): %s' % (self.getKitFriendlyName(kit), ', '.join(ngInUse)) )
                         self.unlock()
                         sys.exit(1)
 
@@ -247,8 +256,8 @@ For examples:
                     repo.save()
                     repo.flush()
                         
-                    self.logEvent("Finished deleting Kit %s-%s-%s from Repo: %s" % (kname,kversion,karch,repo_name), toStdout=False)
-                    self.stdoutMessage('Kit: %s-%s-%s removed from repo: %s. Remember to refresh with -u\n', kname,kversion,karch,repo_name)
+                    self.logEvent("Finished deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
+                    self.stdoutMessage('Kit: %s removed from repo: %s. Remember to refresh with -u\n', self.getKitFriendlyName(kit),repo_name)
         else:
             self.logErrorEvent('No such kit. Please specify kit name, version and arch.')
             self.unlock()
@@ -700,12 +709,8 @@ For examples:
             print "%s:\t%s" % (headers[2], repo.installers)
             print "%s:\t\t%s" % (headers[3], (repo.ostype or ''))
 
-            kitnames = []
-            for kit in self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits:
-                if kit.is_os():
-                    kitnames.append('%s-%s.%s-%s' % (kit.rname, kit.os.major, kit.os.minor, kit.arch)) 
-                else:
-                    kitnames.append('%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch)) 
+            kitnames = [self.getKitFriendlyName(kit)
+                            for kit in self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits]
 
             sys.stdout.write("%s:\t\t" % headers[4])
 
