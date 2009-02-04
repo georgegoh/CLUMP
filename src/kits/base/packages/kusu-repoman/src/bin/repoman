@@ -179,6 +179,15 @@ For examples:
                     if kit.isOS:
                         repo.ostype = '%s-%s-%s' % (kname,kversion,karch)
 
+                    else:
+                        # validate kit
+                        # At least 1 component must be valid for the repo os type
+                        if not kit.getMatchingComponents(repo.os):
+                            self.logErrorEvent('Kit is not compatible with repo: %s\n' % repo_name)
+                            self.stderrMessage('Kit is not compatible with repo: %s\n' % repo_name)
+                            self.unlock()
+                            sys.exit(1)
+        
                     repo.kits.append(kit)
                     repo.save()
                     repo.flush()
@@ -694,7 +703,7 @@ For examples:
             kitnames = []
             for kit in self.dbs.Repos.select_by(repoid = repo.repoid)[0].kits:
                 if kit.is_os():
-                    kitnames.append('%s-%s-%s' % (kit.rname, kit.os.major, kit.arch)) 
+                    kitnames.append('%s-%s.%s-%s' % (kit.rname, kit.os.major, kit.os.minor, kit.arch)) 
                 else:
                     kitnames.append('%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch)) 
 
