@@ -312,6 +312,13 @@ class KitOps:
 
         return kit, components
 
+    def getKitApi(self, kid):
+        kitinfo = self.kits_dir / str(kid) / 'kitinfo'
+        if not kitinfo.exists():
+            return '0.1'
+        kit, components = processKitInfo(kitinfo)
+        return kit.get('api', '0.1')
+
     def checkKitInstalled(self, kitname, kitver, kitrel, kitarch):
         """
         Returns True if specified kit is already in the DB, False otherwise.
