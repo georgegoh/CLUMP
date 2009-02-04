@@ -186,8 +186,11 @@ class KitOps:
                 # NOTE: storing pkgname as component name, since that's the
                 # RPM package to be installed.
                 if comp.has_key('os'):
+                    comp_ngtypes = comp.get('ngtypes', [])
+                    ngtypes = ';'.join(comp_ngtypes)
                     newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
-                                                   cdesc=comp['description'])
+                                                   cdesc=comp['description'],
+                                                   ngtypes=ngtypes)
                     newcomp.save()
                 else:
                     os = comp['ostype']
