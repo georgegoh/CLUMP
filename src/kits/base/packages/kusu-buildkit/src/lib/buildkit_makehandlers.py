@@ -6,6 +6,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 
 import sys
+import pwd
 import atexit
 from path import path
 from kusu.core.app import KusuApp
