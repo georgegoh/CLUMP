@@ -157,7 +157,7 @@ class Kits(BaseTable):
     def getSupportedDistro(self):
 
         if self.is_os():
-            return self.os
+            return [self.os]
 
         matching_os = []        
         for _os in OS.select():
