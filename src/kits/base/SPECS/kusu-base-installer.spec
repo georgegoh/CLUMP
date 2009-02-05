@@ -94,7 +94,7 @@ install -d $RPM_BUILD_ROOT/opt/kusu/man/man8
 install -d $RPM_BUILD_ROOT/depot/repos/custom_scripts
 install -d $RPM_BUILD_ROOT/depot/repos/post_scripts
 install -d $RPM_BUILD_ROOT/depot/kits
-install -d $RPM_BUILD_ROOT/depot/kits/www
+install -d $RPM_BUILD_ROOT/depot/www/kits
 install -d $RPM_BUILD_ROOT/depot/images
 
 # Just for development
@@ -245,7 +245,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/etc/templates/dhcpd.tmpl
 /opt/kusu/etc/templates/pxefile.tmpl
 /depot/repos/post_scripts
-/depot/kits/www
+/depot/www/kits
 %defattr(-,apache,apache)
 /depot/repos/nodeboot.cgi
 /depot/kits
