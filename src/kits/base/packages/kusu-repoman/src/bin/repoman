@@ -653,7 +653,10 @@ For examples:
                     sys.exit(-1)
 
                 if kits == []:
-                    self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
+                    if not self.kitname:
+                        self.logErrorEvent("The kit '%s' could not be found" % self.kid)
+                    else:
+                        self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
                     self.unlock()
                     sys.exit(-1)
                 else:
@@ -690,7 +693,11 @@ For examples:
                     sys.exit(-1)
            
                 if kits == []:
-                    self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
+                    if not self.kitname:
+                        self.logErrorEvent("The kit '%s' could not be found" % self.kid)
+                    else:
+                        self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
+
                     self.unlock()
                     sys.exit(-1)
                
