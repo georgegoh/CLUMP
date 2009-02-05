@@ -84,6 +84,7 @@ Requires: MAKEDEV
 Requires: libxcrypt
 Requires: pam_unix2
 Requires: python-bcrypt
+Requires: inst-source-utils
 
 %description
 This component provides the node with the Kusu management tools for the 
