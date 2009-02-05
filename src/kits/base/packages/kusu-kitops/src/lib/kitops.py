@@ -17,7 +17,7 @@ import glob
 import re
 from path import path
 import sqlalchemy as sa
-from primitive.support.osfamily import getOSNames
+from primitive.support.osfamily import getOSNames, matchTuple
 from kusu.boot.tool import BootMediaTool
 from kusu.boot.distro import *
 from kusu.kitops.package import PackageFactory
@@ -37,6 +37,13 @@ except:
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
+
+
+# We currently want to limit the extent of association
+# to certain ngids and below. 
+NG_ASSOC_THRESHOLD = 2
+USE_NG_ASSOC_THRESHOLD = True
+
 
 class KitOps:
     def __init__(self, **kw):
@@ -161,11 +168,38 @@ class KitOps:
            Precondition: kit is mounted to self.mountpoint'''
         AddKitStrategy[api](self, self.__db, kitinfo)
 
-    def updateComponents(self, kid, components):
+
+    def getKitComponents(self, kid, os):
+        kitinfo = self.kits_dir / str(kid) / 'kitinfo'
+        if not kitinfo.exists():
+            return []
+        kit, components = processKitInfo(kitinfo)
+        if kit['api'] != '0.2':
+            return []
+
+        target_os = (os.name, os.major, os.minor, os.arch)
+        components_list = []
+        for comp in components:
+            os_tuples = []
+            try:
+                for tup in comp['os']:
+                    for os_name in getOSNames(tup['name'], default=[tup['name']]):
+                        os_tuples.append((os_name, tup['major'], tup['minor'], tup['arch']))
+            except KeyError:
+                break
+            try:
+                if matchTuple(target_os, os_tuples):
+                    db_comp = self.__db.Components.selectfirst_by(cname=comp['pkgname'], kid=kid)
+                    components_list.append(db_comp)
+            except KeyError:
+                pass
+        return components_list
+
+    def updateComponents(self, kit, components):
         """
         Update components table with information from kit.
         """
-
+        kid = kit.kid
         compnames = []
         for comp in components:
             compnames.append(comp['pkgname'])
@@ -173,15 +207,16 @@ class KitOps:
         oldcomponents = self.__db.Components.select(
                 self.__db.Components.c.cname.in_(*compnames))
 
-        updated_ngtypes = []
         for comp in components:
             newcomponent = True
             for oldcomp in oldcomponents:
                 if comp['pkgname'] == oldcomp.cname:
                     if comp.has_key('ostype') and comp['ostype'] == oldcomp.os:
                         newcomponent = False
+                        kl.debug('Component %s already exists in database' % comp['pkgname'])
 
             if newcomponent:
+                kl.debug('Component %s does not already exist in database' % comp['pkgname'])
                 # This component does not yet exist in the DB, so add it now.
                 # NOTE: storing pkgname as component name, since that's the
                 # RPM package to be installed.
@@ -192,6 +227,7 @@ class KitOps:
                                                    cdesc=comp['description'],
                                                    ngtypes=ngtypes)
                     newcomp.save()
+                    newcomp.flush()
                 else:
                     os = comp['ostype']
                     newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
@@ -199,24 +235,32 @@ class KitOps:
                                                    os=os)
                     # also store the OS/ARCH -- but how to determine?
                     newcomp.save()
+                    newcomp.flush()
 
-                if self.installer:
-                    ngs = self.__db.NodeGroups.select(
-                        self.__db.NodeGroups.c.type.in_(*comp['ngtypes']))
-
-                    for ng in ngs:
+                ngs = self.__db.NodeGroups.select(
+                    self.__db.NodeGroups.c.type.in_(*comp['ngtypes']))
+                kl.debug('comp[ngtypes]: %s, ngs: %s' % (comp['ngtypes'], [ng.ngname for ng in ngs]))
+                for ng in ngs:
+                    kl.debug('Attempting to associate component %s.%s to nodegroup %s' % (newcomp.cid, newcomp.cname, ng.ngname))
+                    kl.debug('installer mode: %s' % self.installer)
+                    if not self.installer and ng.repo:
+                        kl.debug('newcomp: %s, ng.repo.os: %s matches: %s matched: %s' % (newcomp, ng.repo.os, self.getKitComponents(kit.kid, ng.repo.os),
+                                                                           newcomp in self.getKitComponents(kit.kid, ng.repo.os)))
+                        kl.debug('USE_NG_ASSOC_THRESHOLD: %s NG_ASSOC_THRESHOLD: %s' % (USE_NG_ASSOC_THRESHOLD, NG_ASSOC_THRESHOLD))
+                    if self.installer:
+                        kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
+                        ng.components.append(newcomp)
+                    elif USE_NG_ASSOC_THRESHOLD and ng.ngid > NG_ASSOC_THRESHOLD:
+                        pass
+                    elif ng.repo and newcomp in self.getKitComponents(kit.kid, ng.repo.os):
+                        kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                         ng.components.append(newcomp)
 
-                    # keep track of updated nodegroup types
-                    for type in comp['ngtypes']:
-                        if type not in updated_ngtypes:
-                            updated_ngtypes.append(type)
             else:
                 raise ComponentAlreadyInstalledError, \
                     'Component %s already installed' % comp['pkgname']
 
         self.__db.flush()
-        return updated_ngtypes
 
     def getAvailableKits(self):
         """

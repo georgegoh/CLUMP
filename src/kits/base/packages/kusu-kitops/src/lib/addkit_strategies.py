@@ -7,11 +7,6 @@ from kusu.util.errors import KitAlreadyInstalledError,ComponentAlreadyInstalledE
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
-# We currently want to limit the extent of association
-# to certain ngids and below. 
-NG_ASSOC_THRESHOLD = 2
-USE_NG_ASSOC_THRESHOLD = True
-
 def addkit01(koinst, db, kitinfo):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
@@ -54,7 +49,7 @@ def addkit01(koinst, db, kitinfo):
     
     # check/populate component table
     try:
-        updated_ngtypes = koinst.updateComponents(newkit.kid, kitinfo[2])
+        koinst.updateComponents(newkit, kitinfo[2])
     except ComponentAlreadyInstalledError, msg:
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
@@ -177,7 +172,7 @@ def addkit02(koinst, db, kitinfo):
 
     # check/populate component table
     try:
-        updated_ngtypes = koinst.updateComponents(newkit.kid, kitinfo[2])
+        koinst.updateComponents(newkit, kitinfo[2])
     except ComponentAlreadyInstalledError, msg:
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
@@ -202,27 +197,6 @@ def addkit02(koinst, db, kitinfo):
                 dpack.dpdesc = dpdesc
                 _comp.driverpacks.append(dpack)
             db.flush()
-
-        # for all ngtypes listed in the component,
-        # find the nodegroups of that type.
-        _ngs = db.NodeGroups.select(db.nodegroups.c.type.in_(*comp['ngtypes']))
-        kl.debug('nodegroups specified by component %s: %s' % (comp['pkgname'], [ng.ngname for ng in _ngs]))
-        for _ng in _ngs:
-            # We currently want to limit the extent of association
-            # to certain ngids and below.
-            kl.debug('Trying to associate component %s with nodegroup %s' % (_comp.cname, _ng.ngname))
-            if USE_NG_ASSOC_THRESHOLD and _ng.ngid <= NG_ASSOC_THRESHOLD:
-                # create an association with the nodegroup if it doesn't already exist.
-                if _comp not in _ng.components:
-                    # nodegroup does not have an associated repo in some cases(e.g., installer).
-                    # IF REPOSITORY IS NOT ASSOCIATED, THEN ASSUME THE ENVIRONMENT(INSTALLER)
-                    # HAS ENSURED THAT THE COMPONENT _DOES_ MATCH THE NODEGROUP, AND ADD
-                    # ANYWAY. NOTE: INSTALLER NEEDS TO VALIDATE THE KIT COMPONENTS.
-                    if _ng.repo and not _comp in newkit.getMatchingComponents(_ng.repo.os):
-                        continue
-                    _ng.components.append(_comp)
-                    _ng.save()
-                    _ng.flush()
 
     return newkit.kid
 
