@@ -965,7 +965,7 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
                                       arch=self.os_arch)
 
         if kits:
-            return [self.getKitsPath(kits[0].kid) /  self.dirlayout['rpmsdir']]
+            return [self.getKitPath(kits[0].kid) /  self.dirlayout['rpmsdir']]
         else:
             return []
 
@@ -1077,7 +1077,7 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
                                       arch=self.os_arch)
 
         if kits:
-            return [self.getKitsPath(kits[0].kid) /  self.dirlayout['rpmsdir']]
+            return [self.getKitPath(kits[0].kid) /  self.dirlayout['rpmsdir']]
         else:
             return []
 
@@ -1145,7 +1145,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 min_version = kit.os.minor
                 kid = kit.kid
 
-        return [self.getKitsPath(kid) / p 
+        return [self.getKitPath(kid) / p 
                 for p in [self.dirlayout['server.rpmsdir'],
                           self.dirlayout['cluster.rpmsdir'],
                           self.dirlayout['clusterstorage.rpmsdir'],
