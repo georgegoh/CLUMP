@@ -11,7 +11,7 @@
 kit = {'api': '0.2',
  'arch': '${BASE_KIT_ARCH_STR}',
  'dependencies': [],
- 'conflicts': []
+ 'conflicts': [],
  'license': 'GPL',
  'name': 'base',
  'description': 'Base Kit',
