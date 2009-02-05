@@ -166,12 +166,18 @@ For examples:
             self.logEvent("Adding Kit %s to Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
 
             if len(kits) > 1:
-                self.logErrorEvent('There is more than 1 kit.')
+                self.logErrorEvent('There is more than 1 kit. Please use kid instead.')
                 self.unlock()
                 sys.exit(1)
 
             else:
                 repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
+
+                # No kits in repo, OS kit must be added first
+                if not repo.kits and not kit.is_os():
+                    self.stderrMessage('OS kit must be added first.\n')
+                    self.unlock()
+                    sys.exit(1)                
 
                 if kit.isOS:
                     if True in [k.isOS for k in repo.kits]:
@@ -209,7 +215,6 @@ For examples:
 
     def delKit(self, repo_name, kid, kname, kversion, karch):
         
-        
         self.repoExists(repo_name)
 
         kits = self.dbs.Kits.select_by(kid = kid, rname = kname, version=kversion, arch=karch)
@@ -220,7 +225,7 @@ For examples:
             self.logEvent("Deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
 
             if len(kits) > 1:
-                self.logErrorEvent('More than 1 kit is available.')
+                self.logErrorEvent('More than 1 kit is available. Please use kid instead.')
                 self.unlock()
                 sys.exit(1)
             else:
@@ -231,6 +236,13 @@ For examples:
                     self.unlock()
                     sys.exit(1)
                 else:
+                    
+                    # OS must be removed last
+                    if len(repo.kits) > 1 and kit.is_os():
+                        self.stderrMessage('OS kit must be removed last.\n')
+                        self.unlock()
+                        sys.exit(1)                
+
                     ngs = self.dbs.NodeGroups.select_by(repoid = repo.repoid)
 
                     ngInUse = []
@@ -246,18 +258,19 @@ For examples:
                     repo.kits.remove(kit)
                     
                     noOS = True
-                    for kit in repo.kits:
-                        if kit.isOS:
+                    for k in repo.kits:
+                        if k.isOS:
                             noOS = False
                             break
 
                     if noOS:
-                        repo.ostpe = None
+                        repo.ostype = None
                     repo.save()
                     repo.flush()
-                        
-                    self.logEvent("Finished deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
-                    self.stdoutMessage('Kit: %s removed from repo: %s. Remember to refresh with -u\n', self.getKitFriendlyName(kit),repo_name)
+                       
+                    if repo.kits: 
+                        self.logEvent("Finished deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
+                        self.stdoutMessage('Kit: %s removed from repo: %s. Remember to refresh with -u\n', self.getKitFriendlyName(kit),repo_name)
         else:
             self.logErrorEvent('No such kit. Please specify kit name, version and arch.')
             self.unlock()
