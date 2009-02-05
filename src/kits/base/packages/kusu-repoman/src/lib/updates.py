@@ -78,7 +78,7 @@ class BaseUpdate:
 
         kitName = '%s-updates' % self.os_name 
         kitVersion = self.os_version
-        kitRelease = self.getNextRelease(kitName, kitVerson, self.os_arch)
+        kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
         # Buildkit's kit src
