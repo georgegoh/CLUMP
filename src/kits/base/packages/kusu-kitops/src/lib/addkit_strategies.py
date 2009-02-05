@@ -206,10 +206,12 @@ def addkit02(koinst, db, kitinfo):
         # for all ngtypes listed in the component,
         # find the nodegroups of that type.
         _ngs = db.NodeGroups.select(db.nodegroups.c.type.in_(*comp['ngtypes']))
+        kl.debug('nodegroups specified by component %s: %s' % (comp['pkgname'], [ng.ngname for ng in _ngs]))
         for _ng in _ngs:
             # We currently want to limit the extent of association
             # to certain ngids and below.
-            if USE_NG_ASSOC_THRESHOLD and _ng.ngid < NG_ASSOC_THRESHOLD:
+            kl.debug('Trying to associate component %s with nodegroup %s' % (_comp.cname, _ng.ngname))
+            if USE_NG_ASSOC_THRESHOLD and _ng.ngid <= NG_ASSOC_THRESHOLD:
                 # create an association with the nodegroup if it doesn't already exist.
                 if _comp not in _ng.components:
                     # nodegroup does not have an associated repo in some cases(e.g., installer).
