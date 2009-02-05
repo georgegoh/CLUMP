@@ -8,6 +8,7 @@
 import sys
 import pwd
 import atexit
+import os
 from path import path
 from kusu.core.app import KusuApp
 from kusu.util.tools import getArch
