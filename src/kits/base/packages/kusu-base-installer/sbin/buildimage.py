@@ -397,6 +397,16 @@ class BuildImage:
                 os.chown(authorizedkeys, 0, 0)
                 os.chmod(authorizedkeys, 0644)
 
+        ## setup symlink for system-auth to system-auth-ac
+        system_auth = path(self.imagedir) / 'etc/pam.d/system-auth'
+        system_auth_ac = path(self.imagedir) / 'etc/pam.d/system-auth-ac'
+        if system_auth.exists():
+            system_auth.remove()
+        if system_auth_ac.exists():
+            system_auth_ac.remove()
+        # Set up relative symlink
+        (system_auth.parent.relpathto(system_auth_ac)).symlink(system_auth)
+
 
 class BuildImageApp(KusuApp):
 
