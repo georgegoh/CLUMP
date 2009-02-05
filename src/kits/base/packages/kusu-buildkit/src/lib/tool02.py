@@ -58,6 +58,9 @@ class BuildKit:
         elif dist == 'rhel' and distver == '5':
             compclass = 'RHEL5Component()'
             compdesc = '%s component for RHEL5.' % defaultname
+        elif dist == 'sles' and distver == '10':
+            compclass = 'SLES10Component()'
+            compdesc = '%s component for SLES10.' % defaultname
         else:
             compclass = 'DefaultComponent()'
             compdesc = '%s component.' % defaultname
