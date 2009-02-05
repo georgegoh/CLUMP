@@ -104,6 +104,13 @@ class Kits(BaseTable):
             'removable', 'arch', 'osid', 'release']
 
     def getMatchingComponents(self, target_os):
+
+        if self.is_os():
+            if self.os == target_os:
+                return self.components
+            else:
+                return []
+
         components_list = []
         os_string = '%s-%s-%s' % (target_os.name, target_os.major, target_os.arch)
         os_string = os_string.lower()
@@ -113,7 +120,7 @@ class Kits(BaseTable):
         try:
             kits_root = AppGlobals.selectfirst_by(kname='DEPOT_KITS_ROOT').kvalue
         except AttributeError:
-            kits_root = 'depot/kits'
+            kits_root = '/depot/kits'
 
         kit_path = path.path(kits_root)
         kitinfo = kit_path / str(self.kid) / 'kitinfo'
@@ -146,6 +153,18 @@ class Kits(BaseTable):
                 except KeyError: pass
 
         return components_list
+
+    def getSupportedDistro(self):
+
+        if self.is_os():
+            return self.os
+
+        matching_os = []        
+        for _os in OS.select():
+            if self.getMatchingComponents(_os):
+                matching_os.append(_os)
+
+        return list(set(matching_os))
 
     def is_os(self):
         if self.osid is not None or self.isOS:

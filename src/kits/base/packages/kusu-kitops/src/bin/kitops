@@ -405,7 +405,7 @@ class KitOpsApp(KusuApp):
         kl.debug('Performing list operation')
 
         headers = ['Kit', 'Kid', 'Description', 'Version', 'Release', 'Architecture', 'OS Kit',
-                   'Removable', 'Node Groups']
+                   'Removable', 'Supported OS', 'Node Groups']
 
         max_lengths = []
         for x in xrange(len(headers)):
@@ -440,11 +440,35 @@ class KitOpsApp(KusuApp):
             else:
                 sys.stdout.write("No")
 
+            if not kit.is_os():
+            
+                sys.stdout.write("\n%s:\t" % headers[8])
+                osline=""
+                count=0
+                for o in kit.getSupportedDistro():
+                    o = '%s-%s.%s-%s' % (o.name, o.major, o.minor, o.arch)
+                    
+                    osline += "%s" % o
+                    if o:
+                        osline += ", "
+
+                    if (count % 2):
+                        osline +="\n\t\t"
+                    count += 1
+
+                if osline[-2:-1] == ',':
+                    osline = osline[:-2]
+
+                if osline[len(osline)-5:-4] == ',':
+                    osline = osline[:len(osline)-5]
+
+                sys.stdout.write(osline)
+
             ngnames = [ng.ngname for ng in
                        self.koinst.getNodeGroups(kit.rname, kit.version,
                                                  kit.release, kit.arch)]
 
-            sys.stdout.write("\n%s:\t" % headers[8])
+            sys.stdout.write("\n%s:\t" % headers[9])
             ngline=""
             count=0
             for ng in ngnames:
