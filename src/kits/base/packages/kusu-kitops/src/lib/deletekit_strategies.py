@@ -121,7 +121,7 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
         return
     link = kusu_root / 'lib' / 'plugins' / provider / plugin
     cur_target = link.realpath()
-    for kit in kits_dir.dirs():
+    for kit in kits_root.dirs():
         new_target = kit / 'plugins' / provider / plugin
         if new_target.exists() and new_target != cur_target:
             link.remove()
