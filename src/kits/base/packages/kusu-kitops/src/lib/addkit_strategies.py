@@ -1,6 +1,7 @@
 import subprocess
 from path import path
 from kusu.util import rpmtool
+from kusu.buildkit import processKitInfo
 from kusu.util.errors import KitAlreadyInstalledError,ComponentAlreadyInstalledError
 
 import kusu.util.log as kusulog
@@ -18,9 +19,9 @@ def addkit01(koinst, db, kitinfo):
                                   kit['release'], kit['arch'])
 
     #check if this kit is already installed - by name, version, release and arch
-    if koinst.checkKitInstalled(kit['name'], kit['version'], kit['release'], kit['arch']):
+    if checkKitInstalled01(koinst, db, kit['name'], kit['version'], kit['arch']):
         raise KitAlreadyInstalledError, \
-                "Kit '%s-%s-%s-%s' already installed" % \
+                "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'])
 
 
@@ -58,7 +59,7 @@ def addkit01(koinst, db, kitinfo):
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
         newkit.flush()
-        koinst.deleteKit(kit['name'], kit['version'], kit['arch'])
+        koinst.deleteKit(del_name=kit['name'], del_version=kit['version'], del_arch=kit['arch'])
         raise ComponentAlreadyInstalledError, msg
             
     # install the kit RPM
@@ -119,6 +120,21 @@ def addkit01(koinst, db, kitinfo):
 
     return newkit.kid
 
+
+def checkKitInstalled01(koinst, db, kitname, kitver, kitarch):
+    """
+    Returns True if specified kit is already in the DB, False otherwise.
+    """
+    matches = db.Kits.select_by(rname=kitname)
+    for m in matches:
+        m_api = koinst.getKitApi(m.kid)
+        if m_api == '0.1' and m.version == kitver and m.arch == kitarch:
+            return True
+        if m_api == '0.2':
+            return True
+    return False
+
+        
 def addkit02(koinst, db, kitinfo):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
@@ -126,9 +142,9 @@ def addkit02(koinst, db, kitinfo):
                                   kit['release'], kit['arch'])
 
     #check if this kit is already installed - by name, version, release and arch
-    if koinst.checkKitInstalled(kit['name'], kit['version'], kit['release'], kit['arch']):
+    if checkKitInstalled02(koinst, db, kit['name'], kit['version'], kit['release'], kitinfo[3]):
             raise KitAlreadyInstalledError, \
-                    "Kit '%s-%s-%s-%s' already installed" % \
+                    "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
                     (kit['name'], kit['version'], kit['release'], kit['arch'])
 
     # populate the kit DB table with info
@@ -166,7 +182,7 @@ def addkit02(koinst, db, kitinfo):
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
         newkit.flush()
-        koinst.deleteKit(kit['name'], kit['version'], kit['arch'])
+        koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
             
     # get the handle on components
@@ -174,9 +190,9 @@ def addkit02(koinst, db, kitinfo):
     # FIXME: Put a proper try/except here!
 
     for comp in components:
-        # each component may have one or more rows in the DB,
-        # since a component can now be defined for multiple OSes.
-        _components = db.Components.select_by(cname=comp['pkgname'])
+        # each component may have only one row in the DB,
+        # regardless of multiple OSes.
+        _comp = db.Components.selectfirst_by(cname=comp['pkgname'])
         if 'driverpacks' in comp:
             for _dpack in comp['driverpacks']:
                 dpname = _dpack['name']
@@ -184,28 +200,54 @@ def addkit02(koinst, db, kitinfo):
                 dpack = db.DriverPacks()
                 dpack.dpname = dpname
                 dpack.dpdesc = dpdesc
-                for _comp in _components:
-                    _comp.driverpacks.append(dpack)
+                _comp.driverpacks.append(dpack)
             db.flush()
 
         # for all ngtypes listed in the component,
         # find the nodegroups of that type.
-        for t in comp['ngtypes']:
-            _ngs = db.NodeGroups.select_by(type=t)
-            for _ng in _ngs:
-                # We currently want to limit the extent of association
-                # to certain ngids and below.
-                if USE_NG_ASSOC_THRESHOLD and _ng.ngid < NG_ASSOC_THRESHOLD:
-                    # for each of the component entries created by this component,
-                    # create an association with the nodegroup if it doesn't already exist.
-                    for _comp in _components:
-                        assoc = db.NGHasComp.select_by(ngid=_ng.ngid, cid=_comp.cid)
-                        if not assoc:
-                            newrelation = db.NGHasComp(ngid=_ng.ngid, cid=_comp.cid)
-                            newrelation.save()
-                            newrelation.flush()
+        _ngs = db.NodeGroups.select(db.nodegroups.c.type.in_(*comp['ngtypes']))
+        for _ng in _ngs:
+            # We currently want to limit the extent of association
+            # to certain ngids and below.
+            if USE_NG_ASSOC_THRESHOLD and _ng.ngid < NG_ASSOC_THRESHOLD:
+                # create an association with the nodegroup if it doesn't already exist.
+                if _comp not in _ng.components and \
+                   _comp in newkit.getMatchingComponents(_ng.repo.os):
+                    _ng.components.append(_comp)
+                    _ng.save()
+                    _ng.flush()
 
     return newkit.kid
+
+
+def checkKitInstalled02(koinst, db, kitname, kitver, kitrel, kitrpm):
+    """
+    Returns True if specified kit is already in the DB, False otherwise.
+    """
+    matches = db.Kits.select_by(rname=kitname)
+    for m in matches:
+        m_api = koinst.getKitApi(m.kid)
+        if m_api == '0.1':
+            return True
+        if m_api == '0.2' and m.version == kitver:
+            new_comps = koinst.getKitRPMInfo(kitrpm)[1]
+            m_comps = processKitInfo(koinst.kits_dir / str(m.kid) / 'kitinfo')[1]
+            for m in m_comps:
+                for n in new_comps:
+                    if hasMatchingOS(m, n):
+                        return True
+    return False
+
+
+def hasMatchingOS(comp1, comp2):
+    for os1 in comp1['os']:
+        for os2 in comp2['os']:
+            if os1['name'] == os2['name'] and \
+               os1['major'] == os2['major'] and \
+               (os1['minor'] == os2['minor'] or os1['minor'] == '*') and \
+               (os1['arch'] == os2['arch'] or os1['arch'] == '*'):
+                return True
+    return False
 
 
 def installPlugins(koinst, kitdir, kid):

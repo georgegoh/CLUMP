@@ -177,9 +177,9 @@ class KitOps:
         for comp in components:
             newcomponent = True
             for oldcomp in oldcomponents:
-                if comp['pkgname'] == oldcomp.cname \
-                    and comp['ostype'] == oldcomp.os:
-                    newcomponent = False
+                if comp['pkgname'] == oldcomp.cname:
+                    if comp.has_key('ostype') and comp['ostype'] == oldcomp.os:
+                        newcomponent = False
 
             if newcomponent:
                 # This component does not yet exist in the DB, so add it now.
@@ -312,20 +312,26 @@ class KitOps:
 
         return kit, components
 
+    def getKitRPMInfo(self, kitrpm):
+        """
+        kitrpm = object of class kusu.util.rpmtool.RPM.
+        """
+        tmpdir = path(tempfile.mkdtemp(prefix='kitinfo-', dir=self.tmpprefix))
+        kitrpm.extract(tmpdir)
+        kitinfo = tmpdir / 'kitinfo'
+        if not kitinfo.exists():
+            return None
+        kits, components = processKitInfo(kitinfo)
+        # cleanup
+        self.tmpdir.rmtree()
+        return kits, components
+
     def getKitApi(self, kid):
         kitinfo = self.kits_dir / str(kid) / 'kitinfo'
         if not kitinfo.exists():
             return '0.1'
         kit, components = processKitInfo(kitinfo)
         return kit.get('api', '0.1')
-
-    def checkKitInstalled(self, kitname, kitver, kitrel, kitarch):
-        """
-        Returns True if specified kit is already in the DB, False otherwise.
-        """
-
-        return [] != self.__db.Kits.select_by(rname=kitname, version=kitver,
-                                              release=kitrel, arch=kitarch)
 
     def mountMedia(self, media, isISO=False):
         """
@@ -590,7 +596,7 @@ class KitOps:
                 kit_struct, components = processKitInfo(kitinfo)
                 api = kit_struct.get('api', '0.1')
 
-            DeleteKitStrategy[api](self, self.__db, kit, del_name, del_version, del_arch)
+            DeleteKitStrategy[api](self, self.__db, kit)
 
         self.__db.flush()
 

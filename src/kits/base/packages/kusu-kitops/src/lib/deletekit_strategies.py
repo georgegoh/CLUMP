@@ -1,26 +1,12 @@
 import sqlalchemy
+import subprocess
 from kusu.util.errors import DeleteKitsError
 
-def deletekit01(koinst, db, kit, del_name, del_version, del_arch):
-    del_path = ''
-    if del_arch and del_version:
-        kl.info("Removing kit '%s', version %s, arch %s" %
-                (del_name, del_version, del_arch))
-        del_path = koinst.kits_dir / del_name / del_version / del_arch
-        del_version = '-' + del_version
-        del_arch = '-' + del_arch
-        del_depth = 2
-    elif del_version:
-        kl.info("Removing kit '%s', version %s, all architectures" %
-                (del_name, del_version))
-        del_path = koinst.kits_dir / del_name / del_version
-        del_version = '-' + del_version
-        del_depth = 1
-    else:
-        kl.info("Removing kit '%s', all versions and architectures" %
-                del_name)
-        del_path = koinst.kits_dir / del_name
-        del_depth = 0
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog('kitops')
+
+def deletekit01(koinst, db, kit):
+    kl.info("Removing kit with kid '%s'" % kit.kid)
 
     try:
         # remove component info from DB
@@ -57,16 +43,12 @@ def deletekit01(koinst, db, kit, del_name, del_version, del_arch):
             koinst.pxeboot_dir.rmdir()
 
     # remove the RPMS kit contents
-    if del_path.exists(): del_path.rmtree()
-
-    deeper_del_path = del_path
-    for dd in xrange(del_depth):
-        deeper_del_path = deeper_del_path.dirname()
-        if not deeper_del_path.listdir():
-            deeper_del_path.rmdir()
+    kitdir = koinst.kits_dir / str(kit.kid)
+    if kitdir.exists(): kitdir.rmtree()
 
 
-def deletekit02(koinst, db, kit, del_name, del_version, del_arch):
+def deletekit02(koinst, db, kit):
+    kl.info("Removing kit with kid '%s'" % kit.kid)
     try:
         # remove component info from DB
         for component in kit.components:
