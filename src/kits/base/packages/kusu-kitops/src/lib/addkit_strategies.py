@@ -102,7 +102,7 @@ def addkit01(koinst, db, kitinfo):
     for comp in components:
         if 'driverpacks' in comp:
             # there should be one and only one component with the pkgname we want
-            _comp = koinst.__db.Components.select_by(cname=comp['pkgname'])[0]
+            _comp = db.Components.select_by(cname=comp['pkgname'])[0]
             for _dpack in comp['driverpacks']:
                 dpname = _dpack['name']
                 dpdesc = _dpack['description']
