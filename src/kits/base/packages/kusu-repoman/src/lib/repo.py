@@ -344,7 +344,7 @@ class SuseYastRepo(BaseRepo):
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
-
+        i386_family = ['i386', 'i486', 'i586', 'i686']
 
         rpmPkgs = []
         for d in self.getPackagesDir():
@@ -363,13 +363,15 @@ class SuseYastRepo(BaseRepo):
 
                     name = rpm.getName()
                     r_arch = rpm.getArch()
+                    if r_arch == 'x86_64' and self.os_arch in i386_family:
+                        continue
 
                     # We will be replacing the package from the os kit when 
                     # it is provided by a kit
                     for rpmPkg in rpmPkgs:
                         if rpmPkg.has_key(name):
-                            if r_arch in ['i386', 'i486', 'i586', 'i686']:
-                                for arch in ['i386', 'i486', 'i586', 'i686']:
+                            if r_arch in i386_family:
+                                for arch in i386_family:
                                     if rpmPkg[name].has_key(arch):
                                         osFile = rpmPkg[name][arch][0].getFilename()
                                         if osFile.exists(): osFile.remove()
@@ -640,6 +642,7 @@ class RedhatYumRepo(BaseRepo):
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
+        i386_family = ['i386', 'i486', 'i586', 'i686']
 
         rpmPkgs = rpmtool.getLatestRPM([self.repo_path / self.dirlayout['rpmsdir']])
 
@@ -655,12 +658,14 @@ class RedhatYumRepo(BaseRepo):
 
                     name = rpm.getName()
                     arch = rpm.getArch()
+                    if arch == 'x86_64' and self.os_arch in i386_family:
+                        continue
 
                     # We will be replacing the package from the os kit when 
                     # it is provided by a kit
                     if rpmPkgs.has_key(name):
-                        if arch in ['i386', 'i486', 'i586', 'i686']:
-                            for arch in ['i386', 'i486', 'i586', 'i686']:
+                        if arch in i386_family:
+                            for arch in i386_family:
                                 if rpmPkgs[name].has_key(arch):
                                     osFile = rpmPkgs[name][arch][0].getFilename()
                                     if osFile.exists(): osFile.remove()
@@ -1151,6 +1156,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
+        i386_family = ['i386', 'i486', 'i586', 'i686'] 
 
         rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
                    rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
@@ -1170,13 +1176,15 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
                     name = rpm.getName()
                     arch = rpm.getArch()
+                    if arch == 'x86_64' and self.os_arch in i386_family:
+                        continue
 
                     # We will be replacing the package from the os kit when 
                     # it is provided by a kit
                     for rpmPkg in rpmPkgs:
                         if rpmPkg.has_key(name):
-                            if arch in ['i386', 'i486', 'i586', 'i686']:
-                                for arch in ['i386', 'i486', 'i586', 'i686']:
+                            if arch in i386_family:
+                                for arch in i386_family:
                                     if rpmPkg[name].has_key(arch):
                                         osFile = rpmPkg[name][arch][0].getFilename()
                                         if osFile.exists(): osFile.remove()
