@@ -23,6 +23,7 @@ import string
 
 from path import path
 from primitive.system.software.dispatcher import Dispatcher
+from kusu.util.errors import UnsupportedOS
 
 class KusuRC(rcplugin.Plugin):
 
@@ -77,6 +78,12 @@ class KusuRC(rcplugin.Plugin):
 
             if dev != 'bmc':
                 # It's a normal NIC
+
+                if network_type == 'provision' and not mcast_static_route_added:
+                    if not self.setupMcastStaticRoute(dev):
+                        return False
+                    mcast_static_route_added = True
+                
                 network_path = path(Dispatcher.get('networkscripts_path'))
 
                 if dev.startswith('ib'):
@@ -112,14 +119,6 @@ class KusuRC(rcplugin.Plugin):
                 cmd = '%s %s' % (ifup_path / 'ifup', dev)
                 os.system(cmd)
 
-                # The following adds a static route for the multicast network
-                # on the first nic on the 'provision' network.
-                # Needed for apps like ganglia v3.1.1 to work properly when it
-                # tries to send out multicast UDP packets.
-                if network_type == 'provision' and not mcast_static_route_added:
-                    self.runCommand('/sbin/route add -net 239.0.0.0 netmask 255.0.0.0 %s' % dev)
-                    mcast_static_route_added = True
-                
             else:
                 # Put the code to configure BMC here
                 rcfile = '/etc/rc.kusu.d/S99DellBMCSetup'
@@ -128,3 +127,42 @@ class KusuRC(rcplugin.Plugin):
                 os.unlink(rcfile)
 
         return True
+
+    def setupMcastStaticRoute(self, dev=None):
+        """
+        Adds a static route for the multicast network
+        on the first nic on the 'provision' network.
+        Needed for apps like ganglia v3.1.1 to work properly 
+        when it tries to send out multicast UDP packets.
+        Returns False if this is not a supported OS.
+        Returns True otherwise.
+        """
+        if dev:
+            self.runCommand('/sbin/route add -net 239.0.0.0 netmask 255.0.0.0 %s' % dev)
+
+            try:
+                self.addMcastStaticRouteConfig(self.os_name, dev)
+            except UnsupportedOS:
+                return False
+
+        return True
+
+    def addMcastStaticRouteConfig(self, os_name=None, dev=None):
+        """
+        Set up static route in config files so that it
+        survives a 'service network restart'.
+        """
+        if os_name and dev:
+            if os_name in ['sles', 'opensuse', 'suse']:
+                line = '239.0.0.0       0.0.0.0         255.0.0.0       %s' % dev
+                routes_file = path('/etc/sysconfig/network/routes')
+            elif os_name in ['rhel', 'centos', 'redhat']:
+                line = '239.0.0.0/8 dev %s' % dev
+                routes_file = path('/etc/sysconfig/network-scripts/route-%s' % dev)
+            else:
+                raise UnsupportedOS
+            if not routes_file.exists():
+                routes_file.touch()
+            if not routes_file.text().find(line) > -1:
+                routes_file.write_lines([line], append=True)
+
