@@ -211,8 +211,13 @@ def addkit02(koinst, db, kitinfo):
             # to certain ngids and below.
             if USE_NG_ASSOC_THRESHOLD and _ng.ngid < NG_ASSOC_THRESHOLD:
                 # create an association with the nodegroup if it doesn't already exist.
-                if _comp not in _ng.components and \
-                   _comp in newkit.getMatchingComponents(_ng.repo.os):
+                if _comp not in _ng.components:
+                    # nodegroup does not have an associated repo in some cases(e.g., installer).
+                    # IF REPOSITORY IS NOT ASSOCIATED, THEN ASSUME THE ENVIRONMENT(INSTALLER)
+                    # HAS ENSURED THAT THE COMPONENT _DOES_ MATCH THE NODEGROUP, AND ADD
+                    # ANYWAY. NOTE: INSTALLER NEEDS TO VALIDATE THE KIT COMPONENTS.
+                    if _ng.repo and not _comp in newkit.getMatchingComponents(_ng.repo.os):
+                        continue
                     _ng.components.append(_comp)
                     _ng.save()
                     _ng.flush()
