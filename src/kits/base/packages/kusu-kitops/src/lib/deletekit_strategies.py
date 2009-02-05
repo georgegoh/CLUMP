@@ -86,10 +86,13 @@ def uninstallPlugins(kusu_root, kits_root, kitdir):
     for provider in [x.basename() for x in plugin_dir.dirs()]:
         for plugin in [x.basename() for x in (plugin_dir / provider).files()]:
             # construct the path of the plugin to remove.
-            proposed_plugin = kusu_root / 'plugins' / provider / plugin
-            if not proposed_plugin.exists():
+            proposed_plugin = kusu_root / 'lib' / 'plugins' / provider / plugin
+            plugin_exists = proposed_plugin.exists() or proposed_plugin.islink()
+            if not plugin_exists:
+                kl.debug('Plugin %s does not exist' % proposed_plugin)
                 # if the path does not exist, then skip and go to next plugin.
                 continue
+            kl.debug('Plugin %s exists' % proposed_plugin)
             if proposed_plugin.realpath() == (plugin_dir / provider / plugin):
                 # if the plugin symlinks to this kit, then it is a candidate for removal.
                 if pluginUseCount(kits_root, provider, plugin) > 1:
@@ -116,7 +119,7 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
     """
     if pluginUseCount(kits_root, provider, plugin) < 2:
         return
-    link = kusu_root / 'plugins' / provider / plugin
+    link = kusu_root / 'lib' / 'plugins' / provider / plugin
     cur_target = link.realpath()
     for kit in kits_dir.dirs():
         new_target = kit / 'plugins' / provider / plugin
