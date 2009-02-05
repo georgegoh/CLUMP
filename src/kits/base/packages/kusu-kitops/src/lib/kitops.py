@@ -323,7 +323,7 @@ class KitOps:
             return None
         kits, components = processKitInfo(kitinfo)
         # cleanup
-        self.tmpdir.rmtree()
+        tmpdir.rmtree()
         return kits, components
 
     def getKitApi(self, kid):
