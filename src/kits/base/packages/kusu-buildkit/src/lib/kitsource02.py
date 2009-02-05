@@ -201,6 +201,8 @@ class KusuComponent(Struct):
         if 'ostype' in d: del d['ostype']
         if 'osversion' in d: del d['osversion']
         
+        d['os'] = [ {'name': self.ostype, 'major': self.osversion, 'minor':'*', 'arch': self.arch } ]
+ 
         return d
         
     def addDep(self, package, absoluteversion=False):
