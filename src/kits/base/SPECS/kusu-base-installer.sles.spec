@@ -125,9 +125,9 @@ install -m644 sbin/S02KusuMotd.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S02KusuYumSetup.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S02KusuGenconfig.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S02KusuNamed.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
+install -m644 sbin/S02KusuUserAuth.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S02KusuUsrSkel.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S03KusuNetworkRoutes.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
-install -m644 sbin/S90KusuUserAuth.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S90KusuFirefox.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuCFMSync.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuMigrateAppGlobals.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
@@ -189,12 +189,12 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /etc/rc.kusu.d/S02KusuSSH.rc.py*
 /etc/rc.kusu.d/S02KusuSSHHosts.rc.py*
 /etc/rc.kusu.d/S02KusuSyslog.rc.py*
+/etc/rc.kusu.d/S02KusuUserAuth.rc.py*
 /etc/rc.kusu.d/S02KusuUsrSkel.rc.py*
 /etc/rc.kusu.d/S02KusuXinetd.rc.py*
 /etc/rc.kusu.d/S02KusuYumSetup.rc.py*
 /etc/rc.kusu.d/S03KusuImage.rc.py*
 /etc/rc.kusu.d/S03KusuNetworkRoutes.rc.py*
-/etc/rc.kusu.d/S90KusuUserAuth.rc.py*
 /etc/rc.kusu.d/S90KusuCFM.rc.py*
 /etc/rc.kusu.d/S90KusuFirefox.rc.py*
 /etc/rc.kusu.d/S99KusuCFMSync.rc.py*
