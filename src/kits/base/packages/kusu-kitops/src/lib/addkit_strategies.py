@@ -129,7 +129,7 @@ def checkKitInstalled01(koinst, db, kitname, kitver, kitarch):
             return True
     return False
 
-        
+
 def addkit02(koinst, db, kitinfo):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
@@ -260,5 +260,14 @@ def installPlugins(koinst, kitdir, kid):
                 actual_plugin.symlink(proposed_plugin)
 
 
+def addkit02InstallerRules(koinst, db, kitinfo):
+    kit = kitinfo[1]
+    matches = db.Kits.select_by(rname=kit['name'])
+    if matches:
+        raise KitAlreadyInstalledError
+    return addkit02(koinst, db, kitinfo)
+
+
 AddKitStrategy = { '0.1': addkit01,
-                   '0.2': addkit02}
+                   '0.2': addkit02,
+                   '0.2-installer': addkit02InstallerRules}

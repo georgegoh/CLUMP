@@ -166,6 +166,8 @@ class KitOps:
     def addKit(self, kitinfo, api='0.1'):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
+        if self.installer and api=='0.2':
+            api = '0.2-installer'
         return AddKitStrategy[api](self, self.__db, kitinfo)
 
     def getKitComponents(self, kid, os):
