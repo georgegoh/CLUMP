@@ -238,11 +238,14 @@ class KitOpsApp(KusuApp):
             msg = 'The above kits will be removed.\n'
 
             if not kits:
-                msg = "Kit '%s" % self.kit_name
-                if self.kit_ver:
-                    msg += '-%s' % self.kit_ver
-                if self.kit_arch:
-                    msg += '-%s' % self.kit_arch
+                if self.kit_id:
+                    msg = "Kit '%s" % self.kit_id
+                else:
+                    msg = "Kit '%s" % self.kit_name
+                    if self.kit_ver:
+                        msg += '-%s' % self.kit_ver
+                    if self.kit_arch:
+                        msg += '-%s' % self.kit_arch
                 msg += "' is not in the database"
                 self.logErrorEvent(msg)
                 sys.exit(EKITDEL_FAIL)
@@ -614,7 +617,7 @@ class KitOpsApp(KusuApp):
         self.parser.print_help()
 
 def confirm(kits, msg, skip=True):
-    headers = ['Kit', 'Version', 'Release', 'Architecture']
+    headers = ['Kid', 'Kit', 'Version', 'Release', 'Architecture']
     max_lengths = []
     for x in xrange(len(headers)):
         max_lengths.append(len(headers[x]))
@@ -622,6 +625,7 @@ def confirm(kits, msg, skip=True):
     kitlines = []
     for kit in kits:
         kitline = []
+        kitline.append(str(kit.kid))
         kitline.append(kit.rname)
         kitline.append(kit.version)
         kitline.append(str(kit.release))

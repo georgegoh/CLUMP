@@ -6,12 +6,14 @@ comp.version = '$kitver'
 
 # define a kit
 k = DefaultKit()
+k.api = '0.2'
 k.name = '$kitname'
 k.description = '$kitdesc'
 k.version = '$kitver'
 k.release = '$kitrel'
 k.arch = '$kitarch'
 k.description = '$kitdesc'
+k.filenames = []
 
 # Adding the component defined earlier
 k.addComponent(comp)

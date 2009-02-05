@@ -166,8 +166,7 @@ class KitOps:
     def addKit(self, kitinfo, api='0.1'):
         '''perform the add operation on the kit specified 
            Precondition: kit is mounted to self.mountpoint'''
-        AddKitStrategy[api](self, self.__db, kitinfo)
-
+        return AddKitStrategy[api](self, self.__db, kitinfo)
 
     def getKitComponents(self, kid, os):
         kitinfo = self.kits_dir / str(kid) / 'kitinfo'
@@ -607,13 +606,17 @@ class KitOps:
         kits = self.findKits(del_name, del_id, del_version, del_arch)
 
         if not kits:
-            msg = "Kit '%s" % del_name
             if del_id:
-                msg += '-%s' % del_id
-            if del_version:
-                msg += '-%s' % del_version
-            if del_arch:
-                msg += '-%s' % del_arch
+                msg = "Kit '%s" % del_id
+            else:
+                msg = "Kit '%s" % del_name
+                if del_id:
+                    msg += '-%s' % del_id
+                if del_version:
+                    msg += '-%s' % del_version
+                if del_arch:
+                    msg += '-%s' % del_arch
+                
             msg += "' is not in the database"
             raise KitNotInstalledError, msg
 
