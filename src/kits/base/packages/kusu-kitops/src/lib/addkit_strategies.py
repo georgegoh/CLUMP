@@ -264,7 +264,9 @@ def installPlugins(koinst, kitdir, kid):
         for plugin in [x.basename() for x in (plugin_dir / provider).files()]:
             proposed_plugin = koinst.kusu_root / 'lib' / 'plugins' / provider / plugin
             kl.debug('Checking if system already has %s' % proposed_plugin)
-            if not proposed_plugin.exists():
+            if proposed_plugin.exists() or proposed_plugin.islink():
+                kl.debug('Yes. Not creating symlink.')
+            else:
                 # temporary set the kitops prefix to '/' to reflect final destination.
                 prefix = koinst.prefix
                 koinst.setPrefix('/')
