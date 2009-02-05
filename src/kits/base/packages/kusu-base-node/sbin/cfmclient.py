@@ -789,6 +789,10 @@ class CFMClient:
                                 self.log(" ++ Md5sum differs Going to get: %s\n" % filename)
                                 self.newfiles.append([filename, user, group, mode, action, md5sum])
                         proc.close()
+                    else:
+                        # Special case.  For merging files we cannot use the md5sum.  Have to merge anyway
+                        self.log(" ++ Local file is newer!  Action=%s  Going to get: %s\n" % (action, filename))
+                        self.newfiles.append([filename, user, group, mode, action, md5sum])
                 else:
                     self.log("NOTICE:  File: %s does not exist!\n" % filename)
                     self.newfiles.append([filename, user, group, mode, action, md5sum])
