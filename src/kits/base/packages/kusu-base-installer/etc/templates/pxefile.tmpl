@@ -21,5 +21,5 @@ label Reinstall
         append initrd=$initrdName syslog=$instIP:514 niihost=$instIP ks=http://$instIP/repos/$kwargs.repoid/ks.cfg.$instIP ksdevice=$kwargs.ksdevice $params
     #end if
 #else
-        append niihost=$kwargs.niihost $params
+        append initrd=$initrdName niihost=$kwargs.niihost $params
 #end if
