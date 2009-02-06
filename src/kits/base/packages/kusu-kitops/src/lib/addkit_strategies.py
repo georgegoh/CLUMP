@@ -169,6 +169,7 @@ def addkit02(koinst, db, kitinfo):
     kitrpm.extract(repodir)
 
     installPlugins(koinst, repodir, str(newkit.kid))
+    installDocs(koinst.kits_dir, newkit)
 
     # check/populate component table
     try:
@@ -258,6 +259,27 @@ def installPlugins(koinst, kitdir, kid):
                 if not proposed_plugin.dirname().exists():
                     proposed_plugin.dirname().makedirs()
                 actual_plugin.symlink(proposed_plugin)
+
+
+def installDocs(kitdir, kit):
+    """
+    Install kit docs from a kit directory into the central docs directory.
+    """
+    kl.debug('Installing kit documentation. Looking for docs in this kit.')
+    src_dir = kitdir / str(kit.kid) / 'www'
+    if not (src_dir.exists() or src_dir.islink()):
+        kl.debug('kit %s does not have any documentation in %s' % \
+                 (kit.rname, src_dir))
+        return
+    dest_dir = kitdir / 'www' / kit.rname / str(kit.version) / str(kit.release)
+    kl.debug('Checking if proposed directory %s already exists.' % dest_dir)
+    if dest_dir.exists() or dest_dir.islink():
+        kl.debug('Proposed directory exists. Nothing left to do.')
+        return
+
+    if not dest_dir.dirname().exists():
+        dest_dir.dirname().makedirs()
+    src_dir.symlink(dest_dir)
 
 
 def addkit02InstallerRules(koinst, db, kitinfo):
