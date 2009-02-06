@@ -19,6 +19,7 @@ class KusuRC(rcplugin.Plugin):
 
     def run(self):
         new_values = { 'DEPOT_KITS_ROOT': '/depot/kits',
+                       'DEPOT_DOCS_ROOT': '/depot/www/kits',
                        'DEPOT_IMAGES_ROOT': '/depot/images',
                        'DEPOT_REPOS_ROOT': '/depot/repos',
                        'DEPOT_REPOS_SCRIPTS': '/depot/repos/custom_scripts',
