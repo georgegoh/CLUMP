@@ -186,7 +186,7 @@ class BaseUpdate:
             
             kitName = '%s-updates' % self.os_name
             if kit[1]['name'] == kitName:
-                kid = ko.addKit(kit, api='0.2')
+                kid = ko.addKit(kit, api='0.2')[0]
                 
                 if kitdir.exists():
                     kitdir.rmtree()
