@@ -974,6 +974,7 @@ class DB(object):
         AppGlobals(kname='KusuAuthScheme', kvalue='files')
 #        AppGlobals(kname='ImageBaseDir', kvalue='/depot/images')
         AppGlobals(kname='DEPOT_KITS_ROOT', kvalue='/depot/kits')
+        AppGlobals(kname='DEPOT_DOCS_ROOT', kvalue='/depot/www/kits')
         AppGlobals(kname='DEPOT_IMAGES_ROOT', kvalue='/depot/images')
         AppGlobals(kname='DEPOT_REPOS_ROOT', kvalue='/depot/repos')
         AppGlobals(kname='DEPOT_REPOS_SCRIPTS', kvalue='/depot/repos/custom_scripts/')
