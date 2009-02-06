@@ -102,5 +102,10 @@ class KusuRC(rcplugin.Plugin):
         sys.stdout = oldOut
         sys.stderr = oldErr
 
-        return True
+        retval = self.runCommand('/opt/kusu/sbin/cfmsync -p')[0]
+
+        if retval == 0:
+            return True
+        else:
+            return False
 
