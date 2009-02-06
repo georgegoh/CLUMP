@@ -49,7 +49,7 @@ def addkit01(koinst, db, kitinfo):
     
     # check/populate component table
     try:
-        koinst.updateComponents(newkit, kitinfo[2])
+        updated_ngs = koinst.updateComponents(newkit, kitinfo[2])
     except ComponentAlreadyInstalledError, msg:
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
@@ -113,7 +113,7 @@ def addkit01(koinst, db, kitinfo):
 
             db.flush()
 
-    return newkit.kid
+    return newkit.kid, updated_ngs
 
 
 def checkKitInstalled01(koinst, db, kitname, kitver, kitarch):
@@ -172,7 +172,7 @@ def addkit02(koinst, db, kitinfo):
 
     # check/populate component table
     try:
-        koinst.updateComponents(newkit, kitinfo[2])
+        updated_ngs = koinst.updateComponents(newkit, kitinfo[2])
     except ComponentAlreadyInstalledError, msg:
         # updateComponents encountered an error, remove kit from DB
         newkit.removable = True
@@ -198,7 +198,7 @@ def addkit02(koinst, db, kitinfo):
                 _comp.driverpacks.append(dpack)
             db.flush()
 
-    return newkit.kid
+    return newkit.kid,updated_ngs
 
 
 def checkKitInstalled02(koinst, db, kitname, kitver, kitrel, kitrpm):

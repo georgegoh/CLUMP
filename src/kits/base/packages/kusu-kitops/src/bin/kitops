@@ -312,15 +312,18 @@ class KitOpsApp(KusuApp):
             for kit in kits:
                 try:
                     api = kit[4]
-                    self.koinst.addKit(kit, api)
+                    new_kid, updated_ngs = self.koinst.addKit(kit, api)
                     kl.debug('SUCCESS performing add operation: %s(%s)',
                              kit[0], kit[1]['name'])
                     kit_str = "%s-%s-%s" % (kit[1]['name'],
                                             kit[1]['version'],
                                             kit[1]['arch'])
                     msg = self._("kitops_event_added_kit") % kit_str
-                    self.logEvent(msg)  
-                    
+                    self.logEvent(msg)
+                    if updated_ngs:
+                        msg = self._('New Node Groups associated: %s') % ', '.join([ng.ngname for ng in updated_ngs])
+                        self.logEvent(msg)
+
                 except (KitAlreadyInstalledError, InstallKitRPMError,
                         ComponentAlreadyInstalledError, AssertionError), e:
                     msg = '%s(%s): %s' % (kit[0], kit[1]['name'], e.args[0])

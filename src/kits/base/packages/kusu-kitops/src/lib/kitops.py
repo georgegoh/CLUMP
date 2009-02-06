@@ -16,6 +16,7 @@ import tempfile
 import glob
 import re
 from path import path
+from sets import Set
 import sqlalchemy as sa
 from primitive.support.osfamily import getOSNames, matchTuple
 from kusu.boot.tool import BootMediaTool
@@ -208,6 +209,7 @@ class KitOps:
         oldcomponents = self.__db.Components.select(
                 self.__db.Components.c.cname.in_(*compnames))
 
+        affected_ngs = Set()
         for comp in components:
             newcomponent = True
             for oldcomp in oldcomponents:
@@ -251,17 +253,19 @@ class KitOps:
                     if self.installer:
                         kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                         ng.components.append(newcomp)
+                        affected_ngs.add(ng)
                     elif USE_NG_ASSOC_THRESHOLD and ng.ngid > NG_ASSOC_THRESHOLD:
                         pass
                     elif ng.repo and newcomp in self.getKitComponents(kit.kid, ng.repo.os):
                         kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                         ng.components.append(newcomp)
-
+                        affected_ngs.add(ng)
             else:
                 raise ComponentAlreadyInstalledError, \
                     'Component %s already installed' % comp['pkgname']
 
         self.__db.flush()
+        return affected_ngs
 
     def getAvailableKits(self):
         """

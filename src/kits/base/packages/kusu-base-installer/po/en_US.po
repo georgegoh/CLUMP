@@ -609,6 +609,9 @@ msgstr "Added kit: %s"
 msgid "kitops_event_deleted_kit"
 msgstr "Deleted kit: %s"
 
+msgid "New Node Groups associated: %s"
+msgstr "New Node Groups associated: %s"
+
 # Buildinitrd specific messages
 msgid "WARNING: Unable to use System.map to verify module symbols\n"
 msgstr "WARNING: Unable to use System.map to verify module symbols\n"
