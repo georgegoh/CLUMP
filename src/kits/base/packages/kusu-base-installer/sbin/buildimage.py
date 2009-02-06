@@ -101,7 +101,7 @@ class BuildImage:
         os_arch = ng.repo.os.arch
 
         if os_name.lower() in ['sles', 'opensuse', 'suse']:
-            self.stdoutMessage('Skipping BuildImage for %s distribution\n' % os_name)
+            self.stdoutout('Skipping BuildImage for %s distribution\n' % os_name)
             sys.exit(0)
 
         system_arch = OS()[2].lower()
