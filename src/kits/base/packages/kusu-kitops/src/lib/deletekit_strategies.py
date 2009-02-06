@@ -64,7 +64,7 @@ def deletekit02(koinst, db, kit):
     # uninstall plugins and docs
     kitdir = koinst.kits_dir / str(kit.kid)
     uninstallPlugins(koinst.kusu_root, koinst.kits_dir, kitdir)
-    uninstallDocs(db, kit, koinst.kits_dir)
+    uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
 
     # remove tftpboot contents
     if kit.isOS:
@@ -80,10 +80,10 @@ def deletekit02(koinst, db, kit):
     if del_path.exists(): del_path.rmtree()
 
 
-def uninstallDocs(db, kit, kitdir):
+def uninstallDocs(db, kit, kitdir, docsdir):
     kl.debug('Uninstalling kit documentation.')
     src_dir = kitdir / str(kit.kid) / 'www'
-    dest_dir = kitdir / 'www' / kit.rname / str(kit.version) / str(kit.release)
+    dest_dir = docsdir / kit.rname / str(kit.version) / str(kit.release)
     if not (dest_dir.exists() or dest_dir.islink()):
         kl.debug('No documentation to uninstall')
 
@@ -93,12 +93,12 @@ def uninstallDocs(db, kit, kitdir):
         if docUseCount(db, kit.rname, kit.version, kit.release) > 1:
             kl.debug('More than one kit uses location %s for docs' % dest_dir)
             kl.debug('Relinking to antoher kit')
-            resymlinkDocs(db, kitdir, kit)
+            resymlinkDocs(db, kitdir, docsdir, kit)
         else:
             kl.debug('Only one kit links to location %s. Removing' % dest_dir)
             dest_dir.remove()
             d = dest_dir.dirname()
-            while not d.dirs() and not d.files() and d != (kitdir / 'www'):
+            while not d.dirs() and not d.files() and d != (docsdir):
                 d.rmtree()
                 d = d.dirname()
 
@@ -109,7 +109,7 @@ def docUseCount(db, kitname, kitversion, kitrelease):
                                  release=kitrelease))
 
 
-def resymlinkDocs(db, kitdir, kit):
+def resymlinkDocs(db, kitdir, docsdir, kit):
     """
     Look for other kits which provide the same docs and symlink
     to another kit.
@@ -120,7 +120,7 @@ def resymlinkDocs(db, kitdir, kit):
                         if x.kid != kit.kid]
     k = other_kits[0]
     src_dir = kitdir / str(k.kid) / 'www'
-    dest_dir = kitdir / 'www' / kit.rname / str(kit.version) / str(kit.release)
+    dest_dir = docsdir / kit.rname / str(kit.version) / str(kit.release)
     if dest_dir.exists() or dest_dir.islink():
         dest_dir.remove()
     src_dir.symlink(dest_dir)

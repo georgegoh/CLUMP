@@ -74,6 +74,7 @@ class KitOps:
         pixie_root = 'tftpboot/kusu/'
         contrib_root = 'depot/contrib'
         kusu_root = 'opt/kusu'
+        docs_root = 'depot/www'
 
         if self.__db:
             row = self.__db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
@@ -85,10 +86,14 @@ class KitOps:
             row = self.__db.AppGlobals.select_by(kname = 'DEPOT_CONTRIB_ROOT')
             if row: contrib_root =  row[0].kvalue
 
+            row = self.__db.AppGlobals.select_by(kname = 'DEPOT_DOCS_ROOT')
+            if row: docs_root =  row[0].kvalue
+
         if kits_root[0] == '/': kits_root = kits_root[1:]
         if pixie_root[0] == '/': pixie_root = pixie_root[1:]
         if contrib_root[0] == '/': contrib_root = contrib_root[1:]
         if kusu_root[0] == '/': kusu_root = kusu_root[1:]
+        if docs_root[0] == '/': docs_root = docs_root[1:]
 
         if prefix:
             self.prefix = path(prefix)
@@ -96,6 +101,7 @@ class KitOps:
             self.pxeboot_dir = self.prefix / pixie_root
             self.contrib_dir = self.prefix / contrib_root
             self.kusu_root = self.prefix / kusu_root
+            self.docs_dir = self.prefix / docs_root
 
     def setTmpPrefix(self, tmpprefix):
         """
