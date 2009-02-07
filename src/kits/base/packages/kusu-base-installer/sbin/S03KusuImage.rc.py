@@ -17,12 +17,12 @@ class KusuRC(rcplugin.Plugin):
         self.ngtypes = ['installer']
         self.delete = True
 
-    def run(self):
-        """Creating images for imaged and diskless nodes"""
-
         # Bypass this rc script for sles
         if self.os_name in ['sles', 'opensuse', 'suse']:
-            return True
+            self.disable = True
+
+    def run(self):
+        """Creating images for imaged and diskless nodes"""
 
         ngs = self.dbs.NodeGroups.select(
                 self.dbs.NodeGroups.c.installtype.in_('diskless', 'disked'))
