@@ -249,7 +249,7 @@ class BaseRepo(object):
     def isStale(self):
         """check whether repository is stale"""
 
-        if repo_path:
+        if self.repo_path:
             return (self.repo_path / '.stale').exists()
         else:
             return True
