@@ -110,7 +110,6 @@ rm -rf $RPM_BUILD_ROOT
 /plugins/cfmsync/getent-data.sh
 /plugins/ngedit/01-component-base-installer.py*
 /plugins/ngedit/02-component-base-installer.py*
-/plugins/ngedit/03-component-base-node.py*
 
 %pre
 
