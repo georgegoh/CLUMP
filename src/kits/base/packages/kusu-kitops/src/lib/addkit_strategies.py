@@ -211,7 +211,7 @@ def checkKitInstalled02(koinst, db, kitname, kitver, kitrel, kitrpm):
         m_api = koinst.getKitApi(m.kid)
         if m_api == '0.1':
             return True
-        if m_api == '0.2' and m.version == kitver:
+        if m_api == '0.2' and m.version == kitver and m.release == kitrpm:
             new_comps = koinst.getKitRPMInfo(kitrpm)[1]
             m_comps = processKitInfo(koinst.kits_dir / str(m.kid) / 'kitinfo')[1]
             for m in m_comps:
