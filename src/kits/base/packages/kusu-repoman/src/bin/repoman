@@ -258,6 +258,9 @@ For examples:
                         self.unlock()
                         sys.exit(1)
 
+                    r = self.rfinst.getRepo(repo.repoid)
+                    r.markStale()
+
                     repo.kits.remove(kit)
                     
                     noOS = True
@@ -271,9 +274,6 @@ For examples:
                     repo.save()
                     repo.flush()
                        
-                    r = self.rfinst.getRepo(repo.repoid)
-                    r.markStale()
-
                     if repo.kits: 
                         self.logEvent("Finished deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
                         self.stdoutMessage('Kit: %s removed from repo: %s. Remember to refresh with -u\n', self.getKitFriendlyName(kit),repo_name)
