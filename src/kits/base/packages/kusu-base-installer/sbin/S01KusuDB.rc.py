@@ -65,7 +65,9 @@ class KusuRC(rcplugin.Plugin):
             
 
         sqliteDB.copyTo(dbs)
-        # os.unlink('/root/kusu.db') Keep for debugging purpose
+        # Keep orig kusu.db for debugging purpose but rename
+        # it so that it does not confuse kusurc scripts.
+        path('/root/kusu.db').rename('/root/kusu-orig.db')
     
         # Set db.passwd permission correctly
         if self.os_name in ['suse', 'opensuse', 'sles']:
