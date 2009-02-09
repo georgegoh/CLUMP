@@ -294,6 +294,11 @@ For examples:
             self.unlock()
             sys.exit(1)
 
+        if True not in [kit.rname == 'base' for kit in repo.kits]:
+            self.logErrorEvent('No base kit added for repo: %s' % repo_name)
+            self.unlock()
+            sys.exit(1)
+
         try:
             location = path('/' + self.repos_root + '/%s' % repo.repoid)
             if not path(path(self.prefix or '/') / self.repos_root / str(repo.repoid)).exists():
