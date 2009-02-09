@@ -442,7 +442,7 @@ Example operations:
         if not kernelfile:
             kernelfile = ngkernel
 
-        os_name, os_version, os_arch = repotools.getOS(self.db, repoid)
+        os_name, os_version, os_minor, os_arch = repotools.getOS(self.db, repoid)
         moduleHandler = InitrdModulesFactory().getModuleHandler(os_name, os_version)(self.db, initrdpath)
         newinitrdpath = tftpbootdir / newinitrd
         moduleHandler.updateInitrd(newinitrdpath, kernelrpm, kmodlist)

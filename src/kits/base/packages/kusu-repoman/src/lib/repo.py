@@ -570,8 +570,8 @@ class SuseYastRepo(BaseRepo):
         yastRepo = YastRepo(self.repo_path)
         yastRepo.make()
         
-        os_name, os_version, os_arch = tools.getOS(self.db, self.repoid)
-        yastRepo.writeMedia(vendor='Kusu %s-%s-%s repository' % (os_name, os_version, os_arch))
+        os_name, os_major, os_minor, os_arch = tools.getOS(self.db, self.repoid)
+        yastRepo.writeMedia(vendor='Kusu %s-%s.%s-%s repository' % (os_name, os_major, os_minor, os_arch))
 
     def verify(self):
         return True

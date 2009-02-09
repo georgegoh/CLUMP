@@ -77,9 +77,9 @@ class thisReport(Report):
                 except Exception, e:
                     print "Could not retrieve the NodeGroup object from database."
                     return
-                # Retrieve os name, ver and arch.
+                # Retrieve os name, major ver, minor ver and arch.
                 try:
-                    os,ver,arch = getOS(db, ngname)
+                    os,major,minor,arch = getOS(db, ngname)
                     if os not in SUPPORTED_OS:
                         print "Cannot generate autoinst.xml for unsupported OS '%s'" % os
                         return

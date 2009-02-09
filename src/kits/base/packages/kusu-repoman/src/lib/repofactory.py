@@ -33,11 +33,17 @@ class RepoFactory(object):
     def getRepo(self, repoid):
         """Returns the repo obj for that repo"""
 
-        os_name, os_major, os_arch = tools.getOS(self.db, repoid)
-        if not self.class_dict.has_key(os_name) or not self.class_dict[os_name].has_key(os_major):
-            raise UnsupportedOS, "%s %s not supported" % (os_name, os_major)
+        os_name, os_major, os_minor, os_arch = tools.getOS(self.db, repoid)
 
-        r = self.class_dict[os_name][os_major](os_arch, self.prefix, self.db)
+        if os_name == 'opensuse':
+            os_version = '%s.%s' % (os_major, os_minor)
+        else:
+            os_version = os_major
+
+        if not self.class_dict.has_key(os_name) or not self.class_dict[os_name].has_key(os_version):
+            raise UnsupportedOS, "%s %s not supported" % (os_name, os_version)
+
+        r = self.class_dict[os_name][os_version](os_arch, self.prefix, self.db)
         r.repoid = repoid
         
         r.repo_path = r.getRepoPath()

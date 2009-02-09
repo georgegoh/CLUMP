@@ -101,7 +101,7 @@ def getOS(dbs, repoid_or_ngname):
         kit = kit[0]
 
     oskit = kit.os
-    return (oskit.name, oskit.major, oskit.arch)
+    return (oskit.name, oskit.major, oskit.minor, oskit.arch)
 
 def getKits(dbs, ngname):
     """Returns a list of kits for a nodegroup"""
@@ -220,3 +220,19 @@ def getPackagePath(dbs, repoid):
     rfactory = repofactory.RepoFactory(dbs)
     repo = rfactory.getRepo(repoid)
     return repo.getPackagesDir()
+
+def getBaseYumDir(dbs, repoid):
+    '''Returns the path where the repodata dir for yum resides in'''
+
+    if not repoExists(dbs, repoid):
+        raise RepoNotFoundError, repoid
+
+    from kusu.repoman import repofactory
+    rfactory = repofactory.RepoFactory(dbs)
+    repo = rfactory.getRepo(repoid)
+
+    if repo.os_name in ['rhel', 'centos', 'fedora']:
+        return repo.getBaseYumDir()
+    else:
+        return None
+
