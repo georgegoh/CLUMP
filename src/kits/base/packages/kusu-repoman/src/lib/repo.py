@@ -234,6 +234,24 @@ class BaseRepo(object):
         """verify the repository"""
         raise NotImplementedError
 
+    def markStale(self):
+        """mark the repository as stale"""
+
+        if self.repo_path:
+            (self.repo_path / '.stale').touch()
+
+    def markClean(self):
+        """mark the repository as clean (not stale)"""
+
+        if self.repo_path and (self.repo_path / '.stale').exists():
+            (self.repo_path / '.stale').remove()
+
+    def isStale(self):
+        """check whether repository is stale"""
+
+        if repo_path:
+            return (self.repo_path / '.stale').exists()
+
     def copyKitsPackages(self):
         """copy the kits packages to the repository"""
         raise NotImplementedError
@@ -515,12 +533,14 @@ class SuseYastRepo(BaseRepo):
         try:
             self.UpdateDatabase(ngname)
             self.makeRepoDirs()
+            self.markStale()
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
             self.makeMetaInfo()
             self.copyKusuNodeInstaller()
             self.verify()
+            self.markClean()
         except Exception, e:
             # Don't use self.delete(), since is unsure state
 
@@ -549,12 +569,14 @@ class SuseYastRepo(BaseRepo):
         try:
             self.clean(self.repoid)
             self.makeRepoDirs()
+            self.markStale()
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
             self.makeMetaInfo()
             self.copyKusuNodeInstaller()
             self.verify()
+            self.markClean()
         except Exception, e:
             raise e
 
@@ -841,6 +863,7 @@ class RedhatYumRepo(BaseRepo):
         try:
             self.UpdateDatabase(ngname)
             self.makeRepoDirs()
+            self.markStale()
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
@@ -850,6 +873,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyKusuNodeInstaller()
             self.makeAutoInstallScript()
             self.verify()
+            self.markClean()
         except Exception, e:
             # Don't use self.delete(), since is unsure state
 
@@ -878,6 +902,7 @@ class RedhatYumRepo(BaseRepo):
         try:
             self.clean(self.repoid)
             self.makeRepoDirs()
+            self.markStale()
             self.copyOSKit()
             self.copyKitsPackages()
             self.copyContribPackages()
@@ -887,6 +912,7 @@ class RedhatYumRepo(BaseRepo):
             self.copyKusuNodeInstaller()
             self.makeAutoInstallScript()
             self.verify()
+            self.markClean()
         except Exception, e:
             raise e
 
