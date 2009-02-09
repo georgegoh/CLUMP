@@ -237,7 +237,7 @@ def getBaseYumDir(dbs, repoid):
         return None
 
 def isRepoStale(dbs, repoid):
-    '''Returns the path where the repodata dir for yum resides in'''
+    '''Returns whether a repo has been refreshed and up to date'''
 
     if not repoExists(dbs, repoid):
         raise RepoNotFoundError, repoid

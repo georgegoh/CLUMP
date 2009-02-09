@@ -251,6 +251,8 @@ class BaseRepo(object):
 
         if repo_path:
             return (self.repo_path / '.stale').exists()
+        else:
+            return True
 
     def copyKitsPackages(self):
         """copy the kits packages to the repository"""
