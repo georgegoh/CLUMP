@@ -30,7 +30,8 @@ class KusuRC(rcplugin.Plugin):
             self.runCommand('/opt/kusu/bin/genconfig zone > %s/%s.zone' % (self.named_dir, domain))
 
             for net in self.dbs.Networks.select():
-                self.runCommand('/opt/kusu/bin/genconfig reverse %s > %s/%s.rev' % (net.network, self.named_dir, net.network))
+                if not net.usingdhcp:
+                    self.runCommand('/opt/kusu/bin/genconfig reverse %s > %s/%s.rev' % (net.network, self.named_dir, net.network))
 
             success, (out, retcode, err) = self.service('named', 'start')
             if not success:
