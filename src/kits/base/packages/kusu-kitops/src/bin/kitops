@@ -411,7 +411,7 @@ class KitOpsApp(KusuApp):
         kl.debug('Performing list operation')
 
         headers = ['Kit', 'Kid', 'Description', 'Version', 'Release', 'Architecture', 'OS Kit',
-                   'Removable', 'Supported OS', 'Node Groups']
+                   'Removable', 'Supported OS', 'Repositories', 'Node Groups']
 
         max_lengths = []
         for x in xrange(len(headers)):
@@ -471,10 +471,24 @@ class KitOpsApp(KusuApp):
                 sys.stdout.write(osline)
 
             ngnames = [ng.ngname for ng in
-                       self.koinst.getNodeGroups(kit.rname, kit.version,
-                                                 kit.release, kit.arch)]
+                       self.koinst.getNodeGroups(kit.kid)]
 
             sys.stdout.write("\n%s:\t" % headers[9])
+            repoline=""
+            for i,repo in enumerate(kit.repos):
+                repoline += "%s" % repo.reponame
+                repoline += ", "
+
+                if (count % 2):
+                    repoline += "\n\t\t"
+
+            if repoline[-2:-1] == ',':
+                repoline = repoline[:-2]
+            if repoline[-5:-4] == ',':
+                repoline = repoline[:len(repoline)-5]
+            sys.stdout.write(repoline)
+
+            sys.stdout.write("\n%s:\t" % headers[10])
             ngline=""
             count=0
             for ng in ngnames:
@@ -492,10 +506,8 @@ class KitOpsApp(KusuApp):
             if ngline[len(ngline)-5:-4] == ',':
                 ngline = ngline[:len(ngline)-5]
 
-            sys.stdout.write(ngline)
-            
-            print '\n'
-
+            sys.stdout.write(ngline + '\n\n')
+ 
         kl.debug('SUCCESS performing list operation')
 
     def determineKitMedia(self):
