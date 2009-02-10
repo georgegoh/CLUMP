@@ -85,6 +85,8 @@ endif
 BASE_KIT_COMPONENT_OS_MAJOR_STR=$(KUSU_DISTRO_VERSION)
 BASE_KIT_COMPONENT_OS_ARCH_STR=$(KUSU_DISTRO_ARCH)
 
+BASE_KIT_DESCRIPTION=Base Kit for $(KUSU_DISTRO_NAME) $(KUSU_DISTRO_VERSION) $(KUSU_DISTRO_ARCH)
+
 BASE_KIT_VERSION_STR=$(shell grep "^Version: " SPECS/$(PKG_KIT_SPEC) | awk '{print $$2}')
 BASE_KIT_RELEASE_STR=$(shell grep "^Release: " SPECS/$(PKG_KIT_SPEC) | awk '{print $$2}')
 BASE_KIT_ARCH_STR=$(shell uname -i)
@@ -112,5 +114,6 @@ kitinfo:
     -e 's%$${BASE_KIT_VERSION_STR}%$(BASE_KIT_VERSION_STR)%g' \
     -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_ARCH_STR}%$(BASE_KIT_ARCH_STR)%g' \
+    -e 's%$${BASE_KIT_DESCRIPTION}%$(BASE_KIT_DESCRIPTION)%g' \
 	packages/kit-base/kitinfo.in >packages/kit-base/kitinfo
 
