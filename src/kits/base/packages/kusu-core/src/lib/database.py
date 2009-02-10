@@ -878,17 +878,17 @@ class DB(object):
         # REGULAR PARTITIONING
 
         # use literals so we can overcome mysql and postgres specifics
-
+        default_fstype = Dispatcher.get('default_fstype', default='ext3')
         for ng in [compute]:
             boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
                               size='100', device='1', preserve=false)
-            root = Partitions(mntpnt='/', fstype='ext3', partition='2',
+            root = Partitions(mntpnt='/', fstype=default_fstype, partition='2',
                               size='12000', device='1', preserve=false)
             swap = Partitions(fstype='linux-swap', partition='3',
                               size='2000', device='1', preserve=false)
-            var = Partitions(mntpnt='/var', fstype='ext3', partition='5',
+            var = Partitions(mntpnt='/var', fstype=default_fstype, partition='5',
                              size='2000', device='1', preserve=false)
-            data = Partitions(mntpnt='/data', fstype='ext3', partition='6', size='14000',
+            data = Partitions(mntpnt='/data', fstype=default_fstype, partition='6', size='14000',
                               options='fill', device='1', preserve=false)
             dell = Partitions(options='partitionID=Dell Utility', preserve=true)
             donotpreserve = Partitions(options='partitionID=*', preserve=false)
@@ -909,11 +909,11 @@ class DB(object):
 #                            size='28000', device='N', preserve=false,
 #                            options='fill;pv;vg=VolGroup00')
 #            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=false)
-#            root = Partitions(mntpnt='/', fstype='ext3', size='12000',
+#            root = Partitions(mntpnt='/', fstype=default_fstype, size='12000',
 #                              device='ROOT', options='lv;vg=VolGroup00', preserve=false)
-#            var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
+#            var = Partitions(mntpnt='/var', fstype=default_fstype, size='2000',
 #                             device='VAR', options='lv;vg=VolGroup00', preserve=false)
-#            data = Partitions(mntpnt='/data', fstype='ext3', size='14000',
+#            data = Partitions(mntpnt='/data', fstype=default_fstype, size='14000',
 #                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=false)
 #            dell = Partitions(options='partitionID=Dell Utility', preserve=true)
 ##            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=false)
@@ -938,7 +938,7 @@ class DB(object):
                           size='100', device='1', preserve=false)
         swap = Partitions(fstype='linux-swap', partition='2',
                           size='8000', device='1', preserve=false)
-        root = Partitions(mntpnt='/', fstype='ext3', partition='3',
+        root = Partitions(mntpnt='/', fstype=default_fstype, partition='3',
                           size='24000', device='1', preserve=false)
         imaged.partitions.append(boot)
         imaged.partitions.append(swap)
@@ -953,11 +953,11 @@ class DB(object):
                         size='28000', device='N', preserve=false,
                         options='fill;pv;vg=KusuVolGroup00')
         vg = Partitions(device='KusuVolGroup00', options='vg;extent=32M', preserve=false)
-        root = Partitions(mntpnt='/', fstype='ext3', size='12000',
+        root = Partitions(mntpnt='/', fstype=default_fstype, size='12000',
                           device='ROOT', options='lv;vg=KusuVolGroup00', preserve=false)
-        depot = Partitions(mntpnt='/depot', fstype='ext3', size='10000',
+        depot = Partitions(mntpnt='/depot', fstype=default_fstype, size='10000',
                            device='DEPOT', options='lv;vg=KusuVolGroup00', preserve=false)
-        var = Partitions(mntpnt='/var', fstype='ext3', size='2000',
+        var = Partitions(mntpnt='/var', fstype=default_fstype, size='2000',
                          device='VAR', options='lv;vg=KusuVolGroup00', preserve=false)
         dell = Partitions(options='partitionID=Dell Utility', preserve=true)
         donotpreserve = Partitions(options='partitionID=*', preserve=false)
