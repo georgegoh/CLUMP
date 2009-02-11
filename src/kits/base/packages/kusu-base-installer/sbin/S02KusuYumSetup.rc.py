@@ -13,7 +13,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'yumrepo'
-        self.desc = 'Setting yum repos'
+        self.desc = 'Setting up yum repos'
         self.ngtypes = ['installer']
         self.delete = False
 
