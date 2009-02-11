@@ -543,6 +543,14 @@ class scrNGEEdit_Repo(USXBaseScreen):
         curNG['repoid'] = self.__repolistbox.current()
         # reset kernel and initrd to sane values 
         if curNG['repoid'] <> origNG['repoid']:
+            try:
+                os = self.dbs.Repos.selectone_by(repoid=int(curNG['repoid'])).os
+            except ValueError:
+                msg = "Repository id '%s' could not be converted to integer" % curNG['repoid']
+                self.logErrorEvent('Validation error: ' + msg)
+
+            os_tup = (os.name, os.major+'.'+os.minor, os.arch)
+
             if self.database.driver == 'mysql':
                 query = '''select k.rname ,k.version, k.arch  from kits k join repos_have_kits rk
                 on k.kid = rk.kid where k.isOS = True and rk.repoid = %s ''' %curNG['repoid']
@@ -554,15 +562,8 @@ class scrNGEEdit_Repo(USXBaseScreen):
             rname = rv[0]
             version =rv[1]
             arch = rv[2]
-            curNG['kernel'] = "kernel-%s-%s-%s" % (rname , version , arch)
-            curNG['initrd'] = "initrd-%s-%s-%s.img" % (rname , version , arch)
-            try:
-                os = self.dbs.Repos.selectone_by(repoid=int(curNG['repoid'])).os
-            except ValueError:
-                msg = "Repository id '%s' could not be converted to integer" % curNG['repoid']
-                self.logErrorEvent('Validation error: ' + msg)
-
-            os_tup = (os.name, os.major+'.'+os.minor, os.arch)
+            curNG['kernel'] = "kernel-%s-%s.%s-%s" % (os.name , os.major, os.minor , os.arch)
+            curNG['initrd'] = "initrd-%s-%s.%s-%s.img" % (os.name , os.major, os.minor, os.arch)
 
             curNG['kparams'] = Dispatcher.get('kparams', default='', os_tuple=os_tup)
             curNG['comps'] = []

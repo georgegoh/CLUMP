@@ -465,14 +465,16 @@ class KitOps:
         kit['minor'] = osdistro.getMinorVersion()
         kit['arch'] = osdistro.getArch()            #os kit arch in the db
         kit['name'] = osdistro.ostype.lower()
-        kit['longname'] = '%s-%s-%s' % (kit['name'], kit['ver'], kit['arch'])
+        kit['longname'] = '%s-%s.%s-%s' % (kit['name'], kit['major'], kit['minor'], kit['arch'])
         kit['sum'] = 'OS kit for %s %s.%s %s' % \
                         (kit['name'], kit['major'], kit['minor'], kit['arch'])
 
         kit['initrd'] = 'initrd-%s.img' % kit['longname']
         kit['kernel'] = 'kernel-%s' % kit['longname']
-        kits = self.__db.Kits.select_by(rname=kit['name'], version=kit['ver'],
-                                        arch=kit['arch'])
+    
+        kits = self.__db.OS.select_by(name=kit['name'], 
+                                      major=kit['major'], minor=kit['minor'],
+                                      arch=kit['arch'])
 
         if kits:
             self.unmountMedia()
@@ -565,7 +567,11 @@ class KitOps:
         return repodir
 
     def makeContribDir(self, kit):
-        contribdir = self.contrib_dir / kit['name'] / kit['ver'] / kit['arch']
+        
+        if kit['name'] in ['opensuse']:
+            contribdir = self.contrib_dir / kit['name'] / kit['major'] / kit['minor'] / kit['arch']
+        else:
+            contribdir = self.contrib_dir / kit['name'] / kit['ver'] / kit['arch']
 
         kl.debug('contrib dir: %s' % contribdir) 
         if not contribdir.exists():
