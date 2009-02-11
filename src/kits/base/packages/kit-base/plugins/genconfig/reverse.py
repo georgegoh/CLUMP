@@ -168,4 +168,4 @@ class thisReport(Report):
                     outline += '%s' % suffix
                 print '%s.%s.' % (outline, dnszone)
         else:
-            print "# No data on this network"
+            print "; No data on this network"
