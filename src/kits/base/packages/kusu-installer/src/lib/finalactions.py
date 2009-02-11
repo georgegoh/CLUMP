@@ -126,16 +126,27 @@ def makeRepo(kiprofile):
         f.write('\n'.join(files) + '\n')
         f.close()
 
-def getPackageProfile(dbs, ngname):
+def getPackageProfile(dbs, ngname, kiprofile):
  
+    from kusu.kitops.kitops import KitOps
+    kitops = KitOps(installer=True)
+    kitops.setDB(dbs)
+    kitops.setPrefix(kiprofile['Kusu Install MntPt'])
+    kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
+
     installer = dbs.NodeGroups.select_by(ngname=ngname)[0]
     try:
         components = [component.cname for component in installer.components \
                       if component.kit.rname == 'base']
 
+        kitrpms = ["kit-%s" % kit.rname
+                    for kit in dbs.Kits.select()
+                    if not kit.isOS and kitops.getKitApi(kit.kid) == '0.1']
+        
         pkgs = [pkg.packagename for pkg in installer.packages]
 
-        return components + pkgs 
+        return components + pkgs + kitrpms
+
     except AttributeError:
         raise AttributeError, 'components: %s' % str(installer.components)
 
@@ -168,7 +179,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     dbs = kiprofile.getDatabase()
     ngname = 'installer-' + kiprofile['Kits']['longname']
-    packages = getPackageProfile(dbs, ngname)
+    packages = getPackageProfile(dbs, ngname, kiprofile)
 
     if kusu_dist == "sles":
         template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
