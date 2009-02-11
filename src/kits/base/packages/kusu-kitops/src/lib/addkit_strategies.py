@@ -22,7 +22,7 @@ def addkit01(koinst, db, kitinfo):
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
-                     version=kit['version'], release=kit['release'], arch=kit['arch'],
+                     version=kit['version'], arch=kit['arch'],
                      removable=kit['removable'])
     newkit.save()
 

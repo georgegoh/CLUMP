@@ -425,7 +425,7 @@ class KitOpsApp(KusuApp):
             print "%s:\t%s" % (headers[2], kit.rdesc)
             print "%s:\t%s" % (headers[3], kit.version)
 
-            if not kit.is_os():
+            if not kit.is_os() and self.koinst.getKitApi(kit.kid)!='0.1':
                 print "%s:\t%s" % (headers[4], kit.release)
 
             sys.stdout.write("%s:\t" % headers[5])
