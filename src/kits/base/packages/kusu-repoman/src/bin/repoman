@@ -114,6 +114,8 @@ For examples:
         if kit.is_os():
             version = '%s.%s' % (kit.os.major,kit.os.minor)
             return '%s-%s-%s' % (kit.os.name, version, kit.os.arch)
+        elif self.kitops.getKitApi(kit.kid) == '0.1':
+            return '%s-%s-%s' % (kit.rname, kit.version, kit.arch)
         else:
             return '%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch)
 
