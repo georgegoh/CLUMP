@@ -32,6 +32,14 @@ from optparse import OptionParser
 from path import path
 import kusu.util.log as kusulog
 import errno
+
+sys.path.append("/opt/kusu/lib")
+import platform
+if platform.machine() == "x86_64":
+    sys.path.append("/opt/kusu/lib64/python")
+sys.path.append("/opt/kusu/lib/python")
+sys.path.append('/opt/primitive/lib/python2.4/site-packages')
+
 from primitive.system.software.probe import OS
 
 class KusuApp:
