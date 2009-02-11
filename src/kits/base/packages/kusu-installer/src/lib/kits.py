@@ -82,7 +82,10 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
                 release = ''
             else:
                 version = kit.version
-                release = str(kit.release)
+                if self.kitops.getKitApi(kit.kid) == '0.1':
+                    release = ''
+                else:
+                    release = str(kit.release)
 
             self.listbox.addRow([kit.rname, version, release, kit.arch], kit)
 
