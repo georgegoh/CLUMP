@@ -14,7 +14,7 @@ import os
 import string
 import glob
 from kusu.core.app import KusuApp
-from kusu.core.db import KusuDB
+import kusu.core.database as db
 from kusu.ngedit.ngedit import NGEPluginBase
 
 PluginsDir = "/opt/kusu/lib/plugins/ngedit"
@@ -24,13 +24,13 @@ class ListComps(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)
 
-        self.__db = KusuDB()
         self.reponame = None
         self.interactive = False
-        
+       
+        dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres') 
         try:
-            self.__db.connect(user='apache', dbname='kusudb')
-        except Exception,msg:
+            self.__db = db.DB(dbdriver, 'kusudb', 'apache')
+        except Exception, msg:
             sys.stderr.write('Problems establishing database connection. Error: %s' %msg)
             sys.exit(1)
 
@@ -64,14 +64,13 @@ class ListComps(KusuApp):
         
     def __printComps(self, db, reponame, interactive=False):
 
-        query = "select c.cname" + \
-                " from repos r, repos_have_kits rhk, kits k, components c" + \
-                " where r.reponame='%s' and r.repoid=rhk.repoid" % reponame + \
-                      " and rhk.kid=k.kid and k.kid=c.kid and r.ostype=c.os;"
+        repo = db.Repos.selectfirst_by(reponame=reponame)
+        if repo is None:
+            sys.stderr.write("Repository of name: %s does not exist.\n" % reponame)
+            sys.exit(1)
 
-        db.execute(query)
-        rv = db.fetchall()
-        CompNameList = [x for x, in rv]
+        comps = repo.getEligibleComponents()
+        CompNameList = [x.cname for x in comps]
         CompNameList.sort()
 
         for comp in CompNameList:
