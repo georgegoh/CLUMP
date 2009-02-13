@@ -75,6 +75,26 @@ def filterUnmanagedNodes(nodes, nodefun):
             unmanaged_nodes.append(node)
     return unmanaged_nodes
 
+def writeMacFile(db, nodes, macList):
+    """
+    Given a list of nodes, write out a mac file in the format "<MAC> <IP>"
+    for each node. This mac file will be used by addhosts to re-create nodes 
+    that were being moved. 
+    Returns the file created.
+    """
+    db.connect()
+    (fd, tmpfile) = tempfile.mkstemp()
+    tmpname = os.fdopen(fd, 'w')
+    for node in nodes:
+        try:
+            db.execute("SELECT ip FROM nics,nodes WHERE nics.nid=nodes.nid AND nodes.name=\'%s\'" % node)
+            ip = db.fetchone()[0]
+            tmpname.write("%s %s\n" % (macList[node], ip))
+        except:
+            tmpname.write("%s\n" % macList[node])
+    tmpname.close()
+    return tmpfile
+
 class NodeMemberApp(object, KusuApp):
 
     def __init__(self):
@@ -341,16 +361,9 @@ class NodeMemberApp(object, KusuApp):
                             for node in badList:
                                 msg += '%s (%s)\n' % (node[0], node[1])
                             print self._('The following nodes cannot be moved:\n') + msg
-                    # Create Temp file
-                    (fd, tmpfile) = tempfile.mkstemp()
-                    tmpname = os.fdopen(fd, 'w')
-                    for node in Set(nodesList):
-                       mac = macsList[node]
-                       database.connect()
-                       database.execute("SELECT ip FROM nics,nodes WHERE nics.nid=nodes.nid AND nodes.name=\'%s\'" % node)
-                       ip = database.fetchone()[0]
-                       tmpname.write("%s %s\n" % (mac, ip))
-                    tmpname.close()
+
+                    # Create temp mac file
+                    tmpfile = writeMacFile(database, Set(nodesList), macList)
 
                     print self._("nghosts_moving_nodes_progress")
 
@@ -521,12 +534,8 @@ class SelectNodesWindow(USXBaseScreen):
                        self.selector.popupMsg(self.kusuApp._("Error"), msg)
                        return NAV_NOTHING
 
-               # Create Temp file
-               (fd, tmpfile) = tempfile.mkstemp()
-               tmpname = os.fdopen(fd, 'w')
-               for node in moveList:
-                  tmpname.write("%s\n" % macList[node])
-               tmpname.close()
+               # Create temp mac file
+               tmpfile = writeMacFile(database, moveList, macList)
 
                # Call addhosts to delete these nodes
                progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
@@ -746,12 +755,8 @@ class SelectNodegroupsWindow(USXBaseScreen):
                 self.selector.popupMsg(self.kusuApp._("Notice"), msg)
                 
             if len(moveList) > 0:
-                # Create Temp file
-                (fd, tmpfile) = tempfile.mkstemp()
-                tmpname = os.fdopen(fd, 'w')
-                for node in moveList:
-                   tmpname.write("%s\n" % macList[node])
-                tmpname.close()
+                # Create temp mac file
+                tmpfile = writeMacFile(database, moveList, macList)
 
                 # Call addhosts to delete these nodes
                 progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
