@@ -291,7 +291,7 @@ class ProgressScreen(BaseScreen):
         dlg = self.selector.popupProgress('Preparing %s' % self.autoinstall_type, \
                                           'Preparing %s files...' % self.autoinstall_type)
         tmp_disk_profile = DiskProfile(False)
-        disk_order = self.disambiguateDiskOrder(tmp_disk_profile, interactive=False, fix=True)
+        disk_order = self.disambiguateDiskOrder(tmp_disk_profile)
         kl.debug('Disk order: %s' % str(disk_order))
 
         # Ensure parent directory already exists

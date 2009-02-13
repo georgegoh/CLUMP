@@ -27,7 +27,7 @@ class WelcomeScreen(InstallerScreen):
           'the F12 key. Otherwise, press Next to continue.') % ('${VERSION_STR}', '${VERSION_STR}')
     buttons = []
     dupMBR_prompt = True
-    fix_dupMBR = True
+    fix_dupMBR = False
 
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 1)
