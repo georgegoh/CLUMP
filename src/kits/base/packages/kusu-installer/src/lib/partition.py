@@ -16,10 +16,11 @@ from partition_delete import *
 from defaults import *
 from kusu.ui.text import kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
-from kusu.util.errors import *
+from primitive.system.hardware.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.testing import runCommand
+from kusu.util.errors import KusuError, UserExitError
 from primitive.system.hardware.partitiontool import DiskProfile
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
@@ -316,8 +317,10 @@ class PartitionScreen(InstallerScreen):
                         self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
                     else:
                         logger.debug('Use Existing')
+                        self.preserveExistingPartitions()
             else:
                 logger.debug('Use Existing')
+                self.preserveExistingPartitions()
 
         else:
             # tell user nothing exists and ask to proceed.
@@ -330,8 +333,31 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
 
+    def preserveExistingPartitions(self):
+        exceptions = ['/', '/depot', '/boot']
+        for d in self.disk_profile.disk_dict.values():
+            for p in d.partition_dict.values():
+                if p.mountpoint not in exceptions:
+                    p.do_not_format = True
+          
     def rollback(self):
         self.prompt_for_default_schema = True
+
+    def willBeFormatted(self, vol):
+        if vol.do_not_format or vol.leave_unchanged:
+            return False
+        else:
+            return True
+
+    def swapPartitionExists(self):
+        for disk in self.disk_profile.disk_dict.itervalues():
+            for partition in disk.partition_dict.itervalues():
+                if partition.fs_type == 'linux-swap':
+                    return True
+        for lv in self.disk_profile.lv_dict.itervalues():
+            if lv.fs_type == 'linux-swap':
+                return True
+        return False
 
     def validate(self):
         errList = []
@@ -357,10 +383,8 @@ class PartitionScreen(InstallerScreen):
             # verify that /, /boot and /depot are to be formatted
             for mntpnt in ['/', '/boot', '/depot']:
                 vol = self.disk_profile.mountpoint_dict[mntpnt]
-                if vol.do_not_format or vol.leave_unchanged:
-                    errList.append('%s is flagged as "do not format". ' % mntpnt + \
-                                   'Installation cannot continue until this ' + \
-                                   'flag is cleared.')
+                vol.do_not_format = False
+                vol.leave_unchanged = False
 
         if errList:
             errMsg = _('Please correct the following errors:')
@@ -370,106 +394,6 @@ class PartitionScreen(InstallerScreen):
         else:
             return True, ''
 
-    def willBeFormatted(self, vol):
-        if vol.do_not_format or vol.leave_unchanged:
-            return False
-        else:
-            return True
-
-    def swapPartitionExists(self):
-        for disk in self.disk_profile.disk_dict.itervalues():
-            for partition in disk.partition_dict.itervalues():
-                if partition.fs_type == 'linux-swap':
-                    return True
-        for lv in self.disk_profile.lv_dict.itervalues():
-            if lv.fs_type == 'linux-swap':
-                return True
-        return False
- 
-    def formAction(self):
-        """
-        
-        Store to kiprofile
-        
-        """
-        try:
-            profile = self.kiprofile[self.profile]
-        except KeyError:
-            profile = {}
-            self.kiprofile[self.profile] = profile
-
-        profile['DiskProfile'] = self.disk_profile
-        profile['disk_order'] = self.disk_order
-
-        missing_fs_types = self.checkMissingFSTypes()
-        if missing_fs_types:
-            proceed = self.selector.popupMsg('No Filesystem type defined',
-                        'The following volumes have mountpoints defined but ' + \
-                        'no filesystem type defined. The installation cannot ' + \
-                        'proceed until you have defined the filesystem for:\n' + \
-                        missing_fs_types)
-            self.selector.currentStep = self.selector.currentStep - 1
-            return
-
-    def checkMissingFSTypes(self):
-        """Check that all the mountpoints have associated mountpoints."""
-        missing_fs_types = []
-        for vol in self.disk_profile.mountpoint_dict.values():
-            if not vol.fs_type:
-                missing_fs_type.append(vol.path) 
-                setupDiskProfile(self.disk_profile, schema)
-
-    def validate(self):
-        errList = []
-        # verify that /, swap, /depot, and /boot exist.
-        mntpnts = self.disk_profile.mountpoint_dict.keys()
-        if '/' not in mntpnts:
-            errList.append("'/' partition is required.")
-        if '/depot' not in  mntpnts:
-            errList.append("'/depot' partition is required.")
-        if '/boot' not in  mntpnts:
-            errList.append("'/boot' partition is required.")
-        has_swap = False
-        for disk in self.disk_profile.disk_dict.itervalues():
-            for part in disk.partition_dict.itervalues():
-                if part.fs_type == 'linux-swap':
-                    has_swap = True
-                    break
-        if not has_swap:
-            errList.append("A 'linux-swap' partition is required.")
-
-        if not errList:
-            # verify that /, /boot and /depot are to be formatted
-            for mntpnt in ['/', '/boot', '/depot']:
-                vol = self.disk_profile.mountpoint_dict[mntpnt]
-                if vol.do_not_format or vol.leave_unchanged:
-                    errList.append('%s is flagged as "do not format". ' % mntpnt + \
-                                   'Installation cannot continue until this ' + \
-                                   'flag is cleared.')
-
-        if errList:
-            errMsg = _('Please correct the following errors:')
-            for i, string in enumerate(errList):
-                errMsg = errMsg + '\n\n' + str(i+1) + '. ' + string
-            return False, errMsg
-        else:
-            return True, ''
-
-    def willBeFormatted(self, vol):
-        if vol.do_not_format or vol.leave_unchanged:
-            return False
-        else:
-            return True
-
-    def swapPartitionExists(self):
-        for disk in self.disk_profile.disk_dict.itervalues():
-            for partition in disk.partition_dict.itervalues():
-                if partition.fs_type == 'linux-swap':
-                    return True
-        for lv in self.disk_profile.lv_dict.itervalues():
-            if lv.fs_type == 'linux-swap':
-                return True
-        return False
  
     def formAction(self):
         """
@@ -502,30 +426,8 @@ class PartitionScreen(InstallerScreen):
         for vol in self.disk_profile.mountpoint_dict.values():
             if not vol.fs_type:
                 missing_fs_type.append(vol.path) 
+        return missing_fs_types
 
-#        proceed = self.selector.popupYesNo(_('Really Proceed?'),
-#                       _('Proceeding beyond this screen will cause ' + \
-#                         'irreversible changes to your disk(s).\n\nIf you ' + \
-#                         'have any valuable data that is existing on your ' + \
-#                         'current disk(s), please press "No" to cancel ' + \
-#                         'installation, and then backup your data before ' + \
-#                         're-attempting installation.\n\nOtherwise, if you ' + \
-#                         'are sure you want to continue, then press the ' + \
-#                         '"Yes" button.'), defaultNo=True)
-#
-#        if proceed:
-#            from finalactions import setupDisks, mountKusuMntPts
-#            prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-#            setupDisks(self.disk_profile)
-#            mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
-#            prog_dlg.close()
-#        else:
-#            self.selector.currentStep = self.selector.currentStep - 1
-#         from finalactions import setupDisks, mountKusuMntPts
-#         prog_dlg = self.selector.popupProgress('Formatting Disks', 'Formatting disks...')
-#         setupDisks(self.disk_profile)
-#         mountKusuMntPts(self.kiprofile['Kusu Install MntPt'], self.disk_profile)
-#         prog_dlg.close()
 
     def executeCallback(self, obj):
         if obj is self.listbox.listbox:

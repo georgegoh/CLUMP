@@ -291,14 +291,22 @@ class ProgressScreen(BaseScreen):
         dlg = self.selector.popupProgress('Preparing %s' % self.autoinstall_type, \
                                           'Preparing %s files...' % self.autoinstall_type)
         tmp_disk_profile = DiskProfile(False)
-        disk_order = self.disambiguateDiskOrder(tmp_disk_profile, interactive=False)
+        disk_order = self.disambiguateDiskOrder(tmp_disk_profile, interactive=False, fix=True)
         kl.debug('Disk order: %s' % str(disk_order))
 
         # Ensure parent directory already exists
         if not os.path.exists(os.path.dirname(self.autoinstall_conf)):
             os.makedirs(os.path.dirname(self.autoinstall_conf))
 
-        self.nodeinst.setup(self.autoinstall_conf, self.niihost, disk_order)
+        try:
+            self.nodeinst.setup(self.autoinstall_conf, self.niihost, disk_order)
+        except LVMPreservationError, e:
+            dlg.close()
+            errMsg = str(e) + """\nPlease back up your data, remove the
+above-mentioned volume group, and press OK to reboot"""
+            self.selector.popupMsg('LVM Error', errMsg)
+            raise UserExitError
+        
         dlg.close()
 
         kl.debug('Setting timezone')

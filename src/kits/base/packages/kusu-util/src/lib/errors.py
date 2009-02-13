@@ -167,6 +167,7 @@ class NIISourceUnavailableError(KusuError): pass
 class EmptyNIISource(KusuError): pass
 class ParseNIISourceError(KusuError): pass
 class InvalidPartitionSchema(KusuError): pass
+class LVMPreservationError(KusuError): pass
 
 # buildkit
 class KitSrcAlreadyExists(KusuError): pass

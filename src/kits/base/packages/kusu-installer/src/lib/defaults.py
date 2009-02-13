@@ -423,6 +423,10 @@ def clearLVM(disk_profile, schema):
             except LogicalVolumeGroupStillInUseError, e:
                 preserved_lvg.append(lvg.name)
                 logger.debug(str(e))
+            except Exception, e:
+                preserved_lvg.append(lvg.name)
+                logger.debug(str(e))                
+                
     return preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv
 
 def getPartitionTuple(disk):

@@ -123,7 +123,6 @@ install -m644 sbin/S03KusuNetworkRoutes.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S90KusuFirefox.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuCFMSync.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuMigrateAppGlobals.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
-install -m644 sbin/S99KusuNoPreservePartition.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S99KusuXorg.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m755 sbin/boothost.py $RPM_BUILD_ROOT/opt/kusu/sbin/boothost
 install -m755 sbin/buildimage.py $RPM_BUILD_ROOT/opt/kusu/sbin/buildimage
@@ -192,7 +191,6 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /etc/rc.kusu.d/S90KusuFirefox.rc.py*
 /etc/rc.kusu.d/S99KusuCFMSync.rc.py*
 /etc/rc.kusu.d/S99KusuMigrateAppGlobals.rc.py*
-/etc/rc.kusu.d/S99KusuNoPreservePartition.rc.py*
 /etc/rc.kusu.d/S99KusuXorg.rc.py*
 /opt/kusu/bin/genconfig
 /opt/kusu/lib/python/kusu/addhost.py*

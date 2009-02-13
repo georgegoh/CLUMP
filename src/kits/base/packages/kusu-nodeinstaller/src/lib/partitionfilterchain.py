@@ -5,11 +5,9 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from primitive.system.hardware.partitiontool import DiskProfile
+from sets import Set
 from primitive.system.hardware.disk import Partition
-from kusu.installer.defaults import setupDiskProfile
-#from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError
+from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError, LVMPreservationError
 import kusu.util.log as kusulog
 
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
@@ -150,7 +148,12 @@ def translatePartitionOptions(options, opt):
         return (False, None)
     if opt == 'partitionID' and opt in opt_dict.keys():
         return (True, opt_dict[opt])
-
+    
+    # preserveDefault
+    if opt == 'preserveDefault' and opt not in opt_dict.keys():
+        return (False, None)
+    if opt == 'preserveDefault' and opt in opt_dict.keys():
+        return (True, opt_dict[opt])
 
 class PartitionEntriesFilterChain(object):
     def __init__(self, filter_list=[]):
@@ -453,3 +456,99 @@ class FilterOnPartitionTypeNoPreserve(FilterOnPartitionType):
                 p.leave_unchanged = False
                 logger.debug('Unpreserve %s' % p.path)
         return disk_profile
+    
+
+class PEFCPreserveUndefinedDisks(PartitionEntriesFilterChainDefaultNoPreserve):
+    def prefilter(self, partition_entries, disk_profile):
+        """Set the leave_unchanged flag to False for all volumes."""
+        for disk in disk_profile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                partition.leave_unchanged = False
+
+        for lv in disk_profile.lv_dict.values():
+            lv.leave_unchanged = False
+        logger.debug('%s prefilter, diskprofile:\n%s' % (self.__class__.__name__, str(disk_profile))) 
+        return disk_profile
+
+    def postfilter(self, partition_entries, disk_profile):
+        """ This post filter looks for unique disk ids in the partition entries
+            and compares this against all the disks detected by disk_profile.
+            Disks that are detected, but not defined in the partition entries
+            are preserved.
+        """
+        # Get the unique disk IDs from partition entries
+        disk_ids_set = Set([pe['device'] for pe in partition_entries])
+        if 'n' in disk_ids_set or 'N' in disk_ids_set:
+            return disk_profile
+
+        # Database partition table disk ids start from 1. Normalise to 0.
+        disk_ids = [int(i) - 1 for i in disk_ids_set if str(i).isdigit()]
+        
+        # Disks may not appear to the BIOS in alphabetical order, so we
+        # need to be explicit and get the disks in BIOS order.
+        disks_biosorder = disk_profile.getBIOSDiskOrder()
+        # May return empty if EDD is not available on the compute node.
+        # If so, then we have no choice but to simply use alpha order.
+        if not disks_biosorder:
+            disks_biosorder = disk_profile.disk_dict.keys()
+
+        # Get the list of defined and detected disks so that we can derive
+        # the list of detected, but undefined disks from the set of all
+        # detected disks.
+        defined_disks = []
+        for id in disk_ids:
+            defined_disks.append(disks_biosorder[id])
+
+        undefined_disks = Set(disk_profile.disk_dict.keys()) - \
+                          Set(defined_disks)
+
+        # Make sure there are no partitions that are part of a LVM Volume
+        # Group that spans a defined disk.
+        self.lvmCheck(disk_profile, undefined_disks, defined_disks)
+
+
+        # Finally, mark those undefined disks and their partitions to be
+        # left alone.
+        for d in undefined_disks:
+            disk = disk_profile.disk_dict[d]
+            disk.leave_unchanged = True
+            for part in disk.partition_dict.values():
+                part.leave_unchanged = True
+
+        return disk_profile
+
+    def subtractDisks(self, disk_profile, disk_l):
+        """ Subtract the disks in disk_l from the list of disks in
+            disk_profile and return the remaining disks left.
+        """
+        result = Set(disk_profile.disk_dict.keys()) - \
+                 Set(disk_l)
+        return [disk_profile.disk_dict[key] for key in result]
+
+    def lvmCheck(self, disk_profile, undefined, defined):
+        """ Check for LVM physical volumes in the undefined disks.
+            If they exist, check to see if they belong to a LVM
+            volume group which also has physical volumes on the defined
+            disks. Raise an exception if this is true.
+        """
+        undefined_disks = [disk_profile.disk_dict[x] for x in undefined]
+        defined_disks = [disk_profile.disk_dict[x] for x in defined]
+
+        for pv in disk_profile.pv_dict.values():
+            if pv.partition.disk in undefined_disks and \
+               pv.group and \
+               len(pv.group.pv_dict) > 1:
+                for other_pv in pv.group.pv_dict.values():
+                    if other_pv.partition.disk in defined_disks:
+                        err = 'This node cannot be partitioned because ' + \
+                              'the schema for this nodegroup would ' + \
+                              'cause data loss:\n LVM Volume Group ' + \
+                              '%s has physical volumes ' % pv.group.name + \
+                              'which would be deleted on some drives, ' + \
+                              'but preserved on others.'
+                        raise LVMPreservationError, err
+            if pv.partition.disk in undefined_disks:
+                for lv in pv.group.lv_dict.values():
+                    lv.leave_unchanged = True
+
+  

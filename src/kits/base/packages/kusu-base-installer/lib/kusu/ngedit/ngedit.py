@@ -2364,12 +2364,16 @@ class NodeGroupXMLRecord(NodeGroup):
             if PartSchema.isPartition(pk):
                 curr_section = self.__createXMLSectionWithDict(
                     xml, "partition", part_rec, 
-                    ("idpartitions", "mntpnt", "fstype", "device", "size", "preserve"))
+                    ("idpartitions", "mntpnt", "fstype", "device", "size"))
                 
                 # Get the fill option
                 fill = translatePartitionOptions(part_rec['options'], 'fill')[0]
                 fill = fill and 1 or 0
                 curr_section.appendChild(self.__createXMLElement(xml, "fill", fill))
+                
+                # Get the preserve column
+                preserve = part_rec['preserve'] and 1 or 0
+                curr_section.appendChild(self.__createXMLElement(xml, "preserve", preserve))
                 
             elif PartSchema.isVG(pk):
                 curr_section = self.__createXMLSectionWithDict(
@@ -2394,7 +2398,7 @@ class NodeGroupXMLRecord(NodeGroup):
             elif PartSchema.isLV(pk):
                 curr_section = self.__createXMLSectionWithDict(
                     xml, "log_vol", part_rec, 
-                    ("idpartitions", "mntpnt", "fstype", "device", "size", "preserve"))
+                    ("idpartitions", "mntpnt", "fstype", "device", "size"))
                 
                 # Get the VG ID
                 vg_name = translatePartitionOptions(part_rec['options'],'lv')[1]
@@ -2406,6 +2410,10 @@ class NodeGroupXMLRecord(NodeGroup):
                 
                 curr_section.appendChild(self.__createXMLElement(xml, "vol_group_id", vg_id))
                 
+                # Get the preserve column
+                preserve = part_rec['preserve'] and 1 or 0
+                curr_section.appendChild(self.__createXMLElement(xml, "preserve", preserve))   
+                             
             else:
                 continue
             
@@ -2626,7 +2634,9 @@ class NodeGroupXMLRecord(NodeGroup):
             # We must first import hidden partition entries  
             # into the schema (if they exist)
             hiddenRecs = []
-            query = "select * from partitions where ngid = %s " % self.data['ngid'] + "and options like 'partitionID=%'"
+            query = "select * from partitions where ngid = %s " % self.data['ngid'] + \
+            "and (options like 'partitionID=%' or options like 'preserveDefault=%'"
+            
             db.execute(query)
             rv = db.fetchall()
 

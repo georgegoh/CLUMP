@@ -9,7 +9,8 @@ import sys
 from primitive.system.hardware.partitiontool import DiskProfile
 from primitive.system.hardware.disk import Partition
 from kusu.nodeinstaller import NodeInstInfoHandler
-from kusu.util.errors import *
+from kusu.util.errors import KusuError, InvalidPartitionSchema
+from primitive.system.hardware.errors import *
 from kusu.nodeinstaller.partitionfilterchain import *
 from kusu.installer.defaults import getPartitionTuple
 from os.path import basename
@@ -18,16 +19,34 @@ import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('nodeinstaller.NodeInstaller')
 
 
-def partitionRulesDefaultIsPreserve(rules):
-    preserve = False
+def partitionRulesPreservationDefault(rules):
+    # Check new-style rules first.
+    for p in rules:
+        logger.debug('Checking part_rule for preserveDefault')
+        p_id, value = translatePartitionOptions(p['options'], 'preserveDefault')
+        if p_id and value.lower() == 'all':
+            logger.debug('Default Preserve set to All.')
+            return 'all'
+        elif p_id and value.lower() == 'none':
+            logger.debug('Default Preserve set to None.')
+            return 'none'
+        elif p_id and value.lower() == 'undefined':
+            logger.debug('Default Preserve set to Undefined.')
+            return 'undefined'
+        
+    # If new-style rules are not present, then fallback to checking
+    # old-style rules.
     for p in rules:
         logger.debug('Checking part_rule for partitionID=*')
         p_id, value = translatePartitionOptions(p['options'], 'partitionID')
         if p_id and value=='*':
             if p['preserve'] == '0':
-                logger.debug('Default Preserve set to False(User defined).')
-                preserve = False
-    return preserve
+                logger.debug('Default Preserve set to None.')
+                return 'none'
+            elif p['preserve'] == '1':
+                logger.debug('Default Preserve set to All.')
+                return 'all'
+        return 'undefined'                
 
 
 def adaptNIIPartition(niipartition, diskprofile):
@@ -37,9 +56,9 @@ def adaptNIIPartition(niipartition, diskprofile):
 
     """
     part_rules = niipartition.values()
-    default_preserve = partitionRulesDefaultIsPreserve(part_rules)
+    preserve = partitionRulesPreservationDefault(part_rules)
 
-    if default_preserve:
+    if preserve == 'all':
         logger.debug('Default Preserve')
         pefc = PartitionEntriesFilterChainDefaultPreserve()
         pefc.filter_list.append(FilterOnFileSystem())
@@ -48,7 +67,7 @@ def adaptNIIPartition(niipartition, diskprofile):
         pefc.filter_list.append(FilterOnMountpoints())
         pefc.filter_list.append(AssignMntPntForLV())
         pefc.filter_list.append(PropagateLVPreserveToPV())
-    else:
+    elif preserve == 'none':
         logger.debug('Default No Preserve')
         pefc = PartitionEntriesFilterChainDefaultNoPreserve()
         pefc.filter_list.append(AssignMntPntForLV())
@@ -57,8 +76,18 @@ def adaptNIIPartition(niipartition, diskprofile):
         pefc.filter_list.append(FilterOnPartitionTypeNoPreserve())
         pefc.filter_list.append(FilterOnFileSystemNoPreserve())
         pefc.filter_list.append(PropagateLVPreserveToPV())
+    else:
+        logger.debug('Default Preserve Undefined Disks')
+        pefc = PEFCPreserveUndefinedDisks()
+        pefc.filter_list.append(AssignMntPntForLV())
+        pefc.filter_list.append(FilterOnMountpointsNoPreserve())
+        pefc.filter_list.append(FilterOnLogicalVolumeNoPreserve())
+        pefc.filter_list.append(FilterOnPartitionTypeNoPreserve())
+        pefc.filter_list.append(FilterOnFileSystemNoPreserve())
+        pefc.filter_list.append(PropagateLVPreserveToPV())        
 
     disk_profile = pefc.apply(part_rules, diskprofile)
+    
     logger.debug('Before cleaning diskprofile:\n%s' % str(disk_profile))
     cleanDiskProfile(disk_profile)
     logger.debug('After cleaning diskprofile:\n%s' % str(disk_profile))
@@ -80,15 +109,13 @@ def cleanDiskProfile(disk_profile):
             disk_profile.delete(vg)
         except CannotDeleteVolumeGroupError:
             logger.debug('VG: %s has PVs with leave unchanged' % vg.name)
-            pass
         except PhysicalVolumeStillInUseError:
             logger.debug('VG: %s has LVs remaining.' % vg.name)
-            pass
         except LogicalVolumeGroupStillInUseError,msg:
             logger.debug('VG: %s has LVs remaining. Message: %s' % (vg.name,
                          str(msg)))
-            pass
-            
+        except Exception, e:
+            logger.debug('Error: %s' % str(e))
       
 
     for disk in disk_profile.disk_dict.values():

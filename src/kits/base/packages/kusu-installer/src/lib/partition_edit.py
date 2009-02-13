@@ -17,7 +17,8 @@ from kusu.ui.text import screenfactory, kusuwidgets
 from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 import kusu.util.log as kusulog
 from kusu.ui.text.navigator import NAV_NOTHING
-from kusu.util.errors import *
+from kusu.util.errors import KusuError
+from primitive.system.hardware.errors import *
 
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -53,7 +54,7 @@ def editDevice(baseScreen):
   
             return NAV_NOTHING
 
-        except KusuError, e:
+        except (KusuError, PartitionException), e:
             msgbox = snack.GridForm(screen, 'Error', 1, 2)
             text = snack.TextboxReflowed(30, str(e))
             msgbox.add(text, 0, 0)
@@ -220,8 +221,7 @@ class EditLogicalVolume(NewLogicalVolume):
     def __init__(self, screen, device, disk_profile):
         NewLogicalVolume.__init__(self, screen, disk_profile)
         self.lv = device
-        self.filesystem = snack.Label(self.lv.fs_type)
-
+        
     def draw(self):
         """Draw the fields onscreen."""
         # mount point
@@ -241,7 +241,8 @@ class EditLogicalVolume(NewLogicalVolume):
         self.size.setEntry(str(self.lv.size_MB))
         self.gridForm.add(self.size, 0,2)
 
-        self.filesystem = snack.Label('Filesystem: ' + self.lv.fs_type)
+        fs_type = self.lv.fs_type or 'Unable to detect'
+        self.filesystem = snack.Label('Filesystem: ' + fs_type)        
 
         # query volume groups
         self.volumegroup = snack.Label('Volume Group: ' + self.lv.group.name)

@@ -10,7 +10,8 @@ from primitive.system.hardware.disk import Partition
 from kusu.installer.defaults import *
 from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.testing import runCommand
-from kusu.util.errors import *
+from kusu.util.errors import KusuError, NIISourceUnavailableError, ParseNIISourceError, InvalidPartitionSchema, LVMPreservationError, EmptyNIISource
+from primitive.system.hardware.errors import *
 from kusu.hardware import probe
 from random import choice
 from cStringIO import StringIO
@@ -203,6 +204,9 @@ class KickstartFromNIIProfile(object):
         except InvalidPartitionSchema, e:
             logger.debug('Invalid partition schema! schema: %r' % schema)
             raise e
+        except LVMPreservationError, e:
+            logger.debug('LVM Preservation Error: %s' % str(e))
+            raise e        
         except OutOfSpaceError, e:
             s = str(e) + '\nPlease remove unwanted partitions/logical volumes, or ' + \
                 'modify the partition schema for this nodegroup to reduce the size ' + \
