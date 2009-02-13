@@ -503,7 +503,9 @@ class NodeInstaller(object):
         mounted = []
 
         # Mount and create in order
-        for m in ['/', '/root', '/etc']:
+        mountpts = d.keys()
+        mountpts.sort()
+        for m in mountpts:
             mntpnt = prefix + m
 
             if not mntpnt.exists():
@@ -524,3 +526,10 @@ class NodeInstaller(object):
             if m not in mounted:
                 raise KusuError, 'Mountpoint: %s not defined' % m
 
+    def setInstallFlag(self, prefix):
+        prefix = path(prefix)
+        flag = prefix / 'var' / 'lock' / 'subsys' /  'kusu-installer'
+        # fix issue where the lock dir can already exist, causing an exception
+        if not flag.parent.exists():
+            flag.parent.makedirs()
+        flag.touch()

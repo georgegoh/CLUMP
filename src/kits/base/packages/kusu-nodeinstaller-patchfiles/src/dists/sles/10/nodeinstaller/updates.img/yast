@@ -51,6 +51,11 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo "Starting the real yast..."
     /usr/lib/YaST2/startup/YaST2.First-Stage "$@"
+
+    if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer" ]; then
+        /bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
+    fi
+
     if [ "$?" -eq 0 ]; then
         /usr/bin/python /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
     fi

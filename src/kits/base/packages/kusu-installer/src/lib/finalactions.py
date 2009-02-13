@@ -298,7 +298,7 @@ def writeNTP(prefix, kiprofile):
 def setInstallFlag(prefix, kiprofile):
     prefix = path(prefix)
     flag = prefix / 'var' / 'lock' / 'subsys' /  'kusu-installer'
-    # fix issue where the lock dir can already exist, causing an expection
+    # fix issue where the lock dir can already exist, causing an exception
     if not flag.parent.exists():
         flag.parent.makedirs()
     flag.touch()

@@ -51,6 +51,10 @@ if [ $EXIT_CODE -eq 0 ]; then
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
 
+    if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer" ]; then
+        /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
+    fi
+
     if [ "$?" -eq 0 ]; then
         /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
     fi
