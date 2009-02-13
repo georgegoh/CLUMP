@@ -486,7 +486,7 @@ class DB(object):
             sa.Column('cname', sa.String(255)),
             sa.Column('cdesc', sa.String(255)),
             sa.Column('os', sa.String(20)),
-            sa.Column('ngtypes', sa.String(40)),
+            sa.Column('ngtypes', sa.String(255)),
             mysql_engine='InnoDB')
         sa.Index('components_FKIndex1', components.c.kid)
         self.__dict__['components'] = components
