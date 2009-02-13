@@ -16,7 +16,10 @@ import string
 import re
 import glob
 import shutil
-import subprocess
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 import tempfile
 import path
 import select
@@ -37,6 +40,7 @@ from kusu.ui.text.USXnavigator import *
 from kusu.ui.text import USXkusuwidgets as kusuwidgets
 
 from primitive.system.software.dispatcher import Dispatcher
+from kusu.util.cfm import runCfmMaintainerScripts
 
 MAXWIDTH = 70
 MAXHEIGHT = 18
@@ -1822,9 +1826,9 @@ class NodeGroup(NodeGroupRec):
                 
         # Run cfmsync
         if syncNG:
-            self.__runTool('cfmsync', "-n '%s' -p" %self['ngname'], windowInst)
+            self.__runTool('cfmsync', "-n '%s' -f -p" %self['ngname'], windowInst)
         else:
-            cmd = 'cfmsync'+ " -n '%s' -p" %self['ngname']
+            cmd = 'cfmsync'+ " -n '%s' -f -p" %self['ngname']
             if windowInst:
                 windowInst.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
                     " at your earliest convenience by running\n%s" %cmd)
@@ -2099,7 +2103,6 @@ class NodeGroup(NodeGroupRec):
             except:
                 raise NGECommitError, "Failed to update the node states."
 
-
     def __finalizeCommit(self, db, prevNG, kusuApp, windowInst):
         
         diffNG = self - prevNG
@@ -2173,14 +2176,17 @@ class NodeGroup(NodeGroupRec):
                 #driverpatch
                 self.__runTool('driverpatch', " nodegroup name='%s'" %self['ngname'], windowInst)
 
+        #3. Run any CFM maintainer scripts found in 
+        #   {DEPOT_KITS_ROOT}/<kid>/cfm/*.rc.py
+        runCfmMaintainerScripts()
             
-        #3. handle component plugins
+        #4. handle component plugins
         if plugdir not in sys.path:
             sys.path.append(plugdir)
         self.__handleCompPlug(db, removedComps, 'remove', kusuApp, windowInst)
         self.__handleCompPlug(db, addedComps, 'add', kusuApp, windowInst)
 
-        #4. show cfmsync screen only if packages or components
+        #5. show cfmsync screen only if packages or components
         # were modified for node group
         
         if not self.syncNodesIsRequired(prevNG) and windowInst:

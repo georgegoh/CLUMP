@@ -31,8 +31,7 @@ import string
 from kusu.core.app import *
 from kusu.core.db import KusuDB
 from kusu.cfms import PackBuilder
-
-
+from kusu.util.cfm import runCfmMaintainerScripts
 
 class UpdateApp(KusuApp):
     def __init__(self, argv):
@@ -72,7 +71,6 @@ class UpdateApp(KusuApp):
 
     def getActionDesc(self):
         return "Synchronizing nodegroup(s)"
-
 
     def run(self):
         """run - Run the application"""
@@ -151,16 +149,36 @@ class UpdateApp(KusuApp):
         pb.genFileList()
 
         # Now update the Installer if needed
-        ntype = type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
         if ngid == 1 or ngid == 0:
             # Run on the installer
             ntype = type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
             if os.path.exists(CFMCLIENT):
-                cmd = "%s -t %i -i self" % (CFMCLIENT, ntype)
+                client = CFMCLIENT
             else:
-                cmd = "cfmclient -t %i -i self" % ntype
+                client = 'cfmclient'
+
+            cmd_template = "%(cfmclient)s -t %(update_type)i -i self"
+            cmd_args = {'cfmclient': client}
+
             self.stdoutMessage("cfm_Updating installer\n")
-            os.system(cmd)
+
+            # Handle update packages first
+            if self.options.updatepackages:
+                cmd_args['update_type'] = UPDATEPACKAGE
+                os.system(cmd_template % cmd_args)
+                # Run cfm maintainer scripts to update cfm links
+                runCfmMaintainerScripts()
+                # Recreate the cfmfiles.lst
+                pb.updateCFMdir()
+                pb.removeOldFiles()
+                pb.genFileList()
+                # Don't need to update packages again
+                ntype = ntype - UPDATEPACKAGE
+
+            # Perform file updates and/or package upgrades
+            if ntype:
+                cmd_args['update_type'] = ntype
+                os.system(cmd_template % cmd_args)
 
         # Signal the nodes to start updating
         pb.signalUpdate(type, self.options.nodegrp)
