@@ -16,12 +16,16 @@ fi
 
 if [ "$KUSU_BUILD_DIST" = "centos" ]; then
     ISO=CentOS-5.2-$KUSU_BUILD_ARCH-bin-DVD.iso
+    DISTVER=$KUSU_BUILD_DISTVER
 elif [ "$KUSU_BUILD_DIST" = "rhel" ]; then
     ISO=rhel-5.2-server-$KUSU_BUILD_ARCH-dvd.iso
+    DISTVER=$KUSU_BUILD_DISTVER
 elif [ "$KUSU_BUILD_DIST" = "sles" ]; then
     ISO=SLES-10-SP2-DVD-$KUSU_BUILD_ARCH-GM-DVD1.iso
+    DISTVER=$KUSU_BUILD_DISTVER
 elif [ "$KUSU_BUILD_DIST" = "opensuse" ]; then
     ISO=openSUSE-10.3-DVD-$KUSU_BUILD_ARCH.iso
+    DISTVER=$KUSU_BUILD_DISTVER.$KUSU_BUILD_DISTVER_MINOR
 fi
 
 KUSU_REVISION=`svn info ../ | grep 'Last Changed Rev:' | awk '{print $4}'`
@@ -62,26 +66,26 @@ if [ $ec -eq 0 ]; then
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso;
         if [ -f iso/kit-base-*.i386.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .i386.iso`;
-            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         elif [ -f iso/*.i586.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .i586.iso`;
-            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         elif [ -f iso/*.x86_64.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .x86_64.iso`;
-            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         fi 
         scp *.iso build@ronin:build/kusu/release/$KUSU_VERSION
     else
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
         if [ -f iso/kit-base-*.i386.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .i386.iso`;
-            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         elif [ -f iso/*.i586.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .i586.iso`;
-            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         elif [ -f iso/*.x86_64.iso ]; then
             base_kit_name_version=`basename iso/kit-base-*.iso .x86_64.iso`;
-            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$DISTVER.$KUSU_BUILD_ARCH.iso;
         fi
         
         DEST_PATH=$KUSU_VERSION/$KUSU_REVISION
