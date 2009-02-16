@@ -7,13 +7,14 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 import kusu.util.log as kusulog
-from kusu.util.errors import *
+from kusu.util.errors import KusuError
 from kusu.util.structure import Struct
 from path import path
 from sets import Set
 from os.path import basename
 import primitive.system.hardware.partitiontool as pt
 from primitive.system.software.dispatcher import Dispatcher
+from primitive.system.hardware.errors import *
 
 logger = kusulog.getKusuLog('installer.defaults')
 
