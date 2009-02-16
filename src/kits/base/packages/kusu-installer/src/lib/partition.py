@@ -360,6 +360,7 @@ class PartitionScreen(InstallerScreen):
         return False
 
     def validate(self):
+        from primitive.system.hardware.disk import Partition
         errList = []
         # verify that /, swap, /depot, and /boot exist.
         mntpnts = self.disk_profile.mountpoint_dict.keys()
@@ -367,8 +368,12 @@ class PartitionScreen(InstallerScreen):
             errList.append("'/' partition is required.")
         if '/depot' not in  mntpnts:
             errList.append("'/depot' partition is required.")
+
         if '/boot' not in  mntpnts:
             errList.append("'/boot' partition is required.")
+        # check that /boot is on a physical partition
+        elif not isinstance(self.disk_profile.mountpoint_dict['/boot'],Partition):
+            errList.append("'/boot' must be on a physical partition")
         has_swap = False
         for disk in self.disk_profile.disk_dict.itervalues():
             for part in disk.partition_dict.itervalues():
