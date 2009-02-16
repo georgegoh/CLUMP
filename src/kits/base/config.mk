@@ -35,7 +35,7 @@
 #                     CPU architecture. This variable can be overriden.
 #
 KIT_PROPER_NAME = base
-KIT_VERSION = 1.1
+KIT_VERSION = $(shell grep "^Version: " SPECS/kit-base.spec | awk '{print $$2}')
 KIT_RELEASE = 1
 KIT_NAME = $(shell echo $(KIT_PROPER_NAME) | tr A-Z a-z)
 KIT_ARCH = $(shell uname -i)

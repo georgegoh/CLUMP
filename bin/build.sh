@@ -47,10 +47,10 @@ MNT=/mnt/share/$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER-$KUSU_BUILD_ARCH
 
 cd ../ && \
 mkdir -p $MNT && \
-mount -o loop /data/iso/$ISO $MNT && \
+if [ ! "$KUSU_BUILD_DIST" = "opensuse" ]; then mount -o loop /data/iso/$ISO $MNT; fi && \
 make clean && \
 make && \
-make bootable-iso 
+if [ ! "$KUSU_BUILD_DIST" = "opensuse" ]; then make bootable-iso; fi 
 
 ec=$?
 
@@ -59,10 +59,30 @@ umount $MNT && rmdir $MNT
 if [ $ec -eq 0 ]; then
 
     if [ "$RELEASE_BUILD" -eq 0 ]; then
-        mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
+        mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso;
+        if [ -f iso/kit-base-*.i386.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .i386.iso`;
+            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        elif [ -f iso/*.i586.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .i586.iso`;
+            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        elif [ -f iso/*.x86_64.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .x86_64.iso`;
+            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        fi 
         scp *.iso build@ronin:build/kusu/release/$KUSU_VERSION
     else
         mv `basename *.iso .iso`.iso kusu-$KUSU_VERSION-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST-$KUSU_BUILD_DISTVER.$KUSU_BUILD_ARCH.iso; 
+        if [ -f iso/kit-base-*.i386.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .i386.iso`;
+            cp -f iso/$base_kit_name_version.i386.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        elif [ -f iso/*.i586.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .i586.iso`;
+            cp -f iso/$base_kit_name_version.i586.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        elif [ -f iso/*.x86_64.iso ]; then
+            base_kit_name_version=`basename iso/kit-base-*.iso .x86_64.iso`;
+            cp -f iso/$base_kit_name_version.x86_64.iso $base_kit_name_version-`date +%Y%m%d`-$KUSU_REVISION.$KUSU_BUILD_DIST.$KUSU_BUILD_ARCH.iso;
+        fi
         
         DEST_PATH=$KUSU_VERSION/$KUSU_REVISION
         mkdir -p $DEST_PATH
@@ -82,7 +102,11 @@ if [ $ec -eq 0 ]; then
             cp -r src/kits/base/RPMS/i586/*.rpm $DEST_PATH/RPMS/i586
         fi
 
-        scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
+        if [ "$KUSU_BUILD_DIST" = "opensuse" ]; then 
+            scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER.$KUSU_BUILD_DISTVER_MINOR/DAILY/
+        else
+            scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
+        fi
     fi
 fi
 
