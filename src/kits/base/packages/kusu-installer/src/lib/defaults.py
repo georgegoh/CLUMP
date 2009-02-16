@@ -13,6 +13,7 @@ from path import path
 from sets import Set
 from os.path import basename
 import primitive.system.hardware.partitiontool as pt
+from primitive.system.software.dispatcher import Dispatcher
 
 logger = kusulog.getKusuLog('installer.defaults')
 
@@ -174,6 +175,8 @@ def vanillaSchemaLVM():
           c. VAR - ext3, 2000M, mounted on /var
           d. HOME - ext3, 5000M, mounted on /home (fill)
     """
+
+    default_fstype = Dispatcher.get('default_fstype', default='ext3')
     # Physical Disks.
     d1 = Disk()
 
@@ -225,7 +228,7 @@ def vanillaSchemaLVM():
     root = LVMLogicalVolume()
     root.name = 'ROOT'
     root.size_MB = 12000
-    root.fs = 'ext3'
+    root.fs = default_fstype
     root.mountpoint = '/'
     root.fill = False
     volgroup00.addLV(root)
@@ -234,7 +237,7 @@ def vanillaSchemaLVM():
     var = LVMLogicalVolume()
     var.name = 'VAR'
     var.size_MB = 2000
-    var.fs = 'ext3'
+    var.fs = default_fstype
     var.mountpoint = '/var'
     var.fill = False
     volgroup00.addLV(var)
@@ -242,8 +245,8 @@ def vanillaSchemaLVM():
     # Depot Logical Volume.
     depot = LVMLogicalVolume()
     depot.name = 'DEPOT'
-    depot.size_MB = 10000
-    depot.fs = 'ext3'
+    depot.size_MB = 12000
+    depot.fs = default_fstype
     depot.mountpoint = '/depot'
     depot.fill = False
     volgroup00.addLV(depot)
@@ -252,7 +255,7 @@ def vanillaSchemaLVM():
     home = LVMLogicalVolume()
     home.name = 'HOME'
     home.size_MB = 5000
-    home.fs = 'ext3'
+    home.fs = default_fstype
     home.mountpoint = '/home'
     home.fill = True
     volgroup00.addLV(home)
