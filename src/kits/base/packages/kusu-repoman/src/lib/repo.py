@@ -644,6 +644,10 @@ class SuseYastRepo(BaseRepo):
         if self.hasBaseKit():
             if not src.exists():
                 self.makeNodeInstallerImage()
+
+            if not src.exists():
+                raise UpdatesImgNotCreatedError, '%s does not exists' % src
+
             yastRepo = YastRepo(self.repo_path)
             yastRepo.handleUpdates('file://' + src)
      
