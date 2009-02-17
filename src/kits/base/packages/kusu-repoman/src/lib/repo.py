@@ -1415,6 +1415,7 @@ class OpenSUSE103Repo(SuseYastRepo, YumUpdate):
         YumUpdate.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['bootdir'] = 'boot'
         self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
         self.dirlayout['mediadir'] = 'media.1' 
         self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
@@ -1426,10 +1427,10 @@ class OpenSUSE103Repo(SuseYastRepo, YumUpdate):
         self.dirlayout['packagesdir.i486'] = 'suse/i486';
         self.dirlayout['packagesdir.i586'] = 'suse/i586';
         self.dirlayout['packagesdir.i686'] = 'suse/i686';
-
         if os_arch == 'x86_64':
             self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
-    
+
+
     def getSources(self):
 
         return self.getPackagesDir()
