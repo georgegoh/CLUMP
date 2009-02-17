@@ -676,3 +676,76 @@ class YouUpdate(BaseUpdate):
         return kpkgs 
 
 
+class OpenSUSEUpdate(YumUpdate):
+    def __init__(self, os_version, os_arch, prefix, db):
+        YumUpdate.__init__(self, 'opensuse', os_version, os_arch, prefix, db)
+ 
+    def makeUpdateKit(self, pkgs):
+        """Makes the update kit"""
+
+        kitName = '%s-updates' % self.os_name 
+        kitVersion =  self.getOSVersion()
+        kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
+        kitArch = 'noarch'
+
+        # Buildkit's kit src
+        tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp')))
+        # Used by kitops to add the kit from
+        kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp')))
+
+        self.prepKit(tempkitdir, kitName)
+
+        for p in pkgs:
+            file = p.getFilename()
+            dest = tempkitdir / kitName / 'sources' / file.basename()
+
+            # Use abs symlink. Relative links does not work
+            # when buildkit prepares temp new directory for
+            # making kit
+            file.symlink(dest) 
+    
+        kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
+        self.makeKit(tempkitdir, kitdir, kitName)
+        
+        return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
+
+    def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
+
+        dest = tempkitdir / kitName / 'build.kit'
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        template = kusu_root / 'etc' / 'templates' / 'update.kit.tmpl'
+
+        ns = {}
+        ns['kitname'] = kitName
+        ns['kitver'] = kitVersion
+        ns['kitrel'] = kitRelease
+        if self.os_arch in ['i386', 'i486', 'i586', 'i686']:
+            ns['kitarch'] = 'x86'
+        else:
+            ns['kitarch'] = self.os_arch
+
+        ns['kitarch'] = 'noarch'
+        ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
+                        (self.os_name, self.getOSVersion(), self.os_arch, time.asctime())
+
+        ns['compclass'] = self.compclass[self.os_name][self.os_version]
+
+        kpkgs = self.getKernelPackagesList(tempkitdir, r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+        ns['kernels'] = []
+        for kpkg in kpkgs:
+            kpkg = rpmtool.RPM(str(kpkg))            
+            filename = kpkg.getFilename().basename() 
+            desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
+            ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
+                                  'release':kpkg.release, 'filename':filename})
+ 
+        t = Template(file=str(template), searchList=[ns])  
+        f = open(dest, 'w')
+        f.write(str(t))
+        f.close()
+   
+        return kpkgs 
+
+
+

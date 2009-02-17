@@ -252,6 +252,53 @@ class SLES10InitrdModule(BaseInitrdModule):
                 (destPath / ko.basename()).remove()
             ko.copy(destPath)
                 
+class OpenSUSE103InitrdModule(BaseInitrdModule):
+    def __init__(self, db, initrdpath):
+        BaseInitrdModule.__init__(self, db, initrdpath)
+
+    def updateInitrd(self, newinitrdpath, kernelrpm, kmodlist):
+      
+        # opensuse 10.3 initrd layout
+        # uname -r: 2.6.22.5-31-default
+        #
+        # /modules -> lib/modules/2.6.22.5-31-default/initrd
+        # /lib/modules/2.6.22.5-31-default
+        #
+        # /lib/modules/2.6.22.5-31-default/ modules.* files
+        # /lib/modules/2.6.22.5-31-default/initrd ko.* files
+        
+        pkg_ver = kernelrpm.version
+        pkg_rel = kernelrpm.release
+        
+        self.unpackInitrd()
+        kver = self.getKernelVersion(kernelrpm)
+
+        for p in (self.tmpdir / 'lib' / 'modules').listdir():
+            if (p / 'modules.dep').exists():
+                p.move(self.tmpdir / 'lib' / 'modules' / '%s-default' % kver)  
+
+        if (self.tmpdir / 'modules').islink(): (self.tmpdir / 'modules').remove()
+        path('lib/modules/%s-default/initrd' % kver).symlink(self.tmpdir / 'modules')
+
+        moduleassets = self.getKernelModulesAssets()
+        self.unpackKernelModules(moduleassets, kmodlist)
+   
+        origmodulesdep = 'lib/modules/%s-default/modules.dep' % kver
+        origmodulesalias = 'lib/modules/%s-default/modules.alias' % kver
+        self.updateModulesAssets(origmodulesdep, origmodulesalias, '%s-default' % kver)
+
+        self.updateModulesInInitrd(self.tmpkmoddir, self.tmpdir, '%s-default' % kver)
+        self.packInitrd(newinitrdpath)
+
+    def updateModulesInInitrd(self, kmoddir, initrdpath, kver):
+
+        destPath = initrdpath / 'lib' / 'modules' / kver / 'initrd'
+        kofiles = [ko for ko in kmoddir.walkfiles('*.ko*')]
+        for ko in kofiles:
+            if (destPath / ko.basename()).exists():
+                (destPath / ko.basename()).remove()
+            ko.copy(destPath)
+                
         
         
 

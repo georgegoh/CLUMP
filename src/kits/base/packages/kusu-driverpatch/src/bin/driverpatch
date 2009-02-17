@@ -443,7 +443,13 @@ Example operations:
             kernelfile = ngkernel
 
         os_name, os_version, os_minor, os_arch = repotools.getOS(self.db, repoid)
-        moduleHandler = InitrdModulesFactory().getModuleHandler(os_name, os_version)(self.db, initrdpath)
+
+        if os_name in ['opensuse']:
+            os_ver = '%s.%s' % (os_version, os_minor)
+        else:
+            os_ver = os_version
+
+        moduleHandler = InitrdModulesFactory().getModuleHandler(os_name, os_ver)(self.db, initrdpath)
         newinitrdpath = tftpbootdir / newinitrd
         moduleHandler.updateInitrd(newinitrdpath, kernelrpm, kmodlist)
 

@@ -9,12 +9,13 @@
 
 from kusu.util.errors import *
 from kusu.repoman import tools
-from kusu.repoman.updates import YumUpdate, RHNUpdate, YouUpdate
+from kusu.repoman.updates import YumUpdate, RHNUpdate, YouUpdate, OpenSUSEUpdate
 from kusu.util import rpmtool
 from primitive.repo.yast import YastRepo
 from path import path
 from Cheetah.Template import Template
 import os
+import re
 
 try:
     import subprocess
@@ -297,19 +298,6 @@ class BaseRepo(object):
     def getKernelPackages(self):
         """get a list of kernel packages"""
         raise NotImplementedError
-
-        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
-
-        kpkgs = []
-
-        try:
-            root = path(srcPath)
-            li = [f for f in root.walkfiles('kernel*rpm')]
-            kpkgs.extend([l for l in li if re.findall(pat,l)])
-        except OSError:
-            pass
-
-        return kpkgs
 
     def getPackagesDir(self):
         """get the list of path of packages directories"""
@@ -654,7 +642,7 @@ class SuseYastRepo(BaseRepo):
     def getKernelPackages(self):
         """get a list of kernel packages"""
         
-        pat = re.compile(r'kernel-default[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+        pat = re.compile(r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
 
         kpkgs = []
         try:
@@ -1413,10 +1401,10 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
         """Make the autoinstall script for the repository"""
         pass #SLES nodeinstaller does not require fake autoinst.xml
 
-class OpenSUSE103Repo(SuseYastRepo, YumUpdate):
+class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
     def __init__(self, os_arch, prefix, db):
         SuseYastRepo.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
-        YumUpdate.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
+        OpenSUSEUpdate.__init__(self, '10.3', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['bootdir'] = 'boot'
