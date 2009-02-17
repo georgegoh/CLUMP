@@ -81,9 +81,7 @@ class KusuRC(rcplugin.Plugin):
         if repo: 
             kid = repo.oskit.kid
 
-            if self.os_name == "centos":
-                self.runCommand('/bin/rpm --import /depot/kits/%s/RPM-GPG-KEY*' % kid)
-            elif self.os_name == "rhel":
+            if self.os_name in ['centos', 'rhel']:
                 self.runCommand('/bin/rpm --import /depot/kits/%s/RPM-GPG-KEY*' % kid)
             
         return True
