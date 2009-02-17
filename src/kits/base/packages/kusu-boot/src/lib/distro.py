@@ -203,13 +203,13 @@ def DistroFactory(srcPath):
                CentOS5AdditionalInstallSrc(srcPath),
                CentOS4InstallSrc(srcPath),
                CentOS4AdditionalInstallSrc(srcPath),
-               FedoraInstallSrc(srcPath),
-               FedoraAdditionalInstallSrc(srcPath),
-               Fedora7InstallSrc(srcPath),
+               #FedoraInstallSrc(srcPath),
+               #FedoraAdditionalInstallSrc(srcPath),
+               #Fedora7InstallSrc(srcPath),
                RHELInstallSrc(srcPath),
                RHEL5InstallSrc(srcPath),
                RHEL5AdditionalInstallSrc(srcPath),
-               Fedora8InstallSrc(srcPath),
+               #Fedora8InstallSrc(srcPath),
                OPENSUSE103InstallSrc(srcPath),
                SLES10InstallSrc(srcPath)]
     for d in distros:
