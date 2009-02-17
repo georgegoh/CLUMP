@@ -810,18 +810,15 @@ class NodeGroup(NodeGroupRec):
         if not repoid:
             raise NGEValidationError, "A repository must be specified for the Node Group."
 
-        query = "select repository,ostype from repos where repoid = %s" % repoid
-        (repodir,ostype) = self.__runSingleRowQuery(db, query)
-        
-        repodir = repodir.strip()
-        ostype = ostype.lower()
+        from kusu.repoman import tools as rtool
+        from kusu.core import database as sadb
+        engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+        dbinst = sadb.DB(engine, db='kusudb',username='nobody')
 
-        if ostype.startswith('fedora'):
-            repodir = repodir + '/Fedora/RPMS'
-        elif ostype.startswith('rhel'):
-            repodir = repodir + '/Server'
-        elif ostype.startswith('centos'):
-            repodir = repodir + '/CentOS'
+        repodir  = rtool.getPackagePath(dbinst, repoid)
+
+        if repodir:
+            repodir = repodir[0]
         else:
             raise NGEValidationError, 'Selected repository has an unknown OS type.'
 
@@ -3211,26 +3208,6 @@ def removeNGLockFile(ngid):
         lock = path.path(lockFile)
         lock.remove()
 
-def getRPMSDirKeys(ostype, arch):
-    if ostype.lower().startswith('fedora') or \
-       ostype.lower().startswith('centos'):
-        repodatakey = "repodatadir"
-        rpmsdirkeys = ['rpmsdir']
-    elif ostype.lower().startswith('rhel'):
-        repodatakey = 'server.repodatadir'
-        rpmsdirkeys = ['server.rpmsdir']
-    elif ostype.lower().startswith('sles'):
-        repodatakey = ""
-        rpmsdirkeys = ['packagesdir.noarch',
-                       'packagesdir.i386',
-                       'packagesdir.i486',
-                       'packagesdir.i586',
-                       'packagesdir.i686']
-        if arch in ['x86_64']:
-            rpmsdirkeys.append('packagesdir.x86_64')
-    return repodatakey, rpmsdirkeys
-
-
 def getAvailPkgs(db, repoid, categorized=False):
     '''Returns a dictionary containing info for all of the packages 
        contained in the specified repository. Note: it takes time to 
@@ -3250,27 +3227,23 @@ def getAvailPkgs(db, repoid, categorized=False):
     if repoid is None:
         raise NodeGroupError, "Must specify a repository to get the list of available packages"
 
-    query = "select r.repository, r.ostype from repos r where r.repoid = %s" % repoid
-    db.execute(query)
-    repodir, ostype = db.fetchone()
-    repodir = repodir.strip()
-
-    import kusu.repoman.repofactory as repofactory
+    from kusu.repoman import tools as rtool
     from kusu.core import database as sadb
     engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
     dbinst = sadb.DB(engine, db='kusudb',username='nobody')
-    rf = repofactory.RepoFactory(db=dbinst)
+
+    repoObj = dbinst.Repos.get(repoid)
+    os_name = repoObj.os.name
+    repodir = repoObj.repository.strip()
+
     try:
-        repoinst = rf.getRepo(repoid)
+        repopackdirs = rtool.getPackagePath(dbinst, repoid)
+        if os_name.lower() not in ['sles', 'opensuse', 'suse']:
+            compsfile = glob.glob(os.path.join(repodir, rtool.getBaseYumDir(dbinst, repoid), 'repodata','comps*.xml'))[0]
+
     except:
         raise NodeGroupError, "Cannot retrieve package info from selected " \
             "repository (ostype=%s) because it cannot be used at this time. " %ostype
-
-    repodatakey, rpmsdirkeys = getRPMSDirKeys(ostype, repoinst.os_arch)
-
-    repopackdirs = [os.path.join(repodir, repoinst.dirlayout[x]) for x in rpmsdirkeys]
-    if not ostype.lower().startswith('sles'):
-        compsfile = glob.glob(os.path.join(repodir, repoinst.dirlayout[repodatakey],'comps*.xml'))[0]
 
     cwdbackup = os.getcwd()
     repopacklst = []
@@ -3467,21 +3440,13 @@ def getAvailModules(db, ngid, repoid=None, comps=None):
 
     repodir = repodir.strip()
 
-    import kusu.repoman.repofactory as repofactory
+    from kusu.repoman import tools as rtool
     from kusu.core import database as sadb
     engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
     dbinst = sadb.DB(engine, db='kusudb',username='nobody')
-    rf = repofactory.RepoFactory(db=dbinst)
+    
     try:
-        repoinst = rf.getRepo(repoid)
-    except:
-        raise NodeGroupError, "Cannot retrieve package info from selected " \
-            "repository (ostype=%s) because it cannot be used at this time. " %ostype
-
-    repodatakey, rpmsdirkeys = getRPMSDirKeys(ostype, repoinst.os_arch)
-    repopackdirs = []
-    try:
-        repopackdirs = [os.path.join(repodir, repoinst.dirlayout[x]) for x in rpmsdirkeys]
+        repopackdirs = rtool.getPackagePath(dbinst, repoid)
     except KeyError:
         raise NodeGroupError, "Repository with ostype = %s is not supported." % ostype
 
