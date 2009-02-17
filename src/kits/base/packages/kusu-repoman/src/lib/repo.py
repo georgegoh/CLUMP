@@ -1397,7 +1397,7 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
 
     def getSources(self):
         
-        return self.getPackagesDir()
+        return [self.getRepoPath()]
 
     def getPackageFilePath(self, packagename):
 
