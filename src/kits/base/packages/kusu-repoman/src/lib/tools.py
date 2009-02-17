@@ -249,7 +249,7 @@ def isRepoStale(dbs, repoid):
 
     return repo.isStale()
 
-def getEffictiveOSVersion(dbs, repoid):
+def getEffectiveOSVersion(dbs, repoid):
     '''Returns the effective OS version for the repo'''
 
     if not repoExists(dbs, repoid):
