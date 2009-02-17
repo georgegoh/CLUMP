@@ -35,6 +35,7 @@ class BaseUpdate:
     compclass = {'rhel' : {'5': 'RHEL5Component()'},
                  'centos' : {'5': 'Centos5Component()'},
                  'sles' : {'10': 'SLES10Component()'},
+                 'opensuse' : {'10.3': 'OPENSUSE103Component()'},
                  'fedora' : {'6': 'Fedora6Component()'}}
 
     def __init__(self, os_name, os_version, os_arch, prefix, db, updates_root = '/depot/updates'):
@@ -343,6 +344,15 @@ class YumUpdate(BaseUpdate):
             name = r.getName()
             arch = r.getArch()
 
+            if arch not in ['x86_64', 'i386', 'i486', 'i586', 'i686', 'noarch']:
+                continue
+
+            if self.os_arch == 'i386' and arch == 'x86_64':
+                continue
+
+            if name.endswith('-debuginfo'):
+                continue
+
             if rpmPkgs.RPMExists(name, arch):
                 # There's a newer rpm, so download it
                 if r > rpmPkgs[name][arch][0]:
@@ -520,7 +530,6 @@ class RHNUpdate(BaseUpdate):
 class YouUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, 'sles', os_version, os_arch, prefix, db)
-
         
     def getYouCred(self):
         if self.configFile:
@@ -542,18 +551,12 @@ class YouUpdate(BaseUpdate):
                     '10.2': 'SLES10-SP2-Updates',
                     '10.3': 'SLES10-SP3-Updates' }
 
-        return channels[self.os_version_full]
+        return channels[self.getOSVersion()]
 
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
    
-        repo = self.db.Repos.get(self.repoid)        
-        major = repo.os.major
-        minor = repo.os.minor
-
-        self.os_version_full = '%s.%s' % (major,minor)
-
-        dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version_full / self.os_arch
+        dir = path(self.prefix) / self.updates_root / self.os_name / self.getOSVersion() / self.os_arch
         if not dir.exists():
             dir.makedirs()
 
@@ -609,7 +612,7 @@ class YouUpdate(BaseUpdate):
         """Makes the update kit"""
 
         kitName = '%s-updates' % self.os_name 
-        kitVersion = self.os_version_full
+        kitVersion =  self.getOSVersion()
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
@@ -652,7 +655,7 @@ class YouUpdate(BaseUpdate):
 
         ns['kitarch'] = 'noarch'
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
-                        (self.os_name, self.os_version_full, self.os_arch, time.asctime())
+                        (self.os_name, self.getOSVersion(), self.os_arch, time.asctime())
 
         ns['compclass'] = self.compclass[self.os_name][self.os_version]
 

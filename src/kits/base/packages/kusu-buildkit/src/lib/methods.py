@@ -157,24 +157,36 @@ def Centos5Component(**kwargs):
     """ This is used for Centos5Component 5 components. """
     kwargs['ostype'] = 'centos'
     kwargs['osversion'] = '5'
+    kwargs['osmajor'] = '5'
     return DefaultComponent(**kwargs)
 
 def RHEL5Component(**kwargs):
     """ This is used for RHEL 5 components. """
     kwargs['ostype'] = 'rhel'
     kwargs['osversion'] = '5'
+    kwargs['osmajor'] = '5'
     return DefaultComponent(**kwargs)
 
 def Fedora6Component(**kwargs):
     """ This is used for Fedora Core 6 components. """
     kwargs['ostype'] = 'fedora'
     kwargs['osversion'] = '6'
+    kwargs['osmajor'] = '6'
     return DefaultComponent(**kwargs)
 
 def SLES10Component(**kwargs):
     """ This is used for SLES 10 components. """
     kwargs['ostype'] = 'sles'
     kwargs['osversion'] = '10'
+    kwargs['osmajor'] = '10'
+    return DefaultComponent(**kwargs)
+
+def OPENSUSE103Component(**kwargs):
+    """ This is used for OPENSUSE 10.3 components. """
+    kwargs['ostype'] = 'opensuse'
+    kwargs['osversion'] = '10.3'
+    kwargs['osmajor'] = '10'
+    kwargs['osminor'] = '3'
     return DefaultComponent(**kwargs)
 
 def DefaultComponent(**kwargs):
@@ -193,6 +205,8 @@ def DefaultComponent(**kwargs):
     if not 'pkgname' in kwargs: kwargs['pkgname'] = ''
     if not 'ostype' in kwargs: kwargs['ostype'] = ''
     if not 'osversion' in kwargs: kwargs['osversion'] = ''
+    if not 'osmajor' in kwargs: kwargs['osmajor'] = ''
+    if not 'osminor' in kwargs: kwargs['osminor'] = ''
     
     component = KusuComponentFactory[KIT_API](**kwargs)
   

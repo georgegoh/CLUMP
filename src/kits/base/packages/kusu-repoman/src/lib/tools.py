@@ -149,7 +149,8 @@ def getConfig(file):
     sections = configParser.sections()
 
     for sec in sections:
-        if sec in ['fedora', 'centos', 'rhel', 'sles', 'rhel-5-i386', 'rhel-5-x86_64']:
+        if sec in ['fedora', 'centos', 'rhel', 'sles', 'opensuse', 
+                   'rhel-5-i386', 'rhel-5-x86_64']:
             cfg[sec] = {}
             for opt in configParser.items(sec):
                key = opt[0]
@@ -247,3 +248,15 @@ def isRepoStale(dbs, repoid):
     repo = rfactory.getRepo(repoid)
 
     return repo.isStale()
+
+def getEffictiveOSVersion(dbs, repoid):
+    '''Returns the effective OS version for the repo'''
+
+    if not repoExists(dbs, repoid):
+        raise RepoNotFoundError, repoid
+
+    from kusu.repoman import repofactory
+    rfactory = repofactory.RepoFactory(dbs)
+    repo = rfactory.getRepo(repoid)
+    return repo.getEffectiveOSVersion()
+ 

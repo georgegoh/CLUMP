@@ -3,6 +3,12 @@ comp = $compclass
 comp.name = '${kitname}_${kitver}'
 comp.description = '$kitdesc'
 comp.version = '$kitver'
+#if $varExists('osminor')
+#if $osminor 
+comp.osminor = '$osminor'
+#else
+#end if
+#end if
 
 # define a kit
 k = DefaultKit()

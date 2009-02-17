@@ -134,9 +134,9 @@ class RepoPatchApp(KusuApp):
         oldUpdateKits = []
         if repoObj.os_name in ['sles', 'opensuse', 'suse']:
             # sles doesn't seem to be upgradable from SPX->SPY easily unlike rhel.
-            effectiveOSVer =  repoObj.os_version_full
+            effectiveOSVer =  repoObj.getOSVersion()
         else:
-            effectiveOSVer =  repoObj.os_version
+            effectiveOSVer =  repoObj.os_version #major version only
 
         if kitRelease > 1:
             # find the previous update kit

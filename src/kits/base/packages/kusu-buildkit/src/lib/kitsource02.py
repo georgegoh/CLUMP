@@ -200,8 +200,15 @@ class KusuComponent(Struct):
 
         if 'ostype' in d: del d['ostype']
         if 'osversion' in d: del d['osversion']
-        
-        d['os'] = [ {'name': self.ostype, 'major': self.osversion, 'minor':'*', 'arch': self.arch } ]
+        if 'osmajor' in d: del d['osmajor']
+        if 'osminor' in d: del d['osminor']
+       
+        if self.osminor: 
+            osminor = self.osminor
+        else:
+            osminor = '*'
+
+        d['os'] = [ {'name': self.ostype, 'major': self.osmajor, 'minor': osminor, 'arch': self.arch } ]
  
         return d
         

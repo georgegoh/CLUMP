@@ -70,6 +70,17 @@ class BaseRepo(object):
         else:
             return None
 
+    def getOSMajorMinor(self):
+        repo = self.db.Repos.select_by(repoid = self.repoid)[0]
+        return (repo.os.major, repo.os.minor)
+
+    def getOSVersion(self):
+        repo = self.db.Repos.select_by(repoid = self.repoid)[0]
+        return '%s.%s' % (repo.os.major, repo.os.minor)
+
+    def getEffectiveOSVersion(self):
+        raise NotImplementedError
+
     def getKits(self, ngname):
         """Returns a list of kits for a nodegroup"""
         return tools.getKits(self.db, ngname)
@@ -94,6 +105,7 @@ class BaseRepo(object):
         repo = self.db.Repos.select_by(repoid = self.repoid)[0]
         os_name = repo.os.name
         os_major = repo.os.major
+        os_minor = repo.os.minor
         os_arch = repo.os.arch
         
         return self.prefix / self.contrib_root / os_name / os_major / os_arch
@@ -349,6 +361,9 @@ class SuseYastRepo(BaseRepo):
         self.os_arch = os_arch
  
         self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
+
+    def getEffectiveOSVersion(self):
+        return self.os_version
 
     def getPackagesDir(self):
         
@@ -660,6 +675,9 @@ class RedhatYumRepo(BaseRepo):
         self.os_arch = os_arch
  
         self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
+
+    def getEffectiveOSVersion(self):
+        return self.os_version
 
     def copyKitsPackages(self):
         # Need a better method for this
@@ -1375,7 +1393,7 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
 
     def getSources(self):
         
-        return [self.getRepoPath()]
+        return self.getPackagesDir()
 
     def getPackageFilePath(self, packagename):
 
@@ -1391,9 +1409,10 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
         """Make the autoinstall script for the repository"""
         pass #SLES nodeinstaller does not require fake autoinst.xml
 
-class OpenSUSE103Repo(SuseYastRepo):
+class OpenSUSE103Repo(SuseYastRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         SuseYastRepo.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
             
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
@@ -1410,7 +1429,25 @@ class OpenSUSE103Repo(SuseYastRepo):
 
         if os_arch == 'x86_64':
             self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
+    
+    def getSources(self):
 
+        return self.getPackagesDir()
+
+    def getURI(self):
+        if not self.configFile:
+            baseurl = path('http://download.opensuse.org/')
+        else:
+            cfg = self.getConfig(self.configFile)
+            if cfg.has_key('opensuse'):
+                baseurl = path(cfg['opensuse']['url'])
+            else:
+                baseurl = path('http://download.opensuse.org/')
+
+        update = str(baseurl / 'update' / '10.3')
+
+        return [update]
+ 
     def getPackageFilePath(self, packagename):
 
         for dirlayout in self.getPackagesDir():
@@ -1442,5 +1479,16 @@ class OpenSUSE103Repo(SuseYastRepo):
     def makeAutoInstallScript(self):
         """Make the autoinstall script for the repository"""
         pass #openSUSE nodeinstaller does not require fake autoinst.xml
+
+    def getContribPath(self):
+        """Get the contrib path for the repository"""
+
+        repo = self.db.Repos.select_by(repoid = self.repoid)[0]
+        os_name = repo.os.name
+        os_major = repo.os.major
+        os_minor = repo.os.minor
+        os_arch = repo.os.arch
+        
+        return self.prefix / self.contrib_root / os_name / os_major / os_minor / os_arch
 
 
