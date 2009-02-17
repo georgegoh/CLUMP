@@ -76,10 +76,14 @@ class KusuRC(rcplugin.Plugin):
             return False
 
         self.runCommand('/bin/rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-KUSU')
-        
-        if self.os_name == "centos":
-            self.runCommand('/bin/rpm --import /depot/kits/%s%s.*/%s/%s/RPM-GPG-KEY*' % (self.os_name, self.os_version, self.os_version, self.os_arch))
-        elif self.os_name == "rhel":
-            self.runCommand('/bin/rpm --import /depot/kits/%s%s.*/%s/%s/RPM-GPG-KEY*' % (self.os_name, self.os_version, self.os_version, self.os_arch))
-        
+       
+        repo = self.dbs.Repos.get(self.repoid)
+        if repo: 
+            kid = repo.oskit.kid
+
+            if self.os_name == "centos":
+                self.runCommand('/bin/rpm --import /depot/kits/%s/RPM-GPG-KEY*' % kid)
+            elif self.os_name == "rhel":
+                self.runCommand('/bin/rpm --import /depot/kits/%s/RPM-GPG-KEY*' % kid)
+            
         return True
