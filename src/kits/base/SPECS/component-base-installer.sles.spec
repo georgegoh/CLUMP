@@ -89,6 +89,7 @@ Requires: python-xml
 Requires: inst-source-utils
 Requires: makedev
 Requires: python-bcrypt
+Requires: squashfs
 
 %description
 This component provides the node with the Kusu management tools for the 
