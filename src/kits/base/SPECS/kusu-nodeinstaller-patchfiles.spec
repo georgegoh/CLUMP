@@ -62,14 +62,14 @@ install -m444 man/genupdatesimg.8 $RPM_BUILD_ROOT/opt/kusu/man/man8
 %pre
 
 %post
-rm -rf /opt/kusu/lib/nodeinstaller/{rhel,centos,fedora,sles}
+rm -rf /opt/kusu/lib/nodeinstaller/{rhel,centos,fedora,sles,opensuse}
 
 %preun
 
 %postun
 if [ $1 -eq 0 ]; then
     # Remove files created by genupdatesimg
-    rm -rf /opt/kusu/lib/nodeinstaller/{rhel,centos,fedora,sles}
+    rm -rf /opt/kusu/lib/nodeinstaller/{rhel,centos,fedora,sles,opensuse}
 fi
 
 %clean

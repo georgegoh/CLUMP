@@ -92,12 +92,9 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/%{name}-%{version}
 %pre
 
 %post
-/sbin/chkconfig --add kusu
-/sbin/chkconfig kusu on
-/sbin/chkconfig --add cfmd
-/sbin/chkconfig cfmd on
-/sbin/chkconfig --add cfmclient
-/sbin/chkconfig cfmclient on
+/sbin/chkconfig -f --add kusu
+/sbin/chkconfig -f --add cfmd
+/sbin/chkconfig -f --add cfmclient
 
 %preun
 if [ $1 = 0 ]; then # during removal of a pkg

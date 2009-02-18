@@ -18,6 +18,7 @@ from cStringIO import StringIO
 import string
 import urllib2
 import os
+import bcrypt
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
 from path import path
@@ -225,11 +226,7 @@ class KickstartFromNIIProfile(object):
                 self.packageprofile.append(p)
 
     def _makeRootPw(self, rootpw):
-        import md5crypt
-        import time
-
-        # Not support unicode in root password
-        return md5crypt.md5crypt(str(rootpw), str(time.time()));
+        return bcrypt.hashpw(str(rootpw), bcrypt.gensalt())
 
     def __getattr__(self, name):
         if name in self.getattr_dict.keys():
@@ -377,7 +374,7 @@ class NodeInstaller(object):
         kusu_dist = os.environ['KUSU_DIST']
         kusu_distver = os.environ['KUSU_DISTVER']
 
-        if kusu_dist == "sles":
+        if kusu_dist in ['sles', 'opensuse']:
             template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'autoinst.tmpl')
         else:
             template_uri = 'file://%s' % (kusu_root / 'etc' / 'templates' / 'kickstart.tmpl')

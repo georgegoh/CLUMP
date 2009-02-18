@@ -89,9 +89,9 @@ class KusuRC(rcplugin.Plugin):
                 if dev.startswith('ib'):
                     ifcfg = path(network_path / 'ifcfg-%s' % dev)
                 else:
-                    if self.os_name in ['rhel', 'centos', 'fedora']:
+                    if self.os_name in ['rhel', 'centos', 'fedora', 'opensuse']:
                         ifcfg = path(network_path / 'ifcfg-%s' % dev)
-                    elif self.os_name in ['suse', 'sles', 'opensuse']:
+                    elif self.os_name in ['suse', 'sles']:
                         ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
 
                 if ifcfg.exists():

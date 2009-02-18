@@ -122,8 +122,8 @@ class BaseGenUpdates(object):
         updates_dir = tempfile.mkdtemp(prefix='updatesdir-')
         atexit.register(self.cleanup, updates_dir)
         niPatchfilesDir = updates_dir
-        os_tup = (self.target[0], self.target[1].split('.')[0], self.target[2])
-        OSNameVerArchPatchfilesDir = os.path.join(niPatchfilesDir, 'nodeinstaller/%s/%s/%s' % os_tup)
+        OSNameVerArchPatchfilesDir = os.path.join(niPatchfilesDir, 
+                                                  'nodeinstaller/%s/%s/%s' % self.target)
         os.makedirs(OSNameVerArchPatchfilesDir)
 
         # generate the updates.img and place in the os directories.
@@ -144,48 +144,81 @@ class BaseGenUpdates(object):
 class YastGenUpdates(BaseGenUpdates):
     def __init__(self, target_os=OS()):
         BaseGenUpdates.__init__(self, target_os)
-        self.rpms = ['kusu-autoinstall',
-                     'kusu-boot',
-                     'kusu-buildkit',
-                     'python-cheetah',
-                     'kusu-core',
-                     'kusu-createrepo',
-                     'kusu-driverpatch',
-                     'kusu-hardware',
-                     'kusu-installer',
-                     'python-IPy',
-                     'kusu-kitops',
-                     'kusu-md5crypt',
-                     'kusu-networktool',
-                     'kusu-nodeinstaller',
-                     'kusu-path',
-                     'python-sqlite2',
-                     'kusu-repoman',
-                     'python-sqlalchemy',
-                     'kusu-ui',
-                     'kusu-util',
-                     'primitive',
-                     'libnewt0_52',
-                     'newt',
-                     'python-newt',
-                     'python',
-                     'slang',
-                     'python-xml',
-                     'grub',
-                     'mkinitrd',
-                     'coreutils',
-                     'parted',
-                     'pyparted',
-                     'rpm',
-                     'rpm-python',
-                     'yast2-python-bindings',
-                     'sqlite',
-                     'python-elementtree',
-                     'libreiserfs',
-                     'inst-source-utils',
-                     'perl',
-                     'python-bcrypt',
-                     'yast2-users']
+        if target_os[0].lower() == 'sles':
+            self.rpms = ['kusu-autoinstall',
+                         'kusu-boot',
+                         'kusu-buildkit',
+                         'python-cheetah',
+                         'kusu-core',
+                         'kusu-createrepo',
+                         'kusu-driverpatch',
+                         'kusu-hardware',
+                         'kusu-installer',
+                         'python-IPy',
+                         'kusu-kitops',
+                         'kusu-md5crypt',
+                         'kusu-networktool',
+                         'kusu-nodeinstaller',
+                         'kusu-path',
+                         'python-sqlite2',
+                         'kusu-repoman',
+                         'python-sqlalchemy',
+                         'kusu-ui',
+                         'kusu-util',
+                         'primitive',
+                         'libnewt0_52',
+                         'newt',
+                         'python-newt',
+                         'python',
+                         'slang',
+                         'python-xml',
+                         'grub',
+                         'mkinitrd',
+                         'coreutils',
+                         'parted',
+                         'pyparted',
+                         'rpm',
+                         'rpm-python',
+                         'yast2-python-bindings',
+                         'sqlite',
+                         'python-elementtree',
+                         'libreiserfs',
+                         'inst-source-utils',
+                         'perl',
+                         'python-bcrypt',
+                         'yast2-users']
+        elif target_os[0].lower() == 'opensuse':
+            self.rpms = [
+                         'coreutils',
+                         'grub',
+                         'kusu-autoinstall',
+                         'kusu-boot',
+                         'kusu-core',
+                         'kusu-hardware',
+                         'kusu-installer',
+                         'kusu-networktool',
+                         'kusu-nodeinstaller',
+                         'kusu-path',
+                         'kusu-ui',
+                         'kusu-util',
+                         'libnewt0_52',
+                         'libreiserfs',
+                         'newt',
+                         'parted',
+                         'pyparted',
+                         'python',
+                         'python-bcrypt',
+                         'python-cheetah',
+                         'python-elementtree',
+                         'python-IPy',
+                         'python-newt',
+                         'python-sqlalchemy',
+                         'python-xml',
+                         'primitive',
+                         'rpm',
+                         'rpm-python',
+                         'slang',
+                        ]
 
     def __getYastScript(self, distro, version):
         """Returns the 'faux' yast script"""
@@ -199,7 +232,7 @@ class YastGenUpdates(BaseGenUpdates):
         unpacked_dir_sbin = os.path.join(unpacked_dir, 'sbin')
         if not os.path.exists(unpacked_dir_sbin):
             os.mkdir(unpacked_dir_sbin)
-        yastScript = self.__getYastScript(self.target[0], self.target[1].split('.')[0])
+        yastScript = self.__getYastScript(self.target[0], self.target[1])
         shutil.copy(yastScript, unpacked_dir_sbin)
         os.chmod(os.path.join(unpacked_dir_sbin, 'yast'), 0755)
 
@@ -307,7 +340,7 @@ class YumGenUpdates(BaseGenUpdates):
         os.chdir(cwd)
 
     def generateUpdatesImg(self, unpacked_dir, outputdir, size=0):
-        dist_ver = (self.target[0], self.target[1].split('.')[0])
+        dist_ver = (self.target[0], self.target[1])
         anacondaScript = self.__getAnacondaScript(dist_ver)
         kscfgTemplate = self.__getKSTemplate(dist_ver)
 

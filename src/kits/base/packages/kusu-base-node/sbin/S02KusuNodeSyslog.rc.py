@@ -8,6 +8,7 @@
 
 from kusu.core import rcplugin
 from path import path
+from primitive.system.software.dispatcher import Dispatcher
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -21,20 +22,21 @@ class KusuRC(rcplugin.Plugin):
         """Forward all log messages to master installer"""
 
         updated = False
+        syslog_conf = Dispatcher.get('syslog_conf')
+        if not syslog_conf:
+            # We don't know which file to update
+            return False
 
         if self.os_name in ['sles', 'suse', 'opensuse']:
-            # sles uses syslog-ng
-            syslogngconf = '/etc/syslog-ng/syslog-ng.conf.in'
-
             lines = ['# Forward all log messages to master installer\n',
                      'destination loghost { udp("%s" port(514)); };\n' % self.niihost[0],
                      'log { source(src); destination(loghost); };\n']
 
-            updated = self.appendLinesToFile(syslogngconf, lines)
+            updated = self.appendLinesToFile(syslog_conf, lines)
             
             # sles need an extra step to call SuSEconfig to generate
             # the actual /etc/syslog-ng/syslog-ng.conf.
-            if updated:
+            if updated and self.os_name in ['sles', 'suse']:
                 retval = self.runCommand('/sbin/SuSEconfig --module syslog-ng')[0]
                 if retval != 0:
                     # Somehow SuSEconfig is not able to generate the new syslog-ng.conf
@@ -42,12 +44,10 @@ class KusuRC(rcplugin.Plugin):
 
         else:
             # redhat and friends
-            etcsyslogconf = '/etc/syslog.conf'
-
             lines = ['# Forward all log messages to master installer\n',
                      '*.*' + '\t' * 7 + '@%s\n' % self.niihost[0]]
 
-            updated = self.appendLinesToFile(etcsyslogconf, lines)
+            updated = self.appendLinesToFile(syslog_conf, lines)
 
         if updated:
             success, (out, retcode, err) = self.service('syslog', 'restart')

@@ -9,6 +9,7 @@ import os
 from primitive.system.software.dispatcher import Dispatcher
 from kusu.repoman.repofactory import RepoFactory
 from kusu.repoman.genupdates import GenUpdatesFactory
+from kusu.repoman import tools
 
 class GenUpdatesImg(KusuApp):
     def __init__(self):
@@ -61,7 +62,8 @@ class GenUpdatesImg(KusuApp):
         dest = path('/opt/kusu/lib/nodeinstaller')
        
         os = self.dbs.Repos.selectone_by(repoid=self.repoid).os
-        target = (os.name, os.major+'.'+os.minor, os.arch)
+        os_version = tools.getEffectiveOSVersion(self.dbs, self.repoid)
+        target = (os.name, os_version, os.arch)
         
         updater = GenUpdatesFactory().getUpdatesClass(target_os=target)
         try:
