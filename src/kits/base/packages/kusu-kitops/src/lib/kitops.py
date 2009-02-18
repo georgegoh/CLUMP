@@ -272,12 +272,12 @@ class KitOps:
                 # associate driver packs to components
                 if comp.has_key('driverpacks'):
                     for dp in comp['driverpacks']:
-                        dpack = db.DriverPacks()
+                        dpack = self.__db.DriverPacks()
                         dpack.dpname = dp['name']
                         dpack.dpdesc = dp['description']
                         newcomp.driverpacks.append(dpack)
 
-                db.flush()
+                self.__db.flush()
 
             else:
                 raise ComponentAlreadyInstalledError, \
