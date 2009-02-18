@@ -165,7 +165,7 @@ class BaseUpdate:
                     raise UnableToUpdateInitrdKernel, 'buildinitrd failed to run'
  
             # calls boothost to refresh pxe conf
-            p = subprocess.Popen('boothost -t "%s"' % ng.ngname,
+            p = subprocess.Popen('boothost -n "%s"' % ng.ngname,
                                  shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
