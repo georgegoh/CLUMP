@@ -270,11 +270,12 @@ class KitOps:
                         affected_ngs.add(ng)
 
                 # associate driver packs to components
-                for dp in comp['driverpacks']:
-                    dpack = db.DriverPacks()
-                    dpack.dpname = dp['name']
-                    dpack.dpdesc = dp['description']
-                    newcomp.driverpacks.append(dpack)
+                if comp.has_key('driverpacks'):
+                    for dp in comp['driverpacks']:
+                        dpack = db.DriverPacks()
+                        dpack.dpname = dp['name']
+                        dpack.dpdesc = dp['description']
+                        newcomp.driverpacks.append(dpack)
 
                 db.flush()
 
