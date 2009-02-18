@@ -298,8 +298,68 @@ class OpenSUSE103InitrdModule(BaseInitrdModule):
             if (destPath / ko.basename()).exists():
                 (destPath / ko.basename()).remove()
             ko.copy(destPath)
-                
-        
-        
+ 
+    def updateModulesAssets(self, origmodulesdep, origmodulesalias, kver):
 
+        msg = self._('Generating updated modules.dep and modules.alias..')
+        print msg
+
+        try:
+            self.controller.generateModulesAssets(self.tmpkmoddir, self.tmpassetsdir, kver)
+        except FileDoesNotExistError:
+            msg = self._('Error generating modules.dep!')
+            self.printMsgExit(msg)
+
+        modulesdep = self.tmpassetsdir / 'modules.dep'
+        modulesalias = self.tmpassetsdir / 'modules.alias'
+
+        if not modulesdep.exists(): 
+            msg = self._('Error generating modules.dep!')
+            self.printMsgExit(msg)
+        
+        li = self.normalise_modules_dep(kver, modulesdep)
+ 
+        # write the updated modules.dep
+        newmodulesdep = self.tmpassetsdir / 'modules.dep.new'
+        newmodulesdep.write_lines(li)
+
+        modulesdep.remove()
+        newmodulesdep.copy(modulesdep)
+        newmodulesdep.remove()
+ 
+        origmodulesdep = path(self.tmpdir / origmodulesdep)
+        origmodulesalias = path(self.tmpdir / origmodulesalias)
+        
+        if origmodulesdep.exists(): origmodulesdep.remove()
+        if origmodulesalias.exists(): origmodulesalias.remove()
+       
+        modulesdep.copy(origmodulesdep.dirname())
+        modulesalias.copy(origmodulesalias.dirname())
+
+    def normalise_modules_dep(self, kver, f):
+        """ Normalises the generated modules.dep to be like how the initrd prefers it and returns it as a list
+        """
+            
+        modulepath = path('/lib/modules/%s/initrd/' % kver)
+        f = path(f)
+        if not f.exists(): raise FileDoesNotExistError, f
+
+        li = [l for l in open(f).read().split(os.linesep) if l]
+
+        modlist = []
+        for l in li:
+            t = l.split(':')
+            entry = []
+            e1 = modulepath / path(t[0]).basename()
+            entry.append(e1)
+            if len(t) > 1:
+                li2 = t[1].split()
+                for l2 in li2:
+                    entry.append(modulepath / path(l2).basename())
+
+            # construct modlist
+            s = '%s: %s' % (entry[0], ' '.join(entry[1:])) 
+            modlist.append(s)
+
+        return modlist
 
