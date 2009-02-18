@@ -249,6 +249,8 @@ class KitOps:
                 ngs = self.__db.NodeGroups.select(
                     self.__db.NodeGroups.c.type.in_(*comp['ngtypes']))
                 kl.debug('comp[ngtypes]: %s, ngs: %s' % (comp['ngtypes'], [ng.ngname for ng in ngs]))
+
+                # associate components to nodegroups
                 for ng in ngs:
                     kl.debug('Attempting to associate component %s.%s to nodegroup %s' % (newcomp.cid, newcomp.cname, ng.ngname))
                     kl.debug('installer mode: %s' % self.installer)
@@ -266,6 +268,16 @@ class KitOps:
                         kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                         ng.components.append(newcomp)
                         affected_ngs.add(ng)
+
+                # associate driver packs to components
+                for dp in comp['driverpacks']:
+                    dpack = db.DriverPacks()
+                    dpack.dpname = dp['name']
+                    dpack.dpdesc = dp['description']
+                    newcomp.driverpacks.append(dpack)
+
+                db.flush()
+
             else:
                 raise ComponentAlreadyInstalledError, \
                     'Component %s already installed' % comp['pkgname']

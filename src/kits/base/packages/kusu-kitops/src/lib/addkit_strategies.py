@@ -91,28 +91,6 @@ def addkit01(koinst, db, kitinfo):
 
         if cfmsync: koinst.add_cfmsync_script()
 
-    # RPM install successful, add kit to DB
-
-    # handling driverpacks
-
-    # get the handle on components
-    components = kitinfo[2]
-    # FIXME: Put a proper try/except here!
-
-    for comp in components:
-        if 'driverpacks' in comp:
-            # there should be one and only one component with the pkgname we want
-            _comp = db.Components.select_by(cname=comp['pkgname'])[0]
-            for _dpack in comp['driverpacks']:
-                dpname = _dpack['name']
-                dpdesc = _dpack['description']
-                dpack = db.DriverPacks()
-                dpack.dpname = dpname
-                dpack.dpdesc = dpdesc
-                _comp.driverpacks.append(dpack)
-
-            db.flush()
-
     return newkit.kid, updated_ngs
 
 
@@ -181,24 +159,6 @@ def addkit02(koinst, db, kitinfo):
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
             
-    # get the handle on components
-    components = kitinfo[2]
-    # FIXME: Put a proper try/except here!
-
-    for comp in components:
-        # each component may have only one row in the DB,
-        # regardless of multiple OSes.
-        _comp = db.Components.selectfirst_by(cname=comp['pkgname'])
-        if 'driverpacks' in comp:
-            for _dpack in comp['driverpacks']:
-                dpname = _dpack['name']
-                dpdesc = _dpack['description']
-                dpack = db.DriverPacks()
-                dpack.dpname = dpname
-                dpack.dpdesc = dpdesc
-                _comp.driverpacks.append(dpack)
-            db.flush()
-
     return newkit.kid,updated_ngs
 
 
