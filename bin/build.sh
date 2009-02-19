@@ -106,11 +106,7 @@ if [ $ec -eq 0 ]; then
             cp -r src/kits/base/RPMS/i586/*.rpm $DEST_PATH/RPMS/i586
         fi
 
-        if [ "$KUSU_BUILD_DIST" = "opensuse" ]; then 
-            scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER.$KUSU_BUILD_DISTVER_MINOR/DAILY/
-        else
-            scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$KUSU_BUILD_DISTVER/DAILY/
-        fi
+        scp -r $KUSU_VERSION build@ronin:build/kusu/$KUSU_BUILD_DIST/$DISTVER/DAILY/
     fi
 fi
 
