@@ -268,8 +268,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     net_copy.netname = newnet.netname + '-eth0'
                     net_copy.suffix = '-eth0'
  
-                # DANGER!!!! HARDCODING OCS-STYLE NETWORKS
-                if intf == 'eth0':
+                if interfaces[intf]['nettype'] == 'provision':
                     for ng in other_ngs:
                         ng.networks.append(newnet)
 
