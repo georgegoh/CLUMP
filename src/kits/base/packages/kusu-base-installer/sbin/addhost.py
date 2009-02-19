@@ -102,6 +102,9 @@ myNode = kusu.nodefun.NodeFun()
 global pluginActions
 pluginActions = None
 
+kl = kusulog.getKusuLog()
+kl.addFileHandler("/var/log/kusu/kusu.log")
+
 
 # Define Signal Handler for batch mode
 def handleSignal(sig,frame):
@@ -144,7 +147,7 @@ class AddHostApp(KusuApp):
         self.parser.add_option("-r", "--rack", action="store",
                                 type="int", dest="rack", help=self._("addhost_rack_usage"))
         self.parser.add_option("-c", "--rank", action="store",
-				type="int", dest="rank", help=self._("addhost_change_rank_usage"))
+                                type="int", dest="rank", help=self._("addhost_change_rank_usage"))
         self.parser.add_option("-u", "--update", action="store_true", 
                                 dest="update", help=self._("addhost_update_usage"))
         self.parser.add_option("-s", "--static-host", action="store", 
@@ -231,13 +234,13 @@ class AddHostApp(KusuApp):
                 myNode.setRackNumber(myNodeInfo.nodeRackNumber)
 
         ## Handle -c option
-	if isinstance(self._options.rank,int) :
-	   result = int(self._options.rank)
-	   if result < 0:
-	      self.parser.error(kusuApp._("rank_negative_number"))
-	   else:
-	      myNodeInfo.nodeRankNumber = result
-	      myNode.setRankNumber(myNodeInfo.nodeRankNumber)
+        if isinstance(self._options.rank,int) :
+            result = int(self._options.rank)
+            if result < 0:
+                self.parser.error(kusuApp._("rank_negative_number"))
+            else:
+                myNodeInfo.nodeRankNumber = result
+                myNode.setRankNumber(myNodeInfo.nodeRankNumber)
 
         ## Handle -i option
         if self._options.interface:            
@@ -320,8 +323,7 @@ class AddHostApp(KusuApp):
         pluginInstances = []
         moduleInstance = None
 
-        if not os.path.exists(myNodeInfo.pluginLocation):
-            # No plugins found the tool should still work even without any plugins.
+        if not os.path.exists(myNodeInfo.pluginLocation):            # No plugins found the tool should still work even without any plugins.
             return
         else:
             sys.path.append(myNodeInfo.pluginLocation)
@@ -343,12 +345,15 @@ class AddHostApp(KusuApp):
         for thisModule in moduleInstances:
              try:
                  thisPlugin = thisModule.AddHostPlugin(self.__db)
-	         if thisPlugin.enabled():
-                    pluginInstances.append(thisPlugin)
+                 if thisPlugin.enabled():
+                     pluginInstances.append(thisPlugin)
              except:
-                 self.stdoutMessage(kusuApp._("Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED.\n"),thisModule)
+                 msg = "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED.\n"
+                 self.stdoutMessage(kusuApp._(msg), thisModule)
+                 kl.error(msg, thisModule)    
+
         pluginActions = PluginActions(pluginInstances)
-    
+
     def nxor(self, *args):
         """nxor(varargs args)
         N-way function, only one condition may be true otherwise false. """
@@ -361,22 +366,27 @@ class AddHostApp(KusuApp):
         try:
             self.__db.connect(user='apache', dbname='kusudb')
         except Exception,msg:
-            raise KusuError, 'Problems establishing database connection. Error: %s' %msg
+            kl.error("Problems establishing database connection. Error: %s" % msg)
+            raise KusuError, 'Problems establishing database connection. Error: %s' % msg
         
         # Check if nghosts is in use, if so abort running addhost.
         if os.path.isfile("/var/lock/subsys/nghosts"):
+            kl.error("ERROR:   Cannot run addhost because nghosts is running. Please wait for nghosts to finish first")
             raise KusuError, kusuApp._("addhost_nghosts_lock")
 
         # Check if repoman is in use, if so abort running addhost.
 	if os.path.isfile("/var/lock/subsys/repoman"):
-	    raise KusuError, kusuApp._("ERROR:   Cannot run addhost because repoman is running. Please wait for repoman to finish first")
+            kl.error("ERROR: Cannot run addhost because repoman is running. Please wait for repoman to finish first")
+            raise KusuError, kusuApp._("ERROR:   Cannot run addhost because repoman is running. Please wait for repoman to finish first")
 
         # Check if repopatch is in use, if so abort running addhost.
         if os.path.isfile("/var/lock/subsys/repopatch"):
-	    raise KusuError, kusuApp._("ERROR:   Cannot run addhost because repopatch is running. Please wait for repopatch to finish first")
-	   
+            kl.error("ERROR: Cannot run addhost because repopatch is running. Please wait for repopatch to finish first")
+            raise KusuError, kusuApp._("ERROR:   Cannot run addhost because repopatch is running. Please wait for repopatch to finish first")	    
+ 
         if self.islock():
-            raise KusuError, kusuApp._("addhost_already_inuse")           
+            kl.error("ERROR: addhost already running")
+            raise KusuError, kusuApp._("addhost_already_inuse")          
 
         self.lock()
         self.loadPlugins()
@@ -766,8 +776,11 @@ class PluginActions(object, KusuApp):
         for plugin in self._pluginInstances:
             #t1=time.time()
             try:
-                plugin.added(nodename, info, prePopulateMode)
-            except: pass
+                ret = plugin.added(nodename, info, prePopulateMode)
+                if ret:
+                    kl.error("Error: addhost plugins.add %s failed Return code: %s" % (plugin.__module__, ret))
+            except:
+                kl.exception("Error: addhost plugins_add.")
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: added(): %f" % (plugin, t2-t1)
       
@@ -785,8 +798,11 @@ class PluginActions(object, KusuApp):
         for plugin in self._pluginInstances:
             #t1=time.time()
             try:
-                plugin.removed(nodename, info)
-            except: pass
+                ret = plugin.removed(nodename, info)
+                if ret:
+                    kl.error("Error: addhost plugins.removed %s failed. Return code: %s" % (plugin.__module__, ret)) 
+            except:
+                kl.exception("Error: addhost plugins_removed.")
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: removed(): %f" % (plugin, t2-t1)
 
@@ -805,8 +821,11 @@ class PluginActions(object, KusuApp):
             for plugin in self._pluginInstances:
                 #t1=time.time()
                 try:
-                    plugin.replaced(nodename, info)
-                except: pass
+                    ret = plugin.replaced(nodename, info)
+                    if ret:
+                        kl.error("Error: addhost plugins.replaced %s failed. Return code: %s" % (plugin.__module__, ret))
+                except:
+                    kl.exception("Error: addhost plugins_replaced.")
                 #t2=time.time()
                 #print "====> PLUGIN: %s: Time Spent: replaced(): %f" % (plugin, t2-t1)
         else:
@@ -825,8 +844,14 @@ class PluginActions(object, KusuApp):
         for plugin in self._pluginInstances:
             #t1=time.time()
             try:
-                plugin.finished(myNodeInfo.nodeList, prePopulateMode)
-            except: pass
+                ret = plugin.finished(myNodeInfo.nodeList, prePopulateMode)
+                if ret:
+                    kl.error("Error: addhost plugin.finished %s failed. Return code: %s" % (plugin.__module__, ret))
+            except:
+                kl.exception("Error: addhost plugin_finished.")
+                #Exception, e:
+                #log
+ 
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: finished(): %f" % (plugin, t2-t1)
         #t2=time.time()
@@ -836,13 +861,20 @@ class PluginActions(object, KusuApp):
         """plugins_updated()
         Call all Add host plugins updated() method
         """
+       
         #print "DEBUG: Calling updated() method from plugins"
         #pt1=time.time()
         for plugin in self._pluginInstances:
             #t1=time.time()
             try:
-                plugin.updated()
-            except: pass
+                kl.debug('Plugin: %s' % plugin)
+                print dir(plugin)
+
+                ret = plugin.updated()
+                if ret:
+                    kl.error("Error: addhost plugin.updated %s failed. Return code: %s" % (plugin.__module__, ret))
+            except:
+                kl.exception("Error: addhost plugins_updated.")
             #t2=time.time()
             #print "====> PLUGIN: %s: Time Spent: updated(): %f" % (plugin, t2-t1)
         #t2=time.time()
@@ -1006,7 +1038,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
            ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 1.2", showTrail=False)
            result = ks.run()
            if myNodeInfo.forceQuitflag:
-	      raise UserExitError
+              raise UserExitError
 
            if not myNodeInfo.optionDHCPMode:
               raise UserExitError
@@ -1280,7 +1312,7 @@ class BatchUnmanaged:
         while flag:
             self.getUserInput()
             if myNodeInfo.forceQuitflag:
-                break
+                break 
 
             (result,errMsg) = self.validate()
             if result:
@@ -1484,10 +1516,10 @@ class BatchNodeStatus:
                         and not myNodeInfo.optionReplaceMode and not myNodeInfo.optionStaticHostMode:
                         self.aNode = NodeFun(rack=myNodeInfo.nodeRackNumber, nodegroup=myNodeInfo.ngid)
                         self.aNode.setRankNumber(myNodeInfo.nodeRankNumber) 
-			try: 
+                        try: 
                              nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=self.screen)
-			except:
-			     nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=False)
+                        except:
+                             nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=False)
 
                         self.myNode.setRankNumber(myNodeInfo.nodeRankNumber)
                         self.displayAddedNode(nodeName,macAddress, self.aNode.getRankNumber())
@@ -1630,8 +1662,6 @@ class ScreenFactoryImpl(ScreenFactory):
         ScreenFactory.screens = screenlist
 
 if __name__ == '__main__':
-    kl = kusulog.getKusuLog()
-    kl.addFileHandler("/var/log/kusu/kusu.log")
         
     app = AddHostApp()
     app.parse()
