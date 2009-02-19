@@ -15,16 +15,54 @@ import kusu.util.log as kusulog
 kl = kusulog.getKusuLog()
 kl.addFileHandler()
 
+from path import path
 from kusu.core.app import KusuApp
 from kusu.util.errors import *
 from kusu.nodeinstaller import NodeInstaller, retrieveNII
 from kusu.installer.util import remarkMBRs
 from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
-from kusu.ui.text.navigator import Navigator
+from kusu.ui.text.navigator import Navigator, PlatformScreen
 from primitive.system.hardware.nodes import checkAndMakeNode
 from primitive.system.hardware.partitiontool import DiskProfile
 from primitive.system.software.dispatcher import Dispatcher
+
+class NodeInstallerError(KusuError): pass
+
+class NINav(Navigator):
+    def __init__(self, **kwargs):
+        Navigator.__init__(self, **kwargs)
+
+    def run(self):
+        try:
+            self.mainScreen = PlatformScreen(self.screenTitle)
+            self.selectScreen(0)
+            self.draw()
+        except UserExitError, e:
+            kl.debug('Caught UserExitError')
+            if self.drawn: self.mainScreen.popWindow()
+            self.mainScreen.finish()
+            kl.debug('Returning False')
+            return False
+        except NodeInstallerError,e:
+            sys.exit(2)
+        except Exception, e:
+            import traceback
+            tb = traceback.format_exc()
+            kusu_tmp = os.environ.get('KUSU_TMP', '/tmp/kusu')
+            exception_log = open(path(kusu_tmp) / 'exception.dump', 'w')
+            exception_log.write(tb)
+            exception_log.close()
+            friendly_msg = 'An unrecoverable error has occurred in the '
+            friendly_msg += 'installation. The debug trace can be found '
+            friendly_msg += 'in %s/exception.dump.\n\n' % kusu_tmp
+            friendly_msg += 'The system will now reboot. Please remember '
+            friendly_msg += 'to transfer out the trace before reboot.'
+            self.popupMsg(self._('Unresolved exception'), tb)
+            if self.drawn: self.mainScreen.popWindow()
+            self.mainScreen.finish()
+            raise e
+        return True
 
 class NodeInstallerApp(KusuApp):
     
@@ -169,8 +207,8 @@ actions:
         class NIIScreenFactory(ScreenFactory):
             name = 'nodeinstaller'
             ScreenFactory.screens = [ProgressScreen(niihost, autoinstall_conf)]
-        feedback = Navigator(screenFactory=NIIScreenFactory, screenTitle='Installing Node',
-                             showTrail=True, showNavButtons=False)
+        feedback = NINav(screenFactory=NIIScreenFactory, screenTitle='Installing Node',
+                         showTrail=True, showNavButtons=False)
         try:
             return_code = feedback.run()
         except UserExitError, e:
@@ -286,7 +324,7 @@ class ProgressScreen(BaseScreen):
             if not dp.disk_dict:
                 self.selector.popupMsg('No Disk Found',
                                        'No disk was found for installation. Press "OK" to reboot.')
-                raise UserExitError
+                raise NodeInstallerError
 
         dlg = self.selector.popupProgress('Preparing %s' % self.autoinstall_type, \
                                           'Preparing %s files...' % self.autoinstall_type)
@@ -305,7 +343,7 @@ class ProgressScreen(BaseScreen):
             errMsg = str(e) + """\nPlease back up your data, remove the
 above-mentioned volume group, and press OK to reboot"""
             self.selector.popupMsg('LVM Error', errMsg)
-            raise UserExitError
+            raise NodeInstallerError
         
         dlg.close()
 
