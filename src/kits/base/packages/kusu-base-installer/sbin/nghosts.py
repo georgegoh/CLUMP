@@ -87,7 +87,7 @@ def writeMacFile(db, nodes, macList):
     tmpname = os.fdopen(fd, 'w')
     for node in nodes:
         try:
-            db.execute("SELECT ip FROM nics,nodes WHERE nics.nid=nodes.nid AND nodes.name=\'%s\'" % node)
+            db.execute("SELECT ip FROM nics,nodes WHERE nics.nid=nodes.nid AND nodes.name=\'%s\' AND boot=True" % node)
             ip = db.fetchone()[0]
             tmpname.write("%s %s\n" % (macList[node], ip))
         except:
