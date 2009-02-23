@@ -368,7 +368,11 @@ class NodeMemberApp(object, KusuApp):
                     print self._("nghosts_moving_nodes_progress")
 
                     self.unlock() 
-                    os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(Set(nodesList), ' '))
+                    ret = os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(Set(nodesList), ' '))
+                    if ret:
+                        msg = self._("ERROR : addhost failed to remove nodes. Return code: %s", ret)
+                        self.logErrorEvent(msg)
+                        sys.exit(-1)
                
                     # Add these back using mac file
                     if self._options.racknumber >= 0:
@@ -449,7 +453,7 @@ class SelectNodesWindow(USXBaseScreen):
         if result == "yes":
             global reallyQuit
             reallyQuit = True
-	    return NAV_QUIT
+            return NAV_QUIT
         else:
             return NAV_NOTHING
 
@@ -541,7 +545,11 @@ class SelectNodesWindow(USXBaseScreen):
                progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
 
                self.kusuApp.unlock()
-               os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(moveList, ' '))
+               ret = os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(moveList, ' '))
+               if ret:
+                   msg = self._("ERROR : addhost failed to remove nodes. Return code: %s", ret)
+                   self.logErrorEvent(msg)
+                   sys.exit(-1)
 
                # Add these back using mac file
                if needRack:
@@ -672,7 +680,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
         if result == "yes":
             global reallyQuit
             reallyQuit = True
-	    return NAV_QUIT
+            return NAV_QUIT
 
         else:
             return NAV_NOTHING
@@ -760,8 +768,12 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Call addhosts to delete these nodes
                 progDialog = ProgressDialogWindow(self.screen, self.kusuApp._("nghosts_moving_nodes"), self.kusuApp._("nghosts_moving_nodes_progress"))
-		self.kusuApp.unlock()
-                os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(moveList, ' '))
+                self.kusuApp.unlock()
+                ret = os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(moveList, ' '))
+                if ret:
+                    msg = self._("ERROR : addhost failed to remove nodes. Return code: %s", ret)
+                    self.logErrorEvent(msg)
+                    sys.exit(-1)
 
                 # Add these back using mac file
                 if needRack:
@@ -771,7 +783,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
 
                 # Remove temp file
                 os.remove(tmpfile)
-		self.kusuApp.lock()
+                self.kusuApp.lock()
                 progDialog.close()
  
                 # If the user wants to reinstall the nodes check if the option is selected or not.
@@ -889,7 +901,7 @@ class MembershipMainWindow(USXBaseScreen):
         if result == "no":
             return NAV_NOTHING
         if result == "yes":
-	    self.screen.finish()
+            self.screen.finish()
             return NAV_QUIT
         else:
             return NAV_NOTHING
