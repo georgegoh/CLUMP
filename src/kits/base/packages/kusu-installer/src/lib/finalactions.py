@@ -199,6 +199,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
                                           installsrc='http://127.0.0.1/',
                                           rootpw=kiprofile['RootPasswd'],
                                           tz=kiprofile['Timezone']['zone'],
+                                          tz_utc=kiprofile['Timezone']['utc'],
                                           lang=kiprofile['Language'],
                                           keyboard=kiprofile['Keyboard'],
                                           packageprofile=packages,

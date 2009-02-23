@@ -36,7 +36,12 @@ firewall --disabled
 selinux --disabled
 firstboot --disable
 authconfig --enableshadow --enablemd5
+
+#if $tz_utc
+timezone --utc $tz
+#else
 timezone $tz
+#end if
 
 #if $mbrbootloader
 bootloader --location=mbr --driveorder=$mbrdriveorder 

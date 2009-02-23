@@ -97,7 +97,11 @@
     </software>
 
     <timezone>
-        <hwclock>localtime</hwclock>
+        #if $tz_utc
+            <hwclock>UTC</hwclock>
+        #else
+            <hwclock>localtime</hwclock>
+        #end if
         <timezone>$tz</timezone>
     </timezone>
 

@@ -391,6 +391,7 @@ class NodeInstaller(object):
                                               installsrc=self.ksprofile.installsrc,
                                               rootpw=self.ksprofile.rootpw,
                                               tz=self.ksprofile.tz,
+                                              tz_utc=self.ksprofile.tz_utc,
                                               lang=self.ksprofile.lang,
                                               keyboard=self.ksprofile.keyboard,
                                               packageprofile=self.ksprofile.packageprofile,
