@@ -455,7 +455,7 @@ class KitOpsApp(KusuApp):
                 if not os_set:
                     osline += "Unspecified"
                 else:
-                    for o in kit.os_set():
+                    for o in os_set:
                         osline += "%s" % o
                         if o:
                             osline += ", "
