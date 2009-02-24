@@ -848,7 +848,7 @@ class NodeGroup(NodeGroupRec):
                 newmodules = stdout.split('\n')
                 newmodules = [x.split('.ko')[0] for x in newmodules ]
                 allmodules.extend(newmodules)
-                        
+
         # Determine if module is in any of the driverpacks
         for module in self.data['modules']:
             if module not in allmodules:
@@ -3237,16 +3237,17 @@ def getAvailPkgs(db, repoid, categorized=False):
     repodir = repoObj.repository.strip()
 
     try:
-        repopackdirs = rtool.getPackagePath(dbinst, repoid)
+        packdirs = rtool.getPackagePath(dbinst, repoid)
         if os_name.lower() not in ['sles', 'opensuse', 'suse']:
             compsfile = glob.glob(os.path.join(repodir, rtool.getBaseYumDir(dbinst, repoid), 'repodata','comps*.xml'))[0]
 
     except:
         raise NodeGroupError, "Cannot retrieve package info from selected " \
-            "repository (ostype=%s) because it cannot be used at this time. " %ostype
+            "repository (ostype=%s) because it cannot be used at this time. " % os_name
 
     cwdbackup = os.getcwd()
     repopacklst = []
+    repopackdirs = [str(x) for x in packdirs if x.exists()]
     for d in repopackdirs:
         os.chdir(d)
         repopacklst += glob.glob('*.[rR][pP][mM]') #only basenames returned
@@ -3446,9 +3447,10 @@ def getAvailModules(db, ngid, repoid=None, comps=None):
     dbinst = sadb.DB(engine, db='kusudb',username='nobody')
     
     try:
-        repopackdirs = rtool.getPackagePath(dbinst, repoid)
+        packdirs = rtool.getPackagePath(dbinst, repoid)
     except KeyError:
         raise NodeGroupError, "Repository with ostype = %s is not supported." % ostype
+    repopackdirs = [str(x) for x in packdirs if x.exists()]
 
     #2. obtain the name of driverpacks to examine
     if not comps:

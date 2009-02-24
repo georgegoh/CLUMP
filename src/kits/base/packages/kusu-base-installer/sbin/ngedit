@@ -512,7 +512,16 @@ class scrNGEEdit_Repo(USXBaseScreen):
         lblheader = snack.Label(headstr)
         self.__repolistbox = snack.Listbox(height=10,scroll=1,width=MAXWIDTH,returnExit=1,showCursor=0)
 
-        self.database.execute('select reponame,repository,ostype,repoid from repos')
+        query = '''select r.reponame, r.repository, r.ostype, r.repoid
+                   from repos r, repos_have_kits rk, kits k
+                   where r.repoid = rk.repoid and rk.kid = k.kid '''
+        if self.database.driver == 'mysql':
+            query += 'and k.isOS = True'
+            self.database.execute(query)
+        else: # Only postgres for now
+            query += 'and k."isOS" = True'
+            self.database.execute(query, postgres_replace=False)
+
         rv = self.database.fetchall()
         rv = [ ifelse(None in x, [ ifelse(y==None,'',y) for y in x ] , list(x)) for x in rv ]
 
@@ -531,10 +540,15 @@ class scrNGEEdit_Repo(USXBaseScreen):
         self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), growx=1, anchorLeft=1)
         self.screenGrid.setField(self.__repolistbox, 0,1, (0,0,0,0), growx=1)
 
-
     def validate(self):
-        """Validation code goes here. Activated when 'Next' button is pressed."""        
-        return True, 'Success'
+        """Validation code goes here. Activated when 'Next' button is pressed."""
+        from kusu.repoman import tools as rtool
+        repoid = self.__repolistbox.current()
+        if rtool.isRepoStale(self.dbs, repoid):
+            name = self.dbs.Repos.selectone_by(repoid=repoid).reponame
+            return False, 'Repository is stale, please refresh using repoman -u -r %s' % name
+        else:
+            return True, 'Success'
 
     def formAction(self):
         ''' Actions taken once the form data was successfully validated.
