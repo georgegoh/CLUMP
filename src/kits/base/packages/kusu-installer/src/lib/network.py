@@ -229,8 +229,11 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                    'compute-imaged', 'compute', 'unmanaged'))
 
         interfaces = profile['interfaces']
+        interface_keys = interfaces.keys()
+        interface_keys.sort() # we sort to hit the lowest order provision interface first.
 
-        for intf in interfaces:
+        provisioned = False # flag to associate only a sinle provision network
+        for intf in interfaces_keys:
             if interfaces[intf]['configure']:
                 newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
                 master_node.nics.append(newnic)
@@ -267,8 +270,10 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     net_copy.device = 'eth0'
                     net_copy.netname = newnet.netname + '-eth0'
                     net_copy.suffix = '-eth0'
- 
-                if interfaces[intf]['nettype'] == 'provision':
+
+                # associate only the first provisioning network to ngs
+                if interfaces[intf]['nettype'] == 'provision' and not provisioned:
+                    provisioned = True
                     for ng in other_ngs:
                         ng.networks.append(newnet)
 
