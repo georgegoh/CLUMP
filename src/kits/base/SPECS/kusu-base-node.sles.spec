@@ -87,6 +87,7 @@ install -m755 sbin/S02KusuAutomount.sh $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmc
 install -m755 sbin/S01mountall.sh $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmclient
 install -m644 sbin/S91KusuHomeFstab.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 sbin/S90KusuMinUidGid.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
+install -m644 sbin/S99KusuNodeResolvConf.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/%{name}-%{version}
 
 %pre

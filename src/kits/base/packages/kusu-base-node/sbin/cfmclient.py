@@ -29,7 +29,7 @@ FORCEFILES    = 4
 UPDATEREPO    = 8
 
 # Set DEBUG to 1 to see debugging info in /var/log/cfmclient.log
-DEBUG = 0
+DEBUG = 1
 
 import os
 import sys
@@ -436,7 +436,11 @@ class CFMClient:
                     proc.close()
                     return -1
             proc.close()
-            os.rename(tmpfile2, tmpfile)
+            try:
+                os.rename(tmpfile2, tmpfile)
+            except OSError, e:
+                self.log("ERROR: unable to rename %s to %s: %s" % (tmpfile2, tmpfile, e))
+                return -1
 
         # Set the file permissions
         self.__setFilePerms(tmpfile, deststruct[1], deststruct[2], deststruct[3])
