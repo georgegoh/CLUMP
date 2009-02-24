@@ -867,9 +867,6 @@ class PluginActions(object, KusuApp):
         for plugin in self._pluginInstances:
             #t1=time.time()
             try:
-                kl.debug('Plugin: %s' % plugin)
-                print dir(plugin)
-
                 ret = plugin.updated()
                 if ret:
                     kl.error("Error: addhost plugin.updated %s failed. Return code: %s" % (plugin.__module__, ret))
