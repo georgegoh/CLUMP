@@ -364,7 +364,8 @@ class DB(object):
                     'OS' : OS}
 
     __passfile = os.environ.get('KUSU_ROOT', '') + '/etc/db.passwd'
-
+    __postgres_passfile = os.environ.get('KUSU_ROOT', '') + '/etc/pgdb.passwd'
+    
     def __init__(self, driver, db=None, username=None, password=None,
                  host='localhost', port=None, entity_name=None):
         """Initialize the database with the corrrect driver and account
@@ -373,12 +374,18 @@ class DB(object):
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
 
+        apache_password = ''
+        if username == 'apache':
+            apache_password = self.__getPasswd()
+        if apache_password:
+            password = apache_password
+            
         if driver == 'sqlite':
             if db:
                 engine_src = 'sqlite:///%s' % db
             else:
                 engine_src = 'sqlite://'   # in-memory database
-
+            
         elif driver == 'mysql':
             if not port:
                 port = '3306'
@@ -389,12 +396,6 @@ class DB(object):
             else:
                 import pwd
                 engine_src += pwd.getpwuid(os.getuid())[0]
-
-            apache_password = ''
-            if username == 'apache':
-                apache_password = self.__getPasswd()
-            if apache_password:
-                password = apache_password
                 
             if password:
                 engine_src += ':%s@%s:%s/%s' % (password, host, port, db)
@@ -402,10 +403,16 @@ class DB(object):
                 engine_src += '@%s:%s/%s' % (host, port, db)
  
         elif driver == 'postgres':
-           if not port:
+            
+            if username == 'postgres':
+                postgres_password = self.__getPasswd(user='postgres')
+                if postgres_password: #ensure postgres_password
+                    password = postgres_password            
+            
+            if not port:
                port = '5432'
         
-               engine_src = 'postgres://%s:%s@%s:%s/%s' % \
+            engine_src = 'postgres://%s:%s@%s:%s/%s' % \
                              (username, password, host, port, db)
 
         else:
@@ -427,13 +434,18 @@ class DB(object):
         # make classes available as instance attributes
         self.__dict__.update(self.tableClasses)
 
-    def __getPasswd(self):
+    def __getPasswd(self, user='apache'):
         """
         Open self.__passfile to retrieve password, return None on fail.
         """
+        
+        if user == 'postgres':
+            passfile = self.__postgres_passfile
+        else:
+            passfile = self.__passfile        
 
         try:
-            fp = file(self.__passfile, 'r')
+            fp = file(passfile, 'r')
         except IOError, msg:
             kl.error("Missing password file or insufficient privileges for " +
                      "access: %s", msg)
@@ -1013,6 +1025,10 @@ class DB(object):
                 raise CommandFailedToRunError
         elif self.driver == 'postgres':
             try:
+                password = self.__getPasswd(user='postgres')
+                env = os.environ.copy()
+                env['PGPASSWORD'] = password
+                
                 # ignore self.password for now
                 # expect to have a psql create role apache with superuser login to be run
                 # already.
@@ -1020,12 +1036,14 @@ class DB(object):
                       % (self.port, self.username, self.db, self.username)
                 p = subprocess.Popen(cmd,
                                      shell=True,
+                                     env=env,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 retcode = p.returncode
-            except:
-                raise CommandFailedToRunError
+            except Exception, e:
+                raise CommandFailedToRunError, e
+            
             if retcode:
                 raise FailedToCreateDatabase, 'Unable to create database: %s' % self.db
         else:
@@ -1056,21 +1074,29 @@ class DB(object):
         elif self.driver == 'postgres':
             try:
                 # disconnect from the database
+                password = self.__getPasswd(user='postgres')
+                env = os.environ.copy()
+                env['PGPASSWORD'] = password                
+                
                 # ignore self.password for now
-                self.flush()
-                cmd = 'psql -p %s postgres   %s  -c "drop database %s;'\
-                      % (self.port,self.username, self.db)
+                # expect to have a psql create role apache with superuser login to be run
+                # already.
+                cmd = 'psql -p %s  postgres %s   -c "drop database %s;"'\
+                        % (self.port,self.username,self.db)
+                
                 p = subprocess.Popen(cmd,
                                      shell=True,
+                                     env=env,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 retcode = p.returncode
-            except:
-                    raise CommandFailedToRunError
+                
+            except Exception, e:
+                    raise CommandFailedToRunError, e
 
             if retcode:
-                raise FailedToDropDatabase, 'Unable to drop database: %s' % self.db
+                raise CommandFailedToRunError, 'Failed to drop database'
 
         else:
             raise NotSupportedDatabaseCreationError, 'Database creation not supported for %s' % self.driver

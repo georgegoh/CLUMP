@@ -8,8 +8,13 @@
 
 from kusu.core import rcplugin 
 from path import path
+from primitive.system.software.dispatcher import Dispatcher 
 import os
 import pwd
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
 
 class KusuRC(rcplugin.Plugin):
 
@@ -19,6 +24,49 @@ class KusuRC(rcplugin.Plugin):
         self.desc = 'Setting up Kusu db'
         self.ngtypes = ['installer']
         self.delete = True
+        self.__postgres_passfile = '/opt/kusu/etc/pgdb.passwd'
+        
+    def __genpasswd(self):
+        import random
+        import time
+        r = random.Random(time.time())
+        chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        password = ''.join([r.choice(chars) for i in xrange(8)])
+        return password
+    
+    def __writePassword(self,user,passfile):
+        """get the password and write it to a file."""
+        passwd = self.__genpasswd()
+        # obtain security details of the file.
+        userinfo = pwd.getpwnam(user)
+        if not userinfo:
+            return None
+        uid = userinfo[2]
+        gid = userinfo[3]
+        f = open(passfile, 'w')
+        f.write(passwd)
+        f.close()
+        os.chmod(passfile, 0400)
+        os.chown(passfile, uid, gid)
+        return passwd
+    
+    def __modifyHBAConf(self):
+        """ Places modifications to HBA.conf and saves the settings """
+        pg_hba = path ('/var/lib/pgsql/data/pg_hba.conf')
+        token_str='%s\t%s\t%s\t%s\t%s\n'
+        f = open(pg_hba,'r')
+        hba_lines = f.readlines()
+        f.close()
+        kusu_lines = []
+        kusu_lines.append("#Appended by Kusu\n")
+        kusu_lines.append(token_str % ('local','kusudb','nobody','','trust'))
+        kusu_lines.append(token_str % ('host','kusudb','nobody','127.0.0.1/32','trust'))
+        kusu_lines.append(token_str % ('host','kusudb','nobody','::1/128','trust'))
+        kusu_lines.append("#End of Kusu Edit\n")
+        kusu_lines.extend(hba_lines)
+        f = open(pg_hba,'w')
+        f.writelines(kusu_lines)
+        f.close()        
 
     def run(self):
         """Set up Main DB connection and SQLite collection, then migrate."""
@@ -29,27 +77,42 @@ class KusuRC(rcplugin.Plugin):
         if not path('/root/kusu.db').exists():
             return True
         engine = os.getenv('KUSU_DB_ENGINE')
+        
+        mysql_svc = Dispatcher.get('mysql')[0]  
+        postgresql_svc = Dispatcher.get('postgresql')[0]
+        
         if engine == 'mysql':
-            success, (out,retcode,err) = self.service('mysqld', 'start')
+            
+            
+            success, (out,retcode,err) = self.service(mysql_svc, 'start')
             if not success:
                 raise Exception, err
 
         else: # default this 
+            
             engine = 'postgres'
-            success, (out,retcode,err) = self.service('postgresql', 'status')
+            success, (out,retcode,err) = self.service(postgresql_svc, 'status')
             # retcode will be 0 if postgresql service is already running.
             if retcode == 0:
-                success, (out,retcode,err) = self.service('postgresql', 'stop')
+                success, (out,retcode,err) = self.service(postgresql_svc, 'stop')
                 if not success:
                     raise Exception, err
             pg_data_path = path('/var/lib/pgsql/data')
-            pg_data_path.rmtree()
-            self.runCommand("su -l postgres -c \'initdb --pgdata=/var/lib/pgsql/data >> /dev/null  2>&1\'")
+            
+            if pg_data_path.exists():
+                pg_data_path.rmtree()
+            # get the password and write it to a file.
+            pwfile = "%s/etc/pgdb.passwd" % (os.environ.get('KUSU_ROOT', '/opt/kusu'))
+            pg_passwd = self.__writePassword('postgres', pwfile)
+
+            self.runCommand("su -l postgres -c \'initdb --pgdata=/var/lib/pgsql/data --auth=md5 --pwfile=%s>> /dev/null  2>&1\'" % pwfile)              
+            
             pg_log_path = pg_data_path / 'pg_log'
             pg_log_path.makedirs()
+            self.__modifyHBAConf()            
             self.runCommand('chown postgres:postgres %s' % pg_log_path)
             self.runCommand ('chmod go-rwx %s' % pg_log_path)
-            success, (out,retcode,err) = self.service('postgresql', 'start')
+            success, (out,retcode,err) = self.service(postgresql_svc, 'start')
             if not success:
                 raise Exception, err
 
@@ -78,21 +141,9 @@ class KusuRC(rcplugin.Plugin):
             apache = pwd.getpwnam('apache')
             uid = apache[2]
             gid = apache[3]
-
-        # Write new db.passwd
-        import random
-        import time
-        r = random.Random(time.time())
-        chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        password =  ''.join([r.choice(chars) for i in xrange(8)])
-
-        p = path(os.environ.get('KUSU_ROOT', '/opt/kusu')) / 'etc/db.passwd'
-        f = open(p, 'w')
-        f.write(password)
-        f.close()
-
-        p.chmod(0400)
-        p.chown(uid, gid)
+        
+        pwfile = "%s/etc/db.passwd" % (os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        password = self.__writePassword('apache', pwfile)
 
         # setup permission
         if engine == 'mysql':
@@ -104,8 +155,9 @@ grant select on kusudb.* to ''@localhost;
 FLUSH PRIVILEGES;""" % password
         else: #XXX postgres specific for now.
             permission = """
-create role apache with login;
+create role apache with login PASSWORD '%s';
 create role nobody with login;"""
+            permission = permission % password
             permission += "Grant all on table %s to apache;" \
                 % ','.join(dbs.postgres_get_table_list())
             permission += "Grant all on table %s to apache;" \
@@ -126,18 +178,28 @@ create role nobody with login;"""
         if engine == 'mysql':
             self.runCommand('/usr/bin/mysql kusudb < ' + tmpfile)
         else:
-            self.runCommand('/usr/bin/psql kusudb postgres < ' +tmpfile)
+            cmd = '/usr/bin/psql kusudb postgres < ' +tmpfile
+            env = os.environ.copy()
+            env['PGPASSWORD'] = pg_passwd
+            p = subprocess.Popen(cmd,
+                                 env=env,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+                      
         os.unlink(tmpfile)
 
         # chkconfig
         if engine == 'mysql':
-            success, (out,retcode,err) = self.service('mysqld', 'enable')
+            success, (out,retcode,err) = self.service(mysql_svc, 'enable')
             if not success:
                 raise Exception, err
         else: # XXX postgres only for now 
-            success, (out,retcode,err) = self.service('postgresql', 'enable')
+            success, (out,retcode,err) = self.service(postgresql_svc, 'enable')
             if not success:
                 raise Exception, err
+            
 
         # Clear all mappers and init them
         for key in sa.orm.mapper_registry.keys():
