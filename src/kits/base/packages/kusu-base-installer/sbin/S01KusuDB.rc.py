@@ -132,16 +132,9 @@ class KusuRC(rcplugin.Plugin):
         # it so that it does not confuse kusurc scripts.
         path('/root/kusu.db').rename('/root/kusu-orig.db')
     
-        appuser = ''
+        appuser = Dispatcher.get('webserver_usergroup')[0]
         # Set db.passwd permission correctly
-        if self.os_name in ['suse', 'opensuse', 'sles']:
-            appuser = pwd.getpwnam('wwwrun')
-            uid = wwwrun[2]
-            gid = wwwrun[3]
-        else:
-            appuser = pwd.getpwnam('apache')
-            uid = apache[2]
-            gid = apache[3]
+        
         
         pwfile = "%s/etc/db.passwd" % (os.environ.get('KUSU_ROOT', '/opt/kusu'))
         password = self.__writePassword(appuser, pwfile)
