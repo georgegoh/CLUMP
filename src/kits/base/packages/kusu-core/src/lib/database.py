@@ -18,6 +18,7 @@ import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support.osfamily import getOSNames, matchTuple
 from kusu.buildkit import processKitInfo
+from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
@@ -159,13 +160,45 @@ class Kits(BaseTable):
         if self.is_os():
             return [self.os]
 
-        matching_os = []        
-        for _os in OS.select():
-            if self.getMatchingComponents(_os):
-                matching_os.append(_os)
+        os_set = Set()
+        try:
+            kits_root = AppGlobals.selectfirst_by(kname='DEPOT_KITS_ROOT').kvalue
+        except AttributeError:
+            kits_root = '/depot/kits'
 
-        return list(set(matching_os))
+        kit_path = path.path(kits_root)
+        kitinfo = kit_path / str(self.kid) / 'kitinfo'
+        infokit, infocomps = processKitInfo(str(kitinfo))
 
+        if len(infokit) == 0 or 'api' not in infokit or '0.1' == infokit['api']:
+            for comp in self.components:
+                if not comp.os or comp.os.strip() == '' or comp.os == 'NULL':
+                    return None
+                
+                else:
+                    os_set.add(comp.os.lower())
+                     
+        elif '0.2' == infokit['api']:
+            for comp in infocomps:
+                try:
+                    for tup in comp['os']:
+                        for os_name in getOSNames(tup['name'], default=[tup['name']]):
+            
+                            os_str = os_name
+                            if tup['minor'] == '*':
+                                os_str = os_str + '-' + tup['major']
+                            else:
+                                os_str = os_str + '-' + tup['major'] + '.' + tup['minor']
+                    
+                            if tup['arch'] in ['*', 'noarch']:
+                                os_set.add(os_str + '-' + 'i386')
+                                os_set.add(os_str + '-' + 'x86_64')
+                            else:
+                                os_set.add(os_str + '-' + tup['arch'])
+                except KeyError:
+                    break
+        return sorted(os_set)
+ 
     def is_os(self):
         if self.osid is not None or self.isOS:
             return True

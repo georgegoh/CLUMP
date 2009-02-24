@@ -451,19 +451,22 @@ class KitOpsApp(KusuApp):
                 sys.stdout.write("\n%s:\t" % headers[8])
                 osline=""
                 count=0
-                for o in kit.getSupportedDistro():
-                    o = '%s-%s.%s-%s' % (o.name, o.major, o.minor, o.arch)
-                    
-                    osline += "%s" % o
-                    if o:
-                        osline += ", "
+                os_set = kit.getSupportedDistro()
+                os_set = None
+                if not os_set:
+                    osline += "Unspecified"
+                else:
+                    for o in kit.os_set():
+                        osline += "%s" % o
+                        if o:
+                            osline += ", "
 
-                    if (count % 2):
-                        osline +="\n\t\t"
-                    count += 1
+                        if (count % 2):
+                            osline +="\n\t\t"
+                        count += 1
 
-                if osline[-2:-1] == ',':
-                    osline = osline[:-2]
+                    if osline[-2:-1] == ',':
+                        osline = osline[:-2]
 
                 if osline[len(osline)-5:-4] == ',':
                     osline = osline[:len(osline)-5]
