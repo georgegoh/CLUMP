@@ -6,9 +6,10 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+import sys
 from path import path
 from kusu.core import rcplugin
-import sys
+from kusu.util.cfm import updateCfmfiles
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -88,15 +89,8 @@ class KusuRC(rcplugin.Plugin):
         sys.stdout = f
         sys.stderr = f
 
-        # Update the cfm files
-        from kusu.cfms import PackBuilder
-        from kusu.core import app 
-        kApp = app.KusuApp()
-        _ = kApp.langinit()
-        pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
-        pb.genMergeFiles()
-        size = pb.updateCFMdir()
-        pb.genFileList()
+        # Update cfmfiles.lst
+        updateCfmfiles()
 
         # Restore stdout and stderr
         sys.stdout = oldOut

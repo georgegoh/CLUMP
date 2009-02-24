@@ -7,12 +7,15 @@
 
 import os
 import path
+import sys
 try:
     import subprocess
 except:
     from popen5 import subprocess
 
 from kusu.core import database as db
+from kusu.core import app 
+from kusu.cfms import PackBuilder
 
 def get_readonly_dbs():
     DB_NAME = 'kusudb'
@@ -21,6 +24,16 @@ def get_readonly_dbs():
     
     dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres')
     return db.DB(dbdriver, DB_NAME, DB_USER, DB_PASSWORD)
+
+def updateCfmfiles():
+    """Update cfmfiles.lst"""
+    kApp = app.KusuApp()
+    _ = kApp.langinit()
+    pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
+    pb.genMergeFiles()
+    pb.updateCFMdir()
+    pb.removeOldFiles()
+    pb.genFileList()
 
 def runCfmMaintainerScripts():
     """
@@ -46,4 +59,19 @@ def runCfmMaintainerScripts():
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
         scripts_run.append(script.basename())
+
+    if scripts_run:
+        # Redirect all stdout, stderr
+        oldOut = sys.stdout
+        oldErr = sys.stderr
+        f = open('/dev/null', 'w')
+        sys.stdout = f
+        sys.stderr = f
+
+        # Update cfmfiles.lst
+        updateCfmfiles()
+
+        # Restore stdout and stderr
+        sys.stdout = oldOut
+        sys.stderr = oldErr
 

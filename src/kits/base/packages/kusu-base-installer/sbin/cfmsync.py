@@ -168,10 +168,6 @@ class UpdateApp(KusuApp):
                 os.system(cmd_template % cmd_args)
                 # Run cfm maintainer scripts to update cfm links
                 runCfmMaintainerScripts()
-                # Recreate the cfmfiles.lst
-                pb.updateCFMdir()
-                pb.removeOldFiles()
-                pb.genFileList()
                 # Don't need to update packages again
                 ntype = ntype - UPDATEPACKAGE
 
