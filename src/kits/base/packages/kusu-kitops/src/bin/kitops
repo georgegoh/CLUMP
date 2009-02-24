@@ -452,7 +452,6 @@ class KitOpsApp(KusuApp):
                 osline=""
                 count=0
                 os_set = kit.getSupportedDistro()
-                os_set = None
                 if not os_set:
                     osline += "Unspecified"
                 else:
