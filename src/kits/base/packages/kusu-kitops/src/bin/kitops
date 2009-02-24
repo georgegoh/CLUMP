@@ -321,7 +321,7 @@ class KitOpsApp(KusuApp):
                     msg = self._("kitops_event_added_kit") % kit_str
                     self.logEvent(msg)
                     if updated_ngs:
-                        msg = self._('New Node Groups associated: %s') % ', '.join([ng.ngname for ng in updated_ngs])
+                        msg = self._('New Node Groups associated: %s') % ', '.join(updated_ngs)
                         self.logEvent(msg)
 
                 except (KitAlreadyInstalledError, InstallKitRPMError,
