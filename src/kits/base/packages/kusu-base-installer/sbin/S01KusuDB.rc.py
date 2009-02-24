@@ -78,8 +78,8 @@ class KusuRC(rcplugin.Plugin):
             return True
         engine = os.getenv('KUSU_DB_ENGINE')
         
-        mysql_svc = Dispatcher.get('mysql')[0]  
-        postgresql_svc = Dispatcher.get('postgresql')[0]
+        mysql_svc = Dispatcher.get('mysql_server')
+        postgresql_svc = Dispatcher.get('postgres_server')
         
         if engine == 'mysql':
             
