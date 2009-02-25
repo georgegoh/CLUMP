@@ -35,7 +35,7 @@ class thisReport(Report):
         if engine == 'mysql':
             os.system('mysqldump kusudb')
         elif engine == 'postgres':
-            os.system('pg_dump -Upostgres kusudb')
+            os.system('pg_dump -Unobody kusudb')
         else:
             print('Unknown engine - %s.  Giving up .. ' % engine)
 
