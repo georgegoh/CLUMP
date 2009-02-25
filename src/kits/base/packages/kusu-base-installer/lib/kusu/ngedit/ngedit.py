@@ -2632,7 +2632,7 @@ class NodeGroupXMLRecord(NodeGroup):
             # into the schema (if they exist)
             hiddenRecs = []
             query = "select * from partitions where ngid = %s " % self.data['ngid'] + \
-            "and (options like 'partitionID=%' or options like 'preserveDefault=%'"
+            "and (options like 'partitionID=%' or options like 'preserveDefault=%')"
             
             db.execute(query)
             rv = db.fetchall()
