@@ -283,7 +283,7 @@ class KitOps:
                         if assoc_ng:
                             kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                             ng.components.append(newcomp)
-                            affected_ngs.add(ng)
+                            affected_ngs.add(ng.ngname)
                     elif USE_NG_ASSOC_THRESHOLD and ng.ngid > NG_ASSOC_THRESHOLD:
                         pass
                     elif ng.repo and newcomp in self.getKitComponents(kit.kid, ng.repo.os):
