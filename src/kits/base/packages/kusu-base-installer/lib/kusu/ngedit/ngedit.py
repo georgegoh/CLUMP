@@ -1823,9 +1823,9 @@ class NodeGroup(NodeGroupRec):
                 
         # Run cfmsync
         if syncNG:
-            self.__runTool('cfmsync', "-n '%s' -f -p" %self['ngname'], windowInst)
+            self.__runTool('cfmsync', "-n '%s' -p -f" %self['ngname'], windowInst)
         else:
-            cmd = 'cfmsync'+ " -n '%s' -f -p" %self['ngname']
+            cmd = 'cfmsync'+ " -n '%s' -p -f" %self['ngname']
             if windowInst:
                 windowInst.selector.popupMsg("cfmsync reminder", "Please update the nodes manually"+\
                     " at your earliest convenience by running\n%s" %cmd)
