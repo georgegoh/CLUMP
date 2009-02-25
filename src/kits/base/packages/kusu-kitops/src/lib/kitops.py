@@ -43,6 +43,7 @@ kl = kusulog.getKusuLog('kitops')
 # We currently want to limit the extent of association
 # to certain ngids and below. 
 NG_ASSOC_THRESHOLD = 2
+BASE_NG_ASSOC_THRESHOLD = 4 # This threshold applies to base kit only
 USE_NG_ASSOC_THRESHOLD = True
 
 
@@ -177,6 +178,14 @@ class KitOps:
             api = '0.2-installer'
         return AddKitStrategy[api](self, self.__db, kitinfo)
 
+    def getKitInfoComponents(self, kid):
+        '''Get the components list from the kitinfo file, given kit id.'''
+        kitinfo = self.kits_dir / str(kid) / 'kitinfo'
+        if not kitinfo.exists():
+            return []
+        kit, components = processKitInfo(kitinfo)
+        return components
+
     def getKitComponents(self, kid, os):
         kitinfo = self.kits_dir / str(kid) / 'kitinfo'
         if not kitinfo.exists():
@@ -259,9 +268,22 @@ class KitOps:
                                                                            newcomp in self.getKitComponents(kit.kid, ng.repo.os)))
                         kl.debug('USE_NG_ASSOC_THRESHOLD: %s NG_ASSOC_THRESHOLD: %s' % (USE_NG_ASSOC_THRESHOLD, NG_ASSOC_THRESHOLD))
                     if self.installer:
-                        kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
-                        ng.components.append(newcomp)
-                        affected_ngs.add(ng.ngname)
+                        kit_ngtypes = Set()
+                        for c in self.getKitInfoComponents(kit.kid):
+                            kit_ngtypes.update(c['ngtypes'])
+
+                        assoc_ng = False
+                        if not USE_NG_ASSOC_THRESHOLD:
+                            assoc_ng = True
+                        elif ng.type in kit_ngtypes:
+                            if (kit.rname == 'base' and ng.ngid <= BASE_NG_ASSOC_THRESHOLD) or \
+                               ng.ngid <= NG_ASSOC_THRESHOLD:
+                                assoc_ng = True
+                        
+                        if assoc_ng:
+                            kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
+                            ng.components.append(newcomp)
+                            affected_ngs.add(ng)
                     elif USE_NG_ASSOC_THRESHOLD and ng.ngid > NG_ASSOC_THRESHOLD:
                         pass
                     elif ng.repo and newcomp in self.getKitComponents(kit.kid, ng.repo.os):
