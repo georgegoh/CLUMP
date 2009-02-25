@@ -233,7 +233,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interface_keys.sort() # we sort to hit the lowest order provision interface first.
 
         provisioned = False # flag to associate only a sinle provision network
-        for intf in interfaces_keys:
+        for intf in interface_keys:
             if interfaces[intf]['configure']:
                 newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
                 master_node.nics.append(newnic)
