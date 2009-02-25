@@ -604,7 +604,7 @@ class KitOpsApp(KusuApp):
         if self.suppress_questions:
             return kits
         while 1:
-            for num_kits in enumerate(sorted(kits)):
+            for num_kits in enumerate(kits):
                 print '[%d]: %s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
                                           num_kits[1][1]['version'],
                                           num_kits[1][1]['arch'])

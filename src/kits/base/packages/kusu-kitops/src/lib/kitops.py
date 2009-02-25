@@ -330,6 +330,8 @@ class KitOps:
         if not availableKits:
             self.unmountMedia()
 
+        availableKits = sorted(availableKits)
+
         kl.debug("Kits available: %s", availableKits)
         return availableKits
 
