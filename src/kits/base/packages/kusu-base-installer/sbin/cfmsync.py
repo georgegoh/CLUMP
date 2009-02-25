@@ -175,6 +175,8 @@ class UpdateApp(KusuApp):
             if ntype:
                 cmd_args['update_type'] = ntype
                 os.system(cmd_template % cmd_args)
+        else:
+            runCfmMaintainerScripts()
 
         # Signal the nodes to start updating
         pb.signalUpdate(type, self.options.nodegrp)
