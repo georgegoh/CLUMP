@@ -720,7 +720,7 @@ class scrNGEEdit_Boot(USXBaseScreen):
 class scrNGEEdit_Components(USXBaseScreen):
     name = 'Components'
     msg = 'Please select components from the list below'
-    buttons = ['next_button', 'back_button', 'cancel_button']
+    buttons = ['next_button', 'back_button', 'cancel_button', 'toggleview_button']
 
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
@@ -736,6 +736,7 @@ class scrNGEEdit_Components(USXBaseScreen):
         self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
         
         self.__ct = None
+        self.filter_by_ngtype = True
 
     def setCallbacks(self):
 
@@ -743,6 +744,7 @@ class scrNGEEdit_Components(USXBaseScreen):
         self.buttonsDict['next_button'].setCallback_(self.doForwardAction)
         self.buttonsDict['back_button'].setCallback_(self.doBackAction)
         self.buttonsDict['cancel_button'].setCallback_(self.doCancelAction)
+        self.buttonsDict['toggleview_button'].setCallback_(self.doToggleAction)
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.doForwardAction
         self.hotkeysDict['F5'] = self.doBackAction
@@ -760,11 +762,16 @@ class scrNGEEdit_Components(USXBaseScreen):
     def doForwardAction(self):
         return NAV_FORWARD
 
+    def doToggleAction(self):
+        self.filter_by_ngtype = not self.filter_by_ngtype
+        return NAV_NOTHING
+
     def drawImpl(self):
         self.screenGrid = snack.Grid(1, 2)
 
         repo = self.dbs.Repos.selectone_by(repoid=curNG['repoid'])
-        comps = repo.getEligibleComponents(curNG['type'])
+        ng_type = (self.filter_by_ngtype or None) and curNG['type'] # Either None or curNG['type']
+        comps = repo.getEligibleComponents(ng_type)
         rv = [(c.kid, c.kit.rname, c.cid, c.cname) for c in comps]
 
         if not rv:
