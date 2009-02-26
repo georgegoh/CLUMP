@@ -14,7 +14,7 @@ class KusuRC(rcplugin.Plugin):
         rcplugin.Plugin.__init__(self)
         self.name = 'resolv_conf'
         self.desc = 'Setting up dns resolver'
-        self.ngtypes = ['compute']
+        self.ngtypes = ['compute', 'compute-imaged', 'compute-diskless']
         self.delete = True
 
     def run(self):

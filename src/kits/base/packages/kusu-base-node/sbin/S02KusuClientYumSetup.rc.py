@@ -14,7 +14,7 @@ class KusuRC(rcplugin.Plugin):
         rcplugin.Plugin.__init__(self)
         self.name = 'yumrepo'
         self.desc = 'Setting client yum repos'
-        self.ngtypes = ['compute']
+        self.ngtypes = ['compute', 'compute-imaged', 'compute-diskless']
         self.delete = False
 
         # Bypass this rc script for sles

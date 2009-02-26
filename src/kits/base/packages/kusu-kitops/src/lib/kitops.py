@@ -42,7 +42,7 @@ kl = kusulog.getKusuLog('kitops')
 
 # We currently want to limit the extent of association
 # to certain ngids and below. 
-NG_ASSOC_THRESHOLD = 2
+NG_ASSOC_THRESHOLD = 4
 BASE_NG_ASSOC_THRESHOLD = 4 # This threshold applies to base kit only
 USE_NG_ASSOC_THRESHOLD = True
 
@@ -642,7 +642,7 @@ class KitOps:
 
         if self.installer:
             ngs = self.__db.NodeGroups.select(
-                    self.__db.NodeGroups.c.type.in_('compute', 'installer'))
+                    self.__db.NodeGroups.c.type.in_('compute', 'installer', 'compute-imaged', 'compute-diskless'))
 
             for ng in ngs:
                 if comp not in ng.components:

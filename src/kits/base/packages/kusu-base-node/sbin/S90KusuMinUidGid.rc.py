@@ -15,7 +15,7 @@ class KusuRC(rcplugin.Plugin):
         rcplugin.Plugin.__init__(self)
         self.name = 'min_uid_gid'
         self.desc = 'Setting up minimum uid and gid'
-        self.ngtypes = ['installer', 'compute']
+        self.ngtypes = ['installer', 'compute', 'compute-imaged', 'compute-diskless']
         self.delete = True
 
     def run(self):

@@ -15,7 +15,7 @@ class KusuRC(rcplugin.Plugin):
         rcplugin.Plugin.__init__(self)
         self.name = 'syslog'
         self.desc = 'Setting up syslog'
-        self.ngtypes = ['compute']
+        self.ngtypes = ['compute', 'compute-imaged', 'compute-diskless']
         self.delete = True
 
     def run(self):

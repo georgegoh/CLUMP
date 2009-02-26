@@ -85,7 +85,7 @@ class Components(BaseTable):
 
     def getNGTypes(self):
         if not self.ngtypes or self.ngtypes == '*' or self.ngtypes.strip() == '':
-            return ['installer','compute','other']
+            return ['installer','compute','compute-diskless', 'compute-imaged', 'other']
         else:
             return self.ngtypes.split(';')
 
@@ -274,7 +274,7 @@ class NodeGroups(BaseTable):
     cols = ['repoid', 'ngname', 'installtype', \
             'ngdesc', 'nameformat', 'kernel', 'initrd', \
             'kparams', 'type']
-    types = ['installer', 'compute', 'other']
+    types = ['installer', 'compute', 'compute-imaged', 'compute-diskless', 'other']
 
     def getEligibleComponents(self):
         """Returns a list of components eligible for a nodegroup"""
@@ -630,7 +630,7 @@ class DB(object):
         nodegroups = sa.Table('nodegroups', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('repoid', sa.Integer, sa.ForeignKey('repos.repoid'), nullable=True),
-            sa.Column('ngname', sa.String(45), unique=True), 
+            sa.Column('ngname', sa.String(255), unique=True), 
             sa.Column('installtype', sa.String(20)),
             sa.Column('ngdesc', sa.String(255)),
             sa.Column('nameformat', sa.String(45)),
@@ -894,9 +894,9 @@ class DB(object):
 
         # more nodegroups
         imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
-                            installtype='disked', type='compute')
+                            installtype='disked', type='compute-imaged')
         diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
-                              installtype='diskless', type='compute')
+                              installtype='diskless', type='compute-diskless')
         NodeGroups(ngname='unmanaged', nameformat='device#NNN',
                    installtype='unmanaged', type='other')
 

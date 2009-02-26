@@ -31,7 +31,7 @@ class KusuRC(rcplugin.Plugin):
         rcplugin.Plugin.__init__(self)
         self.name    = 'nicstart'
         self.desc    = 'Initializing other NIC interfaces'
-        self.ngtypes = ['compute']
+        self.ngtypes = ['compute', 'compute-imaged', 'compute-diskless']
         self.delete  = False
         self.nics    = {}   # Dictionary of all the NIC info
 
