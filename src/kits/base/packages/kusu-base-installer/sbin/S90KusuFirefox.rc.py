@@ -20,9 +20,10 @@ class KusuRC(rcplugin.Plugin):
     def run(self):
         """Setup firefox default homepage."""
         lib_path_str = '/usr/lib'
-        arch = os.getenv('KUSU_DIST_ARCH')
-        if arch.endswith('64'):
-            lib_path_str += '64'
+        if not self.os_name in ['sles', 'suse']:
+            arch = os.getenv('KUSU_DIST_ARCH')
+            if arch.endswith('64'):
+                lib_path_str += '64'
         lib_path = path(lib_path_str)
 
         ff_path_list = lib_path.listdir('firefox*')
