@@ -18,7 +18,9 @@
 #
 
 import sys
+from IPy import IP
 from kusu.genconfig import Report
+from kusu.networktool.networktool import Interface
 
 from primitive.configtool.plugins import BasePlugin
 from primitive.configtool.commands import ConfigCommand
@@ -70,7 +72,13 @@ class thisReport(Report):
             # sys.exit(-1)
 
         # Determine the list of networks that this installer can serve
-        query = ('select distinct network, subnet from networks where network is not NULL')
+        query = ('SELECT DISTINCT network, subnet, device, usingdhcp '
+                 'FROM networks, nodes, nics '
+                 'WHERE networks.netid = nics.netid AND '
+                 '      nics.nid = nodes.nid AND '
+                 '      nodes.name = (SELECT kvalue FROM appglobals WHERE '
+                 '                    kname = "PrimaryInstaller") AND '
+                 '      NOT networks.device = "bmc"')
         try:
             self.db.execute(query)
 
@@ -82,8 +90,14 @@ class thisReport(Report):
         data = self.db.fetchall()
         if data:
             for row in data:
-                network, subnet = row
-                allowlist.append('%s/%s' % (network, subnet))
+                network, subnet, device, usingdhcp = row
+                if usingdhcp:
+                    net = IP('%s/%s' % Interface(device).getIPNetmask(), make_net=True)
+                    # We want /255.255.0.0 type of netmask instead of /16
+                    net.WantPrefixLen = 2
+                    allowlist.append(str(net))
+                else:
+                    allowlist.append('%s/%s' % (network, subnet))
         allowlist.append('127.0.0.1')
     
         wwwroot = path(Dispatcher.get('webserver_docroot'))
