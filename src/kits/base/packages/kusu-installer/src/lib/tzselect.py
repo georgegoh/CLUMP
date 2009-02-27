@@ -106,7 +106,7 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
         hwclock_args = '--hctosys'
         if self.kiprofile[self.profile]['utc']:
-            hwclock_args += ' -u'
+            hwclock_args += ' --utc'
 
         hwclockP = subprocess.Popen('hwclock %s' % hwclock_args, shell=True,
                                     stdout=subprocess.PIPE,
