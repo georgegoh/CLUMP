@@ -102,6 +102,19 @@ class KusuRC(rcplugin.Plugin):
             if pg_data_path.exists():
                 pg_data_path.rmtree()
             # get the password and write it to a file.
+            #  
+            # the postgres authentication is decoupled from unix auth. 
+            # There are directives in hba conf that let you say , if its a local access, 
+            # on all db, trust a user . The user in this context is the postgres user, 
+            # so you can say "all local users are allowed to login using the accoutn nobody". 
+            # conversly you can say "all local users are authenticated by some auth 
+            # mechanism". The md5 mechanism is more secure than the password mechanism 
+            # in this way because password sends the password unencrypted. 
+            # The reason the postgres user needs a password is because I dont think 
+            # there is (or I dont know) how to tie local user credentials with postgres access 
+            # credentials. IE , There is no straightforward mechanism to say, local 
+            # root user can login as user postgres to all db without password. Or Local postgres user.
+            # So we need the postgres password 
             pwfile = "%s/etc/pgdb.passwd" % (os.environ.get('KUSU_ROOT', '/opt/kusu'))
             pg_passwd = self.__writePassword('postgres', pwfile)
 
