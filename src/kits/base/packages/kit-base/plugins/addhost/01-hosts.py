@@ -17,8 +17,8 @@ import os
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-    def added(self, nodename, info, prePopulateMode):
-        os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
+    #def added(self, nodename, info, prePopulateMode):
+    #   os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
 
     def updated(self):
         os.system("/opt/kusu/bin/genconfig hosts > /etc/hosts")
