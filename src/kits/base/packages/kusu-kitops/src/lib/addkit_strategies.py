@@ -147,7 +147,7 @@ def addkit02(koinst, db, kitinfo):
     kitrpm.extract(repodir)
 
     installPlugins(koinst, repodir, str(newkit.kid))
-    installDocs(koinst.kits_dir, koinst.docs_dir, newkit)
+    installDocs(koinst, newkit)
 
     # check/populate component table
     try:
@@ -221,25 +221,33 @@ def installPlugins(koinst, kitdir, kid):
                 actual_plugin.symlink(proposed_plugin)
 
 
-def installDocs(kitdir, docsdir, kit):
+def installDocs(koinst, kit):
     """
     Install kit docs from a kit directory into the central docs directory.
     """
     kl.debug('Installing kit documentation. Looking for docs in this kit.')
-    src_dir = kitdir / str(kit.kid) / 'www'
+    src_dir = koinst.kits_dir / str(kit.kid) / 'www'
     if not (src_dir.exists() or src_dir.islink()):
         kl.debug('kit %s does not have any documentation in %s' % \
                  (kit.rname, src_dir))
         return
-    dest_dir = docsdir / kit.rname / str(kit.version) / str(kit.release)
+    dest_dir = koinst.docs_dir / kit.rname / str(kit.version) / str(kit.release)
     kl.debug('Checking if proposed directory %s already exists.' % dest_dir)
     if dest_dir.exists() or dest_dir.islink():
         kl.debug('Proposed directory exists. Nothing left to do.')
         return
-
-    if not dest_dir.dirname().exists():
-        dest_dir.dirname().makedirs()
-    src_dir.symlink(dest_dir)
+    else:
+        # temporary set the kitops prefix to '/' to reflect final destination.
+        prefix = koinst.prefix
+        koinst.setPrefix('/')
+        src_dir = koinst.kits_dir / str(kit.kid) / 'www'
+        koinst.setPrefix(prefix)
+        # original kitops prefix restored.
+        kl.debug('No. Creating symlink to %s from %s' % (src_dir, dest_dir))
+ 
+        if not dest_dir.dirname().exists():
+            dest_dir.dirname().makedirs()
+        src_dir.symlink(dest_dir)
 
 
 def addkit02InstallerRules(koinst, db, kitinfo):
