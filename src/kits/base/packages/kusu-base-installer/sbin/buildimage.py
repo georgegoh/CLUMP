@@ -106,7 +106,7 @@ class BuildImage:
 
         system_arch = OS()[2].lower()
         if system_arch == 'i386' and os_arch == 'x86_64':
-            self.stdoutout('Skipping BuildInitrd for %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
+            self.stdoutout('Skipping BuildImage %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
             sys.exit(0)
 
         self.__getPackages()
