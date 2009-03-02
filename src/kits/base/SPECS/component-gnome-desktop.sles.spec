@@ -37,11 +37,11 @@ Requires: kdelibs3 libsndfile qt-x11 yast2-sound gnome2-NLD xorg-x11-driver-vide
 Requires: python-gtk libgda sax2-libsax evolution-data-server xorg-x11-driver-video-nvidia
 Requires: jack gnome-terminal gnome-keyring-manager  gnome-cups-manager mozilla-xulrunner
 Requires: gnome-power-manager gal2 librsvg file-roller nautilus-share gnome-media
-Requires: gnome-applets yast2-control-center 915resolution dbus-1-x11 ghostscript-fonts-other
+Requires: gnome-applets yast2-control-center dbus-1-x11 ghostscript-fonts-other
 Requires: aalib dejavu dialog gle gtk2-engines fonts-config cabextract gnome-audio fribidi
 Requires: info2html iso-codes gnome-mime-data guile dosbootdisk hplip-hpijs intlfnts dmapi
 Requires: htdig ghostscript-fonts-std latex2html-pngicons libcddb libdaemon libgimpprint
-Requires: libgnomecups libgsm libidl libiniparser libnetpbm libopencdk libsamplerate
+Requires: libgnomecups libidl libiniparser libnetpbm libopencdk libsamplerate
 Requires: libstroke libwnck lsb mDNSResponder-lib ncpfs poppler qt startup-notification
 Requires: sax2-tools taglib thinkeramik-style unrar vte x11-tools xdmbgrd xli xorg-x11-Xvnc
 Requires: xorg-x11-fonts-75dpi xorg-x11-server-glx xtermset gnome-printer-add evms-gui alsa
