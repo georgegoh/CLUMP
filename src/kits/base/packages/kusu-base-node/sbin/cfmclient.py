@@ -595,7 +595,7 @@ class CFMClient:
 
         elif self.osname in ['sles', 'opensuse', 'suse']:
             self.__setupZypperSource()
-            cmd = "echo y | /usr/bin/zypper --non-interactive --no-gpg-checks install --auto-agree-with-licenses"
+            cmd = "echo y | %s" % Dispatcher.get('zypper_install_cmd')
     
         if cmd:
             for i in self.newpackages:
@@ -617,7 +617,7 @@ class CFMClient:
 
         elif self.osname in ['sles', 'opensuse', 'suse']:
             self.__setupZypperSource()
-            cmd = "/usr/bin/zypper --non-interactive --no-gpg-checks remove"
+            cmd = "echo y | %s" % Dispatcher.get('zypper_remove_cmd')
 
         if cmd:
             for i in self.oldpackages:
@@ -961,8 +961,7 @@ class CFMClient:
 
         elif self.osname in ['sles', 'opensuse', 'suse']:
             self.__setupZypperSource()
-
-            cmd = "echo y | /usr/bin/zypper --non-interactive --no-gpg-checks update -t package --auto-agree-with-licenses >> %s 2>&1" % LOGFILE
+            cmd = "echo y | %s >> %s 2>&1" % (Dispatcher.get('zypper_update_cmd'), LOGFILE)
             self.__runCommand2(cmd)
 
     def run (self):
