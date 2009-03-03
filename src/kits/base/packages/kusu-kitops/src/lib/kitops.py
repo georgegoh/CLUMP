@@ -693,6 +693,8 @@ class KitOps:
                 continue
 
             api = '0.1'
+            if kit.isOS or kit.osid:
+                api = '0.2'
             kitinfo = self.kits_dir / str(kit.kid) / 'kitinfo'
             if kitinfo.exists():
                 kit_struct, components = processKitInfo(kitinfo)
