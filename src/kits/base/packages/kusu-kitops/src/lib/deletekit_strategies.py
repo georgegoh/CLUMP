@@ -56,9 +56,8 @@ def deletekit02(koinst, db, kit):
                 dpack.delete()
             component.delete()
 
-        if kit.osid:
-            osentry = db.OS.selectfirst_by(osid=kit.osid)
-            osentry.delete()
+        if kit.os:
+            kit.os.delete()
 
         # remove kit DB info
         kit.delete()
