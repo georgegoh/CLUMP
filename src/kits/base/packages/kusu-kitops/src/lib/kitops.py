@@ -770,8 +770,8 @@ class KitOps:
             if script.exists():
                 kl.debug("Removing '%s'", script)
                 script.remove()
-
-            kl.debug("Script '%s' does not exist, doing nothing", script)
+            else:
+                kl.debug("Script '%s' does not exist, doing nothing", script)
 
     def getRPMScriptName(self, kitname, kitver, kitarch, order):
         """
