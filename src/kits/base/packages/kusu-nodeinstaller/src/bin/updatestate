@@ -32,7 +32,7 @@ def getNIIHost(nii, key):
     return None 
 
 def update(niihost, state, bootfrom):
-    url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1&state=%s&boot=%s' % (niihost, state, bootfrom)
+    url = 'http://%s/repos/nodeboot.cgi?state=%s&boot=%s' % (niihost, state, bootfrom)
 
     try:
         f = urllib2.urlopen(url)

@@ -140,7 +140,7 @@ class NodeInfo:
                  'networks.subnet, networks.device, networks.suffix, '
                  'networks.gateway, networks.options, nics.boot, nics.mac, networks.type '
                  'from nics,networks where networks.netid=nics.netid '
-                 'and nics.nid=\'%s\'' % nid)
+                 'and nics.nid=%s' % nid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -344,7 +344,9 @@ class NodeInfo:
         self.db.disconnect()
         if os.path.exists('/opt/kusu/sbin/boothost'):
             os.system('/opt/kusu/sbin/boothost -m %s' % nodename)
-
+    
+    def disconnect(self):
+        self.db.disconnect()
 
 
 class NodeBootApp(KusuApp):
@@ -499,6 +501,8 @@ class NodeBootApp(KusuApp):
         # Update PXE file if needed
         if updatepxe:
             nodefun.regenPXE(node)
+        else:
+            nodefun.disconnect()
 
         
         
