@@ -334,7 +334,7 @@ class PartitionScreen(InstallerScreen):
                 self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
 
     def preserveExistingPartitions(self):
-        exceptions = ['/', '/depot', '/boot']
+        exceptions = ['/', '/depot', '/boot', '/var']
         for d in self.disk_profile.disk_dict.values():
             for p in d.partition_dict.values():
                 if p.mountpoint not in exceptions:
