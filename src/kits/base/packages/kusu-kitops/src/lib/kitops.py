@@ -759,6 +759,19 @@ class KitOps:
 
         return True
 
+    def removeRPMScripts(self, kitname, kitver, kitarch):
+        """
+        Removes kusurc script for this kit RPM.
+        """
+
+        for order in [0, 1]:
+            script = self.getRPMScriptName(kitname, kitver, kitarch, order)
+
+            if script.exists():
+                kl.debug("Removing '%s'", script)
+                script.remove()
+
+            kl.debug("Script '%s' does not exist, doing nothing", script)
 
     def getRPMScriptName(self, kitname, kitver, kitarch, order):
         """
