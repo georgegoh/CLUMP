@@ -339,6 +339,8 @@ class PartitionScreen(InstallerScreen):
             for p in d.partition_dict.values():
                 if p.mountpoint not in exceptions:
                     p.do_not_format = True
+                else:
+                    p.do_not_format = False
           
     def rollback(self):
         self.prompt_for_default_schema = True
