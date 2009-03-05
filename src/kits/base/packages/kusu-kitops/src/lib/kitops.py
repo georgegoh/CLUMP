@@ -692,20 +692,21 @@ class KitOps:
                                   (kit.rname, kit.version, kit.arch))
                 continue
 
-            api = '0.1'
-            if kit.isOS or kit.osid:
-                api = '0.2'
-            kitinfo = self.kits_dir / str(kit.kid) / 'kitinfo'
-            if kitinfo.exists():
-                kit_struct, components = processKitInfo(kitinfo)
-                api = kit_struct.get('api', '0.1')
+        if error_kits:
+             raise DeleteKitsError, error_kits
+        else:
+            for kit in kits:
+                api = '0.1'
+                if kit.isOS or kit.osid:
+                    api = '0.2'
+                kitinfo = self.kits_dir / str(kit.kid) / 'kitinfo'
+                if kitinfo.exists():
+                    kit_struct, components = processKitInfo(kitinfo)
+                    api = kit_struct.get('api', '0.1')
 
-            DeleteKitStrategy[api](self, self.__db, kit)
+                DeleteKitStrategy[api](self, self.__db, kit)
 
         self.__db.flush()
-
-        if error_kits:
-            raise DeleteKitsError, error_kits
 
     def addRPMPreScript(self, kitname, kitver, kitarch, cmd):
         """
@@ -759,19 +760,6 @@ class KitOps:
 
         return True
 
-    def removeRPMScripts(self, kitname, kitver, kitarch):
-        """
-        Removes kusurc script for this kit RPM.
-        """
-
-        for order in [0, 1]:
-            script = self.getRPMScriptName(kitname, kitver, kitarch, order)
-
-            if script.exists():
-                kl.debug("Removing '%s'", script)
-                script.remove()
-            else:
-                kl.debug("Script '%s' does not exist, doing nothing", script)
 
     def getRPMScriptName(self, kitname, kitver, kitarch, order):
         """
