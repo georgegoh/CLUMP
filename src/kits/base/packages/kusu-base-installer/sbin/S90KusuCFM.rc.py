@@ -75,13 +75,6 @@ class KusuRC(rcplugin.Plugin):
                 if not newFile.exists():
                     file.symlink(newFile)
 
-            fstab = dest / 'etc' / 'fstab.append'
-            if not fstab.exists():
-                f = open(fstab, 'w')
-                f.write('# Appended by CFM\n')
-                f.write('# Entries below this come from the CFM\'s fstab.append\n')
-                f.close()
-
         # Redirect all stdout, stderr
         oldOut = sys.stdout
         oldErr = sys.stderr
