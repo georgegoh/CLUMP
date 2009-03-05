@@ -66,7 +66,7 @@ class RepoPatchApp(KusuApp):
                                help=self._('Database password'))
 
     def getVersion(self):
-        self.stdoutMessage('Repopatch ${VERSION_STR}\n')
+        self.stdoutMessage('Repopatch %s\n', self.version)
 
     def update(self, repo_name):
         

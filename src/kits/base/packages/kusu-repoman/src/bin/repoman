@@ -107,7 +107,7 @@ For examples:
                                help=self._('flush repository cache'))
 
     def getVersion(self):
-        self.stdoutMessage('Repoman 1.2\n')
+        self.stdoutMessage('Repoman %s\n', self.version)
 
     def getKitFriendlyName(self, kit):
 

@@ -29,15 +29,6 @@ init:
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g'  -e 's%$${KUSU_REVISION}%$(KUSU_REVISION)%g' \
 	-e 's%$${KUSU_RELEASE_NAME}%$(KUSU_RELEASE_NAME)%g' \
 	packages/kusu-installer/src/bin/installer.in > packages/kusu-installer/src/bin/installer
-	@cp -pf packages/kusu-kitops/src/bin/kitops packages/kusu-kitops/src/bin/kitops.in
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' \
-	packages/kusu-kitops/src/bin/kitops.in > packages/kusu-kitops/src/bin/kitops
-	@cp -pf packages/kusu-repoman/src/bin/repoman packages/kusu-repoman/src/bin/repoman.in
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' \
-	packages/kusu-repoman/src/bin/repoman.in > packages/kusu-repoman/src/bin/repoman
-	@cp -pf packages/kusu-repoman/src/bin/repopatch packages/kusu-repoman/src/bin/repopatch.in
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' \
-	packages/kusu-repoman/src/bin/repopatch.in > packages/kusu-repoman/src/bin/repopatch
 	@cp -pf packages/kusu-base-installer/sbin/S02KusuMotd.rc.py packages/kusu-base-installer/sbin/S02KusuMotd.rc.py.in 
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -e 's%$${KUSU_REVISION}%$(KUSU_REVISION)%g' \
 	-e 's%$${KUSU_RELEASE_NAME}%$(KUSU_RELEASE_NAME)%g' \
