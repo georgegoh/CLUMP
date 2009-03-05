@@ -68,6 +68,9 @@ class KusuRC(rcplugin.Plugin):
             # Use CFM append mechanism to append the entry for the home
             # NFS mount
             fstab_append = path('/etc/cfm/%s/etc/fstab.append' % ng.ngname)
+            # Don't clobber the existing file
+            if fstab_append.exists():
+                continue
 
             f = open(fstab_append, 'w')
             f.writelines(entries)
