@@ -1209,15 +1209,19 @@ class scrNGEEdit_PartSchema(USXBaseScreen):
         provision = self.database.getAppglobals('PROVISION')
         if provision == 'KUSU':
             pv_dict  = self.PartSchema.getPVMap()
-           #getpvmap returns a pv key and vg value. the value is none if
-           # the PV is unassociated, in which case we can add a new VG
-           # To add new LVs we check that there is at least 1 pv that is
-           # associated with a VG.
+            #getpvmap returns a pv key and vg value. the value is none if
+            # the PV is unassociated, in which case we can add a new VG
+            # To add new LVs we check that there is at least 1 pv that is
+            # associated with a VG.
             if pv_dict and [ vg for vg in pv_dict.values() if vg]:
                 optionList.append(('Logical Volume','log_vol'))
-            if pv_dict and [ vg for vg in pv_dict.values() if not vg]:
-                optionList.append(('Volume Group', 'vol_grp'))
-
+            # show vg creation if 1 there is a pv dict 2 there is
+            #a pv without a vg , 3 there is no other vg 
+            if pv_dict and\
+                    [ vg for vg in pv_dict.values() if not vg]\
+                    and not [vg for vg in pv_dict.values() if vg] :
+                    optionList.append(('Volume Group', 'vol_grp'))
+ 
         button,item = self.selector.popupListBox(
             'Select type of device',
             "Please select what you'd like to create",
