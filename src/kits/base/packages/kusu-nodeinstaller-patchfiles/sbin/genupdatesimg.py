@@ -25,6 +25,10 @@ class GenUpdatesImg(KusuApp):
 
     def parse(self):
         options, args = self.parser.parse_args()
+
+        if options.repoid is None:
+            print 'Please provide a target repository id using -r/--repoid option.'
+            return False
         try:
             self.repoid = int(options.repoid)
         except ValueError:
