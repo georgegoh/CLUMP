@@ -119,7 +119,7 @@ class thisReport(Report):
                 try:
                     tz_utc = bool(db.AppGlobals.selectfirst_by(kname='Timezone_utc').kvalue)
                 except Exception, e:
-                    print "Could not retrieve timezone from database."
+                    print "Could not retrieve timezone_utc from database."
                     return
                 # Retrieve language.
                 try:
