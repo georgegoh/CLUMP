@@ -119,6 +119,12 @@ class thisReport(Report):
                 except Exception, e:
                     print "Could not retrieve timezone from database."
                     return
+                # Retrieve utc.
+                try:
+                    tz_utc = bool(db.AppGlobals.selectfirst_by(kname='Timezone_utc').kvalue)
+                except Exception, e:
+                    print "Could not retrieve timezone from database."
+                    return
                 # Retrieve language.
                 try:
                     lang = db.AppGlobals.selectfirst_by(kname='Language').kvalue
@@ -140,13 +146,14 @@ class thisReport(Report):
                     print "Could not retrieve package list from database."
                     return
 
-            ic = GenerateAutoInstallScriptCommand(os={'name': os, 'version':ver},
+            ic = GenerateAutoInstallScriptCommand(os={'name': os, 'version':major},
                                                   diskprofile=None,
                                                   partitionrules=partition_rules,
                                                   installsrc=installsrc,
                                                   networkprofile=networkprofile,
                                                   rootpw=rootpw,
                                                   tz=tz,
+                                                  tz_utc=tz_utc,
                                                   lang=lang,
                                                   keyboard=keyb,
                                                   packageprofile=packages,

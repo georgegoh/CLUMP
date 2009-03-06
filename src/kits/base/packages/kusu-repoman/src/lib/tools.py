@@ -8,6 +8,7 @@
 #
 
 from kusu.util.errors import *
+from kusu.core import database as db
 from path import path
 import re
 
@@ -86,9 +87,14 @@ def getOS(dbs, repoid_or_ngname):
     # nodegroup name
     elif type(key) in [str, unicode]:
         kit = db.findKitsFromNodeGroup(dbs,
-                                       columns=['rname', 'version', 'arch'],
-                                       kitargs={'isOS': True}, 
+                                       columns=['kid'],
+                                       kitargs={'isOS': True},
                                        ngargs={'ngname': key})
+        
+        if kit:
+            kid = kit[0].kid
+            kit = dbs.Kits.select_by(kid = kid)
+
     else:
         raise TypeError, 'Invalid type for key: %s' % key
 
