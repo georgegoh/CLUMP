@@ -872,21 +872,19 @@ class NodeGroup(NodeGroupRec):
         
         if not ostype:
             raise NGEValidationError, "Repository with ID '%s' does not have an OS type." % repoid
-        
-        repodir = repodir.strip()
-        ostype = ostype.lower()
+       
+        from kusu.repoman import tools as rtool
+        from kusu.core import database as sadb
+        engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
+        dbinst = sadb.DB(engine, db='kusudb',username='nobody')
 
-        if ostype.startswith('fedora'):
-            repodir = repodir + '/Fedora/RPMS'
-        elif ostype.startswith('rhel'):
-            repodir = repodir + '/Server'
-        elif ostype.startswith('centos'):
-            repodir = repodir + '/CentOS'
+        repodir = rtool.getPackagePath(dbinst, repoid)
+        if repodir:
+            repodir = repodir[0]
         else:
             raise NGEValidationError, 'Selected repository has an unknown OS type.'
-        
-        # validate all selected packages
 
+        # validate all selected packages
         packages = self.data['packs']
         for pkg in packages:
             matches = glob.glob('%s/%s-[0-9]*' % (repodir,pkg))
