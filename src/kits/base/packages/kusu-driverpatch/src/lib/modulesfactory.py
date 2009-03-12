@@ -6,6 +6,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
+from primitive.support import osfamily
 from modules import Redhat5InitrdModule, SLES10InitrdModule, OpenSUSE103InitrdModule
 
 class InitrdModulesFactory(object):
@@ -14,7 +15,7 @@ class InitrdModulesFactory(object):
                   'opensuse'   : {'10.3': OpenSUSE103InitrdModule}}
     
     def getModuleHandler(self, os_name, os_version):
-        if os_name in ['rhel', 'centos']:
+        if os_name in osfamily.getOSNames('rhelfamily'):
             os_name = 'rhel'
 
         return self.class_dict[os_name][os_version]

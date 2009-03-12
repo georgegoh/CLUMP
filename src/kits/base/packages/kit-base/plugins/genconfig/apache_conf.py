@@ -26,6 +26,7 @@ from primitive.configtool.plugins import BasePlugin
 from primitive.configtool.commands import ConfigCommand
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.system.software.probe import OS
+from primitive.support import osfamily
 
 from path import path
  
@@ -107,7 +108,7 @@ class thisReport(Report):
         os = OS()[0].lower()
         cacheDisabled = False
 
-        if os in ['rhel', 'centos', 'fedora']:
+        if os in osfamily.getOSNames('rhelfamily') + ['fedora']:
             disableCache = True
         elif os in ['sles', 'opensuse', 'suse']:
             disableCache = False

@@ -62,6 +62,10 @@ ifeq ($(KUSU_DISTRO_NAME), centos)
 include config.mk
 BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily
 endif
+ifeq ($(KUSU_DISTRO_NAME), scientificlinux)
+include config.mk
+BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily
+endif
 ifeq ($(KUSU_DISTRO_NAME), rhel)
 include config.mk
 BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily

@@ -26,7 +26,7 @@ class GenUpdatesFactory(object):
         pass
 
     def getUpdatesClass(self, target_os=OS()):
-        if target_os[0].lower() in ['rhel', 'redhat', 'centos', 'fedora', 'sl']:
+        if target_os[0].lower() in ['rhel', 'redhat', 'centos', 'fedora', 'scientificlinux']:
             return YumGenUpdates(target_os)
         elif target_os[0].lower() in ['sles', 'suse', 'opensuse']:
             return YastGenUpdates(target_os)

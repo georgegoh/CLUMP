@@ -9,6 +9,7 @@ from kusu.core import rcplugin
 import kusu.core.database as db
 from kusu.util.errors import UnsupportedOS
 from path import path
+from primitive.support import osfamily
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -61,7 +62,7 @@ class KusuRC(rcplugin.Plugin):
             if os_name in ['sles', 'opensuse', 'suse']:
                 line = '239.0.0.0       0.0.0.0         255.0.0.0       %s' % dev
                 routes_file = path('/etc/sysconfig/network/routes')
-            elif os_name in ['rhel', 'centos', 'redhat']:
+            elif os_name in osfamily.getOSNames('rhelfamily'):
                 line = '239.0.0.0/8 dev %s' % dev
                 routes_file = path('/etc/sysconfig/network-scripts/route-%s' % dev)
             else:

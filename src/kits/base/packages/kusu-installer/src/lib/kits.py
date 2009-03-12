@@ -156,10 +156,10 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Network set up.')
         prog_dlg.close()
 
-        prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
-        writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
-        kl.debug('Network time set up.')
-        prog_dlg.close()
+        #prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
+        #writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        #kl.debug('Network time set up.')
+        #prog_dlg.close()
 
         setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
         kl.debug('Set the installation flag')

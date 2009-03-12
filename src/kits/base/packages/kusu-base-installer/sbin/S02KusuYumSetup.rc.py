@@ -8,6 +8,7 @@
 
 from path import path
 from kusu.core import rcplugin
+from primitive.system.software.dispatcher import Dispatcher
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -46,7 +47,6 @@ class KusuRC(rcplugin.Plugin):
 
         header = "[kusu-%s]\n" % self.ngtypes[0]
         name = "name=Kusu %s %s %s %s\n" % (self.ngtypes[0], self.os_name, self.os_version, self.os_arch)
-        baseurl = "baseurl=http://%s/repos/%s\n" % (self.niihost[0], self.repoid)
         enabled = "enabled=1\n"
         gpgcheck = "gpgcheck=0\n"
         gpgkey = "gpgkey=http://%s/repos/%s/RPM-GPG-KEY-KUSU\n" % (self.niihost[0], self.repoid)
@@ -64,6 +64,8 @@ class KusuRC(rcplugin.Plugin):
                     fh.write(gpgcheck)
                     fh.write(gpgkey+"\n")
             else:
+                dirname = Dispatcher.get('yum_repo_subdir', 'Server')
+                baseurl = "baseurl=http://%s/repos/%s%s\n" % (self.niihost[0], self.repoid, dirname)
                 fh = open(kusurepo, 'w')
                 fh.write(header)
                 fh.write(name)
@@ -81,7 +83,9 @@ class KusuRC(rcplugin.Plugin):
         if repo: 
             kid = repo.oskit.kid
 
-            if self.os_name in ['centos', 'rhel']:
+            if self.os_name in ['centos', 'rhel']: # SL is different
                 self.runCommand('/bin/rpm --import /depot/kits/%s/RPM-GPG-KEY*' % kid)
+            elif self.os_name == 'scientificlinux': # SL is different
+                pass
             
         return True

@@ -23,6 +23,7 @@ import string
 
 from path import path
 from primitive.system.software.dispatcher import Dispatcher
+from primitive.support import osfamily
 from kusu.util.errors import UnsupportedOS
 
 class KusuRC(rcplugin.Plugin):
@@ -89,7 +90,7 @@ class KusuRC(rcplugin.Plugin):
                 if dev.startswith('ib'):
                     ifcfg = path(network_path / 'ifcfg-%s' % dev)
                 else:
-                    if self.os_name in ['rhel', 'centos', 'fedora', 'opensuse']:
+                    if self.os_name in ['rhel', 'centos', 'scientificlinux', 'fedora', 'opensuse']:
                         ifcfg = path(network_path / 'ifcfg-%s' % dev)
                     elif self.os_name in ['suse', 'sles']:
                         ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
@@ -156,7 +157,7 @@ class KusuRC(rcplugin.Plugin):
             if os_name in ['sles', 'opensuse', 'suse']:
                 line = '239.0.0.0       0.0.0.0         255.0.0.0       %s' % dev
                 routes_file = path('/etc/sysconfig/network/routes')
-            elif os_name in ['rhel', 'centos', 'redhat']:
+            elif os_name in osfamily.getOSNames('rhelfamily'):
                 line = '239.0.0.0/8 dev %s' % dev
                 routes_file = path('/etc/sysconfig/network-scripts/route-%s' % dev)
             else:

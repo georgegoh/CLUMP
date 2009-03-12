@@ -97,16 +97,16 @@ class BuildImage:
 
         # Skip Buildimage for sles/opensuse
         ng = self.dbs.NodeGroups.select_by(ngname = nodegroup)[0]
-        os_name = ng.repo.os.name
-        os_arch = ng.repo.os.arch
-
-        if os_name.lower() in ['sles', 'opensuse', 'suse']:
-            self.stdoutout('Skipping BuildImage for %s distribution\n' % os_name)
+        _os = ng.repo.os
+        self.os_tup = (_os.name, _os.major, _os.arch)
+        
+        if _os.name.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutout('Skipping BuildImage for %s distribution\n' % _os.name)
             sys.exit(0)
 
         system_arch = OS()[2].lower()
-        if system_arch == 'i386' and os_arch == 'x86_64':
-            self.stdoutout('Skipping BuildImage %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
+        if system_arch == 'i386' and _os.arch == 'x86_64':
+            self.stdoutout('Skipping BuildImage %s. Unable to build on %s platform.\n' % (_os.arch, system_arch))
             sys.exit(0)
 
         self.__getPackages()
@@ -274,17 +274,7 @@ class BuildImage:
 
         # print "repoid = %s" % self.repoid
         # print "repodir = %s" % self.repodir
-
-        dirname = 'Redhat'
-        repopref = ''
-        if self.ostype[:6] == 'fedora':
-            dirname = 'Fedora'
-        if self.ostype[:4] == 'rhel' :
-            dirname = 'Redhat'
-            repopref = '/Server'
-            #   /depot/repos/1000/Server/repodata
-        if self.ostype[:6] == 'centos':
-            dirname = 'CentOS'
+        dirname = Dispatcher.get('yum_repo_subdir', 'Server', os_tuple=self.os_tup)
 
         # Create the yum config file
         #yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
@@ -297,8 +287,8 @@ class BuildImage:
                 'reposdir=/dev/null\n'
                 'tolerant=1\n\n'
                 '[base]\n'
-                'name=%s - Base\n'
-                'baseurl=file://%s%s\n' % (dirname, self.repodir, repopref)
+                'name=Kusu Base\n'
+                'baseurl=file://%s%s\n' % (self.repodir, dirname)
                 )
 
         fp.write(out)

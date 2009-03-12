@@ -25,7 +25,7 @@ class LicenseScreen(InstallerScreen, profile.PersistentProfile):
     name = _('Inst Number')
     profile = 'InstNum'
     msg = _('Please enter Red Hat Installation number\n\n' + \
-            'If you are providing a CentOS OS kit later, you can skip this screen.')
+            'If you are not providing a Red Hat OS kit later, you can skip this screen.')
     buttons = [_('Skip')]
 
     def __init__(self, kiprofile):

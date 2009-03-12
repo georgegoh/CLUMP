@@ -55,6 +55,7 @@ sys.path.append('/opt/primitive/lib64/python2.4/site-packages')
 
 from primitive.system.software.probe import OS
 from primitive.system.software.dispatcher import Dispatcher
+from primitive.support import osfamily
 
 PLUGINS='/opt/kusu/lib/plugins/cfmclient'
 CFMFILE='/etc/cfm/.cfmsecret'
@@ -584,7 +585,7 @@ class CFMClient:
             return
         
         cmd = ''
-        if self.osname in ['rhel', 'fedora', 'centos']:
+        if self.osname in osfamily.getOSNames('rhelfamily') + ['fedora']:
             global YUMCONF
             self.__setupForYum()
 
@@ -1003,7 +1004,7 @@ class CFMClient:
             self.repoid = 1000
 
             # Exit if os is not supported
-            if not (self.osname in ['rhel', 'centos', 'fedora', 'sles', 'opensuse', 'suse']):
+            if not (self.osname in ['rhel', 'centos', 'fedora', 'scientificlinux', 'sles', 'opensuse', 'suse']):
                 sys.exit(-1)
 
             self.CFMBaseDir = '/opt/kusu/cfm'

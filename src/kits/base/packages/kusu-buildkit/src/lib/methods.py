@@ -167,6 +167,13 @@ def RHEL5Component(**kwargs):
     kwargs['osmajor'] = '5'
     return DefaultComponent(**kwargs)
 
+def ScientificLinux5Component(**kwargs):
+    """ This is used for Scientific Linux 5 components. """
+    kwargs['ostype'] = 'scientificlinux'
+    kwargs['osversion'] = '5'
+    kwargs['osmajor'] = '5'
+    return DefaultComponent(**kwargs)
+
 def Fedora6Component(**kwargs):
     """ This is used for Fedora Core 6 components. """
     kwargs['ostype'] = 'fedora'

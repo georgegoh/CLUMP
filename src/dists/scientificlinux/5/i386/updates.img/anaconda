@@ -18,7 +18,7 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 export LANG="en_US.UTF-8"
 
 # setups our environment
-export KUSU_DIST=centos
+export KUSU_DIST=scientificlinux
 export KUSU_DISTVER=5
 export KUSU_DIST_ARCH=i386
 source /opt/kusu/bin/kusuenv.sh
@@ -64,11 +64,12 @@ if [ $EXIT_CODE -eq 0 ]; then
         /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
     fi
 
+	# rhel iso provided
 	if [ -f "/tmp/kusu.fake.files" ]; then
 		for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -rf $f > /dev/null 2>&1; done
 
 		GRUB_TITLE=`cat /tmp/kusu.grub`
-		/usr/bin/sed -i "s/CentOS/$GRUB_TITLE/g" /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
+		/usr/bin/sed -i "s/Scientific Linux/$GRUB_TITLE/g" /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
 	fi
 
     exit $EXIT_CODE

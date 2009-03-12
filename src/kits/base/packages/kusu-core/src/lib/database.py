@@ -530,7 +530,7 @@ class DB(object):
             sa.Column('kid', sa.Integer, sa.ForeignKey('kits.kid'), nullable=False),
             sa.Column('cname', sa.String(255)),
             sa.Column('cdesc', sa.String(255)),
-            sa.Column('os', sa.String(20)),
+            sa.Column('os', sa.String(255)),
             sa.Column('ngtypes', sa.String(255)),
             mysql_engine='InnoDB')
         sa.Index('components_FKIndex1', components.c.kid)
@@ -698,7 +698,7 @@ class DB(object):
             sa.Column('reponame', sa.String(255), unique=True),
             sa.Column('repository', sa.String(255)),
             sa.Column('installers', sa.String(255)),
-            sa.Column('ostype', sa.String(20)),
+            sa.Column('ostype', sa.String(255)),
             mysql_engine='InnoDB')
         self.__dict__['repos'] = repos
 

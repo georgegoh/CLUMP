@@ -7,6 +7,8 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+from primitive.support import osfamily
+
 from kusu.util.errors import *
 from kusu.core import database as db
 from path import path
@@ -156,7 +158,7 @@ def getConfig(file):
 
     for sec in sections:
         if sec in ['fedora', 'centos', 'rhel', 'sles', 'opensuse', 
-                   'rhel-5-i386', 'rhel-5-x86_64']:
+                   'rhel-5-i386', 'rhel-5-x86_64', 'scientificlinux']:
             cfg[sec] = {}
             for opt in configParser.items(sec):
                key = opt[0]
@@ -238,7 +240,7 @@ def getBaseYumDir(dbs, repoid):
     rfactory = repofactory.RepoFactory(dbs)
     repo = rfactory.getRepo(repoid)
 
-    if repo.os_name in ['rhel', 'centos', 'fedora']:
+    if repo.os_name in osfamily.getOSNames('rhelfamily') + ['fedora']:
         return repo.getBaseYumDir()
     else:
         return None

@@ -9,6 +9,8 @@
 from path import path
 from kusu.core import rcplugin
 
+from primitive.system.software.dispatcher import Dispatcher
+
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
@@ -44,9 +46,10 @@ class KusuRC(rcplugin.Plugin):
         # if retcode == 0 and len(out) > 0:
         #   retcode, out, err = self.runCommand("rpm -ev " + out)
 
+        dirname = Dispatcher.get('yum_repo_subdir', 'Server')
+
         header = "[kusu-%s]\n" % self.ngtypes[0]
         name = "name=Kusu %s %s %s %s\n" % (self.ngtypes[0], self.os_name, self.os_version, self.os_arch)
-        baseurl = "baseurl=http://%s/repos/%s\n" % (self.niihost[0], self.repoid)
         enabled = "enabled=1\n"
         gpgcheck = "gpgcheck=0\n"
         gpgkey = "gpgkey=http://%s/repos/%s/RPM-GPG-KEY-kusu-release\n" % (self.niihost[0], self.repoid)
@@ -64,6 +67,8 @@ class KusuRC(rcplugin.Plugin):
                     fh.write(gpgcheck)
                     fh.write(gpgkey+"\n")
             else:
+                baseurl = "baseurl=http://%s/repos/%s%s\n" % (self.niihost[0], self.repoid, dirname)
+
                 fh = open(kusurepo, 'w')
                 fh.write(header)
                 fh.write(name)

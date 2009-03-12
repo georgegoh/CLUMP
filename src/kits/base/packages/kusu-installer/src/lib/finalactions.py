@@ -17,6 +17,7 @@ from IPy import IP
 from Cheetah.Template import Template
 import kusu.util.log as kusulog
 from primitive.system.hardware.lvm202 import activateAllVolumeGroups
+from primitive.support import osfamily
 
 logger = kusulog.getKusuLog('installer.final')
 
@@ -38,6 +39,92 @@ def setupNetwork():
     #interface.up()
     #interface = interface.setDHCP()
    
+def makeFakeRepo(kiprofile, oskitname):
+
+    grub = { 'centos' : 'CentOS',
+             'rhel' : 'Red Hat Enterprise Linux Server',
+             'scientificlinux': 'Scientific Linux'}
+
+    # Fake rhel/centos/sl repo
+    # Temp symlinks to be cleaned up in faux anaconda script later
+    if kiprofile['OS'] in ['rhel', 'centos', 'scientificlinux'] and \
+        oskitname != kiprofile['OS']:
+        files = []
+        repodir = path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / '1000'
+
+        if kiprofile['OS'] == 'centos':
+            if oskitname == 'rhel': # rhel iso provided
+                (repodir / 'Server' / 'repodata').symlink(repodir / 'repodata')    
+                files.append(repodir / 'repodata')
+
+                packagedir = repodir / 'Server'
+                destdir = repodir 
+
+            elif oskitname == 'scientificlinux': # sl iso provided
+                (repodir / 'SL' / 'repodata').symlink(repodir / 'repodata')    
+                files.append(repodir / 'repodata')
+
+                packagedir = repodir / 'SL'
+                destdir = repodir 
+
+        elif kiprofile['OS'] == 'rhel' :
+            (repodir / 'Server').makedirs()
+            files.append(repodir / 'Server')
+           
+            if oskitname == 'centos': # centos iso provided
+                (repodir / 'Server' / 'CentOS').makedirs()
+                files.append(repodir / 'Server' / 'CentOS')
+     
+                (repodir / 'repodata').symlink(repodir / 'Server' / 'repodata')    
+                files.append(repodir / 'Server' / 'repodata')
+     
+                packagedir = repodir / 'CentOS'
+                destdir = repodir / 'Server' / 'CentOS'
+            
+            elif oskitname == 'scientificlinux': # sl iso provided
+                (repodir / 'SL' / 'repodata').symlink(repodir / 'Server' / 'repodata')    
+                files.append(repodir / 'Server' / 'repodata')
+ 
+                packagedir = repodir / 'SL'
+                destdir = repodir / 'Server'
+ 
+        elif kiprofile['OS'] == 'scientificlinux':
+            (repodir / 'SL').makedirs()
+            files.append(repodir / 'SL')
+           
+            if oskitname == 'centos': # centos iso provided
+                (repodir / 'SL' / 'CentOS').makedirs()
+                files.append(repodir / 'SL' / 'CentOS')
+     
+                (repodir / 'repodata').symlink(repodir / 'SL' / 'repodata')    
+                files.append(repodir / 'SL' / 'repodata')
+     
+                packagedir = repodir / 'CentOS'
+                destdir = repodir / 'SL' / 'CentOS'
+ 
+            elif oskitname == 'rhel': # rhel iso provided
+                (repodir / 'Server' / 'repodata').symlink(repodir / 'SL' / 'repodata')    
+                files.append(repodir / 'SL' / 'repodata')
+ 
+                packagedir = repodir / 'Server'
+                destdir = repodir / 'SL'
+ 
+
+        for r in packagedir.glob('*.rpm'):
+            dest = destdir / r.basename()
+            r.symlink(dest)
+            files.append(dest)
+        
+        # fake files to remove later
+        f = open('/tmp/kusu.fake.files', 'w')
+        f.write('\n'.join(files) + '\n')
+        f.close()
+
+        # grub title to change later
+        f = open('/tmp/kusu.grub', 'w')
+        f.write(grub[oskitname])
+        f.close()
+
 def makeRepo(kiprofile):
     from kusu.repoman.repofactory import RepoFactory
 
@@ -56,7 +143,7 @@ def makeRepo(kiprofile):
     repo.kits = db.Kits.select()
 
     oskit = db.Kits.select_by(isOS = True)[0]
-    oskitname = re.compile('[a-z]+').findall(oskit.rname)[0]    
+    oskitname = oskit.rname    
     oskitversion = oskit.version
     oskitarch = oskit.arch
  
@@ -88,43 +175,7 @@ def makeRepo(kiprofile):
     db.Repos.selectfirst_by(repoid=999).delete()
     db.flush()
 
-    # Fake rhel/centos repo
-    # Temp symlinks to be cleaned up in faux anaconda script later
-    if kiprofile['OS'] in ['rhel', 'centos'] and \
-        oskitname != kiprofile['OS']:
-        files = []
-        repodir = path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / '1000'
-
-        if kiprofile['OS'] == 'centos' and not (repodir / 'repodata').exists(): # rhel iso provided
-
-            (repodir / 'Server' / 'repodata').symlink(repodir / 'repodata')    
-            files.append(repodir / 'repodata')
-
-            packagedir = repodir / 'Server'
-            destdir = repodir 
-
-        elif kiprofile['OS'] == 'rhel' and not (repodir / 'Server' / 'repodata').exists(): # centos iso provided
-
-            (repodir / 'Server').makedirs()
-            files.append(repodir / 'Server')
-            
-            (repodir / 'Server' / 'CentOS').makedirs()
-            files.append(repodir / 'Server' / 'CentOS')
- 
-            (repodir / 'repodata').symlink(repodir / 'Server' / 'repodata')    
-            files.append(repodir / 'Server' / 'repodata')
- 
-            packagedir = repodir / 'CentOS'
-            destdir = repodir / 'Server' / 'CentOS'
-
-        for r in [ r for r in packagedir.glob('*.rpm') ]:
-            dest = destdir / r.basename()
-            r.symlink(dest)
-            files.append(dest)
-        
-        f = open('/tmp/kusu.fake.files', 'w')
-        f.write('\n'.join(files) + '\n')
-        f.close()
+    makeFakeRepo(kiprofile, oskitname)
 
 def getPackageProfile(dbs, ngname, kiprofile):
  
@@ -158,9 +209,9 @@ def genAutoInstallScript(disk_profile, kiprofile):
     kusu_dist = os.environ.get('KUSU_DIST', None)
     kusu_distver = os.environ.get('KUSU_DISTVER', None)
 
-    if kusu_dist in ['fedora', 'centos', 'rhel']:
+    if kusu_dist in osfamily.getOSNames('rhelfamily') + ['fedora']:
         install_script = kusu_tmp / 'kusu-ks.cfg'
-    elif kusu_dist == "sles":
+    elif kusu_dist in  ['sles', 'opensuse']:
         install_script = kusu_tmp / 'kusu-autoinst.xml'
     else:
         install_script = kusu_tmp / 'install_script'

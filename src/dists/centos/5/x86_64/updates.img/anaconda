@@ -65,10 +65,10 @@ if [ $EXIT_CODE -eq 0 ]; then
     fi
 
 	if [ -f "/tmp/kusu.fake.files" ]; then
-		for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -f $f > /dev/null 2>&1; done
+		for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -rf $f > /dev/null 2>&1; done
 
-		# Change grub title to rhel 
-		/usr/bin/sed -i 's/CentOS/Red Hat Enterprise Linux Server/g' /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
+		GRUB_TITLE=`cat /tmp/kusu.grub`
+		/usr/bin/sed -i "s/CentOS/$GRUB_TITLE/g" /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
 	fi
 
     exit $EXIT_CODE

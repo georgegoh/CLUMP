@@ -105,16 +105,16 @@ class BuildInitrd:
 
         # Skip Buildinitrd for sles/opensuse
         ng = self.dbs.NodeGroups.select_by(ngname =nodegroup)[0]
-        os_name = ng.repo.os.name
-        os_arch = ng.repo.os.arch
-
-        if os_name.lower() in ['sles', 'opensuse', 'suse']:
-            self.stdoutout('Skipping BuildInitrd for %s distribution\n' % os_name)
+        _os = ng.repo.os
+        self.os_tup = (_os.name, _os.major+'.'+_os.minor, _os.arch)
+ 
+        if _os.name.lower() in ['sles', 'opensuse', 'suse']:
+            self.stdoutout('Skipping BuildInitrd for %s distribution\n' % _os.name)
             sys.exit(0)
 
         system_arch = OS()[2].lower()
-        if system_arch == 'i386' and os_arch == 'x86_64':
-            self.stdoutout('Skipping BuildInitrd for %s. Unable to build on %s platform.\n' % (os_arch, system_arch))
+        if system_arch == 'i386' and _os.arch == 'x86_64':
+            self.stdoutout('Skipping BuildInitrd for %s. Unable to build on %s platform.\n' % (_os.arch, system_arch))
             sys.exit(0)
 
      
@@ -376,12 +376,15 @@ class BuildInitrd:
 
                
             # Warning OS Specific Stuff
+            # THIS IS REAL BAD CODE
             pattern = '/nonexistant/stuff'
             if self.ostype[:6] == 'fedora':
                 pattern = '%s/Fedora/RPMS/%s' % (self.repodir, row[0])
             elif self.ostype[:4] == 'rhel':
                 pattern = '%s/*/%s' % (self.repodir, row[0])
             elif self.ostype[:6] == 'centos':
+                pattern = '%s/*/%s' % (self.repodir, row[0])
+            elif self.ostype[:15] == 'scientificlinux':
                 pattern = '%s/*/%s' % (self.repodir, row[0])
                 
             flist = glob.glob(pattern)
@@ -570,7 +573,8 @@ class BuildInitrd:
         os.chdir(self.imagedir)
         pattern  = ''
         pattern2 = ''
-        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos':
+
+        if self.ostype[:6] == 'fedora' or self.ostype[:4] == 'rhel' or self.ostype[:6] == 'centos' or self.ostype[:15] == 'scientificlinux':
             pattern  = os.path.join(self.modlink, 'boot/System.map*')
             pattern2 = os.path.join(self.initlink, 'lib/modules/2*')
             
