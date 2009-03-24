@@ -428,7 +428,7 @@ class NodeMemberApp(object, KusuApp):
         screenList = [ MembershipMainWindow(database=database, kusuApp=kusuApp) ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 1.2", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Node Membership Editor - Version 2.0", showTrail=False)
         ks.run()
         self.unlock()
 
@@ -923,7 +923,7 @@ class MembershipMainWindow(USXBaseScreen):
             ScreenFactory.screens = \
                             [ SelectNodegroupsWindow(database=database, kusuApp=kusuApp) ]
         
-        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 1.2", showTrail=False)
+        ks = USXNavigator(screenFactory=ScreenFactory, screenTitle="Node Membership Editor - Version 2.0", showTrail=False)
         ks.run()
         if reallyQuit:
            return NAV_QUIT

@@ -749,7 +749,7 @@ class AddHostApp(KusuApp):
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
-        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 1.2", showTrail=False)
+        ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 2.0", showTrail=False)
         ks.run()
 
  
@@ -1032,7 +1032,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
         if myNode.getNodegroupNameByID(myNodeInfo.ngid) == 'unmanaged':
            screenList = [ WindowUnmanaged(database=self.database, kusuApp=kusuApp) ]
            screenFactory = ScreenFactoryImpl(screenList)
-           ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 1.2", showTrail=False)
+           ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version 2.0", showTrail=False)
            result = ks.run()
            if myNodeInfo.forceQuitflag:
               raise UserExitError

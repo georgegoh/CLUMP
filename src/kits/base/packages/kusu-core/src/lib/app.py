@@ -19,7 +19,7 @@
 #
 #
 
-__version__ = "1.2"
+__version__ = "2.0"
 
 CFMSYNC    = '/opt/kusu/sbin/cfmsync'
 CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
