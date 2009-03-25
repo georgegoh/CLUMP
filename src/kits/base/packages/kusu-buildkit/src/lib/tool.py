@@ -5,7 +5,7 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.buildkit.kitsource01 import KitSrcFactory, KusuKit, KusuComponent
+from kusu.buildkit.strategies.kitsource01 import KitSrcFactory, KusuKit, KusuComponent
 from kusu.buildkit.methods import *
 from kusu.util.tools import getArch
 from path import path

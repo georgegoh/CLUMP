@@ -8,23 +8,24 @@
 import os
 import pwd
 import subprocess
-from kusu.buildkit.kitsource01 import KitSrcFactory, KusuKit, KusuComponent
+from kusu.buildkit.strategies.kitsource03 import KitSrcFactory, KusuKit, KusuComponent
 from kusu.buildkit.builder import PackageProfile, setupRPMMacrofile, getBuildKitTemplate, getScriptTemplate
 from kusu.buildkit.methods import *
-import kusu.buildkit.methods as methods
 from path import path
 from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty, PackageBuildError
 from kusu.util.tools import mkdtemp, cpio_copytree, getArch
 from Cheetah.Template import Template
+import tool01
 
-
-class BuildKit:
+class BuildKit(tool01.BuildKit):
     """This is a convenience class for the buildkit app as well as other external apps or libs to use.
     """
-    
-    verbose = False
-    debuginfo = False
-    
+
+    def __init__(self):
+        super(BuildKit, self).__init__()
+        import kusu.buildkit.methods as methods
+        methods.KIT_API = '0.3'
+ 
     def newKitSrc(self, srcpath, arch=None):
         """prepare the Kit source directory"""
         srcpath = path(srcpath)
@@ -37,46 +38,21 @@ class BuildKit:
         f = open('%s/build.kit' % srcpath,'w')
         f.write(s)
         f.close()
-        
-        # create sample post/postun scripts
-        postscript = getScriptTemplate('post')
-        t = Template(file=str(postscript),searchList=[])
-        f = open('%s/sources/00-post-script.sh' % srcpath,'w')
-        f.write(str(t))
-        f.close()
 
-        postunscript = getScriptTemplate('postun')
-        t = Template(file=str(postunscript),searchList=[])
-        f = open('%s/sources/00-postun-script.sh' % srcpath,'w')
-        f.write(str(t))
-        f.close()
-        
-    def getKitSrc(self, srcpath):
-        """ Builds the kit based on the kitsrc dir"""
-        return KitSrcFactory(srcpath)
-
-    def getKitScript(self, kitsrc, kitscript='build.kit'):
-        """ Sweeps the kitsrc dir and attempts to locate the kitscript.
+    def prepareBuildKitTemplate(self, defaultname, arch=None, tmplname='build.kit.v03.tmpl'):
+        """ Gets the build.kit template and populate it with the correct 
+            namespace. The defaultname is just a string to set the default
+            component and kit names.
         """
-        _kitsrc = path(kitsrc)
-        li = _kitsrc.files(kitscript)
-        if not li: raise FileDoesNotExistError, kitscript
-        
-        # TODO : only handle single kitscript
-        return li[0]
+        t = super(BuildKit, self).prepareBuildKitTemplate(defaultname,
+                                                          arch, tmplname)
+        return t
 
-    def getBuildProfile(self, kitsrc):
-        """ Returns the buildprofile based on kitsrc. """
-        return setupprofile(kitsrc)
-        
     def loadKitScript(self, kitscript):
         """ Loads the kitscript and get a tuple of the kit, components and packages defined in
             that kitscript.
         """
-        print 'API 0.1'
-        methods.KIT_API = '0.1'
         ns = {}
-
         execfile(kitscript,globals(),ns)
         
         pkgs = [ns[key] for key in ns.keys() if isinstance(ns[key], PackageProfile)]
@@ -91,19 +67,6 @@ class BuildKit:
         
         return (kit,comps,pkgs)
         
-    def handlePackages(self, packages, buildprofile):
-        """ Handles the configuring, building and deploying of the packages. """
-        for p in packages:
-            p.buildprofile = buildprofile
-            p.setup()
-            p.verify()
-            p._processAddScripts()
-            p.configure()
-            p.build()
-            exitcode = p.deploy(verbose=self.verbose)
-            if exitcode != 0:
-                raise PackageBuildError, p.name
-            
     def handleComponents(self, components, buildprofile):
         """ Handles the configuring, building and deploying of the components. """
         for c in components:
@@ -118,7 +81,6 @@ class BuildKit:
         """ Handles the configuring, building and deploying of the kit. """
         kit.buildprofile = buildprofile
         kit.setup()
-        kit._processAddScripts()
         exitcode = kit.deploy(verbose=self.verbose)
         if exitcode != 0:
             raise PackageBuildError, kit.name
@@ -131,7 +93,6 @@ class BuildKit:
         """ Sets up a proper .rpmmacros file for building purposes. """
         return setupRPMMacrofile(buildprofile)
 
-        
     def restoreRPMMacros(self, oldrpmmacros):
         """ Restores the old .rpmmacros. """
         userhome = path(pwd.getpwuid(os.getuid())[5])
@@ -147,47 +108,7 @@ class BuildKit:
             regarding the kit and its components.
         """
         kit.generateKitInfo(filepath)
-        
-    def prepareBuildKitTemplate(self, defaultname, arch=None):
-        """ Gets the build.kit template and populate it with the correct 
-            namespace. The defaultname is just a string to set the default
-            component and kit names.
-        """
-        tmpl = getBuildKitTemplate('build.kit.tmpl')
-        ns = {}
-
-        # get this system's distro and version
-        dist = os.environ.get('KUSU_DIST','')
-        distver = os.environ.get('KUSU_DISTVER','')
-        if dist == 'fedora' and distver == '6':
-            compclass = 'Fedora6Component()'
-            compdesc = '%s component for Fedora Core 6.' % defaultname
-        elif dist == 'centos' and distver == '5':
-            compclass = 'Centos5Component()'
-            compdesc = '%s component for CentOS 5.' % defaultname
-        elif dist == 'rhel' and distver == '5':
-            compclass = 'RHEL5Component()'
-            compdesc = '%s component for RHEL5.' % defaultname
-        elif dist == 'sles' and distver == '10':
-            compclass = 'SLES10Component()'
-            compdesc = '%s component for SLES10.' % defaultname
-        else:
-            compclass = 'DefaultComponent()'
-            compdesc = '%s component.' % defaultname
-
-        ns['compclass'] = compclass
-        ns['compname'] = defaultname
-        ns['kitclass'] = 'DefaultKit()'
-        ns['kitname'] = defaultname
-        ns['kitdesc'] = '%s kit.' % defaultname
-        if arch:
-            ns['kitarch'] = "'%s'" % arch
-        else:
-            ns['kitarch'] = 'getArch()'
-        ns['compdesc'] = compdesc
-        t = Template(file=str(tmpl),searchList=[ns])
-        return str(t)
-        
+       
     def stripOutSVN(self, dirpath):
         """ Removes .svn assets from the dirpath.
         """
