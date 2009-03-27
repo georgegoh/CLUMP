@@ -370,7 +370,7 @@ class NodeMemberApp(object, KusuApp):
                     self.unlock() 
                     ret = os.system("/opt/kusu/sbin/addhost --remove %s > /dev/null 2>&1" % string.join(Set(nodesList), ' '))
                     if ret:
-                        msg = self._("ERROR : addhost failed to remove nodes. Return code: %s", ret)
+                        msg = self._("ERROR : addhost failed to remove nodes. Return code: %s" % ret)
                         self.logErrorEvent(msg)
                         sys.exit(-1)
                
