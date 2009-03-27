@@ -7,8 +7,8 @@
 
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
-from kusu.util.errors import UndefinedOSType, InvalidBuildProfile, KitinfoSyntaxError
-from kusu.buildkit.strategy import KusuKit, KusuComponent, KitSrcFactory
+from kusu.util.errors import UndefinedOSType, KitinfoSyntaxError
+from kusu.buildkit.strategy import KusuKitFactory, KusuComponentFactory
 
 
 from path import path
@@ -16,38 +16,7 @@ import subprocess
 
 KIT_API='0.1'
 
-def setupprofile(basedir=''):
-    """ Convenience method to setup buildprofile. 
-    """
-    if not basedir:
-        # check if the current directory looks like a build environment
-        _basedir = path.getcwd()
-        _kitsrc = KitSrcFactory[KIT_API](_basedir)
-        if _kitsrc.verifyLocalSrcPath():
-            builddir = _basedir / 'artifacts'
-            pkgdir = _basedir / 'packages'
-            srcdir = _basedir / 'sources'
-            docsdir = _basedir / 'docs'
-            pluginsdir = _basedir / 'plugins'
-            tmpdir = _basedir / 'tmp'
-            return BuildProfile(builddir=builddir,tmpdir=tmpdir,
-                srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
-        else:
-            raise InvalidBuildProfile
-    _basedir = path(basedir)
-    _kitsrc = KitSrcFactory[KIT_API](_basedir)
-    if _kitsrc.verifyLocalSrcPath():        
-        builddir = _basedir / 'artifacts'
-        srcdir = _basedir / 'sources'
-        docsdir = _basedir / 'docs'
-        pluginsdir = _basedir / 'plugins'
-        pkgdir = _basedir / 'packages'
-        tmpdir = _basedir / 'tmp'
-        return BuildProfile(builddir=builddir,tmpdir=tmpdir,
-            srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
-    else:
-        raise InvalidBuildProfile
-        
+       
 def populatePackagesDir(buildprofile, arch='noarch'):
     """ Sweeps through the kitsrc dir and makes the built packages
         available in the packages dir.
@@ -70,10 +39,11 @@ def populatePackagesDir(buildprofile, arch='noarch'):
     
     # locate the built rpms
     builtdir = buildprofile.builddir / 'packages/RPMS'
-
+    buildprofile.filenames = []
     for fspec in filespecs:
         for f in builtdir.walkfiles(fspec):
             _f = f.basename()
+            buildprofile.filenames.append(_f)
             if not path(buildprofile.pkgdir / _f).exists(): 
                 pass
             else:
@@ -141,7 +111,7 @@ def DefaultKit(**kwargs):
     
     if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
-    kit = KusuKit[KIT_API](**kwargs)
+    kit = KusuKitFactory[KIT_API](**kwargs)
 
     return kit
 
@@ -208,7 +178,7 @@ def DefaultComponent(**kwargs):
     if not 'osmajor' in kwargs: kwargs['osmajor'] = ''
     if not 'osminor' in kwargs: kwargs['osminor'] = ''
     
-    component = KusuComponent[KIT_API](**kwargs)
+    component = KusuComponentFactory[KIT_API](**kwargs)
   
     return component
 

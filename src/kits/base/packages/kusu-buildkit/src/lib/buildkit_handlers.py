@@ -12,7 +12,7 @@ import os
 from path import path
 from kusu.core.app import KusuApp
 from kusu.util.tools import getArch
-from kusu.util.errors import BuildkitArchError, InvalidBuildProfile, PackageBuildError
+from kusu.util.errors import BuildkitArchError, InvalidBuildProfile, PackageBuildError, FileDoesNotExistError, PackageAttributeNotDefined
 from kusu.buildkit import getSyntaxValidator
 
 # i18n - grab from KusuApp.
@@ -215,7 +215,7 @@ def makeKit(bkinst, args, options):
     msg = _('Generating kitinfo..')
     print msg
     kitinfo = '%s/kitinfo' % kitsrc
-    bkinst.generateKitInfo(kit,kitinfo)
+    bkinst.generateKitInfo(kit,kitinfo,bp)
         
     # finally, make the kit artifact
     if makeiso:

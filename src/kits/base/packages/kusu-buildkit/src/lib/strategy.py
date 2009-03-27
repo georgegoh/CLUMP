@@ -11,9 +11,9 @@ from kusu.buildkit.strategies.kitsource03 import KusuComponent as KusuComponent0
 from kusu.buildkit.strategies.kitsource03 import KusuKit as KusuKit03
 from kusu.buildkit.strategies.kitsource03 import KitSrcFactory as KitSrcFactory03
 
-KusuKit = { '0.1': KusuKit01, '0.2': KusuKit02, '0.3': KusuKit03 }
-KusuComponent = { '0.1': KusuComponent01, '0.2': KusuComponent02, '0.3': KusuComponent03 }
-KitSrcFactory = { '0.1': KitSrcFactory01, '0.2': KitSrcFactory02, '0.3': KitSrcFactory03 }
+KusuKitFactory = { '0.1': KusuKit01, '0.2': KusuKit02, '0.3': KusuKit03 }
+KusuComponentFactory = { '0.1': KusuComponent01, '0.2': KusuComponent02, '0.3': KusuComponent03 }
+KitSrcAbstractFactory = { '0.1': KitSrcFactory01, '0.2': KitSrcFactory02, '0.3': KitSrcFactory03 }
 
 
 BuildKitMakeStrategy = {'0.1': BuildKit01,

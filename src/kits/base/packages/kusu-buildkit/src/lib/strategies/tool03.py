@@ -52,6 +52,14 @@ class BuildKit(tool01.BuildKit):
         """ Loads the kitscript and get a tuple of the kit, components and packages defined in
             that kitscript.
         """
+        import kusu.buildkit.methods as methods
+        methods.KIT_API = '0.3'
+        d = dict(methods.__dict__)
+        hidden_keys = [s for s in d.keys() if s.startswith('_')]
+        for k in hidden_keys:
+            d.pop(k)
+        globals().update(d)
+        
         ns = {}
         execfile(kitscript,globals(),ns)
         
@@ -103,11 +111,11 @@ class BuildKit(tool01.BuildKit):
         renP = subprocess.Popen(cmd,shell=True)
         renP.wait()
         
-    def generateKitInfo(self, kit, filepath):
+    def generateKitInfo(self, kit, filepath, buildprofile):
         """ Generates the kitinfo which contains the metadata information 
             regarding the kit and its components.
         """
-        kit.generateKitInfo(filepath)
+        kit.generateKitInfo(filepath, buildprofile)
        
     def stripOutSVN(self, dirpath):
         """ Removes .svn assets from the dirpath.

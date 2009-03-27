@@ -16,7 +16,7 @@ from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty, Package
 from kusu.util.tools import mkdtemp, cpio_copytree, getArch
 from Cheetah.Template import Template
 from kusu.util.tools import getArch
-from kusu.util.errors import BuildkitArchError
+from kusu.util.errors import BuildkitArchError, InvalidBuildProfile
 
 
 class BuildKit(object):
@@ -79,8 +79,35 @@ class BuildKit(object):
 
     def getBuildProfile(self, kitsrc):
         """ Returns the buildprofile based on kitsrc. """
-        return setupprofile(kitsrc)
-        
+        if not kitsrc:
+            # check if the current directory looks like a build environment
+            _basedir = path.getcwd()
+            _kitsrc = KitSrcFactory(_basedir)
+            if _kitsrc.verifyLocalSrcPath():
+                builddir = _basedir / 'artifacts'
+                pkgdir = _basedir / 'packages'
+                srcdir = _basedir / 'sources'
+                docsdir = _basedir / 'docs'
+                pluginsdir = _basedir / 'plugins'
+                tmpdir = _basedir / 'tmp'
+                return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+                    srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
+            else:
+                raise InvalidBuildProfile
+        _basedir = path(kitsrc)
+        _kitsrc = KitSrcFactory(_basedir)
+        if _kitsrc.verifyLocalSrcPath():        
+            builddir = _basedir / 'artifacts'
+            srcdir = _basedir / 'sources'
+            docsdir = _basedir / 'docs'
+            pluginsdir = _basedir / 'plugins'
+            pkgdir = _basedir / 'packages'
+            tmpdir = _basedir / 'tmp'
+            return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+                srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
+        else:
+            raise InvalidBuildProfile
+ 
     def loadKitScript(self, kitscript):
         """ Loads the kitscript and get a tuple of the kit, components and packages defined in
             that kitscript.

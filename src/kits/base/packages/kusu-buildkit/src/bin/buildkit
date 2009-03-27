@@ -232,6 +232,7 @@ Example operations:
 
         try:
             bkinst = BuildKitNewStrategy[version]()
+            bkinst.verbose = self.options.verbose
             newKit(bkinst, dirname, self.options)
         except BuildkitArchError:
             msg = self._('Creating kit for %(arch)s is not possible on this system. The possible architectures are noarch and %(curArch)s.' \
@@ -259,6 +260,7 @@ Example operations:
         kit, components, packages = loadKitScript(kitscript)
         version = kit.get('api', 'default')
         bkinst = BuildKitMakeStrategy[version]()
+        bkinst.verbose = self.options.verbose
         makeKit(bkinst, args, self.options)
 
 

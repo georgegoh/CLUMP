@@ -86,7 +86,6 @@ class KusuComponent(KusuComponent01):
         if 'filenames' in d:
             d['filenames'].append([])
 
-        print self.components
         return d
 
 
@@ -127,6 +126,7 @@ class KusuKit(KusuKit01):
         """ Returns a metadata for this kit. """
         d = super(KusuKit, self).generate()
         if 'scripts' in d: del d['scripts']
+
         return d
 
     def _prepDocumentation(self, ns):
@@ -210,3 +210,16 @@ class KusuKit(KusuKit01):
         _ns['description'] = self.description
         
         return _ns
+
+    def generateKitInfo(self, filename, buildprofile=None):
+        """ Generates a .kitinfo file."""
+        complist = [component.generate() for component in self.components]
+
+        _kitinfo  = self.generate()
+        if buildprofile:
+            _kitinfo['filenames'] = buildprofile.filenames
+        f = open(filename,'w')
+        f.write('kit = %s\n' % pprint.pformat(_kitinfo))
+        f.write('components = %s\n' % pprint.pformat(complist))
+        f.close()
+

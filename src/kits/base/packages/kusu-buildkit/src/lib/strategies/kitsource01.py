@@ -464,7 +464,7 @@ class KusuKit(Struct):
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         return rpmbuilder.build()
 
-    def generateKitInfo(self, filename):
+    def generateKitInfo(self, filename, buildprofile=None):
         """ Generates a .kitinfo file."""
         complist = [component.generate() for component in self.components]
 
