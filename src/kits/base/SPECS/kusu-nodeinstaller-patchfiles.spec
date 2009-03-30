@@ -20,7 +20,7 @@
 
 Summary: kusu-nodeinstaller-patchfiles 
 Name: kusu-nodeinstaller-patchfiles
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPLv2
 Group: System Environment/Base

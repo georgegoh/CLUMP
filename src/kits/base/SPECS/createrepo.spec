@@ -1,6 +1,6 @@
 Summary: Creates a common metadata repository
 Name: createrepo
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPL
 Group: System Environment/Base

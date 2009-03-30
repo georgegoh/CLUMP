@@ -18,7 +18,7 @@
 
 Summary: Component for Kusu Node Base
 Name: component-base-node
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPLv2
 URL: http://www.osgdc.org

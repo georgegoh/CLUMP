@@ -21,7 +21,7 @@
 
 Summary: Kusu core libraries and system scripts
 Name: kusu-core
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPLv2
 Group: System Environment/Base

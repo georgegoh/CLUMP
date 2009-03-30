@@ -19,7 +19,7 @@
 
 Summary: Component for GNOME Desktop
 Name: component-gnome-desktop
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPLv2
 URL: http://www.osgdc.org

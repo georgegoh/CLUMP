@@ -20,7 +20,7 @@
 
 Summary: kusu-installer module runtime
 Name: kusu-installer
-Version: 1.2
+Version: 2.0
 Release: 1
 License: GPLv2
 Group: System Environment/Base
