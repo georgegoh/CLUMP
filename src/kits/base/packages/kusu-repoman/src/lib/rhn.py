@@ -173,6 +173,31 @@ class RHN:
         channels = self.call('self.rhnServer.channel.software.listSystemChannels', self.session, rhnServerID)
         return channels
 
+    def getAllPackages(self, channelLabel):
+        """Get all rpms from a channel"""
+        rpms = self.call('self.rhnServer.channel.software.listAllPackages', self.session, channelLabel)
+
+        pkgs = []
+        for r in rpms:
+            name = r['package_name']
+            version = r['package_version']
+            release = r['package_release']
+            epoch = r['package_epoch']
+            arch = r['package_arch_label']
+
+            # None epoch is returned as " "
+            if not epoch.strip():
+                epoch = None
+
+            r = rpmtool.RPM(name = name,
+                            version = version,
+                            release = release,
+                            epoch = epoch,
+                            arch = arch)
+
+            pkgs.append(r)
+        return pkgs
+ 
     def getLatestPackages(self, channelLabel):
         """Get latest rpms from a channel"""
         rpms = self.call('self.rhnServer.channel.software.listLatestPackages', self.session, channelLabel)
