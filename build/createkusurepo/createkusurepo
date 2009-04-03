@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+# Copyright (C) 2007 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+# $Id: mk-bootable 1016 2008-03-27 12:26:15Z ggoh $
+#
+
+import os
+import sys
+import subprocess
+import tempfile
+import atexit
+import shutil
+import optparse
+import glob
+from ConfigParser import ConfigParser
+import string
+import commands
+
+def cleanup(tdir):
+    """Housekeeping routines"""
+    if os.path.exists(tdir):
+        shutil.rmtree(tdir)
+        
+def fetchKitISO(url,postdata,dest):
+    
+    if not os.path.exists(dest):
+        print '%s not found! No such File or Directory.' % dest
+        sys.exit(-1)
+     
+    cmd = "wget %s --post-data '%s' >/dev/null 2>&1"
+    cpioP = subprocess.Popen(cmd % (url,postdata),shell=True,cwd=dest,stdout=subprocess.PIPE)
+    cpioP.wait()
+    
+def getRPM(dirname):
+    """Returns the binary RPM"""
+    rpms = []
+    
+    for root, dirs, files in os.walk(dirname):
+        for f in files:
+            if f.endswith('.rpm'):
+                rpms.append(os.path.join(root,f))
+                #print os.path.join(root,f)
+                
+    return rpms
+    
+def createRepoFromISO(isodirname,rpmdirname):
+    if not os.path.exists(isodirname):
+        print '%s not found! No such File or Directory.' % isodirname
+        sys.exit(-1)
+        
+    if not os.path.exists(rpmdirname):
+        print '%s not found! No such File or Directory.' % rpmdirname
+        sys.exit(-1)
+        
+    li = glob.glob(os.path.abspath(os.path.join(isodirname,'*.iso')))
+    
+    for l in li:
+        print 'Copying RPMS from %s to %s ....' % (l,rpmdirname)
+        
+        # create scratch directory
+        mntpnt = tempfile.mkdtemp(prefix='pcm-')
+        atexit.register(cleanup,mntpnt)
+        
+        cmd = 'sleep 2 && mount -o loop %s %s' % (l,mntpnt)
+        #print cmd
+        mountP = subprocess.Popen(cmd,shell=True)
+        mountP.wait()
+        
+        ri = getRPM(mntpnt)
+        for r in ri:
+            shutil.copy2(r,rpmdirname)
+            
+        cmd = 'sleep 2 && umount %s' % mntpnt
+        mountP = subprocess.Popen(cmd,shell=True)
+        mountP.wait()
+    
+    print 'Creating repo in %s.' % rpmdirname
+    cmd = "createrepo . >/dev/null 2>&1"
+    cpioP = subprocess.Popen(cmd ,shell=True,cwd=rpmdirname,stdout=subprocess.PIPE)
+    cpioP.wait()
+    
+def syncRepo(srcdir, desturl):
+    if not os.path.exists(srcdir):
+        print '%s not found! No such File or Directory.' % srcdir
+        sys.exit(-1)
+    
+    print 'Syncing %s to %s' % (srcdir, desturl)
+    cmd = 'rsync -av --rsh=ssh %s %s' % (srcdir, desturl)
+    #print cmd
+    mountP = subprocess.Popen(cmd,shell=True)
+    mountP.wait()
+
+if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option('-c', '--config', dest='config', help="Specify configuration file source path")
+    options, args = parser.parse_args()
+
+    if not options.config: 
+        print 'Please specify configuration file source path!'
+        sys.exit(-1)
+
+    if not os.path.exists(options.config):
+        print '%s not found!' % options.config
+        sys.exit(-1)
+    
+    config = ConfigParser()
+    config.read([options.config])
+    
+    if not config.has_option('defaults','isourl'):
+        print 'Please configure kit iso url in the defaults section in %s' % options.config
+        sys.exit(-1)
+        
+    isourl = config.get('defaults','isourl')
+    
+    topdir = os.getcwd()
+    isodirname = os.path.abspath(os.path.join(topdir, 'iso'))
+        
+    if os.path.exists(isodirname):
+        cleanup(isodirname)
+        pass
+    os.mkdir(isodirname)
+     
+    for kit in config.sections():
+        if not kit == 'defaults':
+            postdata = 'kit=%s&version=%s&release=%s&dist=%s&distver=%s&distarch=%s' % (config.get(kit,'name'),config.get(kit,'version'),config.get(kit,'release'),config.get(kit,'dist'),config.get(kit,'distver'),config.get(kit,'distarch'))
+            print 'Downloading %s?%s ....' % (isourl,postdata)
+            fetchKitISO(isourl,postdata,isodirname)
+
+    li = glob.glob(os.path.abspath(os.path.join(isodirname,'kit-base-*.iso')))
+    
+    if not li:
+        print 'Base kit not found! Base Kit download failed?'
+        
+    basekitisoname = os.path.basename(li[0])
+    #print '%s' % basekitisoname
+     
+    baserev = string.split(string.rsplit(basekitisoname,'.',3)[0],'-')[5]
+    #print '%s' % baserev
+    
+    baserevdirname = os.path.abspath(os.path.join(topdir,os.path.join(baserev,os.path.join('repo',config.get('base','distarch')))))
+    if os.path.exists(baserevdirname):
+        cleanup(baserevdirname)
+    os.makedirs(baserevdirname)
+    atexit.register(cleanup,os.path.abspath(os.path.join(topdir,baserev)))
+    
+    createRepoFromISO(isodirname,baserevdirname)
+    
+    desturl = 'build@sources.osgdc.org:build/kusu/%s/%s/DAILY/%s' % (config.get('base','dist'),config.get('base','distver'),config.get('base','version'))
+    
+    syncRepo(os.path.abspath(os.path.join(topdir, baserev)), desturl)
+
+
+
+
+
+
+
+

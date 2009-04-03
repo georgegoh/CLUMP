@@ -18,7 +18,9 @@ kit = {'api': '0.2',
  'pkgname': 'kit-base',
  'removable': False,
  'release': '${BASE_KIT_RELEASE_STR}',
- 'version': '${BASE_KIT_VERSION_STR}'}
+ 'version': '${BASE_KIT_VERSION_STR}',
+ 'filenames':[ ${RPM_FILENAMES} ]
+ }
 components = [{'os': [{'name': '${BASE_KIT_COMPONENT_OS_NAME_STR}',
                        'major': '${BASE_KIT_COMPONENT_OS_MAJOR_STR}',
                        'minor': '${BASE_KIT_COMPONENT_OS_MINOR_STR}',
