@@ -91,7 +91,7 @@ PKG_SRPM_URL = $(if $($(1)_SRPM_URL),$($(1)_SRPM_URL))
 define PKG_GET_SRPM_FROM_URL
 ifdef $(1)_SRPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
-RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
+SRPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
 	@echo running make $$(_$(1)_rpmurl_tgt)
 	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))
