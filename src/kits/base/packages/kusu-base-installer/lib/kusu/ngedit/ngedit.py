@@ -3299,7 +3299,7 @@ def getAvailPkgs(db, repoid, categorized=False):
                 curletter = letter
             result[letter].append(p)
 
-    elif not ostype.lower().startswith('sles'): #category view
+    elif not os_name.lower() in ['sles', 'opensuse', 'suse']: #category view
         
         import yum.comps
         from kusu.kitops.package import PackageFactory
