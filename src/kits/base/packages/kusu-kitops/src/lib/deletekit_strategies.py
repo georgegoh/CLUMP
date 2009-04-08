@@ -66,7 +66,7 @@ def deletekit02(koinst, db, kit):
 
     # uninstall plugins and docs
     kitdir = koinst.kits_dir / str(kit.kid)
-    uninstallPlugins(koinst.kusu_root, koinst.kits_dir, kitdir)
+    uninstallPlugins(koinst, kitdir, str(kit.kid))
     uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
 
     # remove tftpboot contents
@@ -129,26 +129,32 @@ def resymlinkDocs(db, kitdir, docsdir, kit):
     src_dir.symlink(dest_dir)
 
 
-def uninstallPlugins(kusu_root, kits_root, kitdir):
+def uninstallPlugins(koinst, kitdir, kid):
     plugin_dir = kitdir / 'plugins'
     if not plugin_dir.exists():
         return
     for provider in [x.basename() for x in plugin_dir.dirs()]:
         for plugin in [x.basename() for x in (plugin_dir / provider).files()]:
             # construct the path of the plugin to remove.
-            proposed_plugin = kusu_root / 'lib' / 'plugins' / provider / plugin
+            proposed_plugin = koinst.kusu_root / 'lib' / 'plugins' / provider / plugin
             plugin_exists = proposed_plugin.exists() or proposed_plugin.islink()
             if not plugin_exists:
                 kl.debug('Plugin %s does not exist' % proposed_plugin)
                 # if the path does not exist, then skip and go to next plugin.
                 continue
             kl.debug('Plugin %s exists' % proposed_plugin)
-            if proposed_plugin.realpath() == (plugin_dir / provider / plugin):
+            # temporarily set the kitops prefix to '/' to reflect final destination.
+            prefix = koinst.prefix
+            koinst.setPrefix('/')
+            actual_plugin = koinst.kits_dir / kid / 'plugins' / provider / plugin
+            koinst.setPrefix(prefix)
+            # check if the proposed plugin points to the kit we're interested in.
+            if proposed_plugin.realpath() == actual_plugin:
                 # if the plugin symlinks to this kit, then it is a candidate for removal.
-                if pluginUseCount(kits_root, provider, plugin) > 1:
+                if pluginUseCount(koinst.kits_dir, provider, plugin) > 1:
                     # if other kits use this plugin, symlink to their copy of the
                     # plugin instead, since we are removing this kit.
-                    resymlinkPlugin(kusu_root, kits_root, provider, plugin)
+                    resymlinkPlugin(koinst.kusu_root, koinst.kits_dir, provider, plugin)
                 else:
                     # else, no other kit uses this plugin, so remove it.
                     proposed_plugin.remove()
