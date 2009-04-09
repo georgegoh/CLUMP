@@ -39,12 +39,12 @@ class InstallServant(ISetup, IKusuServant):
         try:
             self.installSvc.install(config_fh.name)
         except ServiceInstallException, e:
+            seq = []
             for info in e.messages:
-                seq = []
                 if isinstance(info, ServiceExceptionInfo):
                     ei = ExceptionInfo(title=info.title, msg=info.msg)
                     seq.append(ei)
-            raise InstallException(messages=seq)
+            raise InstallException(messages=tuple(seq))
 
     def _getConfigFileHandle(self):
         # Final implementation should write this file

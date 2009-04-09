@@ -90,7 +90,10 @@ class InstallService(object):
         failed_checks.extend(check.Provision.getFailures(provision))
 
         # Disk requirements
-        failed_checks.extend(check.Disk.getFailures())
+        disk = {}
+        for tup in config.items('Disk'):
+            disk[tup[0]] = tup[1]
+        failed_checks.extend(check.Disk.getFailures(disk))
 
         return failed_checks
 
