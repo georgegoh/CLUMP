@@ -72,15 +72,10 @@ mkdir -p $DIR/rpms
 mkdir -p $DIR/root
 mkdir -p $DIR/tmp
 mkdir -p $DIR/genconfig
-mkdir -p $DIR/etc/httpd/conf
-mkdir -p $DIR/etc/sysconfig/network-scripts
-mkdir -p $DIR/var/log/httpd
 mkdir -p $DIR/var/log/kusu
 mkdir -p $DIR/dbdump
 mkdir -p $DIR/etc/profile.d
 mkdir -p $DIR/etc/skel
-mkdir -p $DIR/etc/rc.d
-mkdir -p $DIR/var/named
 
 echo "    * copying services runlevel configuration"
 /sbin/chkconfig --list >                                $DIR/chkconfig
@@ -111,7 +106,13 @@ echo "    * copying startup scripts (rc.d files)"
 cp -a /etc/rc.d                                   $DIR/etc/
 
 echo "    * copying configuration information"
-cp -a /etc/httpd/conf/*.conf                      $DIR/etc/httpd/conf
+if [ -f /etc/redhat-release ]; then
+	mkdir -p $DIR/etc/httpd/conf
+	cp -a /etc/httpd/conf/*.conf                  $DIR/etc/httpd/conf
+else
+	mkdir -p $DIR/etc/apache2/conf.d
+	cp -a /etc/apache2/conf.d/*.conf			  $DIR/etc/apache2/conf.d/
+fi
 cp -a /etc/auto.*                                 $DIR/etc/
 cp -a /etc/exports                                $DIR/etc/
 cp -a /etc/dhcpd.conf                             $DIR/etc/dhcpd.conf
@@ -119,13 +120,38 @@ cp -a /etc/resolv.conf                            $DIR/etc/resolv.conf
 cp -a /etc/named.conf                             $DIR/etc/named.conf
 cp -a /etc/hosts                                  $DIR/etc/hosts
 cp -a /tftpboot                                   $DIR/
-cp -a /etc/sysconfig/network-scripts/ifcfg-eth?   $DIR/etc/sysconfig/network-scripts/
+
+if [ -f /etc/redhat-release ]; then
+	mkdir -p $DIR/etc/sysconfig/network-scripts
+	cp -a /etc/sysconfig/network-scripts/ifcfg-eth?   $DIR/etc/sysconfig/network-scripts/
+else
+	mkdir -p $DIR/etc/sysconfig/network/
+	cp -a /etc/sysconfig/network/ifcfg*   $DIR/etc/sysconfig/network/
+fi
+
 cp -a /etc/sysconfig/network                      $DIR/etc/sysconfig/network
-cp -a /etc/sysconfig/iptables                     $DIR/etc/sysconfig/iptables
+
+
+if [ -f /etc/redhat-release ]; then
+	cp -a /etc/sysconfig/iptables                 $DIR/etc/sysconfig/iptables
+else
+	cp -a /etc/sysconfig//SuSEfirewall2           $DIR/etc/sysconfig/SuSEfirewall2
+fi
+
 cp -a /$MODULES                                   $DIR/$MODULES
 cp -a /etc/fstab                                  $DIR/etc/fstab
 cp -a /etc/ld.so.conf                             $DIR/etc/ld.so.conf
-cp -a /var/named/*                                $DIR/var/named/
+
+
+if [ -f /etc/redhat-release ]; then
+	mkdir -p $DIR/var/named
+	cp -a /var/named/*                            $DIR/var/named/
+else
+	mkdir -p $DIR/var/lib/named
+	cp -a /var/lib/named/*.zone		       	 		  $DIR/var/lib/named/
+	cp -a /var/lib/named/*.rev		       	 		  $DIR/var/lib/named/
+fi
+
 if [ -d /etc/ld.so.conf.d ]; then
     cp -a /etc/ld.so.conf.d                           $DIR/etc/ld.so.conf.d
 fi
@@ -135,13 +161,37 @@ python -c "import pwd; import pprint; pprint.pprint(pwd.getpwall())"  > $DIR/etc
 cp -a /etc/group     $DIR/etc/group
 
 echo "    * copying logs"
-cp -a /root/anaconda-ks.cfg             $DIR/root
+
+if [ -f /root/anaconda-ks.cfg ]; then
+	cp -a /root/anaconda-ks.cfg         $DIR/root
+fi
+
 cp -a /root/kusu.log                    $DIR/root
-cp -a /root/kusu-ks.cfg                 $DIR/root
-cp -a /root/install.log                 $DIR/root
+
+if [ -f /etc/redhat-release ]; then
+	cp -a /root/kusu-ks.cfg             $DIR/root
+else
+	cp -a /root/kusu-autoinst.xml		$DIR/root
+fi
+
+if [ -f /root/install.log ]; then
+	cp -a /root/install.log             $DIR/root
+fi
+
 cp -a /var/log/messages*                $DIR/var/log/
-cp -a /var/log/dmesg*                   $DIR/var/log/
-cp -a /var/log/httpd/*                  $DIR/var/log/httpd/
+
+if [ -f /var/log/dmesg ]; then
+	cp -a /var/log/dmesg*               $DIR/var/log/
+fi
+
+if [ -f /etc/redhat-release ]; then
+	mkdir -p $DIR/var/log/httpd
+	cp -a /var/log/httpd/*              $DIR/var/log/httpd/
+else
+	mkdir -p $DIR/var/log/apache2
+	cp -a /var/log/apache2/*			$DIR/var/log/apache2
+fi
+
 cp -a /var/log/kusu/*                   $DIR/var/log/kusu/
 
 echo "    * querying RPM database"
@@ -163,7 +213,12 @@ genconfig zone            > $DIR/genconfig/zone
 genconfig hosts           > $DIR/genconfig/hosts
 
 echo "    * get iptables information"
-service iptables status > $DIR/iptables
+if [ -f /etc/redhat-release ]; then
+	service iptables status > $DIR/iptables
+else
+	service SuSEfirewall2_init status > $DIR/SuSEfirewall2_init
+	service SuSEfirewall2_setup > $DIR/SuSEfirewall2_setup
+fi
 
 echo "    * get route information"
 route -n > $DIR/route
@@ -211,15 +266,22 @@ echo "    * get hostname"
 hostname > $DIR/hostname
 
 echo "    * get Kusu release"
-cat /etc/kusu-release > $DIR/kusu-release
+cp /etc/kusu-release $DIR/kusu-release
 
-echo "    * get redhat-release"
 if [ -f /etc/redhat-release ]; then
-    cat /etc/redhat-release > $DIR/redhat-release
+	echo "    * get redhat-release"
+    cp /etc/redhat-release $DIR/redhat-release
+else
+	echo "    * get SuSE-release"
+	cp /etc/SuSE-release $DIR/etc/SuSE-release
 fi
 
 echo "    * get Kusu db"
 genconfig debug > $DIR/dbdump/kusu.sql
+
+if [ -f /root/kusu-orig.db ]; then
+	cp /root/kusu-orig.db $DIR/root
+fi
 
 echo "    * get ps list"
 ps auwwwwx > $DIR/ps
