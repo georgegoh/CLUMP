@@ -105,6 +105,10 @@ class BuildInitrd:
 
         # Skip Buildinitrd for sles/opensuse
         ng = self.dbs.NodeGroups.select_by(ngname =nodegroup)[0]
+        if not ng.repo:
+            self.stdoutout('Nodegroup %s has no repo.\n' % ng.ngname)
+            sys.exit(0)
+
         _os = ng.repo.os
         self.os_tup = (_os.name, _os.major+'.'+_os.minor, _os.arch)
  
