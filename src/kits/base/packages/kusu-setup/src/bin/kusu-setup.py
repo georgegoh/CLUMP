@@ -5,6 +5,11 @@ import time
 import signal
 from path import path
 import subprocess
+# ICE 
+import Ice
+Ice.loadSlice('/opt/kusu/server/conf/kusu.ice')
+import kusu
+import kusu2
 
 KUSU_SERVER_PATH = '/opt/kusu/sbin/kusu-server'
 
@@ -27,6 +32,7 @@ def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
 
     # Start Kusu Server
 #    kusu_server_pid = startKusuServer()
+
 
     # Start config environment
     if isXRunning() and not textmode:
@@ -91,10 +97,6 @@ def startGraphicalInstall():
 
 
 def startInstall(conf):
-    import Ice
-    Ice.loadSlice('/opt/kusu/server/conf/kusu.ice')
-    import kusu
-    import kusu2
     ic = Ice.initialize(['--Ice.Config=/opt/kusu/server/conf/ice.conf'])
     base = ic.stringToProxy('InstallServant:ssl -p 10000')
     install = kusu.remote.ISetupPrx.checkedCast(base)
@@ -106,9 +108,9 @@ def startInstall(conf):
         install.install(s)
         print 'Success'
     except kusu.remote.InstallException, e:
-        print 'Install Exception(s):'
-        for m in e.messages:
-            print '%s: %s' % (m.title, m.msg)
+        print 'Install Config Exception(s):'
+        for i,m in enumerate(e.messages):
+            print i+1,'. %s: %s' % (m.title, m.msg)
 
 
 
