@@ -667,7 +667,7 @@ For examples:
 
                 if kits == []:
                     if not self.kitname:
-                        self.logErrorEvent("The kit '%s' could not be found" % self.kid)
+                        self.logErrorEvent("The kit id '%s' could not be found" % self.kid)
                     else:
                         self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
                     self.unlock()
@@ -707,7 +707,7 @@ For examples:
            
                 if kits == []:
                     if not self.kitname:
-                        self.logErrorEvent("The kit '%s' could not be found" % self.kid)
+                        self.logErrorEvent("The kit id '%s' could not be found" % self.kid)
                     else:
                         self.logErrorEvent("The kit '%s' could not be found" % self.kitname)
 
