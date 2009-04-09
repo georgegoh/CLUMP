@@ -585,6 +585,9 @@ msgstr "specify the media iso or mountpoint for the kit"
 msgid "kitops_usage_list"
 msgstr "list all the kits available on the system"
 
+msgid "kitops_usage_remotelist"
+msgstr "list all the kits available on all remote repositories"
+
 msgid "kitops_usage_upgrade"
 msgstr "upgrade the specified kit"
 

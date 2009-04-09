@@ -257,7 +257,11 @@ def addkit02InstallerRules(koinst, db, kitinfo):
         raise KitAlreadyInstalledError
     return addkit02(koinst, db, kitinfo)
 
+def addkit03(koinst, db, kitinfo):
+    """Add kit v0.3 strategy is same as add kit v0.2 strategy."""
+    return addkit02(koinst, db, kitinfo)
 
 AddKitStrategy = { '0.1': addkit01,
                    '0.2': addkit02,
-                   '0.2-installer': addkit02InstallerRules}
+                   '0.2-installer': addkit02InstallerRules,
+                   '0.3': addkit03}

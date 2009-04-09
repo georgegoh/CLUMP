@@ -8,8 +8,17 @@
 
 import sys
 import os
+import shutil
+import cPickle as cpickle
 from path import path
 from optparse import SUPPRESS_HELP
+from tempfile import mkdtemp
+from ConfigParser import ConfigParser
+from primitive.support.yum import YumRepo
+from kusu.buildkit import processKitInfo
+from primitive.fetchtool.commands import FetchCommand
+from kusu.repoman import tools
+from primitive.support.rpmtool import RPM
 
 if os.getuid() != 0:
     sys.stderr.write('You need to be root to run kitops.\n')
@@ -41,6 +50,8 @@ KITOP_ADD   = 0x01
 KITOP_DEL   = 0x02
 KITOP_UP    = 0x04
 KITOP_LST   = 0x08
+KITOP_RLST  = 0X10
+
 
 class KitOpsApp(KusuApp):
     def __init__(self, koinst):
@@ -54,6 +65,9 @@ class KitOpsApp(KusuApp):
         self.kit_ver = ''
         self.kit_arch = ''
         self.skip_confirm = False
+        self.cachepath = path('/opt/kusu/var/cache/kitops')
+        self.channel = 'rhn://kusu-x86_64-2_0/'
+
         # if this is set to true, the following default assumptions are made
         # 1) An OS Kit only has 1 CD.
         # 2) In a meta kit, all kits are selected for addition
@@ -76,6 +90,10 @@ class KitOpsApp(KusuApp):
                 setattr(parser.values, option.dest, 'delete')
             elif '-l' in option._short_opts:
                 setattr(parser.values, option.dest, 'list')
+            elif '-r' in option._short_opts:
+                setattr(parser.values, option.dest, 'remotelist')
+
+
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='action',
                                help=self._('kitops_usage_add'), 
@@ -83,6 +101,10 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
                                action='callback', callback=mutexAction)
+        self.parser.add_option('-r', '--remotelist', dest='action',
+                               help=self._('kitops_usage_remotelist'),
+                               action='callback', callback=mutexAction)
+
         self.parser.add_option('-e', '--remove', dest='action',
                                help=self._('kitops_usage_remove'),
                                action='callback', callback=mutexAction)
@@ -151,12 +173,15 @@ class KitOpsApp(KusuApp):
                     self.logErrorEvent('Kit media not specified in silent mode')
                     sys.exit(EKITLOC_FAIL)
                 else:
-                    kit_media = self.determineKitMedia()
+                    if not options.kid:
+                        kit_media = self.determineKitMedia()
+     
             # to indicate which kit to install from a metakit
             self.kit_name = options.kit
+            self.kit_id = options.kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
-
+                        
             koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
         elif options.action == 'delete':
@@ -171,6 +196,13 @@ class KitOpsApp(KusuApp):
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.kitop = KITOP_LST
+        elif options.action == 'remotelist':
+            self.kit_name = options.kit
+            self.kit_id = options.kid
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
+            self.kitop = KITOP_RLST
+
 
         dbdriver = os.getenv('KUSU_DB_ENGINE')
         if not dbdriver or dbdriver not in ['mysql','postgres']:
@@ -218,6 +250,8 @@ class KitOpsApp(KusuApp):
             return "Delete Kit"
         elif self.kitop == KITOP_LST:
             return "List Kits"
+        elif self.kitop == KITOP_RLST:
+            return "List remote kits"
         else:
             return KusuApp.getActionDesc(self)
 
@@ -227,7 +261,14 @@ class KitOpsApp(KusuApp):
         self.parseArgs()
         
         if self.kitop == KITOP_ADD:
-            self.runAdd()
+             
+            if self.kit_id:
+                opt = self.kit_id
+                """Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid"""               
+                if opt.find('-'):
+                    self.runAddRemoteKit(self.kit_id)  
+            else:
+                self.runAdd()
 
         elif self.kitop == KITOP_DEL:
             kl.debug('Performing delete operation')
@@ -272,6 +313,9 @@ class KitOpsApp(KusuApp):
         elif self.kitop == KITOP_LST:
             self.runListKit()
 
+        elif self.kitop == KITOP_RLST:
+            self.runListRemoteKit()
+
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
             self.printHelp()
@@ -279,6 +323,274 @@ class KitOpsApp(KusuApp):
 
         return 0
 
+    def getRemoteRepoConfig(self, urlfile):
+        """read the .conf file at /opt/kusu/etc/remoterepo.conf and return dict with repo name and url"""
+
+        if os.path.isfile(urlfile):
+            repodict={}
+            cp = ConfigParser()
+            cp.read(urlfile)
+
+            for section in cp.sections():                  
+                if section == 'rhel':
+                    if cp.get(section, 'enabled') == str(1) and os.path.isfile('/etc/sysconfig/rhn/systemid'):
+                        p = cp.get(section, 'conf')
+                        g = tools.getConfig(p)
+                        repodict[section] = g[section]['url']                         
+                        if cp.get(section, 'channel'): 
+                            self.channel = cp.get(section, 'channel')
+                else:
+                    if cp.get(section, 'enabled') == str(1):
+                        repodict[section] = cp.get(section, 'url')
+            return repodict
+
+    def cacheKitInfo(self, repo, repoid, url):
+        """cache the kitinfo files of all the kit rpm in the cache directory"""
+ 
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = self.cachepath +'/'+ repo
+        
+        if not cachepath.isdir():
+            os.makedirs(cachepath +'/repodata')
+
+        self.cacheRepoMD(repo, url)
+
+        if repo == 'rhel':
+            self.getRHNFile(url, '/repodata/primary.xml.gz', cachepath)
+            y = YumRepo('file://'+ cachepath)
+        else:
+            y = YumRepo(url)
+
+        p = y.getPrimary()
+        kitid = 1
+        kitdict = {}
+        for kit in p.keys():
+            if kit.startswith('kit-'):
+
+                for arch in p[kit].keys():
+                    tempdir = path(mkdtemp(suffix='-kitops'))
+                    choice = p[kit][arch][0]
+
+                    if repo == 'rhel':
+                        pkg = choice.filename
+                        self.getRHNFile(url, pkg.basename(), tempdir)
+                        tmppath= tempdir +'/'+pkg.basename()
+                        r = RPM(str(tmppath))
+                        r.extract(tempdir)
+                    else:
+                        choice.extract(tempdir)
+
+                    for file in tempdir.files():                       
+                        if file.basename()=='kitinfo':
+                            kit, components = processKitInfo(file)
+                            kitdict[str(repoid)+'-'+ str(kitid)] = url +'/'+ kit['pkgname'] +'-'+ kit['version'] +'-'+ kit['release'] +'.'+kit['arch']+'.rpm'
+                            os.rename(tempdir +'/kitinfo', cachepath +'/'+ str(repoid) +'-'+ str(kitid)+'_kitinfo')             
+                            kitid = kitid + 1
+                            break
+                    tempdir.rmtree()
+        self.generateCacheFile(repo, kitdict)
+        return
+
+
+    def runListRemoteKit(self):
+        kl.debug('Performing remote listing operation')
+
+        headers = ['Kit', 'Kid', 'Description', 'Version', 'Release', 'Architecture', 'OS Kit',
+                   'Removable', 'Supported OS', 'Repositories', 'Node Groups']
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        urlfile = kusu_root + '/etc/remoterepo.conf'
+        cachepath = self.cachepath 
+        
+        repodict= self.getRemoteRepoConfig(urlfile)
+        repoid = 1
+
+        for repo, url in repodict.iteritems():            
+            
+            if not self.verifyCacheChecksum(repo, url):
+                self.cacheKitInfo(repo, repoid, url) 
+
+            repocache = cachepath.realpath()/repo
+            
+            for file in repocache.files('*kitinfo*'):
+                f = file.basename()
+                kit, components = processKitInfo(file)
+                if not kit == {}:
+                    print "%s:\t\t%s" % (headers[0], kit['name'])
+                    print "%s:\t\t%s" % (headers[1], f[:f.find('_')])
+                    print "%s:\t%s" % (headers[2], kit['description'])
+                    print "%s:\t%s" % (headers[3], kit['version'])
+                    print "%s:\t%s" % (headers[4], kit['release'])
+                    print "%s:\t%s" % (headers[5], kit['arch'])
+                    print "%s:\t%s" % (headers[9], repo)
+                    print "%s:\t%s" % (headers[7], kit['removable'])
+                    sys.stdout.write('\n\n')          
+            repoid = repoid + 1 
+              
+    def getRHNFile(self, url, filename, dest):
+
+        if not dest.isdir():
+            os.makedirs(dest +'/repodata')
+    
+        if filename.find('repodata') >= 0:
+            dest = dest + '/repodata' 
+            if not dest.isdir():
+                os.makedirs(dest)
+
+        if dest.isdir():
+            fc = FetchCommand(uri=self.channel + filename,
+                              fetchdir=False,
+                              destdir=dest,
+                              overwrite=True,
+                              systemid=open('/etc/sysconfig/rhn/systemid', 'r'),
+                              up2dateURL=url)
+            status, dest = fc.execute()
+                      
+
+    def cacheRepoMD(self, repo, url):
+        """fetch the repomd.xml from repository and cache in the repo cache directory"""
+
+        cachepath = self.cachepath +'/'+ repo
+         
+        if not cachepath.isdir():
+            os.makedirs(cachepath +'/repodata')
+
+        if repo == 'rhel':
+            self.getRHNFile(url, '/repodata/repomd.xml', cachepath)
+        else:
+            fc = FetchCommand(uri=url +'/repodata/repomd.xml',
+                              fetchdir=False,
+                              destdir= cachepath +'/repodata',
+                              overwrite=True)
+            status, dest = fc.execute()
+
+       
+    def generateCacheFile(self, repo, kitdict):
+        """create cachekits.pck from the kitdict with the rkid and url"""
+        cachepath = self.cachepath +'/'+ repo
+
+        if not cachepath.isdir():
+            os.makedirs(cachepath)
+
+        outfile = open(cachepath +'/cachekits.pck', 'wb')
+        cpickle.dump(kitdict, outfile)
+        outfile.close()
+
+    def retrieveCacheKitURL(self, rkid):
+        """return the root path of the cachekit.pck file and the rkid, kit url in dict form"""
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = kusu_root + '/var/cache/kitops'
+
+        for root, dirs, files in os.walk(cachepath, True):
+           if files.count('cachekits.pck') > 0:
+               file = os.path.join(root, 'cachekits.pck')
+               if os.path.isfile(file):
+                   infile = open(file, 'rb')
+                   kitdict = cpickle.load(infile) 
+
+                   for i in kitdict.keys():
+                       if i == rkid:
+                           infile.close()
+                           return root, kitdict
+                   infile.close()                           
+        return "", {}
+
+
+    def retrieveCacheURL(self, rkid):
+        """find the url of the remote kit from the rkid in the cachekits.pck"""
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = kusu_root + '/var/cache/kitops'        
+        root, kitdict = self.retrieveCacheKitURL(rkid)
+  
+        return root.basename(), kitdict[rkid]
+
+    def verifyCacheChecksum(self, repo, url):
+        """check if the cache repo information is updated by fetching repomd.xml and comparing the checksums"""
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = self.cachepath +'/'+ repo
+
+        if cachepath.isdir():
+            local = YumRepo('file://'+ cachepath)
+            local.getRepoMD()
+
+            if repo == 'rhel':
+                tmpdir = path(mkdtemp(suffix='-kitops'))            
+                self.getRHNFile(url, '/repodata/repomd.xml', tmpdir)
+                remote = YumRepo('file://'+ tmpdir)
+                remote.getRepoMD()
+                tmpdir.rmtree()
+            else:
+                remote = YumRepo(url)
+                remote.getRepoMD()
+            return self.compareCheckSum(local.repo, remote.repo)
+        return False
+
+
+    def compareCheckSum(self, local, remote):
+        """Compare the primary.xml.gz checksum value from the local repomd.xml 
+           and the remote repomd.xml"""
+        return local['primary']['checksum'][0] == remote['primary']['checksum'][0] and \
+               local['primary']['checksum'][1] == remote['primary']['checksum'][1]
+
+
+    def verifyKitUpdated(self, rkid):
+        """check if the rkid of the kit to be added is up-to-date"""
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = kusu_root + '/var/cache/kitops'
+
+        root, kitdict = self.retrieveCacheKitURL(rkid) 
+
+        if root and kitdict:
+            kpath, krepo = os.path.split(root)
+            kurl, krpm = os.path.split(kitdict[rkid])
+            return self.verifyCacheChecksum(krepo, kurl)
+        return False
+
+                
+    def runAddRemoteKit(self, rkid):
+        kl.debug('Performing remote add kits operation')
+
+        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
+        cachepath = kusu_root + '/var/cache/kitops'
+
+        if not self.verifyKitUpdated(rkid):
+            print "Remote repository has been updated and kit id may have changed. Please do kitops -r\n"
+            sys.exit(-1)       
+        repo, rpmurl = self.retrieveCacheURL(rkid)
+        if repo == 'rhel':
+            cachedir = os.path.join(cachepath, repo)
+            url, krpm = os.path.split(rpmurl)
+        else:     
+            cachedir = os.path.join(cachepath, repo) 
+            url, krpm = os.path.split(rpmurl)
+        tmpdir = path(mkdtemp(suffix='-kitops'))
+
+        if cachedir:
+            for file in cachedir.files():
+                if file.find(str(rkid)+'_kitinfo') >= 0:
+                    kit, components = processKitInfo(file)
+
+                    for info in kit:
+                        if info == 'filenames' and kit.has_key('filenames'):
+                            for c in kit['filenames']:                                    
+
+                                if repo == 'rhel':
+                                    self.getRHNFile(url, c, tmpdir)                          
+                                else:
+                                    urlc = os.path.join(url, c)
+                                 
+                                    fc = FetchCommand(uri=urlc,
+                                                      fetchdir=False,
+                                                      destdir=tmpdir,
+                                                      overwrite=False)
+                                    status, dest = fc.execute()
+            kit_media = tmpdir
+            koinst.setKitMedia(kit_media)
+            self.runAdd()
+        tmpdir.rmtree()
+
+        
     def runAdd(self):
         kl.debug('Performing add operation')
         self.logEvent(self._("kitops_event_add_kits_from_media") % koinst.kitmedia,
