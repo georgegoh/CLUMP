@@ -73,7 +73,7 @@ install -m644 etc/templates/update.kit.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templat
 /opt/kusu/lib/python/kusu/repoman/*
 /opt/kusu/bin/repoman
 /opt/kusu/bin/repopatch
-/opt/kusu/etc/updates.conf
+%config(noreplace) /opt/kusu/etc/updates.conf
 /opt/kusu/etc/templates/update.kit.tmpl
 
 %doc /opt/kusu/share/doc/repoman-%{version}/COPYING
