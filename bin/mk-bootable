@@ -133,7 +133,7 @@ def makeSuseBootDir(rootdir, buildprofile):
 
     # copy the contents over to the newly made ext2fs filesystem
     #cmd = '(find boot | cpio -mpdu %s) >/dev/null 2>&1'
-    cmd = "(find * | grep -v 'suse/' | cpio -mpdu %s) >/dev/null 2>&1"
+    cmd = "(find * | grep -v 'suse/' | grep -v 'docu/' | grep -v 'dosutils/' | grep -v 'patches/' | grep -v '\.jpg' | grep -v '\.tr' | grep -v '\.pcx' | grep -v '\.hlp' | grep -v '\.spl' | cpio -mpdu %s) >/dev/null 2>&1"
     cpioP = subprocess.Popen(cmd % rootdir,shell=True,cwd=buildprofile.instsource,stdout=subprocess.PIPE)
     cpioP.wait()
     
