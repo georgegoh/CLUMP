@@ -163,7 +163,7 @@ PKG_HARDWARE_TARBALL_SUBVER = 2
 # Kusu Kitops package.
 KIT_PKGS += PKG_KITOPS
 PKG_KITOPS_SPEC = kusu-kitops.spec
-PKG_KITOPS_SOURCES = doc src/bin src/lib
+PKG_KITOPS_SOURCES = doc src/bin src/lib src/etc
 PKG_KITOPS_TARBALL_SUBVER = 4
 #PKG_KITOPS_SOURCES = src setup.py
 

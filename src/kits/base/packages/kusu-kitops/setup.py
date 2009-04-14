@@ -17,4 +17,5 @@ setup(name="kusu-kitops",
       packages = ['kitops'],
       package_dir={'kitops': 'src/lib'},
       scripts=['src/bin/kitops']
+      data_files=[('etc', ['src/etc/remoterepo.conf'])]
      )

@@ -391,6 +391,21 @@ class KitOpsApp(KusuApp):
         self.generateCacheFile(repo, kitdict)
         return
 
+    def getMaxRepoID(self):
+        cachepath = self.cachepath
+        rlist=[]
+
+        for root, dirs, files in os.walk(cachepath, True):
+            for file in files:
+                if file.find('kitinfo') >=0:  
+                    rlist.append(int(file[:file.find('-')]))
+                    break
+        
+        if rlist == []:
+            return 1
+        else:
+            return max(rlist)+ 1
+                                   
 
     def runListRemoteKit(self):
         kl.debug('Performing remote listing operation')
@@ -403,10 +418,10 @@ class KitOpsApp(KusuApp):
         cachepath = self.cachepath 
         
         repodict= self.getRemoteRepoConfig(urlfile)
-        repoid = 1
 
-        for repo, url in repodict.iteritems():            
-            
+        for repo, url in repodict.iteritems():                        
+            repoid = self.getMaxRepoID()
+
             if not self.verifyCacheChecksum(repo, url):
                 self.cacheKitInfo(repo, repoid, url) 
 
@@ -415,6 +430,14 @@ class KitOpsApp(KusuApp):
             for file in repocache.files('*kitinfo*'):
                 f = file.basename()
                 kit, components = processKitInfo(file)
+                if not components =={}:
+                    os_set=set()
+                    osline=''
+                    for c in components:
+                        c=c['os'][0]
+                        os_set.add(c['name']+'-'+c['major']+'.'+c['minor']+'-'+c['arch']) 
+                    for o in os_set:
+                        osline += "%s,\t" % o 
                 if not kit == {}:
                     print "%s:\t\t%s" % (headers[0], kit['name'])
                     print "%s:\t\t%s" % (headers[1], f[:f.find('_')])
@@ -424,8 +447,9 @@ class KitOpsApp(KusuApp):
                     print "%s:\t%s" % (headers[5], kit['arch'])
                     print "%s:\t%s" % (headers[9], repo)
                     print "%s:\t%s" % (headers[7], kit['removable'])
+                    print "%s:\t%s" % (headers[8], osline[:len(osline)-2])
                     sys.stdout.write('\n\n')          
-            repoid = repoid + 1 
+
               
     def getRHNFile(self, url, filename, dest):
 
@@ -436,7 +460,7 @@ class KitOpsApp(KusuApp):
             dest = dest + '/repodata' 
             if not dest.isdir():
                 os.makedirs(dest)
-
+        
         if dest.isdir():
             fc = FetchCommand(uri=self.channel + filename,
                               fetchdir=False,
@@ -478,8 +502,7 @@ class KitOpsApp(KusuApp):
 
     def retrieveCacheKitURL(self, rkid):
         """return the root path of the cachekit.pck file and the rkid, kit url in dict form"""
-        kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
-        cachepath = kusu_root + '/var/cache/kitops'
+        cachepath = self.cachepath
 
         for root, dirs, files in os.walk(cachepath, True):
            if files.count('cachekits.pck') > 0:
@@ -564,31 +587,31 @@ class KitOpsApp(KusuApp):
         else:     
             cachedir = os.path.join(cachepath, repo) 
             url, krpm = os.path.split(rpmurl)
-        tmpdir = path(mkdtemp(suffix='-kitops'))
 
         if cachedir:
+            tmpdir = path(mkdtemp(suffix='-kitops'))
+
             for file in cachedir.files():
                 if file.find(str(rkid)+'_kitinfo') >= 0:
                     kit, components = processKitInfo(file)
 
-                    for info in kit:
-                        if info == 'filenames' and kit.has_key('filenames'):
-                            for c in kit['filenames']:                                    
+                    if kit.has_key('filenames'):
+                        for c in kit['filenames']:                                    
 
-                                if repo == 'rhel':
-                                    self.getRHNFile(url, c, tmpdir)                          
-                                else:
-                                    urlc = os.path.join(url, c)
+                            if repo == 'rhel':
+                                self.getRHNFile(url, c, tmpdir)                          
+                            else:
+                                urlc = os.path.join(url, c)
                                  
-                                    fc = FetchCommand(uri=urlc,
-                                                      fetchdir=False,
-                                                      destdir=tmpdir,
-                                                      overwrite=False)
-                                    status, dest = fc.execute()
+                                fc = FetchCommand(uri=urlc,
+                                                  fetchdir=False,
+                                                  destdir=tmpdir,
+                                                  overwrite=False)
+                                status, dest = fc.execute()
             kit_media = tmpdir
             koinst.setKitMedia(kit_media)
             self.runAdd()
-        tmpdir.rmtree()
+            tmpdir.rmtree()
 
         
     def runAdd(self):
