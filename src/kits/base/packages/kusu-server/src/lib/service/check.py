@@ -34,13 +34,13 @@ class Media(Checker):
         os, ver, arch = probe.OS()
         if not (media.ostype and media.version and media.arch):
             return [ExceptionInfo(title='Media not detected',
-                                  msg='Cannot detect OS of media')]
+                                  msg='Cannot detect OS of media at %s' % loc)]
         elif media.ostype.lower() != os.lower() or \
              media.version != ver or \
              media.arch != arch:
             return [ExceptionInfo(title='Media/OS mismatch',
-                           msg='Media(%s,%s,%s) does not match system OS(%s, %s, %s)' % 
-                           (media.ostype, media.version, media.arch, os, ver, arch))]
+                           msg='Media(%s,%s,%s) at %s does not match system OS(%s, %s, %s)' % 
+                           (media.ostype, media.version, media.arch, loc, os, ver, arch))]
         return []
 
 
@@ -49,16 +49,40 @@ class Provision(Checker):
         provision = kwargs.get('provision', None) or args[0]
 
         intfs_dict = net.getPhysicalInterfaces()
+        # does the requested network device actually exist?
         if provision['device'] not in intfs_dict:
             return [ExceptionInfo(title='Provision interface missing',
                             msg='Provision interface %s specified does not exist' %
                             provision['device'])]
-        
+
+        # does the IP/netmask make sense?
         try:
             IPy.IP(provision['ip']).make_net(provision['netmask'])
         except Exception, e:
             return [ExceptionInfo(title='Provision IP/Netmask Error',
                                   msg=str(e))]
+
+        intf = intfs_dict[provision['device']]
+        # is the interface on static or dhcp?
+        if intf['dhcp']:
+            return [ExceptionInfo(title='Provision interface is not static',
+                        msg='Requested provision interface %s is not a static interface' %
+                            (provision['device']))]
+
+        # if interface is currently configured, does it clash with the
+        # user-defined settings?
+        existing_ip = intf['ip']
+        existing_netmask = intf['netmask']
+        intf_already_enabled = existing_ip and existing_netmask
+        intf_matches_conf = (existing_ip == provision['ip'] and \
+                             existing_netmask == provision['netmask'])
+        if intf_already_enabled and not intf_matches_conf:
+            overwrite = provision.get('overwrite_existing', False)
+            if not overwrite:
+                return [ExceptionInfo(title='Provision interface has conflicting configuration',
+                            msg='Requested provision interface %s already has a configuration(%s/%s) which conflicts with requested configuration(%s/%s)' % 
+                                (provision['device'], existing_ip, existing_netmask,
+                                 provision['ip'], provision['netmask']))]
         return []
 
 
@@ -104,10 +128,9 @@ class Disk(Checker):
                     min_req_size_MB = self.min_req_MB.get(k, 0)
                     if m_size_MB < min_req_size_MB:
                         rv.append(ExceptionInfo(title='Insufficient available space for mountpoint',
-                                    msg='%s(%s) needs %dM, %s(%s) has %s available\n' % (target_path, k,
-                                                                                      self.min_req_MB[k],
-                                                                                      m, mntpnt_d[m].dev,
-                                                                                      mntpnt_d[m].available)))
+                                    msg='%s(%s) needs %dM, %s(%s) has %s available\n' %
+                                        (target_path, k, self.min_req_MB[k],
+                                         m, mntpnt_d[m].dev, mntpnt_d[m].available)))
         return rv
 
     @classmethod
