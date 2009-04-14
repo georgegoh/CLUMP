@@ -45,6 +45,7 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -d $RPM_BUILD_ROOT/opt/kusu/bin
 install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
+install -d $RPM_BUILD_ROOT/opt/kusu/etc
 
 install -m755 bin/kitops $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/kitops.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
@@ -53,6 +54,7 @@ install -m644 lib/deletekit_strategies.py $RPM_BUILD_ROOT/opt/kusu/lib/python/ku
 install -m644 lib/package.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
+install -m644 etc/remoterepo.conf $RPM_BUILD_ROOT/opt/kusu/etc
 
 %pre
 
@@ -65,6 +67,7 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
 %files
 /opt/kusu/lib/python/kusu/kitops/*
 /opt/kusu/bin/kitops
+%config(noreplace) /opt/kusu/etc/remoteconf.conf
 
 %doc /opt/kusu/share/doc/kitops-%{version}/COPYING
 
