@@ -67,7 +67,7 @@ install -m644 etc/remoterepo.conf $RPM_BUILD_ROOT/opt/kusu/etc
 %files
 /opt/kusu/lib/python/kusu/kitops/*
 /opt/kusu/bin/kitops
-%config(noreplace) /opt/kusu/etc/remoteconf.conf
+%config(noreplace) /opt/kusu/etc/remoterepo.conf
 
 %doc /opt/kusu/share/doc/kitops-%{version}/COPYING
 
