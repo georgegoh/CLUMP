@@ -222,18 +222,26 @@ For examples:
         
         self.repoExists(repo_name)
 
-        kits = self.dbs.Kits.select_by(kid = kid, rname = kname, version=kversion, arch=karch)
+        if not kid:
+            stmt = self.dbs.kits.select()
+            if kname: stmt.append_whereclause(getattr(self.dbs.kits.c, 'kname') == kname)
+            if kversion: stmt.append_whereclause(getattr(self.dbs.kits.c, 'version') == kversion)
+            if karch: stmt.append_whereclause(getattr(self.dbs.kits.c, 'arch') == karch)
+                
+            kits = stmt.execute().fetchall()
+            if len(kits) == 1: kits = self.dbs.Kits.select_by(kid = kits[0].kid)
+
+        else:
+            kits = self.dbs.Kits.select_by(kid = kid)
 
         if kits:
-            kit = kits[0]
-
-            self.logEvent("Deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
-
             if len(kits) > 1:
                 self.logErrorEvent('More than 1 kit is available. Please use kid instead.')
                 self.unlock()
                 sys.exit(1)
             else:
+                kit = kits[0]
+
                 repo = self.dbs.Repos.select_by(reponame = repo_name)[0]
 
                 if not kit in repo.kits:
@@ -259,6 +267,8 @@ For examples:
                         self.logErrorEvent('Kit: %s in use by nodegroup(s): %s' % (self.getKitFriendlyName(kit), ', '.join(ngInUse)) )
                         self.unlock()
                         sys.exit(1)
+                
+                    self.logEvent("Deleting Kit %s from Repo: %s" % (self.getKitFriendlyName(kit), repo_name), toStdout=False)
 
                     r = self.rfinst.getRepo(repo.repoid)
                     r.markStale()
@@ -679,7 +689,7 @@ For examples:
                     self.kitname = kits[0].rname
                     self.delKit(options.reponame, self.kid, self.kitname, self.kitversion, self.kitarch)
             elif options.kit or options.kitversion or options.kitarch:
-                self.delKit(options.reponame, options.kid, options.kitversion, options.kitarch)
+                self.delKit(options.reponame, self.kid, self.kitname, self.kitversion, self.kitarch)
             elif options.reponame:
                 self.action = REPOMAN_DELREPO
                 self.delete(options.reponame)
