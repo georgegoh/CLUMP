@@ -392,13 +392,14 @@ class KitOpsApp(KusuApp):
         return
 
     def getMaxRepoID(self):
+        """generate new repo id to ensure no duplication"""
         cachepath = self.cachepath
         rlist=[]
 
         for root, dirs, files in os.walk(cachepath, True):
-            for file in files:
-                if file.find('kitinfo') >=0:  
-                    rlist.append(int(file[:file.find('-')]))
+            for f in files:
+                if f.find('kitinfo') >=0:  
+                    rlist.append(int(f[:f.find('-')]))
                     break
         
         if rlist == []:
@@ -420,25 +421,22 @@ class KitOpsApp(KusuApp):
         repodict= self.getRemoteRepoConfig(urlfile)
 
         for repo, url in repodict.iteritems():                        
-            repoid = self.getMaxRepoID()
 
             if not self.verifyCacheChecksum(repo, url):
+                repoid = self.getMaxRepoID()
                 self.cacheKitInfo(repo, repoid, url) 
 
             repocache = cachepath.realpath()/repo
             
-            for file in repocache.files('*kitinfo*'):
-                f = file.basename()
-                kit, components = processKitInfo(file)
-                if not components =={}:
-                    os_set=set()
-                    osline=''
+            for filename in repocache.files('*kitinfo*'):
+                f = filename.basename()
+                kit, components = processKitInfo(filename)
+                if components:
+                    os_set=set()                    
                     for c in components:
-                        c=c['os'][0]
-                        os_set.add(c['name']+'-'+c['major']+'.'+c['minor']+'-'+c['arch']) 
-                    for o in os_set:
-                        osline += "%s,\t" % o 
-                if not kit == {}:
+                        for ostype in c['os']:
+                            os_set.add(ostype['name']+'-'+ostype['major']+'.'+ostype['minor']+'-'+ostype['arch']) 
+                if kit:
                     print "%s:\t\t%s" % (headers[0], kit['name'])
                     print "%s:\t\t%s" % (headers[1], f[:f.find('_')])
                     print "%s:\t%s" % (headers[2], kit['description'])
@@ -447,7 +445,7 @@ class KitOpsApp(KusuApp):
                     print "%s:\t%s" % (headers[5], kit['arch'])
                     print "%s:\t%s" % (headers[9], repo)
                     print "%s:\t%s" % (headers[7], kit['removable'])
-                    print "%s:\t%s" % (headers[8], osline[:len(osline)-2])
+                    print "%s:\t%s" % (headers[8], ', '.join(os_set))
                     sys.stdout.write('\n\n')          
 
               
@@ -506,9 +504,9 @@ class KitOpsApp(KusuApp):
 
         for root, dirs, files in os.walk(cachepath, True):
            if files.count('cachekits.pck') > 0:
-               file = os.path.join(root, 'cachekits.pck')
-               if os.path.isfile(file):
-                   infile = open(file, 'rb')
+               f = os.path.join(root, 'cachekits.pck')
+               if os.path.isfile(f):
+                   infile = open(f, 'rb')
                    kitdict = cpickle.load(infile) 
 
                    for i in kitdict.keys():
@@ -591,9 +589,9 @@ class KitOpsApp(KusuApp):
         if cachedir:
             tmpdir = path(mkdtemp(suffix='-kitops'))
 
-            for file in cachedir.files():
-                if file.find(str(rkid)+'_kitinfo') >= 0:
-                    kit, components = processKitInfo(file)
+            for f in cachedir.files():
+                if f.find(str(rkid)+'_kitinfo') >= 0:
+                    kit, components = processKitInfo(f)
 
                     if kit.has_key('filenames'):
                         for c in kit['filenames']:                                    
