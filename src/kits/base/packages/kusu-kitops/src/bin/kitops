@@ -431,8 +431,8 @@ class KitOpsApp(KusuApp):
             for filename in repocache.files('*kitinfo*'):
                 f = filename.basename()
                 kit, components = processKitInfo(filename)
+                os_set=set()
                 if components:
-                    os_set=set()                    
                     for c in components:
                         for ostype in c['os']:
                             os_set.add(ostype['name']+'-'+ostype['major']+'.'+ostype['minor']+'-'+ostype['arch']) 
