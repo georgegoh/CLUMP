@@ -31,7 +31,21 @@ class InstallServant(ISetup, IKusuServant):
     SERVANT_NAME = "InstallServant"
     installSvc = None #Dependency-injected via Spring
     cleanFiles = True
-    
+
+    def verify(self, conf, current=None):
+        config_fh = self._getConfigFileHandle()
+        config_fh.write(conf)
+        config_fh.close()
+        try:
+            self.installSvc.verify(config_fh.name)
+        except ServiceInstallException, e:
+            seq = []
+            for info in e.messages:
+                if isinstance(info, ServiceExceptionInfo):
+                    ei = ExceptionInfo(title=info.title, msg=info.msg)
+                    seq.append(ei)
+            raise InstallException(messages=tuple(seq))
+
     def install(self, conf, current=None):
         config_fh = self._getConfigFileHandle()
         config_fh.write(conf)
@@ -55,3 +69,17 @@ class InstallServant(ISetup, IKusuServant):
             atexit.register(cleanup, tmpfile)
         return tmpfile
         ##
+
+    def verifyConfig(self, conf, current=None):
+        config_fh = self._getConfigFileHandle()
+        config_fh.write(conf)
+        config_fh.close()
+        try:
+            self.installSvc.verify(config_fh.name)
+        except ServiceInstallException, e:
+            seq = []
+            for info in e.messages:
+                if isinstance(info, ServiceExceptionInfo):
+                    ei = ExceptionInfo(title=info.title, msg=info.msg)
+                    seq.append(ei)
+            raise InstallException(messages=tuple(seq))

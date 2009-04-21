@@ -1,5 +1,5 @@
 import IPy
-from sets import Set
+from path import path
 from kusu.boot.distro import DistroFactory
 from kusu.service.exceptions import ExceptionInfo
 from primitive.system.software import probe
@@ -87,8 +87,8 @@ class Provision(Checker):
 
 
 class Disk(Checker):
-    usable_fstypes=Set(['ext2', 'ext3', 'reiserfs'])
-    required_keys=Set(['kusu', 'depot', 'home'])
+    usable_fstypes=set(['ext2', 'ext3', 'reiserfs'])
+    required_keys=set(['kusu', 'depot', 'home'])
     min_req_MB = {'kusu': 500, 'depot': 8000}
 
     def getFailuresImpl(self, *args, **kwargs):
@@ -98,7 +98,7 @@ class Disk(Checker):
         disk = kwargs.get('disk', None) or args[0]
 
         # do some set mathematics here to look for missing keys.
-        missing_keys = self.required_keys - Set(disk.keys())
+        missing_keys = self.required_keys - set(disk.keys())
         if missing_keys:
             rv.append(ExceptionInfo(title='Required paths missing',
                         msg='%s paths need to be defined in the config' %
@@ -114,7 +114,13 @@ class Disk(Checker):
             rv.append(ExceptionInfo(title='Paths are not absolute',
                         msg='Paths defined need to be absolute%s.' % failed_keys))
 
-        # Check that all defined paths fulfill minimum free space requirements.
+        # home must already exist.
+        if not path(disk['home']).exists():
+            rv.append(ExceptionInfo(title='Home directory does not exist',
+                        msg='Defined home directory "%s" needs to be a valid directory.' %
+                        disk['home']))
+
+        # check that all defined paths fulfill minimum free space requirements.
         mntpnt_d = self.probeMountPoints()
         # longest paths at top of the list.
         mntpnts = mntpnt_d.keys()
