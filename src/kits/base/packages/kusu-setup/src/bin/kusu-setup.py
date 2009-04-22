@@ -105,12 +105,12 @@ def startInstall(conf):
         s = ''
         if path(conf).exists():
             s = open(conf).read()
+        install.verify(s)
         install.install(s)
-        print 'Success'
     except kusu.remote.InstallException, e:
         print 'Install Config Exception(s):'
         for i,m in enumerate(e.messages):
-            print i+1,'. %s: %s' % (m.title, m.msg)
+            print '%s. %s: %s' % (i+1, m.title, m.msg)
 
 
 
