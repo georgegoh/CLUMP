@@ -1,13 +1,13 @@
 import os
-import pwd
-import time
-import random
+import socket
+import tempfile
 import subprocess
-import sqlalchemy
+import sqlalchemy as sa
 from path import path
 from ConfigParser import ConfigParser
 # KUSU imports
 from kusu.service import check
+from kusu.service import db_helper
 from kusu.service.exceptions import ExceptionInfo
 from kusu.service.exceptions import InstallConfMissingException
 from kusu.service.exceptions import InstallConfParseException
@@ -18,84 +18,12 @@ import kusu.core.database as kusudb
 from primitive.system.software import probe
 from primitive.system.software.dispatcher import Dispatcher
 
-
-def genPasswordToFile(user, passfile):
-    """ Generates a file containing a random password, setting it to
-        the uid and gid of the specified user. 
-        
-        Returns the password generated.
-    """
-    passwd = genRandomStr()
-    userinfo = pwd.getpwnam(user)
-    if not userinfo:
-        return None
-    uid = userinfo[2]
-    gid = userinfo[3]
-    f = open(passfile, 'w')
-    f.write(passwd)
-    f.close()
-    os.chmod(passfile, 0400)
-    os.chown(passfile, uid, gid)
-    return passwd
-
-
-def genRandomStr():
-    """ Returns a pseudo-random 8-digit string. """
-    r = random.Random(time.time())
-    chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    password = ''.join([r.choice(chars) for i in xrange(8)])
-    return password
-
-
-def modifyHBAConf(conf):
-    pg_hba = path(conf)
-    token_str = '%s\t%s\t%s\t%s\t%s\n'
-    hba_lines = []
-    if pg_hba.exists():
-        f = pg_hba.open('r')
-        hba_lines = f.readlines()
-        f.close()
-
-    kusu_lines = []
-    kusu_lines.append('# Start of Kusu config\n')
-    kusu_lines.append(token_str % ('local','kusudb','nobody','','trust'))
-    kusu_lines.append(token_str % ('host','kusudb','nobody','127.0.0.1/32','trust'))
-    kusu_lines.append(token_str % ('host','kusudb','nobody','::1/128','trust'))
-    kusu_lines.append('# End of Kusu config\n')
-    kusu_lines.extend(hba_lines)
-    f = pg_hba.open('w')
-    f.writelines(kusu_lines)
-    f.close()
-
-
-def createPostgresDb(prime_db_script, pg_passwd):
-    """ Create and initialise the postgres database."""
-    sqlalchemy.orm.mapper_registry.clear()
-    db = kusudb.DB('postgres', 'kusudb', 'postgres')
-    db.createDatabase()
-    db.createTables()
-    db.flush()
-    db = None
-
-    # run primedb script.
-    cmd = 'psql kusudb postgres'
-    env = os.environ
-    env['PGPASSWORD'] = pg_passwd
-    p = subprocess.Popen(cmd.split(), env=env, shell=True,
-                         stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    f = open(prime_db_script, 'r')
-    s = f.read()
-    f.close()
-    out, err = p.communicate(s)
-
-    # grant permissions.
-    db = kusudb.DB('postgres', 'kusudb', 'postgres')
-    db.postgres_update_sequences(db.postgres_get_seq_list())
+DEFAULT_DNS_DOMAIN='kusu'
+DEFAULT_NTP_SERVER='pool.ntp.org'
 
 
 class InstallService(object):
+
     def verify(self, conf):
         """ Verify a config file given its path.
         """
@@ -127,8 +55,7 @@ class InstallService(object):
             raise PrerequisiteCheckFailedException(failures)
         self._setupPaths(config)
         self._setupNetwork(config)
-#        self._setupDB(config)
-#        self._bootstrapDB(config)
+        self._setupDB(config)
         self._createRepo(config)
         self._addKits(config)
         self._refreshRepo(config)
@@ -214,7 +141,8 @@ class InstallService(object):
         """
         self.KUSU_ROOT = path(config.get('Disk', 'kusu'))
         self.DEPOT_ROOT = path(config.get('Disk', 'depot'))
-        for p in [self.KUSU_ROOT, self.DEPOT_ROOT]:
+        HOME = path(config.get('Disk', 'home'))
+        for p in [self.KUSU_ROOT, self.DEPOT_ROOT, HOME]:
             if not p.exists():
                 p.makedirs()
 
@@ -226,42 +154,135 @@ class InstallService(object):
     def _setupDB(self, config):
         """ Set up the Postgres DB. """
         # stop postgres service.
-        psql_name = Dispatcher.get('postgres_server')
-        psql_stop_cmd = Dispatcher.get('service_stop') % psql_name
-        subprocess.call(psql_stop_cmd.split())
+        db_helper.stopPostgresSvc()
 
         pg_data_path = path('/var/lib/pgsql/data')
-#        if pg_data_path.exists():
-#            pg_data_path.rmtree()
-#        pg_data_path.makedirs()
+        if pg_data_path.exists():
+            pg_data_path.rmtree()
 
-        # get the password and write it to a file.
+        # self.KUSU_ROOT initialised in _setupPaths()
         pwfile = '%s/etc/pgdb.passwd' % self.KUSU_ROOT
-        pg_passwd = genPasswordToFile('postgres', pwfile)
-        psql_init_cmd = 'su -l postgres -c \'initdb --pgdata=/var/lib/pgsql/data ' + \
-                        '--auth=md5 --pwfile=%s\'' % pwfile
-        subprocess.call(psql_init_cmd.split())
+        pg_passwd = db_helper.genPostgresPasswd(pwfile, pg_data_path)
+
+        # create the log directory.
+        pg_log_path = pg_data_path / 'pg_log'
+        pg_log_path.makedirs()
 
         # set up the host-based authentication.
-        modifyHBAConf(pg_data_path / 'pg_hba.conf')
+        db_helper.modifyHBAConf(pg_data_path / 'pg_hba.conf')
 
-        # set up permissions for the log file.
-        pg_log_path = pg_data_path / 'pg_log'
-        if not pg_log_path.exists():
-            pg_log_path.makedirs()
+        # set up ownership and permissions for the log directory.
         chown_psql_log_cmd = 'chown postgres:postgres %s' % pg_log_path
         subprocess.call(chown_psql_log_cmd.split())
-        chmod_psql_log_cmd = 'chown go-rwx %s' % pg_log_path
+        chmod_psql_log_cmd = 'chmod go-rwx %s' % pg_log_path
         subprocess.call(chmod_psql_log_cmd.split())
 
         # start the service again.
-        psql_start_cmd = Dispatcher.get('service_start') % psql_name
-        subprocess.call(psql_stop_cmd.split())
-        createPostgresDb('/opt/kusu/sql/psql_kusu_primedb.sql', pg_passwd)
+        db_helper.startPostgresSvc()
+
+        # clear all mappers and init them.
+        sa.orm.mapper_registry.clear()
+        dbs = kusudb.DB('postgres', 'kusudb', 'postgres', pg_passwd)
+
+        # This was where migration from sqlite took place.
+        self._bootstrapDB(config, dbs)
+
+        # add apache user to password file.
+        appuser = Dispatcher.get('webserver_usergroup')[0]
+        pwfile = '%s/etc/db.passwd' % self.KUSU_ROOT
+        appuser_pw = db_helper.genPasswdToFile(appuser, pwfile)
+
+        # set up permissions.
+        permission = """
+create role apache with login PASSWORD '%s';
+create role nobody with login;"""
+        permission = permission % appuser_pw
+        permission += "Grant all on table %s to apache;" % \
+                      ','.join(dbs.postgres_get_table_list())
+        permission += "Grant all on table %s to apache;" % \
+                      ','.join(dbs.postgres_get_seq_list())
+        permission += "Grant select on table %s to nobody;" % \
+                      ','.join(dbs.postgres_get_table_list())
+        permission += "Grant select on table %s to nobody;" % \
+                      ','.join(dbs.postgres_get_seq_list())
+        env = os.environ.copy()
+        env['PGPASSWORD'] = pg_passwd
+        p = subprocess.Popen(['/usr/bin/psql', 'kusudb', 'postgres'],
+                             env=env,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        (out,err) = p.communicate(permission)
+
+        # chkconfig on postgres.
+        db_helper.enablePostgresSvc()
+
+        # clear all mappers and init them.
+        sa.orm.mapper_registry.clear()
+        dbs = kusudb.DB('postgres', 'kusudb', 'apache', appuser_pw)
+
+        # initialise repository for compute and installer nodes.
+        repoid = dbs.Repos.select()[0].repoid
+        ngs = [ng for ng in dbs.NodeGroups.select() if ng.ngname != 'unmanaged']
+        for ng in ngs:
+            ng.repoid = repoid
+            ng.save()
+            ng.flush()            
 
 
-    def _bootstrapDB(self, config):
-        pass
+    def _bootstrapDB(self, config, db_obj):
+        """ Bootstrap the DB with initial values. Assumes clean install. """
+        db_obj.createDatabase()
+        db_obj.bootstrap()
+
+        # get public DNS zone.
+        fqhname = socket.gethostname()
+        try:
+            hostname, public_zone = fqhname.split('.', 1)
+        except ValueError:
+            # nothing to split.
+            hostname = fqhname
+            public_zone = ''
+ 
+        # get provision DNS domain.
+        domain = DEFAULT_DNS_DOMAIN
+        if config.has_option('Provision', 'domain'):
+            domain = config.get('Provision', 'domain')
+        
+        # get timezone/utc.
+        try:
+            (tz, utc) = probe.getTimezone()
+        except Exception, e:
+            failures.append(ExceptionInfo(title='Cannot get timezone/UTC',
+                                msg=str(e)))
+
+        # get keyboard.
+        try:
+            keyb = probe.getKeyboard()
+        except:
+            # default to us.
+            keyb = 'us'
+
+        # get language.
+        try:
+            lang = os.environ['LANG']
+        except:
+            # default to en_US.
+            lang = 'en_US.UTF-8'
+
+        # get NTP server.
+        ntp_server = DEFAULT_NTP_SERVER
+        if config.has_option('Provision', 'ntp_server'):
+            domain = config.get('Provision', 'ntp_server')
+ 
+        db_obj.AppGlobals(kname='DNSZone', kvalue=domain).save()
+        db_obj.AppGlobals(kname='PublicDNSZone', kvalue=public_zone).save()
+        db_obj.AppGlobals(kname='Language', kvalue=lang).save()
+        db_obj.AppGlobals(kname='Keyboard', kvalue=keyb).save()
+        db_obj.AppGlobals(kname='PrimaryInstaller', kvalue=hostname).save()
+        db_obj.AppGlobals(kname='Timezone_zone', kvalue=tz).save()
+        db_obj.AppGlobals(kname='Timezone_utc', kvalue=utc).save()
+        db_obj.AppGlobals(kname='Timezone_ntp_server', kvalue=ntp_server).save()
 
 
     def _createRepo(self, config):

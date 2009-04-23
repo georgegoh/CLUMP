@@ -16,3 +16,4 @@ class InstallConfMissingException(ServiceInstallException): pass
 class InstallConfParseException(ServiceInstallException): pass
 class InvalidConfException(ServiceInstallException): pass
 class PrerequisiteCheckFailedException(ServiceInstallException): pass
+class DBSetupFailedException(ServiceInstallException): pass

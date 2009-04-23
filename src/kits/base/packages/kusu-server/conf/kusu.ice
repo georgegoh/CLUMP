@@ -15,6 +15,7 @@ module kusu {
         };
 
         interface ISetup {
+            string verify(string config) throws InstallException;
             string install(string config) throws InstallException;
         };
     };
