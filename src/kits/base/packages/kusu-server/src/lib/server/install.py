@@ -59,6 +59,7 @@ class InstallServant(ISetup, IKusuServant):
                     ei = ExceptionInfo(title=info.title, msg=info.msg)
                     seq.append(ei)
             raise InstallException(messages=tuple(seq))
+        print 'Install success.'
 
     def _getConfigFileHandle(self):
         # Final implementation should write this file

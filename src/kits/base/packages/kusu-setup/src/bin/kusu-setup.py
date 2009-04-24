@@ -46,6 +46,7 @@ def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
 #    os.kill(kusu_server_pid, signal.SIGTERM)
 
 def setupMinimalDeps(deps):
+    """ deps is the list of dependencies to be downloaded remotely and installed. """
     pass
 
 
@@ -107,17 +108,12 @@ def startInstall(conf):
             s = open(conf).read()
         install.verify(s)
         install.install(s)
+        print 'Kusu successfully installed.'
     except kusu.remote.InstallException, e:
         print 'Install Config Exception(s):'
         for i,m in enumerate(e.messages):
             print '%s. %s: %s' % (i+1, m.title, m.msg)
 
-
-
-#    base = ic.stringToProxy('NetworkServant:ssl -p 10000')
-#    network = kusu2.config.net.INetworkPrx.checkedCast(base)
-#    intf = network.getInterfaces()
-#    print network.getInterfaceConfig(intf[0])
     return
 
 if __name__ == '__main__':

@@ -1,8 +1,6 @@
 import os
-import socket
 import tempfile
 import subprocess
-import sqlalchemy as sa
 from path import path
 from ConfigParser import ConfigParser
 # KUSU imports
@@ -14,12 +12,8 @@ from kusu.service.exceptions import InstallConfParseException
 from kusu.service.exceptions import InvalidConfException
 from kusu.service.exceptions import PrerequisiteCheckFailedException
 from kusu.boot.distro import DistroFactory
-import kusu.core.database as kusudb
+from kusu.kitops.kitops import KitOps
 from primitive.system.software import probe
-from primitive.system.software.dispatcher import Dispatcher
-
-DEFAULT_DNS_DOMAIN='kusu'
-DEFAULT_NTP_SERVER='pool.ntp.org'
 
 
 class InstallService(object):
@@ -55,9 +49,11 @@ class InstallService(object):
             raise PrerequisiteCheckFailedException(failures)
         self._setupPaths(config)
         self._setupNetwork(config)
-        self._setupDB(config)
+        db = db_helper.setupDB(config, self.KUSU_ROOT)
+        self._addBaseKit(config, db)
+        oskid = self._addOSKit(config, db)
+        self._addKits(config, db)
         self._createRepo(config)
-        self._addKits(config)
         self._refreshRepo(config)
 
 
@@ -151,145 +147,30 @@ class InstallService(object):
         pass
 
 
-    def _setupDB(self, config):
-        """ Set up the Postgres DB. """
-        # stop postgres service.
-        db_helper.stopPostgresSvc()
-
-        pg_data_path = path('/var/lib/pgsql/data')
-        if pg_data_path.exists():
-            pg_data_path.rmtree()
-
-        # self.KUSU_ROOT initialised in _setupPaths()
-        pwfile = '%s/etc/pgdb.passwd' % self.KUSU_ROOT
-        pg_passwd = db_helper.genPostgresPasswd(pwfile, pg_data_path)
-
-        # create the log directory.
-        pg_log_path = pg_data_path / 'pg_log'
-        pg_log_path.makedirs()
-
-        # set up the host-based authentication.
-        db_helper.modifyHBAConf(pg_data_path / 'pg_hba.conf')
-
-        # set up ownership and permissions for the log directory.
-        chown_psql_log_cmd = 'chown postgres:postgres %s' % pg_log_path
-        subprocess.call(chown_psql_log_cmd.split())
-        chmod_psql_log_cmd = 'chmod go-rwx %s' % pg_log_path
-        subprocess.call(chmod_psql_log_cmd.split())
-
-        # start the service again.
-        db_helper.startPostgresSvc()
-
-        # clear all mappers and init them.
-        sa.orm.mapper_registry.clear()
-        dbs = kusudb.DB('postgres', 'kusudb', 'postgres', pg_passwd)
-
-        # This was where migration from sqlite took place.
-        self._bootstrapDB(config, dbs)
-
-        # add apache user to password file.
-        appuser = Dispatcher.get('webserver_usergroup')[0]
-        pwfile = '%s/etc/db.passwd' % self.KUSU_ROOT
-        appuser_pw = db_helper.genPasswdToFile(appuser, pwfile)
-
-        # set up permissions.
-        permission = """
-create role apache with login PASSWORD '%s';
-create role nobody with login;"""
-        permission = permission % appuser_pw
-        permission += "Grant all on table %s to apache;" % \
-                      ','.join(dbs.postgres_get_table_list())
-        permission += "Grant all on table %s to apache;" % \
-                      ','.join(dbs.postgres_get_seq_list())
-        permission += "Grant select on table %s to nobody;" % \
-                      ','.join(dbs.postgres_get_table_list())
-        permission += "Grant select on table %s to nobody;" % \
-                      ','.join(dbs.postgres_get_seq_list())
-        env = os.environ.copy()
-        env['PGPASSWORD'] = pg_passwd
-        p = subprocess.Popen(['/usr/bin/psql', 'kusudb', 'postgres'],
-                             env=env,
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        (out,err) = p.communicate(permission)
-
-        # chkconfig on postgres.
-        db_helper.enablePostgresSvc()
-
-        # clear all mappers and init them.
-        sa.orm.mapper_registry.clear()
-        dbs = kusudb.DB('postgres', 'kusudb', 'apache', appuser_pw)
-
-        # initialise repository for compute and installer nodes.
-        repoid = dbs.Repos.select()[0].repoid
-        ngs = [ng for ng in dbs.NodeGroups.select() if ng.ngname != 'unmanaged']
-        for ng in ngs:
-            ng.repoid = repoid
-            ng.save()
-            ng.flush()            
-
-
-    def _bootstrapDB(self, config, db_obj):
-        """ Bootstrap the DB with initial values. Assumes clean install. """
-        db_obj.createDatabase()
-        db_obj.bootstrap()
-
-        # get public DNS zone.
-        fqhname = socket.gethostname()
-        try:
-            hostname, public_zone = fqhname.split('.', 1)
-        except ValueError:
-            # nothing to split.
-            hostname = fqhname
-            public_zone = ''
- 
-        # get provision DNS domain.
-        domain = DEFAULT_DNS_DOMAIN
-        if config.has_option('Provision', 'domain'):
-            domain = config.get('Provision', 'domain')
-        
-        # get timezone/utc.
-        try:
-            (tz, utc) = probe.getTimezone()
-        except Exception, e:
-            failures.append(ExceptionInfo(title='Cannot get timezone/UTC',
-                                msg=str(e)))
-
-        # get keyboard.
-        try:
-            keyb = probe.getKeyboard()
-        except:
-            # default to us.
-            keyb = 'us'
-
-        # get language.
-        try:
-            lang = os.environ['LANG']
-        except:
-            # default to en_US.
-            lang = 'en_US.UTF-8'
-
-        # get NTP server.
-        ntp_server = DEFAULT_NTP_SERVER
-        if config.has_option('Provision', 'ntp_server'):
-            domain = config.get('Provision', 'ntp_server')
- 
-        db_obj.AppGlobals(kname='DNSZone', kvalue=domain).save()
-        db_obj.AppGlobals(kname='PublicDNSZone', kvalue=public_zone).save()
-        db_obj.AppGlobals(kname='Language', kvalue=lang).save()
-        db_obj.AppGlobals(kname='Keyboard', kvalue=keyb).save()
-        db_obj.AppGlobals(kname='PrimaryInstaller', kvalue=hostname).save()
-        db_obj.AppGlobals(kname='Timezone_zone', kvalue=tz).save()
-        db_obj.AppGlobals(kname='Timezone_utc', kvalue=utc).save()
-        db_obj.AppGlobals(kname='Timezone_ntp_server', kvalue=ntp_server).save()
-
 
     def _createRepo(self, config):
         pass
 
 
-    def _addKits(self, config):
+    def _addBaseKit(self, config, db):
+        pass
+
+
+    def _addOSKit(self, config, db):
+        """ Add the OS kit that corresponds to the master's OS. """
+        ko = KitOps(db=db)
+        media_loc = config.get('Media', 'os')
+        ko.setKitMedia(media_loc)
+        kits = ko.addKitPrepare()
+        kit = ko.prepareOSKit(kits)
+        kitpath = ko.copyOSKitMedia(kit)
+        ko.setKitMedia('')
+        ko.makeContribDir(kit)
+        ko.finalizeOSKit(kit)
+        return kit['kid']
+
+
+    def _addKits(self, config, db):
         pass
 
 
