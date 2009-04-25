@@ -563,19 +563,16 @@ class SuseYastRepo(BaseRepo):
         if not self.repoid:
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
        
-        try:
-            self.clean(self.repoid)
-            self.makeRepoDirs()
-            self.markStale()
-            self.copyOSKit()
-            self.copyKitsPackages()
-            self.copyContribPackages()
-            self.makeMetaInfo()
-            self.copyKusuNodeInstaller()
-            self.verify()
-            self.markClean()
-        except Exception, e:
-            raise e
+        self.clean(self.repoid)
+        self.makeRepoDirs()
+        self.markStale()
+        self.copyOSKit()
+        self.copyKitsPackages()
+        self.copyContribPackages()
+        self.makeMetaInfo()
+        self.copyKusuNodeInstaller()
+        self.verify()
+        self.markClean()
 
         return self
 
