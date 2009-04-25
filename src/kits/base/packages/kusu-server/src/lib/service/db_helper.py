@@ -152,7 +152,14 @@ def bootstrapDB(config, db_obj):
         # nothing to split.
         hostname = fqhname
         public_zone = ''
- 
+
+    # bootstrap defaults the master node name to 'master'. Use the
+    # existing hostname.
+    master = db_obj.Nodes.selectfirst_by(name='master')
+    master.name = hostname
+    master.save()
+    master.flush()
+
     # get provision DNS domain.
     domain = DEFAULT_DNS_DOMAIN
     if config.has_option('Provision', 'domain'):

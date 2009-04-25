@@ -13,6 +13,7 @@ from kusu.service.exceptions import InvalidConfException
 from kusu.service.exceptions import PrerequisiteCheckFailedException
 from kusu.boot.distro import DistroFactory
 from kusu.kitops.kitops import KitOps
+from kusu.repoman.repofactory import RepoFactory
 from primitive.system.software import probe
 
 
@@ -51,9 +52,9 @@ class InstallService(object):
         self._setupNetwork(config)
         db = db_helper.setupDB(config, self.KUSU_ROOT)
         self._addBaseKit(config, db)
-        oskid = self._addOSKit(config, db)
+        oskit_dict = self._addOSKit(config, db)
         self._addKits(config, db)
-        self._createRepo(config)
+        self._createRepo(config, oskit_dict, db)
         self._refreshRepo(config)
 
 
@@ -148,8 +149,45 @@ class InstallService(object):
 
 
 
-    def _createRepo(self, config):
-        pass
+    def _createRepo(self, config, oskit_dict, db):
+        repo = db.Repos()
+        repo.reponame = oskit_dict['longname']
+        print 'Making repo %s.' % repo.reponame
+        print 'Creating Repo entry in database.'
+
+        print 'Associating installer(s) to repo.'
+        row = db.AppGlobals.selectfirst_by(kname='PrimaryInstaller')
+        master = db.Nodes.selectfirst_by(name=row.kvalue)
+        repo.installers = ';'.join([nic.ip for nic in master.nics if nic.ip])
+
+        print 'Associating kits to repo.'
+        repo.kits = db.Kits.select()
+
+        print 'Assigning OS type to repo.'
+        oskit = db.Kits.selectfirst_by(isOS=True)
+        repo.ostype = '%s-%s-%s' % (oskit.rname, oskit.version, oskit.arch)
+        repo.save()
+        repo.flush()
+
+        print 'Creating physical location for repo.'
+        loc = path('%s/repos/%s' % (config.get('Disk', 'depot'), repo.repoid))
+        loc.makedirs()
+        repo.repository = str(loc)
+        repo.save()
+        repo.flush()
+
+        print 'Associating repo to installer(s).'
+        ng = db.NodeGroups.selectfirst_by(type='installer')
+        ng.repoid = repo.repoid
+        ng.save()
+        ng.flush()
+
+        print 'Refreshing repository with id %s.' % repo.repoid
+        repo_obj = RepoFactory(db).getRepo(repo.repoid)
+        repo_obj.refresh(repo.repoid)
+        
+        db.Repos.selectfirst_by(repoid=999).delete()
+        db.flush()
 
 
     def _addBaseKit(self, config, db):
@@ -158,16 +196,24 @@ class InstallService(object):
 
     def _addOSKit(self, config, db):
         """ Add the OS kit that corresponds to the master's OS. """
+        print 'Adding OS kit.'
+        print 'Instantiating KitOps object.'
         ko = KitOps(db=db)
+        print 'Setting OS media location.'
         media_loc = config.get('Media', 'os')
         ko.setKitMedia(media_loc)
+        print 'Prepare KitOps for adding kit.'
         kits = ko.addKitPrepare()
+        print 'Prepare KitOps for adding OS kit.'
         kit = ko.prepareOSKit(kits)
+        print 'Copying OS media. This will take a while...'
         kitpath = ko.copyOSKitMedia(kit)
         ko.setKitMedia('')
+        print 'Finalizing Kit directory.'
         ko.makeContribDir(kit)
         ko.finalizeOSKit(kit)
-        return kit['kid']
+        print 'OS kit added.'
+        return kit
 
 
     def _addKits(self, config, db):
