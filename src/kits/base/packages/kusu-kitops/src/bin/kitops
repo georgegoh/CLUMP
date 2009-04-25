@@ -779,11 +779,11 @@ class KitOpsApp(KusuApp):
             else:
                 sys.stdout.write("No")
 
+            count=0
             if not kit.is_os():
             
                 sys.stdout.write("\n%s:\t" % headers[8])
                 osline=""
-                count=0
                 os_set = kit.getSupportedDistro()
                 if not os_set:
                     osline += "Unspecified"
