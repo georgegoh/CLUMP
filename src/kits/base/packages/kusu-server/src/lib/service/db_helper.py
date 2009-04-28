@@ -21,9 +21,7 @@ def modifyHBAConf(conf):
     token_str = '%s\t%s\t%s\t%s\t%s\n'
     hba_lines = []
     if pg_hba.exists():
-        f = pg_hba.open('r')
-        hba_lines = f.readlines()
-        f.close()
+        hba_lines = pg_hba.lines()
 
     kusu_lines = []
     kusu_lines.append('# Start of Kusu config\n')
@@ -32,9 +30,7 @@ def modifyHBAConf(conf):
     kusu_lines.append(token_str % ('host','kusudb','nobody','::1/128','trust'))
     kusu_lines.append('# End of Kusu config\n')
     kusu_lines.extend(hba_lines)
-    f = pg_hba.open('w')
-    f.writelines(kusu_lines)
-    f.close()
+    pg_hba.write_lines(kusu_lines)
 
 
 ############
@@ -114,13 +110,13 @@ def genPasswdToFile(user, passfile, randomStrGen=genRandomStr):
     return passwd
 
 
-def genPostgresPasswd(pwfile, pgdata):
+def postGresInitDB(pgdata, pwfile):
     """ Get the postgres password and write it to a file(%kusu_root%/etc/pgdb.passwd).
         The postgres authentication is decoupled from unix auth. 
         There are directives in hba conf that let you say , if its a local access, 
         on all db, trust a user . The user in this context is the postgres user, 
         so you can say "all local users are allowed to login using the account nobody". 
-        conversly you can say "all local users are authenticated by some auth 
+        conversely you can say "all local users are authenticated by some auth 
         mechanism". The md5 mechanism is more secure than the password mechanism 
         in this way because password sends the password unencrypted. 
         The reason the postgres user needs a password is because I dont think 
@@ -216,7 +212,8 @@ def setupDB(config, kusu_root):
 
     # generate password for postgres user.
     pwfile = '%s/etc/pgdb.passwd' % kusu_root
-    pg_passwd = genPostgresPasswd(pwfile, pg_data_path)
+    pg_passwd = genPasswdToFile('postgres', pwfile)
+    postGresInitDB(pg_data_path, pwfile)
 
     # create the log directory.
     pg_log_path = pg_data_path / 'pg_log'
