@@ -192,7 +192,7 @@ def bootstrapDB(config, db_obj):
     # get NTP server.
     ntp_server = DEFAULT_NTP_SERVER
     if config.has_option('Provision', 'ntp_server'):
-        domain = config.get('Provision', 'ntp_server')
+        ntp_server = config.get('Provision', 'ntp_server')
 
     db_obj.AppGlobals(kname='DNSZone', kvalue=domain).save()
     db_obj.AppGlobals(kname='PublicDNSZone', kvalue=public_zone).save()
