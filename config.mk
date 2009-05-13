@@ -41,7 +41,7 @@ KUSU_RPM_TMPPATH=/tmp/kusu
 
 KUSU_RELEASE_NAME=Magnificent Anemone
 KUSU_VERSION = 2.0
-KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk '{print $$4}')
+KUSU_REVISION = $(shell ../../../bin/find-kusu-rev.sh $(KUSU_TOPDIR))
 
 # lists of kits to build
 KUSU_KITS_LISTS=\
