@@ -31,7 +31,7 @@ elif [ "$KUSU_BUILD_DIST" = "opensuse" ]; then
     DISTVER=$KUSU_BUILD_DISTVER.$KUSU_BUILD_DISTVER_MINOR
 fi
 
-KUSU_REVISION=`find-kusu-rev.sh ../`
+KUSU_REVISION=`./find-kusu-rev.sh ../`
 
 KUSU_VERSION=`cat config.mk | grep KUSU_VERSION | awk '{print $3}'`
 
