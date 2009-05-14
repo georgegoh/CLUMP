@@ -184,6 +184,7 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
             new_target.symlink(link)
             return
 
-
+"""The delete kit strategy for 0.3 is the same as 0.2"""
 DeleteKitStrategy = { '0.1': deletekit01,
-                      '0.2': deletekit02}
+                      '0.2': deletekit02,
+                      '0.3': deletekit02}

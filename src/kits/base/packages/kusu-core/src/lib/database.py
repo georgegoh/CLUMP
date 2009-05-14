@@ -22,6 +22,8 @@ from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
+SUPPORTED_KIT_APIS = ['0.2', '0.3']
+
 # it seems these must be told to be quiet individually...
 logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
@@ -133,7 +135,7 @@ class Kits(BaseTable):
                    comp.os.strip() == '' or comp.os == 'NULL']
             components_list.extend(lst)
 
-        elif '0.2' == infokit['api']:
+        elif infokit['api'] in SUPPORTED_KIT_APIS:
             comp_dict = {}
             for db_comp in self.components:
                 comp_dict[db_comp.cname] = db_comp
@@ -178,7 +180,7 @@ class Kits(BaseTable):
                 else:
                     os_set.add(comp.os.lower())
                      
-        elif '0.2' == infokit['api']:
+        elif infokit['api'] in SUPPORTED_KIT_APIS:
             for comp in infocomps:
                 try:
                     for tup in comp['os']:

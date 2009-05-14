@@ -63,8 +63,9 @@ NGE_TEST    = 0x100
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
 # TODO: consolidate constants in one place
 CFMBaseDir = "/etc/cfm"
-PluginsDir = "/opt/kusu/lib/plugins/ngedit"
-PluginsLibDir = PluginsDir + "/lib"
+#PluginsDir = "/opt/kusu/lib/plugins/ngedit"
+PluginsDir = ""
+#PluginsLibDir = PluginsDir + "/lib"
 LockDir = "/var/lock/ngedit"
 
 # TODO: initialize logging
@@ -348,7 +349,7 @@ class NodeGroup(NodeGroupRec):
                 if lkey in self.links:
                     kwdict[lkey] = kwargs[key]
             self.update(kwdict)
-        
+                
         # Create partition schema when needed b/c it's expensive to create!
         self.PartSchema = None
         
@@ -1830,6 +1831,7 @@ class NodeGroup(NodeGroupRec):
             else:
                 sys.stdout.write("Please update the nodes manually by running: %s\n" % cmd)
 
+
     def genKickstart(self,windowInst,generateKS):
         '''Generates kickstart file for nodes in the nodegroup and returns the string
         '''
@@ -1874,9 +1876,7 @@ class NodeGroup(NodeGroupRec):
 #         if p.returncode != 0:
 #             raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % stderr
 #         return stdout
-
         
-
     def __compHasInteractivePlugin(self, db, compId):                
         plugcinst = self.__importPlugin(compId, db)
         if not plugcinst:
@@ -1893,8 +1893,13 @@ class NodeGroup(NodeGroupRec):
                 continue
             return plugcname
                 
+
     def __importPlugin(self, compId, db):
-        plugdir = PluginsDir
+        query=('SELECT kid FROM components WHERE cid= %s' % compId)
+        db.execute(query)
+        kid=db.fetchone()
+        plugdir = "/depot/kits/"+str(kid[0][0])+"/plugins/ngedit"
+        
         if plugdir not in sys.path:
             sys.path.append(plugdir)        
         
@@ -1930,7 +1935,7 @@ class NodeGroup(NodeGroupRec):
 
     def __handleCompPlug(self, db, CompIdList, action, kusuApp, windowInst):
         
-        plugdir = PluginsDir
+        #plugdir = PluginsDir
         _msg = ""
         
         if not CompIdList:

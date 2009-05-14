@@ -732,8 +732,6 @@ class scrNGEEdit_Components(USXBaseScreen):
             msg = 'Problems establishing database connection. Error: %s' % e
             self.logErrorEvent('Database error: ' + msg)
             sys.exit(1)
-
-        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
         
         self.__ct = None
         self.filter_by_ngtype = True
@@ -2080,7 +2078,7 @@ class scrNGEEdit_Finalize(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.__diffNG = None
-        self.__plugdir = '/opt/kusu/lib/plugins/ngedit' #FIXME: may need to change
+        
 
     def setCallbacks(self):
         #for the buttons
