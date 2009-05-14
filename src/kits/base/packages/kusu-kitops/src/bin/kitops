@@ -82,8 +82,7 @@ class KitOpsApp(KusuApp):
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
                 self.printHelp()
-                sys.stderr.write('Only one of -a/--add, -e/--remove or ' + 
-                                 '-l/--list is supported.\n')
+                sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list, -r/--remotelist or -u/--update is supported.\n')
                 sys.exit(EBAD_OP)
             elif '-a' in option._short_opts:
                 setattr(parser.values, option.dest, 'add')
@@ -93,6 +92,8 @@ class KitOpsApp(KusuApp):
                 setattr(parser.values, option.dest, 'list')
             elif '-r' in option._short_opts:
                 setattr(parser.values, option.dest, 'remotelist')
+            elif '-u' in option._short_opts:
+                setattr(parser.values, option.dest, 'update')
 
 
         # setup command line parser
@@ -104,6 +105,9 @@ class KitOpsApp(KusuApp):
                                action='callback', callback=mutexAction)
         self.parser.add_option('-r', '--remotelist', dest='action',
                                help=self._('kitops_usage_remotelist'),
+                               action='callback', callback=mutexAction)
+        self.parser.add_option('-u', '--update', dest='action',
+                               help=self._('kitops_usage_update'),
                                action='callback', callback=mutexAction)
 
         self.parser.add_option('-e', '--remove', dest='action',
@@ -182,8 +186,7 @@ class KitOpsApp(KusuApp):
             self.kit_id = options.kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
-                        
-            koinst.setKitMedia(kit_media)
+            self.koinst.setKitMedia(kit_media)                        
             self.kitop = KITOP_ADD
         elif options.action == 'delete':
             self.kit_name = options.kit
@@ -265,7 +268,7 @@ class KitOpsApp(KusuApp):
              
             if self.kit_id:
                 opt = self.kit_id
-                """Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid"""               
+                """Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid"""
                 if opt.find('-'):
                     self.runAddRemoteKit(self.kit_id)  
             else:
@@ -596,12 +599,8 @@ class KitOpsApp(KusuApp):
             print "Remote repository has been updated and kit id may have changed. Please do kitops -r\n"
             sys.exit(-1)       
         repo, rpmurl = self.retrieveCacheURL(rkid)
-        if repo == 'rhel':
-            cachedir = os.path.join(cachepath, repo)
-            url, krpm = os.path.split(rpmurl)
-        else:     
-            cachedir = os.path.join(cachepath, repo) 
-            url, krpm = os.path.split(rpmurl)
+        cachedir = os.path.join(cachepath, repo)
+        url, krpm = os.path.split(rpmurl)
 
         if cachedir:
             tmpdir = path(mkdtemp(suffix='-kitops'))
@@ -631,26 +630,11 @@ class KitOpsApp(KusuApp):
         
     def runAdd(self):
         kl.debug('Performing add operation')
-        self.logEvent(self._("kitops_event_add_kits_from_media") % koinst.kitmedia,
+        self.logEvent(self._("kitops_event_add_kits_from_media") % self.koinst.kitmedia,
                       toStdout=False)
                 
-        try:
-            kits = self.koinst.addKitPrepare()
-        except (CannotMountKitMediaError, UnrecognizedKitMediaError,
-                AssertionError), e:
-            kl.debug('FAIL performing add operation')
-            self.logErrorEvent(e.args[0])
-            sys.exit(EKITLOC_FAIL)
-        except InvalidRPMHeader, e:
-            invalid_rpm_name = path(e.args[0]).basename()
-            kl.debug('FAIL performing add operation')
-            self.logErrorEvent('Invalid RPM header: %s' % path(e.args[0]).basename())
-            sys.exit(EKITLOC_FAIL)
-        except KitinfoSyntaxError, e:
-            kl.debug('FAIL performing add operation: %s', e.args[0])
-            self.logErrorEvent('Error: %s' % e.args[0])
-            sys.exit(EKIT_BAD)
-
+        kits = self.mountAndParseKitMedia()
+ 
         kitError = False
 
         if getattr(kits, 'ostype', None) is not None:
@@ -690,7 +674,7 @@ class KitOpsApp(KusuApp):
         if kitError:
             sys.exit(EKITLOC_FAIL)
 
-        self.logEvent(self._("kitops_event_finish_add_kits_from_media") % koinst.kitmedia,
+        self.logEvent(self._("kitops_event_finish_add_kits_from_media") % self.koinst.kitmedia,
                       toStdout=False)
         kl.debug('SUCCESS performing add operation')
 
@@ -861,6 +845,24 @@ class KitOpsApp(KusuApp):
             sys.stdout.write(ngline + '\n\n')
  
         kl.debug('SUCCESS performing list operation')
+
+    def mountAndParseKitMedia(self):
+        """Abort if mounting of kit media or parsing of kit metadata fails."""
+        try:
+            return self.koinst.addKitPrepare()
+        except (CannotMountKitMediaError, UnrecognizedKitMediaError, AssertionError), e:
+            kl.debug('FAIL performing add operation')
+            self.logErrorEvent(e.args[0])
+            sys.exit(EKITLOC_FAIL)
+        except InvalidRPMHeader, e:
+            invalid_rpm_name = path(e.args[0]).basename()
+            kl.debug('FAIL performing add operation')
+            self.logErrorEvent('Invalid RPM header: %s' % path(e.args[0]).basename())
+            sys.exit(EKITLOC_FAIL)
+        except KitinfoSyntaxError, e:
+            kl.debug('FAIL performing add operation: %s', e.args[0])
+            self.logErrorEvent('Error: %s' % e.args[0])
+            sys.exit(EKIT_BAD)
 
     def determineKitMedia(self):
         media_choices = self.autoDetectMedia()
