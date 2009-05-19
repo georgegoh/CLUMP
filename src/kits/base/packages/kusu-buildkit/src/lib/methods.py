@@ -43,8 +43,9 @@ def populatePackagesDir(buildprofile, arch='noarch'):
     for fspec in filespecs:
         for f in builtdir.walkfiles(fspec):
             _f = f.basename()
-            buildprofile.filenames.append(_f)
-            if not path(buildprofile.pkgdir / _f).exists(): 
+            if not _f in buildprofile.filenames:
+                buildprofile.filenames.append(_f)
+            if not path(buildprofile.pkgdir / _f).exists():
                 pass
             else:
                 path(buildprofile.pkgdir / _f).remove()
