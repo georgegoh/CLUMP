@@ -29,26 +29,26 @@ def KitSrcFactory(srcPath):
 class KitSrcBase(KitSrcBase01):
     def __init__(self):
         super(KitSrcBase,self).__init__()
-       
+
 class GeneralKitSrc(GeneralKitSrc01):
     def __init__(self, srcPath):
         super(GeneralKitSrc,self).__init__(srcPath)
-        
+
 class BinaryKitSrc(KitSrcBase): pass
 
 
 class KusuComponent(KusuComponent01):
     """ Component for Kits. """
-    
+
     def __init__(self, **kwargs):
         super(KusuComponent, self).__init__(**kwargs)
         self.os = []
 
-       
+
     def verify(self):
         # FIXME: needs to be fill out
         pass
-        
+
     def _processAddScripts(self):
         """ Process any queued commands.
         """
@@ -61,12 +61,12 @@ class KusuComponent(KusuComponent01):
                 args = []
 
             func(*args)
-        
+
     def associateWith(self, ngtype):
         """ Add ngtype for this component to belong to. """
         if ngtype not in NODEGROUP_TYPES: raise UnsupportedNGType
         if ngtype not in self.ngtypes: self.ngtypes.append(ngtype)
-        
+
     def generate(self):
         """ Returns a metadata dict. """
         d = super(KusuComponent, self).generate()
@@ -75,8 +75,8 @@ class KusuComponent(KusuComponent01):
         if 'osversion' in d: del d['osversion']
         if 'osmajor' in d: del d['osmajor']
         if 'osminor' in d: del d['osminor']
-       
-        if self.osminor: 
+
+        if self.osminor:
             osminor = self.osminor
         else:
             osminor = '*'
@@ -94,7 +94,7 @@ class KusuKit(KusuKit01):
 
     def __init__(self, **kwargs):
         super(KusuKit, self).__init__(**kwargs)
-        self.api = '0.2'
+        self.api = '0.3'
         self.conflicts = []
         self.filenames = []
 
@@ -147,7 +147,7 @@ class KusuKit(KusuKit01):
         filelist = []
         for f in destdir.files():
             filelist.append(str(path(docsdir / f.basename())))
-            
+
         return filelist
 
     def _prepPlugins(self, ns):
@@ -162,7 +162,7 @@ class KusuKit(KusuKit01):
         _filelist = ngeditPlugins.files() + addhostPlugins.files() + \
             genconfigPlugins.files()
         if not _filelist: return []
-        
+
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
         if not buildroot.exists: buildroot.makedirs()
@@ -175,7 +175,7 @@ class KusuKit(KusuKit01):
         for f in fl:
             filelist.append(str(path(plugdir / f)))
         return filelist
-        
+
     def _prepKitInfo(self,ns):
         """ Sets up the kitinfo
             Returns the path for kitinfo
@@ -205,10 +205,10 @@ class KusuKit(KusuKit01):
             _ns['arch'] = self.arch
 
         _ns['pkgversion'] = self.version
-        _ns['pkgrelease'] = self.release       
+        _ns['pkgrelease'] = self.release
         _ns['license'] = self.license
         _ns['description'] = self.description
-        
+
         return _ns
 
     def generateKitInfo(self, filename, buildprofile=None):
