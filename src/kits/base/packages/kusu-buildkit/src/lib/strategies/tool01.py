@@ -22,14 +22,14 @@ from kusu.util.errors import BuildkitArchError, InvalidBuildProfile
 class BuildKit(object):
     """This is a convenience class for the buildkit app as well as other external apps or libs to use.
     """
-    
+
     verbose = False
     debuginfo = False
     def __init__(self):
         super(BuildKit, self).__init__()
         import kusu.buildkit.methods as methods
         methods.KIT_API = '0.1'
-        
+
     def newKitSrc(self, srcpath, arch=None):
         """prepare the Kit source directory"""
         # get the current arch
@@ -37,19 +37,19 @@ class BuildKit(object):
 
         if arch != this_arch and arch != 'noarch':
             print 'arch: %s curarch: %s' % (arch, this_arch)
-            raise BuildkitArchError 
+            raise BuildkitArchError
 
         srcpath = path(srcpath)
         newkit = KitSrcFactory(srcpath)
         newkit.prepareSrcPath()
-        
+
         # also create a sample build.kit
         defaultname = srcpath.basename()
         s = self.prepareBuildKitTemplate(defaultname, arch)
         f = open('%s/build.kit' % srcpath,'w')
         f.write(s)
         f.close()
-        
+
         # create sample post/postun scripts
         postscript = getScriptTemplate('post')
         t = Template(file=str(postscript),searchList=[])
@@ -62,7 +62,7 @@ class BuildKit(object):
         f = open('%s/sources/00-postun-script.sh' % srcpath,'w')
         f.write(str(t))
         f.close()
-        
+
     def getKitSrc(self, srcpath):
         """ Builds the kit based on the kitsrc dir"""
         return KitSrcFactory(srcpath)
@@ -73,7 +73,7 @@ class BuildKit(object):
         _kitsrc = path(kitsrc)
         li = _kitsrc.files(kitscript)
         if not li: raise FileDoesNotExistError, kitscript
-        
+
         # TODO : only handle single kitscript
         return li[0]
 
@@ -96,7 +96,7 @@ class BuildKit(object):
                 raise InvalidBuildProfile
         _basedir = path(kitsrc)
         _kitsrc = KitSrcFactory(_basedir)
-        if _kitsrc.verifyLocalSrcPath():        
+        if _kitsrc.verifyLocalSrcPath():
             builddir = _basedir / 'artifacts'
             srcdir = _basedir / 'sources'
             docsdir = _basedir / 'docs'
@@ -107,35 +107,35 @@ class BuildKit(object):
                 srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
         else:
             raise InvalidBuildProfile
- 
+
     def loadKitScript(self, kitscript):
         """ Loads the kitscript and get a tuple of the kit, components and packages defined in
             that kitscript.
         """
         import kusu.buildkit.methods as methods
-        methods.KIT_API = '0.3'
+        methods.KIT_API = '0.1'
         d = dict(methods.__dict__)
         hidden_keys = [s for s in d.keys() if s.startswith('_')]
         for k in hidden_keys:
             d.pop(k)
         globals().update(d)
- 
+
         ns = {}
 
         execfile(kitscript,globals(),ns)
-        
+
         pkgs = [ns[key] for key in ns.keys() if isinstance(ns[key], PackageProfile)]
         comps = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuComponent)]
         kits = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuKit)]
-        
+
         # FIXME: only a single kit is supported right now
         if not kits:
             kit = []
         else:
             kit = kits[0]
-        
+
         return (kit,comps,pkgs)
-        
+
     def handlePackages(self, packages, buildprofile):
         """ Handles the configuring, building and deploying of the packages. """
         for p in packages:
@@ -148,7 +148,7 @@ class BuildKit(object):
             exitcode = p.deploy(verbose=self.verbose)
             if exitcode != 0:
                 raise PackageBuildError, p.name
-            
+
     def handleComponents(self, components, buildprofile):
         """ Handles the configuring, building and deploying of the components. """
         for c in components:
@@ -158,7 +158,7 @@ class BuildKit(object):
             exitcode = c.deploy(verbose=self.verbose)
             if exitcode != 0:
                 raise PackageBuildError, c.name
-            
+
     def handleKit(self, kit, buildprofile):
         """ Handles the configuring, building and deploying of the kit. """
         kit.buildprofile = buildprofile
@@ -167,16 +167,16 @@ class BuildKit(object):
         exitcode = kit.deploy(verbose=self.verbose)
         if exitcode != 0:
             raise PackageBuildError, kit.name
-        
+
     def populatePackagesDir(self, buildprofile, arch):
         """ Populates the built or binary packages into the package directory. """
         populatePackagesDir(buildprofile, arch)
-        
+
     def setupRPMMacros(self, buildprofile):
         """ Sets up a proper .rpmmacros file for building purposes. """
         return setupRPMMacrofile(buildprofile)
 
-        
+
     def restoreRPMMacros(self, oldrpmmacros):
         """ Restores the old .rpmmacros. """
         userhome = path(pwd.getpwuid(os.getuid())[5])
@@ -186,15 +186,15 @@ class BuildKit(object):
         cmd = 'mv -f %s %s' % (oldrpmmacros,rpmmacros)
         renP = subprocess.Popen(cmd,shell=True)
         renP.wait()
-        
+
     def generateKitInfo(self, kit, filepath, buildprofile):
-        """ Generates the kitinfo which contains the metadata information 
+        """ Generates the kitinfo which contains the metadata information
             regarding the kit and its components.
         """
         kit.generateKitInfo(filepath, buildprofile)
-        
+
     def prepareBuildKitTemplate(self, defaultname, arch=None, tmplname='build.kit.tmpl'):
-        """ Gets the build.kit template and populate it with the correct 
+        """ Gets the build.kit template and populate it with the correct
             namespace. The defaultname is just a string to set the default
             component and kit names.
         """
@@ -232,7 +232,7 @@ class BuildKit(object):
         ns['compdesc'] = compdesc
         t = Template(file=str(tmpl),searchList=[ns])
         return str(t)
-        
+
     def stripOutSVN(self, dirpath):
         """ Removes .svn assets from the dirpath.
         """
@@ -257,13 +257,13 @@ class BuildKit(object):
         if not kitdir.exists(): kitdir.mkdir()
         pkgdir = path(kitsrc / 'packages')
 
-        # sweep and get the kitinfo files    
+        # sweep and get the kitinfo files
         li = kitsrc.files('kitinfo')
         kitinfo = path(li[0])
 
         kit,comps = processKitInfo(kitinfo)
 
-        if not kit: 
+        if not kit:
             raise KitDefinitionEmpty
 
         # TODO : right now, we don't make use of the kitversion, only kitnames
@@ -276,7 +276,7 @@ class BuildKit(object):
         self.stripOutSVN(kitnamedir)
         if not self.debuginfo: self.stripOutDebugInfo(kitnamedir)
 
-        
+
     def makeKitISO(self, kitsrc):
         """ Creates a Kusu Kit ISO based on the kitsrc dir.
             Returns the isofile.
@@ -284,13 +284,13 @@ class BuildKit(object):
         tmpdir = kitsrc / 'tmp'
         isodir = mkdtemp(dir=tmpdir,prefix='isodir-')
         self.makeKitDir(kitsrc,isodir)
-        # sweep and get the kitinfo files    
+        # sweep and get the kitinfo files
         li = kitsrc.files('kitinfo')
         kitinfo = path(li[0])
 
         kit,comps = processKitInfo(kitinfo)
 
-        if not kit: 
+        if not kit:
             if isodir.exists(): isodir.rmtree
             raise KitDefinitionEmpty
 
