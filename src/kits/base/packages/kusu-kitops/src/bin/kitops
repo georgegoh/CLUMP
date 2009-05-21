@@ -33,6 +33,7 @@ kl = kusulog.getKusuLog('kitops-app')
 import kusu.core.database as db
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
+from kusu.kitops.action import UpdateAction
 from kusu.boot.distro import DistroInstallSrcBase
 from kusu.util.errors import *
 
@@ -52,7 +53,7 @@ KITOP_DEL   = 0x02
 KITOP_UP    = 0x04
 KITOP_LST   = 0x08
 KITOP_RLST  = 0X10
-
+PROCESS_ACTION_QUEUE = 0x11
 
 class KitOpsApp(KusuApp):
     def __init__(self, koinst):
@@ -60,6 +61,7 @@ class KitOpsApp(KusuApp):
 
         KusuApp.__init__(self)
 
+        self.action_queue = {}
         self.koinst = koinst
         self.kitop = KITOP_NONE
         self.kit_name = ''
@@ -74,11 +76,11 @@ class KitOpsApp(KusuApp):
         # 2) In a meta kit, all kits are selected for addition
         # 3) confirmations are skipped
         self.suppress_questions = False
-        
+
         # We only want one instance of kitops running at any one time.
         self.force_single_instance()
-        
-        
+
+
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
                 self.printHelp()
@@ -98,7 +100,7 @@ class KitOpsApp(KusuApp):
 
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='action',
-                               help=self._('kitops_usage_add'), 
+                               help=self._('kitops_usage_add'),
                                action='callback', callback=mutexAction)
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
@@ -148,7 +150,7 @@ class KitOpsApp(KusuApp):
                                dest='suppress_questions',
                                action='store_true',default=False,
                                help=SUPPRESS_HELP)
-                                   
+
 
     def parseArgs(self):
         (options, args) = self.parser.parse_args()
@@ -165,6 +167,39 @@ class KitOpsApp(KusuApp):
             self.stdoutMessage('Kitops Version %s\n', self.version)
             sys.exit(0)
 
+        dbdriver = os.getenv('KUSU_DB_ENGINE')
+        if not dbdriver or dbdriver not in ['mysql','postgres']:
+            dbdriver = 'mysql' # default to mysql
+
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+
+        if options.dbdriver:
+            dbdriver = options.dbdriver
+        if options.dbdatabase:
+            dbdatabase = options.dbdatabase
+        if options.dbuser:
+            dbuser = options.dbuser
+        if options.dbpassword:
+            dbpassword = options.dbpassword
+
+        try:
+            self.__db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+            self.koinst.setDB(self.__db)
+        except UnsupportedDriverError, e:
+            self.logErrorEvent('Database error: ' + e.args[0])
+            sys.exit(EDB_FAIL)
+
+        # Now we will just perform a quick query from the DB to make sure the
+        # DB connection we established is correct.
+        try:
+            self.koinst.findKits('not expecting', 1, 'result', 'at all')
+        except:
+            self.logErrorEvent("Database error. " + \
+                               "Please check database configuration.")
+            sys.exit(EDB_FAIL)
+
         #suppress questions if required
         self.suppress_questions = options.suppress_questions
         #confirmations are skipped if questions are not asked
@@ -180,14 +215,24 @@ class KitOpsApp(KusuApp):
                 else:
                     if not options.kid:
                         kit_media = self.determineKitMedia()
-     
+
             # to indicate which kit to install from a metakit
             self.kit_name = options.kit
             self.kit_id = options.kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
-            self.koinst.setKitMedia(kit_media)                        
+            self.koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
+        elif options.action == 'update':
+            kit_media = options.media
+            self.koinst.setKitMedia(kit_media)
+
+            update_action = UpdateAction(self.__db, self.koinst)
+            run_args = { 'old_kit_id': options.kid,
+                         'kits': self.mountAndParseKitMedia() }
+
+            self.action_queue[update_action] = run_args
+            self.kitop = PROCESS_ACTION_QUEUE
         elif options.action == 'delete':
             self.kit_name = options.kit
             self.kit_id = options.kid
@@ -208,44 +253,12 @@ class KitOpsApp(KusuApp):
             self.kitop = KITOP_RLST
 
 
-        dbdriver = os.getenv('KUSU_DB_ENGINE')
-        if not dbdriver or dbdriver not in ['mysql','postgres']:
-            dbdriver = 'mysql' # default to mysql
-
-        dbdatabase = 'kusudb'
-        dbuser = 'apache'
-        dbpassword = None
-
-        if options.dbdriver:
-            dbdriver = options.dbdriver
-        if options.dbdatabase:
-            dbdatabase = options.dbdatabase
-        if options.dbuser:
-            dbuser = options.dbuser
-        if options.dbpassword:
-            dbpassword = options.dbpassword
-
-        try:
-            self.koinst.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
-        except UnsupportedDriverError, e:
-            self.logErrorEvent('Database error: ' + e.args[0])
-            sys.exit(EDB_FAIL)
-
-        # Now we will just perform a quick query from the DB to make sure the
-        # DB connection we established is correct.
-        try:
-            self.koinst.findKits('not expecting', 1, 'result', 'at all')
-        except:
-            self.logErrorEvent("Database error. " + \
-                               "Please check database configuration.")
-            sys.exit(EDB_FAIL)
-
         if options.prefix:
             kl.debug('Setting prefix to %s', options.prefix)
             self.koinst.setPrefix(options.prefix)
         else:
             self.koinst.setPrefix('/')
-      
+
 
     def getActionDesc(self):
         if self.kitop == KITOP_ADD:
@@ -263,14 +276,14 @@ class KitOpsApp(KusuApp):
         '''The main body of the application.  '''
 
         self.parseArgs()
-        
+
         if self.kitop == KITOP_ADD:
-             
+
             if self.kit_id:
                 opt = self.kit_id
-                """Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid"""
+                # Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid
                 if opt.find('-'):
-                    self.runAddRemoteKit(self.kit_id)  
+                    self.runAddRemoteKit(self.kit_id)
             else:
                 self.runAdd()
 
@@ -310,7 +323,7 @@ class KitOpsApp(KusuApp):
             else:
                 kl.debug('Deletion confirmation aborted!')
 
-            self.logEvent(self._("kitops_event_deleted_kit") % self.kit_name, 
+            self.logEvent(self._("kitops_event_deleted_kit") % self.kit_name,
                           toStdout=False)
             kl.debug('SUCCESS performing delete operation')
 
@@ -319,6 +332,9 @@ class KitOpsApp(KusuApp):
 
         elif self.kitop == KITOP_RLST:
             self.runListRemoteKit()
+        elif self.kitop == PROCESS_ACTION_QUEUE:
+            for action, run_args in self.action_queue.iteritems():
+                action.run(**run_args)
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
@@ -335,13 +351,13 @@ class KitOpsApp(KusuApp):
             cp = ConfigParser()
             cp.read(urlfile)
 
-            for section in cp.sections():                  
+            for section in cp.sections():
                 if section == 'rhel':
                     if cp.get(section, 'enabled') == str(1) and os.path.isfile('/etc/sysconfig/rhn/systemid'):
                         p = cp.get(section, 'conf')
                         g = tools.getConfig(p)
-                        repodict[section] = g[section]['url']                         
-                        if cp.get(section, 'channel'): 
+                        repodict[section] = g[section]['url']
+                        if cp.get(section, 'channel'):
                             self.channel = cp.get(section, 'channel')
                 else:
                     if cp.get(section, 'enabled') == str(1):
@@ -350,10 +366,10 @@ class KitOpsApp(KusuApp):
 
     def cacheKitInfo(self, repo, repoid, url):
         """cache the kitinfo files of all the kit rpm in the cache directory"""
- 
+
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
         cachepath = self.cachepath +'/'+ repo
-        
+
         if not cachepath.isdir():
             os.makedirs(cachepath +'/repodata')
 
@@ -384,11 +400,11 @@ class KitOpsApp(KusuApp):
                     else:
                         choice.extract(tempdir)
 
-                    for file in tempdir.files():                       
+                    for file in tempdir.files():
                         if file.basename()=='kitinfo':
                             kit, components = processKitInfo(file)
                             kitdict[str(repoid)+'-'+ str(kitid)] = url +'/'+ kit['pkgname'] +'-'+ kit['version'] +'-'+ kit['release'] +'.'+kit['arch']+'.rpm'
-                            os.rename(tempdir +'/kitinfo', cachepath +'/'+ str(repoid) +'-'+ str(kitid)+'_kitinfo')             
+                            os.rename(tempdir +'/kitinfo', cachepath +'/'+ str(repoid) +'-'+ str(kitid)+'_kitinfo')
                             kitid = kitid + 1
                             break
                     tempdir.rmtree()
@@ -402,15 +418,15 @@ class KitOpsApp(KusuApp):
 
         for root, dirs, files in os.walk(cachepath, True):
             for f in files:
-                if f.find('kitinfo') >=0:  
+                if f.find('kitinfo') >=0:
                     rlist.append(int(f[:f.find('-')]))
                     break
-        
+
         if rlist == []:
             return 1
         else:
             return max(rlist)+ 1
-                                   
+
 
     def runListRemoteKit(self):
         kl.debug('Performing remote listing operation')
@@ -420,18 +436,18 @@ class KitOpsApp(KusuApp):
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
         urlfile = kusu_root + '/etc/remoterepo.conf'
-        cachepath = self.cachepath 
-        
+        cachepath = self.cachepath
+
         repodict= self.getRemoteRepoConfig(urlfile)
 
-        for repo, url in repodict.iteritems():                        
+        for repo, url in repodict.iteritems():
 
             if not self.verifyCacheChecksum(repo, url):
                 repoid = self.getMaxRepoID()
-                self.cacheKitInfo(repo, repoid, url) 
+                self.cacheKitInfo(repo, repoid, url)
 
             repocache = cachepath.realpath()/repo
-            
+
             for filename in repocache.files('*kitinfo*'):
                 f = filename.basename()
                 kit, components = processKitInfo(filename)
@@ -439,7 +455,7 @@ class KitOpsApp(KusuApp):
                 if components:
                     for c in components:
                         for ostype in c['os']:
-                            os_set.add(ostype['name']+'-'+ostype['major']+'.'+ostype['minor']+'-'+ostype['arch']) 
+                            os_set.add(ostype['name']+'-'+ostype['major']+'.'+ostype['minor']+'-'+ostype['arch'])
                 if kit:
                     print "%s:\t\t%s" % (headers[0], kit['name'])
                     print "%s:\t\t%s" % (headers[1], f[:f.find('_')])
@@ -450,19 +466,19 @@ class KitOpsApp(KusuApp):
                     print "%s:\t%s" % (headers[9], repo)
                     print "%s:\t%s" % (headers[7], kit['removable'])
                     print "%s:\t%s" % (headers[8], ', '.join(os_set))
-                    sys.stdout.write('\n\n')          
+                    sys.stdout.write('\n\n')
 
-              
+
     def getRHNFile(self, url, filename, dest):
 
         if not dest.isdir():
             os.makedirs(dest +'/repodata')
-    
+
         if filename.find('repodata') >= 0:
-            dest = dest + '/repodata' 
+            dest = dest + '/repodata'
             if not dest.isdir():
                 os.makedirs(dest)
-        
+
         if dest.isdir():
             fc = FetchCommand(uri=self.channel + filename,
                               fetchdir=False,
@@ -471,26 +487,26 @@ class KitOpsApp(KusuApp):
                               systemid=open('/etc/sysconfig/rhn/systemid', 'r'),
                               up2dateURL=url)
             status, dest = fc.execute()
-                      
+
 
     def cacheRepoMD(self, repo, url):
         """fetch the repomd.xml from repository and cache in the repo cache directory"""
 
         cachepath = self.cachepath +'/'+ repo
-         
+
         if not cachepath.isdir():
             os.makedirs(cachepath +'/repodata')
 
         if repo == 'rhel':
             self.getRHNFile(url, '/repodata/repomd.xml', cachepath)
-        else:            
+        else:
             fc = FetchCommand(uri=url +'/repodata/repomd.xml',
                               fetchdir=False,
                               destdir= cachepath +'/repodata',
                               overwrite=True)
             status, dest = fc.execute()
-           
-       
+
+
     def generateCacheFile(self, repo, kitdict):
         """create cachekits.pck from the kitdict with the rkid and url"""
         cachepath = self.cachepath +'/'+ repo
@@ -511,13 +527,13 @@ class KitOpsApp(KusuApp):
                f = os.path.join(root, 'cachekits.pck')
                if os.path.isfile(f):
                    infile = open(f, 'rb')
-                   kitdict = cpickle.load(infile) 
+                   kitdict = cpickle.load(infile)
 
                    for i in kitdict.keys():
                        if i == rkid:
                            infile.close()
                            return root, kitdict
-                   infile.close()                           
+                   infile.close()
         return "", {}
 
 
@@ -525,9 +541,9 @@ class KitOpsApp(KusuApp):
         """find the url of the remote kit from the rkid in the cachekits.pck"""
 
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
-        cachepath = kusu_root + '/var/cache/kitops'        
+        cachepath = kusu_root + '/var/cache/kitops'
         root, kitdict = self.retrieveCacheKitURL(rkid)
-  
+
         return root.basename(), kitdict[rkid]
 
     def verifyCacheChecksum(self, repo, url):
@@ -540,13 +556,13 @@ class KitOpsApp(KusuApp):
             l={}
             local = YumRepo('file://'+ cachepath)
             try:
-	        l=local.getRepoMD()          
+	        l=local.getRepoMD()
             except FetchException, e:
                 kl.error(e)
                 print "Unable to retrieve repomd.xml file in cache directory [%s]\n" % repo
 
             if repo == 'rhel':
-                tmpdir = path(mkdtemp(suffix='-kitops'))            
+                tmpdir = path(mkdtemp(suffix='-kitops'))
                 self.getRHNFile(url, '/repodata/repomd.xml', tmpdir)
                 remote=YumRepo('file://'+ tmpdir)
                 try:
@@ -569,7 +585,7 @@ class KitOpsApp(KusuApp):
 
 
     def compareCheckSum(self, local, remote):
-        """Compare the primary.xml.gz checksum value from the local repomd.xml 
+        """Compare the primary.xml.gz checksum value from the local repomd.xml
            and the remote repomd.xml"""
         return local['primary']['checksum'][0] == remote['primary']['checksum'][0] and \
                local['primary']['checksum'][1] == remote['primary']['checksum'][1]
@@ -580,7 +596,7 @@ class KitOpsApp(KusuApp):
         kusu_root = path(os.environ.get('KUSU_ROOT', '/opt/kusu'))
         cachepath = kusu_root + '/var/cache/kitops'
 
-        root, kitdict = self.retrieveCacheKitURL(rkid) 
+        root, kitdict = self.retrieveCacheKitURL(rkid)
 
         if root and kitdict:
             kpath, krepo = os.path.split(root)
@@ -588,7 +604,7 @@ class KitOpsApp(KusuApp):
             return self.verifyCacheChecksum(krepo, kurl)
         return False
 
-                
+
     def runAddRemoteKit(self, rkid):
         kl.debug('Performing remote add kits operation')
 
@@ -597,7 +613,7 @@ class KitOpsApp(KusuApp):
 
         if not self.verifyKitUpdated(rkid):
             print "Remote repository has been updated and kit id may have changed. Please do kitops -r\n"
-            sys.exit(-1)       
+            sys.exit(-1)
         repo, rpmurl = self.retrieveCacheURL(rkid)
         cachedir = os.path.join(cachepath, repo)
         url, krpm = os.path.split(rpmurl)
@@ -610,31 +626,31 @@ class KitOpsApp(KusuApp):
                     kit, components = processKitInfo(f)
 
                     if kit.has_key('filenames'):
-                        for c in kit['filenames']:                                    
+                        for c in kit['filenames']:
 
                             if repo == 'rhel':
-                                self.getRHNFile(url, c, tmpdir)                          
+                                self.getRHNFile(url, c, tmpdir)
                             else:
                                 urlc = os.path.join(url, c)
-                                 
+
                                 fc = FetchCommand(uri=urlc,
                                                   fetchdir=False,
                                                   destdir=tmpdir,
                                                   overwrite=False)
                                 status, dest = fc.execute()
             kit_media = tmpdir
-            koinst.setKitMedia(kit_media)
+            self.koinst.setKitMedia(kit_media)
             self.runAdd()
             tmpdir.rmtree()
 
-        
+
     def runAdd(self):
         kl.debug('Performing add operation')
         self.logEvent(self._("kitops_event_add_kits_from_media") % self.koinst.kitmedia,
                       toStdout=False)
-                
+
         kits = self.mountAndParseKitMedia()
- 
+
         kitError = False
 
         if getattr(kits, 'ostype', None) is not None:
@@ -670,7 +686,7 @@ class KitOpsApp(KusuApp):
             kl.debug(msg)
             self.logErrorEvent(msg)
             sys.exit(EKITLOC_FAIL)
-            
+
         if kitError:
             sys.exit(EKITLOC_FAIL)
 
@@ -733,8 +749,8 @@ class KitOpsApp(KusuApp):
             res = sys.stdin.readline().strip()
             if res == 'N': break
             elif not res: res = self.determineKitMedia()
-     
-        self.koinst.makeContribDir(kit) 
+
+        self.koinst.makeContribDir(kit)
         self.koinst.finalizeOSKit(kit)
 
         kit_str = "%s-%s-%s" % (kit['name'], kit['ver'], kit['arch'])
@@ -782,7 +798,7 @@ class KitOpsApp(KusuApp):
 
             count=0
             if not kit.is_os():
-            
+
                 sys.stdout.write("\n%s:\t" % headers[8])
                 osline=""
                 os_set = kit.getSupportedDistro()
@@ -843,7 +859,7 @@ class KitOpsApp(KusuApp):
                 ngline = ngline[:len(ngline)-5]
 
             sys.stdout.write(ngline + '\n\n')
- 
+
         kl.debug('SUCCESS performing list operation')
 
     def mountAndParseKitMedia(self):
