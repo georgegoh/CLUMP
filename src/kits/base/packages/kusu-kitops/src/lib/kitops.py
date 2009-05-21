@@ -26,7 +26,7 @@ from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.util.tools import cpio_copytree
 from kusu.util import rpmtool
-from kusu.util.kits import processKitInfo
+from kusu.util.kits import processKitInfo, getKitComponentsMatchingOS
 from kusu.util.errors import *
 # TODO: uncomment this to call repoman's refresh
 #from kusu.repoman.repofactory import RepoFactory
@@ -188,28 +188,13 @@ class KitOps:
 
     def getKitComponents(self, kid, os):
         kitinfo = self.kits_dir / str(kid) / 'kitinfo'
-        if not kitinfo.exists():
-            return []
-        kit, components = processKitInfo(kitinfo)
-        if kit['api'] != '0.2':
-            return []
+        components = getKitComponentsMatchingOS(kitinfo, os)
 
-        target_os = (os.name, os.major, os.minor, os.arch)
         components_list = []
-        for comp in components:
-            os_tuples = []
-            try:
-                for tup in comp['os']:
-                    for os_name in getOSNames(tup['name'], default=[tup['name']]):
-                        os_tuples.append((os_name, tup['major'], tup['minor'], tup['arch']))
-            except KeyError:
-                break
-            try:
-                if matchTuple(target_os, os_tuples):
-                    db_comp = self.__db.Components.selectfirst_by(cname=comp['pkgname'], kid=kid)
-                    components_list.append(db_comp)
-            except KeyError:
-                pass
+        for component in components:
+            db_comp = self.__db.Components.selectfirst_by(cname=comp['pkgname'], kid=kid)
+            components_list.append(db_comp)
+
         return components_list
 
     def updateComponents(self, kit, components):

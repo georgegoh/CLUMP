@@ -1,5 +1,6 @@
 from path import path
 from kusu.util.errors import KitinfoSyntaxError
+from primitive.support.osfamily import getOSNames, matchTuple
 
 def processKitInfo(kitinfo):
     """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo
@@ -22,3 +23,40 @@ def processKitInfo(kitinfo):
     components = ns.get('components',[])
 
     return (kit,components)
+
+def getKitComponentsMatchingOS(kitinfo, os):
+    """
+    This method returns a list of component names compatible with the operating
+    system described by os as stated in the specified kitinfo file.
+
+    kitinfo: a string containing the path to the authoritative kitinfo file
+    os: a tuple of the form (name, major, minor, arch) describing the os to match
+    """
+
+    kitinfo = path(kitinfo)
+    if not kitinfo.isfile(): return []
+
+    kit, components = processKitInfo(kitinfo)
+    if kit['api'] != '0.2':
+        return []
+
+    target_os = (os.name, os.major, os.minor, os.arch)
+    components_list = []
+
+    for comp in components:
+        os_tuples = []
+
+        try:
+            for os_tuple in comp['os']:
+                for os_name in getOSNames(os_tuple['name'], default=[os_tuple['name']]):
+                    os_tuples.append((os_name, os_tuple['major'], os_tuple['minor'], os_tuple['arch']))
+        except KeyError:
+            break
+
+        try:
+            if matchTuple(target_os, os_tuples):
+                components_list.append(comp['pkgname'])
+        except KeyError:
+            pass
+
+    return components_list
