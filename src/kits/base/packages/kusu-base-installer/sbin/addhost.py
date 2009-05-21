@@ -623,7 +623,7 @@ class AddHostApp(KusuApp):
             
             # Handle removing node from db.
             if myNode.deleteNode(delnode):
-                self.logEvent(kusuApp._("addhost_event_deleted_node") %delnode, 
+                self.logEvent(kusuApp._("addhost_event_deleted_node") % delnode, 
                               toStdout=False)
                 delflag = True
                 myNodeInfo.nodeList.append(delnode)
