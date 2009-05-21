@@ -7,7 +7,7 @@
 
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
-from kusu.util.errors import UndefinedOSType, KitinfoSyntaxError
+from kusu.util.errors import UndefinedOSType
 from kusu.buildkit.strategy import KusuKitFactory, KusuComponentFactory
 
 
@@ -16,14 +16,14 @@ import subprocess
 
 KIT_API='0.1'
 
-       
+
 def populatePackagesDir(buildprofile, arch='noarch'):
     """ Sweeps through the kitsrc dir and makes the built packages
         available in the packages dir.
-    
+
     """
     # TODO : need to handle DEBs too instead of just RPMs
-    
+
     filespecs = []
 
     if arch == 'x86':
@@ -36,7 +36,7 @@ def populatePackagesDir(buildprofile, arch='noarch'):
 
     # add noarch packages no matter what
     if not '*.noarch.rpm' in filespecs: filespecs.append('*.noarch.rpm')
-    
+
     # locate the built rpms
     builtdir = buildprofile.builddir / 'packages/RPMS'
     buildprofile.filenames = []
@@ -54,40 +54,18 @@ def populatePackagesDir(buildprofile, arch='noarch'):
             lnP = subprocess.Popen(cmd,shell=True)
             lnP.wait()
 
-        
+
     # also locate rpms that are located in the srcdir
 
     for fspec in filespecs:
         for f in buildprofile.srcdir.walkfiles(fspec):
-            if f.endswith('.src.rpm'): 
+            if f.endswith('.src.rpm'):
                 pass
             else:
                 cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
                 lnP = subprocess.Popen(cmd,shell=True)
                 lnP.wait()
 
-
-def processKitInfo(kitinfo):
-    """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo 
-        and a list of component metainfo contained in that file. A metainfo is a dict object.
-    """
-    kitinfo = path(kitinfo)
-    if not kitinfo.isfile(): return ({},[])
-    
-    ns = {}
-
-    # If there is a syntax error in the kitinfo file, holla!
-    try:
-        execfile(kitinfo,ns)
-    except SyntaxError, e:
-        error_message = "%s in kitinfo file %s at line %s, column %s" % \
-                        (e.msg, e.filename, e.lineno, e.offset)
-        raise KitinfoSyntaxError, error_message
-
-    kit = ns.get('kit',{})
-    components = ns.get('components',[])
-    
-    return (kit,components)
 
 def DefaultKit(**kwargs):
     """ The most basic type of kits. """
@@ -106,10 +84,10 @@ def DefaultKit(**kwargs):
         del kwargs['removeable']
     if not 'removable' in kwargs and not 'removeable' in kwargs:
         kwargs['removable'] = True
-        
+
     if not 'pkgname' in kwargs: kwargs['pkgname'] = ''
     if not 'name' in kwargs: kwargs['name'] = ''
-    
+
     if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
     kit = KusuKitFactory[KIT_API](**kwargs)
@@ -178,9 +156,9 @@ def DefaultComponent(**kwargs):
     if not 'osversion' in kwargs: kwargs['osversion'] = ''
     if not 'osmajor' in kwargs: kwargs['osmajor'] = ''
     if not 'osminor' in kwargs: kwargs['osminor'] = ''
-    
+
     component = KusuComponentFactory[KIT_API](**kwargs)
-  
+
     return component
 
 
@@ -192,7 +170,7 @@ def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
     kwargs['srctype'] = 'distro'
     return Package(**kwargs)
-    
+
 def RPMPackage(**kwargs):
     """ This is used to handle rpm packages. """
     kwargs['srctype'] = 'rpm'
@@ -220,7 +198,7 @@ def Package(**kwargs):
         pkg = PackageProfile(RPMWrapper(),**kwargs)
     elif kwargs['srctype'] == 'srpm':
         pkg = PackageProfile(SRPMWrapper(),**kwargs)
-        
+
 
     return pkg
 

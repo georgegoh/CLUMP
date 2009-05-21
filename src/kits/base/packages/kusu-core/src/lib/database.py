@@ -17,7 +17,7 @@ from kusu.util.errors import *
 import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support.osfamily import getOSNames, matchTuple
-from kusu.buildkit import processKitInfo
+from kusu.util.kits import processKitInfo
 from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
@@ -58,7 +58,7 @@ class BaseTable(object):
     def __init__(self, **kwargs):
         for col, value in kwargs.items():
             if col not in self.cols:
-                raise NoSuchColumnError, '%s not found' % col 
+                raise NoSuchColumnError, '%s not found' % col
             else:
                 setattr(self, col, value)
 
@@ -66,13 +66,13 @@ class BaseTable(object):
     # SA sets some custom stuff.
     #def __getattr__(self, col, value):
     #    if col not in self.cols:
-    #        raise NoSuchColumnError, '%s not found' % col 
+    #        raise NoSuchColumnError, '%s not found' % col
     #    else:
     #        object.__getattr__(self, col, value)
-            
+
     #def __setattr__(self, col, value):
     #    if col not in self.cols:
-    #        raise NoSuchColumnError, '%s not found' % col 
+    #        raise NoSuchColumnError, '%s not found' % col
     #    else:
     #        object.__setattr__(self, col, value)
 
@@ -82,7 +82,7 @@ class AppGlobals(BaseTable):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.kname, self.kvalue, self.ngid)
 
-class Components(BaseTable): 
+class Components(BaseTable):
     cols = ['kid', 'cname', 'cdesc', 'os', 'ngtypes']
 
     def getNGTypes(self):
@@ -96,13 +96,13 @@ class Components(BaseTable):
                (self.__class__.__name__, self.kid, self.cname, self.os, self.ngtypes,
                 self.cdesc)
 
-class DriverPacks(BaseTable): 
+class DriverPacks(BaseTable):
     cols = ['dpid', 'cid', 'dpname', 'dpdesc']
     def __repr__(self):
         return '%s(%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.dpid, self.cid, self.dpname, self.dpdesc)
 
-class Kits(BaseTable): 
+class Kits(BaseTable):
     cols = ['rname', 'rdesc', 'version', 'isOS', \
             'removable', 'arch', 'osid', 'release']
 
@@ -176,22 +176,22 @@ class Kits(BaseTable):
             for comp in self.components:
                 if not comp.os or comp.os.strip() == '' or comp.os == 'NULL':
                     return None
-                
+
                 else:
                     os_set.add(comp.os.lower())
-                     
+
         elif infokit['api'] in SUPPORTED_KIT_APIS:
             for comp in infocomps:
                 try:
                     for tup in comp['os']:
                         for os_name in getOSNames(tup['name'], default=[tup['name']]):
-            
+
                             os_str = os_name
                             if tup['minor'] == '*':
                                 os_str = os_str + '-' + tup['major']
                             else:
                                 os_str = os_str + '-' + tup['major'] + '.' + tup['minor']
-                    
+
                             if tup['arch'] in ['*', 'noarch']:
                                 os_set.add(os_str + '-' + 'i386')
                                 os_set.add(os_str + '-' + 'x86_64')
@@ -200,7 +200,7 @@ class Kits(BaseTable):
                 except KeyError:
                     break
         return sorted(os_set)
- 
+
     def is_os(self):
         if self.osid is not None or self.isOS:
             return True
@@ -227,7 +227,7 @@ class Kits(BaseTable):
         return rname, version, arch
 
     def getLongName(self):
-        return '%s%s%s' % self.prepNameVerArch('-') 
+        return '%s%s%s' % self.prepNameVerArch('-')
 
     longname = property(getLongName)
 
@@ -236,13 +236,13 @@ class Kits(BaseTable):
                (self.__class__.__name__, self.rname, self.version, self.release,
                 self.arch, self.rdesc, self.isOS, self.osid, self.removable)
 
-class Modules(BaseTable): 
+class Modules(BaseTable):
     cols = ['ngid', 'module', 'loadorder']
     def __repr__(self):
         return '%s(%r,%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.module, self.loadorder)
 
-class Networks(BaseTable): 
+class Networks(BaseTable):
     cols = ['network', 'subnet', 'device', 'suffix', \
             'gateway', 'options', 'netname', 'startip', \
             'inc', 'type', 'usingdhcp']
@@ -299,7 +299,7 @@ class Nodes(BaseTable):
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.name, self.kernel,
-                self.initrd, self.kparams, self.state, self.bootfrom, 
+                self.initrd, self.kparams, self.state, self.bootfrom,
                 self.lastupdate, self.rack, self.rank)
 
 class Packages(BaseTable):
@@ -390,9 +390,9 @@ class DB(object):
                     'Networks' : Networks,
                     'Nics' : Nics,
                     'NGHasNet' : NGHasNet,
-                    'NodeGroups' : NodeGroups,              
+                    'NodeGroups' : NodeGroups,
                     'Nodes' : Nodes,
-                    'Packages' : Packages, 
+                    'Packages' : Packages,
                     'Partitions' : Partitions,
                     'Scripts' : Scripts,
                     'Repos' : Repos,
@@ -400,7 +400,7 @@ class DB(object):
 
     __passfile = os.environ.get('KUSU_ROOT', '') + '/etc/db.passwd'
     __postgres_passfile = os.environ.get('KUSU_ROOT', '') + '/etc/pgdb.passwd'
-    
+
     def __init__(self, driver, db=None, username=None, password=None,
                  host='localhost', port=None, entity_name=None):
         """Initialize the database with the corrrect driver and account
@@ -414,13 +414,13 @@ class DB(object):
             apache_password = self.__getPasswd()
         if apache_password:
             password = apache_password
-            
+
         if driver == 'sqlite':
             if db:
                 engine_src = 'sqlite:///%s' % db
             else:
                 engine_src = 'sqlite://'   # in-memory database
-            
+
         elif driver == 'mysql':
             if not port:
                 port = '3306'
@@ -431,22 +431,22 @@ class DB(object):
             else:
                 import pwd
                 engine_src += pwd.getpwuid(os.getuid())[0]
-                
+
             if password:
                 engine_src += ':%s@%s:%s/%s' % (password, host, port, db)
             else:
                 engine_src += '@%s:%s/%s' % (host, port, db)
- 
+
         elif driver == 'postgres':
-            
+
             if username == 'postgres':
                 postgres_password = self.__getPasswd(user='postgres')
                 if postgres_password: #ensure postgres_password
-                    password = postgres_password            
-            
+                    password = postgres_password
+
             if not port:
                port = '5432'
-        
+
             engine_src = 'postgres://%s:%s@%s:%s/%s' % \
                              (username, password, host, port, db)
 
@@ -461,7 +461,7 @@ class DB(object):
         self.port = port
         self.entity_name = entity_name
         self.ctx = None
-        
+
         self.metadata = sa.BoundMetaData(engine_src, \
                                          poolclass=sa.pool.SingletonThreadPool)
         self._defineTables()
@@ -473,11 +473,11 @@ class DB(object):
         """
         Open self.__passfile to retrieve password, return None on fail.
         """
-        
+
         if user == 'postgres':
             passfile = self.__postgres_passfile
         else:
-            passfile = self.__passfile        
+            passfile = self.__passfile
 
         try:
             fp = file(passfile, 'r')
@@ -507,14 +507,14 @@ class DB(object):
 
         # need to destroy the current session which may still contain old data
         self.ctx.del_current()
- 
-    def createTables(self): 
+
+    def createTables(self):
         """Creates all tables in the database"""
 
         self.metadata.create_all()
 
     def _defineTables(self):
-        """Define the database schema and load 
+        """Define the database schema and load
            all mapper into class atrributes
         """
         # This originates frm the sql script.
@@ -546,7 +546,7 @@ class DB(object):
             mysql_engine='InnoDB')
         sa.Index('driverpacks_FKIndex1', driverpacks.c.cid)
         self.__dict__['driverpacks'] = driverpacks
-    
+
         kits = sa.Table('kits', self.metadata,
             sa.Column('kid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('rname', sa.String(45)),
@@ -596,8 +596,8 @@ class DB(object):
         sa.Index('comp2ng_FKIndex1', ng_has_comp.c.cid)
         sa.Index('comp2ng_FKIndex2', ng_has_comp.c.ngid)
         self.__dict__['ng_has_comp'] = ng_has_comp
-       
-        # Again, this is a M-N table. 
+
+        # Again, this is a M-N table.
         ng_has_net = sa.Table('ng_has_net', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, nullable=False),
             sa.Column('netid', sa.Integer, primary_key=True, nullable=False),
@@ -609,7 +609,7 @@ class DB(object):
         self.__dict__['ng_has_net'] = ng_has_net
 
         # Since nicsid is a PK, it is uniq.
-        # It is reduntant to create a composite key of 
+        # It is reduntant to create a composite key of
         # (nicsid | nid | netid). nid and netid can
         # just be FK and not nullable
         #
@@ -632,7 +632,7 @@ class DB(object):
         nodegroups = sa.Table('nodegroups', self.metadata,
             sa.Column('ngid', sa.Integer, primary_key=True, autoincrement=True),
             sa.Column('repoid', sa.Integer, sa.ForeignKey('repos.repoid'), nullable=True),
-            sa.Column('ngname', sa.String(255), unique=True), 
+            sa.Column('ngname', sa.String(255), unique=True),
             sa.Column('installtype', sa.String(20)),
             sa.Column('ngdesc', sa.String(255)),
             sa.Column('nameformat', sa.String(45)),
@@ -662,14 +662,14 @@ class DB(object):
 
         # Not sure what is this used for.
         #
-        # Could be used for third party packages that can 
+        # Could be used for third party packages that can
         # be added to a nodegroup, an additional path
-        # column will be needed. Such packages will 
+        # column will be needed. Such packages will
         # not be in a kit or distro
         # Similar to script table. Both can be merged
         # into a single table.
         packages = sa.Table('packages', self.metadata,
-            sa.Column('idpackages', sa.Integer, primary_key=True, 
+            sa.Column('idpackages', sa.Integer, primary_key=True,
                       autoincrement=True),
             sa.Column('ngid', sa.Integer, sa.ForeignKey('nodegroups.ngid'),
                       nullable=False),
@@ -744,7 +744,7 @@ class DB(object):
 
         self.ctx = SessionContext(sa.create_session)
         # mappers have been created, do nothing
-        from sqlalchemy.orm.mapper import ClassKey 
+        from sqlalchemy.orm.mapper import ClassKey
         if sa.orm.mapper_registry.has_key(ClassKey(ReposHaveKits, self.entity_name)):
 #            self.ctx.set_current(sa.orm.mapper_registry.get(ClassKey(ReposHaveKits, self.entity_name)).get_session())
             return
@@ -778,7 +778,7 @@ class DB(object):
           entity_name=self.entity_name)
 
         driverpacks = sa.Table('driverpacks', self.metadata, autoload=True)
-        assign_mapper(self.ctx, DriverPacks, driverpacks, 
+        assign_mapper(self.ctx, DriverPacks, driverpacks,
           properties={'component': sa.relation(Components, entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
@@ -787,7 +787,7 @@ class DB(object):
           properties={'components': sa.relation(Components,
                                                 entity_name=self.entity_name),
                       'os': sa.relation(OS, entity_name=self.entity_name),
-                      'repos': sa.relation(Repos, secondary=repos_have_kits, 
+                      'repos': sa.relation(Repos, secondary=repos_have_kits,
                                            entity_name=self.entity_name),
                       'removable': kits.c.removeable},
           entity_name=self.entity_name)
@@ -829,7 +829,7 @@ class DB(object):
                                               entity_name=self.entity_name),
                       'scripts': sa.relation(Scripts,
                                              entity_name=self.entity_name),
-                      'repo': sa.relation(Repos, 
+                      'repo': sa.relation(Repos,
                                           entity_name=self.entity_name)},
 
           entity_name=self.entity_name)
@@ -912,7 +912,7 @@ class DB(object):
             diskless.modules.append(Modules(loadorder=index+1, module=mod))
 
         for index, mod in enumerate(Dispatcher.get('imaged_modules', default=[])):
-            imaged.modules.append(Modules(loadorder=index+1, module=mod)) 
+            imaged.modules.append(Modules(loadorder=index+1, module=mod))
 
         # Creates the necessary pkg list for image and diskless nodes
         for pkg in Dispatcher.get('diskless_packages', default=[]):
@@ -1063,7 +1063,7 @@ class DB(object):
                 password = self.__getPasswd(user='postgres')
                 env = os.environ.copy()
                 env['PGPASSWORD'] = password
-                
+
                 # ignore self.password for now
                 # expect to have a psql create role apache with superuser login to be run
                 # already.
@@ -1078,7 +1078,7 @@ class DB(object):
                 retcode = p.returncode
             except Exception, e:
                 raise CommandFailedToRunError, e
-            
+
             if retcode:
                 raise FailedToCreateDatabase, 'Unable to create database: %s' % self.db
         else:
@@ -1111,14 +1111,14 @@ class DB(object):
                 # disconnect from the database
                 password = self.__getPasswd(user='postgres')
                 env = os.environ.copy()
-                env['PGPASSWORD'] = password                
-                
+                env['PGPASSWORD'] = password
+
                 # ignore self.password for now
                 # expect to have a psql create role apache with superuser login to be run
                 # already.
                 cmd = 'psql -p %s  postgres %s   -c "drop database %s;"'\
                         % (self.port,self.username,self.db)
-                
+
                 p = subprocess.Popen(cmd,
                                      shell=True,
                                      env=env,
@@ -1126,7 +1126,7 @@ class DB(object):
                                      stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 retcode = p.returncode
-                
+
             except Exception, e:
                     raise CommandFailedToRunError, e
 
@@ -1176,7 +1176,7 @@ class DB(object):
         other_db.createTables()
 
         # Copy them in order to preserve relationship
-        # Order by primary, secondary(1-M) and 
+        # Order by primary, secondary(1-M) and
         # junction tables(M-N)
         for table in ['AppGlobals', 'Repos', 'OS', 'Kits', 'Networks', \
                       'Components', 'NodeGroups', 'Modules', \
@@ -1239,7 +1239,7 @@ class DB(object):
             # causes an exception to be raised, as described in KUSU-507.
 #             try:
 #                other_db.flush()
-#             except sa.exceptions, e: 
+#             except sa.exceptions, e:
 #                raise UnableToCommitDataError, e
 #             except Exception, e:
 #                raise KusuError, e

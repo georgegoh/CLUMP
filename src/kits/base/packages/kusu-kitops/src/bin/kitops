@@ -15,7 +15,7 @@ from optparse import SUPPRESS_HELP
 from tempfile import mkdtemp
 from ConfigParser import ConfigParser
 from primitive.support.yum import YumRepo
-from kusu.buildkit import processKitInfo
+from kusu.util.kits import processKitInfo
 from primitive.fetchtool.commands import FetchCommand
 from kusu.repoman import tools
 from primitive.support.rpmtool import RPM

@@ -1,7 +1,7 @@
 import subprocess
 from path import path
 from kusu.util import rpmtool
-from kusu.buildkit import processKitInfo
+from kusu.util.kits import processKitInfo
 from kusu.util.errors import KitAlreadyInstalledError,ComponentAlreadyInstalledError
 
 import kusu.util.log as kusulog
@@ -46,7 +46,7 @@ def addkit01(koinst, db, kitinfo):
     kifile = kitpath / 'kitinfo'
     if kifile.exists(): kifile.copy(repodir)
 
-    
+
     # check/populate component table
     try:
         updated_ngs = koinst.updateComponents(newkit, kitinfo[2])
@@ -56,7 +56,7 @@ def addkit01(koinst, db, kitinfo):
         newkit.flush()
         koinst.deleteKit(del_name=kit['name'], del_version=kit['version'], del_arch=kit['arch'])
         raise ComponentAlreadyInstalledError, msg
-            
+
     # install the kit RPM
     if not koinst.installer:
         rpmP = subprocess.Popen('rpm --quiet --force --nodeps -i %s' %
@@ -158,7 +158,7 @@ def addkit02(koinst, db, kitinfo):
         newkit.flush()
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
-            
+
     return newkit.kid,updated_ngs
 
 
@@ -244,7 +244,7 @@ def installDocs(koinst, kit):
         koinst.setPrefix(prefix)
         # original kitops prefix restored.
         kl.debug('No. Creating symlink to %s from %s' % (src_dir, dest_dir))
- 
+
         if not dest_dir.dirname().exists():
             dest_dir.dirname().makedirs()
         src_dir.symlink(dest_dir)
