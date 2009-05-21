@@ -40,6 +40,17 @@ def getKitComponentsMatchingOS(kitinfo, os):
     if kit['api'] != '0.2':
         return []
 
+    return matchComponentsToOS(components, os)
+
+def matchComponentsToOS(components, os):
+    """
+    This method returns a list of component names compatible with the operating
+    system described by os.
+
+    components: a list of components as described in the kit's kitinfo file
+    os: a tuple of the form (name, major, minor, arch) describing the os to match
+    """
+
     target_os = (os.name, os.major, os.minor, os.arch)
     components_list = []
 

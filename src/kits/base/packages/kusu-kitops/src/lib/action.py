@@ -1,6 +1,7 @@
 import types
 import rpm
 from kusu.util.errors import KitNotInstalledError, UpdateKitError
+from kusu.util.kits import matchComponentsToOS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
@@ -63,9 +64,13 @@ class UpdateAction(KitopsAction):
         # TODO:
         # Check min_version to determine whether a kit can be upgraded
 
-        # Get a list of repos the old kit was associated with. We will need to
+        # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
-        associated_repo_ids = [r.repoid for r in self._db.ReposHaveKits.select_by(kid=old_kit_id)]
+        associated_repos = old_kit.repos
+
+        for repo in associated_repos:
+            if not matchComponentsToOS(kit_to_add[2], repo.getOS()):
+                raise UpdateKitError, "New kit does not have any components compatible with repo %s" % repo
 
         # Add the new kit, and pull it from the DB
         kit_api = kit_to_add[4]
@@ -73,9 +78,7 @@ class UpdateAction(KitopsAction):
         new_kit = self._db.Kits.get(new_kit_id)
 
         # Let's re-associate repos
-        for repo_id in associated_repo_ids:
-            repo = self._db.Repos.get(repo_id)
-
+        for repo in associated_repos:
             # First, deassociate the old kit from the repo
             for i in xrange(len(repo.kits)):
                 if old_kit_id == repo.kits[i].kid:
@@ -94,6 +97,8 @@ class UpdateAction(KitopsAction):
                     new_component.nodegroups = old_component.nodegroups
                     old_component.nodegroups = []
 
+        # For some reason, the in-memory representation of the DB is stale at
+        # this point, so we need to re-load the old kit.
         old_kit = self._db.Kits.get(old_kit_id)
         DeleteKitStrategy[self.koinst.getKitApi(old_kit_id)](self.koinst, self._db, old_kit)
         self._db.flush()

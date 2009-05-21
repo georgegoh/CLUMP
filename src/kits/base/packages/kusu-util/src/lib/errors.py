@@ -94,6 +94,7 @@ class KitNotInstalledError(KusuError): pass
 class InstallKitRPMError(KusuError): pass
 class CopyOSMediaError(KusuError): pass
 class DeleteKitsError(KusuError): pass
+class UpdateKitError(KusuError): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
