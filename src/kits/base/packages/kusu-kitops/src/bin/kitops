@@ -334,7 +334,13 @@ class KitOpsApp(KusuApp):
             self.runListRemoteKit()
         elif self.kitop == PROCESS_ACTION_QUEUE:
             for action, run_args in self.action_queue.iteritems():
-                action.run(**run_args)
+                try:
+                    action.run(**run_args)
+                except Exception, e:
+                    sys.stderr.write("ERROR: %s\n" % e)
+                    # TODO: move the error codes into the KitopsAction class
+                    # hierarchy, and have the action return its own error code.
+                    sys.exit(EKIT_BAD)
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)

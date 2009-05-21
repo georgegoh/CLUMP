@@ -1,6 +1,6 @@
 import types
 import rpm
-from kusu.util.errors import UpdateKitError
+from kusu.util.errors import KitNotInstalledError, UpdateKitError
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
@@ -33,6 +33,9 @@ class UpdateAction(KitopsAction):
         # Find the kit with the specified id. We assume there is only one.
         old_kit_id = kw.pop('old_kit_id')
         old_kit = self._db.Kits.get(old_kit_id)
+
+        if old_kit is None:
+            raise KitNotInstalledError, "Kit with id '%s' is not installed" % old_kit_id
 
         # Determine which kit(s) in the supplied kit source (media, repo, etc)
         # can be updates.
