@@ -46,4 +46,4 @@ A simple example that demonstrates most of the features:
 	else:
 		print "It does not match"
 
-$Id: README,v 1.1.1.1 2006/05/22 11:53:27 djm Exp $
+$Id$

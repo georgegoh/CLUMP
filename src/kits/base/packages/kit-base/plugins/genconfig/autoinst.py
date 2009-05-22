@@ -1,4 +1,4 @@
-# $Id: kickstart.py 3725 2008-11-10 15:37:59Z ltsai $
+# $Id$
 #
 #   Copyright 2008 Platform Computing Inc
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: tool.py 3471 2008-09-26 13:50:30Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

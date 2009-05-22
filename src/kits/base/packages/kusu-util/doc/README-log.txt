@@ -1,4 +1,4 @@
-$Id: README-log.txt 606 2007-05-07 01:55:43Z mike $
+$Id$
 
 Kusu log module mini-HOWTO
 ==========================

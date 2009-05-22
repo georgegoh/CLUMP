@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kitsource01.py 4069 2009-01-19 04:21:57Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

@@ -16,7 +16,7 @@
 
 #include "Python.h"
 
-/* $Id: bcrypt_python.c,v 1.1.1.1 2006/05/22 11:53:27 djm Exp $ */
+/* $Id$ */
 
 /* Import */
 char *pybc_bcrypt(const char *, const char *);

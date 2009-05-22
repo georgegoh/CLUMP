@@ -1,5 +1,5 @@
 #
-# $Id: python-bcrypt.sles.spec 4172 2009-02-04 02:22:53Z hirwan $
+# $Id$
 #
 
 %define python_sitepkgs %(python -c 'from distutils import sysconfig; print sysconfig.get_python_lib(1)')
