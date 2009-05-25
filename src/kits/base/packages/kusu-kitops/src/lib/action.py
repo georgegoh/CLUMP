@@ -69,8 +69,8 @@ class UpdateAction(KitopsAction):
             raise UpdateKitError, msg
 
         # Verify both kits can be used in an upgrade.
-        validateNewKitForUpgrade(kit_to_add)
-        validateOldKitForUpgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''))
+        validate_new_kit_for_upgrade(kit_to_add)
+        validate_old_kit_for_upgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''))
 
         # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
@@ -135,7 +135,7 @@ class UpdateAction(KitopsAction):
         # Run post section of kit upgrade plugin
         # Propmt user to run cfmsync --upgrade
 
-def validateNewKitForUpgrade(kit_tuple):
+def validate_new_kit_for_upgrade(kit_tuple):
     """
     Checks whether the kit described by kit_tuple can be used in an upgrade.
 
@@ -156,7 +156,7 @@ def validateNewKitForUpgrade(kit_tuple):
         kl.error(msg)
         raise UpdateKitError, msg
 
-def validateOldKitForUpgrade(old_kit, oldest_upgradeable_version):
+def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version):
     """
     Checks whether old_kit can be upgraded.
 

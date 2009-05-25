@@ -53,8 +53,11 @@ class KitOps:
         self.kitmedia = ''
         self.dlkitiso = None
         self.mountpoint = None
-        self.i_mounted = False
         self.medialoc = None
+
+        # Did kitops mount the media? If so, kitops needs to unmount it.
+        self.i_mounted = False
+
         self.__db = kw.get('db', None)
 
         self.setPrefix(path(kw.get('prefix', '/')))
@@ -458,10 +461,12 @@ class KitOps:
             else:
                 kl.error('Unable to umount %s' % self.mountpoint)
 
+            self.i_mounted = False
             self.mountpoint = None
 
-        if self.dlkitiso and self.dlkitiso.exists():
-            self.dlkitiso.remove()
+        if self.dlkitiso:
+            if self.dlkitiso.exists():
+                self.dlkitiso.remove()
             self.dlkitiso = None
 
     def __handleMountError(self, rv):

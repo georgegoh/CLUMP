@@ -648,6 +648,7 @@ class KitOpsApp(KusuApp):
             kit_media = tmpdir
             self.koinst.setKitMedia(kit_media)
             self.runAdd()
+            # tmpdir.rmtree() will not be called if runAdd() throws an exception
             tmpdir.rmtree()
 
 
@@ -869,6 +870,8 @@ class KitOpsApp(KusuApp):
 
         kl.debug('SUCCESS performing list operation')
 
+    # This method should probably be broken up into two: mountKidMedia() and
+    # parseKitInfo(). This implies changes to koinst.addKitPrepare().
     def mountAndParseKitMedia(self):
         """Abort if mounting of kit media or parsing of kit metadata fails."""
         try:
