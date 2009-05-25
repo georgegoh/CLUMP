@@ -124,6 +124,8 @@ class KitOpsApp(KusuApp):
 
         self.parser.add_option('-i', '--kid', dest='kid',
                                help=self._('kid'))
+        self.parser.add_option('-n', '--remote-kid', dest='remote_kid',
+                               help=self._('Kit ID in the remote repo'))
 
         self.parser.add_option('-o', '--kitversion', dest='kitversion',
                                help=self._('kitversion'))
@@ -131,7 +133,7 @@ class KitOpsApp(KusuApp):
                                help=self._('kitarch'))
 
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                               help=self._('Database driver (sqlite, mysql,postgres)'))
+                               help=self._('Database driver (sqlite, mysql, postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -213,12 +215,12 @@ class KitOpsApp(KusuApp):
                     self.logErrorEvent('Kit media not specified in silent mode')
                     sys.exit(EKITLOC_FAIL)
                 else:
-                    if not options.kid:
+                    if not options.remote_kid:
                         kit_media = self.determineKitMedia()
 
             # to indicate which kit to install from a metakit
             self.kit_name = options.kit
-            self.kit_id = options.kid
+            self.remote_kit_id = options.remote_kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
             self.koinst.setKitMedia(kit_media)
@@ -228,8 +230,8 @@ class KitOpsApp(KusuApp):
             self.koinst.setKitMedia(kit_media)
 
             update_action = UpdateAction(self.__db, self.koinst)
-            run_args = { 'old_kit_id': options.kid,
-                         'kits': self.mountAndParseKitMedia() }
+            run_args = {'old_kit_id': options.kid,
+                        'kits': self.mountAndParseKitMedia()}
 
             self.action_queue[update_action] = run_args
             self.kitop = PROCESS_ACTION_QUEUE
@@ -279,11 +281,10 @@ class KitOpsApp(KusuApp):
 
         if self.kitop == KITOP_ADD:
 
-            if self.kit_id:
-                opt = self.kit_id
+            if self.remote_kit_id:
                 # Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid
-                if opt.find('-'):
-                    self.runAddRemoteKit(self.kit_id)
+                if self.remote_kit_id.find('-'):
+                    self.runAddRemoteKit(self.remote_kit_id)
             else:
                 self.runAdd()
 
@@ -562,7 +563,7 @@ class KitOpsApp(KusuApp):
             l={}
             local = YumRepo('file://'+ cachepath)
             try:
-	        l=local.getRepoMD()
+                l=local.getRepoMD()
             except FetchException, e:
                 kl.error(e)
                 print "Unable to retrieve repomd.xml file in cache directory [%s]\n" % repo
