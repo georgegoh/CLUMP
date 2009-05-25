@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import signal
-from path import path
 import subprocess
 from kusu.service.exceptions import *
 from kusu.service.install import InstallService
@@ -20,16 +19,12 @@ def error(msg):
     sys.exit(1)
 
 def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
-    cf = path(conf)
-    if not cf.isfile():
+    if not os.path.isfile(conf):
         error('Config file not found.')
 
     # Detect OS,ver,arch
     
     # Check for dependencies
-    deps = path(deps)
-    if not deps.isfile():
-        error('Dependencies list not found.')
     setupMinimalDeps(deps)
 
     # Start Kusu Server
@@ -47,8 +42,52 @@ def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
     # kill Kusu Server
 #    os.kill(kusu_server_pid, signal.SIGTERM)
 
+
 def setupMinimalDeps(deps):
-    pass
+    """ deps is a string location of the text file containing the list
+        of dependencies to be downloaded remotely and installed.
+    """
+    if not os.path.isfile(deps):
+        error('Dependencies list not found.')
+
+    f = open(deps)
+    # remove newline characters for each line.
+    lines = [l.strip() for l in f]
+    # remove empty lines.
+    lines = [l for l in lines if l]
+    # get list of missing dependencies.
+    missing_deps = [pkg for pkg in lines if not isPkgInstalled(pkg)]
+    if missing_deps:
+        print 'Required dependencies missing: %s' % missing_deps
+        for pkg in missing_deps:
+            installPackage(pkg)
+
+
+def isPkgInstalled(pkgname):
+    """ Check using the 'rpm -q' command whether a package is installed.
+        If the return value starts with the package name, then returns True.
+        Returns False otherwise.
+    """
+    rpm_check = subprocess.Popen(['/bin/rpm', '-q', pkgname],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+    out,err = rpm_check.communicate()
+    if out.startswith(pkgname):
+        return True
+    return False
+
+
+def installPackage(pkg):
+    """ Install a package using the zypper command. """
+    cmd = ['/usr/bin/zypper',
+           '--non-interactive',
+           '--no-gpg-checks',
+           'install',
+           '--auto-agree-with-licenses',
+           pkg]
+    install_pkg = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out,err = install_pkg.communicate()
+    print "Install '%s' out: %s err: %s" % (pkg, out, err)
 
 
 def startKusuServer():
@@ -107,6 +146,7 @@ def startInstall(conf):
     try:
         install.verify(conf)
         install.install(conf)
+        print 'Kusu successfully installed.'
     except ServiceException, e:
         print 'Install Config Exception(s):'
         for i,m in enumerate(e.messages):

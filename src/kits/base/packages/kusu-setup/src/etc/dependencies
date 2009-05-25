@@ -1,0 +1,9 @@
+python-newt
+postgresql
+wget
+python-psycopg2
+rpm-python
+rpm-devel
+inst-source-utils
+pyparted
+ice-python

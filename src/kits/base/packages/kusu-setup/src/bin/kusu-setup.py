@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import signal
-from path import path
 import subprocess
 # ICE 
 import Ice
@@ -18,16 +17,12 @@ def error(msg):
     sys.exit(1)
 
 def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
-    cf = path(conf)
-    if not cf.isfile():
+    if not os.path.isfile(conf):
         error('Config file not found.')
 
     # Detect OS,ver,arch
     
     # Check for dependencies
-    deps = path(deps)
-    if not deps.isfile():
-        error('Dependencies list not found.')
     setupMinimalDeps(deps)
 
     # Start Kusu Server
@@ -46,8 +41,35 @@ def run(conf, deps='/opt/kusu/setup/dependencies', textmode=False):
 #    os.kill(kusu_server_pid, signal.SIGTERM)
 
 def setupMinimalDeps(deps):
-    """ deps is the list of dependencies to be downloaded remotely and installed. """
-    pass
+    """ deps is a string location of the text file containing the list
+        of dependencies to be downloaded remotely and installed.
+    """
+    if not os.path.isfile(deps):
+        error('Dependencies list not found.')
+
+    f = open(deps)
+    # remove newline characters for each line.
+    lines = [l.strip() for l in f]
+    # remove empty lines.
+    lines = [l for l in lines if l]
+    # get list of missing dependencies.
+    missing_deps = [pkg for pkg in lines if not isPkgInstalled(pkg)]
+    if missing_deps:
+        error('Required dependencies missing: %s' % missing_deps)
+
+
+def isPkgInstalled(pkgname):
+    """ Check using the 'rpm -q' command whether a package is installed.
+        If the return value starts with the package name, then returns True.
+        Returns False otherwise.
+    """
+    rpm_check = subprocess.Popen(['/bin/rpm', '-q', pkgname],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+    out,err = rpm_check.communicate()
+    if out.startswith(pkgname):
+        return True
+    return False
 
 
 def startKusuServer():
@@ -104,7 +126,7 @@ def startInstall(conf):
    
     try:
         s = ''
-        if path(conf).exists():
+        if os.path.isfile(conf):
             s = open(conf).read()
         install.verify(s)
         install.install(s)
