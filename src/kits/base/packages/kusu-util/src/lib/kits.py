@@ -78,14 +78,9 @@ def matchComponentsToOS(components, os):
 def compareVersion((verA, relA), (verB, relB)):
     """Compares A and B to determine which is newer.
 
-    verA is the old version
-    relA is the old release
-    verB is the new version
-    relB is the new release
-
-    returns -1 if A is newer than B,
+    returns  1 if A is newer than B,
              0 if A is the same as B, and
-             1 if B is newer than A.
+            -1 if B is newer than A.
     """
 
     return compareEVR(("0", verA, relA), ("0", verB, relB))

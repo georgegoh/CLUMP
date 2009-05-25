@@ -1,7 +1,7 @@
 import types
 import rpm
 from kusu.util.errors import KitNotInstalledError, UpdateKitError
-from kusu.util.kits import matchComponentsToOS, SUPPORTED_KIT_APIS
+from kusu.util.kits import matchComponentsToOS, compareVersion, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
@@ -32,11 +32,11 @@ class UpdateAction(KitopsAction):
         """Perform the action."""
 
         # Find the kit with the specified id. We assume there is only one.
-        old_kit_id = kw.pop('old_kit_id')
+        old_kit_id = int(kw.pop('old_kit_id'))
         old_kit = self._db.Kits.get(old_kit_id)
 
         if old_kit is None:
-            raise KitNotInstalledError, "Kit with id '%s' is not installed" % old_kit_id
+            raise KitNotInstalledError, "Kit with id '%d' is not installed" % old_kit_id
 
         # Determine which kit(s) in the supplied kit source (media, repo, etc)
         # can be updates.
@@ -50,7 +50,6 @@ class UpdateAction(KitopsAction):
             # [ ] have the same name (kit.rname)
             # [ ] have the same arch (kit.arch)
             # [ ] are newer than the kit being updated (kit.version/kit.release)
-            # [ ] the new kit's API is supported
             if kitinfo['pkgname'] == 'kit-%s' % old_kit.rname and kitinfo['arch'] == old_kit.arch \
                     and -1 == compareVersion((old_kit.version, old_kit.release), (kitinfo['version'], kitinfo['release'])):
                 possible_kits.append(kit)
@@ -60,17 +59,17 @@ class UpdateAction(KitopsAction):
         else:
             raise UpdateKitError, 'No suitable kits avaialble for upgrade'
 
-        # Verify the new kit can be used in an upgrade.
+        # Verify both kits can be used in an upgrade.
         validateNewKitForUpgrade(kit_to_add)
-
-        # TODO:
-        # Check min_version to determine whether a kit can be upgraded
+        validateOldKitForUpgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''))
 
         # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
         associated_repos = old_kit.repos
 
+        associated_repo_ids = []
         for repo in associated_repos:
+            associated_repo_ids.append(repo.repoid)
             if not matchComponentsToOS(kit_to_add[2], repo.getOS()):
                 raise UpdateKitError, "New kit does not have any components compatible with repo %s" % repo
 
@@ -80,7 +79,9 @@ class UpdateAction(KitopsAction):
         new_kit = self._db.Kits.get(new_kit_id)
 
         # Let's re-associate repos
-        for repo in associated_repos:
+        for repo_id in associated_repo_ids:
+            repo = self._db.Repos.get(repo_id)
+
             # First, deassociate the old kit from the repo
             for i in xrange(len(repo.kits)):
                 if old_kit_id == repo.kits[i].kid:
@@ -90,7 +91,9 @@ class UpdateAction(KitopsAction):
             # TODO: check whether the new kit has compatible components
             # Add the new kit
             repo.kits.append(new_kit)
-            RepoFactory(self._db).getRepo(repo_id).markStale()
+            RepoFactory(self._db).getRepo(repo.repoid).markStale()
+            repo.save()
+            self._db.flush()
 
         # Now we handle the nodegroup-component associations
         for new_component in new_kit.components:
@@ -129,3 +132,17 @@ def validateNewKitForUpgrade(kit_tuple):
 
     if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
         raise UpdateKitError, "Upgrades only supported for kit API version 0.4 or newer."
+
+def validateOldKitForUpgrade(old_kit, oldest_upgradeable_version):
+    """
+    Checks whether old_kit can be upgraded.
+
+    The check is performed based on the oldest_upgradeable_version specified in
+    the new kit and passed into this method. If the kit is too old to be
+    upgraded, this method raises an UpdateKitError.
+    """
+
+    # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
+    if -1 == compareVersion((old_kit.version, "0"), (oldest_upgradeable_version, "0")):
+        raise UpdateKitError, "Unable to upgrade, oldest upgradeable version is %(oldest)s, specified kit is %(current)s." \
+                % {'oldest': oldest_upgradeable_version, 'current': old_kit.version}
