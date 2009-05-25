@@ -6,6 +6,9 @@ from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
 
+import kusu.util.log as kusulog
+kl = kusulog.getKusuLog('kitops')
+
 class KitopsAction(object):
     """Head of class hierarchy implementing actions on kits.
 
@@ -36,7 +39,9 @@ class UpdateAction(KitopsAction):
         old_kit = self._db.Kits.get(old_kit_id)
 
         if old_kit is None:
-            raise KitNotInstalledError, "Kit with id '%d' is not installed" % old_kit_id
+            msg = "Kit with id '%d' is not installed" % old_kit_id
+            kl.error(msg)
+            raise KitNotInstalledError, msg
 
         # Determine which kit(s) in the supplied kit source (media, repo, etc)
         # can be updates.
@@ -59,7 +64,9 @@ class UpdateAction(KitopsAction):
             kit_to_add = possible_kits[0]
             components_to_add = kit_to_add[2]
         else:
-            raise UpdateKitError, 'No suitable kits avaialble for upgrade'
+            msg = 'No suitable kits avaialble for upgrade'
+            kl.error(msg)
+            raise UpdateKitError, msg
 
         # Verify both kits can be used in an upgrade.
         validateNewKitForUpgrade(kit_to_add)
@@ -74,7 +81,9 @@ class UpdateAction(KitopsAction):
         for repo in associated_repos:
             associated_repo_ids.append(repo.repoid)
             if not matchComponentsToOS(components_to_add, repo.getOS()):
-                raise UpdateKitError, "New kit does not have any components compatible with repo %s" % repo
+                msg = "New kit does not have any components compatible with repo %s" % repo
+                kl.error(msg)
+                raise UpdateKitError, msg
 
         # Add the new kit, and pull it from the DB
         kit_api = kit_to_add[4]
@@ -138,10 +147,14 @@ def validateNewKitForUpgrade(kit_tuple):
 
     # Upgrading kits is supported from kit API 0.4 on.
     if kit_api not in SUPPORTED_KIT_APIS:
-        raise UpdateKitError, "New kit API version is not supported."
+        msg = "New kit API version is not supported."
+        kl.error(msg)
+        raise UpdateKitError, msg
 
     if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
-        raise UpdateKitError, "Upgrades only supported for kit API version 0.4 or newer."
+        msg = "Upgrades only supported for kit API version 0.4 or newer."
+        kl.error(msg)
+        raise UpdateKitError, msg
 
 def validateOldKitForUpgrade(old_kit, oldest_upgradeable_version):
     """
@@ -154,6 +167,7 @@ def validateOldKitForUpgrade(old_kit, oldest_upgradeable_version):
 
     # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
     if -1 == compareVersion((old_kit.version, "0"), (oldest_upgradeable_version, "0")):
-        raise UpdateKitError, \
-                "Unable to upgrade specified kit, version %(current)s, oldest upgradeable version is %(oldest)s." \
+        msg = "Unable to upgrade specified kit, version %(current)s, oldest upgradeable version is %(oldest)s." \
                 % {'oldest': oldest_upgradeable_version, 'current': old_kit.version}
+        kl.error(msg)
+        raise UpdateKitError, msg
