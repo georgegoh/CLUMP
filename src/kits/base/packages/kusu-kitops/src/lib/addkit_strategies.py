@@ -264,4 +264,5 @@ def addkit03(koinst, db, kitinfo):
 AddKitStrategy = { '0.1': addkit01,
                    '0.2': addkit02,
                    '0.2-installer': addkit02InstallerRules,
-                   '0.3': addkit03}
+                   '0.3': addkit03,
+                   '0.4': addkit03}

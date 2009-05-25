@@ -71,33 +71,33 @@ class RPMCollection(Struct):
                 else:
                     return False
             else:
-                return True 
-         
+                return True
+
 class RPM:
     """A RPM abstraction class"""
     filename = None       # Filename inclduing the absolute path. For e.g.: /tmp/foo.rpm
     hdr = None            # Header object.
-    ext = None            # File extenstion. For e.g: .hdr 
+    ext = None            # File extenstion. For e.g: .hdr
     path = None           # The absolute path. For e.g.: /tmp
     fname = None          # The filename. For e.g.: foo.rpm
-    file = None           # The filename that was used to init the RPM. 
+    file = None           # The filename that was used to init the RPM.
     rpmtags = dir(rpm)
-    
+
     # Take the attributes out from the RPMTAG_<attribute>
     rpmtags = {}
     for t in dir(rpm):
         if t.find('RPMTAG') == 0:
-            attr = t.split('RPMTAG_')[1].lower()  
+            attr = t.split('RPMTAG_')[1].lower()
             val  = getattr(rpm, t)
 
             rpmtags[attr] = val
-    
+
     def __init__(self, r=None, **kwargs):
         """Accepts the following:
            1. RPM header
            2. RPM header filename (foo.hdr)
            3. RPM filename (foo.rpm)"""
-        
+
         if r:
             if type(r) in [str, unicode]:
                 r = path(r)
@@ -147,7 +147,7 @@ class RPM:
 
         if not self.hdr:
             raise InvalidRPMHeader, "Invalid header"
-                    
+
     def writeHeader(self, dir='.', compress=True):
         """Write rpm header to a directory.
 
@@ -160,11 +160,11 @@ class RPM:
 
         if not dir:
             dir = path.getcwd()
-            
+
         dst = path(dir) / dst
         if dst.exits():
             os.unlink(dst)
-        
+
         if compress:
             h_file = gzip.open(dst, 'w')
         else:
@@ -173,14 +173,14 @@ class RPM:
         h_file.close()
 
         return dst
-        
+
     def getFilename(self):
         """Returns the filename of the rpm"""
         if self.filename:
             return path(self.filename)
-        else:       
+        else:
             return None
-        
+
     def getSplitfilename(self):
         """Returns the tuple (path, filename) of the rpm"""
         filename = self.getFilename()
@@ -193,11 +193,11 @@ class RPM:
     def getName(self):
         """Returns the name"""
         return self.hdr[rpm.RPMTAG_NAME]
-    
+
     def getArch(self):
         """Returns the arch"""
         return self.hdr[rpm.RPMTAG_ARCH]
-    
+
     def getVersion(self):
         """Returns the version"""
         return self.hdr[rpm.RPMTAG_VERSION]
@@ -212,7 +212,7 @@ class RPM:
             return self.hdr[rpm.RPMTAG_EPOCH]
         else:
             return 0
-            
+
     def getNEVRA(self):
         """Returns the name,epoch,version,release,arch"""
         n = self.getName()
@@ -277,7 +277,7 @@ class RPM:
             return lst
         else:
             return None
-    
+
     def getVendor(self):
         """Returns the vendor"""
         if rpm.RPMTAG_VENDOR in self.hdr.keys():
@@ -322,36 +322,36 @@ class RPM:
             p = (self.hdr[rpm.RPMTAG_REQUIRENAME][i], flag, version)
 
             lst.append(p)
-        
+
         if lst:
             return lst
         else:
             return None
-        
+
     def getChangelog(self):
         """Returns the changelog in a dictionary, sorted in reverse chronological order"""
-  
+
         if (rpm.RPMTAG_CHANGELOGNAME not in self.hdr.keys()) or \
            (rpm.RPMTAG_CHANGELOGTEXT not in self.hdr.keys()) or \
            (rpm.RPMTAG_CHANGELOGTIME not in self.hdr.keys()):
             return None
- 
+
         def _cmp_time(self, other):
             return self['TIME'] - other['TIME']
-                            
-            
+
+
         name = self.hdr[rpm.RPMTAG_CHANGELOGNAME]
         text = self.hdr[rpm.RPMTAG_CHANGELOGTEXT]
         time = self.hdr[rpm.RPMTAG_CHANGELOGTIME]
-        
+
         lst = []
-        
+
         for i in xrange(len(name)):
             d = {}
             d['NAME'] = name[i]
             d['TEXT'] = text[i]
             d['TIME'] = time[i]
-            
+
             lst.append(d)
 
         lst.sort(_cmp_time)
@@ -361,7 +361,7 @@ class RPM:
     def getAttributes(self):
         """Returns a list of attributes available for the RPM"""
         return self.rpmtags.keys()
-    
+
     def getSummary(self):
         """Returns the summary"""
 
@@ -370,10 +370,10 @@ class RPM:
             return None
         else:
             return self.hdr[rpm.RPMTAG_SUMMARY]
-    
+
     def getConflicts(self):
         """Returns the summary"""
-    
+
         if rpm.RPMTAG_CONFLICTS not in self.hdr.keys():
             return None
         else:
@@ -421,11 +421,11 @@ class RPM:
 
     def __eq__(self, other):
         """Determine if 2 rpms are equal"""
-               
+
         n1,e1,v1,r1,a1 = self.getNEVRA()
         n2,e2,v2,r2,a2 = other.getNEVRA()
-        x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
-        
+        x = compareEVR((e1,v1,r1),(e2,v2,r2))
+
         if n1 == n2 and a1 == a2 and x == 0:
            return True
         else:
@@ -440,8 +440,8 @@ class RPM:
         """
         n1,e1,v1,r1,a1 = self.getNEVRA()
         n2,e2,v2,r2,a2 = other.getNEVRA()
-        x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
-     
+        x = compareEVR((e1,v1,r1),(e2,v2,r2))
+
         if n1 == n2:
             if (e1,v1,r1) == (e2,v2,r2):
                return self._compareARCH(a1, a2)
@@ -452,13 +452,13 @@ class RPM:
 
     def __repr__(self):
         str = "<%s instance at %s" % (self.__class__, hex(id(self)))
-        
+
         if self.hdr:
             n,e,v,r,a = self.getNEVRA()
             str = str + ". %s:%s-%s-%s.%s" % (e,n,v,r,a)
-        
+
         return str + ">"
-   
+
     def _compareARCH(self, a1, a2):
         """Compare 2 rpms arch using rpm.archscore"""
         s1 = rpm.archscore(a1)
@@ -471,60 +471,38 @@ class RPM:
         if s1 == s2:
             return 0
 
-    def _compareEVR(self, (e1, v1, r1), (e2, v2, r2)):
-        """Use EVR to compare 2 rpms"""
-        # a is newer than b: 1
-        # a is same version as b: 0
-        # b is newer than a: -1
-        
-        def toStr(a):
-            if type(a) != types.StringType and a != None:
-                a = str(a)
-            return a
-
-        e1 = toStr(e1)
-        v1 = toStr(v1)
-        r1 = toStr(r1)
-        
-        e2 = toStr(e2)
-        v2 = toStr(v2)
-        r2 = toStr(r2)
-        
-        x = rpm.labelCompare((e1, v1, r1), (e2, v2, r2))
-        return x
-
     def _read_header(self, f):
         """Read rpm header"""
         if not os.access(f, os.R_OK):
             raise FileReadPermissionError, 'Unable to read rpm header: %s' % f
-       
+
         # try yum headers. yum headers are gzipped
         # Can check for \037\213 too in open(f).read(2)
         try:
             blob = gzip.open(f).read()
-            self.hdr = rpm.headerLoad(blob)                 
+            self.hdr = rpm.headerLoad(blob)
             isGzip = True
         except IOError:
             isGzip = False
         except Exception:
             raise InvalidRPMHeader, 'rpm unable to load header: %s' % f
-           
+
         if not isGzip:
             try:
                 blob = open(f, "r").read()
-                self.hdr = rpm.headerLoad(blob)                 
+                self.hdr = rpm.headerLoad(blob)
             except Exception:
                 raise InvalidRPMHeader, 'rpm unable to load header: %s' % f
-                
+
     def __getattr__(self, attr):
         if attr not in self.getAttributes():
             raise AttributeError, "'module' object has no attribute '%s'" % attr
-            
+
         return self.hdr[self.rpmtags[attr]]
-                    
+
     def _getFilename(self):
         """Determine the filename from headers"""
-        if self.ext == '.hdr':           
+        if self.ext == '.hdr':
             n,e,v,r,a = self.getNEVRA()
             fname = "%s-%s-%s.%s.rpm" % (n,v,r,a)
 
@@ -532,7 +510,7 @@ class RPM:
             if self.path.basename() == 'headers':
                 pkgdir   = self.path.dirname() / 'packages'
                 filename = pkgdir / fname
-            
+
                 # yum cache directory stucture
                 # /headers.info
                 # /headers
@@ -540,7 +518,7 @@ class RPM:
                 if filename.isfile():
                     self.filename = filename
                     return self.filename
-                
+
                 else:
                     pkgdir   = self.path.dirname()
                     filename = self.path / 'header.info'
@@ -556,7 +534,7 @@ class RPM:
                             i = [s.split('=')[0] for s in stat].index(search)
                         except:
                             return None
-                        
+
                         filename = pkgdir / stat[i].split('=')[1].strip()
 
                         if filename.isfile():
@@ -566,7 +544,7 @@ class RPM:
                             return None
                     else:
                         return None
-            
+
             else:
                 # current dir
                 filename = self.path / fname
@@ -575,7 +553,7 @@ class RPM:
                     return self.filename
                 else:
                     return None
-            
+
         else:
             # .rpm file
             return self.filename
@@ -594,7 +572,7 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
                 except InvalidRPMHeader, e:
                     if ignoreErrors:
                         continue
-                    else:     
+                    else:
                         raise e
 
                 name = r.getName()
@@ -602,8 +580,30 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
 
                 if c.RPMExists(name, arch):
                     if r > c[name][arch][0]:
-                        c[name][arch][0] = r 
+                        c[name][arch][0] = r
                 else:
                     c.add(r)
 
     return c
+
+def compareEVR((e1, v1, r1), (e2, v2, r2)):
+    """Use EVR to compare 2 rpms"""
+    # 1 is newer than 2: 1
+    # 1 is same version as 2: 0
+    # 2 is newer than 1: -1
+
+    def toStr(a):
+        if type(a) != types.StringType and a != None:
+            a = str(a)
+        return a
+
+    e1 = toStr(e1)
+    v1 = toStr(v1)
+    r1 = toStr(r1)
+
+    e2 = toStr(e2)
+    v2 = toStr(v2)
+    r2 = toStr(r2)
+
+    x = rpm.labelCompare((e1, v1, r1), (e2, v2, r2))
+    return x

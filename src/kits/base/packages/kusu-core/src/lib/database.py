@@ -17,12 +17,10 @@ from kusu.util.errors import *
 import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support.osfamily import getOSNames, matchTuple
-from kusu.util.kits import processKitInfo
+from kusu.util.kits import processKitInfo, SUPPORTED_KIT_APIS
 from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
-
-SUPPORTED_KIT_APIS = ['0.2', '0.3']
 
 # it seems these must be told to be quiet individually...
 logging.getLogger('sqlalchemy').setLevel(logging.WARNING)

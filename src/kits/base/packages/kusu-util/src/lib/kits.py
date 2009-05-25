@@ -1,6 +1,9 @@
 from path import path
 from kusu.util.errors import KitinfoSyntaxError
+from kusu.util.rpmtool import compareEVR
 from primitive.support.osfamily import getOSNames, matchTuple
+
+SUPPORTED_KIT_APIS = ['0.2', '0.3', '0.4']
 
 def processKitInfo(kitinfo):
     """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo
@@ -37,7 +40,7 @@ def getKitComponentsMatchingOS(kitinfo, os):
     if not kitinfo.isfile(): return []
 
     kit, components = processKitInfo(kitinfo)
-    if kit['api'] != '0.2':
+    if -1 == compareVersion((kit['api'], '0'), ('0.2', '0')):
         return []
 
     return matchComponentsToOS(components, os)
@@ -71,3 +74,18 @@ def matchComponentsToOS(components, os):
             pass
 
     return components_list
+
+def compareVersion((verA, relA), (verB, relB)):
+    """Compares A and B to determine which is newer.
+
+    verA is the old version
+    relA is the old release
+    verB is the new version
+    relB is the new release
+
+    returns -1 if A is newer than B,
+             0 if A is the same as B, and
+             1 if B is newer than A.
+    """
+
+    return compareEVR(("0", verA, relA), ("0", verB, relB))

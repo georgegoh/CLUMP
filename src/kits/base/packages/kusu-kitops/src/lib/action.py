@@ -1,7 +1,7 @@
 import types
 import rpm
 from kusu.util.errors import KitNotInstalledError, UpdateKitError
-from kusu.util.kits import matchComponentsToOS
+from kusu.util.kits import matchComponentsToOS, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
@@ -52,14 +52,16 @@ class UpdateAction(KitopsAction):
             # [ ] are newer than the kit being updated (kit.version/kit.release)
             # [ ] the new kit's API is supported
             if kitinfo['pkgname'] == 'kit-%s' % old_kit.rname and kitinfo['arch'] == old_kit.arch \
-                    and isNewer(old_kit.version, old_kit.release, kitinfo['version'], kitinfo['release']) \
-                    and AddKitStrategy.has_key(kit_api) and DeleteKitStrategy.has_key(kit_api):
+                    and -1 == compareVersion((old_kit.version, old_kit.release), (kitinfo['version'], kitinfo['release'])):
                 possible_kits.append(kit)
 
         # TODO: Ask the user which new kit to use?
         if possible_kits: kit_to_add = possible_kits[0]
         else:
             raise UpdateKitError, 'No suitable kits avaialble for upgrade'
+
+        # Verify the new kit can be used in an upgrade.
+        validateNewKitForUpgrade(kit_to_add)
 
         # TODO:
         # Check min_version to determine whether a kit can be upgraded
@@ -111,27 +113,19 @@ class UpdateAction(KitopsAction):
         # Run post section of kit upgrade plugin
         # Propmt user to run cfmsync --upgrade
 
+def validateNewKitForUpgrade(kit_tuple):
+    """
+    Checks whether the kit described by kit_tuple can be used in an upgrade.
 
-def isNewer(old_ver, old_rel, new_ver, new_rel):
-    """Compares old and new to determine whether new is newer.
-
-    old_ver is the old version
-    old_rel is the old release
-    new_ver is the new version
-    new_rel is the new release
-
-    returns true if new is newer than old, false otherwise.
+    If for any reason the kit cannot be used in an upgrade, this method will
+    raise an UpdateKitError.
     """
 
-    def toStr(a):
-        if type(a) != types.StringType and a != None:
-            a = str(a)
-        return a
+    kit_api = kit_tuple[4]
 
-    old_ver = toStr(old_ver)
-    old_rel = toStr(old_rel)
+    # Upgrading kits is supported from kit API 0.4 on.
+    if kit_api not in SUPPORTED_KIT_APIS:
+        raise UpdateKitError, "New kit API version is not supported."
 
-    new_ver = toStr(new_ver)
-    new_rel = toStr(new_rel)
-
-    return -1 == rpm.labelCompare(("0", old_ver, old_rel), ("0", new_ver, new_rel))
+    if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
+        raise UpdateKitError, "Upgrades only supported for kit API version 0.4 or newer."

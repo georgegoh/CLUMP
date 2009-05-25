@@ -19,7 +19,7 @@ def deletekit01(koinst, db, kit):
         kit.delete()
     except sa.exceptions.SQLError, e:
         raise DeleteKitsError, [e]
- 
+
     # uninstall kit RPM
     if not kit.isOS and not koinst.installer:
         cmds = ['/bin/rpm', '--quiet', '-e', '--nodeps',
@@ -187,4 +187,5 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
 """The delete kit strategy for 0.3 is the same as 0.2"""
 DeleteKitStrategy = { '0.1': deletekit01,
                       '0.2': deletekit02,
-                      '0.3': deletekit02}
+                      '0.3': deletekit02,
+                      '0.4': deletekit02}
