@@ -55,7 +55,9 @@ class UpdateAction(KitopsAction):
                 possible_kits.append(kit)
 
         # TODO: Ask the user which new kit to use?
-        if possible_kits: kit_to_add = possible_kits[0]
+        if possible_kits:
+            kit_to_add = possible_kits[0]
+            components_to_add = kit_to_add[2]
         else:
             raise UpdateKitError, 'No suitable kits avaialble for upgrade'
 
@@ -67,10 +69,11 @@ class UpdateAction(KitopsAction):
         # associate the new kit with these repos.
         associated_repos = old_kit.repos
 
+        # Check whether the new kit has compatible components.
         associated_repo_ids = []
         for repo in associated_repos:
             associated_repo_ids.append(repo.repoid)
-            if not matchComponentsToOS(kit_to_add[2], repo.getOS()):
+            if not matchComponentsToOS(components_to_add, repo.getOS()):
                 raise UpdateKitError, "New kit does not have any components compatible with repo %s" % repo
 
         # Add the new kit, and pull it from the DB
@@ -88,17 +91,24 @@ class UpdateAction(KitopsAction):
                     repo.kits.pop(i)
                     break
 
-            # TODO: check whether the new kit has compatible components
             # Add the new kit
             repo.kits.append(new_kit)
             RepoFactory(self._db).getRepo(repo.repoid).markStale()
             repo.save()
             self._db.flush()
 
+        # We will need a mapping from new_kit.components to components_to_add
+        component_mapping = {}
+        for db_component in new_kit.components:
+            for component in components_to_add:
+                if db_component.cname == component['pkgname']:
+                    component_mapping[db_component.cname] = component
+
         # Now we handle the nodegroup-component associations
         for new_component in new_kit.components:
             for old_component in old_kit.components:
-                if old_component.cname == new_component.cname:
+                if old_component.cname == new_component.cname \
+                        or 'component-' + component_mapping[new_component.cname]['follows'] == old_component.cname:
                     new_component.nodegroups = old_component.nodegroups
                     old_component.nodegroups = []
 
@@ -144,5 +154,6 @@ def validateOldKitForUpgrade(old_kit, oldest_upgradeable_version):
 
     # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
     if -1 == compareVersion((old_kit.version, "0"), (oldest_upgradeable_version, "0")):
-        raise UpdateKitError, "Unable to upgrade, oldest upgradeable version is %(oldest)s, specified kit is %(current)s." \
+        raise UpdateKitError, \
+                "Unable to upgrade specified kit, version %(current)s, oldest upgradeable version is %(oldest)s." \
                 % {'oldest': oldest_upgradeable_version, 'current': old_kit.version}
