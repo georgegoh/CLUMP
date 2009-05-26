@@ -57,14 +57,18 @@ class KitOps:
 
         # Did kitops mount the media? If so, kitops needs to unmount it.
         self.i_mounted = False
+        # Set to true if kitops is responsible for removing the kitmedia
+        # file/directory. Used when installing/upgrading from remote repos.
+        self.delete_kitmedia_on_finish = False
 
         self.__db = kw.get('db', None)
 
         self.setPrefix(path(kw.get('prefix', '/')))
         self.setTmpPrefix(path(kw.get('tmpprefix', '/tmp')))
 
-    def setKitMedia(self, kitmedia):
+    def setKitMedia(self, kitmedia, delete_kitmedia=False):
         self.kitmedia = kitmedia
+        self.delete_kitmedia_on_finish = True
 
     def setDB(self, db):
         self.__db = db
@@ -468,6 +472,13 @@ class KitOps:
             if self.dlkitiso.exists():
                 self.dlkitiso.remove()
             self.dlkitiso = None
+
+        if self.delete_kitmedia_on_finish:
+            if self.kitmedia.isdir():
+                self.kitmedia.rmtree()
+            elif self.kitmedia.isfile():
+                self.kitmedia.remove()
+            self.delete_kitmedia_on_finish = False
 
     def __handleMountError(self, rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
