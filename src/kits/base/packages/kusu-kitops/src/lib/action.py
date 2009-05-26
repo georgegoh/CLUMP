@@ -70,7 +70,7 @@ class UpdateAction(KitopsAction):
 
         # Verify both kits can be used in an upgrade.
         validate_new_kit_for_upgrade(kit_to_add)
-        validate_old_kit_for_upgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''))
+        validate_old_kit_for_upgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''), kit_to_add[1].get('oldest_upgradeable_release', ''))
 
         # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
@@ -156,18 +156,23 @@ def validate_new_kit_for_upgrade(kit_tuple):
         kl.error(msg)
         raise UpdateKitError, msg
 
-def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version):
+def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
     """
     Checks whether old_kit can be upgraded.
 
-    The check is performed based on the oldest_upgradeable_version specified in
-    the new kit and passed into this method. If the kit is too old to be
-    upgraded, this method raises an UpdateKitError.
+    The check is performed based on the oldest_upgradeable_version and
+    oldest_upgradeable_release specified in the new kit and passed into this
+    method. If the kit is too old to be upgraded, this method raises an
+    UpdateKitError.
     """
 
     # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
-    if -1 == compareVersion((old_kit.version, "0"), (oldest_upgradeable_version, "0")):
-        msg = "Unable to upgrade specified kit, version %(current)s, oldest upgradeable version is %(oldest)s." \
-                % {'oldest': oldest_upgradeable_version, 'current': old_kit.version}
+    if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
+        msg = "Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, " + \
+              "oldest upgradeable version is %(oldest_version)s-%(oldest_release)s." \
+                % {'current_version': old_kit.version,
+                   'current_release': old_kit.release,
+                   'oldest_version': oldest_upgradeable_version,
+                   'oldest_release': oldest_upgradeable_release}
         kl.error(msg)
         raise UpdateKitError, msg
