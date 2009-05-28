@@ -186,7 +186,11 @@ class KusuKit(KusuKit01):
         destdir = buildroot / kiroot[1:]
         if not destdir.exists(): destdir.makedirs()
         kifile = path(destdir / 'kitinfo')
-        self.generateKitInfo(kifile)
+
+        if not hasattr(self.buildprofile, 'filenames'):
+            self.buildprofile.filenames = []
+
+        self.generateKitInfo(kifile, self.buildprofile)
         _kitfile = kiroot + '/kitinfo'
         return [_kitfile]
 

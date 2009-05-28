@@ -196,7 +196,7 @@ def makeKit(bkinst, args, options):
             msg = _('Error building component %(name)s! Please fix this and build again.' \
                     % {'name':e})
             printMsgExit(msg)
-            
+
     if kit:
         try:
             msg = _('Building the package for the kit..')
@@ -205,28 +205,37 @@ def makeKit(bkinst, args, options):
         except PackageBuildError, e:
             msg = _('Error building kit! Please fix this and build again.')
             printMsgExit(msg)
-            
+
     # populate the packages dir
     msg = _('Populating the packages directory with the Kit artifacts..')
     print msg
     bkinst.populatePackagesDir(bp,arch)
-        
+
+    if kit:
+        try:
+            msg = _('Building the package for the kit..')
+            bkinst.handleKit(kit,bp)
+            print msg
+        except PackageBuildError, e:
+            msg = _('Error building kit! Please fix this and build again.')
+            printMsgExit(msg)
+
     # generate the kitinfo file
     msg = _('Generating kitinfo..')
     print msg
     kitinfo = '%s/kitinfo' % kitsrc
     bkinst.generateKitInfo(kit,kitinfo,bp)
-        
+
     # finally, make the kit artifact
     if makeiso:
         msg = _('Creating the Kit iso..')
         print msg
         kitiso = bkinst.makeKitISO(kitsrc)
-        
+
         if not kitiso:
             msg = _('Error creating Kit ISO!')
             printMsgExit(msg)
-                
+
         msg = _('Kit ISO created.')
         print msg
         msg = _('ISO file is at %(isofile)s.' % {'isofile':kitiso})
