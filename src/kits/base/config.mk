@@ -110,7 +110,7 @@ PKG_COMPONENT_GNOME_DESKTOP_SPEC = component-gnome-desktop.spec
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
 PKG_BASE_INSTALLER_SPEC = kusu-base-installer.spec
-PKG_BASE_INSTALLER_SOURCES = locale lib sbin bin sql man etc po
+PKG_BASE_INSTALLER_SOURCES = lib sbin bin sql man etc po
 PKG_BASE_INSTALLER_TARBALL_SUBVER = 17
 
 # Kusu Base node package.

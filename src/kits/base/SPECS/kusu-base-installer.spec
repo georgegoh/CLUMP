@@ -42,6 +42,7 @@ This package contains the Kusu installer node tools.
 %build
 cd po
 msgfmt -o kusuapps.mo en_US.po
+mkdir -p ../locale/en/LC_MESSAGES
 cp kusuapps.mo ../locale/en/LC_MESSAGES
 
 %pre
