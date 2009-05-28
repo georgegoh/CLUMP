@@ -49,6 +49,9 @@ This package contains the Kusu installer node tools.
 %setup -q -n kusu-base-installer
 
 %build
+cd po
+msgfmt -o kusuapps.mo en_US.po
+cp kusuapps.mo ../locale/en/LC_MESSAGES
 
 %pre
 
