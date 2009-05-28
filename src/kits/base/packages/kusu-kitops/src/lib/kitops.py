@@ -50,7 +50,7 @@ USE_NG_ASSOC_THRESHOLD = True
 class KitOps:
     def __init__(self, **kw):
         self.installer = kw.get('installer', False) # installer environment?
-        self.kitmedia = ''
+        self.kitmedia = path('')
         self.dlkitiso = None
         self.mountpoint = None
         self.medialoc = None
@@ -67,8 +67,8 @@ class KitOps:
         self.setTmpPrefix(path(kw.get('tmpprefix', '/tmp')))
 
     def setKitMedia(self, kitmedia, delete_kitmedia=False):
-        self.kitmedia = kitmedia
-        self.delete_kitmedia_on_finish = True
+        self.kitmedia = path(kitmedia)
+        self.delete_kitmedia_on_finish = delete_kitmedia
 
     def setDB(self, db):
         self.__db = db
