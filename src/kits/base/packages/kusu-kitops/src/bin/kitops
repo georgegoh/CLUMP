@@ -216,6 +216,10 @@ class KitOpsApp(KusuApp):
             kit_media = options.media
             self.koinst.setKitMedia(kit_media)
 
+            if options.remote_kid is not None and options.kid.find('-'):
+                kit_media = RemoteKit().runAddRemoteKit(options.remote_kid)
+                self.koinst.setKitMedia(kit_media, delete_kitmedia=True)
+
             update_action = UpdateAction(self.__db, self.koinst)
             run_args = {'old_kit_id': options.kid,
                         'kits': self.mountAndParseKitMedia()}
