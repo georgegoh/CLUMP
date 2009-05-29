@@ -65,10 +65,16 @@ class KusuKit(KusuKit01):
     def _addScript(self, script, mode='post'):
 
         if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
-        scriptfile = self.srcdir / script
-        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        if type(script) == str: script = [script]
+
+        scriptfiles = []
+        for s in script:
+            scriptfile = self.srcdir / s
+            if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+            scriptfiles.append(scriptfile)
+
         key = '%sscript' % mode
-        self.scripts[key] = scriptfile
+        self.scripts[key] = scriptfiles
 
     def generate(self):
         """ Returns a metadata for this kit. """
@@ -137,10 +143,14 @@ class KusuKit(KusuKit01):
 
         scripts = []
         for mode, script in self.scripts.iteritems():
+            script_prefix = 0
             if script:
-                path(self.srcdir / script).copy(destdir)
-                script_file = path(destdir / '%s%s' % (mode, path(script).ext))
-                scripts.append(scriptroot + '/%s' % script.basename())
+                if type(script) == str: script = [script]
+                for s in script:
+                    script_file = path(destdir / '%03d-%s%s' % (script_prefix, mode, path(s).ext))
+                    path(self.srcdir / s).copy(script_file)
+                    scripts.append(scriptroot + '/%s' % script_file.basename())
+                    script_prefix += 1
 
         return scripts
 
