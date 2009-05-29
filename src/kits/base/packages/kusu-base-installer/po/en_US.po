@@ -607,7 +607,7 @@ msgid "kitops_event_finish_add_kits_from_media"
 msgstr "Finished adding kits from media: %s"
 
 msgid "kitops_event_added_kit"
-msgstr "Added kit: %s"
+msgstr "Added kit %s, ID is %s"
 
 msgid "kitops_event_deleted_kit"
 msgstr "Deleted kit: %s"

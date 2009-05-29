@@ -367,7 +367,7 @@ class KitOpsApp(KusuApp):
                     kit_str = "%s-%s-%s" % (kit[1]['name'],
                                             kit[1]['version'],
                                             kit[1]['arch'])
-                    msg = self._("kitops_event_added_kit") % kit_str
+                    msg = self._("kitops_event_added_kit") % (kit_str, new_kid)
                     self.logEvent(msg)
                     if updated_ngs:
                         msg = self._('New Node Groups associated: %s') % ', '.join(updated_ngs)
