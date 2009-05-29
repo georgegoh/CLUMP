@@ -62,13 +62,13 @@ class KusuKit(KusuKit01):
         self.oldest_upgradeable_version = ''
         self.oldest_upgradeable_release = ''
 
-    def _processAddScripts(self):
-        # Not used
-        pass
+    def _addScript(self, script, mode='post'):
 
-    def addScript(self, script, mode='post'):
-        # Not used
-        pass
+        if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
+        scriptfile = self.srcdir / script
+        if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
+        key = '%sscript' % mode
+        self.scripts[key] = scriptfile
 
     def generate(self):
         """ Returns a metadata for this kit. """
@@ -124,6 +124,26 @@ class KusuKit(KusuKit01):
             filelist.append(str(path(plugdir / f)))
         return filelist
 
+    def _prepScripts(self, ns):
+        """
+        Sets up the pre- and post-[un]install scripts.
+        """
+
+        _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
+        buildroot = self.tmpdir / _root
+        scriptroot = '/scripts'
+        destdir = buildroot / scriptroot[1:]
+        if not destdir.exists(): destdir.makedirs()
+
+        scripts = []
+        for mode, script in self.scripts.iteritems():
+            if script:
+                path(self.srcdir / script).copy(destdir)
+                script_file = path(destdir / '%s%s' % (mode, path(script).ext))
+                scripts.append(scriptroot + '/%s' % script.basename())
+
+        return scripts
+
     def _prepKitInfo(self,ns):
         """ Sets up the kitinfo
             Returns the path for kitinfo
@@ -162,6 +182,23 @@ class KusuKit(KusuKit01):
         _ns['description'] = self.description
 
         return _ns
+
+    def _packRPM(self, verbose=False):
+        """ RPM packaging stage for this class. """
+
+        ns = self._generateNS()
+        tmpl = getTemplateSpec('kit')
+        builddir = path(self.buildprofile.builddir)
+        _s = '%s.spec' % ns['pkgname']
+        fl = []
+        fl.extend(self._prepDocumentation(ns))
+        fl.extend(self._prepPlugins(ns))
+        fl.extend(self._prepScripts(ns))
+        fl.extend(self._prepKitInfo(ns))
+        ns['filelist'] = fl
+        specfile = builddir / _s
+        rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
+        return rpmbuilder.build()
 
     def generateKitInfo(self, filename, buildprofile=None):
         """ Generates a kitinfo file."""
