@@ -1,8 +1,9 @@
 import subprocess
+import tempfile
 from path import path
 from kusu.util import rpmtool
-from kusu.util.kits import processKitInfo
-from kusu.util.errors import KitAlreadyInstalledError,ComponentAlreadyInstalledError
+from kusu.util.kits import processKitInfo, run_scripts
+from kusu.util.errors import KitAlreadyInstalledError, ComponentAlreadyInstalledError, KitScriptError
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -116,9 +117,9 @@ def addkit02(koinst, db, kitinfo):
 
     #check if this kit is already installed - by name, version, release and arch
     if checkKitInstalled02(koinst, db, kit['name'], kit['version'], kit['release'], kitinfo[3]):
-            raise KitAlreadyInstalledError, \
-                    "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
-                    (kit['name'], kit['version'], kit['release'], kit['arch'])
+        raise KitAlreadyInstalledError, \
+                "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
+                (kit['name'], kit['version'], kit['release'], kit['arch'])
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
@@ -261,8 +262,84 @@ def addkit03(koinst, db, kitinfo):
     """Add kit v0.3 strategy is same as add kit v0.2 strategy."""
     return addkit02(koinst, db, kitinfo)
 
+def addkit04(koinst, db, kitinfo, update_action=False):
+    kitpath = path(kitinfo[0])
+    kit = kitinfo[1]
+    kitrpm = '%s-%s-%s.%s.rpm' % (kit['pkgname'], kit['version'],
+                                  kit['release'], kit['arch'])
+
+    #check if this kit is already installed - by name, version, release and arch
+    if checkKitInstalled02(koinst, db, kit['name'], kit['version'], kit['release'], kitinfo[3]):
+        raise KitAlreadyInstalledError, \
+                "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
+                (kit['name'], kit['version'], kit['release'], kit['arch'])
+
+    # Extract the kit RPM to get access at its scripts.
+    tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
+    rpm = rpmtool.RPM(str(kitpath / kitrpm))
+    rpm.extract(tmpdir)
+
+    if 0 != run_scripts(tmpdir, mode='pre', script_arg=int(update_action) + 1):
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        raise KitScriptError, "Pre script error, failed to add kit"
+
+    # populate the kit DB table with info
+    newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
+                     version=kit['version'], release=kit['release'], arch=kit['arch'],
+                     removable=kit['removable'])
+    newkit.save()
+
+    db.flush()
+    kl.debug('Addkit kid: %s', newkit.kid)
+
+    # copy the RPMS
+    repodir = koinst.kits_dir / str(newkit.kid)
+    if not repodir.exists():
+        repodir.makedirs()
+
+    srcP = subprocess.Popen('tar cf - *.rpm', cwd=kitpath,
+                            shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    dstP = subprocess.Popen('tar xf -',
+                            cwd=repodir, shell=True, stdin=srcP.stdout,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    dstP.communicate()
+
+    # handle the kitinfo file, docs, and plugins
+    kitrpm = kitinfo[3]
+    kitrpm.extract(repodir)
+
+    installPlugins(koinst, repodir, str(newkit.kid))
+    installDocs(koinst, newkit)
+
+    # check/populate component table
+    try:
+        updated_ngs = koinst.updateComponents(newkit, kitinfo[2])
+    except ComponentAlreadyInstalledError, msg:
+        # updateComponents encountered an error, remove kit from DB
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        newkit.removable = True
+        newkit.flush()
+        koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
+        raise ComponentAlreadyInstalledError, msg
+
+    if 0 != run_scripts(tmpdir, mode='post', script_arg=int(update_action) + 1):
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        newkit.removable = True
+        newkit.flush()
+        koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
+        raise KitScriptError, "Pre script error, failed to add kit"
+
+    # Remove tmpdir. Should probably be done with atexit.
+    tmpdir.rmtree()
+
+    return newkit.kid,updated_ngs
+
 AddKitStrategy = { '0.1': addkit01,
                    '0.2': addkit02,
                    '0.2-installer': addkit02InstallerRules,
                    '0.3': addkit03,
-                   '0.4': addkit03}
+                   '0.4': addkit04}

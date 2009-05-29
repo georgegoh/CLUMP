@@ -1,6 +1,10 @@
 import sqlalchemy
 import subprocess
+import tempfile
+from path import path
+from kusu.util import rpmtool
 from kusu.util.errors import DeleteKitsError
+from kusu.util.kits import run_scripts
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -82,6 +86,62 @@ def deletekit02(koinst, db, kit):
     del_path = koinst.kits_dir / str(kit.kid)
     if del_path.exists(): del_path.rmtree()
 
+def deletekit04(koinst, db, kit, update_action=False):
+    kitdir = koinst.kits_dir / str(kit.kid)
+
+    # Extract the kit RPM to get access at its scripts.
+    kitrpm = 'kit-%s-%s-%s.%s.rpm' % (kit.rname, kit.version, kit.release, kit.arch)
+    tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
+    rpm = rpmtool.RPM(str(kitdir / kitrpm))
+    rpm.extract(tmpdir)
+
+    if 0 != run_scripts(tmpdir, mode='preun', script_arg=int(update_action)):
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        raise KitScriptError, "Pre script error, failed to delete kit"
+
+    kl.info("Removing kit with kid '%s'" % kit.kid)
+    try:
+        # remove component info from DB
+        for component in kit.components:
+            for dpack in component.driverpacks:
+                dpack.delete()
+            component.delete()
+
+        if kit.os:
+            kit.os.delete()
+
+        # remove kit DB info
+        kit.delete()
+    except sqlalchemy.exceptions.SQLError, e:
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        raise DeleteKitsError, [e]
+
+    # uninstall plugins and docs
+    uninstallPlugins(koinst, kitdir, str(kit.kid))
+    uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
+
+    # remove tftpboot contents
+    if kit.isOS:
+        p = koinst.pxeboot_dir / ('initrd-%s.img' % kit.longname)
+        if p.exists(): p.remove()
+        p = koinst.pxeboot_dir / ('kernel-%s' % kit.longname)
+        if p.exists(): p.remove()
+        if not koinst.pxeboot_dir.listdir():  # directory is empty
+            koinst.pxeboot_dir.rmdir()
+
+    # remove the RPMS kit contents
+    del_path = koinst.kits_dir / str(kit.kid)
+    if del_path.exists(): del_path.rmtree()
+
+    if 0 != run_scripts(tmpdir, mode='postun', script_arg=int(update_action)):
+        # Remove tmpdir. Should probably be done with atexit.
+        tmpdir.rmtree()
+        raise KitScriptError, "Pre script error, failed to delete kit"
+
+    # Remove tmpdir. Should probably be done with atexit.
+    tmpdir.rmtree()
 
 def uninstallDocs(db, kit, kitdir, docsdir):
     kl.debug('Uninstalling kit documentation.')
@@ -188,4 +248,4 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
 DeleteKitStrategy = { '0.1': deletekit01,
                       '0.2': deletekit02,
                       '0.3': deletekit02,
-                      '0.4': deletekit02}
+                      '0.4': deletekit04}

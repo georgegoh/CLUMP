@@ -87,7 +87,7 @@ class UpdateAction(KitopsAction):
 
         # Add the new kit, and pull it from the DB
         kit_api = kit_to_add[4]
-        new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db, kit_to_add)
+        new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db, kit_to_add, update_action=True)
         new_kit = self._db.Kits.get(new_kit_id)
 
         # Let's re-associate repos
@@ -124,7 +124,7 @@ class UpdateAction(KitopsAction):
         # For some reason, the in-memory representation of the DB is stale at
         # this point, so we need to re-load the old kit.
         old_kit = self._db.Kits.get(old_kit_id)
-        DeleteKitStrategy[self.koinst.getKitApi(old_kit_id)](self.koinst, self._db, old_kit)
+        DeleteKitStrategy[self.koinst.getKitApi(old_kit_id)](self.koinst, self._db, old_kit, update_action=True)
         self._db.flush()
 
         # TODO:

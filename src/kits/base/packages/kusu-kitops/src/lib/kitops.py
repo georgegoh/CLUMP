@@ -199,7 +199,7 @@ class KitOps:
 
         components_list = []
         for component in components:
-            db_comp = self.__db.Components.selectfirst_by(cname=comp['pkgname'], kid=kid)
+            db_comp = self.__db.Components.selectfirst_by(cname=component, kid=kid)
             components_list.append(db_comp)
 
         return components_list

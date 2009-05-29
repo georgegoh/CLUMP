@@ -3,6 +3,11 @@ from kusu.util.errors import KitinfoSyntaxError
 from kusu.util.rpmtool import compareEVR
 from primitive.support.osfamily import getOSNames, matchTuple
 
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 SUPPORTED_KIT_APIS = ['0.2', '0.3', '0.4']
 
 def processKitInfo(kitinfo):
@@ -84,3 +89,22 @@ def compareVersion((verA, relA), (verB, relB)):
     """
 
     return compareEVR(("0", verA, relA), ("0", verB, relB))
+
+def run_scripts(kit_root, mode, script_arg):
+    script_root = path(kit_root) / 'scripts'
+
+    scripts = []
+    for script in script_root.walkfiles('*%sscript*' % mode):
+        scripts.append(script)
+
+    scripts.sort()
+    for script in scripts:
+        cmd = [script, str(script_arg)]
+        scriptP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = scriptP.communicate()
+
+        if 0 != scriptP.returncode:
+            return scriptP.returncode
+
+    # All scripts succeeded.
+    return 0

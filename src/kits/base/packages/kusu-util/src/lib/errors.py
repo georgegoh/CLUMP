@@ -96,6 +96,7 @@ class InstallKitRPMError(KitopsError): pass
 class CopyOSMediaError(KitopsError): pass
 class DeleteKitsError(KitopsError): pass
 class UpdateKitError(KitopsError): pass
+class KitScriptError(KitopsError): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
