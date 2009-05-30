@@ -2,7 +2,7 @@ import subprocess
 import tempfile
 from path import path
 from kusu.util import rpmtool
-from kusu.util.kits import processKitInfo, run_scripts
+from kusu.util.kits import processKitInfo, run_scripts, generate_script_arg
 from kusu.util.errors import KitAlreadyInstalledError, ComponentAlreadyInstalledError, KitScriptError
 
 import kusu.util.log as kusulog
@@ -279,7 +279,8 @@ def addkit04(koinst, db, kitinfo, update_action=False):
     rpm = rpmtool.RPM(str(kitpath / kitrpm))
     rpm.extract(tmpdir)
 
-    if 0 != run_scripts(tmpdir, mode='pre', script_arg=int(update_action) + 1):
+    script_arg=generate_script_arg(operation='add', update_action=update_action)
+    if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg):
         # Remove tmpdir. Should probably be done with atexit.
         tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to add kit"
@@ -325,7 +326,7 @@ def addkit04(koinst, db, kitinfo, update_action=False):
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
 
-    if 0 != run_scripts(tmpdir, mode='post', script_arg=int(update_action) + 1):
+    if 0 != run_scripts(tmpdir, mode='post', script_arg=script_arg):
         # Remove tmpdir. Should probably be done with atexit.
         tmpdir.rmtree()
         newkit.removable = True

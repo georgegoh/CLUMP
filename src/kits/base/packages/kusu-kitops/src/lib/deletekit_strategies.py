@@ -4,7 +4,7 @@ import tempfile
 from path import path
 from kusu.util import rpmtool
 from kusu.util.errors import DeleteKitsError
-from kusu.util.kits import run_scripts
+from kusu.util.kits import run_scripts, generate_script_arg
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -95,7 +95,8 @@ def deletekit04(koinst, db, kit, update_action=False):
     rpm = rpmtool.RPM(str(kitdir / kitrpm))
     rpm.extract(tmpdir)
 
-    if 0 != run_scripts(tmpdir, mode='preun', script_arg=int(update_action)):
+    script_arg=generate_script_arg(operation='delete', update_action=update_action)
+    if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):
         # Remove tmpdir. Should probably be done with atexit.
         tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to delete kit"
@@ -135,7 +136,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     del_path = koinst.kits_dir / str(kit.kid)
     if del_path.exists(): del_path.rmtree()
 
-    if 0 != run_scripts(tmpdir, mode='postun', script_arg=int(update_action)):
+    if 0 != run_scripts(tmpdir, mode='postun', script_arg=script_arg):
         # Remove tmpdir. Should probably be done with atexit.
         tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to delete kit"

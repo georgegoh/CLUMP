@@ -99,7 +99,7 @@ def run_scripts(kit_root, mode, script_arg):
 
     scripts.sort()
     for script in scripts:
-        cmd = [script, str(script_arg)]
+        cmd = [script, script_arg]
         scriptP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = scriptP.communicate()
 
@@ -108,3 +108,56 @@ def run_scripts(kit_root, mode, script_arg):
 
     # All scripts succeeded.
     return 0
+
+def generate_script_arg(operation, update_action):
+    """
+    Generates the argument passed to an install/uninstall script.
+
+    operation: a string indicating the current operation, one of 'add' or
+    'delete'
+    update_action: boolean indicating whether this action is part of an update
+
+    returns: the string argument to be passed to the install/uninstall script
+
+    NOTE: this method raises a ValueError if operation is not one of 'add' or
+    'delete'
+
+    The kit install/uninstall scripts are passed one integer argument depending
+    on the operation being performed. The argument represents the number of
+    kits by this name which will be installed in the system after this
+    operation completes.
+
+    When a new kit is added, the add kit operation is executed, its scripts are
+    passed '1' as the argument, since after the add operation is completed, one
+    instance of the kit is installed in the system. When the kit is removed,
+    its scripts are passed '0', since after the delete operation completes, no
+    instances of the kit are installed.
+
+    An upgrade is a combination of two steps, first an add of the new version,
+    followed by a delete of the older version. In this case, the scripts of the
+    newer version of the kit are passed '2' as the argument, since when the add
+    operation completes, two instances of the kit are installed in the system.
+    During the delete operation, the scripts of the older version of the kit
+    are passed '1' as the argument, since when the delete operation completes,
+    one instance of the kit will still remain (the new version) in the system.
+
+    The table below shows this relationship:
+
+       install script | add/remove | update
+      ----------------+------------+--------
+             pre/post |          1 |      2
+         preun/postun |          0 |      1
+
+    Also see http://www.ibm.com/developerworks/library/l-rpm3.html for details.
+    """
+
+    if 'add' == operation:
+        if update_action:
+            return '2'
+        return '1'
+    elif 'delete' == operation:
+        if update_action:
+            return '1'
+        return '0'
+
+    raise ValueError, "Unknown operation: '%s', only 'add' and 'delete' supported." % operation
