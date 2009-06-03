@@ -440,14 +440,17 @@ class KitOpsApp(KusuApp):
             # We need to clear the kit media now that we're done with it
             self.koinst.setKitMedia('')
 
-            print "Please insert next disk if installing from phys. media NOW"
-            if not prepare_success:
-                print "Copying from the media you specified was not " + \
-                      "successful. Try again..."
-            print '(URI for next ISO | blank if phys. media | N to finish): '
-            res = sys.stdin.readline().strip()
-            if res == 'N': break
-            elif not res: res = self.determineKitMedia()
+            if res.lower() == 'n':
+                break
+            else:
+                print "Please insert next disk if installing from phys. media NOW"
+                if not prepare_success:
+                    print "Copying from the media you specified was not " + \
+                          "successful. Try again..."
+                print '(URI for next ISO | blank if phys. media | N to finish): '
+                res = sys.stdin.readline().strip()
+                if res == 'N': break
+                elif not res: res = self.determineKitMedia()
 
         self.koinst.makeContribDir(kit)
         self.koinst.finalizeOSKit(kit)
