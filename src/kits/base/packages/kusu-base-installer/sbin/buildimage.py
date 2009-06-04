@@ -37,6 +37,7 @@ from kusu.core import database
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.system.software.probe import OS
 from path import path
+from kusu.util.errors import YumFailedToRunError
 
 class BuildImage:
     """This class will provide the image management functions"""
@@ -132,14 +133,26 @@ class BuildImage:
                 arg = arg + " %s" % package
                 if len(arg) > 8000:
                     # Call yum to install the packages
-                    os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
+                    yt = os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
                     arg = ''
+                    
+                    if yt:
+                        raise YumFailedToRunError
             if len(arg):
-                os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
+                yt = os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
                 print ""
+
+            if yt:
+                raise YumFailedToRunError
         except:
             if self.stderrout:
                 self.stderrout("ERROR: Yum Failed!\n")
+
+            if os.path.exists(self.imagedir):
+                self.stdoutout("Removing: %s\n", self.imagedir)
+                os.system('rm -rf \"%s\"' % self.imagedir)
+
+            sys.exit(-1)
 
         # Do the post processing
         self.__runPostScripts()
