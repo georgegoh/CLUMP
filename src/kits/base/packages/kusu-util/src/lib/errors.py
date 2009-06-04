@@ -196,4 +196,5 @@ class RPMComparisonError(KusuError): pass
 # driverpatch
 class UnknownKernelModuleAsset(KusuError): pass
 
-
+# buildimage
+class YumFailedToRunError(KusuError): pass
