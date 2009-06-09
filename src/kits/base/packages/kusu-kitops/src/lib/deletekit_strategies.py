@@ -209,8 +209,12 @@ def uninstallPlugins(koinst, kitdir, kid):
             koinst.setPrefix('/')
             actual_plugin = koinst.kits_dir / kid / 'plugins' / provider / plugin
             koinst.setPrefix(prefix)
+
+            # if the proposed plugin is a .pyc file, just get rid of it
+            if proposed_plugin.ext == '.pyc':
+                proposed_plugin.remove()
             # check if the proposed plugin points to the kit we're interested in.
-            if proposed_plugin.realpath() == actual_plugin:
+            elif proposed_plugin.realpath() == actual_plugin:
                 # if the plugin symlinks to this kit, then it is a candidate for removal.
                 if pluginUseCount(koinst.kits_dir, provider, plugin) > 1:
                     # if other kits use this plugin, symlink to their copy of the
