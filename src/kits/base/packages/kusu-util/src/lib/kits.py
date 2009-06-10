@@ -1,6 +1,6 @@
 from path import path
 from kusu.util.errors import KitinfoSyntaxError
-from kusu.util.rpmtool import compareEVR
+from kusu.util.rpmtool import compareEVR, RPM
 from primitive.support.osfamily import getOSNames, matchTuple
 
 try:
@@ -80,6 +80,15 @@ def matchComponentsToOS(components, os):
 
     return components_list
 
+def get_kit_RPM(dir):
+    """
+    Returns an rpmtool.RPM() object for the kit RPM in dir.
+    """
+
+    # There is (should) be only one kit RPM.
+    kit_rpm = path(dir).files('kit-*.rpm')[0]
+    return RPM(str(kit_rpm))
+
 def compareVersion((verA, relA), (verB, relB)):
     """Compares A and B to determine which is newer.
 
@@ -92,6 +101,9 @@ def compareVersion((verA, relA), (verB, relB)):
 
 def run_scripts(kit_root, mode, script_arg):
     script_root = path(kit_root) / 'scripts'
+
+    # There are no scripts to run.
+    if not script_root.isdir(): return 0
 
     scripts = []
     for script in script_root.walkfiles('*%sscript*' % mode):

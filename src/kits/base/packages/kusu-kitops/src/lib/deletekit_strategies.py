@@ -4,12 +4,12 @@ import tempfile
 from path import path
 from kusu.util import rpmtool
 from kusu.util.errors import DeleteKitsError
-from kusu.util.kits import run_scripts, generate_script_arg
+from kusu.util.kits import run_scripts, generate_script_arg, get_kit_RPM
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
-def deletekit01(koinst, db, kit):
+def deletekit01(koinst, db, kit, update_action=False):
     kl.info("Removing kit with kid '%s'" % kit.kid)
 
     try:
@@ -51,7 +51,7 @@ def deletekit01(koinst, db, kit):
     if kitdir.exists(): kitdir.rmtree()
 
 
-def deletekit02(koinst, db, kit):
+def deletekit02(koinst, db, kit, update_action=False):
     kl.info("Removing kit with kid '%s'" % kit.kid)
     try:
         # remove component info from DB
@@ -90,9 +90,8 @@ def deletekit04(koinst, db, kit, update_action=False):
     kitdir = koinst.kits_dir / str(kit.kid)
 
     # Extract the kit RPM to get access at its scripts.
-    kitrpm = 'kit-%s-%s-%s.%s.rpm' % (kit.rname, kit.version, kit.release, kit.arch)
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
-    rpm = rpmtool.RPM(str(kitdir / kitrpm))
+    rpm = get_kit_RPM(kitdir)
     rpm.extract(tmpdir)
 
     script_arg=generate_script_arg(operation='delete', update_action=update_action)

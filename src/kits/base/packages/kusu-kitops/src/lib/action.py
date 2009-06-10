@@ -152,7 +152,7 @@ def validate_new_kit_for_upgrade(kit_tuple):
         raise UpdateKitError, msg
 
     if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
-        msg = "Upgrades only supported for kit API version 0.4 or newer."
+        msg = "New kit API is %s. Upgrades only supported for kit API version 0.4 or newer." % kit_api
         kl.error(msg)
         raise UpdateKitError, msg
 
