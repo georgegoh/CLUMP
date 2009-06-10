@@ -310,9 +310,13 @@ class KitOpsApp(KusuApp):
                     self.logErrorEvent(e.args[0])
                     sys.exit(EKITDEL_FAIL)
                 except DeleteKitsError, e:
-                    kl.debug('FAIL perfoming delete operation')
+                    kl.debug('FAIL performing delete operation')
                     for error in e.args[0]:
                         self.logErrorEvent(error)
+                    sys.exit(EKITDEL_FAIL)
+                except KitPackageError, e:
+                    kl.debug('FAIL performing delete operation')
+                    self.logErrorEvent(e.args[0])
                     sys.exit(EKITDEL_FAIL)
             else:
                 kl.debug('Deletion confirmation aborted!')

@@ -1,5 +1,5 @@
 from path import path
-from kusu.util.errors import KitinfoSyntaxError
+from kusu.util.errors import KitinfoSyntaxError, KitPackageError
 from kusu.util.rpmtool import compareEVR, RPM
 from primitive.support.osfamily import getOSNames, matchTuple
 
@@ -85,8 +85,14 @@ def get_kit_RPM(dir):
     Returns an rpmtool.RPM() object for the kit RPM in dir.
     """
 
-    # There is (should) be only one kit RPM.
-    kit_rpm = path(dir).files('kit-*.rpm')[0]
+    # There is (should) be only one kit RPM...
+    kit_rpm_list = path(dir).files('kit-*.rpm')
+
+    if 0 == len(kit_rpm_list):
+        raise KitPackageError, 'No kit RPM found in %(dir)s' % {'dir': dir}
+
+    # ...so we grab the first one.
+    kit_rpm = kit_rpm_list[0]
     return RPM(str(kit_rpm))
 
 def compareVersion((verA, relA), (verB, relB)):
