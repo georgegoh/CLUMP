@@ -25,8 +25,8 @@ if __name__ == '__main__':
     elif path('/root/kusu.db').exists():
         from kusu.core import database as db
         dbs = db.DB('sqlite', '/root/kusu.db')
-    
-    else:        
+
+    else:
         from kusu.core import database as db
 
         engine = os.getenv('KUSU_DB_ENGINE')
@@ -37,20 +37,23 @@ if __name__ == '__main__':
         dbdatabase = 'kusudb'
         dbuser = 'apache'
         dbpassword = None
-        
+
         dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
-    if len(args) == 1:
+    if len(args) == 1: # run all scrips
         p = path('/etc/rc.kusu.d')
         prunner = PluginRunner('KusuRC', p, dbs)
-       
+
         results = prunner.run()
         files = [result[1] for result in results]
         results = prunner.run(files)
-        
-    else:
+
+    elif len(args) == 2: # run one specific script
         p = path(args[1])
         prunner = PluginRunner('KusuRC', p, dbs)
         prunner.run()
 
-
+    elif 'update' == args[2]: # run one specific script update
+        p = path(args[1])
+        prunner = PluginRunner('KusuRC', p, dbs, is_update=True)
+        prunner.run()

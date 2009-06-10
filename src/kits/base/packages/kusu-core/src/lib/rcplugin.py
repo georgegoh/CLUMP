@@ -38,7 +38,7 @@ except:
 kl = kusulog.getKusuLog()
 kl.addFileHandler()
 
-class Plugin: 
+class Plugin:
     nodename = None
     niihost = None
     os_name = None
@@ -49,7 +49,7 @@ class Plugin:
 
     def __init__(self):
         self.hostname = socket.gethostname()
-      
+
          # plugin specific settings
         self.name = None # name of the plugin
         self.desc = None # description of the plugin. Used to display during init
@@ -76,7 +76,7 @@ class Plugin:
             else:
                 time.sleep(.05)
         fptr.close()
-        
+
         return retval, '', ''
 
     def service(self, service, action, **kwargs):
@@ -101,13 +101,22 @@ class Plugin:
             svc = command_dict[action](service=service, **kwargs)
             return svc.execute()
 
+    def run(self):
+        """To be overridden in subclasses."""
+        return True
+
+    def update(self):
+        """To be overridden in subclasses."""
+        return True
+
 
 class PluginRunner:
-    def __init__(self, classname, p, dbs, debug=False):
+    def __init__(self, classname, p, dbs, is_update=False, debug=False):
         self.classname = classname
         self.plugins = {}
         self.dbs = dbs
         self.ngtype = self.getNodeGroupInfo()
+        self.is_update = is_update
 
         self.initPlugin()
         self.pluginPath = p
@@ -138,12 +147,13 @@ class PluginRunner:
         kusuenv['KUSU_NII_HOST'] = ' '.join(Plugin.niihost)
         kusuenv['KUSU_OS_NAME'] = Plugin.os_name
         kusuenv['KUSU_OS_VERSION'] = Plugin.os_version
-        kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch 
+        kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch
         kusuenv['KUSU_REPOID'] = str(Plugin.repoid)
         kusuenv['KUSU_NGTYPE'] = self.ngtype
+        kusuenv['KUSU_IS_UPDATE'] = str(self.is_update)
 
         plugins = self.loadPlugins(self.pluginPath)
-        
+
         for fname in sorted(plugins.keys()):
             if fname.exists() and not fname in ignoreFiles:
                 if type(plugins[fname]) == str:
@@ -178,26 +188,32 @@ class PluginRunner:
                             retval = False
                             self.failure()
                             kl.error('Plugin: %s failed to run successfully' % fbasename)
-     
+
                         results.append( (fbasename, fname, retval, None) )
 
                     except Exception, e:
                         self.failure()
                         results.append( (fbasename, fname, 0, e) )
                         kl.error('Plugin: %s failed to run successfully. Reason: %s' % (fbasename,e))
-                   
+
                 else:
                     try:
                         plugin = plugins[fname]
                         self.display(plugin.desc)
-                        retval = plugin.run()
+
+                        retval = False
+                        if self.is_update:
+                            retval = plugin.update()
+                        else:
+                            retval = plugin.run()
+
                         if retval:
                             self.success()
                             kl.info('Plugin: %s ran successfully' % plugin.name)
                         else:
                             self.failure()
                             kl.error('Plugin: %s failed to run successfully' % plugin.name)
-                    
+
                         results.append( (plugin.name, fname, retval, None) )
 
                     except Exception, e:
@@ -205,10 +221,10 @@ class PluginRunner:
                         results.append( (plugin.name, fname, 0, e) )
                         kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name,e))
                         kl.error('Plugin traceback:\n%s', traceback.format_exc())
-                           
+
                     if plugin.delete and fname.exists():
                         self.removeByteCompiledFiles(fname)
-                                    
+
                         firstrun = path('/etc/rc.kusu.d/firstrun')
                         if not firstrun.exists():
                             firstrun.makedirs()
@@ -218,13 +234,13 @@ class PluginRunner:
 
     def initPlugin(self):
         from rcplugin import Plugin
-    
+
         Plugin.nodename = self.getNodeName()
         Plugin.niihost = self.getNIIHost()
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
         Plugin.repoid = self.getRepoID()
         Plugin.dbs = self.dbs
-       
+
         logstr = 'Init plugin wth variables: nodename=%s, niihost=%s, '\
                  'os_name=%s, os_version=%s, os_arch=%s, '\
                  'repoid=%s' % (Plugin.nodename, Plugin.niihost, \
@@ -252,7 +268,7 @@ class PluginRunner:
                 ns = {}
                 try:
                     execfile(plugin, ns)
-                except Exception, e:   
+                except Exception, e:
                     kl.error('Unable to load plugin: %s Reason: %s' % (plugin.basename(), e))
                     kl.error('Plugin traceback:\n%s', traceback.format_exc())
                     continue
@@ -260,11 +276,11 @@ class PluginRunner:
                 if ns.has_key(self.classname):
                     try:
                         m = ns[self.classname]()
-                    except Exception, e:   
+                    except Exception, e:
                         kl.error('Unable to instatiate plugin: %s Reason: %s' % (plugin.basename(), e))
                         kl.error('Plugin traceback:\n%s', traceback.format_exc())
                         continue
-                
+
                     if m.disable:
                         kl.info('Ignoring plugin: ' + m.name)
                         continue
@@ -277,7 +293,7 @@ class PluginRunner:
 
                     pluginsData[plugin] = m
                     kl.info('Loaded plugin: ' + m.name)
-                    
+
             else:
                 pluginsData[plugin] = str(plugin)
                 kl.info('Loaded plugin: ' + plugin.basename())
@@ -294,7 +310,7 @@ class PluginRunner:
         if path('/etc/profile.nii').exists():
             # On compute node
             nodegroup_type = self.parseNII('/etc/profile.nii', 'NII_NGTYPE')
- 
+
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
             masterName = row.kvalue
@@ -308,7 +324,7 @@ class PluginRunner:
             nodegroup_type = ng.type
 
         return nodegroup_type
- 
+
     def getOS(self):
         os_name = None
         os_version = None
@@ -349,7 +365,7 @@ class PluginRunner:
         if path('/etc/profile.nii').exists():
             # On compute node
             node_name = self.parseNII('/etc/profile.nii', 'NII_HOSTNAME')
- 
+
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
             node_name = row.kvalue
@@ -362,7 +378,7 @@ class PluginRunner:
         if path('/etc/profile.nii').exists():
             # On compute node
             repoid = int(self.parseNII('/etc/profile.nii', 'NII_REPOID'))
- 
+
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
             node_name = row.kvalue
@@ -389,8 +405,8 @@ class PluginRunner:
             if len(lst) == 2:
                 if key == lst[1].strip():
                     return value.strip('"')
-           
-        return None 
+
+        return None
 
     def removeByteCompiledFiles(self, fname):
         bcFiles = [ path("%sc" % fname), path("%so" % fname) ]
