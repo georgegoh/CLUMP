@@ -460,7 +460,7 @@ class KitOpsApp(KusuApp):
         self.koinst.finalizeOSKit(kit)
 
         kit_str = "%s-%s-%s" % (kit['name'], kit['ver'], kit['arch'])
-        msg = self._("kitops_event_added_kit") % kit_str
+        msg = self._("kitops_event_added_kit") % (kit_str, kit['kid'])
         self.logEvent(msg)
 
     def runListKit(self):
