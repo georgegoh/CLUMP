@@ -20,11 +20,11 @@ class WelcomeScreen(InstallerScreen):
     """This is the welcome screen."""
     name = _('Welcome')
     context = 'Welcome'
-    msg = _('Welcome to the %s %s installation program. In the ' + \
+    msg = _('Welcome to the Kusu %s installation program. In the ' + \
           'following screens, you will be presented with questions ' + \
-          'that will help you configure your new %s %s cluster.\n\n' + \
+          'that will help you configure your new Kusu %s cluster.\n\n' + \
           'If you do not wish to continue at any point, please press ' + \
-          'the F12 key. Otherwise, press Next to continue.') % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_RELEASE_NAME}', '${VERSION_STR}')
+          'the F12 key. Otherwise, press Next to continue.') % ('${VERSION_STR}', '${VERSION_STR}')
     buttons = []
     dupMBR_prompt = True
     fix_dupMBR = True
