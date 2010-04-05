@@ -74,7 +74,7 @@ if __name__ == '__main__':
        checkAndMakeNode('/dev/' + dev)
 
     # create kusu installer instance
-    screentitle = '%s %s (build %s)' % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_REVISION}')
+    screentitle = 'Kusu "%s" %s (build %s)' % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_REVISION}')
     ki = KusuInstaller(screenFactory=ScreenFactoryImpl,
                        screenTitle=screentitle ,
                        showTrail=True)

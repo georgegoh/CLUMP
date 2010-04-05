@@ -36,7 +36,7 @@ class KusuRC(rcplugin.Plugin):
             motdlines.append(-1)
 
         for motdline in motdlines:
-            lines[motdline] = '%s %s (build %s) Installer Node\n' % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_REVISION}')
+            lines[motdline] = 'Kusu "%s" %s (build %s) Installer Node\n' % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', '${KUSU_REVISION}')
 
         f = open('/etc/motd', 'w')
         f.writelines(lines)
