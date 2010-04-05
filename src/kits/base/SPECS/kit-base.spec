@@ -51,9 +51,9 @@ mkdir -p $docdir
 mkdir -p $docdir/kit_base_doc_source
 mkdir -p $docdir/images/border
 mkdir -p $docdir/styles
-mkdir -p $docdir/guides/pcm_user_guide_files
-mkdir -p $docdir/guides/pcm_installation_guide
-mkdir -p $docdir/guides/pcm_release_notes
+#mkdir -p $docdir/guides/pcm_user_guide_files
+#mkdir -p $docdir/guides/pcm_installation_guide
+#mkdir -p $docdir/guides/pcm_release_notes
 mkdir -p $plugdir/addhost $plugdir/genconfig $plugdir/ngedit $plugdir/cfmsync
 mkdir -p $kitinfodir
 
@@ -62,11 +62,11 @@ mkdir -p $kitinfodir
 /usr/bin/install -m 444 docs/images/border/spacer.gif   $docdir/images/border/spacer.gif
 /usr/bin/install -m 444 docs/styles/site.css   $docdir/styles/site.css
 /usr/bin/install -m 444 docs/COPYING       $docdir
-/usr/bin/install -m 444 docs/guides/*.html $docdir/guides
-/usr/bin/install -m 444 docs/guides/pcm_user_guide_files/* $docdir/guides/pcm_user_guide_files
-/usr/bin/install -m 444 docs/guides/pcm_installation_guide/* $docdir/guides/pcm_installation_guide
-/usr/bin/install -m 444 docs/guides/pcm_release_notes/* $docdir/guides/pcm_release_notes
-/usr/bin/install -m 444 docs/guides/upgrading_from_pcm_1.2_to_pcm_2.0.pdf $docdir/guides
+#/usr/bin/install -m 444 docs/guides/*.html $docdir/guides
+#/usr/bin/install -m 444 docs/guides/pcm_user_guide_files/* $docdir/guides/pcm_user_guide_files
+#/usr/bin/install -m 444 docs/guides/pcm_installation_guide/* $docdir/guides/pcm_installation_guide
+#/usr/bin/install -m 444 docs/guides/pcm_release_notes/* $docdir/guides/pcm_release_notes
+#/usr/bin/install -m 444 docs/guides/upgrading_from_pcm_1.2_to_pcm_2.0.pdf $docdir/guides
 /usr/bin/install -m 444 docs/kit_base_doc_source/* -t $docdir/kit_base_doc_source
 
 /usr/bin/install -m 444 plugins/addhost/*.py     $plugdir/addhost
@@ -85,11 +85,11 @@ rm -rf $RPM_BUILD_ROOT
 /www/*.html
 /www/COPYING
 /www/kit_base_doc_source/*
-/www/guides/*.html
-/www/guides/*.pdf
-/www/guides/pcm_user_guide_files/*
-/www/guides/pcm_installation_guide/*
-/www/guides/pcm_release_notes/*
+#/www/guides/*.html
+#/www/guides/*.pdf
+#/www/guides/pcm_user_guide_files/*
+#/www/guides/pcm_installation_guide/*
+#/www/guides/pcm_release_notes/*
 /www/images/*/*
 /www/styles/site.css
 /kitinfo

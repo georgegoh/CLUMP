@@ -27,11 +27,11 @@ import socket
 
 OCS_KITPATH = '/var/www/html/kits'
 BASE_URL = 'http://localhost/cgi-bin'
-LIST_KITS_CGI = 'list_kits.cgi'
-LIST_GUIDES_CGI = 'list_guides.cgi'
 LIST_MANPAGES_CGI = 'list_manpages.cgi'
 LIST_HOSTINFO_CGI = 'list_hostinfo.cgi'
-LIST_USEFUL_CGI = 'list_useful.cgi'
+#LIST_KITS_CGI = 'list_kits.cgi'
+#LIST_GUIDES_CGI = 'list_guides.cgi'
+#LIST_USEFUL_CGI = 'list_useful.cgi'
 
 # Helpers
 
@@ -44,7 +44,7 @@ def outputURL(cgi):
    fp.close()
 
 def headContents():
-   print '<head><title>Welcome to Platform Cluster Manager</title></head>'
+   print '<head><title>Welcome to Kusu Desis release</title></head>'
    print '<link href="../portal/styles/portal.css" rel="stylesheet" type="text/css"/>'
 
 def pageHeader():
@@ -61,10 +61,10 @@ def pageTOC():
    print '<table class="TOC">'
    print '<tr><td>'
    print '<span class="title2">Table of Contents:</span><br/>'
-   print '<a href="#Useful_Links">Useful Links</a><br/>'
-   print '<a href="#Installed_Kits">Installed Kits</a><br/>'
-   print '<a href="#Guides">Guides</a><br/>'
-   print '<a href="#PCM_Tools_Man_Pages">Platform Cluster Manager Tools Man Pages</a><br/>'
+   #print '<a href="#Useful_Links">Useful Links</a><br/>'
+   #print '<a href="#Installed_Kits">Installed Kits</a><br/>'
+   #print '<a href="#Guides">Guides</a><br/>'
+   print '<a href="#PCM_Tools_Man_Pages">Kusu Tools Man Pages</a><br/>'
    print '</td></tr>'
    print '</table>'
    print '<br/>'
@@ -108,29 +108,31 @@ startBody()
 pageHeader()
 pageTOC()
 
-# List useful links
-sectionHeader('Useful links')
-print '<p>A collection of links to web GUIs of installed applications and support sites:</p>'
-outputURL(LIST_USEFUL_CGI)
-sectionFooter()
-
-# List kit links
-sectionHeader('Installed Kits')
-print '<p>The following kits are available on this cluster:</p>'
-outputURL(LIST_KITS_CGI)
-sectionFooter()
-
-# List guide links
-sectionHeader('Guides')
-print '<p>Refer to the following guides for detailed instructions:</p>'
-outputURL(LIST_GUIDES_CGI)
-sectionFooter()
-
 # List manpage links
 sectionHeader('PCM Tools Man Pages')
 print '<p>Refer to the following man pages for detailed command-line usage:</p>'
 outputURL(LIST_MANPAGES_CGI)
 sectionFooter()
+
+# The links below are PCM-related and commented out for kusu development. 
+
+# List useful links
+#sectionHeader('Useful links')
+#print '<p>A collection of links to web GUIs of installed applications and support sites:</p>'
+#outputURL(LIST_USEFUL_CGI)
+#sectionFooter()
+
+# List kit links
+#sectionHeader('Installed Kits')
+#print '<p>The following kits are available on this cluster:</p>'
+#outputURL(LIST_KITS_CGI)
+#sectionFooter()
+
+# List guide links
+#sectionHeader('Guides')
+#print '<p>Refer to the following guides for detailed instructions:</p>'
+#outputURL(LIST_GUIDES_CGI)
+#sectionFooter()
 
 endBody()
 endHTML()
