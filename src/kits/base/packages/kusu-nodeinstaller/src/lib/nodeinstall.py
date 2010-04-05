@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: nodeinstall.py 3481 2010-02-03 08:01:55Z mkchew $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -12,19 +12,26 @@ from kusu.nodeinstaller import NodeInstInfoHandler
 from kusu.util.testing import runCommand
 from kusu.util.errors import KusuError, NIISourceUnavailableError, ParseNIISourceError, InvalidPartitionSchema, LVMPreservationError, EmptyNIISource
 from primitive.system.hardware.errors import *
-from kusu.hardware import probe
+from primitive.system.hardware import probe
+from primitive.system.hardware.net import arrangeOnBoardNicsFirst
 from random import choice
 from cStringIO import StringIO
+import time
 import string
+import tempfile
 import urllib2
 import os
-import bcrypt
+import md5crypt
 import kusu.util.log as kusulog
 from xml.sax import make_parser, SAXParseException
 from path import path
 from kusu.nodeinstaller.partition import *
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.installtool.commands import GenerateAutoInstallScriptCommand
+from primitive.system.hardware.net import getPhysicalAddressList
+from primitive.support.util import convertStrMACAddresstoInt
+from primitive.support.errors import InvalidMacAddressException
+import sha
 
 try:
     import subprocess
@@ -46,11 +53,40 @@ def translateBoolean(value):
             return False
     except ValueError:
         return False
+
+def getLowestMACAddress():
+    """ Returns the lowest integer MAC Address among all physical interfaces."""
+    macs = getPhysicalAddressList()
+
+    intMACs = []
+    for mac in macs:
+        try:
+            mac = convertStrMACAddresstoInt(mac)
+            intMACs.append(mac)
+        except InvalidMacAddressException:
+            pass
+
+    return min(intMACs)
+
+def genUID():
+    """ Returns a hashed time-invariant Unique ID (string) for the machine."""
+    mac = getLowestMACAddress()
+
+    if not mac:
+        return ''
+
+    s = sha.new(str(mac))
+    hashed = s.hexdigest()
+    return hashed
  
 def retrieveNII(niihost):
-    """ Downloads the NII from the niihost.
-    """
+    """ Downloads the NII from the niihost."""
     url = 'http://%s/repos/nodeboot.cgi?dump=1&getindex=1&state=Installing' % niihost
+
+    uid = genUID()
+    if uid:
+        url += '&uid=%s' % uid
+
     try:
         logger.debug('Fetching %s' % url)
         f = urllib2.urlopen(url)
@@ -91,8 +127,7 @@ class KickstartFromNIIProfile(object):
         """ ni is an instance of the NodeInstaller class. """
         super(KickstartFromNIIProfile, self).__init__()
 
-
-    def prepareKickstartSiteProfile(self,ni):
+    def prepareKickstartSiteProfile(self, ni):
         """ Reads in the NII instance and fills up the site-specific
             profile.
         """
@@ -121,7 +156,7 @@ class KickstartFromNIIProfile(object):
         logger.debug('Preparing network profile')
         nw = {}
         # network profile dict
-        nw['interfaces'] = probe.getPhysicalInterfaces()
+        nw['interfaces'] = arrangeOnBoardNicsFirst(probe.getPhysicalInterfaces())
         unused_nics = []
         default_gateway = ''
         for nic in nw['interfaces']:
@@ -194,7 +229,7 @@ class KickstartFromNIIProfile(object):
                     self.diskprofile = DiskProfile(fresh=False, probe_fstab=False)
  
             schema = None
-            schema, self.diskprofile = adaptNIIPartition(ni.partitions, self.diskprofile)
+            schema, self.diskprofile = adaptNIIPartition(ni.partitions, self.diskprofile, ni.appglobal)
             logger.debug('Adapted schema from the ni.partitions: %r' % schema)
             if not disk_order:
                 logger.debug('Getting order of disks according to the BIOS.')
@@ -220,13 +255,20 @@ class KickstartFromNIIProfile(object):
         """ Reads in the NII instance and fills up the packageprofile. """
         
         logger.debug('Preparing package profile')
-        for p in ni.packages:
-            logger.debug('Adding package %s to packageprofile..' % p)
-            if p not in self.packageprofile:
-                self.packageprofile.append(p)
+
+        for c in ni.components:
+            logger.debug('Adding base kit components %s to packageprofile..' % c)
+            if c.startswith('component-base') and c not in self.packageprofile:
+                self.packageprofile.append(c)
+
+        # cfm will now install these packages/components
+        #for p in ni.packages:
+        #    logger.debug('Adding package %s to packageprofile..' % p)
+        #    if p not in self.packageprofile:
+        #        self.packageprofile.append(p)
 
     def _makeRootPw(self, rootpw):
-        return bcrypt.hashpw(str(rootpw), bcrypt.gensalt())
+        return md5crypt.md5crypt(str(rootpw), (str(time.time())))
 
     def __getattr__(self, name):
         if name in self.getattr_dict.keys():
@@ -267,6 +309,7 @@ class NodeInstaller(object):
     'partitions':{},    # Dictionary of all the Partition info.  Note key is only a counter
     'diskprofile':{},   # Dictionary of disks and partitions
     'packages':[],      # List of packages to install
+    'components':[],    # List of components to install
     'scripts':[],       # List of scripts to run
     'cfm': '',           # The CFM data
     'ksprofile' : None,  # The kickstart profile 
@@ -314,6 +357,7 @@ class NodeInstaller(object):
         self.nics = {}
         self.partitions = {}
         self.packages = []
+        self.components = []
         self.scripts = []
         self.cfm = ''
         self.ksprofile = None
@@ -335,7 +379,7 @@ class NodeInstaller(object):
             p.setContentHandler(self.niidata)
             p.parse(self.source)
             for i in ['name', 'installers', 'repo', 'ostype', 'installtype',
-                'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages',
+                'nodegrpid', 'appglobal', 'nics', 'partitions', 'packages', 'components',
                 'scripts', 'cfm', 'ngtype', 'repoid']:
                 setattr(self,i,getattr(self.niidata,i))
                 logger.debug('%s : %s' % (i,getattr(self,i)))
@@ -402,6 +446,33 @@ class NodeInstaller(object):
 
         ic.execute()
 
+    def setUUIDs(self):
+         for disk in self.ksprofile.diskprofile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                #mount partition as readonly and check UUID dotfile
+                try:
+                    if partition.native_type.lower().find('ntfs') == -1 \
+                       and partition.native_type.lower().find('swap') == -1 \
+                       and partition.leave_unchanged == False:
+                        
+                        tmpdir = tempfile.mkdtemp()
+                        partition.mount(mountpoint=tmpdir, readonly=False)
+                        
+                        """FIXME: Temporarily disable the proper appglobals method of writing the file
+                        
+                        if (not os.path.exists("%s/.%s" % (tmpdir, self.niidata.appglobal['MASTER_UUID']))):
+                            fd = open("%s/.%s" % (tmpdir, self.niidata.appglobal['MASTER_UUID']), "w")
+                            fd.close()
+                        """
+                        
+                        #FIXME: writing ".kusu" as a temporary placeholder
+                        fd = open("%s/.%s" % (tmpdir, "kusu"), "w")
+                        fd.close()
+                        
+                            
+                        partition.unmount()       
+                except:
+                    logger.debug("Failed to mount [%s] for UUID writing" % (partition.path) )
         
     def commit(self):
         """ This starts the automatic provisioning """
@@ -409,6 +480,9 @@ class NodeInstaller(object):
         logger.debug('Committing changes and formatting disk..')
         self.ksprofile.diskprofile.commit()
         self.ksprofile.diskprofile.formatAll()
+
+        #mount each of the formatted disks and write the UUID
+        self.setUUIDs()
         
     def generateProfileNII(self, prefix):
         """ Generate the /etc/profile.nii. """
@@ -432,6 +506,16 @@ class NodeInstaller(object):
         cfmfile = cfmdir / '.cfmsecret'
         self.niidata.saveCFMSecret(cfmfile)
 
+
+    def getIpmiPasswd(self, prefix):
+        """ Sync /opt/kusu/etc/.ipmi.passwd. """
+        root = path(prefix)
+        etcdir = root / 'opt' / 'kusu' / 'etc'
+        if not etcdir.exists(): etcdir.makedirs()
+        ipmipasswd = etcdir / '.ipmi.passwd'
+        self.niidata.saveIpmiPassword(ipmipasswd)
+
+
     def setTimezone(self):
         tzfile = path('/usr/share/zoneinfo') / self.ksprofile.tz
         tzfile.copy('/etc/localtime')
@@ -446,23 +530,6 @@ class NodeInstaller(object):
         hwclockP.communicate()
         logger.debug('Setting timezone hwclock args: %s, return code: %s',
                      hwclock_args, hwclockP.returncode)
-
-    def getSSHPublicKeys(self, hostip, prefix=''):
-        authorized_keys = path(prefix + '/root/.ssh/authorized_keys')
-
-        if not authorized_keys.dirname().exists():
-            authorized_keys.dirname().makedirs()
-
-        # /root/.ssh needs to be 0700
-        authorized_keys.dirname().chmod(0700)
-
-        # grab public_keys file from master, save as authorized_keys
-        cmds = ['wget', 'http://%s/public_keys' % hostip, '-O', authorized_keys]
-        wgetP = subprocess.Popen(cmds, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        out, err = wgetP.communicate()                                 
-
-        authorized_keys.chmod(0600)
 
     def saveLogs(self, destdir='/kusu/mnt/root', prefix='/tmp/kusu/'):
         """Save the kusu.log and kusu.cfg/autoinst.xml to /root."""
@@ -503,6 +570,7 @@ class NodeInstaller(object):
 
         d = self.diskprofile.mountpoint_dict
         mounted = []
+        kusu_dist = os.environ.get('KUSU_DIST', None)
 
         # Mount and create in order
         mountpts = d.keys()
@@ -514,6 +582,9 @@ class NodeInstaller(object):
                 mntpnt.makedirs()
                 logger.debug('Made %s dir' % mntpnt)
             
+            if m=='/boot' and kusu_dist=='sles':
+                continue
+
             # mountpoint has an associated partition,
             # and mount it at the mountpoint
             if d.has_key(m):

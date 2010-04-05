@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id$
+# $Id: imageinit.py 3579 2010-03-03 07:55:44Z ggoh $
 #
 #  Copyright (C) 2007 Platform Computing Inc
 #
@@ -34,6 +34,7 @@ import string
 import glob
 import ipfun
 import time
+import sha
 
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
@@ -108,9 +109,54 @@ class ImagedNodeConfiger:
             status = os.system('udhcpc -n -i eth%i > /dev/null 2>&1' % i)
             if os.WEXITSTATUS(status) == 0:
                 self.ifs.append('eth%i' % i)
+            else:
+                print "udhcpc -n -i eth%i exited with: %i" % (i, os.WEXITSTATUS(status))
 
+        print "Started interfaces:  %s\n" % self.ifs
         self.log("Started interfaces:  %s\n" % self.ifs)
 
+    def getPhysicalAddressList(self):
+        """ Returns a list of integer MAC addresses for the Physical interfaces."""
+        macs = []
+
+        for dir in ['', '/sbin/', '/usr/sbin']:
+            try:
+                pipe = os.popen(os.path.join(dir, 'ifconfig'))
+            except IOError:
+                continue
+            else:
+                break
+
+        for line in pipe:
+            words = line.lower().split()
+            for i in range(len(words)):
+                if words[i] in ['hwaddr', 'ether']:
+                    macs.append(int(words[i + 1].replace(':', ''), 16))
+
+        return macs
+
+    def getLowestPhysicalAddress(self):
+        """Returns the lowest integer Physical address."""
+        macs = self.getPhysicalAddressList()
+
+        for mac in macs:
+            if 'low' not in locals() or mac < low:
+                low = mac
+
+        try:
+            return low
+        except UnboundLocalError:
+            return ''
+
+    def genUID(self):
+        """Returns a time invariant unique identifier string."""
+        mac = self.getLowestPhysicalAddress()
+
+        if not mac:
+            return ''
+
+        s = sha.new(str(mac))
+        return s.hexdigest()
 
     def setInterface(self, device, ip, subnet, dgateway=''):
         """setInterface - Configure the named device with the given ip,
@@ -130,6 +176,21 @@ class ImagedNodeConfiger:
         if len(self.installer) == 1:
             return self.installer[0]
 
+        print "Ifs = %s" % self.ifs
+        if self.ifs == []:
+            print "******************************************************************"
+            print "*                                                                *"
+            print "*  No Network interfaces are available!  The correct kernel      *"
+            print "*  module for this machines NICs may not have been included.     *"
+            print "*  Determine which module is used by using a package based       *"
+            print "*  then including the module in the diskless nodegroup.          *"
+            print "*                                                                *"
+            print "******************************************************************"
+            time.sleep(60)
+            print "Rebooting....."
+            # Exit with 99 to force reboot
+            sys.exit(99)
+            
         for interface in self.ifs:
             cmd = 'ifconfig %s |grep inet |grep Mask' % interface
             ip = ''
@@ -144,14 +205,13 @@ class ImagedNodeConfiger:
                         mask = ent[1]
             if ip and mask:
                 self.log("Address:  %s,  Mask:  %s\n" % (ip, mask))
-
                 for instip in self.installer:
-                    print "Testing:  %s, %s, %s" % (ip, mask, instip)
                     if ipfun.onNetwork(ip, mask, instip):
                         # This is the interface to use
                         return instip
                     
         # Did not find an IP.  Try the first one.
+        print "Failed to find the best installer IP!"
         return self.installer[0]
 
 
@@ -174,12 +234,16 @@ class ImagedNodeConfiger:
             os.chdir('/tmp')
             sys.stdout.write("/tmp")
             
-        self.log("Downloading image: %s\n" % image)
-        sys.stdout.write("Downloading image: %s\n" % image)
-        status = os.system('wget %s' % image)
-        if os.WEXITSTATUS(status) != 0:
-            self.log("Unable to download image from: %s\n" % image)
-            sys.exit(0)
+        while True:
+            self.log("Downloading image: %s\n" % image)
+            sys.stdout.write("Downloading image: %s\n" % image)
+            status = os.system('wget %s' % image)
+            if os.WEXITSTATUS(status) != 0:
+                self.log("Unable to download image from: %s\nWill retry in 30 seconds.\n" % image)
+                time.sleep(30)
+                
+            else:
+                break
         os.chdir('/newroot')
         self.log("Extracting image\n")
         sys.stdout.write("Extracting image\n")
@@ -593,24 +657,23 @@ app.upInterfaces()
 bestip = app.findBestInstaller()
 app.log("Best Installer = %s\n" % bestip )
 
+uid = app.genUID()
+app.log("UID = %s" % uid)
+
 niiinfo = NIIFun()
-niiinfo.setState('Installed')
+niiinfo.setState('Installing')
+niiinfo.setUID(uid)
 niiinfo.wantNII(1)
 #niiinfo.wantCFM(1)  # Can't do anything with it yet
 
-cnt = 0
-while cnt < 20:
+while True:
     try:
         niifile = niiinfo.callNodeboot(bestip)
         break
     except:
         app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
         print "ERROR:  Unable to get NII from:  %s\nWill retry in 30 seconds.\n" % bestip
-        cnt = cnt + 1
-        time.sleep(cnt * 30)
-
-if cnt == 20:
-    sys.exit(-1)
+        time.sleep(30)
     
 niihandler = NodeInstInfoHandler()
 try:
@@ -742,6 +805,8 @@ if disked:
     icf = ImagedConfigFiles()
     nicdata = {}
     for i in niihandler.nics.keys():
+        if  niihandler.nics[i]['device'] in ['bmc']: continue 
+
         nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
                        'ip'      : niihandler.nics[i]['ip'],
                        'subnet'  : niihandler.nics[i]['subnet'],
@@ -768,22 +833,38 @@ if disked:
     niiinfo.wantNII(0)
     niiinfo.setBootFrom('disk')  # This is only for disked!
 
-    cnt = 0
-    while cnt < 20:
+    while True:
         try:
             niifile = niiinfo.callNodeboot(bestip)
             break
         except:
             app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
             print "ERROR:  Unable to update bootfrom:  %s\nWill retry in 30 seconds.\n" % bestip
-            cnt = cnt + 1
-            time.sleep(cnt * 30)
+            time.sleep(30)
             
-    if cnt == 20:
-        sys.exit(-1)
-    
     # Exit with 99 to force reboot
     sys.exit(99)
+
+# diskless systems have errors on reboot/shutdown due
+# to the S01reboot script crashing the system.
+# This section is a workaround hack that inserts
+# rc scripts to run before the S01reboot scripts
+# in runlevels 0(shutdown) and 6(reboot).
+if not disked:
+    # shutdown in runlevel 0.
+    f = open('/newroot/etc/rc0.d/S00killpcm', 'w')
+    f.write('#!/bin/bash\n')
+    f.write('echo 1 > /proc/sys/kernel/sysrq\n')
+    f.write('echo o > /proc/sysrq-trigger\n')
+    f.close()
+    os.system('chmod 755 /newroot/etc/rc0.d/S00killpcm')
+    # reboot in runlevel 6.
+    f = open('/newroot/etc/rc6.d/S00killpcm', 'w')
+    f.write('#!/bin/bash\n')
+    f.write('echo 1 > /proc/sys/kernel/sysrq\n')
+    f.write('echo b > /proc/sysrq-trigger\n')
+    f.close()
+    os.system('chmod 755 /newroot/etc/rc6.d/S00killpcm')
 
 app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
 if initrddebug == 1:

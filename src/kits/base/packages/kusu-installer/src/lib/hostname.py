@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: hostname.py 2556 2009-07-21 08:57:47Z mike $
 #
 # Kusu Text Installer Host Name Setup Screen.
 #
@@ -21,7 +21,7 @@ from kusu.ui.text.navigator import NAV_NOTHING
 
 kl = kusulog.getKusuLog('installer.network')
 
-DEFAULT_DNSZONE = 'kusu'
+DEFAULT_DNSZONE = 'private.dns.zone'
 DEFAULT_PUBLIC_DNSZONE = 'example.com'
 
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
@@ -53,8 +53,8 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         self.netProfile['fqhn_use_dhcp'] = self.use_dhcp.value()
-        self.netProfile['fqhn_host'] = self.hostname.value()
-        self.netProfile['fqhn_domain'] = self.domain.value()
+        self.netProfile['fqhn_host'] = self.hostname.value().lower()
+        self.netProfile['fqhn_domain'] = self.domain.value().lower()
 
         if not self.netProfile['fqhn_use_dhcp']:
             self.netProfile['fqhn_host'] = ''
@@ -69,10 +69,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
-        ### Removing DHCP temporarily, fix in KUSU-207
-        self.screenGrid = snack.Grid(1, 6)
-        #self.screenGrid = snack.Grid(1, 5)
-        ###
+        self.screenGrid = snack.Grid(1, 5)
         entryWidth = 22
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
@@ -110,30 +107,19 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        ### Removing DHCP temporarily, FIXME in KUSU-207
-        #self.screenGrid.setField(snack.TextboxReflowed(text=self.hostname_msg,
-        #                                               width=self.gridWidth),
-        #                         col=0, row=1, padding=(0, 1, 0, 0),
-        #                         anchorLeft=1)
-        #self.screenGrid.setField(self.hostname, col=0, row=2,
-        #                         padding=(0, 0, 0, 1), anchorLeft=1)
-        #self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
-        #                                               width=self.gridWidth),
-        #                         col=0, row=3, anchorLeft=1)
-        #self.screenGrid.setField(self.domain, col=0, row=4,
-        #                         padding=(0, 0, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.use_dhcp, col=0, row=1,
-                                 padding=(0, 1, 0, 0), anchorLeft=1)
+        ### Removing DHCP until further notice
+        #self.screenGrid.setField(self.use_dhcp, col=0, row=1,
+        #                         padding=(0, 1, 0, 0), anchorLeft=1)
         self.screenGrid.setField(snack.TextboxReflowed(text=self.hostname_msg,
                                                        width=self.gridWidth),
-                                 col=0, row=2, padding=(0, 1, 0, 0),
+                                 col=0, row=1, padding=(0, 1, 0, 0),
                                  anchorLeft=1)
-        self.screenGrid.setField(self.hostname, col=0, row=3,
+        self.screenGrid.setField(self.hostname, col=0, row=2,
                                  padding=(0, 0, 0, 1), anchorLeft=1)
         self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
                                                        width=self.gridWidth),
-                                 col=0, row=4, anchorLeft=1)
-        self.screenGrid.setField(self.domain, col=0, row=5,
+                                 col=0, row=3, anchorLeft=1)
+        self.screenGrid.setField(self.domain, col=0, row=4,
                                  padding=(0, 0, 0, 0), anchorLeft=1)
         ###
 
@@ -170,8 +156,8 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         """
 
         self.netProfile['fqhn_use_dhcp'] = bool(self.use_dhcp.value())
-        self.netProfile['fqhn_host'] = self.hostname.value()
-        self.netProfile['fqhn_domain'] = self.domain.value()
+        self.netProfile['fqhn_host'] = self.hostname.value().lower()
+        self.netProfile['fqhn_domain'] = self.domain.value().lower()
 
     def rollback(self):
         self.formAction()

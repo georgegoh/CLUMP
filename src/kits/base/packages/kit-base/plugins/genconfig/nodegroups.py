@@ -1,4 +1,4 @@
-# $Id$
+# $Id: nodegroups.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 #   Copyright 2007 Platform Computing Inc
 #
@@ -19,6 +19,7 @@
 
 from kusu.genconfig import Report
 import sys
+import psycopg2
 
 class thisReport(Report):
     
@@ -40,8 +41,13 @@ class thisReport(Report):
         try:
             self.db.execute(query)
 
+        except psycopg2.ProgrammingError, e:
+            sys.stderr.write(self.gettext("Error: Invalid optional SQL condition provided.\n\n"))
+            self.toolHelp()
+            sys.exit(-1)
         except:
-            sys.stderr.write(self.gettext("DB_Query_Error\n"))
+            sys.stderr.write(self.gettext("DB_Query_Error\n\n"))
+            self.toolHelp()
             sys.exit(-1)
 
         else:            

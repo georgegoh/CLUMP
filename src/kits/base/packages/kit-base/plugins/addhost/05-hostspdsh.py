@@ -18,7 +18,7 @@ from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
-        os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts.pdsh")
+        os.system("/opt/kusu/bin/kusu-genconfig hostspdsh > /etc/hosts.pdsh")
 
     def finished(self, nodelist, prePopulateMode):
-        os.system("/opt/kusu/bin/genconfig hostspdsh > /etc/hosts.pdsh")
+        os.system("/opt/kusu/bin/kusu-genconfig hostspdsh > /etc/hosts.pdsh")

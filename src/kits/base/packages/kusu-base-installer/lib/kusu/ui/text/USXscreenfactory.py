@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: USXscreenfactory.py 3482 2010-02-03 10:19:20Z ggoh $
 #
 # Kusu Text UI Screen Factory.
 #
@@ -50,6 +50,7 @@ class USXBaseScreen(BaseScreen):
         self.selector=selector
         #if HelpLine is set - push it to the screen
         if type(self.HelpLine) == type(''):
+            self.screen.popHelpLine()
             self.screen.pushHelpLine(self.HelpLine)
         self.setCallbacks()
         self.drawImpl()

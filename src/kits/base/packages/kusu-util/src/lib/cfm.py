@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: cfm.py 3264 2009-11-24 12:08:22Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -14,14 +14,14 @@ except:
     from popen5 import subprocess
 
 from kusu.core import database as db
-from kusu.core import app 
+from kusu.core import app
 from kusu.cfms import PackBuilder
 
 def get_readonly_dbs():
     DB_NAME = 'kusudb'
     DB_USER = 'nobody'
     DB_PASSWORD = None
-    
+
     dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres')
     return db.DB(dbdriver, DB_NAME, DB_USER, DB_PASSWORD)
 
@@ -35,9 +35,15 @@ def updateCfmfiles():
     pb.removeOldFiles()
     pb.genFileList()
 
+def updateCfmPackages(ngname=''):
+    """Update /opt/kusu/cfm/<ngid>.package.lst"""
+    def foo(*args): pass
+    pb = PackBuilder(foo, foo)
+    pb.getPackageList(ngname)
+
 def runCfmMaintainerScripts():
     """
-    Runs all CFM maintainer scripts found in 
+    Runs all CFM maintainer scripts found in
     {DEPOT_KITS_ROOT}/<kid>/cfm/*.rc.py
     """
     try:
@@ -45,7 +51,7 @@ def runCfmMaintainerScripts():
         kits_root = dbs.AppGlobals.selectfirst_by(kname='DEPOT_KITS_ROOT').kvalue
     except:
         kits_root = '/depot/kits'
-             
+
     scripts = path.path(kits_root).glob('*/cfm/*.rc.py')
     scripts_run = []
     for script in scripts:
@@ -60,18 +66,17 @@ def runCfmMaintainerScripts():
         out, err = p.communicate()
         scripts_run.append(script.basename())
 
-    if scripts_run:
-        # Redirect all stdout, stderr
-        oldOut = sys.stdout
-        oldErr = sys.stderr
-        f = open('/dev/null', 'w')
-        sys.stdout = f
-        sys.stderr = f
+    # Redirect all stdout, stderr
+    oldOut = sys.stdout
+    oldErr = sys.stderr
+    f = open('/dev/null', 'w')
+    sys.stdout = f
+    sys.stderr = f
 
-        # Update cfmfiles.lst
-        updateCfmfiles()
+    # Update cfmfiles.lst
+    updateCfmfiles()
 
-        # Restore stdout and stderr
-        sys.stdout = oldOut
-        sys.stderr = oldErr
-
+    # Restore stdout and stderr
+    sys.stdout = oldOut
+    sys.stderr = oldErr
+    f.close()

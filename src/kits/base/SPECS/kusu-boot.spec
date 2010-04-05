@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kusu-boot.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright (C) 2007 Platform Computing Inc
 #
@@ -17,19 +17,18 @@
 #
 # 
 
-%define subversion 2
-
 Summary: Boot Media tool
 Name: kusu-boot
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Corporation
 BuildArch: noarch
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-URL: http://www.osgdc.org
+URL: http://ocssrc.platform.com/
 BuildRequires: python
 
 %description
@@ -71,7 +70,12 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/boot-%{version}
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
+* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-3
+- Reving tar file for RH
+
+* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
+- Initial release
 

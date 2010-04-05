@@ -1,10 +1,22 @@
-#!/usr/bin/env python
-#
-# $Id$
-#
-# Copyright 2007 Platform Computing Inc.
-#
-# Licensed under GPL version 2; See LICENSE file for details.
+#!/usr/bin/env python 
+# -*- coding: utf-8 -*- 
+# 
+# $Id: updates.py 3497 2010-02-09 08:19:43Z binxu $ 
+# 
+# Copyright (C) 2010 Platform Computing Inc. 
+# 
+# This program is free software; you can redistribute it and/or modify it under 
+# the terms of version 2 of the GNU General Public License as published by the 
+# Free Software Foundation. 
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# details. 
+# 
+# You should have received a copy of the GNU General Public License along with: 
+# this program; if not, write to the Free Software Foundation, Inc., 51 
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA 
 #
 
 import os
@@ -14,16 +26,23 @@ import time
 from path import path
 from Cheetah.Template import Template
 
-from kusu.repoman.rhn import RHN
-from kusu.repoman.yum import YumRepo
-from kusu.repoman.tools import getFile, getConfig
+from kusu.repoman.tools import getConfig
 from kusu.driverpatch import DriverPatchController
-from kusu.util import tools as utiltools
-from kusu.util.errors import *
+from kusu.util.errors import DirDoesNotExistError
+from kusu.util.errors import InvalidInitrd
+from kusu.util.errors import UnableToUpdateInitrdKernel
+from kusu.util.errors import UnrecognizedKitMediaError
+from kusu.util.errors import UnableToPrepUpdateKit
+from kusu.util.errors import UnableToMakeUpdateKit
+from kusu.util.errors import rhnNoAccountInformationProvidedError
+from kusu.util.errors import youNoAccountInformationProvidedError
 
 from primitive.updatetool.commands import YouUpdateCommand
+from primitive.updatetool.commands import RHNUpdateCommand
 from primitive.fetchtool.commands import FetchCommand
 from primitive.support import rpmtool
+from primitive.support.yum import YumRepo
+from primitive.support.proxy import Proxy
 
 try:
     import subprocess
@@ -47,6 +66,8 @@ class BaseUpdate:
         self.prefix = prefix
         self.db = db
         self.configFile = None
+
+        self.proxy = None
 
         self.updates_root = updates_root 
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_UPDATES_ROOT')
@@ -83,7 +104,7 @@ class BaseUpdate:
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
-        # Buildkit's kit src
+        # kusu-buildkit's kit src
         tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp')))
         # Used by kitops to add the kit from
         kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp')))
@@ -95,7 +116,7 @@ class BaseUpdate:
             dest = tempkitdir / kitName / 'sources' / file.basename()
 
             # Use abs symlink. Relative links does not work
-            # when buildkit prepares temp new directory for
+            # when kusu-buildkit prepares temp new directory for
             # making kit
             file.symlink(dest) 
     
@@ -142,7 +163,7 @@ class BaseUpdate:
                 newinitrd = 'initrd-%s-%s-%s.%s.img' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
                 newkernel = 'kernel-%s-%s-%s.%s' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
                 
-                cmd = 'driverpatch -u nodegroup id=%s initrd=%s kernel=%s' % (ng.ngid, newinitrd, newkernel)
+                cmd = 'kusu-driverpatch -u nodegroup id=%s initrd=%s kernel=%s' % (ng.ngid, newinitrd, newkernel)
                 p = subprocess.Popen(cmd,
                                      shell=True,
                                      stdout=subprocess.PIPE,
@@ -151,10 +172,10 @@ class BaseUpdate:
                 retcode = p.returncode
 
                 if retcode:
-                    raise UnableToUpdateInitrdKernel, 'driverpatch failed to run'
+                    raise UnableToUpdateInitrdKernel, 'kusu-driverpatch failed to run'
 
             elif ng.installtype in ['disked', 'diskless']:
-                cmd = 'buildinitrd -n "%s"' % ng.ngname
+                cmd = 'kusu-buildinitrd -n "%s"' % ng.ngname
                 p = subprocess.Popen(cmd,
                                      shell=True,
                                      stdout=subprocess.PIPE,
@@ -163,18 +184,20 @@ class BaseUpdate:
                 retcode = p.returncode
    
                 if retcode:
-                    raise UnableToUpdateInitrdKernel, 'buildinitrd failed to run'
- 
-            # calls boothost to refresh pxe conf
-            p = subprocess.Popen('boothost -n "%s"' % ng.ngname,
-                                 shell=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            retcode = p.returncode
-            
-            if retcode:
-                raise UnableToUpdateInitrdKernel, 'boothost failed to run'
+                    raise UnableToUpdateInitrdKernel, 'kusu-buildinitrd failed to run'
+
+            # Test for a valid node group
+            if ng.type != 'installer':
+                # calls boothost to refresh pxe conf
+                p = subprocess.Popen('kusu-boothost -n "%s"' % ng.ngname,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                retcode = p.returncode
+                
+                if retcode:
+                    raise UnableToUpdateInitrdKernel, 'kusu-boothost failed to run'
 
     def addUpdateKit(self, kitdir):
         from kusu.kitops import kitops
@@ -242,7 +265,7 @@ class BaseUpdate:
         return kpkgs 
 
     def prepKit(self, workingDir, kitName):
-        cmd = 'buildkit new kit=%s' % kitName
+        cmd = 'kusu-buildkit new kit=%s' % kitName
         p = subprocess.Popen(cmd,
                              cwd=workingDir,
                              shell=True,
@@ -257,7 +280,7 @@ class BaseUpdate:
             raise UnableToPrepUpdateKit, out
     
     def makeKit(self, workingDir, destDir, kitName):
-        cmd = 'buildkit make kit=%s dir=%s' % (kitName, destDir)
+        cmd = 'kusu-buildkit make kit=%s dir=%s' % (kitName, destDir)
         p = subprocess.Popen(cmd,
                              cwd=workingDir,
                              shell=True,
@@ -302,7 +325,33 @@ class BaseUpdate:
 
     def getConfig(self, configFile):
         """Returns the configuration"""
-        return getConfig(configFile)
+        cfg = getConfig(configFile)
+        if cfg.has_key('proxy') or os.getenv('http_proxy') or os.getenv('https_proxy'):
+            self.proxy = self.getProxy(cfg.get('proxy'))
+
+        return cfg
+
+    def getProxy(self, proxy_cfg):
+        """Returns the proxy settings from file/environ"""
+        if proxy_cfg:
+            http_proxy = os.getenv('http_proxy', proxy_cfg.get('http_proxy'))
+            https_proxy = os.getenv('https_proxy', proxy_cfg.get('https_proxy'))
+        else:
+            http_proxy = os.getenv('http_proxy')
+            https_proxy = os.getenv('https_proxy')
+
+        proxy = {}
+        if not http_proxy and not https_proxy:
+            #neither http nor https proxy
+            return None
+        
+        if http_proxy:
+            proxy['http'] = http_proxy
+
+        #if not set https, then default use http proxy
+        proxy['https'] = https_proxy or http_proxy
+                    
+        return Proxy(proxy)
 
     def setConfig(self, configFile):
         """Sets the configuration"""
@@ -334,14 +383,14 @@ class YumUpdate(BaseUpdate):
 
         # Merge the necessary update(s) dir
         # into a single dictionary with all the rpms info
-        primarys = {}
+        primaries = {}
         for u in self.getURI():
-            primarys[u] = YumRepo(u).getPrimary()
+            primaries[u] = YumRepo(u, proxy=self.proxy).getPrimary()
 
         # Filter out the packages that are newer and
         # needs to be downloaded
         downloadPkgs = []
-        for r in self.getLatestRPM(primarys):
+        for r in self.getLatestRPM(primaries):
             name = r.getName()
             arch = r.getArch()
 
@@ -375,11 +424,12 @@ class YumUpdate(BaseUpdate):
                     # corrupted/incomplete/etc
                     dest.remove()
 
-            content = getFile(filename)
-            if content:
-                f = open(dest, 'w')
-                f.write(content)
-                f.close()
+            fc = FetchCommand(uri=filename,
+                             fetchdir=False,
+                             proxy=self.proxy,
+                             destdir=dir,
+                             overwrite=False)
+            status , dest = fc.execute()
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
         pkgs = rpmPkgs.getList()
@@ -397,11 +447,11 @@ class YumUpdate(BaseUpdate):
 
         return (pkgs, newKernels)
 
-    def getLatestRPM(self, primarys):
+    def getLatestRPM(self, primaries):
         """Return the latested rpms from yum repos"""
 
         c = rpmtool.RPMCollection()
-        for uri, pri in primarys.items():
+        for uri, pri in primaries.items():
             for name, value in pri.items():
                 for arch, rpms in value.items():
                     for r in rpms:
@@ -420,27 +470,27 @@ class YumUpdate(BaseUpdate):
 class RHNUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, 'rhel', os_version, os_arch, prefix, db)
-        self.rhn = None
 
     def getRHN(self):
         if self.configFile:
-            cfg = self.getConfig(self.configFile)['rhel']
+            cfg_all = self.getConfig(self.configFile)
+            cfg = cfg_all['rhel']
             username = cfg['username']
             password = cfg['password']
             url = cfg['url']
             yumrhn = cfg['yumrhn']
 
             # new key in kusu 1.2
-            if not self.getConfig(self.configFile).has_key('rhel-%s-%s' % (self.os_version, self.os_arch)):
+            if not cfg_all.has_key('rhel-%s-%s' % (self.os_version, self.os_arch)):
                raise rhnNoAccountInformationProvidedError, 'Missing section in /opt/kusu/etc/updates.conf'
 
-            cfg = self.getConfig(self.configFile)['rhel-%s-%s' % (self.os_version, self.os_arch)]
+            cfg = cfg_all['rhel-%s-%s' % (self.os_version, self.os_arch)]
             serverid = cfg['serverid']
 
             if not (username and password and url and yumrhn and serverid):
-               raise rhnNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
+               raise rhnNoAccountInformationProvidedError, 'Invalid configuration in /opt/kusu/etc/updates.conf, you must provide username, password, URLs, and serverid.'
 
-            return RHN(username, password, yumrhn, url, int(serverid))
+            return username, password, yumrhn, url, int(serverid)
 
         else:
             raise rhnNoAccountInformationProvidedError, 'No config file provided'
@@ -451,49 +501,21 @@ class RHNUpdate(BaseUpdate):
         dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
-
-        if not self.rhn: 
-            self.rhn = self.getRHN()
-        self.rhn.login()
-        channels = self.rhn.getChannels(self.rhn.getServerID())
-
-        # 'rhel-x86_64-server-5'
-        # 'rhel-x86_64-server-hpc-5'
-        # 'rhel-x86_64-server-5-mrg-grid-1'
-        for channel in channels:
-            if not re.compile('^rhel-%s-(.*)-%s(.*)' % (self.os_arch, self.os_version)).match(channel['channel_label']):
-                raise rhnInvalidServerID, 'Invalid Server ID given. Please check /opt/kusu/etc/updates.conf'
-
-        # Get the latest list of rpms from os kits and the
-        # updates dir
-        searchPaths = []
-        for p in self.getSources():
-            if path(p).exists():
-                searchPaths.append(p)
-        searchPaths.append(dir)
-        rpmPkgs = rpmtool.getLatestRPM(searchPaths, True)
-      
-        downloadPkgs={}
-        for channel in channels:
-            downloadPkgs[channel['channel_label']] = []
         
-        for channel in downloadPkgs.keys():
-            for r in self.rhn.getLatestPackages(channel):
-                name = r.getName()
-                arch = r.getArch()
+        username, password, yumrhn, url, serverid = self.getRHN()
 
-                if rpmPkgs.RPMExists(name, arch):
-                    # There's a newer rpm, so download it
-                    if r > rpmPkgs[name][arch][0]:
-                        downloadPkgs[channel].append(r)
-                else:
-                    # No such existing rpm, so download it
-                    downloadPkgs[channel].append(r)
+        c = RHNUpdateCommand(username = username, password = password,
+                             serverid = serverid, yumrhn = yumrhn,
+                             repopath = self.getRepoPath(),
+                             arch = self.os_arch, version = self.os_version,
+                             proxy = self.proxy)
 
+        downloadPkgs, systemid = c.execute()
+        
         for channel, pkgs in downloadPkgs.items():
             for r in pkgs:
-                filename = r.getFilename().basename()
-                dest = path(dir / filename)
+                filename = r.getFilename()
+                dest = path(dir / filename.basename())
                 
                 if dest.exists():
                     try:
@@ -503,14 +525,14 @@ class RHNUpdate(BaseUpdate):
                         # corrupted/incomplete/etc
                         dest.remove()
 
-                
-                if self.rhn.getPackage(filename, channel, dest):
-                    # Success
-                    pass
-
-        try:
-            self.rhn.logout()
-        except: pass
+                fc = FetchCommand(uri=filename,
+                                 fetchdir=False,
+                                 destdir=dir,
+                                 systemid=systemid,
+                                 up2dateURL=url,
+                                 proxy=self.proxy,
+                                 overwrite=False)
+                status , dest = fc.execute()
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
         pkgs = rpmPkgs.getList()
@@ -531,7 +553,7 @@ class RHNUpdate(BaseUpdate):
 class YouUpdate(BaseUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
         BaseUpdate.__init__(self, 'sles', os_version, os_arch, prefix, db)
-        
+
     def getYouCred(self):
         if self.configFile:
             cfg = self.getConfig(self.configFile)['sles']
@@ -539,7 +561,7 @@ class YouUpdate(BaseUpdate):
             password = cfg['password']
 
             if not (username and password):
-               raise youNoAccountInformationProvidedError, 'Please configure /opt/kusu/etc/updates.conf'
+               raise youNoAccountInformationProvidedError, 'Invalid configuration in /opt/kusu/etc/updates.conf, you must provide username and password.'
         else:
             raise youNoAccountInformationProvidedError, 'No config file provided'
 
@@ -570,7 +592,7 @@ class YouUpdate(BaseUpdate):
 
         c = YouUpdateCommand(username = username, password = password,
                              channel=self.getChannel(), arch=os_arch,
-                             repopath=self.getSources()[0])
+                             repopath=self.getSources()[0], proxy=self.proxy)
 
         downloadPkgs = c.execute()
 
@@ -590,6 +612,7 @@ class YouUpdate(BaseUpdate):
             fc = FetchCommand(uri=filename,
                              fetchdir=False,
                              destdir=dir,
+                             proxy=self.proxy,
                              overwrite=False)
             status , dest = fc.execute()
  
@@ -617,7 +640,7 @@ class YouUpdate(BaseUpdate):
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
-        # Buildkit's kit src
+        # kusu-buildkit's kit src
         tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp')))
         # Used by kitops to add the kit from
         kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp')))
@@ -629,7 +652,7 @@ class YouUpdate(BaseUpdate):
             dest = tempkitdir / kitName / 'sources' / file.basename()
 
             # Use abs symlink. Relative links does not work
-            # when buildkit prepares temp new directory for
+            # when kusu-buildkit prepares temp new directory for
             # making kit
             file.symlink(dest) 
     
@@ -689,7 +712,7 @@ class OpenSUSEUpdate(YumUpdate):
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
 
-        # Buildkit's kit src
+        # kusu-buildkit's kit src
         tempkitdir = path(tempfile.mkdtemp(prefix='repopatch_buildkit', dir=os.environ.get('KUSU_TMP', '/tmp')))
         # Used by kitops to add the kit from
         kitdir = path(tempfile.mkdtemp(prefix='repopatch_kit', dir=os.environ.get('KUSU_TMP', '/tmp')))
@@ -701,7 +724,7 @@ class OpenSUSEUpdate(YumUpdate):
             dest = tempkitdir / kitName / 'sources' / file.basename()
 
             # Use abs symlink. Relative links does not work
-            # when buildkit prepares temp new directory for
+            # when kusu-buildkit prepares temp new directory for
             # making kit
             file.symlink(dest) 
     

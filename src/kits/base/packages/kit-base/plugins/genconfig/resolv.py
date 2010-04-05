@@ -1,4 +1,4 @@
-# $Id$
+# $Id: resolv.py 873 2008-02-25 20:49:32Z mblack $
 #
 #   Copyright 2007 Platform Computing Inc
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: S90KusuFirefox.rc.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -19,6 +19,12 @@ class KusuRC(rcplugin.Plugin):
 
     def run(self):
         """Setup firefox default homepage."""
+
+        if not self.os_name in ['sles', 'opensuse', 'suse']:
+            # Fix Firefox packaging (for rhel/centos only)
+            os.system("rpm -e --nodeps xulrunner --allmatches")
+            os.system("yum install -y xulrunner.i386 xulrunner.x86_64 firefox.i386 firefox.x86_64 > /dev/null 2>&1")
+        
         lib_path_str = '/usr/lib'
         if not self.os_name in ['sles', 'suse']:
             arch = os.getenv('KUSU_DIST_ARCH')

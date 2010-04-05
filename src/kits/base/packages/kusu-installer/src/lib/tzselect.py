@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: tzselect.py 2110 2009-02-27 21:36:10Z ggoh $
 #
 # Kusu Text Installer Timezone Setup Screen.
 #
@@ -106,7 +106,7 @@ class TZSelectionScreen(InstallerScreen, profile.PersistentProfile):
 
         hwclock_args = '--hctosys'
         if self.kiprofile[self.profile]['utc']:
-            hwclock_args += ' --utc'
+            hwclock_args += ' -u'
 
         hwclockP = subprocess.Popen('hwclock %s' % hwclock_args, shell=True,
                                     stdout=subprocess.PIPE,

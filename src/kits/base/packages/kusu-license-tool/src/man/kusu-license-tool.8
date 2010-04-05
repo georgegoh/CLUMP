@@ -1,0 +1,44 @@
+.\" Copyright (c) 2010 Platform Computing Inc
+.TH "kusu-license-tool" "8" "Version: ${VERSION_STR}" "Bin Xu" "Kusu Base"
+.SH "NAME"
+.LP
+kusu-license-tool \- Unified license management tool for kusu.
+.SH "SYNOPSIS"
+.LP
+\fBkusu-license-tool\fR [\-h|\-v]
+.LP
+\fBkusu-license-tool\fR register [\-f <license file>] [\-p <product name>] [\-\-force] [\-h]
+.LP
+\fBkusu-license-tool\fR recover [\-h]
+.LP
+.SH "DESCRIPTION"
+.LP
+kusu-license-tool is a unified FLEXlm license management tool.  It is used to register software bundled as kusu kits.  Kusu kits that bundle software requiring FLEXlm license registration can extend the functionality of kusu-license-tool via plugins. Kusu-license-tool supports both individual and unified license files when applying a license, and simplifies the steps for license registration and software deployment.
+.LP
+.SH "OPTIONS"
+.LP
+.TP
+\fB\-f, \-\-file==<license file>\fR
+Specifies the license to be applied.  If the license file is not specified, kusu-license-tool will search for the license in the default location as listed in the FILES section.
+.TP
+\fB\-p, \-\-product==<product name>\fR
+Specifies the product to apply the license for.  If the product is not specified, kusu-license-tool will apply a unified license for all supported products.
+.TP
+\fB\-h, \-\-help\fR
+Prints the help information and exits, also prints all supported products and their default license locations.
+.TP
+\fB\-v, \-\-version\fR
+Prints the version information and exits.
+.SH "FILES"
+.LP
+.TP
+/opt/kusu/license/bundle-license.dat
+Default location of the unified license
+.LP
+More default locations can be provided by plugins.  Run `kusu-license-tool --help` for documentation on those.
+.SH "AUTHORS"
+.LP
+Bin Xu, <binxu_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP
+kusu-kitops, kusu-repoman, kusu-kit-install

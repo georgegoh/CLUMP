@@ -1,12 +1,22 @@
 #!/usr/bin/env python
-# $Id$
+# -*- coding: utf-8 -*-
 #
-# Common source for tests.
+# $Id: testing.py 3150 2009-10-30 01:38:36Z mike $
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright (C) 2010 Platform Computing Inc.
 #
-# Licensed under GPL version 2; See LICENSE file for details.
-# 
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along wit:
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import tempfile
 import subprocess
@@ -85,3 +95,52 @@ def isFileExists(filename):
         else:
             raise e
     return True
+
+def temp_dir(prefix='kusutest'):
+    """
+    A decorator providing a temporary directory for a method.
+
+    The temporary directory will always be removed after the method
+    terminates. The temporary directory is a path.path() object, and is
+    passed to the method as an argument. Stack as many decorators on a
+    method as you need. The optional `prefix` argument sets the prefix
+    for the temporary directory.
+
+    Example:
+    @temp_dir()
+    @temp_dir()
+    def method(our, regular, arguments, tempdir1, tempdir2):
+        # do your thing
+        # regardless of how your function terminates,
+        # tempdir1 and tempdir2 should be removed
+    """
+
+    def _temp_dir(meth):
+        def wrapper(*__args, **__kw):
+            td = path(tempfile.mkdtemp(prefix=prefix, dir=os.environ.get('KUSU_TMP', '/tmp')))
+            __args += (td, )
+            try:
+                return meth(*__args, **__kw)
+            finally:
+                if td.ismount():
+                    # Let's first unmount this directory, if needed.
+                    cmd = ['umount', td]
+                    umountP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    umountPo, umountPe = umountP.communicate()
+
+                    if 0 != umountP.returncode:
+                        sys.stderr.write('WARNING: could not `umount %s`, return code: %s\n' % (td, umountP.returncode) +
+                                         'stdout:\n%s\nstderr:\n%s\n' % (umountPo, umountPe))
+
+                # It's possible that the function changed td.
+                if td.isdir():
+                    td.rmtree()
+                elif td.isfile():
+                    td.remove()
+
+        wrapper.__name__ = meth.__name__
+        wrapper.__dict__ = meth.__dict__
+        wrapper.__doc__ = meth.__doc__
+        return wrapper
+    return _temp_dir
+

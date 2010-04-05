@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: tool.py 2110 2009-02-27 21:36:10Z ggoh $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-#from kusu.buildkit.strategies.kitsource01 import KitSrcFactory, KusuKit, KusuComponent
-import kusu.buildkit.strategies.kitsource01 as kitsource01
+from kusu.buildkit.kitsource01 import KitSrcFactory, KusuKit, KusuComponent
 from kusu.buildkit.methods import *
 from kusu.util.tools import getArch
 from path import path
@@ -30,8 +29,8 @@ def loadKitScript(kitscript):
     execfile(kitscript,globals(),ns)
         
     pkgs = [ns[key] for key in ns.keys() if isinstance(ns[key], PackageProfile)]
-    comps = [ns[key] for key in ns.keys() if isinstance(ns[key], kitsource01.KusuComponent)]
-    kits = [ns[key] for key in ns.keys() if isinstance(ns[key], kitsource01.KusuKit)]
+    comps = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuComponent)]
+    kits = [ns[key] for key in ns.keys() if isinstance(ns[key], KusuKit)]
         
     # FIXME: only a single kit is supported right now
     if not kits:

@@ -21,7 +21,7 @@
 
 """byterange.py tests"""
 
-# $Id$
+# $Id: test_byterange.py 270 2007-04-12 04:14:43Z ltsai $
 
 import sys
 

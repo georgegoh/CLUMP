@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: kernel.py 1605 2008-08-21 10:15:36Z nninaba $
 #
 # Copyright 2007 Platform Computing Inc.
 #

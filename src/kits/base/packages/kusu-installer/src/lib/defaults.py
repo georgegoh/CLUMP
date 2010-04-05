@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: defaults.py 3321 2009-12-18 07:53:52Z mkchew $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
+
 import kusu.util.log as kusulog
 from kusu.util.errors import KusuError
 from kusu.util.structure import Struct
 from path import path
 from sets import Set
 from os.path import basename
+from os import environ
 import primitive.system.hardware.partitiontool as pt
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.system.hardware.errors import *
@@ -363,7 +365,7 @@ def setupDiskProfile(disk_profile, schema=None, wipe_existing_profile=True, disk
     logger.debug('Wipe Existing Profile: %s' % wipe_existing_profile)
     if wipe_existing_profile:
         preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv = clearLVM(disk_profile, schema)
-        disk_profile.executeLVMFifo()
+        disk_profile.executeLVMFifo(ignore_errors=True)
 
         # clear partitions that haven't been preserved.
         for disk in disk_profile.disk_dict.itervalues():
@@ -429,8 +431,8 @@ def clearLVM(disk_profile, schema):
                 logger.debug(str(e))
             except Exception, e:
                 preserved_lvg.append(lvg.name)
-                logger.debug(str(e))                
-                
+                logger.debug(str(e))
+
     return preserved_mntpnt, preserved_fs, preserved_lvg, preserved_lv
 
 def getPartitionTuple(disk):
@@ -690,6 +692,18 @@ def getAllFreePVs(disk_profile):
         if pv.group is None:
             pv_list.append(pv)
     return pv_list
+
+def getSupportedFsTypes():
+    """Return the list of supported filesystems for current os"""
+    kusu_dist = environ.get('KUSU_DIST', None)
+    kusu_distver = environ.get('KUSU_DISTVER', None)
+
+    fsTypes = ['ext2', 'ext3', 'linux-swap']
+    if kusu_dist in ['sles', 'opensuse', 'suse'] and kusu_distver in ['10', '103']:
+        fsTypes.append('reiserfs')
+
+    return fsTypes
+    
 
 #def getPVsForVG(disk_profile):
     

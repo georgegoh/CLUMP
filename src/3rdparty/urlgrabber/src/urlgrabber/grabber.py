@@ -364,7 +364,7 @@ BANDWIDTH THROTTLING
 
 """
 
-# $Id$
+# $Id: grabber.py 270 2007-04-12 04:14:43Z ltsai $
 
 import os
 import os.path

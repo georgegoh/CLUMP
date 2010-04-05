@@ -14,10 +14,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
+# $Id: initrd-templates.spec 3135 2009-10-23 05:42:58Z ltsai $
 # 
 
-%define subversion 5
 %define initrd_builddir %name
 %define ARCH %(echo `arch` | sed 's/i[3456]86/i386/')
 
@@ -25,6 +24,7 @@ Summary: Template Initial RAM disks for Image based installs
 Name: initrd-templates
 Version: 2.0
 Release: 1
+Epoch: 1
 License: LGPL/GPL
 Group: System Environment/Base
 Vendor: Platform Computing Inc
@@ -32,7 +32,7 @@ BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Requires: kusu-base-installer kusu-base-node
 BuildRequires: yum
-Source: initrd-templates-%{version}.%{subversion}.tar.gz
+Source: initrd-templates-%{version}.%{release}.tar.gz
 
 %description
 This package contains the script to generate Kusu base template initrds.
@@ -78,7 +78,7 @@ install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 /opt/kusu/etc/imageinit.pyc
 /opt/kusu/etc/imageinit.pyo
 /opt/kusu/etc/imageinit.sh
-/opt/kusu/etc/templates/mkinitrd-templates.tmpl
+%config(noreplace) /opt/kusu/etc/templates/mkinitrd-templates.tmpl
 /opt/kusu/sbin/mkinitrd-templates
 /opt/kusu/share/initrd-templates
 
@@ -86,7 +86,23 @@ install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
 
+* Thu Nov 6 2008 Mark Black <mblack@platform.com> 5.1-10
+- Change package to allow for other architectures
+
+* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-9
+- Reving tar file for RH
+
+* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-8
+- Reset version/revision after switching build to trunk
+
+* Mon Jun 2 2008 Mike Frisch <mfrisch@platform.com> 5.1-7
+- Add missing copyright
+
+* Wed May 28 2008 Mike Frisch <mfrisch@platform.com> 5.1-6
+- Remove mkinitrd-templates from post section (#109455)
+
+* Thu May 15 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
+- Use RH system files to generate initrd (#108335)

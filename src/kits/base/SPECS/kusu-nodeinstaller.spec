@@ -13,21 +13,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
+# $Id: kusu-nodeinstaller.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
-
-%define subversion 6
 
 Summary: kusu-nodeinstaller module runtime
 Name: kusu-nodeinstaller
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 Buildrequires: gcc, python, python-devel, patch
 BuildArch: noarch
 
@@ -70,7 +69,18 @@ rm -rf %{buildroot}
 %{_approot}
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
 
+* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-7
+- Reving tar file for RH
+
+* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-6
+- Reset version/revision after switching build to trunk
+
+* Fri May 30 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
+- Detect duplicate MBRs and disambiguate them for both master and node
+  (#108240)
+
+* Thu Apr 3 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
+- Fixes for partitioning related issues

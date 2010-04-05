@@ -14,15 +14,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
+# $Id: component-gnome-desktop.spec 3135 2009-10-23 05:42:58Z ltsai $
 # 
 
 Summary: Component for GNOME Desktop
 Name: component-gnome-desktop
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
-URL: http://www.osgdc.org
+URL: http://www.platform.com
 Group: System Environment/Base
 Vendor: Platform Computing Inc
 BuildArch: noarch
@@ -134,7 +135,11 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
 
+* Thu Jul 31 2008 Mike Frisch <mfrisch@platform.com> 5.1.1-2
+- Removed non-essential dependencies (#109704)
+
+* Thu Jan 10 2008 Platform Computing <support@platform.com>
+- Initial release.

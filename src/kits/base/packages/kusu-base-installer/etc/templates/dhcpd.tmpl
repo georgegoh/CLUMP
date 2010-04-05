@@ -12,17 +12,20 @@ option option-140 "$installerip";
 subnet $network.subnet netmask $network.netmask {
         default-lease-time $leasetime;
         max-lease-time $leasetime;
+        #if $network.gateway
         option routers $network.gateway;
+        #end if
         option subnet-mask $network.netmask;
-        #if $provision != 'KUSU'
-			#if $network.ranges
-				#for $range in $network.ranges
+        #if $network.ranges
+                #for $range in $network.ranges
         range $range[0] $range[1];
-		        #end for
-			#end if
+                #end for
         #end if
         #if $dnsdomain
         option domain-name "$dnsdomain";
+        #end if
+        #if $dnsdomainserver
+        option domain-name-servers $dnsdomainserver;
         #end if
 
         if substring (option  vendor-class-identifier, 0, 20)  = "PXEClient:Arch:00000" {

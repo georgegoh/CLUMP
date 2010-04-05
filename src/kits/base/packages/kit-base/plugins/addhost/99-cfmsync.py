@@ -19,12 +19,12 @@ from kusu.addhost import *
 class AddHostPlugin(AddHostPluginBase):
     def common(self):
         """Instruct the cfmsync to run after a node is added"""
-        os.system('/opt/kusu/sbin/cfmsync -f')
+        os.system('/opt/kusu/sbin/kusu-cfmsync -f')
 
     def updated(self):
-        """Called when user runs 'addhost -u'"""
+        """Called when user runs 'kusu-addhost -u'"""
         self.common()
 
     def finished(self, nodelist, prePopulateMode):
-        """Called when addhost exits"""
+        """Called when kusu-addhost exits"""
         self.common()

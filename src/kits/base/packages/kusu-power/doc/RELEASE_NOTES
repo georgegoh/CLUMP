@@ -1,0 +1,118 @@
+------------------------------------------------------------------------------
+                  Kusu Power Release 2.2.1-1 - October 16th 2009
+------------------------------------------------------------------------------
+
+Warnings/known limitations
+--------------------------
+  - altixL1 plugin requires preinstalled/preconfigured conserver console
+    server/client.
+  - hpipmi plugin requires preinstalled/preconfigured conserver console
+    server/client.
+  - hpipmi plugin only supports systems requiring no password to enter
+    IPMI cli.
+  - Devices with only serial interfaces  must be connected through a 
+    qualified Ethernet equipped console switch. 
+  - Simultanous requests from multiple clients not supported
+
+
+Supported power switching hardware
+----------------------------------
+
+  power switching system       supported interface/connections 
+  ---------------------------- ---------------------------------------------- 
+  Pulizzi                      serial (through console switch over TCP/IP) 
+  Baytech RPC3 switch          10BaseT TCP/IP 
+  APC MasterSwitch VM          10BaseT TCP/IP
+  APC AP7921/AP7951            10BaseT TCP/IP
+  IPMI 1.0                     serial (through console switch over TCP/IP) 
+  ILO (HP)                     scambix utility	
+  RAC/DRAC (Dell)              racadm utility or scambix utility
+  IPMI 1.5		       ipmitool utility
+  MP Card, IPMI (HP)           10/100 BT LAN TCP/IP, ipmitool utility
+  SGI Altix L1 controller      serial (throuth console switch over TCP/IP)
+
+
+------------------------------------------------------------------------------
+                             Change Log
+------------------------------------------------------------------------------
+
+Release 2.2.1-1 - October 16th 2009
+----------------------------------
+  - Added the kusu-power package to the PCM base kit; changing its license to GPL v2
+
+Release 2.2 - November 25th 2008
+----------------------------------
+  - Refactored to be individual module
+
+Release 1.6 - December 16th 2005
+----------------------------------
+  - Added support for IPMI 2.0
+
+Release 1.5.5 - May 4th 2005
+----------------------------
+  - Added support for APC Switched Rack Power Distribution Unit model AP7951
+
+Release 1.5.4 - Apr 14th 2005
+-----------------------------
+  - Added support for APC Switched Rack Power Distribution Unit model AP7921
+  - Fixed issue with power cycle over IPMI
+  - Added support for SGI Altix 350 L1 controller (over serial systemconsole
+    port)
+
+Release 1.5.3 - Aug 03th 2004
+------------------------------
+  - Make powercycle also work with DRAC III on PE6650 (Dell) by use of racadm plugin.
+
+Release 1.5.2 - July 26th 2004
+------------------------------
+  - Added support for use of racadm tool (Dell) by introducing racadm plugin.
+
+Release 1.5.1 - July 16th 2004
+------------------------------
+  - Changed the scaproxy plugin to use ipmitool instead of ipmicmd.
+
+Release 1.5.0 - June 30th 2004
+------------------------------
+  - Added limited support for WOL (Wake-On-Lan) by use of ether-wake
+  - Added support for HP Management Processor Card on HP rx2600
+
+Release 1.4.0 - February 04th 2004
+----------------------------------
+  - Added support for powercontrol by use of ipmicmd in scaproxy plugin.
+  - Changed baytech plugin to support status command.
+
+Release 1.3.1 - August 27th 2003
+--------------------------------
+  - Updated license information
+
+Release 1.3.0 - August 20th 2003
+---------------------------------
+  - Added support for ILO power switching through the scambix utility.
+
+Release 1.2.1 - April 10th 2003
+-------------------------------
+  - Bugfix to run on ia64
+  - Added some errorhandling when no plugins is found
+
+Release 1.2.0 - March 13th 2003
+-------------------------------
+  - Added support for running scapowd in batchmode with the "power" utility
+  - Added support for APC MasterSwitch VM conroller (AP9224)
+  - Status is reportd as "ON" and "OFF" rather than 0 and 1
+  - Added scapowd.reconfig	
+
+Release 1.1.0 - January 30th 2003
+---------------------------------
+  - Introduced use of scapowd.config and scapowd.rmconfig
+  - Added powercontrol by use of IPMI1.0 over serial console (hpipmi plugin)
+
+Release 1.0.1 - December 5th 2001
+---------------------------------
+  - Added support for Pulizzi switches.
+
+Release 1.0.0 - July 20th 2001
+------------------------------
+  - First release
+
+
+version: $Id: RELEASE_NOTES 61173 2008-11-25 11:07:03Z kbjornst $ 

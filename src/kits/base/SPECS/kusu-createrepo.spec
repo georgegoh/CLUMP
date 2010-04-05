@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
+# $Id: kusu-createrepo.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
 %define debug_package %{nil}
 
@@ -26,7 +26,7 @@ Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 Buildrequires: gcc, python, python-devel, patch
 BuildArch: noarch
 Requires: python >= 2.1, rpm-python, rpm >= 0:4.1.1

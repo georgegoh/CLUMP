@@ -1,0 +1,7 @@
+#Fri May 16 14:50:47 EDT 2008
+dita.input.valfile=C\:/Vasont/Extract/conditions.ditaval
+args.input=C\:\\Vasont\\Extract\\v14830515-16-08-14-50-XHTML.ditamap
+transtype=xhtml
+output.dir=N\:/Vasont/DITA/OUT/xhtml-out/v14830515-16-08-14-50-XHTML
+dita.dir=N\:\\DITA-OT1.2.2
+basedir=N\:\\DITA-OT1.2.2

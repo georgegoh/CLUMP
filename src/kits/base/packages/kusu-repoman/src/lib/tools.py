@@ -1,16 +1,31 @@
-#!/usr/bin/env python
-#
-# $Id$
-#
-# Copyright 2007 Platform Computing Inc.
-#
-# Licensed under GPL version 2; See LICENSE file for details.
+#!/usr/bin/env python 
+# -*- coding: utf-8 -*- 
+# 
+# $Id: tools.py 3198 2009-11-12 09:35:02Z binxu $ 
+# 
+# Copyright (C) 2010 Platform Computing Inc. 
+# 
+# This program is free software; you can redistribute it and/or modify it under 
+# the terms of version 2 of the GNU General Public License as published by the 
+# Free Software Foundation. 
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# details. 
+# 
+# You should have received a copy of the GNU General Public License along with: 
+# this program; if not, write to the Free Software Foundation, Inc., 51 
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA 
 #
 
 from primitive.support import osfamily
-
-from kusu.util.errors import *
 from kusu.core import database as db
+from kusu.util.errors import RepoOSKitError
+from kusu.util.errors import UnsupportedURIError
+from kusu.util.errors import FileDoesNotExistError
+from kusu.util.errors import RepoNotFoundError
+
 from path import path
 import re
 
@@ -156,9 +171,9 @@ def getConfig(file):
     cfg = {}
     sections = configParser.sections()
 
+    supported_sections = osfamily.getOSNames('rhelfamily') + ['fedora', 'sles', 'opensuse', 'rhel-5-i386', 'rhel-5-x86_64'] + ['proxy'] 
     for sec in sections:
-        if sec in ['fedora', 'centos', 'rhel', 'sles', 'opensuse', 
-                   'rhel-5-i386', 'rhel-5-x86_64', 'scientificlinux']:
+        if sec in supported_sections:
             cfg[sec] = {}
             for opt in configParser.items(sec):
                key = opt[0]

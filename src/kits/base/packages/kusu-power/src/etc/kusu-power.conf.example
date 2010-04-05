@@ -1,0 +1,74 @@
+### IPMI examples
+##device	<devicename>	ipmi		<interface option>
+##node		<nodename>	<devicename>	<ip address> [<username>] [<password>]
+
+#device		ipmi15		ipmi		lan
+#device		ipmi20		ipmi		lanplus
+#node		n1		ipmi15		10.2.100.1 admin admin
+#node		n2		ipmi15		10.2.100.2 admin admin
+#node		n3		ipmi20		10.2.100.3 admin admin
+#node		n4		ipmi20		10.2.100.4 admin admin
+
+
+### Dell RAC examples
+##device	<devicename>	dellrac
+##node		<nodename>	<devicename>	<ip address> <username> <password>
+
+#device		racadm		dellrac
+#node		r1		racadm		10.2.100.2 admin admin
+#node		r2		racadm		10.2.100.3 admin admin
+
+
+### HP iLO examples
+##device	<devicename>	hpilo		[nossl]
+##node		<nodename>	<devicename>	<ip address> <username> <password>
+
+#device		ilohttps	hpilo
+#node		h1		ilohttps	10.2.100.1 admin admin
+#node		h2		ilohttps	10.2.100.2 admin admin
+#node		h3		ilohttps	10.2.100.3 admin admin
+#node		h4		ilohttps	10.2.100.4 admin admin
+
+
+### LNXI IceBox examples
+##device	<devicename>	icebox		<ip address> <password> [<tcp port>] [<timeout>]
+##node		<nodename>	<devicename>	<port>
+
+#device		iceo2		icebox		192.168.2.246 password
+#node		o31		iceo2		1
+#node		o32		iceo2		2
+#node		o65		iceo2		3
+#node		o67		iceo2		5
+#node		o68		iceo2		6
+
+
+### Baytech examples
+##device	<devicename>	baytech		<ip address> [<username>] [<password>] [<tcp port>] [<timeout>]
+##node		<nodename>	<devicename>	<port>
+
+#device		baysw1		baytech		172.20.21.1
+#node		b1		baysw1		1
+#node		b2		baysw1		2
+#node		b3		baysw1		3
+#node		b4		baysw1		4
+
+
+### APC examples
+##device	<devicename>	apc7921		<ip address> <username> <password> [<tcp port>] [<timeout>]
+##node		<nodename>	<devicename>	<port>
+
+#device		apcsw1		apc7921		172.20.21.4 apc apc
+#node		a1		apcsw1		1
+#node		a2		apcsw1		2
+#node		a3		apcsw1		3
+#node		a4		apcsw1		4
+
+
+### IBM BladeCenter
+##device	<devicename>	ibmbc		<ip address> <username> <password> [<tcp port>] [<timeout>]
+##node		<nodename>	<devicename>	<slot>
+
+#device		bc1		ibmbc		172.30.101.5 USERID PASSW0RD
+#node		n1		bc1		1
+#node		n2		bc1		2
+

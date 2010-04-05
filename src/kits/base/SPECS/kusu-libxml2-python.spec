@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
+# $Id: kusu-libxml2-python.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
 %define python_ver %(python -c "import sys; v=sys.version_info[:2]; print '%d.%d'%v")
 
@@ -21,12 +21,13 @@ Summary: kusu-libxml2-python module runtime
 Name: kusu-libxml2-python
 Version: 2.5.11
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 Buildrequires: gcc, python, python-devel, patch, libxml2, libxml2-devel, libxslt, libxslt-devel
 
 %description
@@ -72,4 +73,3 @@ rm -rf %{buildroot}
 
 %files
 %{_approot}
-

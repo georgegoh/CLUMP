@@ -1,13 +1,13 @@
 #!/usr/bin/python
 #
-# $Id$
+# $Id: nodeboot.cgi.py 3326 2009-12-18 09:24:32Z mkchew $
 #
 #   Copyright 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -45,9 +45,9 @@ from path import path
 
 class NodeInfo:
     """This class will provide the functions for getting the Node Installation
-    Information, and for setting the database fields for a node """
+    Information, and for setting the database fields for a node."""
 
-    def __init__(self, user='nobody',cgi=False):
+    def __init__(self, user='nobody', cgi=False):
         """__init__ - initializer for the class"""
         self.db = KusuDB()
         #in a CGI environment, we do not have access to the environment
@@ -61,9 +61,9 @@ class NodeInfo:
                 self.db.connect('kusudb',user,driver='mysql')
                 self.driver='mysql' # if it fails here, nodeboot.cgi will fail altogether
         else:
-            self.db.connect('kusudb', user) # connect will handle the driver 
+            self.db.connect('kusudb', user) # connect will handle the driver
 
-        
+
     def getNIInfo(self, nodename, nodeip):
         """getNII - Generates the Node Installation Information for a given
         node."""
@@ -72,7 +72,8 @@ class NodeInfo:
 
         # Create the nodeinfo line
         query = ('select repos.installers, repos.ostype, '
-                 'nodegroups.ngid, nodegroups.installtype, nodes.nid, nodegroups.type, repos.repoid from nodes, '
+                 'nodegroups.ngid, nodegroups.installtype, nodes.nid, '
+                 'nodegroups.type, repos.repoid from nodes, '
                  'nodegroups, repos where nodes.ngid=nodegroups.ngid and '
                  'nodegroups.repoid=repos.repoid and nodes.name="%s"' % nodename)
         try:
@@ -86,21 +87,25 @@ class NodeInfo:
             sys.exit(-1)
         installer, os, ngid, type, nid, ngtype, repoid = data
         repo = '/repos/' + str(repoid)
- 
+
         #FIXME: WORK IN PROGRESS
-        # Currently just use the ip from the master installer, where the 
-        # network request from the node is hitting. 
+        # Currently just use the ip from the master installer, where the
+        # network request from the node is hitting.
         # We will use multiple installers next time when
-        # we have other installers up and running. 
-        #query = ('select ip from nics,nodes where nics.nid=nodes.nid ' + 
-        #         'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' + 
+        # we have other installers up and running.
+        #query = ('select ip from nics,nodes where nics.nid=nodes.nid ' +
+        #         'and nodes.name=(select kvalue from appglobals where kname="PrimaryInstaller") ' +
         #         'and netid = (select netid from nodes,nics where nodes.nid=nics.nid and nodes.name="%s" and nics.ip="%s")' % (nodename,nodeip))
-        query = ('SELECT ip FROM nics, nodes, networks WHERE nics.nid=nodes.nid AND nics.netid=networks.netid ' +
-                 'AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname=\'PrimaryInstaller\') ' +
-                 'AND networks.network=(SELECT network FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
-                                        'AND networks.netid=nics.netid AND nodes.name=\'%s\' AND nics.ip=\'%s\') ' % (nodename, nodeip) +
-                 'AND networks.subnet=(SELECT subnet FROM nodes, nics, networks WHERE nodes.nid=nics.nid ' +
-                                       'AND networks.netid=nics.netid AND nodes.name=\'%s\' AND nics.ip=\'%s\')' % (nodename, nodeip))
+        query = ('SELECT ip FROM nics, nodes, networks '
+                 'WHERE nics.nid=nodes.nid AND nics.netid=networks.netid '
+                 'AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname=\'PrimaryInstaller\') '
+                 'AND networks.network=(SELECT network FROM nodes, nics, networks WHERE nodes.nid=nics.nid '
+                                        'AND networks.netid=nics.netid AND nodes.name=\'%(nodename)s\' '
+                                        'AND nics.ip=\'%(nodeip)s\') '
+                 'AND networks.subnet=(SELECT subnet FROM nodes, nics, networks WHERE nodes.nid=nics.nid '
+                                       'AND networks.netid=nics.netid AND nodes.name=\'%(nodename)s\' '
+                                       'AND nics.ip=\'%(nodeip)s\')'
+                ) % {'nodename': nodename, 'nodeip': nodeip}
 
         try:
             self.db.execute(query)
@@ -111,7 +116,7 @@ class NodeInfo:
         if not data:
             # Need to trigger a 500 error
             sys.exit(-1)
- 
+
         installer = data[0]
 
         # This section could probably be removed
@@ -123,6 +128,15 @@ class NodeInfo:
             f = open(etcdbpasswd, 'r')
             dbpasswd = f.read().strip()
             f.close()
+        
+        etcipmi = path('/opt/kusu/etc/.ipmi.passwd')
+        ipmipasswd = ''
+        try:
+            f = open(etcipmi, 'r')
+            ipmipasswd = f.read().strip()
+            f.close()
+        except IOError:
+            print 'Failed to open the IPMI password file.'
 
         cfmsecretfile = path('/etc/cfm/.cfmsecret')
         cfmsecret = ''
@@ -133,7 +147,7 @@ class NodeInfo:
             cfmsecret = f.read().strip()
             f.close()
         #Line 1
-        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s" cfmsecret="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd, cfmsecret)
+        print '<nodeinfo name="%s" installers="%s" repo="%s" ostype="%s" installtype="%s" nodegrpid="%i" ngtype="%s" repoid="%s" dbpasswd="%s" ipmipasswd="%s" cfmsecret="%s">' % (nodename, installer, repo, os or '', type, ngid, ngtype, repoid, dbpasswd, ipmipasswd, cfmsecret)
 
         # NICinfo section
         query = ('select nics.ip, networks.usingdhcp, networks.network, '
@@ -145,14 +159,15 @@ class NodeInfo:
             self.db.execute(query)
             data = self.db.fetchall()
         except:
-
             # Return 500
             print "Oops! again"
             sys.exit(-1)
+
         if not data:
             # Need to trigger a 500 error
             print "Oops!"
             sys.exit(-1)
+
         for row in data:
             ip, dhcpb, network, subnet, dev, suffix, gw, opt, bootb, mac, ntype = row
             if dhcpb:
@@ -165,7 +180,7 @@ class NodeInfo:
                 boot=0
             #Line 2
             print '    <nicinfo device="%s" ip="%s" subnet="%s" network="%s" suffix="%s" gateway="%s" dhcp="%s" options="%s" boot="%s" mac="%s" type="%s"></nicinfo>' % (dev, ip or '', subnet, network, suffix, gw, dhcp, opt or '', boot, mac or '', ntype)
-                
+
         # Partition Info
         #default is 7 lines
         query = ('select device, partition, mntpnt, fstype, size, options, preserve '
@@ -202,7 +217,7 @@ class NodeInfo:
                          'where components.cid=ng_has_comp.cid and '
                          'kits.kid=components.kid and kits."isOS"=False and '
                          'ng_has_comp.ngid=\'%i\'' % ngid )
-                self.db.execute(query,postgres_replace=False)
+                self.db.execute(query, postgres_replace=False)
             data = self.db.fetchall()
         except:
             # Return 500
@@ -214,8 +229,7 @@ class NodeInfo:
                 print '    <component>%s</component>' % cname
 
         # Optional packages
-        query = ('select packagename from packages '
-                 'where ngid=\'%i\'' % ngid )
+        query = ('select packagename from packages where ngid=\'%i\'' % ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -229,8 +243,7 @@ class NodeInfo:
                 print '    <optpackage>%s</optpackage>' % pack
 
         # Optional scripts
-        query = ('select script from scripts '
-                 'where ngid=\'%i\'' % ngid )
+        query = ('select script from scripts where ngid=\'%i\'' % ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -243,9 +256,9 @@ class NodeInfo:
                 script = row[0]
                 print '    <optscript>%s</optscript>' % script
 
-        # Appglobals 
+        # Appglobals
         query = ('select kname, kvalue from appglobals where '
-                 'ngid is NULL or ngid=\'%i\'' % ngid )
+                 'ngid is NULL or ngid=\'%i\'' % ngid)
         try:
             self.db.execute(query)
             data = self.db.fetchall()
@@ -256,7 +269,7 @@ class NodeInfo:
         if data:
             for row in data:
                 kname, kvalue = row
-                print '    <appglobals name="%s" value="%s"></appglobals>' % (kname, kvalue or '') 
+                print '    <appglobals name="%s" value="%s"></appglobals>' % (kname.strip(), kvalue or '')
 
         print '</nodeinfo>'
 
@@ -292,7 +305,7 @@ class NodeInfo:
 
         if not nodeip:
             return
-        
+
         query = ('select nodes.name from nodes,nics where '
                  'nodes.nid = nics.nid and nics.ip = \'%s\'' % nodeip)
         try:
@@ -310,8 +323,8 @@ class NodeInfo:
 
         return data[0]
 
-        
-    def setNodeInfo(self, nodename, state, bootfrom, timestamp):
+
+    def setNodeInfo(self, nodename, state, bootfrom, timestamp, uid=''):
         """setState - Set the nodes state in the database.  One method is
         used to reduce the DB calls."""
         if not state and bootfrom == -1 and not timestamp:
@@ -326,6 +339,8 @@ class NodeInfo:
             cmdstr = cmdstr + ' bootfrom=%s,' % bf
         if timestamp:
             cmdstr = cmdstr + ' lastupdate=\'%s\',' % timestamp
+        if uid:
+            cmdstr = cmdstr + ' uid=\'%s\',' % uid
         query = cmdstr[:-1] + ' where name=\'%s\'' % nodename
 
         try:
@@ -335,16 +350,16 @@ class NodeInfo:
             # Return 500 (hopefully)
             print "Query problem:  %s" % query
             sys.exit(-1)
-                 
+
 
     def regenPXE(self, nodename):
         """regenPXE - Calls the boothost tool to cause the PXE file to be
         regenerated.
         NOTE:  This forces the database connection to close! """
         self.db.disconnect()
-        if os.path.exists('/opt/kusu/sbin/boothost'):
-            os.system('/opt/kusu/sbin/boothost -m %s' % nodename)
-    
+        if os.path.exists('/opt/kusu/sbin/kusu-boothost'):
+            os.system('/opt/kusu/sbin/kusu-boothost -m %s' % nodename)
+
     def disconnect(self):
         self.db.disconnect()
 
@@ -354,17 +369,15 @@ class NodeBootApp(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)
 
-
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
         self.errorMessage("Version %s\n", self.version)
         sys.exit(0)
 
-
     def parseargs(self):
         """parseargs - Parse the command line arguments and populate the
         class variables"""
-        
+
         self.parser.add_option("-v", "--version", action="store_true",
                                dest="getversion", default=False)
         self.parser.add_option("-d", "--displaynii", action="store_true",
@@ -377,10 +390,10 @@ class NodeBootApp(KusuApp):
                                type="string", dest="nodestate")
         self.parser.add_option("-b", "--bootfrom", action="store",
                                type="string", dest="bootfrom")
+        self.parser.add_option("-u", "--uid", action="store",
+                               type="string", dest="uid")
 
         (self.options, self.args) = self.parser.parse_args(sys.argv)
-
-            
 
     def run(self):
         """run - Run the application"""
@@ -393,16 +406,17 @@ class NodeBootApp(KusuApp):
         bootfrom    = -1        # -1 means unchanged, 0=network, 1=disk
         updatepxe   = 0
         timestamp   = ''        # The timestamp to go in the nodes table
-        runascgi    = 0         # Flag to indicate this is running as a CGI 
-        
+        runascgi    = 0         # Flag to indicate this is running as a CGI
+        uid         = ''
+
         # Test to see if we are running as a CGIless
         if os.environ.has_key('REMOTE_ADDR'):
             runascgi = 1
             ip = os.environ['REMOTE_ADDR']
-            
+
             # Prepare the CGI class
             self.cgi = cgi.FieldStorage()
-            
+
             if os.environ.has_key('REMOTE_HOST'):
                 node = os.environ['REMOTE_HOST']
 
@@ -423,6 +437,10 @@ class NodeBootApp(KusuApp):
                     bootfrom = 1
                 else:
                     bootfrom = 0
+
+            if self.cgi.has_key('uid'):
+                if self.cgi['uid'].value:
+                    uid = self.cgi['uid'].value            
 
             # Uncomment this for doing scalibility testing
             # Exercise with:  wget 'http://HOSTNAME/repos/nodeboot.cgi?dump=1&ip=IP_ADDR&boot='
@@ -454,7 +472,9 @@ class NodeBootApp(KusuApp):
                         bootfrom = 1
                     else:
                         bootfrom = 0
-                    
+
+                if self.options.uid:
+                    uid = self.options.uid
 
         # The data should now be ready to call the methods
         if runascgi:
@@ -467,10 +487,11 @@ class NodeBootApp(KusuApp):
         print "Dump NII: %s" % dumpnii
         print "State: %s" % state
         print "Dump CFM: %s" % dumpcfm
-            
-        # Test to see if we need write access to the database and connect 
+        print "UID: %s" % uid
+
+        # Test to see if we need write access to the database and connect
         if bootfrom or state:
-            nodefun = NodeInfo('apache',cgi=runascgi)
+            nodefun = NodeInfo('apache', cgi=runascgi)
             updatepxe = 1
         else:
             nodefun = NodeInfo()
@@ -481,12 +502,12 @@ class NodeBootApp(KusuApp):
         print "IP: %s" % ip
         print "Node: %s" % node
         print "</debug>"
-        
+
         if not node:
             # Bail out
             print "</nii>"
             sys.exit(0)
-        
+
         if dumpnii:
             nodefun.getNIInfo(node, ip)
 
@@ -494,18 +515,17 @@ class NodeBootApp(KusuApp):
             nodefun.getCFMfile()
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         print "</nii>"
- 
-        # Update State, bootfrom, and timestamp  (Methods check validity)
-        nodefun.setNodeInfo(node, state, bootfrom, timestamp)
-        
+
+        # Update State, bootfrom, timestamp and uid  (Methods check validity)
+        nodefun.setNodeInfo(node, state, bootfrom, timestamp, uid)
+
         # Update PXE file if needed
         if updatepxe:
             nodefun.regenPXE(node)
         else:
             nodefun.disconnect()
 
-        
-        
+
 if __name__ == '__main__':
     app = NodeBootApp()
     app.run()

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id$
+# $Id: kusu-debug 4520 2009-04-09 12:26:50Z ltsai $
 
 BASE_DIR=/tmp
 MODULES=etc/modprobe.conf
@@ -14,6 +14,45 @@ usage() {
     echo "    --help                Display usage and exit"
     echo "    --dir                 Destination directory for the tarball ($BASE_DIR)"
     exit $1
+}
+
+# check source file before copy
+check_cp_file()
+{
+    # check parameters
+    if [ ! $# -eq 2 ]; then
+        echo "Parameters Error!";
+        return 1;
+    fi
+
+    # check source
+    /bin/ls $1 > /dev/null 2>&1
+    if [ ! $? = 0 ]; then
+        return 1;
+    fi
+
+    # exec
+    /bin/cp -a $1 $2
+    return 0;
+}
+
+# check source dir before copy
+check_cp_dir()
+{
+    # check parameters
+    if [ ! $# -eq 2 ]; then
+        echo "Parameters Error!";
+        return 1;
+    fi
+
+    # check source
+    if [ ! -d $1 ]; then
+        return 1;
+    fi
+
+    # exec
+    /bin/cp -a $1 $2
+    return 0;
 }
 
 while [ $# -ne 0 ]; do
@@ -52,15 +91,25 @@ fi
 BASE_DIR=`cd $BASE_DIR && pwd`
 
 DIR=$BASE_DIR/kusu-debug-$$/kusu-debug
-TARBALL=$BASE_DIR/kusu-debug-`date +'%Y%m%d%H%M%S%Z'`.tar.gz
+TFTPDIR=$BASE_DIR/kusu-debug-$$/kusu-debug-tftpboot                                              
+DATESTRING=`date +'%Y%m%d%H%M%S%Z'`                                                              
+LOGANDCONFTARBALL=$BASE_DIR/kusu-debug-$DATESTRING.tar.gz                                        
+TFTPTARBALL=$BASE_DIR/kusu-debug-tftpboot-$DATESTRING.tar.gz 
 
-/bin/mkdir -p $DIR
-if [ $? != 0 ] ; then
-  echo "Unable to create directory $DIR"
-  exit
+# ROLE
+if [ -f /opt/kusu/bin/kusu-genconfig ]; then
+    ROLE=MASTER
+else
+    ROLE=NODE
 fi
 
-chmod 700 $DIR
+/bin/mkdir -p $DIR $TFTPDIR
+if [ $? != 0 ] ; then
+    echo "Unable to create directory $DIR or $TFTPDIR"
+    exit
+fi
+
+chmod 700 $DIR $TFTPDIR
 cd $DIR
 
 echo 
@@ -76,148 +125,169 @@ mkdir -p $DIR/var/log/kusu
 mkdir -p $DIR/dbdump
 mkdir -p $DIR/etc/profile.d
 mkdir -p $DIR/etc/skel
+mkdir -p $DIR/opt/kusu
 
 echo "    * copying services runlevel configuration"
-/sbin/chkconfig --list >                                $DIR/chkconfig
+/sbin/chkconfig --list > $DIR/chkconfig
 
 if [ -d /etc/samba ]; then
-
     echo "    * copying Samba configuration"
     mkdir -p $DIR/etc/samba
-    cp -a /etc/samba                                  $DIR/etc/
-
+    check_cp_dir /etc/samba $DIR/etc/
 fi
 
 if [ -f /etc/netgroup ]; then
-    cp -a /etc/netgroup                           $DIR/etc/netgroup
+    check_cp_file /etc/netgroup $DIR/etc/netgroup
 fi
 
 if [ -f /etc/hosts.equiv ]; then
-    cp -a /etc/hosts.equiv                        $DIR/etc/hosts.equiv
+    check_cp_file /etc/hosts.equiv $DIR/etc/hosts.equiv
 fi
 
 echo "    * copying profiles directory"
-cp -a /etc/profile.d                              $DIR/etc/
+check_cp_dir /etc/profile.d $DIR/etc/
 
 echo "    * copying skeleton directory"
-cp -a /etc/skel                                   $DIR/etc/
+check_cp_dir /etc/skel $DIR/etc/
+
+echo "    * copying udev directory"
+check_cp_dir /etc/udev $DIR/etc/
+
+echo "    * copying /opt/kusu/etc directory"
+check_cp_dir /opt/kusu/etc $DIR/opt/kusu/
+
+if [ -d /opt/kusu/cfm ]; then
+    echo "    * copying /opt/kusu/cfm directory"
+    check_cp_dir /opt/kusu/cfm $DIR/opt/kusu/
+fi
 
 echo "    * copying startup scripts (rc.d files)"
-cp -a /etc/rc.d                                   $DIR/etc/
+check_cp_dir /etc/rc.d $DIR/etc/
 
 echo "    * copying configuration information"
 if [ -f /etc/redhat-release ]; then
-	mkdir -p $DIR/etc/httpd/conf
-	cp -a /etc/httpd/conf/*.conf                  $DIR/etc/httpd/conf
+    mkdir -p $DIR/etc/httpd/conf
+    check_cp_file  "etc/httpd/conf/*.conf" $DIR/etc/httpd/conf
 else
-	mkdir -p $DIR/etc/apache2/conf.d
-	cp -a /etc/apache2/conf.d/*.conf			  $DIR/etc/apache2/conf.d/
+    mkdir -p $DIR/etc/apache2/conf.d
+    check_cp_file "/etc/apache2/conf.d/*.conf" $DIR/etc/apache2/conf.d/
 fi
-cp -a /etc/auto.*                                 $DIR/etc/
-cp -a /etc/exports                                $DIR/etc/
-cp -a /etc/dhcpd.conf                             $DIR/etc/dhcpd.conf
-cp -a /etc/resolv.conf                            $DIR/etc/resolv.conf
-cp -a /etc/named.conf                             $DIR/etc/named.conf
-cp -a /etc/hosts                                  $DIR/etc/hosts
-cp -a /tftpboot                                   $DIR/
+
+if [ -f /etc/profile.nii ]; then
+    check_cp_file "/etc/profile.nii" $DIR/etc/
+fi
+
+check_cp_file "/etc/auto.*" $DIR/etc/
+check_cp_file /etc/exports $DIR/etc/
+check_cp_file /etc/dhcpd.conf $DIR/etc/dhcpd.conf
+check_cp_file /etc/resolv.conf $DIR/etc/resolv.conf
+check_cp_file /etc/named.conf $DIR/etc/named.conf
+check_cp_file /etc/hosts $DIR/etc/hosts
+check_cp_dir /tftpboot $TFTPDIR/
 
 if [ -f /etc/redhat-release ]; then
-	mkdir -p $DIR/etc/sysconfig/network-scripts
-	cp -a /etc/sysconfig/network-scripts/ifcfg-eth?   $DIR/etc/sysconfig/network-scripts/
+    mkdir -p $DIR/etc/sysconfig/network-scripts
+    check_cp_file "/etc/sysconfig/network-scripts/ifcfg-eth?" $DIR/etc/sysconfig/network-scripts/
 else
-	mkdir -p $DIR/etc/sysconfig/network/
-	cp -a /etc/sysconfig/network/ifcfg*   $DIR/etc/sysconfig/network/
+    mkdir -p $DIR/etc/sysconfig/network/
+    check_cp_file "/etc/sysconfig/network/ifcfg*" $DIR/etc/sysconfig/network/
 fi
 
-cp -a /etc/sysconfig/network                      $DIR/etc/sysconfig/network
-
-
-if [ -f /etc/redhat-release ]; then
-	cp -a /etc/sysconfig/iptables                 $DIR/etc/sysconfig/iptables
-else
-	cp -a /etc/sysconfig//SuSEfirewall2           $DIR/etc/sysconfig/SuSEfirewall2
-fi
-
-cp -a /$MODULES                                   $DIR/$MODULES
-cp -a /etc/fstab                                  $DIR/etc/fstab
-cp -a /etc/ld.so.conf                             $DIR/etc/ld.so.conf
+check_cp_dir /etc/sysconfig/network $DIR/etc/sysconfig/network
 
 
 if [ -f /etc/redhat-release ]; then
-	mkdir -p $DIR/var/named
-	cp -a /var/named/*                            $DIR/var/named/
+    check_cp_file /etc/sysconfig/iptables $DIR/etc/sysconfig/iptables
 else
-	mkdir -p $DIR/var/lib/named
-	cp -a /var/lib/named/*.zone		       	 		  $DIR/var/lib/named/
-	cp -a /var/lib/named/*.rev		       	 		  $DIR/var/lib/named/
+    check_cp_file /etc/sysconfig//SuSEfirewall2 $DIR/etc/sysconfig/SuSEfirewall2
+fi
+
+check_cp_file /$MODULES $DIR/$MODULES
+check_cp_file /etc/fstab $DIR/etc/fstab
+check_cp_file /etc/ld.so.conf $DIR/etc/ld.so.conf
+
+
+if [ -f /etc/redhat-release ]; then
+    mkdir -p $DIR/var/named
+    check_cp_file "/var/named/*" $DIR/var/named/
+else
+    mkdir -p $DIR/var/lib/named
+    check_cp_file "/var/lib/named/*.zone" $DIR/var/lib/named/
+    check_cp_file "/var/lib/named/*.rev" $DIR/var/lib/named/
 fi
 
 if [ -d /etc/ld.so.conf.d ]; then
-    cp -a /etc/ld.so.conf.d                           $DIR/etc/ld.so.conf.d
+    check_cp_dir /etc/ld.so.conf.d $DIR/etc/ld.so.conf.d
 fi
 
 echo "    * copying user/group information"
-python -c "import pwd; import pprint; pprint.pprint(pwd.getpwall())"  > $DIR/etc/passwd
-cp -a /etc/group     $DIR/etc/group
+python -c "import pwd; import pprint; pprint.pprint(pwd.getpwall())" > $DIR/etc/passwd
+check_cp_file /etc/group $DIR/etc/group
 
 echo "    * copying logs"
 
 if [ -f /root/anaconda-ks.cfg ]; then
-	cp -a /root/anaconda-ks.cfg         $DIR/root
+    check_cp_file /root/anaconda-ks.cfg $DIR/root
 fi
 
-cp -a /root/kusu.log                    $DIR/root
+check_cp_file /root/kusu.log $DIR/root
 
 if [ -f /etc/redhat-release ]; then
-	cp -a /root/kusu-ks.cfg             $DIR/root
+    check_cp_file /root/kusu-ks.cfg $DIR/root
 else
-	cp -a /root/kusu-autoinst.xml		$DIR/root
+    check_cp_file /root/kusu-autoinst.xml $DIR/root
 fi
 
 if [ -f /root/install.log ]; then
-	cp -a /root/install.log             $DIR/root
+    check_cp_file /root/install.log $DIR/root
 fi
 
-cp -a /var/log/messages*                $DIR/var/log/
+check_cp_file "/var/log/messages*" $DIR/var/log/
 
 if [ -f /var/log/dmesg ]; then
-	cp -a /var/log/dmesg*               $DIR/var/log/
+    check_cp_file "/var/log/dmesg*" $DIR/var/log/
+fi
+
+if [ -f /var/log/cfmclient.log ]; then
+    check_cp_file "/var/log/cfmclient.log" $DIR/var/log/
 fi
 
 if [ -f /etc/redhat-release ]; then
-	mkdir -p $DIR/var/log/httpd
-	cp -a /var/log/httpd/*              $DIR/var/log/httpd/
+    mkdir -p $DIR/var/log/httpd
+    check_cp_file "/var/log/httpd/*" $DIR/var/log/httpd/
 else
-	mkdir -p $DIR/var/log/apache2
-	cp -a /var/log/apache2/*			$DIR/var/log/apache2
+    mkdir -p $DIR/var/log/apache2
+    check_cp_file "/var/log/apache2/*" $DIR/var/log/apache2
 fi
 
-cp -a /var/log/kusu/*                   $DIR/var/log/kusu/
+check_cp_file "/var/log/kusu/*" $DIR/var/log/kusu/
 
 echo "    * querying RPM database"
-rpm -qa | sort      > $DIR/rpms/rpm-manifest
+rpm -qa | sort > $DIR/rpms/rpm-manifest
 
-echo "    * querying genconfig"
-genconfig bashrc          > $DIR/genconfig/bashrc
-genconfig apache_conf     > $DIR/genconfig/apache_conf
-genconfig hostspdsh       > $DIR/genconfig/hostspdsh
-genconfig nodegroups      > $DIR/genconfig/nodegroups
-genconfig hostsequiv      > $DIR/genconfig/hostsequiv
-genconfig debug           > $DIR/genconfig/debug
-genconfig named           > $DIR/genconfig/named
-genconfig ssh             > $DIR/genconfig/ssh
-genconfig dhcpd           > $DIR/genconfig/dhcpd
-genconfig nodes           > $DIR/genconfig/nodes
-genconfig zone            > $DIR/genconfig/zone
-#genconfig reverse <network>            > $DIR/genconfig/reverse
-genconfig hosts           > $DIR/genconfig/hosts
+if [ "$ROLE" = "MASTER" ]; then
+    echo "    * querying kusu-genconfig"
+    kusu-genconfig bashrc > $DIR/genconfig/bashrc
+    kusu-genconfig apache_conf > $DIR/genconfig/apache_conf
+    kusu-genconfig hostspdsh > $DIR/genconfig/hostspdsh
+    kusu-genconfig nodegroups > $DIR/genconfig/nodegroups
+    kusu-genconfig hostsequiv > $DIR/genconfig/hostsequiv
+    kusu-genconfig debug > $DIR/genconfig/debug
+    kusu-genconfig named > $DIR/genconfig/named
+    kusu-genconfig ssh > $DIR/genconfig/ssh
+    kusu-genconfig dhcpd > $DIR/genconfig/dhcpd
+    kusu-genconfig nodes > $DIR/genconfig/nodes
+    kusu-genconfig zone > $DIR/genconfig/zone
+    #kusu-genconfig reverse <network> > $DIR/genconfig/reverse
+    kusu-genconfig hosts > $DIR/genconfig/hosts
+fi
 
 echo "    * get iptables information"
 if [ -f /etc/redhat-release ]; then
-	service iptables status > $DIR/iptables
+    service iptables status > $DIR/iptables
 else
-	service SuSEfirewall2_init status > $DIR/SuSEfirewall2_init
-	service SuSEfirewall2_setup > $DIR/SuSEfirewall2_setup
+    service SuSEfirewall2_init status > $DIR/SuSEfirewall2_init
+    service SuSEfirewall2_setup > $DIR/SuSEfirewall2_setup
 fi
 
 echo "    * get route information"
@@ -244,8 +314,15 @@ lspci -vvv > $DIR/lspci
 echo "    * get dmidecode information"
 dmidecode > $DIR/dmidecode
 
+echo "    * get biosdecode information"
+biosdecode > $DIR/biosdecode
+
+echo "    * get name_eths information"
+(cd /opt/kusu/libexec/name_eths; ./hw_eth_order.pl > $DIR/hw_eth_order.pl.txt)
+(cd /opt/kusu/libexec/name_eths; ./dump_pirq > $DIR/dump_pirq)
+
 echo "    * get mount information"
-mount     > $DIR/mount
+mount > $DIR/mount
 
 echo "    * get ifconfig information"
 ifconfig -a > $DIR/ifconfig
@@ -266,43 +343,52 @@ echo "    * get hostname"
 hostname > $DIR/hostname
 
 echo "    * get Kusu release"
-cp /etc/kusu-release $DIR/kusu-release
+check_cp_file /etc/kusu-release $DIR/kusu-release
 
 if [ -f /etc/redhat-release ]; then
-	echo "    * get redhat-release"
-    cp /etc/redhat-release $DIR/redhat-release
+    echo "    * get redhat-release"
+    check_cp_file /etc/redhat-release $DIR/redhat-release
 else
-	echo "    * get SuSE-release"
-	cp /etc/SuSE-release $DIR/etc/SuSE-release
+    echo "    * get SuSE-release"
+    check_cp_file /etc/SuSE-release $DIR/etc/SuSE-release
 fi
 
-echo "    * get Kusu db"
-genconfig debug > $DIR/dbdump/kusu.sql
+if [ "$ROLE" = "MASTER" ]; then
+    echo "    * get Kusu db"
+    kusu-genconfig debug > $DIR/dbdump/kusu.sql
+    /opt/kusu/libexec/kusu-db-copy -d $DIR/dbdump/kusu-sqlite.db
+fi
 
 if [ -f /root/kusu-orig.db ]; then
-	cp /root/kusu-orig.db $DIR/root
+    check_cp_file /root/kusu-orig.db $DIR/root
 fi
 
 echo "    * get ps list"
 ps auwwwwx > $DIR/ps
 
-echo "    * get Kusu information"
-kitops -l    > $DIR/kusu/kits
-repoman -l   > $DIR/kusu/repoman
-ngedit -l    > $DIR/kusu/ngedit
-boothost -l  > $DIR/kusu/boothost
+if [ "$ROLE" = "MASTER" ]; then
+    echo "    * get Kusu information"
+    kusu-kitops -l > $DIR/kusu/kits
+    kusu-repoman -l > $DIR/kusu/repoman
+    kusu-ngedit -l > $DIR/kusu/ngedit
+    kusu-boothost -l > $DIR/kusu/boothost
+    kusu-nghosts -l > $DIR/kusu/nghosts
+fi
 
 echo "    * timestamping"
 echo "Kusu debug created on `date`" > $DIR/timestamp
 
-echo "    * creating tarball (may take some time): $TARBALL"
-cd $BASE_DIR/kusu-debug-$$ && tar -czf $TARBALL kusu-debug
+echo "    * creating tarball (may take some time): $LOGANDCONFTARBALL"
+cd $BASE_DIR/kusu-debug-$$ && tar -czf $LOGANDCONFTARBALL kusu-debug
+
+echo "    * creating tarball (may take some time): $TFTPTARBALL"
+cd $BASE_DIR/kusu-debug-$$ && tar -czf $TFTPTARBALL kusu-debug-tftpboot
 
 echo "    * removing temporary debug tree"
 cd /
 rm -rf $BASE_DIR/kusu-debug-$$
 
 echo
-echo "Debug dump created, stored in $TARBALL"
-
-
+echo "Debug dump created:"
+echo " Log files and configurations are stored in $LOGANDCONFTARBALL"
+echo " TFTPBOOT files are stored in $TFTPTARBALL"

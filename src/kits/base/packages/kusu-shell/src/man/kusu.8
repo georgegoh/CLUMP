@@ -1,0 +1,27 @@
+.\" Copyright (c) 2010 Platform Computing Inc
+.TH "kusu" "8" "Version: ${VERSION_STR}" "Mike Mazur" "Kusu Base"
+.SH "NAME"
+.LP
+kusu \- Kusu Shell
+.SH "SYNOPSIS"
+.LP
+\fBkusu\fR [\-h|\-v] PLUGIN
+
+.SH "DESCRIPTION"
+.LP
+The kusu command launches the kusu shell plugin specified by PLUGIN. The PLUGIN specified must exist in \fI/opt/kusu/lib/plugins/shell\fR.
+.SH "OPTIONS"
+.LP
+.TP
+\fB\-h, \-\-help\fR
+Print the help information and exit.
+.TP
+\fB\-v, \-\-version\fR
+Print the version information and exit.
+.SH "FILES"
+.LP
+.TP
+/opt/kusu/lib/plugins/shell/
+.SH "AUTHORS"
+.LP
+Mike Mazur <mmazur@platform.com>

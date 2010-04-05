@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: network.py 3481 2010-02-03 08:01:55Z mkchew $
 #
 # Kusu Text Installer Network Screen.
 #
@@ -8,12 +8,14 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 
+import os
 import socket
 import snack
 from gettext import gettext as _
 from IPy import IP
 from kusu.ui.text import kusuwidgets
 from primitive.system.hardware import probe
+from primitive.system.hardware.net import arrangeOnBoardNicsFirst
 import kusu.util.log as kusulog
 from kusu.util.verify import *
 from kusu.util.errors import *
@@ -232,7 +234,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
         interface_keys = interfaces.keys()
         interface_keys.sort() # we sort to hit the lowest order provision interface first.
 
-        provisioned = False # flag to associate only a sinle provision network
+        provisioned = False # flag to associate only a single provision network to ngs
         for intf in interface_keys:
             if interfaces[intf]['configure']:
                 newnic = db.Nics(mac=interfaces[intf]['hwaddr'], boot=False)
@@ -270,19 +272,24 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
                     net_copy.device = 'eth0'
                     net_copy.netname = newnet.netname + '-eth0'
                     net_copy.suffix = '-eth0'
-
+ 
                 # associate only the first provisioning network to ngs
                 if interfaces[intf]['nettype'] == 'provision' and not provisioned:
                     provisioned = True
                     for ng in other_ngs:
                         ng.networks.append(newnet)
+                    # update appglobals, set default logging server.
+                    db.AppGlobals(kname='SYSLOG_SERVER',
+                                  kvalue=interfaces[intf]['ip_address'])
 
                 newnic.network = newnet
 
         db.flush()
 
     def setDefaults(self):
-        interfaces = probe.getPhysicalInterfaces()    # we get a dictionary
+        # we get a dictionary and rename the interfaces so that on-board nics
+        # get eth0, eth1 first.
+        interfaces = arrangeOnBoardNicsFirst(probe.getPhysicalInterfaces())
 
         # we want interfaces in alphabetical order
         intfs = sorted(interfaces)
@@ -318,6 +325,7 @@ class NetworkScreen(InstallerScreen, profile.PersistentProfile):
 
         self.kiprofile[self.profile] = {}
         self.kiprofile[self.profile]['interfaces'] = interfaces
+
 
 class ConfigureIntfScreen:
     """
@@ -412,15 +420,15 @@ class ConfigureIntfScreen:
         namesubgrid.setField(self.nettypes, 1, 0, anchorLeft=1)
         namegrid.setField(namesubgrid, 0, 1)
 
-        ipgrid = snack.Grid(1, 4)
-        ### Removing DHCP temporarily, fix in KUSU-207
-        ipgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
+        ipgrid = snack.Grid(1, 3)
+        ### Removing DHCP until further notice
+        #ipgrid.setField(self.use_dhcp, 0, 0, (0, 0, 0, 1), anchorLeft=1)
         ###
-        ipgrid.setField(self.ip_address, 0, 1, anchorLeft=1)
-        ipgrid.setField(self.netmask, 0, 2, anchorLeft=1)
-        ipgrid.setField(self.active_on_boot, 0, 3, (0, 1, 0, 0), anchorLeft=1)
+        ipgrid.setField(self.ip_address, 0, 0, anchorLeft=1)
+        ipgrid.setField(self.netmask, 0, 1, anchorLeft=1)
+        ipgrid.setField(self.active_on_boot, 0, 2, (0, 1, 0, 0), anchorLeft=1)
         subgrid.setField(ipgrid, 0, 0, (0, 1, 0, 0), anchorTop=1)
-        subgrid.setField(namegrid, 1, 0, (1, 3, 0, 0), anchorTop=1)
+        subgrid.setField(namegrid, 1, 0, (1, 1, 0, 0), anchorTop=1)
         gridForm.add(subgrid, 0, 2)
 
         # add OK and Cancel buttons
@@ -507,11 +515,18 @@ class ConfigureIntfScreen:
         # check for valid ip/netmask combination
         if valid_ip_netmask:
             try:
-                IP(self.ip_address.value() + '/' + self.netmask.value(),
-                   make_net=True)
+                network = IP(self.ip_address.value() + '/' + self.netmask.value(),
+                        make_net=True)
             except ValueError:
                 errList.append(_('The address %s/%s is invalid.' %
-                             (self.ip_address.value(), self.netmask.value())))
+                               (self.ip_address.value(), self.netmask.value())))
+            else:
+                if self.ip_address.value() == str(network[0]):
+                    errList.append(_('The network address %s cannot be used.' %
+                                   self.ip_address.value()))
+                elif self.ip_address.value() == str(network[-1]):
+                    errList.append(_('The broadcast address %s cannot be used.' %
+                                   self.ip_address.value()))
 
         if errList:
             errMsg = _('Please correct the following errors:')

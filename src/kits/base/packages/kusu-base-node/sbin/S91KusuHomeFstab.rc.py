@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: S91KusuHomeFstab.rc.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -26,7 +26,7 @@ class KusuRC(rcplugin.Plugin):
         self.disable = False
 
     def run(self):
-        sharedhomedir = path('/home')
+        shared_paths = { '/home': '/home', '/depot/shared': '/shared' }
 
         myname = self.dbs.AppGlobals.selectfirst_by(kname='PrimaryInstaller').kvalue
         nics = self.dbs.Nodes.selectfirst_by(name=myname).nics
@@ -50,9 +50,9 @@ class KusuRC(rcplugin.Plugin):
             for network in ng.networks:
                 for key, ip in masternics.iteritems():
                     if ipfun.onNetwork(network.network, network.subnet, ip):
-                        # Only one entry for the fstab
-                        entries.append("%s:%s /home nfs defaults 0 0\n" % (
-                            ip, sharedhomedir ))
+                        for source_path, target_path in shared_paths.iteritems():
+                            entries.append("%s:%s %s nfs defaults 0 0\n" % (
+                                ip, source_path, target_path ))
                         bFound = True
                         break
 
@@ -63,6 +63,10 @@ class KusuRC(rcplugin.Plugin):
             # at all nor create auto.master since currently the only entry
             # it references is auto.home.
             if not entries:
+                continue
+
+            # fstab.append set-up is not required for multiboot nodegroup
+            if ng.installtype == 'multiboot':
                 continue
 
             # Use CFM append mechanism to append the entry for the home

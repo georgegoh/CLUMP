@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: setup.py 523 2008-01-30 05:50:31Z hirwan $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -20,9 +20,6 @@ setup(name="kusu-buildkit",
                 ('etc/buildkit-templates', ['src/etc/templates/package.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/component.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/build.kit.tmpl']),
-                ('etc/buildkit-templates', ['src/etc/templates/build.kit.v02.tmpl']),
-                ('etc/buildkit-templates', ['src/etc/templates/build.kit.v03.tmpl']),
-                ('etc/buildkit-templates', ['src/etc/templates/build.kit.v04.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/kit.spec.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/00-post-script.sh.tmpl']),
                 ('etc/buildkit-templates', ['src/etc/templates/00-postun-script.sh.tmpl'])]

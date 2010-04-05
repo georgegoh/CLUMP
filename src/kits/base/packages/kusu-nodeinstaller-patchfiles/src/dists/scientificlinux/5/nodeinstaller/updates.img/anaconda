@@ -14,6 +14,15 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # links the kusu runtime to /opt
 /usr/bin/ln -sf /tmp/updates/opt /opt
 
+# link /sbin/biosdecode from dmidecode
+/usr/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
+# link /sbin/blkid from e2fsprogs
+/usr/bin/ln -sf /tmp/updates/sbin/blkid /sbin/blkid
+
+# link mke2fs.conf determine block size automatically
+/usr/bin/ln -sf /mnt/runtime/etc/mke2fs.conf /etc/mke2fs.conf
+
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
@@ -28,9 +37,13 @@ export PRIMITIVE_LOCKDIR="/tmp"
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
 
+OLDPATH=$PATH
+PATH=/opt/kusu/anaconda-mount:$PATH
 # launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/nodeinstaller
 EXIT_CODE=$?
+PATH=$OLDPATH
+
 if [ $EXIT_CODE -eq 0 ]; then 
     # Unset kusu bits
     for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: setup.py 901 2008-02-27 01:54:04Z nninaba $
 #
 # Copyright 2007 Platform Computing Inc.
 #

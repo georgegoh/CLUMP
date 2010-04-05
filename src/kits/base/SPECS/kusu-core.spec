@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kusu-core.spec 3528 2010-02-19 11:31:57Z ankit $
 #
 # Copyright (C) 2007 Platform Computing Inc
 #
@@ -17,17 +17,16 @@
 #
 # 
 
-%define subversion 5
-
 Summary: Kusu core libraries and system scripts
 Name: kusu-core
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
 BuildArch: noarch
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 #Requires: MySQL-python
 Requires: python-psycopg2
@@ -49,6 +48,7 @@ install -d $RPM_BUILD_ROOT/opt/kusu/lib64/python
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/core-%{version}
 install -d $RPM_BUILD_ROOT/opt/kusu/etc
+install -d $RPM_BUILD_ROOT/opt/kusu/libexec
 
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
 install -m644 lib/netutil.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
@@ -58,11 +58,12 @@ install -m644 lib/database.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -m644 lib/rcplugin.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
 install -m644 lib/netutil.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/core
+install -m755 lib/kusu-db-copy.py $RPM_BUILD_ROOT/opt/kusu/libexec/kusu-db-copy
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/core-%{version}
 install -m755 bin/kusurc $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusuenv.sh $RPM_BUILD_ROOT/opt/kusu/bin
 install -m755 bin/kusu-debug $RPM_BUILD_ROOT/opt/kusu/bin
-install -m755 bin/kusu_register.py $RPM_BUILD_ROOT/opt/kusu/bin/kusu_register
+install -m755 bin/kusu-register.py $RPM_BUILD_ROOT/opt/kusu/bin/kusu-register
 
 %pre
 
@@ -74,6 +75,9 @@ fi
 %preun
 
 %postun
+if [ $1 -eq 0 ]; then
+    rm -f /etc/profile.d/kusuenv.sh
+fi
 
 %files
 %dir /opt/kusu
@@ -84,19 +88,44 @@ fi
 %dir /opt/kusu/etc
 %dir /opt/kusu/share
 %dir /opt/kusu/share/doc
+/opt/kusu/libexec/kusu-db-copy
 /opt/kusu/lib/python/kusu/__init__.py*
 /opt/kusu/lib/python/kusu/core/*
 /opt/kusu/bin/kusuenv.sh
 /opt/kusu/bin/kusurc
 /opt/kusu/bin/kusu-debug
-/opt/kusu/bin/kusu_register
+/opt/kusu/bin/kusu-register
 %doc /opt/kusu/share/doc/core-%{version}/COPYING
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
 
+* Mon Dec 22 2008 Mark Black <mblack@platform.com> 5.1-12
+- Tighten the security on the kusudb
+
+* Thu Sep 18 2008 Mike Frisch <mfrisch@platform.com> 5.1-10
+- Sync with RH HPC
+
+* Fri Sep 5 2008 Mike Frisch <mfrisch@platform.com> 5.1-9
+- Fixes problem with boothost failing when being called from CGI script
+  (#114570)
+- Change KUSU_TMP to be /tmp (#113889)
+
+* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-8
+- Reset version/revision after switching build to trunk
+
+* Wed Jun 11 2008 Mike Frisch <mfrisch@platform.com> 5.1-11
+- Added 'netutil.py' module
+
+* Wed Apr 16 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
+- Partitioning issues resolved (#104419)
+
+* Thu Apr 10 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
+- Bug fixes
+
+* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com>
+- Initial release

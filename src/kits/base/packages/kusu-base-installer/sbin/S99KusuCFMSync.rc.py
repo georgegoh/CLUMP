@@ -28,7 +28,7 @@ class KusuRC(rcplugin.Plugin):
 
     def run(self):
         """Run cfmsync on installer"""
-        retval = self.runCommand('/opt/kusu/sbin/cfmsync -f')[0]
+        retval = self.runCommand('/opt/kusu/sbin/kusu-cfmsync -f')[0]
 
         if retval == 0:
             return True

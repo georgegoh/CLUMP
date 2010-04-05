@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id$
+# $Id: app.py 3193 2009-11-11 10:59:17Z ankit $
 #
 #  Copyright (C) 2007 Platform Computing
 #
@@ -19,9 +19,9 @@
 #
 #
 
-__version__ = "2.0"
+__version__ = "${VERSION_STR}"
 
-CFMSYNC    = '/opt/kusu/sbin/cfmsync'
+CFMSYNC    = '/opt/kusu/sbin/kusu-cfmsync'
 CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
 
 import gettext
@@ -43,7 +43,7 @@ sys.path.append('/opt/primitive/lib/python2.4/site-packages')
 from primitive.system.software.probe import OS
 
 class KusuApp:
-    """ This is the class for all Kusu applications to inherit from """
+    """ This is the class for all OCS applications to inherit from """
 
     def __init__(self):
         """ Initialize Class variables.  Extend as needed (if needed) """
@@ -51,7 +51,7 @@ class KusuApp:
         self.version    = __version__
         self.name       = ''            # This is the name of the application
                                         # This will be derived from the name
-        self.name = os.path.splitext(os.path.basename(self.args[0]))[0]
+        self.name = path(sys.argv[0]).realpath().stripext().basename()
 
         tmpstr = '%s_Help' % self.name
         self._ = self.langinit()
@@ -99,9 +99,10 @@ class KusuApp:
         #   LANG="POSIX"
         #   LC_CTYPE="zh_CN.UTF-8"
         # Hence we remove LANG="POSIX" and keep LC_CTYPE for SLES.
-        if OS()[0].lower() in ['sles', 'opensuse', 'suse'] and \
-                os.environ.get('LANG') == 'POSIX':
-            lenv.remove('LANG')
+        for var in lenv:
+            if OS()[0].lower() in ['sles', 'opensuse', 'suse'] and \
+                os.environ.get(var) == 'POSIX':
+                lenv.remove(var)
 
         envfound = [ x in os.environ for x in lenv ]
 
@@ -211,28 +212,24 @@ class KusuApp:
 
     def lock(self):
         if len(sys.argv) >= 1:
-            prog = path(sys.argv[0]).stripext().basename()
-            lock = path('/var/lock/subsys/') / prog
+            lock = self._getProgramName()
             lock.touch()
 
     def unlock(self):
         if len(sys.argv) >= 1:
-            prog = path(sys.argv[0]).stripext().basename()
-            lock = path('/var/lock/subsys/') / prog
+            lock = self._getProgramName()
             if lock.exists(): lock.remove()
             
     def islock(self):
         if len(sys.argv) >= 1:
-            prog = path(sys.argv[0]).stripext().basename()
-            lock = path('/var/lock/subsys/') / prog
+            lock = self._getProgramName()
             return lock.exists() 
         else:
             return None
 
     def getlockfile(self):
         if len(sys.argv) >= 1:
-            prog = path(sys.argv[0]).stripext().basename()
-            lock = path('/var/lock/subsys/') / prog
+            lock = self._getProgramName()
             return lock
         else:
             return None
@@ -271,3 +268,7 @@ class KusuApp:
             sys.stderr.write(str(errMsg) + "\n")
         actionDesc = self.getActionDesc()
         self.kel.error(actionDesc + ": " + str(errMsg))
+
+    def _getProgramName(self):
+        """Returns the full path to the current program"""
+        return path('/var/lock/subsys') / path(sys.argv[0]).realpath().stripext().basename()

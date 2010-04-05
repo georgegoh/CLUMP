@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: partitionfilterchain.py 3568 2010-03-01 14:07:39Z ggoh $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
 from sets import Set
+import os
+import tempfile
 from primitive.system.hardware.disk import Partition
 from kusu.util.errors import EmptyNIISource, InvalidPartitionSchema, KusuError, MountFailedError, LVMPreservationError
 import kusu.util.log as kusulog
@@ -269,6 +271,80 @@ class AssignMntPntForLV(FilterOnLogicalVolume):
         lv = disk_profile.lv_dict[lv_name]
         lv.mountpoint = mntpnt
         disk_profile.mountpoint_dict[mntpnt] = lv
+
+class FilterMatchPartitionSchema(PartitionEntriesFilter):
+    def apply(self, partition_entries, disk_profile):
+        """Set the leave_unchanged flag to true for HPFS/NTFS partitions """ 
+        #disk_profile.use_mbr = True
+        for disk in disk_profile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                if partition.native_type == 'HPFS/NTFS':
+                    partition.leave_unchanged = True
+        return disk_profile
+
+class FilterMatchPartitionUUID(PartitionEntriesFilter):
+    """
+        This filter looks for partitions that matches the UUID of the master
+        node. Any such partitions which have a UUID dotfile matching the 
+        UUID of the master node will have their preservation flag set to true.
+        This filter *must* ALWAYS be the last in your chain, lest some other 
+        logic decide to flag a partition for deletion.
+    """
+    
+    def __init__(self, master_uuid):
+        """
+            Expect the UUID to be passed in from appglobals
+        """
+        self.uuid = master_uuid
+        
+    def apply(self, partition_entries, disk_profile):
+        """Set the leave_unchanged flag to true for partitions  with matching UUID""" 
+        
+        tmpdir = tempfile.mkdtemp()
+                    
+        for disk in disk_profile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                #mount partition as readonly and check UUID dotfile
+                try:
+                    #do some cursory checks for the obviously unmountable partitions
+                    if partition.native_type.lower().find('ntfs') == -1 \
+                       and partition.native_type.lower().find('swap') == -1:
+                        partition.mount(mountpoint=tmpdir, readonly=True)
+
+                        # only modify them if .kusu file is found. Otherwise, leave them
+                        # alone.
+                        if (os.path.exists("%s/.%s" % (tmpdir, "kusu") )):
+                            partition.leave_unchanged = False
+                            logger.debug('Wipe %s' % partition.path) 
+                        partition.unmount()
+                    
+                    #leave non-kusu linux swap partitions alone
+                    if partition.native_type.lower().find('swap') >= 0:
+                        if partition.label.lower().find("kusu_swap"):
+                            #It's a kusu swap partition
+                            partition.leave_unchanged = False
+                        
+                except:
+                    #If you have weird partitions that are unsupported like LVM, you are here.
+                    logger.debug('Failed to mount partition [%s] - ignoring' % partition.path)
+                    
+        return disk_profile
+    
+
+class FilterUseMBR(PartitionEntriesFilter):
+    def apply(self, partition_entries, disk_profile):
+        """ 
+            If any partition is NTFS or FAT32, then set don't use
+            mbr for grub.
+        """
+        disk_profile.use_mbr = True
+        for disk in disk_profile.disk_dict.values():
+            for partition in disk.partition_dict.values():
+                if partition.native_type == 'HPFS/NTFS' or \
+                   partition.native_type == 'W95 FAT32' or \
+                   partition.native_type == 'W95 FAT32 (LBA)':
+                    disk_profile.use_mbr = False
+        return disk_profile
 
 
 class FilterOnFileSystem(PartitionEntriesFilter):

@@ -13,21 +13,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
+# $Id: kusu-md5crypt.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
-
-%define subversion 1
 
 Summary: kusu-md5crypt module runtime
 Name: kusu-md5crypt
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 AutoReq: no
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 Buildrequires: gcc, python, python-devel, patch
 BuildArch: noarch
 
@@ -63,4 +62,3 @@ rm -rf %{buildroot}
 
 %files
 %{_approot}
-

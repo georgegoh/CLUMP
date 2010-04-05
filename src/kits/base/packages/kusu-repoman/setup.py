@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: setup.py 2946 2009-09-22 02:45:21Z yqang $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -17,7 +17,7 @@ setup(name="kusu-repoman",
   description="Repoman for Kusu.",
   packages = ['repoman'],
   package_dir={'repoman': 'src/lib'},
-  scripts=['src/bin/repoman', 'src/bin/repopatch'],
+  scripts=['src/bin/kusu-repoman', 'src/bin/kusu-repopatch'],
   data_files=[('etc', ['src/etc/updates.conf']),
        ('etc/repoman-templates', ['src/etc/templates/update.kit.tmpl'])] 
   )

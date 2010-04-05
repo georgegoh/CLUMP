@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: kitops.py 2110 2009-02-27 21:36:10Z ggoh $
 #
 # Kusu Text Installer New Partition Setup Screen.
 #

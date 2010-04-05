@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: S10NICStartup.rc.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright 2008 Platform Computing Inc.
 #
@@ -90,7 +90,7 @@ class KusuRC(rcplugin.Plugin):
                 if dev.startswith('ib'):
                     ifcfg = path(network_path / 'ifcfg-%s' % dev)
                 else:
-                    if self.os_name in ['rhel', 'centos', 'scientificlinux', 'fedora', 'opensuse']:
+                    if self.os_name in osfamily.getOSNames('rhelfamily') + ['fedora', 'opensuse']:
                         ifcfg = path(network_path / 'ifcfg-%s' % dev)
                     elif self.os_name in ['suse', 'sles']:
                         ifcfg = path(network_path / 'ifcfg-eth-id-%s' % mac)
@@ -125,7 +125,6 @@ class KusuRC(rcplugin.Plugin):
                 rcfile = '/etc/rc.kusu.d/S99DellBMCSetup'
                 if os.path.exists(rcfile):
                     os.system("%s %s %s %s" % (rcfile, ip, gw, sn))
-                os.unlink(rcfile)
 
         return True
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: verify.py 3160 2009-11-02 08:36:52Z mxu $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -33,6 +33,11 @@ def verifyFQDN(fqdn):
     if li:
         return False, 'Fully-qualified host name can only contain the ' + \
                       'characters .-a-zA-Z0-9'
+
+    if fqdn.startswith(".") or fqdn.startswith("-"):
+        return False, "Fully-qualified host name must not start with " + \
+                      "characters '.' and '-'"
+
     return True, None
 
 def verifyHostname(hostname):

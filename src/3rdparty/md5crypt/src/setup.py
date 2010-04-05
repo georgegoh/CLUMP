@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: setup.py 262 2007-04-11 07:09:24Z ltsai $
 #
 
 from distutils.core import setup

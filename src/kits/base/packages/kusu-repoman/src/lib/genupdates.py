@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: genupdates.py 3555 2010-02-26 02:52:00Z ggoh $
 #
 # Copyright (C) 2007 Platform Computing Inc
 #
@@ -11,8 +11,10 @@ import tempfile
 import shutil
 import atexit
 import string
+import fnmatch
 
 from primitive.system.software.probe import OS
+from primitive.support import osfamily
 from primitive.support.util import runCommand
 from primitive.core.errors import ModuleException
 from kusu.genupdates.downloader import Downloader
@@ -26,7 +28,7 @@ class GenUpdatesFactory(object):
         pass
 
     def getUpdatesClass(self, target_os=OS()):
-        if target_os[0].lower() in ['rhel', 'redhat', 'centos', 'fedora', 'scientificlinux']:
+        if target_os[0].lower() in osfamily.getOSNames('rhelfamily') + ['fedora']:
             return YumGenUpdates(target_os)
         elif target_os[0].lower() in ['sles', 'suse', 'opensuse']:
             return YastGenUpdates(target_os)
@@ -152,6 +154,7 @@ class YastGenUpdates(BaseGenUpdates):
                      'kusu-core',
                      'kusu-hardware',
                      'kusu-installer',
+                     'kusu-md5crypt',
                      'kusu-networktool',
                      'kusu-nodeinstaller',
                      'kusu-path',
@@ -161,19 +164,20 @@ class YastGenUpdates(BaseGenUpdates):
                      'libreiserfs',
                      'newt',
                      'parted',
+                     'pmtools',
                      'pyparted',
                      'python',
-                     'python-bcrypt',
                      'python-cheetah',
                      'python-elementtree',
                      'python-IPy',
                      'python-newt',
                      'python-sqlalchemy',
                      'python-xml',
-                     'primitive',
+                     'kusu-primitive',
                      'rpm',
                      'rpm-python',
                      'slang',
+                     'e2fsprogs',
                     ]
 
     def __getYastScript(self, distro, version):
@@ -222,8 +226,9 @@ class YumGenUpdates(BaseGenUpdates):
                      'python-sqlalchemy',
                      'kusu-ui',
                      'kusu-util',
-                     'python-bcrypt',
-                     'primitive']
+                     'kusu-primitive',
+                     'e2fsprogs',
+                     'dmidecode']
 
     def __getAnacondaScript(self, (distro, version)):
         """Returns the 'faux' anaconda script"""
@@ -239,13 +244,22 @@ class YumGenUpdates(BaseGenUpdates):
         kscfgtmpl = os.path.abspath(os.path.join(trunk, os.path.join(distspath, 'ks.cfg.tmpl')))
         return kscfgtmpl
         
-    def __getYumScalabilityPatch(self, (distro,version)):
+    def __getYumScalabilityPatchs(self, (distro,version)):
         """Returns the yuminstall.py.patch"""
         trunk = self.getSrcDir()
         distspath = 'src/dists/%s/%s/nodeinstaller' % (distro, version)
-        patchPath = os.path.join(trunk, os.path.join(distspath, 'updates.img/yuminstall.py.patch'))
-        return os.path.abspath(patchPath)
-    
+        # Currently self.target doesn't including minor version of target OS.
+        updatesdir = os.path.join(trunk, os.path.join(distspath, 'updates.img/'))
+        patchfiles = fnmatch.filter(os.listdir(os.path.abspath(updatesdir)), 'yuminstall.py.patch*')
+        return [ os.path.abspath(os.path.join(updatesdir, patchfile)) for patchfile in patchfiles ]
+ 
+    def __copyAnacondaMount(self, destdir, (distro,version)):
+        """Copy the mount that uses anaconda's isys."""
+        trunk = self.getSrcDir()
+        distspath = 'src/dists/%s/%s/nodeinstaller/updates.img' % (distro, version)
+        srcdir = os.path.abspath(os.path.join(trunk, os.path.join(distspath, 'opt')))
+        self.runCmd('cp -a %s %s' % (srcdir, destdir))
+       
     def __checkFreeLoopDev(self):
         """Check for any available loopback devices"""
         loopdev  = self.runCmd('losetup -a')[0]
@@ -312,10 +326,14 @@ class YumGenUpdates(BaseGenUpdates):
         os.chmod(os.path.join(unpacked_dir, 'anaconda'), 0755)
 
         # Bring in Scalability patch
-        if dist_ver == ('rhel', '5'):
-            # Rhel 5 specific patch for now.
-            yumScalabilityPatch =  self.__getYumScalabilityPatch(dist_ver)
+        # Rhel 5 and CentOS 5 specific patch for now.
+        for yumScalabilityPatch in self.__getYumScalabilityPatchs(dist_ver):
             shutil.copy(yumScalabilityPatch, unpacked_dir)
+
+        # Copy our version of mount/umount that uses anaconda isys module.
+        # Needed as the busybox mount binary crashes compute when used.
+        # See PCMSTD-REVIEW-292
+        self.__copyAnacondaMount(unpacked_dir, dist_ver)
 
         self.__packExt2FS(unpacked_dir, os.path.join(outputdir, 'updates.img'), 20000)
 

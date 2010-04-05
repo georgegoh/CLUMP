@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kickstart.py 3425 2010-01-26 03:40:44Z yqang $
 #
 #   Copyright 2008 Platform Computing Inc
 #
@@ -27,8 +27,9 @@ from kusu.genconfig import Report
 from kusu.core import database
 from kusu.repoman.tools import getOS
 from primitive.installtool.commands import GenerateAutoInstallScriptCommand
+from primitive.support import osfamily
 
-SUPPORTED_OS = ['rhel', 'fedora', 'centos', 'scientificlinux']
+SUPPORTED_OS = osfamily.getOSNames('rhelfamily') + ['fedora']
 
 def createDB():
     engine = os.getenv('KUSU_DB_ENGINE')
@@ -38,10 +39,9 @@ def createDB():
         dbdriver = 'postgres'
     dbdatabase = 'kusudb'
     dbuser = 'apache'
-    dbpassword = 'None'
+    dbpassword = None
 
     return database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
-
 
 class thisReport(Report):
     
@@ -141,6 +141,37 @@ class thisReport(Report):
                 except Exception, e:
                     print "Could not retrieve package list from database."
                     return
+
+                # If this is a new nodegroup, it may be of a different OS from the
+                # master's. For HP-ICE provisioning, we need to handle lang and keyb
+                # settings differently.
+                if ngid > 5:
+                    # Retrieve PROVISION type
+                    try:
+                        provision = db.AppGlobals.selectfirst_by(kname='PROVISION').kvalue
+                    except Exception, e:
+                        print "Could not retrieve PROVISION from database."
+                        return
+
+                    if not provision == 'KUSU':
+                        # Retrieve NodeGroup object for installer.
+                        try:
+                            installer_ng_obj = db.NodeGroups.selectfirst_by(ngid=1)
+                        except Exception, e:
+                            print "Could not retrieve the installer nodeGroup object from database."
+                            return
+                        # Retrieve installer's os.
+                        try:
+                            installer_os, _, _, _ = getOS(db, installer_ng_obj.ngname)
+                        except Exception, e:
+                            print "Could not retrieve the OS type and version for installer."
+                            return
+
+                        # Use sane defaults if the os of the installer and the compute
+                        # nodegroup differs.
+                        if not installer_os.lower() == os.lower():
+                            lang = 'en'
+                            keyb = 'us'
 
             ic = GenerateAutoInstallScriptCommand(os={'name': os, 'version':major},
                                                   diskprofile=None,

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-#  $Id$
+#  $Id: db.py 2996 2009-09-28 06:50:44Z abuck $
 #
 #  Copyright 2007 Platform Computing Corporation
 #
@@ -81,12 +81,10 @@ class KusuDB:
 
     def connect(self, dbname=None, user=None, passwd=None, driver=None):
         if not driver:
-            driver = os.getenv('KUSU_DB_ENGINE')
-            if not driver:
-                driver = 'postgres'
-        
+            driver = os.getenv('KUSU_DB_ENGINE', 'postgres')
+
         if driver == 'postgres':
-            from psycopg2 import OperationalError   
+            from psycopg2 import OperationalError
                 
         if driver not in supported_backends:
             raise Exception,"Unable to find a suitable db driver"
@@ -264,6 +262,21 @@ class KusuDB:
         if data:
             return data[0]
         return ''
+
+    def getNgidOf(self, ngname):
+        """
+        Returns the ngid of a given nodegroup name as an integer.
+        Returns None if nodegroup is not found.
+        """
+        query = ('select ngid from nodegroups where ngname="%s"' % ngname)
+        try:
+            self.execute(query)
+        except:
+            return None
+        data = self.fetchone()
+        if data:
+            return int(data[0])
+        return None
 
     def getDescription(self):
         if not self.isconnected():

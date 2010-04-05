@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: gatewaydns.py 2556 2009-07-21 08:57:47Z mike $
 #
 # Kusu Text Installer Gateway and DNS Setup Screen.
 #
@@ -67,7 +67,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         """
         self.netProfile = self.kiprofile[self.profile]
 
-        self.screenGrid = snack.Grid(1, 6)
+        self.screenGrid = snack.Grid(1, 5)
         entryWidth = 28
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
@@ -100,29 +100,19 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
         self.screenGrid.setField(snack.TextboxReflowed(text=self.msg,
                                                        width=self.gridWidth),
                                  col=0, row=0, anchorLeft=1)
-        ### Removing DHCP temporarily, fix in KUSU-207
-        #self.screenGrid.setField(self.admin_email, col=0, row=1, anchorLeft=1,
+        ### Removing DHCP until further notice
+        #self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
+        #                         padding=(0, 1, 0, 0))
+        #self.screenGrid.setField(self.admin_email, col=0, row=2, anchorLeft=1,
         #                         padding=(3, 1, 0, 0))
-        #self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
-        #                         padding=(3, 0, 0, 0))
-        #self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
-        #                         padding=(3, 0, 0, 0))
-        #self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
-        #                         padding=(3, 0, 0, 0))
-        #self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
-        #                         padding=(3, 0, 0, 1))
-        self.screenGrid.setField(self.use_dhcp, col=0, row=1, anchorLeft=1,
-                                 padding=(0, 1, 0, 0))
-#        self.screenGrid.setField(self.admin_email, col=0, row=2, anchorLeft=1,
-#                                 padding=(3, 1, 0, 0))
-        self.screenGrid.setField(self.gateway, col=0, row=2, anchorLeft=1,
+        self.screenGrid.setField(self.gateway, col=0, row=1, anchorLeft=1,
+                                 padding=(3, 1, 0, 0))
+        self.screenGrid.setField(self.dns1, col=0, row=2, anchorLeft=1,
                                  padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns1, col=0, row=3, anchorLeft=1,
+        self.screenGrid.setField(self.dns2, col=0, row=3, anchorLeft=1,
                                  padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns2, col=0, row=4, anchorLeft=1,
-                                 padding=(3, 0, 0, 0))
-        self.screenGrid.setField(self.dns3, col=0, row=5, anchorLeft=1,
-                                 padding=(3, 0, 0, 0))
+        self.screenGrid.setField(self.dns3, col=0, row=4, anchorLeft=1,
+                                 padding=(3, 0, 0, 1))
         ###
 
         self.initializeFields()

@@ -20,8 +20,8 @@ class AddHostPlugin(AddHostPluginBase):
     def added(self, nodename, info, prePopulateMode):
         if prePopulateMode == False:
            # Don't run boothost if ng is unmanaged
-           if info[nodename][0]["nodegroupid"] != 5:
-              os.system("/opt/kusu/sbin/boothost -m %s" % nodename)
+           if info[nodename][0]["nodegroupid"] != self.dbconn.getNgidOf('unmanaged'):
+              os.system("/opt/kusu/sbin/kusu-boothost -m %s" % nodename)
 
     def removed(self, nodename, info):
 	try:
@@ -43,6 +43,6 @@ class AddHostPlugin(AddHostPluginBase):
                self.dbconn.execute('SELECT nodegroups.ngname FROM nodegroups, nodes WHERE nodes.ngid=nodegroups.ngid AND \
                                     nodes.name="%s"' % nodelist[0])
                ngname = self.dbconn.fetchone()[0]
-               os.system("/opt/kusu/sbin/boothost -n '%s'" % ngname)
+               os.system("/opt/kusu/sbin/kusu-boothost -n '%s'" % ngname)
            except:
                pass

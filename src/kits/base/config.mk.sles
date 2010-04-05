@@ -3,7 +3,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,7 +25,7 @@
 #   KIT_PROPER_NAME - the "proper" name of the kit. For instance,
 #                     "Kusu Runtime" (minus the quotes).
 #          KIT_NAME - This is converted to all lowercase from the
-#                     KIT_PROPER_NAME variable, then used in determining 
+#                     KIT_PROPER_NAME variable, then used in determining
 #                     generated file names (such as RPM, ISO, etc). This
 #                     variable can be overridden.
 #       KIT_VERSION - the version of this kit.
@@ -61,14 +61,14 @@ endif
 #                      or can be manually overridden.
 #
 # Each package must also specify its one source from which the package is
-# generated. Do not define more than one of the following for the same 
+# generated. Do not define more than one of the following for the same
 # package:
 #
-#     {PREFIX}_SPEC - this package is generated from a spec file. The 
+#     {PREFIX}_SPEC - this package is generated from a spec file. The
 #                     filename is stored in this variable. The value in
 #                     $(SPECDIR) will be prepended to this variable;
 #                     $(SPECDIR) defaults to SPECS/
-#   {PREFIX}_PARENT - this package is generated as a sub-package from 
+#   {PREFIX}_PARENT - this package is generated as a sub-package from
 #                     another package, when a spec file is built or an SRPM
 #                     is rebuilt. This variable should store the {PREFIX}
 #                     of its parent's package definition. PARENT-type
@@ -100,7 +100,6 @@ endif
 KIT_PKGS += PKG_KIT
 PKG_KIT_SPEC = kit-base.spec
 PKG_KIT_SOURCES = docs plugins kitinfo
-PKG_KIT_TARBALL_SUBVER = 12
 ifeq ($(strip $(ARCH)), x86_64)
 PKG_KIT_ARCH = $(ARCH)
 else
@@ -112,21 +111,24 @@ PKG_COMPONENT_BASE_INSTALLER_SPEC = component-base-installer.sles.spec
 
 KIT_PKGS += PKG_COMPONENT_BASE_NODE
 PKG_COMPONENT_BASE_NODE_SPEC = component-base-node.sles.spec
+PKG_COMPONENT_BASE_NODE_SOURCES = src/doc src/libexec
 
 KIT_PKGS += PKG_COMPONENT_GNOME_DESKTOP
 PKG_COMPONENT_GNOME_DESKTOP_SPEC = component-gnome-desktop.sles.spec
 
+KIT_PKGS += PKG_COMPONENT_ICR
+PKG_COMPONENT_ICR_SPEC = component-icr-facilitator.sles.spec
+PKG_COMPONENT_ICR_SOURCES = etc
+
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
 PKG_BASE_INSTALLER_SPEC = kusu-base-installer.sles.spec
-PKG_BASE_INSTALLER_SOURCES = lib sbin bin sql man etc po
-PKG_BASE_INSTALLER_TARBALL_SUBVER = 17
+PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc po tftpboot firstboot libexec
 
 # Kusu Base node package.
 KIT_PKGS += PKG_BASE_NODE
 PKG_BASE_NODE_SPEC = kusu-base-node.sles.spec
-PKG_BASE_NODE_SOURCES = doc cfm etc lib sbin
-PKG_BASE_NODE_TARBALL_SUBVER = 6
+PKG_BASE_NODE_SOURCES = doc cfm etc lib sbin man
 ifeq ($(strip $(ARCH)), x86_64)
 PKG_BASE_NODE_ARCH = $(ARCH)
 else
@@ -137,99 +139,98 @@ endif
 KIT_PKGS += PKG_REPOMAN
 PKG_REPOMAN_SPEC = kusu-repoman.spec
 PKG_REPOMAN_SOURCES = doc src/bin src/lib src/etc
-PKG_REPOMAN_TARBALL_SUBVER = 4
 #PKG_REPOMAN_SOURCES = src setup.py
 
 # Kusu Boot package.
 KIT_PKGS += PKG_BOOT
 PKG_BOOT_SPEC = kusu-boot.spec
 PKG_BOOT_SOURCES = doc src/bin src/lib
-PKG_BOOT_TARBALL_SUBVER = 2
 #PKG_BOOT_SOURCES = src setup.py
 
 # Kusu Buildkit package.
 KIT_PKGS += PKG_BUILDKIT
 PKG_BUILDKIT_SPEC = kusu-buildkit.sles.spec
 PKG_BUILDKIT_SOURCES = doc src/bin src/lib src/etc
-PKG_BUILDKIT_TARBALL_SUBVER = 3
 
 # Kusu Core package.
 KIT_PKGS += PKG_CORE
 PKG_CORE_SPEC = kusu-core.spec
 PKG_CORE_SOURCES = doc src/bin src/lib src/etc
-PKG_CORE_TARBALL_SUBVER = 5
+
+# Kusu Shell package.
+#KIT_PKGS += PKG_SHELL
+#PKG_SHELL_SPEC = kusu-shell.spec
+#PKG_SHELL_SOURCES = doc src/bin src/lib src/plugins src/man
+
+# kusu kit install
+KIT_PKGS += PKG_KIT_INSTALL
+PKG_KIT_INSTALL_SPEC = kusu-kit-install.spec
+PKG_KIT_INSTALL_SOURCES = doc src/bin src/man src/lib
 
 # Kusu Driverpatch package.
 KIT_PKGS += PKG_DRIVERPATCH
 PKG_DRIVERPATCH_SPEC = kusu-driverpatch.spec
 PKG_DRIVERPATCH_SOURCES = doc src/bin src/lib
-PKG_DRIVERPATCH_TARBALL_SUBVER = 4
 
 # Kusu Hardware package.
 KIT_PKGS += PKG_HARDWARE
 PKG_HARDWARE_SPEC = kusu-hardware.sles.spec
 PKG_HARDWARE_SOURCES = doc src/lib
-PKG_HARDWARE_TARBALL_SUBVER = 2
 
 # Kusu Kitops package.
 KIT_PKGS += PKG_KITOPS
 PKG_KITOPS_SPEC = kusu-kitops.spec
-PKG_KITOPS_SOURCES = doc src/bin src/lib src/etc
-PKG_KITOPS_TARBALL_SUBVER = 4
+PKG_KITOPS_SOURCES = doc src/bin src/lib
 
 # Kusu Network Tool package.
 KIT_PKGS += PKG_NETWORKTOOL
 PKG_NETWORKTOOL_SPEC = kusu-networktool.spec
 PKG_NETWORKTOOL_SOURCES = doc src/bin src/lib
-PKG_NETWORKTOOL_TARBALL_SUBVER = 2
 
 # Kusu UI package.
 KIT_PKGS += PKG_UI
 PKG_UI_SPEC = kusu-ui.spec
 PKG_UI_SOURCES = doc src/bin src/lib
-PKG_UI_TARBALL_SUBVER = 2
 
 # Kusu Util package.
 KIT_PKGS += PKG_UTIL
 PKG_UTIL_SPEC = kusu-util.spec
 PKG_UTIL_SOURCES = doc src/lib src/etc
-PKG_UTIL_TARBALL_SUBVER = 5
 
 # Initrd Templates package.
 KIT_PKGS += PKG_INITRD_TEMPLATES
 PKG_INITRD_TEMPLATES_SPEC = initrd-templates.sles.spec
 PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates
-PKG_INITRD_TEMPLATES_TARBALL_SUBVER = 5
 
 # Kusu Autoinstall package.
 KIT_PKGS += PKG_AUTOINSTALL
 PKG_AUTOINSTALL_SPEC = kusu-autoinstall.spec
 PKG_AUTOINSTALL_SOURCES = src/doc src/lib src/etc
-PKG_AUTOINSTALL_TARBALL_SUBVER = 3
 
 # Kusu Installer package.
 KIT_PKGS += PKG_INSTALLER
 PKG_INSTALLER_SPEC = kusu-installer.sles.spec
 PKG_INSTALLER_SOURCES = src/doc src/bin src/etc src/lib src/po
-PKG_INSTALLER_TARBALL_SUBVER = 4
 
 # Kusu Node Installer package.
 KIT_PKGS += PKG_NODEINSTALLER
 PKG_NODEINSTALLER_SPEC = kusu-nodeinstaller.spec
 PKG_NODEINSTALLER_SOURCES = src/bin src/lib
-PKG_NODEINSTALLER_TARBALL_SUBVER = 6
 
 # Kusu Node Installer Patchfiles package.
 KIT_PKGS += PKG_NODEINSTALLER_PATCHFILES
 PKG_NODEINSTALLER_PATCHFILES_SPEC = kusu-nodeinstaller-patchfiles.spec
 PKG_NODEINSTALLER_PATCHFILES_SOURCES = src sbin bin man lib
-PKG_NODEINSTALLER_PATCHFILES_TARBALL_SUBVER = 6
 
 # Kusu Node Installer Patchfiles package.
 KIT_PKGS += PKG_RELEASE
 PKG_RELEASE_SPEC = kusu-release.spec
-PKG_RELEASE_SOURCES = src 
-PKG_RELEASE_TARBALL_SUBVER = 1
+PKG_RELEASE_SOURCES = src
+
+# Kusu power management framework package.
+KIT_PKGS += PKG_POWER
+PKG_POWER_SPEC = kusu-power.sles.spec
+PKG_POWER_SOURCES = doc src setup.py
 
 #3rd party packages
 
@@ -249,13 +250,12 @@ else
 PKG_LIBXML2_ARCH = i586
 endif
 PKG_LIBXML2_RPM = $(PKG_LIBXML2_NAME)-$(PKG_LIBXML2_VERSION)-$(PKG_LIBXML2_RELEASE).$(PKG_LIBXML2_ARCH).rpm
-PKG_LIBXML2_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_LIBXML2_ARCH)/$(PKG_LIBXML2_RPM)
+#PKG_LIBXML2_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_LIBXML2_ARCH)/$(PKG_LIBXML2_RPM)
 
 # Kusu MD5 crypt package.
 KIT_PKGS += PKG_MD5CRYPT
 PKG_MD5CRYPT_SPEC = kusu-md5crypt.spec
 PKG_MD5CRYPT_SOURCES = src
-PKG_MD5CRYPT_TARBALL_SUBVER = 1
 
 
 # Kusu Ipy package.
@@ -265,22 +265,28 @@ PKG_IPY_VERSION = 0.60
 PKG_IPY_RELEASE = 1
 PKG_IPY_ARCH = noarch
 PKG_IPY_SRPM = $(PKG_IPY_NAME)-$(PKG_IPY_VERSION)-$(PKG_IPY_RELEASE).src.rpm
-PKG_IPY_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_IPY_SRPM)
+#PKG_IPY_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_IPY_SRPM)
 
 # Primitive package.
 KIT_PKGS += PKG_PRIMITIVE
-PKG_PRIMITIVE_NAME = primitive
-PKG_PRIMITIVE_VERSION = 0.5
-PKG_PRIMITIVE_RELEASE = 1
-PKG_PRIMITIVE_ARCH = noarch
-PKG_PRIMITIVE_RPM = $(PKG_PRIMITIVE_NAME)-$(PKG_PRIMITIVE_VERSION)-$(PKG_PRIMITIVE_RELEASE).$(PKG_PRIMITIVE_ARCH).rpm
-PKG_PRIMITIVE_RPM_URL = http://www.osgdc.org/pub/build/primitive/centos/5/RPMS/$(PKG_PRIMITIVE_ARCH)/$(PKG_PRIMITIVE_RPM)
+PKG_PRIMITIVE_NAME = kusu-primitive
+PKG_PRIMITIVE_SPEC = kusu-primitive.spec
+PKG_PRIMITIVE_SOURCES = config.mk Makefile src
 
 # Kusu Path package.
 KIT_PKGS += PKG_PATH
 PKG_PATH_SPEC = kusu-path.spec
 PKG_PATH_SOURCES = src
-PKG_PATH_TARBALL_SUBVER = 1
+
+# Net tool package
+KIT_PKGS += PKG_KUSU_NET_TOOL
+PKG_KUSU_NET_TOOL_SPEC = kusu-net-tool.spec
+PKG_KUSU_NET_TOOL_SOURCES = doc sbin man
+
+# License support tool package
+KIT_PKGS += PKG_KUSU_LICENSE_TOOL
+PKG_KUSU_LICENSE_TOOL_SPEC = kusu-license-tool.spec
+PKG_KUSU_LICENSE_TOOL_SOURCES = src/sbin src/man src/lib src/firstboot
 
 # Python SQL Alchemy package.
 KIT_PKGS += PKG_SQLALCHEMY
@@ -289,7 +295,7 @@ PKG_SQLALCHEMY_VERSION = 0.3.11
 PKG_SQLALCHEMY_RELEASE = 1
 PKG_SQLALCHEMY_ARCH = noarch
 PKG_SQLALCHEMY_SRPM = $(PKG_SQLALCHEMY_NAME)-$(PKG_SQLALCHEMY_VERSION)-$(PKG_SQLALCHEMY_RELEASE).src.rpm
-PKG_SQLALCHEMY_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQLALCHEMY_SRPM)
+#PKG_SQLALCHEMY_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQLALCHEMY_SRPM)
 
 # Modules package.
 KIT_PKGS += PKG_MODULES
@@ -302,7 +308,7 @@ else
 PKG_MODULES_ARCH = i586
 endif
 PKG_MODULES_SRPM = $(PKG_MODULES_NAME)-$(PKG_MODULES_VERSION)-$(PKG_MODULES_RELEASE).src.rpm
-PKG_MODULES_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_MODULES_SRPM)
+#PKG_MODULES_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_MODULES_SRPM)
 
 # PDSH package.
 KIT_PKGS += PKG_PDSH
@@ -363,7 +369,7 @@ else
 PKG_PYPARTED_ARCH = i586
 endif
 PKG_PYPARTED_SRPM = $(PKG_PYPARTED_NAME)-$(PKG_PYPARTED_VERSION)-$(PKG_PYPARTED_RELEASE).el5.src.rpm
-PKG_PYPARTED_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYPARTED_SRPM)
+#PKG_PYPARTED_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYPARTED_SRPM)
 
 # SQLITE package.
 KIT_PKGS += PKG_SQLITE
@@ -376,7 +382,7 @@ else
 PKG_SQLITE_ARCH = i586
 endif
 PKG_SQLITE_SRPM = $(PKG_SQLITE_NAME)-$(PKG_SQLITE_VERSION)-$(PKG_SQLITE_RELEASE).src.rpm
-PKG_SQLITE_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQLITE_SRPM)
+#PKG_SQLITE_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQLITE_SRPM)
 
 # Cheetah package.
 KIT_PKGS += PKG_CHEETAH
@@ -389,7 +395,7 @@ else
 PKG_CHEETAH_ARCH = i586
 endif
 PKG_CHEETAH_SRPM = $(PKG_CHEETAH_NAME)-$(PKG_CHEETAH_VERSION)-$(PKG_CHEETAH_RELEASE).src.rpm
-PKG_CHEETAH_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_CHEETAH_SRPM)
+#PKG_CHEETAH_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_CHEETAH_SRPM)
 
 # Python SQLite 2 package.
 KIT_PKGS += PKG_PYSQLITE2
@@ -402,7 +408,7 @@ else
 PKG_PYSQLITE2_ARCH = i586
 endif
 PKG_PYSQLITE2_SRPM = $(PKG_PYSQLITE2_NAME)-$(PKG_PYSQLITE2_VERSION)-$(PKG_PYSQLITE2_RELEASE).src.rpm
-PKG_PYSQLITE2_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYSQLITE2_SRPM)
+#PKG_PYSQLITE2_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYSQLITE2_SRPM)
 
 # Kusu Thttpd package.
 KIT_PKGS += PKG_THTTPD
@@ -415,7 +421,7 @@ else
 PKG_THTTPD_ARCH = i586
 endif
 PKG_THTTPD_RPM = $(PKG_THTTPD_NAME)-$(PKG_THTTPD_VERSION)-$(PKG_THTTPD_RELEASE).$(PKG_THTTPD_ARCH).rpm
-PKG_THTTPD_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_THTTPD_RPM)
+#PKG_THTTPD_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_THTTPD_RPM)
 
 # Python Psycopg2  package.
 KIT_PKGS += PKG_PSYCOPG2
@@ -428,7 +434,7 @@ else
 PKG_PSYCOPG2_ARCH = i586
 endif
 PKG_PSYCOPG2_SRPM = $(PKG_PSYCOPG2_NAME)-$(PKG_PSYCOPG2_VERSION)-$(PKG_PSYCOPG2_RELEASE).src.rpm
-PKG_PSYCOPG2_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PSYCOPG2_SRPM)
+#PKG_PSYCOPG2_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PSYCOPG2_SRPM)
 
 # Python elementtree package.
 KIT_PKGS += PKG_PYTHON_ELEMENTTREE
@@ -441,7 +447,7 @@ else
 PKG_PYTHON_ELEMENTTREE_ARCH = i586
 endif
 PKG_PYTHON_ELEMENTTREE_RPM = $(PKG_PYTHON_ELEMENTTREE_NAME)-$(PKG_PYTHON_ELEMENTTREE_VERSION)-$(PKG_PYTHON_ELEMENTTREE_RELEASE).$(PKG_PYTHON_ELEMENTTREE_ARCH).rpm
-PKG_PYTHON_ELEMENTTREE_RPM_URL = http://fserv/repo/sles/10/SP2-SDK/$(ARCH)/suse/$(PKG_PYTHON_ELEMENTTREE_ARCH)/$(PKG_PYTHON_ELEMENTTREE_RPM)
+#PKG_PYTHON_ELEMENTTREE_RPM_URL = http://fserv/repo/sles/10/SP2-SDK/$(ARCH)/suse/$(PKG_PYTHON_ELEMENTTREE_ARCH)/$(PKG_PYTHON_ELEMENTTREE_RPM)
 
 # 3rd party installer dependencies
 # Coreutils  package.
@@ -455,7 +461,7 @@ else
 PKG_COREUTILS_ARCH = i586
 endif
 PKG_COREUTILS_RPM = $(PKG_COREUTILS_NAME)-$(PKG_COREUTILS_VERSION)-$(PKG_COREUTILS_RELEASE).$(PKG_COREUTILS_ARCH).rpm
-PKG_COREUTILS_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_COREUTILS_RPM)
+#PKG_COREUTILS_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_COREUTILS_RPM)
 
 # grub package.
 INSTALLER_PKGS += PKG_GRUB
@@ -468,7 +474,7 @@ else
 PKG_GRUB_ARCH = i586
 endif
 PKG_GRUB_RPM = $(PKG_GRUB_NAME)-$(PKG_GRUB_VERSION)-$(PKG_GRUB_RELEASE).$(PKG_GRUB_ARCH).rpm
-PKG_GRUB_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_GRUB_RPM)
+#PKG_GRUB_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_GRUB_RPM)
 
 # libnewt package.
 KIT_PKGS += PKG_LIBNEWT
@@ -481,7 +487,7 @@ else
 PKG_LIBNEWT_ARCH = i586
 endif
 PKG_LIBNEWT_RPM = $(PKG_LIBNEWT_NAME)-$(PKG_LIBNEWT_VERSION)-$(PKG_LIBNEWT_RELEASE).$(PKG_LIBNEWT_ARCH).rpm
-PKG_LIBNEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_LIBNEWT_RPM)
+#PKG_LIBNEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_LIBNEWT_RPM)
 
 # newt package.
 KIT_PKGS += PKG_NEWT
@@ -494,7 +500,7 @@ else
 PKG_NEWT_ARCH = i586
 endif
 PKG_NEWT_RPM = $(PKG_NEWT_NAME)-$(PKG_NEWT_VERSION)-$(PKG_NEWT_RELEASE).$(PKG_NEWT_ARCH).rpm
-PKG_NEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_NEWT_RPM)
+#PKG_NEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_NEWT_RPM)
 
 # Python newt package.
 KIT_PKGS += PKG_PYTHON_NEWT
@@ -507,7 +513,7 @@ else
 PKG_PYTHON_NEWT_ARCH = i586
 endif
 PKG_PYTHON_NEWT_RPM = $(PKG_PYTHON_NEWT_NAME)-$(PKG_PYTHON_NEWT_VERSION)-$(PKG_PYTHON_NEWT_RELEASE).$(PKG_PYTHON_NEWT_ARCH).rpm
-PKG_PYTHON_NEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_NEWT_RPM)
+#PKG_PYTHON_NEWT_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_NEWT_RPM)
 
 # Python package.
 INSTALLER_PKGS += PKG_PYTHON
@@ -520,7 +526,7 @@ else
 PKG_PYTHON_ARCH = i586
 endif
 PKG_PYTHON_RPM = $(PKG_PYTHON_NAME)-$(PKG_PYTHON_VERSION)-$(PKG_PYTHON_RELEASE).$(PKG_PYTHON_ARCH).rpm
-PKG_PYTHON_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_RPM)
+#PKG_PYTHON_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_RPM)
 
 # Slang package.
 KIT_PKGS += PKG_SLANG
@@ -533,7 +539,7 @@ else
 PKG_SLANG_ARCH = i586
 endif
 PKG_SLANG_RPM = $(PKG_SLANG_NAME)-$(PKG_SLANG_VERSION)-$(PKG_SLANG_RELEASE).$(PKG_SLANG_ARCH).rpm
-PKG_SLANG_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_SLANG_RPM)
+#PKG_SLANG_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_SLANG_RPM)
 
 # Python xml package.
 KIT_PKGS += PKG_PYTHON_XML
@@ -546,7 +552,7 @@ else
 PKG_PYTHON_XML_ARCH = i586
 endif
 PKG_PYTHON_XML_RPM = $(PKG_PYTHON_XML_NAME)-$(PKG_PYTHON_XML_VERSION)-$(PKG_PYTHON_XML_RELEASE).$(PKG_PYTHON_XML_ARCH).rpm
-PKG_PYTHON_XML_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_XML_RPM)
+#PKG_PYTHON_XML_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PYTHON_XML_RPM)
 
 # Mkinitrd package.
 INSTALLER_PKGS += PKG_MKINITRD
@@ -559,7 +565,7 @@ else
 PKG_MKINITRD_ARCH = i586
 endif
 PKG_MKINITRD_RPM = $(PKG_MKINITRD_NAME)-$(PKG_MKINITRD_VERSION)-$(PKG_MKINITRD_RELEASE).$(PKG_MKINITRD_ARCH).rpm
-PKG_MKINITRD_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_MKINITRD_RPM)
+#PKG_MKINITRD_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_MKINITRD_RPM)
 
 # Parted package.
 KIT_PKGS += PKG_PARTED
@@ -572,7 +578,7 @@ else
 PKG_PARTED_ARCH = i586
 endif
 PKG_PARTED_RPM = $(PKG_PARTED_NAME)-$(PKG_PARTED_VERSION)-$(PKG_PARTED_RELEASE).$(PKG_PARTED_ARCH).rpm
-PKG_PARTED_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PARTED_RPM)
+#PKG_PARTED_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PARTED_RPM)
 
 # RPM package.
 INSTALLER_PKGS += PKG_PACKAGE_MANAGER
@@ -585,7 +591,7 @@ else
 PKG_PACKAGE_MANAGER_ARCH = i586
 endif
 PKG_PACKAGE_MANAGER_RPM = $(PKG_PACKAGE_MANAGER_NAME)-$(PKG_PACKAGE_MANAGER_VERSION)-$(PKG_PACKAGE_MANAGER_RELEASE).$(PKG_PACKAGE_MANAGER_ARCH).rpm
-PKG_PACKAGE_MANAGER_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PACKAGE_MANAGER_RPM)
+#PKG_PACKAGE_MANAGER_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PACKAGE_MANAGER_RPM)
 
 # RPM python package.
 INSTALLER_PKGS += PKG_PACKAGE_MANAGER_PYTHON
@@ -598,7 +604,7 @@ else
 PKG_PACKAGE_MANAGER_PYTHON_ARCH = i586
 endif
 PKG_PACKAGE_MANAGER_PYTHON_RPM = $(PKG_PACKAGE_MANAGER_PYTHON_NAME)-$(PKG_PACKAGE_MANAGER_PYTHON_VERSION)-$(PKG_PACKAGE_MANAGER_PYTHON_RELEASE).$(PKG_PACKAGE_MANAGER_PYTHON_ARCH).rpm
-PKG_PACKAGE_MANAGER_PYTHON_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PACKAGE_MANAGER_PYTHON_RPM)
+#PKG_PACKAGE_MANAGER_PYTHON_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_PACKAGE_MANAGER_PYTHON_RPM)
 
 # Yast2 python bindings package.
 INSTALLER_PKGS += PKG_YAST2_PYTHON_BINDINGS
@@ -611,7 +617,7 @@ else
 PKG_YAST2_PYTHON_BINDINGS_ARCH = i586
 endif
 PKG_YAST2_PYTHON_BINDINGS_RPM = $(PKG_YAST2_PYTHON_BINDINGS_NAME)-$(PKG_YAST2_PYTHON_BINDINGS_VERSION)-$(PKG_YAST2_PYTHON_BINDINGS_RELEASE).$(PKG_YAST2_PYTHON_BINDINGS_ARCH).rpm
-PKG_YAST2_PYTHON_BINDINGS_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_YAST2_PYTHON_BINDINGS_RPM)
+#PKG_YAST2_PYTHON_BINDINGS_RPM_URL = http://fserv/engineering/build/sles/10/$(ARCH)/$(PKG_YAST2_PYTHON_BINDINGS_RPM)
 
 # Yast2 users package.
 INSTALLER_PKGS += PKG_YAST2_USERS
@@ -624,7 +630,7 @@ else
 PKG_YAST2_USERS_ARCH = i586
 endif
 PKG_YAST2_USERS_RPM = $(PKG_YAST2_USERS_NAME)-$(PKG_YAST2_USERS_VERSION)-$(PKG_YAST2_USERS_RELEASE).$(PKG_YAST2_USERS_ARCH).rpm
-PKG_YAST2_USERS_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_YAST2_USERS_ARCH)/$(PKG_YAST2_USERS_RPM)
+#PKG_YAST2_USERS_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_YAST2_USERS_ARCH)/$(PKG_YAST2_USERS_RPM)
 
 # libreiserfs package.
 INSTALLER_PKGS += PKG_LIBREISERFS
@@ -637,16 +643,16 @@ else
 PKG_LIBREISERFS_ARCH = i586
 endif
 PKG_LIBREISERFS_RPM = $(PKG_LIBREISERFS_NAME)-$(PKG_LIBREISERFS_VERSION)-$(PKG_LIBREISERFS_RELEASE).$(PKG_LIBREISERFS_ARCH).rpm
-PKG_LIBREISERFS_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_LIBREISERFS_ARCH)/$(PKG_LIBREISERFS_RPM)
+#PKG_LIBREISERFS_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_LIBREISERFS_ARCH)/$(PKG_LIBREISERFS_RPM)
 
 # inst-source-utils pkg
 KIT_PKGS += PKG_INST_SOURCE_UTILS
 PKG_INST_SOURCE_UTILS_NAME = inst-source-utils
-PKG_INST_SOURCE_UTILS_VERSION = 2007.12.11
-PKG_INST_SOURCE_UTILS_RELEASE = 0.3
+PKG_INST_SOURCE_UTILS_VERSION = 2008.11.24
+PKG_INST_SOURCE_UTILS_RELEASE = 2.1
 PKG_INST_SOURCE_UTILS_ARCH = noarch
-PKG_INST_SOURCE_UTILS_RPM = $(PKG_INST_SOURCE_UTILS_NAME)-$(PKG_INST_SOURCE_UTILS_VERSION)-$(PKG_INST_SOURCE_UTILS_RELEASE).$(PKG_INST_SOURCE_UTILS_ARCH).rpm
-PKG_INST_SOURCE_UTILS_RPM_URL = http://fserv/engineering/build/sles/10/$(PKG_INST_SOURCE_UTILS_ARCH)/$(PKG_INST_SOURCE_UTILS_RPM)
+PKG_INST_SOURCE_UTILS_SRPM = $(PKG_INST_SOURCE_UTILS_NAME)-$(PKG_INST_SOURCE_UTILS_VERSION)-$(PKG_INST_SOURCE_UTILS_RELEASE).src.rpm
+#PKG_INST_SOURCE_UTILS_RPM_URL = http://fserv/engineering/build/sles/10/$(PKG_INST_SOURCE_UTILS_ARCH)/$(PKG_INST_SOURCE_UTILS_RPM)
 
 # perl pkg
 INSTALLER_PKGS += PKG_PERL
@@ -659,7 +665,7 @@ else
 PKG_PERL_ARCH = i586
 endif
 PKG_PERL_RPM = $(PKG_PERL_NAME)-$(PKG_PERL_VERSION)-$(PKG_PERL_RELEASE).$(PKG_PERL_ARCH).rpm
-PKG_PERL_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_PERL_ARCH)/$(PKG_PERL_RPM)
+#PKG_PERL_RPM_URL = http://fserv/repo/sles/10/SP2/$(ARCH)/suse/$(PKG_PERL_ARCH)/$(PKG_PERL_RPM)
 
 # createrepo pkg
 KIT_PKGS += PKG_CREATEREPO
@@ -668,7 +674,7 @@ PKG_CREATEREPO_VERSION = 0.4.11
 PKG_CREATEREPO_RELEASE = 17.1
 PKG_CREATEREPO_ARCH = noarch
 PKG_CREATEREPO_RPM = $(PKG_CREATEREPO_NAME)-$(PKG_CREATEREPO_VERSION)-$(PKG_CREATEREPO_RELEASE).$(PKG_CREATEREPO_ARCH).rpm
-PKG_CREATEREPO_RPM_URL = http://fserv/engineering/build/sles/10/$(PKG_CREATEREPO_ARCH)/$(PKG_CREATEREPO_RPM)
+#PKG_CREATEREPO_RPM_URL = http://fserv/engineering/build/sles/10/$(PKG_CREATEREPO_ARCH)/$(PKG_CREATEREPO_RPM)
 
 # yum-metadata-parser pkg
 KIT_PKGS += PKG_YUM_METADATA_PARSER
@@ -681,7 +687,7 @@ else
 PKG_YUM_METADATA_PARSER_ARCH = i586
 endif
 PKG_YUM_METADATA_PARSER_SRPM = $(PKG_YUM_METADATA_PARSER_NAME)-$(PKG_YUM_METADATA_PARSER_VERSION)-$(PKG_YUM_METADATA_PARSER_RELEASE).src.rpm
-PKG_YUM_METADATA_PARSER_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_METADATA_PARSER_SRPM)
+#PKG_YUM_METADATA_PARSER_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_METADATA_PARSER_SRPM)
 
 # Python SQLite package.
 KIT_PKGS += PKG_PYSQLITE
@@ -694,7 +700,7 @@ else
 PKG_PYSQLITE_ARCH = i586
 endif
 PKG_PYSQLITE_SRPM = $(PKG_PYSQLITE_NAME)-$(PKG_PYSQLITE_VERSION)-$(PKG_PYSQLITE_RELEASE).src.rpm
-PKG_PYSQLITE_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYSQLITE_SRPM)
+#PKG_PYSQLITE_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYSQLITE_SRPM)
 
 # yum-utils package.
 KIT_PKGS += PKG_YUM_UTILS
@@ -703,7 +709,7 @@ PKG_YUM_UTILS_VERSION = 1.1.11
 PKG_YUM_UTILS_RELEASE = 5.1
 PKG_YUM_UTILS_ARCH = noarch
 PKG_YUM_UTILS_SRPM = $(PKG_YUM_UTILS_NAME)-$(PKG_YUM_UTILS_VERSION)-$(PKG_YUM_UTILS_RELEASE).src.rpm
-PKG_YUM_UTILS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_UTILS_SRPM)
+#PKG_YUM_UTILS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_UTILS_SRPM)
 
 # yum package.
 KIT_PKGS += PKG_YUM
@@ -716,7 +722,7 @@ else
 PKG_YUM_ARCH = i586
 endif
 PKG_YUM_SRPM = $(PKG_YUM_NAME)-$(PKG_YUM_VERSION)-$(PKG_YUM_RELEASE).src.rpm
-PKG_YUM_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_SRPM)
+#PKG_YUM_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_YUM_SRPM)
 
 # python-gpgme package.
 KIT_PKGS += PKG_PYTHON_GPGME
@@ -729,18 +735,7 @@ else
 PKG_PYTHON_GPGME_ARCH = i586
 endif
 PKG_PYTHON_GPGME_SRPM = $(PKG_PYTHON_GPGME_NAME)-$(PKG_PYTHON_GPGME_VERSION)-$(PKG_PYTHON_GPGME_RELEASE).src.rpm
-PKG_PYTHON_GPGME_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYTHON_GPGME_SRPM)
-
-# Python bcrypt package.
-KIT_PKGS += PKG_PYTHON_BCRYPT
-PKG_PYTHON_BCRYPT_SPEC = python-bcrypt.sles.spec
-PKG_PYTHON_BCRYPT_SOURCES = src/*
-PKG_PYTHON_BCRYPT_TARBALL_SUBVER = 1
-ifeq ($(strip $(ARCH)), x86_64)
-PKG_PYTHON_BCRYPT_ARCH = $(ARCH)
-else
-PKG_PYTHON_BCRYPT_ARCH = i586
-endif
+#PKG_PYTHON_GPGME_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_PYTHON_GPGME_SRPM)
 
 # squashfs package.
 KIT_PKGS += PKG_SQUASHFS
@@ -753,5 +748,22 @@ else
 PKG_SQUASHFS_ARCH = i586
 endif
 PKG_SQUASHFS_SRPM = $(PKG_SQUASHFS_NAME)-$(PKG_SQUASHFS_VERSION)-$(PKG_SQUASHFS_RELEASE).src.rpm
-PKG_SQUASHFS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQUASHFS_SRPM)
+#PKG_SQUASHFS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_SQUASHFS_SRPM)
+
+# insserv pkg
+KIT_PKGS += PKG_INSSERV
+PKG_INSSERV_NAME = insserv
+PKG_INSSERV_VERSION = 1.10.0
+PKG_INSSERV_RELEASE = 15.3
+ifeq ($(strip $(ARCH)), x86_64)
+PKG_INSSERV_ARCH = $(ARCH)
+else
+PKG_INSSERV_ARCH = i586
+endif
+PKG_INSSERV_RPM = $(PKG_INSSERV_NAME)-$(PKG_INSSERV_VERSION)-$(PKG_INSSERV_RELEASE).$(PKG_INSSERV_ARCH).rpm
+
+# Kusu Appglobals Tool package.
+KIT_PKGS += PKG_KUSU_APPGLOBALS_TOOL
+PKG_KUSU_APPGLOBALS_TOOL_SPEC = kusu-appglobals-tool.spec
+PKG_KUSU_APPGLOBALS_TOOL_SOURCES = src/sbin src/lib src/man
 

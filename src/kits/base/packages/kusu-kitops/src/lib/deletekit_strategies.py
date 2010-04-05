@@ -1,15 +1,12 @@
 import sqlalchemy
 import subprocess
-import tempfile
-from path import path
-from kusu.util import rpmtool
 from kusu.util.errors import DeleteKitsError
-from kusu.util.kits import run_scripts, generate_script_arg, get_kit_RPM
+from kusu.kitops.addkit_strategies import getPluginProviders
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
-def deletekit01(koinst, db, kit, update_action=False):
+def deletekit01(koinst, db, kit):
     kl.info("Removing kit with kid '%s'" % kit.kid)
 
     try:
@@ -23,7 +20,7 @@ def deletekit01(koinst, db, kit, update_action=False):
         kit.delete()
     except sa.exceptions.SQLError, e:
         raise DeleteKitsError, [e]
-
+ 
     # uninstall kit RPM
     if not kit.isOS and not koinst.installer:
         cmds = ['/bin/rpm', '--quiet', '-e', '--nodeps',
@@ -51,7 +48,7 @@ def deletekit01(koinst, db, kit, update_action=False):
     if kitdir.exists(): kitdir.rmtree()
 
 
-def deletekit02(koinst, db, kit, update_action=False):
+def deletekit02(koinst, db, kit):
     kl.info("Removing kit with kid '%s'" % kit.kid)
     try:
         # remove component info from DB
@@ -71,7 +68,7 @@ def deletekit02(koinst, db, kit, update_action=False):
     # uninstall plugins and docs
     kitdir = koinst.kits_dir / str(kit.kid)
     uninstallPlugins(koinst, kitdir, str(kit.kid))
-    uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
+    uninstallDocs(db, kit, koinst.prefix, koinst.kits_dir, koinst.docs_dir)
 
     # remove tftpboot contents
     if kit.isOS:
@@ -86,64 +83,8 @@ def deletekit02(koinst, db, kit, update_action=False):
     del_path = koinst.kits_dir / str(kit.kid)
     if del_path.exists(): del_path.rmtree()
 
-def deletekit04(koinst, db, kit, update_action=False):
-    kitdir = koinst.kits_dir / str(kit.kid)
 
-    # Extract the kit RPM to get access at its scripts.
-    tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
-    rpm = get_kit_RPM(kitdir)
-    rpm.extract(tmpdir)
-
-    script_arg=generate_script_arg(operation='delete', update_action=update_action)
-    if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
-        raise KitScriptError, "Pre script error, failed to delete kit"
-
-    kl.info("Removing kit with kid '%s'" % kit.kid)
-    try:
-        # remove component info from DB
-        for component in kit.components:
-            for dpack in component.driverpacks:
-                dpack.delete()
-            component.delete()
-
-        if kit.os:
-            kit.os.delete()
-
-        # remove kit DB info
-        kit.delete()
-    except sqlalchemy.exceptions.SQLError, e:
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
-        raise DeleteKitsError, [e]
-
-    # uninstall plugins and docs
-    uninstallPlugins(koinst, kitdir, str(kit.kid))
-    uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
-
-    # remove tftpboot contents
-    if kit.isOS:
-        p = koinst.pxeboot_dir / ('initrd-%s.img' % kit.longname)
-        if p.exists(): p.remove()
-        p = koinst.pxeboot_dir / ('kernel-%s' % kit.longname)
-        if p.exists(): p.remove()
-        if not koinst.pxeboot_dir.listdir():  # directory is empty
-            koinst.pxeboot_dir.rmdir()
-
-    # remove the RPMS kit contents
-    del_path = koinst.kits_dir / str(kit.kid)
-    if del_path.exists(): del_path.rmtree()
-
-    if 0 != run_scripts(tmpdir, mode='postun', script_arg=script_arg):
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
-        raise KitScriptError, "Pre script error, failed to delete kit"
-
-    # Remove tmpdir. Should probably be done with atexit.
-    tmpdir.rmtree()
-
-def uninstallDocs(db, kit, kitdir, docsdir):
+def uninstallDocs(db, kit, prefix, kitdir, docsdir):
     kl.debug('Uninstalling kit documentation.')
     src_dir = kitdir / str(kit.kid) / 'www'
     dest_dir = docsdir / kit.rname / str(kit.version) / str(kit.release)
@@ -151,7 +92,8 @@ def uninstallDocs(db, kit, kitdir, docsdir):
         kl.debug('No documentation to uninstall')
 
     kl.debug('Check if %s points to %s' % (dest_dir, src_dir))
-    if dest_dir.realpath() == src_dir:
+    if dest_dir.realpath() == src_dir or \
+       dest_dir.realpath() == src_dir.split(prefix, 1)[1]:
         kl.debug('%s symlinks to %s' % (dest_dir, src_dir))
         if docUseCount(db, kit.rname, kit.version, kit.release) > 1:
             kl.debug('More than one kit uses location %s for docs' % dest_dir)
@@ -193,7 +135,7 @@ def uninstallPlugins(koinst, kitdir, kid):
     plugin_dir = kitdir / 'plugins'
     if not plugin_dir.exists():
         return
-    for provider in [x.basename() for x in plugin_dir.dirs()]:
+    for provider in getPluginProviders(plugin_dir):
         for plugin in [x.basename() for x in (plugin_dir / provider).files()]:
             # construct the path of the plugin to remove.
             proposed_plugin = koinst.kusu_root / 'lib' / 'plugins' / provider / plugin
@@ -248,8 +190,6 @@ def resymlinkPlugin(kusu_root, kits_root, provider, plugin):
             new_target.symlink(link)
             return
 
-"""The delete kit strategy for 0.3 is the same as 0.2"""
+
 DeleteKitStrategy = { '0.1': deletekit01,
-                      '0.2': deletekit02,
-                      '0.3': deletekit02,
-                      '0.4': deletekit04}
+                      '0.2': deletekit02}

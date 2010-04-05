@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id$
+# $Id: kusuenv.sh 3665 2008-10-29 10:57:52Z kunalc $
 #
 # Kusu specific environment script
 #

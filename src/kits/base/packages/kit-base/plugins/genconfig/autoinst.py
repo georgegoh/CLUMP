@@ -1,4 +1,4 @@
-# $Id$
+# $Id: autoinst.py 3425 2010-01-26 03:40:44Z yqang $
 #
 #   Copyright 2008 Platform Computing Inc
 #
@@ -33,14 +33,10 @@ from primitive.installtool.commands import GenerateAutoInstallScriptCommand
 SUPPORTED_OS = ['sles', 'opensuse']
 
 def createDB():
-    engine = os.getenv('KUSU_DB_ENGINE')
-    if engine == 'mysql':
-        dbdriver = 'mysql'
-    else:
-        dbdriver = 'postgres'
+    dbdriver = os.getenv('KUSU_DB_ENGINE', 'postgres')
     dbdatabase = 'kusudb'
     dbuser = 'apache'
-    dbpassword = 'None'
+    dbpassword = None
 
     return database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
@@ -48,7 +44,7 @@ def createDB():
 class thisReport(Report):
     
     def toolHelp(self):
-        print "Generates kickstart file for a nodegroup. Run via: # genconfig kickstart <ngid>"
+        print "Generates autoinst.xml file for a nodegroup. Run via: # genconfig autoinst <ngid>"
 
     def getRandomSeq(self, length=8, chars=string.letters + string.digits):
         """Return a random sequence length chars long."""
@@ -63,8 +59,6 @@ class thisReport(Report):
             db = createDB()
             # get the nodegroup ID.
             ngid = pluginargs[0]
-            # get the nodegroup name.
-            ngname = db.NodeGroups.selectfirst_by(ngid=ngid).ngname
             # work only if a valid nodegroup ID is given.
             valid_ng = [x.ngid for x in db.NodeGroups.select()]
             if int(ngid) not in valid_ng:
@@ -79,7 +73,7 @@ class thisReport(Report):
                     return
                 # Retrieve os name, major ver, minor ver and arch.
                 try:
-                    os,major,minor,arch = getOS(db, ngname)
+                    os,major,minor,arch = getOS(db, ng_obj.ngname)
                     if os not in SUPPORTED_OS:
                         print "Cannot generate autoinst.xml for unsupported OS '%s'" % os
                         return
@@ -109,6 +103,7 @@ class thisReport(Report):
                 networkprofile = {}
 
                 try:
+                    # TODO: can use bcrypt for consistency.
                     rootpw = md5crypt.md5crypt(str(self.getRandomSeq()), str(time.time()));
                 except Exception, e:
                     print "Could not generate root password."

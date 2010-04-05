@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: distro.py 3049 2009-10-07 13:41:31Z abuck $
 # 
 # Copyright 2007 Platform Computing Inc.
 #
@@ -13,10 +13,10 @@ import re
 from kusu.util.errors import FileAlreadyExists, CopyError
 from kusu.util.rpmtool import RPM
 from ConfigParser import ConfigParser
+from primitive.support import osfamily
 
-
-SUPPORTED_DISTROS = ['centos', 'fedora', 'rhel', 'scientificlinux', 'sles', 'opensuse']
-USES_ANACONDA = ['centos', 'fedora', 'rhel', 'scientificlinux']
+SUPPORTED_DISTROS = osfamily.getOSNames('rhelfamily') + ['fedora', 'sles', 'opensuse']
+USES_ANACONDA = osfamily.getOSNames('rhelfamily') + ['fedora']
 SUPPORTED_ARCH = ['i386', 'x86_64']
 
 class DistroInstallSrcBase(object):

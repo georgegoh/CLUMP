@@ -14,6 +14,15 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # links the kusu runtime to /opt
 /usr/bin/ln -sf /tmp/updates/opt /opt
 
+# link /sbin/blkid from e2fsprogs
+/usr/bin/ln -sf /tmp/updates/sbin/blkid /sbin/blkid
+
+# link mke2fs.conf determine block size automatically
+/usr/bin/ln -sf /mnt/runtime/etc/mke2fs.conf /etc/mke2fs.conf
+
+# link /sbin/biosdecode from dmidecode
+/usr/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
@@ -47,7 +56,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     unset PYTHONPATH  > /dev/null 2>&1
     #clean up temporary net info such as --gateway
     if [ -f "/tmp/netinfo" ];then 
-	/usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
+        /usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
     fi
  
     

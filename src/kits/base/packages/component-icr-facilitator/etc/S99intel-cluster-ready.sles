@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Intel(R) Cluster ready setup
+if [ `/bin/grep kernel.randomize_va_space /etc/sysctl.conf -c` -eq 0 ]; then
+   /bin/echo 'kernel.randomize_va_space=0' >> /etc/sysctl.conf
+   # The command sets the sysctl variable at runtime enabling us to avoid rebooting the node.
+fi
+
+/sbin/sysctl -w kernel.randomize_va_space=0
+
+# Add compat X11 paths
+xprograms="glxinfo listres oclock viewres x11perfcomp xclipboard xev xfontsel xkill xlogo xmessage xwininfo glxgears mkhtmlindex showfont x11perf xclock xfd xload xmag xvinfo xterm"
+
+if [ ! -d /usr/bin/X11 ]; then mkdir -p /usr/bin/X11; fi
+
+for prog in $xprograms; do
+    cmd=`which $prog`
+    ln -s $cmd /usr/bin/X11
+done
+
+rm -rf $0

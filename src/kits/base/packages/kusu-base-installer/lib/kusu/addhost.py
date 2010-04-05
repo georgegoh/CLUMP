@@ -25,6 +25,13 @@
 class AddHostPluginBase:
     def __init__(self, dbconn):
         self.dbconn = dbconn
+        self.canFail = False
+        self.pluginArgs = {}
+        self.parser = None
+
+    def init(self):
+        """virtual, overide it to initialize the plugin if need to connect database"""
+        pass
 
     def finished(self, nodelist, prePopulateMode):
         """virtual"""
@@ -50,3 +57,12 @@ class AddHostPluginBase:
         """virtual"""
         return True
 
+    def parseOptions(self, options):
+        """virtual, overide it to parse plugin's own options"""
+        #Expected to do nothing for those plugin without options
+        pass
+
+    def registerOptions(self, parser):
+        """virtual, overide it to register plugin's own options"""
+        #Expected to do nothing for those plugin without options
+        pass

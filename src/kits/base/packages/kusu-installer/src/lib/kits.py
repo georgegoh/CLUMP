@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: kits.py 3564 2010-03-01 03:23:24Z mkchew $
 #
 # Kusu Text Installer Kits Setup Screen.
 #
@@ -134,19 +134,41 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Store the kits.')
         kit_list = self.kitops.listKit()
         names = [kit.rname for kit in kit_list]
-        os = [kit.rname for kit in kit_list if kit.isOS]
+        os_kit = [kit for kit in kit_list if kit.isOS]
+        if os_kit: os_kit = os_kit[0]
         missing = []
+        incompatible = []
 
         if 'base' not in names:
             missing.append('base')
-        if not os:
-            missing.append(self.kiprofile['OS'])
+        if not os_kit:
+            errMsg = ('Cannot continue installation unless an OS kit is installed. '
+                      'Please refer to your documentation for the list of supported Operating Systems.')
+            self.selector.currentStep -= 1
+            self.selector.popupMsg('Missing an OS Kit', errMsg)
+            return
         if missing:
-            errMsg = 'Cannot continue installation unless the following ' + \
-                     'kits are added:'
+            errMsg = ('Cannot continue installation unless the following '
+                      'kits are added:')
             for name in missing: errMsg += '\n\t%s' % name
             self.selector.currentStep -= 1
             self.selector.popupMsg('Missing Kits', errMsg)
+            return
+
+        for kit in kit_list:
+            if not kit.isOS:
+                components = self.kitops.getKitComponents(kit.kid, os_kit.os)
+                if not components:
+                    incompatible.append(kit.rname)
+
+        if incompatible:
+            os = os_kit.os
+            errMsg = ('Kits incompatible with the OS Kit (%s-%s.%s-%s) are detected. '
+                      'Please remove the following kits to continue:') % \
+                      (os.name, os.major, os.minor, os.arch)
+            for name in incompatible: errMsg += '\n\t%s' % name
+            self.selector.currentStep -= 1
+            self.selector.popupMsg('Incompatible Kits Found', errMsg)
             return
 
         self.kiprofile.save()
@@ -156,10 +178,10 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
         kl.debug('Network set up.')
         prog_dlg.close()
 
-        #prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
-        #writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
-        #kl.debug('Network time set up.')
-        #prog_dlg.close()
+        prog_dlg = self.selector.popupProgress('Setting Up Network Time', 'Setting up network time...')
+        writeNTP(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
+        kl.debug('Network time set up.')
+        prog_dlg.close()
 
         setInstallFlag(self.kiprofile['Kusu Install MntPt'], self.kiprofile)
         kl.debug('Set the installation flag')
@@ -217,3 +239,23 @@ class KitsScreen(InstallerScreen, profile.PersistentProfile):
                     ng.kernel = profile['kernel']
 
         db.flush()
+
+class KitInformationScreen(InstallerScreen):
+    """This is Kit Information screen."""
+    name = _('Kit Info')
+    kit_descriptions = path('/opt/kusu/etc/kits.txt').text()
+    msg =_('''%s %s includes the following software kits:
+
+%s
+
+* The %s %s media may contain additional kits that are not\
+ listed here. 
+ ''') % ('${KUSU_RELEASE_NAME}', '${VERSION_STR}', kit_descriptions, '${KUSU_RELEASE_NAME}', '${VERSION_STR}')
+    buttons = []
+
+    def drawImpl(self):
+        self.screenGrid = snack.Grid(1, 1)
+        self.screenGrid.setField(snack.TextboxReflowed(self.gridWidth,
+                                               self.msg,maxHeight=9),
+                                 col=0, row=0)
+

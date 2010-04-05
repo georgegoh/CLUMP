@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: listavailmodules.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # List available packages to select for a node group
 #

@@ -1,4 +1,4 @@
-# $Id$
+# $Id: genconfig.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 #   Copyright 2007 Platform Computing Inc
 #
@@ -24,6 +24,7 @@ import string
 from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 
+PLUGINS='/opt/kusu/lib/plugins/genconfig'
 
 class Report:
     """This class will be used to generate various configuration files
@@ -35,67 +36,7 @@ class Report:
         self.user     = 'nobody'
         self.database = 'kusudb'
         self.password = ''
-        self.gettext  = gettext 
-        self.plugins  = []
-
-        query=('select distinct kits.kid '
-               'from nodes, nodegroups, repos, repos_have_kits, kits, appglobals '
-               'where kits.kid = repos_have_kits.kid and '
-               'repos.repoid = repos_have_kits.repoid and '
-               'nodegroups.repoid = repos.repoid and '
-               'nodegroups.ngid = nodes.ngid and '
-               'nodes.name = appglobals.kvalue and '
-               'appglobals.kname = \'PrimaryInstaller\'')
-        db = KusuDB()
-        db.connect(self.database, self.user, self.password)
-        db.execute(query)
-        kitslist = db.fetchall()
-        for kit in kitslist:
-            plug='/depot/kits/%s/plugins/genconfig' % str(kit[0])
-            if os.path.isdir(plug):
-                self.plugins.append(plug)
-
-    def setRepoPlugins(self, repo):
-        query=('select distinct kits.kid '
-               'from repos, repos_have_kits, kits '
-               'where kits.kid = repos_have_kits.kid and '
-               'repos.repoid = repos_have_kits.repoid and '
-               'repos.reponame = \'%s\'' % repo)
-        db = KusuDB()
-        db.connect(self.database, self.user, self.password)
-        db.execute(query)
-        kitslist = db.fetchall()
-        self.plugins = []
-
-        if not kitslist:
-            print "Repository %s does not exist." % repo
-        else:
-            for kit in kitslist:
-                plug='/depot/kits/%s/plugins/genconfig' % str(kit[0])
-                if os.path.isdir(plug):
-                    self.plugins.append(plug)
-
-        
-    def setNGPlugins(self, ngroup):
-        query=('select distinct kits.kid '
-               'from repos, repos_have_kits, kits, nodegroups '
-               'where kits.kid = repos_have_kits.kid and '
-               'repos.repoid = repos_have_kits.repoid and '
-               'repos.repoid = nodegroups.repoid and '
-               'nodegroups.ngname = \'%s\'' % ngroup)
-        db = KusuDB()
-        db.connect(self.database, self.user, self.password)
-        db.execute(query)
-        kitslist = db.fetchall()
-        self.plugins = []
-
-        if not kitslist:
-            print "Nodegroup name %s does not exist." % ngroup
-        else:
-            for kit in kitslist:
-                plug='/depot/kits/%s/plugins/genconfig' % str(kit[0])
-                if os.path.isdir(plug):
-                    self.plugins.append(plug)
+        self.gettext  = gettext
 
 
     def toolHelp(self):
@@ -103,13 +44,12 @@ class Report:
         plugins.  Each plugin must override this method."""
         msg = self.gettext("genconfig_Help")
         print msg
-        
-        for plugin in self.plugins:
-            dirlist = os.listdir(plugin)
-            for file in dirlist:
-                if file[-3:] == '.py' and file[0:2] != '__':
-                    print "%s\t" % file[:-3],
-            
+        global PLUGINS
+        dirlist = os.listdir(PLUGINS)
+        for file in dirlist:
+            if file[-3:] == '.py' and file[0:2] != '__':
+                print "%s\t" % file[:-3],
+        print ""
         sys.exit(0)
 
 
@@ -122,20 +62,20 @@ class Report:
     def run(self, plugin, action, pargs):
         """run - This method is responsible for calling the appropriate interface
         from the plugin"""
-        
-        if self.plugins: 
-            exec "from " + plugin + " import *"
-            pinst = thisReport(self.gettext)
-            if action == 'help':
-                pinst.toolHelp()
-            else:
-                # Get a database connection for the plugin to use
-                pinst.db = KusuDB()
-                pinst.db.connect(self.database, self.user, self.password)       
+    
+        exec "from " + plugin + " import *"
+        pinst = thisReport(self.gettext)
+        if action == 'help':
+            pinst.toolHelp()
 
-                # Run the plugin
-                pinst.runPlugin(pargs)  
-         
+        else:
+            # Get a database connection for the plugin to use
+            pinst.db = KusuDB()
+            pinst.db.connect(self.database, self.user, self.password)
+            
+            # Run the plugin
+            pinst.runPlugin(pargs)  
+
 
     def altDb(self, database, user, password):
         """altDb - Change the database user, password and database"""

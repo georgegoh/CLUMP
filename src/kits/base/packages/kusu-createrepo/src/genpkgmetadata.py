@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 # Copyright 2004 Duke University
 
-# $Id$
+# $Id: genpkgmetadata.py 501 2008-01-29 04:51:15Z hirwan $
 
 
 import os

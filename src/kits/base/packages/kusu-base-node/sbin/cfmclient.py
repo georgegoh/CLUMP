@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id$
+# $Id: cfmclient.py 3431 2010-01-26 06:48:46Z leiai $
 #
 #   Copyright 2007 Platform Computing Inc
 #
@@ -28,7 +28,7 @@ UPDATEPACKAGE = 2
 FORCEFILES    = 4
 UPDATEREPO    = 8
 
-# Set DEBUG to 1 to see debugging info in /var/log/kusu/cfmclient.log
+# Set DEBUG to 1 to see debugging info in /var/log/cfmclient.log
 DEBUG = 1
 
 import os
@@ -60,7 +60,8 @@ from primitive.support import osfamily
 PLUGINS='/opt/kusu/lib/plugins/cfmclient'
 CFMFILE='/etc/cfm/.cfmsecret'
 YUMCONF='/var/cache/yum/yum.conf'
-LOGFILE='/var/log/kusu/cfmclient.log'
+LOGFILE='/var/log/cfmclient.log'
+CHGLIST='/opt/kusu/etc/cfmchanges.lst'
 
 # When the cfmclient is updating files on itself it will
 # not replace the files in the IGNORELST
@@ -270,8 +271,8 @@ class CFMClient:
         except:
             self.log("ERROR:  Unable to determine NGID.  Got: %s\n" % self.ngid)
             self.ngid = 0
-        
-            
+        self.insttype = self.getProfileVal('NII_INSTALLTYPE').strip()
+
 
     def __haveLocalAccess(self):
         """__haveLocalAccess - This function will determine if the CFMBaseDir is
@@ -364,6 +365,10 @@ class CFMClient:
             os.system('cp \"%s\" \"%s\" >/dev/null 2>&1' % (cfmpath, tmpfile))
 
         else:
+            if self.bestinstaller.lower() == 'self' and os.path.exists(self.CFMBaseDir):
+                self.log("INFO: First boot not completed so CFM is not ready. Exiting.\n")
+                sys.exit(0)
+
             # Copy the file from one of the installers.  Make the URL
             if cfmfile:
                 url = "http://%s/cfm/%s" % (self.bestinstaller, source)
@@ -438,7 +443,7 @@ class CFMClient:
                     return -1
             proc.close()
             try:
-                os.rename(tmpfile2, tmpfile)
+            	os.rename(tmpfile2, tmpfile)
             except OSError, e:
                 self.log("ERROR: unable to rename %s to %s: %s" % (tmpfile2, tmpfile, e))
                 return -1
@@ -495,6 +500,24 @@ class CFMClient:
                 )
 
         fp.write(out)
+        # Handle other other RHEL directories
+        if self.osname == 'rhel':
+            out = ('[kusu-installer-Cluster]\n'
+                   'name=%s - Booger - Cluster\n'
+                   'baseurl=http://%s/repos/%s/Cluster/\n' % (self.osname, self.bestinstaller, self.repoid)
+                   )
+            fp.write(out)
+            out = ('[kusu-installer-ClusterStorage]\n'
+                   'name=%s - Booger - ClusterStorage\n'
+                   'baseurl=http://%s/repos/%s/ClusterStorage/\n' % (self.osname, self.bestinstaller, self.repoid)
+                   )
+            fp.write(out)
+            out = ('[kusu-installer-VT]\n'
+                   'name=%s - Booger - VT\n'
+                   'baseurl=http://%s/repos/%s/VT/\n' % (self.osname, self.bestinstaller, self.repoid)
+                   )
+            fp.write(out)
+
         fp.close()
         
     def __runCommand(self, cmd):
@@ -611,7 +634,7 @@ class CFMClient:
             return
        
         cmd = ''
-        if self.osname in ['rhel', 'fedora', 'centos']:
+        if self.osname in osfamily.getOSNames('rhelfamily') + ['fedora']:
             global YUMCONF
             self.__setupForYum()
             cmd = "/usr/bin/yum -y -c %s remove" % YUMCONF
@@ -848,6 +871,22 @@ class CFMClient:
         sorted then run. """
         global PLUGINS
         sys.path.append(PLUGINS)
+
+        # Drop a file listing the changes that have happened
+        try:
+            fptr = open(CHGLIST,'w')
+            if self.newpackages:
+                for i in self.newpackages:
+                    fptr.write("Added %s\n" % i)
+            if self.oldpackages:
+                for i in self.oldpackages:
+                    fptr.write("Removed %s\n" % i)
+            if self.newfiles:
+                for filename, user, group, mode, action, md5sum in self.newfiles:
+                    fptr.write("New_file %s\n" % filename)
+            fptr.close()
+        except:
+            self.log("ERROR Failed to open: %s\n" % CHGLIST)
         
         flist = glob.glob('%s/*' % PLUGINS)
         if len(flist) == 0:
@@ -856,11 +895,13 @@ class CFMClient:
         flist.sort()
 
         for plugin in flist:
-            if plugin[-7:] == '.remove':
+            if plugin.endswith('.remove') or plugin.endswith('.pyc') or plugin.endswith('.pyo'):
                 continue
             self.log("Running plugin: %s\n" % plugin)
-            os.system('/bin/sh %s >/dev/null 2>&1' % plugin)
-
+            if plugin.endswith('.py'):
+                os.system('/usr/bin/python %s >/dev/null 2>&1' % plugin)
+            else:
+                os.system('/bin/sh %s >/dev/null 2>&1' % plugin)
 
     def __removeDeps(self):
         """__removeDeps - Run any plugin found in the PLUGINS directory that
@@ -888,6 +929,10 @@ class CFMClient:
     def updatePackages (self):
         """updatepackages - Update packages"""
         self.log("Updating Packages\n")
+        if hasattr(self, 'insttype') and self.insttype == 'multiboot':
+            self.log("Node is in multiboot nodegroup, skipping package updates ...")
+            return 0
+
         if os.path.exists(self.packagelst):
             os.rename(self.packagelst, '%s.ORIG' % self.packagelst)
         attr = (self.packagelst, 'root', 'root', 0600)
@@ -911,7 +956,6 @@ class CFMClient:
                 self.__removePackages()
                 self.__removeDeps()
                 self.__installPackages()
-                self.__runPlugins()
                 if os.path.exists('%s.ORIG' % self.packagelst):
                     os.unlink('%s.ORIG' % self.packagelst)
             except:
@@ -936,8 +980,6 @@ class CFMClient:
         self.__getFile('cfmfiles.lst', attr, 1)
         self.__findOlderFiles(force)
         self.__installNewFiles()
-        if len(self.newfiles):
-            self.__runPlugins()
 
 
     def updateRepo (self):
@@ -947,16 +989,13 @@ class CFMClient:
         self.__haveLocalAccess()
 
         # Just running:  yum update
-        if self.osname in ['rhel', 'fedora', 'centos']:
+        if self.osname in osfamily.getOSNames('rhelfamily') + ['fedora']:
             global YUMCONF
             self.__setupForYum()
 
-            cmd = "/usr/bin/yum -y -c %s clean metadata >> %s 2>&1" % (YUMCONF, LOGFILE)
-            self.__runCommand2(cmd)
-
             cmd = "/usr/bin/yum -y -c %s clean all >> %s 2>&1" % (YUMCONF, LOGFILE)
             self.__runCommand2(cmd)
-            
+
             cmd = "/usr/bin/yum -y -c %s update >> %s 2>&1" % (YUMCONF, LOGFILE)
             self.__runCommand2(cmd)
 
@@ -964,6 +1003,7 @@ class CFMClient:
             self.__setupZypperSource()
             cmd = "echo y | %s >> %s 2>&1" % (Dispatcher.get('zypper_update_cmd'), LOGFILE)
             self.__runCommand2(cmd)
+
 
     def run (self):
         """run - Entry point for CFM client"""
@@ -973,7 +1013,11 @@ class CFMClient:
         if os.geteuid():
             print "ERROR:  Only root can run this tool\n"
             sys.exit(-1)
-            
+           
+        # Delete changed file
+        if os.path.exists(CHGLIST):
+           os.unlink(CHGLIST)
+ 
         if self.installers[0] != 'self':
             self.setupNIIVars()
         else:
@@ -1004,7 +1048,7 @@ class CFMClient:
             self.repoid = 1000
 
             # Exit if os is not supported
-            if not (self.osname in ['rhel', 'centos', 'fedora', 'scientificlinux', 'sles', 'opensuse', 'suse']):
+            if not (self.osname in osfamily.getOSNames('rhelfamily') + ['fedora', 'sles', 'opensuse', 'suse']):
                 sys.exit(-1)
 
             self.CFMBaseDir = '/opt/kusu/cfm'
@@ -1028,6 +1072,13 @@ class CFMClient:
 
         if self.type & UPDATEPACKAGE:
             self.updatePackages()
+
+        if (self.type & UPDATEPACKAGE) or (self.type & UPDATEFILE):
+            if (self.type & UPDATEFILE) and len(self.newfiles):
+                self.__runPlugins()
+            elif self.type & UPDATEPACKAGE:
+                self.__runPlugins()
+            
 
         if self.type & UPDATEREPO:
             self.updateRepo()

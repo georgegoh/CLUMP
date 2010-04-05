@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: setup.py 1532 2007-06-22 04:56:43Z hirwan $
 
 import sys
 if "--setuptools" in sys.argv:

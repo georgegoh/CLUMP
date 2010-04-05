@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: repo.py 3049 2009-10-07 13:41:31Z abuck $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -95,13 +95,7 @@ class BaseRepo(object):
     def getContribPath(self):
         """Get the contrib path for the repository"""
 
-        repo = self.db.Repos.select_by(repoid = self.repoid)[0]
-        os_name = repo.os.name
-        os_major = repo.os.major
-        os_minor = repo.os.minor
-        os_arch = repo.os.arch
-        
-        return self.prefix / self.contrib_root / os_name / os_major / os_arch
+        return self.prefix / self.contrib_root / str(self.repoid)
 
     def getKitPath(self, kid):
         """Get the kit path given the name, version and arch"""
@@ -524,6 +518,9 @@ class SuseYastRepo(BaseRepo):
                 (self.repo_path / dir).makedirs()
             except: pass
 
+        if not self.getContribPath().exists():
+            self.getContribPath().makedirs()
+
     def make(self, ngname):
         """makes the repository"""
 
@@ -563,16 +560,19 @@ class SuseYastRepo(BaseRepo):
         if not self.repoid:
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
        
-        self.clean(self.repoid)
-        self.makeRepoDirs()
-        self.markStale()
-        self.copyOSKit()
-        self.copyKitsPackages()
-        self.copyContribPackages()
-        self.makeMetaInfo()
-        self.copyKusuNodeInstaller()
-        self.verify()
-        self.markClean()
+        try:
+            self.clean(self.repoid)
+            self.makeRepoDirs()
+            self.markStale()
+            self.copyOSKit()
+            self.copyKitsPackages()
+            self.copyContribPackages()
+            self.makeMetaInfo()
+            self.copyKusuNodeInstaller()
+            self.verify()
+            self.markClean()
+        except Exception, e:
+            raise e
 
         return self
 
@@ -770,6 +770,9 @@ class RedhatYumRepo(BaseRepo):
             try:
                 (self.repo_path / dir).makedirs()
             except: pass
+
+        if not self.getContribPath().exists():
+            self.getContribPath().makedirs()
 
     def copyRamDisk(self):
         pass
@@ -1463,16 +1466,6 @@ class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
         """Make the autoinstall script for the repository"""
         pass #openSUSE nodeinstaller does not require fake autoinst.xml
 
-    def getContribPath(self):
-        """Get the contrib path for the repository"""
-
-        repo = self.db.Repos.select_by(repoid = self.repoid)[0]
-        os_name = repo.os.name
-        os_major = repo.os.major
-        os_minor = repo.os.minor
-        os_arch = repo.os.arch
-        
-        return self.prefix / self.contrib_root / os_name / os_major / os_minor / os_arch
 
 class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):

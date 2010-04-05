@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: timezones.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Timezone values for rhel/centos/scientificlinux
 #
@@ -8,7 +8,7 @@
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
-tzDefault = 'Asia/Singapore'
+tzDefault = 'America/Toronto'
 
 tzMap = \
 {   'Africa/Abidjan': 'Africa/Abidjan',

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: mkinitrd-templates 4116 2009-01-30 14:16:28Z ltsai $
 
 from kusu.core.database import DB 
 from primitive.system.software.dispatcher import Dispatcher
@@ -52,19 +52,22 @@ def run(repoid):
 
     os_tup = (_os.name, _os.major, _os.arch)
     dirname = Dispatcher.get('yum_repo_subdir', 'Server', os_tuple=os_tup)
-    repo_path = repos_root / str(repo.repoid) 
+    repo_path = repos_root / str(repo.repoid) / dirname[1:-1]
 
-    conf = """[buildinitrd]
+    conf = """[main]
+reposdir=/dev/null
+tolerant=1
+
+[buildinitrd]
 name=initrd
-baseurl=file://%s%s
+baseurl=file://%s
 enabled=1
-gpgcheck=0""" % (repo_path, dirname)
+gpgcheck=0""" % repo_path
 
     f = open(yumconf, 'w')
     f.write(conf)
     f.close()
 
-    print conf
     t =  Template(file=str(template), 
                   searchList=[{'MAKEDEV': makedev, 
                                'yumconf': yumconf, 'FAKEROOT':tmpdir, 'ARCH': _os.arch}])

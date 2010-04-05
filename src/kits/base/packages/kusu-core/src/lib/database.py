@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: database.py 3532 2010-02-21 15:06:57Z ankit $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -17,7 +17,7 @@ from kusu.util.errors import *
 import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support.osfamily import getOSNames, matchTuple
-from kusu.util.kits import processKitInfo, SUPPORTED_KIT_APIS
+from kusu.buildkit import processKitInfo
 from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
@@ -83,9 +83,15 @@ class AppGlobals(BaseTable):
 class Components(BaseTable):
     cols = ['kid', 'cname', 'cdesc', 'os', 'ngtypes']
 
-    def getNGTypes(self):
-        if not self.ngtypes or self.ngtypes == '*' or self.ngtypes.strip() == '':
+    def getNGTypes(self, match_empty_ngtypes=True):
+        # match_empty_ngtypes=False is used to mimic kitops' component ngtypes (Kit ASK 0.2 bug)
+        #     i.e. '*' denotes match against All ngtypes; and None or '' denote match against None
+        if self.ngtypes == '*' or \
+            (match_empty_ngtypes and (not self.ngtypes or self.ngtypes.strip() == '')):
             return ['installer','compute','compute-diskless', 'compute-imaged', 'other']
+
+        elif not self.ngtypes or self.ngtypes.strip() == '':
+            return []
         else:
             return self.ngtypes.split(';')
 
@@ -133,7 +139,7 @@ class Kits(BaseTable):
                    comp.os.strip() == '' or comp.os == 'NULL']
             components_list.extend(lst)
 
-        elif infokit['api'] in SUPPORTED_KIT_APIS:
+        elif '0.2' == infokit['api']:
             comp_dict = {}
             for db_comp in self.components:
                 comp_dict[db_comp.cname] = db_comp
@@ -178,7 +184,7 @@ class Kits(BaseTable):
                 else:
                     os_set.add(comp.os.lower())
 
-        elif infokit['api'] in SUPPORTED_KIT_APIS:
+        elif '0.2' == infokit['api']:
             for comp in infocomps:
                 try:
                     for tup in comp['os']:
@@ -276,13 +282,16 @@ class NodeGroups(BaseTable):
             'kparams', 'type']
     types = ['installer', 'compute', 'compute-imaged', 'compute-diskless', 'other']
 
-    def getEligibleComponents(self):
+    def getEligibleComponents(self, match_empty_ngtypes=True):
         """Returns a list of components eligible for a nodegroup"""
 
         if self.repoid is None:
             return []
 
-        return self.repo.getEligibleComponents(ngtype=self.type)
+        # match_empty_ngtypes=False is used to mimic kitops' component associability criteria.
+        #     It filters out components with None or '' ngtype.
+        # match_empty_ngtypes=True matches components with None or '' ngtype.
+        return self.repo.getEligibleComponents(ngtype=self.type, match_empty_ngtypes=match_empty_ngtypes)
 
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
@@ -293,12 +302,12 @@ class NodeGroups(BaseTable):
 class Nodes(BaseTable):
     cols = ['ngid', 'name', 'kernel', 'initrd', \
             'kparams', 'state', 'bootfrom', 'lastupdate', \
-            'rack', 'rank']
+            'rack', 'rank', 'uid']
     def __repr__(self):
-        return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
+        return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.ngid, self.name, self.kernel,
                 self.initrd, self.kparams, self.state, self.bootfrom,
-                self.lastupdate, self.rack, self.rank)
+                self.lastupdate, self.rack, self.rank, self.uid)
 
 class Packages(BaseTable):
     cols = ['ngid', 'packagename']
@@ -334,7 +343,7 @@ class Repos(BaseTable):
 
     oskit = property(getOSKit)
 
-    def getEligibleComponents(self, ngtype=None):
+    def getEligibleComponents(self, ngtype=None, match_empty_ngtypes=True):
         """Returns a list of components eligible for a nodegroup type.
            If ngtype is None, it returns all components in the repo.
         """
@@ -348,7 +357,10 @@ class Repos(BaseTable):
                 matched = kit.getMatchingComponents(self.os)
                 eligible = matched
                 if ngtype is not None:
-                    eligible = [comp for comp in matched if ngtype in comp.getNGTypes()]
+                    # match_empty_ngtypes=False is used to mimic kitops' component associability criteria.
+                    #     It filters out components with None or '' ngtype.
+                    # match_empty_ngtypes=True matches components with None or '' ngtype.
+                    eligible = [comp for comp in matched if ngtype in comp.getNGTypes(match_empty_ngtypes=match_empty_ngtypes)]
                 components_list.extend(eligible)
 
         return components_list
@@ -377,6 +389,13 @@ class OS(BaseTable):
                (self.__class__.__name__, self.osid, self.name, \
                 self.major, self.minor, self.arch)
 
+class AlterEgos(BaseTable):
+    cols = ['mac', 'ngid', 'name', 'ip', 'rack', 'rank', 'bmcip']
+    def __repr__(self):
+        return '%s(%r, %r, %r, %r, %r, %r, %r)' % \
+                (self.__class__.__name__, self.mac, self.ngid, \
+                 self.name, self.ip, self.rack, self.rank, self.bmcip)
+
 class DB(object):
     tableClasses = {'ReposHaveKits' : ReposHaveKits,
                     'AppGlobals' : AppGlobals,
@@ -394,7 +413,8 @@ class DB(object):
                     'Partitions' : Partitions,
                     'Scripts' : Scripts,
                     'Repos' : Repos,
-                    'OS' : OS}
+                    'OS' : OS,
+                    'AlterEgos' : AlterEgos}
 
     __passfile = os.environ.get('KUSU_ROOT', '') + '/etc/db.passwd'
     __postgres_passfile = os.environ.get('KUSU_ROOT', '') + '/etc/pgdb.passwd'
@@ -407,11 +427,8 @@ class DB(object):
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
 
-        apache_password = ''
-        if username == 'apache':
-            apache_password = self.__getPasswd()
-        if apache_password:
-            password = apache_password
+        if username == 'apache' and not password:
+            password = self.__getPasswd()
 
         if driver == 'sqlite':
             if db:
@@ -443,9 +460,9 @@ class DB(object):
                     password = postgres_password
 
             if not port:
-               port = '5432'
+                port = '5432'
 
-            engine_src = 'postgres://%s:%s@%s:%s/%s' % \
+                engine_src = 'postgres://%s:%s@%s:%s/%s' % \
                              (username, password, host, port, db)
 
         else:
@@ -654,6 +671,7 @@ class DB(object):
             sa.Column('lastupdate', sa.String(20)),
             sa.Column('rack', sa.Integer, sa.PassiveDefault('0')),
             sa.Column('rank', sa.Integer, sa.PassiveDefault('0')),
+            sa.Column('uid', sa.String(255)),
             mysql_engine='InnoDB')
         sa.Index('nodes_FKIndex1', nodes.c.ngid)
         self.__dict__['nodes'] = nodes
@@ -732,6 +750,19 @@ class DB(object):
             sa.Column('arch', sa.String(20)),
             mysql_engine='InnoDB')
         self.__dict__['os'] = os
+
+        alteregos = sa.Table('alteregos', self.metadata,
+            sa.Column('alteregoid', sa.Integer, primary_key=True, autoincrement=True),
+            sa.Column('mac', sa.String(45)),
+            sa.Column('ngid', sa.Integer),
+            sa.Column('name', sa.String(45)),
+            sa.Column('ip', sa.String(20)),
+            sa.Column('rack', sa.Integer, sa.PassiveDefault('0')),
+            sa.Column('rank', sa.Integer, sa.PassiveDefault('0')),
+            sa.Column('bmcip', sa.String(20)),
+            mysql_engine='InnoDB')
+        sa.Index('alteregos_FKIndex1', alteregos.c.alteregoid)
+        self.__dict__['alteregos'] = alteregos
 
         self._assignMappers()
 
@@ -864,6 +895,10 @@ class DB(object):
                                           entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
+        alteregos = sa.Table('alteregos', self.metadata, autoload=True)
+        assign_mapper(self.ctx, AlterEgos, alteregos,
+                      entity_name=self.entity_name)
+
     def bootstrap(self):
         """bootstrap the necessary tables and fields"""
 
@@ -892,32 +927,37 @@ class DB(object):
         if kusu_dist:
             compute.kparams = installer.kparams = Dispatcher.get('kparams', default='')
 
-        # more nodegroups
-        imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
-                            installtype='disked', type='compute-imaged')
-        diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
-                              installtype='diskless', type='compute-diskless')
+        if kusu_dist in getOSNames('rhelfamily'):
+            # more nodegroups
+            imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
+                                installtype='disked', type='compute-imaged')
+            diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
+                                  installtype='diskless', type='compute-diskless')
+
+            # Set kernel parameters for diskless and imaged nodegroups.
+            diskless.kparams = imaged.kparams = compute.kparams
+  
+            # creates the necessary modules for image and diskless nodes
+            for index, mod in enumerate(Dispatcher.get('diskless_modules', default=[])):
+                diskless.modules.append(Modules(loadorder=index+1, module=mod))
+
+            for index, mod in enumerate(Dispatcher.get('imaged_modules', default=[])):
+                imaged.modules.append(Modules(loadorder=index+1, module=mod))
+
+            # Creates the necessary pkg list for image and diskless nodes
+            for pkg in Dispatcher.get('diskless_packages', default=[]):
+                diskless.packages.append(Packages(packagename=pkg))
+
+            for pkg in Dispatcher.get('imaged_packages', default=[]):
+                imaged.packages.append(Packages(packagename=pkg))
+
         NodeGroups(ngname='unmanaged', nameformat='device#NNN',
                    installtype='unmanaged', type='other')
 
         # Create the master installer node
         now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        master_node = Nodes(name='master', state='Installed', lastupdate=now, bootfrom=true)
+        master_node = Nodes(name='master', state='Installed', lastupdate=now, bootfrom=true, uid='')
         installer.nodes.append(master_node)
-
-        # creates the necessary modules for image and diskless nodes
-        for index, mod in enumerate(Dispatcher.get('diskless_modules', default=[])):
-            diskless.modules.append(Modules(loadorder=index+1, module=mod))
-
-        for index, mod in enumerate(Dispatcher.get('imaged_modules', default=[])):
-            imaged.modules.append(Modules(loadorder=index+1, module=mod))
-
-        # Creates the necessary pkg list for image and diskless nodes
-        for pkg in Dispatcher.get('diskless_packages', default=[]):
-            diskless.packages.append(Packages(packagename=pkg))
-
-        for pkg in Dispatcher.get('imaged_packages', default=[]):
-            imaged.packages.append(Packages(packagename=pkg))
 
         # Create the partition entries for the compute node
         # REGULAR PARTITIONING
@@ -978,16 +1018,19 @@ class DB(object):
 ##            ng.partitions.append(donotpreserve2)
 ##            ng.partitions.append(donotpreserve3)
 #            ng.partitions.append(donotpreserve4)
+
         # Imaged Partitioning
-        boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
-                          size='100', device='1', preserve=false)
-        swap = Partitions(fstype='linux-swap', partition='2',
-                          size='8000', device='1', preserve=false)
-        root = Partitions(mntpnt='/', fstype=default_fstype, partition='3',
-                          size='24000', device='1', preserve=false)
-        imaged.partitions.append(boot)
-        imaged.partitions.append(swap)
-        imaged.partitions.append(root)
+        if kusu_dist in getOSNames('rhelfamily'):
+            boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
+                              size='100', device='1', preserve=false)
+            swap = Partitions(fstype='linux-swap', partition='2',
+                              size='8000', device='1', preserve=false)
+            root = Partitions(mntpnt='/', fstype=default_fstype, partition='3',
+                              size='24000', device='1', preserve=false)
+
+            imaged.partitions.append(boot)
+            imaged.partitions.append(swap)
+            imaged.partitions.append(root)
 
         # Installer Partitioning Schema
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
@@ -1029,8 +1072,12 @@ class DB(object):
         AppGlobals(kname='DEPOT_AUTOINST_ROOT', kvalue='/depot/repos/instconf')
         AppGlobals(kname='PIXIE_ROOT', kvalue='/tftpboot/kusu')
         AppGlobals(kname='PROVISION', kvalue='KUSU')
-        AppGlobals(kname='KUSU_VERSION', kvalue='1.2')
+        AppGlobals(kname='PRESERVE_NODE_IP', kvalue='0')
+        AppGlobals(kname='MASTER_UUID', kvalue='KUSU')
+        AppGlobals(kname='KUSU_VERSION', kvalue='${VERSION_STR}')
         AppGlobals(kname='InstNum', kvalue='')
+        AppGlobals(kname='LMGRD_PATH', kvalue='')
+        AppGlobals(kname='LM_LICENSE_FILE', kvalue='')
         Repos(repoid=999, reponame="DELETEME")
         self.flush()
         if self.driver =='postgres':
@@ -1142,6 +1189,10 @@ class DB(object):
 
         return sa.create_session()
 
+    def expire_all(self):
+        sess = self.ctx.get_current()
+        sess.clear()
+
     def flush(self):
         """Flushes the current session context."""
 
@@ -1166,9 +1217,9 @@ class DB(object):
                 other_db.dropDatabase()
             except:
                 pass
-        other_db.createDatabase()
-
-        other_db.dropTables()
+        if not other_db.driver == 'sqlite':
+            other_db.createDatabase()
+            other_db.dropTables()
 
         # Creates the tables
         other_db.createTables()
@@ -1176,7 +1227,7 @@ class DB(object):
         # Copy them in order to preserve relationship
         # Order by primary, secondary(1-M) and
         # junction tables(M-N)
-        for table in ['AppGlobals', 'Repos', 'OS', 'Kits', 'Networks', \
+        for table in ['AppGlobals', 'AlterEgos', 'Repos', 'OS', 'Kits', 'Networks', \
                       'Components', 'NodeGroups', 'Modules', \
                       'Nodes', 'Packages', 'Partitions', 'Scripts', 'DriverPacks', \
                       'Nics', 'NGHasComp', 'ReposHaveKits', 'NGHasNet']:
@@ -1226,6 +1277,26 @@ class DB(object):
             return [ tupl[0] for tupl in res]
         else:
             return None # programatically, there can be no sequences.
+
+    def is_connection_valid(self):
+        """Checks the DB connection.
+
+        Returns True if the connection is valid, False otherwise."""
+
+        if self.driver == 'postgres':
+            password = self.__getPasswd(user='postgres')
+            env = os.environ.copy()
+            env['PGPASSWORD'] = password
+
+            # We execute an empty command. If the DB isn't yet ready, we'll get
+            # a non-zero return code.
+            cmd = ['psql', '-p', self.port, 'postgres', 'postgres', '-c', '']
+            checkP = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            o, e = checkP.communicate()
+            return 0 == checkP.returncode
+
+        # Other DBs not yet implemented
+        return True
 
     def postgres_update_sequences(self,seq):
         tbl_column_pairs = [  tuple(l.split('_')[:2])   for l in seq ]
@@ -1320,5 +1391,45 @@ def findKitsFromNodeGroup(db, columns=[], kitargs={}, ngargs={}):
         elif not db.kits.c.has_key(arg):
             raise NoSuchColumnError, \
                 "Invalid column '%s' for table '%s'" % (arg, db.kits.name)
+
+    return stmt.execute().fetchall()
+
+def findNodeGroupsFromComponent(db, columns=[], compargs={}, ngargs={}):
+    """
+    Selects nodegroups which has associated components
+    SELECT cols FROM nodegroups
+    WHERE components <-> ng_has_comp <-> nodegroups
+
+    columns -- a list of kits columns to select; set to [] to select all.
+    compargs -- a dictionary of components columns to match in WHERE clause
+    ngargs -- a dictionary of nodegroups columns to match in WHERE clause
+    """
+
+    if not columns:
+        stmt = db.nodegroups.select()
+    else:
+        stmt = sa.select([getattr(db.nodegroups.c, col) for col in columns])
+
+    stmt.distinct = True
+    stmt.append_from(
+        db.nodegroups.join(db.ng_has_comp,
+                           db.nodegroups.c.ngid == db.ng_has_comp.c.ngid).join(
+                           db.components,
+                           db.ng_has_comp.c.cid == db.components.c.cid))
+
+    for arg in ngargs:
+        if db.nodegroups.c.has_key(arg) and ngargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.nodegroups.c, arg) == \
+                                    ngargs[arg])
+        elif not db.nodegroups.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.nodegroups.name)
+
+    for arg in compargs:
+        if db.components.c.has_key(arg) and compargs[arg] is not None:
+            stmt.append_whereclause(getattr(db.components.c, arg) == compargs[arg])
+        elif not db.components.c.has_key(arg):
+            raise NoSuchColumnError, \
+                "Invalid column '%s' for table '%s'" % (arg, db.components.name)
 
     return stmt.execute().fetchall()

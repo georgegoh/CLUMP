@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kusu-buildkit.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright (C) 2007 Platform Computing Inc
 #
@@ -17,25 +17,24 @@
 #
 # 
 
-%define subversion 3
-
-Summary: Kit building for Kusu
+Summary: Kit building for PCM
 Name: kusu-buildkit
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
 BuildArch: noarch
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-URL: http://www.osgdc.org
+URL: http://www.osgdc.org/
 BuildRequires: python
 Requires: mkisofs
 Requires: rpm-build
 
 %description
-This package contains a tool to make kits for Kusu.
+This package contains a tool to make kits for PCM.
 
 %prep
 %setup -q -n %{name}
@@ -45,27 +44,25 @@ This package contains a tool to make kits for Kusu.
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
-install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit/strategies
 install -d $RPM_BUILD_ROOT/opt/kusu/bin
 install -d $RPM_BUILD_ROOT/opt/kusu/etc/templates
 install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
 
-install -m755 bin/buildkit $RPM_BUILD_ROOT/opt/kusu/bin
+install -m755 bin/kusu-buildkit $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/builder.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
-install -m644 lib/buildkit_handlers.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/buildkit_makehandlers.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/buildkit_newhandlers.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/checker.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/kitsource01.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/kitsource02.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/methods.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
-install -m644 lib/strategy.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/tool.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/tool01.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
+install -m644 lib/tool02.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit
-
-install -m644 lib/strategies/kitsource*.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit/strategies
-install -m644 lib/strategies/tool*.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit/strategies
-install -m644 lib/strategies/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/buildkit/strategies
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
 install -m644 doc/buildkit.txt $RPM_BUILD_ROOT/opt/kusu/share/doc/buildkit-%{version}
 install -m644 etc/templates/*.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
-
 %pre
 
 %post
@@ -75,10 +72,9 @@ install -m644 etc/templates/*.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 %postun
 
 %files
-/opt/kusu/lib/python/kusu/buildkit/strategies/*
 /opt/kusu/lib/python/kusu/buildkit/*
-/opt/kusu/bin/buildkit
-/opt/kusu/etc/templates/*.tmpl
+/opt/kusu/bin/kusu-buildkit
+%config(noreplace) /opt/kusu/etc/templates/*.tmpl
 
 %doc /opt/kusu/share/doc/buildkit-%{version}/COPYING
 %doc /opt/kusu/share/doc/buildkit-%{version}/buildkit.txt
@@ -87,8 +83,17 @@ install -m644 etc/templates/*.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Thu Mar 26 2009 George Goh <ggoh@osgdc.org> 2.0-1
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
 
+* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-5
+- Reving tar file for RH
+
+* Thu Mar 27 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
+- Remove AutoReq tag at the request of Red Hat
+
+* Thu Mar 20 2008 Mike Frisch <mfrisch@platform.com> 5.1-3
+- Change location of Kusu installer lock file in templates
+
+* Mon Jan 2 2008 Shawn Starr <sstarr@platform.com> 5.1-0
+- Initial release

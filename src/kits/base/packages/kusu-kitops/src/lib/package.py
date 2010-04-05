@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #  KUSU Package API
 # 
-#  $Id$
+#  $Id: package.py 2110 2009-02-27 21:36:10Z ggoh $
 # 
 #  Copyright 2007 Platform Computing Corporation
 # 

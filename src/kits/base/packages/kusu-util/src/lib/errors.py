@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: errors.py 3517 2010-02-12 09:19:08Z kunalc $
 #
 # Kusu Exceptions.
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-#
+# 
 
 # General
 class KusuError(Exception): pass
@@ -25,6 +25,7 @@ class NotImplementedError(KusuError): pass
 class UnsupportedURIError(KusuError): pass
 class UnsupportedOS(KusuError): pass
 class InvalidArguments(KusuError): pass
+class ConflictingOptionError(KusuError): pass
 
 # partitiontool
 class PartitionSchemaError(KusuError): pass
@@ -85,19 +86,16 @@ class TemplateNotFoundError(KusuError): pass
 class UnableToGenerateFileFromTemplateError(KusuError): pass
 
 # kitops
-class KitopsError(KusuError): pass
-class CannotMountKitMediaError(KitopsError): pass
-class UnrecognizedKitMediaError(KitopsError): pass
-class KitAlreadyInstalledError(KitopsError): pass
-class InvalidKitInfoError(KitopsError): pass
-class ComponentAlreadyInstalledError(KitopsError): pass
-class KitNotInstalledError(KitopsError): pass
-class InstallKitRPMError(KitopsError): pass
-class CopyOSMediaError(KitopsError): pass
-class DeleteKitsError(KitopsError): pass
-class UpdateKitError(KitopsError): pass
-class KitScriptError(KitopsError): pass
-class KitPackageError(KitopsError): pass
+class CannotMountKitMediaError(KusuError): pass
+class UnrecognizedKitMediaError(KusuError): pass
+class KitAlreadyInstalledError(KusuError): pass
+class InvalidKitInfoError(KusuError): pass
+class ComponentAlreadyInstalledError(KusuError): pass
+class KitNotInstalledError(KusuError): pass
+class InstallKitRPMError(KusuError): pass
+class CopyOSMediaError(KusuError): pass
+class DeleteKitsError(KusuError): pass
+class UnsupportedKitAPIError(KusuError): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
@@ -197,5 +195,9 @@ class RPMComparisonError(KusuError): pass
 # driverpatch
 class UnknownKernelModuleAsset(KusuError): pass
 
-# buildimage
-class YumFailedToRunError(KusuError): pass
+# kusu-appglobals
+class InvalidMetaXMLError(KusuError): pass
+class UnknownSettingNameError(KusuError): pass
+class SettingNotFoundError(KusuError): pass
+class InvalidAppglobalValueError(KusuError): pass
+

@@ -11,6 +11,9 @@
 envfile="/tmp/yast-current-environment.$$.tmp"
 /usr/bin/env > $envfile
 
+# link /sbin/biosdecode from dmidecode
+/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
 export TERM=linux
 export LANG="en_US.UTF-8"
 source /opt/kusu/bin/kusuenv.sh

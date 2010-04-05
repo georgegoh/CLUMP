@@ -6,6 +6,7 @@ from path import path
 import tempfile
 import subprocess
 import os
+import sys
 from primitive.system.software.dispatcher import Dispatcher
 from kusu.repoman.repofactory import RepoFactory
 from kusu.repoman.genupdates import GenUpdatesFactory
@@ -20,6 +21,11 @@ class GenUpdatesImg(KusuApp):
         dbuser = 'apache'
         
         self.dbs = database.DB(dbdriver, dbdatabase, dbuser)
+
+        provision = self.dbs.AppGlobals.select_by(kname = 'PROVISION')[0].kvalue
+        if provision and provision.lower() != 'kusu':
+            sys.stderr.write('Kusu provisioning has been disabled. genupdatesimg will not run.\n')
+            sys.exit(1)
 
         self.parser.add_option('-r', '--repoid', action='store', help='Target repository id')
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: kits_sourcehandlers.py 3049 2009-10-07 13:41:31Z abuck $
 #
 # Kusu Text Installer New Partition Setup Screen.
 #
@@ -12,6 +12,8 @@ from kusu.util.errors import *
 from kusu.ui.text.navigator import NAV_BACK
 import kusu.util.log as kusulog
 import os
+import md5
+from primitive.support import osfamily
 
 try:
     import subprocess
@@ -112,7 +114,7 @@ def addKitFromCDAction(baseScreen, kitops, cdrom):
             
             baseScreen.selector.popupMsg('Cannot Add Additional OS Kit', 'Cannot add more than one OS kit ' + \
                                          'during installation. ' + \
-                                         'You can add additional OS kit using kitops later.')
+                                         'You can add additional OS kit using kusu-kitops later.')
             
             return
 
@@ -164,8 +166,8 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     err_list = []
     ostype = distro.ostype    
 
-    if kiprofile['OS'] in ['rhel', 'centos', 'scientificlinux']:
-        if ostype in ['rhel', 'centos', 'scientificlinux']:
+    if kiprofile['OS'] in osfamily.getOSNames('rhelfamily'):
+        if ostype in osfamily.getOSNames('rhelfamily'):
             pass
         else:
             err_list.append('OS:%s Media OS:%s' % (kiprofile['OS'].ljust(10),
@@ -178,7 +180,7 @@ def verifyDistroVersionAndArch(kiprofile, distro):
         verified = False
     
     distro_ver = distro.getVersion() or 'Unknown'
-    if ostype in ['rhel', 'centos', 'scientificlinux'] and distro_ver != 'Unknown':
+    if ostype in osfamily.getOSNames('rhelfamily') and distro_ver != 'Unknown':
         distro_ver = distro_ver.split('.')[0]
     if kiprofile['OS_VERSION'] != distro_ver:
         err_list.append('Version:%s Media Version:%s' % (kiprofile['OS_VERSION'].ljust(5),
@@ -195,6 +197,21 @@ def verifyDistroVersionAndArch(kiprofile, distro):
     return verified, err_list
 
 
+def computeChecksum(mountpoint):
+    """ Do a recursive directory listing of the cdrom. use this concatenated
+        listing to perform an md5 checksum as fingerprint for CD
+    """
+    rpms = []
+    for root, dirs, files in os.walk(mountpoint):
+        rpms.extend(files)
+
+    sortedRPMs = sorted(rpms)
+    m = md5.new()
+    m.update(str(sortedRPMs)) #alternatively the list can be flattened into a string: "".join(sortedRPMS)
+
+    return m.hexdigest()
+
+
 def addOSKit(baseScreen, kitops, osdistro, cdrom):
     try:
         kit = kitops.prepareOSKit(osdistro)
@@ -208,9 +225,9 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
         baseScreen.selector.popupMsg('Media Error', e.args[0])
         eject(cdrom)
         return
-        
+
     kit_name = kit['name']
-    if kit_name in ['rhel', 'centos', 'scientificlinux'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos', 'scientificlinux']:
+    if kit_name in osfamily.getOSNames('rhelfamily') and baseScreen.kiprofile['OS'] in  osfamily.getOSNames('rhelfamily'):
         kit_name = baseScreen.kiprofile['OS']
 
     if kit_name != baseScreen.kiprofile['OS'] or \
@@ -227,7 +244,19 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
                                       baseScreen.kiprofile['OS_VERSION'],
                                       baseScreen.kiprofile['OS_ARCH'],
                                       kit_name, kit['ver'], kit['arch']))
+
         return
+
+    disks_cksum = []
+    
+    # Compute the checksum of the very first Kit CD
+    kl.debug('Starting checksum... this might take a while...')
+
+    #Checksum first disk    
+    cur_disk_cksum  = computeChecksum(kitops.mountpoint)
+
+    #store checksum
+    disks_cksum.append(cur_disk_cksum)
 
     baseScreen.kiprofile[baseScreen.profile]['initrd'] = kit['initrd']
     baseScreen.kiprofile[baseScreen.profile]['kernel'] = kit['kernel']
@@ -250,16 +279,32 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
 
             kitops.setKitMedia(cdrom)
             kitops.addKitPrepare()
+
+            # compute the next checksum
+            cur_disk_cksum = computeChecksum(kitops.mountpoint)
+        
+            # If the checksum has already existed (duplicate CD), then prompt user to insert the next CD
+            # for the current OS kit
+            if cur_disk_cksum in disks_cksum:
+                title = _('Duplicate CD Inserted')
+                msg = _('This CD has already been copied. Please press OK to proceed with the installation for this OS kit')
+                buttons = [_('OK')]
+                result = baseScreen.selector.popupDialogBox(title, msg, buttons)
+                if result == buttons[0].lower():
+                    continue
+                
+            disks_cksum.append(cur_disk_cksum)    
+
             d = kitops.getOSDist()
 
             kit_name = d.ostype
-            if kit_name in ['rhel', 'centos', 'scientificlinux'] and baseScreen.kiprofile['OS'] in  ['rhel', 'centos', 'scientificlinux']:
+            if kit_name in osfamily.getOSNames('rhelfamily') and baseScreen.kiprofile['OS'] in osfamily.getOSNames('rhelfamily'):
                 kit_name = baseScreen.kiprofile['OS']
 
             if not d.ostype or not d.getVersion() or not d.getArch() or \
-               kit_name != baseScreen.kiprofile['OS'] or \
-               d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
-               d.getArch() != baseScreen.kiprofile['OS_ARCH']:
+                kit_name != baseScreen.kiprofile['OS'] or \
+                d.getVersion() != baseScreen.kiprofile['OS_VERSION'] or \
+                d.getArch() != baseScreen.kiprofile['OS_ARCH']:
                 prog_dlg.close()
                 baseScreen.selector.popupMsg('Wrong OS Disk', 'Disk does not ' + \
                                              'match selected OS.')
@@ -267,7 +312,6 @@ def addOSKit(baseScreen, kitops, osdistro, cdrom):
             kitops.copyOSKitMedia(kit)
             prog_dlg.close()
 
-    kitops.makeContribDir(kit)
     kitops.finalizeOSKit(kit)
 
 def addKitFromURIForm(baseScreen):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: rcplugin.py 3470 2010-02-03 01:50:50Z mkchew $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -13,6 +13,7 @@ import socket
 import sys
 import traceback
 import time
+import re
 
 sys.path.append("/opt/kusu/lib")
 import platform
@@ -22,14 +23,8 @@ sys.path.append("/opt/kusu/lib/python")
 sys.path.append('/opt/primitive/lib/python2.4/site-packages')
 
 import kusu.util.log as kusulog
-from primitive.svctool.commands import SvcStartCommand
-from primitive.svctool.commands import SvcStatusCommand
-from primitive.svctool.commands import SvcStopCommand
-from primitive.svctool.commands import SvcRestartCommand
-from primitive.svctool.commands import SvcReloadCommand
-from primitive.svctool.commands import SvcEnableCommand
-from primitive.svctool.commands import SvcDisableCommand
-from primitive.svctool.commands import SvcListCommand
+from kusu.util.errors import CommandFailedToRunError
+from kusu.util.tools import service
 try:
     import subprocess
 except:
@@ -79,44 +74,46 @@ class Plugin:
 
         return retval, '', ''
 
-    def service(self, service, action, **kwargs):
-        """ Perform an action on a service.
-            Input args:
-                service - name of service
-                action - one of [start, stop, status,
-                                 restart, reload, enable,
-                                 disable, list]
-                **kwargs - any other keyword/args relevant to the service
-        """
-        command_dict = { 'start' : SvcStartCommand,
-                         'stop' : SvcStopCommand,
-                         'status' : SvcStatusCommand,
-                         'restart' : SvcRestartCommand,
-                         'reload' : SvcReloadCommand,
-                         'enable' : SvcEnableCommand,
-                         'disable' : SvcDisableCommand,
-                         'list' : SvcListCommand }
-        if action in command_dict.keys():
-            # exceptions are handled in the PluginRunner.
-            svc = command_dict[action](service=service, **kwargs)
-            return svc.execute()
+    service = staticmethod(service)
 
-    def run(self):
-        """To be overridden in subclasses."""
-        return True
 
-    def update(self):
-        """To be overridden in subclasses."""
-        return True
+def getInteger(string):
+    """ Find and return the first occurence of integers in a string.
+        Returns None if no integers are found.
+    """
+    occurences = re.findall(r'\d+',string)
+    if occurences:
+        return int(occurences[0])
+    return None
+
+
+def rcCompare(scriptName, comparedName):
+    """ Compare the integers of 2 filenames using getInteger method.
+        Do simple string comparison if:
+        - any of them have no integers, or
+        - both have the same integer.
+    """
+    scriptInteger = getInteger(scriptName)
+    comparedInteger = getInteger(comparedName)
+    cmpResult = 0
+
+    # Make sure that both have a valid integer before doing a comparison.
+    if (scriptInteger is not None and comparedInteger is not None):
+        cmpResult = cmp(scriptInteger, comparedInteger)
+
+    # If they have no difference so far, then do a string comp.
+    if cmpResult == 0:
+        cmpResult = cmp(scriptName, comparedName)
+
+    return cmpResult
 
 
 class PluginRunner:
-    def __init__(self, classname, p, dbs, is_update=False, debug=False):
+    def __init__(self, classname, p, dbs, debug=False):
         self.classname = classname
         self.plugins = {}
         self.dbs = dbs
-        self.ngtype = self.getNodeGroupInfo()
-        self.is_update = is_update
+        self.ngtype, self.ngid = self.getNodeGroupInfo()
 
         self.initPlugin()
         self.pluginPath = p
@@ -150,11 +147,10 @@ class PluginRunner:
         kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch
         kusuenv['KUSU_REPOID'] = str(Plugin.repoid)
         kusuenv['KUSU_NGTYPE'] = self.ngtype
-        kusuenv['KUSU_IS_UPDATE'] = str(self.is_update)
 
         plugins = self.loadPlugins(self.pluginPath)
 
-        for fname in sorted(plugins.keys()):
+        for fname in sorted(plugins.keys(), rcCompare):
             if fname.exists() and not fname in ignoreFiles:
                 if type(plugins[fname]) == str:
                     fbasename = fname.basename()
@@ -200,13 +196,7 @@ class PluginRunner:
                     try:
                         plugin = plugins[fname]
                         self.display(plugin.desc)
-
-                        retval = False
-                        if self.is_update:
-                            retval = plugin.update()
-                        else:
-                            retval = plugin.run()
-
+                        retval = plugin.run()
                         if retval:
                             self.success()
                             kl.info('Plugin: %s ran successfully' % plugin.name)
@@ -216,6 +206,12 @@ class PluginRunner:
 
                         results.append( (plugin.name, fname, retval, None) )
 
+                    except CommandFailedToRunError, e:
+                        self.failure()
+                        kl.error('Plugin: %s failed to run successfully. Reason: %s' % (plugin.name, e))
+                        kl.error('Plugin traceback:\n%s', traceback.format_exc())
+                        kl.error('No more plugins will be executed.')
+                        raise
                     except Exception, e:
                         self.failure()
                         results.append( (plugin.name, fname, 0, e) )
@@ -240,6 +236,7 @@ class PluginRunner:
         Plugin.os_name, Plugin.os_version, Plugin.os_arch = self.getOS()
         Plugin.repoid = self.getRepoID()
         Plugin.dbs = self.dbs
+        Plugin.appglobals = self.getAppGlobals()
 
         logstr = 'Init plugin wth variables: nodename=%s, niihost=%s, '\
                  'os_name=%s, os_version=%s, os_arch=%s, '\
@@ -301,15 +298,15 @@ class PluginRunner:
         return pluginsData
 
     def getNodeGroupInfo(self):
-        """Returns the node name, nodegroup name, nodegroup type"""
+        """Returns nodegroup type, nodegroup ID"""
 
-        node_name = None
-        nodegroup_name = None
         nodegroup_type = None
+        nodegroup_id = None
 
         if path('/etc/profile.nii').exists():
             # On compute node
             nodegroup_type = self.parseNII('/etc/profile.nii', 'NII_NGTYPE')
+            nodegroup_id = self.parseNII('/etc/profile.nii', 'NII_NGID')
 
         else:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
@@ -320,10 +317,10 @@ class PluginRunner:
             ng = self.dbs.NodeGroups.select_by(self.dbs.Nodes.c.name == masterName,
                                                self.dbs.NodeGroups.c.ngid == self.dbs.Nodes.c.ngid)[0]
 
-            nodegroup_name = ng.ngname
+            nodegroup_id = ng.ngid
             nodegroup_type = ng.type
 
-        return nodegroup_type
+        return (nodegroup_type, nodegroup_id)
 
     def getOS(self):
         os_name = None
@@ -350,10 +347,15 @@ class PluginRunner:
             row = self.dbs.AppGlobals.select_by(kname = 'PrimaryInstaller')[0]
             node_name = row.kvalue
 
+            # Keep this import statement here since we don't need
+            # (and don't want to) to install sqlalchemy on compute nodes.
+            import sqlalchemy
+
             nics = self.dbs.Nics.select_by(self.dbs.Nodes.c.nid == self.dbs.Nics.c.nid,
                                            self.dbs.Nics.c.netid == self.dbs.Networks.c.netid,
                                            self.dbs.Networks.c.type == 'provision',
-                                           self.dbs.Nodes.c.name == node_name)
+                                           self.dbs.Nodes.c.name == node_name,
+                                           sqlalchemy.func.lower(self.dbs.Networks.c.device) != 'bmc')
 
             nii_host = [ nic.ip for nic in nics if nic.ip ]
 
@@ -407,6 +409,61 @@ class PluginRunner:
                     return value.strip('"')
 
         return None
+
+    def parseNIIAll(self, nii):
+        """
+        parse nii file and return a dictionary containing all appglobal variables.
+        """
+        appglobal_map = {}
+        if not path(nii).exists():
+            return appglobal_map
+
+        confp = open(nii, 'r')
+        lines = confp.readlines()
+        confp.close()
+        
+        for line in lines:
+            # ignore empty line and comment line
+            if line.isspace():
+                continue
+            if line.strip().startswith('#'):
+                continue
+
+            assignstr = line.split()
+            if len(assignstr) != 2:
+                continue
+            couple = assignstr[1].split('=')
+            if len(couple) == 2:
+                key = couple[0].strip()
+                value = couple[1].strip().strip('"\'')
+                appglobal_map[key] = value
+
+        return appglobal_map
+
+    def getAppGlobalsFromDB(self):
+        """
+        dump appglobals from DB and return as a dictionary.
+        """
+        appglobal_map = {}
+        rows = self.dbs.AppGlobals.select_by('ngid is NULL or ngid = %s' % self.ngid)
+        for row in rows:
+            kname = (row.kname or '').strip()
+            if kname: 
+                 appglobal_map[kname] = (row.kvalue or '').strip()
+        return appglobal_map
+
+    def getAppGlobals(self):
+        """
+        Get all appglobal variables and return as a dictionary.
+        If ngid is specified for an appglobals variable, won't include it in the 
+            dictionary if the ngid not same with node's ngid.
+        Include all appglobals with NULL ngid column.
+        """
+        # compute nodes.
+        if path('/etc/profile.nii').exists():
+            return self.parseNIIAll('/etc/profile.nii')
+        # master
+        return self.getAppGlobalsFromDB()
 
     def removeByteCompiledFiles(self, fname):
         bcFiles = [ path("%sc" % fname), path("%so" % fname) ]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: test_partition_schema.py 1757 2008-11-06 22:31:19Z mblack $
 #
 # Copyright 2007 Platform Computing Inc.
 #

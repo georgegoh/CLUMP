@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: partition.py 2997 2009-09-28 07:42:35Z yqang $
 #
 # Kusu Text Installer Partition Setup Screen.
 #
@@ -20,7 +20,7 @@ from primitive.system.hardware.errors import *
 from screen import InstallerScreen
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.testing import runCommand
-from kusu.util.errors import KusuError, UserExitError
+from kusu.util.errors import KusuError, UserExitError 
 from primitive.system.hardware.partitiontool import DiskProfile
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
@@ -245,7 +245,7 @@ class PartitionScreen(InstallerScreen):
         logger.debug('Ignore list: %s' % str(self.disk_profile.ignore_disk_dict.keys()))
 
 
-    def useSchema(self, schema, ignore_disks):
+    def useSchema(self, schema, ignore_disks, wipe=False):
         self.disk_profile = DiskProfile(fresh=True, probe_fstab=False)
         self.prepareIgnoreList(ignore_disks)
         schema = schema
@@ -254,7 +254,7 @@ class PartitionScreen(InstallerScreen):
         self.disk_order = self.disk_profile.getBIOSDiskOrder()
         try:
             setupDiskProfile(self.disk_profile, schema,
-                             wipe_existing_profile=False,
+                             wipe_existing_profile=wipe,
                              disk_order=self.disk_order)
         except OutOfSpaceError,e:
             self.selector.popupDialogBox('Out of Space error', 
@@ -284,7 +284,7 @@ class PartitionScreen(InstallerScreen):
         if exists:
             if self.lvm_inconsistent:
                 buttons_list = ['Use Default', 'Clear All Partitions']
-                msg = 'OCS installer can install using its default '
+                msg = 'PCM installer can install using its default '
                 msg += 'partition schema. Alternatively, you may choose '
                 msg += 'to clear all partitions and create your own schema.'
             else:
@@ -306,7 +306,7 @@ class PartitionScreen(InstallerScreen):
                 result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
                 if result:
                     logger.debug('Clear all partitions')
-                    self.useSchema(clearSchemaPreserveUP(), do_not_use_disks)
+                    self.useSchema(clearSchemaPreserveUP(), do_not_use_disks, wipe=True)
                 else:
                     msg = 'Do you want to use the default schema, or edit '
                     msg += 'the existing schema?'
@@ -341,7 +341,7 @@ class PartitionScreen(InstallerScreen):
                     p.do_not_format = True
                 else:
                     p.do_not_format = False
-          
+
     def rollback(self):
         self.prompt_for_default_schema = True
 
@@ -376,14 +376,13 @@ class PartitionScreen(InstallerScreen):
         # check that /boot is on a physical partition
         elif not isinstance(self.disk_profile.mountpoint_dict['/boot'],Partition):
             errList.append("'/boot' must be on a physical partition")
-        has_swap = False
+        
         for disk in self.disk_profile.disk_dict.itervalues():
             for part in disk.partition_dict.itervalues():
                 if part.fs_type == 'linux-swap':
-                    has_swap = True
                     part.setLabel()
                     break
-        if not has_swap:
+        if not self.swapPartitionExists():
             errList.append("A 'linux-swap' partition is required.")
 
         if not errList:
@@ -401,7 +400,7 @@ class PartitionScreen(InstallerScreen):
         else:
             return True, ''
 
- 
+
     def formAction(self):
         """
         

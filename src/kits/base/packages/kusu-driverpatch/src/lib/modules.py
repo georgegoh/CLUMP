@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: modules.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -326,7 +326,7 @@ class OpenSUSE103InitrdModule(BaseInitrdModule):
         modulesdep.remove()
         newmodulesdep.copy(modulesdep)
         newmodulesdep.remove()
- 
+        
         origmodulesdep = path(self.tmpdir / origmodulesdep)
         origmodulesalias = path(self.tmpdir / origmodulesalias)
         
@@ -335,7 +335,7 @@ class OpenSUSE103InitrdModule(BaseInitrdModule):
        
         modulesdep.copy(origmodulesdep.dirname())
         modulesalias.copy(origmodulesalias.dirname())
-
+        
     def normalise_modules_dep(self, kver, f):
         """ Normalises the generated modules.dep to be like how the initrd prefers it and returns it as a list
         """

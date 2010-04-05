@@ -14,13 +14,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
+# $Id: component-base-installer.sles.spec 3463 2010-02-01 04:32:44Z binxu $
 # 
 
 Summary: Component for Kusu Installer Base
 Name: component-base-installer
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 URL: http://www.osgdc.org
@@ -39,13 +40,15 @@ Requires: kusu-kitops
 Requires: kusu-networktool 
 Requires: kusu-path 
 Requires: kusu-md5crypt
-Requires: primitive 
+Requires: kusu-power
+Requires: kusu-primitive 
 Requires: kusu-repoman 
 Requires: python-sqlalchemy
 Requires: kusu-ui 
 Requires: kusu-util 
 Requires: kusu-nodeinstaller-patchfiles
 Requires: kusu-nodeinstaller 
+Requires: kusu-kit-install
 #Requires: mysql
 #Requires: mysql-server
 Requires: dhcp
@@ -79,7 +82,7 @@ Requires: python-IPy
 Requires: initrd-templates
 Requires: pyparted
 Requires: rsh
-#Requires: kusu-net-tool
+Requires: kusu-net-tool
 Requires: dhcp-server
 Requires: newt
 Requires: libnewt0_52
@@ -88,8 +91,9 @@ Requires: slang
 Requires: python-xml
 Requires: inst-source-utils
 Requires: makedev
-Requires: python-bcrypt
 Requires: squashfs
+Requires: kusu-appglobals-tool
+Requires: kusu-license-tool
 
 %description
 This component provides the node with the Kusu management tools for the 
@@ -118,6 +122,12 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section
 
 %changelog
+* Fri Nov 6 2009 Andreas Buck <abuck@platform.com> 2.0-1
+- added kusu-power
+
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

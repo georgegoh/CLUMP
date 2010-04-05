@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: installprofile.py 1314 2008-06-06 07:22:57Z ggoh $
 #
 # Copyright 2007 Platform Computing Inc.
 #

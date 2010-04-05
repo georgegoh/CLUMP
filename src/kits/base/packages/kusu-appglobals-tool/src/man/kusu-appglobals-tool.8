@@ -1,0 +1,74 @@
+.TH kusu-appglobals-tool 8 "Version: ${VERSION_STR}" "Platform Computing" "Kusu Base"
+.SH NAME
+kusu-appglobals-tool \- appglobals management tool for PCM
+.SH SYNOPSIS
+.PP
+.B kusu-appglobals-tool [-h|--help | -v]
+.PP
+.B kusu-appglobals-tool [action] [-h|--help] [target [value]]
+.PP
+.B kusu-appglobals-tool set [-h|--help] 
+\- lists all appglobals with descriptions and allowed values
+.PP
+.B kusu-appglobals-tool set [-h|--help] [target] 
+\- describes target appglobal
+.PP
+.B kusu-appglobals-tool set <target> <value> 
+\- sets target appglobal to given value
+.PP
+.B kusu-appglobals-tool show [-h|--help] 
+\- lists all known appglobal names
+.PP
+.B kusu-appglobals-tool show <target> 
+\- displays target appglobal value
+.PP
+.B kusu-appglobals-tool show 
+\- displays all appglobal values
+.SH DESCRIPTION
+kusu-appglobals-tool is a management tool for appglobals values in the PCM
+database.  It is used for viewing and modifying the appglobals settings,
+which are used all accross the PCM cluster.
+.PP
+For example, kusu-appglobals-tool can be used to change the Public DNS Zone.
+.PP
+WARNING: incorrect usage of this tool can result in a malfunctioning
+cluster.  Use with caution!
+.SH ACTIONS
+Being a multi-purpose tool,
+.BI kusu-appglobals-tool
+is action-based.  The functionality of the tool is dependent on the
+specified action keyword.
+
+The possible actions are as follows:
+.TP
+.B
+set [-h|--help] <target> [value]
+Sets values to appglobal settings.
+.br
+When called without any options, Sets the "target" setting to the given
+"value". Both "target" and "value" must be specified.
+.br
+.B contextual help :
+.br
+When called with the "-h/--help" option, displays the description and
+allowed values of the "target" setting.
+.br
+When called with only the "-h/--help" option, all possible settings are 
+displayed along with their descriptions and allowed values.
+.TP
+.B
+show [options] [target]
+Displays values of appglobal settings.
+.br
+When called without any options or "target" specified, all settings are
+displayed along with their values.
+.br
+When called a specified target and without any options, displays the
+current value of the "target" setting.
+.br
+.B contextual help :
+.br
+When called with the "-h/--help" option, displays a list of idrac/bios
+setting names.
+.SH AUTHORS
+Kunal Chowdhury <kunalc_at_platform_dot_com>

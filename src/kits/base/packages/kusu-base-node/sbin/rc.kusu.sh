@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# $Id$
+# $Id: rc.kusu.sh 1903 2007-08-07 09:05:41Z ltsai $
 #
 #   Copyright 2007 Platform Computing Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,13 +29,13 @@
 
 ### BEGIN INIT INFO
 # Provides: kusu
-# Required-Start: $local_fs $remote_fs $network
+# Required-Start: $local_fs $remote_fs $network cfmclient
 # Should-Start: $time postgresql mysql
 # Required-Stop:
 # Default-Start:  3 5
-# Default-Stop:   
+# Default-Stop:
 # description: RC scripts for Kusu
-### END INIT INFO 
+### END INIT INFO
 
 #. /etc/init.d/functions
 . /etc/profile.d/kusuenv.sh
@@ -46,8 +46,8 @@ KUSUUSCRIPTS=/etc/rc.kusu.custom.d
 prog='kusu'
 
 start() {
-	echo $"Starting $prog. This may take a while..."	
-  
+    echo $"Starting $prog. This may take a while..."
+
     # Run any Kit configuration script.
     if [ -d "$KUSURCDIR" ]; then
         /opt/kusu/bin/kusurc $KUSURCDIR

@@ -81,7 +81,7 @@
 </thead>
 <tbody><tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489447"><a name="v1485903__v1489447"><!-- --></a>addhost</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489450"><a name="v1485903__v1489450"><!-- --></a>This tool lets you quickly and easily add and remove nodes from a specified nodegroup. It also performs the following functions:</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489450"><a name="v1485903__v1489450"><!-- --></a>This tool lets you quickly and easily add and remove nodes from a specified OCS nodegroup. It also performs the following functions:</p>
 <div class="p" id="v1485903__v1489451"><a name="v1485903__v1489451"><!-- --></a><a name="v1485903__v1489452"><!-- --></a><ul id="v1485903__v1489452"><li id="v1485903__v1489453"><a name="v1485903__v1489453"><!-- --></a><p id="v1485903__v1489454"><a name="v1485903__v1489454"><!-- --></a>Monitors the DHCP log file for new MAC addresses; when a new address is detected, the host is added to the specified nodegroup</p>
 </li>
 <li id="v1485903__v1489455"><a name="v1485903__v1489455"><!-- --></a><p id="v1485903__v1489456"><a name="v1485903__v1489456"><!-- --></a>Updates existing hosts with new MAC addresses—this allows you to replace a compute node if it fails</p>
@@ -114,7 +114,7 @@
 <td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489484"><a name="v1485903__v1489484"><!-- --></a>This tool creates images (diskless and imaged). Other attributes include the following:</p>
 <div class="p" id="v1485903__v1489485"><a name="v1485903__v1489485"><!-- --></a><a name="v1485903__v1489486"><!-- --></a><ul id="v1485903__v1489486"><li id="v1485903__v1489487"><a name="v1485903__v1489487"><!-- --></a><p id="v1485903__v1489488"><a name="v1485903__v1489488"><!-- --></a>Automatically called by <span class="keyword">ngedit</span></p>
 </li>
-<li id="v1485903__v1489490"><a name="v1485903__v1489490"><!-- --></a><p id="v1485903__v1489491"><a name="v1485903__v1489491"><!-- --></a>Used in scripts to create custom Kusu tools</p>
+<li id="v1485903__v1489490"><a name="v1485903__v1489490"><!-- --></a><p id="v1485903__v1489491"><a name="v1485903__v1489491"><!-- --></a>Used in scripts to create custom OCS tools</p>
 </li>
 <li id="v1485903__v1489492"><a name="v1485903__v1489492"><!-- --></a><p id="v1485903__v1489493"><a name="v1485903__v1489493"><!-- --></a>Run when packages are added or removed from an image</p>
 </li>
@@ -161,7 +161,7 @@
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489542"><a name="v1485903__v1489542"><!-- --></a>ngedit</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489544"><a name="v1485903__v1489544"><!-- --></a>This is the nodegroup editor tool for Kusu. (A nodegroup is a template that defines cluster node properties, including repositories, install-type, components, network configurations, OS packages, custom scripts, etc.)</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489544"><a name="v1485903__v1489544"><!-- --></a>This is the nodegroup editor tool for OCS. (A nodegroup is a template that defines cluster node properties, including repositories, install-type, components, network configurations, OS packages, custom scripts, etc.)</p>
 </td>
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489547"><a name="v1485903__v1489547"><!-- --></a>nghosts</p>
@@ -171,9 +171,9 @@
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489552"><a name="v1485903__v1489552"><!-- --></a>repoman</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489554"><a name="v1485903__v1489554"><!-- --></a>Nodegroups in an Kusu cluster are associated with a particular repository—This tool manages those repositories. Note the following:<a name="v1485903__v1489555"><!-- --></a><ul id="v1485903__v1489555"><li id="v1485903__v1489556"><a name="v1485903__v1489556"><!-- --></a><p id="v1485903__v1489557"><a name="v1485903__v1489557"><!-- --></a>Kusu kits are added to repositories</p>
+<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489554"><a name="v1485903__v1489554"><!-- --></a>Nodegroups in an OCS cluster are associated with a particular repository—This tool manages those repositories. Note the following:<a name="v1485903__v1489555"><!-- --></a><ul id="v1485903__v1489555"><li id="v1485903__v1489556"><a name="v1485903__v1489556"><!-- --></a><p id="v1485903__v1489557"><a name="v1485903__v1489557"><!-- --></a>OCS kits are added to repositories</p>
 </li>
-<li id="v1485903__v1489558"><a name="v1485903__v1489558"><!-- --></a><p id="v1485903__v1489559"><a name="v1485903__v1489559"><!-- --></a>Multiple repositories can be installed on a single Kusu primary install node</p>
+<li id="v1485903__v1489558"><a name="v1485903__v1489558"><!-- --></a><p id="v1485903__v1489559"><a name="v1485903__v1489559"><!-- --></a>Multiple repositories can be installed on a single OCS primary install node</p>
 </li>
 <li id="v1485903__v1489560"><a name="v1485903__v1489560"><!-- --></a><p id="v1485903__v1489561"><a name="v1485903__v1489561"><!-- --></a>Repositories can be customized and updated; repository snapshots can be taken</p>
 </li>
@@ -185,12 +185,12 @@
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489566"><a name="v1485903__v1489566"><!-- --></a>repopatch</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489568"><a name="v1485903__v1489568"><!-- --></a>This tool updates Kusu repositories using <span class="keyword">yum</span>, and/or from RHN.</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489568"><a name="v1485903__v1489568"><!-- --></a>This tool updates OCS repositories using <span class="keyword">yum</span>, and/or from RHN.</p>
 </td>
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489572"><a name="v1485903__v1489572"><!-- --></a>kitops</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489574"><a name="v1485903__v1489574"><!-- --></a>This tool is used to manipulate kits in an Kusu cluster. It can add, remove, and list kits. (Kits are pre-packaged applications or services that can be automatically installed and configured on cluster nodes once installed in an Kusu cluster). </p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489574"><a name="v1485903__v1489574"><!-- --></a>This tool is used to manipulate kits in an OCS cluster. It can add, remove, and list kits. (Kits are pre-packaged applications or services that can be automatically installed and configured on cluster nodes once installed in an OCS cluster). </p>
 <div class="p" id="v1485903__v1489575"><a name="v1485903__v1489575"><!-- --></a>Note the following:<a name="v1485903__v1489576"><!-- --></a><ul id="v1485903__v1489576"><li id="v1485903__v1489577"><a name="v1485903__v1489577"><!-- --></a><p id="v1485903__v1489578"><a name="v1485903__v1489578"><!-- --></a>Kits can be installed from an iso, or a mount point</p>
 </li>
 <li id="v1485903__v1489579"><a name="v1485903__v1489579"><!-- --></a><p id="v1485903__v1489580"><a name="v1485903__v1489580"><!-- --></a>Kits must be added to a repository after they are installed</p>
@@ -203,12 +203,12 @@
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489585"><a name="v1485903__v1489585"><!-- --></a>boot-media-tool</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489587"><a name="v1485903__v1489587"><!-- --></a>This tool is used by developers and Platform support personnel to create an Kusu Kusu boot media from supported linux distributions.</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489587"><a name="v1485903__v1489587"><!-- --></a>This tool is used by developers and Platform support personnel to create an OCS Kusu boot media from supported linux distributions.</p>
 </td>
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489590"><a name="v1485903__v1489590"><!-- --></a>buildkit</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489592"><a name="v1485903__v1489592"><!-- --></a>This tool allows administrators and developers to build new Kusu kits. It does this by creating a template workspace for the kit.</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489592"><a name="v1485903__v1489592"><!-- --></a>This tool allows administrators and developers to build new OCS kits. It does this by creating a template workspace for the kit.</p>
 </td>
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489595"><a name="v1485903__v1489595"><!-- --></a>driverpatch</p>
@@ -218,7 +218,7 @@
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489600"><a name="v1485903__v1489600"><!-- --></a>genconfig</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489602"><a name="v1485903__v1489602"><!-- --></a>This is the Kusu database reporting and file generating tool. It creates these configuration files for system services:<a name="v1485903__v1489603"><!-- --></a><ul id="v1485903__v1489603"><li id="v1485903__v1489604"><a name="v1485903__v1489604"><!-- --></a><p id="v1485903__v1489605"><a name="v1485903__v1489605"><!-- --></a>debug: A debug file for support purposes</p>
+<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489602"><a name="v1485903__v1489602"><!-- --></a>This is the OCS database reporting and file generating tool. It creates these configuration files for system services:<a name="v1485903__v1489603"><!-- --></a><ul id="v1485903__v1489603"><li id="v1485903__v1489604"><a name="v1485903__v1489604"><!-- --></a><p id="v1485903__v1489605"><a name="v1485903__v1489605"><!-- --></a>debug: A debug file for support purposes</p>
 </li>
 <li id="v1485903__v1489606"><a name="v1485903__v1489606"><!-- --></a><p id="v1485903__v1489607"><a name="v1485903__v1489607"><!-- --></a>hosts: The cluster’s <span class="filepath" id="v1485903__v1489608"><a name="v1485903__v1489608"><!-- --></a>/etc/hosts</span> file </p>
 </li>
@@ -228,7 +228,7 @@
 </li>
 <li id="v1485903__v1489613"><a name="v1485903__v1489613"><!-- --></a><p id="v1485903__v1489614"><a name="v1485903__v1489614"><!-- --></a>named: The DNS named.conf file</p>
 </li>
-<li id="v1485903__v1489615"><a name="v1485903__v1489615"><!-- --></a><p id="v1485903__v1489616"><a name="v1485903__v1489616"><!-- --></a>nodegroups: A list of Kusu nodegroups</p>
+<li id="v1485903__v1489615"><a name="v1485903__v1489615"><!-- --></a><p id="v1485903__v1489616"><a name="v1485903__v1489616"><!-- --></a>nodegroups: A list of OCS nodegroups</p>
 </li>
 <li id="v1485903__v1489617"><a name="v1485903__v1489617"><!-- --></a><p id="v1485903__v1489618"><a name="v1485903__v1489618"><!-- --></a>bashrc: The cluster bashrc configuration file</p>
 </li>
@@ -246,14 +246,14 @@
 </li>
 </ul>
 </div>
-<p id="v1485903__v1489631"><a name="v1485903__v1489631"><!-- --></a>Some plugins for this tool may allow the generation of configuration files for other Kusu kits such as LSF, Lava, Nagios, and Cacti.</p>
-<p id="v1485903__v1489632"><a name="v1485903__v1489632"><!-- --></a>This tool is automatically called other Kusu tools such as <span class="keyword">addhost</span> and <span class="keyword">ngedit</span>.</p>
+<p id="v1485903__v1489631"><a name="v1485903__v1489631"><!-- --></a>Some plugins for this tool may allow the generation of configuration files for other OCS kits such as LSF, Lava, Nagios, and Cacti.</p>
+<p id="v1485903__v1489632"><a name="v1485903__v1489632"><!-- --></a>This tool is automatically called other OCS tools such as <span class="keyword">addhost</span> and <span class="keyword">ngedit</span>.</p>
 </td>
 </tr>
 <tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489637"><a name="v1485903__v1489637"><!-- --></a>pdsh</p>
 </td>
-<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489639"><a name="v1485903__v1489639"><!-- --></a>This high-performance, parellel remote shell utility is used to run commands in parallel across the Kusu cluster. Note the following:</p>
-<div class="p" id="v1485903__v1489640"><a name="v1485903__v1489640"><!-- --></a><a name="v1485903__v1489641"><!-- --></a><ul id="v1485903__v1489641"><li id="v1485903__v1489642"><a name="v1485903__v1489642"><!-- --></a><p id="v1485903__v1489643"><a name="v1485903__v1489643"><!-- --></a>Kusu automatically generates a pdsh “hosts” file</p>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489639"><a name="v1485903__v1489639"><!-- --></a>This high-performance, parellel remote shell utility is used to run commands in parallel across the OCS cluster. Note the following:</p>
+<div class="p" id="v1485903__v1489640"><a name="v1485903__v1489640"><!-- --></a><a name="v1485903__v1489641"><!-- --></a><ul id="v1485903__v1489641"><li id="v1485903__v1489642"><a name="v1485903__v1489642"><!-- --></a><p id="v1485903__v1489643"><a name="v1485903__v1489643"><!-- --></a>OCS automatically generates a pdsh “hosts” file</p>
 </li>
 <li id="v1485903__v1489644"><a name="v1485903__v1489644"><!-- --></a><p id="v1485903__v1489645"><a name="v1485903__v1489645"><!-- --></a>Configured to use ssh</p>
 </li>

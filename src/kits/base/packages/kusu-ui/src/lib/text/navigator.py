@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: navigator.py 2990 2009-09-24 15:09:30Z ltsai $
 #
 # Kusu snack screens Navigator Framework.
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright 2009 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
@@ -36,7 +36,7 @@ class PlatformScreen(snack.SnackScreen, KusuApp):
     def __init__(self, title):
         snack.SnackScreen.__init__(self)
         KusuApp.__init__(self)
-        helpLine=self._('Copyright(C) 2007 Platform Computing Inc.\t\t' + \
+        helpLine=self._('Copyright(C) 2010 Platform Computing Inc.\t\t' + \
                         'Press F12 to quit')
         snack.SnackScreen.popHelpLine(self)
         snack.SnackScreen.pushHelpLine(self, helpLine)

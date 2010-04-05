@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: Makefile 2735 2007-11-14 06:33:23Z hirwan $
 #
 include config.mk
 
@@ -96,7 +96,8 @@ updatesimg: init
 	bin/gen-updatesimg ;
 	@if [ -f ./updates.img ]; then \
 		echo "Generated updates.img"; \
-	fi;
+	fi; 
+	
 
 clean:
 	@echo "====================================================================" ;

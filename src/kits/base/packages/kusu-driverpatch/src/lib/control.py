@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: control.py 3039 2009-10-05 10:18:09Z ankit $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
-""" This module contains Controller-specific operations for driverpatch. """
+""" This module contains Controller-specific operations for kusu-driverpatch. """
 
 from kusu.boot.tool import BootMediaTool
 from kusu.util.errors import InvalidPathError, FileDoesNotExistError, InvalidArguments, \

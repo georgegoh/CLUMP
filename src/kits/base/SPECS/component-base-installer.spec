@@ -14,16 +14,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
+# $Id: component-base-installer.spec 3463 2010-02-01 04:32:44Z binxu $
 # 
 
 Summary: Component for Kusu Installer Base
 Name: component-base-installer
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
-URL: http://www.osgdc.org
+URL: http://www.platform.com
 Vendor: Platform Computing Inc
 BuildArch: noarch
 Buildroot: %{_tmppath}/%{name}-%{version}-buildroot
@@ -39,13 +40,16 @@ Requires: kusu-kitops
 Requires: kusu-networktool 
 Requires: kusu-path 
 Requires: kusu-md5crypt
-Requires: primitive 
+Requires: kusu-power
+Requires: kusu-primitive 
 Requires: kusu-repoman 
 Requires: python-sqlalchemy
 Requires: kusu-ui 
 Requires: kusu-util 
 Requires: kusu-nodeinstaller-patchfiles
 Requires: kusu-nodeinstaller 
+Requires: kusu-kit-install
+Requires: kusu-migrate 
 #Requires: mysql
 #Requires: mysql-server
 Requires: dhcp
@@ -79,13 +83,12 @@ Requires: python-IPy
 Requires: initrd-templates
 Requires: pyparted
 Requires: rsh
-#Requires: kusu-net-tool
+Requires: kusu-net-tool
 Requires: MAKEDEV
-Requires: libxcrypt
-Requires: pam_unix2
-Requires: python-bcrypt
 Requires: inst-source-utils
 Requires: squashfs-tools
+Requires: kusu-appglobals-tool
+Requires: kusu-license-tool
 
 %description
 This component provides the node with the Kusu management tools for the 
@@ -114,7 +117,23 @@ rm -rf $RPM_BUILD_ROOT
 #equivalent of uninstall section
 
 %changelog
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Fri Nov 6 2009 Andreas Buck <abuck@platform.com> 2.0-1
+- added kusu-power
 
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
+* Thu Nov 6 2008 Mark Black <mblack@platform.com> 5.1-6
+- Switched to primitives
+
+* Fri Aug 22 2008 Mark Black <mblack@platform.com> 5.1-5
+- Removed 'kusu-net-tool'
+
+* Fri Jul 25 2008 Mike Frisch <mfrisch@platform.com> 5.1-4
+- Added 'kusu-net-tool'
+
+* Fri Jul 4 2008 Najib Ninaba <najib@platform.com>
+- Replaced kusu-ipy with python-IPy
+
+* Thu Jan 10 2008 Platform Computing <support@platform.com>
+- Initial release.

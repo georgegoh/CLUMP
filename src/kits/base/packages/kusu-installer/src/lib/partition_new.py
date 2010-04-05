@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: partition_new.py 2641 2009-07-31 04:21:44Z ankit $
 #
 # Kusu Text Installer New Partition Setup Screen.
 #
@@ -7,7 +7,6 @@
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
-
 import snack
 import partition
 from gettext import gettext as _
@@ -17,6 +16,7 @@ from kusu.ui.text.kusuwidgets import LEFT,CENTER,RIGHT
 from kusu.ui.text.navigator import NAV_NOTHING
 from kusu.util.errors import KusuError
 from primitive.system.hardware.errors import *
+from defaults import getSupportedFsTypes
 import kusu.util.log as kusulog
 logger = kusulog.getKusuLog('installer.partition')
 
@@ -138,9 +138,10 @@ class NewPartition:
         self.gridForm.add(self.mountpoint, 0,0, padding=(0,0,0,1))
 
         # query filesystems
-        for fs in ['ext2', 'ext3', 'linux-swap', 'physical volume']:
+        for fs in getSupportedFsTypes():
             self.filesystem.addRow([fs], fs)
-
+        self.filesystem.addRow(["physical volume"], "physical volume")
+ 
         self.filesystem.setCallback_(partition.fileSystemCallback,
                                      (self.filesystem, self.mountpoint, self.diskProfile))
         # query drives
@@ -273,7 +274,7 @@ class NewLogicalVolume:
         self.gridForm.add(self.size, 0,2)
 
         # query filesystems
-        for fs in ['ext2', 'ext3', 'linux-swap']:
+        for fs in getSupportedFsTypes():
             self.filesystem.addRow([fs], fs)
 
         self.filesystem.setCallback_(partition.fileSystemCallback,

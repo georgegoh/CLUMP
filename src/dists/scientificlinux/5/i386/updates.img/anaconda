@@ -14,6 +14,12 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # links the kusu runtime to /opt
 /usr/bin/ln -sf /tmp/updates/opt /opt
 
+# link /sbin/blkid from e2fsprogs
+/usr/bin/ln -sf /tmp/updates/sbin/blkid /sbin/blkid
+
+# link mke2fs.conf determine block size automatically
+/usr/bin/ln -sf /mnt/runtime/etc/mke2fs.conf /etc/mke2fs.conf
+
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
@@ -47,7 +53,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     unset PYTHONPATH  > /dev/null 2>&1
     #clean up temporary net info such as --gateway
     if [ -f "/tmp/netinfo" ];then 
-	/usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
+        /usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
     fi
  
     
@@ -66,10 +72,10 @@ if [ $EXIT_CODE -eq 0 ]; then
 
 	# rhel iso provided
 	if [ -f "/tmp/kusu.fake.files" ]; then
-		for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -rf $f > /dev/null 2>&1; done
+        for f in `/usr/bin/tac /tmp/kusu.fake.files`; do /usr/bin/rm -rf $f > /dev/null 2>&1; done
 
-		GRUB_TITLE=`cat /tmp/kusu.grub`
-		/usr/bin/sed -i "s/Scientific Linux/$GRUB_TITLE/g" /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
+        GRUB_TITLE=`cat /tmp/kusu.grub`
+        /usr/bin/sed -i "s/Scientific Linux/$GRUB_TITLE/g" /kusu/mnt/boot/grub/grub.conf > /dev/null 2>&1
 	fi
 
     exit $EXIT_CODE

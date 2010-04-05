@@ -3,7 +3,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: config.mk 4186 2009-02-04 11:04:57Z ggoh $
 #
 
 ### Kit Configuration File
@@ -25,7 +25,7 @@
 #   KIT_PROPER_NAME - the "proper" name of the kit. For instance,
 #                     "Kusu Runtime" (minus the quotes).
 #          KIT_NAME - This is converted to all lowercase from the
-#                     KIT_PROPER_NAME variable, then used in determining 
+#                     KIT_PROPER_NAME variable, then used in determining
 #                     generated file names (such as RPM, ISO, etc). This
 #                     variable can be overridden.
 #       KIT_VERSION - the version of this kit.
@@ -57,14 +57,14 @@ KIT_ARCH = $(shell uname -i)
 #                      or can be manually overridden.
 #
 # Each package must also specify its one source from which the package is
-# generated. Do not define more than one of the following for the same 
+# generated. Do not define more than one of the following for the same
 # package:
 #
-#     {PREFIX}_SPEC - this package is generated from a spec file. The 
+#     {PREFIX}_SPEC - this package is generated from a spec file. The
 #                     filename is stored in this variable. The value in
 #                     $(SPECDIR) will be prepended to this variable;
 #                     $(SPECDIR) defaults to SPECS/
-#   {PREFIX}_PARENT - this package is generated as a sub-package from 
+#   {PREFIX}_PARENT - this package is generated as a sub-package from
 #                     another package, when a spec file is built or an SRPM
 #                     is rebuilt. This variable should store the {PREFIX}
 #                     of its parent's package definition. PARENT-type
@@ -96,132 +96,133 @@ KIT_ARCH = $(shell uname -i)
 KIT_PKGS += PKG_KIT
 PKG_KIT_SPEC = kit-base.spec
 PKG_KIT_SOURCES = docs plugins kitinfo
-PKG_KIT_TARBALL_SUBVER = 12
 
 KIT_PKGS += PKG_COMPONENT_BASE_INSTALLER
 PKG_COMPONENT_BASE_INSTALLER_SPEC = component-base-installer.spec
 
 KIT_PKGS += PKG_COMPONENT_BASE_NODE
 PKG_COMPONENT_BASE_NODE_SPEC = component-base-node.spec
+PKG_COMPONENT_BASE_NODE_SOURCES = src/doc src/libexec
 
 KIT_PKGS += PKG_COMPONENT_GNOME_DESKTOP
 PKG_COMPONENT_GNOME_DESKTOP_SPEC = component-gnome-desktop.spec
 
+KIT_PKGS += PKG_COMPONENT_ICR
+PKG_COMPONENT_ICR_SPEC = component-icr-facilitator.spec
+PKG_COMPONENT_ICR_SOURCES = etc
+
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
 PKG_BASE_INSTALLER_SPEC = kusu-base-installer.spec
-PKG_BASE_INSTALLER_SOURCES = lib sbin bin sql man etc po
-PKG_BASE_INSTALLER_TARBALL_SUBVER = 17
+PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc po tftpboot firstboot libexec
 
 # Kusu Base node package.
 KIT_PKGS += PKG_BASE_NODE
 PKG_BASE_NODE_SPEC = kusu-base-node.spec
-PKG_BASE_NODE_SOURCES = doc cfm etc lib sbin
-PKG_BASE_NODE_TARBALL_SUBVER = 6
+PKG_BASE_NODE_SOURCES = doc cfm etc lib sbin man
 
 # Kusu Repoman package.
 KIT_PKGS += PKG_REPOMAN
 PKG_REPOMAN_SPEC = kusu-repoman.spec
 PKG_REPOMAN_SOURCES = doc src/bin src/lib src/etc
-PKG_REPOMAN_TARBALL_SUBVER = 4
 #PKG_REPOMAN_SOURCES = src setup.py
 
 # Kusu Boot package.
 KIT_PKGS += PKG_BOOT
 PKG_BOOT_SPEC = kusu-boot.spec
 PKG_BOOT_SOURCES = doc src/bin src/lib
-PKG_BOOT_TARBALL_SUBVER = 2
 #PKG_BOOT_SOURCES = src setup.py
 
 # Kusu Buildkit package.
 KIT_PKGS += PKG_BUILDKIT
 PKG_BUILDKIT_SPEC = kusu-buildkit.spec
 PKG_BUILDKIT_SOURCES = doc src/bin src/lib src/etc
-PKG_BUILDKIT_TARBALL_SUBVER = 3
 #PKG_BUILDKIT_SOURCES = src setup.py
 
 # Kusu Core package.
 KIT_PKGS += PKG_CORE
 PKG_CORE_SPEC = kusu-core.spec
 PKG_CORE_SOURCES = doc src/bin src/lib src/etc
-PKG_CORE_TARBALL_SUBVER = 5
+
+# Kusu Shell package.
+#KIT_PKGS += PKG_SHELL
+#PKG_SHELL_SPEC = kusu-shell.spec
+#PKG_SHELL_SOURCES = doc src/bin src/lib src/plugins src/man
 
 # Kusu Driverpatch package.
 KIT_PKGS += PKG_DRIVERPATCH
 PKG_DRIVERPATCH_SPEC = kusu-driverpatch.spec
 PKG_DRIVERPATCH_SOURCES = doc src/bin src/lib
-PKG_DRIVERPATCH_TARBALL_SUBVER = 4
 #PKG_DRIVERPATCH_SOURCES = src setup.py
 
 # Kusu Hardware package.
 KIT_PKGS += PKG_HARDWARE
 PKG_HARDWARE_SPEC = kusu-hardware.spec
 PKG_HARDWARE_SOURCES = doc src/lib
-PKG_HARDWARE_TARBALL_SUBVER = 2
 #PKG_HARDWARE_SOURCES = src setup.py
 
 # Kusu Kitops package.
 KIT_PKGS += PKG_KITOPS
 PKG_KITOPS_SPEC = kusu-kitops.spec
-PKG_KITOPS_SOURCES = doc src/bin src/lib src/etc
-PKG_KITOPS_TARBALL_SUBVER = 4
+PKG_KITOPS_SOURCES = doc src/bin src/lib
 #PKG_KITOPS_SOURCES = src setup.py
+
+#kusu kit-install package.
+KIT_PKGS += PKG_KIT_INSTALL
+PKG_KIT_INSTALL_SPEC = kusu-kit-install.spec
+PKG_KIT_INSTALL_SOURCES = doc src/bin src/man src/lib
 
 # Kusu Network Tool package.
 KIT_PKGS += PKG_NETWORKTOOL
 PKG_NETWORKTOOL_SPEC = kusu-networktool.spec
 PKG_NETWORKTOOL_SOURCES = doc src/bin src/lib
-PKG_NETWORKTOOL_TARBALL_SUBVER = 2
 #PKG_NETWORKTOOL_SOURCES = src setup.py
 
 # Kusu UI package.
 KIT_PKGS += PKG_UI
 PKG_UI_SPEC = kusu-ui.spec
 PKG_UI_SOURCES = doc src/bin src/lib
-PKG_UI_TARBALL_SUBVER = 2
 #PKG_UI_SOURCES = src setup.py
 
 # Kusu Util package.
 KIT_PKGS += PKG_UTIL
 PKG_UTIL_SPEC = kusu-util.spec
 PKG_UTIL_SOURCES = doc src/lib src/etc
-PKG_UTIL_TARBALL_SUBVER = 5
 
 # Initrd Templates package.
 KIT_PKGS += PKG_INITRD_TEMPLATES
 PKG_INITRD_TEMPLATES_SPEC = initrd-templates.spec
-PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates 
-PKG_INITRD_TEMPLATES_TARBALL_SUBVER = 5
+PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates
 
 # Kusu Autoinstall package.
 KIT_PKGS += PKG_AUTOINSTALL
 PKG_AUTOINSTALL_SPEC = kusu-autoinstall.spec
 PKG_AUTOINSTALL_SOURCES = src/doc src/lib src/etc
-PKG_AUTOINSTALL_TARBALL_SUBVER = 3
 
 # Kusu Installer package.
 KIT_PKGS += PKG_INSTALLER
 PKG_INSTALLER_SPEC = kusu-installer.rhel.spec
 PKG_INSTALLER_SOURCES = src/doc src/bin src/etc src/lib src/po
-PKG_INSTALLER_TARBALL_SUBVER = 4
 
 # Kusu Node Installer package.
 KIT_PKGS += PKG_NODEINSTALLER
 PKG_NODEINSTALLER_SPEC = kusu-nodeinstaller.spec
 PKG_NODEINSTALLER_SOURCES = src/bin src/lib
-PKG_NODEINSTALLER_TARBALL_SUBVER = 6
 
 # Kusu Node Installer Patchfiles package.
 KIT_PKGS += PKG_NODEINSTALLER_PATCHFILES
 PKG_NODEINSTALLER_PATCHFILES_SPEC = kusu-nodeinstaller-patchfiles.spec
 PKG_NODEINSTALLER_PATCHFILES_SOURCES = src sbin bin man lib
-PKG_NODEINSTALLER_PATCHFILES_TARBALL_SUBVER = 6
 
 # Kusu Node Installer Patchfiles package.
 KIT_PKGS += PKG_RELEASE
 PKG_RELEASE_SPEC = kusu-release.spec
-PKG_RELEASE_SOURCES = src 
-PKG_RELEASE_TARBALL_SUBVER = 1
+PKG_RELEASE_SOURCES = src
+
+# Kusu power management framework package.
+KIT_PKGS += PKG_POWER
+PKG_POWER_SPEC = kusu-power.spec
+PKG_POWER_SOURCES = doc src setup.py
 
 #3rd party packages
 
@@ -239,7 +240,6 @@ PKG_LIBXML2_SOURCES = custom src
 KIT_PKGS += PKG_MD5CRYPT
 PKG_MD5CRYPT_SPEC = kusu-md5crypt.spec
 PKG_MD5CRYPT_SOURCES = src
-PKG_MD5CRYPT_TARBALL_SUBVER = 1
 
 
 # Kusu Thttpd package.
@@ -268,18 +268,29 @@ PKG_IPY_RPM = $(PKG_IPY_NAME)-$(PKG_IPY_VERSION)-$(PKG_IPY_RELEASE).$(PKG_IPY_AR
 
 # Primitive package.
 KIT_PKGS += PKG_PRIMITIVE
-PKG_PRIMITIVE_NAME = primitive
-PKG_PRIMITIVE_VERSION = 0.5
-PKG_PRIMITIVE_RELEASE = 1
-PKG_PRIMITIVE_ARCH = noarch
-PKG_PRIMITIVE_RPM = $(PKG_PRIMITIVE_NAME)-$(PKG_PRIMITIVE_VERSION)-$(PKG_PRIMITIVE_RELEASE).$(PKG_PRIMITIVE_ARCH).rpm
-PKG_PRIMITIVE_RPM_URL = http://www.osgdc.org/pub/build/primitive/centos/5/RPMS/$(PKG_PRIMITIVE_ARCH)/$(PKG_PRIMITIVE_RPM)
+PKG_PRIMITIVE_NAME = kusu-primitive
+PKG_PRIMITIVE_SPEC = kusu-primitive.spec
+PKG_PRIMITIVE_SOURCES = config.mk Makefile src
 
 # Kusu Path package.
 KIT_PKGS += PKG_PATH
 PKG_PATH_SPEC = kusu-path.spec
 PKG_PATH_SOURCES = src
-PKG_PATH_TARBALL_SUBVER = 1
+
+# Kusu Migrate package.
+KIT_PKGS += PKG_KUSU_MIGRATE
+PKG_KUSU_MIGRATE_SPEC = kusu-migrate.spec
+PKG_KUSU_MIGRATE_SOURCES = src/sbin src/man src/lib
+
+# Net tool package
+KIT_PKGS += PKG_KUSU_NET_TOOL
+PKG_KUSU_NET_TOOL_SPEC = kusu-net-tool.spec
+PKG_KUSU_NET_TOOL_SOURCES = doc sbin man
+
+# License support tool package
+KIT_PKGS += PKG_KUSU_LICENSE_TOOL
+PKG_KUSU_LICENSE_TOOL_SPEC = kusu-license-tool.spec
+PKG_KUSU_LICENSE_TOOL_SOURCES = src/sbin src/man src/lib src/firstboot
 
 # Python SQLite 2 package.
 KIT_PKGS += PKG_PYSQLITE
@@ -357,24 +368,6 @@ KIT_PKGS += PKG_PDSH_MOD_MACHINES
 PKG_PDSH_MOD_MACHINES_NAME = pdsh-mod-machines
 PKG_PDSH_MOD_MACHINES_PARENT = PKG_PDSH
 
-# Libxcrypt package.
-KIT_PKGS += PKG_LIBXCRYPT
-PKG_LIBXCRYPT_SPEC = libxcrypt.spec
-PKG_LIBXCRYPT_SOURCES = src/*
-PKG_LIBXCRYPT_TARBALL_SUBVER = 1
-
-# PAM Unix2 package.
-KIT_PKGS += PKG_PAM_UNIX2
-PKG_PAM_UNIX2_SPEC = pam_unix2.spec
-PKG_PAM_UNIX2_SOURCES = src/*
-PKG_PAM_UNIX2_TARBALL_SUBVER = 1
-
-# Python bcrypt package.
-KIT_PKGS += PKG_PYTHON_BCRYPT
-PKG_PYTHON_BCRYPT_SPEC = python-bcrypt.spec
-PKG_PYTHON_BCRYPT_SOURCES = src/*
-PKG_PYTHON_BCRYPT_TARBALL_SUBVER = 1
-
 # inst-source-utils pkg
 KIT_PKGS += PKG_INST_SOURCE_UTILS
 PKG_INST_SOURCE_UTILS_NAME = inst-source-utils
@@ -382,4 +375,9 @@ PKG_INST_SOURCE_UTILS_VERSION = 2008.11.24
 PKG_INST_SOURCE_UTILS_RELEASE = 2.1
 PKG_INST_SOURCE_UTILS_ARCH = noarch
 PKG_INST_SOURCE_UTILS_SRPM = $(PKG_INST_SOURCE_UTILS_NAME)-$(PKG_INST_SOURCE_UTILS_VERSION)-$(PKG_INST_SOURCE_UTILS_RELEASE).src.rpm
-PKG_INST_SOURCE_UTILS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_INST_SOURCE_UTILS_SRPM)
+#PKG_INST_SOURCE_UTILS_SRPM_URL = http://fserv/engineering/build/sles/10/SRPMS/$(PKG_INST_SOURCE_UTILS_SRPM)
+
+# Kusu Appglobals Tool package.
+KIT_PKGS += PKG_KUSU_APPGLOBALS_TOOL
+PKG_KUSU_APPGLOBALS_TOOL_SPEC = kusu-appglobals-tool.spec
+PKG_KUSU_APPGLOBALS_TOOL_SOURCES = src/sbin src/lib src/man

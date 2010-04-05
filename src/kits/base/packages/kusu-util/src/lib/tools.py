@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: tools.py 3311 2009-12-09 10:39:12Z leiai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -12,7 +12,15 @@ from path import path
 import kusu.util.log as kusulog
 from kusu.util.errors import *
 import tempfile
-
+from primitive.svctool.commands import SvcStartCommand
+from primitive.svctool.commands import SvcStatusCommand
+from primitive.svctool.commands import SvcStopCommand
+from primitive.svctool.commands import SvcRestartCommand
+from primitive.svctool.commands import SvcReloadCommand
+from primitive.svctool.commands import SvcEnableCommand
+from primitive.svctool.commands import SvcDisableCommand
+from primitive.svctool.commands import SvcListCommand
+from primitive.svctool.commands import SvcExistsCommand
 try:
     import subprocess
 except:
@@ -165,3 +173,26 @@ def mkdtemp(**kwargs):
         return tempfile.mkdtemp('', **kwargs)
     else:
         return tempfile.mkdtemp('', 'kusu-', **kwargs)
+
+
+def service(serviceName, action, **kwargs):
+    """ Perform an action on a service.
+        Input args:
+            serviceName - name of service
+            action - one of [start, stop, status,
+                             restart, reload, enable,
+                             disable, list]
+            **kwargs - any other keyword/args relevant to the service
+    """
+    command_dict = { 'start' : SvcStartCommand,
+                     'stop' : SvcStopCommand,
+                     'status' : SvcStatusCommand,
+                     'restart' : SvcRestartCommand,
+                     'reload' : SvcReloadCommand,
+                     'enable' : SvcEnableCommand,
+                     'disable' : SvcDisableCommand,
+                     'list' : SvcListCommand,
+                     'exists' : SvcExistsCommand }
+    if action in command_dict.keys():
+        svc = command_dict[action](service=serviceName, **kwargs)
+        return svc.execute()

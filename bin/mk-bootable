@@ -422,7 +422,7 @@ def mkMetaISO(rootdir, buildprofile):
         umountP.wait()
     
     
-def makeBootISO(rootdir, isofile, volname="kusu"):
+def makeBootISO(rootdir, isofile, volname="PCM"):
     """Create a bootable ISO isoname out of the directory rootdir. The volname can be used to specify
        the ISO label name.
     """

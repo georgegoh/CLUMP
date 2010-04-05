@@ -13,23 +13,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: config.mk 3862 2008-12-01 09:43:03Z hirwan $
 #
 
 # global kusu build params.
-KUSU_DISTRO_SRC=/mnt/share/centos-5.1-x86_64
+KUSU_DISTRO_SRC=/pcc/lsf_madison/
 ifdef KUSU_BUILD_DIST
 KUSU_DISTRO_NAME=$(KUSU_BUILD_DIST)
 else
-KUSU_DISTRO_NAME=centos
+KUSU_DISTRO_NAME=sles
 endif
 ifdef KUSU_BUILD_DISTVER
 KUSU_DISTRO_VERSION=$(KUSU_BUILD_DISTVER)
 else
-KUSU_DISTRO_VERSION=5
-endif
-ifdef KUSU_BUILD_DISTVER_MINOR
-KUSU_DISTRO_VERSION_MINOR=$(KUSU_BUILD_DISTVER_MINOR)
+KUSU_DISTRO_VERSION=10
 endif
 ifdef KUSU_BUILD_ARCH
 KUSU_DISTRO_ARCH=$(KUSU_BUILD_ARCH)
@@ -39,9 +36,9 @@ endif
 KUSU_TOPDIR=`pwd`
 KUSU_RPM_TMPPATH=/tmp/kusu
 
-KUSU_RELEASE_NAME=Magnificent Anemone
+KUSU_RELEASE_NAME=Platform Cluster Manager
 KUSU_VERSION = 2.0
-KUSU_REVISION = $(shell ../../../bin/find-kusu-rev.sh $(KUSU_TOPDIR))
+KUSU_REVISION = $(shell svn info $(KUSU_TOPDIR) | grep "Last Changed Rev" | awk '{print $$4}')
 
 # lists of kits to build
 KUSU_KITS_LISTS=\

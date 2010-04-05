@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id$
+# $Id: cfms.py 3523 2010-02-18 09:37:15Z ankit $
 
 # cfms.py - The Cluster File Management Server library 
 
@@ -141,7 +141,7 @@ class PackBuilder:
         query = ('select nics.ip from nics, nodes, nodegroups, networks where '
                  'nodegroups.ngid=nodes.ngid and nodes.nid=nics.nid and '
                  'networks.netid=nics.netid and networks.usingdhcp=False '
-                 'and nodegroups.type="installer" and networks.type="provision"')
+                 'and nodegroups.type="installer" and networks.type="provision" and not networks.device="bmc"')
         installers = []
         try:
             self.db.execute(query)
@@ -159,7 +159,7 @@ class PackBuilder:
 
     def __getBroadcasts(self):
         """getBroadcasts - Get a list of all of the available network broadcast addresses"""
-        query = ('select distinct network, subnet from networks where type="provision" and usingdhcp=False')
+        query = ('select distinct network, subnet from networks where type="provision" and usingdhcp=False and (device like "eth%%" or device like "bond%%")')
 
         bc = []
         try:

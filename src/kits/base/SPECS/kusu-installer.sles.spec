@@ -13,20 +13,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # 
-# $Id$
+# $Id: kusu-installer.sles.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
-
-%define subversion 4
 
 Summary: kusu-installer module runtime
 Name: kusu-installer
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 Buildrequires: gcc, python, python-devel, patch
 BuildArch: noarch
 
@@ -101,6 +100,9 @@ rm -rf %{buildroot}
 %{_approot}
 
 %changelog
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

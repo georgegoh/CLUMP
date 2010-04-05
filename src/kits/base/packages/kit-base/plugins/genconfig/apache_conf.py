@@ -1,4 +1,4 @@
-# $Id$
+# $Id: apache_conf.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 #  Copyright (C) 2007 Platform Computing Inc
 #
@@ -106,7 +106,6 @@ class thisReport(Report):
         imagesdir = wwwroot / 'images'
 
         os = OS()[0].lower()
-        cacheDisabled = False
 
         if os in osfamily.getOSNames('rhelfamily') + ['fedora']:
             disableCache = True

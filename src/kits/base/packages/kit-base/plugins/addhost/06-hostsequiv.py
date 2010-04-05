@@ -18,7 +18,7 @@ from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
-        os.system("/opt/kusu/bin/genconfig hostsequiv > /etc/hosts.equiv")
+        os.system("/opt/kusu/bin/kusu-genconfig hostsequiv > /etc/hosts.equiv")
 
     def finished(self, nodelist, prePopulateMode):
-        os.system("/opt/kusu/bin/genconfig hostsequiv > /etc/hosts.equiv")
+        os.system("/opt/kusu/bin/kusu-genconfig hostsequiv > /etc/hosts.equiv")

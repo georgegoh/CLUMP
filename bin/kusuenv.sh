@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id$
+# $Id: kusuenv.sh 3582 2008-10-17 06:10:52Z ltsai $
 #
 # Kusu specific environment script
 #

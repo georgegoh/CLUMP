@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: modifyrepo.py 271 2007-04-12 04:42:07Z ltsai $
 #
 # This tools is used to insert arbitrary metadata into an RPM repository.
 # Example:

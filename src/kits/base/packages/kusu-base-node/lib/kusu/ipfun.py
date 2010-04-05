@@ -36,6 +36,10 @@ def validIP(IP):
             numval = string.atoi(num)
         except:
             return 0
+
+        # Reject octets like '010', '001', '00'
+        if num[0] == '0' and len(num) > 1:
+            return 0
         
         if numval < 0 or numval > 255:
             return 0
@@ -90,21 +94,26 @@ def incrementIP(startIP, increment=1, subnet=''):
     return number2ip(newIPnum)
 
 
-def onNetwork(network, subnet, ip):
+def onNetwork(network, subnet, ip, start_ip=None):
     """onNetwork - Determine if the given ip lies within the network.
     Requires the network address, on an IP on that network, as well as
-    the subnet mask, from which it checks the given ip to see if it
-    is on the same network."""
+    the subnet mask. Optional parameter is the pcm network start_ip to
+    respect the PCM network schema where two overlapping networks have
+    the same network and subnet, but different starting ips."""
     try:
-        netnum  = ip2number(network)
+        netnum = ip2number(network)
         masknum = ip2number(subnet)
-        ipnum   = ip2number(ip)
+        ipnum = ip2number(ip)
+        if start_ip:
+            start_num = ip2number(start_ip)
     except:
         # Got garbage
         return False
     
-    minnum  = netnum & masknum
-    maxnum  = minnum + (masknum ^ 0xffffffff)
+    minnum = netnum & masknum
+    maxnum = minnum + (masknum ^ 0xffffffff)
+    if start_ip and start_ip > minnum:
+        minnum = start_num - 1
     if ipnum > minnum and ipnum < maxnum:
         return True
     return False
@@ -158,6 +167,33 @@ def bestIP (myIPs, ipList):
                 if onNetwork(network, subnet, ip):
                     onnet.append(ip)
         return onnet
+
+def getArpaZone(network, mask):
+    """getArpaZone - Get the parent class subnet and its arpa zone"""
+    ipbytes = string.split(network, '.')
+    maskbytes = string.split(mask, '.')
+
+    if maskbytes[0] != '255':
+        #x.0.0.0 classless A, user ensure the correctness
+        arpazone = '%s' % ipbytes[0]
+        net = '%s.0.0.0' % ipbytes[0]
+    elif maskbytes[1] != '255':
+        #255.x.0.0 class A and classless B
+        arpazone = '%s' % ipbytes[0]
+        net = '%s.0.0.0' % ipbytes[0]
+    elif maskbytes[2] != '255':
+        #255.255.x.0 class B and classless C
+        arpazone = '%s.%s' % (ipbytes[1], ipbytes[0])
+        net = '%s.%s.0.0' % (ipbytes[0], ipbytes[1])
+    else:
+        #255.255.255.x
+        arpazone = '%s.%s.%s' % (ipbytes[2], ipbytes[1], ipbytes[0])
+        net = '%s.%s.%s.0' % (ipbytes[0], ipbytes[1], ipbytes[2])
+
+    if arpazone in ['0','255','0.0.127']:
+        arpazone = None
+
+    return arpazone, net 
                 
     
 def unittest():

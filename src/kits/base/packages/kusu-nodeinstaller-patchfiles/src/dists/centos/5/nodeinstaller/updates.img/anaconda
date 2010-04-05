@@ -14,6 +14,15 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # links the kusu runtime to /opt
 /usr/bin/ln -sf /tmp/updates/opt /opt
 
+# link /sbin/biosdecode from dmidecode
+/usr/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
+# link /sbin/blkid from e2fsprogs
+/usr/bin/ln -sf /tmp/updates/sbin/blkid /sbin/blkid
+
+# link mke2fs.conf determine block size automatically
+/usr/bin/ln -sf /mnt/runtime/etc/mke2fs.conf /etc/mke2fs.conf
+
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
@@ -28,9 +37,47 @@ export PRIMITIVE_LOCKDIR="/tmp"
 # setup /tmp/kusu
 /usr/bin/mkdir -p $KUSU_TMP
 
+OLDPATH=$PATH
+PATH=/opt/kusu/anaconda-mount:$PATH
 # launch the Kusu Installer
 /usr/bin/python /opt/kusu/bin/nodeinstaller
 EXIT_CODE=$?
+PATH=$OLDPATH
+
+getYumPatch(){
+    BUILDSTAMP=`cat /.buildstamp 2>/dev/null | head -1`
+    #CENTOS 5.2
+    if [ x$BUILDSTAMP = "x200806231752.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.CENTOS53";
+    #CENTOS 5.3
+    elif [ x$BUILDSTAMP = "x200903211313.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.CENTOS53";
+    #CENTOS 5.4
+    elif [ x$BUILDSTAMP = "x200910011652.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.CENTOS54";
+    fi
+}
+
+patchYumInstall(){
+    # no patch file available
+    if [ x$YUMPATCHFILE = "x" ]; then
+        return
+    fi
+
+    echo "Applying yum scalability patch"
+    cp /usr/lib/anaconda/yuminstall.py /tmp/updates/yuminstall.py.old
+    TMP_PWD=$PWD
+    cd /tmp/updates
+    touch /tmp/updates/yuminstall.py
+
+    patch -p0 -i $YUMPATCHFILE
+    EXIT_CODE1=$?
+    if [ $EXIT_CODE1 -eq 0 ]; then
+        mount -o ro --bind /tmp/updates/yuminstall.py /usr/lib/anaconda/yuminstall.py
+        cd $TMP_PWD
+    else
+        echo "Unable to apply patch, continuing"
+        cd $TMP_PWD
+    fi
+}
+
 if [ $EXIT_CODE -eq 0 ]; then 
     # Unset kusu bits
     for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 
@@ -38,7 +85,13 @@ if [ $EXIT_CODE -eq 0 ]; then
     done
     unset LANG > /dev/null 2>&1
     unset PYTHONPATH  > /dev/null 2>&1
- 
+  
+    YUMPATCHFILE=""
+    # To see if there is a yumpatch file avail, SET YUMPATCHFILE.
+    getYumPatch
+    # patch yuminstall.py if patch available.
+    patchYumInstall
+
     
     # Restore the environment when we are done
     source $envfile > /dev/null 2>&1 

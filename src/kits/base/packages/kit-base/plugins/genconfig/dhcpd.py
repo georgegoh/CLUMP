@@ -1,4 +1,4 @@
-# $Id$
+# $Id: dhcpd.py 3529 2010-02-19 12:46:40Z ankit $
 #
 #   Copyright 2007 Platform Computing Inc
 #
@@ -49,7 +49,7 @@ class thisReport(Report):
             dbdriver = 'postgres'
         dbdatabase = 'kusudb'
         dbuser = 'apache'
-        dbpassword = 'None'
+        dbpassword = None
 
         dbs = database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
@@ -67,6 +67,28 @@ class thisReport(Report):
             pi_nics = dbs.Nodes.selectfirst_by(name=installer).nics
             pi_ip = filter(lambda x: x.network.type=='provision', pi_nics)[0].ip
         except: pi_ip = ''
+
+        # Get the provisioning IP for all installers
+        query = ("SELECT nics.ip FROM nodes, nics, networks WHERE "
+                 "nodes.nid=nics.nid AND nics.netid=networks.netid "
+                 "AND networks.type='provision' "
+                 "AND nodes.ngid=1 "
+                 "AND not networks.device='bmc' "
+                 "AND not lower(networks.device) like 'ib%%'")
+
+        try:
+            self.db.execute(query)
+        except:
+            sys.stderr.write(_("DB_Query_Error\n"))
+            sys.exit(-1)
+ 
+        data = self.db.fetchall()
+        dnssrv = ''
+        if data:
+            for ds in data:
+                tmp = ds[0]
+                dnssrv = dnssrv + tmp + ','
+            dnssrv = dnssrv[:-1]
  
         # Get the max lease time
         leasetime = self.db.getAppglobals('DHCPLeaseTime')
@@ -85,7 +107,7 @@ class thisReport(Report):
                  'networks.gateway, networks.netid, nics.ip '
                  'from networks,nics,nodes where nodes.nid=nics.nid and '
                  'nics.netid=networks.netid and networks.usingdhcp=False '
-                 'and nodes.name=\'%s\' and networks.type=\'provision\'' % installer)
+                 'and nodes.name=\'%s\' and networks.type=\'provision\' and not networks.device=\'bmc\' and not lower(networks.device) like \'ib%%\'' % installer)
         try:
             self.db.execute(query)
 
@@ -143,12 +165,14 @@ class thisReport(Report):
                 network.ranges = getNetworkRanges(network.subnet,
                                                   network.netmask,
                                                   network.gateway,
-                                                  [x.ip for x in network.hosts])
+                                                  [x.ip for x in network.hosts],
+                                                  provision=provision)
 
                 networks.append(network)
  
             ns = {'leasetime': leasetime, 
                   'dnsdomain': dnsdomain,
+                  'dnsdomainserver': dnssrv,
                   'networks': networks,
                   'installerip': pi_ip,
                   'provision': provision}
@@ -158,7 +182,7 @@ class thisReport(Report):
             print "# This machine is not the primary installer"
 
 
-def getNetworkRanges(subnet, netmask, gateway, hosts):
+def getNetworkRanges(subnet, netmask, gateway, hosts, provision='KUSU'):
     """ Returns a list of usable ranges in the the given subnet/netmask,
         while taking into account the IPs that are used up by the gateway
         and the list of hosts.
@@ -176,8 +200,12 @@ def getNetworkRanges(subnet, netmask, gateway, hosts):
 
     if gateway:
         used_ips.add(IP(gateway))
-    for h in ip_hosts:
-        used_ips.add(IP(h))
+    # HP-ICE provisioning needs the hosts' IPs to be excluded from dhcpd's available list.
+    if provision != 'KUSU':
+        for h in ip_hosts:
+            used_ips.add(IP(h))
+    #else:
+        # KUSU stores fixed addresses for hosts in dhcpd, no need to further exclude their IPs.
 
     # Convert IPs to integers for easier manipulation.
     ip_ints = sorted([x.int() for x in used_ips])
@@ -187,10 +215,22 @@ def getNetworkRanges(subnet, netmask, gateway, hosts):
 
     # Create a list of (start IP, end IP) tuples to return to dhcpd config.
     allocatable_ranges = []
+    count = 0
     for i,s in enumerate(range_startings):
         start = s+1
         end = range_endings[i]-1
+        
+        # Limit range to a sane size
+        if (end - start) > 65533:
+            end = start + 65533
+
+        count += (end - start)
         allocatable_ranges.append((IP(start), IP(end)))
+
+        # Limit total allocable IPs
+        if count >= 65533:
+            break
+    
     return allocatable_ranges
 
 

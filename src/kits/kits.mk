@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: kits.mk 2443 2009-06-17 09:02:51Z mkchew $
 #
 
 # Setting some defaults.
@@ -71,7 +71,8 @@ PKG_SOURCES = $(if $($(1)_SOURCES),$($(1)_SOURCES))
 PKG_PREFIX_SRCDIR = $(PACKAGESDIR)/$($(1)_NAME)
 
 # if "<pkg>_TARBALL_SUBVER" is defined, append it to the tarball filename
-PKG_PREFIX_TARBALL_NAME = $(SOURCEDIR)/$($(1)_NAME)-$($(1)_VERSION)$(if $($(1)_TARBALL_SUBVER),.$($(1)_TARBALL_SUBVER)).tar.gz
+# else use _RELEASE instead.
+PKG_PREFIX_TARBALL_NAME = $(SOURCEDIR)/$($(1)_NAME)-$($(1)_VERSION)$(if $($(1)_TARBALL_SUBVER),.$($(1)_TARBALL_SUBVER),.$($(1)_RELEASE)).tar.gz
 
 PKG_RPMBUILD_OPTIONS = $(if $($(1)_RPMBUILD_OPTIONS),$($(1)_RPMBUILD_OPTIONS))
 
@@ -91,7 +92,7 @@ PKG_SRPM_URL = $(if $($(1)_SRPM_URL),$($(1)_SRPM_URL))
 define PKG_GET_SRPM_FROM_URL
 ifdef $(1)_SRPM_URL
 _$(1)_rpmurl_tgt = $(call PKG_PREFIX_SRPM_NAME,$(1))
-SRPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
+RPM_ARTIFACTS += $$(_$(1)_rpmurl_tgt)
 $$(_$(1)_rpmurl_tgt):
 	@echo running make $$(_$(1)_rpmurl_tgt)
 	wget -nd --waitretry=60 --continue -O $(call PKG_PREFIX_SRPM_NAME,$(1)) $(call PKG_SRPM_URL,$(1))

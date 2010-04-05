@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: S90KusuCFM.rc.py 3158 2009-11-02 07:09:37Z mxu $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
 #
 
+import os
 import sys
 from path import path
 from kusu.core import rcplugin
@@ -25,7 +26,6 @@ class KusuRC(rcplugin.Plugin):
         files = [path('/etc/cfm/shadow.merge'),
                  path('/etc/cfm/passwd.merge'),
                  path('/etc/cfm/group.merge'),
-                 path('/etc/pam.d/system-auth-ac'),
                  path('/etc/hosts'),
                  path('/etc/hosts.equiv'),
                  path('/etc/ssh/ssh_config'),
@@ -35,16 +35,6 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/ssh/ssh_host_dsa_key.pub'),
                  path('/etc/ssh/ssh_host_key.pub'),
                  path('/etc/ssh/ssh_host_rsa_key.pub')]
-
-        # FIXME: Rightfully /etc/pam.d/system-auth-ac only needs to be
-        # distributed to rhel/centos nodes. However, we currently do
-        # not have a clean way to do this based on the OS of each
-        # nodegroup. We can handle that issue partly in this script but
-        # should the user make a copy of a nodegroup using ngedit and
-        # changes the OS (say from centos to sles), the CFM symlinks
-        # are going to be wrong. In this particular instance, having
-        # /etc/pam.d/system-auth-ac in SLES is OK since it is not
-        # referenced by other pam config files.
 
         ngs = self.dbs.NodeGroups.select()
 
@@ -57,6 +47,13 @@ class KusuRC(rcplugin.Plugin):
             dest = path('/etc') / 'cfm' / ngname
 
             if not dest.exists(): dest.makedirs()
+
+            # Create symbolic links to the private key and the
+            # authorized_keys file generated under
+            # /opt/kusu/etc/.ssh for managed compute nodegroups only.
+            ngtype = ng.type
+            if ngtype.startswith('compute'):
+                self.createLinkToSSHKeyForComputeOnly(dest)
 
             for file in files:
                 if file in ['/etc/cfm/shadow.merge', 
@@ -89,10 +86,35 @@ class KusuRC(rcplugin.Plugin):
         sys.stdout = oldOut
         sys.stderr = oldErr
 
-        retval = self.runCommand('/opt/kusu/sbin/cfmsync -p')[0]
+        retval = self.runCommand('/opt/kusu/sbin/kusu-cfmsync -p')[0]
 
         if retval == 0:
             return True
         else:
             return False
 
+    def createLinkToSSHKeyForComputeOnly(self, cfmDir):
+        """Create CFM symbolic links to private key and the
+           authorized_keys file generated under
+           /opt/kusu/etc/.ssh for managed compute nodegroups only"""
+
+        sshKeyDir = path('/opt/kusu/etc/.ssh')
+        linkDir = cfmDir / 'root' / '.ssh'
+        if not linkDir.exists():
+            linkDir.makedirs()
+
+        authorizedKeys = sshKeyDir / 'authorized_keys'
+        authorizedKeysLink = linkDir / 'authorized_keys'
+        privateKey = sshKeyDir / 'id_rsa'
+        privateKeyLink = linkDir / 'id_rsa'
+
+        if not authorizedKeysLink.exists() and authorizedKeys.exists():
+            authorizedKeys.symlink(authorizedKeysLink)
+
+        if not privateKeyLink.exists() and privateKey.exists():
+            privateKey.symlink(privateKeyLink)
+
+        # /etc/cfm/<nodegroup>/root and its contents must be
+        # read for root only
+        os.system('chmod -R 0600 %s' % linkDir.parent)
+        os.system('chown -R root:root %s' % linkDir.parent)

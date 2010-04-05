@@ -18,7 +18,7 @@ from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
-        os.system("/opt/kusu/bin/genconfig ssh > /etc/ssh/ssh_config")
+        os.system("/opt/kusu/bin/kusu-genconfig ssh > /etc/ssh/ssh_config")
 
     def finished(self, nodelist, prePopulateMode):
-        os.system("/opt/kusu/bin/genconfig ssh > /etc/ssh/ssh_config")
+        os.system("/opt/kusu/bin/kusu-genconfig ssh > /etc/ssh/ssh_config")

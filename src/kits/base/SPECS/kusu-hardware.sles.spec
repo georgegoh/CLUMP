@@ -1,4 +1,4 @@
-# $Id$
+# $Id: kusu-hardware.sles.spec 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright (C) 2007 Platform Computing Inc
 #
@@ -17,17 +17,16 @@
 #
 # 
 
-%define subversion 2
-
 Summary: Hardware module
 Name: kusu-hardware
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
 BuildArch: noarch
-Source: %{name}-%{version}.%{subversion}.tar.gz
+Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 URL: http://www.osgdc.org
 BuildRequires: python
@@ -71,6 +70,9 @@ install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/hardware-%{version}
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

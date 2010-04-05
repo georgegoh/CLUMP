@@ -43,7 +43,7 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'kusu-kitops',
                 'kusu-md5crypt',
                 'kusu-networktool',
-                'primitive',
+                'kusu-primitive',
                 'kusu-path',
                 'python-sqlite2',
                 'kusu-repoman',
@@ -51,7 +51,9 @@ KUSU_RUNTIME = ['kusu-autoinstall',
                 'thttpd',
                 'kusu-ui',
                 'kusu-util',
-                'python-bcrypt']
+                'e2fsprogs']
+
+RHEL_PKGS = ['dmidecode']
                 
 SLES_PKGS = ['libnewt0_52',
       'newt',
@@ -72,8 +74,8 @@ SLES_PKGS = ['libnewt0_52',
       'libreiserfs',
       'inst-source-utils',
       'perl',
-      'yast2-users'
-      ]
+      'insserv',
+      'pmtools']
                 
 CURRENT_PKGS = []
 
@@ -286,6 +288,8 @@ if __name__ == '__main__':
     
     if dist == 'sles' or dist == 'opensuse':
         KUSU_RUNTIME = KUSU_RUNTIME + SLES_PKGS
+    else:
+        KUSU_RUNTIME = KUSU_RUNTIME + RHEL_PKGS
     
     # get the base kit RPMS directory
     basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS/noarch')
@@ -344,7 +348,7 @@ if __name__ == '__main__':
     # copy the thttpd-run.sh script
     shutil.copy(thttpdRunScript, tdir)
     os.chmod(os.path.join(tdir,'thttpd-run.sh'),0755)
-    
+
     if dist == 'sles' or dist == 'opensuse':
         yastScript = getYastScript(dist, distver, arch)
         if not os.path.exists(yastScript):
@@ -413,6 +417,10 @@ if __name__ == '__main__':
         shutil.copy(anacondaScript, tdir)
         os.chmod(os.path.join(tdir,'anaconda'),0755)
     
+    # copy the kits.txt into place
+    kits_txt = os.path.abspath(os.path.join(getKusuTrunk(), 'src/dists/common/kits.txt'))
+    shutil.copy(kits_txt, os.path.join(tdir, 'opt/kusu/etc'))
+
     generateUpdatesImg(tdir,'./updates.img')
     
     # remove temp holding directory

@@ -1,7 +1,6 @@
-
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: kusufactory.py 2110 2009-02-27 21:36:10Z ggoh $
 #
 # Kusu Text Installer Screen Factory.
 #
@@ -23,6 +22,7 @@ from rootpasswd import RootPasswordScreen
 from partition import PartitionScreen
 from gatewaydns import GatewayDNSSetupScreen
 from kits import KitsScreen
+from kits import KitInformationScreen
 from tzselect import TZSelectionScreen
 from confirm import ConfirmScreen
 from network import NetworkScreen
@@ -72,6 +72,7 @@ class ScreenFactoryImpl(ScreenFactory):
          RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
          ConfirmScreen(kiprofile=kiprofile),
+         KitInformationScreen(kiprofile=kiprofile),
          KitsScreen(kiprofile=kiprofile)
         ]
 

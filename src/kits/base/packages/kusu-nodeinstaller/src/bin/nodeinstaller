@@ -14,6 +14,8 @@ import kusu.util.log as kusulog
 # Sets up kusu logging
 kl = kusulog.getKusuLog()
 kl.addFileHandler()
+pl = kusulog.getPrimitiveLog()
+pl.addFileHandler()
 
 from path import path
 from kusu.core.app import KusuApp
@@ -24,6 +26,7 @@ from kusu.boot.tool import getPartitionMap, makeDev
 from kusu.ui.text.screenfactory import *
 from kusu.ui.text.navigator import Navigator, PlatformScreen
 from primitive.system.hardware.nodes import checkAndMakeNode
+from primitive.system.hardware import probe
 from primitive.system.hardware.partitiontool import DiskProfile
 from primitive.system.software.dispatcher import Dispatcher
 
@@ -192,12 +195,11 @@ actions:
         niihost = args.get('niihost',None)
         kl.addSysLogHandler(host=niihost)
 
-        import kusu.hardware.probe
-        disks_dict = kusu.hardware.probe.getDisks()
+        disks_dict = probe.getDisks()
         disks_str = disks_dict.keys()
         for d in disks_dict.values():
             disks_str += d['partitions']
-        disks_str += kusu.hardware.probe.getCDROM().keys()
+        disks_str += probe.getCDROM().keys()
 
         for dev in disks_str:
             checkAndMakeNode('/dev/' + dev)
@@ -208,7 +210,7 @@ actions:
             name = 'nodeinstaller'
             ScreenFactory.screens = [ProgressScreen(niihost, autoinstall_conf)]
         feedback = NINav(screenFactory=NIIScreenFactory, screenTitle='Installing Node',
-                         showTrail=True, showNavButtons=False)
+                             showTrail=True, showNavButtons=False)
         try:
             return_code = feedback.run()
         except UserExitError, e:
@@ -329,7 +331,7 @@ class ProgressScreen(BaseScreen):
         dlg = self.selector.popupProgress('Preparing %s' % self.autoinstall_type, \
                                           'Preparing %s files...' % self.autoinstall_type)
         tmp_disk_profile = DiskProfile(False)
-        disk_order = self.disambiguateDiskOrder(tmp_disk_profile)
+        disk_order = self.disambiguateDiskOrder(tmp_disk_profile, interactive=False, fix=True)
         kl.debug('Disk order: %s' % str(disk_order))
 
         # Ensure parent directory already exists
@@ -344,7 +346,16 @@ class ProgressScreen(BaseScreen):
 above-mentioned volume group, and press OK to reboot"""
             self.selector.popupMsg('LVM Error', errMsg)
             raise NodeInstallerError
-        
+        except InsufficientFreeSpaceInVolumeGroupError, e:
+            dlg.close()
+            errMsg = str(e) + """\nInstallation is not supported on disks smaller than 40GB. 
+Please refer to your documentation for minimum system requirements. Press OK to reboot."""
+            self.selector.popupMsg('Insufficient free space', errMsg)
+            raise NodeInstallerError
+        except Exception, e:
+            dlg.close()
+            self.selector.popupMsg('Nodeinstaller Error', str(e))
+            raise NodeInstallerError
         dlg.close()
 
         kl.debug('Setting timezone')
@@ -373,11 +384,6 @@ above-mentioned volume group, and press OK to reboot"""
         kl.debug('Set the installation flag')
         self.nodeinst.setInstallFlag(kusu_prefix)
         dlg.close()
-
-        kl.debug('Copying public keys')
-        dlg = self.selector.popupProgress('SSH Public Keys', 'Downloading SSH public keys...')
-        self.nodeinst.getSSHPublicKeys(self.niihost, kusu_prefix)
-        dlg.close()
         
         kl.debug('Generating /etc/profile.nii')
         dlg = self.selector.popupProgress('Setting profile.nii', 'Generating file...')
@@ -387,6 +393,11 @@ above-mentioned volume group, and press OK to reboot"""
         kl.debug('Copying /opt/kusu/etc/db.passwd')
         dlg = self.selector.popupProgress('Db Passwd', 'Copying db.passwd...')
         self.nodeinst.getDbPasswd(kusu_prefix)
+        dlg.close()
+        
+        kl.debug('Copying /opt/kusu/etc/.ipmi.passwd')
+        dlg = self.selector.popupProgress('IPMI Passwd', 'Copying .ipmi.passwd...')
+        self.nodeinst.getIpmiPasswd(kusu_prefix)
         dlg.close()
 
         kl.debug('Downloading custom scripts')
@@ -407,6 +418,7 @@ if __name__ == '__main__':
     # set up tty3 for logging output
     if os.access("/dev/tty3", os.W_OK):
         kl.addFileHandler('/dev/tty3')
+        pl.addFileHandler('/dev/tty3')
 
     app = NodeInstallerApp()
     app.run()

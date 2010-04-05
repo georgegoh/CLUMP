@@ -13,13 +13,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: component-base-node.sles.spec 3331 2009-12-22 06:54:59Z mxu $
 #
 
 Summary: Component for Kusu Node Base
 Name: component-base-node
 Version: 2.0
 Release: 1
+Epoch: 1
 License: GPLv2
 URL: http://www.osgdc.org
 Group: System Environment/Base
@@ -30,6 +31,7 @@ Requires: kusu-base-node >= 0.1
 
 BuildArch: noarch
 Buildroot: %{_tmppath}/%{name}-%{version}-buildroot
+Source: %{name}-%{version}.%{release}.tar.gz
 Requires: python
 Requires: pdsh
 Requires: pdsh-rcmd-exec
@@ -40,10 +42,11 @@ Requires: kusu-core
 Requires: kusu-path
 Requires: kusu-util
 Requires: kusu-release
-Requires: primitive 
+Requires: kusu-primitive 
 Requires: xinetd
 Requires: rsh-server
 Requires: rsh
+Requires: aaa_base
 #Requires: vim-enhanced
 
 %description
@@ -52,13 +55,36 @@ nodes (not the installer components).
 
 
 %prep
+%setup -q -n %{name}
 
 %build
 
 %install
 rm -rf $RPM_BUILD_ROOT
+name_eths_dir=$RPM_BUILD_ROOT/opt/kusu/libexec/name_eths
+mkdir -p $name_eths_dir
+
+install -m0755 libexec/name_eths/dump_pirq $name_eths_dir
+install -m0755 libexec/name_eths/edit_modprobe_conf $name_eths_dir
+install -m0755 libexec/name_eths/hw_eth_order.pl $name_eths_dir
+install -m0755 libexec/name_eths/mactab_to_suse_configfiles $name_eths_dir
+install -m0755 libexec/name_eths/name_eths_suse $name_eths_dir
+
+mkdir -p $RPM_BUILD_ROOT/etc/init.d/
+install -m0755 libexec/name_eths/name_eths.init.suse $RPM_BUILD_ROOT/etc/init.d/name_eths
+
+name_eths_docdir=$RPM_BUILD_ROOT/opt/kusu/share/doc/name_eths-0.4
+mkdir -p $name_eths_docdir
+install -m0444 doc/name_eths-0.4/* $name_eths_docdir
 
 %files
+/etc/init.d/name_eths
+/opt/kusu/libexec/name_eths/dump_pirq
+/opt/kusu/libexec/name_eths/edit_modprobe_conf
+/opt/kusu/libexec/name_eths/hw_eth_order.pl
+/opt/kusu/libexec/name_eths/mactab_to_suse_configfiles
+/opt/kusu/libexec/name_eths/name_eths_suse
+/opt/kusu/share/doc/name_eths-0.4/*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -68,12 +94,17 @@ rm -rf $RPM_BUILD_ROOT
 %post
 #equivalent of post section for the client
 
+/sbin/chkconfig name_eths on
+
 %preun
 
 %postun
 #equivalent of uninstall section for the client
 
 %changelog
+* Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
+- Bump version to 5.3 for PCM 1.2.1.
+
 * Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
 - Sync with OCS (r1609)
 - Initial 1.0 release

@@ -1,11 +1,11 @@
-# $Id$
+# $Id: zone.py 3420 2010-01-25 09:48:45Z ankit $
 #
 #   Copyright 2007 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,23 +35,23 @@ class thisReport(Report):
         plugin.  All plugins must implement this method."""
 
         _ = self.gettext
-        
+
         # Test to see if the Installer node should be running DNS.
         dnsenabled = self.db.getAppglobals('InstallerServeDNS')
         if dnsenabled != '1':
-            sys.exit(0)
+            return True
 
         # Get the name of the primary installer
         primaryinst = self.db.getAppglobals('PrimaryInstaller')
         if not primaryinst:
             sys.stderr.write(_("genconfig_cannot_determine_primary_installer\n"))
-            sys.exit(-1)
+            return False
 
         # Get the DNS Zone served by the Installer
         dnszone = self.db.getAppglobals('DNSZone')
         if not dnszone:
             sys.stderr.write(_("genconfig_cannot_determine_DNS_zone\n"))
-            sys.exit(-1)
+            return False
 
         # Get the name of the primary mail server
         mailserv = self.db.getAppglobals('SMTPServer')
@@ -76,52 +76,72 @@ class thisReport(Report):
         print '\t\t\t1d\t; Minimum TTL'
         print '\t\t\t)'
 
-        # Print out all the NS entries
-        query = ('select nodes.name, nics.ip, networks.suffix from '
-                 'nodes, nics, networks '
-                 'where networks.netid=nics.netid and '
-                 'nodes.ngid=1 and nics.nid=nodes.nid and networks.usingdhcp=False')
+        # Print out all the NS entries, exclude the public nic
+        query = ('select nodes.name, nics.ip, networks.suffix '
+                 'from nodes, nics, networks '
+                 'where nodes.ngid=1 and nodes.nid=nics.nid and networks.netid=nics.netid '
+                 'and networks.usingdhcp=False and networks.type<>"public"')
         try:
             self.db.execute(query)
 
         except:
             sys.stderr.write(_("DB_Query_Error\n"))
-            sys.exit(-1)
-            
+            return False
+
         data = self.db.fetchall()
-        
+
         if data:
             for row in data:
-                dnsname, ip, suffix = row
-                outline = '\t\tIN\tNS\t%s' % dnsname
-                if suffix and suffix != '':
-                    outline += '%s' % suffix
-                outline += '.%s.' % dnszone
-                print outline
-                
+                dnsname, ip, nssuffix = row
+                print '\t\tIN\tNS\t%s%s.%s.' % (dnsname, nssuffix or '', dnszone)
+        else:
+            sys.stderr.write("Warning:  No private NS records in PCM domain: %s!\n", dnszone)
+
         if mailserv != '':
             print '\t\tIN\tMX  50  %s.' % mailserv
         print ''
 
-        # Print out all the available names
-        query = ('select nodes.name,nics.ip, networks.suffix, nics.boot from '
-                 'nodes,nics,networks where nodes.nid=nics.nid and '
-                 'nics.netid=networks.netid and networks.usingdhcp=False order by nodes.name')
+        #got the unmanaged node group id
+        umngid = self.db.getNgidOf('unmanaged')
 
+        # Print out all installer node group names
+        query = ('select nodes.name,nics.ip,networks.suffix,networks.type,nics.boot,nodes.ngid '
+                 'from nodes,nics,networks '
+                 'where nodes.nid=nics.nid and nics.netid=networks.netid '
+                 'and networks.usingdhcp=False and networks.type<>"public" '
+                 'order by nodes.name, networks.device')
         try:
             self.db.execute(query)
 
         except:
             sys.stderr.write(_("DB_Query_Error\n"))
-            sys.exit(-1)
-            
-        data = self.db.fetchall()
-        if data:
-            for row in data:
-                dnsname, ip, suffix, boot = row
-                outline = '%s%s\tIN\tA\t%s' % (dnsname, suffix, ip)
-                print '%s' % outline
-                if boot:
-                    # Add the short name as well
-                    outline = '%s\tIN\tA\t%s' % (dnsname, ip)
-                    print '%s' % outline
+            return False
+
+        prev_dns_name = ''             #the previous dnsname
+        written_short_name = False       #already give short name flag
+        data = self.db.fetchall() or []
+        for row in data:
+            dnsname, ip, suffix, nettype, boot, ngid = row
+
+            if umngid == ngid:
+                #unmanaged node without suffix
+                print '%s\tIN\tA\t%s' % (dnsname, ip)
+            else:
+                if prev_dns_name != dnsname:
+                    written_short_name = False
+                    prev_dns_name = dnsname
+                #Add the short name when it's bootable(compute-node) and in provision net
+                #only add one short name, sorted by device name
+                if not written_short_name and self._is_name_short(nettype, suffix, (boot or ngid==1)):
+                    print '%s\tIN\tA\t%s' % (dnsname, ip)
+                    written_short_name = True
+
+                    if suffix:
+                        print '%s%s\tIN\tCNAME\t%s' % (dnsname, suffix, dnsname)
+
+                else:
+                    print '%s%s\tIN\tA\t%s' % (dnsname, suffix or '', ip)
+
+    def _is_name_short(self, nettype, suffix, boot):
+        #check the nics can be short name
+        return nettype == 'provision' and suffix != '-bmc' and boot

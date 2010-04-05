@@ -1,0 +1,52 @@
+.\" Copyright (c) 2010 Platform Computing Inc
+.TH "kusu-kit-install" "8" "Version: ${VERSION_STR}" "Kunal Chowdhury" "Kusu Base"
+.SH "NAME"
+.LP 
+kusu-kit-install \- Unified kit installation and deployment tool.
+.SH "SYNOPSIS"
+.LP 
+\fBkusu-kit-install\fR [\-h|\-v] 
+.LP 
+\fBkusu-kit-install\fR [\-r <Repo list>] <SOURCE>
+.LP
+<SOURCE>- The location of the kits to be installed, e.g. /tmp/kit.iso (file) or /dev/cdrom (cdrom device) or /data/kit (directory).
+.LP
+.SH "DESCRIPTION"
+.LP 
+kusu-kit-install is a kit installation and deployment tool. Kusu provides a detailed deployment mechanism for kits using kusu-kitops, kusu-repoman and kusu-ngedit. kusu-kit-install uses reasonable defaults to abstract these details into a single action for easy deployment. The steps used are:
+.IP 
+\- Install kits.
+.br 
+\- Add kits to each repository.
+.br 
+\- Refresh repositories.
+.br 
+\- Associate components to nodegroups of each repository.
+.br 
+\- Synchronize nodegroups.
+.LP 
+If a kit is already present in the system, it is still added to the repositories. If it is already added to a repository, it\(aqs components are still associated with the matching nodegroups.
+.LP 
+Components are associated matching the ngtypes listed in the kitinfo file and the os against the type of the nodegroups and the ostype of the repository.
+.LP 
+When a kit\(aqs kitinfo file does not mention the nodegroup types meant for its components, it is assumed that the components are to be associated with just the compute nodegroup.
+.LP 
+kusu-kit-install has the following options:
+.LP
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-r, \-\-repolist==<\fIRepo names\fR>\fR
+Add kits to the repositories specified with the \fB\-r\fR option.  Note multiple repository names must be separated by commas. Ex: rhel5.3-5-x86_64,\ rhel5.2-5-x86_64.
+.TP 
+\fB\-h, \-\-help\fR
+Print the help information and exit.
+.TP 
+\fB\-v, \-\-version\fR
+Print the version information and exit.
+.SH "AUTHORS"
+.LP 
+Kunal Chowdhury, <kunalc_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP 
+kusu-kitops(8), kusu-repoman(8), kusu-ngedit(8), kusu-cfmsync(8)

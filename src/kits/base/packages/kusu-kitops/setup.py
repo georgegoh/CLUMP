@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: setup.py 2946 2009-09-22 02:45:21Z yqang $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -16,6 +16,5 @@ setup(name="kusu-kitops",
       platforms=["any"],
       packages = ['kitops'],
       package_dir={'kitops': 'src/lib'},
-      scripts=['src/bin/kitops']
-      data_files=[('etc', ['src/etc/remoterepo.conf'])]
+      scripts=['src/bin/kusu-kitops']
      )

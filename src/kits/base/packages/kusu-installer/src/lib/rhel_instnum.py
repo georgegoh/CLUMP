@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: rhel_instnum.py 3049 2009-10-07 13:41:31Z abuck $
 #
 # Kusu Text Installer License Entry Screen.
 #

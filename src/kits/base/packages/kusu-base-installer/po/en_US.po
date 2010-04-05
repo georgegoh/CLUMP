@@ -6,7 +6,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OCS 5.0\n"
+"Project-Id-Version: PCM 1.2.1\n"
 "Report-Msgid-Bugs-To: support@platform.com\n"
 "POT-Creation-Date: 2007-03-13 12:06-0400\n"
 "PO-Revision-Date: 2007-03-13 12:25-0400\n"
@@ -120,7 +120,7 @@ msgid "nonroot_execution\n"
 msgstr "ERROR:  Only root can run this tool\n"
 
 msgid "boothost_Help"
-msgstr "boothost [-h|-v|-l {nodename}]\nboothost [-n node_group] | [-m node_list] | [-s node_group]\n         [-r] [-k Kernel] [-i Initrd] [-p Kern_Parms]\nThe boothost tool is responsible for generating the PXE configuration\nfiles nodes will use to boot over the network with.  This tool can\nmanipulate the kernel, initrd, and kernel parameters a node group or\nnode will boot with.  It can optionally attempt to trigger a reinstall\nof all the nodes in a node group, or a list of nodes.  The options are:\n    -h             - Provide tool help (This screen)\n    -v             - Print the tool version\n    -l {nodename}  - Output the booting status of the given node.\n                     If no name is provided list all nodes that PXE.\n    -n node_group  - Update all the PXE files for all nodes in the\n                     node group node_group.\n    -m node_list   - Update all the PXE files for all nodes in the\n                     comma-separated list of nodes.\n    -s node_group  - Update all the PXE files for all nodes in the\n                     node group node_group that are out of sync.\n                     (This option may be removed)\n    -r             - If specified attempt to connect to all affected\n                     nodes and trigger a reinstall.  Uses pdsh.\n    -k Kernel      - If specified it will use the kernel provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -i Initrd      - If specified it will use the Initrd provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -p Kern_Parms  - If specified it will use the kernel parameters\n                     provided in the PXE file(s) for the nodes or\n                     node_group.  The database will be updated\n                     accordingly."
+msgstr "usage: kusu-boothost [-h|-v|-l {nodename}]\n\t\t     [-n node_group] | [-m node_list] | [-s node_group]\n\t\t     [-r] [-k Kernel] [-i Initrd] [-p Kern_Parms]\nThe kusu-boothost tool is responsible for generating the PXE configuration\nfiles nodes will use to boot over the network with.  This tool can\nmanipulate the kernel, initrd, and kernel parameters a node group or\nnode will boot with.  It can optionally attempt to trigger a reinstall\nof all the nodes in a node group, or a list of nodes.  The options are:\n    -h             - Provide tool help (This screen)\n    -v             - Print the tool version\n    -l {nodename}  - Output the booting status of the given node.\n                     If no name is provided list all nodes that PXE.\n    -n node_group  - Update all the PXE files for all nodes in the\n                     node group node_group.\n    -m node_list   - Update all the PXE files for all nodes in the\n                     comma-separated list of nodes.\n    -s node_group  - Update all the PXE files for all nodes in the\n                     node group node_group that are out of sync.\n    -r             - If specified attempt to connect to all affected\n                     nodes and trigger a reinstall.  Uses pdsh.\n    -k Kernel      - If specified it will use the kernel provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -i Initrd      - If specified it will use the Initrd provided\n                     in the PXE file(s) for the nodes or node_group.\n                     The database will be updated accordingly.\n    -p Kern_Parms  - If specified it will use the kernel parameters\n                     provided in the PXE file(s) for the nodes or\n                     node_group.  The database will be updated\n                     accordingly."
 
 msgid "boothost_root_reboot"
 msgstr "ERROR:  Only root can reboot nodes.  Not attempting reboot!"
@@ -170,6 +170,9 @@ msgstr "Finished rebooting nodes"
 msgid "boothost_event_rebooted_node"
 msgstr "Rebooted node: %s"
 
+msgid "boothost_no_mac_host"
+msgstr "ERROR:  No MAC for node: %s"
+
 msgid "genconfig_cannot_find_plugin: %s\n"
 msgstr "ERROR:  Cannot find plugin: %s\n"
 
@@ -177,7 +180,7 @@ msgid "genconfig_provide_database_user_password\n"
 msgstr "ERROR:  The database, user, and password must all be specified\n"
 
 msgid "genconfig_Help"
-msgstr "genconfig [-h|-v| -d database -u user -p password ] plugin plugin_args\n\nThe genconfig tool will run various plugins to generate configuration\nfiles for various applications.  It may also be used to gather\ninformation about the cluster.  See below for a list of plugins.\n\nWhen run with no arguments it will generate a list of all available\nplugins.  The following arguments are supported by the tool:\n  -h           - Provide help on this tool.  If a plugin is specified\n                 then the help for that tool will be displayed\n  -v           - Print the tool version.\n  -d database  - (optional) name of the database to connect to.\n                 Defaults to ocsdb.\n  -u user      - (optional) user of to connect to the database as.\n                 Defaults to guest.\n  -p password  - (optional) The password to use in connecting to the\n                 database.  Defaults to guest.\n\nAvailable plugins include:"
+msgstr "kusu-genconfig [-h|-v| -d database -u user -p password ] plugin plugin_args\n\nThe kusu-genconfig tool will run various plugins to generate configuration\nfiles for various applications.  It may also be used to gather\ninformation about the cluster.  See below for a list of plugins.\n\nWhen run with no arguments it will generate a list of all available\nplugins.  The following arguments are supported by the tool:\n  -h           - Provide help on this tool.  If a plugin is specified\n                 then the help for that tool will be displayed\n  -v           - Print the tool version.\n  -d database  - (optional) name of the database to connect to.\n                 Defaults to kusudb.\n  -u user      - (optional) user of to connect to the database as.\n                 Defaults to guest.\n  -p password  - (optional) The password to use in connecting to the\n                 database.  Defaults to guest.\n\nAvailable plugins include:"
 
 msgid "genconfig_Nodes_Help"
 msgstr "This plugin generates a list of all nodes installed by the installer.\nIf the plugin is provided with a node group name it will generate\na list of nodes in node group."
@@ -230,8 +233,8 @@ msgstr "This plugin generates the Apache configuration file.\nUSE:  genconfig ap
 msgid "genconfig_Nodegroups_Help"
 msgstr "This plugin generates a list of all nodegroups.\nUSE:  genconfig nodegroups {Optional SQL}\nThe optional SQL forms part of a WHERE clause\n which can be used to adjust the query e.g.\n    genconfig nodegroups 'ngid=1'"
 
-msgid "repoman_Help"
-msgstr "Repoman help goes here"
+msgid "kusu-repoman_Help"
+msgstr "Kusu-repoman help goes here"
 
 msgid "repoman_Repo_exists.\n"
 msgstr "ERROR:  The repository already exists.\n"
@@ -242,8 +245,8 @@ msgstr "Kit %s has been added already.\n"
 msgid "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n"
 msgstr "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n"
 
-msgid "addhost_Help"
-msgstr "addhost [-hvub]\n\t       [-n {node group}]\n\t       [-r rack#]\n\t       [-i ifname -n {node group} [-r rack #]]\n\t       [-f file -j ifname -n {node group} [-r rack#]]\n\t       [-p hostname]\n\t       [-e {nodes_to_remove}]\n\t       [-s static_hostname -x ip_addr]\n\t       [-s static_hostname -i ifname]\n\t       [-c rank#]\n\nYou use -b with any of the usages above to run addhost in batch mode."
+msgid "kusu-addhost_Help"
+msgstr "kusu-addhost [-hvub]\n\t\t    [-n {node group} [-x {ip_addr}]]\n\t\t    [-r rack#]\n\t\t    [-i ifname -n {node group} [-r rack #]]\n\t\t    [-f file -j ifname -n {node group} [-r rack#]]\n\t\t    [-p hostname]\n\t\t    [-e {nodes_to_remove}]\n\t\t    [-s static_hostname -x ip_addr]\n\t\t    [-s static_hostname -i ifname]\n\t\t    [-c rank#]\n\nYou use -b with any of the usages above to run kusu-addhost in batch mode."
 
 msgid "addhost_version_usage"
 msgstr "Display version of tool"
@@ -260,8 +263,8 @@ msgstr "Set the interface to provide DHCP on"
 msgid "addhost_nodeinterface_usage"
 msgstr "Select the interface from the nodes/nodegroups view different then -i which is from installers view"
 
-msgid "addhost_macfile_usage"
-msgstr "Use the following file as the source of the MAC address"
+msgid "addhost_file_usage"
+msgstr "Use the following file as the source of the MAC address for a managed nodegroup or use the following file as the source of the unmanaged host for a unmanaged nodegroup"
 
 msgid "addhost_remove_usage"
 msgstr "Remove the list of hosts"
@@ -279,7 +282,7 @@ msgid "addhost_statichost_usage"
 msgstr "The static hostname to assign"
 
 msgid "addhost_ipaddr_usage"
-msgstr "The static IP address to assign to the device"
+msgstr "The static IP address to assign to the device or node"
 
 msgid "addhost_batch_usage"
 msgstr "Runs the addhost tool in non-graphical batch mode"
@@ -341,17 +344,47 @@ msgstr "The options -n, -p, -e, -u and -s are mutually exclusive"
 msgid "addhost_options_interface_required"
 msgstr "The -i option requires an interface name"
 
+msgid "addhost_options_provision_interface_required"
+msgstr "The -i option requires an interface associated with provisioning network"
+
 msgid "addhost_options_invalid_interface"
 msgstr "Not a valid network interface. Please try again"
 
 msgid "addhost_options_hostname_in_use"
 msgstr "Specified hostname is already used. Please try again"
 
-msgid "addhost_options_macfile_options_needed"
-msgstr "The -f option requires the -j and -n options"
+msgid "addhost_unmanaged_hosts_file_not_found"
+msgstr "The unmanaged hosts file %s was not found."
+
+msgid "addhost_options_file_nodegroup_needed"
+msgstr "-f option requires -n option"
+
+msgid "addhost_options_file_interface_needed"
+msgstr "-f option requires -j option for managed nodegroups"
+
+msgid "addhost_options_file_interface_invalid"
+msgstr "-j option must only be used for managed nodegroups"
+
+msgid "addhost_options_invalid_hostname"
+msgstr "Static hostname %s is not valid. Specify a hostname that only contains the characters '.-a-zA-Z0-9' and does not start with characters '.' and '-'."
+
+msgid "addhost_options_hostname_too_long"
+msgstr "Static hostname %s exceeds the maximum length. Specify a hostname that has less than or equal to %d characters."
+
+msgid "addhost_options_invalid_ip"
+msgstr "Static IP address %s is not a valid IPv4 address. Specify an IP address in the form XXX.XXX.XXX.XXX, where 0 <= XXX <= 255."
+
+msgid "addhost_options_ip_not_on_network"
+msgstr "Static IP address %s is not on any private network. Specify a static IP address that is on a private network."
+
+msgid "addhost_options_ip_inuse"
+msgstr "Static IP address %s is in use. Specify an available static IP address."
+
+msgid "addhost_options_hostname_inuse"
+msgstr "Static hostname %s is in use. Specify an available static hostname."
 
 msgid "addhost_options_macfile_suboptions_error"
-msgstr "The -j option must be used with the -f option"
+msgstr "-j option must only be used with the -f option"
 
 msgid "addhost_options_nodegroup_required"
 msgstr "The -n option requires a Node group name"
@@ -366,7 +399,7 @@ msgid "addhost_options_static_option_conflict"
 msgstr "The -s option must be used with either -x or -i"
 
 msgid "addhost_options_static_suboptions_error"
-msgstr "The -x option must be used with the -s option"
+msgstr "The -x option must be used with the -s or -n option, and should not be used with -f."
 
 msgid "addhost_unmanaged_no_ip"
 msgstr "Missing -x option. Must provide an IP Address for the unmanaged node"
@@ -376,6 +409,9 @@ msgstr "Must specify -x or -i option when using -s option."
 
 msgid "addhost_invalid_ip"
 msgstr "ERROR:  Invalid IP address"
+
+msgid "addhost_ip_conflict"
+msgstr "Specified IP address %s has already been used by some node."
 
 msgid "options_invalid_nodegroup"
 msgstr "Not a valid node group. Please try again"
@@ -402,10 +438,10 @@ msgid "addhost_duplicate_mac"
 msgstr "Found duplicate MAC address %s. Ignoring."
 
 msgid "addhost_nghosts_lock"
-msgstr "ERROR:   Cannot run addhost because nghosts is running. Please exit nghosts first"
+msgstr "ERROR:   Cannot run kusu-addhost because kusu-nghosts is running. Please exit kusu-nghosts first"
 
-msgid "addhost_already_inuse"
-msgstr "ERROR:   Addhost is already in use. Delete the /var/lock/subsys/addhost lockfile if it is not"
+msgid "program_already_inuse"
+msgstr "ERROR:   %s is already in use. Delete the /var/lock/subsys/%s lockfile if it is present."
 
 msgid "addhost_cmd_abort"
 msgstr "Command aborted by user..."
@@ -465,13 +501,19 @@ msgid "addhost_static_device_hostname_space_error"
 msgstr "Error: Cannot have a space in the hostname"
 
 msgid "addhost_static_device_hostname_used_error"
-msgstr "Error: The hostname %s is already in use. Please another hostname"
+msgstr "Error: The hostname %s is already in use. Please try another hostname"
 
 msgid "addhost_static_device_invalid_ip_error"
 msgstr "Error: '%s' is not a valid IP Address, try again"
 
 msgid "addhost_static_device_ip_used_error"
 msgstr "Error: The IP '%s' is already in use. Try another"
+
+msgid "addhost_static_device_no_net_error"
+msgstr "Error: Specified IP '%s' is not in any private network. Try another"
+
+msgid "addhost_ip_notin_network"
+msgstr "Error: Specified IP '%s' is not in provisioning network of Node Group %s or is a broadcast IP"
 
 msgid "addhost_batch_unmanaged_device_instruction"
 msgstr "Please input the following information for the Unmanaged device"
@@ -536,6 +578,21 @@ msgstr "Finished deleting nodes"
 msgid "addhost_event_deleted_node"
 msgstr "Deleted node %s"
 
+msgid "addhost_event_start_unmanagedhosts_import"
+msgstr "Importing unmanaged hosts file"
+
+msgid "addhost_event_finish_unmanagedhosts_import"
+msgstr "Finished importing unmanaged hosts file"
+
+msgid "The macfile '%s' is empty"
+msgstr "The macfile '%s' is empty"
+
+msgid "Check that MAC addresses are in valid format and are unique in the macfile '%s'"
+msgstr "Check that MAC addresses are in valid format and are unique in the macfile '%s'"
+
+msgid "The unmanaged hosts file '%s' is empty"
+msgstr "The unmanaged hosts file '%s' is empty"
+
 msgid "replace_primary_installer_error\n"
 msgstr "ERROR:  Cannot replace the primary installer!\n"
 
@@ -545,8 +602,8 @@ msgstr "ERROR:  Cannot add the primary installer again!\n"
 msgid "remove_primary_installer_error\n"
 msgstr "ERROR:  Cannot remove the primary installer!\n"
 
-msgid "buildimage_Help"
-msgstr "buildimage [-h|-v| -n node_group {-i image_name}]\n\nThe buildimage tool will build the root filesystem for diskless and disked\nnodes.  It uses the data in the database for a node group to determine which\npackages to install.  It then creates a chroot'ed filesystem under which it\ncopies the files.  It then runs any post installation scripts and any user\nprovided custom scripts.  The arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -n node-group  - The name pf the node group to generate the root\n                   filesystem for.\n  -i image_name  - (Optional) The name to assign the generated image.\nThe full list of arguments is as follows:"
+msgid "kusu-buildimage_Help"
+msgstr "kusu-buildimage [-h|-v| -n node_group {-i image_name}]\n\nThe kusu-buildimage tool will build the root filesystem for diskless and disked\nnodes.  It uses the data in the database for a node group to determine which\npackages to install.  It then creates a chroot'ed filesystem under which it\ncopies the files.  It then runs any post installation scripts and any user\nprovided custom scripts.  The arguments have the following meanings:\n  -h             - Provide help on this tool.\n  -v             - Print the tool version.\n  -n node-group  - The name pf the node group to generate the root\n                   filesystem for.\n  -i image_name  - (Optional) The name to assign the generated image.\nThe full list of arguments is as follows:"
 
 msgid "Removing: %s\n"
 msgstr "Removing: %s\n"
@@ -573,20 +630,17 @@ msgid "buildimage_need_a_node_group\n"
 msgstr "ERROR:  No node group specified\n"
 
 # Kitops intl messages
-msgid "kitops_Help"
-msgstr "KUSU kitops - kit operations tool"
+msgid "kusu-kitops_Help"
+msgstr "kusu-kitops - kit operations tool"
 
 msgid "kitops_usage_add"
 msgstr "add the kit specified with -m"
 
 msgid "kitops_usage_media"
-msgstr "specify the media iso or mountpoint for the kit"
+msgstr "specify the media iso or mountpoint for the kit (support access to the kit on a remote location over the http and ftp protocol)"
 
 msgid "kitops_usage_list"
 msgstr "list all the kits available on the system"
-
-msgid "kitops_usage_remotelist"
-msgstr "list all the kits available on all remote repositories"
 
 msgid "kitops_usage_upgrade"
 msgstr "upgrade the specified kit"
@@ -637,16 +691,16 @@ msgstr "ERROR: Unable to locate kernel package in: %s  Try running:  ls %s\n"
 msgid "Extracting template Initial Ram Disk\n"
 msgstr "Extracting template Initial Ram Disk\n"
 
-msgid "buildinitrd_Help"
-msgstr "buildinitrd [-h|-v| -n node_group {-i image_name} {-r}]\n\nThe buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by ngedit.  It can build both initramfs\nand initrd type images.  By default it will build initramfs.  The -r \nargument causes cramfs initrds to be built instead."
+msgid "kusu-buildinitrd_Help"
+msgstr "kusu-buildinitrd [-h|-v| -n node_group {-i image_name} {-r}]\n\nThe kusu-buildinitrd tool creates the initial RAM disk for\n Diskless and Disked nodes running from an image.\nThe tool is typically run by kusu-ngedit.  It can build both initramfs\nand initrd type images.  By default it will build initramfs.  The -r \nargument causes cramfs initrds to be built instead."
 
 msgid "nodeboot_no_hostname_or_ip\n"
 msgstr "ERROR: Missing hostname or IP\n"
 
 # Netedit specific messages
 
-msgid "netedit_Help"
-msgstr "netedit [-hvl]\n\t       [-d netid#]\n\t       [-a -n network -s subnet -i ifname -t start_ipaddr [-g gateway] -e {network description} -x suffix [-o {network options}] [-y | -z]\n [-r increment]]\n\t       [-a -i ifname -x suffix -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-c netid# -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}]\n [-y | -z]] [-r increment]\n\t       [-c netid# -i ifname [-x suffix] -e {network description} [-o {network options}] [-y | -z] -p] - DHCP Mode\n\t       [-w netid# [-o network options] [-y | -z] [-t start_ipaddr] [-e {network description}] [-r increment]]"
+msgid "kusu-netedit_Help"
+msgstr "kusu-netedit [-hvl]\n\t\t    [-d netid#]\n\t\t    [-a -n network -s subnet -i ifname -t start_ipaddr [-g gateway] -e {network description} -x suffix [-o {network options}] [-y | -z] [-r increment]]\n\t\t    [-c netid# -n network -s subnet -i ifname -t start_ipaddr -g gateway -e {network description} [-x suffix] [-o {network options}] [-y | -z]] [-r increment]\n\t\t    [-w netid# [-o network options] [-y | -z] [-t start_ipaddr] [-e {network description}] [-r increment]]"
 
 msgid "netedit_window_title_network"
 msgstr "Network Editor"
@@ -658,7 +712,7 @@ msgid "netedit_item_labels"
 msgstr "DEVICE NETWORK SUBNET DESCRIPTION"
 
 msgid "netedit_window_title_exit"
-msgstr "Exit netedit?"
+msgstr "Exit kusu-netedit?"
 
 msgid "netedit_instructions_exit"
 msgstr "Do you want to quit the Network editor?"
@@ -774,16 +828,19 @@ msgid "netedit_validate_desc_in_use"
 msgstr "The description field contains a description that is already used."
 
 msgid "netedit_validate_inc_not_zero"
-msgstr "The incremental number cannot be 0"
+msgstr "Increment cannot be zero. Specify the increment to be a non-zero value."
 
 msgid "netedit_validate_inc_not_empty"
-msgstr "The incremental number cannot be empty"
+msgstr "Increment cannot be empty. Specify the increment to be a non-zero value."
 
 msgid "netedit_validate_inc_not_number"
-msgstr "The incremental value is not a number"
+msgstr "Increment is not a number. Specify the increment to be a number."
 
-msgid "netedit_validate_device"
+msgid "netedit_validate_device_not_empty"
 msgstr "The device value cannot be empty"
+
+msgid "netedit_validate_device_not_alphanumeric"
+msgstr "The device value can only contain alphanumeric characters"
 
 msgid "netedit_validate_gateway_on_network"
 msgstr "The gateway specified does not reside on the network. Please try a different network value"
@@ -843,7 +900,7 @@ msgid "netedit_dhcp_usage"
 msgstr "Specify to enable or disable using DHCP. By default disabled"
 
 msgid "netedit_changeused_usage"
-msgstr "Change non-destructive values for a network in use (associated with ngedit)"
+msgstr "Change non-destructive values for a network in use (associated with kusu-ngedit)"
 
 msgid "netedit_provision_usage"
 msgstr "Set network to 'provision' type"
@@ -864,7 +921,7 @@ msgid "netedit_provision_conflict"
 msgstr "Cannot specify -z and -y at same time"
 
 msgid "netedit_options_add_options_needed"
-msgstr "The -a option needs the -n, -s, -i, -t, -x and -e specified when not using the -p option. Otherwise -a requires -i -e when using the -p option."
+msgstr "The -a option needs the -n, -s, -i, -t, -x and -e specified."
 
 msgid "netedit_options_delete_options_needed"
 msgstr "The -d option needs the -n and -s options specified"
@@ -879,7 +936,7 @@ msgid "netedit_options_conflict_type"
 msgstr "Cannot specify the options -z and -y at the same time"
 
 msgid "netedit_options_illegal_usednetwork"
-msgstr "Cannot specify -s, -n, -g, -i, -x or -p options when changing a network already assigned with ngedit (in use)"
+msgstr "Cannot specify -s, -n, -g, -i or -x options when changing a network already assigned with kusu-ngedit (in use)"
 
 msgid "netedit_empty_description"
 msgstr "Cannot have an empty network description"
@@ -950,13 +1007,8 @@ msgstr "Instructions: Press F5 to cancel screen, Press F8 to accept changes"
 msgid "addhost_helpline_instructions"
 msgstr "Instructions: Press F5 to go back, F8 to goto next screen, F12 to quit"
 
-msgid "netedit_already_inuse"
-msgstr "ERROR:   Netedit is already in use. Delete the /var/lock/subsys/netedit lockfile if it is not"
-
-# nghosts
-
-msgid "nghosts_Help"
-msgstr "nghosts [-hvl]\n\t       [-g {node group}]\n\t       [-m {hosts} -t {node group} [-f {node group}] [-a rack#]]\n\t       [-f {node group} -t {node group} [-a rack#]]"
+msgid "kusu-nghosts_Help"
+msgstr "kusu-nghosts [-hvl]\n\t\t    [-g {node group}]\n\t\t    [-m {hosts} -t {node group} [-a rack#]]\n\t\t    [-f {node group} -t {node group} [-a rack#]]"
 
 msgid "nghosts_version_usage"
 msgstr "Display version of tool"
@@ -984,6 +1036,9 @@ msgstr "The rack number to use (if applicable)"
 
 msgid "nghosts_options_exclusive"
 msgstr "The options -l, -g and -t are mutually exclusive"
+
+msgid "nghosts_m_f_options_exclusive"
+msgstr "The options -f and -m are mutually exclusive"
 
 msgid "nghosts_window_title_prompt"
 msgstr "Node Membership Editor"
@@ -1019,7 +1074,7 @@ msgid "nghosts_instruction_select_nodegroup"
 msgstr "Select node group(s) to move all it's nodes to a new node group."
 
 msgid "nghosts_window_title_exit"
-msgstr "Exit nghosts?"
+msgstr "Exit kusu-nghosts?"
 
 msgid "nghosts_instructions_exit"
 msgstr "Do you want to quit the Network membership editor?"
@@ -1043,7 +1098,7 @@ msgid "nghosts_moving_nodes"
 msgstr "Moving nodes"
 
 msgid "nghosts_addhost_lock"
-msgstr "ERROR:  Cannot run nghosts because addhost is running. Please exit addhost first"
+msgstr "ERROR:  Cannot run kusu-nghosts because kusu-addhost is running. Please exit kusu-addhost first"
 
 msgid "nghosts_moving_nodes_progress"
 msgstr "Moving nodes, please wait..."
@@ -1059,9 +1114,6 @@ msgstr "Source Nodes, Destination Nodegroup"
 
 msgid "nghosts_nodegroup_label"
 msgstr "Source Nodegroups, Destination Nodegroup"
-
-msgid "nghosts_already_inuse"
-msgstr "ERROR:   Nghosts is already in use. Delete the /var/lock/subsys/nghosts lockfile if it is not"
 
 msgid "Node Group Editor"
 msgstr "Node Group Editor"
@@ -1117,14 +1169,14 @@ msgid "Could not move the selected nodes to the '%s' node group. They may be alr
 
 msgstr "Could not move the selected nodes to the '%s' node group. They may be already in the same node group or do not have a valid network to associate them to the new node group."
 
-msgid "ngedit_Help"
-msgstr "Node Group Editor is an administrative tool for nodegroup related operations,\nincluding their copying/deletion/modification. It allows ultimate control over\nthe specific behavior/configuration of node groups. ngedit is used as follows:\nngedit [ -l | { -p | -s | -d } <NGName> | -c <NGName> -n <NewNGName> | -i <XMLFile> [-u] [-r] | -e <NGName> | -t <XMLFile> ]"
+msgid "kusu-ngedit_Help"
+msgstr "Node Group Editor is an administrative tool for nodegroup related operations,\nincluding their copying/deletion/modification. It allows ultimate control over\nthe specific behavior/configuration of node groups. kusu-ngedit is used as follows:\nkusu-ngedit [ -l | { -p | -s | -d } <NGName> | -c <NGName> -n <NewNGName> | -i <XMLFile> [-u] [-r] | -e <NGName> | -t <XMLFile> ]"
 
 msgid "ngedit_usage_delete"
 msgstr "Delete specified nodegroup"
 
 msgid "ngedit_usage_version"
-msgstr "Display ngedit version"
+msgstr "Display kusu-ngedit version"
 
 msgid "ngedit_usage_copy"
 msgstr "Copy specified nodegroup"
@@ -1141,6 +1193,9 @@ msgstr "List all nodegroups"
 msgid "ngedit_usage_print"
 msgstr "Provide detailed printout of a specified NG"
 
+msgid "ngedit_usage_yes"
+msgstr "Answer yes for all questions"
+
 msgid "ngedit_usage_import"
 msgstr "Import a node group XML configuration file"
 
@@ -1155,6 +1210,18 @@ msgstr "Outputs a node group configuration to XML format"
 
 msgid "ngedit_usage_test"
 msgstr "Test a node group XML configuration file"
+
+msgid "kusu-migrate - PCM migration tool"
+msgstr "kusu-migrate - PCM migration tool"
+
+msgid "Capture PCM customisation and settings and export to a tar-gzipped file"
+msgstr "Capture PCM customisation and settings and export to a tar-gzipped file"
+
+msgid "Import customisation and settings in a tar-gzipped file into PCM"
+msgstr "Import customisation and settings in a tar-gzipped file into PCM"
+
+msgid "print the report of current PCM 1.2 cluster or the report in the tar-gzipped file if it is provided."
+msgstr "print the report of current PCM 1.2 cluster or the report in the tar-gzipped file if it is provided."
 
 msgid "boot-media-tool_Help"
 msgstr "boot-media-tool [-h|-v] <action> arg1=val1 arg2=val2 ...\n\nboot-media-tool builds Kusu Boot Media from supported Linux distros' installation\nsources. The tool also queries and extracts kernel/initrd images from these sources.\n\nOptions:\n    \n    -h          - Provide the tool help (this screen).\n    -v          - Provide the version string.\n    -f          - Force overwriting when extracting kernel/initrd.\n    \nActions:\n\n    query           - Probes and displays any kernel/initrd in the \n                      installation source. Available arguments for \n                      this action: \n                        source=<path of installation source>\n    extract         - Extracts the kernel/initrd from the installation \n                      source. Available arguments for this action:\n                        source=<path of installation source>\n                        image=<kernel|initrd|all>\n    unpack          - Unpacks the specified initrd into a directory. \n                      Available arguments for this action:\n                        initrd=<path of initrd file>\n                        dir=<directory to unpack into>    \n    pack            - Packs the rootfs directory into a initramfs image.\n                      An optional init script template can be passed. \n                      Available arguments for this action:\n                        dir=<path of rootfs directory>\n                        initramfs=<name of initramfs file>\n                        template=<init script template file>\n    make-isolinux   - Make isolinux directory with the specified kernel \n                      and initrd. Available arguments for this action:\n                        dir=<directory for isolinux>\n                        os=<the os for the kernel/initrd>\n                        kernel=<path of kernel file>\n                        initrd=<path of initrd file>\n                        isobin=<path of isolinux.bin>\n    make-iso        - Make the Kusu Boot Media iso from the isolinuxdir.\n                      Available arguments for this action:\n                        dir=<path of isolinuxdir>\n                        iso=<name of iso file>\n    make-boot-tgz   - Make the Kusu BootArchive from the isolinuxdir which\n                      then can be included in a Kusu Kit to make it bootable. \n                      Available arguments for this action:\n                        bootarchive=<name of bootarchive>\n                        dir=<path of isolinuxdir>\n                        \nExample operation usages:\n\n    To query installation source mounted at /media/cdrom:\n    # boot-media-tool query source=/media/cdrom\n    \n    To extract the kernel from the installation source:\n    # boot-media-tool extract source=/media/cdrom image=kernel\n    \n    To extract the initrd from the installation source:\n    # boot-media-tool extract source=/media/cdrom image=initrd\n    \n    To unpack the initrd into a directory called foodir:\n    # boot-media-tool unpack initrd=initrd.img dir=foodir\n    \n    To pack the rootfs directory called foodir into an initramfs image:\n    # boot-media-tool pack dir=foodir initramfs=initram.img"

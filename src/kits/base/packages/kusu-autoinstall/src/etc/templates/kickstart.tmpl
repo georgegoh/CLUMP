@@ -1,6 +1,6 @@
 # Redhat kickstart template
 #
-# \$Id$
+# \$Id: kickstart.tmpl 3140 2008-03-15 17:13:11Z ggoh $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -70,6 +70,15 @@ $pkg
 #end for
 @base
 ntp
+rsyslog
 
 %post
-
+# RHEL 5 anaconda hardcodes swap partition labels.
+# http://git.fedorahosted.org/git/anaconda.git?p=anaconda.git;a=blob;f=fsset.py;h=771a482e3c95542a6d4315c8fc51043b17a2bee0;hb=8d5ef4bbe5e77da46f2811f7a409cd0e5d50059b#l896
+# This is a problem for ISF AC, because we mark our swap partitions using
+# custom labels. Remaking the filesystem on the partition and fixing the fstab here
+# solves our problem.
+#if $swap_path and $swap_label
+mkswap -L $swap_label $swap_path
+sed -i 's/SWAP-$swap_devbasename/$swap_label/' /etc/fstab
+#end if

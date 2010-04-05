@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: networktool.py 476 2008-01-25 12:36:55Z hirwan $
 #
 # Copyright 2007 Platform Computing Inc.
 #

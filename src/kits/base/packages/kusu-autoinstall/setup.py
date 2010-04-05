@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: setup.py 2110 2009-02-27 21:36:10Z ggoh $
 #
 # Kusu autogen generator
 #

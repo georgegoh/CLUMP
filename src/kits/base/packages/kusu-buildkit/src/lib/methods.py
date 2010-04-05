@@ -1,29 +1,67 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: methods.py 3049 2009-10-07 13:41:31Z abuck $
 #
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
+from kusu.buildkit.kitsource01 import KusuComponent as KusuComponent01
+from kusu.buildkit.kitsource01 import KusuKit as KusuKit01
+from kusu.buildkit.kitsource01 import KitSrcFactory as KitSrcFactory01
+from kusu.buildkit.kitsource02 import KusuComponent as KusuComponent02
+from kusu.buildkit.kitsource02 import KusuKit as KusuKit02
+from kusu.buildkit.kitsource02 import KitSrcFactory as KitSrcFactory02
 from kusu.buildkit.builder import PackageProfile, BuildProfile
 from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
-from kusu.util.errors import UndefinedOSType
-from kusu.buildkit.strategy import KusuKitFactory, KusuComponentFactory
-
-
+from kusu.util.errors import UndefinedOSType, InvalidBuildProfile, KitinfoSyntaxError
 from path import path
 import subprocess
 
 KIT_API='0.1'
 
+KusuKitFactory = { '0.1': KusuKit01, '0.2': KusuKit02 }
+KusuComponentFactory = { '0.1': KusuComponent01, '0.2': KusuComponent02 }
+KitSrcAbstractFactory = { '0.1': KitSrcFactory01, '0.2': KitSrcFactory02 }
 
+def setupprofile(basedir=''):
+    """ Convenience method to setup buildprofile. 
+    """
+    if not basedir:
+        # check if the current directory looks like a build environment
+        _basedir = path.getcwd()
+        _kitsrc = KitSrcAbstractFactory[KIT_API](_basedir)
+        if _kitsrc.verifyLocalSrcPath():
+            builddir = _basedir / 'artifacts'
+            pkgdir = _basedir / 'packages'
+            srcdir = _basedir / 'sources'
+            docsdir = _basedir / 'docs'
+            pluginsdir = _basedir / 'plugins'
+            tmpdir = _basedir / 'tmp'
+            return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+                srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
+        else:
+            raise InvalidBuildProfile
+    _basedir = path(basedir)
+    _kitsrc = KitSrcAbstractFactory[KIT_API](_basedir)
+    if _kitsrc.verifyLocalSrcPath():        
+        builddir = _basedir / 'artifacts'
+        srcdir = _basedir / 'sources'
+        docsdir = _basedir / 'docs'
+        pluginsdir = _basedir / 'plugins'
+        pkgdir = _basedir / 'packages'
+        tmpdir = _basedir / 'tmp'
+        return BuildProfile(builddir=builddir,tmpdir=tmpdir,
+            srcdir=srcdir,pkgdir=pkgdir,docsdir=docsdir,pluginsdir=pluginsdir)
+    else:
+        raise InvalidBuildProfile
+        
 def populatePackagesDir(buildprofile, arch='noarch'):
     """ Sweeps through the kitsrc dir and makes the built packages
         available in the packages dir.
-
+    
     """
     # TODO : need to handle DEBs too instead of just RPMs
-
+    
     filespecs = []
 
     if arch == 'x86':
@@ -36,16 +74,14 @@ def populatePackagesDir(buildprofile, arch='noarch'):
 
     # add noarch packages no matter what
     if not '*.noarch.rpm' in filespecs: filespecs.append('*.noarch.rpm')
-
+    
     # locate the built rpms
     builtdir = buildprofile.builddir / 'packages/RPMS'
-    buildprofile.filenames = []
+
     for fspec in filespecs:
         for f in builtdir.walkfiles(fspec):
             _f = f.basename()
-            if not _f in buildprofile.filenames:
-                buildprofile.filenames.append(_f)
-            if not path(buildprofile.pkgdir / _f).exists():
+            if not path(buildprofile.pkgdir / _f).exists(): 
                 pass
             else:
                 path(buildprofile.pkgdir / _f).remove()
@@ -54,18 +90,40 @@ def populatePackagesDir(buildprofile, arch='noarch'):
             lnP = subprocess.Popen(cmd,shell=True)
             lnP.wait()
 
-
+        
     # also locate rpms that are located in the srcdir
 
     for fspec in filespecs:
         for f in buildprofile.srcdir.walkfiles(fspec):
-            if f.endswith('.src.rpm'):
+            if f.endswith('.src.rpm'): 
                 pass
             else:
                 cmd = 'ln -sf %s %s' % (f,buildprofile.pkgdir)
                 lnP = subprocess.Popen(cmd,shell=True)
                 lnP.wait()
 
+
+def processKitInfo(kitinfo):
+    """ Loads the kitinfo file and returns a tuple containing two elements - the kit metainfo 
+        and a list of component metainfo contained in that file. A metainfo is a dict object.
+    """
+    kitinfo = path(kitinfo)
+    if not kitinfo.isfile(): return ({},[])
+    
+    ns = {}
+
+    # If there is a syntax error in the kitinfo file, holla!
+    try:
+        execfile(kitinfo,ns)
+    except SyntaxError, e:
+        error_message = "%s in kitinfo file %s at line %s, column %s" % \
+                        (e.msg, e.filename, e.lineno, e.offset)
+        raise KitinfoSyntaxError, error_message
+
+    kit = ns.get('kit',{})
+    components = ns.get('components',[])
+    
+    return (kit,components)
 
 def DefaultKit(**kwargs):
     """ The most basic type of kits. """
@@ -84,10 +142,10 @@ def DefaultKit(**kwargs):
         del kwargs['removeable']
     if not 'removable' in kwargs and not 'removeable' in kwargs:
         kwargs['removable'] = True
-
+        
     if not 'pkgname' in kwargs: kwargs['pkgname'] = ''
     if not 'name' in kwargs: kwargs['name'] = ''
-
+    
     if not 'srctype' in kwargs: kwargs['srctype'] = 'kit'
 
     kit = KusuKitFactory[KIT_API](**kwargs)
@@ -156,9 +214,9 @@ def DefaultComponent(**kwargs):
     if not 'osversion' in kwargs: kwargs['osversion'] = ''
     if not 'osmajor' in kwargs: kwargs['osmajor'] = ''
     if not 'osminor' in kwargs: kwargs['osminor'] = ''
-
+    
     component = KusuComponentFactory[KIT_API](**kwargs)
-
+  
     return component
 
 
@@ -170,7 +228,7 @@ def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
     kwargs['srctype'] = 'distro'
     return Package(**kwargs)
-
+    
 def RPMPackage(**kwargs):
     """ This is used to handle rpm packages. """
     kwargs['srctype'] = 'rpm'
@@ -198,7 +256,7 @@ def Package(**kwargs):
         pkg = PackageProfile(RPMWrapper(),**kwargs)
     elif kwargs['srctype'] == 'srpm':
         pkg = PackageProfile(SRPMWrapper(),**kwargs)
-
+        
 
     return pkg
 

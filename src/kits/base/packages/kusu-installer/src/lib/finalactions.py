@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: finalactions.py 3049 2009-10-07 13:41:31Z abuck $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -10,6 +10,7 @@
 import os
 import re
 import subprocess
+from sets import Set
 from kusu.util.verify import *
 from kusu.util.errors import *
 from path import path
@@ -47,7 +48,7 @@ def makeFakeRepo(kiprofile, oskitname):
 
     # Fake rhel/centos/sl repo
     # Temp symlinks to be cleaned up in faux anaconda script later
-    if kiprofile['OS'] in ['rhel', 'centos', 'scientificlinux'] and \
+    if kiprofile['OS'] in osfamily.getOSNames('rhelfamily') and \
         oskitname != kiprofile['OS']:
         files = []
         repodir = path(kiprofile['Kusu Install MntPt']) / 'depot' / 'repos' / '1000'
@@ -211,7 +212,7 @@ def genAutoInstallScript(disk_profile, kiprofile):
 
     if kusu_dist in osfamily.getOSNames('rhelfamily') + ['fedora']:
         install_script = kusu_tmp / 'kusu-ks.cfg'
-    elif kusu_dist in  ['sles', 'opensuse']:
+    elif kusu_dist in  ['sles']:
         install_script = kusu_tmp / 'kusu-autoinst.xml'
     else:
         install_script = kusu_tmp / 'install_script'
@@ -290,17 +291,21 @@ def mountKusuMntPts(prefix, disk_profile):
     activateAllVolumeGroups()
     d = disk_profile.mountpoint_dict
     mounted = []
+    kusu_dist = os.environ.get('KUSU_DIST', None)
 
     # Mount and create in order 
     # fix bug 107818 - add /var to the list so that the lock file is touched
     # in the mounted partition if it exists. 
-    for m in ['/', '/root', '/depot', '/depot/repos', '/depot/kits','/var', '/boot']:
+    for m in sorted(Set(['/', '/root', '/depot', '/depot/repos', '/depot/kits','/var', '/boot']).union(d.keys())):
         mntpnt = prefix + m
 
         if not mntpnt.exists():
             mntpnt.makedirs()
             logger.debug('Made %s dir' % mntpnt)
         
+        if m=='/boot' and kusu_dist=='sles':
+            continue
+
         # mountpoint has an associated partition,
         # and mount it at the mountpoint
         if d.has_key(m):

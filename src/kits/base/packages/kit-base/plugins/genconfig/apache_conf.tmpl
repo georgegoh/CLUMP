@@ -14,10 +14,7 @@ CacheDisable /cfm
     Options FollowSymLinks Indexes
     AllowOverride None
     Order deny,allow
-    #for $list in $allowlist
-    Allow from $list
-    #end for
-    Deny from all
+    Allow from all
 </Directory>
  
 <Directory "$reposdir">

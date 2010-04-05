@@ -1,6 +1,28 @@
 <?xml version="1.0"?>
 <!DOCTYPE profile SYSTEM "/usr/share/autoinstall/dtd/profile.dtd">
 <profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+    <bootloader>
+        <global>
+            #if $mbrbootloader
+            <activate>true</activate>
+            <generic_mbr>true</generic_mbr>
+            <boot_mbr>true</boot_mbr>
+            #else
+            <activate>false</activate>
+            <boot_boot>true</boot_boot>
+            <boot_mbr>false</boot_mbr>
+            <boot_root>false</boot_root>
+            <debug>false</debug>
+            <generic_mbr>false</generic_mbr>
+            <hiddenmenu>false</hiddenmenu>
+            #end if
+        </global>
+        #if not $mbrbootloader
+        <repl_mbr>false</repl_mbr>
+        <loader_type>grub</loader_type>
+        #end if 
+    </bootloader>
+
     <general>
         <mode>
             <confirm config:type="boolean">false</confirm>
@@ -27,6 +49,10 @@
         <language>$lang</language>
         <languages></languages>
     </language>
+
+    <security>
+        <passwd_encryption>md5</passwd_encryption>
+    </security>
 
     <networking>
         <dhcp_options>
@@ -100,7 +126,7 @@
         #if $tz_utc
             <hwclock>UTC</hwclock>
         #else
-            <hwclock>localtime</hwclock>
+        <hwclock>localtime</hwclock>
         #end if
         <timezone>$tz</timezone>
     </timezone>
@@ -159,7 +185,7 @@ EOF
                     ##del $pv
                 #elif $part.fs_type=='linux-swap'
                     <filesystem config:type="symbol">swap</filesystem>
-                    <format config:type="boolean">$part.do_not_format</format>
+                    <format config:type="boolean">true</format>
                     <mount>swap</mount>
                     <mountby config:type="symbol">device</mountby>
                 #elif $part.fs_type=='reiserfs'
@@ -169,7 +195,11 @@ EOF
                     <mountby config:type="symbol">device</mountby>
                 #else
                     <filesystem config:type="symbol">$part.fs_type</filesystem>
+                    #if $part.mountpoint=='/boot':
+                    <format config:type="boolean">true</format>
+                    #else
                     <format config:type="boolean">$part.do_not_format</format>
+                    #end if
                     <mount>$part.mountpoint</mount>
                     <mountby config:type="symbol">device</mountby>
                 #end if

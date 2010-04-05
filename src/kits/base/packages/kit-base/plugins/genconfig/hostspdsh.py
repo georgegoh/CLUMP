@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: hostspdsh.py 3135 2009-10-23 05:42:58Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -21,11 +21,13 @@ class thisReport(Report):
         print self.gettext("genconfig_HostsPdsh_Help")
         
     def runPlugin(self, pluginargs):
+
         query = ("SELECT nodes.name, networks.suffix " +
                  "FROM nodes, nics, networks WHERE nics.nid = nodes.nid " +
                  "AND nics.netid = networks.netid " +
                  "AND nodes.name != (SELECT kvalue FROM appglobals WHERE " +
                  "                  kname='PrimaryInstaller') " +
+                 "AND nics.boot = True " +
                  "AND networks.type = 'provision' " +
                  "AND NOT networks.device = 'bmc' " +
                  "AND nodes.ngid NOT IN (SELECT ngid FROM nodegroups WHERE " +

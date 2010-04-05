@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: partition_edit.py 1999 2009-01-29 07:56:46Z ggoh $
 #
 # Kusu Text Installer Edit Partition Screen.
 #
@@ -221,7 +221,7 @@ class EditLogicalVolume(NewLogicalVolume):
     def __init__(self, screen, device, disk_profile):
         NewLogicalVolume.__init__(self, screen, disk_profile)
         self.lv = device
-        
+
     def draw(self):
         """Draw the fields onscreen."""
         # mount point
@@ -242,7 +242,7 @@ class EditLogicalVolume(NewLogicalVolume):
         self.gridForm.add(self.size, 0,2)
 
         fs_type = self.lv.fs_type or 'Unable to detect'
-        self.filesystem = snack.Label('Filesystem: ' + fs_type)        
+        self.filesystem = snack.Label('Filesystem: ' + fs_type)
 
         # query volume groups
         self.volumegroup = snack.Label('Volume Group: ' + self.lv.group.name)

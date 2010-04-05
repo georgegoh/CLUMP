@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id$
+# $Id: scriptfactory.py 2996 2009-09-28 06:50:44Z abuck $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -125,7 +125,8 @@ class KickstartFactory(BaseFactory):
                 if not networks['fqhn_use_dhcp'] \
                    and networks.has_key('fqhn_host') and networks['fqhn_host']:
                     str += ' --hostname %s' % networks['fqhn_host']
-                
+               
+                str += ' --noipv6'
                 network_lines.append(str)
 
             else:
@@ -137,8 +138,11 @@ class KickstartFactory(BaseFactory):
     def _useMBR(self):
         for disk in self.profile.diskprofile.disk_dict.values():
             for partition in disk.partition_dict.values():
-                if partition.native_type == 'Dell Utility' or partition.dellUP_flag:
+                if partition.native_type == 'Dell Utility' or \
+                   partition.dellUP_flag:
                     return False
+        if hasattr(self.profile.diskprofile, 'use_mbr'):
+            return self.profile.diskprofile.use_mb
         return True
 
     def _getIgnoreDisks(self):
@@ -158,6 +162,7 @@ class KickstartFactory(BaseFactory):
                         'fat32': 'vfat', 
                         'fat16': 'vfat', 
                         'linux-swap': 'swap',
+                        'ntfs': 'ntfs',
                         None: None}
 
         # Handles normal partitions without, pv, vg, lv 
@@ -196,8 +201,7 @@ class KickstartFactory(BaseFactory):
                 str = str + ' --onpart=%s' % \
                       os.path.sep.join((path(p.path).splitall()[2:])) 
         
-                if fs_type != 'swap':
-                    str = str + ' --noformat'
+                str = str + ' --noformat'
 
                 part_lines.append(str) 
 

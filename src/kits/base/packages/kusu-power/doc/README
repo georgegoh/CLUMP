@@ -1,0 +1,110 @@
+-------------------------------------------------------------------------------
+kusu-power README
+-------------------------------------------------------------------------------
+
+RPM
+-------------------------------------------------------------------------------
+kusu-power is distributed as an rpm, and everything is installed under 
+the /opt/kusu prefix.
+
+Command
+-------------------------------------------------------------------------------
+The Kusu power management utility "kusu-power" is a command-line utility 
+intended to hide the complexity of communicating with different power 
+management devices through a unified user interface. 
+
+The command /opt/kusu/sbin/kusu-power uses the plug-ins/adapters in
+/opt/kusu/lib/python/kusu/powerplugins to control Baseboard Management
+Controllers (BMC's) and Power Distribution Units (PDU's).
+
+The supported set of BMC's and PDU's is related to the current support needed
+in Platform Manager.
+
+Usage:
+
+# power -h
+usage: Usage: power [options] <nodelist> <on|off|cycle|reset|status>
+
+options:
+  -h, --help            show this help message and exit
+  -c CONF_FILE, --config_file=CONF_FILE
+                        Define config-file
+  -v, --verbose         Verbose run; display more information
+  -d, --debug           Debug run; display debug information
+  -p PLUGIN_DIR, --plugin_dir=PLUGIN_DIR
+                        Define plugin directory
+  -r RETRIES, --retries=RETRIES
+                        Retry failed commands this many times before giving
+                        up.
+  -i INTERVAL, --interval=INTERVAL
+                        Wait this many seconds between each node.
+
+Note that the reset command option might not work with all plugins.
+
+Configuration
+-------------------------------------------------------------------------------
+By default the kusu-power command reads the config file: /opt/kusu/etc/kusu-power.conf.
+The configuration file describes the mapping between node name and BMC/PDU and login details.
+The following node type and plug-in type mapping is used by Platform Manager:
+
+    Server Elementname    |  BMC identifyingnumber   
+--------------------------+--------------------------
+ Dell PowerEdge 1550      | dellrac                  
+ Dell PowerEdge 1650      | dellrac                  
+ Dell PowerEdge 1750      | dellrac                  
+ Dell PowerEdge 2650      | dellrac                  
+ Dell PowerEdge 650       | dellrac                  
+ Dell PowerEdge 6650      | dellrac                  
+ Dell PowerEdge 750       | dellrac                  
+ HP ProLiant BL20p G2     | hpilo                    
+ HP ProLiant BL30p        | hpilo                    
+ HP ProLiant DL360 G2     | hpilo                    
+ HP ProLiant DL360 G3     | hpilo                    
+ HP ProLiant DL380 G2     | hpilo                    
+ HP ProLiant DL380 G3     | hpilo                     
+ Dell PowerEdge 1950      | dellipmi20               
+ Dell PowerEdge 1955      | dellipmi20               
+ Dell PowerEdge 2950      | dellipmi20               
+ Dell PowerEdge 6950      | dellipmi20               
+ Dell PowerEdge SC1435    | dellipmi20               
+ HP ProLiant BL20p G3     | hpilo                    
+ HP ProLiant BL25p        | hpilo
+ HP ProLiant BL35p        | hpilo
+ HP ProLiant DL145        | hpipmi15
+ HP ProLiant DL360 G4     | hpilo
+ HP ProLiant DL360 G4p    | hpilo
+ HP ProLiant DL360 G5     | hpilo2
+ HP ProLiant DL365 G1     | hpilo2
+ HP ProLiant DL380 G4     | hpilo
+ HP ProLiant DL380 G5     | hpilo2
+ HP ProLiant DL385        | hpilo
+ HP ProLiant DL385 G2     | hpilo2
+ HP ProLiant DL580 G4     | hpilo2
+ HP ProLiant DL585        | hpilo
+ HP ProLiant DL585 G2     | hpilo2
+ IBM eServer 325          | ibmipmi15
+ IBM eServer 326          | ibmipmi15
+ IBM System x3550 (7978)  | ibmipmi20
+ SGI Altix XE210          | intelipmi20
+ SGI Altix XE240          | intelipmi20
+ SGI Altix XE310          | sgiipmi20
+
+Unfortunately there is a level of indirection here, from the table above to the device name needed in the kusu-power.conf file:
+
+    * hpilo = ilohttps
+    * dellrac = racadm
+    * IPMI 15 = ipmi15
+    * IPMI 20 = ipmi20
+    * intelipmi20 = intelipmi20
+    * SGI L2 = sgil2<partition id> 
+
+Some blades need to be handled as a PDU. See example file for using the PDU control for the following plug-ins:
+
+    * icebox
+    * baytech
+    * ibmbc
+    * apcap7921
+    * apcap7953" 
+
+
+
