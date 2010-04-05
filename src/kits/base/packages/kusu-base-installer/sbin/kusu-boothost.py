@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: kusu-boothost.py 3481 2010-02-03 08:01:55Z mkchew $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

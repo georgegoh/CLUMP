@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: repofactory.py 3049 2009-10-07 13:41:31Z abuck $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

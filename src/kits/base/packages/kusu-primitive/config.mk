@@ -1,4 +1,4 @@
-# $Id: config.mk 4401 2009-03-02 12:28:34Z ltsai $
+# $Id$
 UC_NAME = primitive
 UC_VERSION = 0.4
 UC_RELEASE = 1

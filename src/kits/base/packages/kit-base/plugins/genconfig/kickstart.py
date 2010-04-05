@@ -1,4 +1,4 @@
-# $Id: kickstart.py 3425 2010-01-26 03:40:44Z yqang $
+# $Id$
 #
 #   Copyright 2008 Platform Computing Inc
 #

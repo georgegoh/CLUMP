@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: database.py 3532 2010-02-21 15:06:57Z ankit $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

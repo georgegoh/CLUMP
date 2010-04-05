@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: collection.py 524 2008-01-30 06:14:21Z hirwan $
+# $Id$
 #
 # Kusu Installer Data Container Module
 #

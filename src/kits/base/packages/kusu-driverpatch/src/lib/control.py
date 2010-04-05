@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: control.py 3039 2009-10-05 10:18:09Z ankit $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

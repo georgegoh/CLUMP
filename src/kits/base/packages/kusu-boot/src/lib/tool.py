@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: tool.py 1757 2008-11-06 22:31:19Z mblack $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

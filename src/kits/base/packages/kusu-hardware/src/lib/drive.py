@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: drive.py 997 2008-03-19 21:20:46Z sstarr $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

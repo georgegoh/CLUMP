@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kitops_app_test.py 945 2008-03-05 03:11:46Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

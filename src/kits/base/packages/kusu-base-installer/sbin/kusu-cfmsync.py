@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: kusu-cfmsync.py 3511 2010-02-12 06:41:52Z mkchew $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

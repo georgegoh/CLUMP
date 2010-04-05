@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: genupdates.py 3555 2010-02-26 02:52:00Z ggoh $
+# $Id$
 #
 # Copyright (C) 2007 Platform Computing Inc
 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: hostname.py 2556 2009-07-21 08:57:47Z mike $
+# $Id$
 #
 # Kusu Text Installer Host Name Setup Screen.
 #

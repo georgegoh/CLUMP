@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: setup.py 2946 2009-09-22 02:45:21Z yqang $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: plugin_test.py 476 2008-01-25 12:36:55Z hirwan $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

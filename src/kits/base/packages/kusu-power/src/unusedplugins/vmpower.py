@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# $Id: vmpower.py 3126 2009-10-20 07:29:26Z abuck $
+# $Id$
 #
 # pylint: disable-msg=C0103
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: yast.py 3361 2010-01-12 03:13:25Z ggoh $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: kusu-license-support.py 3539 2010-02-23 05:02:34Z qguan $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

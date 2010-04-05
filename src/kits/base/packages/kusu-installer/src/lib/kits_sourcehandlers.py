@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kits_sourcehandlers.py 3049 2009-10-07 13:41:31Z abuck $
+# $Id$
 #
 # Kusu Text Installer New Partition Setup Screen.
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kitops.py 3450 2010-01-28 06:28:25Z yqang $
+# $Id$
 #
 # Kusu kitops - kit operations tool
 #

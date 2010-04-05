@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: kusu-register.py 3143 2009-10-23 13:39:27Z ltsai $
+# $Id$
 #
 
 from kusu.util.errors import *

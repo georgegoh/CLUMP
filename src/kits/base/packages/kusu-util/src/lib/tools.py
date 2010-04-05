@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: tools.py 3311 2009-12-09 10:39:12Z leiai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

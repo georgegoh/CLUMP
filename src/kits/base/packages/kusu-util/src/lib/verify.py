@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: verify.py 3160 2009-11-02 08:36:52Z mxu $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

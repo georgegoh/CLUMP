@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: checker.py 2110 2009-02-27 21:36:10Z ggoh $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

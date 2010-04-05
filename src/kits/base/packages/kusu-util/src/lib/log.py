@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: log.py 3373 2010-01-15 09:10:35Z binxu $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

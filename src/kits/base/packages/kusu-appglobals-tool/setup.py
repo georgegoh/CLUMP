@@ -1,6 +1,6 @@
 !/usr/bin/env python
 #
-# $Id: setup.py 3271 2009-11-25 08:01:11Z kunalc $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

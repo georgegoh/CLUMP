@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: kits.mk 2443 2009-06-17 09:02:51Z mkchew $
+# $Id$
 #
 
 # Setting some defaults.

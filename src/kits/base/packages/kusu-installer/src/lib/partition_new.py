@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition_new.py 2641 2009-07-31 04:21:44Z ankit $
+# $Id$
 #
 # Kusu Text Installer New Partition Setup Screen.
 #

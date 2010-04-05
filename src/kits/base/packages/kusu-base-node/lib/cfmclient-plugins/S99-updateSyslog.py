@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: S99-updateSyslog.py 3556 2010-02-26 04:11:42Z ankit $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*- 
 # 
-# $Id: commands.py 3201 2009-11-12 10:18:36Z binxu $ 
+# $Id$ 
 # 
 
 import os

@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*- 
 # 
-# $Id: fetchhandler.py 3508 2010-02-12 03:48:11Z binxu $ 
+# $Id$ 
 # 
 # Copyright (C) 2010 Platform Computing Inc. 
 # 

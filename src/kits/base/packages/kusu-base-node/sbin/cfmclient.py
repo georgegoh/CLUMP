@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: cfmclient.py 3431 2010-01-26 06:48:46Z leiai $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

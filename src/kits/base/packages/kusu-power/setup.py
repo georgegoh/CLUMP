@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: setup.py 3126 2009-10-20 07:29:26Z abuck $
+# $Id$
 #
 # Copyright 2010 Platform Computing Inc.
 #

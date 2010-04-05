@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: updatenic.py 3419 2010-01-25 09:41:40Z mkchew $
+# $Id$
 #
 # Copyright 2010 Platform Computing Inc
 #

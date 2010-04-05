@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: testing.py 3150 2009-10-30 01:38:36Z mike $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

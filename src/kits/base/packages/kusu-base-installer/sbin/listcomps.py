@@ -1,6 +1,6 @@
 #!/usr/bin/python -u
 #
-# $Id: listcomps.py 3135 2009-10-23 05:42:58Z ltsai $
+# $Id$
 #
 # List components, or list components with interactive plug-ins
 #

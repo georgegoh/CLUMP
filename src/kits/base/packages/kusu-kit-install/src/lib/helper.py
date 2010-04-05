@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: helper.py 3417 2010-01-25 09:13:24Z kunalc $
+# $Id$
 #
 # Copyright 2010 Platform Computing Inc.
 #

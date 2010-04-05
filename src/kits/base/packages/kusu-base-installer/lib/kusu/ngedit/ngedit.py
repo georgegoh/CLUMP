@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: ngedit.py 3512 2010-02-12 08:19:21Z mkchew $
+# $Id$
 #
 # Node Group Editor Library
 #

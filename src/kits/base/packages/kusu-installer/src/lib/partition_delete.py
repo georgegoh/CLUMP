@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition_delete.py 1999 2009-01-29 07:56:46Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Delete Partition Screen.
 #

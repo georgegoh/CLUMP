@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: kitinstall.py 3527 2010-02-19 08:11:45Z kunalc $
+# $Id$
 #
 # Kusu kit-install - Easy install tool for kits
 #

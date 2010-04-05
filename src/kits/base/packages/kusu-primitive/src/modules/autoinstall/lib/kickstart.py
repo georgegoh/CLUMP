@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: kickstart.py 3568 2010-03-01 14:07:39Z ggoh $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 import os

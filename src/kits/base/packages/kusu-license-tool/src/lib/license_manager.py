@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: license_manager.py 3565 2010-03-01 03:30:16Z leiai $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

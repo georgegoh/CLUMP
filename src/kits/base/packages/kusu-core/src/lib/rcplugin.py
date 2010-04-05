@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: rcplugin.py 3470 2010-02-03 01:50:50Z mkchew $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

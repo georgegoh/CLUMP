@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: probe.py 3297 2009-12-03 07:45:58Z ggoh $
+# $Id$
 #
 # Original Author: Tsai Li Ming (ltsai@osgdc.org)
 # Adapted by: George Goh (ggoh@osgdc.org)

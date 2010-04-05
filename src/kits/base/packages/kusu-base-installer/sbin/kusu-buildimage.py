@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: kusu-buildimage.py 3620 2010-03-10 12:07:53Z leiai $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing
 #

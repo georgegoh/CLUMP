@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*- 
 # 
-# $Id: updates.py 3497 2010-02-09 08:19:43Z binxu $ 
+# $Id$ 
 # 
 # Copyright (C) 2010 Platform Computing Inc. 
 # 

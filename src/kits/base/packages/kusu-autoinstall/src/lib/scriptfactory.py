@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: scriptfactory.py 2996 2009-09-28 06:50:44Z abuck $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

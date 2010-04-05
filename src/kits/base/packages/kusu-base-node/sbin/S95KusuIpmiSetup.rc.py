@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: S95KusuIpmiSetup.rc.py 3513 2010-02-12 08:24:35Z ggoh $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# $Id: dellracadm.py 3126 2009-10-20 07:29:26Z abuck $
+# $Id$
 #
 # Disabling several pylint warnings (no time to clean up at this time)
 # pylint: disable-msg=C0111,C0103

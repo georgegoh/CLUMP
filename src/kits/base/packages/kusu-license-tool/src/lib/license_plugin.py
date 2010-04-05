@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: license_plugin.py 3557 2010-02-26 05:09:22Z qguan $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

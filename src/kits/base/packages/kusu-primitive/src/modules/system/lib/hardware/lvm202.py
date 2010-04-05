@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: lvm202.py 3373 2010-01-15 09:10:35Z binxu $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

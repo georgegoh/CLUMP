@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: disk.py 3447 2010-01-28 02:24:56Z ggoh $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

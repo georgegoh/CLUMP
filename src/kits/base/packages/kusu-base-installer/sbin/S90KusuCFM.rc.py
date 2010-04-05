@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S90KusuCFM.rc.py 3158 2009-11-02 07:09:37Z mxu $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

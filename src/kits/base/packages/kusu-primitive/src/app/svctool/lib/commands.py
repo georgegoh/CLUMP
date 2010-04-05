@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: commands.py 3549 2010-02-24 09:51:53Z mkchew $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

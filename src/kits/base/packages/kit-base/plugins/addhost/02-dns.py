@@ -1,4 +1,4 @@
-# $Id: 02-dns.py 2932 2009-09-17 07:34:24Z binxu $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

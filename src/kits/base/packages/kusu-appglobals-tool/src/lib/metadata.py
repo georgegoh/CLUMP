@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: metadata.py 3517 2010-02-12 09:19:08Z kunalc $
+# $Id$
 #
 # Copyright 2009 Platform Computing Inc.
 #

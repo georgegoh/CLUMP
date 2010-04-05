@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: kusu-db-copy.py 3528 2010-02-19 11:27:24Z ankit $
+# $Id$
 #
 # Copyright 2010 Platform Computing Inc.
 #

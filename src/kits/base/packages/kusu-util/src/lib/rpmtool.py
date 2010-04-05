@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# $Id: rpmtool.py 2544 2009-07-20 07:06:51Z mkchew $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

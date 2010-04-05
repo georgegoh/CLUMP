@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# $Id: packages.py 3135 2009-10-23 05:42:58Z ltsai $
+# $Id$
 #
 # Copyright 2008 Platform Computing Inc.
 #

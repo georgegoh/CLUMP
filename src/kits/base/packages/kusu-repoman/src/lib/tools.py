@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*- 
 # 
-# $Id: tools.py 3198 2009-11-12 09:35:02Z binxu $ 
+# $Id$ 
 # 
 # Copyright (C) 2010 Platform Computing Inc. 
 # 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: kusu-secure-mysql.py 3433 2010-01-26 07:17:55Z mike $
+# $Id$
 #
 # Copyright 2010 Platform Computing Inc.
 #

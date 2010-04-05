@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# $Id: nodeboot.cgi.py 3326 2009-12-18 09:24:32Z mkchew $
+# $Id$
 #
 #   Copyright 2007 Platform Computing Inc
 #

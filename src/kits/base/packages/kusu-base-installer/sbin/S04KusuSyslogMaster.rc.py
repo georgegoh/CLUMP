@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: S04KusuSyslogMaster.rc.py 3431 2010-01-26 06:48:46Z leiai $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

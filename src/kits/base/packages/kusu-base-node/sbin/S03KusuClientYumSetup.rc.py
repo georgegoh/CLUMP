@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S03KusuClientYumSetup.rc.py 3325 2009-12-18 08:28:01Z mike $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

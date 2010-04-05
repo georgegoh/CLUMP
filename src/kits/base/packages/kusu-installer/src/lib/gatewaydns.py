@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: gatewaydns.py 2556 2009-07-21 08:57:47Z mike $
+# $Id$
 #
 # Kusu Text Installer Gateway and DNS Setup Screen.
 #

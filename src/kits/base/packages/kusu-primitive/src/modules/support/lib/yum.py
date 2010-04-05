@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*- 
 # 
-# $Id: yum.py 3201 2009-11-12 10:18:36Z binxu $ 
+# $Id$ 
 # 
 # Copyright (C) 2010 Platform Computing Inc. 
 # 

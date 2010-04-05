@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: kusu-license-tool.py 3510 2010-02-12 06:27:11Z binxu $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

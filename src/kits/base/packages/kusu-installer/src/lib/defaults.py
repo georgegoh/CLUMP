@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: defaults.py 3321 2009-12-18 07:53:52Z mkchew $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

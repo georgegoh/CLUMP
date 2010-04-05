@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S03KusuNtp.rc.py 3499 2010-02-09 10:28:36Z mkchew $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

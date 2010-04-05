@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: partition.py 3536 2010-02-22 11:04:30Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: util.py 1536 2008-07-25 18:11:40Z mblack $
+# $Id$
 #
 # Kusu Text Installer Utility functions.
 #

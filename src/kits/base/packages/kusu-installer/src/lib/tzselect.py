@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: tzselect.py 2110 2009-02-27 21:36:10Z ggoh $
+# $Id$
 #
 # Kusu Text Installer Timezone Setup Screen.
 #

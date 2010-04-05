@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: cfm.py 3264 2009-11-24 12:08:22Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

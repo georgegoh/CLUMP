@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: constants.py 2359 2009-05-18 04:23:47Z kunalc $
+# $Id$
 #
 # Node Group Editor Constants
 #

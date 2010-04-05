@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# $Id: imageinit.py 3579 2010-03-03 07:55:44Z ggoh $
+# $Id$
 #
 #  Copyright (C) 2007 Platform Computing Inc
 #

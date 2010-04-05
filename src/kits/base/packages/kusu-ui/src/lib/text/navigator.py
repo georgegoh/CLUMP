@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: navigator.py 2990 2009-09-24 15:09:30Z ltsai $
+# $Id$
 #
 # Kusu snack screens Navigator Framework.
 #

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: S03KusuMotd.rc.py 3137 2009-10-23 06:26:27Z ltsai $
+# $Id$
 #
 # Copyright 2007 Platform Computing Inc.
 #

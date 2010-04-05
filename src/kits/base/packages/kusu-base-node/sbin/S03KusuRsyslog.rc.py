@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: S03KusuRsyslog.rc.py 3319 2009-12-17 09:38:57Z leiai $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

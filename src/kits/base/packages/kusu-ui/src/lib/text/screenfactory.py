@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: screenfactory.py 476 2008-01-25 12:36:55Z hirwan $
+# $Id$
 #
 # Kusu Text Installer Screen Factory.
 #

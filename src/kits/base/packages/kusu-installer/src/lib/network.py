@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: network.py 3481 2010-02-03 08:01:55Z mkchew $
+# $Id$
 #
 # Kusu Text Installer Network Screen.
 #

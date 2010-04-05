@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: kits.py 3564 2010-03-01 03:23:24Z mkchew $
+# $Id$
 #
 # Kusu Text Installer Kits Setup Screen.
 #
