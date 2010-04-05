@@ -72,7 +72,6 @@ class ScreenFactoryImpl(ScreenFactory):
          RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
          ConfirmScreen(kiprofile=kiprofile),
-         KitInformationScreen(kiprofile=kiprofile),
          KitsScreen(kiprofile=kiprofile)
         ]
 
