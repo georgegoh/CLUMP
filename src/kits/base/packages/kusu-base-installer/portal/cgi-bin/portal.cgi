@@ -44,7 +44,7 @@ def outputURL(cgi):
    fp.close()
 
 def headContents():
-   print '<head><title>Welcome to Kusu Desis release</title></head>'
+   print '<head><title>Welcome to Kusu Cluster Management</title></head>'
    print '<link href="../portal/styles/portal.css" rel="stylesheet" type="text/css"/>'
 
 def pageHeader():
