@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: mount 3629 2010-03-12 09:11:20Z binxu $
+# $Id$
 
 # This module is meant to be a standalone 'mount' command replacement for
 # ext2 and ext3 partitions.

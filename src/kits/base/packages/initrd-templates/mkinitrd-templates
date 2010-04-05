@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: mkinitrd-templates 4116 2009-01-30 14:16:28Z ltsai $
+# $Id$
 
 from kusu.core.database import DB 
 from primitive.system.software.dispatcher import Dispatcher

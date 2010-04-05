@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# $Id: list_manpages.cgi 3371 2010-01-15 08:29:28Z mkchew $
+# $Id$
 #
 # Copyright (C) 2007 Platform Computing Inc.
 
