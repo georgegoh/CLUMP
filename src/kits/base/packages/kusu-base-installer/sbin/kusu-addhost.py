@@ -1631,10 +1631,10 @@ class BatchUnmanaged:
             flag=True
             while flag:
                 useDHCP = raw_input(self.kusuApp._("addhost_batch_unmanaged_device_use_dhcp_prompt"))
-                if (useDHCP.strip().lower() == "yes" or useDHCP.strip().lower() == 'y'):
+                if (useDHCP == "yes"):
                     myNodeInfo.optionDHCPMode = True
                     flag=False
-                elif (useDHCP.strip().lower() == "no" or useDHCP.strip().lower() == 'n'):
+                elif (useDHCP == "no"):
                     myNodeInfo.optionDHCPMode = False
                     flag=False
                 else:
