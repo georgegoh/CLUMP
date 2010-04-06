@@ -64,7 +64,7 @@ def pageTOC():
    #print '<a href="#Useful_Links">Useful Links</a><br/>'
    #print '<a href="#Installed_Kits">Installed Kits</a><br/>'
    #print '<a href="#Guides">Guides</a><br/>'
-   print '<a href="#PCM_Tools_Man_Pages">Kusu Tools Man Pages</a><br/>'
+   print '<a href="#Kusu_Tools_Man_Pages">Kusu Tools Man Pages</a><br/>'
    print '</td></tr>'
    print '</table>'
    print '<br/>'
@@ -109,7 +109,7 @@ pageHeader()
 pageTOC()
 
 # List manpage links
-sectionHeader('PCM Tools Man Pages')
+sectionHeader('Kusu Tools Man Pages')
 print '<p>Refer to the following man pages for detailed command-line usage:</p>'
 outputURL(LIST_MANPAGES_CGI)
 sectionFooter()
