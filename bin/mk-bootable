@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: mk-bootable 1016 2008-03-27 12:26:15Z ggoh $
+# $Id$
 #
 
 import os

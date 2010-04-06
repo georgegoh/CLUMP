@@ -1,5 +1,5 @@
 #!${BASH_EXE}
-# $Id: makemetakit.sh 2809 2007-11-21 07:06:51Z hirwan $
+# $Id$
 #
 # Kusu specific environment script
 #
