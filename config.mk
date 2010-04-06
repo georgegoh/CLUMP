@@ -17,7 +17,6 @@
 #
 
 # global kusu build params.
-KUSU_DISTRO_SRC=/pcc/lsf_madison/
 ifdef KUSU_BUILD_DIST
 KUSU_DISTRO_NAME=$(KUSU_BUILD_DIST)
 else
