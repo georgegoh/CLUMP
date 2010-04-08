@@ -1,8 +1,0 @@
-Index: bin/modifyrepo
-===================================================================
---- bin/modifyrepo	(revision 751)
-+++ bin/modifyrepo	(working copy)
-@@ -1,2 +1,2 @@
- #!/bin/sh
--exec /usr/share/createrepo/modifyrepo.py "$@"
-+exec $KUSU_ROOT/lib/python/createrepo/modifyrepo.py "$@"
