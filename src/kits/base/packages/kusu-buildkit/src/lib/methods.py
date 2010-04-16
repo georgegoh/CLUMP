@@ -1,9 +1,23 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 # $Id$
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright (C) 2010 Platform Computing Inc.
 #
-# Licensed under GPL version 2; See LICENSE for details.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
 
 from kusu.buildkit.kitsource01 import KusuComponent as KusuComponent01
 from kusu.buildkit.kitsource01 import KusuKit as KusuKit01
@@ -170,6 +184,13 @@ def RHEL5Component(**kwargs):
 def ScientificLinux5Component(**kwargs):
     """ This is used for Scientific Linux 5 components. """
     kwargs['ostype'] = 'scientificlinux'
+    kwargs['osversion'] = '5'
+    kwargs['osmajor'] = '5'
+    return DefaultComponent(**kwargs)
+
+def ScientificLinuxCern5Component(**kwargs):
+    """ This is used for Scientific Linux 5 components. """
+    kwargs['ostype'] = 'scientificlinuxcern'
     kwargs['osversion'] = '5'
     kwargs['osmajor'] = '5'
     return DefaultComponent(**kwargs)

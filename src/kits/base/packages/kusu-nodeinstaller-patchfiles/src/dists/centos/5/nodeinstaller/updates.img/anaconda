@@ -58,6 +58,7 @@ getYumPatch(){
 patchYumInstall(){
     # no patch file available
     if [ x$YUMPATCHFILE = "x" ]; then
+        echo "The yum scalability patch is not found. No patch is applied."
         return
     fi
 
@@ -69,13 +70,10 @@ patchYumInstall(){
 
     patch -p0 -i $YUMPATCHFILE
     EXIT_CODE1=$?
-    if [ $EXIT_CODE1 -eq 0 ]; then
-        mount -o ro --bind /tmp/updates/yuminstall.py /usr/lib/anaconda/yuminstall.py
-        cd $TMP_PWD
-    else
+    if [ $EXIT_CODE1 -ne 0 ]; then
         echo "Unable to apply patch, continuing"
-        cd $TMP_PWD
     fi
+    cd $TMP_PWD
 }
 
 if [ $EXIT_CODE -eq 0 ]; then 
@@ -103,15 +101,16 @@ if [ $EXIT_CODE -eq 0 ]; then
     # Need a better to replace existing -m and --kickstart option in $@
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
+    fi
 
     if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer" ]; then
         /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
     fi
-
-    if [ "$?" -eq 0 ]; then
-        /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
-    fi
-
+    
 elif [ $EXIT_CODE -eq 1 ]; then
     # an unknown exception has occurred. Give user an option to copy out log+dump
     echo "An internal program error has occurred."

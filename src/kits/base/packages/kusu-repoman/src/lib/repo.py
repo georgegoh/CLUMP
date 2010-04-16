@@ -1,10 +1,22 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # $Id$
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright (C) 2010 Platform Computing Inc.
 #
-# Licensed under GPL version 2; See LICENSE file for details.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
 from kusu.util.errors import *
@@ -1502,15 +1514,11 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
         return [self.getKitPath(kid) / self.dirlayout['rpmsdir']]
 
     def getURI(self):
-        if not self.configFile:
-            baseurl = path('http://ftp.scientificlinux.org/linux/scientific')
-        else:
-            cfg = self.getConfig(self.configFile)
+        baseurl = path('http://ftp.scientificlinux.org/linux/scientific')
+        if self.configFile:
+            cfg=self.getConfig(self.configFile)
             if cfg.has_key('scientificlinux'):
                 baseurl = path(cfg['scientificlinux']['url'])
-            else:
-                baseurl = path('http://ftp.scientificlinux.org/linux/scientific')
-
         os = str(baseurl / '5x' / self.os_arch / 'SL')
         updates = str(baseurl / '5x' / self.os_arch / 'updates' / 'security')
         
@@ -1569,4 +1577,104 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
 
     def getPackagesDir(self):
         return [self.repo_path / self.dirlayout['rpmsdir']]
- 
+
+class ScientificLinuxCern5Repo(RedhatYumRepo, YumUpdate):
+    def __init__(self, os_arch, prefix, db):
+        RedhatYumRepo.__init__(self, 'scientificlinuxcern', '5', os_arch, prefix, db)
+        YumUpdate.__init__(self, 'scientificlinuxcern', '5', os_arch, prefix, db)
+        self.yum_dirs['default'] = 'SL'
+
+        # FIXME: Need to use a common lib later, maybe boot-media-tool
+        self.dirlayout['repodatadir'] = 'SL/repodata'
+        self.dirlayout['imagesdir'] = 'images'
+        self.dirlayout['isolinuxdir'] = 'isolinux'
+        self.dirlayout['rpmsdir'] = 'SL'
+
+    def getOSMajorVersion(self, os_version):
+        """Returns the major number"""
+        return os_version.split('.')[0]
+
+    def getSources(self):
+
+        kits = self.db.Kits.select_by(rname=self.os_name,
+                                      arch=self.os_arch)
+
+        if not kits:
+            return []
+
+        min_version = '0'
+
+        for kit in kits:
+            if kit.isOS and kit.os.major == '5' and kit.os.minor > min_version:
+                min_version = kit.os.minor
+                kid = kit.kid
+
+        return [self.getKitPath(kid) / self.dirlayout['rpmsdir']]
+
+    def getURI(self):
+        baseurl = path('http://linuxsoft.cern.ch/cern')
+        if self.configFile:
+            cfg=self.getConfig(self.configFile)
+            if cfg.has_key('scientificlinuxcern'):
+                baseurl = path(cfg['scientificlinuxcern']['url'])
+        os = str(baseurl / 'slc5X' / self.os_arch / 'SL')
+        updates = str(baseurl / 'slc5X' / 'updates' / self.os_arch / 'RPMS')
+
+        return [os,updates]
+   
+    def getPackageFilePath(self, packagename):
+        p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
+
+        if p.exists():
+            return p
+        else:
+            return None
+
+    def makeComps(self):
+        """Makes the necessary comps xml file"""
+
+        # symlink comps.xml
+        src = self.os_path / self.dirlayout['repodatadir'] / 'comps.xml'
+        dest = self.repo_path / self.dirlayout['repodatadir'] / 'comps.xml'
+
+        (dest.parent.relpathto(src)).symlink(dest)
+
+        self.comps_file = dest
+
+    def makeMetaInfo(self):
+        """Creates a yum repository"""
+
+        repocache_path = self.getRepoCachePath()
+        if (not repocache_path.exists()):
+            repocache_path.makedirs()
+
+        dotrepodata = self.repo_path / '.repodata'
+        cmd = 'createrepo -c %s -g %s %s' % (repocache_path, self.comps_file, self.repo_path / 'SL')
+
+        out = ''
+        err = ''
+        retcode = ''
+        try:
+            p = subprocess.Popen(cmd,
+                                 cwd=self.repo_path,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            retcode = p.returncode
+
+        except:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+
+            raise CommandFailedToRunError, 'createrepo failed'
+
+        if retcode:
+            if dotrepodata.exists():
+                dotrepodata.rmtree()
+
+            kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
+            raise YumRepoNotCreatedError, 'Retcode: %s :: Out: %s :: Error: %s :: Unable to create repo at \'%s\'' % (retcode,out,err, self.repo_path)
+
+    def getPackagesDir(self):
+        return [self.repo_path / self.dirlayout['rpmsdir']] 

@@ -56,7 +56,8 @@ class BaseUpdate:
                  'sles' : {'10': 'SLES10Component()'},
                  'opensuse' : {'10.3': 'OPENSUSE103Component()'},
                  'fedora' : {'6': 'Fedora6Component()'},
-                 'scientificlinux' : {'5': 'ScientificLinux5Component()'}}
+                 'scientificlinux' : {'5': 'ScientificLinux5Component()'},
+                 'scientificlinuxcern' : {'5': 'ScientificLinuxCern5Component()'}}
 
     def __init__(self, os_name, os_version, os_arch, prefix, db, updates_root = '/depot/updates'):
         self.os_name = os_name

@@ -309,6 +309,30 @@ class YumGenUpdates(BaseGenUpdates):
         self.runCmd('umount %s' % tmprootdir)
         os.chdir(cwd)
 
+    def repackUpdatesImg(self, os_updatesimg, gen_updatesimg):
+        scratchdir = tempfile.mkdtemp('emerald-')
+        tmprootdir = tempfile.mkdtemp(dir=scratchdir)
+        tmpdir = tempfile.mkdtemp(dir=scratchdir)
+
+        mountP = subprocess.Popen("mount -o loop %s %s" % (os_updatesimg, tmprootdir),shell=True)
+        mountP.communicate()
+        mountP = subprocess.Popen("mount -o loop %s %s" % (gen_updatesimg, tmpdir),shell=True)
+        mountP.communicate()
+
+        cmd = '(find . | cpio -mpdu %s)'
+        cpioP = subprocess.Popen(cmd % tmpdir,shell=True,cwd=tmprootdir,stdout=subprocess.PIPE)
+        cpioP.wait()
+
+        # housecleaning
+        umountP = subprocess.Popen("umount %s" % tmprootdir,shell=True,cwd=scratchdir)
+        umountP.communicate()
+        umountP = subprocess.Popen("umount %s" % tmpdir,shell=True,cwd=scratchdir)
+        umountP.communicate()
+ 
+        if os.path.exists(tmprootdir): shutil.rmtree(tmprootdir)
+        if os.path.exists(tmpdir): shutil.rmtree(tmpdir)
+        if os.path.exists(scratchdir): shutil.rmtree(scratchdir)
+
     def generateUpdatesImg(self, unpacked_dir, outputdir, size=0):
         dist_ver = (self.target[0], self.target[1])
         anacondaScript = self.__getAnacondaScript(dist_ver)

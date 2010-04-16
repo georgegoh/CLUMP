@@ -1,10 +1,22 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # $Id$
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright (C) 2010 Platform Computing Inc.
 #
-# Licensed under GPL version 2; See LICENSE file for details.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
 from kusu.repoman import repo, tools
@@ -18,14 +30,15 @@ class RepoFactory(object):
                    'rhel'   : {'5': repo.Redhat5Repo},
                    'sles'   : {'10': repo.SLES10Repo},
                    'opensuse' : {'10.3': repo.OpenSUSE103Repo},
-                   'scientificlinux' : { '5': repo.ScientificLinux5Repo}}
+                   'scientificlinux' : { '5': repo.ScientificLinux5Repo},
+                   'scientificlinuxcern' : { '5': repo.ScientificLinuxCern5Repo}}
 
     def __init__(self, db, prefix='/', test=False):
         """Creates a RepoFactory.
 
            Accepts the following arguments:
            prefix: prefix of the root directory, if any
-           db: The DB clas object
+           db: The DB class object
         """
         self.db = db
         self.prefix = path(prefix)

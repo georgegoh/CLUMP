@@ -56,6 +56,17 @@ class GenUpdatesImg(KusuApp):
         retval = p.wait()
         return retval
 
+    def packUpdatesImg(self, repoid, updater, os, sdir):        
+        os_kit = self.dbs.Repos.selectone_by(repoid=self.repoid).oskit
+
+        if not os_kit:
+            return 
+
+        os_updatesimg = path('/depot/kits/%s/images/updates.img' % os_kit.kid)
+        if os_updatesimg.exists():
+            gen_updatesimg = sdir / os.name / os.major / os.arch / 'updates.img'
+            updater.repackUpdatesImg(os_updatesimg, gen_updatesimg)
+
     def run(self):
         if not self.parse():
             return
@@ -74,7 +85,7 @@ class GenUpdatesImg(KusuApp):
         os = self.dbs.Repos.selectone_by(repoid=self.repoid).os
         os_version = tools.getEffectiveOSVersion(self.dbs, self.repoid)
         target = (os.name, os_version, os.arch)
-        
+         
         updater = GenUpdatesFactory().getUpdatesClass(target_os=target)
         try:
             updater.doGenUpdates(str(scratchdir))
@@ -83,7 +94,10 @@ class GenUpdatesImg(KusuApp):
             if scratchdir.exists():
                 scratchdir.rmtree()
             return
-       
+
+        if target[0] in ['scientificlinux', 'scientificlinuxcern']:
+            self.packUpdatesImg(self.repoid, updater, os, scratchdir/'nodeinstaller')       
+
         self._runCommand('cd %s/nodeinstaller && find . | cpio -mpdu %s' % (scratchdir, dest))
         
         if scratchdir.exists():

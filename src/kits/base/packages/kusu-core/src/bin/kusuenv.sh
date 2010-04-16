@@ -3,7 +3,7 @@
 #
 # Kusu specific environment script
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright 2010 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE for details.
 #
@@ -28,7 +28,11 @@ elif [ -f /etc/redhat-release ]; then
         export KUSU_DIST=rhel
     ;;
     "Scientific" )
-        export KUSU_DIST=scientificlinux
+        if [ `head -n 1 /etc/redhat-release | awk '{print $3}'` != "CERN" ]; then
+            export KUSU_DIST=scientificlinux
+        else
+            export KUSU_DIST=scientificlinuxcern
+        fi
     ;;
     * )
         export KUSU_DIST=centos

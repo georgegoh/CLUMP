@@ -1,9 +1,24 @@
 #!/usr/bin/env python
-# $Id$
-# 
-# Copyright 2007 Platform Computing Inc.
+# -*- coding: utf-8 -*-
 #
-# Licensed under GPL version 2; See LICENSE for details.
+# $Id$
+#
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
 
 """This module handles operations that work with the meta-information of the supported native distros."""
 
@@ -177,7 +192,7 @@ class DistroInstallSrcBase(object):
         '''virtual function to be implemented by specific distro children'''
         return self.version
 
-    def getMajorVerson(self):
+    def getMajorVersion(self):
         '''virtual function to be implemented by specific distro children'''
         return self.majorVersion
 
@@ -213,7 +228,8 @@ def DistroFactory(srcPath):
                OPENSUSE103InstallSrc(srcPath),
                SLES10InstallSrc(srcPath),
                ScientificLinux5InstallSrc(srcPath),
-               ScientificLinux5AdditionalInstallSrc(srcPath)]
+               ScientificLinux5AdditionalInstallSrc(srcPath),
+               ScientificLinuxCern5InstallSrc(srcPath)]
 
     for d in distros:
         if d.verifySrcPath():
@@ -359,7 +375,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
@@ -417,7 +433,7 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class FedoraInstallSrc(DistroInstallSrcBase):
@@ -591,7 +607,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
@@ -686,7 +702,7 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class Fedora7InstallSrc(DistroInstallSrcBase):
@@ -859,7 +875,7 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 
@@ -954,7 +970,7 @@ class RHELInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class CentOS5InstallSrc(DistroInstallSrcBase):
@@ -1164,7 +1180,7 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             pass
 
  
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
@@ -1247,7 +1263,7 @@ class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 
@@ -1482,7 +1498,7 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
 
         return kpkgs[0]
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
@@ -1586,7 +1602,7 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class Fedora8InstallSrc(DistroInstallSrcBase):
@@ -1754,7 +1770,7 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 class SLES10InstallSrc(DistroInstallSrcBase):
@@ -1927,7 +1943,7 @@ class SLES10InstallSrc(DistroInstallSrcBase):
                 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 
@@ -2093,7 +2109,7 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
                 
         return kpkgs
 
-    # syntatic sugar
+    # syntactic sugar
     getKernelRpms = getKernelPackages
 
 
@@ -2126,7 +2142,8 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
             'stage2' : 'images/stage2.img',
             'baseosdir' : 'SL',
             'packagesdir' : 'SL',
-            'repodatadir' : 'SL/repodata'
+            'repodatadir' : 'SL/repodata',
+            'rhupdatesdir' : 'RHupdates'
         }
 
         # The following determines the patchfile layout for Scientific Linux
@@ -2271,7 +2288,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
         return self.versionString
  
     def getVersion(self):
-        '''CentOS specific way of getting the distro version'''
+        '''Scientific Linux specific way of getting the distro version'''
         return self.version
 
     def getReleasePkg(self):
@@ -2325,7 +2342,8 @@ class ScientificLinux5AdditionalInstallSrc(DistroInstallSrcBase):
         # These should describe the key directories that identify a Scientific Linux 5 installation source layout.
         self.pathLayoutAttributes = {
             'baseosdir' : 'SL',
-            'packagesdir' : 'SL'
+            'packagesdir' : 'SL',
+            'fastbugsdir' : 'fastbugs'
         }
 
 
@@ -2407,3 +2425,206 @@ class ScientificLinux5AdditionalInstallSrc(DistroInstallSrcBase):
 
 ## End Scientific Linux 5
 
+## Scientific Linux CERN 5
+class ScientificLinuxCern5InstallSrc(DistroInstallSrcBase):
+    """This class describes how a Scientific Linux CERN installation source should be and the operations that can work on it."""
+
+    def __init__(self, srcPath):
+        super(ScientificLinuxCern5InstallSrc,self).__init__()
+        if srcPath.startswith('http://'):
+            self.srcPath = srcPath
+            self.isRemote = True
+        elif srcPath.startswith('file://'):
+            self.srcPath = path(srcPath.split('file://')[1])
+            self.isRemote = False
+        else:
+            self.srcPath = path(srcPath)
+            self.isRemote = False
+
+        self.ostype = 'scientificlinuxcern'
+        self.version = '5'
+
+        # These should describe the key directories that identify a Scientific Linux CERN installation source layout.
+        self.pathLayoutAttributes = {
+            'isolinuxdir' : 'isolinux',
+            'kernel' : 'isolinux/vmlinuz',
+            'initrd' : 'isolinux/initrd.img',
+            'isolinuxbin' : 'isolinux/isolinux.bin',
+            'imagesdir' : 'images',
+            'stage2' : 'images/stage2.img',
+            'baseosdir' : 'SL',
+            'packagesdir' : 'SL',
+            'repodatadir' : 'SL/repodata',
+            'builddir' : 'build'
+        }
+
+        # The following determines the patchfile layout for Scientific Linux CERN
+        self.patchLayoutAttributes = {
+            'patchdir' : 'images',
+            'patchimage' : 'images/updates.img'
+        }
+
+    def verifyLocalVersion(self):
+        return True
+
+    def getIsolinuxbinPath(self):
+        """Get the isolinux.bin path object"""
+
+        if self.pathLayoutAttributes.has_key('isolinuxbin'):
+            return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
+        else:
+            return None
+
+    def copyIsolinuxbin(self, dest, overwrite=False):
+        """Copy the isolinuxbin file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the isolinuxbinPath
+                filepath = path(dest) / self.getIsolinuxbinPath().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)
+                    self.getIsolinuxbinPath().copy(filepath)
+                elif not filepath.exists():
+                    self.getIsolinuxbinPath().copy(filepath)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError, "Cannot write to %s. Check path and permissions." % dest
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite:
+                    path(dest).chmod(0644)
+                    self.getIsolinuxbinPath().copy(dest)
+                if not path(dest).exists():
+                    self.getIsolinuxbinPath().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError, "Cannot write to %s. Check path and permissions." % dest
+
+    def getStage2Path(self):
+        """Get the stage2 path object"""
+
+        if self.pathLayoutAttributes.has_key('stage2'):
+            return path(self.srcPath / self.pathLayoutAttributes['stage2'])
+        else:
+            return None
+
+    def copyStage2(self, dest, overwrite=False):
+        """Copy the stage2 file to a destination"""
+
+        if path(dest).isdir():
+            if path(dest).access(os.W_OK):
+                # check if the destpath already contains the same name as the stage2Path
+                filepath = path(dest) / self.getStage2Path().basename()
+                if filepath.exists() and overwrite:
+                    filepath.chmod(0644)
+                    self.getStage2Path().copy(filepath)
+                elif not filepath.exists():
+                    self.getStage2Path().copy(filepath)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError, "Cannot write to %s. Check path and permissions." % dest
+        else:
+            if path(dest).parent.access(os.W_OK):
+                # make sure that the existing destpath is accessible and writable
+                if path(dest).exists() and overwrite:
+                    path(dest).chmod(0644)
+                    self.getStage2Path().copy(dest)
+                if not path(dest).exists():
+                    self.getStage2Path().copy(dest)
+                else:
+                    raise FileAlreadyExists
+            else:
+                raise CopyError, "Cannot write to %s. Check path and permissions." % dest
+
+    def getArch(self):
+        '''Scientific Linux specific way of getting the distro architecture'''
+        discinfo = self.srcPath + '/.discinfo'
+        if os.path.exists(discinfo):
+            fp = file(discinfo, 'r')
+            linelst = fp.readlines()
+            fp.close()
+
+            line = linelst[2] #third line is usually the arch
+            self.arch = line.strip().split()[0].lower()
+        else:
+            #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
+            pass
+        return self.arch
+
+    def getKernelPackages(self):
+        # set up pattern to match Scientific Linux CERN kernel packages
+        pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+                li = [f for f in root.walkfiles('kernel*rpm')]
+                kpkgs.extend([l for l in li if re.findall(pat,l)])
+        except OSError:
+            pass
+        return kpkgs
+   
+    def getMajorVersion(self):
+        self.majorVersion = self.getVersion()
+        return self.majorVersion
+
+    def getMinorVersion(self):
+        r = RPM(str(self.getReleasePkg()))
+        self.minorVersion = r.getVersion().split('.')[1]
+
+        return self.minorVersion
+
+    def getVersionString(self):
+        r = RPM(str(self.getReleasePkg()))
+        self.versionString = '.'.join(r.getVersion().split('.')[:2])
+
+        return self.versionString
+
+    def getVersion(self):
+        '''Scientific Linux CERN specific way of getting the distro version'''
+        return self.version
+
+    def getReleasePkg(self):
+
+        # get the packagesdir as the starting point
+        _pkgsdir = [self.pathLayoutAttributes[k] for k in self.pathLayoutAttributes.keys() if k.endswith('packagesdir')]
+        # remove duplicates
+        _d = {}
+        try:
+            for k in _pkgsdir:
+                _d[k] = 1
+        except TypeError:
+                del _d
+        pkgsdir = _d.keys()
+        kpkgs = []
+
+        try:
+            for pkgdir in pkgsdir:
+                root = path(self.srcPath) / pkgdir
+
+                kpkgs =  [f for f in root.walkfiles('sl-release-notes*rpm')]
+                if kpkgs: return kpkgs[0]
+        except OSError:
+            pass
+
+
+    # syntactic sugar
+    getKernelRpms = getKernelPackages
+
+## End Scientific Linux CERN 5

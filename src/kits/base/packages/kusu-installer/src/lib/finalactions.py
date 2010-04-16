@@ -1,10 +1,22 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # $Id$
 #
-# Copyright 2007 Platform Computing Inc.
+# Copyright (C) 2010 Platform Computing Inc.
 #
-# Licensed under GPL version 2; See LICENSE file for details.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
 import os
@@ -44,7 +56,8 @@ def makeFakeRepo(kiprofile, oskitname):
 
     grub = { 'centos' : 'CentOS',
              'rhel' : 'Red Hat Enterprise Linux Server',
-             'scientificlinux': 'Scientific Linux'}
+             'scientificlinux': 'Scientific Linux',
+             'scientificlinuxcern': 'Scientific Linux CERN'}
 
     # Fake rhel/centos/sl repo
     # Temp symlinks to be cleaned up in faux anaconda script later
@@ -61,7 +74,7 @@ def makeFakeRepo(kiprofile, oskitname):
                 packagedir = repodir / 'Server'
                 destdir = repodir 
 
-            elif oskitname == 'scientificlinux': # sl iso provided
+            elif oskitname.startswith('scientificlinux'): # sl or slc iso provided
                 (repodir / 'SL' / 'repodata').symlink(repodir / 'repodata')    
                 files.append(repodir / 'repodata')
 
@@ -82,14 +95,14 @@ def makeFakeRepo(kiprofile, oskitname):
                 packagedir = repodir / 'CentOS'
                 destdir = repodir / 'Server' / 'CentOS'
             
-            elif oskitname == 'scientificlinux': # sl iso provided
+            elif oskitname.startswith('scientificlinux'): # sl or slc iso provided
                 (repodir / 'SL' / 'repodata').symlink(repodir / 'Server' / 'repodata')    
                 files.append(repodir / 'Server' / 'repodata')
  
                 packagedir = repodir / 'SL'
                 destdir = repodir / 'Server'
  
-        elif kiprofile['OS'] == 'scientificlinux':
+        elif kiprofile['OS'].startswith('scientificlinux'): # sl or slc iso
             (repodir / 'SL').makedirs()
             files.append(repodir / 'SL')
            

@@ -184,7 +184,7 @@ class BuildImage:
 
             if not path(selinux_file).exists():
                 if self.stderrout:
-                    self.stderrout("ERROR: Selinux config file missing... continuing ...")
+                    self.stderrout("WARNING: Selinux config file not found.. Continue with buildimage...")
                 return     
             
             cmd = "sed --in-place -e 's/^SELINUX=enforcing$/SELINUX=DISABLED/' %s" %(selinux_file)
@@ -193,7 +193,7 @@ class BuildImage:
 
             if run_cmd.returncode != 0:
                 if self.stderrout:
-                    self.stderrout("ERROR:Can't set SE Linux policy.. Fatal Error... ")
+                    self.stderrout("ERROR: Cannot set SE Linux policy.. Fatal Error... ")
                 sys.exit(-1)
 
         return    

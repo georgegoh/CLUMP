@@ -27,7 +27,7 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 export LANG="en_US.UTF-8"
 
 # setups our environment
-export KUSU_DIST=rhel
+export KUSU_DIST=scientificlinuxcern
 export KUSU_DISTVER=5
 source /opt/kusu/bin/kusuenv.sh
 export PYTHONPATH=$PYTHONPATH:/tmp/updates/usr/lib64/python2.4/site-packages
@@ -46,24 +46,30 @@ PATH=$OLDPATH
 
 getYumPatch(){
     BUILDSTAMP=`cat /.buildstamp 2>/dev/null | head -1`
-    #RHEL 5.2
-    if [ x$BUILDSTAMP = "x200804301923.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL53"; 
-    #RHEL 5.3
-    elif [ x$BUILDSTAMP = "x200901061732.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL53";
-    #RHEL 5.4
-    elif [ x$BUILDSTAMP = "x200908190312.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL54"
+    #SCIENTIFIC LINUX CERN 5.2
+    if [ x$BUILDSTAMP = "x200809080921.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUXCERN53";
+    #SCIENTIFIC LINUX CERN 5.3
+    elif [ x$BUILDSTAMP = "x200902191112.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUXCERN53";
+    #SCIENTIFIC LINUX CERN 5.4
+    elif [ x$BUILDSTAMP = "x200909221121.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUXCERN54"
     fi
 }   
 
 patchYumInstall(){
+    # updates.img does not contain SLC specific yuminstall.py. 
+    # Will not be able to patch
+    if [ ! -f /tmp/updates/yuminstall.py ]; then
+        return
+    fi
+    
     # no patch file available
     if [ x$YUMPATCHFILE = "x" ]; then
         echo "The yum scalability patch is not found. No patch is applied."
         return
     fi  
-    
+ 
     echo "Applying yum scalability patch"
-    cp /usr/lib/anaconda/yuminstall.py /tmp/updates/yuminstall.py.old
+    mv /tmp/updates/yuminstall.py /tmp/updates/yuminstall.py.old
     TMP_PWD=$PWD
     cd /tmp/updates
     touch /tmp/updates/yuminstall.py
@@ -100,6 +106,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
+    export PYTHONPATH=$PYTHONPATH:/tmp/updates:/tmp/product
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
     EXIT_CODE=$?
 

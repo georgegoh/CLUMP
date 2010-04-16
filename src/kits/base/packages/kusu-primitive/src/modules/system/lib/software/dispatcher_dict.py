@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright 2010 Platform Computing Inc.
+#
 # The dispatcher dict is a python dictionary which catalogs several programs 
 # that are used for the same purpose in various distros. This layer of abstraction
 # is not limited to commands and can be used for any purpose such as common directories
@@ -16,6 +23,7 @@ rhel_fedora_diskless_packages = ['SysVinit', 'basesystem', 'bash', 'chkconfig', 
 rhel_diskless_packages = rhel_fedora_diskless_packages + ['redhat-release',  'authconfig', 'redhat-lsb']
 centos_diskless_packages = rhel_fedora_diskless_packages + [ 'authconfig', 'redhat-lsb']
 sl_diskless_packages = rhel_fedora_diskless_packages + ['sl-release', 'authconfig', 'redhat-lsb']
+slc_diskless_packages = rhel_fedora_diskless_packages + ['sl-release', 'authconfig', 'redhat-lsb']
 
 rhel_imaged_packages = rhel_diskless_packages + ['grub', 'kernel']
 
@@ -242,6 +250,8 @@ dispatcher_dict = {
                           ('CENTOS','5','x86_64') : '',
                           ('SCIENTIFICLINUX','5','i386') : '/SL/',
                           ('SCIENTIFICLINUX','5','x86_64') : '/SL/',
+                          ('SCIENTIFICLINUXCERN','5','i386') : '/SL/',
+                          ('SCIENTIFICLINUXCERN','5','x86_64') : '/SL/',
                           ('FEDORA','6','i386') : '',
                           ('FEDORA','6','x86_64') : '',
                         },
@@ -333,6 +343,8 @@ dispatcher_dict = {
                             ('FEDORA','6','x86_64') : fedora_diskless_packages,
                             ('SCIENTIFICLINUX','5','i386') : sl_diskless_packages,
                             ('SCIENTIFICLINUX','5','x86_64') : sl_diskless_packages,
+                            ('SCIENTIFICLINUXCERN','5','i386') : slc_diskless_packages,
+                            ('SCIENTIFICLINUXCERN','5','x86_64') : slc_diskless_packages,
                           },
     'imaged_packages' : { ('SLES','10','i386') : [],
                           ('SLES','10','x86_64') : [],
@@ -402,7 +414,9 @@ dispatcher_dict = {
                       ('RHEL','5','i386') : '/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release',
                       ('RHEL','5','x86_64') : '/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release',
                       ('SCIENTIFICLINUX','5','i386') : '/etc/pki/rpm-gpg/RPM-GPG-KEY',
-                      ('SCIENTIFICLINUX','5','x86_64') : '/etc/pki/rpm-gpg/RPM-GPG-KEY'
+                      ('SCIENTIFICLINUX','5','x86_64') : '/etc/pki/rpm-gpg/RPM-GPG-KEY',
+                      ('SCIENTIFICLINUXCERN','5','i386') : '/etc/pki/rpm-gpg/RPM-GPG-KEY',
+                      ('SCIENTIFICLINUXCERN','5','x86_64') : '/etc/pki/rpm-gpg/RPM-GPG-KEY',
                     }
     }
 

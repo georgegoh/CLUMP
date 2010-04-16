@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright 2010 Platform Computing Inc.
+#
 #This file contains library functions to detect Os name, ver and arch
 
 import os
@@ -24,10 +31,14 @@ def OS():
                 except IndexError:
                     # RHEL 5.4 format
                     ver = splits[3]
+            elif 'cern' == splits[2].lower():
+                name = splits[0] + splits[1] + splits[2]
+                ver = splits[5].split('.')[0] ## Major version only
+            
             elif 'scientific' == splits[0].lower():
                 name = splits[0] + splits[1]
                 ver = splits[4].split('.')[0] ## Major version only
-        
+       
         elif os.path.exists('/etc/SuSE-release'):
             lines = open('/etc/SuSE-release').readlines()
             splits = lines[0].split()

@@ -110,7 +110,28 @@ def getAnacondaScript(distro, version, arch=None):
                 'version':version, 'arch':arch}
     anacondaScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/anaconda')))
     return anacondaScript
+   
+def packSLUpdatesImgFiles(distro_src, updatesdir):
     
+    updatesimgpath = os.path.join(distro_src, 'images', 'updates.img')
+
+    # create scratchdir
+    scratchdir = tempfile.mkdtemp('emerald-')
+    tmprootdir = tempfile.mkdtemp(dir=scratchdir)
+
+    mountP = subprocess.Popen("mount -o loop,ro %s %s" % (updatesimgpath,tmprootdir),shell=True)
+    mountP.communicate()
+
+    cmd = '(find . | cpio -mpdu %s)'
+    cpioP = subprocess.Popen(cmd % updatesdir,shell=True,cwd=tmprootdir,stdout=subprocess.PIPE)
+    cpioP.wait()
+
+    # housecleaning
+    umountP = subprocess.Popen("umount %s" % tmprootdir,shell=True,cwd=scratchdir)
+    umountP.communicate()
+    if os.path.exists(tmprootdir): shutil.rmtree(tmprootdir)
+    if os.path.exists(scratchdir): shutil.rmtree(scratchdir)
+
 def getThttpdRunScript(distro, version, arch=None):
     """Returns the thttpd-run.sh script from the SVN sources."""
     if not arch:
@@ -258,7 +279,12 @@ if __name__ == '__main__':
         if re.compile('^Red').match(dist):
             dist = 'rhel'
         elif re.compile('^Scientific').match(dist):
-            dist = 'scientificlinux'
+            distS = subprocess.Popen("head -n 1 /etc/redhat-release | awk '{print $3}'",shell=True,stdout=subprocess.PIPE)
+            dist = distS.stdout.read().strip(os.linesep)
+            if re.compile('^CERN').match(dist):
+                dist = 'scientificlinuxcern'
+            else:
+                dist = 'scientificlinux'
         elif re.compile('^CentOS').match(dist):
             dist = 'centos'
             
@@ -282,11 +308,15 @@ if __name__ == '__main__':
         
     if 'KUSU_BUILD_DISTVER' in os.environ.keys():
         distver = os.environ['KUSU_BUILD_DISTVER']
+
+    if 'KUSU_DISTRO_SRC' in os.environ.keys():
+        dist_src = os.environ['KUSU_DISTRO_SRC']
     
     print 'KUSU_DIST=%s' % dist
     print 'KUSU_DISTVER=%s' % distver
-    
-    if dist == 'sles' or dist == 'opensuse':
+    print 'KUSU_DISTRO_SRC=%s' % dist_src
+ 
+    if dist in ['sles', 'opensuse']:
         KUSU_RUNTIME = KUSU_RUNTIME + SLES_PKGS
     else:
         KUSU_RUNTIME = KUSU_RUNTIME + RHEL_PKGS
@@ -349,7 +379,7 @@ if __name__ == '__main__':
     shutil.copy(thttpdRunScript, tdir)
     os.chmod(os.path.join(tdir,'thttpd-run.sh'),0755)
 
-    if dist == 'sles' or dist == 'opensuse':
+    if dist in ['sles', 'opensuse']:
         yastScript = getYastScript(dist, distver, arch)
         if not os.path.exists(yastScript):
             print "Unable to get 'faux' yast script from SVN source tree! Please ensure the source tree is complete!"
@@ -420,6 +450,9 @@ if __name__ == '__main__':
     # copy the kits.txt into place
     kits_txt = os.path.abspath(os.path.join(getKusuTrunk(), 'src/dists/common/kits.txt'))
     shutil.copy(kits_txt, os.path.join(tdir, 'opt/kusu/etc'))
+
+    if dist in ['scientificlinux', 'scientificlinuxcern']:
+        packSLUpdatesImgFiles(dist_src, tdir)
 
     generateUpdatesImg(tdir,'./updates.img')
     

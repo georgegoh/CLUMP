@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 # $Id$
 #
-# Copyright 2008 Platform Computing Inc.
+# Copyright 2010 Platform Computing Inc.
 #
 ''' InstallTool is used to generate output based on SLES autoinst.xml or 
     RHEL kickstart-ks.cfg formats based on inputs as specified in UBI-7.
@@ -29,7 +31,9 @@ class InstallCommand(Command):
                            'centos': {'5': KickstartFactory,
                                       '4': KickstartFactory},
                            'scientificlinux': {'5': KickstartFactory,
-                                               '4': KickstartFactory}
+                                               '4': KickstartFactory},
+                           'scientificlinuxcern': {'5': KickstartFactory,
+                                                   '4': KickstartFactory}
                          }
 
     def __init__(self, **kwargs):

@@ -47,5 +47,7 @@ reboot
 #for $pkg in $packages
 $pkg
 #end for
+# Do not install the autoupdate package for yum as it interferes with Kusu workflow in SLC.
+-yum-autoupdate
 
 %post

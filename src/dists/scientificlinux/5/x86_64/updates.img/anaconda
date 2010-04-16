@@ -20,6 +20,9 @@ envfile="/tmp/anaconda-current-environment.$$.tmp"
 # link mke2fs.conf determine block size automatically
 /usr/bin/ln -sf /mnt/runtime/etc/mke2fs.conf /etc/mke2fs.conf
 
+# link /sbin/biosdecode from dmidecode
+/usr/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
 # Sets the LANG to a valid value to avoid the garbled text ui
 export LANG="en_US.UTF-8"
 
@@ -55,8 +58,8 @@ if [ $EXIT_CODE -eq 0 ]; then
     if [ -f "/tmp/netinfo" ];then 
         /usr/bin/rm  -f /tmp/netinfo > /dev/null 2>&1
     fi
- 
-    
+
+
     # Restore the environment when we are done
     source $envfile > /dev/null 2>&1 
 
@@ -64,6 +67,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     /tmp/updates/thttpd-run.sh > /dev/null 2>&1 &
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
+    export PYTHONPATH=$PYTHONPATH:/tmp/updates:/tmp/product
     /usr/bin/anaconda "$@" -m http://127.0.0.1/repos/1000 --kickstart /tmp/kusu-ks.cfg ;
     EXIT_CODE=$?
     if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer " ]; then

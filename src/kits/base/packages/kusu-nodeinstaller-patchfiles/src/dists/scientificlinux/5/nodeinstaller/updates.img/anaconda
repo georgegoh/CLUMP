@@ -44,6 +44,38 @@ PATH=/opt/kusu/anaconda-mount:$PATH
 EXIT_CODE=$?
 PATH=$OLDPATH
 
+getYumPatch(){
+    BUILDSTAMP=`cat /.buildstamp 2>/dev/null | head -1`
+    #SCIENTIFIC LINUX 5.2
+    if [ x$BUILDSTAMP = "x200806251533.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUX53"; 
+    #SCIENTIFIC LINUX 5.3
+    elif [ x$BUILDSTAMP = "x200902111740.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUX53";
+    #SCIENTIFIC LINUX 5.4
+    elif [ x$BUILDSTAMP = "x200911021429.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.SCIENTIFICLINUX54"
+    fi
+}   
+
+patchYumInstall(){
+    # no patch file available
+    if [ x$YUMPATCHFILE = "x" ]; then
+        echo "The yum scalability patch is not found. No patch is applied."
+        return
+    fi  
+    
+    echo "Applying yum scalability patch"
+    cp /usr/lib/anaconda/yuminstall.py /tmp/updates/yuminstall.py.old
+    TMP_PWD=$PWD
+    cd /tmp/updates
+    touch /tmp/updates/yuminstall.py
+    
+    patch -p0 -i $YUMPATCHFILE
+    EXIT_CODE1=$?
+    if [ $EXIT_CODE1 -ne 0 ]; then
+        echo "Unable to apply patch, continuing"
+    fi
+    cd $TMP_PWD
+}
+
 if [ $EXIT_CODE -eq 0 ]; then 
     # Unset kusu bits
     for key in `/usr/bin/env | /usr/bin/awk -F= '{print $1}' | grep KUSU`; do 
@@ -51,8 +83,14 @@ if [ $EXIT_CODE -eq 0 ]; then
     done
     unset LANG > /dev/null 2>&1
     unset PYTHONPATH  > /dev/null 2>&1
- 
-    
+
+    YUMPATCHFILE=""
+    # To see if there is a yumpatch file avail, SET YUMPATCHFILE.
+    getYumPatch
+    # patch yuminstall.py if patch available.
+    patchYumInstall
+
+
     # Restore the environment when we are done
     source $envfile > /dev/null 2>&1 
 
@@ -62,14 +100,16 @@ if [ $EXIT_CODE -eq 0 ]; then
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
+    export PYTHONPATH=$PYTHONPATH:/tmp/updates:/tmp/product
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
+    fi
 
     if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer" ]; then
         /usr/bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
-    fi
-
-    if [ "$?" -eq 0 ]; then
-        /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
     fi
 
 elif [ $EXIT_CODE -eq 1 ]; then

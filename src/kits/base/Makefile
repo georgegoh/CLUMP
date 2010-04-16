@@ -1,4 +1,4 @@
-# Copyright (C) 2007 Platform Computing Inc
+# Copyright (C) 2010 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -72,7 +72,6 @@ init:
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-net-tool/man/kusu-net-tool.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-autoinstall/src/man/autogen.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-appglobals-tool/src/man/kusu-appglobals-tool.8
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-license-tool/src/man/kusu-license-tool.8
 
 ifeq ($(KUSU_DISTRO_NAME), sles)
 	@echo 'Removing EPEL and Fedora packages from source tree'
@@ -107,6 +106,11 @@ BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily
 KITINFO_TEMPLATE=kitinfo.in
 endif
 ifeq ($(KUSU_DISTRO_NAME), scientificlinux)
+include config.mk
+BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily
+KITINFO_TEMPLATE=kitinfo.in
+endif
+ifeq ($(KUSU_DISTRO_NAME), scientificlinuxcern)
 include config.mk
 BASE_KIT_COMPONENT_OS_NAME_STR=rhelfamily
 KITINFO_TEMPLATE=kitinfo.in

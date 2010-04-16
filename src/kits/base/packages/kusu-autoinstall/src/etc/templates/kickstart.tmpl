@@ -71,6 +71,8 @@ $pkg
 @base
 ntp
 rsyslog
+# Do not install the autoupdate package for yum as it interferes with Kusu workflow in SLC.
+-yum-autoupdate
 
 %post
 # RHEL 5 anaconda hardcodes swap partition labels.
