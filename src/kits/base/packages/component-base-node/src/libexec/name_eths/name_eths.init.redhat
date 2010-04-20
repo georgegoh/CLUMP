@@ -27,12 +27,14 @@ cd /opt/kusu/libexec/name_eths
 
 # See how we were called.
 case "$1" in
-  start)
-	action "Running NIC Enumeration script: " ./name_eths_redhat
+    start)
+        action "Running NIC Enumeration script: " ./name_eths_redhat
         service network restart
         ;;
-  *)
-        echo $"Usage: $0 {start}"
+    stop)
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop}"
         exit 1
 esac
 

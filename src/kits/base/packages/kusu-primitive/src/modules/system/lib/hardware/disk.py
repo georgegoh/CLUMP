@@ -1133,6 +1133,8 @@ class Partition(object):
         0xf1 : 'SpeedStor',
         0xf4 : 'SpeedStor',
         0xf2 : 'DOS secondary',
+        0xfb : 'VMware File System partition',
+        0xfc : 'VMware Swap partition',
         0xfd : 'Linux raid auto',
         0xfe : 'LANstep',
         0xff : 'BBT'

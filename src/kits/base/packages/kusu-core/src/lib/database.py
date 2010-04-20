@@ -826,9 +826,16 @@ class DB(object):
           properties={'nodegroup': sa.relation(NodeGroups, entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
+        ng_has_net = sa.Table('ng_has_net', self.metadata, autoload=True)
+        assign_mapper(self.ctx, NGHasNet, ng_has_net,
+                      entity_name=self.entity_name)
+
         networks = sa.Table('networks', self.metadata, autoload=True)
         assign_mapper(self.ctx, Networks, networks,
-          properties={'nics': sa.relation(Nics, entity_name=self.entity_name)},
+          properties={'nics': sa.relation(Nics, entity_name=self.entity_name),
+                      'nodegroups': sa.relation(NodeGroups,
+                                                secondary=ng_has_net,
+                                                entity_name=self.entity_name)},
           entity_name=self.entity_name)
 
         nics = sa.Table('nics', self.metadata, autoload=True)
@@ -836,10 +843,6 @@ class DB(object):
           properties={'network': sa.relation(Networks, entity_name=self.entity_name),
                       'node': sa.relation(Nodes, entity_name=self.entity_name)},
           entity_name=self.entity_name)
-
-        ng_has_net = sa.Table('ng_has_net', self.metadata, autoload=True)
-        assign_mapper(self.ctx, NGHasNet, ng_has_net,
-                      entity_name=self.entity_name)
 
         nodegroups = sa.Table('nodegroups', self.metadata, autoload=True)
         assign_mapper(self.ctx, NodeGroups, nodegroups,
@@ -927,29 +930,30 @@ class DB(object):
         if kusu_dist:
             compute.kparams = installer.kparams = Dispatcher.get('kparams', default='')
 
-        if kusu_dist in getOSNames('rhelfamily'):
-            # more nodegroups
             imaged = NodeGroups(ngname='compute-imaged', nameformat='host#NNN',
                                 installtype='disked', type='compute-imaged')
-            diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
-                                  installtype='diskless', type='compute-diskless')
-
-            # Set kernel parameters for diskless and imaged nodegroups.
-            diskless.kparams = imaged.kparams = compute.kparams
+            imaged.kparams = compute.kparams
   
-            # creates the necessary modules for image and diskless nodes
-            for index, mod in enumerate(Dispatcher.get('diskless_modules', default=[])):
-                diskless.modules.append(Modules(loadorder=index+1, module=mod))
-
+            # creates the necessary modules for imaged nodes
             for index, mod in enumerate(Dispatcher.get('imaged_modules', default=[])):
                 imaged.modules.append(Modules(loadorder=index+1, module=mod))
 
-            # Creates the necessary pkg list for image and diskless nodes
-            for pkg in Dispatcher.get('diskless_packages', default=[]):
-                diskless.packages.append(Packages(packagename=pkg))
-
+            # Creates the necessary pkg list for imaged nodes
             for pkg in Dispatcher.get('imaged_packages', default=[]):
                 imaged.packages.append(Packages(packagename=pkg))
+
+        if kusu_dist in getOSNames('rhelfamily'):
+            diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
+                                  installtype='diskless', type='compute-diskless')
+            diskless.kparams = compute.kparams
+
+            # creates the necessary modules for diskless nodes
+            for index, mod in enumerate(Dispatcher.get('diskless_modules', default=[])):
+                diskless.modules.append(Modules(loadorder=index+1, module=mod))
+
+            # Creates the necessary pkg list for diskless nodes
+            for pkg in Dispatcher.get('diskless_packages', default=[]):
+                diskless.packages.append(Packages(packagename=pkg))
 
         NodeGroups(ngname='unmanaged', nameformat='device#NNN',
                    installtype='unmanaged', type='other')
@@ -984,53 +988,18 @@ class DB(object):
             ng.partitions.append(data)
             ng.partitions.append(dell)
             ng.partitions.append(donotpreserve)
-# LVM PARTITIONING
-#        for ng in [compute]:
-#            boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',
-#                              size='100', device='1', preserve=false)
-#            swap = Partitions(fstype='linux-swap', partition='2',
-#                              size='2000', device='1', preserve=false)
-#            pv = Partitions(fstype='physical volume', partition='0',
-#                            size='28000', device='N', preserve=false,
-#                            options='fill;pv;vg=VolGroup00')
-#            vg = Partitions(device='VolGroup00', options='vg;extent=32M', preserve=false)
-#            root = Partitions(mntpnt='/', fstype=default_fstype, size='12000',
-#                              device='ROOT', options='lv;vg=VolGroup00', preserve=false)
-#            var = Partitions(mntpnt='/var', fstype=default_fstype, size='2000',
-#                             device='VAR', options='lv;vg=VolGroup00', preserve=false)
-#            data = Partitions(mntpnt='/data', fstype=default_fstype, size='14000',
-#                              device='DATA', options='lv;vg=VolGroup00;fill', preserve=false)
-#            dell = Partitions(options='partitionID=Dell Utility', preserve=true)
-##            donotpreserve1 = Partitions(options='partitionID=Linux', preserve=false)
-##            donotpreserve2 = Partitions(options='partitionID=Linux swap', preserve=false)
-##            donotpreserve3 = Partitions(options='partitionID=Linux extended', preserve=false)
-#            donotpreserve4 = Partitions(options='partitionID=*', preserve=false)
-
-#            ng.partitions.append(boot)
-#            ng.partitions.append(swap)
-#            ng.partitions.append(pv)
-#            ng.partitions.append(vg)
-#            ng.partitions.append(root)
-#            ng.partitions.append(var)
-#            ng.partitions.append(data)
-#            ng.partitions.append(dell)
-##            ng.partitions.append(donotpreserve1)
-##            ng.partitions.append(donotpreserve2)
-##            ng.partitions.append(donotpreserve3)
-#            ng.partitions.append(donotpreserve4)
 
         # Imaged Partitioning
-        if kusu_dist in getOSNames('rhelfamily'):
-            boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
-                              size='100', device='1', preserve=false)
-            swap = Partitions(fstype='linux-swap', partition='2',
-                              size='8000', device='1', preserve=false)
-            root = Partitions(mntpnt='/', fstype=default_fstype, partition='3',
-                              size='24000', device='1', preserve=false)
+        boot = Partitions(mntpnt='/boot', fstype='ext2', partition='1',
+                          size='100', device='1', preserve=false)
+        swap = Partitions(fstype='linux-swap', partition='2',
+                          size='8000', device='1', preserve=false)
+        root = Partitions(mntpnt='/', fstype=default_fstype, partition='3',
+                          size='24000', device='1', preserve=false)
 
-            imaged.partitions.append(boot)
-            imaged.partitions.append(swap)
-            imaged.partitions.append(root)
+        imaged.partitions.append(boot)
+        imaged.partitions.append(swap)
+        imaged.partitions.append(root)
 
         # Installer Partitioning Schema
         boot = Partitions(mntpnt='/boot', fstype='ext3', partition='1',

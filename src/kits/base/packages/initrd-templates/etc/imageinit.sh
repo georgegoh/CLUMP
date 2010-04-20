@@ -60,7 +60,12 @@ init_udev() {
     mknod /dev/zero c 1 5
     mkdir /dev/{pts,shm}
 
-    /sbin/start_udev
+    if [ -f /sbin/start_udev ]; then
+        /sbin/start_udev
+    else
+        /etc/init.d/boot.udev start
+        /etc/init.d/boot.device-mapper start
+    fi
 
     echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
 }
@@ -83,7 +88,7 @@ init_udev
 
 # Use rngd to generate entropy for /dev/random; this solves a startup
 # issue with 'automount' (from the autofs) package
-/sbin/rngd -r /dev/urandom
+[ -f /sbin/rngd ] && /sbin/rngd -r /dev/urandom
 
 /bin/mount -o remount,rw /
 /bin/mount -a
@@ -92,21 +97,36 @@ init_udev
 /sbin/route add -net 127.0.0.0 netmask 255.0.0.0 lo
 
 # now run any rc scripts
-/etc/init.d/rcS
+if [ -f /etc/init.d/rcS ]; then
+    /etc/init.d/rcS
+else
+    /etc/rc.d/init.d/rcS > /dev/null 2>&1
+fi
 
 # Provide shell for watching what it is doing.
-/sbin/getty 38400 tty2 &
+if [ -f /sbin/getty ]; then
+    /sbin/getty 38400 tty2 &
+else
+    /sbin/mingetty 38400 tty2 &
+fi
 
 /bin/touch /var/log/messages
 
 /imageinit.py
+
 RETVAL=$?
 if [ -s /tmp/imageinit.log ] ; then
     cp /tmp/imageinit.log ${NEW_ROOT}/tmp/imageinit.log
 fi
 
+/bin/umount /tmp
+
 if [ $RETVAL -eq 0 ]; then
-    exec switch_root ${NEW_ROOT} ${NEW_INIT}
+    if [ -f /sbin/switch_root ]; then
+        exec switch_root ${NEW_ROOT} ${NEW_INIT}
+    else
+        exec pivot_root ${NEW_ROOT} ${NEW_INIT}
+    fi
 fi
 
 if [ $RETVAL -eq 99 ]; then
@@ -116,4 +136,8 @@ if [ $RETVAL -eq 99 ]; then
 fi
 
 echo "Debugging time..."
-/sbin/getty 38400 tty1
+if [ -f /sbin/getty ]; then
+    /sbin/getty 38400 tty1
+else
+    /bin/bash
+fi

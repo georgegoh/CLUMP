@@ -39,6 +39,8 @@ from primitive.system.software.probe import OS
 from path import path
 import subprocess
 
+RHELFAMILY = ['rhel', 'centos', 'scientificlinux', 'scientificlinuxcern']
+
 class BuildImage:
     """This class will provide the image management functions"""
 
@@ -96,7 +98,6 @@ class BuildImage:
                 self.stderrout("ERROR: Invalid node group type: %s\n", self.installtype)
             return
 
-        # Skip kusu-buildimage for sles/opensuse
         ng = self.dbs.NodeGroups.select_by(ngname = nodegroup)[0]
         if not ng.repo:
             self.stdoutout('Nodegroup %s has no repo.\n' % ng.ngname)
@@ -105,7 +106,8 @@ class BuildImage:
         _os = ng.repo.os
         self.os_tup = (_os.name, _os.major, _os.arch)
 
-        if _os.name.lower() in ['sles', 'opensuse', 'suse']:
+        # Skip kusu-buildimage for opensuse
+        if _os.name.lower() in ['opensuse', 'suse']:
             self.stdoutout('Skipping kusu-buildimage for %s distribution\n' % _os.name)
             sys.exit(0)
 
@@ -122,25 +124,51 @@ class BuildImage:
         
         self.__mkImageDir()
         self.__getRepoInfo()
-        self.__prepYum()
 
-        # Now install all the packages.  Note list of packages may exceed
-        # length of args.
         arg = ''
-        yumconf = os.path.join(self.imagedir, 'tmp/yum.conf')
-        try:
-            for package in self.packages:
-                arg = arg + " %s" % package
-                if len(arg) > 8000:
-                    # Call yum to install the packages
+
+        if _os.name.lower() in ['sles']:
+            os.system('echo y | /usr/bin/zypper --root %s service-add file://%s TEMPORARY > /dev/null 2>&1' % (self.imagedir, self.repodir))
+            try:
+                #Install some packages to enable 'network' service, for avoiding 'insserv error' while building image.
+                prePkgs = ['aaa_base', 'sysconfig', 'dbus-1', 'hal', 'udev']
+                os.system('echo y | zypper --root %s --non-interactive --no-gpg-checks install --auto-agree-with-licenses %s' % (self.imagedir, ' '.join(prePkgs)))
+                for srv in ['boot.localnet', 'haldaemon', 'network']:
+                    os.system('/sbin/insserv %s/etc/init.d/%s' % (self.imagedir, srv))
+
+                for package in self.packages:
+                    if package in prePkgs:
+                        continue
+                    arg = arg + " %s" % package
+                    if len(arg) > 8000:
+                        # Call zypper to install the packages
+                        os.system('echo y | zypper --root %s --non-interactive --no-gpg-checks install --auto-agree-with-licenses %s' % (self.imagedir, arg))
+                        arg = ''
+                if len(arg):
+                    os.system('echo y | zypper --root %s --non-interactive --no-gpg-checks install --auto-agree-with-licenses %s' % (self.imagedir, arg))
+                    print ""
+            except TypeError:
+                if self.stderrout:
+                    self.stderrout("ERROR: zypper Failed!\n")
+        else:
+            self.__prepYum()
+
+            # Now install all the packages.  Note list of packages may exceed
+            # length of args.
+            yumconf = os.path.join(self.imagedir, 'tmp/yum.conf')
+            try:
+                for package in self.packages:
+                    arg = arg + " %s" % package
+                    if len(arg) > 8000:
+                        # Call yum to install the packages
+                        os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
+                        arg = ''
+                if len(arg):
                     os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
-                    arg = ''
-            if len(arg):
-                os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
-                print ""
-        except:
-            if self.stderrout:
-                self.stderrout("ERROR: Yum Failed!\n")
+                    print ""
+            except:
+                if self.stderrout:
+                    self.stderrout("ERROR: Yum Failed!\n")
 
         # Do the post processing
         self.__runPostScripts()
@@ -396,6 +424,8 @@ class BuildImage:
             self.stdoutout("Compressing Image.  This will take some time.  Please wait\n")
 
         os.chdir(self.imagedir)
+        if path('%s/proc' % self.imagedir).glob('*'):
+            os.system('umount %s/proc' % self.imagedir)
         os.system('tar cfj \"../%s.img.tar.bz2\" .' % self.ngid )
         os.system('chown %s:%s \"../%s.img.tar.bz2\"' % (self.apacheuser, self.apachegrp, self.ngid))
         os.chdir('/tmp')
@@ -417,9 +447,10 @@ class BuildImage:
                 os.chmod(authorizedkeys, 0644)
 
         # set up /etc/sysconfig/kernel for ticket 145644: After repopatch, imaged node does not set to boot from the new kernel.
-        # We should be ware that this fix is only for RHEL. If we want to support SLES image in future,
+        # We should be aware that this fix is only for RHEL. If we want to support SLES image in future,
         # we should notice /etc/sysconfig/kernel for RHEL and SLES is quite different.
-        self.__createRHKconfig()
+        if self.os_tup[0] in RHELFAMILY:
+            self.__createRHKconfig()
 
     def __createRHKconfig(self):
         

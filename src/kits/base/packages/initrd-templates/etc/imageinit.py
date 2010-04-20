@@ -43,10 +43,12 @@ from niifun import NIIFun
 from niifun import NodeInstInfoHandler
 
 MODULE_LOAD_LIST='/etc/module-load-order.lst'
+IMAGEINIT_LOGFILE='/tmp/imageinit.log'
 
 initrddebug = 0
-dlp = ''
-class ImagedNodeConfiger:
+
+
+class NodeConfigurator:
     """This class contains the code for doing the steps above"""
 
     def __init__(self):
@@ -54,6 +56,7 @@ class ImagedNodeConfiger:
         self.ifs = []
         self.installer = []
         self.logfilefp = 0
+        self.niihandler = None
         global initrddebug
         initrddebug = 0
         try:
@@ -71,20 +74,18 @@ class ImagedNodeConfiger:
             self.installer = "10.1.0.1"
             self.test = 1
 
-
     def log(self, mesg):
-        """log - Output messages to a log file"""
+        """Logs a message to the IMAGEINIT_LOFILE"""
         try:
-            self.logfilefp = file('/tmp/imageinit.log', 'a')
+            self.logfilefp = file(IMAGEINIT_LOGFILE, 'a')
             self.logfilefp.write(mesg)
             self.logfilefp.close()
         except:
             self.logfilefp = 0
             print "Logging unavailable!"
 
-
     def loadModules(self):
-        """loadModules - Load the modules in the provided list."""
+        """Loads the modules in the MODULE_LOAD_LIST file."""
         if self.test:
             self.log("Skipping module loading")
             return
@@ -102,15 +103,19 @@ class ImagedNodeConfiger:
         else:
             self.log("No modules to load!\n")
 
-
     def upInterfaces(self):
-        """upInterfaces - Try to bring up the interfaces using DHCP"""
+        """Tries to bring up the interfaces using DHCP"""
+        dhcp_client_cmd = ''
+        if os.path.exists('/sbin/udhcpc'):
+            dhcp_client_cmd = 'udhcpc -n -i'
+        else:
+            dhcp_client_cmd = 'dhclient -lf /tmp/dhclient.leases -1'
         for i in range(0,3):
-            status = os.system('udhcpc -n -i eth%i > /dev/null 2>&1' % i)
+            status = os.system('%s eth%i > /dev/null 2>&1' % (dhcp_client_cmd, i))
             if os.WEXITSTATUS(status) == 0:
                 self.ifs.append('eth%i' % i)
             else:
-                print "udhcpc -n -i eth%i exited with: %i" % (i, os.WEXITSTATUS(status))
+                print "%s eth%i exited with: %i" % (dhcp_client_cmd, i, os.WEXITSTATUS(status))
 
         print "Started interfaces:  %s\n" % self.ifs
         self.log("Started interfaces:  %s\n" % self.ifs)
@@ -159,9 +164,8 @@ class ImagedNodeConfiger:
         return s.hexdigest()
 
     def setInterface(self, device, ip, subnet, dgateway=''):
-        """setInterface - Configure the named device with the given ip,
-        and subnet mask.  If the gateway is provided it will also set
-        the default route."""
+        """Configures the named device with the given ip and subnet mask.
+           If the gateway is provided it will also set the default route."""
         if not device or not ip or not subnet:
             return
 
@@ -169,10 +173,9 @@ class ImagedNodeConfiger:
         if dgateway:
             # Set the default route
             os.system('route add -net default gw %s' % dgateway)
-            
 
     def findBestInstaller(self):
-        """findBestInstaller - Find the best IP address to get the NII"""
+        """Finds the best IP address to get the NII"""
         if len(self.installer) == 1:
             return self.installer[0]
 
@@ -214,25 +217,22 @@ class ImagedNodeConfiger:
         print "Failed to find the best installer IP!"
         return self.installer[0]
 
-
     def mkNewRoot(self, newroot):
-        """mkNewRoot - Make a new root filesystem to run from."""
+        """Makes a new root filesystem to run from."""
         os.makedirs(newroot, mode=0777)
         os.system('mount tmpfs %s -t tmpfs' % newroot)
-        
-
 
     def getImage(self, ngid, disked):
-        """getImage - Download and extract the image to use as the root filesystem.
+        """Downloads and extracts the image to use as the root filesystem.
         The 'disked' flag is used to control where the image is downloaded to"""
         image = "http://%s/images/%s.img.tar.bz2" % (bestip, ngid)
         sys.stdout.write("Downloading image: %s to " % image)
         if disked:
             os.chdir('/newroot/tmp')
-            sys.stdout.write("/newroot/tmp")
+            sys.stdout.write("/newroot/tmp\n")
         else:
             os.chdir('/tmp')
-            sys.stdout.write("/tmp")
+            sys.stdout.write("/tmp\n")
             
         while True:
             self.log("Downloading image: %s\n" % image)
@@ -241,16 +241,16 @@ class ImagedNodeConfiger:
             if os.WEXITSTATUS(status) != 0:
                 self.log("Unable to download image from: %s\nWill retry in 30 seconds.\n" % image)
                 time.sleep(30)
-                
             else:
                 break
+
         os.chdir('/newroot')
         self.log("Extracting image\n")
         sys.stdout.write("Extracting image\n")
         if disked:
-            es = os.system('tar jxf /newroot/tmp/%s.img.tar.bz2' % ngid)
+            es = os.system('tar jxf /newroot/tmp/%s.img.tar.bz2 2>/dev/null' % ngid)
         else:
-            es = os.system('tar jxf /tmp/%s.img.tar.bz2' % ngid)
+            es = os.system('tar jxf /tmp/%s.img.tar.bz2 2>/dev/null' % ngid)
         if es != 0:
             sys.stdout.write("FATAL:  Failed to extract image!\n")
             sys.stdout.write("There may not be enough disk space\n")
@@ -260,19 +260,32 @@ class ImagedNodeConfiger:
             os.unlink('/tmp/%s.img.tar.bz2' % ngid)
 
     def setupSystem(self, niihandler, bestip):
+        """Sets up the following:
+           - network config (ifcfg files, resolv.conf, default gateway)
+           - timezone and system clock settings"""
 
-        # setup /etc/sysconfig/network
-        if not os.path.exists('/newroot/etc/sysconfig/network'):
-            hostname = niihandler.name
-            gateway = bestip
+        hostname = niihandler.name
+        gateway = bestip
 
+        # Set up network config for rhel
+        if not os.path.isdir('/newroot/etc/sysconfig/network'):
             f = open('/newroot/etc/sysconfig/network', 'w')
             f.write('NETWORKING=yes\n')
             f.write('NETWORKING_IPV6=yes\n')
             f.write('HOSTNAME=%s\n' % hostname)
-            f.write('GATEWAY=%s\n' % bestip)
+            f.write('GATEWAY=%s\n' % gateway)
             f.close()
        
+        # Set up network config for sles
+        if os.path.isfile('/newroot/etc/HOSTNAME'):
+            f = open('/newroot/etc/HOSTNAME', 'w')
+            f.write('%s\n' % hostname)
+            f.close()
+        if os.path.isdir('/newroot/etc/sysconfig/network'):
+            f = open('/newroot/etc/sysconfig/network/routes', 'w')
+            f.write('default %s - -\n' % gateway)
+            f.close()
+            
         # setup timezone
         timezone = niihandler.appglobal['Timezone_zone']
         if not os.path.exists(os.path.join('/newroot/usr/share/zoneinfo', timezone)):
@@ -286,12 +299,20 @@ class ImagedNodeConfiger:
         os.system('hwclock %s > /dev/null 2>&1' % hwclock_args)
  
         f = open('/newroot/etc/sysconfig/clock', 'w')
-        f.write('ZONE="%s"\n' % timezone)
-        if niihandler.appglobal['Timezone_utc'] == '1':
-            f.write('UTC=true\n')
+        if os.path.exists('/newroot/etc/SuSE-release'):
+            f.write('TIMEZONE="%s"\n' % timezone)
+            if niihandler.appglobal['Timezone_utc'] == '1':
+                f.write('HWCLOCK="-u"\n')
+            else:
+                f.write('HWCLOCK="--localtime"\n')
+            f.write('SYSTOHC="yes"\n')
         else:
-            f.write('UTC=false\n')
-        f.write('ARC=false\n')
+            f.write('ZONE="%s"\n' % timezone)
+            if niihandler.appglobal['Timezone_utc'] == '1':
+                f.write('UTC=true\n')
+            else:
+                f.write('UTC=false\n')
+            f.write('ARC=false\n')
         f.close()
 
         # setup /etc/resolv.conf
@@ -305,12 +326,56 @@ class ImagedNodeConfiger:
                     f.write('search %s\n' % niihandler.appglobal[dns])
         f.close()
 
+    def logNiiInformation(self, niihandler=None):
+        self.niihandler = niihandler
+        self.log("Name        = %s\n" % self.niihandler.name)
+        self.log("installers  = %s\n" % self.niihandler.installers)
+        self.log("repo        = %s\n" % self.niihandler.repo)
+        self.log("ostype      = %s\n" % self.niihandler.ostype)
+        self.log("installtype = %s\n" % self.niihandler.installtype)
+        self.log("nodegrpid   = %s\n" % self.niihandler.nodegrpid)
+        for i in self.niihandler.partitions.keys():
+            self.log("------------------------------ Partitions: Key = %s\n" % i)
+            self.log("        Device    = %s\n" % (self.niihandler.partitions[i]['device']))
+            self.log("        Partition = %s\n" % (self.niihandler.partitions[i]['partition']))    
+            self.log("        Mntpnt    = %s\n" % (self.niihandler.partitions[i]['mntpnt']))
+            self.log("        fstype    = %s\n" % (self.niihandler.partitions[i]['fstype']))
+            self.log("        size      = %s\n" % (self.niihandler.partitions[i]['size']))
+            self.log("        options   = %s\n" % (self.niihandler.partitions[i]['options']))
+            self.log("        preserve  = %s\n" % (self.niihandler.partitions[i]['preserve']))
+        for i in self.niihandler.nics.keys():
+            self.log("------------------------------ NICS:  Key = %s\n" % i)
+            self.log("        Device  = %s\n" % (self.niihandler.nics[i]['device']))
+            self.log("        IP      = %s\n" % (self.niihandler.nics[i]['ip']))
+            self.log("        subnet  = %s\n" % (self.niihandler.nics[i]['subnet']))
+            self.log("        network = %s\n" % (self.niihandler.nics[i]['network']))
+            self.log("        suffix  = %s\n" % (self.niihandler.nics[i]['suffix']))
+            self.log("        gateway = %s\n" % (self.niihandler.nics[i]['gateway']))
+            self.log("        dhcp    = %s\n" % (self.niihandler.nics[i]['dhcp']))
+            self.log("        options = %s\n" % (self.niihandler.nics[i]['options']))
+
+    def configureNiiInterfaces(self):
+        """Brings up the interfaces according to NII"""
+        for i in self.niihandler.nics.keys():
+            if self.niihandler.nics[i]['dhcp'] == 0:
+                if self.niihandler.nics[i]['gateway'] != '':
+                    self.setInterface(self.niihandler.nics[i]['device'],
+                                      self.niihandler.nics[i]['ip'],
+                                      self.niihandler.nics[i]['subnet'],
+                                      self.niihandler.nics[i]['gateway'])
+                else:
+                    self.setInterface(self.niihandler.nics[i]['device'],
+                                      self.niihandler.nics[i]['ip'],
+                                      self.niihandler.nics[i]['subnet'])
+
+
 class DirtyLittlePartitioner:
-    """ This class will deal with partitioning disks for imaged nodes
+    """ This class deals with partitioning disks for imaged nodes
     until the real partitioning code can be used."""
 
     def __init__(self):
         self.firstdisk = ""
+        self.root_device = ""
         self.bootpartnum = 0
         self.partinfo  = {}    # Dictionary of all the Partition info.
         devlist = []
@@ -342,16 +407,14 @@ class DirtyLittlePartitioner:
 
         self.firstdisk = best
         print "First disk to use is: %s" % best
-
         
     def addPart(self, pnum, ptype, size, mntpnt):
-        '''addPart - Store the partition information in a class structure'''
+        '''Stores the partition information as a dict in the partinfo dict'''
         self.partinfo[pnum] = { 'type'   : ptype,
                                 'size'   : size,
                                 'mntpnt' : mntpnt,
                                 'boot'   : '',
                                 'device' : "/dev/%s%s" % (self.firstdisk, pnum) }
-        
 
     def findType(self, fstype):
         if fstype == 'linux-swap':
@@ -368,9 +431,8 @@ class DirtyLittlePartitioner:
             ptype = 83  # Linux partition
         return(ptype)
 
-
     def wipeParts(self):
-        '''wipeParts - Delete all partitions'''
+        '''Deletes all partitions'''
         try:
             fp = file('/tmp/part0', 'w')
             fp.write(';\n;\n;\n;\n')
@@ -381,9 +443,8 @@ class DirtyLittlePartitioner:
             
         os.system('sfdisk /dev/%s < /tmp/part0 >/dev/null 2>/dev/null' % (self.firstdisk))
 
-
     def partitionDisk(self):
-        '''partitionDisk - Create the partitions'''
+        '''Creates the partitions'''
         # Determine which to boot
         boot = -1
         for i in self.partinfo.keys():
@@ -425,7 +486,6 @@ class DirtyLittlePartitioner:
                 fp.write(self.partinfo['4']['sfdiskstr'])
             else:
                 fp.write('0,0,0,\n')
-            
             fp.close()
         except:
             print "Unable to partition disk!"
@@ -433,26 +493,29 @@ class DirtyLittlePartitioner:
         print "****  Running:  sfdisk -uM /dev/%s < /tmp/partitions" % (self.firstdisk)
         os.system('sfdisk -uM /dev/%s < /tmp/partitions >/dev/null 2>/dev/null' % (self.firstdisk))
 
+    def executeAndLog(self, cmd=''):
+        """Executes the given cmd using os.system and logging its
+           output to IMAGEINIT_LOGFILE."""
+        os.system('%s >> %s 2>&1' % (cmd, IMAGEINIT_LOGFILE))
 
     def formatPart(self):
-        '''prepPart  - Format the partitions on the disk, and use swap'''
+        '''Formats the partitions on the disk, and use swap'''
         for i in self.partinfo.keys():
             device = "/dev/%s%s" % (self.firstdisk, i)
             type = self.partinfo[i]['type']
             print "Formatting %s as %s" % (device, type)
             if type == 'linux-swap':
-                os.system('mkswap %s >> /tmp/imageinit.log 2>&1' % device)
-                os.system('swapon %s >> /tmp/imageinit.log 2>&1' % device)
+                self.executeAndLog('mkswap %s' % device)
+                self.executeAndLog('swapon %s' % device)
             elif type == 'ext2':
-                os.system('mke2fs -q %s >> /tmp/imageinit.log 2>&1' % device)
+                self.executeAndLog('mke2fs -q %s' % device)
             elif type == 'ext3':
-                os.system('mke2fs -j -q %s >> /tmp/imageinit.log 2>&1' % device)
+                self.executeAndLog('mke2fs -j -q %s' % device)
             else:
                 print "Unknown partition type: %s" % type
 
-
     def mountParts(self):
-        '''mountParts - Mount the partitions.'''
+        '''Mounts the partitions.'''
         # Find root key first
         rkey = ''
         for i in self.partinfo.keys():
@@ -464,7 +527,7 @@ class DirtyLittlePartitioner:
             sys.exit(-7)
             
         print "Mounting %s as root" % self.partinfo[rkey]['device']
-        os.system('mount %s /newroot/ >> /tmp/imageinit.log 2>&1' % self.partinfo[rkey]['device'])
+        self.executeAndLog('mount %s /newroot/' % self.partinfo[rkey]['device'])
 
         # Now mount the other filesystems
         for i in self.partinfo.keys():
@@ -473,11 +536,17 @@ class DirtyLittlePartitioner:
             if self.partinfo[i]['type'] == 'linux-swap':
                 continue
             os.makedirs('/newroot%s' % self.partinfo[i]['mntpnt'], mode=0755)
-            os.system('mount %s /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['device'], self.partinfo[i]['mntpnt']))
-
+            print "Mounting %s to /newroot%s" % (self.partinfo[i]['device'], 
+                                                 self.partinfo[i]['mntpnt'])
+            self.executeAndLog('mount %s /newroot%s' % \
+                    (self.partinfo[i]['device'], self.partinfo[i]['mntpnt']))
 
     def unmountParts(self):
-        '''unmountParts - Unmount the partitions.'''
+        '''Unmounts the partitions.'''
+
+        # Flush file system buffers first before unmounting partitions
+        os.system('sync')
+
         # Find root key first
         rkey = ''
         for i in self.partinfo.keys():
@@ -490,26 +559,38 @@ class DirtyLittlePartitioner:
                 continue
             if self.partinfo[i]['type'] == 'linux-swap':
                 continue
-            os.system('umount /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['mntpnt']))
+            self.executeAndLog('umount /newroot%s' % (self.partinfo[i]['mntpnt']))
 
-        os.system('umount /newroot%s >> /tmp/imageinit.log 2>&1' % (self.partinfo[i]['mntpnt']))
-            
+        self.executeAndLog('umount /newroot%s' % (self.partinfo[i]['mntpnt']))
                 
     def addGrub(self):
-        '''addGrub  - Install the grub bootloader'''
+        '''Installs the grub bootloader'''
         flist = glob.glob('/newroot/boot/initrd*')
         if len(flist) == 0:
             print "ERROR:  Unable to locate the initrd!  Was the kernel package included?"
             sys.exit(-2)
-        init = os.path.basename(flist[0])
-        
-        flist = glob.glob('/newroot/boot/vmlin*')
-        if len(flist) == 0:
-            print "ERROR:  Unable to locate the kernel for imaged nodes!"
-            sys.exit(-3)
-        kern = os.path.basename(flist[0])
+        if os.path.islink(flist[0]):
+            initrd = os.path.realpath(flist[0])
+            initrd = os.path.basename(initrd)
+        else:
+            initrd = os.path.basename(flist[0])
+        kver = ''
+        kern = ''
+        if initrd.startswith('initrd-'):
+            kver = initrd[len('initrd-'):]
+            if os.path.exists('/newroot/boot/vmlinuz-%s' % kver):
+               kern = 'vmlinuz-%s' % kver
 
-        if not os.path.exists('/newroot/usr/share/grub/'):
+        if not kern:
+            flist = glob.glob('/newroot/boot/vmlinuz-*')
+            if len(flist) == 0:
+                print "ERROR:  Unable to locate the kernel for imaged nodes!"
+                sys.exit(-3)
+            kern = os.path.basename(flist[0])
+            kver = kern[len('vmlinuz-'):]
+            initrd = 'initrd-%s' % kver
+
+        if not (os.path.exists('/newroot/usr/sbin/grub') or os.path.exists('/newroot/sbin/grub')):
             print "ERROR:  Unable to locate the grub package!  Was the grub package included?"
             sys.exit(-4)
 
@@ -522,9 +603,10 @@ class DirtyLittlePartitioner:
             if self.partinfo[i]['boot'] == '*':
                 bdev = string.atoi(i) - 1
 
-        os.system('cp -r /newroot/usr/share/grub/*/* /newroot/boot/grub')
+        os.system('cp -r /newroot/usr/share/grub/*/* /newroot/boot/grub > /dev/null 2>&1')
+        os.system('cp -r /newroot/usr/lib/grub/* /newroot/boot/grub > /dev/null 2>&1')
         # make /dev/ available for grub
-        os.system('mount /dev /newroot/dev')
+        os.system('mount -o bind /dev /newroot/dev')
         fp = file('/newroot/boot/grub/grub.conf', 'w')
         fp.write('# Imaged node \n')
         fp.write('# \n')
@@ -534,28 +616,57 @@ class DirtyLittlePartitioner:
         fp.write('title Imaged Node\n')
         fp.write('        root (hd0,%s)\n' % bdev)
         fp.write('        kernel /%s ro root=%s\n' % (kern, self.partinfo[rkey]['device']))
-        fp.write('        initrd /%s\n' % (init))
+        fp.write('        initrd /%s\n' % (initrd))
         fp.close()
         os.chdir('/newroot/boot/grub')
         os.system('ln -s grub.conf menu.lst')
         os.chdir('/')
+        return kver
 
-        
+    def configBootloader(self):
+        if os.path.exists('/newroot/etc/SuSE-release'):
+            if not os.path.exists('/newroot/var/log/YaST2'):
+                os.makedirs('/newroot/var/log/YaST2', mode=0700)
+
+            fp = file('/newroot/etc/grub.conf', 'w')
+            fp.write('setup --stage2=/boot/grub/stage2 (hd0) (hd0,0)\n')
+            fp.write('quit\n')
+            fp.close()
+
+            fp = file('/newroot/etc/sysconfig/bootloader', 'w')
+            fp.write('LOADER_TYPE=\"grub\"\n')
+            fp.close()
+        else:
+            fp = file('/newroot/etc/sysconfig/kernel', 'w')
+            fp.write('# UPDATEDEFAULT specifies if new-kernel-pkg should make\n'
+                     '# new kernels the default\n')
+            fp.write('UPDATEDEFAULT=yes\n')
+            fp.write('\n')
+            fp.write('# DEFAULTKERNEL specifies the default kernel package type\n')
+            fp.write('DEFAULTKERNEL=kernel\n')
+            fp.close()
+
     def mkfstab(self):
-        '''mkfstab - write out the fstab file'''
+        '''Writes the fstab file'''
         filename = "/newroot/etc/fstab"
         fp = file(filename, 'w')
         fp.writelines('# Created by Kusu Image installation\n')
         for i in self.partinfo.keys():
             if self.partinfo[i]['mntpnt'] != '/':
                 continue
-            device = "/dev/%s%s" % (self.firstdisk, i)
-            fp.writelines('%s          /       %s     defaults        1 1\n' % (device, self.partinfo[i]['type']))
+            self.root_device = "/dev/%s%s" % (self.firstdisk, i)
+            fp.writelines('%s          /       %s     defaults        1 1\n' % \
+                    (self.root_device, self.partinfo[i]['type']))
 
         fp.writelines('devpts                  /dev/pts                devpts  gid=5,mode=620  0 0\n')
-        fp.writelines('tmpfs                   /dev/shm                tmpfs   defaults        0 0\n')
         fp.writelines('proc                    /proc                   proc    defaults        0 0\n')
-        fp.writelines('sysfs                   /sys                    sysfs   defaults        0 0\n')   
+
+        if os.path.exists('/newroot/etc/SuSE-release'):
+            fp.writelines('sysfs                   /sys                    sysfs   noauto        0 0\n')   
+            fp.writelines('debugfs                 /sys/kernel/debug       debugfs noauto        0 0\n')   
+        else:
+            fp.writelines('sysfs                   /sys                    sysfs   defaults        0 0\n')   
+            fp.writelines('tmpfs                   /dev/shm                tmpfs   defaults        0 0\n')
 
         for i in self.partinfo.keys():
             if self.partinfo[i]['mntpnt'] == '/':
@@ -575,19 +686,39 @@ class ImagedConfigFiles:
     """ This class will deal with all the files that need to be created
     on imaged nodes."""
 
-    def __init__(self):
+    def __init__(self, niihandler=None, bestip=''):
         self.root = '/newroot'
+        self.niihandler = niihandler
+        self.bestip = bestip
+
+    def getPhysicalAddressOfInterface(self, interface):
+        """ Returns the MAC address of the given interface."""
+        sys.path.append("/opt/primitive/lib/python2.4/site-packages")
+        from primitive.system.hardware import probe
+        from primitive.system.hardware.net import arrangeOnBoardNicsFirst
+        interfaces = arrangeOnBoardNicsFirst(probe.getPhysicalInterfaces())
+        return interfaces[interface]['hwaddr']
+
+    def getIfcfgFilename(self, interface):
+        dir = "%s/etc/sysconfig/network-scripts/" % self.root
+        if not os.path.exists(dir):
+            dir = "%s/etc/sysconfig/network/" % self.root
+        filename = "%sifcfg-%s" % (dir, interface)
+        if os.path.exists('%s/etc/SuSE-release' % self.root) and interface.startswith('eth'):
+            filename = "%sifcfg-eth-id-%s" % (dir, self.getPhysicalAddressOfInterface(interface))
+        return filename
 
     def mkifcfgs(self, hostname, data):
-        """mkifcfgs - Write the /etc/sysconfig/network-scripts/ifcfg-XXX files."""
-        path = "%s/etc/sysconfig/network-scripts/" % self.root
-        gw = ''
+        """Writes the ifcfg-XXX files."""
         for i in data.keys():
-            filename = "%sifcfg-%s" % (path, data[i]['device'])
-            fp = file(filename, 'w')
+            interface = data[i]['device']
+            fp = file(self.getIfcfgFilename(interface), 'w')
             fp.writelines('# NIC configured by Kusu\n')
-            fp.writelines('DEVICE=%s\n' % data[i]['device'])
-            fp.writelines('ONBOOT=yes\n')
+            if os.path.exists('%s/etc/SuSE-release' % self.root):
+                fp.writelines('STARTMODE=auto\n')
+            else:
+                fp.writelines('ONBOOT=yes\n')
+                fp.writelines('DEVICE=%s\n' % interface)
             if data[i]['dhcp'] == '0':
                 fp.writelines('BOOTPROTO=static\n')
                 fp.writelines('IPADDR=%s\n' % data[i]['ip'])
@@ -600,30 +731,39 @@ class ImagedConfigFiles:
                 fp.writelines('# NETWORK=%s\n' % data[i]['network'])
                 fp.writelines('# dhcp=%s\n' % data[i]['dhcp'])
             fp.close()
-            if data[i]['gateway'] != '':
-                gw = data[i]['gateway']
 
-        path = "%s/etc/sysconfig/" % self.root
-        filename = "%snetwork" % (path)
-        fp = file(filename, 'w')
-        fp.writelines('NETWORKING=yes\n')
-        if gw != '':
-            fp.writelines('GATEWAY=%s\n' % gw)
-        fp.writelines('HOSTNAME=%s\n' % hostname)
-        fp.close()
+    def get_sles_module_list(self):
+        if not os.path.exists('/var/log/YaST2'):
+            os.makedirs('/var/log/YaST2', mode=0700)
+        import ycp
+        controllers = ycp.SCR.Read(ycp.Path('.probe.storage'))
+        sles_module_list = []
+        for controller in controllers:
+            if controller.has_key('drivers'):
+                for drivers in controller['drivers']:
+                    for module in drivers['modules']:
+                        sles_module_list.append(module[0])
+            elif controller.has_key('driver'):
+                sles_module_list.append(controller['driver'])
 
+        return ' '.join(set(sles_module_list))
 
-    def rebuildInitrd(self):
-        '''rebuildInitrd - rebuild the initrd so this thing can boot.
-        This is VERY linux centric.'''
+    def rebuildInitrd(self, kver):
+        '''Rebuilds the initrd so this thing can boot. This is VERY linux centric.'''
 
-        kver = ''
-        flist = glob.glob('/newroot/boot/vmlinuz*')
-        if len(flist) == 0:
-            print "ERROR:  Unable to locate the kernel for imaged nodes!"
-            sys.exit(-3)
-        kern = os.path.basename(flist[0])
-        kver = kern[len('vmlinuz-'):]
+        #For sles, should add module list to /etc/sysconfig/kernel for 'mkinitrd'
+        if os.path.exists('/newroot/etc/SuSE-release'):
+            sles_module_list = self.get_sles_module_list()
+            fp = file('/newroot/etc/sysconfig/kernel', 'r')
+            contents = fp.readlines()
+            fp.close()
+            fp = file('/newroot/etc/sysconfig/kernel', 'w')
+            for line in contents:
+                if line.strip().startswith('INITRD_MODULES='):
+                    fp.write('INITRD_MODULES="%s"\n' % sles_module_list)
+                else:
+                    fp.write(line)
+            fp.close()
 
         # Create a script to run in a chroot'ed environment to build the initrd
         filename = "/newroot/SetupInitrd"
@@ -632,243 +772,217 @@ class ImagedConfigFiles:
         fp.writelines('mount /sys\n')
         fp.writelines('mount /proc\n')
         fp.writelines('cd /boot\n')
-        fp.writelines('mv initrd-%s.img initrd-%s.ORIG.img\n' % (kver,kver))
-
-        fp.writelines('mkinitrd /boot/initrd-%s.img %s\n' % (kver, kver))
+        fp.writelines('if [ -f "/etc/SuSE-release" ]; then\n')
+        fp.writelines('    for svc in syslog portmap nfs; do\n')
+        fp.writelines('        chkconfig --add $svc\n')
+        fp.writelines('    done\n')
+        fp.writelines('    SuSEconfig --module permissions > /dev/null 2>&1\n')
+        fp.writelines('    echo y | zypper service-delete TEMPORARY 2>&1 > /dev/null\n')
+        repo_url = "http://%s%s" % (self.bestip, self.niihandler.repo)
+        fp.writelines('    echo y | zypper service-add %s %s\n' % (repo_url, self.niihandler.ostype))
+        fp.writelines('    ln -s /proc/self/fd /dev/fd\n')
+        fp.writelines('    mkinitrd -k /boot/vmlinuz-%s -i /boot/initrd-%s\n' % (kver, kver))
+        fp.writelines('else\n')
+        fp.writelines('    mv initrd-%s.img initrd-%s.ORIG.img\n' % (kver, kver))
+        fp.writelines('    mkinitrd /boot/initrd-%s.img %s\n' % (kver, kver))
+        fp.writelines('fi\n')
         fp.writelines('cat <<EOF >/tmp/grub.cmd\n')
         fp.writelines('root (hd0,0)\n')
         fp.writelines('setup (hd0)\n')
         fp.writelines('EOF\n')
         fp.writelines('grub --batch --no-floppy --no-curses < /tmp/grub.cmd\n')
-        fp.writelines('#/sbin/new-kernel-pkg --package kernel --mkinitrd --depmod --install %s\n' % kver)
         fp.writelines('umount /sys\n')
         fp.writelines('umount /proc\n')
         fp.writelines('exit')
         fp.close()
-        os.system('chmod 755 %s' %  filename)
+        os.system('chmod 755 %s' % filename)
+        os.system('cat %s' % filename)
         os.system('chroot /newroot /SetupInitrd')
         os.chdir('/')
 
 
-app = ImagedNodeConfiger()
-app.loadModules()
-app.upInterfaces()
+if __name__ == '__main__':
+    app = NodeConfigurator()
+    app.loadModules()
+    app.upInterfaces()
 
-bestip = app.findBestInstaller()
-app.log("Best Installer = %s\n" % bestip )
+    bestip = app.findBestInstaller()
+    app.log("Best Installer = %s\n" % bestip)
 
-uid = app.genUID()
-app.log("UID = %s" % uid)
+    uid = app.genUID()
+    app.log("UID = %s\n" % uid)
 
-niiinfo = NIIFun()
-niiinfo.setState('Installing')
-niiinfo.setUID(uid)
-niiinfo.wantNII(1)
-#niiinfo.wantCFM(1)  # Can't do anything with it yet
-
-while True:
-    try:
-        niifile = niiinfo.callNodeboot(bestip)
-        break
-    except:
-        app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
-        print "ERROR:  Unable to get NII from:  %s\nWill retry in 30 seconds.\n" % bestip
-        time.sleep(30)
-    
-niihandler = NodeInstInfoHandler()
-try:
-    parser = make_parser()
-except:
-    app.log("ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n")
-    print "ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n"
-    sys.exit(-1)
-    
-parser.setContentHandler(niihandler)
-parser.parse(open(niifile)) 
-
-if len(niihandler.partitions.keys()) > 0 and niihandler.installtype == 'disked':
-    disked = True
-    app.log("Using local disk\n")
-else:
-    disked = False
-    app.log("Not using local disk\n")
-
-app.log("Name        = %s\n" % niihandler.name)
-app.log("installers  = %s\n" % niihandler.installers)
-app.log("repo        = %s\n" % niihandler.repo)
-app.log("ostype      = %s\n" % niihandler.ostype)
-app.log("installtype = %s\n" % niihandler.installtype)
-app.log("nodegrpid   = %s\n" % niihandler.nodegrpid)
-
-for i in niihandler.partitions.keys():
-    app.log("------------------------------ Partitions: Key = %s\n" % i)
-    app.log("        Device    = %s\n" % (niihandler.partitions[i]['device']))
-    app.log("        Partition = %s\n" % (niihandler.partitions[i]['partition']))    
-    app.log("        Mntpnt    = %s\n" % (niihandler.partitions[i]['mntpnt']))
-    app.log("        fstype    = %s\n" % (niihandler.partitions[i]['fstype']))
-    app.log("        size      = %s\n" % (niihandler.partitions[i]['size']))
-    app.log("        options   = %s\n" % (niihandler.partitions[i]['options']))
-    app.log("        preserve  = %s\n" % (niihandler.partitions[i]['preserve']))
-
-for i in niihandler.nics.keys():
-    app.log("------------------------------ NICS:  Key = %s" % i)
-    app.log("        Device  = %s\n" % (niihandler.nics[i]['device']))
-    app.log("        IP      = %s\n" % (niihandler.nics[i]['ip']))
-    app.log("        subnet  = %s\n" % (niihandler.nics[i]['subnet']))
-    app.log("        network = %s\n" % (niihandler.nics[i]['network']))
-    app.log("        suffix  = %s\n" % (niihandler.nics[i]['suffix']))
-    app.log("        gateway = %s\n" % (niihandler.nics[i]['gateway']))
-    app.log("        dhcp    = %s\n" % (niihandler.nics[i]['dhcp']))
-    app.log("        options = %s\n" % (niihandler.nics[i]['options']))
-
-# Bring up the interfaces according to the NII
-for i in niihandler.nics.keys():
-    if niihandler.nics[i]['dhcp'] == 0:
-        if niihandler.nics[i]['gateway'] != '':
-            app.setInterface(niihandler.nics[i]['device'],
-                             niihandler.nics[i]['ip'],
-                             niihandler.nics[i]['subnet'],
-                             niihandler.nics[i]['gateway'])
-        else:
-            app.setInterface(niihandler.nics[i]['device'],
-                             niihandler.nics[i]['ip'],
-                             niihandler.nics[i]['subnet'])
-
-if disked:
-    os.makedirs('/newroot/', mode=0755)
-else:
-    # Make a RAM root filesystem
-    app.mkNewRoot('/newroot')
-
-if disked and 'gdfgd' == 'FAIL':
-    # Bring up the partitions according to the NII
-    # TODO
-    #
-    # Need to get a lot more modules from the installer before this can work
-    #from nodeinstaller import adaptNIIPartition
-    #from kusu.partitiontool import DiskProfile
-    #from kusu.installer.defaults import setupDiskProfile
-    #disk_profile = DiskProfile(True) # Start with blank disk.
-    #schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
-    #setupDiskProfile(disk_profile, schema)
-    #disk_profile.commit()
-    #disk_profile.formatAll()
-    print ""
-
-if disked:
-    dlp = DirtyLittlePartitioner()
-    if dlp.firstdisk == 'none':
-        print "FATAL:  No Disk Found!"
-        print "The kernel modules for the drive controller may not be loaded."
-        print "Type:  Alt-F2, login and look at /proc/partitions"
-        sys.exit(4)
-        
-    app.log("Trying to partition %s\n" % dlp.firstdisk)
-    dlp.wipeParts()
-    for i in niihandler.partitions.keys():
-        # This is all we will deal with.
-        if niihandler.partitions[i]['device'] == "1":
-            if niihandler.partitions[i]['partition'] == '':
-                continue
-
-            dlp.addPart(niihandler.partitions[i]['partition'],
-                        niihandler.partitions[i]['fstype'],
-                        niihandler.partitions[i]['size'],
-                        niihandler.partitions[i]['mntpnt'])
-
-    dlp.partitionDisk()
-    dlp.formatPart()
-    dlp.mountParts()
-    
-
-os.makedirs('/newroot/etc', mode=0755)
-os.makedirs('/newroot/etc/cfm', mode=0755)
-os.makedirs('/newroot/tmp', mode=0777)
-os.system('cp /.cfmsecret /newroot/etc/cfm/')
-os.system('chmod 400 /newroot/etc/cfm/.cfmsecret')
-os.system('chown root /newroot/etc/cfm/.cfmsecret')
-niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
-app.getImage(niihandler.nodegrpid, disked)
-app.setupSystem(niihandler, bestip)
-
-os.system('hostname %s' % niihandler.name)
-
-if disked:
-    # Install the bootloader
-    print "Adding bootloader"
-    dlp.addGrub()
-
-    print "Adding Fstab"
-    dlp.mkfstab()
-    
-    # Write config files
-    icf = ImagedConfigFiles()
-    nicdata = {}
-    for i in niihandler.nics.keys():
-        if  niihandler.nics[i]['device'] in ['bmc']: continue 
-
-        nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
-                       'ip'      : niihandler.nics[i]['ip'],
-                       'subnet'  : niihandler.nics[i]['subnet'],
-                       'network' : niihandler.nics[i]['network'],
-                       'suffix'  : niihandler.nics[i]['suffix'],
-                       'gateway' : niihandler.nics[i]['gateway'],
-                       'dhcp'    : niihandler.nics[i]['dhcp'],
-                       'options' : niihandler.nics[i]['options'],
-                       'boot'    : niihandler.nics[i]['boot'] }
-        
-    print "Writing network config files"
-    icf.mkifcfgs(niihandler.name, nicdata)
-
-    print "Installing initrd"
-    icf.rebuildInitrd()
-
-    if os.path.exists('/tmp/imageinit.log'):
-        os.system('mv /tmp/imageinit.log /newroot/tmp/imageinit.log')
-
-    dlp.unmountParts()
-
-    print "Changing boot device"
-    niiinfo.setState('Installed')
-    niiinfo.wantNII(0)
-    niiinfo.setBootFrom('disk')  # This is only for disked!
+    niiinfo = NIIFun()
+    niiinfo.setState('Installing')
+    niiinfo.setUID(uid)
+    niiinfo.wantNII(1)
+    #niiinfo.wantCFM(1)  # Can't do anything with it yet
 
     while True:
         try:
             niifile = niiinfo.callNodeboot(bestip)
             break
         except:
-            app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
-            print "ERROR:  Unable to update bootfrom:  %s\nWill retry in 30 seconds.\n" % bestip
+            app.log("ERROR:  Unable to get NII from:  %s\n" % bestip)
+            print "ERROR:  Unable to get NII from:  %s\nWill retry in 30 seconds.\n" % bestip
             time.sleep(30)
+        
+    niihandler = NodeInstInfoHandler()
+    try:
+        parser = make_parser()
+    except:
+        app.log("ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n")
+        print "ERROR:  Unable to initialize xml parser.  Make sure initrd has Expat\n"
+        sys.exit(-1)
+        
+    parser.setContentHandler(niihandler)
+    parser.parse(open(niifile)) 
+
+    if len(niihandler.partitions.keys()) > 0 and niihandler.installtype == 'disked':
+        disked = True
+        app.log("Using local disk\n")
+    else:
+        disked = False
+        app.log("Not using local disk\n")
+
+    app.logNiiInformation(niihandler=niihandler)
+    app.configureNiiInterfaces()
+
+    if disked:
+        os.makedirs('/newroot/', mode=0755)
+    else:
+        # Make a RAM root filesystem
+        app.mkNewRoot('/newroot')
+
+    if disked and 'gdfgd' == 'FAIL':
+        # Bring up the partitions according to the NII
+        # TODO
+        #
+        # Need to get a lot more modules from the installer before this can work
+        #from nodeinstaller import adaptNIIPartition
+        #from kusu.partitiontool import DiskProfile
+        #from kusu.installer.defaults import setupDiskProfile
+        #disk_profile = DiskProfile(True) # Start with blank disk.
+        #schema, disk_profile = adaptNIIPartition(niihandler, disk_profile)
+        #setupDiskProfile(disk_profile, schema)
+        #disk_profile.commit()
+        #disk_profile.formatAll()
+        print ""
+
+    if disked:
+        dlp = DirtyLittlePartitioner()
+        if dlp.firstdisk == 'none':
+            print "FATAL:  No Disk Found!"
+            print "The kernel modules for the drive controller may not be loaded."
+            print "Type:  Alt-F2, login and look at /proc/partitions"
+            sys.exit(4)
             
-    # Exit with 99 to force reboot
-    sys.exit(99)
+        app.log("Trying to partition %s\n" % dlp.firstdisk)
+        dlp.wipeParts()
+        for i in niihandler.partitions.keys():
+            # This is all we will deal with.
+            if niihandler.partitions[i]['device'] == "1":
+                if niihandler.partitions[i]['partition'] == '':
+                    continue
 
-# diskless systems have errors on reboot/shutdown due
-# to the S01reboot script crashing the system.
-# This section is a workaround hack that inserts
-# rc scripts to run before the S01reboot scripts
-# in runlevels 0(shutdown) and 6(reboot).
-if not disked:
-    # shutdown in runlevel 0.
-    f = open('/newroot/etc/rc0.d/S00killpcm', 'w')
-    f.write('#!/bin/bash\n')
-    f.write('echo 1 > /proc/sys/kernel/sysrq\n')
-    f.write('echo o > /proc/sysrq-trigger\n')
-    f.close()
-    os.system('chmod 755 /newroot/etc/rc0.d/S00killpcm')
-    # reboot in runlevel 6.
-    f = open('/newroot/etc/rc6.d/S00killpcm', 'w')
-    f.write('#!/bin/bash\n')
-    f.write('echo 1 > /proc/sys/kernel/sysrq\n')
-    f.write('echo b > /proc/sysrq-trigger\n')
-    f.close()
-    os.system('chmod 755 /newroot/etc/rc6.d/S00killpcm')
+                dlp.addPart(niihandler.partitions[i]['partition'],
+                            niihandler.partitions[i]['fstype'],
+                            niihandler.partitions[i]['size'],
+                            niihandler.partitions[i]['mntpnt'])
 
-app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
-if initrddebug == 1:
-    # Exit with 1 to stop the switch_root
-    sys.exit(1)
+        dlp.partitionDisk()
+        dlp.formatPart()
+        dlp.mountParts()
 
-sys.exit(0)
+    os.makedirs('/newroot/etc', mode=0755)
+    os.makedirs('/newroot/etc/cfm', mode=0755)
+    os.makedirs('/newroot/tmp', mode=0777)
+    os.system('cp /.cfmsecret /newroot/etc/cfm/')
+    os.system('chmod 400 /newroot/etc/cfm/.cfmsecret')
+    os.system('chown root /newroot/etc/cfm/.cfmsecret')
+    niihandler.saveAppGlobalsEnv('/newroot/etc/profile.nii')
+    app.getImage(niihandler.nodegrpid, disked)
+    app.setupSystem(niihandler, bestip)
+
+    os.system('hostname %s' % niihandler.name)
+
+    if disked:
+        # Install the bootloader
+        print "Adding bootloader"
+        kversion = dlp.addGrub()
+        dlp.configBootloader()
+
+        print "Adding Fstab"
+        dlp.mkfstab()
+        
+        # Write config files
+        icf = ImagedConfigFiles(niihandler=niihandler, bestip=bestip)
+        nicdata = {}
+        for i in niihandler.nics.keys():
+            if  niihandler.nics[i]['device'] in ['bmc']: continue 
+
+            nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
+                           'ip'      : niihandler.nics[i]['ip'],
+                           'subnet'  : niihandler.nics[i]['subnet'],
+                           'network' : niihandler.nics[i]['network'],
+                           'suffix'  : niihandler.nics[i]['suffix'],
+                           'gateway' : niihandler.nics[i]['gateway'],
+                           'dhcp'    : niihandler.nics[i]['dhcp'],
+                           'options' : niihandler.nics[i]['options'],
+                           'boot'    : niihandler.nics[i]['boot'] }
+            
+        print "Writing network config files"
+        icf.mkifcfgs(niihandler.name, nicdata)
+
+        print "Installing initrd"
+        icf.rebuildInitrd(kversion)
+
+        if os.path.exists(IMAGEINIT_LOGFILE):
+            os.system('mv %s /newroot/root/imageinit.log' % IMAGEINIT_LOGFILE)
+
+        dlp.unmountParts()
+
+        print "Changing boot device"
+        niiinfo.setState('Installed')
+        niiinfo.wantNII(0)
+        niiinfo.setBootFrom('disk')  # This is only for disked!
+
+        while True:
+            try:
+                niifile = niiinfo.callNodeboot(bestip)
+                break
+            except:
+                app.log("ERROR:  Unable to update bootfrom:  %s\n" % bestip)
+                print "ERROR:  Unable to update bootfrom:  %s\nWill retry in 30 seconds.\n" % bestip
+                time.sleep(30)
+                
+        # Exit with 99 to force reboot
+        sys.exit(99)
+
+    # diskless systems have errors on reboot/shutdown due
+    # to the S01reboot script crashing the system.
+    # This section is a workaround hack that inserts
+    # rc scripts to run before the S01reboot scripts
+    # in runlevels 0(shutdown) and 6(reboot).
+    if not disked:
+        # shutdown in runlevel 0.
+        f = open('/newroot/etc/rc0.d/S00killpcm', 'w')
+        f.write('#!/bin/bash\n')
+        f.write('echo 1 > /proc/sys/kernel/sysrq\n')
+        f.write('echo o > /proc/sysrq-trigger\n')
+        f.close()
+        os.system('chmod 755 /newroot/etc/rc0.d/S00killpcm')
+        # reboot in runlevel 6.
+        f = open('/newroot/etc/rc6.d/S00killpcm', 'w')
+        f.write('#!/bin/bash\n')
+        f.write('echo 1 > /proc/sys/kernel/sysrq\n')
+        f.write('echo b > /proc/sysrq-trigger\n')
+        f.close()
+        os.system('chmod 755 /newroot/etc/rc6.d/S00killpcm')
+
+    app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
+    if initrddebug == 1:
+        # Exit with 1 to stop the switch_root
+        sys.exit(1)
+
+    sys.exit(0)

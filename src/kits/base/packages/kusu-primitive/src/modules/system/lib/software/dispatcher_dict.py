@@ -10,36 +10,64 @@
 # is not limited to commands and can be used for any purpose such as common directories
 # or files which Kusu may depend on.
 
-rhel_fedora_diskless_packages = ['SysVinit', 'basesystem', 'bash', 'chkconfig', 'coreutils', 'db4',
-'e2fsprogs', 'filesystem', 'findutils', 'gawk', 'cracklib-dicts', 'glibc', 'glibc-common', 'initscripts',
-'iproute', 'iputils', 'krb5-libs', 'libacl', 'libattr', 'libgcc', 'libstdc++', 'libtermcap', 'mingetty',
-'mktemp', 'ncurses', 'net-tools', 'nfs-utils', 'pam', 'pcre', 'popt', 'portmap', 'procps', 'psmisc',
-'rdate', 'rsh', 'rsh-server', 'rsync', 'rsyslog', 'sed', 'setup', 'shadow-utils', 'openssh', 'openssh-server',
-'openssh-clients', 'sysklogd', 'tcp_wrappers', 'termcap', 'tzdata', 'words', 'xinetd', 'zlib', 'tar',
-'mkinitrd', 'less', 'gzip', 'which', 'util-linux', 'module-init-tools', 'udev', 'cracklib', 'yum',
-'vim-minimal', 'vim-common', 'vim-enhanced', 'rootfiles', 'autofs', 'ntp', 'dmidecode', 'sendmail',
-'OpenIPMI', 'OpenIPMI-libs', 'OpenIPMI-tools']
+rhel_fedora_diskless_packages = ['OpenIPMI', 'OpenIPMI-libs', 'OpenIPMI-tools',
+'SysVinit', 'autofs', 'basesystem', 'bash', 'chkconfig', 'coreutils', 'cracklib',
+'cracklib-dicts', 'db4', 'dmidecode', 'e2fsprogs', 'filesystem', 'findutils',
+'gawk', 'glibc', 'glibc-common', 'gzip', 'initscripts', 'iproute', 'iputils',
+'krb5-libs', 'less', 'libacl', 'libattr', 'libgcc', 'libstdc++', 'libtermcap',
+'mingetty', 'mkinitrd', 'mktemp', 'module-init-tools', 'ncurses', 'net-tools',
+'nfs-utils', 'ntp', 'openssh', 'openssh-clients', 'openssh-server', 'pam',
+'pcre', 'popt', 'portmap', 'procps', 'psmisc', 'rdate', 'rootfiles', 'rsh',
+'rsh-server', 'rsync', 'rsyslog', 'sed', 'sendmail', 'setup', 'shadow-utils',
+'sysklogd', 'tar', 'tcp_wrappers', 'termcap', 'tzdata', 'udev', 'util-linux',
+'vim-common', 'vim-enhanced', 'vim-minimal', 'which', 'words', 'xinetd', 'yum',
+'zlib']
 
 rhel_diskless_packages = rhel_fedora_diskless_packages + ['redhat-release',  'authconfig', 'redhat-lsb']
-centos_diskless_packages = rhel_fedora_diskless_packages + [ 'authconfig', 'redhat-lsb']
+centos_diskless_packages = rhel_fedora_diskless_packages + ['authconfig', 'redhat-lsb']
 sl_diskless_packages = rhel_fedora_diskless_packages + ['sl-release', 'authconfig', 'redhat-lsb']
 slc_diskless_packages = rhel_fedora_diskless_packages + ['sl-release', 'authconfig', 'redhat-lsb']
-
-rhel_imaged_packages = rhel_diskless_packages + ['grub', 'kernel']
-
 fedora_diskless_packages =  rhel_fedora_diskless_packages + ['fedora-release']
 
+rhel_imaged_packages = rhel_diskless_packages + ['grub', 'kernel']
 fedora_imaged_packages = fedora_diskless_packages + ['grub', 'kernel']
 
-rhel_diskless_modules = ['uhci-hcd', 'ohci-hcd', 'ehci-hcd', 'jbd', 'nfs', 'ext3', 'libphy', 'tg3',
-'bnx2', 'e1000', 'e1000e', 'mii', 'e100', 'lockd', 'fscache', 'nfs_acl', 'sunrpc', 'pcnet32',
-'forcedeth', 'autofs4', 'ipmi_si', 'ipmi_devintf', 'ipmi_watchdog', 'ipmi_poweroff', 'ipmi_msghandler']
+standard_diskless_modules = ['uhci-hcd', 'ohci-hcd', 'ehci-hcd', 'jbd', 'nfs',
+'ext3', 'libphy', 'tg3', 'bnx2', 'bnx2x', '8021q', 'igb', 'ixgbe', 'cxgb3',
+'e1000', 'e1000e', 'mii', 'e100', 'lockd', 'nfs_acl', 'sunrpc', 'pcnet32',
+'forcedeth', 'autofs4', 'ipmi_si', 'ipmi_devintf', 'ipmi_watchdog',
+'ipmi_poweroff', 'ipmi_msghandler']
 
-rhel_imaged_modules = ['uhci-hcd', 'ohci-hcd', 'ehci-hcd', 'jbd', 'nfs', 'ext3', 'bonding', 'libphy',
-'tg3', 'bnx2', 'e1000', 'e1000e', 'scsi_mod', 'sd_mod', 'libata', 'ata_piix', 'sata_svw', 'sata_nv',
-'ahci', 'mptbase', 'mptscsih', 'scsi_transport_sas', 'scsi_transport_fc', 'scsi_transport_spi', 'mptsas',
-'mptfc', 'mptspi', 'lockd', 'fscache', 'nfs_acl', 'sunrpc', 'mii', 'e100', 'pcnet32', 'forcedeth',
-'autofs4', 'ipmi_si', 'ipmi_devintf', 'ipmi_watchdog', 'ipmi_poweroff', 'ipmi_msghandler']
+rhel_diskless_modules = standard_diskless_modules + ['fscache', 'dca']
+
+standard_imaged_modules = ['uhci-hcd', 'ohci-hcd', 'ehci-hcd', 'jbd', 'nfs',
+'ext3', 'libphy', 'tg3', 'bnx2', 'bnx2x', '8021q', 'igb', 'ixgbe', 'cxgb3',
+'e1000', 'e1000e', 'scsi_mod', 'sd_mod', 'libata', 'ata_piix', 'sata_svw',
+'sata_nv', 'ahci', 'mptbase', 'mptscsih', 'scsi_transport_sas',
+'scsi_transport_fc', 'scsi_transport_spi', 'mptsas', 'mptfc', 'mptspi',
+'mpt2sas', 'megaraid_sas', 'lockd', 'nfs_acl', 'sunrpc', 'mii', 'e100',
+'pcnet32', 'forcedeth', 'autofs4', 'ipmi_si', 'ipmi_devintf', 'ipmi_watchdog',
+'ipmi_poweroff', 'ipmi_msghandler', 'dm-mod']
+
+rhel_imaged_modules = standard_imaged_modules + ['crypto_api', 'xfrm_nalgo',
+'ipv6', 'bonding', 'fscache', 'dca']
+
+sles_diskless_packages = ['OpenIPMI', 'aaa_base', 'aaa_skel', 'autofs', 'bash',
+'binutils', 'coreutils', 'cracklib', 'cron', 'db', 'dhcpcd', 'e2fsprogs',
+'ethtool', 'filesystem', 'findutils', 'gawk', 'glibc', 'glibc-i18ndata',
+'glibc-locale', 'gzip', 'ipmitool', 'iproute2', 'iputils', 'klogd', 'krb5',
+'less', 'libacl', 'libattr', 'libgcc', 'libstdc++', 'make', 'man', 'man-pages',
+'mingetty', 'mkinitrd', 'mktemp', 'module-init-tools', 'ncurses', 'net-tools',
+'nfs-utils', 'openssh', 'pam', 'patch', 'pcre', 'pmtools', 'popt', 'portmap',
+'postfix', 'procps', 'psmisc', 'resmgr', 'rsh', 'rsh-server', 'rsync', 'sed',
+'sles-release', 'syslog-ng', 'tar', 'tcpd', 'termcap', 'timezone', 'udev',
+'util-linux', 'vim', 'wireless-tools', 'words', 'xinetd', 'xntp', 'zlib',
+'zypper']
+
+sles_imaged_packages = sles_diskless_packages + ['grub', 'kernel-default', 'hwinfo', 'mdadm']
+
+sles_diskless_modules = standard_diskless_modules + ['usbcore', 'af_packet', 'firmware_class']
+sles_imaged_modules = standard_imaged_modules + ['usbcore', 'af_packet', 'firmware_class']
 
 dispatcher_dict = {
     'service_start' : { ('SLES','10','i386') : 'service %s start',
@@ -333,8 +361,8 @@ dispatcher_dict = {
                            ('RHEL','5','i386') : 'kickstart',
                            ('RHEL','5','x86_64') : 'kickstart',
                          },
-    'diskless_packages' : { ('SLES','10','i386') : [],
-                            ('SLES','10','x86_64') : [],
+    'diskless_packages' : { ('SLES','10','i386') : sles_diskless_packages,
+                            ('SLES','10','x86_64') : sles_diskless_packages,
                             ('CENTOS','5','i386') : centos_diskless_packages,
                             ('CENTOS','5','x86_64') : centos_diskless_packages,
                             ('RHEL','5','i386') : rhel_diskless_packages,
@@ -346,20 +374,20 @@ dispatcher_dict = {
                             ('SCIENTIFICLINUXCERN','5','i386') : slc_diskless_packages,
                             ('SCIENTIFICLINUXCERN','5','x86_64') : slc_diskless_packages,
                           },
-    'imaged_packages' : { ('SLES','10','i386') : [],
-                          ('SLES','10','x86_64') : [],
+    'imaged_packages' : { ('SLES','10','i386') : sles_imaged_packages,
+                          ('SLES','10','x86_64') : sles_imaged_packages,
                           ('RHEL','5','i386') : rhel_imaged_packages,
                           ('RHEL','5','x86_64') : rhel_imaged_packages,
                           ('FEDORA','6','i386') : fedora_imaged_packages,
                           ('FEDORA','6','x86_64') : fedora_imaged_packages,
                         },
-    'diskless_modules' : { ('SLES','10','i386') : [],
-                           ('SLES','10','x86_64') : [],
+    'diskless_modules' : { ('SLES','10','i386') : sles_diskless_modules,
+                           ('SLES','10','x86_64') : sles_diskless_modules,
                            ('RHEL','5','i386') : rhel_diskless_modules,
                            ('RHEL','5','x86_64') : rhel_diskless_modules,
                          },
-    'imaged_modules' : { ('SLES','10','i386') : [],
-                         ('SLES','10','x86_64') : [],
+    'imaged_modules' : { ('SLES','10','i386') : sles_imaged_modules,
+                         ('SLES','10','x86_64') : sles_imaged_modules,
                          ('RHEL','5','i386') : rhel_imaged_modules,
                          ('RHEL','5','x86_64') : rhel_imaged_modules,
                        },

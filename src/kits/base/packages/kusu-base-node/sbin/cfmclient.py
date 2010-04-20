@@ -624,7 +624,8 @@ class CFMClient:
         if cmd:
             for i in self.newpackages:
                 # Using redirection here because the p.communicate deadlocks
-                cmd2 = "%s %s >> %s 2>&1" % (cmd, i, LOGFILE)
+                check_package_exists_cmd = "/bin/rpm -q %s > /dev/null && [ $? -eq 0 ]" % i
+                cmd2 = "%s || %s %s >> %s 2>&1" % (check_package_exists_cmd, cmd, i, LOGFILE)
                 self.__runCommand2(cmd2)
 
     def __removePackages(self):

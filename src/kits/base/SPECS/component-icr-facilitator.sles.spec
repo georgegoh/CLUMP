@@ -68,6 +68,7 @@ Requires: gcc-c++
 Requires: termcap
 Requires: termcap-32bit
 Requires: pam-32bit
+Requires: hdparm
 
 %description
 This component sets up cluster for Intel(R) Cluster Ready

@@ -72,6 +72,7 @@ Requires: gdbm-devel
 Requires: elfutils-libelf-devel
 Requires: bzip2-devel
 Requires: libacl-devel
+Requires: hdparm
 
 %description
 This component sets up cluster for Intel(R) Cluster Ready

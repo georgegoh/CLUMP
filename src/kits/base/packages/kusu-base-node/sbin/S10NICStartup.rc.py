@@ -101,8 +101,11 @@ class KusuRC(rcplugin.Plugin):
 
                 fp = open(ifcfg, 'w')
                 fp.write('# Added by Kusu\n')
-                fp.write('DEVICE=%s\n' % dev)
-                fp.write('ONBOOT=yes\n')
+                if self.os_name in ['sles', 'opensuse', 'suse']:
+                    fp.write('STARTMODE=onboot\n')
+                else:
+                    fp.write('DEVICE=%s\n' % dev)
+                    fp.write('ONBOOT=yes\n')
                 if dhcp == '0':
                     fp.write('BOOTPROTO=static\n')
                     fp.write('IPADDR=%s\n' % ip)

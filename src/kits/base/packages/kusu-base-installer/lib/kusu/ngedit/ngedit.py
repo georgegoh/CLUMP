@@ -924,13 +924,6 @@ class NodeGroup(NodeGroupRec):
         engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
         dbinst = sadb.DB(engine, db='kusudb',username='nobody')
         
-        repodir  = rtool.getPackagePath(dbinst, repoid)
-
-        if repodir:
-            repodir = repodir[0]
-        else:
-            raise NGEValidationError, 'Selected repository has an unknown OS type.'
-
         # get the list of driverpacks to examine
         comps = self.data['comps']
         if not comps:
@@ -943,7 +936,11 @@ class NodeGroup(NodeGroupRec):
         # Get list of modules from all driverpacks
         allmodules = []
         for dpack in dpacklst:
-            dpackfull = "%s/%s" %(repodir,dpack)
+            try:
+                dpackfull = rtool.getPackageFilePath(dbinst, repoid, dpack)
+            except FileDoesNotExistError:
+                raise NGEValidationError, 'Selected repository has an unknown OS type.'
+
             if os.path.exists(dpackfull):
                 # Read contents of driverpack
                 cmd = "rpm -qlp %s | grep '.ko$' | awk -F'/' '{print $NF}'" % dpackfull                 
@@ -993,12 +990,19 @@ class NodeGroup(NodeGroupRec):
 
         # validate all selected packages
         packages = self.data['packs']
+        #Package name: <name>-<version>-<release>, version is usually like '3.1.6'
+        #But some are tricky on SLES10SP3, for example iputils-ss021109-167.10.x86_64.rpm
+        pkg_pattern = re.compile('^-[a-zA-Z]*[0-9]+')
         for pkg in packages:
             pkg_exists = False
             for repodir in repodirs:
-                matches = glob.glob('%s/%s-[0-9]*' % (repodir,pkg))
-                if matches:
-                    pkg_exists = True
+                matches = glob.glob('%s/%s-*' % (repodir, pkg))
+                matches = [os.path.basename(fn) for fn in matches]
+                for fn in matches:
+                    if pkg_pattern.match(fn[len(pkg):]):
+                        pkg_exists = True
+                        break
+                if pkg_exists:
                     break
             if not pkg_exists:
                 raise NGEValidationError, "Specified package '%s' was not found in the repository." % pkg

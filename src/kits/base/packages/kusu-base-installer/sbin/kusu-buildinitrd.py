@@ -113,7 +113,7 @@ class BuildInitrd:
         _os = ng.repo.os
         self.os_tup = (_os.name, _os.major+'.'+_os.minor, _os.arch)
 
-        if _os.name.lower() in ['sles', 'opensuse', 'suse']:
+        if _os.name.lower() in ['opensuse', 'suse']:
             self.stdoutout('Skipping kusu-buildinitrd for %s distribution\n' % _os.name)
             sys.exit(0)
 
@@ -392,6 +392,8 @@ class BuildInitrd:
                 pattern = '%s/*/%s' % (self.repodir, row[0])
             elif self.ostype[:15] == 'scientificlinux':
                 pattern = '%s/*/%s' % (self.repodir, row[0])
+            elif self.ostype[:4] == 'sles':
+                pattern = '%s/*/*/%s' % (self.repodir, row[0])
 
             flist = glob.glob(pattern)
 
@@ -545,7 +547,7 @@ class BuildInitrd:
         fp.close()
 
         # Add the libraries for the imageinit
-        pattern = '%s/usr/lib/python2*' % self.imagedir
+        pattern = '%s/usr/lib*/python2*' % self.imagedir
 
         flist = glob.glob(pattern)
         if len(flist) == 0:
@@ -555,7 +557,7 @@ class BuildInitrd:
                                % (self.imagedir, pattern) )
                 sys.exit(-1)
         pythondir = "%s" % flist[0]
-        os.system('cp -r /opt/kusu/lib/python/kusu/* \"%s\"' % pythondir)
+        os.system('cp -r /opt/kusu/lib*/python/kusu/* \"%s\"' % pythondir)
         os.system('cp /opt/kusu/etc/imageinit.py \"%s\"' % self.imagedir)
         file = '%s/imageinit.py' % self.imagedir
         # print 'Running:  cp /opt/kusu/etc/imageinit.py %s' % file
@@ -580,7 +582,7 @@ class BuildInitrd:
         pattern  = ''
         pattern2 = ''
 
-        osList = osfamily.getOSNames('rhelfamily') + ['fedora']
+        osList = osfamily.getOSNames('rhelfamily') + ['fedora', 'sles']
         for osType in osList:
             if self.ostype.startswith(osType):
                 pattern  = os.path.join(self.modlink, 'boot/System.map*')

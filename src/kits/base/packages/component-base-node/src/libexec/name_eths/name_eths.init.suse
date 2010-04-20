@@ -35,8 +35,8 @@ cd /opt/kusu/libexec/name_eths
 
 # See how we were called.
 case "$1" in
-  start)
-	echo -n "Running NIC Enumeration script: "
+    start)
+        echo -n "Running NIC Enumeration script: "
         ./name_eths_suse
         rc_status -v -r
 
@@ -50,8 +50,10 @@ case "$1" in
         service boot.udev start
         service network start
         ;;
-  *)
-        echo $"Usage: $0 {start}"
+    stop)
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop}"
         exit 1
 esac
 

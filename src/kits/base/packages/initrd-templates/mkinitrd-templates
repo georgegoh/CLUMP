@@ -33,16 +33,16 @@ def run(repoid):
     tmpdir = path(tempfile.mkdtemp())
     yumconf = path(tempfile.mkdtemp()) / 'buildinitrd.repo'
 
-    kusu_root = path(os.getenv('KUSU_ROOT', '/opt/kusu'))
-
-    template = kusu_root / \
-               'etc' / \
-               'templates' / \
-               'mkinitrd-templates.tmpl'
-
     repo = db.Repos.select_by(repoid=repoid)[0]
     _os = repo.os
         
+    kusu_root = path(os.getenv('KUSU_ROOT', '/opt/kusu'))
+
+    if _os.name.lower() in ['sles']:
+        template = kusu_root / 'etc' / 'templates' / 'mkinitrd-templates.sles.tmpl'
+    else:
+        template = kusu_root / 'etc' / 'templates' / 'mkinitrd-templates.tmpl'
+
     makedev = Dispatcher.get('makedev')
     if OS()[0].lower() in ['sles', 'opensuse', 'suse']:
         makedev = "cd %s/dev && %s"  % (tmpdir, makedev)
@@ -51,10 +51,18 @@ def run(repoid):
     if row: repos_root = path(row[0].kvalue)
 
     os_tup = (_os.name, _os.major, _os.arch)
-    dirname = Dispatcher.get('yum_repo_subdir', 'Server', os_tuple=os_tup)
-    repo_path = repos_root / str(repo.repoid) / dirname[1:-1]
+    if _os.name.lower() in ['sles']:
+        repo_path = repos_root / str(repo.repoid)
+        t =  Template(file=str(template), 
+                      searchList=[{'MAKEDEV': makedev, 
+                                   'FAKEROOT':tmpdir, 
+                                   'ARCH': _os.arch,
+                                   'REPOPATH': repo_path}])
+    else:
+        dirname = Dispatcher.get('yum_repo_subdir', 'Server', os_tuple=os_tup)
+        repo_path = repos_root / str(repo.repoid) / dirname[1:-1]
 
-    conf = """[main]
+        conf = """[main]
 reposdir=/dev/null
 tolerant=1
 
@@ -64,13 +72,16 @@ baseurl=file://%s
 enabled=1
 gpgcheck=0""" % repo_path
 
-    f = open(yumconf, 'w')
-    f.write(conf)
-    f.close()
+        f = open(yumconf, 'w')
+        f.write(conf)
+        f.close()
 
-    t =  Template(file=str(template), 
-                  searchList=[{'MAKEDEV': makedev, 
-                               'yumconf': yumconf, 'FAKEROOT':tmpdir, 'ARCH': _os.arch}])
+        t =  Template(file=str(template), 
+                      searchList=[{'MAKEDEV': makedev, 
+                                   'yumconf': yumconf, 
+                                   'FAKEROOT':tmpdir, 
+                                   'ARCH': _os.arch}])
+
     fd, tmpfile = tempfile.mkstemp()
     tmpfile = path(tmpfile)
     os.write(fd, str(t))

@@ -77,6 +77,7 @@ install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 /opt/kusu/etc/imageinit.py*
 /opt/kusu/etc/imageinit.sh
 %config(noreplace) /opt/kusu/etc/templates/mkinitrd-templates.tmpl
+%config(noreplace) /opt/kusu/etc/templates/mkinitrd-templates.sles.tmpl
 /opt/kusu/sbin/mkinitrd-templates
 /opt/kusu/share/initrd-templates
 
