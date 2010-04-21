@@ -60,7 +60,7 @@ class syncfun:
             hostlist = hostlist[:-1]
 
             # Unset WCOLL environment before calling pdsh
-            cmd = "unset WCOLL && /usr/bin/pdsh -R ssh -w " + hostlist + " -- " + command
+            cmd = "unset WCOLL && /usr/bin/pdsh -R ssh -w " + hostlist + " -- " + command + " > /dev/null 2>&1"
             try:
                 for retline in os.popen(cmd).readlines():
                     # Insert the results into the list

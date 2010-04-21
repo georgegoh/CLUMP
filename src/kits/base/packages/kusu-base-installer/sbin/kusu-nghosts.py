@@ -645,11 +645,9 @@ class NodeMemberApp(object, KusuApp):
 
                     # Check provision type. Only reboot for Kusu.
                         if provision_type == PROVISION_TYPE_KUSU:
-                            rn = syncfun()
-                            rn.runPdsh(moveIPList, "reboot")
                             if not self.origin_is_multiboot and not insttype == 'multiboot':
                                 rn = syncfun()
-                                rn.runPdsh(moveIPList, "reboot")
+                                rn.runPdsh(moveIPList, "reboot < /dev/null > /dev/null 2>&1 &")
 
                         self.unlock()
 
@@ -871,7 +869,7 @@ class SelectNodesWindow(USXBaseScreen):
                    if provision_type == PROVISION_TYPE_KUSU:
                        if not self.origin_is_multiboot and not insttype == 'multiboot':
                            rn = syncfun()
-                           rn.runPdsh(moveIPList, "reboot")
+                           rn.runPdsh(moveIPList, "reboot < /dev/null > /dev/null 2>&1 &")
 
                    
                progDialog.close()
@@ -1139,7 +1137,7 @@ class SelectNodegroupsWindow(USXBaseScreen):
                     if provision_type == PROVISION_TYPE_KUSU:
                         if not self.origin_is_multiboot and not insttype == 'multiboot':
                             rn = syncfun()
-                            rn.runPdsh(moveIPList, "reboot")
+                            rn.runPdsh(moveIPList, "reboot < /dev/null > /dev/null 2>&1 &")
 
                 # Remove temp file
                 os.remove(tmpfile)

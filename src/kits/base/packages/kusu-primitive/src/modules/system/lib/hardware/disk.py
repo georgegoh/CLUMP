@@ -769,7 +769,7 @@ class Partition(object):
                        'start_cylinder' : 'self.disk.convertStartSectorToCylinder(self.start_sector)',
                        'end_cylinder' : 'self.disk.convertEndSectorToCylinder(self.end_sector)',
                        'type' : 'self.pedPartition.type_name',
-                       'native_type' : 'Partition.native_type_dict[self.pedPartition.native_type]',
+                       'native_type' : 'Partition.native_type_dict.get(self.pedPartition.native_type, "Unknown")',
                        'boot_flag' : 'self.pedPartition.get_flag(parted.PARTITION_BOOT)',
                        'lvm_flag' : 'self.pedPartition.get_flag(parted.PARTITION_LVM)',
                        'root_flag' : 'self.pedPartition.get_flag(parted.PARTITION_ROOT)',
