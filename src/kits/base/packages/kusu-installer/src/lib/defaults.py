@@ -266,7 +266,7 @@ def vanillaSchemaLVM():
     lvm = LVMCollection()
     lvm.addVG(volgroup00)
 
-    return PartitionSchema(disks=disks, lvm=lvm, preserve_types=['Dell Utility'])
+    return PartitionSchema(disks=disks, lvm=lvm)
 
 def clearSchemaPreserveUP():
     """This schema clears all except for the Dell UP.
@@ -281,6 +281,21 @@ def clearSchemaPreserveUP():
     lvm = LVMCollection()
 
     return PartitionSchema(disks=disks, lvm=lvm, preserve_types=['Dell Utility'])
+
+
+def clearSchema():
+    """This schema clears all.
+    """
+    # Physical Disks.
+    d1 = Disk()
+
+    # Create disk collection and add disk 1 to it.
+    disks = DiskCollection()
+    disks.addDisk(d1)
+
+    lvm = LVMCollection()
+
+    return PartitionSchema(disks=disks, lvm=lvm)
 
 
 def setupPreservedPartitions(disk_profile, schema):

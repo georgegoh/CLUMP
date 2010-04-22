@@ -306,7 +306,8 @@ class PartitionScreen(InstallerScreen):
                 result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
                 if result:
                     logger.debug('Clear all partitions')
-                    self.useSchema(clearSchemaPreserveUP(), do_not_use_disks, wipe=True)
+                    # We no longer need to preserve Dell UP
+                    self.useSchema(clearSchema(), do_not_use_disks, wipe=True)
                 else:
                     msg = 'Do you want to use the default schema, or edit '
                     msg += 'the existing schema?'

@@ -979,14 +979,12 @@ class DB(object):
                              size='2000', device='1', preserve=false)
             data = Partitions(mntpnt='/data', fstype=default_fstype, partition='6', size='14000',
                               options='fill', device='1', preserve=false)
-            dell = Partitions(options='partitionID=Dell Utility', preserve=true)
             donotpreserve = Partitions(options='partitionID=*', preserve=false)
             ng.partitions.append(boot)
             ng.partitions.append(root)
             ng.partitions.append(swap)
             ng.partitions.append(var)
             ng.partitions.append(data)
-            ng.partitions.append(dell)
             ng.partitions.append(donotpreserve)
 
         # Imaged Partitioning
@@ -1016,9 +1014,11 @@ class DB(object):
                            device='DEPOT', options='lv;vg=KusuVolGroup00', preserve=false)
         var = Partitions(mntpnt='/var', fstype=default_fstype, size='2000',
                          device='VAR', options='lv;vg=KusuVolGroup00', preserve=false)
-        dell = Partitions(options='partitionID=Dell Utility', preserve=true)
+
+#        dell = Partitions(options='partitionID=Dell Utility', preserve=true)
+# We no longer need to preserve dell UP        
         donotpreserve = Partitions(options='partitionID=*', preserve=false)
-        for parts in [boot, swap, pv, vg, root, depot, var, dell, donotpreserve]:
+        for parts in [boot, swap, pv, vg, root, depot, var, donotpreserve]:
             installer.partitions.append(parts)
         # End Installer Partitioning Schema
 

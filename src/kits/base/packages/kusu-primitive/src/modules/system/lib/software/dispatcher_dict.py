@@ -21,7 +21,7 @@ rhel_fedora_diskless_packages = ['OpenIPMI', 'OpenIPMI-libs', 'OpenIPMI-tools',
 'rsh-server', 'rsync', 'rsyslog', 'sed', 'sendmail', 'setup', 'shadow-utils',
 'sysklogd', 'tar', 'tcp_wrappers', 'termcap', 'tzdata', 'udev', 'util-linux',
 'vim-common', 'vim-enhanced', 'vim-minimal', 'which', 'words', 'xinetd', 'yum',
-'zlib']
+'zlib', 'wget']
 
 rhel_diskless_packages = rhel_fedora_diskless_packages + ['redhat-release',  'authconfig', 'redhat-lsb']
 centos_diskless_packages = rhel_fedora_diskless_packages + ['authconfig', 'redhat-lsb']

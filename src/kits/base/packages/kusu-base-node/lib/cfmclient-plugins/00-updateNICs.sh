@@ -17,6 +17,12 @@
 #
 #
 
+# Do not run this script if yum repo has not been set up yet,
+# i.e. this is the first time the compute is booting up.
+if [ ! -f /etc/yum.repos.d/kusu-compute.repo ]; then
+    exit 0
+fi
+
 # The purpose of this script is to determine if a change is needed 
 # in the BMC or network setup, and to apply it.  This is triggered
 # by the existence of a newer flag file

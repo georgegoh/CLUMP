@@ -123,6 +123,7 @@ fi
 
 if [ $RETVAL -eq 0 ]; then
     if [ -f /sbin/switch_root ]; then
+        echo '/usr/bin/pkill udhcpc' >> ${NEW_ROOT}/etc/rc.local
         exec switch_root ${NEW_ROOT} ${NEW_INIT}
     else
         exec pivot_root ${NEW_ROOT} ${NEW_INIT}
