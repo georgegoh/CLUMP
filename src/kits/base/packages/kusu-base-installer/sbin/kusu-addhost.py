@@ -187,7 +187,7 @@ class AddHostApp(KusuApp):
             removeFlag = bool(self._options.remove)        
 
         # === Verify options have required sub-options ===
-        
+
         ## -n, -p, -e, -u, -s are mututally exclusive
         if not len([x for x in [bool(self._options.nodegroup), 
                                 bool(self._options.replace), 
@@ -477,8 +477,24 @@ class AddHostApp(KusuApp):
                 msg = kusuApp._("addhost_options_invalid_interface")
                 return False, msg
                 
+        dhcp_enabled = int(self.__db.getAppglobals('InstallerServeDHCP'))
+
+        if not dhcp_enabled:
+            ## -b not allowed with external dhcp 
+            if myNodeInfo.batchMode:
+                print "Error: Option '-b/--batch' is not allowed with external DHCP server."
+                self.exitFailedAndUnlock()            
+                    
+            if self.haveNodegroup and myNodeInfo.ngname != 'unmanaged':
+                print "Error: Action not allowed. You can only add nodes to 'unmanaged' nodegroup with external DHCP server."
+                self.exitFailedAndUnlock()
+            elif myNodeInfo.staticHostname or myNodeInfo.replaceNodeName:
+                print "Error: This action is not allowed with external DHCP server."
+                self.exitFailedAndUnlock()
+ 
         # Validate node group name and rack number
         if myNodeInfo.ngname:
+
             result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
             if result:
                 myNodeInfo.ngid = ngid
@@ -573,15 +589,6 @@ class AddHostApp(KusuApp):
 
         need_rack_prompt = myNode.isNodenameHasRack()
 
-        # We're not preserving IPs, let's get rack input from the user now.
-        # There's a bit code duplication here with a similar construct below
-        # inside the for-loop, a prime candidate for refactoring
-        if preserveNodeIP != '1' and need_rack_prompt:
-            need_rack_prompt = False
-            if not self.getRackNumberFromUser():
-                # User decided to quit...
-                return True, 'Success'
-        
         # Check if the node group's interfaces are valid. 
         if not myNode.validateInterface(myNodeInfo.selectedNodeInterface, 
                                         installer=False, nodegroup=myNodeInfo.ngid):
@@ -833,7 +840,7 @@ class AddHostApp(KusuApp):
         Run the application """
         
         screenList = []
-
+        
         global kusuApp
         
         if self.action == ADDHOST_LISTEN:
@@ -878,7 +885,7 @@ class AddHostApp(KusuApp):
         """Run all of addhost's steps in batch mode"""
         
         db = self.__db
-        
+      
         if replaceMode or staticHostMode:
             batchStepList = [BatchNodeStatus(database=db, kusuApp=kusuApp)]
         elif haveInterface and haveNodegroup:
@@ -1291,6 +1298,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
         """ Get list of node groups and allow a user to choose one """
         global tuiMode
         tuiMode = self.screen
+        dhcp_enabled = int(self.database.getAppglobals('InstallerServeDHCP'))
       
         try:
             nodeGroups = NodeGroupBatch.getNodeGroupList(self)
@@ -1301,12 +1309,18 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
             
         self.screenGrid = snack.Grid(1, 2)
         instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
-        self.listbox = snack.Listbox(5, scroll=1, returnExit=1)
 
         #value = snack.ListboxChoiceWindow(self.screen, self.kusuApp._(self.name), self.kusuApp._(self.msg), nodeGroups, buttons = ['Next', 'Exit'], width = 40, scroll=1, height=6, default=None, help=None)
+        if dhcp_enabled:
+            self.listbox = snack.Listbox(len(nodeGroups), scroll=1, returnExit=1)
+            for ng,ngid in nodeGroups:
+                self.listbox.append("%s" % ng, "%s" % ngid)
+        else:
+            self.listbox = snack.Listbox(1, scroll=1, returnExit=1)
+            for ng,ngid in nodeGroups:
+                if ng == 'unmanaged':                
+                    self.listbox.append("%s" % ng, "%s" % ngid)
 
-        for ng,ngid in nodeGroups:
-            self.listbox.append("%s" % ng, "%s" % ngid)
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 1), growx=1)
         self.screenGrid.setField(self.listbox, col=0, row=1, padding=(0, 0, 0, 1), growx=1)
 
@@ -1328,14 +1342,14 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
 
            if not myNodeInfo.optionDHCPMode:
               raise UserExitError
-    
+
         return True, 'Success'
 
     def formAction(self):
         """Any other action other than validation that takes place after the
            'Next button is pressed.
         """
-        pass
+        pass 
 
 
 class BatchSelectNode:
@@ -1732,20 +1746,28 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
         global tuiMode
         tuiMode = self.screen
 
-        instruction = snack.Textbox(50, 3, self.kusuApp._("addhost_unmanaged_instructions"), scroll=0, wrap=1)
         self.staticHostname = LabelledEntry(labelTxt=self.kusuApp._("addhost_hostname_label"), text="", width=20,
                 password=0, returnExit = 0)
 
-        self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = 0)
         self.IPEntry = LabelledEntry(labelTxt=self.kusuApp._("addhost_ipaddr_label"), text="", width=20,
                 password=0, returnExit = 0)
-        self.dhcpCheck.setCallback(self.checkDHCPStatus)
 
-        self.screenGrid = snack.Grid(1, 4)
+        dhcp_enabled = int(self.database.getAppglobals('InstallerServeDHCP'))
+
+        if dhcp_enabled:
+            instruction = snack.Textbox(50, 3, self.kusuApp._("addhost_unmanaged_instructions"), scroll=0, wrap=1)
+            self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = 0)
+            self.dhcpCheck.setCallback(self.checkDHCPStatus)
+            self.screenGrid = snack.Grid(1, 4)
+            self.screenGrid.setField(self.dhcpCheck, col=0, row=2, padding=(-30,1,0,0))
+            self.screenGrid.setField(self.IPEntry, col=0, row=3, padding=(-10,1,0,0))
+        else:
+            instruction = snack.Textbox(50, 3, self.kusuApp._("addhost_unmanaged_instructions_with_external_dhcp"), scroll=0, wrap=1)
+            self.screenGrid = snack.Grid(1, 3)
+            self.screenGrid.setField(self.IPEntry, col=0, row=2, padding=(-10,1,0,0))
+
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0,0,0,0))
         self.screenGrid.setField(self.staticHostname, col=0, row=1, padding=(-11,1,0,0))
-        self.screenGrid.setField(self.dhcpCheck, col=0, row=2, padding=(-30,1,0,0))
-        self.screenGrid.setField(self.IPEntry, col=0, row=3, padding=(-10,1,0,0))
 
     def validateInfo(self):
         myNodeInfo.staticHostname = self.staticHostname.value().strip().lower()
@@ -1753,16 +1775,20 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
 
         (result,errMsg) = BatchUnmanaged.validate(self)
         if not result:
-           self.selector.popupStatus(self.kusuApp._("Error"), errMsg, 4)
-           return NAV_NOTHING
+            self.selector.popupStatus(self.kusuApp._("Error"), errMsg, 4)
+            return NAV_NOTHING
 
-        if myNodeInfo.optionDHCPMode == False:
-           result = self.selector.popupStatus(self.kusuApp._("addhost_add_static_device_title"), self.kusuApp._("addhost_add_static_device_with_ip") % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 2)
-           self.screen.finish()
-           BatchUnmanaged.addStaticDevice(self)
-           return NAV_QUIT
+        if myNodeInfo.optionDHCPMode == True and not int(self.database.getAppglobals('InstallerServeDHCP')):
+            self.selector.popupStatus(self.kusuApp._("Error"), self.kusuApp._("Option not "), 4)
+            return NAV_NOTHING
+
+        if self.dhcp and myNodeInfo.optionDHCPMode == False:
+            result = self.selector.popupStatus(self.kusuApp._("addhost_add_static_device_title"), self.kusuApp._("addhost_add_static_device_with_ip") % (myNodeInfo.staticHostname, myNodeInfo.staticIPAddress), 2)
+            self.screen.finish()
+            BatchUnmanaged.addStaticDevice(self)
+            return NAV_QUIT
         else:
-           return NAV_FORWARD
+            return NAV_FORWARD
            
     def validate(self):
         # Adding a Static hostname via DHCP

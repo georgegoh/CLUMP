@@ -1,5 +1,5 @@
 .\" Copyright (c) 2007 Platform Computing Inc
-.TH "Kusu-addhost" "8" "Version: ${VERSION_STR}" "Mark Black" "Kusu Base"
+.TH "kusu-addhost" "8" "Version: ${VERSION_STR}" "Mark Black" "Kusu Base"
 .SH "NAME"
 .LP 
 kusu-addhost \- Add hosts to the Kusu cluster.
@@ -38,7 +38,7 @@ kusu-addhost \- Add hosts to the Kusu cluster.
 You use \-b with any of the usages above to run kusu-addhost in batch mode.
 .SH "DESCRIPTION"
 .LP 
-Kusu-addhost is a tool for adding/removing nodes (hosts) from the cluster.  The tool provides a Textual User Interface (TUI) when run with no arguments.  The tool will prompt for the information it needs to add hosts.  The use of this tool can be scripted and allows for the bulk addition of files through a MAC file.
+Kusu-addhost is a tool for adding/removing nodes (hosts) from the cluster.  The tool provides a Textual User Interface (TUI) when run with no arguments. However, the Textual User Interface (TUI) only supports 'unmanaged' nodegroup if DHCP server is hosted on an external machine.  The tool will prompt for the information it needs to add hosts.  The use of this tool can be scripted and allows for the bulk addition of files through a MAC file.
 .LP 
 The nodes in the cluster that are managed by Kusu must be configured to boot from the network using PXE.  When adding nodes the \fBkusu-addhost\fR tool should be run prior to booting the new nodes.
 .LP 
@@ -83,7 +83,7 @@ Specifies the rank number to associate the nodes with.  This option is only need
 Specifies the name of a host to add to the cluster.  This host will be listed in the hosts and DNS records of the cluster.  The host will belong to the Unmanaged nodegroup.  This option is used in conjunction with \fB\-x\fR
 .TP 
 \fB\-u, \-\-update\fR
-Calls the addhost plugins to update the configuration files.
+Calls the kusu-addhost plugins to update the configuration files.
 .TP 
 \fB\-v, \-\-version\fR
 Print the version information and exit.
@@ -92,7 +92,7 @@ Print the version information and exit.
 Specifies the IP address of the unmanaged node that was named with the \fB\-s\fR option. 
 .TP 
 \fB\-b, \-\-batch\fR
-Runs the addhost tool in non\-graphical batch mode
+Runs the kusu-addhost tool in non\-graphical batch mode. This option cannot be used external DHCP server.
 .TP
 \fB\-c <\fIRank Number\fR>, \-\-rank=<\fIRank Number\fR>\fR
 Use a different rank value to start with instead of 0.

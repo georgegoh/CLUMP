@@ -20,6 +20,15 @@
 		</allowed_values>
 	</setting>
 	<setting>
+		<kname>InstallerServeDHCP</kname>
+		<name>InstallerServeDHCP</name>
+		<description>To turn DHCP On/Off on the installer node.</description>
+		<allowed_values type='list'>
+			<value desc='To turn ON'>1</value>
+			<value desc='To turn OFF'>0</value>
+		</allowed_values>
+	</setting>
+	<setting>
 		<kname>InstallerServeNIS</kname>
 		<name>InstallerServeNIS</name>
 		<description>To turn NIS On/Off on the installer node.</description>

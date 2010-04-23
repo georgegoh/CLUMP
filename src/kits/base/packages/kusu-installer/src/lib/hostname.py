@@ -27,12 +27,9 @@ DEFAULT_PUBLIC_DNSZONE = 'example.com'
 class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
 
-    name = _('Host & Domain')
     profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
     buttons = [_('Clear All')]
-    msg = _('Please specify public host name and private domain information.')
-    hostname_msg = _("This machine's identity on the public network")
     domain_msg = _('The domain to use inside the cluster')
 
     def __init__(self, kiprofile):
@@ -69,7 +66,11 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
         if not self.kiprofile.has_key(self.profile): self.setDefaults()
         self.netProfile = self.kiprofile[self.profile]
 
-        self.screenGrid = snack.Grid(1, 5)
+        if self.checkOnlyProvisionNetPresent():
+            self.screenGrid = snack.Grid(1, 3)
+        else:
+            self.screenGrid = snack.Grid(1, 5)
+
         entryWidth = 22
 
         self.use_dhcp = snack.Checkbox(_('Use DHCP'), isOn=1)
@@ -83,6 +84,16 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                 self.use_dhcp.setValue(' ')
         except KeyError:
             pass
+
+
+        if self.checkOnlyProvisionNetPresent():
+            self.name = _('Host information')
+            self.msg = _('Please specify public host name information.')
+            self.hostname_msg = _("This machine's identity on the network")
+        else:
+            self.name = _('Host & Domain')
+            self.msg = _('Please specify public host name and private domain information.')
+            self.hostname_msg = _("This machine's identity on the public network")
 
         self.hostname = kusuwidgets.LabelledEntry(
                             labelTxt=_('Public Fully Qualified Host Name '),
@@ -116,12 +127,14 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                                  anchorLeft=1)
         self.screenGrid.setField(self.hostname, col=0, row=2,
                                  padding=(0, 0, 0, 1), anchorLeft=1)
-        self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
-                                                       width=self.gridWidth),
-                                 col=0, row=3, anchorLeft=1)
-        self.screenGrid.setField(self.domain, col=0, row=4,
-                                 padding=(0, 0, 0, 0), anchorLeft=1)
-        ###
+
+        # Other networks such as public is present
+        if not self.checkOnlyProvisionNetPresent():
+            self.screenGrid.setField(snack.TextboxReflowed(text=self.domain_msg,
+                                                           width=self.gridWidth),
+                                     col=0, row=3, anchorLeft=1)
+            self.screenGrid.setField(self.domain, col=0, row=4,
+                                     padding=(0, 0, 0, 0), anchorLeft=1)
 
     def validate(self):
         """
@@ -189,6 +202,9 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
                 db.AppGlobals.selectfirst_by(kname='PublicDNSZone')
             pubdnsdomain.kvalue = pub_domain
 
+            if self.checkOnlyProvisionNetPresent():
+                dnsdomain.kvalue = pub_domain
+
             primaryinstaller = \
                 db.AppGlobals.selectfirst_by(kname='PrimaryInstaller')
             primaryinstaller.kvalue = host
@@ -198,3 +214,20 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
             master.name = host
 
             db.flush()
+
+  
+    def checkOnlyProvisionNetPresent(self):
+        """
+        Return True if only provision network is defined.
+        hostname screen will only show if there's at least 1 provision network
+        """
+
+        interfaces = self.kiprofile[self.profile]['interfaces']
+
+        for intf in interfaces:
+            if interfaces[intf]['configure'] \
+                and not interfaces[intf]['nettype'] == 'provision':
+                    return False
+                   
+        return True
+

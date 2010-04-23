@@ -1025,6 +1025,7 @@ class DB(object):
         # default appglobals values
         AppGlobals(kname='CFMBaseDir', kvalue='/opt/kusu/cfm')
         AppGlobals(kname='InstallerServeDNS', kvalue='1')
+        AppGlobals(kname='InstallerServeDHCP', kvalue='1')
         AppGlobals(kname='InstallerServeNIS', kvalue='0')
         AppGlobals(kname='InstallerServeNTP', kvalue='1')
         AppGlobals(kname='InstallerServeNFS', kvalue='1')

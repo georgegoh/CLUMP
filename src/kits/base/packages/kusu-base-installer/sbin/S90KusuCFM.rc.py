@@ -26,8 +26,6 @@ class KusuRC(rcplugin.Plugin):
         files = [path('/etc/cfm/shadow.merge'),
                  path('/etc/cfm/passwd.merge'),
                  path('/etc/cfm/group.merge'),
-                 path('/etc/hosts'),
-                 path('/etc/hosts.equiv'),
                  path('/etc/ssh/ssh_config'),
                  path('/etc/ssh/ssh_host_dsa_key'),
                  path('/etc/ssh/ssh_host_key'),
@@ -36,6 +34,10 @@ class KusuRC(rcplugin.Plugin):
                  path('/etc/ssh/ssh_host_key.pub'),
                  path('/etc/ssh/ssh_host_rsa_key.pub')]
 
+        if self.appglobals['InstallerServeDNS'] != '0':
+            files.append(path('/etc/hosts'))  
+            files.append(path('/etc/hosts.equiv'))
+  
         ngs = self.dbs.NodeGroups.select()
 
         for ng in ngs:

@@ -39,10 +39,12 @@ class AddHostPlugin(AddHostPluginBase):
         self.umngid = self.dbconn.getNgidOf('unmanaged')
 
     def added(self, nodename, info, prePopulateMode):
-        self._parsenodeinfo(nodename, info)
+        if int(self.dbconn.getAppglobals('InstallerServeDNS')):
+            self._parsenodeinfo(nodename, info)
 
     def removed(self, nodename, info):
-        self._parsenodeinfo(nodename, info)
+        if int(self.dbconn.getAppglobals('InstallerServeDNS')):
+            self._parsenodeinfo(nodename, info)
 
     def _parsenodeinfo(self, nodename, info):
         '''
@@ -63,6 +65,9 @@ class AddHostPlugin(AddHostPluginBase):
         """
         update the config files and reload service 'named'
         """
+        if not int(self.dbconn.getAppglobals('InstallerServeDNS')):
+            return 
+
         self.named_dir = Dispatcher.get('named_dir')
         dnsZone = self.dbconn.getAppglobals('DNSZone')
 

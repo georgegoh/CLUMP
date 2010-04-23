@@ -190,14 +190,16 @@ class KickstartFromNIIProfile(object):
             # remove unused nics, configuring these will raise KeyErrors
             nw['interfaces'].pop(nic)
 
-        nw['fqhn_use_dhcp'] = False     # always static hostnames
+        any_nic_uses_dhcp = False
+        for nic in nw['interfaces'].itervalues():
+            any_nic_uses_dhcp = any_nic_uses_dhcp or nic['use_dhcp']
+        nw['fqhn_use_dhcp'] = any_nic_uses_dhcp
+
         nw['fqhn_host'] = '.'.join([ni.name, ni.appglobal['DNSZone']])
 
+        nw['gw_dns_use_dhcp'] = any_nic_uses_dhcp
         if default_gateway:
-            nw['gw_dns_use_dhcp'] = False
             nw['default_gw'] = default_gateway
-        else:
-            nw['gw_dns_use_dhcp'] = True
 
         if ni.appglobal.get('InstallerServeDNS', '0') == '1':
             nw['dns1'] = niihost

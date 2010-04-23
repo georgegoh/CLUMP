@@ -17,6 +17,7 @@ from kusu.util.profile import Profile
 from kusu.ui.text.screenfactory import ScreenFactory
 from welcome import WelcomeScreen
 from language import LanguageSelectionScreen
+from network_services import NetworkServices
 from keyboard import KeyboardSelectionScreen
 from rootpasswd import RootPasswordScreen
 from partition import PartitionScreen
@@ -68,6 +69,7 @@ class ScreenFactoryImpl(ScreenFactory):
          NetworkScreen(kiprofile=kiprofile),
          GatewayDNSSetupScreen(kiprofile=kiprofile),
          FQHNScreen(kiprofile=kiprofile),
+         NetworkServices(kiprofile=kiprofile),
          TZSelectionScreen(kiprofile=kiprofile),
          RootPasswordScreen(kiprofile=kiprofile),
          PartitionScreen(kiprofile=kiprofile),
@@ -77,4 +79,4 @@ class ScreenFactoryImpl(ScreenFactory):
 
     if kiprofile['OS'] == 'rhel' and kiprofile['OS_VERSION'] == '5':
         from rhel_instnum import LicenseScreen
-        ScreenFactory.screens.insert(7, LicenseScreen(kiprofile=kiprofile))
+        ScreenFactory.screens.insert(8, LicenseScreen(kiprofile=kiprofile))

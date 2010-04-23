@@ -38,7 +38,6 @@ selectedNetwork = None
 
 global networkInUse
 networkInUse = False
-
 global database
 global kusuApp
 database = KusuDB()
@@ -132,20 +131,36 @@ class NetworkRecord(object):
            if not kusu.ipfun.validIP(self._subnet_field):
               return False, 'netedit_validate_subnet'
 
-        # Ensure that given network is not the broadcast or the 
-        # subnet mask.
-        _ip = IPy.IP(self._network_field)
-        _net = _ip.make_net(self._subnet_field)
-        if _ip == _net.netmask() or _ip == _net.broadcast():
-            if self._thisWindow:
-                self._thisWindow.networkEntry.setEntry('')
-            return False, 'netedit_validate_network'
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              # Ensure that given network is not the broadcast or the 
+              # subnet mask.
+              _ip = IPy.IP(self._network_field)
+              _net = _ip.make_net(self._subnet_field)
+              if _ip == _net.netmask() or _ip == _net.broadcast():
+                  self._thisWindow.networkEntry.setEntry('')
+                  return False, 'netedit_validate_network'
+        else:
+           # Ensure that given network is not the broadcast or the 
+           # subnet mask.
+           _ip = IPy.IP(self._network_field)
+           _net = _ip.make_net(self._subnet_field)
+           if _ip == _net.netmask() or _ip == _net.broadcast():
+               return False, 'netedit_validate_network'
 
-        if self._gateway_field:
-            if not kusu.ipfun.validIP(self._gateway_field):
-                if not self._network_field and not self._subnet_field and self._thisWindow:
-                   self._thisWindow.gatewayEntry.setEntry('')
-                   return False, 'netedit_validate_gateway'
+        if self._thisWindow:
+           if self._thisWindow.dhcpCheck.value() == False:
+              if self._gateway_field:
+                  if not kusu.ipfun.validIP(self._gateway_field):
+                      if not self._network_field and not self._subnet_field:
+                         self._thisWindow.gatewayEntry.setEntry('')
+                         return False, 'netedit_validate_gateway'
+        else:
+              if self._gateway_field:
+                  if not kusu.ipfun.validIP(self._gateway_field):
+                      if not self._network_field and not self._subnet_field:
+                         return False, 'netedit_validate_gateway'
+
 
         if self._thisWindow:
            if self._thisWindow.dhcpCheck.value() == False:
@@ -171,17 +186,17 @@ class NetworkRecord(object):
 
         except:
             if len(self._inc_field) == 0:
-               if self._thisWindow and self._thisWindow.dhcpCheck.value() == False:
-                  self._thisWindow.incEntry.setEntry('')
-                  return False, 'netedit_validate_inc_not_empty'
-	       else:
-		  return False, 'netedit_validate_inc_not_empty'
+                if self._thisWindow and self._thisWindow.dhcpCheck.value() == False:
+                    self._thisWindow.incEntry.setEntry('')
+                    return False, 'netedit_validate_inc_not_empty'
+                else:
+                    return False, 'netedit_validate_inc_not_empty'
             else:
-               if self._thisWindow and self._thisWindow.dhcpCheck.value() == False:
-		  self._thisWindow.incEntry.setEntry('')
-                  return False, 'netedit_validate_inc_not_number'
-	       else:
-		  return False, 'netedit_validate_inc_not_number'
+                if self._thisWindow and self._thisWindow.dhcpCheck.value() == False:
+                    self._thisWindow.incEntry.setEntry('')
+                    return False, 'netedit_validate_inc_not_number'
+                else:
+                    return False, 'netedit_validate_inc_not_number'
 
         # Device field cannot be empty.
         if not self._device_field:
@@ -210,19 +225,19 @@ class NetworkRecord(object):
             query = "select netid from networks where netname='%s'" % self._description_field
 
         try:
-           self._database.connect('kusudb', 'apache')
-           self._database.execute(query)
-           rv = self._database.fetchone()
+            self._database.connect('kusudb', 'apache')
+            self._database.execute(query)
+            rv = self._database.fetchone()
         except:
-           return False, 'DB_Query_Error'
+            return False, 'DB_Query_Error'
 
         if rv:
             return False, 'netedit_validate_desc_in_use'
 
         # Validate if IP and gateway exist on the new network entered.
         if not self._network_field == "" and not self._gateway_field == "": # If no gateway specified, don't bother to validate it.
-           if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
-              return False, 'netedit_validate_gateway_on_network'
+            if not kusu.ipfun.onNetwork(self._network_field, self._subnet_field, self._gateway_field):
+                return False, 'netedit_validate_gateway_on_network'
 
 
         if self._thisWindow:
@@ -239,22 +254,19 @@ class NetworkRecord(object):
 
         # Check if DHCP mode is on
         if self._thisWindow:
-           if self._thisWindow.dhcpCheck.value() == True:
-              if self._network_field or self._subnet_field or self._gateway_field or self._startip_field:
-                 return False, 'Cannot specify Network, Subnet, Gateway or Starting IP when using DHCP'
-
-        # Check if the provided network is valid for use
-        # If the provided network is not valid for use, warn user with
-        # with proper message and return to the current screen.
-        if self._network_field and self._subnet_field:
-            try:
-                IPy.IP('%s/%s' % (self._network_field, self._subnet_field))
-            except ValueError:
-                errorMsg = 'The network address %s/%s cannot be used.' % \
-                           (self._network_field, self._subnet_field)
-                return False, errorMsg
+            # Check if the provided network is valid for use
+            # If the provided network is not valid for use, warn user with
+            # with proper message and return to the current screen.
+            if self._network_field and self._subnet_field:
+                try:
+                    IPy.IP('%s/%s' % (self._network_field, self._subnet_field))
+                except ValueError:
+                    errorMsg = 'The network address %s/%s cannot be used.' % \
+                                (self._network_field, self._subnet_field)
+                    return False, errorMsg
 
         return True, 'Success'
+
 
     def updateNetworkEntry(self, currentItem):
 
@@ -293,16 +305,25 @@ class NetworkRecord(object):
         except:
            return False, 'DB_Duplicate_Error'
 
-    def checkNetworkEntry(self, networkid):
+    def checkNetworkEntry(self, networkid, exclude_master=True):
         """Check if the network selected is in use.
+           Normally checks for all nodes associated,
+           including master, unless the 'exclude_master'
+           argument is given as True.
            Return True if in use. False, otherwise.
            Throws: UserExitError if DB error occurs.
         """
 
         # Check if the network selected is not in use.
         netuse = 0
-        #query = "SELECT COUNT(*) FROM ng_has_net WHERE netid = %d" % int(networkid)
-        query = "SELECT COUNT(*) from nics,networks WHERE networks.netid=%d AND nics.netid=networks.netid" % int(networkid)
+        # When deciding if a network is in use, disregard the primary installer
+        # if present.
+        query = "SELECT COUNT(*) FROM nics,networks,nodes "
+        query += "WHERE networks.netid=%d " % int(networkid)
+        query += "AND nics.netid=networks.netid AND nics.nid=nodes.nid"
+        if exclude_master:
+           query += " AND NOT nodes.name=(SELECT kvalue from appglobals "
+           query += "WHERE kname='PrimaryInstaller')"
         try:
            self._database.connect('kusudb', 'apache')
            self._database.execute(query)
@@ -316,6 +337,7 @@ class NetworkRecord(object):
             return True
         else:
             return False
+
 
     def getNetworkList(self):
         """Returns all networks from the database.
@@ -446,9 +468,6 @@ class NetEditApp(object, KusuApp):
            self._options.dhcp = False
         else:
            self._options.dhcp = True
-
-        # Disabling DHCP until further notice (hardcoding to False)
-        self._options.dhcp = False
 
         # Handle -l option
         if self._options.listnetworks:
@@ -1024,17 +1043,11 @@ class NetworkEditWindow(USXBaseScreen):
 
     def toggleDHCPMode(self):
         global networkInUse
-        if self.dhcpCheck.value() == True:
-           self.networkEntry.setEnabled(False)
-           self.subnetEntry.setEnabled(False)
-           self.gatewayEntry.setEnabled(False)
-           self.startIPEntry.setEnabled(False)
-        else:
-           if networkInUse == False:
-              self.networkEntry.setEnabled(True)
-              self.subnetEntry.setEnabled(True)
-              self.gatewayEntry.setEnabled(True)
-              self.startIPEntry.setEnabled(True)
+        if networkInUse == False:
+           self.networkEntry.setEnabled(True)
+           self.subnetEntry.setEnabled(True)
+           self.gatewayEntry.setEnabled(True)
+           self.startIPEntry.setEnabled(True)
 
     def guessIPandGateway(self):
         # First check if the values are valid IP address notation
@@ -1085,7 +1098,7 @@ class NetworkEditWindow(USXBaseScreen):
             sys.exit(-1)
 
 
-        self.screenGrid  = snack.Grid(1, 12)
+        self.screenGrid  = snack.Grid(1, 13)
 
         instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_edit"), scroll=0, wrap=0)
         self.typeLabel = snack.Label(self.kusuApp._("netedit_interface_label"))
@@ -1153,24 +1166,17 @@ class NetworkEditWindow(USXBaseScreen):
 
         self.dhcpCheck = snack.Checkbox(self.kusuApp._("netedit_field_dhcp"), isOn = int(self.networkRecord[9]))
         self.dhcpCheck.setCallback(self.toggleDHCPMode)
+
         if networkInUse:
            self.dhcpCheck.setFlags(snack.FLAG_DISABLED, snack.FLAGS_SET)
         else:
            self.dhcpCheck.setFlags(snack.FLAG_DISABLED, snack.FLAGS_RESET)
 
-        if self.dhcpCheck.value() == True:
-           self.deviceEntry.setEnabled(True)
-           self.suffixEntry.setEnabled(True)
-           self.startIPEntry.setEnabled(False)
-           self.gatewayEntry.setEnabled(False)
-           self.networkEntry.setEnabled(False)
-           self.subnetEntry.setEnabled(False)
-        else:
-           if networkInUse == False:
-              self.startIPEntry.setEnabled(True)
-              self.gatewayEntry.setEnabled(True)
-              self.networkEntry.setEnabled(True)
-              self.networkEntry.setEnabled(True)
+        if networkInUse == False:
+           self.startIPEntry.setEnabled(True)
+           self.gatewayEntry.setEnabled(True)
+           self.networkEntry.setEnabled(True)
+           self.networkEntry.setEnabled(True)
 
         # Set hot text callback, when tabbing or moving cursor away from field, it will prepopulate other fields when needed.
         if not self.networkRecord[2] == "":  # If there was no gateway set, don't force one on the user.
@@ -1190,9 +1196,9 @@ class NetworkEditWindow(USXBaseScreen):
         self.screenGrid.setField(self.incEntry, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
-        #self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.typeLabel, 0, 10, padding=(-2,1,0,0))
-        self.screenGrid.setField(self.typeList, 0, 11, padding=(0,0,0,-1))
+        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
+        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(-2,1,0,0))
+        self.screenGrid.setField(self.typeList, 0, 12, padding=(0,0,0,-1))
 
     def validate(self):
         global selectedNetwork
@@ -1316,7 +1322,7 @@ class NetworkNewWindow(USXBaseScreen):
         self.hotkeysDict['F8'] = self.okAction
 
     def drawImpl(self):
-        self.screenGrid = snack.Grid(1, 12)
+        self.screenGrid = snack.Grid(1, 13)
         instruction = snack.Textbox(60, 1, self.kusuApp._("netedit_instruction_new"), scroll=0, wrap=0)
         self.typeList = snack.Listbox(height=2, scroll=0, width=15, returnExit=0, showCursor=0)
         self.typeLabel = snack.Label(self.kusuApp._("netedit_interface_label"))
@@ -1342,9 +1348,9 @@ class NetworkNewWindow(USXBaseScreen):
         self.screenGrid.setField(self.incEntry, 0, 7, padding=(0,0,0,0))
         self.screenGrid.setField(self.optionEntry, 0, 8, padding=(0,0,0,0))
         self.screenGrid.setField(self.descEntry, 0, 9, padding=(0,0,0,0))
-        #self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
-        self.screenGrid.setField(self.typeLabel, 0, 10, padding=(-2,1,0,0))
-        self.screenGrid.setField(self.typeList, 0, 11, padding=(0,0,0,-1))
+        self.screenGrid.setField(self.dhcpCheck, 0, 10, padding=(8, 1, 0, 0), anchorLeft=1)
+        self.screenGrid.setField(self.typeLabel, 0, 11, padding=(-2,1,0,0))
+        self.screenGrid.setField(self.typeList, 0, 12, padding=(0,0,0,-1))
 
         self.typeList.append("public","public")
         self.typeList.append("provision","provision")
@@ -1429,7 +1435,6 @@ class NetworkMainWindow(USXBaseScreen):
         return NAV_NOTHING
 
     def editAction(self, data=None):
-
         global database
         global kusuApp
         global selectedNetwork
@@ -1439,7 +1444,7 @@ class NetworkMainWindow(USXBaseScreen):
         currNetwork = self.networkListbox.current().split()
         selectedNetwork = currNetwork[0]
 
-        result = networkList.checkNetworkEntry(currNetwork[0])
+        result = networkList.checkNetworkEntry(currNetwork[0], exclude_master=True)
         if result:
            networkInUse = True
            if currNetwork[1] == 'DHCP':

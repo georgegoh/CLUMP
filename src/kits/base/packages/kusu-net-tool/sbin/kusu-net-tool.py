@@ -1849,6 +1849,9 @@ def getProvisioningInterfaces():
 def updateDhcpd():
     """Update dhcpd configuration"""
 
+    if not int(getAppGlobals('InstallerServeDHCP')):
+        return
+ 
     prov_nics = getProvisioningInterfaces()
     dhcpd_arg = Dispatcher.get('dhcpd_interface_arg')
 
@@ -2394,6 +2397,9 @@ def updateDnsSettings(restart=False):
     function is called when updating the DNS settings in appglobals.
     """
 
+    if not int(getAppGlobals('InstallerServeDNS')):
+        return
+
     print 'Updating /etc/named.conf'
 
     rc = genconfigSafeUpdate('kusu-genconfig named', '/etc/named.conf')
@@ -2423,6 +2429,10 @@ def removeReverseDnsCfg(reverseDnsCfg):
 
 
 def updateNamed(action, networks=None, nettype=None):
+
+    if not int(getAppGlobals('InstallerServeDNS')):
+        return
+
     if not updateDnsSettings():
         print 'Error updating /etc/named.conf'
         return False

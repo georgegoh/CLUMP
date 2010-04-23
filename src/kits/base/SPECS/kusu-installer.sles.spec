@@ -62,6 +62,7 @@ install -m644 lib/testfactory.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/ins
 install -m644 lib/defaults.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
 install -m644 lib/language.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
 install -m644 lib/welcome.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
+install -m644 lib/network_services.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
 install -m644 lib/kits_sourcehandlers.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
 install -m644 lib/tzselect.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer
 install -m644 lib/partition_edit.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/installer

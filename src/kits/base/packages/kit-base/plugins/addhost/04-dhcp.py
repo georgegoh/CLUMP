@@ -17,6 +17,8 @@ import os
 from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
-      def finished(self, nodelist, preopulateMode):
-	   os.system("/opt/kusu/bin/kusu-genconfig dhcpd > /etc/dhcpd.conf")
-	   os.system("/etc/init.d/dhcpd restart")
+
+    def finished(self, nodelist, preopulateMode):
+        if int(self.dbconn.getAppglobals('InstallerServeDHCP')):
+            os.system("/opt/kusu/bin/kusu-genconfig dhcpd > /etc/dhcpd.conf")
+            os.system("/etc/init.d/dhcpd restart")

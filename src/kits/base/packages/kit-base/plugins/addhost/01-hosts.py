@@ -18,7 +18,9 @@ from kusu.addhost import *
 
 class AddHostPlugin(AddHostPluginBase):
     def updated(self):
-        os.system("/opt/kusu/bin/kusu-genconfig hosts > /etc/hosts")
+        if int(self.dbconn.getAppglobals('InstallerServeDNS')):
+            os.system("/opt/kusu/bin/kusu-genconfig hosts > /etc/hosts")
 
     def finished(self, nodelist, prePopulateMode):
-        os.system("/opt/kusu/bin/kusu-genconfig hosts > /etc/hosts")
+        if int(self.dbconn.getAppglobals('InstallerServeDNS')):
+            os.system("/opt/kusu/bin/kusu-genconfig hosts > /etc/hosts")

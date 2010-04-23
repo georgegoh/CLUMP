@@ -27,7 +27,7 @@ class GatewayDNSSetupScreen(InstallerScreen, profile.PersistentProfile):
     name = _('Gateway & DNS')
     profile = 'Network'
     netProfile = None   # we assign the Network profile to this local variable
-    msg = _('Please configure your Gateway/DNS settings')
+    msg = _('Please configure your Gateway/DNS settings for the public network.')
     buttons = [_('Clear All')]
 
     def __init__(self, kiprofile):

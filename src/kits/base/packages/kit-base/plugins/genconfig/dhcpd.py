@@ -58,8 +58,12 @@ class thisReport(Report):
         # Need to get the name of the primary installer so we can see which networks
         # we need to install on.
         installer = self.db.getAppglobals('PrimaryInstaller')
+        dhcp_enabled = self.db.getAppglobals('InstallerServeDHCP')
         if not installer:
             sys.stderr.write(_("genconfig_cannot_determine_primary_installer\n"))
+            sys.exit(-1)
+        if not int(dhcp_enabled):
+            sys.stderr.write(_("We do not need to configure dhcpd.conf as DHCP server is disabled on installer node. Exiting... \n"))
             sys.exit(-1)
 
         # Get the Primary Installer's IP.

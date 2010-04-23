@@ -1022,6 +1022,7 @@ class scrNGEEdit_Networks(NGEBaseScreen):
         self.database.execute(query)
         rv = self.database.fetchall()
 
+        self.dhcp_dict = {}
         for record in rv:
             record = list(record) #convert to list
             netid = record.pop()
@@ -1038,6 +1039,11 @@ class scrNGEEdit_Networks(NGEBaseScreen):
                 
             self.__ct.append(entrystr, item=netid, selected=isSel)
 
+            # append to dhcp_list if network is dhcp-enabled.
+            device, network = record[:2]
+            if not network:
+                self.dhcp_dict[netid] = device
+
         #render
         self.screenGrid = snack.Grid(1, 2)
         self.screenGrid.setField(lblheader, 0,0, (0,0,0,0), anchorLeft=1)
@@ -1051,7 +1057,22 @@ class scrNGEEdit_Networks(NGEBaseScreen):
             tmpNG.validateNetworks(self.database)
         except NGEValidationError, e:
             return False, str(e)        
-        
+       
+        # warn user if one of the networks has DHCP.
+        dhcp_set = set(self.dhcp_dict.keys())
+        dhcp_enabled_nets = dhcp_set.intersection(tmpNG['nets'])
+        if dhcp_enabled_nets:
+            devices = [ v for k,v in self.dhcp_dict.iteritems() if k in dhcp_enabled_nets ]
+            msg = "DHCP is enabled on the following network devices associated "
+            msg += "with this nodegroup:\n\n\t%s\n\n" % str(devices)
+            msg += "Compute nodes in this nodegroup may have changes "
+            msg += "in the following configurations:\n"
+            msg += "\t- /etc/resolv.conf\n"
+            msg += "\t- hostname\n"
+            msg += "\t- routes\n\n"
+            msg += "Please note that the above-mentioned are a few of the "
+            msg += "parameters that Kusu cannot control if DHCP is enabled."
+            self.selector.popupMsg('DHCP Warning', msg)
         return True, 'Success'
 
     def formAction(self):

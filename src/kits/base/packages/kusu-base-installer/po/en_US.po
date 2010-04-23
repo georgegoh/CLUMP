@@ -246,7 +246,7 @@ msgid "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Rememb
 msgstr "Kit: %s, version %s, architecture %s, has been added to repo: %s.  Remember to refresh with -u\n"
 
 msgid "kusu-addhost_Help"
-msgstr "kusu-addhost [-hvub]\n\t\t    [-n {node group} [-x {ip_addr}]]\n\t\t    [-r rack#]\n\t\t    [-i ifname -n {node group} [-r rack #]]\n\t\t    [-f file -j ifname -n {node group} [-r rack#]]\n\t\t    [-p hostname]\n\t\t    [-e {nodes_to_remove}]\n\t\t    [-s static_hostname -x ip_addr]\n\t\t    [-s static_hostname -i ifname]\n\t\t    [-c rank#]\n\nYou use -b with any of the usages above to run kusu-addhost in batch mode."
+msgstr "kusu-addhost [-hvub]\n\t\t    [-n {node group} [-x {ip_addr}]]\n\t\t    [-r rack#]\n\t\t    [-i ifname -n {node group} [-r rack #]]\n\t\t    [-f file -j ifname -n {node group} [-r rack#]]\n\t\t    [-p hostname]\n\t\t    [-e {nodes_to_remove}]\n\t\t    [-s static_hostname -x ip_addr]\n\t\t    [-s static_hostname -i ifname]\n\t\t    [-c rank#]\n\nYou use -b with any of the usages above to run kusu-addhost in batch mode. However, -b option cannot be used with external DHCP server."
 
 msgid "addhost_version_usage"
 msgstr "Display version of tool"
@@ -285,13 +285,13 @@ msgid "addhost_ipaddr_usage"
 msgstr "The static IP address to assign to the device or node"
 
 msgid "addhost_batch_usage"
-msgstr "Runs the addhost tool in non-graphical batch mode"
+msgstr "Runs the addhost tool in non-graphical batch mode. This option cannot be used with external DHCP server."
 
 msgid "addhost_window_title_nodegroup"
-msgstr "Select node group"
+msgstr "Select nodegroup"
 
 msgid "addhost_instruction_nodegroup"
-msgstr "Select the node group to use for the installation of new nodes:"
+msgstr "Select the nodegroup to use for the installation of new nodes:"
 
 msgid "addhost_invalid_selection"
 msgstr "Invalid selection."
@@ -331,6 +331,9 @@ msgstr "Add an unmanaged device"
 
 msgid "addhost_unmanaged_instructions"
 msgstr "Type a hostname, choose DHCP if the device is able to get an IP dynamically. Otherwise, type an IP address"
+
+msgid "addhost_unmanaged_instructions_with_external_dhcp"
+msgstr "Type a hostname and IP address to add an unmanaged device"
 
 msgid "addhost_hostname_label"
 msgstr "Hostname: "

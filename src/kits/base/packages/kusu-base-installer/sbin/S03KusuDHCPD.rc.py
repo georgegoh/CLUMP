@@ -13,7 +13,11 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name = 'dhcpd'
-        self.desc = 'Setting up dhcpd'
+        if self.appglobals['InstallerServeDHCP'] == '0':
+            self.desc = 'Disabling dhcpd'
+        else:
+            self.desc = 'Setting up dhcpd'
+
         self.ngtypes = ['installer']
         self.delete = True
 
@@ -22,6 +26,13 @@ class KusuRC(rcplugin.Plugin):
             self.interfaceKey = "DHCPD_INTERFACE"
 
     def run(self):
+    
+        if self.appglobals['InstallerServeDHCP'] == '0':
+            success, (out, retcode, err) = self.service('dhcpd', 'stop')
+               
+            success, (out, retcode, err) = self.service('dhcpd', 'disable')
+
+            return True
 
         if path('/etc/dhcpd.conf').exists():
             retval = self.runCommand('$KUSU_ROOT/bin/kusu-genconfig dhcpd > /etc/dhcpd.conf')[0]

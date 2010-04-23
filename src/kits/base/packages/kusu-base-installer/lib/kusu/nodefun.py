@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 # Author: Shawn Starr <sstarr@platform.com>
-
 import os
 import string
 import popen2
@@ -36,6 +35,7 @@ from kusu.core import database
 import kusu.ipfun
 from kusu.util.errors import UserExitError
 from kusu.util.verify import verifyFQDN, verifyIP
+from kusu.util.tools import getClusterHostNames
 
 def createDB():
     engine = os.getenv('KUSU_DB_ENGINE')
@@ -104,7 +104,7 @@ class NodeFun(object, KusuApp):
     def _getInstallerNetworks(self):
         # Get the installer's subnet and network information.
         self._dbReadonly.execute('SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                 nics.netid=networks.netid AND networks.usingdhcp=False AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
+                                 nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
         return self._dbReadonly.fetchall()
 
     def setRackNumber(self, rack):
@@ -498,7 +498,7 @@ class NodeFun(object, KusuApp):
             #t2=time.time()
             #print "Time Spent: addNode(): %f" % (t2-t1)
             return False
-       
+
         preserveNodeIP = self._dbReadonly.getAppglobals('PRESERVE_NODE_IP')
 
         if not bmc_ip and preserveNodeIP == '1':
@@ -506,7 +506,26 @@ class NodeFun(object, KusuApp):
 
         if not hostname and (preserveNodeIP == '1'):
             hostname = self.findOldHostnameForNode(macaddr, int(self._nodeGroupType))
- 
+
+        # Use the hostname if provided. 
+        if hostname:
+            self._rackNumber = self._rankCount = 0
+            if preserveNodeIP == '1':
+                # verify whether mac and hostname already exist in alteregos table
+                query="select rack, rank from alteregos where name = '%s' and mac = '%s'" % (hostname, macaddr)
+                self._dbReadonly.execute(query)
+                data = self._dbReadonly.fetchone()
+                if data:
+                    self._rackNumber = data[0]
+                    self._rankCount = data[1]
+
+            # Verify whether this hostname is still valid.  
+            if not self.validateNode(hostname):
+                self._nodeName = hostname
+                self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
+                return self._nodeName
+
+        # The hostname provided by the user is not valid, generate new hostname.
         # Build SQL query based on the node groups sharing the same node format.
         sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
         if self._ngConflicts:
@@ -527,7 +546,6 @@ class NodeFun(object, KusuApp):
             sqlquery += " ORDER BY rank"
         else:
             sqlquery += " ORDER BY nodes.rank"
-
 
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
@@ -551,23 +569,6 @@ class NodeFun(object, KusuApp):
                      self._rankCount += 1
                  else:
                      break
-
-        preserveNodeIP = self._dbReadonly.getAppglobals('PRESERVE_NODE_IP')
-
-        if hostname and (preserveNodeIP == '1'):
-            # verify if mac and hostname already exist in alteregos table
-            query="select rack, rank from alteregos where name = '%s' and mac = '%s'" % (hostname, macaddr)
-            self._dbReadonly.execute(query)
-            data = self._dbReadonly.fetchone()
-            if data:
-                self._rackNumber = data[0]
-                self._rankCount = data[1]
-
-            # Verify whether this hostname is still valid.  
-            if not self.validateNode(hostname):
-                self._nodeName = hostname
-                self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
-                return self._nodeName
 
         # If there's no node name in the list. Generate a new one.
         if not len(self._nodeList):
@@ -1012,6 +1013,8 @@ class NodeFun(object, KusuApp):
     def _writeDHCPLease(self, ipaddr, macaddr):
         """writeDHCPLease(ipaddr, macaddr)
         Use DHCP's API to create a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
+        if self._dbReadonly.getAppglobals('InstallerServeDHCP') == '0':
+            return
         #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
@@ -1037,6 +1040,8 @@ class NodeFun(object, KusuApp):
         """writeDHCPLease(nodename)
         Use DHCP's API to delete a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
         
+        if self._dbReadonly.getAppglobals('InstallerServeDHCP') == '0':
+            return
         #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
@@ -1131,28 +1136,28 @@ class NodeFun(object, KusuApp):
             return False
 
     def _getReservedHostnames(self):
-        """Retrieve the host list by genconfig hosts"""
+        """Retrieve the host list from the database and hosts.append file."""
 
+        nodesDict = {}
         rsvNames = []
-        cmd = "/opt/kusu/bin/kusu-genconfig hosts"
-
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        out, err = p.communicate()
-        retcode = p.returncode
-
-        # If the command was executed successfully, then
-        # append each reserved hostname to the "rsvNames"
-        if not retcode:
-            lines = out.split("\n")
+        file = "/etc/hosts.append"
+        
+        if os.path.isfile(file):
+            fp = open(file,'r')
+            lines = fp.readlines()
             for line in lines:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 hostRec = line.split()[1:] # ignore 1st element(IP)
                 rsvNames.extend(hostRec)
+
+            fp.close()
+
+        nodesDict = getClusterHostNames(self._dbReadonly)
+
+        for hosts in nodesDict.values():
+            rsvNames.extend(hosts)
 
         return rsvNames
 

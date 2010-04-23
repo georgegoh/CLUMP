@@ -73,7 +73,7 @@ class boothost:
         query = ('SELECT nics.ip, networks.subnet, networks.device, networks.startip '
                  'FROM nics, nodes, networks '
                  'WHERE nodes.nid=nics.nid AND nics.netid=networks.netid '
-                 'AND networks.usingdhcp=False AND LOWER(networks.device)!="bmc"'
+                 'AND LOWER(networks.device)!="bmc"'
                  'AND nodes.name="%s"') % self.primaryInstaller
 
         try:

@@ -11,6 +11,7 @@ import os
 from path import path
 import kusu.util.log as kusulog
 from kusu.util.errors import *
+from gettext import gettext
 import tempfile
 from primitive.svctool.commands import SvcStartCommand
 from primitive.svctool.commands import SvcStatusCommand
@@ -196,3 +197,154 @@ def service(serviceName, action, **kwargs):
     if action in command_dict.keys():
         svc = command_dict[action](service=serviceName, **kwargs)
         return svc.execute()
+
+def getClusterHostNames(db):
+    """ Method to return the hostnames of all the nodes in the cluster. """
+    """ db is the database instance """
+
+    nodesDict = {}
+    dnszone = db.getAppglobals('DNSZone')
+    if not dnszone:
+        return
+
+    publicdnszone = db.getAppglobals('PublicDNSZone')
+
+    # Get the unmanaged nodegroup ID from database
+    unmanagedNGId = db.getNgidOf('unmanaged')
+
+    # ordered by hostname, network type, boot flag and network device
+    # ngid == 5 means those unmanaged nodes, don't consider them
+    query = ('SELECT nics.ip, nodes.name, networks.suffix, nics.boot, '
+             'networks.type, nodes.ngid, networks.device '
+             'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
+             'AND nics.netid = networks.netid '
+             'AND nodes.ngid!=%d ORDER BY nodes.name, networks.type, nics.boot desc, networks.device' % unmanagedNGId)
+
+    try:
+        db.execute(query)
+    except:
+        sys.stderr.write(gettext("DB_Query_Error\n"))
+        sys.exit(-1)
+
+    else:
+        bFirstPublicInterface = False
+        bFirstProvisionInterface = False
+        bFirstPublicShortNameZone = False
+
+        data = db.fetchall()
+
+        prevNodeName = ''
+        prevPublicNodeName = ''
+        for row in data:
+            ip, name, suffix, boot, nettype, nngid, netdevice= row
+            if suffix:
+                str = "%-15s" % (ip)
+
+                bNeedShortName = False
+                # boot, nettype, nngid to confirm the first boot provision interafce (compute nodes)
+                # nettype, nngid to confirm the first provision interface (master node)
+                if nettype == 'provision' and netdevice != 'bmc' and (nngid == 1 or (nngid != 1 and boot == 1)):
+                    # to guarantee the 'first'
+                    if prevNodeName and name == prevNodeName:
+                        bNeedShortName = False
+                    else:
+                        bNeedShortName = True
+
+                # Display short name + dnszone
+                if bNeedShortName:
+                    str += '\t%s.%s' % (name, dnszone)
+                else:
+                    # Display hostname + public zone for public interface.
+                    if nettype == 'public':
+                        # to guarantee the 'first' when nettype equals to public
+                        if prevPublicNodeName == '' or name != prevPublicNodeName:
+                            bFirstPublicShortNameZone = True
+
+                        if publicdnszone and bFirstPublicShortNameZone:
+                            str += "\t%s.%s" % (name, publicdnszone)
+                            bFirstPublicShortNameZone = False
+                        prevPublicNodeName = name
+
+                if nettype == 'provision':
+                    str += '\t%s%s.%s\t%s%s' % (name, suffix, dnszone, name, suffix)
+                elif nettype == 'public':
+                   if publicdnszone:
+                       str += '\t%s%s.%s\t%s%s' % (name, suffix, publicdnszone, name, suffix)
+                   else:
+                       str += '\t%s%s' % (name, suffix)
+                else:
+                    # Unknown 'nettype'
+                    pass
+
+                if bNeedShortName:
+                    str += "\t%s" % (name)
+
+                print str
+
+                # Store generated managed nodes information into nodesDict
+                _recordNodeInfo(str, nodesDict)
+
+            else:
+                if nettype == 'provision':
+                    str = "%-15s\t%s.%s \t%s" % (ip, name, dnszone, name)
+                    print str
+                    # Store generated managed nodes information into nodesDict
+                    _recordNodeInfo(str, nodesDict)
+
+                elif nettype == 'public':
+                    # to guarantee the 'first' when nettype equals to public
+                    if prevPublicNodeName == '' or name != prevPublicNodeName:
+                        bFirstPublicShortNameZone = True
+
+                    if publicdnszone and bFirstPublicShortNameZone:
+                        str = "%-15s\t%s.%s \t%s" % (ip, name, publicdnszone, name)
+                        print str
+                        # Store generated managed nodes information into nodesDict
+                        self._recordNodeInfo(str, nodesDict)
+                        bFirstPublicShortNameZone = False
+                    prevPublicNodeName = name
+
+                else:
+                     str =  "%-15s \t%s" % (ip, name)
+                     print str
+                     # Store generated managed nodes information into nodesDict
+                     _recordNodeInfo(str, nodesDict)
+
+            prevNodeName = name
+
+    # Create the unmanaged hosts entries
+    query = ('SELECT nics.ip,nodes.name '
+             'FROM nics, nodes, networks WHERE nics.nid = nodes.nid '
+             'AND nics.netid = networks.netid AND networks.usingdhcp=False '
+             'AND nodes.ngid=%d ORDER BY nics.ip' % unmanagedNGId)
+    try:
+        db.execute(query)
+    except:
+         sys.stderr.write(gettext("DB_Query_Error\n"))
+         sys.exit(-1)
+
+    else:
+        data = db.fetchall()
+        if data:
+            print "\n# Unmanaged Nodes"
+            for row in data:
+                ip, name = row
+                line = "%-15s\t%s.%s \t%s" % (ip, name, dnszone, name)
+                print line
+
+                # Store generated unmanaged nodes information into nodesDict
+                _recordNodeInfo(line, nodesDict)
+
+    return nodesDict
+
+def _recordNodeInfo(nodeInfoStr, nodesDict):
+    """
+    Add the node information provided in the nodeInfoStr
+    into the nodesDict
+    """
+    nodeNames = nodeInfoStr.split()
+    ip = nodeNames.pop(0)
+    if ip not in nodesDict.keys():
+        nodesDict[ip] = nodeNames
+    else:
+        nodesDict[ip].extend(nodeNames)

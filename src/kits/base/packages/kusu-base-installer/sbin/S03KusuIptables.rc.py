@@ -28,19 +28,33 @@ class KusuRC(rcplugin.Plugin):
                               ('tcp', 443)]
 
     def run(self):
-        self.setupSysCtl()
-        self.runCommand('/sbin/sysctl -p')[0]
+        
+        self.devices_by_network_name = self.getDevicesByNetworkName()
 
-        self.setupIPTableConf()
+        # Single provision nic on the master only
+        if self.devices_by_network_name.provision and not self.devices_by_network_name.public:
+            success, (out, retcode, err) = self.service('firewall', 'stop')
+            if not success:
+                raise Exception, err
+
+            success, (out, retcode, err) = self.service('firewall', 'disable')
+            if not success:
+                raise Exception, err
         
-        success, (out, retcode, err) = self.service('firewall', 'restart')
-        if not success:
-            raise Exception, err
+        else: 
+            self.setupSysCtl()
+            self.runCommand('/sbin/sysctl -p')[0]
         
-        success, (out, retcode, err) = self.service('firewall', 'enable')
-        if not success:
-            raise Exception, err
+            self.setupIPTableConf()
         
+            success, (out, retcode, err) = self.service('firewall', 'restart')
+            if not success:
+                raise Exception, err
+            
+            success, (out, retcode, err) = self.service('firewall', 'enable')
+            if not success:
+                raise Exception, err
+            
         return True
 
     def setupSysCtl(self, conf='/etc/sysctl.conf'):
@@ -60,9 +74,7 @@ class KusuRC(rcplugin.Plugin):
         f.write(s)
         f.close()
 
-    def setupIPTableConf(self, conf='/etc/sysconfig/iptables'):
-        """Set up the iptables configuration."""
-        
+    def getDevicesByNetworkName(self):
         all_intf_dict = getAllInterfaces()
         db_nics = self.queryDBForMasterNICs()
         nics = [nic for nic in db_nics if (nic['device'] in all_intf_dict.keys())]
@@ -71,13 +83,18 @@ class KusuRC(rcplugin.Plugin):
         devices_by_network_name = Struct(public=self.getNICsOfType(nics, 'public'),
                                          provision=self.getNICsOfType(nics, 'provision'),
                                          others=self.getNICsOfType(nics, 'others'))
-        
+
+        return devices_by_network_name 
+
+    def setupIPTableConf(self, conf='/etc/sysconfig/iptables'):
+        """Set up the iptables configuration."""
+                
         s = ''
         if self.os_name in ["sles", "opensuse", "suse"]:
-            s = self.generateSuSEfirewall2Config(devices_by_network_name)
+            s = self.generateSuSEfirewall2Config(self.devices_by_network_name)
             conf = '/etc/sysconfig/SuSEfirewall2'
         elif self.os_name in ["rhel", "redhat", "centos"]:
-            s = self.generateIPTablesConfig(devices_by_network_name)
+            s = self.generateIPTablesConfig(self.devices_by_network_name)
         conf = path(conf)
         
         f = open(conf, 'w')
