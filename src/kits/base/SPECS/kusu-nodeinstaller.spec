@@ -49,7 +49,6 @@ install -m755 bin/nodeinstaller $RPM_BUILD_ROOT/%{_approot}/bin
 
 install -d $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller
-install -m644 lib/niifun.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller
 install -m644 lib/nodeinstall.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller
 install -m644 lib/partitionfilterchain.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller
 install -m644 lib/partition.py $RPM_BUILD_ROOT/%{_approot}/lib/python/kusu/nodeinstaller

@@ -80,7 +80,6 @@ install -m644 sbin/S99KusuServicesManager.rc.py $RPM_BUILD_ROOT/etc/rc.kusu.d/
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/%{name}-%{version}
 install -m755 lib/cfmclient-plugins/00-updateNICs.sh $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmclient
 install -m755 lib/cfmclient-plugins/S99-updateSyslog.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/cfmclient
-install -m644 lib/kusu/niifun.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/
 install -m644 lib/kusu/servicefun.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/
 
 for i in `ls man/*.8`; do
@@ -118,7 +117,6 @@ fi
 /opt/kusu/lib/plugins/cfmclient/00-updateNICs.sh
 /opt/kusu/lib/plugins/cfmclient/S99-updateSyslog.py*
 /opt/kusu/lib/python/kusu/ipfun.py*
-/opt/kusu/lib/python/kusu/niifun.py*
 /opt/kusu/lib/python/kusu/servicefun.py*
 /opt/kusu/sbin/cfmclient
 /opt/kusu/sbin/cfmd

@@ -45,7 +45,7 @@ except:
     from popen5 import subprocess
 
 from kusu.ipfun import *
-from kusu.niifun import *
+from primitive.nodeinstall.niifun import *
 
 LOGFILE = '/var/log/kusu/updatenic.log'
 

@@ -26,13 +26,12 @@ import string
 import os
 import sys
 import urllib
-import tempfile
 
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
-from primitive.fetchtool.commands import FetchCommand
+
 # ** The initrd's have basic Python installs.  Be careful what you import!
-from path import path
+#from path import path
 
 class NodeInstInfoHandler(ContentHandler):
     """This class provides the content handler for parsing the Node
@@ -50,11 +49,13 @@ class NodeInstInfoHandler(ContentHandler):
         self.nics        = {}    # Dictionary of all the NIC info
         self.partitions  = {}    # Dictionary of all the Partition info.  Note key is only a counter
         self.packages    = []    # List of packages to install
+        self.components  = []    # List of components to install
         self.scripts     = []    # List of scripts to run
         self.cfm         = ''    # The CFM data
         self.ngtype      = ''    # Nodegroup Type
         self.repoid      = ''    # Repo ID
         self.dbpasswd    = ''    # DB Passwd
+        self.ipmipasswd  = ''    # IPMI Passwd
         self.cfmsecret   = ''    # CFM Secret
 
         # The following are for use by the handler internally
@@ -66,7 +67,6 @@ class NodeInstInfoHandler(ContentHandler):
         self.cfmstart    = 0     # Flag for the start of a cfm block
         self.data        = ''
         self.imageinfo =  ''   
-#for imaged installs
 
 
     def startElement(self, name, attrs):
@@ -80,8 +80,9 @@ class NodeInstInfoHandler(ContentHandler):
             self.ngtype      = attrs.get('ngtype',"")
             self.repoid      = attrs.get('repoid', "")
             self.dbpasswd    = attrs.get('dbpasswd',"")
+            self.ipmipasswd  = attrs.get('ipmipasswd',"")
             self.cfmsecret   = attrs.get('cfmsecret',"")
-            self.imageinfo = attrs.get('imageinfo',"")
+            self.imageinfo   = attrs.get('imageinfo',"")
 
         elif name == 'appglobals':
             name  = attrs.get('name',"")
@@ -111,7 +112,9 @@ class NodeInstInfoHandler(ContentHandler):
                                   'gateway' : attrs.get('gateway',""),
                                   'dhcp'    : attrs.get('dhcp',""),
                                   'options' : attrs.get('options',""),
-                                  'boot'    : attrs.get('boot',"") }
+                                  'boot'    : attrs.get('boot',""),
+                                  'mac'     : attrs.get('mac',""), 
+                                  'type'    : attrs.get('type',"") }
         elif name == 'component':
             self.compstart = 1
 
@@ -135,7 +138,7 @@ class NodeInstInfoHandler(ContentHandler):
     def endElement(self, name):
         if name == 'component':
             self.compstart = 0
-            self.packages.append(self.data)
+            self.components.append(self.data)
         elif name == 'optpackage':
             self.packstart = 0
             self.packages.append(self.data)
@@ -166,8 +169,7 @@ class NodeInstInfoHandler(ContentHandler):
         script which exports all of them.  This file can then be sourced in
         other scripts. It also saves useful parts of the NII"""
         if not filename:
-#            file = "/etc/profile.nii"
-            file = '/tmp/profile.nii'
+            file = "/etc/profile.nii"
         else:
             file = filename
 
@@ -189,17 +191,18 @@ class NodeInstInfoHandler(ContentHandler):
         fp.write('export NII_INSTALLTYPE="%s"\n' % self.installtype)
 
         cnt = 0
-        fp.write('\n# NIC Definitions Device:IP:Subnet:Network:suffix:gateway:dhcp:options\n')
+        fp.write('\n# NIC Definitions  Device:IP:Subnet:Network:suffix:gateway:dhcp:options:mac:type\n')
         for i in self.nics.keys():
-            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s"\n'
-                     % ( cnt, self.nics[i]['device'],
-                         self.nics[i]['ip'],
-                         self.nics[i]['subnet'],
-                         self.nics[i]['network'],
-                         self.nics[i]['suffix'],
-                         self.nics[i]['gateway'],
-                         self.nics[i]['dhcp'],
-                         self.nics[i]['options']))
+            fp.write('export NII_NICDEF%i="%s|%s|%s|%s|%s|%s|%s|%s|%s|%s"\n' % ( cnt, self.nics[i]['device'],
+                                                                         self.nics[i]['ip'],
+                                                                         self.nics[i]['subnet'],
+                                                                         self.nics[i]['network'],
+                                                                         self.nics[i]['suffix'],
+                                                                         self.nics[i]['gateway'],
+                                                                         self.nics[i]['dhcp'],
+                                                                         self.nics[i]['options'],
+                                                                         self.nics[i]['mac'],
+                                                                         self.nics[i]['type']))
             cnt = cnt + 1
 
         fp.write('\n')
@@ -209,45 +212,56 @@ class NodeInstInfoHandler(ContentHandler):
         fp.close()
 
 
-#     def saveCFMSecret (self, filename=''):
-#         """saveCFMSecret - Save the CFM secret variable to the given file."""
-#         if not filename:
-#             file = '/tmp/cfmsecret' # ignore this 
-# #            file = '/mnt/etc/cfm/.cfmsecret'
-#         else:
-#             file = filename
+    def saveCFMSecret (self, filename=''):
+        """saveCFMSecret - Save the CFM secret variable to the given file."""
+        if not filename:
+            file = '/mnt/etc/cfm/.cfmsecret'
+        else:
+            file = filename
 
-#         if not os.path.exists(os.path.dirname(file)):
-#             os.system('mkdir -p %s' % (os.path.dirname(file)))
+        if not os.path.exists(os.path.dirname(file)):
+            os.system('mkdir -p %s' % (os.path.dirname(file)))
         
-#         try:
-#             fp = open(file, 'w')
-#         except:
-#             return
+        try:
+            fp = open(file, 'w')
+        except:
+            return
 
-#         fp.write('%s' % self.cfmsecret.strip())
-#         fp.close()
-#         os.chmod(file, 0400)
+        fp.write('%s' % self.cfmsecret.strip())
+        fp.close()
+        os.chmod(file, 0400)
 
 
-#     def saveDbPasswd (self, filename=''):
-#         """saveDbPasswd - Save the db password file.  This is probably a misunderstanding"""
-#         if not filename:
-#             file = '/mnt/opt/kusu/etc/db.passwd'
-#         else:
-#             file = filename
+    def saveIpmiPassword(self, ipmiPasswordFile):
+        """ Saves the IPMI password file """
+        try:
+            fp = open(ipmiPasswordFile, 'w')
+            fp.write('%s' % self.ipmipasswd.strip())
+            fp.close()
+            os.chmod(ipmiPasswordFile, 0400)
+        except:
+            return False
+        return True
 
-#         if not os.path.exists(os.path.dirname(file)):
-#             os.system('mkdir -p %s' % (os.path.dirname(file)))
 
-#         try:
-#             fp = open(file, 'w')
-#         except:
-#             return
+    def saveDbPasswd (self, filename=''):
+        """saveDbPasswd - Save the db password file.  This is probably a misunderstanding"""
+        if not filename:
+            file = '/mnt/opt/kusu/etc/db.passwd'
+        else:
+            file = filename
 
-#         fp.write('%s' % self.dbpasswd.strip())
-#         fp.close()
-#         os.chmod(file, 0400)
+        if not os.path.exists(os.path.dirname(file)):
+            os.system('mkdir -p %s' % (os.path.dirname(file)))
+
+        try:
+            fp = open(file, 'w')
+        except:
+            return
+
+        fp.write('%s' % self.dbpasswd.strip())
+        fp.close()
+        os.chmod(file, 0400)
 
 
 class NIIFun:
@@ -258,6 +272,7 @@ class NIIFun:
         self.cfmflag  = 0
         self.niiflag  = 0
         self.nextboot = ''
+        self.uid      = ''
         
 
     def setBootFrom(self, bootfrom):
@@ -278,12 +293,10 @@ class NIIFun:
         """wantCFM - Set the flag to request the CFM data.
         This needs to be used in conjunction with the callNodeboot to
         actually get the data."""
-        #For primitive, we dont deal with this yet.
-        self.cfmflag = 0
-#         if flag and flag == 1:
-#             self.cfmflag = 1
-#         else:
-#             self.cfmflag = 0
+        if flag and flag == 1:
+            self.cfmflag = 1
+        else:
+            self.cfmflag = 0
 
 
     def wantNII(self, flag):
@@ -302,60 +315,47 @@ class NIIFun:
         self.uid = str(uid)
 
 
-    def callNodeboot(self, host,cgi_path='/sles_os/nodeboot.txt'):
+    def callNodeboot(self, host):
         """callNodeboot  - Call the CGI script to gather the data, and
         return a file with the response in it."""
-#         if not self.state and not self.cfmflag\
-#                 and not self.niiflag and not self.nextboot:
-#             # Do nothing
-#             return
-#         #changed to use cgi_path for primitive
-#        options = 'http://%s/%s?' % host,cgi_path
-#         if self.niiflag:
-#             options += 'dump=1&'
-#         if self.cfmflag:
-#             options += 'getindex=1&'
-#         if self.state:
-#             options += 'state=%s&' % self.state
-#         if self.state:
-#             options += 'boot=%s&' % self.nextboot
-
-        #For primitive, we just retreive a nii info from a text file
-        options = 'http://%s/%s' % host,cgi_path
+        if not self.state and not self.cfmflag and not self.niiflag and not self.nextboot:
+            # Do nothing
+            return
+        
+        options = 'http://%s/repos/nodeboot.cgi?' % host
+        if self.niiflag:
+            options += 'dump=1&'
+        if self.cfmflag:
+            options += 'getindex=1&'
+        if self.state:
+            options += 'state=%s&' % self.state
+        if self.state:
+            options += 'boot=%s&' % self.nextboot
+        if self.uid:
+            options += 'uid=%s&' % self.uid
+            
         print "URL: %s" % options[:-1]
         (niidata, header) = urllib.urlretrieve(options[:-1])
         return niidata
-
 
 
 # Run the unittest if run directly
 if __name__ == '__main__':
     # The host is is using in the URL has to be in the database
     #(niidata, header) = urllib.urlretrieve("http://fe3/repos/nodeboot.cgi?dump=1&getindex=1")
-#    (niidata, header) = \
- #       urllib.urlretrieve("http://172.20.0.1/sles_os/nodeboot.cgi?dump=1&getindex=1")
-    dest_dir=tempfile.mkdtemp('niifun')
-    try:
-        status,niidata = FetchCommand(uri='file:///home/hsaliak/niidump.txt',
-                                      fetchdir=False,
-                                      destdir=dest_dir,
-                                      overwrite=True).execute()
-    except CommandFailException,e:
-        path(dest_dir).rmtree()
-        raise ModuleException,"Failed fetching nii file %s" % e
-    
+    (niidata, header) = urllib.urlretrieve("http://172.20.0.1/repos/nodeboot.cgi?dump=1&getindex=1")
     
     fp = open(niidata)
     print fp.readlines()
     fp.close()
-
+    
     parser = make_parser()
     niihandler = NodeInstInfoHandler()
+
     parser.setContentHandler(niihandler)
     parser.parse(open(niidata)) 
     os.unlink(niidata)
-    path(dest_dir).rmtree()
-    
+
     print "Name        = %s" % niihandler.name
     print "installers  = %s" % niihandler.installers
     print "repo        = %s" % niihandler.repo
@@ -366,6 +366,9 @@ if __name__ == '__main__':
     for i in niihandler.packages:
         print "Packages = %s" % i
 
+    for i in niihandler.components:
+        print "Components = %s" % i
+ 
     for i in niihandler.scripts:
         print "Scripts = %s" % i
         
@@ -397,8 +400,8 @@ if __name__ == '__main__':
     niihandler.saveAppGlobalsEnv('/tmp/profile.nii')
     print "Wrote:  /tmp/profile.nii"
 
-#     niihandler.saveDbPasswd('/tmp/opt/kusu/etc/db.passwd')
-#     print "Wrote:  /tmp/opt/kusu/etc/db.passwd"
+    niihandler.saveDbPasswd('/tmp/opt/kusu/etc/db.passwd')
+    print "Wrote:  /tmp/opt/kusu/etc/db.passwd"
 
     # niihandler.saveCFMSecret('/tmp/etc/cfm/.cfmsecret')
     # print "Wrote:  /tmp/etc/cfm/.cfmsecret"

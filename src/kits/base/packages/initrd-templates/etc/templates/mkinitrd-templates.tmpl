@@ -388,15 +388,17 @@ rm -f \$FAKEROOT/etc/rc{0..6}.d
 ## ... remove unnecessary rc directories
 rm -rf \$FAKEROOT/etc/rc.d/rc{0..6}.d
 
-## These files exist from kusu-base-installer and kusu-base-node
+## These files are from kusu-base-node and primitive
 if [ "\$ARCH" = "x86_64" ]; then
     mkdir -p \$FAKEROOT/usr/lib64/python2.4
     cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib64/python2.4
-    cp -a /opt/kusu/lib/python/kusu/niifun.py* \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib64/python2.4
 else
     mkdir -p \$FAKEROOT/usr/lib/python2.4
     cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib/python2.4
-    cp -a /opt/kusu/lib/python/kusu/niifun.py* \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib/python2.4
 fi
 
 ## Copy overlay files
