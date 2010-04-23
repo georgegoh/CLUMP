@@ -158,9 +158,14 @@ PKG_CORE_SPEC = kusu-core.spec
 PKG_CORE_SOURCES = doc src/bin src/lib src/etc
 
 # Kusu Shell package.
-#KIT_PKGS += PKG_SHELL
-#PKG_SHELL_SPEC = kusu-shell.spec
-#PKG_SHELL_SOURCES = doc src/bin src/lib src/plugins src/man
+KIT_PKGS += PKG_SHELL
+PKG_SHELL_SPEC = kusu-shell.spec
+PKG_SHELL_SOURCES = doc src/bin src/lib src/plugins src/man
+
+# Kusu Shell package.
+KIT_PKGS += PKG_UAT
+PKG_UAT_SPEC = kusu-uat.spec
+PKG_UAT_SOURCES = src/lib src/plugins src/etc
 
 # kusu kit install
 KIT_PKGS += PKG_KIT_INSTALL
