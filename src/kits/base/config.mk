@@ -241,6 +241,15 @@ KIT_PKGS += PKG_MD5CRYPT
 PKG_MD5CRYPT_SPEC = kusu-md5crypt.spec
 PKG_MD5CRYPT_SOURCES = src
 
+# Kusu Shell package.
+KIT_PKGS += PKG_SHELL
+PKG_SHELL_SPEC = kusu-shell.spec
+PKG_SHELL_SOURCES = src/lib src/plugins src/bin src/man
+
+# Kusu UAT package.
+KIT_PKGS += PKG_UAT
+PKG_UAT_SPEC = kusu-uat.spec
+PKG_UAT_SOURCES = src/lib src/plugins src/etc
 
 # Kusu Thttpd package.
 KIT_PKGS += PKG_THTTPD
