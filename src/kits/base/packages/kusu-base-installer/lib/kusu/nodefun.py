@@ -1,6 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Nodefun class
+#
+# $Id$
 #
 # Copyright (C) 2007 Platform Computing Inc
 
@@ -26,7 +28,6 @@ try:
 except:
     from popen5 import subprocess
 import tempfile
-#import time
 import sys
 from IPy import IP
 from kusu.core.app import KusuApp
@@ -50,9 +51,12 @@ def createDB():
     return database.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
 
-""" class NodeFun
-    This class handles adding, deleting, updating, replacing nodes, it also provides functionality to generate a node name. """
 class NodeFun(object, KusuApp):
+    """
+    This class handles adding, deleting, updating, replacing nodes.
+    It also provides functionality to generate a node name.
+    """
+
     def __init__(self, rack=0, nodegroup=None):
         KusuApp.__init__(self)
         # Housekeeping
@@ -79,11 +83,10 @@ class NodeFun(object, KusuApp):
         self._dbRWrite = KusuDB()
         self._database = createDB()
                 
-        # Do a try here
         try:
             self._dbReadonly.connect()
             self._dbRWrite.connect('kusudb', 'apache')
-            # Get primary installer once, for caching
+            # Cache primary installer value
             self._primaryInstaller = self._dbReadonly.getAppglobals('PrimaryInstaller')
         except:
             print self.kusuApp._("DB_Query_Error\n")
@@ -91,20 +94,24 @@ class NodeFun(object, KusuApp):
 
         # Get a list of all the IPs sorted.
         if not self._cachedUsedIP:
-           self._getUsedIPs()
-           self._getMACAddresses()
-           self.getNodeFormat()
-           if self._nodeGroupType:
-              self._nodegroupInterfaces = self._findInterfaces()
-           self._installerNetworks = self._getInstallerNetworks()
-           self._ngConflicts = self._getNodegroupConflicts()
-           self._nodeList = self._getSelectedNodes()
-           self._getPreservedBMCIPs()
+            self._getUsedIPs()
+            self._getMACAddresses()
+            self.getNodeFormat()
+            if self._nodeGroupType:
+                self._nodegroupInterfaces = self._findInterfaces()
+            self._installerNetworks = self._getInstallerNetworks()
+            self._ngConflicts = self._getNodegroupConflicts()
+            self._nodeList = self._getSelectedNodes()
+            self._getPreservedBMCIPs()
 
     def _getInstallerNetworks(self):
         # Get the installer's subnet and network information.
-        self._dbReadonly.execute('SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                 nics.netid=networks.netid AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
+        query = ('SELECT networks.subnet, networks.network \
+                  FROM networks, nics, nodes \
+                  WHERE nodes.nid=nics.nid AND nics.netid=networks.netid AND \
+                      networks.usingdhcp=False AND \
+                      nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
+        self._dbReadonly.execute(query)
         return self._dbReadonly.fetchall()
 
     def setRackNumber(self, rack):
@@ -114,13 +121,13 @@ class NodeFun(object, KusuApp):
         self._specifiedIPAddr =  ipaddr
   
     def setRankNumber(self, rank):
-	self._rankCount = rank
+        self._rankCount = rank
 
     def getRankNumber(self):
-	return self._rankCount
+        return self._rankCount
 
     def getNGNetworks(self):
-        # get all provisioning networks for select NG.
+        # get all provisioning networks for selected NG.
         if not self._nodeGroupType:
             return []
         self._dbReadonly.execute('select networks.* from networks, ng_has_net where \
@@ -135,8 +142,8 @@ class NodeFun(object, KusuApp):
 
     def getNodegroupFromNode(self, node):
         self._dbReadonly.execute('select ngname from nodegroups, nodes \
-                                 where nodegroups.ngid = nodes.ngid and \
-                                               nodes.name = \'%s\'' % node)
+                                  where nodegroups.ngid = nodes.ngid and \
+                                      nodes.name = \'%s\'' % node)
         return self._dbReadonly.fetchone()[0]
 
     def nodegroupNameFormatMatches(self, src_ngname, dst_ngname):
@@ -147,7 +154,8 @@ class NodeFun(object, KusuApp):
         return src_nameformat == dst_nameformat
 
     def allNodegroupsHaveSameNameFormat(self, nglist):
-        self._dbReadonly.execute('select distinct nameformat from nodegroups where ngname in %s' % seq2tplstr(nglist))
+        self._dbReadonly.execute('select distinct nameformat from nodegroups \
+                                  where ngname in %s' % seq2tplstr(nglist))
         if self._dbReadonly.rowcount == 1:
             return True
         return False
@@ -156,26 +164,22 @@ class NodeFun(object, KusuApp):
         self._dbReadonly.execute('select distinct nodegroups.nameformat \
                                   from nodegroups, nodes \
                                   where nodegroups.ngid = nodes.ngid \
-                                  and nodes.name in %s' \
-                                                    % seq2tplstr(nodelist))
-        if self._dbReadonly.rowcount == 1:
-            return True
-        return False
+                                  and nodes.name in %s' % seq2tplstr(nodelist))
+        return self._dbReadonly.rowcount == 1
 
     def getAllNodesInNodeGroups(self, ngnamelist):
-        nodelist = []
         self._dbReadonly.execute('select nodes.name from nodes, nodegroups \
                                   where nodegroups.ngid = nodes.ngid and \
                                   nodegroups.ngname in %s' % seq2tplstr(ngnamelist))
-        nodelist.extend([node[0] for node in self._dbReadonly.fetchall()]) 
-        return nodelist            
+        nodelist = [node[0] for node in self._dbReadonly.fetchall()]
+        return nodelist
 
     def checkNodesForOldHostname(self, node_list, dst_ngname):
         dst_ngid = self.getNodegroupByName(dst_ngname) 
         for node in node_list:
             self._dbReadonly.execute('select nics.mac from nodes, nics \
                                       where nics.nid = nodes.nid and \
-                                      nodes.name = \'%s\'' % (node))
+                                      nodes.name = \'%s\'' % node)
             mac = self._dbReadonly.fetchone()[0]
             if not self.findOldHostnameForNode(mac, dst_ngid):
                 return False
@@ -194,7 +198,7 @@ class NodeFun(object, KusuApp):
         preserveNodeIP = self._dbReadonly.getAppglobals('PRESERVE_NODE_IP')
         if preserveNodeIP != '1':
             return
-        self._dbReadonly.execute("SELECT distinct bmcip, mac from alteregos where bmcip!=''")
+        self._dbReadonly.execute("SELECT distinct bmcip, mac from alteregos where bmcip != ''")
         ips = self._dbReadonly.fetchall()
 
         for ip, mac in ips:
@@ -202,7 +206,7 @@ class NodeFun(object, KusuApp):
             self._preservedBMCIP[ip] = mac
 
     def isPreservedBMCIP(self, bmcip, exclude_mac=None):
-        #check the ip is preserved by some node, except for exclude_mac
+        """Check if given BMC ip is preserved by some node, except for exclude_mac"""
         preserved_mac = self._preservedBMCIP.get(bmcip)
         if preserved_mac:
             return preserved_mac != exclude_mac
@@ -215,25 +219,22 @@ class NodeFun(object, KusuApp):
         for nicName, nicInfo in self._nodegroupInterfaces.items():
             if nicName.lower() != 'bmc':
                 continue
-
             if nicInfo['subnet'] == 'None':
                 return False
             network = kusu.ipfun.getNetwork(nicInfo['startip'], nicInfo['subnet'])
             if self.isPreservedBMCIP(bmcip, exclude_mac=mac):
                 return False
             return kusu.ipfun.onNetwork(network, nicInfo['subnet'], bmcip, nicInfo['startip'])
+
         #BMC network not found
         return False
 
     def _getMACAddresses(self):
-        #t1=time.time()
         self._dbReadonly.execute("SELECT mac FROM nics")
         macs = self._dbReadonly.fetchall()
         
         for i in range(0, len(macs)):
             self._cachedMACAddress["%s" % macs[i][0]] = 'Used'
-        #t2=time.time()
-        #print "Time Spent: getMACAddresses(): %f" % (t2-t1)
 
     def _addUsedIP(self, ip):
         self._cachedUsedIP[ip] = 'Used'
@@ -242,14 +243,12 @@ class NodeFun(object, KusuApp):
         self._cachedMACAddress[mac] = 'Used'
 
     def isNodenameHasRack(self):
-        """ isNodenameHasRack()
-        Checks if the node format has a Rack AND rank. If it does, returns true, else false """
+        """Checks if the node format has a Rack AND rank.
+        If it does, returns true, else false """
         
-        #t1=time.time()   
         flag = 0
         # If the nodeformat is None, return False immediately.
         if not self._nodeFormat:
-            #t2=time.time()
             return False
             
         # Find special characters
@@ -260,35 +259,24 @@ class NodeFun(object, KusuApp):
 
              if flag:
                  if self._nodeFormat[i] == 'R':
-                     #t2=time.time()
                      return True
 
-        #t2=time.time()
-        #print "Time Spent: isNodenameHasRack(): %f" % (t2-t1)
         return False	
 
     def compareRankAvailable(self, rank):
-	if rank == self._rankCount:
-	   return True
-      
-	return False
+        return rank == self._rankCount
 
     def getNodeFormat(self):
-        """getNodeFormat()
-        Gets and sets the node format from database. """
-        #t1=time.time()
-        
+        """Gets and sets the node format from database. """
         try:
-            self._dbReadonly.execute("SELECT nameformat FROM nodegroups WHERE ngid='%s'" % self._nodeGroupType)
+            self._dbReadonly.execute("SELECT nameformat FROM nodegroups \
+                                      WHERE ngid='%s'" % self._nodeGroupType)
             self._nodeFormat = self._dbReadonly.fetchone()[0]
         except:
             self._nodeFormat = None
-        #t2=time.time()
-        #print "Time Spent: getNodeFormat(): %f" % (t2-t1)
 
     def _genHostName(self):
-        """_genHostName()
-        Generate compute node name. If the current generated name has
+        """Generate compute node name. If the current generated name has
         name clash with any existing node (including unmanaged node)
         then regenerate the node name until there is no name clash."""
 
@@ -299,46 +287,44 @@ class NodeFun(object, KusuApp):
             self._hostNameParse()
 
     def _hostNameParse(self):
-        """_hostNameParse()
-        Parses the node format and generates the appropriate node name """
+        """Parses the node format and generates the appropriate node name """
         
         flag = 0
         newString = []
         rackNum = 0 
         rankNum = 0
         self._nodeName = None
-        tmpR = "%s" % self._rackNumber   # Use rack number, maybe 0 depending on node format.
+        tmpR = "%s" % self._rackNumber   # Use rack number, may be 0 depending on node format.
         tmpN = "%s" % self._rankCount
 
-        #t1=time.time()
         # Find special characters and count the number of each special character.
         for i in range (0, len(self._nodeFormat)):
-             if self._nodeFormat[i] == "#":
-                 flag = 1
-                 continue
+            if self._nodeFormat[i] == "#":
+                flag = 1
+                continue
 
-             if flag == 1:
-                 if self._nodeFormat[i] == 'N':
-                     flag = 2
-                     rankNum += 1
-                 elif self._nodeFormat[i] == 'R':
-                     flag = 2
-                     rackNum += 1
-                 continue
+            if flag == 1:
+                if self._nodeFormat[i] == 'N':
+                    flag = 2
+                    rankNum += 1
+                elif self._nodeFormat[i] == 'R':
+                    flag = 2
+                    rackNum += 1
+                continue
 
-             if flag == 2 and self._nodeFormat[i] == 'R' and rackNum:
-                 rackNum += 1
-             elif flag == 2 and self._nodeFormat[i] == 'N' and rankNum:
-                 rankNum += 1
-             else:
-                 flag = 0
-                 if rackNum:
-                     newString += tmpR.zfill(rackNum) # zfill fills in padded zeros for you.
-                     rackNum = 0
-                 if rankNum:
-                     newString += tmpN.zfill(rankNum)
-                     rankNum = 0
-                 newString += self._nodeFormat[i]
+            if flag == 2 and self._nodeFormat[i] == 'R' and rackNum:
+                rackNum += 1
+            elif flag == 2 and self._nodeFormat[i] == 'N' and rankNum:
+                rankNum += 1
+            else:
+                flag = 0
+                if rackNum:
+                    newString += tmpR.zfill(rackNum) # zfill fills in padded zeros for you.
+                    rackNum = 0
+                if rankNum:
+                    newString += tmpN.zfill(rankNum)
+                    rankNum = 0
+                newString += self._nodeFormat[i]
 
         if rackNum:
             newString += tmpR.zfill(rackNum)
@@ -346,34 +332,28 @@ class NodeFun(object, KusuApp):
             newString += tmpN.zfill(rankNum)
 
         self._nodeName = string.join(newString, "").lower()
-        #t2=time.time()
-        #print "Time Spent: hostNameParse(): %f" % (t2-t1)
 
     def _getNodegroupConflicts(self):
-        self._dbReadonly.execute("SELECT ngid FROM nodegroups WHERE nameformat='%s'" % self._nodeFormat)
+        self._dbReadonly.execute("SELECT ngid FROM nodegroups \
+                                  WHERE nameformat='%s'" % self._nodeFormat)
         conflicts = self._dbReadonly.fetchall()
         return conflicts
 
     def _getAllNodes(self):
-        nodes = []
-#        sqlquery = 'SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
-#                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller") AND NOT \
-#                    nodes.ngid=(SELECT ngid FROM nodegroups WHERE ngname = "unmanaged")'
-        sqlquery = 'SELECT nodes.name FROM nodes,nodegroups WHERE nodes.ngid=nodegroups.ngid AND NOT \
-                    nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")'
+        sqlquery = 'SELECT nodes.name FROM nodes,nodegroups \
+                    WHERE nodes.ngid=nodegroups.ngid AND \
+                        NOT nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")'
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
-        for node in data:
-            nodes.append(node[0])
-        return nodes
+        return [ node[0] for node in data ]
             
     def _getSelectedNodes(self):
-        """_getSelectedNodes()
-        Gets selected based nodes from the database, returns a list of nodes and the conflicting node groups that share the same node format """
+        """Gets selected based nodes from the database.
+        Returns a list of nodes and the conflicting node groups that 
+        share the same node format """
        
-        #t1=time.time()
-
-        # Build the SQL query since there many be more than one node group that has the same node group format.
+        # Build the SQL query since there may be more than one nodegroup
+        # that has the same node group format.
         sqlquery = "SELECT nodes.name FROM nodegroups,nodes WHERE nodes.ngid=nodegroups.ngid"
     
         if self._ngConflicts:
@@ -393,60 +373,40 @@ class NodeFun(object, KusuApp):
         data = self._dbReadonly.fetchall()
         
         for info in data:
-             if not self._nodeList.has_key(info[0]):
+            if not self._nodeList.has_key(info[0]):
                 self._nodeList[info[0]] = info[0]
-        #t2=time.time()
-        #print "Time Spent: getNodes(): %f" % (t2-t1)
         return self._nodeList
 
     def _getPrimaryInstaller(self):
-        """_getPrimaryInstaller()
-        gets and returns the primary installer name """
-        
+        """Returns the primary installer name."""
         return self._primaryInstaller
     
     def nodeIsPrimaryInstaller(self, nodename):
-
-        #t1=time.time()
         if not nodename:
             return False
-            
-        if nodename.strip() == self._getPrimaryInstaller():
-            #t2=time.time()
-            #print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
-            return True
-
-        #t2=time.time()
-        #print "Time Spent: nodeIsPrimaryInstaller(): %f" % (t2-t1)
-        return False
+        return nodename.strip() == self._getPrimaryInstaller()
         
     def getNodeID (self, nodename, skip_master=True):
-        """getNodeID(nodename)
-        Returns the node ID if found, otherwise false if nodename is the primary installer name, or not found in db """
-        #t1=time.time()
+        """Returns the node ID if found.
+        Returns false if nodename is the primary installer name, or not found in db """
 
         # return None for FE node if skip_master
         if self.nodeIsPrimaryInstaller(nodename) and skip_master:
-            #t2=time.time()
-            #print "Time Spent: getNodeID(): %f" % (t2-t1)
             self._isMasterInstaller = True
             print self._("remove_primary_installer_error\n")
             return None
         try:
             self._dbReadonly.execute("SELECT nid FROM nodes WHERE nodes.name='%s'" % nodename)
             self._isMasterInstaller = False
-            #t2=time.time()
-            #print "Time Spent: getNodeID(): %f" % (t2-t1)
             return self._dbReadonly.fetchone()[0]
         except:
             return None
     
     def getNodeInformation(self, nodename):
-        """getNodeInformation(nodename)
-        Returns node information: nodegroup id, node id, nic id, network id, ip address, mac address, node name """
+        """Returns the following node information: 
+        nodegroup id, node id, nic id, network id, ip address, mac address, node name """
         
         info = {}
-        #t1=time.time()
         self._dbReadonly.execute("SELECT nodes.ngid, nodes.nid, nodes.name, nics.netid, "
                                  "nics.ip, nics.mac, nodes.rack, nodes.rank, networks.device, nics.boot "
                                  "FROM nodes, nics, nodegroups, networks "
@@ -459,44 +419,41 @@ class NodeFun(object, KusuApp):
         # Format: nodeInfo["nodename"][number_of_interfaces]['key_item']
     
         for i in range(0, len(data)):
-             info["%s" % data[i][2]] = {}
+            info["%s" % data[i][2]] = {}
         
         for i in range(0, len(data)):
             info["%s" % data[i][2]][i] = {}
             
         for i in range(0, len(data)):
-             info["%s" % data[i][2]][i] = {'nodegroupid' : {}, 'nodeid' : {}, 'nicnetid' : {}, 'ipaddress' : {}, 'macaddress' : {}, 'rack' : {}, 'rank' : {}}
-             for i in range(0, len(data)):
-                  info["%s" % data[i][2]][i]['nodegroupid'] = int(data[i][0])
-                  info["%s" % data[i][2]][i]['nodeid'] = int(data[i][1])
-                  info["%s" % data[i][2]][i]['nicnetid'] = int(data[i][3])
-                  info["%s" % data[i][2]][i]['ipaddress'] = data[i][4]
-                  info["%s" % data[i][2]][i]['macaddress'] = data[i][5]
-                  info["%s" % data[i][2]][i]['rack'] = data[i][6]
-                  info["%s" % data[i][2]][i]['rank'] = data[i][7]
-                  info["%s" % data[i][2]][i]['nicname'] = data[i][8]
-                  info["%s" % data[i][2]][i]['boot'] = data[i][9]
-        #t2=time.time()
-        #print "Time Spent: getNodeInformation(): %f" % (t2-t1)
+            info["%s" % data[i][2]][i] = {'nodegroupid' : {}, 'nodeid' : {}, 'nicnetid' : {}, 'ipaddress' : {}, 'macaddress' : {}, 'rack' : {}, 'rank' : {}}
+            for i in range(0, len(data)):
+                info["%s" % data[i][2]][i]['nodegroupid'] = int(data[i][0])
+                info["%s" % data[i][2]][i]['nodeid'] = int(data[i][1])
+                info["%s" % data[i][2]][i]['nicnetid'] = int(data[i][3])
+                info["%s" % data[i][2]][i]['ipaddress'] = data[i][4]
+                info["%s" % data[i][2]][i]['macaddress'] = data[i][5]
+                info["%s" % data[i][2]][i]['rack'] = data[i][6]
+                info["%s" % data[i][2]][i]['rank'] = data[i][7]
+                info["%s" % data[i][2]][i]['nicname'] = data[i][8]
+                info["%s" % data[i][2]][i]['boot'] = data[i][9]
         return info
 
-    def addNode (self, macaddr, selectedinterface, installer=True, unmanaged=False, snackInstance=None, ipaddr=None, hostname=None, uid='', bmc_ip=None):
-        """addNode()
-        Returns a valid node not present in the kusu database. Use this function to create a new node. """
+    def addNode(self, macaddr, selectedinterface, installer=True, 
+            unmanaged=False, snackInstance=None, ipaddr=None, 
+            hostname=None, uid='', bmc_ip=None):
+        """Returns a valid node not present in the kusu database.
+        Use this function to create a new node. """
         if not self._nodeList and not self._ngConflicts:
-            #t2=time.time()
-            #print "Time Spent: addNode(): %f" % (t2-t1)
             return False
 
-        # Check if the node format has a rack AND rank. If it doesn't set the rack to 0 always,
+        # Check if the node format has a rack AND rank.
+        # If it doesn't, set the rack to 0 always,
         if self.isNodenameHasRack() == False:
             self._rackNumber = 0
    
-        # Check if node group exists by looking for the nodeformat If it's empty. Abort.
-       
+        # Check if node group exists by looking for the nodeformat.
+        # If it's empty, abort.
         if self._nodeFormat == None:
-            #t2=time.time()
-            #print "Time Spent: addNode(): %f" % (t2-t1)
             return False
 
         preserveNodeIP = self._dbReadonly.getAppglobals('PRESERVE_NODE_IP')
@@ -527,7 +484,8 @@ class NodeFun(object, KusuApp):
 
         # The hostname provided by the user is not valid, generate new hostname.
         # Build SQL query based on the node groups sharing the same node format.
-        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
+        sqlquery = "SELECT nodes.rank FROM nodes, nodegroups \
+                    WHERE nodes.rack=%d AND nodes.ngid=nodegroups.ngid" % self._rackNumber
         if self._ngConflicts:
             sqlquery += " AND ("
             for ngid in self._ngConflicts:
@@ -542,88 +500,105 @@ class NodeFun(object, KusuApp):
         if preserveNodeIP == '1':
             sqlquery += " UNION "
             nodegroup_ids = map(str, [ngid[0] for ngid in self._ngConflicts])
-            sqlquery += "SELECT alteregos.rank FROM alteregos WHERE alteregos.rack=%d AND alteregos.ngid in (%s) AND rank IS NOT NULL" % (self._rackNumber, ', '.join(nodegroup_ids))
+            sqlquery += "SELECT alteregos.rank FROM alteregos \
+                         WHERE alteregos.rack=%d AND alteregos.ngid in (%s) \
+                             AND rank IS NOT NULL" % (self._rackNumber, ', '.join(nodegroup_ids))
             sqlquery += " ORDER BY rank"
         else:
             sqlquery += " ORDER BY nodes.rank"
 
         self._dbReadonly.execute(sqlquery)
         data = self._dbReadonly.fetchall()
-        # If there's no RANK data found in query, then the rank starts from 0 otherwise if setRankCount called, use that rank number as starting point.
+        # If there's no RANK data found in query, then the rank starts from 0 
+        # otherwise if setRankCount called, use that rank number as starting point.
         if not len(data):
-            # We may not be a matching node format, but the node format may have a rack and rank check the rack and rank to verify
-            # 
-            #self._rankCount = 0
+            # We may not be a matching node format, but the node format 
+            # may have a rack and rank. Check the rack and rank to verify
             while True:
-                sqlquery = "SELECT COUNT(rack) FROM nodes WHERE rack=%d AND rank=%d AND ngid=%d" % (self._rackNumber, self._rankCount, int(self._nodeGroupType))
+                sqlquery = "SELECT COUNT(rack) FROM nodes \
+                            WHERE rack=%d AND rank=%d AND ngid=%d" % \
+                            (self._rackNumber, self._rankCount, int(self._nodeGroupType))
                 self._dbReadonly.execute(sqlquery)
                 data = int(self._dbReadonly.fetchone()[0])
                 if data == 0: 
-                   break
+                    break
                 else:
-                   self._rankCount += 1
+                    self._rankCount += 1
         else:
             # Iterate though the list, increment the rack count if a previous number exists.
             for rankInfo in data:
-                 if rankInfo[0] == self._rankCount:
-                     self._rankCount += 1
-                 else:
-                     break
+                if rankInfo[0] == self._rankCount:
+                    self._rankCount += 1
+                else:
+                    break
+
+        preserveNodeIP = self._dbReadonly.getAppglobals('PRESERVE_NODE_IP')
+
+        if hostname and (preserveNodeIP == '1'):
+            # verify if mac and hostname already exist in alteregos table
+            query="select rack, rank from alteregos \
+                   where name = '%s' and mac = '%s'" % (hostname, macaddr)
+            self._dbReadonly.execute(query)
+            data = self._dbReadonly.fetchone()
+            if data:
+                self._rackNumber = data[0]
+                self._rankCount = data[1]
+
+            # Verify whether this hostname is still valid.  
+            if not self.validateNode(hostname):
+                self._nodeName = hostname
+                self._createNodeEntry(macaddr, selectedinterface, False,
+                        installer, unmanaged=unmanaged, snackinstance=snackInstance,
+                        ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
+                return self._nodeName
 
         # If there's no node name in the list. Generate a new one.
         if not len(self._nodeList):
             self._genHostName()
         else:
-            # Iterate though list, generate a node, check if it exists already in the list. If it does, increment the rank number
+            # Iterate though list, generate a node and check if it already
+            # exists already in the list. If it does, increment the rank number.
             # Otherwise, return the new node name.
             for i in range(1, len(self._nodeList)):
                  self._genHostName()
                  if self._nodeList.has_key(self._nodeName):
                      self._rankCount += 1
                  else:
-                     self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
-                     #t2=time.time()
-                     #print "Time Spent: addNode(): %f" % (t2-t1)
+                     self._createNodeEntry(macaddr, selectedinterface, False, 
+                             installer, unmanaged=unmanaged, snackinstance=snackInstance,
+                             ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
                      return self._nodeName
 
-        # All existing nodes are consecutive in database, no spaces free, just create a new one (rank of 0).
+        # All existing nodes are consecutive in database, 
+        # no spaces free, just create a new one (rank of 0).
         self._genHostName()
-        self._createNodeEntry(macaddr, selectedinterface, False, installer, unmanaged=unmanaged, snackinstance=snackInstance, ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
-        #t2=time.time()
-        #print "Time Spent: addNode(): %f" % (t2-t1)
+        self._createNodeEntry(macaddr, selectedinterface, False,
+                installer, unmanaged=unmanaged, snackinstance=snackInstance,
+                ipaddr=ipaddr, uid=uid, bmc_ip=bmc_ip)
         return self._nodeName
 
     def deleteNode(self, nodename):
-        """deleteNode(nodename)
-        Deletes node from database, and calls deleteDHCPLease() to delete the DHCP entry also. """
-        #t1=time.time()
-
+        """Deletes node from database. Also calls deleteDHCPLease()
+        to delete the DHCP entry."""
         if not nodename or nodename == None:
-            #t2=time.time()
-            #print "Time Spent: deleteNode(): %f" % (t2-t1)
             return False
             
         # We can't be the master installer
         if not self._isMasterInstaller:
             nid = self.getNodeID(nodename)
             if nid == None:
-                #t2=time.time() 
-                #print "Time Spent: deleteNode(): %f" % (t2-t1)
                 print "Node '%s' not found" % nodename
                 return False
                 
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("DELETE FROM nics where nid=%s" % nid)
             self._dbRWrite.execute("DELETE FROM nodes where nid=%s" % nid)
-            #t2=time.time()
-            #print "Time Spent: deleteNode(): %f" % (t2-t1)
             return True
 
     def getNodesFromNodegroup(self, ngid):
-        """getNodesFromNodegroup(ngid)
-        Get the node names list ordered by nodes.name for a specified nodegroup. """
-
-        self._dbReadonly.execute("SELECT nodes.name FROM nodes WHERE ngid=%s ORDER BY nodes.name" % ngid)
+        """Get the node names list ordered by nodes.name for a specified nodegroup. """
+        self._dbReadonly.execute("SELECT nodes.name FROM nodes \
+                                  WHERE ngid=%s ORDER BY nodes.name" % ngid)
         return self._dbReadonly.fetchall()
 
     def nodeHasNICEntry(self, nid, netid):
@@ -633,42 +608,38 @@ class NodeFun(object, KusuApp):
         except:
             return False
         if not self._dbReadonly.fetchone()[0]:
-           return False
+            return False
         return True
 
     def isIPUsed(self, ipaddress):
-        """isIPUsed(ipaddress)
-        Checks if the IP is in use, returns false if not, true if it is. """
+        """Checks if the IP is in use. Returns false if not, true if it is. """
+        return self._cachedUsedIP.has_key(ipaddress)
 
-        #t1=time.time()
-        if self._cachedUsedIP.has_key(ipaddress):
-           #t2=time.time()
-           #print "Time Spent: isUPUsed(): %f" % (t2-t1)
-           return True
-        
-        #t2=time.time()
-        #print "Time Spent: isUPUsed(): %f" % (t2-t1)
-        return False
-
-    def _createNodeEntry(self, macaddr, selectedinterface, dhcpUnmanaged=False, installer=True, unmanaged=False, static=False, snackinstance=None, ipaddr=None, uid='', bmc_ip=None):
-        """createNodeEntry()
-        Create a node in the database. """
-        #t1=time.time()
+    def _createNodeEntry(self, macaddr, selectedinterface, dhcpUnmanaged=False,
+            installer=True, unmanaged=False, static=False,
+            snackinstance=None, ipaddr=None, uid='', bmc_ip=None):
+        """Create a node in the database. """
         flag = 0
         installer_subnet = None
         installer_network = None
         interfaces = {}
+
         if self._nodeList.has_key(self._nodeName):
-           return
+            return
 
         if static == False:
-           self._nodegroupInterfaces = self._findInterfaces()
+            self._nodegroupInterfaces = self._findInterfaces()
 
         if static == True:
-           unmanagedID = self.getNodegroupByName('unmanaged')
-           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank, uid) VALUES ('%s', '%s', 'Installed', False, '%s', '%s', '%s')" % (unmanagedID, self._nodeName, self._rackNumber, self._rankCount, uid))
+            unmanagedID = self.getNodegroupByName('unmanaged')
+            self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank, uid) \
+                    VALUES ('%s', '%s', 'Installed', False, '%s', '%s', '%s')" % \
+                    (unmanagedID, self._nodeName, self._rackNumber, self._rankCount, uid))
         else:
-           self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank, uid) VALUES ('%s', '%s', 'Expired', False, '%s', '%s', '%s')" % (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount, uid))
+            self._dbRWrite.execute("INSERT INTO nodes (ngid, name, state, bootfrom, rack, rank, uid) \
+                    VALUES ('%s', '%s', 'Expired', False, '%s', '%s', '%s')" % \
+                    (self._nodeGroupType, self._nodeName, self._rackNumber, self._rankCount, uid))
+
         if self._dbRWrite.driver == 'mysql':
             self._dbRWrite.execute("SELECT last_insert_id()")
         else: #hardcode to postgres for now
@@ -682,100 +653,101 @@ class NodeFun(object, KusuApp):
         interfaces.update(self._nodegroupInterfaces)
 
         if installer:
-           self._dbReadonly.execute("SELECT networks.subnet, networks.network FROM networks, nics, nodes WHERE nodes.nid=nics.nid AND \
-                                  nics.netid=networks.netid AND networks.usingdhcp=False AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
-                                  AND networks.device='%s'" % selectedinterface)
+            self._dbReadonly.execute("SELECT networks.subnet, networks.network \
+                    FROM networks, nics, nodes \
+                    WHERE nodes.nid=nics.nid AND \
+                        nics.netid=networks.netid AND \
+                        networks.usingdhcp=False AND \
+                        nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') AND \
+                        networks.device='%s'" % selectedinterface)
 
-           # Use the gui selected network interface as the installer's interface.
-           installer_subnet, installer_network = self._dbReadonly.fetchone()
+            # Use the gui selected network interface as the installer's interface.
+            installer_subnet, installer_network = self._dbReadonly.fetchone()
 
         if static == False:
-           if self._nodegroupInterfaces == {}:
-              print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
-              if os.path.isfile("/var/lock/subsys/kusu-addhost"):
-                 os.unlink("/var/lock/subsys/kusu-addhost")
-              sys.exit(-1)
+            if self._nodegroupInterfaces == {}:
+                print "ERROR:  Could not add nodes on interface '%s'. This interface is marked as DHCP only. Please try a different interface\n" % selectedinterface
+                if os.path.isfile("/var/lock/subsys/kusu-addhost"):
+                    os.unlink("/var/lock/subsys/kusu-addhost")
+                sys.exit(-1)
  
-        #if kusu.ipfun.onNetwork(installer_network, installer_subnet, startIP) == False and static == False:
-        #   print "ERROR:  Could not add nodes on interface '%s'. This interface is not available. Please try a different interface\n" % selectedinterface
-        #   sys.exit(-1)
-
         if not installer:
-           for subnet, network in self._installerNetworks:
-               # We don't need to check other subnets only one needs to pass
-               if flag:
-                  break
+            for subnet, network in self._installerNetworks:
+                # We don't need to check other subnets only one needs to pass
+                if flag:
+                    break
 
-               NICInfo = interfaces[selectedinterface]
+                NICInfo = interfaces[selectedinterface]
 
-               networkID = NICInfo['netid']
-               subnetNetwork = NICInfo['subnet']
+                networkID = NICInfo['netid']
+                subnetNetwork = NICInfo['subnet']
                
-               if self._cachedDeviceIPs.has_key(selectedinterface):
+                if self._cachedDeviceIPs.has_key(selectedinterface):
                     startIP = self._cachedDeviceIPs[selectedinterface]
-               else:
+                else:
                     try: 
-                         startIP = NICInfo['startip']
+                        startIP = NICInfo['startip']
                     except:
-                         print "ERROR: Cannot add a host to an interface that uses DHCP. Please choose a different network."
-                         self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
-                         if os.path.isfile("/var/lock/subsys/kusu-addhost"):
+                        print "ERROR: Cannot add a host to an interface that uses DHCP. Please choose a different network."
+                        self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
+                        if os.path.isfile("/var/lock/subsys/kusu-addhost"):
                             os.unlink("/var/lock/subsys/kusu-addhost")
-                         sys.exit(-1)
+                        sys.exit(-1)
 
-               IPincrement = int(NICInfo['incr'])
-               ngGateway = NICInfo['gateway']
-               if ipaddr:
-                   iphint = True
-               else:
-                   iphint = False
+                IPincrement = int(NICInfo['incr'])
+                ngGateway = NICInfo['gateway']
+                if ipaddr:
+                    iphint = True
+                else:
+                    iphint = False
 
-               while True:
-                   # if the desired ip address of the node is provided, then
-                   # try to assign it. Must not fail if moving to unmanaged
-                   if iphint:
-                         if (kusu.ipfun.onNetwork(network, subnet, ipaddr) and not self.isIPUsed(ipaddr) and not self.isPreservedBMCIP(ipaddr)) or \
-                            unmanaged:
-                             self._cachedDeviceIPs[selectedinterface] = ipaddr
-                             self._addUsedIP(ipaddr)
-                             self._createNICBootEntry(nodeID, networkID, True, ipaddr, macaddr)
-                             self._writeDHCPLease(ipaddr, macaddr)
-                             del interfaces[selectedinterface]
-                             flag = 1
-                             break
-                         else:
-                             # we cannot use the desired IP address, so nuke the desired IP
-                             # and skip the 'if ipaddr' branch of code.
-                             iphint = False
-                   # If desired ip address is not provided, then try to provide an IP.
-                   elif kusu.ipfun.onNetwork(network, subnet, startIP) or unmanaged:
-                      if self.isIPUsed(startIP) or self.isPreservedBMCIP(startIP):
-                         try:
-                             startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
-                         except:
-                              # Delete the bogus entry created
-                              print "ERROR:  Too many hosts specified for network. Choose a bigger network."
-                              self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
-                              if os.path.isfile("/var/lock/subsys/kusu-addhost"):
-                                 os.unlink("/var/lock/subsys/kusu-addhost")
-                              sys.exit(-1)
-                      else:
-                         # We're a DHCP/boot interface
-                         self._cachedDeviceIPs[selectedinterface] = startIP
-                         self._addUsedIP(startIP)
-                         self._createNICBootEntry(nodeID, networkID, True, startIP, macaddr)
-                         self._writeDHCPLease(startIP, macaddr)
-                         del interfaces[selectedinterface]
-                         flag = 1
-                         break
-                   else:
-                      break
-           if not flag:
-              self._dbRWrite.execute("DELETE FROM nodes where nodes.ngid=%s AND nodes.name='%s'" % (self._nodeGroupType, self._nodeName))
-              print "ERROR:  Could not create nodes on interface '%s'. Please try a different interface\n" % selectedinterface
-              if os.path.isfile("/var/lock/subsys/kusu-addhost"):
-                 os.unlink("/var/lock/subsys/kusu-addhost")
-              sys.exit(-1)
+                while True:
+                    # if the desired ip address of the node is provided, then
+                    # try to assign it. Must not fail if moving to unmanaged
+                    if iphint:
+                        if (kusu.ipfun.onNetwork(network, subnet, ipaddr) and 
+                                not self.isIPUsed(ipaddr) and 
+                                not self.isPreservedBMCIP(ipaddr)) or unmanaged:
+                            self._cachedDeviceIPs[selectedinterface] = ipaddr
+                            self._addUsedIP(ipaddr)
+                            self._createNICBootEntry(nodeID, networkID, True, ipaddr, macaddr)
+                            self._writeDHCPLease(ipaddr, macaddr)
+                            del interfaces[selectedinterface]
+                            flag = 1
+                            break
+                        else:
+                            # we cannot use the desired IP address, so nuke the desired IP
+                            # and skip the 'if ipaddr' branch of code.
+                            iphint = False
+                    # If desired ip address is not provided, then try to provide an IP.
+                    elif kusu.ipfun.onNetwork(network, subnet, startIP) or unmanaged:
+                        if self.isIPUsed(startIP) or self.isPreservedBMCIP(startIP):
+                            try:
+                                startIP = kusu.ipfun.incrementIP(startIP, IPincrement, subnetNetwork)
+                            except:
+                                # Delete the bogus entry created
+                                print "ERROR:  Too many hosts specified for network. Choose a bigger network."
+                                self._dbRWrite.execute("DELETE from nodes where nid = %s" % nodeID)
+                                if os.path.isfile("/var/lock/subsys/kusu-addhost"):
+                                    os.unlink("/var/lock/subsys/kusu-addhost")
+                                sys.exit(-1)
+                        else:
+                            # We're a DHCP/boot interface
+                            self._cachedDeviceIPs[selectedinterface] = startIP
+                            self._addUsedIP(startIP)
+                            self._createNICBootEntry(nodeID, networkID, True, startIP, macaddr)
+                            self._writeDHCPLease(startIP, macaddr)
+                            del interfaces[selectedinterface]
+                            flag = 1
+                            break
+                    else:
+                        break
+            if not flag:
+                self._dbRWrite.execute("DELETE FROM nodes where nodes.ngid=%s AND nodes.name='%s'" % (self._nodeGroupType, self._nodeName))
+                print "ERROR:  Could not create nodes on interface '%s'. Please try a different interface\n" % selectedinterface
+                if os.path.isfile("/var/lock/subsys/kusu-addhost"):
+                    os.unlink("/var/lock/subsys/kusu-addhost")
+                sys.exit(-1)
 
         # Iterate though interface devices that are found
         for nicdev in interfaces:
@@ -785,25 +757,24 @@ class NodeFun(object, KusuApp):
              excludeMac = None
 
              # 3rd party DHCP server network interface
-             #if len(NICInfo) <= 3:
              if NICInfo['subnet'] == None and NICInfo['gateway'] == None and NICInfo['startip'] == None:
-                self._createNICBootEntry(nodeID, networkID, False)
-                continue
+                 self._createNICBootEntry(nodeID, networkID, False)
+                 continue
 
              subnetNetwork = NICInfo['subnet']
 
              # If the interface has no subnet (maybe DHCP based)
              if subnetNetwork == "None":
-                self._createNICBootEntry(nodeID, networkID, False)
-                continue
+                 self._createNICBootEntry(nodeID, networkID, False)
+                 continue
 
              if self._cachedDeviceIPs.has_key(nicdev):
-                newIP = self._cachedDeviceIPs[nicdev]
+                 newIP = self._cachedDeviceIPs[nicdev]
              else:
-                newIP = NICInfo['startip']
+                 newIP = NICInfo['startip']
 
-             #For bmc nic, try to use the given bmc_ip.
-             #And if not given the bmc_ip, try to find a unused/unpreserved ip from startip. 
+             # For bmc nic, try to use the given bmc_ip.
+             # And if not given the bmc_ip, try to find a unused/unpreserved ip from startip. 
              if nicdev.lower() == 'bmc':
                  excludeMac = macaddr
                  newIP = bmc_ip or newIP
@@ -823,82 +794,79 @@ class NodeFun(object, KusuApp):
             
              while True:
                  if self.isIPUsed(newIP) or self.isPreservedBMCIP(newIP, excludeMac):
-                    try:
-                        newIP = kusu.ipfun.incrementIP(newIP, IPincrement, subnetNetwork)
-                    except:  
-                        if os.path.isfile("/var/lock/subsys/kusu-addhost"):
-                           os.unlink("/var/lock/subsys/kusu-addhost")
+                     try:
+                         newIP = kusu.ipfun.incrementIP(newIP, IPincrement, subnetNetwork)
+                     except:  
+                         if os.path.isfile("/var/lock/subsys/kusu-addhost"):
+                             os.unlink("/var/lock/subsys/kusu-addhost")
 
-                        try:
-                            snackinstance.finish()
-                        except:
-                            pass
+                         try:
+                             snackinstance.finish()
+                         except:
+                             pass
 
-                        print "ERROR:  IP Address overflow, please use a different subnetwork"
-                        os._exit(-1)
+                         print "ERROR:  IP Address overflow, please use a different subnetwork"
+                         os._exit(-1)
                  else:
-                    # Add the used IP to cache list
-                    self._addUsedIP(newIP)
-                    self._cachedDeviceIPs[nicdev] = newIP
-                    break
+                     # Add the used IP to cache list
+                     self._addUsedIP(newIP)
+                     self._cachedDeviceIPs[nicdev] = newIP
+                     break
 
-             if installer:  # Installer mode - We *know* the specific network to boot from vs prepopulating nodes which we don't.
-                # We're a DHCP/boot interface
+             if installer:
+                 # Installer mode - We *know* the specific network to boot from 
+                 # vs prepopulating nodes which we don't.
+                 # We're a DHCP/boot interface
 
                 # If gateway is empty, use the newIP instead.
                 if not ngGateway:
-                   ngGateway = newIP
+                    ngGateway = newIP
 
-                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and self.findMACAddress(macaddr) == False and nicdev != 'bmc':
-                   # Mark the MAC as used.
-                   self.addUsedMAC(macaddr)
-                   self._createNICBootEntry(nodeID, networkID, True, newIP, macaddr)
-                   self._writeDHCPLease(newIP, macaddr)
+                if kusu.ipfun.onNetwork(installer_network, installer_subnet, ngGateway) and \
+                        self.findMACAddress(macaddr) == False and nicdev != 'bmc':
+                    # Mark the MAC as used.
+                    self.addUsedMAC(macaddr)
+                    self._createNICBootEntry(nodeID, networkID, True, newIP, macaddr)
+                    self._writeDHCPLease(newIP, macaddr)
                 else:
-                   # Not a boot interface, just write out other info. 
-                   if dhcpUnmanaged == False : # Dont create other boot entries when using unmanaged DHCP
-                      self._createNICBootEntry(nodeID, networkID, False, newIP)
+                    # Not a boot interface, just write out other info. 
+                    if dhcpUnmanaged == False: 
+                        # Dont create other boot entries when using unmanaged DHCP
+                        self._createNICBootEntry(nodeID, networkID, False, newIP)
              else:
-                self._createNICBootEntry(nodeID, networkID, False, newIP)
-        #t2=time.time()
-        #print "Time Spent: createNodeEntry(): %f" % (t2-t1)
+                 self._createNICBootEntry(nodeID, networkID, False, newIP)
 
     def replaceNodeEntry(self, nodename):
-        """replaceNodeEntry(nodename)
-        Replaces an existing node, first by deleting the existing DHCP entry for the node since it contains the old mac address. 
-        Then setting the MAC address to NULL so a new DHCP request may be done.  """
-
-        #t1=time.time()
+        """Replaces an existing node, first by deleting the existing 
+        DHCP entry for the node since it contains the old mac address. 
+        Then set the MAC address to NULL so a new DHCP request may be done."""
 
         nid = self.getNodeID(nodename)
         if not self._isMasterInstaller:
-	    # Delete the /tftpboot/kusu/pxelinux.cfg/macfile so node will pxe properly.
-	    self._dbRWrite.execute("SELECT mac FROM nics, nodes WHERE nics.nid=nodes.nid AND nodes.name='%s'" % nodename)
-	    macNodeInfo = self._dbRWrite.fetchall()
-	    for macaddr in macNodeInfo:
+            # Delete the /tftpboot/kusu/pxelinux.cfg/macfile so node will pxe properly.
+            self._dbRWrite.execute("SELECT mac FROM nics, nodes \
+                    WHERE nics.nid=nodes.nid AND nodes.name='%s'" % nodename)
+            macNodeInfo = self._dbRWrite.fetchall()
+            for macaddr in macNodeInfo:
                 if macaddr[0]:
-                   macfile = "/tftpboot/kusu/pxelinux.cfg/01-%s" % macaddr[0].replace(':','-')
-	           if os.path.isfile(macfile):
-                      try:
-                          os.unlink(macfile)
-                      except:
-                          pass
+                    macfile = "/tftpboot/kusu/pxelinux.cfg/01-%s" % macaddr[0].replace(':','-')
+                    if os.path.isfile(macfile):
+                        try:
+                            os.unlink(macfile)
+                        except:
+                            pass
 
             self._deleteDHCPLease(nodename)
             self._dbRWrite.execute("UPDATE nics SET mac=NULL WHERE nid='%s'" % nid)
             self._dbRWrite.execute("UPDATE nodes SET state='Expired', bootfrom=False WHERE nid='%s'" % nid)
-            #t2=time.time()
-            #print "replaceNodeEntry(): %f" % (t2-t1)
             return True
         else:
             print self.kusuApp._("replace_primary_installer_error\n")
-            #t2=time.time()
-            #print "replaceNodeEntry(): %f" % (t2-t1)
             return False
    
     def addUnmanagedStaticDevice(self, devicename, ip):
-        """addUnmanagedDevice(devicename)
-        Adds devices such as printers, switches, routers that have an IP and or may use DHCP to set an IP."""
+        """Adds devices such as printers, switches, routers that have an IP
+        or may use DHCP to set an IP."""
 
         # Check if the node name is a fully qualified name
         ret, msg = verifyFQDN(devicename)
@@ -942,17 +910,20 @@ class NodeFun(object, KusuApp):
         ngid = self._dbReadonly.fetchone()[0]
  
         self._dbReadonly.execute('SELECT networks.netid FROM nodegroups,networks,ng_has_net \
-                                  WHERE ng_has_net.netid=networks.netid AND nodegroups.ngid=ng_has_net.ngid AND \
-                                  ng_has_net.ngid=%s' % ngid) 
+                                  WHERE ng_has_net.netid=networks.netid AND \
+                                      nodegroups.ngid=ng_has_net.ngid AND \
+                                      ng_has_net.ngid=%s' % ngid) 
         netid = self._dbReadonly.fetchone()[0]
 
-        self._dbRWrite.execute('INSERT INTO nodes (ngid, name, state, bootFrom) VALUES ("%s", "%s", "Installed", "False")' % (ngid, devicename))
+        self._dbRWrite.execute('INSERT INTO nodes (ngid, name, state, bootFrom) \
+                VALUES ("%s", "%s", "Installed", "False")' % (ngid, devicename))
         if self._dbRWrite.driver == 'mysql':
             self._dbRWrite.execute("SELECT last_insert_id()")
         else: # xxx postgres for now
             self._dbRWrite.execute("SELECT last_value from nodes_nid_seq")
         nid = self._dbRWrite.fetchone()[0]
-        self._dbRWrite.execute('INSERT INTO nics (netid, nid, ip, boot) VALUES ("%s", "%s", "%s", "False")' % (netid, nid, ip))
+        self._dbRWrite.execute('INSERT INTO nics (netid, nid, ip, boot) \
+                VALUES ("%s", "%s", "%s", "False")' % (netid, nid, ip))
         self._addUsedIP(ip)
         return True, "Success"
 
@@ -963,14 +934,13 @@ class NodeFun(object, KusuApp):
         self._createNodeEntry(mac, interface, dhcpUnmanaged=True, installer=True, static=True)
            
     def replaceNICBootEntry(self, nodename, macaddress):
-        """replaceNICBootEntry(nodename, macaddress)
-        Replaces nics table containing new mac address for replaced node """
-        #t1=time.time()
+        """Replaces nics table containing new mac address for replaced node """
         nid = self.getNodeID(nodename)
 
         # The assumption is there is only one provision network!
-        self._dbReadonly.execute("SELECT nics.mac FROM nics, networks WHERE nics.nid='%s' AND nics.netid=networks.netid "
-                                 "AND networks.type='provision' AND lower(networks.device)!='bmc'" % nid)
+        self._dbReadonly.execute("SELECT nics.mac FROM nics, networks "
+                                 "WHERE nics.nid='%s' AND nics.netid=networks.netid AND "
+                                 "networks.type='provision' AND lower(networks.device)!='bmc'" % nid)
         old_macaddress = self._dbReadonly.fetchone()[0]
         self._dbRWrite.execute("UPDATE alteregos SET mac='%s' WHERE mac='%s'" % (macaddress, old_macaddress))
 
@@ -983,39 +953,36 @@ class NodeFun(object, KusuApp):
 
         # Recreate DHCP lease, this time using the new mac address found
         self._writeDHCPLease(data, macaddress)
-        #t2=time.time()
-        #print "Time Spent: replaceNICBootEntry(): %f" % (t2-t1)
             
     def _createNICBootEntry(self, nodeid, networkid, bootflag, ipaddress=None, macaddress=None):
-        """createNICBootEntry(nodeid, networkid, ipaddress, bootflag, macaddress)
-        Creates NIC entries for a specific node. If there's a mac address specified. Then that nic table entry 
-        will have its bootdhcp flag enabled. Otherwise, other network interfaces cannot be PXE booted from. """
-        #t1=time.time()
+        """Creates NIC entries for a specific node.
+        If there's a mac address specified. Then that nic table entry 
+        will have its bootdhcp flag enabled. Otherwise, other network
+        interfaces cannot be PXE booted from. """
         if bootflag:# needed to coerce 0s and 1s to True or false
             bootflag = True
         else:
             bootflag = False
 
         if macaddress:
-            self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) VALUES ('%s', '%s', '%s', '%s', %s)" % (nodeid, networkid, macaddress, ipaddress, bootflag))
+            self._dbRWrite.execute("INSERT INTO nics (nid, netid, mac, ip, boot) \
+                    VALUES ('%s', '%s', '%s', '%s', %s)" %
+                    (nodeid, networkid, macaddress, ipaddress, bootflag))
         else:
             if ipaddress:
-               try:
-                   self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) VALUES ('%s', '%s', '%s', %s)" % (nodeid, networkid, ipaddress, bootflag))
-               except:
-                   pass # There's no entry to write, maybe installer interface being added.
-	    else:
-               self._dbRWrite.execute("INSERT INTO nics (nid, netid, boot) VALUES ('%s', '%s', %s)" % (nodeid, networkid, bootflag))
+                try:
+                    self._dbRWrite.execute("INSERT INTO nics (nid, netid, ip, boot) \
+                            VALUES ('%s', '%s', '%s', %s)" %
+                            (nodeid, networkid, ipaddress, bootflag))
+                except:
+                    pass # There's no entry to write, maybe installer interface being added.
+            else:
+                self._dbRWrite.execute("INSERT INTO nics (nid, netid, boot) \
+                        VALUES ('%s', '%s', %s)" % (nodeid, networkid, bootflag))
 
-        #t2=time.time()
-        #print "Time Spent: createNICBootEntry(): %f" % (t2-t1)
-   
     def _writeDHCPLease(self, ipaddr, macaddr):
-        """writeDHCPLease(ipaddr, macaddr)
-        Use DHCP's API to create a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
         if self._dbReadonly.getAppglobals('InstallerServeDHCP') == '0':
             return
-        #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
         tochild.flush()
@@ -1033,16 +1000,12 @@ class NodeFun(object, KusuApp):
         tochild.flush()
         tochild.close()
         fromchild.close()
-        #t2=time.time()
-        #print "Time Spent: writeDHCPLease(): %f" % (t2-t1)
 
     def _deleteDHCPLease(self, nodename):
-        """writeDHCPLease(nodename)
-        Use DHCP's API to delete a DHCP entry in the /var/lib/dhcpd/dhcpd.leases file """
-        
+        """Use DHCP's API to delete a DHCP entry in the 
+        /var/lib/dhcpd/dhcpd.leases file """
         if self._dbReadonly.getAppglobals('InstallerServeDHCP') == '0':
             return
-        #t1=time.time()
         fromchild, tochild = popen2.popen2("/usr/bin/omshell")
         tochild.write("connect\n")
         tochild.flush()
@@ -1055,90 +1018,68 @@ class NodeFun(object, KusuApp):
         tochild.write("remove\n")
         tochild.close()
         fromchild.close()
-        #t2=time.time()
-        #print "Time Spent: deleteDHCPLease(): %f" % (t2-t1)
     
     def findMACAddress(self, macaddr):
-        #t1=time.time()
-        if self._cachedMACAddress.has_key(macaddr):
-           return True
-        else:
-           return False
+        return self._cachedMACAddress.has_key(macaddr)
 
         self._dbReadonly.execute("SELECT mac FROM nics WHERE mac='%s'" % macaddr)
         try:
-          result = self._dbReadonly.fetchone()[0] 
-          # Mac address exists
-          #t2=time.time()
-          #print "Time Spent: findMACAddress(): %f" % (t2-t1)
-          return True
+            result = self._dbReadonly.fetchone()[0] 
+            return True
         except:
-          # Mac address does not exist
-          #t2=time.time()
-          #print "Time Spent: findMACAddress(): %f" % (t2-t1)
-          return False
+            return False
     
     def validateInterface(self, interface, installer=True, nodegroup=None):
-        """validateInterface(self, interface)
-        Checks if the requested interface exists in the database from the primary installer. If it does, returns True, otherwise False"""
+        """Checks if the requested interface exists in the database
+        for the primary installer. If it does, returns True, otherwise False"""
         if nodegroup:
             # if the nodegroup's installtype is 'unmanaged', interface is always valid.
             self._dbReadonly.execute("SELECT installtype FROM nodegroups WHERE ngid='%s'" % nodegroup)
             if self._dbReadonly.fetchone()[0] == 'unmanaged':
                 return True
-        #t1=time.time()
+
         if installer: 
-           self._dbReadonly.execute("SELECT networks.device FROM networks, nics, nodes WHERE nodes.nid=nics.nid \
-                                   AND nics.netid=networks.netid AND networks.device='%s' AND \
-                                   nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % interface)
+            query = "SELECT networks.device \
+                     FROM networks, nics, nodes \
+                     WHERE nodes.nid=nics.nid AND \
+                        nics.netid=networks.netid AND \
+                        networks.device='%s' AND \
+                        nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller')" % \
+                        interface
+            self._dbReadonly.execute(query)
         else:
-           self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE \
-                                   networks.netid=ng_has_net.netid AND ng_has_net.ngid=%s AND networks.device='%s'" % (nodegroup, interface))
+            self._dbReadonly.execute("SELECT networks.device \
+                    FROM networks, ng_has_net \
+                    WHERE networks.netid=ng_has_net.netid AND \
+                        ng_has_net.ngid=%s AND networks.device='%s'" % (nodegroup, interface))
 
         result = self._dbReadonly.fetchone()
- 
         try:
             testval = result[0]
-            #t2=time.time()
-            #print "Time Spent: validateInterface(): %f" % (t2-t1)
             return True
         except:
-            #t2=time.time()
-            #print "Time Spent: validateInterface(): %f" % (t2-t1)
             return False
 
     def validateNodegroup(self, nodegroup):
-        """validateNodegroup(self, nodegroup)
-        Checks if the requested node group exists. If it does, returns True and the ngid, otherwise False"""
+        """Checks if the requested nodegroup exists.
+        If it does, returns True and the ngid, otherwise False"""
 
         # Check for valid nodegroup.
-        #t1=time.time()
         self._dbReadonly.execute("SELECT ngid, ngname FROM nodegroups WHERE ngname = '%s'" % nodegroup)
         result = self._dbReadonly.fetchone()
         try:
             testval = result[0]
-            #t2=time.time()
-            #print "Time Spent: validateNodegroup(): %f" % (t2-t1)
             return True, testval
         except:
-            #t2=time.time()
-            #print "Time Spent: validateNodegroup(): %f" % (t2-t1)
             return False, None
 
     def validateNode(self, node):
-        """validateNode(self, node)
-        Checks if the requested node exists or not. If it does, returns True, otherwise False"""
-        
-        rsvNames = self._getReservedHostnames()
-        if node in rsvNames:
-            return True
-        else:
-            return False
+        """Checks if the requested node exists or not.
+        If it does, returns True, otherwise False"""
+        return node in self._getReservedHostnames()
 
     def _getReservedHostnames(self):
-        """Retrieve the host list from the database and hosts.append file."""
-
-        nodesDict = {}
+        """Retrieve the host list returned by 'kusu-genconfig hosts'"""
         rsvNames = []
         file = "/etc/hosts.append"
         
@@ -1162,7 +1103,8 @@ class NodeFun(object, KusuApp):
         return rsvNames
 
     def isIPInPrivateNet(self, unmanagedip, networks=None):
-        """Checks if the requested ip is in one private network. If it is, returns True, otherwise False"""
+        """Checks if the requested ip is in one private network.
+        If it is, returns True, otherwise False"""
 
         if not networks:
             query = "SELECT network, subnet FROM networks WHERE usingdhcp=False AND type<>'public'"
@@ -1176,46 +1118,47 @@ class NodeFun(object, KusuApp):
         return False
 
     def _findInterfaces(self):
-        """findInterfaces()
-        Returns a dictionary containing Networks ID number, Subnetwork, Starting IP Address and IP Increment value.
+        """Returns a dictionary containing Networks ID number, 
+        Subnetwork, Starting IP Address and IP Increment value.
         The dictionary uses the device name as its key item[1]. """
-        #t1=time.time()
-        interfaceInfo = {}
-        query = 'SELECT networks.netid, networks.device, networks.subnet, networks.startip, networks.inc, networks.gateway \
-                 FROM networks,ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = "%s"' % self._nodeGroupType
-	self._dbReadonly.execute(query)
+
+        query = 'SELECT networks.netid, networks.device, networks.subnet, \
+                     networks.startip, networks.inc, networks.gateway \
+                 FROM networks,ng_has_net \
+                 WHERE ng_has_net.netid=networks.netid AND \
+                     ng_has_net.ngid = "%s"' % self._nodeGroupType
+        self._dbReadonly.execute(query)
         data = self._dbReadonly.fetchall()
 
+        interfaceInfo = {}
         for item in data:
-                interfaceInfo[item[1]] = {'netid' : {}, 'networks' : {}, 'subnet' : {}, 'startip' : {}, 'incr' : {}, 'gateway' : {}}
-                interfaceInfo[item[1]]['netid'] = item[0]
-                interfaceInfo[item[1]]['subnet'] = item[2]
-                interfaceInfo[item[1]]['startip'] = item[3]
-                interfaceInfo[item[1]]['incr'] = item[4]
-                interfaceInfo[item[1]]['gateway'] = item[5]
-                #interfaceInfo[item[1]] = "%d %s %s %s %s" % (item[0], item[2], item[3], item[4], item[5])
+            interfaceInfo[item[1]] = {'netid': {}, 'networks': {}, 'subnet': {},
+                                      'startip': {}, 'incr': {}, 'gateway': {}}
+            interfaceInfo[item[1]]['netid'] = item[0]
+            interfaceInfo[item[1]]['subnet'] = item[2]
+            interfaceInfo[item[1]]['startip'] = item[3]
+            interfaceInfo[item[1]]['incr'] = item[4]
+            interfaceInfo[item[1]]['gateway'] = item[5]
 
-        #t2=time.time()
-        #print "Time Spent: findInterfaces(): %f" % (t2-t1)
         return interfaceInfo
 
     def findBootDevice(self, nodename):
-        """findBootDevice()
-        Returns the boot device that has its boot flag set to 1 """
+        """Returns the boot device that has its boot flag set to 1 """
         query = "SELECT networks.network, networks.subnet, networks.device, networks.gateway \
                  FROM networks, nics, nodes \
                  WHERE nodes.nid=nics.nid AND nics.netid=networks.netid \
-                 AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
-                 AND NOT lower(networks.device)='bmc' ORDER BY device"
+                     AND nodes.name=(SELECT kvalue FROM appglobals WHERE kname='PrimaryInstaller') \
+                     AND NOT lower(networks.device)='bmc' ORDER BY device"
 
         self._dbReadonly.execute(query)
         installerInfo = self._dbReadonly.fetchall()
 
         # Get list of node available gateway
-        query = 'SELECT distinct networks.device, nics.ip FROM \
-                 networks,nics,nodes WHERE networks.netid = nics.netid AND \
-                 nodes.nid=nics.nid AND nics.boot = True AND \
-                 nodes.name = "%s"' % nodename
+        query = 'SELECT distinct networks.device, nics.ip \
+                 FROM networks,nics,nodes \
+                 WHERE networks.netid = nics.netid AND \
+                     nodes.nid=nics.nid AND nics.boot = True AND \
+                     nodes.name = "%s"' % nodename
 
         self._dbReadonly.execute(query)
         nodeInfo = [(device,ip) for (device,ip) in self._dbReadonly.fetchall() if ip]
@@ -1234,12 +1177,10 @@ class NodeFun(object, KusuApp):
 
     def retrieveIPFromAlteregos(self, mac, ngid):
         # search for a previous IP for the mac address and ngid in alteregos table
-
         query = "select ip from alteregos where mac='%s' and ngid=%i" % (mac, ngid )
         try:
             self._dbReadonly.execute(query)
-            ipaddr = self._dbReadonly.fetchone()[0]
-            return ipaddr
+            return self._dbReadonly.fetchone()[0]
         except:
             pass
         return None
@@ -1249,19 +1190,21 @@ class NodeFun(object, KusuApp):
         result = None
         ipaddr = None
 
-        # Test first to see if this node has been in this nodegroup before
-        # If so try to reuse the IP
+        # Test first to see if this node has been in this nodegroup before.
+        # If so try to reuse the IP.
 
         ipaddr = self.retrieveIPFromAlteregos(mac, ngid)
-
         if ipaddr:
             return ipaddr
         else:
-            query = "SELECT distinct nodegroups.ngid FROM alteregos, nodegroups, ng_has_net, networks " \
-                    "WHERE nodegroups.ngid=ng_has_net.ngid AND ng_has_net.netid=networks.netid " \
-                    "AND networks.type='provision' AND alteregos.ngid=nodegroups.ngid " \
-                    "AND nodegroups.ngid!=%i " \
-                    "AND networks.netid IN (SELECT netid from ng_has_net WHERE ngid=%i )" % (ngid, ngid)
+            query = "SELECT distinct nodegroups.ngid \
+                     FROM alteregos, nodegroups, ng_has_net, networks \
+                     WHERE nodegroups.ngid=ng_has_net.ngid AND \
+                         ng_has_net.netid=networks.netid AND \
+                         networks.type='provision' AND \
+                         alteregos.ngid=nodegroups.ngid AND \
+                         nodegroups.ngid!=%i AND \
+                         networks.netid IN (SELECT netid from ng_has_net WHERE ngid=%i )" % (ngid, ngid)
             try:
                 self._dbReadonly.execute(query)
                 result = self._dbReadonly.fetchone()[0]
@@ -1276,20 +1219,20 @@ class NodeFun(object, KusuApp):
     def retrieveBMCIPFromAlteregos(self, mac, ngid):
         # search for a previous BMC IP for the mac address and ngid in alteregos table
         query = "select bmcip from alteregos where mac='%s' and ngid=%i" % (mac, ngid)
+        ipaddr = None
         try:
             self._dbReadonly.execute(query)
             ipaddr = self._dbReadonly.fetchone()[0]
         except:
-            ipaddr = None
+            pass
         return ipaddr
 
     def findOldBMCIPForNode(self, mac, ngid):
-        '''findOldBMCIPForNode - returns the BMC IP address to use, or None'''
-        result = None
+        '''Returns the BMC IP address to use, or None'''
         ipaddr = None
 
         # Test first to see if this node has been in this nodegroup before
-        # If so try to reuse the IP
+        # If so try to reuse the IP.
         ipaddr = self.retrieveBMCIPFromAlteregos(mac, ngid)
 
         if ipaddr and self.validBMCIPForNode(ipaddr, mac):
@@ -1308,27 +1251,26 @@ class NodeFun(object, KusuApp):
         query = "select name from alteregos where mac='%s' and ngid=%i" % (mac, ngid )
         try:
             self._dbReadonly.execute(query)
-            hname = self._dbReadonly.fetchone()[0]
-            return hname
+            return self._dbReadonly.fetchone()[0]
         except:
             pass
         return None
 
     def findOldHostnameForNode(self, mac, ngid):
-        '''returns the hostname to use, or None'''
+        '''Returns the hostname to use, or None'''
 
         result = None
-        hname = None
-
         hname = self.retrieveHostnameFromAlteregos(mac, ngid)
 
         if hname:
             return hname
         else:
-            query = "SELECT distinct nodegroups.ngid FROM alteregos, nodegroups " \
-                    "WHERE alteregos.ngid=nodegroups.ngid " \
-                    "AND nodegroups.ngid!=%i " \
-                    "AND nodegroups.nameformat IN (SELECT nameformat from nodegroups WHERE ngid=%i )" % (ngid, ngid)
+            query = "SELECT distinct nodegroups.ngid \
+                     FROM alteregos, nodegroups \
+                     WHERE alteregos.ngid=nodegroups.ngid \
+                         AND nodegroups.ngid!=%i \
+                         AND nodegroups.nameformat IN \
+                             (SELECT nameformat from nodegroups WHERE ngid=%i)" % (ngid, ngid)
             try:
                 self._dbReadonly.execute(query)
                 result = self._dbReadonly.fetchone()[0]
@@ -1341,34 +1283,26 @@ class NodeFun(object, KusuApp):
 
     def setNodegroupByName(self, nodegroupname):
         # Convert the name into a nodegroup id
-        #t1=time.time()
         query = "SELECT ngid FROM nodegroups WHERE ngname='%s'" % nodegroupname
         try:
             self._dbReadonly.execute(query)
             self._nodeGroupType = self._dbReadonly.fetchone()[0]
         except:
             self._nodeGroupType = None
-        #t2=time.time()
-        #print "Time Spent: setNodegroupByName(): %f" % (t2-t1)
 
     def setNodegroupByID(self, ngid):
         self._nodeGroupType = ngid
         if self._nodeFormat == None:
-           self.getNodeFormat()
-           self._ngConflicts = self._getNodegroupConflicts()
-           self._nodegroupInterfaces = self._findInterfaces()
+            self.getNodeFormat()
+            self._ngConflicts = self._getNodegroupConflicts()
+            self._nodegroupInterfaces = self._findInterfaces()
      
     def getNodegroupNameByID(self, ngid):
-        #t1=time.time()
         query = "SELECT ngname FROM nodegroups WHERE ngid=%s" % ngid
         try:
             self._dbReadonly.execute(query)
-            #t2=time.time()
-            #print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
             return self._dbReadonly.fetchone()[0]
         except:
-            #t2=time.time()
-            #print "Time Spent: getNodegroupNameByID(): %f" % (t2-t1)
             return None
 
     def moveNodegroups(self, groupList, destGroup):
@@ -1378,18 +1312,20 @@ class NodeFun(object, KusuApp):
          self.setNodegroupByName(destGroup)
          # Check for valid nodegroup.
          if not self._nodeGroupType:
-            return None, None, None
+             return None, None, None
          
-         # Check if the group being moved is not the destination node group, delete from the list if it is.
+         # Check if the group being moved is not the destination nodegroup.
+         # Delete from the list if it is.
          if destGroup in groupList:
-            dupeList.append(destGroup)
+             dupeList.append(destGroup)
       
          for dupegroup in dupeList:
              groupList.remove(dupegroup)
     
          # Get a list of nodes for all the nodegroups.
          for group in groupList:
-             self._dbReadonly.execute("SELECT nodes.name FROM nodes, nodegroups WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group)
+             self._dbReadonly.execute("SELECT nodes.name FROM nodes, nodegroups \
+                     WHERE nodes.ngid=nodegroups.ngid AND nodegroups.ngname='%s'" % group)
              nodes = self._dbReadonly.fetchall()
              for node in nodes:
                  nodeList.append(node[0])
@@ -1410,64 +1346,66 @@ class NodeFun(object, KusuApp):
         # Check which nodes are valid.
         for requestNode in requestedNodes:
             if requestNode in nodeList:
-               continue
+                continue
             else:
-               #print "Node does not exist: %s" % requestNode
-               badList.append((requestNode, 'Node does not exist'))
+                badList.append((requestNode, 'Node does not exist'))
 
         for node in badList:
             requestedNodes.remove(node[0])
 
         # Check for valid nodegroup.
         if not self._nodeGroupType:
-           return None, None, None
-
-        # Can't move unmanaged nodes.
-        #if self._nodeGroupType == self.getNodegroupByName('unmanaged'):
-        #   return None, None, None
+            return None, None, None
 
         # Remove the primary installer if the user tries to move it to another node group.
         primaryInstaller = self._getPrimaryInstaller()
         if primaryInstaller in nodeList:
-           nodeList.remove(primaryInstaller)
-           badList.remove(primaryInstaller)
+            nodeList.remove(primaryInstaller)
+            badList.remove(primaryInstaller)
 
         if primaryInstaller in badList:
-           badList.remove(primaryInstaller)
+            badList.remove(primaryInstaller)
 
-        # Check if the item being moved already exists in the same node group, delete from list if it is.
+        # Check if the item being moved already exists in the same node group.
+        # Delete from list if it is.
         for node in requestedNodes: 
-            self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes WHERE nodes.name='%s' AND nodes.ngid=%s" % (node, self._nodeGroupType))
+            self._dbReadonly.execute("SELECT COUNT(nodes.name) FROM nodes \
+                    WHERE nodes.name='%s' AND nodes.ngid=%s" % (node, self._nodeGroupType))
             data = bool(self._dbReadonly.fetchone()[0])
             if data:
-               #print "Node %s already exists in destination node group" % node
-               dupeList.append(node)
+                dupeList.append(node)
 
         if dupeList:
             for dupenode in dupeList:
                 requestedNodes.remove(dupenode)
 
-        self._dbReadonly.execute("SELECT networks.device FROM networks, ng_has_net WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid = %s" % self._nodeGroupType)
+        self._dbReadonly.execute("SELECT networks.device \
+                FROM networks, ng_has_net \
+                WHERE ng_has_net.netid = networks.netid \
+                    AND ng_has_net.ngid = %s" % self._nodeGroupType)
         provision_networkdev = [x[0] for x in self._dbReadonly.fetchall()]
         for node in requestedNodes:
-            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device FROM nics,nodes,networks,nodegroups WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid AND nics.boot=True AND nodegroups.ngid=nodes.ngid" % node) 
-# AND NOT nodegroups.ngid=(SELECT ngid FROM nodegroups WHERE ngname = 'unmanaged')" % node)
+            self._dbReadonly.execute("SELECT nics.mac, nics.ip, networks.device \
+                    FROM nics,nodes,networks,nodegroups \
+                    WHERE nodes.name='%s' AND nodes.nid=nics.nid AND \
+                        networks.netid=nics.netid AND nics.boot=True AND \
+                        nodegroups.ngid=nodes.ngid" % node) 
             data = self._dbReadonly.fetchone()
             if data:
-               # Make sure MAC address is not empty
-               if not data[0]:
-                   badList.append((node, 'No valid MAC address'))
-               elif data[2] not in provision_networkdev:
-                   badList.append((node, 'No network device available for provision(Available:%s Required:%s' % (data[2], provision_networkdev)))
-               else:
-                   dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
-                   macList["%s" % node] = "%s" % data[0]
+                # Make sure MAC address is not empty
+                if not data[0]:
+                    badList.append((node, 'No valid MAC address'))
+                elif data[2] not in provision_networkdev:
+                    badList.append((node, 'No network device available for provision (Available:%s Required:%s' % (data[2], provision_networkdev)))
+                else:
+                    dataList["%s" % node] = "%s %s %s" % (data[0], data[1], data[2])
+                    macList["%s" % node] = "%s" % data[0]
             else:
                 badList.append((node, 'No network device available for provision (Required:%s)' % (provision_networkdev)))
 
         for node in badList:
             if node[0] in requestedNodes:
-               requestedNodes.remove(node[0])
+                requestedNodes.remove(node[0])
 
         self._dbReadonly.execute("SELECT installtype FROM nodegroups WHERE ngname='%s'" % nodegroupname)
         ng_installtype = self._dbReadonly.fetchone()[0]
@@ -1476,7 +1414,8 @@ class NodeFun(object, KusuApp):
         if ng_installtype == 'multiboot':
             for node in requestedNodes:
                 self._dbReadonly.execute("SELECT nics.ip, networks.device FROM nics,nodes,networks "
-                                         "WHERE nodes.name='%s' AND nodes.nid=nics.nid AND networks.netid=nics.netid "
+                                         "WHERE nodes.name='%s' AND nodes.nid=nics.nid "
+                                         "AND networks.netid=nics.netid "
                                          "AND lower(networks.device)='bmc'" % node)
                 data = self._dbReadonly.fetchone()
                 if data:
@@ -1487,15 +1426,18 @@ class NodeFun(object, KusuApp):
                     requestedNodes.remove(node)
 
         # Get the new nodegroups network and device table list
-        self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network FROM networks, ng_has_net "
-                                 "WHERE ng_has_net.netid=networks.netid AND (networks.type='provision' OR lower(networks.device)='bmc') "
-                                 "AND ng_has_net.ngid = %s" % self._nodeGroupType)
+        self._dbReadonly.execute("SELECT networks.device, networks.subnet, networks.network \
+                FROM networks, ng_has_net \
+                WHERE ng_has_net.netid=networks.netid AND \
+                    (networks.type='provision' OR lower(networks.device)='bmc') AND \
+                    ng_has_net.ngid = %s" % self._nodeGroupType)
         newngdata = list(self._dbReadonly.fetchall())
         if newngdata == []:
-           return [], ipList, macList, requestedNodes, None
+            return [], ipList, macList, requestedNodes, None
 
-        # Check if the existing node group device matches the new node group device thats bootable. Otherwise, indicate an error. The user will
-        # Have to resolve this by running add hosts
+        # Check if the existing nodegroup device matches the new 
+        # nodegroup device that is bootable. Otherwise, indicate an error.
+        # The user will have to resolve this by running addhost.
         for node in requestedNodes:
             badflag = 1
             nodeData = dataList[node].split()
@@ -1509,7 +1451,7 @@ class NodeFun(object, KusuApp):
                         badflag = 0
                         break
                 if badflag:
-                    badList.append((node,'Existing BMC IP on different network'))
+                    badList.append((node, 'Existing BMC IP on different network'))
                     continue
 
             badflag = 1
@@ -1517,8 +1459,11 @@ class NodeFun(object, KusuApp):
                 device, network, subnet = netinfo
                 interfaceName = device
 
-                # Check if the existing IP fits on the new node group network, also check if the device matches, otherwise warn user later.
-                if (device.lower() != 'bmc' and kusu.ipfun.onNetwork(network, subnet, nodeData[1])) or ng_installtype=='unmanaged':
+                # Check if the existing IP fits on the new nodegroup network.
+                # Also check if the device matches, otherwise warn user later.
+                if (device.lower() != 'bmc' and 
+                        kusu.ipfun.onNetwork(network, subnet, nodeData[1])) or \
+                        ng_installtype=='unmanaged':
                     badflag = 0
                     ipList.append(nodeData[1])
                     break
@@ -1527,73 +1472,70 @@ class NodeFun(object, KusuApp):
                 badList.append((node,'Existing IP on different network'))
 
         if badList:
-           for badnode in badList:
-               if badnode[0] in nodeList:
-                  nodeList.remove(badnode[0])
-                  if badnode[0] in requestedNodes:
-                      requestedNodes.remove(badnode[0])
+            for badnode in badList:
+                if badnode[0] in nodeList:
+                    nodeList.remove(badnode[0])
+                    if badnode[0] in requestedNodes:
+                        requestedNodes.remove(badnode[0])
 
-        #print "RETURNS: requestedNodes = %s, ipList = %s, badList = %s, interfaceName = %s" % (requestedNodes, ipList, badList, interfaceName)
         return requestedNodes, ipList, macList, badList, interfaceName
 
 # For ngedit
 
 def validateNodeFormat(nodestr):
-     """validateNodeFormat()
-     Returns true if the string format is valid, false if not."""
-     digit_flag = 0
-     special = 0
-     mini_rank = 0
-     rack_found = 0
-     alphanum = 0
+    """Returns true if the string format is valid, false if not."""
+    digit_flag = 0
+    special = 0
+    mini_rank = 0
+    rack_found = 0
+    alphanum = 0
 
-     if nodestr.find(' ') > 0:
+    if nodestr.find(' ') > 0:
         return False
   
-     for i in range(0, len(nodestr)):
+    for i in range(0, len(nodestr)):
 
-         if nodestr[i].isdigit():
+        if nodestr[i].isdigit():
             digit_flag = 1
             continue
 
-         if digit_flag and nodestr[i] == "#":
+        if digit_flag and nodestr[i] == "#":
             if nodestr[i-1].isdigit():
-               return False
+                return False
 
-         if nodestr[i] == '#':
+        if nodestr[i] == '#':
             if special == 1:
-               return False
+                return False
             special = 1
             continue
 
-         if special:
+        if special:
             if nodestr[i] == 'R':
-               rack_found = 1
-               continue
+                rack_found = 1
+                continue
 
-         if special:
+        if special:
             if nodestr[i] == 'N':
-               mini_rank = 1
-               continue
+                mini_rank = 1
+                continue
 
-         if special:
+        if special:
             if nodestr[i].isdigit():
-               return False
+                return False
 
-         special = 0
-         alphanum = 1
+        special = 0
+        alphanum = 1
 
-     if not mini_rank:
+    if not mini_rank:
         return False
 
-     if not alphanum:
+    if not alphanum:
         return False
 
-     return True
+    return True
 
 def seq2tplstr(seq):
-    '''convert a sequence to a tuple string representation without a trailing comma
-    '''
+    '''convert a sequence to a tuple string representation without a trailing comma'''
     if not seq:
         return None
     try:
@@ -1772,7 +1714,7 @@ if __name__ == "__amain__":
         if createdNode == "c02-01":
             print "\t* Testing NodeFun.addNode() PASSED. Correct node added."
     else:
-            print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: FAIL (Node not created)"
+        print "* Testing NodeFun.addNode(\"aa:bb:cc:dd:ee:ff\", \"eth1\"): Given: Rack 2, ngid 4 (Compute Diskless): Result: FAIL (Node not created)"
 
 
     # Test moving nodes
@@ -1800,7 +1742,7 @@ if __name__ == "__amain__":
         (fd, tmpfile) = tempfile.mkstemp()
         tmpname = os.fdopen(fd, 'w')
         for node in moveList:
-           tmpname.write("%s\n" % macList[node])
+            tmpname.write("%s\n" % macList[node])
         tmpname.close()
 
         # Call addhosts to delete these nodes
@@ -1925,63 +1867,63 @@ if __name__ == "__amain__":
 if __name__ == "__main__":
 
    if validateNodeFormat("1234#R#N-ABCDEF") == False:
-      print "PASS: Format is INVALID (number next to special charactor)"
+       print "PASS: Format is INVALID (number next to special charactor)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("compute-#R-#N"):
-      print "PASS: Format is VALID (Valid format)"
+       print "PASS: Format is VALID (Valid format)"
    else:
-      print "FAIL: Evaluated format is INVALID"
+       print "FAIL: Evaluated format is INVALID"
 
    if validateNodeFormat("compute-room-3452-#R") == False:
-      print "PASS: Format is INVALID (Missing Rank, has only rack)"
+       print "PASS: Format is INVALID (Missing Rank, has only rack)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("1#N") == False:
-      print "PASS: Format is INVALID (Number next to rank)"
+       print "PASS: Format is INVALID (Number next to rank)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("1#R") == False:
-      print "PASS: Format is INVALID (Number next to rack)"
+       print "PASS: Format is INVALID (Number next to rack)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("#N#N#N#R") == False:
-      print "PASS: Format is INVALID (Special charactor next to another special charactor)"
+       print "PASS: Format is INVALID (Special charactor next to another special charactor)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("1-2-#N-#N-#N") == True:
-      print "PASS: Format is VALID (Rank number minimally specified)"
+       print "PASS: Format is VALID (Rank number minimally specified)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("compute-room-3452-#R") == False:
-      print "PASS: Format is INVALID (Missing rank number only rack specified)"
+       print "PASS: Format is INVALID (Missing rank number only rack specified)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("hello world") == False:
-      print "PASS: Format is INVALID (Whitespace in hostname format)"
+       print "PASS: Format is INVALID (Whitespace in hostname format)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("hello-#R0") == False:
-      print "PASS: Format is INVALID (Number after special charactor)"
+       print "PASS: Format is INVALID (Number after special charactor)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("#R") == False:
-      print "PASS: Format is INVALID (No other charactors other than special charactor)"
+       print "PASS: Format is INVALID (No other charactors other than special charactor)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
    if validateNodeFormat("hello") == False:
-      print "PASS: Format is INVALID (Minimal rank not specified)"
+       print "PASS: Format is INVALID (Minimal rank not specified)"
    else:
-      print "FAIL: Evaluated format is VALID"
+       print "FAIL: Evaluated format is VALID"
 
 
