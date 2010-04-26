@@ -44,6 +44,7 @@ from niifun import NodeInstInfoHandler
 
 MODULE_LOAD_LIST='/etc/module-load-order.lst'
 IMAGEINIT_LOGFILE='/tmp/imageinit.log'
+SLES_CONFIGURATION_SCRIPT='/newroot/configure_sles.sh'
 
 initrddebug = 0
 
@@ -748,11 +749,25 @@ class ImagedConfigFiles:
 
         return ' '.join(set(sles_module_list))
 
+    def generate_sles_configuration_script(self):
+        fp = file(SLES_CONFIGURATION_SCRIPT, 'w')
+        fp.writelines('#!/bin/sh\n')
+        fp.writelines('for svc in boot.localnet boot.klog haldaemon network syslog portmap nfs; do\n')
+        fp.writelines('    chkconfig --add $svc\n')
+        fp.writelines('done\n')
+        fp.writelines('SuSEconfig --module permissions > /dev/null 2>&1\n')
+        fp.writelines('echo y | zypper service-delete TEMPORARY 2>&1 > /dev/null\n')
+        repo_url = "http://%s%s" % (self.bestip, self.niihandler.repo)
+        fp.writelines('echo y | zypper service-add %s %s\n' % (repo_url, self.niihandler.ostype))
+        fp.close()
+        os.system('chmod 755 %s' % SLES_CONFIGURATION_SCRIPT)
+        os.system('cat %s' % SLES_CONFIGURATION_SCRIPT)
+
     def rebuildInitrd(self, kver):
         '''Rebuilds the initrd so this thing can boot. This is VERY linux centric.'''
 
-        #For sles, should add module list to /etc/sysconfig/kernel for 'mkinitrd'
         if os.path.exists('/newroot/etc/SuSE-release'):
+            # For sles, should add module list to /etc/sysconfig/kernel for 'mkinitrd'
             sles_module_list = self.get_sles_module_list()
             fp = file('/newroot/etc/sysconfig/kernel', 'r')
             contents = fp.readlines()
@@ -773,13 +788,7 @@ class ImagedConfigFiles:
         fp.writelines('mount /proc\n')
         fp.writelines('cd /boot\n')
         fp.writelines('if [ -f "/etc/SuSE-release" ]; then\n')
-        fp.writelines('    for svc in syslog portmap nfs; do\n')
-        fp.writelines('        chkconfig --add $svc\n')
-        fp.writelines('    done\n')
-        fp.writelines('    SuSEconfig --module permissions > /dev/null 2>&1\n')
-        fp.writelines('    echo y | zypper service-delete TEMPORARY 2>&1 > /dev/null\n')
-        repo_url = "http://%s%s" % (self.bestip, self.niihandler.repo)
-        fp.writelines('    echo y | zypper service-add %s %s\n' % (repo_url, self.niihandler.ostype))
+        fp.writelines('    ./%s\n' % os.path.basename(SLES_CONFIGURATION_SCRIPT))
         fp.writelines('    ln -s /proc/self/fd /dev/fd\n')
         fp.writelines('    mkinitrd -k /boot/vmlinuz-%s -i /boot/initrd-%s\n' % (kver, kver))
         fp.writelines('else\n')
@@ -906,6 +915,34 @@ if __name__ == '__main__':
 
     os.system('hostname %s' % niihandler.name)
 
+    icf = ImagedConfigFiles(niihandler=niihandler, bestip=bestip)
+    nicdata = {}
+    for i in niihandler.nics.keys():
+        if  niihandler.nics[i]['device'] in ['bmc']: continue 
+
+        nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
+                       'ip'      : niihandler.nics[i]['ip'],
+                       'subnet'  : niihandler.nics[i]['subnet'],
+                       'network' : niihandler.nics[i]['network'],
+                       'suffix'  : niihandler.nics[i]['suffix'],
+                       'gateway' : niihandler.nics[i]['gateway'],
+                       'dhcp'    : niihandler.nics[i]['dhcp'],
+                       'options' : niihandler.nics[i]['options'],
+                       'boot'    : niihandler.nics[i]['boot'] }
+            
+    if os.path.exists('/newroot/etc/SuSE-release'):
+        icf.generate_sles_configuration_script()
+
+    if disked or (not disked and os.path.exists('/newroot/etc/SuSE-release')):
+        # Imaged nodes need ifcfg files to be generated.
+        # SLES diskless nodes also need the ifcfg files otherwise when
+        # the name_eths scripts execute, the network service will be
+        # stopped since it could not find any ifcfg files.
+        # RHEL diskless nodes do not restart the network service in
+        # their name_eths scripts.
+        print "Writing network config files"
+        icf.mkifcfgs(niihandler.name, nicdata)
+
     if disked:
         # Install the bootloader
         print "Adding bootloader"
@@ -915,25 +952,6 @@ if __name__ == '__main__':
         print "Adding Fstab"
         dlp.mkfstab()
         
-        # Write config files
-        icf = ImagedConfigFiles(niihandler=niihandler, bestip=bestip)
-        nicdata = {}
-        for i in niihandler.nics.keys():
-            if  niihandler.nics[i]['device'] in ['bmc']: continue 
-
-            nicdata[i] = { 'device'  : niihandler.nics[i]['device'],
-                           'ip'      : niihandler.nics[i]['ip'],
-                           'subnet'  : niihandler.nics[i]['subnet'],
-                           'network' : niihandler.nics[i]['network'],
-                           'suffix'  : niihandler.nics[i]['suffix'],
-                           'gateway' : niihandler.nics[i]['gateway'],
-                           'dhcp'    : niihandler.nics[i]['dhcp'],
-                           'options' : niihandler.nics[i]['options'],
-                           'boot'    : niihandler.nics[i]['boot'] }
-            
-        print "Writing network config files"
-        icf.mkifcfgs(niihandler.name, nicdata)
-
         print "Installing initrd"
         icf.rebuildInitrd(kversion)
 
@@ -966,19 +984,19 @@ if __name__ == '__main__':
     # in runlevels 0(shutdown) and 6(reboot).
     if not disked:
         # shutdown in runlevel 0.
-        f = open('/newroot/etc/rc0.d/S00killpcm', 'w')
+        f = open('/newroot/etc/rc.d/rc0.d/S00killpcm', 'w')
         f.write('#!/bin/bash\n')
         f.write('echo 1 > /proc/sys/kernel/sysrq\n')
         f.write('echo o > /proc/sysrq-trigger\n')
         f.close()
-        os.system('chmod 755 /newroot/etc/rc0.d/S00killpcm')
+        os.system('chmod 755 /newroot/etc/rc.d/rc0.d/S00killpcm')
         # reboot in runlevel 6.
-        f = open('/newroot/etc/rc6.d/S00killpcm', 'w')
+        f = open('/newroot/etc/rc.d/rc6.d/S00killpcm', 'w')
         f.write('#!/bin/bash\n')
         f.write('echo 1 > /proc/sys/kernel/sysrq\n')
         f.write('echo b > /proc/sysrq-trigger\n')
         f.close()
-        os.system('chmod 755 /newroot/etc/rc6.d/S00killpcm')
+        os.system('chmod 755 /newroot/etc/rc.d/rc6.d/S00killpcm')
 
     app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
     if initrddebug == 1:

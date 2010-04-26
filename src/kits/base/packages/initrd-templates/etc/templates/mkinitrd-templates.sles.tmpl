@@ -264,12 +264,14 @@ rm -rf \$FAKEROOT/etc/rc.d/rc{0..6}.d
 if [ "\$ARCH" = "x86_64" ]; then
     mkdir -p \$FAKEROOT/usr/lib64/python2.4
     cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib64/python2.4
-    cp -a /opt/kusu/lib/python/kusu/niifun.py* \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib64/python2.4
     cp -a /opt/kusu/lib/python/path.py* \$FAKEROOT/usr/lib64/python2.4
 else
     mkdir -p \$FAKEROOT/usr/lib/python2.4
     cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib/python2.4
-    cp -a /opt/kusu/lib/python/kusu/niifun.py* \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib/python2.4
     cp -a /opt/kusu/lib/python/path.py* \$FAKEROOT/usr/lib/python2.4
 fi
 

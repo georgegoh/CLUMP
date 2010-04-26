@@ -53,18 +53,20 @@ init_udev() {
     if [ "$ret" -ne '0' ]
     then
         # /dev mount failed .. udev wont work
-	    echo "ERROR:  Failed to mount /dev"
+        echo "ERROR:  Failed to mount /dev"
     fi
     mknod /dev/console c 5 1
     mknod /dev/null c 1 3
     mknod /dev/zero c 1 5
+    mknod /dev/initctl p
+    chmod 600 /dev/initctl
     mkdir /dev/{pts,shm}
 
     if [ -f /sbin/start_udev ]; then
         /sbin/start_udev
     else
         /etc/init.d/boot.udev start
-        /etc/init.d/boot.device-mapper start
+        /etc/init.d/boot.device-mapper start > /dev/null 2>&1
     fi
 
     echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
@@ -126,7 +128,15 @@ if [ $RETVAL -eq 0 ]; then
         echo '/usr/bin/pkill udhcpc' >> ${NEW_ROOT}/etc/rc.local
         exec switch_root ${NEW_ROOT} ${NEW_INIT}
     else
-        exec pivot_root ${NEW_ROOT} ${NEW_INIT}
+        killall -9 dhclient > /dev/null 2>&1
+        dd if=/dev/urandom of=${NEW_ROOT}/var/lib/misc/random-seed count=1 bs=512 2>/dev/null
+        mount --bind /dev ${NEW_ROOT}/dev
+        umount /proc
+        umount /sys
+        rm -fr /etc /opt /svr /boot /home /root /usr/{include,lib,lib64,share,X11R6} /lib/modules
+        cd ${NEW_ROOT}
+        mount --move . / > /dev/null 2>&1
+        exec chroot . sh -c "rm /sbin/modprobe && ln -s /bin/true /sbin/modprobe && ./configure_sles.sh; exec ${NEW_INIT} 3" <dev/console >dev/console 2>&1
     fi
 fi
 

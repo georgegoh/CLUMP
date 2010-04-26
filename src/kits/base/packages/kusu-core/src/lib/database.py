@@ -942,7 +942,7 @@ class DB(object):
             for pkg in Dispatcher.get('imaged_packages', default=[]):
                 imaged.packages.append(Packages(packagename=pkg))
 
-        if kusu_dist in getOSNames('rhelfamily'):
+        if kusu_dist in getOSNames('rhelfamily') + ['sles']:
             diskless = NodeGroups(ngname='compute-diskless', nameformat='host#NNN',
                                   installtype='diskless', type='compute-diskless')
             diskless.kparams = compute.kparams
