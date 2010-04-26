@@ -1,8 +1,10 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
+#
+# $Id$
+#
 # servicefun.py - A collection of functions for manipulating services
 
-#   Copyright 2007 Platform Computing Inc
+#   Copyright 2010 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -20,12 +22,12 @@
 #
 
 
-import string
 import os
+import string
 
 def getrunlevel():
-    """To get current runlevel"""
-    ri,ro,re=os.popen3("runlevel | awk '{print $2}'")
+    """Returns the current system runlevel."""
+    ri, ro, re = os.popen3("runlevel | awk '{print $2}'")
     try:
         # return default run level
         return string.atoi(ro.read()[0])
@@ -33,9 +35,10 @@ def getrunlevel():
         ro.close()
 
 def chkonlevels(servicename):
-    """Return a list contains all the levels with on status when chkconfig the service"""
+    """Returns a list containing all the levels for which the given
+    service is enabled (i.e. started on that runlevel)."""
     levels = []
-    pi,po,pe=os.popen3("chkconfig --list %s" % (servicename))
+    pi, po, pe = os.popen3("chkconfig --list %s" % (servicename))
     try:
         # get all the "on" levels
         statusarray = po.read().split("\t")
@@ -46,4 +49,6 @@ def chkonlevels(servicename):
                     levels.append(string.atoi(tmp[0]))
 
         return levels
-    finally: po.close()
+    finally:
+        po.close()
+
