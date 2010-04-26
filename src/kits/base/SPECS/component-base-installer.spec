@@ -50,6 +50,8 @@ Requires: kusu-nodeinstaller-patchfiles
 Requires: kusu-nodeinstaller 
 Requires: kusu-kit-install
 Requires: kusu-migrate 
+Requires: kusu-shell 
+Requires: kusu-uat 
 #Requires: mysql
 #Requires: mysql-server
 Requires: dhcp
