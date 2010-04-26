@@ -1,6 +1,8 @@
-#!/usr/bin/python
-
-#   Copyright 2007 Platform Computing Inc
+#!/usr/bin/env python
+#
+# $Id$
+#
+#   Copyright 2010 Platform Computing Inc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -23,18 +25,17 @@ import os
 MAXARGS=32000
 
 class syncfun:
-    """This is the class containing the metdods for synchronizing nodes.
+    """This is the class containing the methods for synchronizing nodes.
     This includes the pdsh functions, and rsync ones"""
     def __init__(self):
         pass
 
     def runPdsh(self, hosts, command):
-        """runPdsh - Use pdsh to run a command on a list of hosts.
-        USE:   runPdsh(hosts, command where:
-            hosts = A list containing the names of all the hosts
-                    to run the command on.
-            command = The command to run on each of the hosts.
-        Returns:  A list with the output of pdsh in it.
+        """Use pdsh to run a command on a list of hosts.
+        hosts = A list containing the names of all the hosts
+                to run the command on.
+        command = The command to run on each of the hosts.
+        Returns: A list with the output of pdsh in it.
             """
         global MAXARGS
         output = []
