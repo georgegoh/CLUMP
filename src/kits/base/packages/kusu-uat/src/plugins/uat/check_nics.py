@@ -58,8 +58,6 @@ class CheckNICS(UATPluginBase):
         self._host = None
        
         self._device_speed = ''
-        self._cmd_out = []
-        self._cmd_err = []
         self._cmd_returncode = 0
        
     def pre_check(self):
@@ -77,27 +75,29 @@ class CheckNICS(UATPluginBase):
     def run(self, args):
         nii_config = {} 
         self._interface_list = []
+        self._cmd_out = ''  
+        self._cmd_err = ''
+  
         parser = self._configure_options()
         options, remaining_args = parser.parse_args(args[1:])
            
         if len(remaining_args) != 1:  # require only one host
             parser.pring_usage(file = sys.stderr)
-            self.status = 'Please provide a host\n'
+            self._status = 'Please provide a host\n'
             self._logger.info('Please provide a host\n')
-            return 1, self.status
+            return 1, self._status
 
         self._host = remaining_args[0]
         if options.interface is not None:
             if not self._device_exists(option.interface, self._host):
-                self.status = 'Interface %s is not configured on host %s ' % (options.interface, self._host)
-                return 1, self.status 
+                self._status = 'Interface %s is not configured on host %s ' % (options.interface, self._host)
+                return 1, self._status 
             self._interface_list.append(options.interface)
         else:
             self._get_all_interface_for_node()
 
         if options.speed is not None:
             self._device_speed = options.speed
- 
         for interface in self._interface_list:
             nii_config = self._get_network_config_info(interface)
             returncode = self._check_nic_configuration(nii_config, interface)
@@ -147,6 +147,8 @@ class CheckNICS(UATPluginBase):
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sshP.communicate()
         # Assume ssh pass as the dependend check check_ssh is performed first.
+        self._cmd_out += out
+        self._cmd_err += err
         if not out:
             self._status = err
             return 1
@@ -180,6 +182,8 @@ class CheckNICS(UATPluginBase):
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ethtool_cmd
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sshP.communicate()
+        self._cmd_out += out
+        self._cmd_err += err
         if not out:
             self._status = err
             return sshP.returncode
@@ -195,6 +199,8 @@ class CheckNICS(UATPluginBase):
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ROUTE_COMMAND  + ['|'] + grep_cmd 
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sshP.communicate()
+        self._cmd_out += out
+        self._cmd_err += err
         if not out or out.split()[-1] != interface:
             self._status = "The default gateway \'%s\' for interface \'%s\' is not setup properly." % (gateway, interface)
             return 1
@@ -204,7 +210,7 @@ class CheckNICS(UATPluginBase):
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out:
             filename = artifact_dir / self._host / 'check_nics.out'
-            UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_out)
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_out])
         if self._cmd_err:
             filename = artifact_dir / self._host / 'check_nics.err'
-            UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_err)
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_err])
