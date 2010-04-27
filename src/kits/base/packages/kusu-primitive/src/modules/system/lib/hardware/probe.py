@@ -9,11 +9,8 @@
 #
 import os
 import re
-import parted
-import subprocess
 from path import path
 from primitive.system.hardware import net
-from primitive.system.hardware import nodes
 from primitive.system.hardware.pci import PCI
 from primitive.support.type import Struct
 from primitive.core.errors import UnknownTypeError
@@ -52,108 +49,6 @@ def getDisks():
 
     return d
 
-
-def getPartitions():
-    disks = getDisks()
-    part_dict = Struct()
-    mntpnts = getMountpoints()
-    for k,v in disks.iteritems():
-        sys_path = path('/sys/block') / k
-        if v['label'] == 'loop':
-            dev_path = str(path('/dev') / k)
-            mntpnt = mntpnts.get(dev_path, Struct(mntpnt='', fstype=''))
-            size = getDevSize(sys_path)
-            part_dict[dev_path] = Struct(size=size)
-            part_dict[dev_path].update(mntpnt)
-        else:
-            for p in v['partitions']:
-                sys_path = path('/sys/block/') / k / p
-                dev_path = str(path('/dev') / p)
-                mntpnt = mntpnts.get(dev_path, Struct(mntpnt='', fstype=''))
-                size = getDevSize(sys_path)
-                part_dict[dev_path] = Struct(size=size)
-                part_dict[dev_path].update(mntpnt)
-    return part_dict
-    
-
-def getLVMPhysicalVolumes():
-    p = subprocess.Popen(['lvm', 'pvs', '--units', 'b'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-
-    # return empty struct on failure
-    if p.wait():
-        return Struct()
-
-    pvs = p.stdout.readlines()
-    # output includes one line of headers, return empty struct if
-    # no other output exists.
-    if len(pvs) <= 1:
-        return Struct()
-
-    # ignore first line of headers, and tidy up the output.
-    pvs = pvs[1:]
-    pvs = [l.strip() for l in pvs]
-
-    o = Struct()
-    for l in pvs:
-        # acceptable output is 'lv_name vg_name lvm_opts size'(4 elements)
-        if len(l.split()) != 6:
-            continue
-        (pv_path, vg_name, fmt, attr, size, free) = l.split()
-        o[pv_path] = Struct(vg=vg_name, fmt=fmt, attr=attr,
-                            size=long(size[:-1]), free=long(free[:-1]))
-    return o
-
-
-def getLVMLogicalVolumes():
-    """Probes for Logical Volumes on the system.
-       Output format:
-          Struct(python dictionary-compatible)
-       Sample output:
-          >>> lvs = getLVMLogicalVolumes()
-          >>> print lvs
-          Struct({'VAR': Struct({'vg': 'KusuVolGroup00',
-                                 'options': '-wi-ao',
-                                 'size': '1.97G'})})
-          >>> print lvs.VAR.size
-          '1.97G'
-          >>> print lvs['VAR']['size']
-          '1.97G'
-    """
-    p = subprocess.Popen(['lvm', 'lvs', '--units', 'b'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-
-    # return empty struct on failure
-    if p.wait():
-        return Struct()
-
-    lvs = p.stdout.readlines()
-    # output includes one line of headers, return empty struct if
-    # no other output exists.
-    if len(lvs) <= 1:
-        return Struct()
-
-    # ignore first line of headers, and tidy up the output.
-    lvs = lvs[1:]
-    lvs = [l.strip() for l in lvs]
-
-    o = Struct()
-    mntpnts = getMountpoints()
-    for l in lvs:
-        # acceptable output is 'lv_name vg_name lvm_opts size'(4 elements)
-        if len(l.split()) != 4:
-            continue
-        (lv_name, vg_name, lvm_opts, size) = l.split()
-        lv_path = path('/dev') / vg_name / lv_name
-        mntpnt = mntpnts.get(str(lv_path), Struct(mntpnt='', fstype=''))
-        o[lv_name] = Struct(vg=vg_name, options=lvm_opts, size=long(size[:-1]))
-        o[lv_name].update(mntpnt)
-    return o
-
-
-
 # IDE
 def getIDE(type):
     """Probes for a specific type of IDE device(disk, cdrom, or tape).
@@ -177,14 +72,6 @@ def getIDE(type):
                                     'vendor': readFile(hd / 'vendor')}
                 if type == 'disk':
                     d[hd.basename()]['partitions'] = getIDEPartitions(hd.basename())
-                    devpath = path('/dev/') / hd.basename()
-                    nodes.checkAndMakeNode(devpath)
-                    if devpath.exists():
-                        try:
-                            pedDevice = parted.PedDevice.get(devpath)
-                            d[hd.basename()]['label'] = pedDevice.disk_probe().name
-                        except:
-                            pass
     
     return d
 
@@ -246,18 +133,11 @@ def getSCSI(type):
 
                 removable = dev.realpath() / 'removable'
                 if type in ['disk']:
-                    # Exclude removable drives, including usb cdrom/thumbdrive
-                    # usb portable hardrive are not excluded here when type is
-                    # 'disk'
-                    if removable.exists() \
-                        and int(readFile(removable)): continue
-
                     # Checks for usb devices that presents itself as scsi
                     # such as usb portable hardrive which removable=0
                     idx = (dev / 'device').realpath().find('usb')
                     if idx != -1: # part of the usb bus
                         usb = path((dev / 'device').realpath()[idx:])
-
                         # And yes, the block device matches back
                         if (path('/sys/bus/usb/devices') / usb / 'block').realpath().basename() == dev.basename():
                             continue
@@ -268,9 +148,10 @@ def getSCSI(type):
                     # Exclude non-removable disks if type is 'usb-storage'
                     # Removable=0 even when it is a usb portable hdd drives (those 
                     # mobile 2.5" or 3.5" drive)
-                    if removable.exists() \
-                       and not int(readFile(removable)) \
-                       and (dev / 'device').realpath().find('usb') == -1: continue
+                    # Do not list non-USB devices
+                    if (dev / 'device').realpath().find('usb') == -1: continue
+                    # Do not list non removable devices
+                    if removable.exists() and not int(readFile(removable)): continue
 
                 device = dev.basename()
                 if type in ['cdrom']:
@@ -293,16 +174,7 @@ def getSCSI(type):
                 d[device]['model'] = readFile(s / 'model')
                 if type == 'disk':
                     d[device]['partitions'] = getSCSIPartitions(dev)
-                    devpath = path('/dev/') / device
-                    nodes.checkAndMakeNode(devpath)
-                    if devpath.exists():
-                        try:
-                            pedDevice = parted.PedDevice.get(devpath)
-                            d[device]['label'] = pedDevice.disk_probe().name
-                            d[device]['size'] = getDevSize(dev)
-                        except:
-                            pass
-
+                
     if type == 'disk':    
         sys_block = path('/sys/block')
         cciss_dev = {}
@@ -318,38 +190,6 @@ def getSCSI(type):
 
         d.update(cciss_dev)
     return d 
-
-def getMountpoints(fstab='/etc/fstab'):
-    rv = Struct()
-    fstab = path(fstab)
-    if not fstab.exists():
-        return rv
-
-    f = fstab.open()
-    lines = [l.strip() for l in f.readlines()]
-    lines = [l for l in lines if l[0] != '#']
-    for l in lines:
-        if len(l.split()) > 3:
-            (dev, mntpnt, fstype, opts) = l.split(None, 3)
-            rv[dev] = Struct(mntpnt=mntpnt, fstype=fstype)
-    return rv
-
-
-def getDevSize(dev_path):
-    """Retrieves the size of a device."""
-    BLK_SIZE = 512
-    p = path(dev_path) / 'size'
-    if not p.exists:
-        return 0
-
-    f = p.open()
-    size = f.read()
-    if not size:
-        return 0
-
-    size = size.strip()
-    return long(size) * BLK_SIZE
-
 
 def getSCSIPartitions(path):
     """Retrieves a list of partitions."""

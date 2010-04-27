@@ -1,6 +1,6 @@
 # $Id$
 UC_NAME = primitive
-UC_VERSION = 0.5
+UC_VERSION = 0.4
 UC_RELEASE = 1
 UC_MODULES_PATH = src/modules
 UC_APPS_PATH = src/app

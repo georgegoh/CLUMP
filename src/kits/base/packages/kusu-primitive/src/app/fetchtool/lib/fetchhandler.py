@@ -21,12 +21,10 @@ from primitive.fetchtool.helper import copyDir
 from primitive.fetchtool.helper import isDestWritable
 from primitive.fetchtool.helper import decipherWgetErrors
 from primitive.fetchtool.helper import checkUserPassFormat
-from primitive.fetchtool.helper import checkForRequiredArgs
 from primitive.core.errors import HTTPAuthException
 from primitive.core.errors import ProxyAuthException
 from primitive.core.errors import UnknownHostException
 from primitive.core.errors import FetchException
-from primitive.core.errors import CommandMissingArgsException
 from primitive.core.errors import RHNServerException
 from primitive.support.proxy import Proxy, HTTPSProxyTransport, getUserinfoFromURI
 
@@ -73,10 +71,7 @@ class FileFetchHandler(ProtocolFetchHandler):
         dest = (path(dest_dir) / path(src).basename()).realpath()
         src_file = path(urlparse.urlparse(src)[2]).realpath()
         if src_file != dest:
-            try:
-                shutil.copy2(src_file, dest)
-            except IOError:
-               raise FetchException, "Unable to copy file from %s" % src_file
+            shutil.copy2(src_file, dest)
         return dest 
 
     def copyDir(self, src_uri, dest_dir, overwrite):
@@ -372,12 +367,6 @@ class RHNFetchHandler(HTTPFetchHandler):
         ''' Override the validate input function with a
             few more checks for RHN site.
         '''
-        valid, missing = checkForRequiredArgs(kwargs, self.required_args)
-        if not valid:
-            raise CommandMissingArgsException, \
-                  'Fetching %s requires the following missing arguments: %s' % \
-                  (kwargs['uri'], missing)
-
         self.systemid = kwargs['systemid']
         rhnURL = kwargs['up2dateURL']
 

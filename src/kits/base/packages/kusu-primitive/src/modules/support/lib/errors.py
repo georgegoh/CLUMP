@@ -18,6 +18,5 @@ class InvalidMacAddressException(SupportException): pass
 
 class InvalidRPMHeaderException(SupportException): pass
 class RPMComparisonException(SupportException): pass
-class UnableToCalchecksumException(SupportException): pass
 
 class repodataChecksumException(SupportException): pass

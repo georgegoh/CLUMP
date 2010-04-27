@@ -1,8 +1,8 @@
 Summary: primitive module
 name: kusu-primitive
-Version: 0.5
+Version: 0.4
 Release: 1
-License: GPLv2
+License: Unknown
 Group: System Environment/Base
 Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot

@@ -6,7 +6,6 @@
 """ This module contains miscellaneous utilities that don't
 really fit anywhere else."""
 import md5
-import sha
 from errors import DeviceNotFoundException
 from errors import MountPointException
 from errors import InvalidMacAddressException
@@ -61,16 +60,6 @@ def MD5SUM(infile):
         buf = f.read(8096)
     return m.hexdigest()
 
-def SHASUM(infile):
-    """ Get a file's SHA1SUM."""
- 
-    f = open(infile)
-    m = sha.new()
-    buf = f.read(8096)
-    while buf:
-        m.update(buf)
-        buf = f.read(8096)
-    return m.hexdigest()
 
 def convertUUIDToStr(bytes):
     """ Takes a UUID expressed in bytes and returns as a formatted string."""

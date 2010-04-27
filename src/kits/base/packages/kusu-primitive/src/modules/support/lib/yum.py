@@ -55,12 +55,6 @@ class YumRepo:
                           overwrite=False)
         status , dest = fc.execute()
 
-        tmppath = path(tmpdir/ 'repomd.xml')
-       
-        if not tmppath.isfile():
-            self.cleanup(tmpdir)
-            return self.repo            
-
         f = open(tmpdir / 'repomd.xml')
 
         for event, elem in cElementTree.iterparse(f): 
@@ -92,9 +86,7 @@ class YumRepo:
         """Get the primary list from repodata"""
 
         if not self.repo:
-            r=self.getRepoMD()
-            if not r:
-                return self.primary
+            self.getRepoMD()
 
         primaryFile = self.uri + '/' + self.repo['primary']['location']
         
@@ -109,12 +101,6 @@ class YumRepo:
                           destdir=tmpdir,
                           overwrite=False)
         status , dest = fc.execute()
-        tmppath = path(tmpdir / path(self.repo['primary']['location']).basename())
-
-        if not tmppath.isfile():
-            self.cleanup(tmpdir)
-            return self.primary
-
 
         primaryFile = open(tmpdir / path(self.repo['primary']['location']).basename())
 
@@ -143,17 +129,13 @@ class YumRepo:
                                 arch = elem.text
                             elif tag == 'location':
                                 filename = self.uri + '/' + elem.get('href')
-                            elif tag == 'checksum':
-                                pkgChecksumType = elem.get('type')
-                                pkgChecksum  = elem.text
 
                         r = rpmtool.RPM(name=name, 
                                         version=version,
                                         release=release,
                                         arch=arch,
                                         epoch=epoch,
-                                        filename=filename,
-                                        checksum=(pkgChecksumType,pkgChecksum))
+                                        filename=filename)
 
                         if not self.primary.has_key(name):
                             self.primary[name] = {}

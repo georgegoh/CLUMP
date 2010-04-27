@@ -17,10 +17,6 @@ from path import path
 from errors import *
 from primitive.core.errors import *
 from primitive.support.type import Struct
-from primitive.support.util import MD5SUM, SHASUM
-from primitive.fetchtool.commands import FetchCommand
-
-ignoreAttributeList = ['checksum']
 
 try:
     import subprocess
@@ -100,9 +96,7 @@ class RPM:
            1. RPM header
            2. RPM header filename (foo.hdr)
            3. RPM filename (foo.rpm)"""
-       
-        self.checksum = None
- 
+        
         if r:
             if type(r) in [str, unicode]:
                 r = path(r)
@@ -126,7 +120,6 @@ class RPM:
                     self.filename = self._getFilename()
                 else:
                     raise UnknownFileTypeError, 'Unknown file: %s' % r
-
             else:
                 if type(r) == rpm.hdr:
                     self.hdr = r
@@ -139,12 +132,6 @@ class RPM:
             release = kwargs['release']
             arch = kwargs['arch']
             epoch = kwargs['epoch']
-
-            if kwargs.has_key('checksum') and \
-                type(kwargs['checksum']) == tuple and \
-                len(kwargs['checksum']) == 2:
-                # tuple (md5/sha1, '<checksum>')
-                self.checksum = {kwargs['checksum'][0]:kwargs['checksum'][1]}
 
             self.hdr[rpm.RPMTAG_NAME] = name
             self.hdr[rpm.RPMTAG_VERSION] = version
@@ -411,43 +398,6 @@ class RPM:
         """Returns the preun section of the RPM, including the hash bang"""
         return '#!%s\n%s' % (self.hdr[rpm.RPMTAG_PREUNPROG],self.hdr[rpm.RPMTAG_PREUN] or '')
 
-    def getChecksum(self, type='sha'):
-
-        if self.checksum and self.checksum.has_key(type):
-            return (type, self.checksum[type])
-
-        else:
-            if not self.checksum: self.checksum = {}
-
-            tmpdir = path(tempfile.mkdtemp(prefix='rpmtool', dir='/tmp'))
-
-            try:
-                if self.getFilename().startswith('/'):
-                    filename = self.filename = 'file://' + self.filename
-                else:
-                    filename =self.getFilename()
-
-                fc = FetchCommand(uri=filename,
-                                  fetchdir=False,
-                                  destdir=tmpdir,
-                                  overwrite=False)
-                status , destfile = fc.execute()
-            except:
-                status = False
-
-            if not status:
-                if tmpdir: tmpdir.rmtree()
-                raise UnableToCalchecksumException
-
-            checksum = None
-            if type == 'md5':
-                self.checksum['md5'] = MD5SUM(destfile)
-            elif type == 'sha':
-                self.checksum['sha'] =  SHASUM(destfile)
-            
-            if tmpdir: tmpdir.rmtree()
-            return (type, self.checksum[type])
-             
     def extract(self, dir):
         """Extract the contents of the RPM to the dir"""
 
@@ -476,7 +426,7 @@ class RPM:
         x = self._compareEVR((e1,v1,r1),(e2,v2,r2)) 
         
         if n1 == n2 and a1 == a2 and x == 0:
-            return True
+           return True
         else:
             return False
 
@@ -566,9 +516,6 @@ class RPM:
                 raise InvalidRPMHeaderException, 'rpm unable to load header: %s' % f
                 
     def __getattr__(self, attr):
-        if attr in ignoreAttributeList:
-            return self.__dict__[attr]  
-
         if attr not in self.getAttributes():
             raise AttributeError, "'module' object has no attribute '%s'" % attr
             
