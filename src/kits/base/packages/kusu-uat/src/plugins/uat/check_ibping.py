@@ -38,7 +38,7 @@ from kusu.uat import UATPluginBase, UATHelper
 IBPING_HOST_FILE = path(os.environ.get("KUSU_ROOT", "/opt/kusu")) / 'etc' / '.ibping_host'
 
 PDSH_COMMAND = '/usr/bin/pdsh'
-PING_COMMAND = '/usr/sbin/ibping'
+IBPING_COMMAND = '/usr/sbin/ibping'
 
 DEFAULT_PING_DEADLINE = '10'   # seconds
 DEFAULT_PACKET_COUNT = '5'
@@ -203,7 +203,7 @@ class CheckIBPing(UATPluginBase):
     def _build_remote_ibping_command(self):
         return [PDSH_COMMAND,
                 '-w', self._ibping_host,	# host from which ibping is to be run
-                PING_COMMAND,
+                IBPING_COMMAND,
                 '-t', self._deadline,		# deadline in seconds
                 '-c', self._packet_count,	# number of packets to send
                 '-G', self._destination_ibGUID]	# ib port GUID of remote host to ping
@@ -230,8 +230,8 @@ class CheckIBPing(UATPluginBase):
 
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out:
-            filename = artifact_dir / self._destination / 'check_ping.out'
+            filename = artifact_dir / self._destination / 'check_ibping.out'
             UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_out)
         if self._cmd_err:
-            filename = artifact_dir / self._destination / 'check_ping.err'
+            filename = artifact_dir / self._destination / 'check_ibping.err'
             UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_err)

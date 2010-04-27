@@ -156,8 +156,8 @@ class CheckLava(UATPluginBase):
 
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out:
-            filename = artifact_dir / self._destination / 'check_ping.out'
+            filename = artifact_dir / self._destination / 'check_lava.out'
             UATHelper.generate_file_from_lines(filename, '\n'.join(self._cmd_out))
         if self._cmd_err:
-            filename = artifact_dir / self._destination / 'check_ping.err'
+            filename = artifact_dir / self._destination / 'check_lava.err'
             UATHelper.generate_file_from_lines(filename, '\n'.join(self._cmd_err))
