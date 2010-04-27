@@ -169,7 +169,7 @@ class DiskProfile(object):
         s = s + '\nMountpoints:\n' + self.__mntStr()
         return s
 
-    def __init__(self, fresh, test=None, probe_fstab=True, ignore_errors=True):
+    def __init__(self, fresh, test=None, probe_fstab=True, ignore_errors=True, bootstrap=False):
         """Initialises a DiskProfile object by doing the following:
            
         """
@@ -199,7 +199,7 @@ class DiskProfile(object):
             self.populateDiskProfileTest(fresh, test)
         else:
             try:
-                self.populateDiskProfile(fresh, probe_fstab)
+                self.populateDiskProfile(fresh, probe_fstab, bootstrap=bootstrap)
             except Exception, e:
                 logger.debug("Encountered an unrecoverable error while " + \
                              "scanning the disks/LVM. Clearing the disk " + \
@@ -213,7 +213,7 @@ class DiskProfile(object):
                     tb = fp.getvalue()
 
                 logger.debug("Traceback: %s" % tb)
-                self.populateDiskProfile(fresh, probe_fstab=False)
+                self.populateDiskProfile(fresh, probe_fstab=False, bootstrap=False)
         logger.debug('State after scan:\n%s' % self.__str__())
 
 
@@ -268,7 +268,7 @@ class DiskProfile(object):
                             self.lv_dict[lv_name] = lv
 
 
-    def populateDiskProfile(self, fresh, probe_fstab):
+    def populateDiskProfile(self, fresh, probe_fstab, bootstrap=False):
         self.disk_dict = self.__findDisksAndCreateDictionary(fresh)
         pv_probe_dict, lvg_probe_dict, lv_probe_dict = self.probeLVMEntities()
 
@@ -291,7 +291,7 @@ class DiskProfile(object):
         if not fresh:
             runCommand('lvm vgchange -ay')
             if probe_fstab:
-                self.populateMountPoints()
+                self.populateMountPoints(bootstrap=bootstrap)
 
 
     def __findDisksAndCreateDictionary(self, fresh):
@@ -305,9 +305,22 @@ class DiskProfile(object):
         return disk_dict
 
 
-    def populateMountPoints(self, fstab_path='etc/fstab'):
+    def populateMountPoints(self, fstab_path='etc/fstab', bootstrap=False):
         """Look through the partitions and LV's to determine mountpoints."""
         logger.debug('Populate mount points.')
+        if bootstrap:
+            dev_map = self.extractFstabToDevices(None, '/etc/fstab', bootstrap=bootstrap)
+            for dev_path, dev in dev_map.iteritems():
+                logger.debug("populating %s's mountpoint" % dev)
+                vol = self.findDevice(dev_path)
+                if vol:
+                    self.mountpoint_dict[dev.mntpnt] = vol
+                    vol.mountpoint = dev.mntpnt
+                    vol.fs_type = dev.fs_type
+                logger.debug('Done')
+            # Ok, we've parsed the first fstab we found, job done.
+            return
+
         # Check the partitions and logical volumes
         m_parts = self.getMountablePartitions()
         m_lvs = self.getMountableLVs()
@@ -315,7 +328,7 @@ class DiskProfile(object):
         for p in m_list:
             found, loc = self.lookForFstab(p, fstab_path)
             if found:
-                dev_map = self.extractFstabToDevices(p, loc)
+                dev_map = self.extractFstabToDevices(p, loc, bootstrap=bootstrap)
                 for dev_path, dev in dev_map.iteritems():
                     logger.debug("populating %s's mountpoint" % dev)
                     vol = self.findDevice(dev_path)
@@ -327,41 +340,48 @@ class DiskProfile(object):
                 # Ok, we've parsed the first fstab we found, job done.
                 return
 
-    def extractFstabToDevices(self, device, loc):
+    def extractFstabToDevices(self, device, loc, bootstrap=False):
         """For linux-type systems."""
-        # get the temp directory to mount the device.
-        mntpnt = path(mkdtemp('partitiontool-extractfstab'))
-
-        try:
-            # mount the device.
-            logger.debug('Mounting %s on %s to extract fstab.' % (device.path, mntpnt))
-            device.mount(mountpoint=mntpnt, readonly=True)
-            fstab_loc = str(path(mntpnt) / path(loc))
-            # open fstab file and filter out comments.
-            logger.debug('%s mounted, opening fstab.' % device.path)
-            fstab = open(fstab_loc)
+        if bootstrap:
+            fstab = open(loc)
             f_lines = [l for l in fstab.readlines() if \
                        len(l.strip()) and l.strip()[0] != '#']
             fstab.close()
-            logger.debug('fstab read, unmounting %s.' % mntpnt)
-            device.unmount()
-            mntpnt.rmtree()
-            logger.debug('%s unmounted.' % device.path)
 
-            device_map = {}
-            logger.debug('Parsing fstab')
-            for l in f_lines:
-                try:
-                    # look for a mountable entry and append it to our dict.
-                    dev, mntpnt, fs_type = l.split()[:3]
-                    if fs_type in self.mountable_fsType.keys():
-                        dev_struct = Struct(fs_type=fs_type, mntpnt=mntpnt)
-                        device_map[dev] = dev_struct
-                except ValueError, e:
-                    raise PartitionException, str(e) + ' Offending line: \n' + l
-            logger.debug('Parsed fstab')
-        except MountFailedError:
-            pass
+        else:
+            # get the temp directory to mount the device.
+            mntpnt = path(mkdtemp('partitiontool-extractfstab'))
+
+            try:
+                # mount the device.
+                logger.debug('Mounting %s on %s to extract fstab.' % (device.path, mntpnt))
+                device.mount(mountpoint=mntpnt, readonly=True)
+                fstab_loc = str(path(mntpnt) / path(loc))
+                # open fstab file and filter out comments.
+                logger.debug('%s mounted, opening fstab.' % device.path)
+                fstab = open(fstab_loc)
+                f_lines = [l for l in fstab.readlines() if \
+                           len(l.strip()) and l.strip()[0] != '#']
+                fstab.close()
+                logger.debug('fstab read, unmounting %s.' % mntpnt)
+                device.unmount()
+                mntpnt.rmtree()
+                logger.debug('%s unmounted.' % device.path)
+            except MountFailedError:
+                return {}
+
+        device_map = {}
+        logger.debug('Parsing fstab')
+        for l in f_lines:
+            try:
+                # look for a mountable entry and append it to our dict.
+                dev, mntpnt, fs_type = l.split()[:3]
+                if fs_type in self.mountable_fsType.keys():
+                    dev_struct = Struct(fs_type=fs_type, mntpnt=mntpnt)
+                    device_map[dev] = dev_struct
+            except ValueError, e:
+                raise PartitionException, str(e) + ' Offending line: \n' + l
+        logger.debug('Parsed fstab')
         return device_map
 
     def findDevice(self, dev):

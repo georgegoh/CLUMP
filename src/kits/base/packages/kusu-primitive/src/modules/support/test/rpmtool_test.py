@@ -231,6 +231,11 @@ class TestRPMTool:
         assert preun.find('#!/bin/sh') != -1
         assert preun.find('preun') != -1
 
+    def testgetChecksum(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        assert r1.getChecksum('md5')[1] == 'b31e1585b5b837352e232e5b0bcc12c6'
+        assert r1.getChecksum('sha')[1] == '6b945ee17000ec90e2cda313da3f2d6d9e19e3ab'
+
     def testEqual(self):
         r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
 
@@ -529,6 +534,17 @@ class TestRPMTool:
         assert lst[1] == r2
         assert lst[2] == r3
 
+    def testExtract(self):
+        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        tempdir = path(tempfile.mkdtemp(prefix='rpmtool', dir=cachedir))
+        retval = r1.extract(tempdir)
+
+        assert retval == 0
+        assert (tempdir / 'usr/lib/openoffice.org2.0').exists()
+        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/export/xhtml/table.xsl').exists()
+        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/docbook/DocBookTemplate.stw').exists()
+
+
 class TestRPMToolMockRPM:
     """Test for mock RPM object that isn't created by a rpm file"""
     def testgetName(self):
@@ -587,18 +603,25 @@ class TestRPMToolMockRPM:
 
     def testgetFilename(self):
         r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
-        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+        r1 = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
                         release=r.getRelease(), epoch=r.getEpoch(),
                         arch=r.getArch())
-    
-        assert r.getFilename() == 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
+   
+        assert r1.getFilename() == 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
 
-        r = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
-                        release=r.getRelease(), epoch=r.getEpoch(),
-                        arch=r.getArch(), filename='/tmp/openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm')
+    def testgetChecksum(self):
+        r = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
+        r1 = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                         release=r.getRelease(), epoch=r.getEpoch(),
+                         arch=r.getArch(),checksum = r.getChecksum('md5'))
     
-        assert r.getFilename() == '/tmp/openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'
+        assert r1.getChecksum('md5')[1] == 'b31e1585b5b837352e232e5b0bcc12c6'
 
+        r1 = rpmtool.RPM(name=r.getName(), version=r.getVersion(), 
+                         release=r.getRelease(), epoch=r.getEpoch(),
+                         arch=r.getArch(),checksum = r.getChecksum('sha'))
+
+        assert r1.getChecksum('sha')[1] == '6b945ee17000ec90e2cda313da3f2d6d9e19e3ab'
 
     def testEqual(self):
         r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
@@ -643,17 +666,6 @@ class TestRPMToolMockRPM:
                         arch=r2.getArch())
         
         assert r1 != r2
-
-    def testExtract(self):
-        r1 = rpmtool.RPM(str(cachedir / 'openoffice.org-xsltfilter-2.0.4-5.4.17.1.i386.rpm'))
-        tempdir = path(tempfile.mkdtemp(prefix='rpmtool', dir=cachedir))
-        retval = r1.extract(tempdir)
-
-        assert retval == 0
-        assert (tempdir / 'usr/lib/openoffice.org2.0').exists()
-        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/export/xhtml/table.xsl').exists()
-        assert (tempdir / 'usr/lib/openoffice.org2.0/share/xslt/docbook/DocBookTemplate.stw').exists()
-
 
 class TestRPMFunctions:
     """Test all the utilities function in rpmtool"""

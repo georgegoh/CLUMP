@@ -24,6 +24,8 @@ def getAllInterfaces():
         d[intf]['hwaddr'] = n.mac
         d[intf]['ip'] = n.ip
         d[intf]['netmask'] = n.netmask
+        d[intf]['dhcp'] = n.dhcp
+
         if n.isPhysical():
             d[intf]['pciBusInfo'] = n.pciBusInfo
 
@@ -225,13 +227,13 @@ class Net:
             if line.strip()[0] == '#':
                 continue
             try:
-                key,val = line.split(line, '=', 1)
+                key,val = line.split('=', 1)
                 key = key.strip()
                 val = val.strip()
             except:
                 continue
             if key.lower() == 'bootproto':
-                self.dhcp = (val.lower() == 'dhcp')
+                self.dhcp = (val.lower().strip("\'") == 'dhcp')
 
     def _getPciBusInfo(self):
         """

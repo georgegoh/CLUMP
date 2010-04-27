@@ -10,6 +10,11 @@
 import os
 import os.path
 import platform
+import subprocess
+import re
+
+from primitive.support.osfamily import getOSNames
+from errors import *
 
 X86_ARCHES = ['i386','i486','i586','i686']
 
@@ -84,6 +89,103 @@ def getArch():
         return arch
     return 'noarch' # fallback , should not be here. Things will break
     
+
+def getSelinuxStatus():
+    """Parse the output of the 'sestatus' command and return boolean"""
+
+    name, ver, arch = OS()
+    if name.lower() not in getOSNames('rhelfamily') + ['fedora']:
+        return False
+
+    p = subprocess.Popen('sestatus', shell=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+
+    bSELinuxEnabled = False
+
+    for line in p.stdout.readlines():
+        if re.compile("^SELinux status:").search(line):
+            try:
+                (one, two, three) = line.split()
+
+                bSELinuxEnabled = three.rstrip() != 'disabled'
+            except ValueError, e:
+                pass
+
+            break
+
+    retval = p.wait()
+
+    return bSELinuxEnabled
+
+
+def getKeyboard():
+    if not os.path.exists('/etc/sysconfig/keyboard'):
+        raise KeyboardMissingException, '/etc/sysconfig/keyboard not found.'
+    keyb = 'us'
+    try:
+        f = open('/etc/sysconfig/keyboard', 'r')
+        for line in f:
+            if not line.strip().startswith('#') and \
+               line.split('=', 1)[0] == 'KEYTABLE':
+                try:
+                    keyb = line.split('=', 1)[1].strip().strip('"')
+                    keyb = keyb.split('.', 1)[0]
+                except:
+                    continue
+    finally:
+        f.close()
+    return keyb
+
+
+def getTimezone():
+
+    if not os.path.exists('/etc/sysconfig/clock'):
+        raise TimeZoneMissingException, '/etc/sysconfig/clock not found'
+
+    f = open('/etc/sysconfig/clock', 'r')
+
+    lines = f.readlines()
+    f.close()
+
+    name, ver, arch = OS()
+    timezone = None
+    utc = None
+
+    for line in lines:
+        line = line.strip()
+
+        if not line:
+            continue
+
+        if line[0] == "#":
+            continue
+        try:
+            key,val = line.split('=', 1)
+        except:
+            continue
+                
+        val = val.strip().strip('"')
+        name = name.lower()
+
+        if name in getOSNames('rhelfamily') + ['fedora']:
+            if key == 'ZONE':
+                timezone = val
+            elif key == 'UTC':
+                if val == 'false':
+                    utc = False
+                else:
+                    utc = True
+        elif name in ['sles', 'opensuse', 'suse']:
+            if key == 'TIMEZONE':
+                timezone = val
+            elif key == 'HWCLOCK':
+                if val == '--localtime':
+                    utc = False
+                elif val == '-u':
+                    utc = True
+ 
+    return (timezone, utc)
+
 
 if __name__ == '__main__':
     print getArch()

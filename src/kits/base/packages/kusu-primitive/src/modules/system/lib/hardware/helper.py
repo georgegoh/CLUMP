@@ -9,7 +9,6 @@
 import parted
 import probe
 from os.path import basename
-import os.path
 
 fsTypes = {}
 fs_type = parted.file_system_type_get_next ()

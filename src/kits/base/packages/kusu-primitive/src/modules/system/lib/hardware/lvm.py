@@ -33,7 +33,9 @@ except:
 
 
 import primitive.support.log as primitivelog
-logger = primitivelog.getPrimitiveLog(name='lvm')
+primitivelog.setLoggerClass()
+logger = primitivelog.getPrimitiveLog(name='lvm.py')
+logger.addFileHandler()
 
 cmd_fifo = None
 

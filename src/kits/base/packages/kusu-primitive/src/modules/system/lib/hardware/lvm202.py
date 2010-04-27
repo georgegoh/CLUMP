@@ -12,7 +12,9 @@ try: import subprocess
 except: from popen5 import subprocess
 
 import primitive.support.log as primitivelog
-logger = primitivelog.getPrimitiveLog(name='lvm')
+primitivelog.setLoggerClass()
+logger = primitivelog.getPrimitiveLog(name='lvm202.py')
+logger.addFileHandler()
 
 def retrieveLVMEntityData(command, field):
     display = subprocess.Popen(command,

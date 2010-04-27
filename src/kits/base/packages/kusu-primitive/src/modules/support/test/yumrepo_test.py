@@ -109,4 +109,6 @@ class TestWorkingLocalYumRepo:
         assert r.getEpoch() == 0 #none is treated as 0 in xml
 
         assert r.getFilename() == 'file://' + str(cachedir / 'working/CentOS/cyrus-sasl-ldap-2.1.22-4.i386.rpm')
+        assert r.getChecksum()[0] == 'sha'
+        assert r.getChecksum()[1] == '432519a0b4c26135e2cde3b36e00ceaa59ce2c0d'
 

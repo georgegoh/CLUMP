@@ -19,7 +19,9 @@ from disk_geom import free_space_comparator, getAlignedSectors
 from disk_geom import getSpacesAvailable, getCylinderBoundariesForSector
 
 import primitive.support.log as primitivelog
-logger = primitivelog.getPrimitiveLog(name='disk')
+primitivelog.setLoggerClass()
+logger = primitivelog.getPrimitiveLog(name='disk.py')
+logger.addFileHandler()
 
 try:
     import subprocess
@@ -86,74 +88,6 @@ class Disk(object):
             except parted.error, e:
                 pedDiskType = parted.disk_type_get('msdos')
                 self.pedDisk = pedDevice.disk_new_fresh(pedDiskType)
-
-
-    def calculateAvailableSpace(self):
-        """
-            This method will figure out the disk layout and where there is available
-            space for re-use. It will return an array consisting of 'bins'. Each
-            'bin' is just a map denoting start and end sectors on disk. 
-        """
-        
-        spaceArray = []
-        for disk in self.profile.disk_dict.values() :
-            
-            #reset position pointer to first sector for next disk
-            currentPos = 1 #keeps current sector position
-            extendedStart = 0
-            extendedEnd = 0
-            isExtended = False
-            
-            for partition in disk.partition_dict.values() :
-                
-                if (currentPos >= extendedStart and currentPos <= extendedEnd ):
-                    isExtended = True
-                else:
-                    isExtended = False
-                
-                if (partition.pedPartition.native_type == 5) : #check for extended partition
-                    extendedStart = partition.start_sector
-                    extendedEnd = partition.end_sector
-                    
-                    spaceArray.append({'start_sector' : currentPos,
-                                       'end_sector' : partition.start_sector - 1,
-                                       'isExtended' : True
-                                       })
-                    #Update the currentPos marker to be the start of the extended space
-                    currentPos = partition.start_sector + 1
-                                        
-                elif (partition.start_sector > currentPos):
-                    
-                    spaceArray.append({'start_sector' : currentPos,
-                                       'end_sector' : partition.start_sector - 1,
-                                       'isExtended' : isExtended
-                                       })
-                    currentPos = partition.end_sector + 1
-                
-
-            if (currentPos >= extendedStart and currentPos <= extendedEnd ):
-                isExtended = True
-            else:
-                isExtended = False
-                    
-            #check for empty block of space at end of extended partition
-            if (currentPos < extendedEnd):
-                spaceArray.append({'start_sector' : currentPos,
-                                   'end_sector' : extendedEnd - 1,
-                                   'isExtended' : isExtended
-                                   })
-                currentPos = extendedEnd    
-            
-            isExtended = False #reset extended flag                         
-        
-            #check for empty block of space after last partition
-            if (currentPos < disk.length): #odd, would have expected disk.sectors to have this info
-                spaceArray.append({'start_sector' : currentPos + 1,
-                                   'end_sector' : disk.length,
-                                   'isExtended' : isExtended 
-                                   })
-                
-        return spaceArray
 
     def __populateInitialPartitions(self):
         for i in xrange(self.pedDisk.get_last_partition_num()):
