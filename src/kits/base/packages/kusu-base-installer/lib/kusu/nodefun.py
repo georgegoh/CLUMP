@@ -1095,7 +1095,7 @@ class NodeFun(object, KusuApp):
 
             fp.close()
 
-        nodesDict = getClusterHostNames(self._dbReadonly)
+        nodesDict, nodes_in_str_format = getClusterHostNames(self._dbReadonly)
 
         for hosts in nodesDict.values():
             rsvNames.extend(hosts)

@@ -58,7 +58,9 @@ class thisReport(Report):
             self._importExternalHosts(nodesDict, dnszone)
             return
 
-        nodesDict = getClusterHostNames(self.db)
+        nodesDict, nodes_in_str_format = getClusterHostNames(self.db)
+        print nodes_in_str_format
+
         # Create the external hosts entries
         self._importExternalHosts(nodesDict, dnszone)
 

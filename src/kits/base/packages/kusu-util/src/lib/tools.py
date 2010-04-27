@@ -203,6 +203,7 @@ def getClusterHostNames(db):
     """ db is the database instance """
 
     nodesDict = {}
+    nodes_in_str_format = ''
     dnszone = db.getAppglobals('DNSZone')
     if not dnszone:
         return
@@ -241,7 +242,7 @@ def getClusterHostNames(db):
                 str = "%-15s" % (ip)
 
                 bNeedShortName = False
-                # boot, nettype, nngid to confirm the first boot provision interafce (compute nodes)
+                # boot, nettype, nngid to confirm the first boot provision interface (compute nodes)
                 # nettype, nngid to confirm the first provision interface (master node)
                 if nettype == 'provision' and netdevice != 'bmc' and (nngid == 1 or (nngid != 1 and boot == 1)):
                     # to guarantee the 'first'
@@ -279,17 +280,16 @@ def getClusterHostNames(db):
                 if bNeedShortName:
                     str += "\t%s" % (name)
 
-                print str
-
                 # Store generated managed nodes information into nodesDict
                 _recordNodeInfo(str, nodesDict)
+                nodes_in_str_format += str + '\n'
 
             else:
                 if nettype == 'provision':
                     str = "%-15s\t%s.%s \t%s" % (ip, name, dnszone, name)
-                    print str
                     # Store generated managed nodes information into nodesDict
                     _recordNodeInfo(str, nodesDict)
+                    nodes_in_str_format += str + '\n'
 
                 elif nettype == 'public':
                     # to guarantee the 'first' when nettype equals to public
@@ -298,17 +298,17 @@ def getClusterHostNames(db):
 
                     if publicdnszone and bFirstPublicShortNameZone:
                         str = "%-15s\t%s.%s \t%s" % (ip, name, publicdnszone, name)
-                        print str
                         # Store generated managed nodes information into nodesDict
-                        self._recordNodeInfo(str, nodesDict)
+                        _recordNodeInfo(str, nodesDict)
+                        nodes_in_str_format += str + '\n'
                         bFirstPublicShortNameZone = False
                     prevPublicNodeName = name
 
                 else:
                      str =  "%-15s \t%s" % (ip, name)
-                     print str
                      # Store generated managed nodes information into nodesDict
                      _recordNodeInfo(str, nodesDict)
+                     nodes_in_str_format += str + '\n'
 
             prevNodeName = name
 
@@ -326,16 +326,16 @@ def getClusterHostNames(db):
     else:
         data = db.fetchall()
         if data:
-            print "\n# Unmanaged Nodes"
+            nodes_in_str_format += "\n# Unmanaged Nodes\n"
             for row in data:
                 ip, name = row
                 line = "%-15s\t%s.%s \t%s" % (ip, name, dnszone, name)
-                print line
 
                 # Store generated unmanaged nodes information into nodesDict
                 _recordNodeInfo(line, nodesDict)
+                nodes_in_str_format += line + '\n'
 
-    return nodesDict
+    return nodesDict, nodes_in_str_format
 
 def _recordNodeInfo(nodeInfoStr, nodesDict):
     """
