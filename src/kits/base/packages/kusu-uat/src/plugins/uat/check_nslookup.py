@@ -41,7 +41,7 @@ class CheckNSLookup(UATPluginBase):
         super(CheckNSLookup, self).__init__()
         self._logger = args['logger']
         self._db = args=['db']
-        self.usage = """usage: check_nslookup [options] destination"""
+        self.usage = """usage: check_nslookup destination"""
         self._destination = None
 
         self._cmd_out = []
