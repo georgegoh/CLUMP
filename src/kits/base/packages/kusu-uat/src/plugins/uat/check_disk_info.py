@@ -56,8 +56,8 @@ class CheckDiskInfo(UATPluginBase):
         self._db = args['db'] 
         self._host = None
        
-        self._cmd_out = ''
-        self._cmd_err = ''
+        self._cmd_out = []
+        self._cmd_err = []
         self._cmd_returncode = 0
         
     def pre_check(self):
@@ -81,9 +81,9 @@ class CheckDiskInfo(UATPluginBase):
         options, remaining_args = parser.parse_args(args[1:])
         if len(remaining_args) != 1:  # require only one host
             parser.print_usage(file = sys.stderr)
-            self.status = 'Please provide one host\n'
+            self._status = 'Please provide one host\n'
             self._logger.info('Please provide one host\n')
-            return 1, self.status
+            return 1, self._status
 
         self._host = remaining_args[0]
 
@@ -133,17 +133,16 @@ class CheckDiskInfo(UATPluginBase):
         grep_command = GREP_COMMAND + ['\'^Disk\s*/dev/(s|h)da:\'']
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + FDISK_COMMAND + ['|'] + grep_command 
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self._cmd_out, self._cmd_err = sshP.communicate()
+        self._cmd_out = sshP.stdout.readlines()
+        self._cmd_err = sshP.stdout.readlines()
         if sshP.returncode:
             self._status = 'Harddisk size test failed'
             return sshP.returncode
   
 
     def _check_disknum(self, disknum):
-        out = self._cmd_out
-        if out:
-            lines = out.rstrip().split('\n')
-            host_disknum = len(lines)
+        if self._cmd_out:
+            host_disknum = len(self._cmd_out)
             if host_disknum != disknum:
                 self._status = "Number of disk %d on the host is not equal to %d " %(host_disknum, disknum)
                 return 1
@@ -152,10 +151,8 @@ class CheckDiskInfo(UATPluginBase):
 
     def _check_disksize(self, disk_size):
         host_disksize = 0
-        out = self._cmd_out
-        if out:
-            lines = out.rstrip().split('\n')
-            for line in lines:
+        if self._cmd_out:
+            for line in self._cmd_out:
                 host_disksize += UATHelper.convert_to_megabytes(line.split()[2], line.split()[3][:-1]) 
             diff_size = disk_size - host_disksize
             if diff_size < -200 or diff_size > 200:
@@ -165,7 +162,7 @@ class CheckDiskInfo(UATPluginBase):
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out:
             filename = artifact_dir / self._host / 'check_disk_info.out'
-            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_out])
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + self._cmd_out)
         if self._cmd_err:
             filename = artifact_dir / self._host / 'check_disk_info.err'
-            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_err])
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + self._cmd_err)

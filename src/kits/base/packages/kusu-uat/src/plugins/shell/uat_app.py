@@ -138,7 +138,7 @@ class UATApp(KusuShellApp):
                 continue
             commands = self._get_command_list_for_check(check_name)
             if commands:  
-                self.command_dict[check_name] = self._get_command_list_for_check(check_name)  
+                self.command_dict[check_name] = commands  
             commands = {} 
 
         self._emit_output(self._get_header(self.command_dict) + '\n')
@@ -251,21 +251,30 @@ class UATApp(KusuShellApp):
         print "\nRunning %s Check" %check_name 
         self._logger.info("Running %s Check" %check_name)
         plugin_list = [cmd.split()[0] for cmd in self.check_dict[check_name]['commands']] 
-        self._populate_plugin_inst(plugin_list, check_name)
-        
-        self._check_setup(check_name)
 
-        self._run_check_commands(check_name)
+        try:
+            self._populate_plugin_inst(plugin_list, check_name)
+        except UAT_PluginNotImplemented:
+            self._register_failure(check_name, self.command_dict[check_name].keys())
+            self._logger.error("Check %s failed to run because requested plugin is not implemented." % check_name)
+            self._emit_output("\tFail: Check %s failed to run because requested plugin is not implemented. \n" % check_name)
+            return       
+ 
+        try:
+            self._check_pre(check_name)
+        except Exception, e:   
+            self._register_failure(check_name, self.command_dict[check_name].keys())
+            self._logger.error("Check %s failed, 'pre_check' hook for the plugin %s has raised the exception: %s " % (check_name, plugin, e))
+            self._emit_output("\tFail: Check %s failed, 'pre_check' hook for the plugin %s has raised the exception: %s \n" % (check_name, plugin, e))
+            return
 
-        self._check_teardown(plugin_list)
+        self._run_check_for_all_nodes(check_name)
+
+        self._check_post(plugin_list)
 
     def _populate_plugin_inst(self, plugin_list, check_name):
         for plugin in plugin_list:
-            try:
-                plugin_class = self._get_plugin_class(plugin)
-            except UAT_PluginNotImplemented:
-                self._logger.error("Failed: Check %s failed to run. Plugin %s is not Implemented" % (check_name, plugin))
-
+            plugin_class = self._get_plugin_class(plugin)
             if 'init_args' in self.check_dict[check_name]:
                 self.check_dict[check_name]['init_args']['logger'] = self._logger
                 self.check_dict[check_name]['init_args']['db'] = self._db  
@@ -273,16 +282,12 @@ class UATApp(KusuShellApp):
             else:
                 self.plugin_inst_dict[plugin] = plugin_class({'logger': self._logger, 'db': self._db})
 
-    def _check_setup(self, check_name):
+    def _check_pre(self, check_name):
         for plugin, plugin_inst in self.plugin_inst_dict.iteritems():
-            try:
-                plugin_inst.pre_check()
-            except:   
-                self._logger.error("Failed: Check %s failed. Setup for the plugin %s raised exception. " % (check_name, plugin))
-            else: 
-                atexit.register(plugin_inst.post_check)
+            plugin_inst.pre_check()
+            atexit.register(plugin_inst.post_check)
 
-    def _run_check_commands(self, check_name):
+    def _run_check_for_all_nodes(self, check_name):
         for node, command_list in self.command_dict[check_name].iteritems():
             set_skip = 0
             for cmd in command_list:
@@ -293,49 +298,58 @@ class UATApp(KusuShellApp):
                     self._emit_output('Skipped\n')
                     continue
                 try:
-                    try:
-                        plugin_inst.node_setup(node)
-                    except Exception, msg:
-                        self._logger.error("Check %s failed: %s" % msg)
-                    else:
-                        set_skip = self._run_plugin_for_node(check_name, plugin_inst, node, cmd)
-
-                    try:
-                        plugin_inst.generate_output_artifacts(self._artifact_root / check_name)
-                    except Exception, msg:
-                        self._emit_output('\t\tPlugin %s failed to generate output: %s\n' % (cmd['plugin'],msg))
+                    set_skip = self._run_check_for_node(check_name, plugin_inst, node, cmd)
                 finally:
                     self.plugin_inst_dict[cmd['plugin']].node_teardown(node)
  
                 self._out.flush() # no newline above & result may take a while
 
+    def _run_check_for_node(self, check_name, plugin_inst, node, cmd):
+        try:
+            plugin_inst.node_setup(node)
+        except Exception, msg:
+            set_skip = 1
+            self._register_failure(check_name, [node])
+            self._logger.error("Check %s failed for node %s with exception: %s" % (check_name, node, msg))
+            self._emit_output("Check %s failed for node %s with exception: %s" % (check_name, node, msg))
+        else:
+            set_skip = self._run_plugin_for_node(check_name, plugin_inst, node, cmd)
+
+        try:
+           plugin_inst.generate_output_artifacts(self._artifact_root / check_name)
+        except Exception, msg:
+            self._emit_output('\t\tPlugin %s failed to generate output: %s\n' % (cmd['plugin'], msg))
+
+        return set_skip
+
     def _run_plugin_for_node(self, check_name, plugin_inst, node, cmd):
         try:
             returncode, status_msg = plugin_inst.run(cmd['cmd'])
         except Exception, msg:
-            if check_name in self.command_status: 
-                self.command_status[check_name].append(node)
-            else:
-                self.command_status[check_name] = [node]
+            self._register_failure(check_name, [node])
             self._emit_output('FAIL - %s\n' % msg)
             self._logger.error("Check '%s' failed for node '%s' while performing test'%s': %s" %(check_name, node, " ".join(cmd['cmd']), msg))
             return 1
         
-        if returncode == 0:
+        if not returncode:
             self._emit_output('OK - %s\n' % status_msg)
-            return 0
+            return returncode
  
+        self._register_failure(check_name, [node])
+        plugin_inst.dump_debug_artifacts(self._artifact_root / check_name)
         self._emit_output('FAIL - %s\n' % status_msg)
         self._logger.error("Check '%s' failed for node '%s' while performing test'%s'." %(check_name, node, " ".join(cmd['cmd'])))
-        if check_name in self.command_status:
-            self.command_status[check_name].append(node)
-        else:
-            self.command_status[check_name]=[node]
-            plugin_inst.dump_debug_artifacts(self._artifact_root / check_name)
 
-        return 1 
+        return 1
+ 
+    def _register_failure(self, check_name, nodes):
+       for node in nodes:
+           if check_name in self.command_status: 
+               self.command_status[check_name].append(node)
+           else:
+               self.command_status[check_name] = [node]
 
-    def _check_teardown(self, plugin_list): 
+    def _check_post(self, plugin_list): 
         # Teardown: LIFO, last plugin setup will be teardown the first.        
         plugin_list.reverse()
         for plugin in plugin_list:

@@ -81,9 +81,9 @@ class CheckSpeedStep(UATPluginBase):
         options, remaining_args = parser.parse_args(args[1:])
         if len(remaining_args) != 1:  # require only one host
             parser.print_usage(file = sys.stderr)
-            self.status = 'Please provide one host\n'
+            self._status = 'Please provide one host\n'
             self._logger.info('Please provide one host\n')
-            return 1, self.status
+            return 1, self._status
 
         self._host = remaining_args[0]
 
@@ -131,7 +131,7 @@ class CheckSpeedStep(UATPluginBase):
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out:
             filename = artifact_dir / self._host / 'check_speedstep.out'
-            UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_out)
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_out])
         if self._cmd_err:
             filename = artifact_dir / self._host / 'check_speedstep.err'
-            UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_err)
+            UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_err])

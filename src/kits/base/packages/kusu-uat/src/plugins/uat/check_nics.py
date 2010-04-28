@@ -44,7 +44,6 @@ DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 #                       for this connection
 SSH_COMMAND_OPTIONS = ['-o', 'ConnectTimeout=10', '-o', 'PasswordAuthentication=no', '-o', 'PubkeyAuthentication=yes']
 IFCONFIG_COMMAND = ['ifconfig ']
-ETHTOOL_COMMAND = ['ethtool ']
 GREP_COMMAND = ['grep -P ']
 ROUTE_COMMAND = ['route -n ']
 
@@ -57,7 +56,6 @@ class CheckNICS(UATPluginBase):
         self._db = args['db'] 
         self._host = None
        
-        self._device_speed = ''
         self._cmd_returncode = 0
        
     def pre_check(self):
@@ -96,8 +94,6 @@ class CheckNICS(UATPluginBase):
         else:
             self._get_all_interface_for_node()
 
-        if options.speed is not None:
-            self._device_speed = options.speed
         for interface in self._interface_list:
             nii_config = self._get_network_config_info(interface)
             returncode = self._check_nic_configuration(nii_config, interface)
@@ -109,13 +105,8 @@ class CheckNICS(UATPluginBase):
                 if returncode:
                     return returncode, self._status  
 
-            if self._device_speed is not None:
-                returncode = self._check_device_speed(interface)
-                if returncode:
-                    return returncode, self._status
-
         returncode = 0
-        self._status = "Nic configuration check passed for all interfaces."
+        self._status = "Nics configuration check passed for all interfaces."
         return returncode, self._status
 
     def _configure_options(self):
@@ -124,10 +115,7 @@ class CheckNICS(UATPluginBase):
         parser = OptionParser(usage=usage)
         parser.add_option('-i', '--interface',
                           help='Specify the device to test. \
-                          If not specified we test all the available interfaces on the host.' )
-        parser.add_option('-s', '--speed',
-                          help='Specify the speed of the device in Mb/s.'
-                         )
+                          If not specified we test all the available interfaces on the host.')
         return parser
 
     def _get_all_interface_for_node(self):
@@ -177,23 +165,6 @@ class CheckNICS(UATPluginBase):
                                              self._db.Networks.c.device==interface))
         return stmt.execute().fetchone()
 
-    def _check_device_speed(self, interface):
-        ethtool_cmd = ETHTOOL_COMMAND + [interface] 
-        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ethtool_cmd
-        sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = sshP.communicate()
-        self._cmd_out += out
-        self._cmd_err += err
-        if not out:
-            self._status = err
-            return sshP.returncode
-
-        if out.find("Speed: %sMb/s" % self._device_speed) < 0:
-            self._status = "Interface %s\'s speed does not match the specified speed \'%s\'." % (interface, self._device_speed)
-            return 1
- 
-        return 0   
-             
     def _check_gateway(self, gateway, interface):
         grep_cmd = GREP_COMMAND + ['\'^0.0.0.0\s*%s\'' % gateway] 
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ROUTE_COMMAND  + ['|'] + grep_cmd 
