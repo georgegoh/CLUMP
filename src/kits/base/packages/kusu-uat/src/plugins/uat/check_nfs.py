@@ -34,7 +34,7 @@ PDSH_COMMAND = '/usr/bin/pdsh'
 MOUNT_COMMAND = '/bin/mount'
 UMOUNT_COMMAND = '/bin/umount'
 MKTEMP_COMMAND = '/bin/mktemp'
-GREP_COMMAND = '/usr/bin/grep'
+GREP_COMMAND = '/bin/grep'
 
 DEFAULT_EXPORT_DIR = '/depot/shared'
 

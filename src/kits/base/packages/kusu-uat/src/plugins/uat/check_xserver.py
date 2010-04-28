@@ -163,7 +163,7 @@ class CheckXserver(UATPluginBase):
         end = pos + 30*num_screens
         screens = struct.unpack('>' + 'LLLLLHHHHH'*num_screens, recv_buffer[pos:end])
 
-        return 'Connected to Xserver by vendor: %s' % vendor
+        return 'Connected to Xserver from vendor: %s' % vendor
 
     def generate_output_artifacts(self, artifact_dir):
         filename = artifact_dir / 'check_xserver.out'
