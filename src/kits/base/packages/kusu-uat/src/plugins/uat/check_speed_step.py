@@ -59,7 +59,6 @@ class CheckSpeedStep(UATPluginBase):
        
         self._cmd_out = ''
         self._cmd_err = ''
-        self._cmd_returncode = 0
         
     def pre_check(self):
         pass
@@ -76,14 +75,16 @@ class CheckSpeedStep(UATPluginBase):
     def run(self, args):
         self._status = ''
         speedstep = False
+        self._cmd_returncode = 0
 
         parser = self._configure_options()
         options, remaining_args = parser.parse_args(args[1:])
         if len(remaining_args) != 1:  # require only one host
+            self._cmd_returncode = 1
             parser.print_usage(file = sys.stderr)
-            self._status = 'Please provide one host\n'
+            self.status = 'Please provide one host\n'
             self._logger.info('Please provide one host\n')
-            return 1, self._status
+            return self._cmd_returncode, self.status
 
         self._host = remaining_args[0]
 
@@ -94,12 +95,12 @@ class CheckSpeedStep(UATPluginBase):
         elif options.speedstep:
             speedstep = True
  
-        returncode = self._check_speedstep(speedstep)
-        if returncode:
-           return returncode, self._status
+        self._cmd_returncode = self._check_speedstep(speedstep)
+        if self._cmd_returncode:
+           return self._cmd_returncode, self._status
  
         self._status = "Processor speedstep check passed."
-        return 0, self._status
+        return self._cmd_returncode, self._status
 
     def _configure_options(self):
         """Sets up command line options"""
@@ -114,7 +115,6 @@ class CheckSpeedStep(UATPluginBase):
         return parser
 
     def _check_speedstep(self, speedstep):
-        grep_command = GREP_COMMAND + ['\'^flags\s*:\'', ' %s' % PROC_CPUINFO]
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + LSMOD_COMMAND + ['|'] + GREP_COMMAND + ['p4_clockmod']
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._cmd_out, self._cmd_err = sshP.communicate()
@@ -129,9 +129,9 @@ class CheckSpeedStep(UATPluginBase):
         return 0    
 
     def generate_output_artifacts(self, artifact_dir):
-        if self._cmd_out:
+        if self._cmd_out or self._cmd_returncode == 0:
             filename = artifact_dir / self._host / 'check_speedstep.out'
             UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_out])
-        if self._cmd_err:
+        if self._cmd_err or self._cmd_returncode:
             filename = artifact_dir / self._host / 'check_speedstep.err'
             UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_err])

@@ -59,7 +59,6 @@ class CheckProcInfo(UATPluginBase):
        
         self._cmd_out = ''
         self._cmd_err = ''
-        self._cmd_returncode = 0
         
     def pre_check(self):
         pass
@@ -75,15 +74,17 @@ class CheckProcInfo(UATPluginBase):
 
     def run(self, args):
         self._status = ''
+        self._cmd_returncode = 0
         hyper_threading = False
 
         parser = self._configure_options()
         options, remaining_args = parser.parse_args(args[1:])
         if len(remaining_args) != 1:  # require only one host
             parser.print_usage(file = sys.stderr)
-            self._status = 'Please provide one host\n'
+            self.status = 'Please provide one host\n'
             self._logger.info('Please provide one host\n')
-            return 1, self._status
+            self._cmd_returncode = 1
+            return self._cmd_returncode, self.status
 
         self._host = remaining_args[0]
 
@@ -94,12 +95,12 @@ class CheckProcInfo(UATPluginBase):
         elif options.hyper_threading:
             hyper_threading = True
 
-        returncode = self._check_ht(hyper_threading)
+        self._cmd_returncode = self._check_ht(hyper_threading)
         if returncode:
-           return returncode, self._status
+           return self._cmd_returncode, self._status
   
         self._status = "Processor hyper threading check passed."
-        return 0, self._status
+        return self._cmd_returncode, self._status
 
     def _configure_options(self):
         """Sets up command line options"""
@@ -129,9 +130,9 @@ class CheckProcInfo(UATPluginBase):
         return 0
     
     def generate_output_artifacts(self, artifact_dir):
-        if self._cmd_out:
+        if self._cmd_out or self._cmd_returncode==0:
             filename = artifact_dir / self._host / 'check_hyper_threading.out'
             UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_out])
-        if self._cmd_err:
+        if self._cmd_err or self._cmd_returncode:
             filename = artifact_dir / self._host / 'check_hyper_threading.err'
             UATHelper.generate_file_from_lines(filename, [self._status + '\n'] + [self._cmd_err])
