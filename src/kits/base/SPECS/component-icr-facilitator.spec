@@ -17,7 +17,7 @@
 
 Summary: Component for Intel(R) Cluster Ready Facilitator
 Name: component-icr-facilitator
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

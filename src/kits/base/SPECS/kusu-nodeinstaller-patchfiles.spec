@@ -18,7 +18,7 @@
 
 Summary: kusu-nodeinstaller-patchfiles 
 Name: kusu-nodeinstaller-patchfiles
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

@@ -18,7 +18,7 @@
 
 Summary: kusu-md5crypt module runtime
 Name: kusu-md5crypt
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

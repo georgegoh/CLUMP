@@ -18,7 +18,7 @@
 
 Summary: Tool for appglobals settings of PCM
 Name: kusu-appglobals-tool
-Version: 2.0
+Version: 2.1
 Release: 1
 License: GPLv2
 Group: System Environment/Base

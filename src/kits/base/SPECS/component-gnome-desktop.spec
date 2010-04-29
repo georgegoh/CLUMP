@@ -19,7 +19,7 @@
 
 Summary: Component for GNOME Desktop
 Name: component-gnome-desktop
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

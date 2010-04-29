@@ -15,7 +15,7 @@
 
 Summary: kusu-kit-install package
 Name: kusu-kit-install
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

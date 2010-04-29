@@ -19,7 +19,7 @@
 
 Summary: PCM License Support Tool
 Name: kusu-license-tool
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

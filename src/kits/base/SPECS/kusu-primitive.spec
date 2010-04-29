@@ -1,6 +1,6 @@
 Summary: primitive module
 name: kusu-primitive
-Version: 0.4
+Version: 0.5
 Release: 1
 License: Unknown
 Group: System Environment/Base

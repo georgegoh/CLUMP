@@ -17,7 +17,7 @@
 
 Summary: Kusu shell libraries, plugins and scripts
 Name: kusu-shell
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: GPLv2

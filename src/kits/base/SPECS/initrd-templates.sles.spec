@@ -22,7 +22,7 @@
 
 Summary: Template Initial RAM disks for Image based installs
 Name: initrd-templates
-Version: 2.0
+Version: 2.1
 Release: 1
 Epoch: 1
 License: LGPL/GPL
