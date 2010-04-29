@@ -231,11 +231,6 @@ KIT_PKGS += PKG_CREATEREPO
 PKG_CREATEREPO_SPEC = kusu-createrepo.spec
 PKG_CREATEREPO_SOURCES = custom src
 
-# Kusu libxml2 package.
-KIT_PKGS += PKG_LIBXML2
-PKG_LIBXML2_SPEC = kusu-libxml2-python.spec
-PKG_LIBXML2_SOURCES = custom src
-
 # Kusu MD5 crypt package.
 KIT_PKGS += PKG_MD5CRYPT
 PKG_MD5CRYPT_SPEC = kusu-md5crypt.spec
