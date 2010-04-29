@@ -109,7 +109,6 @@ class NodeFun(object, KusuApp):
         query = ('SELECT networks.subnet, networks.network \
                   FROM networks, nics, nodes \
                   WHERE nodes.nid=nics.nid AND nics.netid=networks.netid AND \
-                      networks.usingdhcp=False AND \
                       nodes.name=(SELECT kvalue FROM appglobals WHERE kname="PrimaryInstaller")')
         self._dbReadonly.execute(query)
         return self._dbReadonly.fetchall()

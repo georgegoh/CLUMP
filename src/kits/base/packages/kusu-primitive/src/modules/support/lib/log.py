@@ -23,7 +23,7 @@ def getPrimitiveLog(name=None):
 def shutdown():
     logging.shutdown()
 
-class PrimitiveLogger(logging.Logger):
+class Logger(logging.Logger):
     """
     This Logger class inherits from logging.Logger class.
 
@@ -104,10 +104,4 @@ class PrimitiveLogger(logging.Logger):
         return syslogHandler
 
 def setLoggerClass():
-    logging.setLoggerClass(PrimitiveLogger)
-
-setLoggerClass()
-
-#Set logging.raiseExceptions = 1 for development environemnt
-#                            = 0 for production environemnt
-logging.raiseExceptions = 0
+    logging.setLoggerClass(Logger)
