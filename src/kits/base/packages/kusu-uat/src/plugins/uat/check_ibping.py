@@ -95,6 +95,9 @@ class CheckIBPing(UATPluginBase):
             return False
 
     def _find_ibping_host(self):
+        # Check what nodes belong to those nodegroups
+        ib_nodes = [node.name for ng in ib_associated_ngs for node in ng.nodes if node.name != self._destination]
+
         # Check if an active ibping host is already known
         ibping_nodes = []
         if IBPING_HOST_FILE.isfile():
@@ -110,9 +113,6 @@ class CheckIBPing(UATPluginBase):
         ib_comps = ['component-Mellanox-OFED', 'component-ofed']
         installed_ib_comps = [comp for comp in self._db.Components.select() if comp.cname in ib_comps]
         ib_associated_ngs = [ng for ng in self._db.NodeGroups.select() if Set(ng.components) & Set(installed_ib_comps)]
-
-        # Check what nodes belong to those nodegroups
-        ib_nodes = [node.name for ng in ib_associated_ngs for node in ng.nodes if node.name != self._destination]
 
         for node in ib_nodes:
             if self._is_node_ib_active(node):
