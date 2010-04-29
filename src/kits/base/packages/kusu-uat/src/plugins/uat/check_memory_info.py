@@ -81,10 +81,10 @@ class CheckMemInfo(UATPluginBase):
         options, remaining_args = parser.parse_args(args[1:])
         if len(remaining_args) != 1:  # require only one host
             parser.print_usage(file = sys.stderr)
-            self.status = 'Please provide one host\n'
+            self._status = 'Please provide one host\n'
             self._logger.info('Please provide one host\n')
             self._cmd_returncode = 1
-            return self._cmd_returncode, self.status
+            return self._cmd_returncode, self._status
 
         self._host = remaining_args[0]
 
