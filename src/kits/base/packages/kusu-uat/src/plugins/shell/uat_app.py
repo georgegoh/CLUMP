@@ -53,6 +53,12 @@ KUSU_UAT_ARTIFACT_ROOT = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'var' / 'ua
 usage = """usage: uat [options] [all | check] [,check ...]"""
 version = """uat version ${VERSION_STR}"""
 
+def create_dir(dir):
+    try:
+        path(dir).makedirs()
+    except OSError:
+        pass 
+          
 class UATApp(KusuShellApp):
     """Runs UAT plugins on appropriate nodes.
 
@@ -103,6 +109,7 @@ class UATApp(KusuShellApp):
         self._conf_dir = KUSU_UAT_CONF_DIR
         self._now = time.localtime()
         self._artifact_root = path(KUSU_UAT_ARTIFACT_ROOT) / self._generate_date_time()
+        create_dir(self._artifact_root)
         self._nodegroups_by_type = {}
         self._nodes_by_nodegroup = {}
         self._nodegroups_by_component = {}
@@ -448,6 +455,6 @@ class UATApp(KusuShellApp):
     def _create_link_to_artifact_dir(self):
         if path(KUSU_UAT_ARTIFACT_ROOT / 'lastrun').islink():
             path(KUSU_UAT_ARTIFACT_ROOT / 'lastrun').unlink()
-
+        
         self._artifact_root.symlink(KUSU_UAT_ARTIFACT_ROOT / 'lastrun')
         print "\nUAT artifacts are stored at: %s " % (KUSU_UAT_ARTIFACT_ROOT / 'lastrun')  
