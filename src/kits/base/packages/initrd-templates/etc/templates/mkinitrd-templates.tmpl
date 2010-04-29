@@ -78,7 +78,7 @@ if [ "\$VERBOSE" == "yes" ]; then RSYNC="\$RSYNC -v"; fi
 
 echo "Getting packages via yum.  Please wait..."
 
-PKGLIST="python busybox e2fsprogs device-mapper parted pyparted udev lvm2 rng-utils"
+PKGLIST="python busybox e2fsprogs device-mapper parted pyparted udev lvm2 rng-utils sendmail"
 
 ## Ensure we're using packages for the right architecture
 for pkg in \$PKGLIST; do NEWPKGLIST="\$NEWPKGLIST \$pkg.\$ARCH"; done
