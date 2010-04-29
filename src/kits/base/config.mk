@@ -282,9 +282,9 @@ PKG_PATH_SPEC = kusu-path.spec
 PKG_PATH_SOURCES = src
 
 # Kusu Migrate package.
-KIT_PKGS += PKG_KUSU_MIGRATE
-PKG_KUSU_MIGRATE_SPEC = kusu-migrate.spec
-PKG_KUSU_MIGRATE_SOURCES = src/sbin src/man src/lib
+#KIT_PKGS += PKG_KUSU_MIGRATE
+#PKG_KUSU_MIGRATE_SPEC = kusu-migrate.spec
+#PKG_KUSU_MIGRATE_SOURCES = src/sbin src/man src/lib
 
 # Net tool package
 KIT_PKGS += PKG_KUSU_NET_TOOL

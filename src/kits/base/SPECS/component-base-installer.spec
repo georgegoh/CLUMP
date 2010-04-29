@@ -49,7 +49,7 @@ Requires: kusu-util
 Requires: kusu-nodeinstaller-patchfiles
 Requires: kusu-nodeinstaller 
 Requires: kusu-kit-install
-Requires: kusu-migrate 
+#Requires: kusu-migrate 
 Requires: kusu-shell 
 Requires: kusu-uat 
 #Requires: mysql
