@@ -977,27 +977,6 @@ if __name__ == '__main__':
         # Exit with 99 to force reboot
         sys.exit(99)
 
-    # diskless systems have errors on reboot/shutdown due
-    # to the S01reboot script crashing the system.
-    # This section is a workaround hack that inserts
-    # rc scripts to run before the S01reboot scripts
-    # in runlevels 0(shutdown) and 6(reboot).
-    if not disked:
-        # shutdown in runlevel 0.
-        f = open('/newroot/etc/rc.d/rc0.d/S00killpcm', 'w')
-        f.write('#!/bin/bash\n')
-        f.write('echo 1 > /proc/sys/kernel/sysrq\n')
-        f.write('echo o > /proc/sysrq-trigger\n')
-        f.close()
-        os.system('chmod 755 /newroot/etc/rc.d/rc0.d/S00killpcm')
-        # reboot in runlevel 6.
-        f = open('/newroot/etc/rc.d/rc6.d/S00killpcm', 'w')
-        f.write('#!/bin/bash\n')
-        f.write('echo 1 > /proc/sys/kernel/sysrq\n')
-        f.write('echo b > /proc/sysrq-trigger\n')
-        f.close()
-        os.system('chmod 755 /newroot/etc/rc.d/rc6.d/S00killpcm')
-
     app.log("INFO: Exiting imageinit with:  %i" % initrddebug)
     if initrddebug == 1:
         # Exit with 1 to stop the switch_root
