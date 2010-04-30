@@ -49,7 +49,7 @@ class CheckKusuServices(UATPluginBase):
     def node_teardown(self, node):
         pass
 
-    def run(self, args): 
+    def run(self, args):
         returncode = self._run()
         return returncode, self.status
 

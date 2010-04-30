@@ -50,7 +50,7 @@ class CheckTFTPD(UATPluginBase):
     def node_teardown(self, node):
         pass
 
-    def run(self, args): 
+    def run(self, args):
         try:
             old_default_timeout = socket.getdefaulttimeout()
             socket.setdefaulttimeout(self.__socket_timeout)

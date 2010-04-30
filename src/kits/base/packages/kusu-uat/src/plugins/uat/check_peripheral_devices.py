@@ -26,17 +26,17 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, MyOption
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs, UATOption
 
-usage = """check_device_info -w remote_host  
+usage = """check_device_info -w remote_host
            check_device_info -p remote_host"""
-                  
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -54,12 +54,12 @@ class CheckDeviceInfo(UATPluginBase):
     def __init__(self, args=None):
         super(CheckDeviceInfo, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
         self._cmd_out = ''
         self._cmd_err = ''
-        
+
     def pre_check(self):
         pass
 
@@ -90,38 +90,38 @@ class CheckDeviceInfo(UATPluginBase):
 
         if options.spec_file:
             # We give preference to spec file
-            config = UATHelper.get_config_parser(self._host)
-            if 'devices' in config.sections(): 
-                for option in config.options('devices'):
-                    devices[option] = config.get('devices', option)
+            spec = ModelSpecs(self._host)
+            if 'devices' in spec.parser.sections():
+                for option in spec.parser.options('devices'):
+                    devices[option] = spec.parser.get('devices', option)
         else:
             if options.peripheral_dev_list:
                 for device in options.peripheral_dev_list:
-                    devices[device] = None          
- 
+                    devices[device] = None
+
         if devices:
             for device, value in devices.iteritems():
                 self._cmd_returncode =  self._check_peripheral_device(device, value)
                 if self._cmd_returncode:
                     return self._cmd_returncode, self._status
- 
+
         self._status = "Peripheral device check passed."
         return 0, self._status
 
     def _configure_options(self):
         """Sets up command line options"""
 
-        parser = OptionParser(option_class=MyOption, usage=usage)
+        parser = OptionParser(option_class=UATOption, usage=usage)
         parser.add_option('-w', '--spec-file', action='store_true', dest="spec_file",
                           help='Read specification from the spec file.This option \
-                                overrides other options.') 
+                                overrides other options.')
         parser.add_option('-p', '--peripheral-card', action="extend", dest="peripheral_dev_list",
                           help='Specify the comma-delimited list of peripheral cards.')
         return parser
 
     def _check_peripheral_device(self, device, value):
-        grep_command = GREP_COMMAND + ["-i ","\'%s\'" % device]  
-        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + LSPCI_COMMAND + ['|'] + grep_command 
+        grep_command = GREP_COMMAND + ["-i ","\'%s\'" % device]
+        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + LSPCI_COMMAND + ['|'] + grep_command
         if value:
             cmd = cmd + ['|'] + GREP_COMMAND + ["\'%s\'" % value]
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -131,7 +131,7 @@ class CheckDeviceInfo(UATPluginBase):
             return sshP.returncode
 
         return 0
-  
+
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out or self._cmd_returncode == 0:
             filename = artifact_dir / self._host / 'check_device_info.out'

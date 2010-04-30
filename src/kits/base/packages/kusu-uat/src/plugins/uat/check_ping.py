@@ -50,7 +50,7 @@ class CheckPing(UATPluginBase):
         self._cmd_out = []
         self._cmd_err = []
         self._cmd_returncode = 0
-  
+
     def pre_check(self):
         pass
 
@@ -58,7 +58,7 @@ class CheckPing(UATPluginBase):
         pass
 
     def node_setup(self, node):
-        pass     
+        pass
 
     def node_teardown (self, node):
         pass
@@ -78,7 +78,7 @@ class CheckPing(UATPluginBase):
         if options.deadline is not None:
             self._deadline = options.deadline
         if options.packet_count is not None:
-            self._packet_count = options.packet_count 
+            self._packet_count = options.packet_count
 
         returncode = self._run()
         self.status = self._generate_status()
@@ -160,4 +160,4 @@ class CheckPing(UATPluginBase):
         if self._cmd_err:
             filename = artifact_dir / self._destination / 'check_ping.err'
             UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_err)
-        
+

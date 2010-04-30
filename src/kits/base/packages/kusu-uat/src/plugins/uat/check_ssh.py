@@ -33,7 +33,7 @@ class CheckSSH(UATPluginBase):
     def __init__(self, args=None):
         super(CheckSSH, self).__init__()
         self._logger = args['logger']
-         
+
         self._remote_host = ''
         self._remote_port = DEFAULT_SSH_PORT
         self._return_code = 0

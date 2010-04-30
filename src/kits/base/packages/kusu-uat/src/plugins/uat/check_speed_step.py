@@ -26,17 +26,17 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, MyOption
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs
 
-usage = """check_speedstep_info -w remote_host  
+usage = """check_speedstep_info -w remote_host
            check_speedstep_info -s remote_host"""
-                  
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -54,12 +54,12 @@ class CheckSpeedStep(UATPluginBase):
     def __init__(self, args=None):
         super(CheckSpeedStep, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
         self._cmd_out = ''
         self._cmd_err = ''
-        
+
     def pre_check(self):
         pass
 
@@ -90,28 +90,28 @@ class CheckSpeedStep(UATPluginBase):
 
         if options.spec_file:
             # We give preference to spec file
-            config = UATHelper.get_config_parser(self._host)
-            speedstep = UATHelper.read_config(config, 'speedstepessor', 'speedstep', type='boolean')
+            spec = ModelSpecs(self._host)
+            speedstep = spec.read_config('speedstepessor', 'speedstep', type='boolean')
         elif options.speedstep:
             speedstep = True
- 
+
         self._cmd_returncode = self._check_speedstep(speedstep)
         if self._cmd_returncode:
            return self._cmd_returncode, self._status
- 
+
         self._status = "Processor speedstep check passed."
         return self._cmd_returncode, self._status
 
     def _configure_options(self):
         """Sets up command line options"""
 
-        parser = OptionParser(option_class=MyOption, usage=usage)
+        parser = OptionParser(usage=usage)
         parser.add_option('-w', '--spec-file', action='store_true', dest="spec_file",
                           help='Read specification from the spec file.This option \
                                 overrides other options.')
         parser.add_option('-s', '--speedstep', dest="speedstep", action="store_true",
                           help='Speedstep is enabled.')
- 
+
         return parser
 
     def _check_speedstep(self, speedstep):
@@ -126,7 +126,7 @@ class CheckSpeedStep(UATPluginBase):
             if not speedstep:
                 self._status = 'Speedstep check failed.'
                 return 1
-        return 0    
+        return 0
 
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out or self._cmd_returncode == 0:

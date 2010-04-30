@@ -68,38 +68,6 @@ class UATHelper(object):
     generate_file_from_lines = staticmethod(generate_file_from_lines)
 
     @staticmethod
-    def get_config_parser(host):
-        spec_file = UATHelper.get_file_from_model(UATHelper.get_host_model())
-        config = ConfigParser.SafeConfigParser()
-        spec_file = KUSU_UAT_SPEC_DIR / spec_file
-        config.read(spec_file)
-        return config
-
-    @staticmethod     
-    def get_host_model():
-        return 'example'
-
-    @staticmethod
-    def get_file_from_model(model_number, extension='.ini'):
-        return model_number + extension
-
-    @staticmethod  
-    def read_config(config_parser, section, option, type=''):
-        value = None
-        try:
-            if not type:
-                value = config_parser.get(section, option)
-            elif type == 'int':
-                value = config_parser.getint(section, option)
-            elif type == 'float':
-                value = config_parser.getfloat(section, option)
-            elif type == 'boolean':
-                value = config_parser.getboolean(section, option)
-        except:
-            return value 
-        return value
-
-    @staticmethod
     def convert_to_megabytes(number, pattern=''):
         value = None
         try:
@@ -125,8 +93,37 @@ class UATHelper(object):
  
         return value
 
-      
-class MyOption(Option):
+
+class ModelSpecs(object):
+
+    def __init__(self, host, extension='.ini'):
+        super(ModelSpecs, self).__init__()
+        spec_file = self._get_host_model(host) + extension
+        self.parser = ConfigParser.SafeConfigParser()
+        spec_file = KUSU_UAT_SPEC_DIR / spec_file
+        self.parser.read(spec_file)
+
+    def get_host_model(self, host):
+        ## Todo: Need to implement the method to return the actual model name of the host. 
+        return 'example'
+
+    def read_config(self, section, option, type=''):
+        value = None
+        try:
+            if not type:
+                value = self.parser.get(section, option)
+            elif type == 'int':
+                value = self.parser.getint(section, option)
+            elif type == 'float':
+                value = self.parser.getfloat(section, option)
+            elif type == 'boolean':
+                value = self.parser.getboolean(section, option)
+        except:
+            return value
+ 
+        return value
+
+class UATOption(Option):
     ACTIONS = Option.ACTIONS + ("extend", )
     STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)

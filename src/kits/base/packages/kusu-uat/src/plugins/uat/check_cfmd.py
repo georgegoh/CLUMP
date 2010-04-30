@@ -51,12 +51,12 @@ class CheckCfmd(UATPluginBase):
 
     def __init__(self, args=None):
         super(CheckCfmd, self).__init__()
-        self._logger = args['logger'] 
+        self._logger = args['logger']
         self._remote_host = None
         self._cmd_out = []
         self._cmd_err = []
         self._cmd_returncode = 0
-       
+
     def pre_check(self):
         self._logger.info("CFMD at setup")
 

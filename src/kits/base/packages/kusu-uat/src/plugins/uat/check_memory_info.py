@@ -26,17 +26,17 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, MyOption
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs
 
-usage = """check_mem_info -w remote_host  
+usage = """check_mem_info -w remote_host
            check_mem_info -s remote_host"""
-                  
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -54,12 +54,12 @@ class CheckMemInfo(UATPluginBase):
     def __init__(self, args=None):
         super(CheckMemInfo, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
         self._cmd_out = ''
         self._cmd_err = ''
-        
+
     def pre_check(self):
         pass
 
@@ -90,8 +90,8 @@ class CheckMemInfo(UATPluginBase):
 
         if options.spec_file:
             # We give preference to spec file
-            config = UATHelper.get_config_parser(self._host)
-            mem_size = UATHelper.read_config(config, 'memory', 'size') 
+            spec = ModelSpecs(self._host)
+            mem_size = spec.read_config('memory', 'size')
         else:
             if options.mem_size:
                 mem_size = options.mem_size
@@ -108,17 +108,17 @@ class CheckMemInfo(UATPluginBase):
     def _configure_options(self):
         """Sets up command line options"""
 
-        parser = OptionParser(option_class=MyOption, usage=usage)
+        parser = OptionParser(usage=usage)
         parser.add_option('-w', '--spec-file', action='store_true', dest="spec_file",
                           help='Read specification from the spec file.This option \
-                                overrides other options.') 
+                                overrides other options.')
         parser.add_option('-s', '--memory', dest='mem_size', type="int",
                           help='Specify the memory size in MBs.')
         return parser
 
     def _check_memsize(self, mem_size):
         grep_command = GREP_COMMAND + ['\'^MemTotal\s*:\'', ' %s' % PROC_MEMINFO ]
-        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + grep_command 
+        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + grep_command
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._cmd_out, self._cmd_err = sshP.communicate()
         if sshP.returncode:
@@ -130,10 +130,10 @@ class CheckMemInfo(UATPluginBase):
             diff_size = mem_size - host_memsize
             if diff_size < -20 or diff_size > 20:
                 self._status = "Host's memory size is \'%d\' rather than %d" % (host_memsize, mem_size)
-                return 1 
+                return 1
 
         return 0
- 
+
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out or self._cmd_returncode == 0:
             filename = artifact_dir / self._host / 'check_mem_info.out'

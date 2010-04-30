@@ -26,17 +26,17 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, MyOption
+from kusu.uat import UATPluginBase, UATHelper, UATOption, ModelSpecs
 
-usage = """check_disk_info -w remote_host  
+usage = """check_disk_info -w remote_host
            check_disk_info -[n|s] remote_host"""
-                  
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -53,12 +53,12 @@ class CheckDiskInfo(UATPluginBase):
     def __init__(self, args=None):
         super(CheckDiskInfo, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
         self._cmd_out = []
         self._cmd_err = []
-        
+
     def pre_check(self):
         pass
 
@@ -90,9 +90,9 @@ class CheckDiskInfo(UATPluginBase):
 
         if options.spec_file:
             # We give preference to spec file
-            config = UATHelper.get_config_parser(self._host)
-            disk_num = UATHelper.read_config(config, 'disk', 'number', type='int')
-            disk_size = UATHelper.read_config(config, 'disk', 'size')
+            spec = ModelSpecs(self._host)
+            disk_num = spec.read_config('disk', 'number', type='int')
+            disk_size = spec.read_config('disk', 'size')
         else:
             if options.disk_num:
                 disk_num = options.disk_num
@@ -102,7 +102,7 @@ class CheckDiskInfo(UATPluginBase):
         self._cmd_returncode = self._run_fdisk_command()
         if self._cmd_returncode:
             return self._cmd_returncode, self._status
- 
+
         if disk_size:
             disk_size = UATHelper.convert_to_megabytes(disk_size)
             self._cmd_returncode = self._check_disksize(disk_size)
@@ -113,17 +113,17 @@ class CheckDiskInfo(UATPluginBase):
             self._cmd_returncode = self._check_disknum(disk_num)
             if self._cmd_returncode:
                 return self._cmd_returncode, self._status
-  
+
         self._status = "Disk check passed."
         return self._cmd_returncode, self._status
 
     def _configure_options(self):
         """Sets up command line options"""
 
-        parser = OptionParser(option_class=MyOption, usage=usage)
+        parser = OptionParser(option_class=UATOption, usage=usage)
         parser.add_option('-w', '--spec-file', action='store_true', dest="spec_file",
                           help='Read specification from the spec file.This option \
-                                overrides other options.') 
+                                overrides other options.')
         parser.add_option('-s', '--disk-size', dest='disk_size', type="int",
                           help='Specify the total harddisk size in GBs.')
         parser.add_option('-n', '--disk-num', dest='disk_num', type="int",
@@ -132,14 +132,14 @@ class CheckDiskInfo(UATPluginBase):
 
     def _run_fdisk_command(self):
         grep_command = GREP_COMMAND + ['\'^Disk\s*/dev/(s|h)da:\'']
-        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + FDISK_COMMAND + ['|'] + grep_command 
+        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + FDISK_COMMAND + ['|'] + grep_command
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._cmd_out = sshP.stdout.readlines()
         self._cmd_err = sshP.stdout.readlines()
         if sshP.returncode:
             self._status = 'Harddisk size test failed'
             return sshP.returncode
-  
+
 
     def _check_disknum(self, disknum):
         if self._cmd_out:
@@ -147,14 +147,14 @@ class CheckDiskInfo(UATPluginBase):
             if host_disknum != disknum:
                 self._status = "Number of disk %d on the host is not equal to %d " %(host_disknum, disknum)
                 return 1
-               
+
         return 0
 
     def _check_disksize(self, disk_size):
         host_disksize = 0
         if self._cmd_out:
             for line in self._cmd_out:
-                host_disksize += UATHelper.convert_to_megabytes(line.split()[2], line.split()[3][:-1]) 
+                host_disksize += UATHelper.convert_to_megabytes(line.split()[2], line.split()[3][:-1])
             diff_size = disk_size - host_disksize
             if diff_size < -200 or diff_size > 200:
                 self._status = "Host's disksize is \'%d\' rather than \'%d\'" %(host_disksize, disk_size)

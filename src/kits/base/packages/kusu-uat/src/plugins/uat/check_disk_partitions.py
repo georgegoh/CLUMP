@@ -26,16 +26,16 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs
 
-usage = """check_disk_partitions remote_host """  
-                  
+usage = """check_disk_partitions remote_host """
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -52,9 +52,9 @@ class CheckDiskPartitions(UATPluginBase):
     def __init__(self, args=None):
         super(CheckDiskPartitions, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-        
+
     def pre_check(self):
         pass
 
@@ -80,19 +80,19 @@ class CheckDiskPartitions(UATPluginBase):
             return 1, self._status
 
         self._host = args[1]
-        config = UATHelper.get_config_parser(self._host)
-        if 'partitions' in config.sections(): 
-             for option in config.options('partitions'):
-                 partition_layout[option] = config.get('partitions', option)
+        spec = ModelSpecs(self._host)
+        if 'partitions' in spec.parser.sections():
+             for option in spec.parser.options('partitions'):
+                 partition_layout[option] = spec.parser.get('partitions', option)
 
         if partition_layout:
-            returncode = self._check_partitions(partition_layout) 
+            returncode = self._check_partitions(partition_layout)
             if returncode:
                 return returncode, self._status
 
         self._status = "Disk partition check passed."
         return 0, self._status
- 
+
     def _check_partitions(self, partition_layout):
         for partition, size in partition_layout.iteritems():
             grep_command = GREP_COMMAND + ['\'%s$\'' % partition]
@@ -107,12 +107,12 @@ class CheckDiskPartitions(UATPluginBase):
                 layout_size = UATHelper.convert_to_megabytes(out.split()[1])
                 size = UATHelper.convert_to_megabytes(size)
                 diff_size = size - layout_size
-                
+
                 if diff_size > 100 or diff_size < -100:
                     self._status = "Disk layout Error: partition %s size is %d not %d " % (partition, layout_size, size)
                     self._cmd_err = ''
                     return 1
-            self._cmd_out += out 
+            self._cmd_out += out
         return 0
 
     def generate_output_artifacts(self, artifact_dir):

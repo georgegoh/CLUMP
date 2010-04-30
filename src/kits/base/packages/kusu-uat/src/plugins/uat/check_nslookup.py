@@ -47,7 +47,7 @@ class CheckNSLookup(UATPluginBase):
         self._cmd_out = []
         self._cmd_err = []
         self._returncode = 0
-  
+
     def pre_check(self):
         pass
 
@@ -55,7 +55,7 @@ class CheckNSLookup(UATPluginBase):
         pass
 
     def node_setup(self, node):
-        pass     
+        pass
 
     def node_teardown (self, node):
         pass
@@ -117,4 +117,4 @@ class CheckNSLookup(UATPluginBase):
         if self._cmd_err:
             filename = artifact_dir / self._destination / 'check_nslookup.err'
             UATHelper.generate_file_from_lines(filename, [self.status + '\n'] + self._cmd_err)
-        
+

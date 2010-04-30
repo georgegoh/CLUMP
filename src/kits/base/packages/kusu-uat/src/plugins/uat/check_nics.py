@@ -34,7 +34,7 @@ SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -53,9 +53,9 @@ class CheckNICS(UATPluginBase):
     def __init__(self, args=None):
         super(CheckNICS, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
     def pre_check(self):
         pass
 
@@ -69,15 +69,15 @@ class CheckNICS(UATPluginBase):
         pass
 
     def run(self, args):
-        nii_config = {} 
+        nii_config = {}
         self._interface_list = []
-        self._cmd_out = ''  
+        self._cmd_out = ''
         self._cmd_err = ''
         self._cmd_returncode = 0
-  
+
         parser = self._configure_options()
         options, remaining_args = parser.parse_args(args[1:])
-           
+
         if len(remaining_args) != 1:  # require only one host
             parser.pring_usage(file = sys.stderr)
             self._status = 'Please provide a host\n'
@@ -90,7 +90,7 @@ class CheckNICS(UATPluginBase):
             if not self._device_exists(option.interface, self._host):
                 self._status = 'Interface %s is not configured on host %s ' % (options.interface, self._host)
                 self._cmd_returncode = 1
-                return self._cmd_returncode, self._status 
+                return self._cmd_returncode, self._status
             self._interface_list.append(options.interface)
         else:
             self._get_all_interface_for_node()
@@ -104,7 +104,7 @@ class CheckNICS(UATPluginBase):
             if nii_config['type'] == 'public':
                 self._cmd_returncode = self._check_gateway(nii_config['gateway'], interface)
                 if self._cmd_returncode:
-                    return self._cmd_returncode, self._status  
+                    return self._cmd_returncode, self._status
 
         self._status = "Nics configuration check passed for all interfaces."
         return self._cmd_returncode, self._status
@@ -122,7 +122,7 @@ class CheckNICS(UATPluginBase):
         stmt = sa.select([self._db.Networks.c.device],
                               whereclause=sa.and_(self._db.Nodes.c.name==self._host,
                                                   self._db.Nodes.c.nid==self._db.Nics.c.nid,
-                                                  self._db.Nics.c.netid==self._db.Networks.c.netid))  
+                                                  self._db.Nics.c.netid==self._db.Networks.c.netid))
 
         results = stmt.execute().fetchall()
         for record in results:
@@ -140,20 +140,20 @@ class CheckNICS(UATPluginBase):
         if not out:
             self._status = err
             return 1
-         
+
         if str(nii_config['usingdhcp']) != 'f':
             return 0
         for key, value in nii_config.iteritems():
             if key in ['usingdhcp', 'type', 'gateway']:
                 continue
-                
+
             if key == 'mac':
                 value.upper()
 
             if out.find(value) < 0:
                 self._status = "Wrong \'%s\' for interface \'%s\'" % (key, interface)
-                return 1 
-                
+                return 1
+
         return 0
 
     def _get_network_config_info(self, interface):
@@ -166,8 +166,8 @@ class CheckNICS(UATPluginBase):
         return stmt.execute().fetchone()
 
     def _check_gateway(self, gateway, interface):
-        grep_cmd = GREP_COMMAND + ['\'^0.0.0.0\s*%s\'' % gateway] 
-        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ROUTE_COMMAND  + ['|'] + grep_cmd 
+        grep_cmd = GREP_COMMAND + ['\'^0.0.0.0\s*%s\'' % gateway]
+        cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + ROUTE_COMMAND  + ['|'] + grep_cmd
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sshP.communicate()
         self._cmd_out += out
@@ -176,7 +176,7 @@ class CheckNICS(UATPluginBase):
             self._status = "The default gateway \'%s\' for interface \'%s\' is not setup properly." % (gateway, interface)
             return 1
 
-        return 0 
+        return 0
 
     def generate_output_artifacts(self, artifact_dir):
         if self._cmd_out or self._cmd_returncode == 0:

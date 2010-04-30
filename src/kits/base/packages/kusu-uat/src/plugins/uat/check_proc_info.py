@@ -26,17 +26,17 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, MyOption
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs
 
-usage = """check_proc_info -w remote_host  
+usage = """check_proc_info -w remote_host
            check_proc_info -n remote_host"""
-                  
+
 SSH_COMMAND = '/usr/bin/ssh'
 SSH_FAILURE_EXIT_STATUS = 255
 DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS = '10'
 
 # The desired result is a command as follows:
-# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep 
+# $ ssh compute-00-00 -o ConnectTimeout=10 -o PasswordAuthentication=no -o PubkeyAuthentication=yes ifconfig | grep
 # ConnectTimeout: we don't want to wait the default TCP timeout (3 minutes?)
 #                 should the remote host be unreachable
 # PasswordAuthentication: we disable password authentication as we won't be
@@ -54,12 +54,12 @@ class CheckProcInfo(UATPluginBase):
     def __init__(self, args=None):
         super(CheckProcInfo, self).__init__()
         self._logger = args['logger']
-        self._db = args['db'] 
+        self._db = args['db']
         self._host = None
-       
+
         self._cmd_out = ''
         self._cmd_err = ''
-        
+
     def pre_check(self):
         pass
 
@@ -90,12 +90,12 @@ class CheckProcInfo(UATPluginBase):
 
         if options.spec_file:
             # We give preference to spec file
-            config = UATHelper.get_config_parser(self._host)
-            proc_number = UATHelper.read_config(config, 'processor', 'number', type='int') 
+            spec = ModelSpecs(self._host)
+            proc_number = spec.read_config('processor', 'number', type='int')
         else:
             if options.proc_number:
                 proc_number = options.proc_number
- 
+
         if proc_number:
             self._cmd_returncode = self._check_proc_number(proc_number)
             if self._cmd_returncode:
@@ -107,17 +107,17 @@ class CheckProcInfo(UATPluginBase):
     def _configure_options(self):
         """Sets up command line options"""
 
-        parser = OptionParser(option_class=MyOption, usage=usage)
+        parser = OptionParser(usage=usage)
         parser.add_option('-w', '--spec-file', action='store_true', dest="spec_file",
                           help='Read specification from the spec file.This option \
-                                overrides other options.') 
+                                overrides other options.')
         parser.add_option('-n', '--proc-number', dest='proc_number', type="int",
-                          help='Specify the number of processors.') 
+                          help='Specify the number of processors.')
         return parser
 
     def _check_proc_number(self, proc_num):
         grep_num_proc = GREP_COMMAND + ['-c ','\'^processor\s*:\'', ' %s' % PROC_CPUINFO]
-        grep_command = GREP_COMMAND + ['%d' % proc_num] 
+        grep_command = GREP_COMMAND + ['%d' % proc_num]
         cmd = [SSH_COMMAND, self._host] + SSH_COMMAND_OPTIONS + grep_num_proc + ['|'] + grep_command
         sshP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._cmd_out, self._cmd_err = sshP.communicate()

@@ -19,6 +19,6 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from uat_helper import UATHelper
-from uat_helper import MyOption
-from uat_helper import UATPluginBase
+from uat_helper import UATOption
+from uat_helper import UATPluginBase, ModelSpecs
 from uat_exceptions import UAT_PluginNotImplemented, UAT_ConfFileError
