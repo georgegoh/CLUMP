@@ -52,6 +52,8 @@ getYumPatch(){
     elif [ x$BUILDSTAMP = "x200901061732.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL53";
     #RHEL 5.4
     elif [ x$BUILDSTAMP = "x200908190312.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL54"
+    #RHEL 5.5
+    elif [ x$BUILDSTAMP = "x201002011426.x86_64" ]; then export YUMPATCHFILE="/tmp/updates/yuminstall.py.patch.RHEL55"
     fi
 }   
 
