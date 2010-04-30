@@ -47,11 +47,9 @@ init:
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-core/src/lib/database.py
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-shell/src/lib/kusu_shell_app.py
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-shell/src/bin/kusu
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-migrate/src/sbin/kusu-migrate
 
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-shell/src/man/kusu.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-base-node/man/updatenic.8
-	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-migrate/src/man/kusu-migrate.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-kit-install/src/man/kusu-kit-install.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-base-installer/man/kusu-kitops.8
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-base-installer/man/kusu-netedit.8
