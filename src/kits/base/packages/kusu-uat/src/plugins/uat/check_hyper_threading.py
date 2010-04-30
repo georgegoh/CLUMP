@@ -26,7 +26,7 @@ try:
 except ImportError:
     from popen5 import subprocess
 
-from kusu.uat import UATPluginBase, UATHelper, ModelSpec
+from kusu.uat import UATPluginBase, UATHelper, ModelSpecs
 
 usage = """check_hyper_threading -w remote_host
            check_hyper_threading -t remote_host"""

@@ -95,10 +95,9 @@ class UATHelper(object):
 
 
 class ModelSpecs(object):
-
     def __init__(self, host, extension='.ini'):
         super(ModelSpecs, self).__init__()
-        spec_file = self._get_host_model(host) + extension
+        spec_file = self.get_host_model(host) + extension
         self.parser = ConfigParser.SafeConfigParser()
         spec_file = KUSU_UAT_SPEC_DIR / spec_file
         self.parser.read(spec_file)
