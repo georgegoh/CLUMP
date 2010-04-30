@@ -51,9 +51,27 @@ install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/uat
 install -m644 lib/uat_exceptions.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/uat
 install -m644 lib/uat_helper.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/uat
 install -m644 plugins/shell/uat_app.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/shell
-install -m644 plugins/uat/check_*.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_cfmd.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_disk_info.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_disk_partitions.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_hyper_threading.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+#install -m644 plugins/uat/check_ibping.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_kusu_services.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+#install -m644 plugins/uat/check_lava.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_memory_info.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_nfs.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_nics.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_nslookup.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_peripheral_devices.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_ping.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_proc_info.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_speed_step.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_ssh.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_tftpd.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
+install -m644 plugins/uat/check_xserver.py $RPM_BUILD_ROOT/opt/kusu/lib/plugins/uat
 install -m644 etc/uat/conf.d/00-default_checks.conf $RPM_BUILD_ROOT/opt/kusu/etc/uat/conf.d
-install -m644 etc/uat/conf.d/00-ofed_checks.conf $RPM_BUILD_ROOT/opt/kusu/etc/uat/conf.d
+#install -m644 etc/uat/conf.d/00-ofed_checks.conf $RPM_BUILD_ROOT/opt/kusu/etc/uat/conf.d
+#install -m644 etc/uat/conf.d/00-lava_check.conf $RPM_BUILD_ROOT/opt/kusu/etc/uat/conf.d
 install -m644 etc/uat/specs/example.ini $RPM_BUILD_ROOT/opt/kusu/etc/uat/specs
 
 %files
