@@ -40,15 +40,15 @@ from path import path
 
 from kusu.shell import KusuShellApp
 from kusu.uat import UATHelper
-from kusu.uat.uat_helper import UATPluginBase
-from kusu.uat.uat_exceptions import UAT_PluginNotImplemented
+from kusu.uat import UATPluginBase
+from kusu.uat import UAT_ConfFileError, UAT_PluginNotImplemented
 
 KUSU_SHELL_COMMAND = 'uat'
 KUSU_SHELL_COMMAND_CLASS = 'UATApp'
 
 KUSU_UAT_PLUGIN_DIR = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'lib' / 'plugins' / 'uat'
 KUSU_UAT_CONF_DIR = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'etc' / 'uat' / 'conf.d'
-KUSU_UAT_ARTIFACT_ROOT = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'var' / 'uat' 
+KUSU_UAT_ARTIFACT_ROOT = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'var' / 'uat'
 
 usage = """usage: uat [options] [all | check] [,check ...]"""
 version = """uat version ${VERSION_STR}"""
@@ -57,8 +57,8 @@ def create_dir(dir):
     try:
         path(dir).makedirs()
     except OSError:
-        pass 
-          
+        pass
+
 class UATApp(KusuShellApp):
     """Runs UAT plugins on appropriate nodes.
 
@@ -133,23 +133,31 @@ class UATApp(KusuShellApp):
         return parser
 
     def run(self):
-        commands = {} 
+        commands = {}
         self._needs_database()
         configured_checks = self._read_config_files()
         self._populate_dictionaries(configured_checks)
         if self._supplied_commands == ['all']:
             self._supplied_commands = configured_checks.keys()
-     
+
+        disqualified_checks = []
         for check_name in self.check_dict.keys():
             if check_name not in self._supplied_commands:
                 continue
-            commands = self._get_command_list_for_check(check_name)
-            if commands:  
-                self.command_dict[check_name] = commands  
-            commands = {} 
+            try:
+                commands = self._get_command_list_for_check(check_name)
+            except UAT_ConfFileError, msg:
+                self._err.write('Configuration file error: %s.\n' % msg)
+                sys.exit(1)
+            if commands:
+                self.command_dict[check_name] = commands
+            else:
+                disqualified_checks.append(check_name)
+            commands = {}
 
         self._emit_output(self._get_header(self.command_dict) + '\n')
-        
+        self._emit_output("UAT found no nodes for %d checks (%s)\n" %(len(disqualified_checks), ', '.join(disqualified_checks)))
+
         for check_name in self.command_dict.keys():
             self._run_check(check_name)
 
@@ -191,7 +199,7 @@ class UATApp(KusuShellApp):
         elif supplied_nodegroups:
             stmt.append_whereclause(self._db.NodeGroups.c.ngname.in_(*supplied_nodegroups))
 
-        stmt.order_by(self._db.NodeGroups.c.ngname, self._db.Nodes.c.name) 
+        stmt.order_by(self._db.NodeGroups.c.ngname, self._db.Nodes.c.name)
         results = stmt.execute().fetchall()
         for record in results:
             ng_name = record['ngname']
@@ -230,7 +238,7 @@ class UATApp(KusuShellApp):
             self.check_dict[check_name] = {}
             for key, values in check_attributes.iteritems():
                 self.check_dict[check_name][key] = values
-      
+
     def _get_valid_nodes_by_nodegroup_type(self, types):
         valid_nodegroups = set()
         for type in types:
@@ -255,21 +263,21 @@ class UATApp(KusuShellApp):
     def _run_check(self, check_name):
         command_list = []
         self.plugin_inst_dict = {}
-        print "\nRunning %s Check" %check_name 
+        print "\nRunning %s Check" %check_name
         self._logger.info("Running %s Check" %check_name)
-        plugin_list = [cmd.split()[0] for cmd in self.check_dict[check_name]['commands']] 
+        plugin_list = [cmd.split()[0] for cmd in self.check_dict[check_name]['commands']]
 
         try:
             self._populate_plugin_inst(plugin_list, check_name)
-        except UAT_PluginNotImplemented:
+        except UAT_PluginNotImplemented, msg:
             self._register_failure(check_name, self.command_dict[check_name].keys())
-            self._logger.error("Check %s failed to run because requested plugin is not implemented." % check_name)
-            self._emit_output("\tFail: Check %s failed to run because requested plugin is not implemented. \n" % check_name)
-            return       
- 
+            self._logger.error("Check %s failed to run because %s" % (check_name, msg))
+            self._emit_output("\tFail: Check %s failed to run because %s.\n" % (check_name, msg))
+            return
+
         try:
             self._check_pre(check_name)
-        except Exception, e:   
+        except Exception, e:
             self._register_failure(check_name, self.command_dict[check_name].keys())
             self._logger.error("Check %s failed, 'pre_check' hook for the plugin %s has raised the exception: %s " % (check_name, plugin, e))
             self._emit_output("\tFail: Check %s failed, 'pre_check' hook for the plugin %s has raised the exception: %s \n" % (check_name, plugin, e))
@@ -284,7 +292,7 @@ class UATApp(KusuShellApp):
             plugin_class = self._get_plugin_class(plugin)
             if 'init_args' in self.check_dict[check_name]:
                 self.check_dict[check_name]['init_args']['logger'] = self._logger
-                self.check_dict[check_name]['init_args']['db'] = self._db  
+                self.check_dict[check_name]['init_args']['db'] = self._db
                 self.plugin_inst_dict[plugin] = plugin_class(self.check_dict[check_name]['init_args'])
             else:
                 self.plugin_inst_dict[plugin] = plugin_class({'logger': self._logger, 'db': self._db})
@@ -298,7 +306,7 @@ class UATApp(KusuShellApp):
         for node, command_list in self.command_dict[check_name].iteritems():
             set_skip = 0
             for cmd in command_list:
-                plugin_inst = self.plugin_inst_dict[cmd['plugin']] 
+                plugin_inst = self.plugin_inst_dict[cmd['plugin']]
                 self._emit_output('\t%s %s: ' % (cmd['plugin'], node))
                 if set_skip == 1:
                     self._logger.info("Skipped plugin '%s' for node '%s' " % (cmd['plugin'], node))
@@ -308,7 +316,7 @@ class UATApp(KusuShellApp):
                     set_skip = self._run_check_for_node(check_name, plugin_inst, node, cmd)
                 finally:
                     self.plugin_inst_dict[cmd['plugin']].node_teardown(node)
- 
+
                 self._out.flush() # no newline above & result may take a while
 
     def _run_check_for_node(self, check_name, plugin_inst, node, cmd):
@@ -337,34 +345,34 @@ class UATApp(KusuShellApp):
             self._emit_output('FAIL - %s\n' % msg)
             self._logger.error("Check '%s' failed for node '%s' while performing test'%s': %s" %(check_name, node, " ".join(cmd['cmd']), msg))
             return 1
-        
+
         if not returncode:
             self._emit_output('OK - %s\n' % status_msg)
             return returncode
- 
+
         self._register_failure(check_name, [node])
         plugin_inst.dump_debug_artifacts(self._artifact_root / check_name)
         self._emit_output('FAIL - %s\n' % status_msg)
         self._logger.error("Check '%s' failed for node '%s' while performing test'%s'." %(check_name, node, " ".join(cmd['cmd'])))
 
         return 1
- 
+
     def _register_failure(self, check_name, nodes):
        for node in nodes:
-           if check_name in self.command_status: 
+           if check_name in self.command_status:
                self.command_status[check_name].append(node)
            else:
                self.command_status[check_name] = [node]
 
-    def _check_post(self, plugin_list): 
-        # Teardown: LIFO, last plugin setup will be teardown the first.        
+    def _check_post(self, plugin_list):
+        # Teardown: LIFO, last plugin setup will be teardown the first.
         plugin_list.reverse()
         for plugin in plugin_list:
             self.plugin_inst_dict[plugin].post_check()
             try:
                 atexit._exithandlers.remove((self.plugin_inst_dict[plugin].post_check, (), {}))
             except ValueError:
-                continue     
+                continue
 
     def _get_plugin_class(self, plugin_name):
         plugin_file = self._plugin_dir / plugin_name + '.py'
@@ -375,10 +383,10 @@ class UATApp(KusuShellApp):
                 if type(module_attribute) == type and issubclass(module_attribute, UATPluginBase) and attribute != 'UATPluginBase':
                     return module_attribute
 
-        raise UAT_PluginNotImplemented 
+        raise UAT_PluginNotImplemented, 'Plugin %s not implemented' % plugin_name
 
     def _get_command_list_for_check(self, check_name):
-        command_dict = {} 
+        command_dict = {}
         node_list = set()
         for nodes in self._nodes_by_nodegroup.values():
             node_list.update(nodes)
@@ -389,10 +397,15 @@ class UATApp(KusuShellApp):
         if 'components' in check:
             nodes_by_component = self._get_valid_nodes_by_component(check['components'])
         valid_nodes = nodes_by_nodegroup_type.intersection(nodes_by_component)
-        for node in valid_nodes:
-            commands = self._generate_check_commands_for_node(check_name, check['commands'], node)
-            if commands:
-                command_dict[node] = commands
+
+        if 'commands' in check and type(check['commands']) == list and check['commands']:
+            for node in valid_nodes:
+                command_list = self._generate_check_commands_for_node(check_name, check['commands'], node)
+                if command_list:
+                    command_dict[node] = command_list
+        else:
+            raise UAT_ConfFileError, 'Syntax error in the commands list of %s check' % check_name   
+
         return command_dict
 
     def _generate_check_commands_for_node(self, check_name, check_commands, node):
@@ -422,12 +435,12 @@ class UATApp(KusuShellApp):
             num_checks += 1
             for node, command_list in values.iteritems():
                 num_commands += len(command_list)
-                node_list.append(node)                
-  
+                node_list.append(node)
+
         date = time.strftime("%Y-%m-%d %H:%M:%S", self._now)
         header = "UAT %s running " % date
         if num_checks == 1:
-            header += " %d check (%d command(s) " % (num_checks, num_commands)
+            header += "%d check (%d command(s) " % (num_checks, num_commands)
         else:
             header += "%d checks (%d commands " % (num_checks, num_commands)
         num_nodes = len(set(node_list))
@@ -439,13 +452,13 @@ class UATApp(KusuShellApp):
 
     def print_result(self):
         self._emit_output("Done!\n")
- 
+
     def _generate_summary(self):
         if self.command_status.keys():
             print("\n%d Check(s) failed" % len(self.command_status.keys()))
         else:
-            print("\nUAT ran Successfully. No failures were reported.")  
- 
+            print("\nUAT ran Successfully. No failures were reported.")
+
         for check_name, node_list in self.command_status.iteritems():
             print("\tFailure: %s failed on node(s): %s" % (check_name, str(node_list)[1:-1]))
 
@@ -455,6 +468,6 @@ class UATApp(KusuShellApp):
     def _create_link_to_artifact_dir(self):
         if path(KUSU_UAT_ARTIFACT_ROOT / 'lastrun').islink():
             path(KUSU_UAT_ARTIFACT_ROOT / 'lastrun').unlink()
-        
+
         self._artifact_root.symlink(KUSU_UAT_ARTIFACT_ROOT / 'lastrun')
-        print "\nUAT artifacts are stored at: %s " % (KUSU_UAT_ARTIFACT_ROOT / 'lastrun')  
+        print "\nUAT artifacts are stored at: %s " % (KUSU_UAT_ARTIFACT_ROOT / 'lastrun')

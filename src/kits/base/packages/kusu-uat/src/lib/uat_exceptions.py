@@ -20,3 +20,4 @@
 
 
 class UAT_PluginNotImplemented(Exception): pass
+class UAT_ConfFileError(Exception): pass
