@@ -591,9 +591,9 @@ class DirtyLittlePartitioner:
             kver = kern[len('vmlinuz-'):]
             initrd = 'initrd-%s' % kver
 
-            if not os.path.exists('/newroot/etc/SuSE-release'):
-                if not initrd[:-4] == '.img':
-                    initrd += '.img'
+        if not os.path.exists('/newroot/etc/SuSE-release'):
+            if not initrd[-4:] == '.img':
+                initrd += '.img'
 
         if not (os.path.exists('/newroot/usr/sbin/grub') or os.path.exists('/newroot/sbin/grub')):
             print "ERROR:  Unable to locate the grub package!  Was the grub package included?"
