@@ -96,7 +96,7 @@ class CheckProcInfo(UATPluginBase):
             hyper_threading = True
 
         self._cmd_returncode = self._check_ht(hyper_threading)
-        if returncode:
+        if self._cmd_returncode:
            return self._cmd_returncode, self._status
 
         self._status = "Processor hyper threading check passed."
