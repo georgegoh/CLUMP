@@ -13,6 +13,7 @@ from primitive.system.hardware.probe import getAllInterfaces
 import sqlalchemy as sa
 import kusu.core.database as db
 from kusu.util.structure import Struct
+from primitive.support import osfamily
 
 class KusuRC(rcplugin.Plugin):
     def __init__(self):
@@ -93,7 +94,7 @@ class KusuRC(rcplugin.Plugin):
         if self.os_name in ["sles", "opensuse", "suse"]:
             s = self.generateSuSEfirewall2Config(self.devices_by_network_name)
             conf = '/etc/sysconfig/SuSEfirewall2'
-        elif self.os_name in ["rhel", "redhat", "centos"]:
+        elif self.os_name in osfamily.getOSNames('rhelfamily'):
             s = self.generateIPTablesConfig(self.devices_by_network_name)
         conf = path(conf)
         
