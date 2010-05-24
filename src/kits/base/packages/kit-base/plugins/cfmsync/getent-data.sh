@@ -35,14 +35,17 @@ else
 fi
 
 getent shadow > /etc/cfm/shadow.new
+chmod 400 /etc/cfm/shadow.new
 if [ -f /etc/cfm/shadow.getent ]; then
     # Only update it if there are differences
     diff -q /etc/cfm/shadow.getent /etc/cfm/shadow.new
     if [ $? -eq 1 ]; then
-	cp /etc/cfm/shadow.new /etc/cfm/shadow.getent
+        cp /etc/cfm/shadow.new /etc/cfm/shadow.getent
+        chmod 400 /etc/cfm/shadow.getent
     fi
 else
     cp /etc/cfm/shadow.new /etc/cfm/shadow.getent
+    chmod 400 /etc/cfm/shadow.getent
 fi
 
 getent group  > /etc/cfm/group.new
