@@ -100,6 +100,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     # exec the real anaconda
     # Need a better to replace existing -m and --kickstart option in $@
     #/usr/bin/anaconda "$@" -m http://127.0.0.1/ --kickstart /tmp/kusu/install_script ;
+    export PYTHONPATH=$PYTHONPATH:/tmp/updates:/tmp/product
     /usr/bin/anaconda "$@" --kickstart /tmp/kusu/ks.cfg ;
     EXIT_CODE=$?
 
