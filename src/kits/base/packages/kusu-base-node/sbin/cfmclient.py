@@ -200,6 +200,8 @@ class CFMClient:
 
         log_file = path('/var/log/kusu/cfmclient.log')
         if not log_file.isfile():
+            if not log_file.dirname().exists():
+                log_file.dirname().makedirs()
             log_file.touch()
 
     def log(self, mesg):
