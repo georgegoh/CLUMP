@@ -21,6 +21,11 @@
 #
 #
 
+UPDATEFILE    = 1
+UPDATEPACKAGE = 2
+FORCEFILES    = 4
+UPDATEREPO    = 8
+
 import os
 import sys
 import string
@@ -37,6 +42,8 @@ from kusu.ipfun import *
 from primitive.system.software.dispatcher import Dispatcher
 
 CFMFILE='/etc/cfm/.cfmsecret'
+CFMSYNC    = '/opt/kusu/sbin/kusu-cfmsync'
+CFMCLIENT  = '/opt/kusu/sbin/cfmclient'
 
 # Change this when the plugins are relocated
 PLUGINS='/opt/kusu/lib/plugins/cfmsync'
@@ -551,6 +558,53 @@ class PackBuilder:
 
         cfmnet = CFMNet()
         cfmnet.sendPacket(installers, broadcasts, type, ngid, wait)
+
+
+    def consolidatedSync(self, action_type, ngname=None, ngid=0):
+        self.genMergeFiles()
+
+        if action_type & UPDATEPACKAGE or action_type & UPDATEREPO:
+            self.getPackageList(ngname)
+
+        if action_type & UPDATEFILE:
+            size = self.updateCFMdir()
+            if size:
+                self.stdoutMessage("Distributing %i KBytes to all nodes.\n", (size / 1024))
+
+        self.removeOldFiles()
+        self.genFileList()
+
+        from kusu.util.cfm import runCfmMaintainerScripts
+
+        # Now update the Installer if needed
+        if ngid == 1 or ngid == 0:
+            # Run on the installer
+            ntype = action_type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
+            if os.path.exists(CFMCLIENT):
+                client = CFMCLIENT
+            else:
+                client = 'cfmclient'
+
+            cmd_template = "%(cfmclient)s -t %(update_type)i -i self"
+            cmd_args = {'cfmclient': client}
+
+            self.stdoutMessage("cfm_Updating installer\n")
+
+            # Handle update packages first
+            if action_type & UPDATEPACKAGE:
+                cmd_args['update_type'] = UPDATEPACKAGE
+                os.system(cmd_template % cmd_args)
+                # Run cfm maintainer scripts to update cfm links
+                runCfmMaintainerScripts()
+                # Don't need to update packages again
+                ntype = ntype - UPDATEPACKAGE
+
+            # Perform file updates and/or package upgrades
+            if ntype:
+                cmd_args['update_type'] = ntype
+                os.system(cmd_template % cmd_args)
+        else:
+            runCfmMaintainerScripts()
 
 
 if __name__ == '__main__':

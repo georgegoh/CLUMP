@@ -19,19 +19,13 @@
 #
 #
 
-UPDATEFILE    = 1
-UPDATEPACKAGE = 2
-FORCEFILES    = 4
-UPDATEREPO    = 8             
-
 import os
 import sys
 import string
 
 from kusu.core.app import *
 from kusu.core.db import KusuDB
-from kusu.cfms import PackBuilder
-from kusu.util.cfm import runCfmMaintainerScripts
+from kusu.cfms import PackBuilder, UPDATEFILE, UPDATEPACKAGE, FORCEFILES, UPDATEREPO
 
 class UpdateApp(KusuApp):
     def __init__(self, argv):
@@ -118,13 +112,10 @@ class UpdateApp(KusuApp):
 
         type = 0
         if self.options.updatefile:
-            global UPDATEFILE
             type = type | UPDATEFILE
         if self.options.updatepackages:
-            global UPDATEPACKAGE
             type = type | UPDATEPACKAGE
         if self.options.updaterepo:
-            global UPDATEREPO
             type = type | UPDATEREPO
         
         if ngid == 0:
@@ -133,50 +124,11 @@ class UpdateApp(KusuApp):
             msg = self._("cfmsync_event_start_sync_ng") % ngname
             
         self.logEvent(msg, toStdout=False)
-        
+
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
-        pb.genMergeFiles()
-
-        if self.options.updatepackages or self.options.updaterepo:
-            pb.getPackageList(self.options.nodegrp)
-
-        if self.options.updatefile:
-            size = pb.updateCFMdir()
-            if size:
-                self.stdoutMessage("Distributing %i KBytes to all nodes.\n", (size / 1024))
-
-        pb.removeOldFiles()
-        pb.genFileList()
-
-        # Now update the Installer if needed
-        if ngid == 1 or ngid == 0:
-            # Run on the installer
-            ntype = type & (UPDATEFILE | UPDATEPACKAGE | UPDATEREPO)
-            if os.path.exists(CFMCLIENT):
-                client = CFMCLIENT
-            else:
-                client = 'cfmclient'
-
-            cmd_template = "%(cfmclient)s -t %(update_type)i -i self"
-            cmd_args = {'cfmclient': client}
-
-            self.stdoutMessage("cfm_Updating installer\n")
-
-            # Handle update packages first
-            if self.options.updatepackages:
-                cmd_args['update_type'] = UPDATEPACKAGE
-                os.system(cmd_template % cmd_args)
-                # Run cfm maintainer scripts to update cfm links
-                runCfmMaintainerScripts()
-                # Don't need to update packages again
-                ntype = ntype - UPDATEPACKAGE
-
-            # Perform file updates and/or package upgrades
-            if ntype:
-                cmd_args['update_type'] = ntype
-                os.system(cmd_template % cmd_args)
-        else:
-            runCfmMaintainerScripts()
+        # Update the installer and setup sync actions for other nodegroup(s)
+        print type
+        pb.consolidatedSync(action_type=type, ngname=self.options.nodegrp, ngid=ngid)
 
         # Reinitialize the PackBuilder instance in case kusu db
         # is restarted due to an upgrade of the RPMs. Otherwise
@@ -184,7 +136,7 @@ class UpdateApp(KusuApp):
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
 
         # Signal the nodes to start updating
-        pb.signalUpdate(type, self.options.nodegrp)
+        pb.signalUpdate(type, ngname)
 
         if ngid == 0:
             msg = self._("cfmsync_event_finish_sync_all")

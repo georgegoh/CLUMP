@@ -10,14 +10,24 @@
 import sys
 import types
 import rpm
+from sets import Set
+
 from kusu.util.errors import KitNotInstalledError, UpgradeKitError, UpgradeKitAbort
 from kusu.util.kits import matchComponentsToOS, compareVersion, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
+from kusu.cfms import PackBuilder
+from kusu.core.app import KusuApp
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
+
+try:
+    import subprocess
+except ImportError:
+    from popen5 import subprocess
+from path import path
 
 class KitopsAction(object):
     """Head of class hierarchy implementing actions on kits.
@@ -41,6 +51,67 @@ class KitopsAction(object):
         raise NotImplementedError
 
 class UpgradeAction(KitopsAction):
+    
+    def is_native_base_kit(self, kit):
+        installer_ng = self._db.NodeGroups.selectfirst_by(type='installer')
+        return installer_ng.repo in kit.repos
+    
+    def validate_new_kit_for_upgrade(self, kit_tuple):
+        """
+        Checks whether the kit described by kit_tuple can be used in an upgrade.
+    
+        If for any reason the kit cannot be used in an upgrade, this method will
+        raise an UpgradeKitError.
+        """
+    
+        kit_api = kit_tuple[4]
+    
+        # Upgrading kits is supported from kit API 0.4 on.
+        if kit_api not in SUPPORTED_KIT_APIS:
+            msg = ("New kit API version '%s' is not supported. "
+                   "Current version of kusu-kitops supports kit API versions up to '%s'.") \
+                           % (kit_api, SUPPORTED_KIT_APIS[-1])
+            kl.error(msg)
+            raise UpgradeKitError, msg
+    
+        if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
+            msg = "New kit API is %s. Upgrades only supported for kit API version 0.4 or newer." % kit_api
+            kl.error(msg)
+            raise UpgradeKitError, msg
+    
+    def validate_old_kit_for_upgrade(self, old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
+        """
+        Checks whether old_kit can be upgraded.
+    
+        The check is performed based on the oldest_upgradeable_version and
+        oldest_upgradeable_release specified in the new kit and passed into this
+        method. If the kit is too old to be upgraded, this method raises an
+        UpgradeKitError.
+        The repositories to be upgraded with a new native base kit are also checked
+        for staleness. If any repository containing the native base kit is stale,
+        UpgradeKitError is raised.
+        """
+    
+        # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
+        if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
+            msg = ("Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, "
+                   "oldest upgradeable version is %(oldest_version)s-%(oldest_release)s.") \
+                    % {'current_version': old_kit.version,
+                       'current_release': old_kit.release,
+                       'oldest_version': oldest_upgradeable_version,
+                       'oldest_release': oldest_upgradeable_release}
+            kl.error(msg)
+            raise UpgradeKitError, msg
+
+        if self.is_native_base_kit(old_kit):
+            for repo in old_kit.repos:
+                repo_obj = RepoFactory(self._db).getRepo(repo.repoid)
+                if repo_obj.isStale():
+                    msg = "Unable to upgrade specified native base kit, %s-%s-%s, used in repository %s."\
+                          "\nRepository is stale. Refresh the repository and rerun." % (old_kit.rname, old_kit.version,
+                                                                                        old_kit.release, repo.reponame)
+                    kl.error(msg)
+                    raise UpgradeKitError, msg
 
     def _get_old_kit(self, old_kit_id):
         old_kit_id = int(old_kit_id)
@@ -112,9 +183,12 @@ class UpgradeAction(KitopsAction):
             except (ValueError, IndexError):
                 print "ERROR: Invalid choice. Please try again.\n"
 
-    def _verify_new_kit_has_compatible_components(self, associated_repos):
-        for repo in associated_repos:
-            if not matchComponentsToOS(components_to_add, repo.getOS()):
+    def _verify_new_kit_has_compatible_components(self, kitinfo_components, existing_repos):
+        """
+        Verify that the components of a new kit are compatible with the existing repositories.
+        """
+        for repo in existing_repos:
+            if not matchComponentsToOS(kitinfo_components, repo.getOS()):
                 msg = "New kit does not have any components compatible with repo %s" % repo
                 kl.error(msg)
                 raise UpgradeKitError, msg
@@ -149,8 +223,24 @@ class UpgradeAction(KitopsAction):
             # Add the new kit
             repo.kits.append(self.new_kit)
             RepoFactory(self._db).getRepo(repo.repoid).markStale()
-            repo.save()
+            repo.save_or_update()
             self._db.flush()
+
+    def _update_repos(self, repos):
+        print "Refreshing repositories: %s" % ", ".join([repo.reponame for repo in repos])
+        print "This may take a while to complete. Please do not run any kusu commands until then."
+
+        for repo in repos:
+            repo_obj = RepoFactory(self._db).getRepo(repo.repoid)
+            try:
+                print "\tRefreshing repo %s" % repo.reponame
+                repo_obj.refresh(repo.repoid)
+            except Exception, e:
+                kl.error("Upgrade failed. Unable to refresh repo %s. Reason: %s." % (repo.reponame, e))
+                sys.exit(1)
+            else:
+                print "\tFinished updating repo %s" % repo.reponame
+        
 
     def _reassociate_components_to_nodegroups(self, components_to_add):
         # We will need a mapping from new_kit.components to components_to_add
@@ -161,6 +251,7 @@ class UpgradeAction(KitopsAction):
                     component_mapping[db_component.cname] = component
 
         # Now we handle the nodegroup-component associations
+        upgraded_nodegroups = Set()
         for new_component in self.new_kit.components:
             new_component_follows = component_mapping[new_component.cname]['follows']
             if not new_component_follows.startswith('component-'):
@@ -170,6 +261,10 @@ class UpgradeAction(KitopsAction):
                         or new_component_follows == old_component.cname:
                     new_component.nodegroups = old_component.nodegroups
                     old_component.nodegroups = []
+                    upgraded_nodegroups.update(new_component.nodegroups)
+
+        return upgraded_nodegroups
+                    
 
     def _delete_old_kit(self):
         # For some reason, the in-memory representation of the DB is stale at
@@ -186,10 +281,79 @@ class UpgradeAction(KitopsAction):
             print "To complete the upgrade, please run the following commands:\n"
             for repo in new_normal_kit.repos:
                 print "    kusu-repoman -u -r %s" % repo.reponame
-            for component in new_normal_kit.components:
-                if component.nodegroups:
-                    print "    kusu-cfmsync -f -p -u\n"
-                    break
+
+            nodegroups = Set([ng for comp in new_normal_kit.components for ng in comp.nodegroups])
+            for ng in nodegroups:
+                if ng.installtype == 'diskless' or ng.installtype == 'disked':
+                    print "    kusu-buildimage -n %s" % ng.ngname
+
+            dpack_nodegroups = Set([ng for comp in new_normal_kit.components if comp.driverpacks for ng in comp.nodegroups])
+            for ng in dpack_nodegroups:
+                if ng.installtype == 'package':
+                    print "    kusu-driverpatch nodegroup id %d" % ng.ngid
+
+            if nodegroups:
+                print "    kusu-cfmsync -f -p -u\n"
+
+    def _synchronize_nodegroups(self):
+        # Use a dummy KusuApp instance for helper functions
+        temp_app = KusuApp()
+
+        # Initialize and prepare consolidated sync
+        pb = PackBuilder(temp_app.errorMessage, temp_app.stdoutMessage)
+        pb.consolidatedSync(action_type=11, ngname=None, ngid=0)
+
+        # Re-initialize to get updated db state and signal for nodes to sync
+        pb = PackBuilder(temp_app.errorMessage, temp_app.stdoutMessage)
+        pb.signalUpdate(11, None)
+
+    def _build_images_and_patch_drivers(self, nodegroups):
+        new_driverpack_comps = [comp for comp in self.new_kit.components if comp.driverpacks]
+        for ng in nodegroups:
+            ng_driverpacks = Set([comps for comp in ng.components if comp in new_driverpack_comps])
+
+            if ng.installtype == 'diskless' or ng.installtype == 'disked':
+                print "Building image for %s nodegroup: %s. " % (ng.type, ng.ngname)
+                print "This may take a while to complete. Please do not run any kusu commands until then."
+                retcode = subprocess.call(['kusu-buildimage', '-n', ng.ngname])
+                if retcode:
+                    print "Buildimage failed. Please run manually after the upgrade has completed."
+                else:
+                    print "Buildimage ran successfully."
+
+            elif ng.installtype == 'package' and ng_driverpacks:
+                print "Patching drivers for %s nodegroup: %s." % (ng.type, ng.ngname)
+                print "This may take a while to complete. Please do not run any kusu commands until then."
+
+                # Find boot directory
+                try:
+                   bootdir = self._db.AppGlobals.selectone_by(kname='PIXIE_ROOT').kvalue
+                except:
+                   bootdir = '/tftpboot/kusu'
+
+                # Copy over pristine initrd
+                bootdir = path(bootdir)
+                src_initrd = bootdir / ng_initrd
+                dst_initrd = bootdir / 'initrd.%s.%d.img' % (ng_installtype, ngid)
+                try:
+                    src_initrd.copyfile(dst_initrd)
+                except:
+                    print 'Warning: Failed to copy pristine initrd for this nodegroup. ' \
+                          'This failure will likely result in unexpected behaviour.\n'
+
+                # Run kusu-driverpatch
+                retcode = subprocess.call(['kusu-driverpatch', 'nodegroup', 'id', str(ng.ngid)])
+                if retcode:
+                    print "Driverpatch failed. Please run manually after the upgrade has completed."
+                else:
+                    print "Driverpatch ran successfully."
+
+
+    def _update_kusu_version(self, version):
+        kusu_ver = self._db.AppGlobals.selectfirst_by(kname='KUSU_VERSION')
+        kusu_ver.kvalue = version
+        kusu_ver.save_or_update()
+        self._db.flush()
 
     def run(self, **kw):
         """Perform the action."""
@@ -207,70 +371,31 @@ class UpgradeAction(KitopsAction):
         components_to_add = selected_kit[2]
 
         # Verify both kits can be used in an upgrade.
-        validate_new_kit_for_upgrade(selected_kit)
-        validate_old_kit_for_upgrade(self.old_kit,
-                                     selected_kit[1].get('oldest_upgradeable_version', ''),
-                                     selected_kit[1].get('oldest_upgradeable_release', ''))
+        self.validate_new_kit_for_upgrade(selected_kit)
+        self.validate_old_kit_for_upgrade(self.old_kit,
+                                          selected_kit[1].get('oldest_upgradeable_version', ''),
+                                          selected_kit[1].get('oldest_upgradeable_release', ''))
 
         # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
         associated_repos = self.old_kit.repos
 
-        self._verify_new_kit_has_compatible_components(associated_repos)
+        self._verify_new_kit_has_compatible_components(components_to_add, associated_repos)
 
         self._get_user_confirmation(selected_kit)
 
         self.new_kit = self._add_and_return_new_kit(selected_kit)
 
         self._reassociate_repos(associated_repos)
-        self._reassociate_components_to_nodegroups(components_to_add)
+        upgraded_nodegroups = self._reassociate_components_to_nodegroups(components_to_add)
 
         self._delete_old_kit()
 
-        if not self.new_kit.rname == 'base':
+        if self.is_native_base_kit(self.new_kit):
+            self._update_repos(associated_repos)
+            self._synchronize_nodegroups()
+            self._build_images_and_patch_drivers(upgraded_nodegroups)
+            self._update_kusu_version(self.new_kit.version)
+        else:
             self._remind_user_remaining_upgrade_steps()
-
-def validate_new_kit_for_upgrade(kit_tuple):
-    """
-    Checks whether the kit described by kit_tuple can be used in an upgrade.
-
-    If for any reason the kit cannot be used in an upgrade, this method will
-    raise an UpgradeKitError.
-    """
-
-    kit_api = kit_tuple[4]
-
-    # Upgrading kits is supported from kit API 0.4 on.
-    if kit_api not in SUPPORTED_KIT_APIS:
-        msg = ("New kit API version '%s' is not supported. "
-               "Current version of kusu-kitops supports kit API versions up to '%s'.") \
-                       % (kit_api, SUPPORTED_KIT_APIS[-1])
-        kl.error(msg)
-        raise UpgradeKitError, msg
-
-    if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
-        msg = "New kit API is %s. Upgrades only supported for kit API version 0.4 or newer." % kit_api
-        kl.error(msg)
-        raise UpgradeKitError, msg
-
-def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
-    """
-    Checks whether old_kit can be upgraded.
-
-    The check is performed based on the oldest_upgradeable_version and
-    oldest_upgradeable_release specified in the new kit and passed into this
-    method. If the kit is too old to be upgraded, this method raises an
-    UpgradeKitError.
-    """
-
-    # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
-    if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
-        msg = ("Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, "
-               "oldest upgradeable version is %(oldest_version)s-%(oldest_release)s.") \
-                % {'current_version': old_kit.version,
-                   'current_release': old_kit.release,
-                   'oldest_version': oldest_upgradeable_version,
-                   'oldest_release': oldest_upgradeable_release}
-        kl.error(msg)
-        raise UpgradeKitError, msg
 
