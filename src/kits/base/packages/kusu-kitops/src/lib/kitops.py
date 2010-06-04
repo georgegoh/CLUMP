@@ -16,6 +16,7 @@ import urlparse
 import tempfile
 import glob
 import re
+import atexit
 from path import path
 from sets import Set
 import sqlalchemy as sa
@@ -324,6 +325,7 @@ class KitOps:
             tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=self.tmpprefix))
             rpm = rpmtool.RPM(str(kitrpm))
             rpm.extract(tmpdir)
+            atexit.register(lambda: tmpdir.rmtree())
 
             kitinfos = []
             for kitinfo in tmpdir.walkfiles('kitinfo'):
@@ -331,7 +333,6 @@ class KitOps:
 
             # only one kitinfo file permitted
             if len(kitinfos) > 1:
-                tmpdir.rmtree()
                 raise InvalidKitInfoError, \
                     'Found %d kitinfo files, only 1 expected' % len(kitinfos)
 
@@ -347,8 +348,6 @@ class KitOps:
                 kit, components = processKitInfo(kitinfo)
                 api = kit.get('api', '0.1')
                 availableKits.append((location, kit, components, rpm, api))
-
-            tmpdir.rmtree()
 
         if not availableKits:
             self.unmountMedia()
@@ -411,12 +410,11 @@ class KitOps:
         """
         tmpdir = path(tempfile.mkdtemp(prefix='kitinfo-', dir=self.tmpprefix))
         kitrpm.extract(tmpdir)
+        atexit.register(lambda: tmpdir.rmtree())
         kitinfo = tmpdir / 'kitinfo'
         if not kitinfo.exists():
             return None
         kits, components = processKitInfo(kitinfo)
-        # cleanup
-        tmpdir.rmtree()
         return kits, components
 
     def getKitApi(self, kid):

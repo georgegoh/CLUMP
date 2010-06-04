@@ -10,6 +10,7 @@
 import pwd
 import subprocess
 import tempfile
+import atexit
 from path import path
 from kusu.util.kits import processKitInfo, run_scripts, generate_script_arg
 from kusu.util.errors import KitAlreadyInstalledError, ComponentAlreadyInstalledError, \
@@ -318,11 +319,10 @@ def addkit04(koinst, db, kitinfo, update_action=False):
     # Extract the kit RPM to get access at its scripts.
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
     kitrpm.extract(tmpdir)
+    atexit.register(lambda: tmpdir.rmtree())
 
     script_arg=generate_script_arg(operation='add', update_action=update_action)
     if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg):
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to add kit"
 
     # populate the kit DB table with info
@@ -350,7 +350,6 @@ def addkit04(koinst, db, kitinfo, update_action=False):
     # Let's move what we extracted earlier into the repodir.
     for item in tmpdir.listdir():
         item.move(repodir / item.basename())
-    tmpdir.rmtree()
 
     installPlugins(koinst, repodir, str(newkit.kid))
     installDocs(koinst, newkit)

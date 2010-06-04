@@ -9,6 +9,7 @@
 
 import sys
 import os
+import atexit
 import cPickle as cpickle
 from tempfile import mkdtemp
 
@@ -169,6 +170,7 @@ class RemoteKit(object):
 
                 for arch in p[kit].keys():
                     tempdir = path(mkdtemp(suffix='-kitops'))
+                    atexit.register(lambda: tempdir.rmtree())
                     choice = p[kit][arch][0]
 
                     if repo == 'rhel':
@@ -187,7 +189,7 @@ class RemoteKit(object):
                             os.rename(tempdir +'/kitinfo', cachepath +'/'+ str(repoid) +'-'+ str(kitid)+'_kitinfo')
                             kitid = kitid + 1
                             break
-                    tempdir.rmtree()
+
         self.generateCacheFile(repo, kitdict)
         return
 
@@ -267,6 +269,7 @@ class RemoteKit(object):
 
             if repo == 'rhel':
                 tmpdir = path(mkdtemp(suffix='-kitops'))
+                atexit.register(lambda: tmpdir.rmtree())
                 self.getRHNFile(url, '/repodata/repomd.xml', tmpdir)
                 remote=YumRepo('file://'+ tmpdir)
                 try:
@@ -274,7 +277,6 @@ class RemoteKit(object):
                 except FetchException, e:
                     kl.error(e)
                     print "Unable to access rhhpc server\n"
-                tmpdir.rmtree()
             else:
                 remote = YumRepo(url)
                 try:

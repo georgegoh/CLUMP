@@ -10,6 +10,7 @@
 import sqlalchemy
 import subprocess
 import tempfile
+import atexit
 from path import path
 from kusu.util.errors import DeleteKitsError
 from kusu.kitops.addkit_strategies import getPluginProviders
@@ -102,11 +103,10 @@ def deletekit04(koinst, db, kit, update_action=False):
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
     rpm = get_kit_RPM(kitdir)
     rpm.extract(tmpdir)
+    atexit.register(lambda: tmpdir.rmtree())
 
     script_arg = generate_script_arg(operation='delete', update_action=update_action)
     if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to delete kit"
 
     kl.info("Removing kit with kid '%s'" % kit.kid)
@@ -123,8 +123,6 @@ def deletekit04(koinst, db, kit, update_action=False):
         # remove kit DB info
         kit.delete()
     except sqlalchemy.exceptions.SQLError, e:
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
         raise DeleteKitsError, [e]
 
     # uninstall plugins and docs
@@ -145,12 +143,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     if del_path.exists(): del_path.rmtree()
 
     if 0 != run_scripts(tmpdir, mode='postun', script_arg=script_arg):
-        # Remove tmpdir. Should probably be done with atexit.
-        tmpdir.rmtree()
         raise KitScriptError, "Pre script error, failed to delete kit"
-
-    # Remove tmpdir. Should probably be done with atexit.
-    tmpdir.rmtree()
 
 def uninstallDocs(db, kit, prefix, kitdir, docsdir):
     kl.debug('Uninstalling kit documentation.')
