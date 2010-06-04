@@ -177,6 +177,7 @@ install -m644 lib/kusu/addhost.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
 install -m644 lib/kusu/cfms.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
 install -m644 lib/kusu/cfmnet.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
 install -m644 lib/kusu/genconfig.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
+install -m644 lib/kusu/buildimage.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu
 install -m644 lib/kusu/ngedit/ngedit.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/ngedit
 install -m644 lib/kusu/ngedit/constants.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/ngedit
 install -m644 lib/kusu/ngedit/partition.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/ngedit
@@ -277,6 +278,7 @@ echo "# CFM changed file list.  Generated automatically" > $RPM_BUILD_ROOT/opt/k
 /opt/kusu/lib/python/kusu/cfmnet.py*
 /opt/kusu/lib/python/kusu/cfms.py*
 /opt/kusu/lib/python/kusu/genconfig.py*
+/opt/kusu/lib/python/kusu/buildimage.py*
 /opt/kusu/lib/python/kusu/ngedit/__init__.py*
 /opt/kusu/lib/python/kusu/ngedit/ngedit.py*
 /opt/kusu/lib/python/kusu/ngedit/constants.py*
