@@ -197,8 +197,14 @@ class KitOpsApp(KusuApp):
             kit_media = options.media
             self.koinst.setKitMedia(kit_media)
 
+            old_kit_id = options.kid
+            if not old_kit_id:
+                kl.debug('Kit id of the kit to update not specified.')
+                self.logErrorEvent('Kit id of the kit to update not specified')
+                sys.exit(EKITUP_FAIL)
+
             update_action = UpdateAction(self.__db, self.koinst)
-            run_args = {'old_kit_id': options.kid,
+            run_args = {'old_kit_id': old_kit_id,
                         'kits': self.mountAndParseKitMedia()}
 
             self.action_queue[update_action] = run_args
