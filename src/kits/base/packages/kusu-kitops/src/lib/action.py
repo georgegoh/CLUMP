@@ -120,8 +120,8 @@ class UpgradeAction(KitopsAction):
 
         # Check if the kit being upgraded is not in any repository.
         if not old_kit.repos:
-            msg = "Current kit %s id: %s is not used in any repository. Add the new kit using kusu-kitops -a instead of upgrading." %
-                  (old_kit.longname, old_kit.kid)
+            msg = "Current kit %s id: %s is not used in any repository. Add the new kit " \
+                  "using kusu-kitops -a instead of upgrading." % (old_kit.longname, old_kit.kid)
             kl.error(msg)
             raise UpgradeKitError, msg
 
