@@ -36,7 +36,7 @@
 #
 KIT_PROPER_NAME = base
 KIT_VERSION = $(shell grep "^Version: " SPECS/kit-base.spec | awk '{print $$2}')
-KIT_RELEASE = 1
+KIT_RELEASE = $(shell grep "^Release: " SPECS/kit-base.spec | awk '{print $$2}')
 KIT_NAME = $(shell echo $(KIT_PROPER_NAME) | tr A-Z a-z)
 #KIT_ARCH = $(shell uname -i)
 ifeq ($(strip $(ARCH)), x86_64)
