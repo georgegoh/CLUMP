@@ -449,7 +449,15 @@ class KitOpsApp(KusuApp):
         kits = self.koinst.listKit(self.kit_name, self.kit_id, self.kit_ver, self.kit_arch)
 
         for kit in kits:
-            print "%s:\t\t%s" % (headers[0], kit.rname)
+            descriptor = ''
+            if kit.rname == 'base':
+                installer_ng = self.__db.NodeGroups.selectfirst_by(type='installer')
+                if installer_ng.repo in kit.repos:
+                    descriptor = ' (native base kit)'
+                else:
+                    descriptor = ' (compatibility kit)'
+
+            print "%s:\t\t%s%s" % (headers[0], kit.rname, descriptor)
             print "%s:\t\t%s" % (headers[1], kit.kid)
             print "%s:\t%s" % (headers[3], kit.version)
 
