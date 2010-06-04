@@ -1,4 +1,4 @@
-# $Id: kusu-hardware.sles.spec 3135 2009-10-23 05:42:58Z ltsai $
+# $Id$
 #
 # Copyright (C) 2007 Platform Computing Inc
 #

@@ -114,7 +114,7 @@ PKG_COMPONENT_ICR_SOURCES = etc
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
 PKG_BASE_INSTALLER_SPEC = kusu-base-installer.spec
-PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc po tftpboot firstboot libexec
+PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc tftpboot firstboot libexec
 
 # Kusu Base node package.
 KIT_PKGS += PKG_BASE_NODE
@@ -164,7 +164,7 @@ PKG_HARDWARE_SOURCES = doc src/lib
 # Kusu Kitops package.
 KIT_PKGS += PKG_KITOPS
 PKG_KITOPS_SPEC = kusu-kitops.spec
-PKG_KITOPS_SOURCES = doc src/bin src/lib
+PKG_KITOPS_SOURCES = doc src/bin src/lib src/etc
 #PKG_KITOPS_SOURCES = src setup.py
 
 #kusu kit-install package.

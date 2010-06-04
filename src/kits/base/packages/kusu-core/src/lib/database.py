@@ -17,10 +17,12 @@ from kusu.util.errors import *
 import kusu.util.log as kusulog
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support.osfamily import getOSNames, matchTuple
-from kusu.buildkit import processKitInfo
+from kusu.util.kits import processKitInfo, SUPPORTED_KIT_APIS
 from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
+
+SUPPORTED_KIT_APIS = ['0.2', '0.3']
 
 # it seems these must be told to be quiet individually...
 logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
@@ -139,7 +141,7 @@ class Kits(BaseTable):
                    comp.os.strip() == '' or comp.os == 'NULL']
             components_list.extend(lst)
 
-        elif '0.2' == infokit['api']:
+        elif infokit['api'] in SUPPORTED_KIT_APIS:
             comp_dict = {}
             for db_comp in self.components:
                 comp_dict[db_comp.cname] = db_comp
@@ -183,8 +185,8 @@ class Kits(BaseTable):
 
                 else:
                     os_set.add(comp.os.lower())
-
-        elif '0.2' == infokit['api']:
+                     
+        elif infokit['api'] in SUPPORTED_KIT_APIS:
             for comp in infocomps:
                 try:
                     for tup in comp['os']:
@@ -427,8 +429,11 @@ class DB(object):
         if not db and driver == 'sqlite':
             raise NoSuchDBError, 'Must specify db for driver: %s' % driver
 
-        if username == 'apache' and not password:
-            password = self.__getPasswd()
+        apache_password = ''
+        if username == 'apache':
+            apache_password = self.__getPasswd()
+        if apache_password:
+            password = apache_password
 
         if driver == 'sqlite':
             if db:
@@ -462,7 +467,7 @@ class DB(object):
             if not port:
                 port = '5432'
 
-                engine_src = 'postgres://%s:%s@%s:%s/%s' % \
+            engine_src = 'postgres://%s:%s@%s:%s/%s' % \
                              (username, password, host, port, db)
 
         else:

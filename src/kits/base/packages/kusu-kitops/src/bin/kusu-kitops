@@ -23,7 +23,8 @@ kl = kusulog.getKusuLog('kitops-app')
 import kusu.core.database as db
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
-from kusu.boot.distro import DistroInstallSrcBase
+from kusu.kitops.action import UpdateAction
+from kusu.kitops.remotekit import RemoteKit
 from kusu.util.errors import *
 
 EMOUNT_FAIL     = -1
@@ -42,18 +43,22 @@ KITOP_DEL   = 0x02
 KITOP_UP    = 0x04
 KITOP_LST   = 0x08
 
+PROCESS_ACTION_QUEUE = 0x11
+
 class KitOpsApp(KusuApp):
     def __init__(self, koinst):
         """Create instance of KitOpsApp. koinst is a KitOps instance."""
 
         KusuApp.__init__(self)
 
+        self.action_queue = {}
         self.koinst = koinst
         self.kitop = KITOP_NONE
         self.kit_name = ''
         self.kit_ver = ''
         self.kit_arch = ''
         self.skip_confirm = False
+
         # if this is set to true, the following default assumptions are made
         # 1) An OS Kit only has 1 CD.
         # 2) In a meta kit, all kits are selected for addition
@@ -67,8 +72,7 @@ class KitOpsApp(KusuApp):
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
                 self.printHelp()
-                sys.stderr.write('Only one of -a/--add, -e/--remove or ' +
-                                 '-l/--list is supported.\n')
+                sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list, -r/--remotelist or -u/--update i2s supported.\n')
                 sys.exit(EBAD_OP)
             elif '-a' in option._short_opts:
                 setattr(parser.values, option.dest, 'add')
@@ -76,6 +80,9 @@ class KitOpsApp(KusuApp):
                 setattr(parser.values, option.dest, 'delete')
             elif '-l' in option._short_opts:
                 setattr(parser.values, option.dest, 'list')
+            elif '-u' in option._short_opts:
+                setattr(parser.values, option.dest, 'update')
+
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='action',
                                help=self._('kitops_usage_add'),
@@ -83,6 +90,13 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
                                action='callback', callback=mutexAction)
+        self.parser.add_option('-r', '--remotelist', dest='action',
+                               help=self._('kitops_usage_remotelist'),
+                               action='callback', callback=mutexAction)
+        self.parser.add_option('-u', '--update', dest='action',
+                               help=self._('kitops_usage_update'),
+                               action='callback', callback=mutexAction)
+
         self.parser.add_option('-e', '--remove', dest='action',
                                help=self._('kitops_usage_remove'),
                                action='callback', callback=mutexAction)
@@ -95,14 +109,16 @@ class KitOpsApp(KusuApp):
 
         self.parser.add_option('-i', '--kid', dest='kid',
                                help=self._('kid'))
-
+        self.parser.add_option('-n', '--remote-kid', dest='remote_kid',
+                               help=self._('Kit ID in the remote repo'))
+ 
         self.parser.add_option('-o', '--kitversion', dest='kitversion',
                                help=self._('kitversion'))
         self.parser.add_option('-c', '--kitarch', dest='kitarch',
                                help=self._('kitarch'))
 
         self.parser.add_option('--dbdriver', dest='dbdriver',
-                               help=self._('Database driver (sqlite, mysql,postgres)'))
+                               help=self._('Database driver (sqlite, mysql, postgres)'))
         self.parser.add_option('--dbdatabase', dest='dbdatabase',
                                help=self._('Database'))
         self.parser.add_option('--dbuser', dest='dbuser',
@@ -138,43 +154,9 @@ class KitOpsApp(KusuApp):
             self.stdoutMessage('kusu-kitops version %s\n', self.version)
             sys.exit(0)
 
-        #suppress questions if required
-        self.suppress_questions = options.suppress_questions
-        #confirmations are skipped if questions are not asked
-        self.skip_confirm = options.suppress_questions or options.skip_confirm
-
-        if options.action == 'add':
-            kit_media = options.media
-            if not kit_media:
-                if self.suppress_questions:
-                    kl.debug('Kit media not specified in silent mode')
-                    self.logErrorEvent('Kit media not specified in silent mode')
-                    sys.exit(EKITLOC_FAIL)
-                else:
-                    kit_media = self.determineKitMedia()
-            # to indicate which kit to install from a metakit
-            self.kit_name = options.kit
-            self.kit_ver = options.kitversion
-            self.kit_arch = options.kitarch
-
-            koinst.setKitMedia(kit_media)
-            self.kitop = KITOP_ADD
-        elif options.action == 'delete':
-            self.kit_name = options.kit
-            self.kit_id = options.kid
-            self.kit_ver = options.kitversion
-            self.kit_arch = options.kitarch
-            self.kitop = KITOP_DEL
-        elif options.action == 'list':
-            self.kit_name = options.kit
-            self.kit_id = options.kid
-            self.kit_ver = options.kitversion
-            self.kit_arch = options.kitarch
-            self.kitop = KITOP_LST
-
         dbdriver = os.getenv('KUSU_DB_ENGINE')
         if not dbdriver or dbdriver not in ['mysql','postgres']:
-            dbdriver = 'postgres' # default to postgres
+            dbdriver = 'mysql' # default to mysql
 
         dbdatabase = 'kusudb'
         dbuser = 'apache'
@@ -190,18 +172,77 @@ class KitOpsApp(KusuApp):
             dbpassword = options.dbpassword
 
         try:
-            self.koinst.setDB(db.DB(dbdriver, dbdatabase, dbuser, dbpassword))
-            self.koinst.isDBAvailable()
+            self.__db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+            self.koinst.setDB(self.__db)
         except UnsupportedDriverError, e:
             self.logErrorEvent('Database error: ' + e.args[0])
             sys.exit(EDB_FAIL)
+
+        # Now we will just perform a quick query from the DB to make sure the
+        # DB connection we established is correct.
+        try:
+            self.koinst.findKits('not expecting', 1, 'result', 'at all')
+        except:
+            self.logErrorEvent("Database error. " + \
+                               "Please check database configuration.")
+            sys.exit(EDB_FAIL)
+
+        #suppress questions if required
+        self.suppress_questions = options.suppress_questions
+        #confirmations are skipped if questions are not asked
+        self.skip_confirm = options.suppress_questions or options.skip_confirm
+
+        if options.action == 'add':
+            kit_media = options.media
+            if not kit_media:
+                if self.suppress_questions:
+                    kl.debug('Kit media not specified in silent mode')
+                    self.logErrorEvent('Kit media not specified in silent mode')
+                    sys.exit(EKITLOC_FAIL)
+                else:
+                    if not options.remote_kid: 
+                        kit_media = self.determineKitMedia()
+
+            # to indicate which kit to install from a metakit
+            self.kit_name = options.kit
+            self.remote_kit_id = options.remote_kid
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
+
+            self.koinst.setKitMedia(kit_media)
+            self.kitop = KITOP_ADD
+        elif options.action == 'update':
+            kit_media = options.media
+            self.koinst.setKitMedia(kit_media)
+
+            if options.remote_kid is not None and options.kid.find('-'):
+                kit_media = RemoteKit().runAddRemoteKit(options.remote_kid)
+                self.koinst.setKitMedia(kit_media, delete_kitmedia=True)
+
+            update_action = UpdateAction(self.__db, self.koinst)
+            run_args = {'old_kit_id': options.kid,
+                        'kits': self.mountAndParseKitMedia()}
+
+            self.action_queue[update_action] = run_args
+            self.kitop = PROCESS_ACTION_QUEUE
+        elif options.action == 'delete':
+            self.kit_name = options.kit
+            self.kit_id = options.kid
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
+            self.kitop = KITOP_DEL
+        elif options.action == 'list':
+            self.kit_name = options.kit
+            self.kit_id = options.kid
+            self.kit_ver = options.kitversion
+            self.kit_arch = options.kitarch
+            self.kitop = KITOP_LST
 
         if options.prefix:
             kl.debug('Setting prefix to %s', options.prefix)
             self.koinst.setPrefix(options.prefix)
         else:
             self.koinst.setPrefix('/')
-
 
     def getActionDesc(self):
         if self.kitop == KITOP_ADD:
@@ -219,6 +260,15 @@ class KitOpsApp(KusuApp):
         self.parseArgs()
 
         if self.kitop == KITOP_ADD:
+            if self.remote_kit_id:
+                # Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid
+                if self.remote_kit_id.find('-'):
+                    kit_media = RemoteKit().runAddRemoteKit(self.remote_kit_id)
+                    # We pass delete_kitmedia=True because the kitmedia
+                    # location is a temporary directory containing downloaded
+                    # files from the remote repo.
+                    self.koinst.setKitMedia(kit_media, delete_kitmedia=True)
+
             self.runAdd()
 
         elif self.kitop == KITOP_DEL:
@@ -250,9 +300,13 @@ class KitOpsApp(KusuApp):
                     self.logErrorEvent(e.args[0])
                     sys.exit(EKITDEL_FAIL)
                 except DeleteKitsError, e:
-                    kl.debug('FAIL perfoming delete operation')
+                    kl.debug('FAIL performing delete operation')
                     for error in e.args[0]:
                         self.logErrorEvent(error)
+                    sys.exit(EKITDEL_FAIL)
+                except KitPackageError, e:
+                    kl.debug('FAIL performing delete operation')
+                    self.logErrorEvent(e.args[0])
                     sys.exit(EKITDEL_FAIL)
 
                 kit_names = [ '%s-%s-%s-%s' % (kit.rname, kit.version, kit.release, kit.arch) for kit in kits ]
@@ -262,8 +316,24 @@ class KitOpsApp(KusuApp):
             else:
                 kl.debug('Deletion confirmation aborted!')
 
+            self.logEvent(self._("kitops_event_deleted_kit") % self.kit_name,
+                          toStdout=False)
+            kl.debug('SUCCESS performing delete operation')
+
         elif self.kitop == KITOP_LST:
             self.runListKit()
+
+        elif self.kitop == KITOP_RLST:
+            RemoteKit().runListRemoteKit()
+        elif self.kitop == PROCESS_ACTION_QUEUE:
+            for action, run_args in self.action_queue.iteritems():
+                try:
+                    action.run(**run_args)
+                except KitopsError, e:
+                    sys.stderr.write("ERROR: %s\n" % e)
+                    # TODO: move the error codes into the KitopsAction class
+                    # hierarchy, and have the action return its own error code.
+                    sys.exit(EKIT_BAD)
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
@@ -274,25 +344,10 @@ class KitOpsApp(KusuApp):
 
     def runAdd(self):
         kl.debug('Performing add operation')
-        self.logEvent(self._("kitops_event_add_kits_from_media") % koinst.kitmedia,
+        self.logEvent(self._("kitops_event_add_kits_from_media") % self.koinst.kitmedia,
                       toStdout=False)
 
-        try:
-            kits = self.koinst.addKitPrepare()
-        except (CannotMountKitMediaError, UnrecognizedKitMediaError,
-                AssertionError), e:
-            kl.debug('FAIL performing add operation')
-            self.logErrorEvent(e.args[0])
-            sys.exit(EKITLOC_FAIL)
-        except InvalidRPMHeader, e:
-            invalid_rpm_name = path(e.args[0]).basename()
-            kl.debug('FAIL performing add operation')
-            self.logErrorEvent('Invalid RPM header: %s' % path(e.args[0]).basename())
-            sys.exit(EKITLOC_FAIL)
-        except (KitinfoSyntaxError, UnsupportedKitAPIError), e:
-            kl.debug('FAIL performing add operation: %s', e.args[0])
-            self.logErrorEvent('Error: %s' % e.args[0])
-            sys.exit(EKIT_BAD)
+        kits = self.mountAndParseKitMedia()
 
         kitError = False
 
@@ -333,7 +388,7 @@ class KitOpsApp(KusuApp):
         if kitError:
             sys.exit(EKITLOC_FAIL)
 
-        self.logEvent(self._("kitops_event_finish_add_kits_from_media") % koinst.kitmedia,
+        self.logEvent(self._("kitops_event_finish_add_kits_from_media") % self.koinst.kitmedia,
                       toStdout=False)
         kl.debug('SUCCESS performing add operation')
 
@@ -506,6 +561,26 @@ class KitOpsApp(KusuApp):
             sys.stdout.write(ngline + '\n\n')
 
         kl.debug('SUCCESS performing list operation')
+
+    # This method should probably be broken up into two: mountKidMedia() and
+    # parseKitInfo(). This implies changes to koinst.addKitPrepare().
+    def mountAndParseKitMedia(self):
+        """Abort if mounting of kit media or parsing of kit metadata fails."""
+        try:
+            return self.koinst.addKitPrepare()
+        except (CannotMountKitMediaError, UnrecognizedKitMediaError, AssertionError), e:
+            kl.debug('FAIL performing add operation')
+            self.logErrorEvent(e.args[0])
+            sys.exit(EKITLOC_FAIL)
+        except InvalidRPMHeader, e:
+            invalid_rpm_name = path(e.args[0]).basename()
+            kl.debug('FAIL performing add operation')
+            self.logErrorEvent('Invalid RPM header: %s' % path(e.args[0]).basename())
+            sys.exit(EKITLOC_FAIL)
+        except KitinfoSyntaxError, e:
+            kl.debug('FAIL performing add operation: %s', e.args[0])
+            self.logErrorEvent('Error: %s' % e.args[0])
+            sys.exit(EKIT_BAD)
 
     def determineKitMedia(self):
         media_choices = self.autoDetectMedia()

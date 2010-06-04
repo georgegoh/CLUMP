@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id: kusu-base-installer.sles.spec 3499 2010-02-09 10:28:36Z mkchew $
+# $Id$
 # 
 
 Summary: Kusu Base Installer

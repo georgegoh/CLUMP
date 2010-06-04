@@ -28,7 +28,7 @@ UPDATEPACKAGE = 2
 FORCEFILES    = 4
 UPDATEREPO    = 8
 
-# Set DEBUG to 1 to see debugging info in /var/log/cfmclient.log
+# Set DEBUG to 1 to see debugging info in /var/log/kusu/cfmclient.log
 DEBUG = 1
 
 import os
@@ -60,7 +60,7 @@ from primitive.support import osfamily
 PLUGINS='/opt/kusu/lib/plugins/cfmclient'
 CFMFILE='/etc/cfm/.cfmsecret'
 YUMCONF='/var/cache/yum/yum.conf'
-LOGFILE='/var/log/cfmclient.log'
+LOGFILE='/var/log/kusu/cfmclient.log'
 CHGLIST='/opt/kusu/etc/cfmchanges.lst'
 
 # When the cfmclient is updating files on itself it will

@@ -248,8 +248,8 @@ if [ -f /var/log/dmesg ]; then
     check_cp_file "/var/log/dmesg*" $DIR/var/log/
 fi
 
-if [ -f /var/log/cfmclient.log ]; then
-    check_cp_file "/var/log/cfmclient.log" $DIR/var/log/
+if [ -f /var/log/kusu/cfmclient.log ]; then
+    check_cp_file "/var/log/kusu/cfmclient.log" $DIR/var/log/
 fi
 
 if [ -f /etc/redhat-release ]; then

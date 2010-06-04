@@ -26,7 +26,7 @@ from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.util.tools import cpio_copytree
 from kusu.util import rpmtool
-from kusu.buildkit import processKitInfo
+from kusu.util.kits import processKitInfo, getKitComponentsMatchingOS
 from kusu.util.errors import *
 # TODO: uncomment this to call repoman's refresh
 #from kusu.repoman.repofactory import RepoFactory
@@ -43,18 +43,25 @@ kl = kusulog.getKusuLog('kitops')
 class KitOps:
     def __init__(self, **kw):
         self.installer = kw.get('installer', False) # installer environment?
-        self.kitmedia = ''
+        self.kitmedia = path('')
         self.dlkitiso = None
         self.mountpoint = None
-        self.i_mounted = False
         self.medialoc = None
+
+        # Did kitops mount the media? If so, kitops needs to unmount it.
+        self.i_mounted = False
+        # Set to true if kitops is responsible for removing the kitmedia
+        # file/directory. Used when installing/upgrading from remote repos.
+        self.delete_kitmedia_on_finish = False
+
         self.__db = kw.get('db', None)
 
         self.setPrefix(path(kw.get('prefix', '/')))
         self.setTmpPrefix(path(kw.get('tmpprefix', '/tmp')))
 
-    def setKitMedia(self, kitmedia):
-        self.kitmedia = kitmedia
+    def setKitMedia(self, kitmedia, delete_kitmedia=False):
+        self.kitmedia = path(kitmedia)
+        self.delete_kitmedia_on_finish = delete_kitmedia
 
     def setDB(self, db):
         self.__db = db
@@ -69,7 +76,7 @@ class KitOps:
         """
         Provide a new prefix.
         """
-    
+
         kits_root = 'depot/kits/'
         pixie_root = 'tftpboot/kusu/'
         kusu_root = 'opt/kusu'
@@ -124,7 +131,7 @@ class KitOps:
                 # The user likely passed in a bad URL.
                 raise UnrecognizedKitMediaError, \
                     'Error accessing or opening kit media: %s' % e.args[0]
-                
+
             self.dlkitiso = path(self.dlkitiso)
             self.medialoc = self.dlkitiso
         else:
@@ -165,7 +172,7 @@ class KitOps:
             raise
 
     def addKit(self, kitinfo, api='0.1'):
-        '''perform the add operation on the kit specified 
+        '''perform the add operation on the kit specified
            Precondition: kit is mounted to self.mountpoint'''
         if self.installer and api=='0.2':
             api = '0.2-installer'
@@ -185,28 +192,13 @@ class KitOps:
 
     def getKitComponents(self, kid, os):
         kitinfo = self.kits_dir / str(kid) / 'kitinfo'
-        if not kitinfo.exists():
-            return []
-        kit, components = processKitInfo(kitinfo)
-        if kit['api'] != '0.2':
-            return []
+        components = getKitComponentsMatchingOS(kitinfo, os)
 
-        target_os = (os.name, os.major, os.minor, os.arch)
         components_list = []
-        for comp in components:
-            os_tuples = []
-            try:
-                for tup in comp['os']:
-                    for os_name in getOSNames(tup['name'], default=[tup['name']]):
-                        os_tuples.append((os_name, tup['major'], tup['minor'], tup['arch']))
-            except KeyError:
-                break
-            try:
-                if matchTuple(target_os, os_tuples):
-                    db_comp = self.__db.Components.selectfirst_by(cname=comp['pkgname'], kid=kid)
-                    components_list.append(db_comp)
-            except KeyError:
-                pass
+        for component in components:
+            db_comp = self.__db.Components.selectfirst_by(cname=component, kid=kid)
+            components_list.append(db_comp)
+
         return components_list
 
     def updateComponents(self, kit, components):
@@ -242,7 +234,11 @@ class KitOps:
                 # This component does not yet exist in the DB, so add it now.
                 # NOTE: storing pkgname as component name, since that's the
                 # RPM package to be installed.
-                comp_ngtypes = comp.get('ngtypes', [])
+                comp_ngtypes = comp.get('ngtypes', ['*'])
+                if '*' in comp_ngtypes or comp_ngtypes==[''] or not comp_ngtypes:
+                    comp_ngtypes = Set([ng.type for ng in self.__db.NodeGroups.select()])
+                ngtypes = ';'.join(comp_ngtypes)
+
                 if comp.has_key('os'):
                     ngtypes = ';'.join(comp_ngtypes)
                     newcomp = self.__db.Components(kid=kid, cname=comp['pkgname'],
@@ -283,7 +279,7 @@ class KitOps:
                             if (kit.rname == 'base' and ng.ngid <= BASE_NG_ASSOC_THRESHOLD) or \
                                ng.ngid <= NG_ASSOC_THRESHOLD:
                                 assoc_ng = True
-                        
+
                         if assoc_ng:
                             kl.debug('Associating component %s to nodegroup %s' % (newcomp.cname, ng.ngname))
                             ng.components.append(newcomp)
@@ -388,7 +384,7 @@ class KitOps:
         for comploc in complist:
             comp = {'compversion': '', 'comprelease': '', 'pkgname': '',
                     'name': '', 'arch': '', 'description': '', 'ngtypes': [],
-                    'ostype': '', 'osversion': '', 
+                    'ostype': '', 'osversion': '',
                     'driverpacks':[]}
 
 
@@ -481,16 +477,25 @@ class KitOps:
             else:
                 kl.error('Unable to umount %s' % self.mountpoint)
 
+            self.i_mounted = False
             self.mountpoint = None
 
-        if self.dlkitiso and self.dlkitiso.exists():
-            self.dlkitiso.remove()
+        if self.dlkitiso:
+            if self.dlkitiso.exists():
+                self.dlkitiso.remove()
             self.dlkitiso = None
+
+        if self.delete_kitmedia_on_finish:
+            if self.kitmedia.isdir():
+                self.kitmedia.rmtree()
+            elif self.kitmedia.isfile():
+                self.kitmedia.remove()
+            self.delete_kitmedia_on_finish = False
 
     def __handleMountError(self, rv):
         '''handle the mount exit status when it's non-zero. Return nothing'''
-        errdict = { 1: 'incorrect invocation or permissions', 
-                    2: 'system error (out of memory, cannot fork, no more loop devices)', 
+        errdict = { 1: 'incorrect invocation or permissions',
+                    2: 'system error (out of memory, cannot fork, no more loop devices)',
                     4: 'internal mount bug or missing nfs support in mount',
                     8: 'user interrupt',
                    16: 'problems writing or locking /etc/mtab',
@@ -519,8 +524,8 @@ class KitOps:
 
         kit['initrd'] = 'initrd-%s.img' % kit['longname']
         kit['kernel'] = 'kernel-%s' % kit['longname']
-    
-        kits = self.__db.OS.select_by(name=kit['name'], 
+
+        kits = self.__db.OS.select_by(name=kit['name'],
                                       major=kit['major'], minor=kit['minor'],
                                       arch=kit['arch'])
 
@@ -590,7 +595,7 @@ class KitOps:
                 path(self.pxeboot_dir / kit['initrd']).remove()
 
             raise
-            
+
         return kit
 
     def copyOSKitMedia(self, kit):
@@ -614,8 +619,19 @@ class KitOps:
         self.unmountMedia()
         return repodir
 
+    def makeContribDir(self, kit):
+
+        if kit['name'] in ['opensuse']:
+            contribdir = self.contrib_dir / kit['name'] / kit['major'] / kit['minor'] / kit['arch']
+        else:
+            contribdir = self.contrib_dir / kit['name'] / kit['ver'] / kit['arch']
+
+        kl.debug('contrib dir: %s' % contribdir)
+        if not contribdir.exists():
+            contribdir.makedirs()
+
     def finalizeOSKit(self, kit):
-        
+
         # get the kernel packages
         oskitdir = self.kits_dir / str(kit['kid'])
         bmt = BootMediaTool()
@@ -631,13 +647,13 @@ class KitOps:
         comp = self.__db.Components(cname=kit['longname'],
                                 cdesc='%s mock component' % kit['longname'])
         newkit.components.append(comp)
- 
+
         # setup driverpacks entry and associate it with the mock component
         for kpkg in kpkgs:
             dpack = self.__db.DriverPacks()
-            dpack.dpname = kpkg.getFilename().basename() 
+            dpack.dpname = kpkg.getFilename().basename()
             desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
-            dpack.dpdesc = desc        
+            dpack.dpdesc = desc
             comp.driverpacks.append(dpack)
 
         if self.installer:
@@ -671,14 +687,14 @@ class KitOps:
                     msg += '-%s' % del_version
                 if del_arch:
                     msg += '-%s' % del_arch
-                
+
             msg += "' is not in the database"
             raise KitNotInstalledError, msg
 
         error_kits = []
         for kit in kits:
             if not self.installer and not kit.removable:
-                error_kits.append("Kit '%s-%s-%s' is not removable" % 
+                error_kits.append("Kit '%s-%s-%s' is not removable" %
                                    (kit.rname, kit.version, kit.arch))
                 continue
 

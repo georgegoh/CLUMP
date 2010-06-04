@@ -39,7 +39,7 @@ except:
 
 scriptname = 'syslog'
 logger = kusulog.getKusuLog()
-logger.addFileHandler('/var/log/cfmclient.log')
+logger.addFileHandler('/var/log/kusu/cfmclient.log')
 logserverfile = '/opt/kusu/etc/logserver.addr'
 logconftmpl = Dispatcher.get('syslog_conf_tmpl')
 logconf = Dispatcher.get('syslog_conf')

@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id: initrd-templates.sles.spec 3135 2009-10-23 05:42:58Z ltsai $
+# $Id$
 # 
 
 %define initrd_builddir %name

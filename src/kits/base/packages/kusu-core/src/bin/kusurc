@@ -46,12 +46,15 @@ if __name__ == '__main__':
 
         dbs = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
 
-    if len(args) == 1:
+    if len(args) == 1: # run all scripts
         p = path('/etc/rc.kusu.d')
-    else:
+        prunner = PluginRunner('KusuRC', p, dbs)
+    elif len(args) == 2: # run one specific script
         p = path(args[1])
-
-    prunner = PluginRunner('KusuRC', p, dbs)
+        prunner = PluginRunner('KusuRC', p, dbs)
+    elif 'update' == args[2]: # run one specific script update
+        p = path(args[1])
+        prunner = PluginRunner('KusuRC', p, dbs, is_update=True)
 
     try:
         results = prunner.run()

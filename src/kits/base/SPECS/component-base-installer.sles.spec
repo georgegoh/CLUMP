@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id: component-base-installer.sles.spec 3463 2010-02-01 04:32:44Z binxu $
+# $Id$
 # 
 
 Summary: Component for Kusu Installer Base

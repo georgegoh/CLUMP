@@ -13,7 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id: component-base-node.sles.spec 3331 2009-12-22 06:54:59Z mxu $
+# $Id$
 #
 
 Summary: Component for Kusu Node Base

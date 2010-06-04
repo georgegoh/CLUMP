@@ -6,7 +6,7 @@
 # Copyright 2007 Platform Computing Inc.
 #
 # Licensed under GPL version 2; See LICENSE file for details.
-# 
+#
 
 # General
 class KusuError(Exception): pass
@@ -86,16 +86,20 @@ class TemplateNotFoundError(KusuError): pass
 class UnableToGenerateFileFromTemplateError(KusuError): pass
 
 # kitops
-class CannotMountKitMediaError(KusuError): pass
-class UnrecognizedKitMediaError(KusuError): pass
-class KitAlreadyInstalledError(KusuError): pass
-class InvalidKitInfoError(KusuError): pass
-class ComponentAlreadyInstalledError(KusuError): pass
-class KitNotInstalledError(KusuError): pass
-class InstallKitRPMError(KusuError): pass
-class CopyOSMediaError(KusuError): pass
-class DeleteKitsError(KusuError): pass
-class UnsupportedKitAPIError(KusuError): pass
+class KitopsError(KusuError): pass
+class CannotMountKitMediaError(KitopsError): pass
+class UnrecognizedKitMediaError(KitopsError): pass
+class KitAlreadyInstalledError(KitopsError): pass
+class InvalidKitInfoError(KitopsError): pass
+class ComponentAlreadyInstalledError(KitopsError): pass
+class KitNotInstalledError(KitopsError): pass
+class InstallKitRPMError(KitopsError): pass
+class CopyOSMediaError(KitopsError): pass
+class DeleteKitsError(KitopsError): pass
+class UnsupportedKitAPIError(KitopsError): pass
+class UpdateKitError(KitopsError): pass
+class KitScriptError(KitopsError): pass
+class KitPackageError(KitopsError): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
@@ -201,3 +205,5 @@ class UnknownSettingNameError(KusuError): pass
 class SettingNotFoundError(KusuError): pass
 class InvalidAppglobalValueError(KusuError): pass
 
+# buildimage
+class YumFailedToRunError(KusuError): pass

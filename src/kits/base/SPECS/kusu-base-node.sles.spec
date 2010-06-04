@@ -1,4 +1,4 @@
-# $Id: kusu-base-node.sles.spec 3419 2010-01-25 09:41:40Z mkchew $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc
 #

@@ -12,8 +12,8 @@ import atexit
 from kusu.core.app import KusuApp
 from kusu.buildkit import getSyntaxValidator
 from kusu.buildkit.tool import getKitScript, loadKitScript
-from kusu.buildkit.buildkit_newhandlers import newKitFactory
-from kusu.buildkit.buildkit_makehandlers import makeKitFactory
+from kusu.buildkit.strategy import BuildKitMakeStrategy, BuildKitNewStrategy
+from kusu.buildkit.buildkit_handlers import makeKit, newKit
 from path import path
 from kusu.util.errors import InvalidBuildProfile, FileDoesNotExistError, ToolNotFound, PackageAttributeNotDefined, PackageBuildError, BuildkitArchError
 from kusu.util.tools import checkToolDeps, mkdtemp, getArch
@@ -231,10 +231,12 @@ Example operations:
             self.printMsgExit(msg)          
 
         try:
-            newKitFactory[version](dirname, self.options)
+            bkinst = BuildKitNewStrategy[version]()
+            bkinst.verbose = self.options.verbose
+            newKit(bkinst, dirname, self.options)
         except BuildkitArchError:
             msg = self._('Creating kit for %(arch)s is not possible on this system. The possible architectures are noarch and %(curArch)s.' \
-                % {'arch':self.options.arch,'curArch':arch})
+                % {'arch':self.options.arch, 'curArch':getArch()})
             self.printMsgExit(msg)
 
 
@@ -257,7 +259,9 @@ Example operations:
         print msg
         kit, components, packages = loadKitScript(kitscript)
         version = kit.get('api', 'default')
-        makeKitFactory[version](args, self.options)
+        bkinst = BuildKitMakeStrategy[version]()
+        bkinst.verbose = self.options.verbose
+        makeKit(bkinst, args, self.options)
 
 
     def _makeMeta(self, args):

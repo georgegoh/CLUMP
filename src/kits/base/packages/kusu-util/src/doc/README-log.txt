@@ -1,4 +1,4 @@
-$Id: README-log.txt 476 2008-01-25 12:36:55Z hirwan $
+$Id$
 
 Kusu log module mini-HOWTO
 ==========================

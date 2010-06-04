@@ -354,6 +354,27 @@ class AddHostApp(KusuApp):
         if pluginActions:
             pluginActions.plugins_parse(self._options)
 
+    def selectKitPlugins(self, ngid=None):
+       
+        if ngid:
+            query = ('SELECT DISTINCT kits.kid '
+                     'FROM nodegroups, repos, repos_have_kits, kits '
+                     'WHERE nodegroups.repoid = repos.repoid '
+                     'AND repos.repoid = repos_have_kits.repoid '
+                     'AND repos_have_kits.kid = kits.kid '
+                     'AND nodegroups.ngid = %s' % ngid)
+        else:
+            query = ('SELECT DISTINCT kits.kid '
+                     'FROM nodegroups, repos, repos_have_kits, kits '
+                     'WHERE nodegroups.repoid = repos.repoid '
+                     'AND repos.repoid = repos_have_kits.repoid '
+                     'AND repos_have_kits.kid = kits.kid ')           
+
+        self.__db.execute(query)
+        data = self.__db.fetchall()
+        return data
+
+
     def loadPlugins(self):
         """ loadPlugins()
         Loads all plugins for addhost. """
@@ -361,27 +382,28 @@ class AddHostApp(KusuApp):
         global pluginActions
         pluginList = []
         pluginInstances = []
-        moduleInstance = None
+        moduleInstance = None        
+        kitpluginlist=self.selectKitPlugins(myNodeInfo.ngid)
 
-        if not os.path.exists(myNodeInfo.pluginLocation):
-            # No plugins found the tool should still work even without any plugins.
-            return
-        else:
-            sys.path.append(myNodeInfo.pluginLocation)
-
-        pluginFileList = os.listdir(myNodeInfo.pluginLocation)
-        pluginFileList.sort()
-
-        # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
-        for pluginName in pluginFileList:
-             plugin, ext = os.path.splitext(pluginName)
-             if ext == ".py":
-                if not plugin == "__init__" and not plugin[0] == '.':
-                    pluginList.append(plugin)
-
-        # Import the plugins
-        moduleInstances = map(__import__, pluginList)
-
+        for kit in kitpluginlist:
+            myNodeInfo.setPluginLocation(kit[0])
+            if not os.path.exists(myNodeInfo.pluginLocation):            # No plugins found the tool should still work even without any plugins.
+                continue
+            else:
+                sys.path.append(myNodeInfo.pluginLocation)
+        
+            pluginFileList = os.listdir(myNodeInfo.pluginLocation)
+            pluginFileList.sort()
+ 
+            # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
+            for pluginName in pluginFileList:
+                plugin, ext = os.path.splitext(pluginName)
+                if ext == ".py":
+                    if not plugin == "__init__" and not plugin[0] == '.':
+                        pluginList.append(plugin)
+            # Import the plugins
+            moduleInstances = map(__import__, pluginList)
+        
         # Create instances of each new plugin and store the instances.
         for thisModule in moduleInstances:
             try:
@@ -392,7 +414,9 @@ class AddHostApp(KusuApp):
             except ConflictingOptionError:
                 self.stdoutMessage(kusuApp._("Warning: Found option conflict in plugin '%s'. This plugin's options will be IGNORED.\n"),thisModule)
             except:
-                self.stdoutMessage(kusuApp._("Warning: Invalid plugin '%s'. Does not have an AddHostPlugin class.\nThis plugin will be IGNORED.\n"),thisModule)
+                msg = "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED.\n"
+                self.stdoutMessage(kusuApp._(msg), thisModule)
+                kl.error(msg, thisModule)            
         pluginActions = PluginActions(pluginInstances)
 
     def nxor(self, *args):
@@ -498,6 +522,7 @@ class AddHostApp(KusuApp):
             result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
             if result:
                 myNodeInfo.ngid = ngid
+                self.loadPlugins()
             else:
                 msg = kusuApp._("options_invalid_nodegroup")
                 return False, msg
@@ -560,7 +585,8 @@ class AddHostApp(KusuApp):
         result, msg = myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname, ip=myNodeInfo.staticIPAddress)
         if not result:
             return False, msg
-    
+
+        self.loadPlugins() 
         if pluginActions:
             pluginActions.plugins_add(myNodeInfo.staticHostname)
             pluginActions.plugins_finished()
@@ -578,6 +604,7 @@ class AddHostApp(KusuApp):
         result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
         if result:
             myNodeInfo.ngid = ngid
+            self.loadPlugins()
         else:
             msg = kusuApp._("options_invalid_nodegroup")
             return False, msg
@@ -746,7 +773,12 @@ class AddHostApp(KusuApp):
         
         for delnode in self.removeList:
             delnode = delnode.strip()
-                        
+            query=('SELECT ngid FROM nodes WHERE name = \'%s\'' % delnode)                         
+            self.__db.execute(query)
+            ngid = self.__db.fetchall()
+            myNodeInfo.ngid = ngid[0][0]
+            self.loadPlugins()
+            
             if not myNode.validateNode(delnode):
                 badnodes.append(delnode)
                 msg = kusuApp._("addhost_delete_unknown_node") %delnode
@@ -761,7 +793,7 @@ class AddHostApp(KusuApp):
             
             # Handle removing node from db.
             if myNode.deleteNode(delnode):
-                self.logEvent(kusuApp._("addhost_event_deleted_node") %delnode, 
+                self.logEvent(kusuApp._("addhost_event_deleted_node") % delnode,
                               toStdout=False)
                 delflag = True
                 myNodeInfo.nodeList.append(delnode)
@@ -779,13 +811,12 @@ class AddHostApp(KusuApp):
         
         return True, 'Success'
 
-    def doUpdate(self):
-        
+    def doUpdate(self):     
+        self.loadPlugins()
         # Ask all plugins to call updated() function
         if pluginActions:
-           pluginActions.plugins_updated()
-           pluginActions.plugins_finished()
-         
+            pluginActions.plugins_updated()
+            pluginActions.plugins_finished()
         return True, 'Success'
     
     def runAction(self, action, startMsg, finishMsg):
@@ -840,7 +871,7 @@ class AddHostApp(KusuApp):
         Run the application """
         
         screenList = []
-        
+
         global kusuApp
         
         if self.action == ADDHOST_LISTEN:
@@ -910,31 +941,25 @@ class AddHostApp(KusuApp):
 
     def runTUIScreens(self, replaceMode, haveInterface, haveNodegroup, staticHostMode):
         """Run all of addhost's steps in TUI mode"""
-        
+       
         # Screen ordering
         db = self.__db
         
         if replaceMode or staticHostMode:
-            screenList = [ WindowNodeStatus(database=db, kusuApp=kusuApp) ]
-
-        elif haveNodegroup and myNodeInfo.ngname == 'unmanaged':
-            screenList = [  WindowUnmanaged(database=db, kusuApp=kusuApp),
-                           WindowSelectNode(database=db, kusuApp=kusuApp),
-                           WindowNodeStatus(database=db, kusuApp=kusuApp)
-                         ]
+            screenList = [ WindowNodeStatus(database=db, kusuApp=self) ]
 
         elif haveInterface and haveNodegroup:
-            screenList = [ WindowNodeStatus(database=db, kusuApp=kusuApp) ]
+            screenList = [ WindowNodeStatus(database=db, kusuApp=self) ]
 
         elif haveNodegroup and not haveInterface:
             screenList = [ WindowSelectNode(database=db, kusuApp=kusuApp),
-                           WindowNodeStatus(database=db, kusuApp=kusuApp) 
+                           WindowNodeStatus(database=db, kusuApp=self) 
                          ]
 
         else:
             screenList = [ NodeGroupWindow(database=db, kusuApp=kusuApp), 
                           WindowSelectNode(database=db, kusuApp=kusuApp),
-                          WindowNodeStatus(database=db, kusuApp=kusuApp)
+                          WindowNodeStatus(database=db, kusuApp=self)
                          ]
 
         screenFactory = ScreenFactoryImpl(screenList)
@@ -1948,6 +1973,7 @@ class WindowNodeStatus(NodeGroupWindow,BatchNodeStatus):
         global tuiMode
         tuiMode = self.screen
 
+        self.kusuApp.loadPlugins()
         self.listbox = snack.Listbox(10, scroll =1, returnExit = 0, width = 60, showCursor = 0)
         
         # We can't go back after we get here

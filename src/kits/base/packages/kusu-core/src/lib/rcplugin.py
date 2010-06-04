@@ -107,13 +107,22 @@ def rcCompare(scriptName, comparedName):
 
     return cmpResult
 
+    def run(self):
+        """To be overridden in subclasses."""
+        return True
+
+    def update(self):
+        """To be overridden in subclasses."""
+        return True
+
 
 class PluginRunner:
-    def __init__(self, classname, p, dbs, debug=False):
+    def __init__(self, classname, p, dbs, is_update=False, debug=False):
         self.classname = classname
         self.plugins = {}
         self.dbs = dbs
         self.ngtype, self.ngid = self.getNodeGroupInfo()
+        self.is_update = is_update
 
         self.initPlugin()
         self.pluginPath = p
@@ -147,6 +156,7 @@ class PluginRunner:
         kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch
         kusuenv['KUSU_REPOID'] = str(Plugin.repoid)
         kusuenv['KUSU_NGTYPE'] = self.ngtype
+        kusuenv['KUSU_IS_UPDATE'] = str(self.is_update)
 
         plugins = self.loadPlugins(self.pluginPath)
 
@@ -196,7 +206,13 @@ class PluginRunner:
                     try:
                         plugin = plugins[fname]
                         self.display(plugin.desc)
-                        retval = plugin.run()
+
+                        retval = False
+                        if self.is_update:
+                            retval = plugin.update()
+                        else:
+                            retval = plugin.run()
+
                         if retval:
                             self.success()
                             kl.info('Plugin: %s ran successfully' % plugin.name)

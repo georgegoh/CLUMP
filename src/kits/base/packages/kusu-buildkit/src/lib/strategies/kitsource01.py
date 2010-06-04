@@ -32,9 +32,9 @@ class KitSrcBase(object):
         self.arch - Architechure of the Kit.
         self.type - The type of the Kit. It should be in lowercase for consistency. May be used for comparison cases.
         self.version - Version of the Kit.
-        self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
+        self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source.
 
-        The keys should the logical names of each layout attribute and the value should be the relative paths of the 
+        The keys should the logical names of each layout attribute and the value should be the relative paths of the
         directories/files."""
 
         self.srcPath = None
@@ -64,20 +64,20 @@ class KitSrcBase(object):
                 p = self.srcPath / _v
                 if not p.exists(): return False
 
-        return True 
-        
+        return True
+
     def prepareSrcPath(self):
         """Make the paths as described in the pathLayoutAttributes."""
-        
+
         try:
             if self.srcPath.exists(): raise KitSrcAlreadyExists
         except AttributeError:
             # we could be testing on a NoneType object instead of a Path object
             pass
-        
+
         # create the initial srcPath
         self.srcPath.mkdir()
-        
+
         # create the paths for each attribute listed
         for k,v in self.pathLayoutAttributes.items():
             if 'file' in v.keys():
@@ -91,9 +91,9 @@ class KitSrcBase(object):
                         path(pdir / 'ngedit').mkdir()
                         path(pdir / 'genconfig').mkdir()
                     else:
-                        path(self.srcPath / v['dir']).makedirs()                    
-                    
-        
+                        path(self.srcPath / v['dir']).makedirs()
+
+
 class GeneralKitSrc(KitSrcBase):
     """This class describes how a general kit source should be and the operations that can work on it."""
 
@@ -112,14 +112,14 @@ class GeneralKitSrc(KitSrcBase):
             'docsdir' : {'dir':'docs'},
             'tmpdir' : {'dir':'tmp'}
         }
-        
+
 class BinaryKitSrc(KitSrcBase): pass
 
 
 class KusuComponent(Struct):
     """ Component for Kits. """
 
-    
+
     def __init__(self, **kwargs):
         self.dependencies = []                   # list of dependencies for this component
         self.ngtypes = ['installer','compute']   # list of nodegroup types for this component
@@ -141,13 +141,13 @@ class KusuComponent(Struct):
         self.templatesdir = path(self.buildprofile.templatesdir)
         self.docsdir = path(self.buildprofile.docsdir)
         self.pluginsdir = path(self.buildprofile.pluginsdir)
-        
+
         self.scripts = {}
         self.scripts['postscript'] = ''
         self.scripts['postunscript'] = ''
         self.scripts['preunscript'] = ''
         self.scripts['prescript'] = ''
-        
+
         for package, absver in self.dependencies:
             # also add to driverpacks list if this package is a driverpack type
             if package.driverpack:
@@ -158,11 +158,11 @@ class KusuComponent(Struct):
                 rpm = RPM(str(p))
                 dpack['description'] = rpm.description
                 if dpack not in self.driverpacks: self.driverpacks.append(dpack)
-        
+
     def verify(self):
         # FIXME: needs to be fill out
         pass
-        
+
     def _processAddScripts(self):
         """ Process any queued commands.
         """
@@ -175,17 +175,16 @@ class KusuComponent(Struct):
                 args = []
 
             func(*args)
-        
+
     def associateWith(self, ngtype):
         """ Add ngtype for this component to belong to. """
         if ngtype not in NODEGROUP_TYPES: raise UnsupportedNGType
         if ngtype not in self.ngtypes: self.ngtypes.append(ngtype)
-        
+
     def generate(self):
         """ Returns a metadata dict. """
         d = self.copy()
         # we don't want to return everything
-        if 'buildprofile' in d: del d['buildprofile']
         if 'buildprofile' in d: del d['buildprofile']
         if 'builddir' in d: del d['builddir']
         if 'pkgdir' in d: del d['pkgdir']
@@ -196,21 +195,21 @@ class KusuComponent(Struct):
         if 'docsdir' in d: del d['docsdir']
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['dependencies']
-        
+
         return d
-        
+
     def addDep(self, package, absoluteversion=False):
-        """ Add package as a dependency. If absoluteversion is set to True, 
-            the package version have to be exact. 
+        """ Add package as a dependency. If absoluteversion is set to True,
+            the package version have to be exact.
             '=' instead of just '>='.
         """
         if package not in self.dependencies:
             self.dependencies.append((package,absoluteversion))
-            
-            
+
+
     def addScript(self, script, mode='post'):
         """ Add script for this component. Available modes are
-            post, pre, postun and preun. 
+            post, pre, postun and preun.
         """
         self._queuecmds.append((self._addScript,script,mode))
 
@@ -221,7 +220,7 @@ class KusuComponent(Struct):
         if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
         key = '%sscript' % mode
         self.scripts[key] = stripShebang(scriptfile)
-            
+
     def _generateNS(self):
         """ Generates the namespace needed for the pack operation.
         """
@@ -246,20 +245,20 @@ class KusuComponent(Struct):
         """ RPM packaging stage for this class. """
 
         ns = self._generateNS()
-        
+
         tmpl = getTemplateSpec('component')
         builddir = path(self.builddir)
         _s = '%s.spec' % ns['pkgname']
         specfile = builddir / _s
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         return rpmbuilder.build()
-        
+
     def deploy(self, pkgtype='rpm', verbose=False):
         """ Deploying stage. This is what the user would call. """
-        
+
         if pkgtype == 'rpm':
             return self._packRPM(verbose)
-            
+
 class KusuKit(Struct):
     """ Kit class. """
 
@@ -267,7 +266,7 @@ class KusuKit(Struct):
         self.components = []     # list of components belonging to this kit
         self.dependencies = []   # list of dependencies for this kit
         self.license = 'LGPL'    # license for this kit
-        self.version = '0.1' 
+        self.version = '0.1'
         self.release = '0'
         self.arch = 'noarch'
         Struct.__init__(self,kwargs)
@@ -310,7 +309,7 @@ class KusuKit(Struct):
 
     def addScript(self, script, mode='post'):
         """ Add script for this component. Available modes are
-            post, pre, postun and preun. 
+            post, pre, postun and preun.
         """
         self._queuecmds.append((self._addScript,script,mode))
 
@@ -326,7 +325,7 @@ class KusuKit(Struct):
     def generate(self):
         """ Returns a metadata for this kit. """
         d = self.copy()
-        if 'removeable' in d: 
+        if 'removeable' in d:
             d['removable'] = d['removeable']
             del d['removeable']
         # we don't want to return everything
@@ -340,7 +339,7 @@ class KusuKit(Struct):
         if 'pluginsdir' in d: del d['pluginsdir']
         del d['components']
         if '_queuecmds' in d: del d['_queuecmds']
-        
+
         if self.arch == 'x86':
             d['arch'] = 'i386'
         else:
@@ -352,7 +351,7 @@ class KusuKit(Struct):
         """ Add component to this kit. """
         if not component in self.components:
             self.components.append(component)
-            
+
     addComp = addComponent
 
     def addDep(self, package):
@@ -378,7 +377,7 @@ class KusuKit(Struct):
         filelist = []
         for f in destdir.files():
             filelist.append(str(path(docsdir / f.basename())))
-            
+
         return filelist
 
     def _prepPlugins(self, ns):
@@ -393,7 +392,7 @@ class KusuKit(Struct):
         _filelist = ngeditPlugins.files() + addhostPlugins.files() + \
             genconfigPlugins.files()
         if not _filelist: return []
-        
+
         _root = '%s-%s-buildroot' % (ns['pkgname'],ns['pkgversion'])
         buildroot = self.tmpdir / _root
         if not buildroot.exists: buildroot.makedirs()
@@ -406,7 +405,7 @@ class KusuKit(Struct):
         for f in fl:
             filelist.append(str(path(plugdir / f)))
         return filelist
-        
+
     def _prepKitInfo(self,ns):
         """ Sets up the kitinfo
             Returns the path for kitinfo
@@ -420,7 +419,7 @@ class KusuKit(Struct):
         self.generateKitInfo(kifile)
         _kitfile = kiroot + '/kitinfo'
         return [_kitfile]
-        
+
 
     def _generateNS(self):
         """ Generates the namespace needed for the pack operation.
@@ -437,20 +436,20 @@ class KusuKit(Struct):
             _ns['arch'] = self.arch
 
         _ns['pkgversion'] = self.version
-        _ns['pkgrelease'] = self.release       
+        _ns['pkgrelease'] = self.release
         _ns['license'] = self.license
         _ns['description'] = self.description
         _ns['prescript'] = self.scripts['prescript']
         _ns['preunscript'] = self.scripts['preunscript']
         _ns['postscript'] = self.scripts['postscript']
         _ns['postunscript'] = self.scripts['postunscript']
-        
-        
+
+
         return _ns
 
     def _packRPM(self, verbose=False):
         """ RPM packaging stage for this class. """
-        
+
         ns = self._generateNS()
         tmpl = getTemplateSpec('kit')
         builddir = path(self.buildprofile.builddir)
@@ -464,7 +463,7 @@ class KusuKit(Struct):
         rpmbuilder =  RPMBuilder(ns=ns,template=tmpl,sourcefile=specfile,verbose=verbose)
         return rpmbuilder.build()
 
-    def generateKitInfo(self, filename):
+    def generateKitInfo(self, filename, buildprofile=None):
         """ Generates a .kitinfo file."""
         complist = [component.generate() for component in self.components]
 
@@ -473,7 +472,7 @@ class KusuKit(Struct):
         f.write('kit = %s\n' % pprint.pformat(_kitinfo))
         f.write('components = %s\n' % pprint.pformat(complist))
         f.close()
-        
+
     def deploy(self, pkgtype='rpm', verbose=False):
         """ Deploying stage. This is what the user would call. """
 

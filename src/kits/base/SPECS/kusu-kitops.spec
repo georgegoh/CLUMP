@@ -44,14 +44,18 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -d $RPM_BUILD_ROOT/opt/kusu/bin
 install -d $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
+install -d $RPM_BUILD_ROOT/opt/kusu/etc
 
 install -m755 bin/kusu-kitops $RPM_BUILD_ROOT/opt/kusu/bin
 install -m644 lib/kitops.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
+install -m644 lib/action.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
+install -m644 lib/remotekit.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/addkit_strategies.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/deletekit_strategies.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/package.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/opt/kusu/lib/python/kusu/kitops
 install -m644 doc/COPYING $RPM_BUILD_ROOT/opt/kusu/share/doc/kitops-%{version}
+install -m644 etc/remoterepo.conf $RPM_BUILD_ROOT/opt/kusu/etc
 
 pushd $RPM_BUILD_ROOT/opt/kusu/bin
 ln -s /opt/kusu/bin/kusu-kitops kitops
@@ -70,6 +74,7 @@ popd
 /opt/kusu/lib/python/kusu/kitops/*
 /opt/kusu/bin/kitops
 /opt/kusu/bin/kusu-kitops
+%config(noreplace) /opt/kusu/etc/remoterepo.conf
 
 %doc /opt/kusu/share/doc/kitops-%{version}/COPYING
 
