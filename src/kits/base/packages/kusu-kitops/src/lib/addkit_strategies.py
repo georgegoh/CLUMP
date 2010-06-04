@@ -319,7 +319,7 @@ def addkit04(koinst, db, kitinfo, update_action=False):
     # Extract the kit RPM to get access at its scripts.
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
     kitrpm.extract(tmpdir)
-    atexit.register(lambda: tmpdir.rmtree())
+    atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
     script_arg=generate_script_arg(operation='add', update_action=update_action)
     if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg):

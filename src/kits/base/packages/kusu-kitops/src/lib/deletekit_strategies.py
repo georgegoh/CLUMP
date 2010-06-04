@@ -103,7 +103,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
     rpm = get_kit_RPM(kitdir)
     rpm.extract(tmpdir)
-    atexit.register(lambda: tmpdir.rmtree())
+    atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
     script_arg = generate_script_arg(operation='delete', update_action=update_action)
     if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):

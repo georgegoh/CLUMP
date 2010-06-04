@@ -205,7 +205,8 @@ class KitOpsApp(KusuApp):
 
             update_action = UpdateAction(self.__db, self.koinst)
             run_args = {'old_kit_id': old_kit_id,
-                        'kits': self.mountAndParseKitMedia()}
+                        'kits': self.mountAndParseKitMedia(),
+                        'suppress_questions': self.suppress_questions}
 
             self.action_queue[update_action] = run_args
             self.kitop = PROCESS_ACTION_QUEUE

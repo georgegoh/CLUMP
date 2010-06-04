@@ -7,6 +7,7 @@
 # Licensed under GPL version 2; See LICENSE for details.
 #
 
+import sys
 import types
 import rpm
 from kusu.util.errors import KitNotInstalledError, UpdateKitError
@@ -134,15 +135,46 @@ class UpdateAction(KitopsAction):
                     print "    kusu-cfmsync -f -p -u\n"
                     break
 
+    def _select_one_kit(self, possible_kits):
+        """
+        From a list of possible kits, select one kit to use for the upgrade.
+        """
+        if len(possible_kits) == 1:
+            return possible_kits[0]
+        if self.suppress_questions:
+            msg = ('Option --suppress-questions specified but user '
+                   'is required to choose which kit to use for the upgrade.')
+            kl.error(msg)
+            raise UpdateKitError, msg
+        while True:
+            for num_kits in enumerate(possible_kits):
+                print '[%d]: %s-%s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
+                                             num_kits[1][1]['version'],
+                                             num_kits[1][1]['release'],
+                                             num_kits[1][1]['arch'])
+
+            print 'Choose the kit to use for the upgrade or ENTER to quit: '
+            res = sys.stdin.readline().strip()
+            if not res:
+                return None
+            try:
+                return possible_kits[int(res)]
+            except (ValueError, IndexError):
+                print "ERROR: Invalid choice. Please try again.\n"
+
     def run(self, **kw):
         """Perform the action."""
 
         self.old_kit = self._get_old_kit(kw.pop('old_kit_id'))
         possible_kits = self._get_possible_kits_to_upgrade(kw.pop('kits', []))
+        self.suppress_questions = kw.pop('suppress_questions', False)
 
-        # TODO: Ask the user which new kit to use?
         if possible_kits:
-            selected_kit = possible_kits[0]
+            selected_kit = self._select_one_kit(possible_kits)
+            if not selected_kit:
+                msg = 'No suitable kit selected for upgrade'
+                kl.error(msg)
+                raise UpdateKitError, msg
             components_to_add = selected_kit[2]
         else:
             msg = 'No suitable kits available for upgrade'

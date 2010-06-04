@@ -325,7 +325,7 @@ class KitOps:
             tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=self.tmpprefix))
             rpm = rpmtool.RPM(str(kitrpm))
             rpm.extract(tmpdir)
-            atexit.register(lambda: tmpdir.rmtree())
+            atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
             kitinfos = []
             for kitinfo in tmpdir.walkfiles('kitinfo'):
@@ -410,7 +410,7 @@ class KitOps:
         """
         tmpdir = path(tempfile.mkdtemp(prefix='kitinfo-', dir=self.tmpprefix))
         kitrpm.extract(tmpdir)
-        atexit.register(lambda: tmpdir.rmtree())
+        atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
         kitinfo = tmpdir / 'kitinfo'
         if not kitinfo.exists():
             return None

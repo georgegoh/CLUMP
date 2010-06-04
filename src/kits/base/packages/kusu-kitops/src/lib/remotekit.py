@@ -170,7 +170,7 @@ class RemoteKit(object):
 
                 for arch in p[kit].keys():
                     tempdir = path(mkdtemp(suffix='-kitops'))
-                    atexit.register(lambda: tempdir.rmtree())
+                    atexit.register(lambda: tempdir.rmtree(ignore_errors=True))
                     choice = p[kit][arch][0]
 
                     if repo == 'rhel':
@@ -269,7 +269,7 @@ class RemoteKit(object):
 
             if repo == 'rhel':
                 tmpdir = path(mkdtemp(suffix='-kitops'))
-                atexit.register(lambda: tmpdir.rmtree())
+                atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
                 self.getRHNFile(url, '/repodata/repomd.xml', tmpdir)
                 remote=YumRepo('file://'+ tmpdir)
                 try:
