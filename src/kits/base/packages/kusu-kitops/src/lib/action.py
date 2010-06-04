@@ -77,6 +77,7 @@ class UpgradeAction(KitopsAction):
         """
 
         kit_api = kit_tuple[4]
+        kitinfo = kit_tuple[1]
 
         # Upgrading kits is supported from kit API 0.4 on.
         if kit_api not in SUPPORTED_KIT_APIS:
@@ -91,6 +92,19 @@ class UpgradeAction(KitopsAction):
             kl.error(msg)
             raise UpgradeKitError, msg
 
+        native_kits = self._db.NodeGroups.selectfirst_by(type='installer').repo.kits
+        native_base = [x for x in native_kits if x.rname == 'base'][0]
+
+        # Check whether compatability/add-on base kits are being upgraded to a version newer han the native base kit.
+        if kitinfo['name'] == 'base' and self.old_kit.kid != native_base.kid:
+            if compareVersion((native_base.version, native_base.release),
+                              (kitinfo['version'], kitinfo['release'])) != 1:
+                msg = "Native base kit version (%s-%s) is lower than the upgrade version (%s-%s). " \
+                      "Compatability base kits can only be upgraded upto the native base kit version." % \
+                    (native_base.version, native_base.release, kitinfo['version'], kitinfo['release'])
+                kl.error(msg)
+                raise UpgradeKitError, msg
+
     def validate_old_kit_for_upgrade(self, old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
         """
         Checks whether old_kit can be upgraded.
@@ -104,6 +118,13 @@ class UpgradeAction(KitopsAction):
         UpgradeKitError is raised.
         """
 
+        # Check if the kit being upgraded is not in any repository.
+        if not old_kit.repos:
+            msg = "Current kit %s id: %s is not used in any repository. Add the new kit using kusu-kitops -a instead of upgrading." %
+                  (old_kit.longname, old_kit.kid)
+            kl.error(msg)
+            raise UpgradeKitError, msg
+
         # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
         if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
             msg = ("Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, "
@@ -115,6 +136,7 @@ class UpgradeAction(KitopsAction):
             kl.error(msg)
             raise UpgradeKitError, msg
 
+        # When upgrading native base kit, check if native repository is stale
         if self.is_native_base_kit(old_kit):
             for repo in old_kit.repos:
                 repo_obj = RepoFactory(self._db).getRepo(repo.repoid)
