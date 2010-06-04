@@ -69,7 +69,7 @@ class App:
         self._ = self.gettext
 
     def err(self, message, *args):
-        """err - Output messages to STDERR with Internationalization.
+        """Output messages to STDERR with Internationalization.
         Additional arguments will be used to substitute variables in the
         message output"""
         if len(args) > 0:
@@ -85,7 +85,7 @@ class App:
             pass
 
     def out(self, message, *args):
-        """print - Output messages to STDOUT with Internationalization.
+        """Output messages to STDOUT with Internationalization.
         Additional arguments will be used to substitute variables in the
         message output"""
         if len(args) > 0:
@@ -101,7 +101,7 @@ class App:
             pass
 
     def getInstallerIP(self):
-        """getInstallerIP - Get the installers IP address"""
+        """Get the installer's IP address"""
         self.installerIP = self.getProfileVal('NII_INSTALLERS')
         if self.installerIP == '':
             self.err("ERROR:  Failed to determine the IP address of the Installer.\n")
@@ -110,7 +110,7 @@ class App:
         self.out("Installer IP is: %s\n", self.installerIP)
 
     def getProfileVal(self, name):
-        """getProfileVal - Returns the value of the NII property from
+        """Returns the value of the NII property from
         /etc/profile.nii with any quotes removed."""
         cmd = "grep %s /etc/profile.nii 2>/dev/null" % name
         val = ''
@@ -127,7 +127,7 @@ class App:
         return val
 
     def getHaddrForNic(self, nic):
-        """getHaddrForNic - extract the HWADDR field from a NIC configuration
+        """Extracts the HWADDR field from a NIC configuration
         script.  It looks like:  HWADDR=00:16:29:F7:99:99 """
 
         filename = '/etc/sysconfig/network-scripts/ifcfg-%s' % nic
@@ -195,7 +195,7 @@ class App:
         return self.niihandler
 
     def updateHostname(self, niihandler):
-        '''updateHostname - Update the host's name in the configuration and set it'''
+        '''Update the host's name in the configuration and set it'''
         dnszone = ''
         if niihandler.appglobal.has_key('DNSZone'):
             fqhn = "%s.%s" % (niihandler.name, niihandler.appglobal['DNSZone'])
@@ -263,7 +263,7 @@ class App:
         # delNics should only contain NICS that need to be deleted
         for i in delNics:
             self.out("Deconfiguring NIC %s\n", i)
-            
+
             # This works for both RHEL and SLES because
             #   /sbin/ifdown eth-id-<MAC>
             # actually works on SLES. See 'man 8 ifdown' on SLES
@@ -293,7 +293,7 @@ class App:
                 if os.path.exists(ifcfg):
                     # Back it up
                     shutil.copy(ifcfg, "/tmp/ifcfg-%s.ORIG" % i)
-                    
+
                     # Update ifcfg file so that this interface does not start on boot.
                     cmd = """/bin/sed -i -e "/STARTMODE=/cSTARTMODE='manual'" %s""" % ifcfg
                     sed = subprocess.Popen(cmd, shell=True)
@@ -303,7 +303,7 @@ class App:
 
 
     def configNics(self, niihandler):
-        # Update the NIC config.
+        """Update the NIC config."""
         for i in niihandler.nics.keys():
             self.out("------------------------------ NICS:  Key = %s\n", i)
             self.out("    Device  = %s\n", (niihandler.nics[i]['device']))
@@ -436,18 +436,19 @@ if __name__ == '__main__':
     i = 0
     while i < len(args):
         if args[i] == '-v':
-            self.out("Updatenic Version ${VERSION_STR}\n")
+            print "Updatenic Version ${VERSION_STR}\n"
             sys.exit(0)
         elif args[i] == '-h':
-            self.out("updatenic [-h|-v]\n\n")
-            self.out("The updatenic tool queries the installer for an updated profile.nii.\n")
-            self.out("It also causes the network configuration on the node to be created\n")
-            self.out("or updated, and the hostname to be updated.\n")
-            self.out("This tool is typically invoked by a cfmclient plugin.\n")
-            self.out("It should not be invoked on the installer.\n")
+            msg = ("updatenic [-h|-v]\n\n"
+                   "The updatenic tool queries the installer for an updated profile.nii.\n"
+                   "It also causes the network configuration on the node to be created\n"
+                   "or updated, and the hostname to be updated.\n"
+                   "This tool is typically invoked by a cfmclient plugin.\n"
+                   "It should not be invoked on the installer.\n")
+            print msg
             sys.exit(0)
         else:
-            self.err("ERROR:  Unknown argument\n")
+            sys.stderr.write("ERROR:  Unknown argument\n")
             sys.exit(1)
         i += 1
 
