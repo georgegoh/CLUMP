@@ -46,13 +46,14 @@ from primitive.system.software.probe import OS
 class KusuApp:
     """ This is the class for all PCM applications to inherit from. """
 
-    def __init__(self):
+    def __init__(self, dummy_app=False):
         """ Initialize Class variables.  Extend as needed """
 
-        check_for_global_lock()
+        if not dummy_app:
+            check_for_global_lock()
 
-        process_registry = KusuProcessRegistry(os.getpid())
-        atexit.register(process_registry.deregister)
+            process_registry = KusuProcessRegistry(os.getpid())
+            atexit.register(process_registry.deregister)
 
         self.args       = sys.argv
         self.version    = __version__
