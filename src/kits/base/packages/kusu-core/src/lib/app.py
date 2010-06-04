@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # $Id$
 #
@@ -7,7 +7,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -43,37 +43,35 @@ sys.path.append('/opt/primitive/lib/python2.4/site-packages')
 from primitive.system.software.probe import OS
 
 class KusuApp:
-    """ This is the class for all OCS applications to inherit from """
+    """ This is the class for all PCM applications to inherit from. """
 
     def __init__(self):
-        """ Initialize Class variables.  Extend as needed (if needed) """
+        """ Initialize Class variables.  Extend as needed """
         self.args       = sys.argv
         self.version    = __version__
-        self.name       = ''            # This is the name of the application
-                                        # This will be derived from the name
+
+        # This is the name of the application derived from its filename.
         self.name = path(sys.argv[0]).realpath().stripext().basename()
 
-        tmpstr = '%s_Help' % self.name
         self._ = self.langinit()
-        usage = self._(tmpstr)
+        usage = self._('%s_Help' % self.name)
         self.parser = OptionParser(usage)
-        
+
         self.kel = kusulog.getKusuEventLog()
 
         # gettext Translations instance
         self.trans = None
-        
+
     def langinit(self):
-        """langinit - Initialize the Internationalization """
+        """Initialize the Internationalization"""
         langdomain = 'kusuapps'
         localedir  = ''
 
         # check if KUSU_ROOT environment exists
-        kusuroot = os.environ.get('KUSU_ROOT',None)
+        kusuroot = os.environ.get('KUSU_ROOT', None)
 
         # Locate the Internationalization stuff
-        if kusuroot and \
-            os.path.exists('%s/share/locale' % kusuroot):
+        if kusuroot and os.path.exists('%s/share/locale' % kusuroot):
             localedir = '%s/share/locale' % kusuroot
         elif os.path.exists('../share/locale'):
             localedir = '../share/locale'
@@ -101,7 +99,7 @@ class KusuApp:
         # Hence we remove LANG="POSIX" and keep LC_CTYPE for SLES.
         for var in lenv:
             if OS()[0].lower() in ['sles', 'opensuse', 'suse'] and \
-                os.environ.get(var) == 'POSIX':
+                    os.environ.get(var) == 'POSIX':
                 lenv.remove(var)
 
         envfound = [ x in os.environ for x in lenv ]
@@ -134,7 +132,7 @@ class KusuApp:
         return self.gettext
 
     def errorMessage(self, message, *args):
-        """errorMessage - Output messages to STDERR with Internationalization.
+        """Output messages to STDERR with Internationalization.
         Additional arguments will be used to substitute variables in the
         message output"""
         if len(args) > 0:
@@ -143,18 +141,10 @@ class KusuApp:
             mesg = self.gettext(message)
         sys.stderr.write(mesg)
 
-    def stderrMessage(self, message, *args):
-        """errorMessage - Output messages to STDERR with Internationalization.
-        Additional arguments will be used to substitute variables in the
-        message output"""
-        if len(args) > 0:
-            mesg = self.gettext(message) % args
-        else:
-            mesg = self.gettext(message)
-        sys.stderr.write(mesg)
+    stderrMessage = errorMessage
 
     def stdoutMessage(self, message, *args):
-        """errorMessage - Output messages to STDOUT with Internationalization.
+        """Output messages to STDOUT with Internationalization.
         Additional arguments will be used to substitute variables in the
         message output"""
         if len(args) > 0:
@@ -164,20 +154,19 @@ class KusuApp:
         sys.stdout.write(mesg)
 
     def optargs(self, option, opt_str, value, parser):
-        ''' optargs - a callback function that allows parsing CL keys with
+        '''A callback function that allows parsing CL keys with
         an optional argument. In RE terms, we can parse --foo [arg]?'''
         value = ''
         if parser.rargs:
             arg = parser.rargs[0]
             if not ((arg[:2] == '--' and len(arg)>2) or
                     (arg[:1] == '-'  and len(arg)>1 and arg[1] != '-')):
-                    value = arg
-                    del parser.rargs[0]
+                value = arg
+                del parser.rargs[0]
         setattr(parser.values, option.dest, value)
 
-
     def varargs(self, option, opt_str, value, parser):
-        ''' varargs - a callback function that allows parsing CL keys with
+        '''A callback function that allows parsing CL keys with
         arbitrary # of args. In RE terms, we can parse --foo [arg]*'''
 
         # 3-liner below allows for mult. instances of the CL option
@@ -219,11 +208,11 @@ class KusuApp:
         if len(sys.argv) >= 1:
             lock = self._getProgramName()
             if lock.exists(): lock.remove()
-            
+
     def islock(self):
         if len(sys.argv) >= 1:
             lock = self._getProgramName()
-            return lock.exists() 
+            return lock.exists()
         else:
             return None
 
@@ -238,14 +227,14 @@ class KusuApp:
         if self.islock():
             self.unlock()
         sys.exit(0)
-        
+
     def exitFailedAndUnlock(self, exitCode=-1):
         if self.islock():
             self.unlock()
         sys.exit(exitCode)
 
     def getActionDesc(self):
-        """Returns description for current action performed. 
+        """Returns description for current action performed.
            Subclasses should override this method."""
         return self.name + " operation"
 
@@ -261,7 +250,7 @@ class KusuApp:
             sys.stdout.write(str(warnMsg) + "\n")
         actionDesc = self.getActionDesc()
         self.kel.warn(actionDesc + ": " + str(warnMsg))
-    
+
     def logErrorEvent(self, errMsg, toStderr=True):
         """Log errors as events and optionally output them to stderr."""
         if toStderr:
@@ -272,3 +261,4 @@ class KusuApp:
     def _getProgramName(self):
         """Returns the full path to the current program"""
         return path('/var/lock/subsys') / path(sys.argv[0]).realpath().stripext().basename()
+
