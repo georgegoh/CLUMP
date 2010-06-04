@@ -148,7 +148,8 @@ class UpdateAction(KitopsAction):
             raise UpdateKitError, msg
         while True:
             for num_kits in enumerate(possible_kits):
-                print '[%d]: %s-%s-%s-%s' % (num_kits[0], num_kits[1][1]['name'],
+                print '[%d]: %s-%s-%s-%s' % (num_kits[0],
+                                             num_kits[1][1]['name'],
                                              num_kits[1][1]['version'],
                                              num_kits[1][1]['release'],
                                              num_kits[1][1]['arch'])
@@ -156,7 +157,9 @@ class UpdateAction(KitopsAction):
             print 'Choose the kit to use for the upgrade or ENTER to quit: '
             res = sys.stdin.readline().strip()
             if not res:
-                return None
+                msg = 'No suitable kit selected for upgrade'
+                kl.error(msg)
+                raise UpdateKitError, msg
             try:
                 return possible_kits[int(res)]
             except (ValueError, IndexError):
@@ -169,17 +172,13 @@ class UpdateAction(KitopsAction):
         possible_kits = self._get_possible_kits_to_upgrade(kw.pop('kits', []))
         self.suppress_questions = kw.pop('suppress_questions', False)
 
-        if possible_kits:
-            selected_kit = self._select_one_kit(possible_kits)
-            if not selected_kit:
-                msg = 'No suitable kit selected for upgrade'
-                kl.error(msg)
-                raise UpdateKitError, msg
-            components_to_add = selected_kit[2]
-        else:
+        if not possible_kits:
             msg = 'No suitable kits available for upgrade'
             kl.error(msg)
             raise UpdateKitError, msg
+
+        selected_kit = self._select_one_kit(possible_kits)
+        components_to_add = selected_kit[2]
 
         # Verify both kits can be used in an upgrade.
         validate_new_kit_for_upgrade(selected_kit)
