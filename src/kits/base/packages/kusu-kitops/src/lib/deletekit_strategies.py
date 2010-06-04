@@ -106,7 +106,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
     script_arg = generate_script_arg(operation='delete', update_action=update_action)
-    if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):
+    if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg, kusulogger=kl):
         raise KitScriptError, "Pre script error, failed to delete kit"
 
     kl.info("Removing kit with kid '%s'" % kit.kid)
@@ -142,8 +142,8 @@ def deletekit04(koinst, db, kit, update_action=False):
     del_path = koinst.kits_dir / str(kit.kid)
     if del_path.exists(): del_path.rmtree()
 
-    if 0 != run_scripts(tmpdir, mode='postun', script_arg=script_arg):
-        raise KitScriptError, "Pre script error, failed to delete kit"
+    if 0 != run_scripts(tmpdir, mode='postun', script_arg=script_arg, kusulogger=kl):
+        raise KitScriptError, "Post script error, failed to delete kit"
 
 def uninstallDocs(db, kit, prefix, kitdir, docsdir):
     kl.debug('Uninstalling kit documentation.')

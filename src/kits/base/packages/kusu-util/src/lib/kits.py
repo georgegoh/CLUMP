@@ -105,7 +105,7 @@ def compareVersion((verA, relA), (verB, relB)):
 
     return compareEVR(("0", verA, relA), ("0", verB, relB))
 
-def run_scripts(kit_root, mode, script_arg):
+def run_scripts(kit_root, mode, script_arg, kusulogger):
     script_root = path(kit_root) / 'scripts'
 
     # There are no scripts to run.
@@ -119,11 +119,14 @@ def run_scripts(kit_root, mode, script_arg):
     scripts.sort()
     for script in scripts:
         cmd = [script, script_arg]
-        scriptP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        kusulogger.info("Running script: %s" % script)
+        scriptP = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, err = scriptP.communicate()
 
         if 0 != scriptP.returncode:
+            kusulogger.error(out)
             return scriptP.returncode
+        kusulogger.info(out)
 
     # All scripts succeeded.
     return 0

@@ -322,7 +322,7 @@ def addkit04(koinst, db, kitinfo, update_action=False):
     atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
     script_arg=generate_script_arg(operation='add', update_action=update_action)
-    if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg):
+    if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg, kusulogger=kl):
         raise KitScriptError, "Pre script error, failed to add kit"
 
     # populate the kit DB table with info
@@ -364,11 +364,11 @@ def addkit04(koinst, db, kitinfo, update_action=False):
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
 
-    if 0 != run_scripts(repodir, mode='post', script_arg=script_arg):
+    if 0 != run_scripts(repodir, mode='post', script_arg=script_arg, kusulogger=kl):
         newkit.removable = True
         newkit.flush()
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
-        raise KitScriptError, "Pre script error, failed to add kit"
+        raise KitScriptError, "Post script error, failed to add kit"
 
     return newkit.kid, updated_ngs
 
