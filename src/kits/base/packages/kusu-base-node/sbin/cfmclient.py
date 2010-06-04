@@ -198,6 +198,9 @@ class CFMClient:
         self.bestinstaller = ''   # The IP of the installer to get files from
         self.selfupdate  = False  # Flag to indicate that this is on an installer
 
+        log_file = path('/var/log/kusu/cfmclient.log')
+        if not log_file.isfile():
+            log_file.touch()
 
     def log(self, mesg):
         log('%s: %s' % (self.__class__.__name__, mesg))
@@ -685,19 +688,18 @@ class CFMClient:
             if tmplst[i-1] == tmplst[i]:
                 oldlist.remove(tmplst[i])
 
-        # Scan over the newlist and oldlist for entries removing those in both
+        # Scan over the newlist and oldlist for entries to remove
         tmp = newlist[:]
         for entry in tmp:
             if entry in oldlist:
                 oldlist.remove(entry)
-                newlist.remove(entry)
 
-        # Anything still in newlist is a new package
+        # Anything still in newlist is a required package
         self.newpackages = []
         for entry in newlist:
             if entry:
                 self.newpackages.append(entry)
-            self.log("Found new package: %s\n" % entry)
+            self.log("Found package: %s\n" % entry)
 
         # Anything still in oldlist is a package to remove
         self.oldpackages = []
