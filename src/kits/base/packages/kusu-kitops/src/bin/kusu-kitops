@@ -352,7 +352,8 @@ class KitOpsApp(KusuApp):
                         self.logEvent(msg)
 
                 except (KitAlreadyInstalledError, InstallKitRPMError,
-                        ComponentAlreadyInstalledError, AssertionError, UnsupportedKitAPIError), e:
+                        ComponentAlreadyInstalledError, AssertionError,
+                        UnsupportedKitAPIError, IncompatibleBaseKitError), e:
                     msg = '%s(%s): %s' % (kit[0], kit[1]['name'], e.args[0])
                     kl.debug('FAIL performing add operation: %s', msg)
                     self.logErrorEvent(msg)
