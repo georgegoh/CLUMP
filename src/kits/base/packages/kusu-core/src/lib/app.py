@@ -32,7 +32,7 @@ from optparse import OptionParser
 from path import path
 import kusu.util.log as kusulog
 import errno
-from kusu.util.lock import check_for_global_lock
+from kusu.util.lock import check_for_global_lock, KusuProcessRegistry
 
 sys.path.append("/opt/kusu/lib")
 import platform
@@ -50,6 +50,9 @@ class KusuApp:
         """ Initialize Class variables.  Extend as needed """
 
         check_for_global_lock()
+
+        process_registry = KusuProcessRegistry(os.getpid())
+        atexit.register(process_registry.deregister)
 
         self.args       = sys.argv
         self.version    = __version__

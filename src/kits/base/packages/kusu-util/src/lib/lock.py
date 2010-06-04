@@ -57,15 +57,43 @@ def check_for_global_lock():
         sys.exit(1)
 
 
+REGISTRY_PATH = path("/var/run/kusu")
+
+class KusuProcessRegistry(object):
+    """
+    Implements a way to track if there are any kusu apps running.
+    Files are created in the directory REGISTRY_PATH. Each file is
+    named using the pid of the kusu app.
+
+    kusu-kitops will only proceed with native base kit upgrade if there
+    no other kusu apps running.
+    """
+
+    def __init__(self, pid):
+        if not REGISTRY_PATH.exists():
+            REGISTRY_PATH.makedirs()
+        self._pid_file = REGISTRY_PATH / str(pid)
+        self.register()
+
+    def register(self):
+        self._pid_file.touch()
+
+    def deregister(self):
+        if self._pid_file.exists():
+            self._pid_file.remove()
+
+    def no_other_kusu_apps_running(self):
+        return REGISTRY_PATH.files() == [self._pid_file]
+
+
 if __name__ == "__main__":
     lock = KusuGlobalLock()
 
-    # Normal usage
+    # Normal usage of KusuGlobalLock
     assert not lock.is_locked()
     assert lock.acquire()
     assert KUSU_GLOBAL_LOCK_FILE.exists()
     assert lock.is_locked()
-    assert is_globally_locked()
     assert lock.release()
     assert not KUSU_GLOBAL_LOCK_FILE.exists()
 
@@ -84,4 +112,13 @@ if __name__ == "__main__":
     assert lock.acquire()
     assert not rogue_lock.release()
     assert lock.release()
+
+    # Normal usage of KusuProcessRegistry
+    assert REGISTRY_PATH.files() == []
+    my_pid = str(os.getpid())
+    process_registry = KusuProcessRegistry(my_pid)
+    assert REGISTRY_PATH.files() == [REGISTRY_PATH / my_pid]
+    assert process_registry.no_other_kusu_apps_running()
+    process_registry.deregister()
+    assert REGISTRY_PATH.files() == []
 
