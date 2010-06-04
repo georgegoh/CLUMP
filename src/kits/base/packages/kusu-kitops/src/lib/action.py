@@ -400,6 +400,15 @@ class UpgradeAction(KitopsAction):
         kusu_ver.save_or_update()
         self._db.flush()
 
+    def _remind_user_add_on_base_kit_upgrades(self):
+        base_kits = self._db.Kits.select_by(rname='base')
+        compatability_kits = ', '.join(['base-%s-%s kit id: %s' % (x.version, x.release, x.kid)
+                                       for x in base_kits if x.kid != self.new_kit.kid])
+        if compatability_kits:
+            print "Please update the following compatability kits to the same version as the native " \
+            "base kit (%s-%s): %s" % (self.new_kit.version, self.new_kit.release, compatability_kits)
+            
+
     def run(self, **kw):
         """Perform the action."""
 
@@ -444,6 +453,7 @@ class UpgradeAction(KitopsAction):
             self._synchronize_nodegroups()
             self._build_images_and_patch_drivers(upgraded_nodegroups)
             self._update_kusu_version(self.new_kit.version)
+            self._remind_user_add_on_base_kit_upgrades()
         else:
             self._remind_user_remaining_upgrade_steps()
 
