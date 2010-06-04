@@ -121,7 +121,7 @@ def deletekit04(koinst, db, kit, update_action=False):
 
     # uninstall plugins and docs
     uninstallPlugins(koinst, kitdir, str(kit.kid))
-    uninstallDocs(db, kit, koinst.kits_dir, koinst.docs_dir)
+    uninstallDocs(db, kit, koinst.prefix, koinst.kits_dir, koinst.docs_dir)
 
     # remove tftpboot contents
     if kit.isOS:
