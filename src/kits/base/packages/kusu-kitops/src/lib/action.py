@@ -7,12 +7,15 @@
 # Licensed under GPL version 2; See LICENSE for details.
 #
 
+import os
 import sys
 import types
 import rpm
 from sets import Set
+import atexit
 
 from kusu.util.errors import KitNotInstalledError, UpgradeKitError, UpgradeKitAbort
+from kusu.util.lock import KusuProcessRegistry, KusuGlobalLock
 from kusu.util.kits import matchComponentsToOS, compareVersion, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
@@ -28,6 +31,7 @@ try:
 except ImportError:
     from popen5 import subprocess
 from path import path
+
 
 class KitopsAction(object):
     """Head of class hierarchy implementing actions on kits.
@@ -50,24 +54,25 @@ class KitopsAction(object):
 
         raise NotImplementedError
 
+
 class UpgradeAction(KitopsAction):
-    
+
     def is_native_base_kit(self, kit):
         if kit.rname == 'base':
             installer_ng = self._db.NodeGroups.selectfirst_by(type='installer')
             return installer_ng.repo in kit.repos
         return False
-    
+
     def validate_new_kit_for_upgrade(self, kit_tuple):
         """
         Checks whether the kit described by kit_tuple can be used in an upgrade.
-    
+
         If for any reason the kit cannot be used in an upgrade, this method will
         raise an UpgradeKitError.
         """
-    
+
         kit_api = kit_tuple[4]
-    
+
         # Upgrading kits is supported from kit API 0.4 on.
         if kit_api not in SUPPORTED_KIT_APIS:
             msg = ("New kit API version '%s' is not supported. "
@@ -75,16 +80,16 @@ class UpgradeAction(KitopsAction):
                            % (kit_api, SUPPORTED_KIT_APIS[-1])
             kl.error(msg)
             raise UpgradeKitError, msg
-    
+
         if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
             msg = "New kit API is %s. Upgrades only supported for kit API version 0.4 or newer." % kit_api
             kl.error(msg)
             raise UpgradeKitError, msg
-    
+
     def validate_old_kit_for_upgrade(self, old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
         """
         Checks whether old_kit can be upgraded.
-    
+
         The check is performed based on the oldest_upgradeable_version and
         oldest_upgradeable_release specified in the new kit and passed into this
         method. If the kit is too old to be upgraded, this method raises an
@@ -93,7 +98,7 @@ class UpgradeAction(KitopsAction):
         for staleness. If any repository containing the native base kit is stale,
         UpgradeKitError is raised.
         """
-    
+
         # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
         if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
             msg = ("Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, "
@@ -114,6 +119,19 @@ class UpgradeAction(KitopsAction):
                                                                                         old_kit.release, repo.reponame)
                     kl.error(msg)
                     raise UpgradeKitError, msg
+
+    def _acquire_global_lock(self):
+        process_registry = KusuProcessRegistry(os.getpid())
+        if not process_registry.no_other_kusu_apps_running():
+            msg = ("There are currently other kusu tools in use. For native base "
+                   "kit upgrades, no other kusu tools should be running. Please "
+                   "quit all running kusu tools first before trying the upgrade "
+                   "again. Upgrade aborted.")
+            kl.error(msg)
+            raise UpgradeKitError, msg
+        global_lock = KusuGlobalLock()
+        global_lock.acquire()
+        atexit.register(global_lock.release)
 
     def _get_old_kit(self, old_kit_id):
         old_kit_id = int(old_kit_id)
@@ -242,7 +260,7 @@ class UpgradeAction(KitopsAction):
                 sys.exit(1)
             else:
                 print "\tFinished updating repo %s" % repo.reponame
-        
+
 
     def _reassociate_components_to_nodegroups(self, components_to_add):
         # We will need a mapping from new_kit.components to components_to_add
@@ -266,7 +284,7 @@ class UpgradeAction(KitopsAction):
                     upgraded_nodegroups.update(new_component.nodegroups)
 
         return upgraded_nodegroups
-                    
+
 
     def _delete_old_kit(self):
         # For some reason, the in-memory representation of the DB is stale at
@@ -350,7 +368,6 @@ class UpgradeAction(KitopsAction):
                 else:
                     print "Driverpatch ran successfully."
 
-
     def _update_kusu_version(self, version):
         kusu_ver = self._db.AppGlobals.selectfirst_by(kname='KUSU_VERSION')
         kusu_ver.kvalue = version
@@ -385,6 +402,9 @@ class UpgradeAction(KitopsAction):
         self._verify_new_kit_has_compatible_components(components_to_add, associated_repos)
 
         self._get_user_confirmation(selected_kit)
+
+        if self.is_native_base_kit(self.old_kit):
+            self._acquire_global_lock()
 
         self.new_kit = self._add_and_return_new_kit(selected_kit)
 

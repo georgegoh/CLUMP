@@ -73,7 +73,8 @@ class KusuProcessRegistry(object):
         if not REGISTRY_PATH.exists():
             REGISTRY_PATH.makedirs()
         self._pid_file = REGISTRY_PATH / str(pid)
-        self.register()
+        if not self._pid_file.exists():
+            self.register()
 
     def register(self):
         self._pid_file.touch()
