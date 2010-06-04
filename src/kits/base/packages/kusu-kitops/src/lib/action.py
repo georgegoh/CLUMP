@@ -124,9 +124,12 @@ class UpdateAction(KitopsAction):
 
         # Now we handle the nodegroup-component associations
         for new_component in new_kit.components:
+            new_component_follows = component_mapping[new_component.cname]['follows']
+            if not new_component_follows.startswith('component-'):
+                new_component_follows = 'component-' + new_component_follows
             for old_component in old_kit.components:
                 if old_component.cname == new_component.cname \
-                        or 'component-' + component_mapping[new_component.cname]['follows'] == old_component.cname:
+                        or new_component_follows == old_component.cname:
                     new_component.nodegroups = old_component.nodegroups
                     old_component.nodegroups = []
 
