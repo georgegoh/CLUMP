@@ -24,7 +24,6 @@ import kusu.core.database as db
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
 from kusu.kitops.action import UpdateAction
-from kusu.kitops.remotekit import RemoteKit
 from kusu.util.errors import *
 
 EMOUNT_FAIL     = -1
@@ -72,7 +71,6 @@ class KitOpsApp(KusuApp):
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
                 self.printHelp()
-                #sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list, -r/--remotelist or -u/--update is supported.\n')
                 sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list or -u/--update is supported.\n')
                 sys.exit(EBAD_OP)
             elif '-a' in option._short_opts:
@@ -91,9 +89,6 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
                                action='callback', callback=mutexAction)
-        #self.parser.add_option('-r', '--remotelist', dest='action',
-        #                       help=self._('kitops_usage_remotelist'),
-        #                       action='callback', callback=mutexAction)
         self.parser.add_option('-u', '--update', dest='action',
                                help=self._('kitops_usage_update'),
                                action='callback', callback=mutexAction)
@@ -110,8 +105,6 @@ class KitOpsApp(KusuApp):
 
         self.parser.add_option('-i', '--kid', dest='kid',
                                help=self._('kid'))
-        #self.parser.add_option('-n', '--remote-kid', dest='remote_kid',
-        #                       help=self._('Kit ID in the remote repo'))
  
         self.parser.add_option('-o', '--kitversion', dest='kitversion',
                                help=self._('kitversion'))
@@ -157,7 +150,7 @@ class KitOpsApp(KusuApp):
 
         dbdriver = os.getenv('KUSU_DB_ENGINE')
         if not dbdriver or dbdriver not in ['mysql','postgres']:
-            dbdriver = 'mysql' # default to mysql
+            dbdriver = 'postgres' # default to postgres
 
         dbdatabase = 'kusudb'
         dbuser = 'apache'
@@ -172,13 +165,11 @@ class KitOpsApp(KusuApp):
         if options.dbpassword:
             dbpassword = options.dbpassword
 
-        # Now we will just perform a quick query from the DB to make sure the
-        # DB connection we established is correct.
         try:
-            self.koinst.findKits('not expecting', 1, 'result', 'at all')
-        except:
-            self.logErrorEvent("Database error. " + \
-                               "Please check database configuration.")
+            self.__db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+            self.koinst.setDB(self.__db)
+        except UnsupportedDriverError, e:
+            self.logErrorEvent('Database error: ' + e.args[0])
             sys.exit(EDB_FAIL)
 
         #suppress questions if required
@@ -194,12 +185,10 @@ class KitOpsApp(KusuApp):
                     self.logErrorEvent('Kit media not specified in silent mode')
                     sys.exit(EKITLOC_FAIL)
                 else:
-                    if not options.remote_kid: 
-                        kit_media = self.determineKitMedia()
+                    kit_media = self.determineKitMedia()
 
             # to indicate which kit to install from a metakit
             self.kit_name = options.kit
-            self.remote_kit_id = options.remote_kid
             self.kit_ver = options.kitversion
             self.kit_arch = options.kitarch
 
@@ -208,10 +197,6 @@ class KitOpsApp(KusuApp):
         elif options.action == 'update':
             kit_media = options.media
             self.koinst.setKitMedia(kit_media)
-
-            if options.remote_kid is not None and options.kid.find('-'):
-                kit_media = RemoteKit().runAddRemoteKit(options.remote_kid)
-                self.koinst.setKitMedia(kit_media, delete_kitmedia=True)
 
             update_action = UpdateAction(self.__db, self.koinst)
             run_args = {'old_kit_id': options.kid,
@@ -254,15 +239,6 @@ class KitOpsApp(KusuApp):
         self.parseArgs()
 
         if self.kitop == KITOP_ADD:
-            if self.remote_kit_id:
-                # Remote kit_id will always be in the form '2-3' where 2 is repoid and 3 is kitid
-                if self.remote_kit_id.find('-'):
-                    kit_media = RemoteKit().runAddRemoteKit(self.remote_kit_id)
-                    # We pass delete_kitmedia=True because the kitmedia
-                    # location is a temporary directory containing downloaded
-                    # files from the remote repo.
-                    self.koinst.setKitMedia(kit_media, delete_kitmedia=True)
-
             self.runAdd()
 
         elif self.kitop == KITOP_DEL:
