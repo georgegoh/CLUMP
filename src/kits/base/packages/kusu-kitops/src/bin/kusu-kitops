@@ -293,8 +293,6 @@ class KitOpsApp(KusuApp):
         elif self.kitop == KITOP_LST:
             self.runListKit()
 
-        elif self.kitop == KITOP_RLST:
-            RemoteKit().runListRemoteKit()
         elif self.kitop == PROCESS_ACTION_QUEUE:
             for action, run_args in self.action_queue.iteritems():
                 try:
