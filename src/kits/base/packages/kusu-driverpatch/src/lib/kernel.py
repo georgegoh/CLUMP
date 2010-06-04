@@ -10,7 +10,8 @@
 
 from path import path
 from kusu.util.errors import FileDoesNotExistError, DirDoesNotExistError, ToolNotFound
-from kusu.util import rpmtool, tools
+from kusu.util import tools
+from primitive.support import rpmtool
 import subprocess
 
 

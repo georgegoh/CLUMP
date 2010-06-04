@@ -5,7 +5,8 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.util import tools as utiltools, rpmtool
+from kusu.util import tools as utiltools
+from primitive.support import rpmtool
 from kusu.core import database as db
 from kusu.driverpatch import DriverPatchController
 import urllib
@@ -27,7 +28,7 @@ def setUp():
     dest = RPMDIR / KRPM1
     if not dest.exists(): download(KRPM1_URL,dest)
 
-    
+
 def tearDown():
     pass
     #if RPMDIR.exists(): RPMDIR.rmtree()
@@ -46,19 +47,19 @@ class TestPatchingKernel(object):
         self.kusudb = self.scratchdir / 'kusu.db'
         self.dbinst = db.DB('sqlite', self.kusudb)
         self.dbinst.createTables()
-        
+
         self.controller = DriverPatchController(self.dbinst)
-        
+
     def tearDown(self):
         if self.scratchdir.exists(): self.scratchdir.rmtree()
-        
+
     def testExtractKernelFori586DefaultName(self):
         """ Testing i586 kernel extraction with default name.
         """
         krpm = path(RPMDIR) / KRPM1
         if not krpm.exists():
             assert False, 'Kernel rpm not found!'
-            
+
         tftpbootdir = self.scratchdir / 'tftpboot'
         if not tftpbootdir.exists(): tftpbootdir.mkdir()
         self.controller.copyKernel(krpm,tftpbootdir)
@@ -79,7 +80,7 @@ class TestPatchingKernel(object):
         self.controller.copyKernel(krpm,tftpbootdir,newkernelname)
         newkernel = tftpbootdir / newkernelname
         assert newkernel.exists()
-        
+
     def testExtractKernelModulesDirFori586(self):
         """ Testing i586 kernel modules dir extraction.
         """
@@ -95,7 +96,7 @@ class TestPatchingKernel(object):
         # find one well known asset
         miiko = modulesdir / 'lib/modules' / kver / 'kernel/drivers/net/mii.ko'
         assert miiko.exists()
-        
+
     def testPackModulesCgzFori586(self):
         """ Test packaging of modules.cgz archive.
         """
@@ -110,7 +111,7 @@ class TestPatchingKernel(object):
         self.controller.extractKernelModulesDir(krpm,modulesdir)
         self.controller.convertKmodDirToModulesArchive(modulesdir,modulescgz, r.getArch())
         assert modulescgz.exists()
-        
+
     def testKernelVersion(self):
         """ Validate the kernel version for the modules.
         """
@@ -123,23 +124,16 @@ class TestPatchingKernel(object):
         if not modulesdir.exists(): modulesdir.mkdir()
         self.controller.extractKernelModulesDir(krpm,modulesdir)
         kver = self.controller.getKernelVersion(modulesdir, r.getArch())
-        
+
         assert kver == '2.6.18-1.2798.fc6'
 
-        
+
     def testPackageIsKernelPackage(self):
         """ Validate the package rpm is indeed a kernel package. """
-        
+
         krpm = path(RPMDIR) / KRPM1
         if not krpm.exists():
             assert False, 'Kernel rpm not found!'
-            
+
         assert self.controller.isKernelPackage(krpm)
 
-
-
-        
-
-
-        
-    

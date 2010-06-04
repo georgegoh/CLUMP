@@ -11,7 +11,6 @@ import sqlalchemy
 import subprocess
 import tempfile
 from path import path
-from kusu.util import rpmtool
 from kusu.util.errors import DeleteKitsError
 from kusu.kitops.addkit_strategies import getPluginProviders
 from kusu.util.kits import run_scripts, generate_script_arg, get_kit_RPM

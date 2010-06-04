@@ -16,8 +16,7 @@ import pwd
 from kusu.util.tools import cpio_copytree
 from kusu.util.errors import FileDoesNotExistError, PackageAttributeNotDefined, UnsupportedScriptMode
 from kusu.util.structure import Struct
-from kusu.util import rpmtool
-
+from primitive.support import rpmtool
 
 SUPPORTED_TARFILES_EXT = ['.tgz','.tar.gz','.tbz2','.tar.bz2','.zip','.tar']
 SUPPORTED_DISTROPKG_EXT = ['.src.rpm','.rpm','.srpm','.deb']

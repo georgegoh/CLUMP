@@ -38,7 +38,7 @@ logger.addFileHandler()
 
 from kusu.util.tools import mkdtemp
 from kusu.ngedit.constants import *
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 
 # For TUI
 from kusu.ui.text.USXscreenfactory import USXBaseScreen,ScreenFactory
@@ -3878,14 +3878,9 @@ def getAvailModules(db, ngid, repoid=None, comps=None):
             kl.warn('Driver package %s not found in repo %s'\
                                     %(dpack,repodir))
         else:
-            #3. extract the driverpack's ko files (can't use rpmtool.extract)
-            cmd = "rpm2cpio %s | cpio -id *.ko" %dpackfull
-            p = subprocess.Popen(   cmd, shell=True,
-                                    cwd = tmpdir,
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE
-                                 )
-            p.communicate()
+            #3. extract the driverpack's ko files
+            _pkg = rpmtool.RPM(dpackfull)
+            _pkg.extract(tmpdir, filter='*.ko')
 
     t2 = time.time()
 

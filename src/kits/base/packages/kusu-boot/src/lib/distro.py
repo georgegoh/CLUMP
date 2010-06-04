@@ -26,7 +26,7 @@ from path import path
 import os
 import re
 from kusu.util.errors import FileAlreadyExists, CopyError
-from kusu.util.rpmtool import RPM
+from primitive.support.rpmtool import RPM
 from ConfigParser import ConfigParser
 from primitive.support import osfamily
 

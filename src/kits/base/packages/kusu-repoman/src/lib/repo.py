@@ -22,7 +22,7 @@
 from kusu.util.errors import *
 from kusu.repoman import tools
 from kusu.repoman.updates import YumUpdate, RHNUpdate, YouUpdate, OpenSUSEUpdate
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 from primitive.repo.yast import YastRepo
 from path import path
 from Cheetah.Template import Template

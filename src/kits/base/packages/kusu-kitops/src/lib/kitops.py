@@ -26,7 +26,7 @@ from kusu.kitops.package import PackageFactory
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.util.tools import cpio_copytree
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 from kusu.util.kits import processKitInfo, getKitComponentsMatchingOS
 from kusu.util.errors import *
 # TODO: uncomment this to call repoman's refresh
@@ -407,7 +407,7 @@ class KitOps:
 
     def getKitRPMInfo(self, kitrpm):
         """
-        kitrpm = object of class kusu.util.rpmtool.RPM.
+        kitrpm = object of class primitive.support.rpmtool.RPM.
         """
         tmpdir = path(tempfile.mkdtemp(prefix='kitinfo-', dir=self.tmpprefix))
         kitrpm.extract(tmpdir)

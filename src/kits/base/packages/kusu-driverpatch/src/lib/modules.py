@@ -12,7 +12,6 @@ from path import path
 from kusu.core import database as db
 from kusu.core.app import KusuApp
 from kusu.util import tools as utiltools
-from kusu.util import rpmtool, tools
 from kusu.driverpatch import DriverPatchController
 from kusu.util.errors import FileDoesNotExistError
 

@@ -1,6 +1,6 @@
 from path import path
 from kusu.util.errors import KitinfoSyntaxError, KitPackageError
-from kusu.util.rpmtool import compareEVR, RPM
+from primitive.support.rpmtool import compareEVR, RPM
 from primitive.support.osfamily import getOSNames, matchTuple
 
 try:

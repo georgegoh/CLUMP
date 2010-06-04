@@ -9,7 +9,7 @@ from path import path
 from kusu.util.errors import KitSrcAlreadyExists, UnsupportedNGType, UnsupportedScriptMode, FileDoesNotExistError
 from kusu.util.structure import Struct
 from kusu.util.tools import cpio_copytree
-from kusu.util.rpmtool import RPM
+from primitive.support.rpmtool import RPM
 from kusu.buildkit.builder import RPMBuilder, getTemplateSpec, stripShebang
 import pprint
 from kusu.buildkit.strategies.kitsource01 import KitSrcFactory, GeneralKitSrc, KitSrcBase, BinaryKitSrc

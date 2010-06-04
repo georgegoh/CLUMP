@@ -7,7 +7,7 @@
 
 from kusu.core import database as db
 from kusu.repoman.updates import BaseUpdate
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 from kusu.util.tools import cpio_copytree
 from kusu.util.testing import download
 

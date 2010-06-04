@@ -192,10 +192,6 @@ class UnsupportedScriptMode(KusuError):pass
 class KitinfoSyntaxError(KusuError): pass
 class BuildkitArchError(KusuError): pass
 
-# util.rpmtool
-class InvalidRPMHeader(KusuError): pass
-class RPMComparisonError(KusuError): pass
-
 # driverpatch
 class UnknownKernelModuleAsset(KusuError): pass
 

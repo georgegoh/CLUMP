@@ -32,6 +32,7 @@ from kusu.core import database
 from primitive.system.software.probe import OS
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.support import osfamily
+from primitive.support import rpmtool
 from path import path
 
 try:
@@ -425,7 +426,8 @@ class BuildInitrd:
             if kpkg.split('.')[-1] == 'rpm':
                 os.system('mkdir -p \'%s\'' % self.moduledir)
                 os.chdir(self.moduledir)
-                os.system('rpm2cpio %s |cpio -id >/dev/null 2>&1' % kpkg)
+                _pkg = rpmtool.RPM(kpkg)
+                _pkg.extract(self.moduledir)
 
             elif kpkg.split('.')[-1] == 'deb':
                 os.system('mkdir -p \'%s\'' % self.moduledir)

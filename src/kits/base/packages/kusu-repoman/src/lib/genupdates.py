@@ -12,9 +12,11 @@ import shutil
 import atexit
 import string
 import fnmatch
+from path import path
 
 from primitive.system.software.probe import OS
 from primitive.support import osfamily
+from primitive.support import rpmtool
 from primitive.support.util import runCommand
 from primitive.core.errors import ModuleException
 from kusu.genupdates.downloader import Downloader
@@ -93,14 +95,9 @@ class BaseGenUpdates(object):
         return rpms, missing
 
     def unpackRPMS(self, rpm_paths, destdir):
-        err = open('/dev/null','w')
         for rpm in rpm_paths:
-            rpm2cpioP = subprocess.Popen('rpm2cpio %s' % rpm, shell=True, cwd=destdir,
-                                         stdout=subprocess.PIPE, stderr=err)
-            cpioP = subprocess.Popen('cpio -id', shell=True, cwd=destdir, stdin=rpm2cpioP.stdout,
-                                     stdout=subprocess.PIPE, stderr=err)
-            cpioP.wait()
-        err.close()
+            pkg = rpmtool.RPM(rpm)
+            pkg.extract(destdir)
 
     def generateUpdatesImg(self, updatesdir, updatesimgdir):
         pass
@@ -258,7 +255,8 @@ class YumGenUpdates(BaseGenUpdates):
         trunk = self.getSrcDir()
         distspath = 'src/dists/%s/%s/nodeinstaller/updates.img' % (distro, version)
         srcdir = os.path.abspath(os.path.join(trunk, os.path.join(distspath, 'opt')))
-        self.runCmd('cp -a %s %s' % (srcdir, destdir))
+        if path(srcdir).exists():
+            self.runCmd('cp -a %s %s' % (srcdir, destdir))
        
     def __checkFreeLoopDev(self):
         """Check for any available loopback devices"""

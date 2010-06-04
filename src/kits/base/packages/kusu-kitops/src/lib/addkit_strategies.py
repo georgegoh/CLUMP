@@ -11,7 +11,6 @@ import pwd
 import subprocess
 import tempfile
 from path import path
-from kusu.util import rpmtool
 from kusu.util.kits import processKitInfo, run_scripts, generate_script_arg
 from kusu.util.errors import KitAlreadyInstalledError, ComponentAlreadyInstalledError, \
                              InstallKitRPMError, KitScriptError

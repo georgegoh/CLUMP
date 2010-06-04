@@ -11,7 +11,8 @@
 
 from path import path
 from kusu.util.errors import FileDoesNotExistError
-from kusu.util import rpmtool, tools
+from kusu.util import tools
+from primitive.support import rpmtool
 import tarfile
 
 FILE_EXTS = ['tgz','tbz2','tar.gz','tar.bz2','gz','bz2']

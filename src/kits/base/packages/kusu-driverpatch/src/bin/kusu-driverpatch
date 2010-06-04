@@ -12,7 +12,7 @@ from path import path
 from kusu.core.app import KusuApp
 from kusu.core import database as db
 from kusu.util import tools as utiltools
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 from kusu.repoman import tools as repotools
 from kusu.driverpatch import DriverPatchController
 from kusu.driverpatch.modulesfactory import InitrdModulesFactory

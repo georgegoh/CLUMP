@@ -5,7 +5,8 @@
 #
 # Licensed under GPL version 2; See LICENSE for details.
 
-from kusu.util import tools, rpmtool
+from kusu.util import tools
+from primitive.support import rpmtool
 import subprocess
 from kusu.buildkit import *
 from path import path

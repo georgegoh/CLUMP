@@ -25,7 +25,7 @@ import rpm
 import urllib
 import urlparse
 from sets import Set
-from kusu.util import rpmtool
+from primitive.support import rpmtool
 
 class ENotImplemented(Exception): pass
 class EInvalidPackage(Exception): pass
