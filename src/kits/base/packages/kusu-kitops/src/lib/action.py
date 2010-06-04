@@ -54,6 +54,11 @@ class KitopsAction(object):
 
         raise NotImplementedError
 
+    def print_and_log(self, msg):
+        """Prints msg to console as well as log with kusulogger."""
+        print msg
+        kl.info(msg)
+
 
 class UpgradeAction(KitopsAction):
 
@@ -216,7 +221,7 @@ class UpgradeAction(KitopsAction):
     def _get_user_confirmation(self, selected_kit):
         _old_kit = self._get_kit_long_name(self.old_kit)
         _selected_kit = self._get_kit_long_name(selected_kit[1])
-        print "Upgrading from %s to %s." % (_old_kit, _selected_kit)
+        self.print_and_log("Upgrading from %s to %s." % (_old_kit, _selected_kit))
         if not self.suppress_questions:
             print 'Confirm [y/N]: '
             result = sys.stdin.readline().strip()
@@ -230,12 +235,12 @@ class UpgradeAction(KitopsAction):
         kit_api = selected_kit[4]
         new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db,
                                                           selected_kit, update_action=True)
-        print "Added new kit, ID is %s" % new_kit_id
+        self.print_and_log("Added new kit, ID is %s" % new_kit_id)
         return self._db.Kits.get(new_kit_id)
 
     def _reassociate_repos(self, associated_repos):
         if associated_repos:
-            print "Associating repositories using the old kit with the new kit"
+            self.print_and_log("Associating repositories using the old kit with the new kit")
         for repo in associated_repos:
             # First, deassociate the old kit from the repo
             for i in xrange(len(repo.kits)):
@@ -250,24 +255,28 @@ class UpgradeAction(KitopsAction):
             self._db.flush()
 
     def _update_repos(self, repos):
-        print "Refreshing repositories: %s" % ", ".join([repo.reponame for repo in repos])
-        print "This may take a while to complete. Please do not run any kusu commands until then."
+        self.print_and_log("Refreshing repositories: %s" % \
+                           ", ".join([repo.reponame for repo in repos]))
+        self.print_and_log("This may take a while to complete. Please do not "
+                           "run any kusu commands until then.")
 
         for repo in repos:
             repo_obj = RepoFactory(self._db).getRepo(repo.repoid)
             try:
-                print "\tRefreshing repo %s" % repo.reponame
+                self.print_and_log("\tRefreshing repo %s" % repo.reponame)
                 repo_obj.refresh(repo.repoid)
             except Exception, e:
-                kl.error("Upgrade failed. Unable to refresh repo %s. Reason: %s." % (repo.reponame, e))
+                kl.error("Upgrade failed. Unable to refresh repo %s. "
+                         "Reason: %s." % (repo.reponame, e))
                 sys.exit(1)
             else:
-                print "\tFinished updating repo %s" % repo.reponame
+                self.print_and_log("\tFinished updating repo %s" % repo.reponame)
 
     def _reassociate_components_to_nodegroups(self, components_to_add):
         for old_component in self.old_kit.components:
             if old_component.nodegroups:
-                print 'Associating nodegroups using the old kit components with new kit components'
+                self.print_and_log('Associating nodegroups using the old kit '
+                                   'components with new kit components')
                 break
 
         # We will need a mapping from new_kit.components to components_to_add
@@ -301,30 +310,30 @@ class UpgradeAction(KitopsAction):
         DeleteKitStrategy[self.koinst.getKitApi(self.old_kit.kid)](self.koinst, self._db,
                                                                    self.old_kit, update_action=True)
         self._db.flush()
-        print "Removed old kit with ID %s" % _old_kit_id
+        self.print_and_log("Removed old kit with ID %s" % _old_kit_id)
 
     def _remind_user_remaining_upgrade_steps(self):
         new_normal_kit = self.new_kit
         if new_normal_kit.repos:
-            print "To complete the upgrade, please run the following commands:\n"
+            self.print_and_log("To complete the upgrade, please run the following commands:\n")
             for repo in new_normal_kit.repos:
-                print "    kusu-repoman -u -r %s" % repo.reponame
+                self.print_and_log("    kusu-repoman -u -r %s" % repo.reponame)
 
             nodegroups = Set([ng for comp in new_normal_kit.components for ng in comp.nodegroups])
             for ng in nodegroups:
                 if ng.installtype == 'diskless' or ng.installtype == 'disked':
-                    print "    kusu-buildimage -n %s" % ng.ngname
+                    self.print_and_log("    kusu-buildimage -n %s" % ng.ngname)
 
             dpack_nodegroups = Set([ng for comp in new_normal_kit.components if comp.driverpacks for ng in comp.nodegroups])
             for ng in dpack_nodegroups:
                 if ng.installtype == 'package':
-                    print "    kusu-driverpatch nodegroup id %d" % ng.ngid
+                    self.print_and_log("    kusu-driverpatch nodegroup id %d" % ng.ngid)
 
             if nodegroups:
-                print "    kusu-cfmsync -f -p -u\n"
+                self.print_and_log("    kusu-cfmsync -f -p -u\n")
 
     def _synchronize_nodegroups(self):
-        print "Syncing nodegroups"
+        self.print_and_log("Syncing nodegroups")
 
         # Use a dummy KusuApp instance for helper functions
         temp_app = KusuApp()
@@ -343,17 +352,22 @@ class UpgradeAction(KitopsAction):
             ng_driverpacks = Set([comps for comp in ng.components if comp in new_driverpack_comps])
 
             if ng.installtype == 'diskless' or ng.installtype == 'disked':
-                print "Building image for %s nodegroup: %s. " % (ng.type, ng.ngname)
-                print "This may take a while to complete. Please do not run any kusu commands until then."
+                self.print_and_log("Building image for %s nodegroup: %s. " \
+                                   % (ng.type, ng.ngname))
+                self.print_and_log("This may take a while to complete. Please "
+                                   "do not run any kusu commands until then.")
                 retcode = subprocess.call(['kusu-buildimage', '-n', ng.ngname])
                 if retcode:
-                    print "Buildimage failed. Please run manually after the upgrade has completed."
+                    self.print_and_log("Buildimage failed. Please run manually "
+                                       "after the upgrade has completed.")
                 else:
-                    print "Buildimage ran successfully."
+                    self.print_and_log("Buildimage ran successfully.")
 
             elif ng.installtype == 'package' and ng_driverpacks:
-                print "Patching drivers for %s nodegroup: %s." % (ng.type, ng.ngname)
-                print "This may take a while to complete. Please do not run any kusu commands until then."
+                self.print_and_log("Patching drivers for %s nodegroup: %s." \
+                                   % (ng.type, ng.ngname))
+                self.print_and_log("This may take a while to complete. Please "
+                                   "do not run any kusu commands until then.")
 
                 # Find boot directory
                 try:
@@ -368,15 +382,17 @@ class UpgradeAction(KitopsAction):
                 try:
                     src_initrd.copyfile(dst_initrd)
                 except:
-                    print 'Warning: Failed to copy pristine initrd for this nodegroup. ' \
-                          'This failure will likely result in unexpected behaviour.\n'
+                    self.print_and_log('Warning: Failed to copy pristine initrd '
+                                       'for this nodegroup. This failure will likely '
+                                       'result in unexpected behaviour.\n')
 
                 # Run kusu-driverpatch
                 retcode = subprocess.call(['kusu-driverpatch', 'nodegroup', 'id', str(ng.ngid)])
                 if retcode:
-                    print "Driverpatch failed. Please run manually after the upgrade has completed."
+                    self.print_and_log("Driverpatch failed. Please run manually "
+                                       "after the upgrade has completed.")
                 else:
-                    print "Driverpatch ran successfully."
+                    self.print_and_log("Driverpatch ran successfully.")
 
     def _update_kusu_version(self, version):
         kusu_ver = self._db.AppGlobals.selectfirst_by(kname='KUSU_VERSION')
