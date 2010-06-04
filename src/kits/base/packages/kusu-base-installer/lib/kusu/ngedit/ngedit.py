@@ -58,9 +58,8 @@ RIGHT=kusuwidgets.RIGHT
 def ifelse(b, x, y): return ((b and [x]) or [y])[0]
 # TODO: consolidate constants in one place
 CFMBaseDir = "/etc/cfm"
-#PluginsDir = "/opt/kusu/lib/plugins/ngedit"
-PluginsDir = ""
-#PluginsLibDir = PluginsDir + "/lib"
+PluginsDir = "/opt/kusu/lib/plugins/ngedit"
+PluginsLibDir = PluginsDir + "/lib"
 LockDir = "/var/lock/ngedit"
 
 # TODO: initialize logging
@@ -353,7 +352,7 @@ class NodeGroup(NodeGroupRec):
 
         # Default behaviour is to run cfmsync
         self.cfmsync_required = True
-        
+
     def __setitem__(self, key, item):
         '''Allows setting exactly one Nodegroup field for the given record '''
         key = key.lower()
@@ -425,7 +424,7 @@ class NodeGroup(NodeGroupRec):
         if len(self.data[link]) < 1:
             return
 
-        if link == 'parts': 
+        if link == 'parts':
             # we should sort partition instances by their partition ids before we update them into DB.
             self.data[link].sort(cmp=lambda x,y: x['idpartitions'] - y['idpartitions'])
             #special case - iterate over the list of PartitionRec instances
@@ -529,7 +528,7 @@ class NodeGroup(NodeGroupRec):
 
     def updateNodegroupNetworks(self, mode, ngname, db=None, netids=None):
         ''' updates the nics table with entries '''
-        
+
         from kusu.core.app import KusuApp
         from kusu.core.db import KusuDB
         from kusu.nodefun import NodeFun
@@ -739,8 +738,8 @@ class NodeGroup(NodeGroupRec):
         # validate installtype
         installtype = self.data['installtype']
         if not installtype:
-            raise NGEValidationError, "Install type is required for Node Group."       
- 
+            raise NGEValidationError, "Install type is required for Node Group."
+
         # validate kernel
         kernel = self.data['kernel']
         if installtype == 'multiboot':
@@ -759,9 +758,9 @@ class NodeGroup(NodeGroupRec):
         initrd = self.data['initrd']
         if installtype == 'multiboot':
             self.data['initrd'] = 'none'
-        else:        
+        else:
             if not initrd:
-                raise NGEValidationError, "An initrd file must be selected for a Node Group."        
+                raise NGEValidationError, "An initrd file must be selected for a Node Group."
             BootDir = db.getAppglobals('PIXIE_ROOT')
             if not BootDir: BootDir = '/tftpboot/kusu'
             initrdpath = os.path.join(BootDir,initrd)
@@ -839,21 +838,21 @@ class NodeGroup(NodeGroupRec):
 
             if not rv:
                 if self.__compHasInteractivePlugin(db, cid):
-                    
+
                   #  compName = self.__getCompName(cid, db)
-                  #  
-                  #  # TODO: limited support for now; remove when we 
+                  #
+                  #  # TODO: limited support for now; remove when we
                   #  # complete Phase 2 of interactive plug-in project
-                  #  supportedComps = ('component-LSF-Master-v7_0_2', 
+                  #  supportedComps = ('component-LSF-Master-v7_0_2',
                   #                    'component-LSF-Master-v7_0_4',
                   #                    'component-LSF-Compute-v7_0_2',
                   #                    'component-LSF-Compute-v7_0_4',
                   #                    'component-Platform-OFED-v1_3')
-                  #  
+                  #
                   #  if compName not in supportedComps:
                   #      raise NGEValidationError, "Component '%s' has an interactive " \
                   #          "plug-in which isn't yet supported." % compName
-                    
+
                     pluginDataDict = {}
                     if self.pluginDataDict.has_key(cid):
                         pluginDataDict = self.pluginDataDict[cid]
@@ -908,7 +907,7 @@ class NodeGroup(NodeGroupRec):
         if missing_provision_network:
             raise NGEValidationError, \
                     "At least one provision network with an ethernet (eth) interface must be selected."
-    
+
     def validateModules(self, db):
         '''Check if all specified modules exist in the driverpacks from components
            selected for the node group.
@@ -924,7 +923,7 @@ class NodeGroup(NodeGroupRec):
         from kusu.core import database as sadb
         engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
         dbinst = sadb.DB(engine, db='kusudb',username='nobody')
-        
+
         # get the list of driverpacks to examine
         comps = self.data['comps']
         if not comps:
@@ -955,7 +954,7 @@ class NodeGroup(NodeGroupRec):
                 newmodules = stdout.split('\n')
                 newmodules = [x.split('.ko')[0] for x in newmodules ]
                 allmodules.extend(newmodules)
-                        
+
         # Determine if module is in any of the driverpacks
         for module in self.data['modules']:
             if module not in allmodules:
@@ -1982,7 +1981,7 @@ class NodeGroup(NodeGroupRec):
                 self.__renameHandler(db, prevNG['ngname'], self['ngname'])
                 kl.info("Final Actions: regenerating ICEintegration instconf xml file succeeded for new NG name %s" % self['ngname'])
 
-            # finalizeCommit() was formerly formAction(). It can also 
+            # finalizeCommit() was formerly formAction(). It can also
             # throw NGECommitError.
             try:
                 self.__finalizeCommit(db, prevNG, kusuApp, windowInst)
@@ -2007,7 +2006,7 @@ class NodeGroup(NodeGroupRec):
 
         diffNG = self - prevNG
         key_lst = diffNG.keys()
-        
+
         # Synchronize if packages or components were modified
         if ('packs' in key_lst or 'comps' in key_lst or 'nets' in key_lst or 'kparams' in key_lst):
             return True
@@ -2024,7 +2023,7 @@ class NodeGroup(NodeGroupRec):
         if syncNG:
             self.__runTool('kusu-cfmsync', "-n '%s' -p -f" %self['ngname'], windowInst)
             if self['installtype'] == 'multiboot':
-                self.__runTool('kusu-boothost', "-n '%s'" % self['ngname'], windowInst)            
+                self.__runTool('kusu-boothost', "-n '%s'" % self['ngname'], windowInst)
         else:
             rmd = "kusu-cfmsync reminder"
             cmd = "kusu-cfmsync"+ " -n '%s' -p -f" %self['ngname']
@@ -2032,13 +2031,12 @@ class NodeGroup(NodeGroupRec):
             if self['installtype'] == 'multiboot':
                 cmd = cmd + "\nkusu-boothost "+ "-n '%s'" % self['ngname']
                 rmd = "kusu-boothost and "+ rmd
-            
+
             if windowInst:
                 windowInst.selector.popupMsg(rmd, "Please update the nodes manually"+\
                     " at your earliest convenience by running\n%s" %cmd)
             else:
                 sys.stdout.write("Please update the nodes manually by running: %s\n" % cmd)
-
 
     def genKickstart(self,windowInst,generateKS):
         '''Generates kickstart file for nodes in the nodegroup and returns the string
@@ -2060,7 +2058,7 @@ class NodeGroup(NodeGroupRec):
         os = re.compile('[a-z]+').findall(full_os)[0]
         target_os = (os, ver, arch)
         plugin = Dispatcher.get('inst_conf_plugin', os_tuple=target_os) # get os context plugin
-        
+
         cmd = "kusu-genconfig %s %s" % (plugin, self.PKval)
         if generateKS:
             return self.__runTool('genconfig','%s %s' % ( plugin , self.PKval) ,windowInst)
@@ -2085,6 +2083,8 @@ class NodeGroup(NodeGroupRec):
 #             raise NGEValidationError, "Could not generate kickstart file from partition schema! : %s" % stderr
 #         return stdout
 
+
+
     def __compHasInteractivePlugin(self, db, compId):
         plugcinst = self.__importPlugin(compId, db)
         if not plugcinst:
@@ -2101,13 +2101,8 @@ class NodeGroup(NodeGroupRec):
                 continue
             return plugcname
 
-
     def __importPlugin(self, compId, db):
-        query=('SELECT kid FROM components WHERE cid= %s' % compId)
-        db.execute(query)
-        kid=db.fetchone()
-        plugdir = "/depot/kits/"+str(kid[0])+"/plugins/ngedit"
-
+        plugdir = PluginsDir
         if plugdir not in sys.path:
             sys.path.append(plugdir)
 
@@ -2146,16 +2141,16 @@ class NodeGroup(NodeGroupRec):
         db.execute(query)
         rv = db.fetchall()
         compIdList = [x for x, in rv]
-        return compIdList         
-        
+        return compIdList
+
     def __handleCompPlug(self, db, CompIdList, action, kusuApp, windowInst):
 
-        #plugdir = PluginsDir
+        plugdir = PluginsDir
         _msg = ""
 
         if not CompIdList:
             return
- 
+
         CompIdList = [ int(x) for x in CompIdList ]
 
         PlugInstList_draw = []
@@ -2224,7 +2219,7 @@ class NodeGroup(NodeGroupRec):
                 if PlugInstList_draw:
                     screenFactory = NGEScreenFactory(PlugInstList_draw)
                     ks = USXNavigator(screenFactory, screenTitle="Node Group Editor", showTrail=False)
-                    ks.run()                                        
+                    ks.run()
         elif action == 'static':
             for inst in PlugInstList_run:
                 try:
@@ -2237,15 +2232,15 @@ class NodeGroup(NodeGroupRec):
                 else:
                     _msg += "The plugin for component " \
                             "'%s' ran successfully.\n" % inst.getComponentName()
-                
+
                 if not windowInst:
                     sys.stdout.write(_msg + "\n")
-                
+
             if windowInst:
                 if PlugInstList_draw:
                     screenFactory = NGEScreenFactory(PlugInstList_draw)
                     ks = USXNavigator(screenFactory, screenTitle="Node Group Editor", showTrail=False)
-                    ks.run() 
+                    ks.run()
         elif action == 'remove':
             for inst in PlugInstList_run:
                 try:
@@ -2261,14 +2256,14 @@ class NodeGroup(NodeGroupRec):
 
                 if not windowInst:
                     sys.stdout.write(_msg + "\n")
-                    
+
     def __importPluginGeneric(self, db):
         pluginGenericInstances = []
         pluginFileList = os.listdir(PluginsDir)
-        pluginFileList.sort()  
+        pluginFileList.sort()
         pluginList = []
- 
-        # Strip out files in the plugins directory with .pyc, ignore .swp files, and select only *-generic.py files. 
+
+        # Strip out files in the plugins directory with .pyc, ignore .swp files, and select only *-generic.py files.
         for pluginName in pluginFileList:
              plugin, ext = os.path.splitext(pluginName)
              if ext == ".py":
@@ -2278,25 +2273,25 @@ class NodeGroup(NodeGroupRec):
 
         # Import the plugins
         moduleInstances = map(__import__, pluginList)
-        
+
         # Create instances of each new plugin and store the instances.
         for thisModule in moduleInstances:
              try:
                  thisPlugin = thisModule.NGPlugin(db, KusuApp())
-                 
+
                  pluginGenericInstances.append(thisPlugin)
              except:
                  self.stdoutMessage(kusuApp._("Warning: Invalid plugin '%s'. Does not have a NGPlugin class.\nThis plugin will be IGNORED.\n"),thisModule)
-        return pluginGenericInstances 
- 
+        return pluginGenericInstances
+
     def handleGenericPlugins(self, db, prevNG, kusuApp, windowInst):
-        
+
         plugdir = PluginsDir
         _msg = ""
-        
+
         PlugInstList = []
         plugInstList = self.__importPluginGeneric(db)
-        
+
         for plugcinst in plugInstList:
             plugcinst.ngid = self['ngid']
             try:
@@ -2309,10 +2304,10 @@ class NodeGroup(NodeGroupRec):
                 else:
                     _msg += "The generic plugin " \
                             "'%s' ran successfully.\n" % plugcinst.getPluginName()
-                
+
                 if not windowInst:
                     sys.stdout.write(_msg + "\n")
-                
+
     def __runTool(self,tool, argstr, windowInst):
 
         kl.info("Final Actions: Running %s:" %tool)
@@ -2414,7 +2409,7 @@ class NodeGroup(NodeGroupRec):
         """
         After the nodegroup name change is synchronized to kusudb,
         handles the kickstart files under /opt/repository/instconfig
-        and xml files under /opt/repository/.icle for the nodegroup 
+        and xml files under /opt/repository/.icle for the nodegroup
         associated with the new name
 
         Parameters:
@@ -2532,8 +2527,8 @@ class NodeGroup(NodeGroupRec):
         self.__handleCompPlug(db, removedComps, 'remove', kusuApp, windowInst)
         self.__handleCompPlug(db, addedComps, 'add', kusuApp, windowInst)
 
-        #Please be carefull for writing NGEDIT static plugins: 
-        # method update() won't be called during adding/removing components, please call update() 
+        #Please be carefull for writing NGEDIT static plugins:
+        # method update() won't be called during adding/removing components, please call update()
         # in add() or remove() if you also want update() to be called in these situations.
         CompIdList = self.__getCompIdList(db)
         staticComps = [id for id in CompIdList if (id not in addedComps and id not in removedComps)]
@@ -2541,10 +2536,9 @@ class NodeGroup(NodeGroupRec):
 
         #5. show cfmsync screen only if packages or components
         # were modified for node group
-
         if not self.syncNodesIsRequired(prevNG) and windowInst:
             self.cfmsync_required = False
-        
+
         key_lst = diffNG.keys()
         # Synchronize if packages or components were modified
         if ('packs' in key_lst or 'comps' in key_lst):
@@ -2734,7 +2728,7 @@ class NodeGroupXMLRecord(NodeGroup):
             part_rec = PartSchema.getPartRecByPK(pk)
             curr_section = None
             if PartSchema.isPartition(pk):
-                # Check the fill option. Put the mountpoint partition that is set to 'Fill at least' as the last of 
+                # Check the fill option. Put the mountpoint partition that is set to 'Fill at least' as the last of
                 # the partition schema section in the XML file. There will only be 1 partition set to 'Fill at least'
                 fill = translatePartitionOptions(part_rec['options'], 'fill')[0]
                 if fill:
@@ -2776,7 +2770,6 @@ class NodeGroupXMLRecord(NodeGroup):
                         break
 
                 curr_section.appendChild(self.__createXMLElement(xml, "vol_group_id", vg_id))
-
                 # Get the preserve column
                 preserve = part_rec['preserve'] and 1 or 0
                 curr_section.appendChild(self.__createXMLElement(xml, "preserve", preserve))
@@ -2793,6 +2786,7 @@ class NodeGroupXMLRecord(NodeGroup):
             sectionEl.appendChild(curr_section)
 
         return sectionEl
+
 
     def syncFromDBAndDump2XML(self, db):
         '''Returns a string containing the XML representation of
@@ -3008,7 +3002,7 @@ class NodeGroupXMLRecord(NodeGroup):
             hiddenRecs = []
             query = "select * from partitions where ngid = %s " % self.data['ngid'] + \
                     "and (options like 'partitionID=%' or options like 'preserveDefault=%')"
-            
+
             db.execute(query)
             rv = db.fetchall()
 
@@ -3433,13 +3427,13 @@ class NGEPluginBase(USXBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.ngid = None
-        self.static = False #do not invoke the plugin everytime	
+        self.static = False #do not invoke the plugin everytime
         self.interactive = False #default to non-interactive
         self.__compname = None
-        
+
     def isStatic(self):
         return self.static
-        
+
     def isInteractive(self):
         return self.interactive
 
@@ -3492,21 +3486,21 @@ class NGEPluginBase(USXBaseScreen):
         ''' remove method gets called for every component disassociated from the N.G.
         '''
         pass
-        
+
     def update(self, currentNG):
-        ''' Method for static plugins to run at every time 
+        ''' Method for static plugins to run at every time
         '''
-        pass        
+        pass
 
     def finished(self, currentNG, prevNG):
-        ''' Method for Generic plugins to run at finish 
+        ''' Method for Generic plugins to run at finish
         '''
         pass
 
     def getPluginName(self):
-        ''' Method to get the Generic Plugin Name 
+        ''' Method to get the Generic Plugin Name
         '''
-        pass      
+        pass
 
 class NGPluginLibBase:
     """Interface to create a re-useable library that provides utility methods
@@ -3532,7 +3526,7 @@ class NGPluginLibBase:
         #we want to only pick up the components associated with the kits available in the
         #repo.We cant use ng_has_comp because we are building that very association here.
         #We work backwards by looking at the repository the nodegroup is backed by and
-        #obtain the list of kits present within. 
+        #obtain the list of kits present within.
 
         query = '''SELECT c.cid FROM components c ,  repos_have_kits  rk , nodegroups ng
         WHERE ( '%s' like textcat (os,'%%')  OR os IS NULL )

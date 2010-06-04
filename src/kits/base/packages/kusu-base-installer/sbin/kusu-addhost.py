@@ -91,9 +91,6 @@ class NodeData:
         self.signal = None
         self.file = None
 
-    def setPluginLocation(self, kid):
-        self.pluginLocation = "/depot/kits/" + str(kid) + "/plugins/addhost"
-
 global kusuApp
 kusuApp = KusuApp()
 
@@ -357,27 +354,6 @@ class AddHostApp(KusuApp):
         if pluginActions:
             pluginActions.plugins_parse(self._options)
 
-    def selectKitPlugins(self, ngid=None):
-
-        if ngid:
-            query = ('SELECT DISTINCT kits.kid '
-                     'FROM nodegroups, repos, repos_have_kits, kits '
-                     'WHERE nodegroups.repoid = repos.repoid '
-                     'AND repos.repoid = repos_have_kits.repoid '
-                     'AND repos_have_kits.kid = kits.kid '
-                     'AND nodegroups.ngid = %s' % ngid)
-        else:
-            query = ('SELECT DISTINCT kits.kid '
-                     'FROM nodegroups, repos, repos_have_kits, kits '
-                     'WHERE nodegroups.repoid = repos.repoid '
-                     'AND repos.repoid = repos_have_kits.repoid '
-                     'AND repos_have_kits.kid = kits.kid ')
-
-        self.__db.execute(query)
-        data = self.__db.fetchall()
-        return data
-
-
     def loadPlugins(self):
         """ loadPlugins()
         Loads all plugins for addhost. """
@@ -391,26 +367,25 @@ class AddHostApp(KusuApp):
         pluginList = []
         pluginInstances = []
         moduleInstance = None
-        kitpluginlist=self.selectKitPlugins(myNodeInfo.ngid)
 
-        for kit in kitpluginlist:
-            myNodeInfo.setPluginLocation(kit[0])
-            if not os.path.exists(myNodeInfo.pluginLocation):            # No plugins found the tool should still work even without any plugins.
-                continue
-            else:
-                sys.path.append(myNodeInfo.pluginLocation)
+        if not os.path.exists(myNodeInfo.pluginLocation):
+            # No plugins found the tool should still work even without any plugins.
+            return
+        else:
+            sys.path.append(myNodeInfo.pluginLocation)
 
-            pluginFileList = os.listdir(myNodeInfo.pluginLocation)
-            pluginFileList.sort()
+        pluginFileList = os.listdir(myNodeInfo.pluginLocation)
+        pluginFileList.sort()
 
-            # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
-            for pluginName in pluginFileList:
-                plugin, ext = os.path.splitext(pluginName)
-                if ext == ".py":
-                    if not plugin == "__init__" and not plugin[0] == '.':
-                        pluginList.append(plugin)
-            # Import the plugins
-            moduleInstances = map(__import__, pluginList)
+        # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
+        for pluginName in pluginFileList:
+             plugin, ext = os.path.splitext(pluginName)
+             if ext == ".py":
+                if not plugin == "__init__" and not plugin[0] == '.':
+                    pluginList.append(plugin)
+
+        # Import the plugins
+        moduleInstances = map(__import__, pluginList)
 
         # Create instances of each new plugin and store the instances.
         for thisModule in moduleInstances:
@@ -530,7 +505,6 @@ class AddHostApp(KusuApp):
             result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
             if result:
                 myNodeInfo.ngid = ngid
-                self.loadPlugins()
             else:
                 msg = kusuApp._("options_invalid_nodegroup")
                 return False, msg
@@ -594,7 +568,6 @@ class AddHostApp(KusuApp):
         if not result:
             return False, msg
 
-        self.loadPlugins()
         if pluginActions:
             pluginActions.plugins_add(myNodeInfo.staticHostname)
             pluginActions.plugins_finished()
@@ -612,7 +585,6 @@ class AddHostApp(KusuApp):
         result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
         if result:
             myNodeInfo.ngid = ngid
-            self.loadPlugins()
         else:
             msg = kusuApp._("options_invalid_nodegroup")
             return False, msg
@@ -781,11 +753,6 @@ class AddHostApp(KusuApp):
 
         for delnode in self.removeList:
             delnode = delnode.strip()
-            query=('SELECT ngid FROM nodes WHERE name = \'%s\'' % delnode)
-            self.__db.execute(query)
-            ngid = self.__db.fetchall()
-            myNodeInfo.ngid = ngid[0][0]
-            self.loadPlugins()
 
             if not myNode.validateNode(delnode):
                 badnodes.append(delnode)
@@ -820,11 +787,12 @@ class AddHostApp(KusuApp):
         return True, 'Success'
 
     def doUpdate(self):
-        self.loadPlugins()
+
         # Ask all plugins to call updated() function
         if pluginActions:
             pluginActions.plugins_updated()
             pluginActions.plugins_finished()
+
         return True, 'Success'
 
     def runAction(self, action, startMsg, finishMsg):
@@ -1987,7 +1955,6 @@ class WindowNodeStatus(NodeGroupWindow,BatchNodeStatus):
         global tuiMode
         tuiMode = self.screen
 
-        self.kusuApp.loadPlugins()
         self.listbox = snack.Listbox(10, scroll =1, returnExit = 0, width = 60, showCursor = 0)
 
         # We can't go back after we get here

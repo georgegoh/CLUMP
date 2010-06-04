@@ -812,6 +812,8 @@ class scrNGEEdit_Components(NGEBaseScreen):
         
         self.dbs = get_dbs()
 
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit'
+        
         self.osCid = None
         self.osCname = None
         self.baseCompId = None
@@ -2255,6 +2257,7 @@ class scrNGEEdit_Finalize(NGEBaseScreen):
     def __init__(self, database, kusuApp=None, gridWidth=45):
         NGEBaseScreen.__init__(self, database, kusuApp=kusuApp, gridWidth=gridWidth)
         self.__diffNG = None
+        self.__plugdir = '/opt/kusu/lib/plugins/ngedit' #FIXME: may need to change
 
     def setCallbacks(self):
         #for the buttons

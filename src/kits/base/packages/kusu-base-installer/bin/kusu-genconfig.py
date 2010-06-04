@@ -7,7 +7,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,17 +27,17 @@ from kusu.core.app import KusuApp
 from kusu.core.db import KusuDB
 from kusu.genconfig import Report
 
+PLUGINS='/opt/kusu/lib/plugins/genconfig'
 
 class DbReportApp(KusuApp):
     def __init__(self, argv):
         KusuApp.__init__(self)
         self.args       = argv
-        self.ngrepo = ''
 
     def toolVersion(self):
-        """ 
+        """
         toolVersion()
-        Prints out the version of the tool to screen. 
+        Prints out the version of the tool to screen.
         """
 
         print "kusu-genconfig version %s" % self.version
@@ -52,7 +52,7 @@ class DbReportApp(KusuApp):
         self.pluginargs = []
         self.plugin     = ''
         self.action     = 'run'   # This will be [help|run]
-        
+
         args = self.args[1:]
         i = 0
         while i < len(args):
@@ -76,18 +76,6 @@ class DbReportApp(KusuApp):
                         self.password = args[i+1]
                     else:
                         toolinst.toolHelp()
-                elif args[i] == '-r':
-                    self.action = 'rname'
-                    if len(args) > (i+1):
-                        self.ngrepo = args[i+1]
-                    else:
-                        toolinst.toolHelp()
-                elif args[i] == '-n':
-                    self.action = 'ngname'
-                    if len(args) > (i+1):
-                        self.ngrepo = args[i+1]
-                    else:
-                        toolinst.toolHelp()
                 else:
                     # Must be the plugin
                     self.plugin = args[i]
@@ -96,7 +84,7 @@ class DbReportApp(KusuApp):
                     break
                 i = i + 1
             i = i + 1
-            
+
 
     def run(self):
         """run - Run the application"""
@@ -113,10 +101,6 @@ class DbReportApp(KusuApp):
             if self.plugin == '':
                 dbrinst.toolHelp()
                 sys.exit(0)
-        elif self.action == 'rname':
-            dbrinst.setRepoPlugins(self.ngrepo)
-        elif self.action == 'ngname':
-            dbrinst.setNGPlugins(self.ngrepo)
 
         if self.plugin == '':
             dbrinst.toolHelp()
@@ -127,26 +111,26 @@ class DbReportApp(KusuApp):
                 sys.exit(1)
 
             # Validate the plugin
-            for p in dbrinst.plugins:
-                pname = os.path.join(p, '%s.py' % self.plugin)
-                if os.access(pname, os.R_OK) == 0:
-                    self.errorMessage("genconfig_cannot_find_plugin: %s\n", self.plugin)
-                    sys.exit(-1)
-                if os.path.isfile(pname):
-                    sys.path.append(p)
+            global PLUGINS
+            sys.path.append(PLUGINS)
+            pname = os.path.join(PLUGINS, '%s.py' % self.plugin)
+
+            if os.access(pname, os.R_OK) == 0:
+                self.errorMessage("genconfig_cannot_find_plugin: %s\n", self.plugin)
+                sys.exit(-1)
 
         # Do we need a new database connection?
         if self.database != '' or self.user != '' or self.password != '':
             if self.database == '' or self.user == '' or self.password == '':
                 self.errorMessage("genconfig_provide_database_user_password\n")
                 sys.exit(-1)
-                
+
             dbrinst.altDb(self.database, self.user, self.password)
 
         # Need to instanciate the plugin and run what is needed there
         dbrinst.run(self.plugin, self.action, self.pluginargs)
 
-        
+
 if __name__ == '__main__':
     app = DbReportApp(sys.argv)
     _ = app.langinit()
