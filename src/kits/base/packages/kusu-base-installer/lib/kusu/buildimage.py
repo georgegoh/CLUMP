@@ -35,7 +35,7 @@ from kusu.core import database
 from primitive.system.software.dispatcher import Dispatcher
 from primitive.system.software.probe import OS
 from path import path
-from kusu.util.errors import YumFailedToRunError
+from kusu.util.errors import YumFailedToRunError, InvalidArguments, BuildImageException, BuildImageError
 import subprocess
 
 RHELFAMILY = ['rhel', 'centos', 'scientificlinux', 'scientificlinuxcern']
@@ -99,27 +99,27 @@ class BuildImage:
 
         ng = self.dbs.NodeGroups.select_by(ngname = nodegroup)[0]
         if not ng.repo:
-            self.stdoutout('Nodegroup %s has no repo.\n' % ng.ngname)
-            sys.exit(0)
+            msg = 'Nodegroup %s has no repo.\n' % ng.ngname
+            raise BuildImageException, msg
+            
 
         _os = ng.repo.os
         self.os_tup = (_os.name, _os.major, _os.arch)
 
         # Skip kusu-buildimage for opensuse
         if _os.name.lower() in ['opensuse', 'suse']:
-            self.stdoutout('Skipping kusu-buildimage for %s distribution\n' % _os.name)
-            sys.exit(0)
+            msg = 'Skipping kusu-buildimage for %s distribution\n' % _os.name
+            raise BuildImageException, msg
 
         system_arch = OS()[2].lower()
         if system_arch == 'i386' and _os.arch == 'x86_64':
-            self.stdoutout('Skipping kusu-buildimage for %s. Unable to build on %s platform.\n' % (_os.arch, system_arch))
-            sys.exit(0)
+            msg = 'Skipping kusu-buildimage for %s. Unable to build on %s platform.\n' % (_os.arch, system_arch)
+            raise BuildImageException, msg
 
         self.__getPackages()
         if len(self.packages) == 0:
-            if self.stderrout:
-                self.stderrout("ERROR: No packages selected for the image!\n")
-            sys.exit(-1)
+            msg = "ERROR: No packages selected for the image!\n"
+            raise BuildImageError, msg
 
         self.__mkImageDir()
         self.__getRepoInfo()
@@ -169,15 +169,14 @@ class BuildImage:
                     print ""
                     if yt:
                         raise YumFailedToRunError
-            except:
-                if self.stderrout:
-                    self.stderrout("ERROR: Yum Failed!\n")
+            except Exception, e:
+                msg = "ERROR: Yum Failed. Reason: %s\n" % e
 
                 if os.path.exists(self.imagedir):
                     self.stdoutout("Removing: %s\n", self.imagedir)
                     os.system('rm -rf \"%s\"' % self.imagedir)
 
-                sys.exit(-1)
+                raise YumFailedToRunError, msg
 
         # Do the post processing
         self.__runPostScripts()
@@ -229,9 +228,8 @@ class BuildImage:
             out, err = run_cmd.communicate()
 
             if run_cmd.returncode != 0:
-                if self.stderrout:
-                    self.stderrout("ERROR: Cannot set SE Linux policy.. Fatal Error... ")
-                sys.exit(-1)
+                msg = "ERROR: Cannot set SE Linux policy.. Fatal Error... "
+                raise BuildImageError, msg
 
         return
 
@@ -265,11 +263,9 @@ class BuildImage:
         try:
             self.db.execute(query)
             data = self.db.fetchall()
-        except:
-            if self.stderrout:
-                self.stderrout("DB_Query_Error: %s\n", query)
-
-            sys.exit(-1)
+        except Exception, e:
+            msg = "DB_Query_Error: %s\n" % e
+            raise BuildImageError, msg
 
         if data:
             for row in data:
@@ -283,11 +279,9 @@ class BuildImage:
         try:
             self.db.execute(query,postgres_replace=False)
             data = self.db.fetchall()
-        except:
-            if self.stderrout:
-                self.stderrout("DB_Query_Error: %s\n", query)
-
-            sys.exit(-1)
+        except Exception, e:
+            msg = "DB_Query_Error: %s\n" % e
+            raise BuildImageError, msg
 
         if data:
             for row in data:
@@ -302,11 +296,9 @@ class BuildImage:
         try:
             self.db.execute(query)
             data = self.db.fetchone()
-        except:
-            if self.stderrout:
-                self.stderrout("DB_Query_Error: %s\n", query)
-
-            sys.exit(-1)
+        except Exception, e:
+            msg = "DB_Query_Error: %s\n" % e
+            raise BuildImageError, msg
 
         if data:
             self.repodir, self.ostype = data
@@ -388,10 +380,9 @@ class BuildImage:
         try:
             self.db.execute(query)
             data = self.db.fetchall()
-        except:
-            if self.stderrout:
-                self.stderrout("DB_Query_Error: %s\n", query)
-            sys.exit(-1)
+        except Exception, e:
+            msg = "DB_Query_Error: %s\n" % e
+            raise BuildImageError, msg
 
         if data:
             # Copy the script over

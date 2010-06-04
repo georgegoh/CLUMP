@@ -23,6 +23,7 @@ import os
 import sys
 from kusu.core.app import KusuApp
 from kusu.buildimage import BuildImage
+from kusu.util.errors import BuildImageException, YumFailedToRunError, BuildImageError
 
 class BuildImageApp(KusuApp):
 
@@ -74,14 +75,13 @@ class BuildImageApp(KusuApp):
             print self._("nonroot_execution\n")
             sys.exit(-1)
 
-
-        imgfun = BuildImage()
-        imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)
-
         if self.options.wantver:
             # Print version
             self.toolVersion()
             sys.exit(0)
+
+        imgfun = BuildImage()
+        imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)
 
         # Do we need a new database connection?
         if self.options.database or self.options.user or self.options.password :
@@ -96,8 +96,14 @@ class BuildImageApp(KusuApp):
 
         if self.options.nodegrp:
             # Generate the node group
-            imgfun.makeImage(self.options.nodegrp, image)
-
+            try:
+                imgfun.makeImage(self.options.nodegrp, image)
+            except BuildImageException, e:
+                self.stderrMessage(e)
+                sys.exit(0)
+            except (BuildImageError, YumFailedToRunError), e:
+                self.stderrMessage('Error: ' + e)
+                sys.exit(-1)
         else:
             # Missing node group name
             self.stdoutMessage('buildimage_need_a_node_group\n')
