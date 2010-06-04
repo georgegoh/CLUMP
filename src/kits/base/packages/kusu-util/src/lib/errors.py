@@ -103,7 +103,6 @@ class KitPackageError(KitopsError): pass
 class IncompatibleBaseKitError(KitopsError): pass
 class KitopsAbort(KusuError): pass
 class UpgradeKitAbort(KitopsAbort): pass
-class IncompatibleBaseKitError(KitopsError): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
