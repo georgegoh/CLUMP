@@ -104,7 +104,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     rpm = get_kit_RPM(kitdir)
     rpm.extract(tmpdir)
 
-    script_arg=generate_script_arg(operation='delete', update_action=update_action)
+    script_arg = generate_script_arg(operation='delete', update_action=update_action)
     if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg):
         # Remove tmpdir. Should probably be done with atexit.
         tmpdir.rmtree()

@@ -73,7 +73,7 @@ class UpdateAction(KitopsAction):
             kit_to_add = possible_kits[0]
             components_to_add = kit_to_add[2]
         else:
-            msg = 'No suitable kits avaialble for upgrade'
+            msg = 'No suitable kits available for upgrade'
             kl.error(msg)
             raise UpdateKitError, msg
 
