@@ -306,7 +306,9 @@ class KitOpsApp(KusuApp):
                     sys.stderr.write("ERROR: %s\n" % e)
                     # TODO: move the error codes into the KitopsAction class
                     # hierarchy, and have the action return its own error code.
+                    self.koinst.unmountMedia()
                     sys.exit(EKIT_BAD)
+            self.koinst.unmountMedia()
 
         else:
             kl.debug('Unknown operation requested: %d', self.kitop)
