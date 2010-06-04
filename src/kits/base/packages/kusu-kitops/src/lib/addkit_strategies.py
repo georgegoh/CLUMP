@@ -187,10 +187,13 @@ def checkKitInstalled02(koinst, db, kitname, kitver, kitrel, kitrpm):
     """
     matches = db.Kits.select_by(func.lower(db.Kits.c.rname) == kitname.lower())
     for m in matches:
+        # koinst.getKitApi always returns '0.1' or above.
         m_api = koinst.getKitApi(m.kid)
         if m_api == '0.1':
             return m.kid
-        if m_api == '0.2' and m.version == kitver and str(m.release) == kitrel:
+
+        # Perform check for kit API 0.2 and above.
+        elif m.version == kitver and str(m.release) == kitrel:
             new_comps = koinst.getKitRPMInfo(kitrpm)[1]
             m_comps = processKitInfo(koinst.kits_dir / str(m.kid) / 'kitinfo')[1]
             for c in m_comps:
@@ -292,7 +295,7 @@ def addkit02InstallerRules(koinst, db, kitinfo, update_action=False):
 def addkit03(koinst, db, kitinfo, update_action=False):
      """Add kit v0.3 strategy is same as add kit v0.2 strategy."""
      return addkit02(koinst, db, kitinfo)
- 
+
 def addkit04(koinst, db, kitinfo, update_action=False):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
