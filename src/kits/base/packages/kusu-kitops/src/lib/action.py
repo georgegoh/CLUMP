@@ -68,6 +68,24 @@ class UpdateAction(KitopsAction):
                 possible_kits.append(kit)
         return possible_kits
 
+    def _get_kit_long_name(self, kit):
+        """
+        Returns <name>-<version>-<release>-<arch> string.
+        Pass in either a kitinfo dictionary or a Kits instance.
+        """
+        if isinstance(kit, dict):
+            # kitinfo dictionary
+            return "%s-%s-%s-%s" % (kit['name'],
+                                    kit['version'],
+                                    kit['release'],
+                                    kit['arch'])
+        else:
+            # Assume this is an instance of Kits class
+            return "%s-%s-%s-%s" % (kit.rname,
+                                    kit.version,
+                                    kit.release,
+                                    kit.arch)
+
     def _select_one_kit(self, possible_kits):
         """
         From a list of possible kits, select one kit to use for the upgrade.
@@ -81,11 +99,7 @@ class UpdateAction(KitopsAction):
             raise UpdateKitError, msg
         while True:
             for num_kits in enumerate(possible_kits):
-                print '[%d]: %s-%s-%s-%s' % (num_kits[0],
-                                             num_kits[1][1]['name'],
-                                             num_kits[1][1]['version'],
-                                             num_kits[1][1]['release'],
-                                             num_kits[1][1]['arch'])
+                print '[%d]: %s' % (num_kits[0], self._get_kit_long_name(num_kits[1][1]))
 
             print 'Choose the kit to use for the upgrade or ENTER to quit: '
             res = sys.stdin.readline().strip()
@@ -106,14 +120,8 @@ class UpdateAction(KitopsAction):
                 raise UpdateKitError, msg
 
     def _get_user_confirmation(self, selected_kit):
-        _old_kit = "%s-%s-%s-%s" % (self.old_kit.rname,
-                                    self.old_kit.version,
-                                    self.old_kit.release,
-                                    self.old_kit.arch)
-        _selected_kit = "%s-%s-%s-%s" % (selected_kit[1]['name'],
-                                         selected_kit[1]['version'],
-                                         selected_kit[1]['release'],
-                                         selected_kit[1]['arch'])
+        _old_kit = self._get_kit_long_name(self.old_kit)
+        _selected_kit = self._get_kit_long_name(selected_kit[1])
         print "Upgrading from %s to %s." % (_old_kit, _selected_kit)
         if not self.suppress_questions:
             print 'Confirm [y/N]: '
