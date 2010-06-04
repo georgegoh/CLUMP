@@ -113,7 +113,8 @@ def run_scripts(kit_root, mode, script_arg):
 
     scripts = []
     for script in script_root.walkfiles('*%sscript*' % mode):
-        scripts.append(script)
+        if script.ext not in ['.pyc', '.pyo']:
+            scripts.append(script)
 
     scripts.sort()
     for script in scripts:
