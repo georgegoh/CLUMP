@@ -41,7 +41,90 @@ class KitopsAction(object):
 
 class UpdateAction(KitopsAction):
 
-    def _remind_user_remaining_upgrade_steps(self, new_normal_kit):
+    def _get_old_kit(self, old_kit_id):
+        old_kit_id = int(old_kit_id)
+        old_kit = self._db.Kits.get(old_kit_id)
+        if old_kit is None:
+            msg = "Kit with id '%d' is not installed" % old_kit_id
+            kl.error(msg)
+            raise KitNotInstalledError, msg
+        return old_kit
+
+    def _get_possible_kits_to_upgrade(self, available_kits):
+        possible_kits = []
+        for kit in available_kits:
+            # We have one level of indirection here...
+            kit_api = kit[4]
+            kitinfo = kit[1]
+            # We only select kits that meet the following criteria:
+            # [ ] have the same name (kit.rname)
+            # [ ] have the same arch (kit.arch)
+            # [ ] are newer than the kit being updated (kit.version/kit.release)
+            if kitinfo['pkgname'] == 'kit-%s' % self.old_kit.rname \
+                    and kitinfo['arch'] == self.old_kit.arch \
+                    and -1 == compareVersion((self.old_kit.version, self.old_kit.release),
+                                             (kitinfo['version'], kitinfo['release'])):
+                possible_kits.append(kit)
+        return possible_kits
+
+    def _verify_new_kit_has_compatible_components(self, associated_repos):
+        for repo in associated_repos:
+            if not matchComponentsToOS(components_to_add, repo.getOS()):
+                msg = "New kit does not have any components compatible with repo %s" % repo
+                kl.error(msg)
+                raise UpdateKitError, msg
+
+    def _add_and_return_new_kit(self, selected_kit):
+        # Add the new kit, and pull it from the DB
+        kit_api = selected_kit[4]
+        new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db,
+                                                          selected_kit, update_action=True)
+        return self._db.Kits.get(new_kit_id)
+
+    def _reassociate_repos(self, associated_repos):
+        for repo in associated_repos:
+            # First, deassociate the old kit from the repo
+            for i in xrange(len(repo.kits)):
+                if self.old_kit.kid == repo.kits[i].kid:
+                    repo.kits.pop(i)
+                    break
+
+            # Add the new kit
+            repo.kits.append(self.new_kit)
+            RepoFactory(self._db).getRepo(repo.repoid).markStale()
+            repo.save()
+            self._db.flush()
+
+    def _reassociate_components_to_nodegroups(self, components_to_add):
+        # We will need a mapping from new_kit.components to components_to_add
+        component_mapping = {}
+        for db_component in self.new_kit.components:
+            for component in components_to_add:
+                if db_component.cname == component['pkgname']:
+                    component_mapping[db_component.cname] = component
+
+        # Now we handle the nodegroup-component associations
+        for new_component in self.new_kit.components:
+            new_component_follows = component_mapping[new_component.cname]['follows']
+            if not new_component_follows.startswith('component-'):
+                new_component_follows = 'component-' + new_component_follows
+            for old_component in self.old_kit.components:
+                if old_component.cname == new_component.cname \
+                        or new_component_follows == old_component.cname:
+                    new_component.nodegroups = old_component.nodegroups
+                    old_component.nodegroups = []
+
+    def _delete_old_kit(self):
+        # For some reason, the in-memory representation of the DB is stale at
+        # this point, so we need to re-load the old kit first before deleting
+        # it.
+        self.old_kit = self._db.Kits.get(self.old_kit.kid)
+        DeleteKitStrategy[self.koinst.getKitApi(self.old_kit.kid)](self.koinst, self._db,
+                                                                   self.old_kit, update_action=True)
+        self._db.flush()
+
+    def _remind_user_remaining_upgrade_steps(self):
+        new_normal_kit = self.new_kit
         if new_normal_kit.repos:
             print "To complete the upgrade, please run the following commands:\n"
             for repo in new_normal_kit.repos:
@@ -54,104 +137,39 @@ class UpdateAction(KitopsAction):
     def run(self, **kw):
         """Perform the action."""
 
-        # Find the kit with the specified id. We assume there is only one.
-        old_kit_id = int(kw.pop('old_kit_id'))
-        old_kit = self._db.Kits.get(old_kit_id)
-
-        if old_kit is None:
-            msg = "Kit with id '%d' is not installed" % old_kit_id
-            kl.error(msg)
-            raise KitNotInstalledError, msg
-
-        # Determine which kit(s) in the supplied kit source (media, repo, etc)
-        # can be updates.
-        possible_kits = []
-        available_kits = kw.pop('kits', [])
-        for kit in available_kits:
-            # We have one level of indirection here...
-            kit_api = kit[4]
-            kitinfo = kit[1]
-            # We only select kits that meet the following criteria:
-            # [ ] have the same name (kit.rname)
-            # [ ] have the same arch (kit.arch)
-            # [ ] are newer than the kit being updated (kit.version/kit.release)
-            if kitinfo['pkgname'] == 'kit-%s' % old_kit.rname and kitinfo['arch'] == old_kit.arch \
-                    and -1 == compareVersion((old_kit.version, old_kit.release), (kitinfo['version'], kitinfo['release'])):
-                possible_kits.append(kit)
+        self.old_kit = self._get_old_kit(kw.pop('old_kit_id'))
+        possible_kits = self._get_possible_kits_to_upgrade(kw.pop('kits', []))
 
         # TODO: Ask the user which new kit to use?
         if possible_kits:
-            kit_to_add = possible_kits[0]
-            components_to_add = kit_to_add[2]
+            selected_kit = possible_kits[0]
+            components_to_add = selected_kit[2]
         else:
             msg = 'No suitable kits available for upgrade'
             kl.error(msg)
             raise UpdateKitError, msg
 
         # Verify both kits can be used in an upgrade.
-        validate_new_kit_for_upgrade(kit_to_add)
-        validate_old_kit_for_upgrade(old_kit, kit_to_add[1].get('oldest_upgradeable_version', ''), kit_to_add[1].get('oldest_upgradeable_release', ''))
+        validate_new_kit_for_upgrade(selected_kit)
+        validate_old_kit_for_upgrade(self.old_kit,
+                                     selected_kit[1].get('oldest_upgradeable_version', ''),
+                                     selected_kit[1].get('oldest_upgradeable_release', ''))
 
         # Get the list of repos the old kit is associated with. We will need to
         # associate the new kit with these repos.
-        associated_repos = old_kit.repos
+        associated_repos = self.old_kit.repos
 
-        # Check whether the new kit has compatible components.
-        associated_repo_ids = []
-        for repo in associated_repos:
-            associated_repo_ids.append(repo.repoid)
-            if not matchComponentsToOS(components_to_add, repo.getOS()):
-                msg = "New kit does not have any components compatible with repo %s" % repo
-                kl.error(msg)
-                raise UpdateKitError, msg
+        self._verify_new_kit_has_compatible_components(associated_repos)
 
-        # Add the new kit, and pull it from the DB
-        kit_api = kit_to_add[4]
-        new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db, kit_to_add, update_action=True)
-        new_kit = self._db.Kits.get(new_kit_id)
+        self.new_kit = self._add_and_return_new_kit(selected_kit)
 
-        # Let's re-associate repos
-        for repo_id in associated_repo_ids:
-            repo = self._db.Repos.get(repo_id)
+        self._reassociate_repos(associated_repos)
+        self._reassociate_components_to_nodegroups(components_to_add)
 
-            # First, deassociate the old kit from the repo
-            for i in xrange(len(repo.kits)):
-                if old_kit_id == repo.kits[i].kid:
-                    repo.kits.pop(i)
-                    break
+        self._delete_old_kit()
 
-            # Add the new kit
-            repo.kits.append(new_kit)
-            RepoFactory(self._db).getRepo(repo.repoid).markStale()
-            repo.save()
-            self._db.flush()
-
-        # We will need a mapping from new_kit.components to components_to_add
-        component_mapping = {}
-        for db_component in new_kit.components:
-            for component in components_to_add:
-                if db_component.cname == component['pkgname']:
-                    component_mapping[db_component.cname] = component
-
-        # Now we handle the nodegroup-component associations
-        for new_component in new_kit.components:
-            new_component_follows = component_mapping[new_component.cname]['follows']
-            if not new_component_follows.startswith('component-'):
-                new_component_follows = 'component-' + new_component_follows
-            for old_component in old_kit.components:
-                if old_component.cname == new_component.cname \
-                        or new_component_follows == old_component.cname:
-                    new_component.nodegroups = old_component.nodegroups
-                    old_component.nodegroups = []
-
-        # For some reason, the in-memory representation of the DB is stale at
-        # this point, so we need to re-load the old kit.
-        old_kit = self._db.Kits.get(old_kit_id)
-        DeleteKitStrategy[self.koinst.getKitApi(old_kit_id)](self.koinst, self._db, old_kit, update_action=True)
-        self._db.flush()
-
-        if not new_kit.rname == 'base':
-            self._remind_user_remaining_upgrade_steps(new_normal_kit=new_kit)
+        if not self.new_kit.rname == 'base':
+            self._remind_user_remaining_upgrade_steps()
 
         # TODO:
         # ...
