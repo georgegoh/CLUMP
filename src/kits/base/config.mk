@@ -114,7 +114,7 @@ PKG_COMPONENT_ICR_SOURCES = etc
 # Kusu Base installer package.
 KIT_PKGS += PKG_BASE_INSTALLER
 PKG_BASE_INSTALLER_SPEC = kusu-base-installer.spec
-PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc tftpboot firstboot libexec
+PKG_BASE_INSTALLER_SOURCES = lib sbin bin man portal etc po tftpboot firstboot libexec
 
 # Kusu Base node package.
 KIT_PKGS += PKG_BASE_NODE

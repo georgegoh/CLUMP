@@ -73,7 +73,6 @@ install -m644 etc/templates/*.tmpl $RPM_BUILD_ROOT/opt/kusu/etc/templates
 %postun
 
 %files
-/opt/kusu/lib/python/kusu/buildkit/strategies/*
 /opt/kusu/lib/python/kusu/buildkit/*
 /opt/kusu/bin/kusu-buildkit
 %config(noreplace) /opt/kusu/etc/templates/*.tmpl
