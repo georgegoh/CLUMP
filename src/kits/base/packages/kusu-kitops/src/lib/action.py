@@ -10,7 +10,7 @@
 import sys
 import types
 import rpm
-from kusu.util.errors import KitNotInstalledError, UpdateKitError, UpdateKitAbort
+from kusu.util.errors import KitNotInstalledError, UpgradeKitError, UpgradeKitAbort
 from kusu.util.kits import matchComponentsToOS, compareVersion, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
@@ -40,7 +40,7 @@ class KitopsAction(object):
 
         raise NotImplementedError
 
-class UpdateAction(KitopsAction):
+class UpgradeAction(KitopsAction):
 
     def _get_old_kit(self, old_kit_id):
         old_kit_id = int(old_kit_id)
@@ -60,7 +60,7 @@ class UpdateAction(KitopsAction):
             # We only select kits that meet the following criteria:
             # [ ] have the same name (kit.rname)
             # [ ] have the same arch (kit.arch)
-            # [ ] are newer than the kit being updated (kit.version/kit.release)
+            # [ ] are newer than the kit being upgraded (kit.version/kit.release)
             if kitinfo['pkgname'] == 'kit-%s' % self.old_kit.rname \
                     and kitinfo['arch'] == self.old_kit.arch \
                     and -1 == compareVersion((self.old_kit.version, self.old_kit.release),
@@ -96,7 +96,7 @@ class UpdateAction(KitopsAction):
             msg = ('Questions are suppressed for this upgrade action but user '
                    'is required to choose which kit to use for the upgrade.')
             kl.error(msg)
-            raise UpdateKitError, msg
+            raise UpgradeKitError, msg
         while True:
             for num_kits in enumerate(possible_kits):
                 print '[%d]: %s' % (num_kits[0], self._get_kit_long_name(num_kits[1][1]))
@@ -106,7 +106,7 @@ class UpdateAction(KitopsAction):
             if not res:
                 msg = 'No suitable kit selected for upgrade.'
                 kl.info(msg)
-                raise UpdateKitAbort, msg
+                raise UpgradeKitAbort, msg
             try:
                 return possible_kits[int(res)]
             except (ValueError, IndexError):
@@ -117,7 +117,7 @@ class UpdateAction(KitopsAction):
             if not matchComponentsToOS(components_to_add, repo.getOS()):
                 msg = "New kit does not have any components compatible with repo %s" % repo
                 kl.error(msg)
-                raise UpdateKitError, msg
+                raise UpgradeKitError, msg
 
     def _get_user_confirmation(self, selected_kit):
         _old_kit = self._get_kit_long_name(self.old_kit)
@@ -129,7 +129,7 @@ class UpdateAction(KitopsAction):
             if not result.lower() in ['y', 'yes']:
                 msg = 'Upgrade action aborted.'
                 kl.info(msg)
-                raise UpdateKitAbort, msg
+                raise UpgradeKitAbort, msg
 
     def _add_and_return_new_kit(self, selected_kit):
         # Add the new kit, and pull it from the DB
@@ -201,7 +201,7 @@ class UpdateAction(KitopsAction):
         if not possible_kits:
             msg = 'No suitable kits available for upgrade'
             kl.error(msg)
-            raise UpdateKitError, msg
+            raise UpgradeKitError, msg
 
         selected_kit = self._select_one_kit(possible_kits)
         components_to_add = selected_kit[2]
@@ -235,7 +235,7 @@ def validate_new_kit_for_upgrade(kit_tuple):
     Checks whether the kit described by kit_tuple can be used in an upgrade.
 
     If for any reason the kit cannot be used in an upgrade, this method will
-    raise an UpdateKitError.
+    raise an UpgradeKitError.
     """
 
     kit_api = kit_tuple[4]
@@ -246,12 +246,12 @@ def validate_new_kit_for_upgrade(kit_tuple):
                "Current version of kusu-kitops supports kit API versions up to '%s'.") \
                        % (kit_api, SUPPORTED_KIT_APIS[-1])
         kl.error(msg)
-        raise UpdateKitError, msg
+        raise UpgradeKitError, msg
 
     if -1 == compareVersion((kit_api, "0"), ("0.4", "0")):
         msg = "New kit API is %s. Upgrades only supported for kit API version 0.4 or newer." % kit_api
         kl.error(msg)
-        raise UpdateKitError, msg
+        raise UpgradeKitError, msg
 
 def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upgradeable_release):
     """
@@ -260,7 +260,7 @@ def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upg
     The check is performed based on the oldest_upgradeable_version and
     oldest_upgradeable_release specified in the new kit and passed into this
     method. If the kit is too old to be upgraded, this method raises an
-    UpdateKitError.
+    UpgradeKitError.
     """
 
     # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
@@ -272,4 +272,5 @@ def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upg
                    'oldest_version': oldest_upgradeable_version,
                    'oldest_release': oldest_upgradeable_release}
         kl.error(msg)
-        raise UpdateKitError, msg
+        raise UpgradeKitError, msg
+

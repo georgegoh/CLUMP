@@ -187,7 +187,7 @@ def addkit02(koinst, db, kitinfo, update_action=False):
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise ComponentAlreadyInstalledError, msg
 
-    return newkit.kid,updated_ngs
+    return newkit.kid, updated_ngs
 
 
 def checkKitInstalled02(koinst, db, kitname, kitver, kitrel, kitrpm):
@@ -370,7 +370,7 @@ def addkit04(koinst, db, kitinfo, update_action=False):
         koinst.deleteKit(del_name=kit['name'], del_id=newkit.kid)
         raise KitScriptError, "Pre script error, failed to add kit"
 
-    return newkit.kid,updated_ngs
+    return newkit.kid, updated_ngs
 
 AddKitStrategy = { '0.1': addkit01,
                    '0.2': addkit02,

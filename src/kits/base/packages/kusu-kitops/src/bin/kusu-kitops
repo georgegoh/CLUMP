@@ -23,7 +23,7 @@ kl = kusulog.getKusuLog('kitops-app')
 import kusu.core.database as db
 from kusu.core.app import KusuApp
 from kusu.kitops.kitops import KitOps
-from kusu.kitops.action import UpdateAction
+from kusu.kitops.action import UpgradeAction
 from kusu.util.errors import *
 
 EMOUNT_FAIL     = -1
@@ -71,7 +71,7 @@ class KitOpsApp(KusuApp):
         def mutexAction(option, opt_str, value, parser):
             if parser.values.action is not None:
                 self.printHelp()
-                sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list or -u/--update is supported.\n')
+                sys.stderr.write('Only one of -a/--add, -e/--remove, -l/--list or -u/--upgrade is supported.\n')
                 sys.exit(EBAD_OP)
             elif '-a' in option._short_opts:
                 setattr(parser.values, option.dest, 'add')
@@ -80,7 +80,7 @@ class KitOpsApp(KusuApp):
             elif '-l' in option._short_opts:
                 setattr(parser.values, option.dest, 'list')
             elif '-u' in option._short_opts:
-                setattr(parser.values, option.dest, 'update')
+                setattr(parser.values, option.dest, 'upgrade')
 
         # setup command line parser
         self.parser.add_option('-a', '--add', dest='action',
@@ -89,8 +89,8 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-l', '--list', dest='action',
                                help=self._('kitops_usage_list'),
                                action='callback', callback=mutexAction)
-        self.parser.add_option('-u', '--update', dest='action',
-                               help=self._('kitops_usage_update'),
+        self.parser.add_option('-u', '--upgrade', dest='action',
+                               help=self._('kitops_usage_upgrade'),
                                action='callback', callback=mutexAction)
 
         self.parser.add_option('-e', '--remove', dest='action',
@@ -193,23 +193,23 @@ class KitOpsApp(KusuApp):
 
             self.koinst.setKitMedia(kit_media)
             self.kitop = KITOP_ADD
-        elif options.action == 'update':
+        elif options.action == 'upgrade':
             kit_media = options.media
             self.koinst.setKitMedia(kit_media)
 
             old_kit_id = options.kid
             if not old_kit_id:
-                kl.debug('Kit id of the kit to update not specified.')
-                self.logErrorEvent('Kit id of the kit to update not specified')
+                kl.debug('Kit id of the kit to upgrade not specified.')
+                self.logErrorEvent('Kit id of the kit to upgrade not specified')
                 sys.exit(EKITUP_FAIL)
 
-            update_action = UpdateAction(self.__db, self.koinst)
+            upgrade_action = UpgradeAction(self.__db, self.koinst)
             run_args = {'old_kit_id': old_kit_id,
                         'kits': self.mountAndParseKitMedia(),
                         'suppress_questions': self.suppress_questions or \
                                               options.skip_confirm}
 
-            self.action_queue[update_action] = run_args
+            self.action_queue[upgrade_action] = run_args
             self.kitop = PROCESS_ACTION_QUEUE
         elif options.action == 'delete':
             self.kit_name = options.kit

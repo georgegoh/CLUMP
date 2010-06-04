@@ -97,11 +97,11 @@ class InstallKitRPMError(KitopsError): pass
 class CopyOSMediaError(KitopsError): pass
 class DeleteKitsError(KitopsError): pass
 class UnsupportedKitAPIError(KitopsError): pass
-class UpdateKitError(KitopsError): pass
+class UpgradeKitError(KitopsError): pass
 class KitScriptError(KitopsError): pass
 class KitPackageError(KitopsError): pass
 class KitopsAbort(KusuError): pass
-class UpdateKitAbort(KitopsAbort): pass
+class UpgradeKitAbort(KitopsAbort): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
