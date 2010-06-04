@@ -291,7 +291,6 @@ class UpgradeAction(KitopsAction):
                 msg = ("Upgrade failed. Unable to refresh repo %s. "
                        "Reason: %s.") % (repo.reponame, e)
                 kl.error(msg)
-                print msg
                 raise UpgradeKitError, msg
             else:
                 self.print_and_log("\tFinished updating repo %s" % repo.reponame)
