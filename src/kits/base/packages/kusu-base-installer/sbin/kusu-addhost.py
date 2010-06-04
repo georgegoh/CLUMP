@@ -948,6 +948,12 @@ class AddHostApp(KusuApp):
         if replaceMode or staticHostMode:
             screenList = [ WindowNodeStatus(database=db, kusuApp=self) ]
 
+        elif haveNodegroup and myNodeInfo.ngname == 'unmanaged':
+            screenList = [ WindowUnmanaged(database=db, kusuApp=kusuApp),
+                          WindowSelectNode(database=db, kusuApp=kusuApp),
+                          WindowNodeStatus(database=db, kusuApp=self)
+                         ]
+
         elif haveInterface and haveNodegroup:
             screenList = [ WindowNodeStatus(database=db, kusuApp=self) ]
 

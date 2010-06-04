@@ -619,17 +619,6 @@ class KitOps:
         self.unmountMedia()
         return repodir
 
-    def makeContribDir(self, kit):
-
-        if kit['name'] in ['opensuse']:
-            contribdir = self.contrib_dir / kit['name'] / kit['major'] / kit['minor'] / kit['arch']
-        else:
-            contribdir = self.contrib_dir / kit['name'] / kit['ver'] / kit['arch']
-
-        kl.debug('contrib dir: %s' % contribdir)
-        if not contribdir.exists():
-            contribdir.makedirs()
-
     def finalizeOSKit(self, kit):
 
         # get the kernel packages

@@ -171,13 +171,6 @@ class KitOpsApp(KusuApp):
         if options.dbpassword:
             dbpassword = options.dbpassword
 
-        try:
-            self.__db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
-            self.koinst.setDB(self.__db)
-        except UnsupportedDriverError, e:
-            self.logErrorEvent('Database error: ' + e.args[0])
-            sys.exit(EDB_FAIL)
-
         # Now we will just perform a quick query from the DB to make sure the
         # DB connection we established is correct.
         try:
