@@ -79,6 +79,16 @@ SLES_PKGS = ['libnewt0_52',
                 
 CURRENT_PKGS = []
 
+def makeSquashfs(rootdir, imagefile):
+    if not os.path.exists(rootdir):
+        print '%s not found!' % rootdir
+
+    # nuke existing image file if any
+    if os.path.exists(imagefile): os.remove(imagefile)
+
+    isoP = subprocess.Popen('mksquashfs %s %s -noappend' % (rootdir, imagefile), shell=True)
+    isoP.wait()
+
 def getKusuTrunk():
     """Returns the SVN trunk for Kusu/Emerald"""
     script = sys.argv[0]
@@ -210,7 +220,7 @@ def generateUpdatesImg(updatesdir, updatesimgpath):
     """ Generate the updates.img file. updatesdir points to the directory containing the contents that
         should be included in the updates.img file.
     """
-    packExt2FS(updatesdir, updatesimgpath, 120000)
+    makeSquashfs(updatesdir, updatesimgpath)
 
 def packExt2FS(dirname, rootimgpath, size=5000):
     """Packs the directory dir into an ext2fs rootimgpath. The size of the image can be passed as well.
@@ -454,7 +464,7 @@ if __name__ == '__main__':
     if dist in ['scientificlinux', 'scientificlinuxcern']:
         packSLUpdatesImgFiles(dist_src, tdir)
 
-    generateUpdatesImg(tdir,'./updates.img')
+    generateUpdatesImg(tdir, './updates.img')
     
     # remove temp holding directory
     shutil.rmtree(tdir,ignore_errors=True)

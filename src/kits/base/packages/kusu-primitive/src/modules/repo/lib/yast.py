@@ -3,7 +3,7 @@
 # $Id$
 #
 
-# Reference: 
+# Reference:
 #  http://en.opensuse.org/Creating_YaST_Installation_Sources
 #  http://en.opensuse.org/Software_Repositories/YaST
 #  http://www.suse.com/~ug/AutoYaST_FAQ.html
@@ -36,7 +36,7 @@ class YastRepo(object):
             self.data_dir = self.repo_path / 'suse'
         else:
             self.pkg_descr_dir = self.repo_path / 'setup' / 'descr'
-            self.data_dir = self.repo_path 
+            self.data_dir = self.repo_path
 
     def make(self):
         self.makeMeta()
@@ -52,7 +52,7 @@ class YastRepo(object):
 
     def makeMeta(self):
 
-        if os.path.exists('/usr/bin/create_package_descr'): 
+        if os.path.exists('/usr/bin/create_package_descr'):
             cmd = 'perl /usr/bin/create_package_descr'
         else:
             cmd = 'create_package_descr'
@@ -62,7 +62,7 @@ class YastRepo(object):
         extra_prov = self.pkg_descr_dir / 'EXTRA_PROV'
         if extra_prov.exists():
             cmd = cmd + ' -x %s' % extra_prov
-       
+
         try:
             p = subprocess.Popen(cmd,
                                  cwd=self.repo_path,
@@ -77,25 +77,25 @@ class YastRepo(object):
         if retcode:
             raise RepoCreationError,\
                    'Repository creation failed with return code  %d' % retcode
-        
+
     def checkOSMedia(self):
         # FIXME: replace with distro detection from kusu
 
         if (self.repo_path / 'suse').exists() and \
             (self.repo_path / 'control.xml').exists() and \
             (self.repo_path / 'boot').exists():
-            return True 
+            return True
         else:
-            return False 
+            return False
 
     def makeContent(self):
         content = self.repo_path / 'content'
 
         if not content.exists():
-            txt = """PRODUCT Primitive 
+            txt = """PRODUCT Primitive
 VERSION 1.0
 LABEL Primitive (1.0)
-VENDOR Primitive 
+VENDOR Primitive
 ARCH.i686 i686 i586 i486 i386 noarch
 ARCH.i586 i586 i486 i386 noarch
 DEFAULTBASE i586
@@ -116,7 +116,7 @@ DESCRDIR setup/descr
         # clean up gz packages. Affects third party rpms in repo
         [ f.remove() for f in descr_path.glob('packages.*gz') ]
         if (descr_path / 'packages.DU').exists(): (descr_path / 'packages.DU').remove()
- 
+
         # Update sha1sum for setup/descr/packages*
         f = open(content, 'r')
         lines = f.readlines()
@@ -132,7 +132,7 @@ DESCRDIR setup/descr
             fd.close()
 
             newLines.append('META SHA1 %s  %s\n' % (digest, os.path.basename(file)))
-           
+
         fd = open(content, 'w')
         fd.writelines(newLines)
         fd.close()
@@ -165,7 +165,7 @@ DESCRDIR setup/descr
 
     def makeProducts(self):
         # media.1/products
-       
+
         products = self.repo_path / 'media.1' / 'products'
         if not self.isOSMedia:
             if not products.parent.exists():
@@ -179,7 +179,7 @@ DESCRDIR setup/descr
         if (p / 'MD5SUMS').exists():
             (p / 'MD5SUMS').remove()
 
-        
+
         cmd = 'md5sum * > MD5SUMS'
         try:
             p = subprocess.Popen(cmd,
@@ -207,7 +207,7 @@ DESCRDIR setup/descr
             if file.basename() != 'directory.yast':
                 fd.write(file.basename() + '\n')
         fd.close()
-            
+
     def updateRootfsSha1sum(self, rootfs):
         """Update sha1sum for rootfs in content file"""
         content = self.repo_path / 'content'
@@ -222,6 +222,16 @@ DESCRDIR setup/descr
         lines = [ line for line in content.lines() if not re.search(pattern, line) ]
         lines.append('HASH SHA1 %s  %s\n' % (digest, rootfs))
         content.write_lines(lines)
+
+    def _unpackSquashfs(self, squashfs_img, dest_dir):
+        # squashfs will complain if the destination directory already exists.
+        if dest_dir.exists():
+            dest_dir.rmtree()
+        args = ['unsquashfs', '-dest', dest_dir, squashfs_img]
+        p = subprocess.Popen(args,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
 
     def handleUpdates(self, update_uri):
         ''' Fetches the updates.img from update_uri and merges it into
@@ -240,15 +250,7 @@ DESCRDIR setup/descr
         fstype = getFstype(rootfs)
         if fstype == 'squashfs':
             # if root image is squashfs, extract it to working directory.
-
-            # squashfs will complain if the destination directory already exists.
-            if working_rootimg.exists():
-                working_rootimg.rmtree()
-            args = ['unsquashfs', '-dest', working_rootimg, rootfs]
-            p = subprocess.Popen(args,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            stdout, stderr = p.communicate()
+            self._unpackSquashfs(squashfs_img=rootfs, dest_dir=working_rootimg)
         else:
             # else, mount and copy.
             mountLoop(rootfs, working_mnt)
@@ -257,28 +259,37 @@ DESCRDIR setup/descr
             fc.execute()
             unmount(working_mnt)
 
-        # mount update image and copy to working location.
-        fc = FetchCommand(uri=update_uri, fetchdir=False,
-                          destdir=dl_dir, overwrite=True)
-        update_path = fc.execute()[1]
+        # Copy update image to working location.
+        _updateimg_path = update_uri
+        if update_uri.startswith('file://'):
+            _updateimg_path = _updateimg_path[len('file://'):]
+        if getFstype(_updateimg_path) == 'squashfs':
+            self._unpackSquashfs(squashfs_img=_updateimg_path, dest_dir=working_updateimg)
+            fc = FetchCommand(uri='file://'+str(working_updateimg), fetchdir=True,
+                              destdir=working_rootimg, overwrite=True)
+            fc.execute()
+        else:
+            fc = FetchCommand(uri=update_uri, fetchdir=False,
+                              destdir=dl_dir, overwrite=True)
+            update_path = fc.execute()[1]
 
-        mountLoop(update_path, working_updateimg)
-        fc = FetchCommand(uri='file://'+str(working_updateimg), fetchdir=True,
-                          destdir=working_rootimg, overwrite=True)
-        fc.execute()
-        unmount(working_updateimg)
+            mountLoop(update_path, working_updateimg)
+            fc = FetchCommand(uri='file://'+str(working_updateimg), fetchdir=True,
+                              destdir=working_rootimg, overwrite=True)
+            fc.execute()
+            unmount(working_updateimg)
 
         fstype = getFstype(rootfs)
         if fstype == 'squashfs':
             app = 'mksquashfs'
-            args = [app, 
+            args = [app,
                     str(working_rootimg),
                     rootfs,
                     '-noappend']
         else:
             # pack up modified root image via cramfs.
             app = 'mkfs.cramfs'
-            args = [app, 
+            args = [app,
                     str(working_rootimg),
                     rootfs]
 

@@ -200,7 +200,8 @@ def makeSuseBootDir(rootdir, buildprofile):
     atexit.register(cleanup,pdir)
     
     print 'Merging root img with updates.img..'
-    cmd = 'sleep 2 && mount -o loop,ro %s %s' % (updatesimg, pdir)
+    shutil.rmtree(pdir)
+    cmd = 'sleep 2 && unsquashfs -dest %s %s' % (pdir, updatesimg)
     mountP = subprocess.Popen(cmd,shell=True)
     mountP.wait()
     
@@ -217,10 +218,6 @@ def makeSuseBootDir(rootdir, buildprofile):
     y = YastRepo(rootdir)
     y.handleUpdates('file://' + str(os.path.abspath(updatesimg)))
     
-    cmd = 'umount %s' % pdir
-    umountP = subprocess.Popen(cmd,shell=True)
-    umountP.wait()
-
 def mkISOLinuxDir(rootdir, buildprofile):
     """Creates a isolinux directory in rootdir with prefilled settings for the distro"""
     if buildprofile.kitsource:
@@ -422,7 +419,7 @@ def mkMetaISO(rootdir, buildprofile):
         umountP.wait()
     
     
-def makeBootISO(rootdir, isofile, volname="PCM"):
+def makeBootISO(rootdir, isofile, volname="kusu"):
     """Create a bootable ISO isoname out of the directory rootdir. The volname can be used to specify
        the ISO label name.
     """
