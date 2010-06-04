@@ -235,8 +235,8 @@ class KitOps:
                 # This component does not yet exist in the DB, so add it now.
                 # NOTE: storing pkgname as component name, since that's the
                 # RPM package to be installed.
-                comp_ngtypes = comp.get('ngtypes', ['*'])
-                if '*' in comp_ngtypes or comp_ngtypes==[''] or not comp_ngtypes:
+                comp_ngtypes = comp.get('ngtypes', [])
+                if '*' in comp_ngtypes:
                     comp_ngtypes = Set([ng.type for ng in self.__db.NodeGroups.select()])
                 ngtypes = ';'.join(comp_ngtypes)
 
