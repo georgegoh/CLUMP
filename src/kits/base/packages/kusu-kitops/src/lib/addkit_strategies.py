@@ -21,6 +21,18 @@ from sqlalchemy import func
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
+def matches_native_base_kit_version(db, kitinfo):
+    kit = kitinfo[1]
+    #check if this kit is a base kit of different version than the native base kit
+    if kit['name'] == 'base' and db.NodeGroups.selectone_by(type='installer').repo:
+        native_kits = db.NodeGroups.selectone_by(type='installer').repo.kits
+        native_base_kit = [x for x in native_kits if x.rname == 'base'][0]
+        if str(kit['version']) != str(native_base_kit.version) or \
+            str(kit['release']) != str(native_base_kit.release):
+            raise IncompatibleBaseKitError, "Cannot install a compatibility base kit of a " \
+                "version (%s-%s) different from that of the native base kit (%s-%s)." % \
+                (kit['version'], kit['release'], native_base_kit.version, native_base_kit.release)
+
 def addkit01(koinst, db, kitinfo, update_action=False):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
@@ -34,15 +46,7 @@ def addkit01(koinst, db, kitinfo, update_action=False):
                 "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit (id: %d) already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'], installed_kit_id)
 
-    #check if this kit is a base kit of different version than the native base kit
-    if kit['name'] == 'base':
-        native_kits = db.NodeGroups.selectone_by(type='installer').repo.kits
-        native_base_kit = [x for x in native_kits if x.rname == 'base'][0]
-        if str(kit['version']) != str(native_base_kit.version) or \
-            str(kit['release']) != str(native_base_kit.release):
-            raise IncompatibleBaseKitError, "Cannot install a compatibility base kit of a " \
-                "version (%s-%s) different from that of the native base kit (%s-%s)." % \
-                (kit['version'], kit['release'], native_base_kit.version, native_base_kit.release)
+    matches_native_base_kit_version(db, kitinfo)
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
@@ -144,15 +148,8 @@ def addkit02(koinst, db, kitinfo, update_action=False):
                 "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit (id: %d) already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'], installed_kit_id)
 
-    #check if this kit is a base kit of different version than the native base kit
-    if kit['name'] == 'base':
-        native_kits = db.NodeGroups.selectone_by(type='installer').repo.kits
-        native_base_kit = [x for x in native_kits if x.rname == 'base'][0]
-        if str(kit['version']) != str(native_base_kit.version) or \
-            str(kit['release']) != str(native_base_kit.release):
-            raise IncompatibleBaseKitError, "Cannot install a compatibility base kit of a " \
-                "version (%s-%s) different from that of the native base kit (%s-%s)." % \
-                (kit['version'], kit['release'], native_base_kit.version, native_base_kit.release)
+
+    matches_native_base_kit_version(db, kitinfo)
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
@@ -335,15 +332,7 @@ def addkit04(koinst, db, kitinfo, update_action=False):
                 "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'])
 
-    #check if this kit is a base kit of different version than the native base kit
-    if kit['name'] == 'base':
-        native_kits = db.NodeGroups.selectone_by(type='installer').repo.kits
-        native_base_kit = [x for x in native_kits if x.rname == 'base'][0]
-        if str(kit['version']) != str(native_base_kit.version) or \
-            str(kit['release']) != str(native_base_kit.release):
-            raise IncompatibleBaseKitError, "Cannot install a compatibility base kit of a " \
-                "version (%s-%s) different from that of the native base kit (%s-%s)." % \
-                (kit['version'], kit['release'], native_base_kit.version, native_base_kit.release)
+    matches_native_base_kit_version(db, kitinfo)
 
     # Extract the kit RPM to get access at its scripts.
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
