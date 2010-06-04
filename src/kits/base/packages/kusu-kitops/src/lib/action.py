@@ -230,9 +230,12 @@ class UpgradeAction(KitopsAction):
         kit_api = selected_kit[4]
         new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db,
                                                           selected_kit, update_action=True)
+        print "Added new kit, ID is %s" % new_kit_id
         return self._db.Kits.get(new_kit_id)
 
     def _reassociate_repos(self, associated_repos):
+        if associated_repos:
+            print "Associating repositories using the old kit with the new kit"
         for repo in associated_repos:
             # First, deassociate the old kit from the repo
             for i in xrange(len(repo.kits)):
@@ -261,8 +264,12 @@ class UpgradeAction(KitopsAction):
             else:
                 print "\tFinished updating repo %s" % repo.reponame
 
-
     def _reassociate_components_to_nodegroups(self, components_to_add):
+        for old_component in self.old_kit.components:
+            if old_component.nodegroups:
+                print 'Associating nodegroups using the old kit components with new kit components'
+                break
+
         # We will need a mapping from new_kit.components to components_to_add
         component_mapping = {}
         for db_component in self.new_kit.components:
@@ -285,15 +292,16 @@ class UpgradeAction(KitopsAction):
 
         return upgraded_nodegroups
 
-
     def _delete_old_kit(self):
         # For some reason, the in-memory representation of the DB is stale at
         # this point, so we need to re-load the old kit first before deleting
         # it.
+        _old_kit_id = self.old_kit.kid
         self.old_kit = self._db.Kits.get(self.old_kit.kid)
         DeleteKitStrategy[self.koinst.getKitApi(self.old_kit.kid)](self.koinst, self._db,
                                                                    self.old_kit, update_action=True)
         self._db.flush()
+        print "Removed old kit with ID %s" % _old_kit_id
 
     def _remind_user_remaining_upgrade_steps(self):
         new_normal_kit = self.new_kit
@@ -316,6 +324,8 @@ class UpgradeAction(KitopsAction):
                 print "    kusu-cfmsync -f -p -u\n"
 
     def _synchronize_nodegroups(self):
+        print "Syncing nodegroups"
+
         # Use a dummy KusuApp instance for helper functions
         temp_app = KusuApp()
 
