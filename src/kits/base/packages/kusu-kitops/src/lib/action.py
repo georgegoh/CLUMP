@@ -288,9 +288,11 @@ class UpgradeAction(KitopsAction):
                 self.print_and_log("\tRefreshing repo %s" % repo.reponame)
                 repo_obj.refresh(repo.repoid)
             except Exception, e:
-                kl.error("Upgrade failed. Unable to refresh repo %s. "
-                         "Reason: %s." % (repo.reponame, e))
-                sys.exit(1)
+                msg = ("Upgrade failed. Unable to refresh repo %s. "
+                       "Reason: %s.") % (repo.reponame, e)
+                kl.error(msg)
+                print msg
+                raise UpgradeKitError, msg
             else:
                 self.print_and_log("\tFinished updating repo %s" % repo.reponame)
 
@@ -429,7 +431,7 @@ class UpgradeAction(KitopsAction):
         if compatability_kits:
             print "Please update the following compatability kits to the same version as the native " \
             "base kit (%s-%s): %s" % (self.new_kit.version, self.new_kit.release, compatability_kits)
-            
+
 
     def run(self, **kw):
         """Perform the action."""
