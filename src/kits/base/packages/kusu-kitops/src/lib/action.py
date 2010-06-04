@@ -75,7 +75,7 @@ class UpdateAction(KitopsAction):
         if len(possible_kits) == 1:
             return possible_kits[0]
         if self.suppress_questions:
-            msg = ('Option --suppress-questions specified but user '
+            msg = ('Questions are suppressed for this upgrade action but user '
                    'is required to choose which kit to use for the upgrade.')
             kl.error(msg)
             raise UpdateKitError, msg
