@@ -177,8 +177,8 @@ def validate_old_kit_for_upgrade(old_kit, oldest_upgradeable_version, oldest_upg
 
     # Check against oldest_upgradeable_version to determine whether a kit can be upgraded
     if -1 == compareVersion((old_kit.version, old_kit.release), (oldest_upgradeable_version, oldest_upgradeable_release)):
-        msg = "Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, " + \
-              "oldest upgradeable version is %(oldest_version)s-%(oldest_release)s." \
+        msg = ("Unable to upgrade specified kit, version %(current_version)s-%(current_release)s, "
+               "oldest upgradeable version is %(oldest_version)s-%(oldest_release)s.") \
                 % {'current_version': old_kit.version,
                    'current_release': old_kit.release,
                    'oldest_version': oldest_upgradeable_version,
