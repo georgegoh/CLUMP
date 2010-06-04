@@ -127,7 +127,6 @@ class UpdateApp(KusuApp):
 
         pb = PackBuilder(self.errorMessage, self.stdoutMessage)
         # Update the installer and setup sync actions for other nodegroup(s)
-        print type
         pb.consolidatedSync(action_type=type, ngname=self.options.nodegrp, ngid=ngid)
 
         # Reinitialize the PackBuilder instance in case kusu db
