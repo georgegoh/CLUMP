@@ -197,6 +197,7 @@ class BuildkitArchError(KusuError): pass
 
 # driverpatch
 class UnknownKernelModuleAsset(KusuError): pass
+class DriverPatchActionError(KusuError): pass
 
 # kusu-appglobals
 class InvalidMetaXMLError(KusuError): pass
@@ -206,3 +207,5 @@ class InvalidAppglobalValueError(KusuError): pass
 
 # buildimage
 class YumFailedToRunError(KusuError): pass
+class BuildImageException(KusuError): pass
+class BuildImageError(BuildImageException): pass
