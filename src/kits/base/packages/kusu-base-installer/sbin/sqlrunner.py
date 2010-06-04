@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Kusu SQL injector
 #
@@ -31,41 +31,34 @@ class SQLInjectorApp(KusuApp):
         KusuApp.__init__(self)
 
     def toolVersion(self, option, opt, value, parser):
-        """ 
-        toolVersion()
-        Prints out the version of the tool to screen. 
-        """
-        
+        """ Prints out the version of the tool to screen.  """
+
         print "SQL Injector Version %s\n" % self.version
         sys.exit(0)
-        
+
     def parseargs(self):
-        """
-        parseargs()
-        Parse the command line arguments. """
+        """ Parse the command line arguments. """
 
         self.parser.add_option("-v", "--version", action="callback",
                                 callback=self.toolVersion)
         self.parser.add_option("-q", "--query", action="store",
                                 type="string", dest="querystring")
-    
+
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
 
     def run(self):
-        """run()
-        Run the application """
+        """ Run the application """
 
         # Check if root user
         if os.geteuid():
            print self._("nonroot_execution\n")
            sys.exit(-1)
 
-        self.str = ""
         self.db = KusuDB()
         # Parse command options
         self.parseargs()
-        
-        # Handle -r option
+
+        # Handle -q option
         if self._options.querystring:
            try:
                self.db.connect('kusudb', 'apache')
@@ -74,18 +67,13 @@ class SQLInjectorApp(KusuApp):
 
            self.db.execute(self._options.querystring)
            try:
-               output = self.db.fetchall()
-               for line in output:
-                    for i in xrange(len(line)):
-                        self.str += "%s|" % line[i]
-                        if i == len(line)-1:
-                           self.str = self.str[:-1]
-                    sys.stdout.write("%s" % self.str)
-                    print
-                    self.str = ""
+               results = self.db.fetchall()
+               for row in results:
+                   line = [str(item) for item in row]
+                   print '|'.join(line)
            except:
                pass
-            
+
 if __name__ == '__main__':
     app = SQLInjectorApp()
     app.run()
