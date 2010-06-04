@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
 # $Id$
 #
@@ -477,7 +477,7 @@ class RPM:
 
         n1,e1,v1,r1,a1 = self.getNEVRA()
         n2,e2,v2,r2,a2 = other.getNEVRA()
-        x = self._compareEVR((e1,v1,r1),(e2,v2,r2))
+        x = compareEVR((e1,v1,r1),(e2,v2,r2))
 
         if n1 == n2 and a1 == a2 and x == 0:
             return True
@@ -493,7 +493,7 @@ class RPM:
         """
         n1,e1,v1,r1,a1 = self.getNEVRA()
         n2,e2,v2,r2,a2 = other.getNEVRA()
-        x = self._compareEVR((e1,v1,r1),(e2,v2,r2))
+        x = compareEVR((e1,v1,r1),(e2,v2,r2))
 
         if n1 == n2:
             if (e1,v1,r1) == (e2,v2,r2):
@@ -523,28 +523,6 @@ class RPM:
             return 1
         if s1 == s2:
             return 0
-
-    def _compareEVR(self, (e1, v1, r1), (e2, v2, r2)):
-        """Use EVR to compare 2 rpms"""
-        # a is newer than b: 1
-        # a is same version as b: 0
-        # b is newer than a: -1
-
-        def toStr(a):
-            if type(a) != types.StringType and a != None:
-                a = str(a)
-            return a
-
-        e1 = toStr(e1)
-        v1 = toStr(v1)
-        r1 = toStr(r1)
-
-        e2 = toStr(e2)
-        v2 = toStr(v2)
-        r2 = toStr(r2)
-
-        x = rpm.labelCompare((e1, v1, r1), (e2, v2, r2))
-        return x
 
     def _read_header(self, f):
         """Read rpm header"""
@@ -663,3 +641,26 @@ def getLatestRPM(dirs=[], ignoreErrors=False):
                     c.add(r)
 
     return c
+
+def compareEVR((e1, v1, r1), (e2, v2, r2)):
+    """Use EVR to compare 2 rpms"""
+    # a is newer than b: 1
+    # a is same version as b: 0
+    # b is newer than a: -1
+
+    def toStr(a):
+        if type(a) != types.StringType and a != None:
+            a = str(a)
+        return a
+
+    e1 = toStr(e1)
+    v1 = toStr(v1)
+    r1 = toStr(r1)
+
+    e2 = toStr(e2)
+    v2 = toStr(v2)
+    r2 = toStr(r2)
+
+    x = rpm.labelCompare((e1, v1, r1), (e2, v2, r2))
+    return x
+
