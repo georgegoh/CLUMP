@@ -150,6 +150,9 @@ COMPONENT_GNOME_DESKTOP_RELEASE_STR=$(shell grep "^Release: " SPECS/$(PKG_COMPON
 COMPONENT_ICR_VERSION_STR=$(shell grep "^Version: " SPECS/$(PKG_COMPONENT_ICR_SPEC) | awk '{print $$2}')
 COMPONENT_ICR_RELEASE_STR=$(shell grep "^Release: " SPECS/$(PKG_COMPONENT_ICR_SPEC) | awk '{print $$2}')
 
+GET_RPMS_LIST = $(if $(suffix $1),"$(notdir $1)")
+RPM_FILENAMES = $(shell echo '$(strip $(foreach pkg,$(RPM_ARTIFACTS),$(call GET_RPMS_LIST,$(pkg))))' | sed 's/ /, /g')
+
 .PHONY: kitinfo
 kitinfo:
 	@sed -e 's%$${COMPONENT_BASE_INSTALLER_VERSION_STR}%$(COMPONENT_BASE_INSTALLER_VERSION_STR)%g' \
@@ -167,5 +170,7 @@ kitinfo:
     -e 's%$${BASE_KIT_VERSION_STR}%$(BASE_KIT_VERSION_STR)%g' \
     -e 's%$${BASE_KIT_RELEASE_STR}%$(BASE_KIT_RELEASE_STR)%g' \
     -e 's%$${BASE_KIT_ARCH_STR}%$(BASE_KIT_ARCH_STR)%g' \
+    -e 's%$${BASE_KIT_DESCRIPTION}%$(BASE_KIT_DESCRIPTION)%g' \
+    -e 's%$${RPM_FILENAMES}%$(RPM_FILENAMES)%g' \
 	packages/kit-base/$(KITINFO_TEMPLATE) >packages/kit-base/kitinfo
 
