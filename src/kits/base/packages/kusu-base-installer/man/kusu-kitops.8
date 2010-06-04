@@ -1,4 +1,4 @@
-.\" Copyright (c) 2007 Platform Computing Inc
+.\" Copyright (c) 2010 Platform Computing Inc
 .TH "kusu-kitops" "8" "Version: ${VERSION_STR}" "Mark Black" "Kusu Base"
 .SH "NAME"
 .LP 
@@ -10,15 +10,17 @@ kusu-kitops \- Kusu kit management tool.
 \fBkusu-kitops\fR [\-a \-m \fIMedia\fR [{\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]]]       \- Adding a Kit
 .LP 
 \fBkusu-kitops\fR [\-e {\-k \fIKitname\fR | \-\-kit=\fIKitname\fR}  [\-o \fIKitVersion\fR | \-\-kitversion=\fIKitVersion\fR] [\-c \fIKitArch\fR | \-\-kitarch=\fIKitArch\fR]                 \- Kit removal
+.LP 
+\fBkusu-kitops\fR \-u \-m \fIMedia\fR \-i \fIKitId\fR       \- Upgrading a Kit
 .SH "DESCRIPTION"
 .LP 
-Kusu-kitops is the kit operations tool.  It is for adding and removing kits.  Once a kit is added with \fBkusu-kitops\fR is must be associated with one or more repositories with the \fBkusu-repoman\fR before the kit can be used.
+kusu-kitops is the kit operations tool.  It is for adding, removing and upgrading kits.  Once a kit is added with \fBkusu-kitops\fR, it must be associated with one or more repositories with the \fBkusu-repoman\fR tool before the kit can be used.
 .LP 
-Adding a kit to the installer cause the packages to be copied to the /depot/kits directory.  The kit is not yet available for installation on the nodes.  The kit then needs to be associated with a repository using \fBkusu-repoman\fR.
+Adding a kit to the installer causes the packages to be copied to the /depot/kits directory.  The kit is not yet available for installation on the nodes.  The kit then needs to be associated with a repository using \fBkusu-repoman\fR.
 .LP 
-Kits can be deleted from the installer, however the kit must not be associated with any repository prior to it's removal.  Removing the kit from the repository may also require de\-selecting any components of that kit that are in use.  A kit cannot be removed if the components are in use.
+Kits can be deleted from the installer. However, the kit must not be associated with any repository prior to its removal.  Removing the kit from the repository may also require de\-selecting any components of that kit that are in use.  A kit cannot be removed if any of its components are in use.
 .LP 
-Upgrading a kit is performed by deleting the old kit and adding the new one.  However this is not desirable.  A snapshot should be taken of the repository using the kit so that it can be reverted back to in the event of a problem.
+Upgrading a kit is performed by adding the new kit and removing the old one.  Any repository and component associations of the old kit are maintained for the new kit.  If any of the packages in the old kit are in use, follow the instructions provided at the end of the upgrade operation to refresh affected repositories and upgrade said packages. When upgrading a base kit that is currently in use by the installer, the refreshing of the repository and upgrading of the packages will be enforced by kusu-kitops.
 
 .SH "OPTIONS"
 .LP 
@@ -29,11 +31,14 @@ Add a kit.
 \fB\-e, \-\-remove\fR
 Remove a kit.  The kit must not be associated with any repositories, and the components provided by that kit should not be used in any nodegroups.  If this condition is not met the kit will not be removed.
 .TP 
+\fB\-u, \-\-update\fR
+Upgrade a kit.
+.TP 
 \fB\-h, \-\-help\fR
 Print the help information and exit.
 .TP 
 \fB\-i, \-\-kid=<\fIKit Id\fR>\fR
-Specifies the id of the kit to add or remove.
+Specifies the id of the kit to add, remove or upgrade.
 .TP 
 \fB\-k, \-\-kit=<\fIKit Name\fR>\fR
 Specifies the name of the kit to add or remove.
@@ -45,7 +50,7 @@ Specifies the kit version to add or remove.
 Specifies the kit architecture to add or remove. 
 .TP 
 \fB\-m <\fIMedia\fR>\fR
-Specifies the kit ISO file, or the mount point of the media containing the kit to add. Support access to the kit on a remote location over the HTTP and FTP protocol.
+Specifies the kit ISO file, or the mount point of the media containing the kit to add or upgrade.
 .TP 
 \fB\-\-dbdriver=<Driver>\fR
 Connect to an alternate database using the driver specified. Currently supported dbdrivers are postgres, mysql or sqlite.  This option is not needed for normal use.

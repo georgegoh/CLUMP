@@ -103,7 +103,7 @@ class KitOpsApp(KusuApp):
         self.parser.add_option('-k', '--kit', dest='kit',
                                help=self._('kit'))
 
-        self.parser.add_option('-i', '--kid', dest='kid',
+        self.parser.add_option('-i', '--kid', dest='kid', type='int',
                                help=self._('kid'))
  
         self.parser.add_option('-o', '--kitversion', dest='kitversion',

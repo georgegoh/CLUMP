@@ -645,7 +645,7 @@ msgstr "specify the media iso or mountpoint for the kit (support access to the k
 msgid "kitops_usage_list"
 msgstr "list all the kits available on the system"
 
-msgid "kitops_usage_upgrade"
+msgid "kitops_usage_update"
 msgstr "upgrade the specified kit"
 
 msgid "kitops_usage_remove"
