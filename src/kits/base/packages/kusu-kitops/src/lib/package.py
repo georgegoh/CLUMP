@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+#
 #  KUSU Package API
-# 
+#
 #  $Id$
-# 
+#
 #  Copyright 2007 Platform Computing Corporation
-# 
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of version 2 of the GNU General Public License as
 #  published by the Free Software Foundation.
@@ -34,7 +35,7 @@ def PackageFactory(packurl):
        Raises ENotImplemented for packages we don't know how to handle
        Raises EInvalidPackage for packages with no ext'''
     tmpfname = ''
-    
+
     rv = urlparse.urlparse(packurl)
     if rv[0]:
         (tmpfname, headers) = urllib.urlretrieve(packurl)
@@ -52,7 +53,7 @@ def PackageFactory(packurl):
     #future packages here
 
     raise ENotImplemented, 'Package handling for %s not implemented' % ext
-    
+
 
 class BasePackage:
     '''Abstract class that defines the interface for RPM information retrieval'''
@@ -118,7 +119,7 @@ class RPMPackage(BasePackage):
     def getConflicts(self):
         '''Return the contents of the conflicts tag, eliminating duplicates'''
         return self.uniq(self.rpm.getConflicts())
-    
+
     def getRequires(self):
         '''Return the contents of the requires tag, eliminating duplicates'''
         return self.uniq(self.rpm.getRequires())
@@ -194,7 +195,7 @@ def RpmUnitTest(fname):
         print 'Invalid RPMTAG name provided - most likely misspelled: ',msg
     except Exception,msg:
         print "RawTag lookup failed w/ generic Exception: ", msg
-        
+
 
 if __name__ == "__main__":
     fname = sys.argv[1]

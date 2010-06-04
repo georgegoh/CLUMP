@@ -132,7 +132,6 @@ class KitOpsApp(KusuApp):
                                action='store_true',default=False,
                                help=SUPPRESS_HELP)
 
-
     def parseArgs(self):
         (options, args) = self.parser.parse_args()
         kl.debug("options: %s", options)

@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+#
+# $Id$
+#
+# Copyright 2010 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+
 import types
 import rpm
 from kusu.util.errors import KitNotInstalledError, UpdateKitError

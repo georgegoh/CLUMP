@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 # $Id$
 #
 # Kusu kitops - kit operations tool
@@ -207,7 +208,7 @@ class KitOps:
         """
 
         # We currently want to limit the extent of association
-        # to certain ngids and below. 
+        # to certain ngids and below.
         unmanaged_ngid = self.__db.NodeGroups.selectfirst_by(ngname='unmanaged').ngid
         NG_ASSOC_THRESHOLD = BASE_NG_ASSOC_THRESHOLD = unmanaged_ngid - 1
         USE_NG_ASSOC_THRESHOLD = True
@@ -831,7 +832,7 @@ class KitOps:
             except sa.exceptions.InvalidRequestError, msg:
                 print "Error %s.  Repository doesn't exist, wrong repo provided by user." % msg
                 sys.exit(1)
-      
+
             kits = self.__db.Kits.select_by(self.__db.ReposHaveKits.c.repoid == repo.repoid,
                                             self.__db.ReposHaveKits.c.kid == self.__db.Kits.c.kid,
                                             **kwargs)
@@ -840,6 +841,6 @@ class KitOps:
 
         if not kits:
             print "Input Error, requested kit doesn't exist. Please provide correct details."
-            sys.exit(1)     
+            sys.exit(1)
 
         return kits
