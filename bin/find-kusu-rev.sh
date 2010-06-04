@@ -9,7 +9,7 @@ if [ x$KUSU_REVISION != x ]; then
 fi
 
 # OK, svn didn't work, let's try git svn
-KUSU_REVISION=`git svn find-rev $(git rev-parse HEAD)`
+KUSU_REVISION=`git svn find-rev $(git rev-parse HEAD) 2>/dev/null`
 
 # git svn didn't work, let's get a git sha1
 if [ x$KUSU_REVISION = x ]; then
