@@ -206,7 +206,8 @@ class KitOpsApp(KusuApp):
             update_action = UpdateAction(self.__db, self.koinst)
             run_args = {'old_kit_id': old_kit_id,
                         'kits': self.mountAndParseKitMedia(),
-                        'suppress_questions': self.suppress_questions}
+                        'suppress_questions': self.suppress_questions or \
+                                              options.skip_confirm}
 
             self.action_queue[update_action] = run_args
             self.kitop = PROCESS_ACTION_QUEUE
@@ -303,6 +304,8 @@ class KitOpsApp(KusuApp):
             for action, run_args in self.action_queue.iteritems():
                 try:
                     action.run(**run_args)
+                except KitopsAbort, e:
+                    sys.stderr.write("%s\n" % e)
                 except KitopsError, e:
                     sys.stderr.write("ERROR: %s\n" % e)
                     # TODO: move the error codes into the KitopsAction class

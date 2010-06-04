@@ -10,7 +10,7 @@
 import sys
 import types
 import rpm
-from kusu.util.errors import KitNotInstalledError, UpdateKitError
+from kusu.util.errors import KitNotInstalledError, UpdateKitError, UpdateKitAbort
 from kusu.util.kits import matchComponentsToOS, compareVersion, SUPPORTED_KIT_APIS
 from kusu.kitops.addkit_strategies import AddKitStrategy
 from kusu.kitops.deletekit_strategies import DeleteKitStrategy
@@ -68,12 +68,60 @@ class UpdateAction(KitopsAction):
                 possible_kits.append(kit)
         return possible_kits
 
+    def _select_one_kit(self, possible_kits):
+        """
+        From a list of possible kits, select one kit to use for the upgrade.
+        """
+        if len(possible_kits) == 1:
+            return possible_kits[0]
+        if self.suppress_questions:
+            msg = ('Option --suppress-questions specified but user '
+                   'is required to choose which kit to use for the upgrade.')
+            kl.error(msg)
+            raise UpdateKitError, msg
+        while True:
+            for num_kits in enumerate(possible_kits):
+                print '[%d]: %s-%s-%s-%s' % (num_kits[0],
+                                             num_kits[1][1]['name'],
+                                             num_kits[1][1]['version'],
+                                             num_kits[1][1]['release'],
+                                             num_kits[1][1]['arch'])
+
+            print 'Choose the kit to use for the upgrade or ENTER to quit: '
+            res = sys.stdin.readline().strip()
+            if not res:
+                msg = 'No suitable kit selected for upgrade.'
+                kl.info(msg)
+                raise UpdateKitAbort, msg
+            try:
+                return possible_kits[int(res)]
+            except (ValueError, IndexError):
+                print "ERROR: Invalid choice. Please try again.\n"
+
     def _verify_new_kit_has_compatible_components(self, associated_repos):
         for repo in associated_repos:
             if not matchComponentsToOS(components_to_add, repo.getOS()):
                 msg = "New kit does not have any components compatible with repo %s" % repo
                 kl.error(msg)
                 raise UpdateKitError, msg
+
+    def _get_user_confirmation(self, selected_kit):
+        _old_kit = "%s-%s-%s-%s" % (self.old_kit.rname,
+                                    self.old_kit.version,
+                                    self.old_kit.release,
+                                    self.old_kit.arch)
+        _selected_kit = "%s-%s-%s-%s" % (selected_kit[1]['name'],
+                                         selected_kit[1]['version'],
+                                         selected_kit[1]['release'],
+                                         selected_kit[1]['arch'])
+        print "Upgrading from %s to %s." % (_old_kit, _selected_kit)
+        if not self.suppress_questions:
+            print 'Confirm [y/N]: '
+            result = sys.stdin.readline().strip()
+            if not result.lower() in ['y', 'yes']:
+                msg = 'Upgrade action aborted.'
+                kl.info(msg)
+                raise UpdateKitAbort, msg
 
     def _add_and_return_new_kit(self, selected_kit):
         # Add the new kit, and pull it from the DB
@@ -135,36 +183,6 @@ class UpdateAction(KitopsAction):
                     print "    kusu-cfmsync -f -p -u\n"
                     break
 
-    def _select_one_kit(self, possible_kits):
-        """
-        From a list of possible kits, select one kit to use for the upgrade.
-        """
-        if len(possible_kits) == 1:
-            return possible_kits[0]
-        if self.suppress_questions:
-            msg = ('Option --suppress-questions specified but user '
-                   'is required to choose which kit to use for the upgrade.')
-            kl.error(msg)
-            raise UpdateKitError, msg
-        while True:
-            for num_kits in enumerate(possible_kits):
-                print '[%d]: %s-%s-%s-%s' % (num_kits[0],
-                                             num_kits[1][1]['name'],
-                                             num_kits[1][1]['version'],
-                                             num_kits[1][1]['release'],
-                                             num_kits[1][1]['arch'])
-
-            print 'Choose the kit to use for the upgrade or ENTER to quit: '
-            res = sys.stdin.readline().strip()
-            if not res:
-                msg = 'No suitable kit selected for upgrade'
-                kl.error(msg)
-                raise UpdateKitError, msg
-            try:
-                return possible_kits[int(res)]
-            except (ValueError, IndexError):
-                print "ERROR: Invalid choice. Please try again.\n"
-
     def run(self, **kw):
         """Perform the action."""
 
@@ -192,6 +210,8 @@ class UpdateAction(KitopsAction):
 
         self._verify_new_kit_has_compatible_components(associated_repos)
 
+        self._get_user_confirmation(selected_kit)
+
         self.new_kit = self._add_and_return_new_kit(selected_kit)
 
         self._reassociate_repos(associated_repos)
@@ -201,10 +221,6 @@ class UpdateAction(KitopsAction):
 
         if not self.new_kit.rname == 'base':
             self._remind_user_remaining_upgrade_steps()
-
-        # TODO:
-        # ...
-        # Obtain user confirmation
 
 def validate_new_kit_for_upgrade(kit_tuple):
     """

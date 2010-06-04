@@ -100,6 +100,8 @@ class UnsupportedKitAPIError(KitopsError): pass
 class UpdateKitError(KitopsError): pass
 class KitScriptError(KitopsError): pass
 class KitPackageError(KitopsError): pass
+class KitopsAbort(KusuError): pass
+class UpdateKitAbort(KitopsAbort): pass
 
 # kits
 class CannotAddKitError(KusuError): pass
