@@ -27,7 +27,7 @@ def get_readonly_dbs():
 
 def updateCfmfiles():
     """Update cfmfiles.lst"""
-    kApp = app.KusuApp()
+    kApp = app.KusuApp(dummy_app=True)
     _ = kApp.langinit()
     pb = PackBuilder(kApp.errorMessage, kApp.stdoutMessage)
     pb.genMergeFiles()
