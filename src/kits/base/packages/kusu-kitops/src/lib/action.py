@@ -40,6 +40,17 @@ class KitopsAction(object):
         raise NotImplementedError
 
 class UpdateAction(KitopsAction):
+
+    def _remind_user_remaining_upgrade_steps(self, new_normal_kit):
+        if new_normal_kit.repos:
+            print "To complete the upgrade, please run the following commands:\n"
+            for repo in new_normal_kit.repos:
+                print "    kusu-repoman -u -r %s" % repo.reponame
+            for component in new_normal_kit.components:
+                if component.nodegroups:
+                    print "    kusu-cfmsync -f -p -u\n"
+                    break
+
     def run(self, **kw):
         """Perform the action."""
 
@@ -139,13 +150,12 @@ class UpdateAction(KitopsAction):
         DeleteKitStrategy[self.koinst.getKitApi(old_kit_id)](self.koinst, self._db, old_kit, update_action=True)
         self._db.flush()
 
+        if not new_kit.rname == 'base':
+            self._remind_user_remaining_upgrade_steps(new_normal_kit=new_kit)
+
         # TODO:
         # ...
         # Obtain user confirmation
-        # Run pre-section of kit upgrade plugin
-        # Replace the old components with new ones accordingly
-        # Run post section of kit upgrade plugin
-        # Propmt user to run cfmsync --upgrade
 
 def validate_new_kit_for_upgrade(kit_tuple):
     """
