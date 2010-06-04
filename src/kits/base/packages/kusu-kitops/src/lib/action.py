@@ -22,6 +22,8 @@ from kusu.kitops.deletekit_strategies import DeleteKitStrategy
 from kusu.repoman.repofactory import RepoFactory
 from kusu.cfms import PackBuilder
 from kusu.core.app import KusuApp
+from kusu.driverpatch import DriverPatch
+from kusu.buildimage import BuildImage
 
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
@@ -256,7 +258,7 @@ class UpgradeAction(KitopsAction):
         # Add the new kit, and pull it from the DB
         kit_api = selected_kit[4]
         new_kit_id, updated_ngs = AddKitStrategy[kit_api](self.koinst, self._db,
-                                                          selected_kit, update_action=True)
+                                                          selected_kit, upgrade_action=True)
         self.print_and_log("Added new kit, ID is %s" % new_kit_id)
         return self._db.Kits.get(new_kit_id)
 
@@ -331,7 +333,7 @@ class UpgradeAction(KitopsAction):
         _old_kit_id = self.old_kit.kid
         self.old_kit = self._db.Kits.get(self.old_kit.kid)
         DeleteKitStrategy[self.koinst.getKitApi(self.old_kit.kid)](self.koinst, self._db,
-                                                                   self.old_kit, update_action=True)
+                                                                   self.old_kit, upgrade_action=True)
         self._db.flush()
         self.print_and_log("Removed old kit with ID %s" % _old_kit_id)
 
@@ -358,18 +360,20 @@ class UpgradeAction(KitopsAction):
     def _synchronize_nodegroups(self):
         self.print_and_log("Syncing nodegroups")
 
-        # Use a dummy KusuApp instance for helper functions
-        temp_app = KusuApp()
+        dummy_app = KusuApp(dummy_app=True)
 
         # Initialize and prepare consolidated sync
-        pb = PackBuilder(temp_app.errorMessage, temp_app.stdoutMessage)
+        pb = PackBuilder(dummy_app.errorMessage, dummy_app.stdoutMessage)
         pb.consolidatedSync(action_type=11, ngname=None, ngid=0)
 
         # Re-initialize to get updated db state and signal for nodes to sync
-        pb = PackBuilder(temp_app.errorMessage, temp_app.stdoutMessage)
+        pb = PackBuilder(dummy_app.errorMessage, dummy_app.stdoutMessage)
         pb.signalUpdate(11, None)
 
+        self.print_and_log("Finished synchronizing nodegroups")
+
     def _build_images_and_patch_drivers(self, nodegroups):
+        self.print_and_log("Building images and Patching in drivers")
         new_driverpack_comps = [comp for comp in self.new_kit.components if comp.driverpacks]
         for ng in nodegroups:
             ng_driverpacks = Set([comps for comp in ng.components if comp in new_driverpack_comps])
@@ -379,10 +383,14 @@ class UpgradeAction(KitopsAction):
                                    % (ng.type, ng.ngname))
                 self.print_and_log("This may take a while to complete. Please "
                                    "do not run any kusu commands until then.")
-                retcode = subprocess.call(['kusu-buildimage', '-n', ng.ngname])
-                if retcode:
-                    self.print_and_log("Buildimage failed. Please run manually "
-                                       "after the upgrade has completed.")
+
+                imager = BuildImage()
+                imager.setTextMeths(kl.error, kl.info)
+                try:
+                    imager.makeImage(ng.ngname, '')
+                except Exception, e:
+                    self.print_and_log("Buildimage failed. Reason: %s\n" % e +
+                    "Please run manually after the upgrade has completed.")
                 else:
                     self.print_and_log("Buildimage ran successfully.")
 
@@ -400,7 +408,7 @@ class UpgradeAction(KitopsAction):
 
                 # Copy over pristine initrd
                 bootdir = path(bootdir)
-                src_initrd = bootdir / ng_initrd
+                src_initrd = bootdir / ng.initrd
                 dst_initrd = bootdir / 'initrd.%s.%d.img' % (ng_installtype, ngid)
                 try:
                     src_initrd.copyfile(dst_initrd)
@@ -410,18 +418,23 @@ class UpgradeAction(KitopsAction):
                                        'result in unexpected behaviour.\n')
 
                 # Run kusu-driverpatch
-                retcode = subprocess.call(['kusu-driverpatch', 'nodegroup', 'id', str(ng.ngid)])
-                if retcode:
-                    self.print_and_log("Driverpatch failed. Please run manually "
-                                       "after the upgrade has completed.")
+                dp = DriverPatch(db, kl.info, kl.error)
+                driverpatch_args = {'id': ng.ngid}
+                try:
+                    dp.nodegroupAction(args)
+                except Exception, e:
+                    self.print_and_log("Driverpatch failed. Reason: %s\n" % e +
+                    "Please run manually after the upgrade has completed.")
                 else:
                     self.print_and_log("Driverpatch ran successfully.")
+        self.print_and_log("Finished building images and patching in drivers")
 
     def _update_kusu_version(self, version):
         kusu_ver = self._db.AppGlobals.selectfirst_by(kname='KUSU_VERSION')
         kusu_ver.kvalue = version
         kusu_ver.save_or_update()
         self._db.flush()
+        self.print_and_log("Kusu version set to %s" % version)
 
     def _remind_user_add_on_base_kit_upgrades(self):
         base_kits = self._db.Kits.select_by(rname='base')

@@ -131,13 +131,13 @@ def run_scripts(kit_root, mode, script_arg, kusulogger):
     # All scripts succeeded.
     return 0
 
-def generate_script_arg(operation, update_action):
+def generate_script_arg(operation, upgrade_action):
     """
     Generates the argument passed to an install/uninstall script.
 
     operation: a string indicating the current operation, one of 'add' or
     'delete'
-    update_action: boolean indicating whether this action is part of an update
+    upgrade_action: boolean indicating whether this action is part of an update
 
     returns: the string argument to be passed to the install/uninstall script
 
@@ -174,11 +174,11 @@ def generate_script_arg(operation, update_action):
     """
 
     if 'add' == operation:
-        if update_action:
+        if upgrade_action:
             return '2'
         return '1'
     elif 'delete' == operation:
-        if update_action:
+        if upgrade_action:
             return '1'
         return '0'
 

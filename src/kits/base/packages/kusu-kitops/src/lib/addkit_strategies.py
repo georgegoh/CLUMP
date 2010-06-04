@@ -33,7 +33,7 @@ def matches_native_base_kit_version(db, kitinfo):
                 "version (%s-%s) different from that of the native base kit (%s-%s)." % \
                 (kit['version'], kit['release'], native_base_kit.version, native_base_kit.release)
 
-def addkit01(koinst, db, kitinfo, update_action=False):
+def addkit01(koinst, db, kitinfo, upgrade_action=False):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
     kitrpm = '%s-%s-%s.%s.rpm' % (kit['pkgname'], kit['version'],
@@ -46,7 +46,8 @@ def addkit01(koinst, db, kitinfo, update_action=False):
                 "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit (id: %d) already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'], installed_kit_id)
 
-    matches_native_base_kit_version(db, kitinfo)
+    if not upgrade_action:
+        matches_native_base_kit_version(db, kitinfo)
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
@@ -136,7 +137,7 @@ def checkKitInstalled01(koinst, db, kitname, kitver, kitarch):
     return None
 
 
-def addkit02(koinst, db, kitinfo, update_action=False):
+def addkit02(koinst, db, kitinfo, upgrade_action=False):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
     kitrpm = kitinfo[3]
@@ -149,7 +150,8 @@ def addkit02(koinst, db, kitinfo, update_action=False):
                 (kit['name'], kit['version'], kit['release'], kit['arch'], installed_kit_id)
 
 
-    matches_native_base_kit_version(db, kitinfo)
+    if not upgrade_action:
+        matches_native_base_kit_version(db, kitinfo)
 
     # populate the kit DB table with info
     newkit = db.Kits(rname=kit['name'], rdesc=kit['description'],
@@ -310,18 +312,18 @@ def installDocs(koinst, kit):
         src_dir.symlink(dest_dir)
 
 
-def addkit02InstallerRules(koinst, db, kitinfo, update_action=False):
+def addkit02InstallerRules(koinst, db, kitinfo, upgrade_action=False):
     kit = kitinfo[1]
     matches = db.Kits.select_by(rname=kit['name'])
     if matches:
         raise KitAlreadyInstalledError
     return addkit02(koinst, db, kitinfo)
 
-def addkit03(koinst, db, kitinfo, update_action=False):
+def addkit03(koinst, db, kitinfo, upgrade_action=False):
      """Add kit v0.3 strategy is same as add kit v0.2 strategy."""
      return addkit02(koinst, db, kitinfo)
 
-def addkit04(koinst, db, kitinfo, update_action=False):
+def addkit04(koinst, db, kitinfo, upgrade_action=False):
     kitpath = path(kitinfo[0])
     kit = kitinfo[1]
     kitrpm = kitinfo[3]
@@ -332,14 +334,15 @@ def addkit04(koinst, db, kitinfo, update_action=False):
                 "Cannot install kit '%s-%s-%s-%s' due to a conflicting kit already installed." % \
                 (kit['name'], kit['version'], kit['release'], kit['arch'])
 
-    matches_native_base_kit_version(db, kitinfo)
+    if not upgrade_action:
+        matches_native_base_kit_version(db, kitinfo)
 
     # Extract the kit RPM to get access at its scripts.
     tmpdir = path(tempfile.mkdtemp(prefix='kitops', dir=koinst.tmpprefix))
     kitrpm.extract(tmpdir)
     atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
-    script_arg=generate_script_arg(operation='add', update_action=update_action)
+    script_arg=generate_script_arg(operation='add', upgrade_action=upgrade_action)
     if 0 != run_scripts(tmpdir, mode='pre', script_arg=script_arg, kusulogger=kl):
         raise KitScriptError, "Pre script error, failed to add kit"
 

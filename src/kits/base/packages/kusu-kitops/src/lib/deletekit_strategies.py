@@ -19,7 +19,7 @@ from kusu.util.kits import run_scripts, generate_script_arg, get_kit_RPM
 import kusu.util.log as kusulog
 kl = kusulog.getKusuLog('kitops')
 
-def deletekit01(koinst, db, kit, update_action=False):
+def deletekit01(koinst, db, kit, upgrade_action=False):
     kl.info("Removing kit with kid '%s'" % kit.kid)
 
     try:
@@ -61,7 +61,7 @@ def deletekit01(koinst, db, kit, update_action=False):
     if kitdir.exists(): kitdir.rmtree()
 
 
-def deletekit02(koinst, db, kit, update_action=False):
+def deletekit02(koinst, db, kit, upgrade_action=False):
     kl.info("Removing kit with kid '%s'" % kit.kid)
     try:
         # remove component info from DB
@@ -96,7 +96,7 @@ def deletekit02(koinst, db, kit, update_action=False):
     del_path = koinst.kits_dir / str(kit.kid)
     if del_path.exists(): del_path.rmtree()
 
-def deletekit04(koinst, db, kit, update_action=False):
+def deletekit04(koinst, db, kit, upgrade_action=False):
     kitdir = koinst.kits_dir / str(kit.kid)
 
     # Extract the kit RPM to get access at its scripts.
@@ -105,7 +105,7 @@ def deletekit04(koinst, db, kit, update_action=False):
     rpm.extract(tmpdir)
     atexit.register(lambda: tmpdir.rmtree(ignore_errors=True))
 
-    script_arg = generate_script_arg(operation='delete', update_action=update_action)
+    script_arg = generate_script_arg(operation='delete', upgrade_action=upgrade_action)
     if 0 != run_scripts(tmpdir, mode='preun', script_arg=script_arg, kusulogger=kl):
         raise KitScriptError, "Pre script error, failed to delete kit"
 
