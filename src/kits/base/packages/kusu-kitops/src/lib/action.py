@@ -53,8 +53,10 @@ class KitopsAction(object):
 class UpgradeAction(KitopsAction):
     
     def is_native_base_kit(self, kit):
-        installer_ng = self._db.NodeGroups.selectfirst_by(type='installer')
-        return installer_ng.repo in kit.repos
+        if kit.rname == 'base':
+            installer_ng = self._db.NodeGroups.selectfirst_by(type='installer')
+            return installer_ng.repo in kit.repos
+        return False
     
     def validate_new_kit_for_upgrade(self, kit_tuple):
         """
