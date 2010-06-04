@@ -65,7 +65,7 @@ def createDB():
 
 class NodeData:
     def __init__(self):
-        # Public 
+        # Public
         self.nodeRackNumber = -1
         self.nodeRankNumber = 0
         self.ngid = 0
@@ -90,6 +90,9 @@ class NodeData:
         self.batchMode = False
         self.signal = None
         self.file = None
+
+    def setPluginLocation(self, kid):
+        self.pluginLocation = "/depot/kits/" + str(kid) + "/plugins/addhost"
 
 global kusuApp
 kusuApp = KusuApp()
@@ -155,50 +158,50 @@ class AddHostApp(KusuApp):
                                 type="int", dest="rack", help=self._("addhost_rack_usage"))
         self.parser.add_option("-c", "--rank", action="store",
                                 type="int", dest="rank", help=self._("addhost_change_rank_usage"))
-        self.parser.add_option("-u", "--update", action="store_true", 
+        self.parser.add_option("-u", "--update", action="store_true",
                                 dest="update", help=self._("addhost_update_usage"))
-        self.parser.add_option("-s", "--static-host", action="store", 
+        self.parser.add_option("-s", "--static-host", action="store",
                                 dest="statichost", help=self._("addhost_statichost_usage"))
-        self.parser.add_option("-x", "--ip-address", action="store", 
+        self.parser.add_option("-x", "--ip-address", action="store",
                                 dest="ipaddr", help=self._("addhost_ipaddr_usage"))
         self.parser.add_option("-b", "--batch", action="store_true",
                                 dest="batch", help=self._("addhost_batch_usage"))
 
     def toolVersion(self, option, opt, value, parser):
-        """ 
+        """
         toolVersion()
-        Prints out the version of the tool to screen. 
+        Prints out the version of the tool to screen.
         """
 
         self.stdoutMessage("kusu-addhost version %s\n", self.version)
         sys.exit(0)
-        
+
     def parse(self):
         """
         parse()
         Parse the command line arguments. """
 
         (self._options, self._args) = self.parser.parse_args(sys.argv[1:])
-        
+
         # Lists are special in Python, handle boolean differently.
         if self._options.remove == []:
             removeFlag = True
         else:
-            removeFlag = bool(self._options.remove)        
+            removeFlag = bool(self._options.remove)
 
         # === Verify options have required sub-options ===
 
         ## -n, -p, -e, -u, -s are mututally exclusive
-        if not len([x for x in [bool(self._options.nodegroup), 
-                                bool(self._options.replace), 
-                                bool(self._options.update), 
-                                removeFlag, 
+        if not len([x for x in [bool(self._options.nodegroup),
+                                bool(self._options.replace),
+                                bool(self._options.update),
+                                removeFlag,
                                 self._options.statichost] if x]) <= 1:
             self.parser.error(kusuApp._("addhost_options_exclusive"))
-        
+
         ## -i option (when not used with -s) requires -n
         if self._options.interface and not self._options.statichost:
-            if not len([x for x in [bool(self._options.nodegroup)] if x]) == 1:                
+            if not len([x for x in [bool(self._options.nodegroup)] if x]) == 1:
                 self.parser.error(kusuApp._("addhost_options_interface_options_needed"))
 
         ## -f option requires -n
@@ -221,11 +224,11 @@ class AddHostApp(KusuApp):
 
 
         # === Verify sub-options are used with correct options ===
-        
+
         ## -j should only be used with -f
         if self._options.nodeinterface and not self._options.file:
             self.parser.error(kusuApp._("addhost_options_macfile_suboptions_error"))
-        
+
         ## -x should only be used with -s or -n
         if self._options.ipaddr and not (self._options.statichost or self._options.nodegroup):
             self.parser.error(kusuApp._("addhost_options_static_suboptions_error"))
@@ -235,7 +238,7 @@ class AddHostApp(KusuApp):
             self.parser.error(kusuApp._("addhost_options_static_suboptions_error"))
 
         # === Process individual options ===
-        
+
         ## Handle -b option
         if self._options.batch:
             myNodeInfo.batchMode = True
@@ -259,7 +262,7 @@ class AddHostApp(KusuApp):
                 myNode.setRankNumber(myNodeInfo.nodeRankNumber)
 
         ## Handle -i option
-        if self._options.interface:            
+        if self._options.interface:
             if self._options.interface[0] == '-':
                 self.parser.error(kusuApp._("addhost_options_interface_required"))
 
@@ -291,13 +294,13 @@ class AddHostApp(KusuApp):
             if self._options.ipaddr:
                 myNodeInfo.staticIPAddrOfManagedNode = self._options.ipaddr.strip()
 
-        ## Handle -s option 
+        ## Handle -s option
         if self._options.statichost:
-            
+
             myNodeInfo.staticHostname = self._options.statichost.strip().lower()
             myNodeInfo.optionStaticHostMode = True
             self.staticHostMode = True
-           
+
             if len(myNodeInfo.staticHostname) == 0:
                self.parser.error(kusuApp._("addhost_static_device_no_host_error"))
 
@@ -306,10 +309,10 @@ class AddHostApp(KusuApp):
                 self.action = ADDHOST_ADD_STATIC_IP
                 myNode.setNodegroupByName("unmanaged")
                 myNodeInfo.staticIPAddress = self._options.ipaddr.strip()
-            
+
             # Handle -i option
             elif self._options.interface:
-                myNodeInfo.optionDHCPMode = True            
+                myNodeInfo.optionDHCPMode = True
 
         ## Handle -j option
         if self._options.nodeinterface:
@@ -329,10 +332,10 @@ class AddHostApp(KusuApp):
         if self._options.replace:
             if self._options.replace.strip().isdigit():
                 self.parser.error(kusuApp._("addhost_options_invalid_node"))
-            
+
             if self._options.replace[0] == '-':
                 self.parser.error(kusuApp._("addhost_options_replace_required"))
-    
+
             self.replaceMode = True
             myNodeInfo.optionReplaceMode = True
             myNodeInfo.replaceNodeName = self._options.replace.strip()
@@ -342,9 +345,9 @@ class AddHostApp(KusuApp):
             self.action = ADDHOST_DEL
             self.removeList = self._options.remove
 
-        elif self._options.remove == []:            
+        elif self._options.remove == []:
             self.parser.error(kusuApp._("addhost_options_remove_required"))
-        
+
         ## Handle -u option
         if self._options.update:
             self.action = ADDHOST_UPDATE
@@ -355,7 +358,7 @@ class AddHostApp(KusuApp):
             pluginActions.plugins_parse(self._options)
 
     def selectKitPlugins(self, ngid=None):
-       
+
         if ngid:
             query = ('SELECT DISTINCT kits.kid '
                      'FROM nodegroups, repos, repos_have_kits, kits '
@@ -368,7 +371,7 @@ class AddHostApp(KusuApp):
                      'FROM nodegroups, repos, repos_have_kits, kits '
                      'WHERE nodegroups.repoid = repos.repoid '
                      'AND repos.repoid = repos_have_kits.repoid '
-                     'AND repos_have_kits.kid = kits.kid ')           
+                     'AND repos_have_kits.kid = kits.kid ')
 
         self.__db.execute(query)
         data = self.__db.fetchall()
@@ -379,10 +382,15 @@ class AddHostApp(KusuApp):
         """ loadPlugins()
         Loads all plugins for addhost. """
 
+        try:
+            self.__db.connect(user='apache', dbname='kusudb')
+        except Exception,msg:
+            raise KusuError, 'Problems establishing database connection. Error: %s' %msg
+
         global pluginActions
         pluginList = []
         pluginInstances = []
-        moduleInstance = None        
+        moduleInstance = None
         kitpluginlist=self.selectKitPlugins(myNodeInfo.ngid)
 
         for kit in kitpluginlist:
@@ -391,10 +399,10 @@ class AddHostApp(KusuApp):
                 continue
             else:
                 sys.path.append(myNodeInfo.pluginLocation)
-        
+
             pluginFileList = os.listdir(myNodeInfo.pluginLocation)
             pluginFileList.sort()
- 
+
             # Strip out files in the plugins directory with .pyc or have a __init__py file (for packages) or ignore .swp files from vi :-)
             for pluginName in pluginFileList:
                 plugin, ext = os.path.splitext(pluginName)
@@ -403,7 +411,7 @@ class AddHostApp(KusuApp):
                         pluginList.append(plugin)
             # Import the plugins
             moduleInstances = map(__import__, pluginList)
-        
+
         # Create instances of each new plugin and store the instances.
         for thisModule in moduleInstances:
             try:
@@ -416,15 +424,15 @@ class AddHostApp(KusuApp):
             except:
                 msg = "Warning: Invalid plugin '%s'. Does not have a AddHostPlugin class.\nThis plugin will be IGNORED.\n"
                 self.stdoutMessage(kusuApp._(msg), thisModule)
-                kl.error(msg, thisModule)            
+                kl.error(msg, thisModule)
         pluginActions = PluginActions(pluginInstances)
 
     def nxor(self, *args):
         """nxor(varargs args)
         N-way function, only one condition may be true otherwise false. """
-        
+
         return len([x for x in args if x]) == 1
-    
+
     def initAction(self):
         """Test DB, lock, then load plugins. Throws KusuError.
         """
@@ -432,7 +440,7 @@ class AddHostApp(KusuApp):
             self.__db.connect(user='apache', dbname='kusudb')
         except Exception,msg:
             raise KusuError, 'Problems establishing database connection. Error: %s' %msg
-        
+
         # Check if nghosts is in use, if so abort running addhost.
         if os.path.isfile("/var/lock/subsys/kusu-nghosts"):
             raise KusuError, kusuApp._("addhost_nghosts_lock")
@@ -455,9 +463,9 @@ class AddHostApp(KusuApp):
             pluginActions.plugins_init()
 
     def getRackNumberFromUser(self):
-                
+
         if myNodeInfo.nodeRackNumber < 0:
-            
+
             while True:
                 try:
                     response = raw_input(kusuApp._("prompt_for_rack"))
@@ -470,52 +478,52 @@ class AddHostApp(KusuApp):
                    if result < 0:
                       self.stdoutMessage(kusuApp._("rack_negative_number") + "\n")
                    else:
-                      myNodeInfo.nodeRackNumber = result 
+                      myNodeInfo.nodeRackNumber = result
                       break
                 except:
                    self.stdoutMessage(kusuApp._("addhost_non_numeric_rack_number_error") + "\n", response)
 
         myNode.setRackNumber(myNodeInfo.nodeRackNumber)
         return True
-    
-    
+
+
     def doListenAction(self):
-        """Action to start the addhost listener. Assumes that lock is acquired. 
+        """Action to start the addhost listener. Assumes that lock is acquired.
         """
-        
+
         # Validate static hostname
         if myNodeInfo.staticHostname:
             if myNode.validateNode(myNodeInfo.staticHostname):
                 msg = kusuApp._("addhost_options_hostname_in_use")
                 return False, msg
-        
+
         # Validate replaced hostname
         if myNodeInfo.replaceNodeName:
             if not myNode.validateNode(myNodeInfo.replaceNodeName):
                 msg = kusuApp._("addhost_replace_node_not_found") % myNodeInfo.replaceNodeName
                 return False, msg
-        
+
         # Validate listening interface
         if myNodeInfo.selectedInterface:
             if not myNode.validateInterface(myNodeInfo.selectedInterface, installer=True):
                 msg = kusuApp._("addhost_options_invalid_interface")
                 return False, msg
-                
+
         dhcp_enabled = int(self.__db.getAppglobals('InstallerServeDHCP'))
 
         if not dhcp_enabled:
-            ## -b not allowed with external dhcp 
+            ## -b not allowed with external dhcp
             if myNodeInfo.batchMode:
                 print "Error: Option '-b/--batch' is not allowed with external DHCP server."
-                self.exitFailedAndUnlock()            
-                    
+                self.exitFailedAndUnlock()
+
             if self.haveNodegroup and myNodeInfo.ngname != 'unmanaged':
                 print "Error: Action not allowed. You can only add nodes to 'unmanaged' nodegroup with external DHCP server."
                 self.exitFailedAndUnlock()
             elif myNodeInfo.staticHostname or myNodeInfo.replaceNodeName:
                 print "Error: This action is not allowed with external DHCP server."
                 self.exitFailedAndUnlock()
- 
+
         # Validate node group name and rack number
         if myNodeInfo.ngname:
 
@@ -526,9 +534,9 @@ class AddHostApp(KusuApp):
             else:
                 msg = kusuApp._("options_invalid_nodegroup")
                 return False, msg
-    
+
             myNode.setNodegroupByID(myNodeInfo.ngid)
-            
+
             if myNodeInfo.staticIPAddrOfManagedNode:
                 # Validate IP address for manually specified IP:
                 if not kusu.ipfun.validIP(myNodeInfo.staticIPAddrOfManagedNode):
@@ -556,50 +564,50 @@ class AddHostApp(KusuApp):
                 if not self.getRackNumberFromUser():
                     # User decided to quit...
                     return True, 'Success'
-            
+
         # Run batch steps or TUI screens
         if (myNodeInfo.batchMode):
-            self.runBatchSteps(self.replaceMode, 
-                               self.haveInterface, 
-                               self.haveNodegroup, 
+            self.runBatchSteps(self.replaceMode,
+                               self.haveInterface,
+                               self.haveNodegroup,
                                self.staticHostMode)
         else:
             self.runTUIScreens(self.replaceMode,
                                self.haveInterface,
                                self.haveNodegroup,
                                self.staticHostMode)
-    
+
         if len(myNodeInfo.nodeList):
             if pluginActions:
                 pluginActions.plugins_finished()
-                
+
         return True, 'Success'
 
 
     def doAddStaticIPAction(self):
-        
+
         if not kusu.ipfun.validIP(myNodeInfo.staticIPAddress):
             msg = kusuApp._("addhost_invalid_ip")
             return False, msg
-    
+
         result, msg = myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname, ip=myNodeInfo.staticIPAddress)
         if not result:
             return False, msg
 
-        self.loadPlugins() 
+        self.loadPlugins()
         if pluginActions:
             pluginActions.plugins_add(myNodeInfo.staticHostname)
             pluginActions.plugins_finished()
-            
+
         return True, 'Success'
 
     def doImportMacs(self):
-        
+
         # Check if the file specified exists.
         if not os.path.isfile(myNodeInfo.macfile):
             msg = kusuApp._("The file '%s' was not found") % myNodeInfo.macfile
             return False, msg
-        
+
         # Validate node group name
         result, ngid = myNode.validateNodegroup(myNodeInfo.ngname)
         if result:
@@ -608,21 +616,21 @@ class AddHostApp(KusuApp):
         else:
             msg = kusuApp._("options_invalid_nodegroup")
             return False, msg
-    
+
         myNode.setNodegroupByID(myNodeInfo.ngid)
-    
+
         # Whether the node IP should be preserved as in Avalon
         preserveNodeIP = self.__db.getAppglobals('PRESERVE_NODE_IP')
 
         need_rack_prompt = myNode.isNodenameHasRack()
 
-        # Check if the node group's interfaces are valid. 
-        if not myNode.validateInterface(myNodeInfo.selectedNodeInterface, 
+        # Check if the node group's interfaces are valid.
+        if not myNode.validateInterface(myNodeInfo.selectedNodeInterface,
                                         installer=False, nodegroup=myNodeInfo.ngid):
             msg = kusuApp._("addhost_options_invalid_interface")
-            return False, msg            
-        
-        # MAC, [Desired IP], [Desired Hostname], [Unique ID]                  
+            return False, msg
+
+        # MAC, [Desired IP], [Desired Hostname], [Unique ID]
         macfileList = [line.split(',') for line in open(myNodeInfo.macfile,'r') if len(line.strip()) > 0]
 
         # Check if the file specified is empty
@@ -635,7 +643,7 @@ class AddHostApp(KusuApp):
              if not re.search("(?<![-0-9a-f:])([\da-fA-F]{2}[:]){5}([\da-fA-F]{2})(?![-0-9a-f:])", macaddr):
                 self.stdoutMessage(kusuApp._("Skipping '%s'. Not a MAC address") + "\n", macaddr.strip())
                 continue
-    
+
              macaddr = macaddr.lower().strip()
              checkMacAddr = myNode.findMACAddress(macaddr)
              if checkMacAddr == False:
@@ -706,7 +714,7 @@ class AddHostApp(KusuApp):
             return False,msg
         if pluginActions:
             pluginActions.plugins_finished(True)
-        
+
         return True, 'Success'
 
     def doImportUnmanagedHostsFile(self):
@@ -770,27 +778,27 @@ class AddHostApp(KusuApp):
 
         delflag = False
         badnodes = []
-        
+
         for delnode in self.removeList:
             delnode = delnode.strip()
-            query=('SELECT ngid FROM nodes WHERE name = \'%s\'' % delnode)                         
+            query=('SELECT ngid FROM nodes WHERE name = \'%s\'' % delnode)
             self.__db.execute(query)
             ngid = self.__db.fetchall()
             myNodeInfo.ngid = ngid[0][0]
             self.loadPlugins()
-            
+
             if not myNode.validateNode(delnode):
                 badnodes.append(delnode)
                 msg = kusuApp._("addhost_delete_unknown_node") %delnode
-                self.logErrorEvent(msg) 
+                self.logErrorEvent(msg)
                 continue
-    
+
             # Ask all plugins to call removed() function
             if pluginActions:
                 pluginActions.plugins_removed(delnode)
-                
+
             self.stdoutMessage(kusuApp._("Removing Node: %s") + "\n", delnode)
-            
+
             # Handle removing node from db.
             if myNode.deleteNode(delnode):
                 self.logEvent(kusuApp._("addhost_event_deleted_node") % delnode,
@@ -798,27 +806,27 @@ class AddHostApp(KusuApp):
                 delflag = True
                 myNodeInfo.nodeList.append(delnode)
             else:
-                self.logErrorEvent(kusuApp._("addhost_delete_node_db_error") % delnode, 
+                self.logErrorEvent(kusuApp._("addhost_delete_node_db_error") % delnode,
                               toStderr=False)
                 badnodes.append(delnode)
                 continue
-                
+
         if pluginActions and delflag:
             pluginActions.plugins_finished()
-            
+
         if badnodes:
             return False, kusuApp._("addhost_delete_bad_nodes_found")
-        
+
         return True, 'Success'
 
-    def doUpdate(self):     
+    def doUpdate(self):
         self.loadPlugins()
         # Ask all plugins to call updated() function
         if pluginActions:
             pluginActions.plugins_updated()
             pluginActions.plugins_finished()
         return True, 'Success'
-    
+
     def runAction(self, action, startMsg, finishMsg):
 
         if startMsg: self.logEvent(startMsg, toStdout=False)
@@ -829,7 +837,7 @@ class AddHostApp(KusuApp):
         except KusuError, e:
             self.logErrorEvent(e)
             sys.exit(-1)
- 
+
         provision = self.__db.getAppglobals('PROVISION')
         if provision and provision != 'KUSU' and self.action == ADDHOST_LISTEN:
             sys.stderr.write('Kusu provisioning has been disabled. addhost will not run.\n')
@@ -849,7 +857,7 @@ class AddHostApp(KusuApp):
         else:
             self.logErrorEvent(errMsg)
             self.exitFailedAndUnlock()
-    
+
     def getActionDesc(self):
         if self.action == ADDHOST_LISTEN:
             return "PXE Listener"
@@ -869,14 +877,14 @@ class AddHostApp(KusuApp):
     def run(self):
         """run()
         Run the application """
-        
+
         screenList = []
 
         global kusuApp
-        
+
         if self.action == ADDHOST_LISTEN:
 
-            self.runAction(self.doListenAction, 
+            self.runAction(self.doListenAction,
                            startMsg = kusuApp._("addhost_event_start_listener"),
                            finishMsg = kusuApp._("addhost_event_stop_listener"))
 
@@ -885,22 +893,22 @@ class AddHostApp(KusuApp):
             host = myNodeInfo.staticHostname
             ip = myNodeInfo.staticIPAddress
 
-            self.runAction(self.doAddStaticIPAction, 
+            self.runAction(self.doAddStaticIPAction,
                            startMsg = kusuApp._("addhost_event_start_add_static_ip") % (host,ip),
                            finishMsg = kusuApp._("addhost_event_finish_add_static_ip") % (host,ip))
-                    
+
         elif self.action == ADDHOST_IMPORT_MACS:
-            
-            self.runAction(self.doImportMacs, 
+
+            self.runAction(self.doImportMacs,
                            startMsg = kusuApp._("addhost_event_start_mac_import"),
-                           finishMsg = kusuApp._("addhost_event_finish_mac_import"))            
-        
+                           finishMsg = kusuApp._("addhost_event_finish_mac_import"))
+
         elif self.action == ADDHOST_DEL:
-            
-            self.runAction(self.doDelNodes, 
+
+            self.runAction(self.doDelNodes,
                            startMsg = kusuApp._("addhost_event_start_delete_nodes"),
-                           finishMsg = kusuApp._("addhost_event_finish_delete_nodes"))            
-            
+                           finishMsg = kusuApp._("addhost_event_finish_delete_nodes"))
+
         elif self.action == ADDHOST_UPDATE:
 
             self.runAction(self.doUpdate, None, None)
@@ -910,13 +918,13 @@ class AddHostApp(KusuApp):
             self.runAction(self.doImportUnmanagedHostsFile,
                            startMsg = kusuApp._("addhost_event_start_unmanagedhosts_import"),
                            finishMsg = kusuApp._("addhost_event_finish_unmanagedhosts_import"))
-        
+
 
     def runBatchSteps(self, replaceMode, haveInterface, haveNodegroup, staticHostMode):
         """Run all of addhost's steps in batch mode"""
-        
+
         db = self.__db
-      
+
         if replaceMode or staticHostMode:
             batchStepList = [BatchNodeStatus(database=db, kusuApp=kusuApp)]
         elif haveInterface and haveNodegroup:
@@ -931,20 +939,20 @@ class AddHostApp(KusuApp):
                              BatchUnmanaged(database=db, kusuApp=kusuApp),
                              BatchSelectNode(database=db, kusuApp=kusuApp),
                              BatchNodeStatus(database=db, kusuApp=kusuApp)]
-        
+
         for step in batchStepList:
             if (myNodeInfo.forceQuitflag):
                 break
             else:
                 step()
-        
+
 
     def runTUIScreens(self, replaceMode, haveInterface, haveNodegroup, staticHostMode):
         """Run all of addhost's steps in TUI mode"""
-       
+
         # Screen ordering
         db = self.__db
-        
+
         if replaceMode or staticHostMode:
             screenList = [ WindowNodeStatus(database=db, kusuApp=self) ]
 
@@ -959,11 +967,11 @@ class AddHostApp(KusuApp):
 
         elif haveNodegroup and not haveInterface:
             screenList = [ WindowSelectNode(database=db, kusuApp=kusuApp),
-                           WindowNodeStatus(database=db, kusuApp=self) 
+                           WindowNodeStatus(database=db, kusuApp=self)
                          ]
 
         else:
-            screenList = [ NodeGroupWindow(database=db, kusuApp=kusuApp), 
+            screenList = [ NodeGroupWindow(database=db, kusuApp=kusuApp),
                           WindowSelectNode(database=db, kusuApp=kusuApp),
                           WindowNodeStatus(database=db, kusuApp=self)
                          ]
@@ -972,7 +980,7 @@ class AddHostApp(KusuApp):
         ks = USXNavigator(screenFactory=screenFactory, screenTitle="Add Hosts - Version ${VERSION_STR}", showTrail=False)
         ks.run()
 
- 
+
 class PluginActions(object, KusuApp):
     def __init__(self, pluginInstances):
         KusuApp.__init__(self)
@@ -1007,12 +1015,12 @@ class PluginActions(object, KusuApp):
                     failureTmp = repr(traceback.format_exception(exceptionType, exceptionValue, exceptionTraceback))
                     kusuApp.kel.error("EXCEPTION from plugin '%s': EXCEPTION ==> %s" % (plugin, failureTmp))
                     if tuiMode == None:
-                        print traceback.print_exception(exceptionType, exceptionValue, exceptionTraceback) 
+                        print traceback.print_exception(exceptionType, exceptionValue, exceptionTraceback)
                         print "************* EXCEPTION OCCURRED PLEASE SEE /var/log/kusu/kusu.log. Program will now exit..."
                         sys.exit(-1)
                     else:
                         tuiMode.finish()
-                        print traceback.print_exception(exceptionType, exceptionValue, exceptionTraceback) 
+                        print traceback.print_exception(exceptionType, exceptionValue, exceptionTraceback)
                         print "************* EXCEPTION OCCURRED PLEASE SEE /var/log/kusu/kusu.log. Program will now exit..."
                         raise UserExitError
 
@@ -1207,20 +1215,20 @@ class NodeGroupBatch:
     def __init__(self, database, kusuApp=None):
         self.database = database;
         self.kusuApp = kusuApp;
-    
+
     def __call__(self):
         if myNodeInfo.forceQuitflag:
             return
-        
+
         self.selectNodeGroup()
         self.validate()
-    
+
     def selectNodeGroup(self):
-        """Asks user to select a node group from a list"""        
+        """Asks user to select a node group from a list"""
 
         global myNodeInfo
         flag = True
-        
+
         while flag:
             try:
                 nodeGroups = self.getNodeGroupList()
@@ -1233,10 +1241,10 @@ class NodeGroupBatch:
                     kusuApp.stdoutMessage("%d) %s\n", count, ng)
                     ngid_list.append(ngid)
                     count = count + 1
-                
+
                 response = raw_input(">> ")
-                
-                try: 
+
+                try:
                     result = int(response) - 1
                     if (result < 0 or result >= len(ngid_list)):
                         kusuApp.stderrMessage("\n%s\n" % self.kusuApp._("addhost_invalid_selection"))
@@ -1245,27 +1253,27 @@ class NodeGroupBatch:
                         flag = False
                 except ValueError:
                     kusuApp.stderrMessage("\n%s\n" % self.kusuApp._("addhost_invalid_selection"))
-                    
+
             except KusuError, e:
-                kusuApp.stderrMessage("\n%s\n" % e.args[0])                
+                kusuApp.stderrMessage("\n%s\n" % e.args[0])
                 myNodeInfo.forceQuitflag = True
                 return
-                
+
             except (KeyboardInterrupt,EOFError), e:
                 kusuApp.stdoutMessage("\n" + kusuApp._("addhost_cmd_abort") + "\n")
                 myNodeInfo.forceQuitflag = True
                 return
-                            
+
 
     def getNodeGroupList(self):
         nodeGroups = ()
         try:
             query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngid"
             self.database.execute(query)
-            nodeGroups = self.database.fetchall()    
-        except:      
+            nodeGroups = self.database.fetchall()
+        except:
             raise KusuError, self.kusuApp._("DB_Query_Error\n")
-       
+
         return nodeGroups
 
     def validate(self):
@@ -1276,14 +1284,14 @@ class NodeGroupBatch:
 
     def exitAction(self):
         pass
-        
+
 
 class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
 
     name = "addhost_window_title_nodegroup"
     msg = "addhost_instruction_nodegroup"
     buttons = ['next_button', 'exit_button']
-    
+
     def __init__(self, database, kusuApp=None, gridWidth=45):
         USXBaseScreen.__init__(self, database, kusuApp, gridWidth)
         NodeGroupBatch.__init__(self, database, kusuApp)
@@ -1291,7 +1299,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
 
     def F12Action(self):
         if myNodeInfo.quitPrompt:
-            result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"), 
+            result = self.selector.popupDialogBox(self.kusuApp._("addhost_window_title_exit"), self.kusuApp._("addhost_instructions_exit"),
                     (self.kusuApp._("no_button"), self.kusuApp._("yes_button")))
             if result == "no":
                 return NAV_NOTHING
@@ -1302,7 +1310,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
             #    if pluginActions:
             #       pluginActions.plugins_finished()
             return NAV_QUIT
- 
+
     def exitAction(self, data=None):
         """ExitAction()
         Function Callback - Will pop up a quit dialog box if new nodes were added, otherwise quits without prompt
@@ -1317,29 +1325,29 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
 
     def nextAction(self):
         return NAV_FORWARD
-        
+
     def setCallbacks(self):
         self.buttonsDict['next_button'].setCallback_(self.nextAction)
         self.buttonsDict['exit_button'].setCallback_(self.exitAction)
 
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.nextAction
-        
+
     def drawImpl(self):
         """ Get list of node groups and allow a user to choose one """
         global tuiMode
         tuiMode = self.screen
         dhcp_enabled = int(self.database.getAppglobals('InstallerServeDHCP'))
-      
+
         try:
             nodeGroups = NodeGroupBatch.getNodeGroupList(self)
         except:
            self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("DB_Query_Error\n"))
            self.screen.finish()
-           raise UserExitError            
-            
+           raise UserExitError
+
         self.screenGrid = snack.Grid(1, 2)
-        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)      
+        instruction = snack.Textbox(40, 2, self.kusuApp._(self.msg), scroll=0, wrap=1)
 
         #value = snack.ListboxChoiceWindow(self.screen, self.kusuApp._(self.name), self.kusuApp._(self.msg), nodeGroups, buttons = ['Next', 'Exit'], width = 40, scroll=1, height=6, default=None, help=None)
         if dhcp_enabled:
@@ -1349,7 +1357,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
         else:
             self.listbox = snack.Listbox(1, scroll=1, returnExit=1)
             for ng,ngid in nodeGroups:
-                if ng == 'unmanaged':                
+                if ng == 'unmanaged':
                     self.listbox.append("%s" % ng, "%s" % ngid)
 
         self.screenGrid.setField(instruction, col=0, row=0, padding=(0, 0, 0, 1), growx=1)
@@ -1359,7 +1367,7 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
 
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
-                
+
         myNodeInfo.ngid = self.listbox.current()
         NodeGroupBatch.validate(self)
 
@@ -1380,41 +1388,41 @@ class NodeGroupWindow(USXBaseScreen,NodeGroupBatch):
         """Any other action other than validation that takes place after the
            'Next button is pressed.
         """
-        pass 
+        pass
 
 
 class BatchSelectNode:
     def __init__(self, database, kusuApp=None):
         self.database = database;
         self.kusuApp = kusuApp;
-    
+
     def __call__(self):
-        
+
         if myNodeInfo.forceQuitflag:
             return
-        
+
         self.selectNetwork()
         self.setSyslogFilePosition()
         self.setRackNumber()
 
     def selectNetwork(self):
-        
+
         flag = True
 
         if myNodeInfo.forceQuitflag:
             return
-        
+
         while flag:
             try:
                 networkList = self.getAvailableNetworks()
 
                 if myNodeInfo.optionStaticHostMode:
                     pass
-                else:         
+                else:
                     if not networkList:
                         kusuApp.stderrMessage(self.kusuApp._("addhost_nodegroup_has_no_network_error") + "\n")
-                        kusuApp.exitFailedAndUnlock()      
-                
+                        kusuApp.exitFailedAndUnlock()
+
                 kusuApp.stdoutMessage("\n" + self.kusuApp._("addhost_instruction_interface") + "\n")
 
                 count = 1
@@ -1423,10 +1431,10 @@ class BatchSelectNode:
                     kusuApp.stdoutMessage("%d) %s\n", count, name)
                     device_list.append(device)
                     count = count + 1
-                
+
                 response = raw_input(">> ")
-                
-                try: 
+
+                try:
                     result = int(response) - 1
                     if (result < 0 or result >= len(device_list)):
                         kusuApp.stderrMessage("\n%s\n" % self.kusuApp._("addhost_invalid_selection"))
@@ -1435,12 +1443,12 @@ class BatchSelectNode:
                         flag = False
                 except ValueError:
                     kusuApp.stderrMessage("\n%s\n" % self.kusuApp._("addhost_invalid_selection"))
-                    
+
             except (KeyboardInterrupt,EOFError), e:
                 kusuApp.stdoutMessage("\n" + kusuApp._("addhost_cmd_abort") + "\n")
                 myNodeInfo.forceQuitflag = True
                 return
-                
+
 
     def getAvailableNetworks(self):
         networkList = []
@@ -1461,7 +1469,7 @@ class BatchSelectNode:
             query = "SELECT DISTINCT networks.gateway, networks.startip FROM networks, ng_has_net \
                      WHERE ng_has_net.netid=networks.netid AND ng_has_net.ngid=%s AND networks.usingdhcp=False \
                      AND lower(networks.device) like 'eth%%'" % myNodeInfo.ngid
-            self.database.execute(query) 
+            self.database.execute(query)
             ngInfo = self.database.fetchall()
         except:
             raise KusuError, self.kusuApp._("DB_Query_Error\n")
@@ -1493,23 +1501,23 @@ class BatchSelectNode:
                          else:
                             networkList.append([itemName, installer_device, 0 ])
                          defaultFlag = 0
-         
+
         return networkList
 
     def setSyslogFilePosition(self):
         if myNodeInfo.forceQuitflag:
             return
-        
+
         filep = open("/var/log/messages", 'r')
         filep.seek(0, 2)
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
-    
+
     def setRackNumber(self):
-        
+
         if myNodeInfo.forceQuitflag:
-            return        
-        
+            return
+
         # Prompt for Rack Number if node format requires a rack number specified.
         flag = 1
         if myNodeInfo.nodeRackNumber < 0:
@@ -1518,7 +1526,7 @@ class BatchSelectNode:
                while flag:
                     kusuApp.stdoutMessage("\n" + self.kusuApp._("addhost_instructions_rack") + "\n")
                     try:
-                                       
+
                         response = raw_input(">> ")
                         try:
                             result = int(response)
@@ -1528,15 +1536,15 @@ class BatchSelectNode:
                             myNodeInfo.nodeRackNumber = result
                             flag = 0
                         except ValueError:
-                            kusuApp.stderrMessage(self.kusuApp._("addhost_non_numeric_rack_number_error") + "\n", response)        
-                            
+                            kusuApp.stderrMessage(self.kusuApp._("addhost_non_numeric_rack_number_error") + "\n", response)
+
                     except (KeyboardInterrupt,EOFError), e:
                         kusuApp.stdoutMessage("\n" + kusuApp._("addhost_cmd_abort") + "\n")
                         myNodeInfo.forceQuitflag = True
                         return
-        
+
         myNode.setRackNumber(myNodeInfo.nodeRackNumber)
-    
+
 
 class WindowSelectNode(NodeGroupWindow,BatchSelectNode):
 
@@ -1557,24 +1565,24 @@ class WindowSelectNode(NodeGroupWindow,BatchSelectNode):
         self.hotkeysDict['F12'] = self.F12Action
         self.hotkeysDict['F8'] = self.nextAction
         self.hotkeysDict['F5'] = self.backAction
-        
+
     def drawImpl(self):
         """" Get list of network interfaces and allow user to choose one"""
-      
+
         global tuiMode
         tuiMode = self.screen
- 
+
         try:
             networkList = BatchSelectNode.getAvailableNetworks(self)
         except:
             self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("DB_Query_Error\n"))
             self.screen.finish()
             raise UserExitError
-       
+
         # Static mode needs to see all the interfaces from the installer we don't care about if a network fits on any interface
         if myNodeInfo.optionStaticHostMode:
             pass
-        else:         
+        else:
            if not networkList:
               self.selector.popupMsg (self.kusuApp._("Error"), self.kusuApp._("addhost_nodegroup_has_no_network_error"))
               self.kusuApp.unlock()
@@ -1597,7 +1605,7 @@ class WindowSelectNode(NodeGroupWindow,BatchSelectNode):
         myNodeInfo.selectedInterface = self.radioButtonList.getSelection()
         #result = self.selector.popupStatus(self.kusuApp._("Debug Window"), myNodeInfo.selectedInterface, 1)
         return True, 'Success'
-    
+
     def formAction(self):
         """Any other action other than validation that takes place after the
            'Next button is pressed.
@@ -1613,19 +1621,19 @@ class WindowSelectNode(NodeGroupWindow,BatchSelectNode):
            if myNode.isNodenameHasRack():
                while flag:
                     buttonPressed, result = snack.EntryWindow(self.screen, self.kusuApp._("addhost_window_title_rack"),
-                    self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")], 
+                    self.kusuApp._("addhost_instructions_rack"), [self.kusuApp._("addhost_gui_text_rack")],
                     NOCANCEL, 40, 20, [self.kusuApp._("ok_button")])
                     try:
                         result = int(result[0])
                         if result < 0:
-                            self.selector.popupStatus(self.kusuApp._("Error"), 
+                            self.selector.popupStatus(self.kusuApp._("Error"),
                             "%s\n" % self.kusuApp._("rack_negative_number"), 2)
                             flag = 1
                         else:
                             myNodeInfo.nodeRackNumber = result
                             flag = 0
                     except:
-                        self.selector.popupStatus(self.kusuApp._("Error"), 
+                        self.selector.popupStatus(self.kusuApp._("Error"),
                             self.kusuApp._("addhost_non_numeric_rack_number_error") % result[0], 2)
                         flag = 1
 
@@ -1636,16 +1644,16 @@ class BatchUnmanaged:
     def __init__(self, database, kusuApp=None):
         self.database = database;
         self.kusuApp = kusuApp;
-    
+
     def __call__(self):
-        
+
         if myNodeInfo.forceQuitflag:
             return
-        
+
         # Run this step only if the user selected the "unmanaged" node group
         if myNodeInfo.ngid != self.database.getNgidOf('unmanaged'):
             return
-        
+
         flag=True
         while flag:
             self.getUserInput()
@@ -1660,19 +1668,19 @@ class BatchUnmanaged:
 
         if myNodeInfo.forceQuitflag:
            return
-                
+
         if myNodeInfo.optionDHCPMode == False:
-           kusuApp.stdoutMessage(kusuApp._("addhost_add_static_device_with_ip") + "\n", 
+           kusuApp.stdoutMessage(kusuApp._("addhost_add_static_device_with_ip") + "\n",
                                  myNodeInfo.staticHostname, myNodeInfo.staticIPAddress)
            self.addStaticDevice()
-           
-    
+
+
     def getUserInput(self):
         kusuApp.stdoutMessage("\n" + self.kusuApp._("addhost_batch_unmanaged_device_instruction") + "\n")
-        
+
         try:
             staticHostname = raw_input(self.kusuApp._("addhost_batch_unmanaged_device_hostname_prompt"))
-        
+
             flag=True
             while flag:
                 useDHCP = raw_input(self.kusuApp._("addhost_batch_unmanaged_device_use_dhcp_prompt"))
@@ -1684,12 +1692,12 @@ class BatchUnmanaged:
                     flag=False
                 else:
                     kusuApp.stderrMessage(self.kusuApp._("addhost_batch_unmanaged_device_use_dhcp_error") + "\n")
-                    
+
             if not myNodeInfo.optionDHCPMode:
                 staticIPAddress = raw_input(self.kusuApp._("addhost_batch_unmanaged_device_ip_prompt"))
             else:
                 staticIPAddress = ""
-                                    
+
         except (KeyboardInterrupt,EOFError), e:
             kusuApp.stdoutMessage("\n" + kusuApp._("addhost_cmd_abort") + "\n")
             myNodeInfo.forceQuitflag = True
@@ -1698,9 +1706,9 @@ class BatchUnmanaged:
         myNodeInfo.staticHostname = staticHostname.strip().lower()
         myNodeInfo.staticIPAddress = staticIPAddress.strip()
 
-    
+
     def validate(self):
-        """Check static host information. Return a tuple of two items indicating 
+        """Check static host information. Return a tuple of two items indicating
         whether the validated succeeded and the corresponding error message."""
 
         if len(myNodeInfo.staticHostname) == 0:
@@ -1711,11 +1719,11 @@ class BatchUnmanaged:
 
         if myNode.validateNode(myNodeInfo.staticHostname):
             return (False, self.kusuApp._("addhost_static_device_hostname_used_error") % myNodeInfo.staticHostname)
-       
-        # Is what the user typed a valid IP address? 
+
+        # Is what the user typed a valid IP address?
         if not kusu.ipfun.validIP(myNodeInfo.staticIPAddress) and myNodeInfo.optionDHCPMode == False:
             return (False, self.kusuApp._("addhost_static_device_invalid_ip_error") % myNodeInfo.staticIPAddress)
-        
+
         if myNode.isIPUsed(myNodeInfo.staticIPAddress):
             return (False, self.kusuApp._("addhost_static_device_ip_used_error") % myNodeInfo.staticIPAddress)
 
@@ -1723,14 +1731,14 @@ class BatchUnmanaged:
             return (False, self.kusuApp._("addhost_static_device_no_net_error") % myNodeInfo.staticIPAddress)
 
         return (True, "")
-    
+
     def addStaticDevice(self):
         myNode.addUnmanagedStaticDevice(myNodeInfo.staticHostname.strip(), myNodeInfo.staticIPAddress.strip())
         myNodeInfo.forceQuitflag = True
         if pluginActions:
             pluginActions.plugins_add(myNodeInfo.staticHostname.strip())
             pluginActions.plugins_finished()
-    
+
 
 class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
     name = "addhost_window_title_unmanaged"
@@ -1759,7 +1767,7 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
            self.kusuApp.unlock()
            self.screen.finish()
            os._exit(0)
-   
+
     def setCallbacks(self):
         self.buttonsDict['ok_button'].setCallback_(self.validateInfo)
         self.buttonsDict['exit_button'].setCallback_(self.exitAction)
@@ -1772,7 +1780,7 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
         else:
            self.IPEntry.setEnabled(True) # DHCP not set
            myNodeInfo.optionDHCPMode = False
-        
+
     def drawImpl(self):
         global tuiMode
         tuiMode = self.screen
@@ -1820,7 +1828,7 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
             return NAV_QUIT
         else:
             return NAV_FORWARD
-           
+
     def validate(self):
         # Adding a Static hostname via DHCP
         myNodeInfo.optionStaticHostMode = True
@@ -1831,29 +1839,29 @@ class WindowUnmanaged(NodeGroupWindow,BatchUnmanaged):
            'Next button is pressed.
         """
         pass
- 
-class BatchNodeStatus: 
+
+class BatchNodeStatus:
     def __init__(self, database, kusuApp=None):
         self.database = database
         self.kusuApp = kusuApp
         # this flag used for manually specifying IP address scenario only
         # in this scenario, only lease DHCP IP once.
         self.specifyIPHostFound = False
-    
+
     def __call__(self):
-        
+
         kusuApp.stdoutMessage("\n" + kusuApp._("addhost_scanning_syslog") + "\n")
         while True:
             if (myNodeInfo.forceQuitflag):
                 if (myNodeInfo.signal):
                     kusuApp.stdoutMessage("\n" + kusuApp._("addhost_cmd_abort") + "\n")
                 return
-            
+
             self.scanSyslogForPXEReqs()
-            
+
             # Sleep for 500 msec
             time.sleep(0.5)
-    
+
     def scanSyslogForPXEReqs(self):
         nodeName = None
         macAddress = None
@@ -1894,22 +1902,22 @@ class BatchNodeStatus:
                             # Set the flag so that addhost will ignore any other DHCP requests.
                             self.specifyIPHostFound = True
                             self.aNode.setSpecifiedIPAddr(myNodeInfo.staticIPAddrOfManagedNode)
-                        try: 
+                        try:
                             nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=self.screen)
                         except:
                             nodeName = self.aNode.addNode(macAddress, myNodeInfo.selectedInterface, installer=True, snackInstance=False)
 
                         self.myNode.setRankNumber(myNodeInfo.nodeRankNumber)
                         self.displayAddedNode(nodeName,macAddress, self.aNode.getRankNumber())
-                        kusuApp.logEvent(kusuApp._("addhost_event_discovered_node") % (nodeName,macAddress), 
+                        kusuApp.logEvent(kusuApp._("addhost_event_discovered_node") % (nodeName,macAddress),
                                          toStdout=False)
 
                         if pluginActions:
                            pluginActions.plugins_add(nodeName)
                         myNodeInfo.nodeList.append(nodeName)
                         del self.aNode
-                   
-                    # Replace node  
+
+                    # Replace node
                     if myNodeInfo.optionReplaceMode and discoveryCheck == False:
                        myNodeInfo.selectedInterface = self.myNode.findBootDevice(myNodeInfo.replaceNodeName)
                        # Check if the interface dhcp is PXEing from matches whats in the DB, if not don't bother trying to go further.
@@ -1926,13 +1934,13 @@ class BatchNodeStatus:
                            myNodeInfo.forceQuitflag = True
                            kusuApp.logEvent(kusuApp._("addhost_event_replace_node") % myNodeInfo.replaceNodeName,
                                          toStdout=False)
- 
-                    # Adding a Static hostname w/ DHCP 
+
+                    # Adding a Static hostname w/ DHCP
                     if myNodeInfo.optionStaticHostMode and myNodeInfo.optionDHCPMode and discoveryCheck == False:
                        if (tokens[9][:-1] == myNodeInfo.selectedInterface or tokens[9] == myNodeInfo.selectedInterface):
                           self.displayUnmanagedNode(macAddress)
                           self.myNode.addUnmanagedDHCPDevice(myNodeInfo.selectedInterface, myNodeInfo.staticHostname, macAddress)
-                          
+
                           if pluginActions:
                              myNodeInfo.nodeList.append(myNodeInfo.staticHostname)
                              pluginActions.plugins_add(myNodeInfo.staticHostname)
@@ -1942,19 +1950,19 @@ class BatchNodeStatus:
                                 toStdout=False)
 
                     del self.myNode
-        
+
         # Store current position of /var/log/messages
         myNodeInfo.syslogFilePosition = filep.tell()
         filep.close()
         return NAV_IGNORE
 
-    
+
     def displayAddedNode(self, nodeName, macAddress, rank):
         kusuApp.stdoutMessage(kusuApp._("addhost_discovered_node") + "\n", nodeName, macAddress)
-            
+
     def displayReplacedNode(self, macAddress):
         kusuApp.stdoutMessage(kusuApp._("addhost_discovered_node") + "\n", myNodeInfo.replaceNodeName, macAddress)
-    
+
     def displayUnmanagedNode(self, macAddress):
         kusuApp.stdoutMessage(kusuApp._("addhost_add_static_device") + "\n", myNodeInfo.staticHostname)
 
@@ -1974,14 +1982,14 @@ class WindowNodeStatus(NodeGroupWindow,BatchNodeStatus):
     def setCallbacks(self):
         self.buttonsDict['quit_button'].setCallback_(self.exitAction)
         self.hotkeysDict['F12'] = self.F12Action
-    
+
     def drawImpl(self):
         global tuiMode
         tuiMode = self.screen
 
         self.kusuApp.loadPlugins()
         self.listbox = snack.Listbox(10, scroll =1, returnExit = 0, width = 60, showCursor = 0)
-        
+
         # We can't go back after we get here
         myNodeInfo.quitPrompt = False
         self.screenGrid = snack.Grid(1, 2)
@@ -1994,16 +2002,16 @@ class WindowNodeStatus(NodeGroupWindow,BatchNodeStatus):
         """
 
         BatchNodeStatus.scanSyslogForPXEReqs(self)
-        
+
         # We must refresh or things will draw weird.
         #self.selector.refresh()
-        
+
         if (myNodeInfo.forceQuitflag):
             # Someone sent a signal
             return NAV_QUIT
         else:
             return NAV_IGNORE
-        
+
     def displayAddedNode(self, nodeName, macAddress, rank):
         # newly added
         # If the rank is not zero and the requested rank is in use then let user know that it will use the next available one.
@@ -2020,15 +2028,15 @@ class WindowNodeStatus(NodeGroupWindow,BatchNodeStatus):
 
         self.listbox.append("%s\t%s\t(%s)" % (nodeName, macAddress, self.kusuApp._("addhost_installing_string")), nodeName)
         self.listbox.setCurrent(nodeName)
-    
+
     def displayReplacedNode(self, macAddress):
         self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("addhost_discovered_node") % (myNodeInfo.replaceNodeName, macAddress), 3)
         self.screen.finish()
-    
+
     def displayUnmanagedNode(self, macAddress):
         self.selector.popupStatus(self.kusuApp._("addhost_node_discovery"), self.kusuApp._("addhost_add_static_device") % myNodeInfo.staticHostname, 3)
         self.screen.finish()
-                                
+
     def validate(self):
         """Validation code goes here. Activated when 'Next' button is pressed."""
         return True, 'Success'

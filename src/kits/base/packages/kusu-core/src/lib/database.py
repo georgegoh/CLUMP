@@ -22,7 +22,7 @@ from sets import Set
 
 logging.getLogger('sqlalchemy').parent = kusulog.getKusuLog()
 
-SUPPORTED_KIT_APIS = ['0.2', '0.3']
+SUPPORTED_KIT_APIS = ['0.2', '0.3', '0.4']
 
 # it seems these must be told to be quiet individually...
 logging.getLogger('sqlalchemy').setLevel(logging.WARNING)

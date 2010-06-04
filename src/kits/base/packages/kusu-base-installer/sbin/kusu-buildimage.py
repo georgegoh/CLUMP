@@ -7,7 +7,7 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
 # published by the Free Software Foundation.
-# 	
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -63,9 +63,9 @@ class BuildImage:
         self.db.connect(self.database, self.user)
         self.stderrout   = 0      # Method for outputting to STDERR with internationalization
         self.stdoutout   = 0      # Method for outputting to STDOUT with internationalization
- 
+
         self.apacheuser, self.apachegrp = Dispatcher.get('webserver_usergroup')
-       
+
         engine = os.getenv('KUSU_DB_ENGINE', 'postgres')
         self.dbs = database.DB(engine, db='kusudb',username='apache')
 
@@ -77,14 +77,14 @@ class BuildImage:
         self.db.disconnect()
         self.db.connect(self.database, self.user, self.password)
 
-        
+
     def setTextMeths(self, stderrmeth, stdoutmeth):
         """setTextMeths - Initialize the function pointers to allow output to STDERR
         and STDOUT with internationalization."""
         self.stderrout = stderrmeth
         self.stdoutout = stdoutmeth
 
-        
+
     def makeImage(self, nodegroup, image):
         """makeImage - This method will create a image for a given node group.
         It will optionally name the image."""
@@ -114,7 +114,7 @@ class BuildImage:
 
         system_arch = OS()[2].lower()
         if system_arch == 'i386' and _os.arch == 'x86_64':
-            self.stdoutout('Skipping kusu-buildimage for %s. Unable to build on %s platform.\n' % (_os.arch, system_arch))       
+            self.stdoutout('Skipping kusu-buildimage for %s. Unable to build on %s platform.\n' % (_os.arch, system_arch))
             sys.exit(0)
 
         self.__getPackages()
@@ -122,7 +122,7 @@ class BuildImage:
             if self.stderrout:
                 self.stderrout("ERROR: No packages selected for the image!\n")
             sys.exit(-1)
-        
+
         self.__mkImageDir()
         self.__getRepoInfo()
 
@@ -164,14 +164,13 @@ class BuildImage:
                         # Call yum to install the packages
                         yt = os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
                         arg = ''
-                    if yt:
-                        raise YumFailedToRunError
+                        if yt:
+                            raise YumFailedToRunError
                 if len(arg):
                     yt = os.system('yum -y -t -d 2 -c \"%s\" --installroot \"%s\" install %s' % (yumconf, self.imagedir, arg))
                     print ""
-
-                if yt:
-                    raise YumFailedToRunError
+                    if yt:
+                        raise YumFailedToRunError
             except:
                 if self.stderrout:
                     self.stderrout("ERROR: Yum Failed!\n")
@@ -187,7 +186,7 @@ class BuildImage:
 
         # Set Selinux policy
         self.__setPolicy(ng)
-                
+
         # Cleanup the installation fragments
         self.__cleanImage()
 
@@ -196,7 +195,7 @@ class BuildImage:
 
         # Package the image for use
         self.__packageImage()
-       
+
     def __validateNG(self, nodegroup):
         """__validateNG - Test the node group name to make sure it is valid.
         Returns:  True - when the node group exists, otherwise False.
@@ -225,10 +224,10 @@ class BuildImage:
             if not path(selinux_file).exists():
                 if self.stderrout:
                     self.stderrout("WARNING: Selinux config file not found.. Continue with buildimage...")
-                return     
-            
+                return
+
             cmd = "sed --in-place -e 's/^SELINUX=enforcing$/SELINUX=DISABLED/' %s" %(selinux_file)
-            run_cmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+            run_cmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = run_cmd.communicate()
 
             if run_cmd.returncode != 0:
@@ -236,7 +235,7 @@ class BuildImage:
                     self.stderrout("ERROR: Cannot set SE Linux policy.. Fatal Error... ")
                 sys.exit(-1)
 
-        return    
+        return
 
     def __mkImageDir(self):
         """__mkImageDir - get the name of the directory to store the image in
@@ -248,14 +247,14 @@ class BuildImage:
         self.imagedir = os.path.join(idir, self.nodegroup)
         if not os.path.exists(idir):
             os.system('mkdir -p \"%s\"' % idir)
-            
+
         if os.path.exists(self.imagedir):
             if self.stdoutout:
                 self.stdoutout("Removing: %s\n", self.imagedir)
             os.system('rm -rf \"%s\"' % self.imagedir)
-            
+
         os.mkdir(self.imagedir, 0700)
-        
+
 
 
     def __getPackages(self):
@@ -271,7 +270,7 @@ class BuildImage:
         except:
             if self.stderrout:
                 self.stderrout("DB_Query_Error: %s\n", query)
-                
+
             sys.exit(-1)
 
         if data:
@@ -289,7 +288,7 @@ class BuildImage:
         except:
             if self.stderrout:
                 self.stderrout("DB_Query_Error: %s\n", query)
-                
+
             sys.exit(-1)
 
         if data:
@@ -323,7 +322,7 @@ class BuildImage:
                        }
 
         yumhost = self.db.getAppglobals('PrimaryInstaller')
-        
+
         for dir,perms in neededdirs.items():
             os.mkdir(os.path.join(self.imagedir, dir), perms)
 
@@ -338,13 +337,13 @@ class BuildImage:
                        }
         for dir,perms in neededdirs.items():
             os.mkdir(os.path.join(self.imagedir, dir), perms)
-            
+
         os.system('rpm --initdb --dbpath \"%s/var/lib/rpm\"' % self.imagedir)
         os.system('touch \"%s/etc/fstab\"' % self.imagedir)
         os.system('mknod \"%s/dev/null\" c 1 3 >/dev/null 2>&1' % self.imagedir)
 
         dirname = Dispatcher.get('yum_repo_subdir', 'Server', os_tuple=self.os_tup)
-        
+
         # Create the yum config file
         #yumconf = os.path.join(self.imagedir, 'etc/yum.conf')
         yumconf = os.path.join(self.imagedir, 'tmp/yum.conf')
@@ -386,7 +385,7 @@ class BuildImage:
         fp = open('%s/etc/fstab' % self.imagedir, 'w')
         fp.writelines(fstabent)
         fp.close()
-        
+
         query = ('select script from scripts where ngid=%s' % self.ngid)
         try:
             self.db.execute(query)
@@ -411,7 +410,7 @@ class BuildImage:
                 os.chmod(newname, 0755)
                 if self.stdoutout:
                     self.stdoutout("Adding script: %s\n", sfile)
-                
+
         global KUSUBASEFILE
         if not os.path.exists(KUSUBASEFILE):
             if self.stderrout:
@@ -428,7 +427,7 @@ class BuildImage:
             os.system('rm -f tmp/yum.conf')
             print 'Removing:  \"%s/tmp/yum.conf\"' %  self.imagedir
 
-            
+
     def __packageImage(self):
         """__packageImage  - Package the image into a tar.bz2 file for use
         by the installing nodes."""
@@ -444,7 +443,7 @@ class BuildImage:
         os.system('rm -rf \"%s\"' %  self.imagedir)
 
     def __setupImage(self):
-        
+
         # setup root ssh keys
         sshdir = os.path.join(self.imagedir, 'root/.ssh')
         if not os.path.exists(sshdir):
@@ -465,7 +464,7 @@ class BuildImage:
             self.__createRHKconfig()
 
     def __createRHKconfig(self):
-        
+
         # set up /etc/sysconfig/kernel for RHEL image file.
         kconfigdir = os.path.join(self.imagedir, 'etc/sysconfig')
         kconfigfile = os.path.join(kconfigdir, 'kernel')
@@ -473,7 +472,7 @@ class BuildImage:
             os.makedirs(kconfigdir)
             os.chown(kconfigdir, 0, 0)
             os.chmod(kconfigdir, 0755)
- 
+
         f = open(kconfigfile, 'w+')
         f.write("# UPDATEDEFAULT specifies if new-kernel-pkg should make\n"
                 "# new kernels the default\n")
@@ -488,7 +487,7 @@ class BuildImageApp(KusuApp):
 
     def __init__(self):
         KusuApp.__init__(self)
-            
+
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
         global version
@@ -506,7 +505,7 @@ class BuildImageApp(KusuApp):
     def parseargs(self):
         """parseargs - Parse the command line arguments and populate the
         class variables"""
-        
+
         self.parser.add_option("-n", "--nodegroup", action="store",
                                type="string", dest="nodegrp")
         self.parser.add_option("-i", "--image", action="store",
@@ -522,11 +521,11 @@ class BuildImageApp(KusuApp):
 
         (self.options, self.args) = self.parser.parse_args(sys.argv)
 
-            
+
 
     def run(self):
         """run - Run the application"""
-        
+
         self.parseargs()
         image = ''
 
@@ -538,7 +537,7 @@ class BuildImageApp(KusuApp):
 
         imgfun = BuildImage()
         imgfun.setTextMeths(self.errorMessage, self.stdoutMessage)
-        
+
         if self.options.wantver:
             # Print version
             self.toolVersion()
@@ -549,25 +548,25 @@ class BuildImageApp(KusuApp):
             if self.options.database == '' or self.options.user == '' or self.options.password == '':
                 self.errorMessage("genconfig_provide_database_user_password\n")
                 sys.exit(-1)
-                
+
             imgfun.altDb(self.options.database, self.options.user, self.options.password)
-            
+
         if self.options.image:
             image = self.options.image
 
         if self.options.nodegrp:
             # Generate the node group
             imgfun.makeImage(self.options.nodegrp, image)
-            
+
         else:
             # Missing node group name
             self.stdoutMessage('buildimage_need_a_node_group\n')
             sys.exit(-1)
 
-            
 
 
-        
+
+
 if __name__ == '__main__':
     app = BuildImageApp()
     app.run()
