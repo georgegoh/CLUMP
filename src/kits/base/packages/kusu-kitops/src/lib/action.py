@@ -187,7 +187,9 @@ def validate_new_kit_for_upgrade(kit_tuple):
 
     # Upgrading kits is supported from kit API 0.4 on.
     if kit_api not in SUPPORTED_KIT_APIS:
-        msg = "New kit API version is not supported."
+        msg = ("New kit API version '%s' is not supported. "
+               "Current version of kusu-kitops supports kit API versions up to '%s'.") \
+                       % (kit_api, SUPPORTED_KIT_APIS[-1])
         kl.error(msg)
         raise UpdateKitError, msg
 
