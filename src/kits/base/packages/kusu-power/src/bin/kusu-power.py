@@ -38,6 +38,7 @@ import string
 
 # Platform imports
 import kusu.power
+from kusu.util.lock import check_for_global_lock
 
 DEFAULT_PLUGIN_PATH = None
 DEFAULT_CONFIG_FILE = None
@@ -48,11 +49,11 @@ def buildPaths():
     """
     global DEFAULT_PLUGIN_PATH
     global DEFAULT_CONFIG_FILE
-    
+
     powerModuleFile = os.path.abspath(kusu.power.__file__)
     powerModuleDirectory = os.path.dirname(powerModuleFile)
     DEFAULT_PLUGIN_PATH = (os.path.join(powerModuleDirectory, "powerplugins") + os.sep)
-    
+
     confdir = os.path.join(powerModuleDirectory, "..")
     confdir = os.path.join(confdir, "..")
     confdir = os.path.join(confdir, "..")
@@ -91,7 +92,7 @@ def doAction(nodename, action):
         result = kusu.power.FAILED
 
     return result
-    
+
 class Parameters:
     """ Cmdline parameter parsing """
     def __init__(self):
@@ -152,14 +153,14 @@ def bracketExpand(arg):
 def main(params):
     """ Main cmdline function """
     failed = False
-    
+
     if len(params.args) != 2:
         print params.usage
         sys.exit(1)
 
     nodelist = params.args[0]
     action = params.args[1]
-    
+
     if params.opts.verbose:
         log.setLevel(logging.ERROR)
     if params.opts.debug:
@@ -182,11 +183,12 @@ def main(params):
 
     if failed:
         sys.exit(-1)
-    
+
 if __name__ == '__main__':
+    check_for_global_lock()
     log = defaultLogging()
     log.setLevel(logging.FATAL)
-    
+
     buildPaths()
     main(Parameters())
 

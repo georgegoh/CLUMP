@@ -20,6 +20,7 @@ import os
 import sys
 
 from path import path
+from kusu.util.lock import check_for_global_lock
 
 KUSU_SHELL_PLUGIN_DIR = path(os.getenv("KUSU_ROOT", "/opt/kusu")) / 'lib' / 'plugins' / 'shell'
 
@@ -95,4 +96,5 @@ def _build_command_class_map():
     return command_class_map
 
 if __name__ == "__main__":
+    check_for_global_lock()
     sys.exit(main(sys.argv))
