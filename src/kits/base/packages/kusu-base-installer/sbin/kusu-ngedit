@@ -409,6 +409,13 @@ class scrNGEMain(NGEBaseScreen):
                                      scrNGEEdit_Finalize(database=self.database, kusuApp=self.kusuApp),
                                      scrNGEEdit_End(database=self.database, kusuApp=self.kusuApp)
                                      ])
+
+            # For installer nodegroup, do not show the repo screen because
+            # it does not make sense to switch the repository of the primary
+            # installer which in turn requires a reinstall of the installer.
+            if curNG['ngid'] == 1:
+                screenFactory.screens.pop(1)
+
             provision = self.database.getAppglobals('PROVISION')
             if provision == 'KUSU':
                 screenFactory.screens.insert(2, scrNGEEdit_Boot(database=self.database, kusuApp=self.kusuApp))
@@ -620,8 +627,7 @@ class scrNGEEdit_Repo(NGEBaseScreen):
         if rtool.isRepoStale(self.dbs, repoid):
             name = self.dbs.Repos.selectone_by(repoid=repoid).reponame
             return False, 'Repository is stale, please refresh using repoman -u -r %s' % name
-        else:
-            return True, 'Success'
+        return True, 'Success'
 
     def formAction(self):
         ''' Actions taken once the form data was successfully validated.
@@ -870,6 +876,8 @@ class scrNGEEdit_Components(NGEBaseScreen):
         for comp in comps:
             if comp.cname == "component-base-node":
                 self.baseCompId = comp.cid
+            if comp.cname == "component-base-installer":
+                self.baseInstallerCompId = comp.cid
 
         rv = [(c.kid, c.kit.rname, c.cid, c.cname) for c in comps]
         rv.sort()
@@ -940,7 +948,9 @@ class scrNGEEdit_Components(NGEBaseScreen):
         if self.osCid not in cids:
             return False, "OS component %s is not selected. Please select it to proceed." % self.osCname
         if self.baseCompId not in cids:
-            return False, "component-base-node is not selected. Please select it to proceed."           
+            return False, "component-base-node is not selected. Please select it to proceed."
+        if curNG['ngid'] == 1 and self.baseInstallerCompId not in cids:
+            return False, "component-base-installer is not selected. Please select it to proceed."
         return True, 'Success'
 
     def formAction(self):
