@@ -117,12 +117,12 @@ def rcCompare(scriptName, comparedName):
 
 
 class PluginRunner:
-    def __init__(self, classname, p, dbs, is_update=False, debug=False):
+    def __init__(self, classname, p, dbs, is_upgrade=False, debug=False):
         self.classname = classname
         self.plugins = {}
         self.dbs = dbs
         self.ngtype, self.ngid = self.getNodeGroupInfo()
-        self.is_update = is_update
+        self.is_upgrade = is_upgrade
 
         self.initPlugin()
         self.pluginPath = p
@@ -156,7 +156,7 @@ class PluginRunner:
         kusuenv['KUSU_OS_ARCH'] = Plugin.os_arch
         kusuenv['KUSU_REPOID'] = str(Plugin.repoid)
         kusuenv['KUSU_NGTYPE'] = self.ngtype
-        kusuenv['KUSU_IS_UPDATE'] = str(self.is_update)
+        kusuenv['KUSU_IS_UPGRADE'] = str(self.is_upgrade)
 
         plugins = self.loadPlugins(self.pluginPath)
 
@@ -208,8 +208,8 @@ class PluginRunner:
                         self.display(plugin.desc)
 
                         retval = False
-                        if self.is_update:
-                            retval = plugin.update()
+                        if self.is_upgrade:
+                            retval = plugin.upgrade()
                         else:
                             retval = plugin.run()
 
@@ -437,7 +437,7 @@ class PluginRunner:
         confp = open(nii, 'r')
         lines = confp.readlines()
         confp.close()
-        
+
         for line in lines:
             # ignore empty line and comment line
             if line.isspace():
@@ -464,14 +464,14 @@ class PluginRunner:
         rows = self.dbs.AppGlobals.select_by('ngid is NULL or ngid = %s' % self.ngid)
         for row in rows:
             kname = (row.kname or '').strip()
-            if kname: 
+            if kname:
                  appglobal_map[kname] = (row.kvalue or '').strip()
         return appglobal_map
 
     def getAppGlobals(self):
         """
         Get all appglobal variables and return as a dictionary.
-        If ngid is specified for an appglobals variable, won't include it in the 
+        If ngid is specified for an appglobals variable, won't include it in the
             dictionary if the ngid not same with node's ngid.
         Include all appglobals with NULL ngid column.
         """

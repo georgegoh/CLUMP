@@ -52,9 +52,9 @@ if __name__ == '__main__':
     elif len(args) == 2: # run one specific script
         p = path(args[1])
         prunner = PluginRunner('KusuRC', p, dbs)
-    elif 'update' == args[2]: # run one specific script update
+    elif 'upgrade' == args[2]: # run one specific script upgrade
         p = path(args[1])
-        prunner = PluginRunner('KusuRC', p, dbs, is_update=True)
+        prunner = PluginRunner('KusuRC', p, dbs, is_upgrade=True)
 
     try:
         results = prunner.run()
