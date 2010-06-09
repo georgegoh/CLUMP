@@ -128,7 +128,7 @@ class NodeInfo:
             f = open(etcdbpasswd, 'r')
             dbpasswd = f.read().strip()
             f.close()
-        
+
         etcipmi = path('/opt/kusu/etc/.ipmi.passwd')
         ipmipasswd = ''
         try:
@@ -367,7 +367,7 @@ class NodeInfo:
 class NodeBootApp(KusuApp):
 
     def __init__(self):
-        KusuApp.__init__(self)
+        KusuApp.__init__(self, dummy_app=True)
 
     def toolVersion(self):
         """toolVersion - provide a version screen for this tool."""
@@ -440,7 +440,7 @@ class NodeBootApp(KusuApp):
 
             if self.cgi.has_key('uid'):
                 if self.cgi['uid'].value:
-                    uid = self.cgi['uid'].value            
+                    uid = self.cgi['uid'].value
 
             # Uncomment this for doing scalibility testing
             # Exercise with:  wget 'http://HOSTNAME/repos/nodeboot.cgi?dump=1&ip=IP_ADDR&boot='
