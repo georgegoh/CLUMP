@@ -21,7 +21,6 @@ Summary: kusu-libxml2-python module runtime
 Name: kusu-libxml2-python
 Version: 2.5.11
 Release: 1
-Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Platform Computing Inc.

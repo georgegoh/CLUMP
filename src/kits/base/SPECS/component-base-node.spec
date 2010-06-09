@@ -20,7 +20,6 @@ Summary: Component for Kusu Node Base
 Name: component-base-node
 Version: 2.1
 Release: 1
-Epoch: 1
 License: GPLv2
 URL: http://www.platform.com
 Group: System Environment/Base

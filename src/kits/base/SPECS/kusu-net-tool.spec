@@ -20,7 +20,6 @@ Summary: Network configuration tool for sysadmins
 Name: kusu-net-tool
 Version: 2.1
 Release: 1
-Epoch: 1
 License: GPLv2
 Group: System Environment/Base
 Vendor: Project Kusu
