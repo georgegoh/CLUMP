@@ -264,7 +264,7 @@ class UpgradeAction(KitopsAction):
 
     def _reassociate_repos(self, associated_repos):
         if associated_repos:
-            self.print_and_log("Associating repositories using the old kit with the new kit")
+            self.print_and_log("Associating repositories to the new kit instead of the old kit")
         for repo in associated_repos:
             # First, deassociate the old kit from the repo
             for i in xrange(len(repo.kits)):
@@ -300,8 +300,8 @@ class UpgradeAction(KitopsAction):
     def _reassociate_components_to_nodegroups(self, components_to_add):
         for old_component in self.old_kit.components:
             if old_component.nodegroups:
-                self.print_and_log('Associating nodegroups using the old kit '
-                                   'components with new kit components')
+                self.print_and_log("Associating nodegroups to the new components "
+                                   "in place of old components")
                 break
 
         # We will need a mapping from new_kit.components to components_to_add
@@ -313,16 +313,30 @@ class UpgradeAction(KitopsAction):
 
         # Now we handle the nodegroup-component associations
         upgraded_nodegroups = Set()
+        old_components = {}
+        for component in self.old_kit.components:
+            old_components[component.cname] = component
+
         for new_component in self.new_kit.components:
             new_component_follows = component_mapping[new_component.cname]['follows']
             if not new_component_follows.startswith('component-'):
                 new_component_follows = 'component-' + new_component_follows
-            for old_component in self.old_kit.components:
-                if old_component.cname == new_component.cname \
-                        or new_component_follows == old_component.cname:
-                    new_component.nodegroups = old_component.nodegroups
-                    old_component.nodegroups = []
-                    upgraded_nodegroups.update(new_component.nodegroups)
+
+            old_component = None
+            if new_component.cname in old_components.keys():
+                old_component = old_components[new_component.cname]
+            elif new_component_follows in old_components.keys():
+                old_component = old_components[new_component_follows]
+                self.print_and_log("New component '%s' found. Follows component '%s'" %
+                    (new_component.cname, new_component_follows))
+
+            if old_component:
+                new_component.nodegroups = old_component.nodegroups
+                old_component.nodegroups = []
+                upgraded_nodegroups.update(new_component.nodegroups)
+            else:
+                self.print_and_log("New component '%s' found. Auto-associated to nodegroups: %s" %
+                    (new_component.cname, ', '.join([x.ngname for x in new_component.nodegroups])))
 
         return upgraded_nodegroups
 
