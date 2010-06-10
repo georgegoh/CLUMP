@@ -78,7 +78,7 @@ if [ "$1" -eq 0 ] ; then
     fi
 fi
 
-/sbin/chkconfig --del lmgrd
+#/sbin/chkconfig --del lmgrd
 
 ##
 ## INSTALL

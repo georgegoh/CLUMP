@@ -15,12 +15,19 @@ from kusu.repoman import tools
 class GenUpdatesImg(KusuApp):
     def __init__(self):
         KusuApp.__init__(self)
-        
+
         dbdriver =  os.getenv('KUSU_DB_ENGINE', 'postgres')
-        dbdatabase = 'kusudb'
-        dbuser = 'apache'
-        
-        self.dbs = database.DB(dbdriver, dbdatabase, dbuser)
+
+        if dbdriver == 'postgres':
+            dbdatabase = 'kusudb'
+            dbuser = 'apache'
+            self.dbs = database.DB(dbdriver, dbdatabase, dbuser)
+        elif dbdriver == 'sqlite':
+            if os.path.exists('/root/kusu.db'):
+                self.dbs = database.DB(dbdriver, '/root/kusu.db')
+            else:
+                sys.stderr.write('SQLite database was not found.\n')
+                sys.exit(1)
 
         provision = self.dbs.AppGlobals.select_by(kname = 'PROVISION')[0].kvalue
         if provision and provision.lower() != 'kusu':
@@ -28,6 +35,7 @@ class GenUpdatesImg(KusuApp):
             sys.exit(1)
 
         self.parser.add_option('-r', '--repoid', action='store', help='Target repository id')
+
 
     def parse(self):
         options, args = self.parser.parse_args()

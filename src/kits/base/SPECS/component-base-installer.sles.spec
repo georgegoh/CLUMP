@@ -50,6 +50,7 @@ Requires: kusu-nodeinstaller
 Requires: kusu-kit-install
 Requires: kusu-shell
 Requires: kusu-uat
+Requires: syslog-ng
 #Requires: mysql
 #Requires: mysql-server
 Requires: dhcp

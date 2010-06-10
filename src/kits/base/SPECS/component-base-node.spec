@@ -45,6 +45,7 @@ Requires: rsh-server
 Requires: rsh
 Requires: vim-enhanced
 Requires: chkconfig
+Requires: rsyslog
 
 %description
 This component provides the nodes with the Kusu tools for the 

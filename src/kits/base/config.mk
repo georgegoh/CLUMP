@@ -281,6 +281,12 @@ KIT_PKGS += PKG_PATH
 PKG_PATH_SPEC = kusu-path.spec
 PKG_PATH_SOURCES = src
 
+# Setup package.
+KIT_PKGS += PKG_SETUP
+PKG_SETUP_NAME = kusu-setup
+PKG_SETUP_SPEC = kusu-setup.spec
+PKG_SETUP_SOURCES = ../kusu-nodeinstaller-patchfiles ../kusu-primitive/config.mk ../kusu-primitive/Makefile ../kusu-primitive/src ../kusu-util ../kusu-path ../kusu-buildkit ../kusu-kitops ../kusu-repoman ../kusu-driverpatch ../kusu-core ../kusu-boot ../kusu-base-node src/bin src/lib ../../RPMS/noarch/python-IPy-0.60-1.el5.noarch.rpm ../../RPMS/noarch/python-sqlalchemy-0.3.11-1.el5.noarch.rpm ../../RPMS/x86_64/python-cheetah-2.0.1-2.2.x86_64.rpm ../../RPMS/x86_64/python-sqlite2-2.4.1-3.1.x86_64.rpm ../../RPMS/x86_64/python-psycopg2-2.0.7-1.el5.x86_64.rpm
+
 # Net tool package
 KIT_PKGS += PKG_KUSU_NET_TOOL
 PKG_KUSU_NET_TOOL_SPEC = kusu-net-tool.spec

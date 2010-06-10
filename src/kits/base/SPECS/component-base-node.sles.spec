@@ -46,6 +46,7 @@ Requires: xinetd
 Requires: rsh-server
 Requires: rsh
 Requires: aaa_base
+Requires: syslog-ng
 #Requires: vim-enhanced
 
 %description

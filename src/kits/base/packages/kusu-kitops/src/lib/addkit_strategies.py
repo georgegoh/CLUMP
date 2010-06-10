@@ -54,6 +54,7 @@ def addkit01(koinst, db, kitinfo, upgrade_action=False):
                      version=kit['version'], arch=kit['arch'],
                      removable=kit['removable'])
     newkit.save()
+    newkit.flush()
 
     db.flush()
     kl.debug('Addkit kid: %s', newkit.kid)
@@ -158,6 +159,7 @@ def addkit02(koinst, db, kitinfo, upgrade_action=False):
                      version=kit['version'], release=kit['release'], arch=kit['arch'],
                      removable=kit['removable'])
     newkit.save()
+    newkit.flush()
 
     db.flush()
     kl.debug('Addkit kid: %s', newkit.kid)
@@ -351,6 +353,7 @@ def addkit04(koinst, db, kitinfo, upgrade_action=False):
                      version=kit['version'], release=kit['release'], arch=kit['arch'],
                      removable=kit['removable'])
     newkit.save()
+    newkit.flush()
 
     db.flush()
     kl.debug('Addkit kid: %s', newkit.kid)
