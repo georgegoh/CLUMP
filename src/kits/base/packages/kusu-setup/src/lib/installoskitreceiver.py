@@ -158,7 +158,7 @@ class InstallOSKitReceiver:
                     try:
                         self.kitops.addKitPrepare()
                     except UnrecognizedKitMediaError, e:
-                        msg = 'FAIL adding kit media: %s: %s' \
+                        msg = 'Failed to add kit media: %s: %s' \
                                      % (res, e.args[0])
                         return False, msg
 
@@ -168,13 +168,14 @@ class InstallOSKitReceiver:
 
                         self.kitops.copyOSKitMedia(kit)
                     except CopyOSMediaError, e:
-                        msg = 'FAIL performing add operation: %s' % e.args[0]
+                        msg = 'Failed to add OS kit: %s' % e.args[0]
                         return False, msg
 
-                while res.lower() not in ['n', 'no', 'y', 'yes']:
-                    res = raw_input('Any more disks for this OS kit? [y/n] ').split()[0]
+                answer = 'FAKE_ANSWER'
+                while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
+                    answer = raw_input("Any more disks for this OS kit ? (Y/[N])")
 
-                if res.lower() in ['n', 'no']:
+                if answer.strip().lower() in ['no','n', '']:
                     break
 
                 # We need to clear the kit media now that we're done with it
