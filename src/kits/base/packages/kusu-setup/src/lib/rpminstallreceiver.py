@@ -50,7 +50,7 @@ gpgcheck=0
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s -y install component-base-installer component-base-node component-gnome-desktop" % yum_file.name, shell=True, stdout=subprocess.PIPE)
+        yumCmd = subprocess.Popen("yum -c %s --disablerepo='*' --enablerepo='bootstraprepo' -y install component-base-installer component-base-node component-gnome-desktop" % yum_file.name, shell=True, stdout=subprocess.PIPE)
         result, code = yumCmd.communicate()
 
         yum_file.close()
