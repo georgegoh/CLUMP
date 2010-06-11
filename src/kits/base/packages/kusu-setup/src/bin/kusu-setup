@@ -141,7 +141,7 @@ class KusuSetup:
                     sys.exit(1)
          
                 ##Check if we have enough NICs
-                nicCheck = niccheckcommand.NicCheckCommand(self._networkReceiver)
+                nicCheck = niccheckcommand.NicCheckCommand(self._networkReceiver, systemSettings.configuredNicCount)
                 nicCheck.execute()
                 if not nicCheck.proceedStatus:
                     message.display("%s\n" % nicCheck.quitMessage)
@@ -237,7 +237,7 @@ class KusuSetup:
                     sys.exit(1)
 
                 ##Run all the kusurc scripts  
-                message.display("Running kusurc scripts to finalize installation.")
+                print ("Running kusurc scripts to finalize installation.")
                 self.runKusuRC()
  
                 self._installCompleted = True

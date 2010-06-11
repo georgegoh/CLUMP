@@ -41,7 +41,7 @@ class SystemSettingsCommand(Command):
         interfaces, properties = self._networkReceiver.physicalInterfacesAndProperties
 
         #iterate over all the interfaces, validating at least 2 static, configured interfaces
-        message.display("Checking for at least 2 configured NICs")
+        message.display("Checking for at least 1 configured NIC")
         ipCount=0
         for interface in interfaces:
            if properties[interface]['ip'] is not None and\
@@ -49,13 +49,16 @@ class SystemSettingsCommand(Command):
                  not properties[interface]['dhcp'] :
                     ipCount = ipCount + 1
 
-        if ipCount >= 2:
+        if ipCount >= 1:
             message.success()
             self._proceedStatus = True
         else:
             self._proceedStatus = False
-            self._quitMessage = "Not enough statically configured network interfaces.\n    Kusu installation requires at least 2 statically configured network interfaces"
+            self._quitMessage = "Not enough statically configured network interfaces.\n    Kusu installation requires at least 1 statically configured network interfaces"
             return
+
+        #make a note of how many configured interfaces we have 
+        self.configuredNicCount = ipCount
 
         message.display("Checking for the public hostname.")
         if not self._fqdn_receiver.pub_dns_discover():

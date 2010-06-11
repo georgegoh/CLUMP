@@ -13,7 +13,10 @@ class EnvCheckCommand(Command):
         super(EnvCheckCommand, self).__init__()
 
         (self._prov_interface, self._prov_interface_props) = provisioningInterfaceTuple
-        (self._pub_interface, self._pub_interface_props) = publicInterfaceTuple
+
+        if publicInterfaceTuple is not None:
+            (self._pub_interface, self._pub_interface_props) = publicInterfaceTuple
+
         self._fqdn_receiver = fqdn_receiver
 
     def execute(self):

@@ -17,7 +17,9 @@ class InitKusuDBReceiver:
 
     def createDB(self, nicCheck, dhcpCheck, envCheck, systemSettings):
 
-        public_nic, public_nic_props = nicCheck.publicInterfaceTuple
+        if not nicCheck.singleNicInstall:
+            public_nic, public_nic_props = nicCheck.publicInterfaceTuple
+
         provision_nic, provision_nic_props = nicCheck.provisionInterfaceTuple
  
         #row = self.__db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
@@ -67,17 +69,18 @@ class InitKusuDBReceiver:
 
         # Network
         #First we insert data for the public network
-        public_network = self._db.Networks()
-        public_network.network = ipfun.getNetwork(public_nic_props['ip'], public_nic_props['netmask'])
-        public_network.subnet = public_nic_props['netmask']
-        public_network.device = public_nic
-        public_network.netname = 'public'
-        public_network.gateway = netutil.findGateway()
-        public_network.startip = public_nic_props['ip'] #FIXME? Is this always the first IP in the block ?
-        public_network.suffix = "-%s" % public_nic
-        public_network.type = 'public'
-        public_network.save()
-        public_network.flush()
+        if not nicCheck.singleNicInstall:
+            public_network = self._db.Networks()
+            public_network.network = ipfun.getNetwork(public_nic_props['ip'], public_nic_props['netmask'])
+            public_network.subnet = public_nic_props['netmask']
+            public_network.device = public_nic
+            public_network.netname = 'public'
+            public_network.gateway = netutil.findGateway()
+            public_network.startip = public_nic_props['ip'] #FIXME? Is this always the first IP in the block ?
+            public_network.suffix = "-%s" % public_nic
+            public_network.type = 'public'
+            public_network.save()
+            public_network.flush()
 
         ## Now data for the provisioning network
         provision_network = self._db.Networks()
@@ -94,9 +97,10 @@ class InitKusuDBReceiver:
 
         #Associate nodegroups with appropriate networks
         #public network with installer
-        public_network.nodegroups.append(self._db.NodeGroups.selectone_by(ngname='installer'))
-        public_network.save()
-        public_network.flush()
+        if not nicCheck.singleNicInstall:
+            public_network.nodegroups.append(self._db.NodeGroups.selectone_by(ngname='installer'))
+            public_network.save()
+            public_network.flush()
 
         #provision network with everything
         provision_network.nodegroups.append(self._db.NodeGroups.selectone_by(ngname='installer'))
@@ -113,11 +117,12 @@ class InitKusuDBReceiver:
         # Default name of the installer node is master, update this value.
         node = self._db.Nodes.selectone_by(name='master')
         node.name = hostname
-        #FIXME: Single Nic Install will look different
-        public_nic = self._db.Nics(ip=public_nic_props['ip'], netid=public_network.netid, mac=public_nic_props['hwaddr'], boot=True)
+        if not nicCheck.singleNicInstall:
+            public_nic = self._db.Nics(ip=public_nic_props['ip'], netid=public_network.netid, mac=public_nic_props['hwaddr'], boot=True)
+            node.nics.append(public_nic)
+
         private_nic = self._db.Nics(ip=provision_nic_props['ip'], netid=provision_network.netid, mac=provision_nic_props['hwaddr'], boot=True)
 
-        node.nics.append(public_nic)
         node.nics.append(private_nic)
         node.save()
         node.flush()

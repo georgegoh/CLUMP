@@ -5,9 +5,10 @@ class NicCheckCommand(Command):
     """
     This is the command class for gathering information on the provisioning network
     """
-    def __init__(self, receiver):
+    def __init__(self, receiver, configuredNicCount):
         super(NicCheckCommand, self).__init__()
         self._receiver = receiver
+        self._configuredNicCount = configuredNicCount
 
         ## We gather information on the provisioning network interface, and exposes
         ## a tuple consisting of : (interface, properties)
@@ -65,12 +66,22 @@ class NicCheckCommand(Command):
 
 
     def execute(self):
+
+        self.singleNicInstall = False
+
         status, self.provisionInterfaceTuple = self._promptForProvisioningNic()
         if not status:
             return
-        status, self.publicInterfaceTuple = self._promptForPublicNic()
-        if not status:
-            return
+
+        #if we have more than one configured nic, we prompt for whether the user want's to configure 
+        # a second/public nic.
+        if self._configuredNicCount > 1 and self.getYesNoAsBool("    Would you like to configure a public network"):
+
+            status, self.publicInterfaceTuple = self._promptForPublicNic()
+            if not status:
+                return
+        else:
+            self.singleNicInstall = True
 
         self._proceedStatus = True
 
