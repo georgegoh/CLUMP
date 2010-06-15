@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en-us" xml:lang="en-us">
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<meta name="copyright" content="(C) Copyright 2005" />
+<meta name="DC.rights.owner" content="(C) Copyright 2005" />
+<meta content="public" name="security" />
+<meta content="index,follow" name="Robots" />
+<meta http-equiv="PICS-Label" content='(PICS-1.1 "http://www.icra.org/ratingsv02.html" l gen true r (cz 1 lz 1 nz 1 oz 1 vz 1) "http://www.rsac.org/ratingsv01.html" l gen true r (n 0 s 0 v 0 l 0) "http://www.classify.org/safesurf/" l gen true r (SS~~000 1))' />
+<meta content="task" name="DC.Type" />
+<meta name="DC.Title" content="Install this kit" />
+<meta content="XHTML" name="DC.Format" />
+<meta content="v1451252" name="DC.Identifier" />
+<link href="commonltr.css" type="text/css" rel="stylesheet" />
+<title>Install this kit</title>
+<script language="JavaScript">
+    
+    myUrl = location.href;
+    mySub1 = "/";
+    mySub2 = ".html";
+    //Returns everything right of the last instance of the subString to the end of the fullString
+    function rightFromSubStringToEndOfFullString(fullString, subString) {
+    if (fullString.lastIndexOf(subString) == -1) {
+    return "";
+    } else {
+    return fullString.substring(fullString.lastIndexOf(subString)+1, fullString.length);
+    }
+    }
+    
+    //Returns everything left of the last instance of the subString to the start of the fullString
+    function leftFromSubStringToBeginningOfFullString(fullString, subString) {
+    if (fullString.lastIndexOf(subString) == -1) {
+    return "";
+    } else {
+    return fullString.substring(0, fullString.lastIndexOf(subString));
+    }
+    }
+    
+    //Strip out everything before the last "/"
+    myVar = rightFromSubStringToEndOfFullString(myUrl, mySub1);
+    
+    //Strip out the .html
+    myText = leftFromSubStringToBeginningOfFullString(myVar, mySub2);
+    
+    // frameJammer_hp v2.52
+    
+    if (window.name!='main' && window.name!='booker_'
+    
+                             && !((self.innerHeight == 0) && (self.innerWidth == 0)))
+                            top.location.replace('index.htm?' +myVar+ '~main');
+    
+    // frameJammer_hp End
+    
+    
+    </script></head>
+<body><p align="right"><SCRIPT language="JavaScript">
+    
+      <!-- This script was supplied free by Hypergurl
+       http://www.hypergurl.com -->
+      <!-- Begin
+      if (window.print) {
+      document.write('<form>' + '<input type=button name=print value="Print" '
+      + 'onClick="javascript:window.print()"></form>');
+      }
+    // End -->
+             
+      </SCRIPT></p><br /><a name="v1451252"><!-- --></a>
+
+<h1 class="topictitle1">Install this kit</h1>
+
+<div id="v1565328"><a name="v1565328"><!-- --></a><div class="section" id="v1451252__v1451255"><a name="v1451252__v1451255"><!-- --></a><p id="v1451252__v1451256"><a name="v1451252__v1451256"><!-- --></a>Use the <pre class="codeph" id="v1451252__v1451775"><a name="v1451252__v1451775"><!-- --></a>kitops</pre> command to install a kit.</p>
+</div>
+
+<a name="v1451252__v1451257"><!-- --></a><ol id="v1451252__v1451257"><li class="stepexpand" id="v1451252__v1451259"><a name="v1451252__v1451259"><!-- --></a><span id="v1451252__v1451260"><a name="v1451252__v1451260"><!-- --></a>Import the kit information to the database, and copy files from the media. To do this, use the <span class="keyword">kitops</span> command:</span>
+ <p id="v1451252__v1565337"><a name="v1451252__v1565337"><!-- --></a><pre class="codeph" id="v1451252__v1565338"><a name="v1451252__v1565338"><!-- --></a>kitops -a -m <var class="varname">path_to_kit</var></pre></p>
+
+<p id="v1451252__v1581299"><a name="v1451252__v1581299"><!-- --></a>where <var class="varname">path_to_kit</var> can be an ISO, URL, FTTP path, or NFS path.</p>
+
+<div class="p" id="v1451252__v1565340"><a name="v1451252__v1565340"><!-- --></a><div class="note" id="v1451252__v1565341"><a name="v1451252__v1565341"><!-- --></a><span class="notetitle">Note:</span> <p id="v1451252__v1565342"><a name="v1451252__v1565342"><!-- --></a>Note the definitions of these command options:</p>
+<div class="p" id="v1451252__v1565343"><a name="v1451252__v1565343"><!-- --></a><a name="v1451252__v1565344"><!-- --></a><ul id="v1451252__v1565344"><li id="v1451252__v1565345"><a name="v1451252__v1565345"><!-- --></a><p id="v1451252__v1565346"><a name="v1451252__v1565346"><!-- --></a><span class="cmdname" id="v1451252__v1565347"><a name="v1451252__v1565347"><!-- --></a>-a</span>: Adds a new kit.</p>
+</li>
+<li id="v1451252__v1565348"><a name="v1451252__v1565348"><!-- --></a><p id="v1451252__v1565349"><a name="v1451252__v1565349"><!-- --></a><span class="cmdname" id="v1451252__v1565350"><a name="v1451252__v1565350"><!-- --></a>-m</span>: Points to the ISO (media) containing the kit files.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+ <p id="v1451252__v1565352"><a name="v1451252__v1565352"><!-- --></a>The kit and its components are registered in the database, and the kit’s contents are copied to this directory on the primary install node: </p>
+
+<p id="v1451252__v1565353"><a name="v1451252__v1565353"><!-- --></a><pre class="codeph" id="v1451252__v1565354"><a name="v1451252__v1565354"><!-- --></a></pre><span class="filepath" id="v1451252__v1565355"><a name="v1451252__v1565355"><!-- --></a>/depot/kits/<var class="varname">kit_name</var>/<var class="varname">version</var>/<var class="varname">architecture</var></span></p>
+
+
+</li>
+
+<li class="stepexpand" id="v1451252__v1451780"><a name="v1451252__v1451780"><!-- --></a><span id="v1451252__v1451781"><a name="v1451252__v1451781"><!-- --></a>Add the kit to a repository on the primary install node. To do this, use the <span class="cmdname" id="v1451252__v1565361"><a name="v1451252__v1565361"><!-- --></a>repoman</span> command:</span>
+<a name="v1451252__v1565362"><!-- --></a><ol type="a" id="v1451252__v1565362"><li class="substepexpand" id="v1451252__v1565363"><a name="v1451252__v1565363"><!-- --></a><span id="v1451252__v1565364"><a name="v1451252__v1565364"><!-- --></a>Determine which repository on the primary install node to which you want to add the kit. To do this, list the repositories currently in the system.</span>
+ <p id="v1451252__v1565366"><a name="v1451252__v1565366"><!-- --></a><pre class="codeph" id="v1451252__v1565367"><a name="v1451252__v1565367"><!-- --></a>repoman -l</pre></p>
+</li>
+
+<li class="substepexpand" id="v1451252__v1565368"><a name="v1451252__v1565368"><!-- --></a><span id="v1451252__v1565369"><a name="v1451252__v1565369"><!-- --></a>Add the kit to the desired repository. </span>
+ <p id="v1451252__v1565371"><a name="v1451252__v1565371"><!-- --></a><pre class="codeph" id="v1451252__v1565372"><a name="v1451252__v1565372"><!-- --></a>repoman -r "<var class="varname">repository name</var>"</pre> -a -k <var class="varname">kit_name</var></p>
+</li>
+
+<li class="substepexpand" id="v1451252__v1565375"><a name="v1451252__v1565375"><!-- --></a><span id="v1451252__v1565376"><a name="v1451252__v1565376"><!-- --></a>Refresh the repository.</span>
+ <p id="v1451252__v1565378"><a name="v1451252__v1565378"><!-- --></a><pre class="codeph" id="v1451252__v1565379"><a name="v1451252__v1565379"><!-- --></a>repoman -r "<var class="varname">repository name</var>" -u </pre></p>
+</li>
+
+</ol>
+
+ <div class="p" id="v1451252__v1565382"><a name="v1451252__v1565382"><!-- --></a><div class="note" id="v1451252__v1565383"><a name="v1451252__v1565383"><!-- --></a><span class="notetitle">Note:</span> <p id="v1451252__v1565384"><a name="v1451252__v1565384"><!-- --></a>Note the definitions of these command options:</p>
+<div class="p" id="v1451252__v1565385"><a name="v1451252__v1565385"><!-- --></a><a name="v1451252__v1565386"><!-- --></a><ul id="v1451252__v1565386"><li id="v1451252__v1565387"><a name="v1451252__v1565387"><!-- --></a><p id="v1451252__v1565388"><a name="v1451252__v1565388"><!-- --></a><span class="cmdname" id="v1451252__v1565389"><a name="v1451252__v1565389"><!-- --></a>-l</span>: LIsts the repositories currently in the system.</p>
+</li>
+<li id="v1451252__v1565390"><a name="v1451252__v1565390"><!-- --></a><p id="v1451252__v1565391"><a name="v1451252__v1565391"><!-- --></a><span class="cmdname" id="v1451252__v1565392"><a name="v1451252__v1565392"><!-- --></a>-r</span>: Selects the repository by name.</p>
+</li>
+<li id="v1451252__v1565393"><a name="v1451252__v1565393"><!-- --></a><p id="v1451252__v1565394"><a name="v1451252__v1565394"><!-- --></a><span class="cmdname" id="v1451252__v1565395"><a name="v1451252__v1565395"><!-- --></a>-a</span>: Adds the kit to the repository.</p>
+</li>
+<li id="v1451252__v1565396"><a name="v1451252__v1565396"><!-- --></a><p id="v1451252__v1565397"><a name="v1451252__v1565397"><!-- --></a><span class="cmdname" id="v1451252__v1565398"><a name="v1451252__v1565398"><!-- --></a>-k</span>: Points to kit you are adding to the repository.</p>
+</li>
+<li id="v1451252__v1565399"><a name="v1451252__v1565399"><!-- --></a><p id="v1451252__v1565400"><a name="v1451252__v1565400"><!-- --></a><span class="cmdname" id="v1451252__v1565401"><a name="v1451252__v1565401"><!-- --></a>-u</span>: Rebuilds the repository metadata with the newly added kits.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+</li>
+
+<li class="stepexpand" id="v1451252__v1565402"><a name="v1451252__v1565402"><!-- --></a><span id="v1451252__v1565403"><a name="v1451252__v1565403"><!-- --></a>Associate kit components with nodegroups. To do this, run <span class="keyword">ngedit</span> from a command prompt to launch the Node Group Editor tool.</span>
+<a name="v1451252__v1565405"><!-- --></a><ol type="a" id="v1451252__v1565405"><li id="v1451252__v1565406"><a name="v1451252__v1565406"><!-- --></a><span id="v1451252__v1565407"><a name="v1451252__v1565407"><!-- --></a>Within the Node Group Editor, navigate to the Repository screen.</span>
+</li>
+
+<li id="v1451252__v1565408"><a name="v1451252__v1565408"><!-- --></a><span id="v1451252__v1565409"><a name="v1451252__v1565409"><!-- --></a>Ensure the nodegroup is using the repository that contains the new kit, and then select <span class="uicontrol">Next</span>.</span>
+</li>
+
+<li id="v1451252__v1565411"><a name="v1451252__v1565411"><!-- --></a><span id="v1451252__v1565412"><a name="v1451252__v1565412"><!-- --></a>Navigate to the Components screen.</span>
+</li>
+
+<li id="v1451252__v1565413"><a name="v1451252__v1565413"><!-- --></a><span id="v1451252__v1565414"><a name="v1451252__v1565414"><!-- --></a>Select the component(s) you want to install on all nodes in the nodegroup.</span>
+</li>
+
+<li id="v1451252__v1565415"><a name="v1451252__v1565415"><!-- --></a><span id="v1451252__v1565416"><a name="v1451252__v1565416"><!-- --></a>Save any changes you have made.</span>
+</li>
+
+</ol>
+
+</li>
+
+<li class="stepexpand" id="v1451252__v1565417"><a name="v1451252__v1565417"><!-- --></a><span id="v1451252__v1565418"><a name="v1451252__v1565418"><!-- --></a>From the Node Group Editor, you can update existing nodes in the nodegroup with the new kit components. The last screen in <span class="keyword">ngedit</span> asks if you want to push the kit package to the nodes using the <span class="keyword">cfm</span> tool.</span>
+ <p id="v1451252__v1565422"><a name="v1451252__v1565422"><!-- --></a>You can also choose to run <span class="keyword">cfm</span> manually at a later time, or simply reboot the nodes to force a reinstall of the new packages.</p>
+
+<div class="p" id="v1451252__v1565424"><a name="v1451252__v1565424"><!-- --></a><div class="note" id="v1451252__v1565425"><a name="v1451252__v1565425"><!-- --></a><span class="notetitle">Note:</span> <p id="v1451252__v1565426"><a name="v1451252__v1565426"><!-- --></a> Any new nodes added to the nodegroup <em>after</em> saving your changes within <span class="keyword">ngedit</span> automatically have the kit package installed.</p>
+</div>
+</div>
+
+
+</li>
+
+</ol>
+
+</div>
+
+<div />
+
+</body>
+</html>

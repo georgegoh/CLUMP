@@ -1,0 +1,223 @@
+#!/usr/bin/env python
+# $Id$
+#
+# Copyright 2010 Platform Computing Inc.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+
+import sys
+import os
+from kusu.core.app import KusuApp
+from kusu.core import database as db
+from kusu.driverpatch import DriverPatch
+from kusu.util.errors import InvalidArguments, DriverPatchActionError
+
+SUPPORTED_KERNEL_ARCHES = ['i586','i686','x86_64']
+
+class App(KusuApp):
+    """ Application class for buildkit. """
+
+    def __init__(self):
+        """ App-specific initialization. """
+        KusuApp.__init__(self)
+
+        self.actions = {'nodegroup':['name','id','arch','version',
+                        'kernel','initrd','assetsdir'], 
+            'list':['name','id']}
+
+        # self.action and self.actionargs will hold the current action and its arguments
+        self.action = None 
+        self.actionargs = None
+        
+
+        self.usagestr = self._("""\
+kusu-driverpatch [-h|-v] <action> arg1=val1 arg2=val2 ...
+
+kusu-driverpatch is used to update initrd images related to package-based
+deployments.
+
+
+actions:
+
+    nodegroup       - Updates the PXE kernel/initrd with the driverpacks
+                      belonging to the specified nodegroup. Nodegroup
+                      can be specified with name OR id:
+
+                      REQUIRED ARGS:
+                        name=<nodegroup name> | id=<nodegroup id>
+                        
+                      OPTIONAL ARGS:
+                        arch=<arch of the kernel/initrd>
+                        version=<specific kernel version to use>
+                        kernel=<filepath of resulting kernel>
+                        initrd=<filepath of resulting initrd>
+                        assetsdir=<dir containing modules assets>
+    
+    list            - List the driverpacks that is associated to
+                      the specified nodegroup. Nodegroup can be
+                      specified with name OR id:
+
+                      REQUIRED ARGS:
+                        name=<nodegroup name> | id=<nodegroup id>
+
+""")
+        self.examples = self._("""\
+Example operations:
+
+    To patch initrds belonging to a nodegroup named compute
+    # kusu-driverpatch nodegroup name=compute
+    
+    To patch initrds for i686 belonging to a nodegroup id of 3
+    # kusu-driverpatch nodegroup id=3 arch=i686
+    
+    To list driverpacks that is associated to a nodegroup 
+    named compute:
+    # kusu-driverpatch list name=compute
+
+    To list driverpacks that is associated to a nodegroup 
+    id of 3:
+    # kusu-driverpatch list id=3
+
+""")
+        self.parser.set_usage(self.usagestr)
+
+    def printUsageExit(self):
+        """ Print usage text and exit. """
+        self.stdoutMessage(self.usagestr)
+        self.stdoutMessage(os.linesep)
+        sys.exit(0)
+
+    def printExamplesExit(self):
+        """ Print examples text and exit. """
+        self.stdoutMessage(self.examples)
+        sys.exit(0)
+
+    def printMsgExit(self, msg, exitcode=1):
+        """ Print msg and exit. """
+        self.stdoutMessage(msg)
+        self.stdoutMessage(os.linesep)
+        sys.exit(exitcode)
+
+    def handleArgPairs(self, arglist):
+        """ Handle the argument list and return a dict of key-value pairs. """
+
+        li = []
+        d = {}
+
+        for s in arglist:
+            li2 = s.split('=')
+            for s2 in li2: 
+                if s2: li.append(s2)        
+
+        # There should be even number of items in order to make pairs
+        if not len(li) % 2: 
+            # Collect the pairs
+            while li:
+                d[li[0].lower()] = li[1]
+                del li[0:2]
+
+        return d
+
+
+    def parseargs(self):
+        """ App-specific arguments goes here. """
+
+        self.parser.add_option('-v','--verbose', action='store_true', dest='verbose')
+        self.parser.add_option('-H','--examples', action='store_true', dest='showexamples')
+        self.parser.add_option('-u','--update', action='store_true', dest='update',
+                                help=self._('Update the kernel/initrd entries in database.'))
+        self.parser.add_option('--dbdriver', dest='dbdriver',
+                                help=self._('Database driver (sqlite, mysql,postgres)'))
+        self.parser.add_option('--dbdatabase', dest='dbdatabase',
+                                help=self._('Database'))
+        self.parser.add_option('--dbuser', dest='dbuser',
+                                help=self._('Database username'))
+        self.parser.add_option('--dbpassword', dest='dbpassword',
+                                help=self._('Database password'))
+        self.parser.set_defaults(verbose=False,showexamples=False,update=False)
+        self.options, self.args = self.parser.parse_args()
+
+
+        if self.options.showexamples:
+            self.printExamplesExit()
+
+        if len(self.args) < 2:
+            self.printUsageExit()
+
+
+        # check if the first parsed argument is a supported action
+        action = self.args[0]
+
+        if action not in self.actions.keys():
+            self.printUsageExit()
+        d = self.handleArgPairs(self.args[1:])
+
+        if not d:
+            self.printUsageExit()
+
+        # iterate keys in d and validate against the commands'
+        # list of keys
+        for k in d.keys():
+            if k not in self.actions[action]:
+                self.printUsageExit()
+
+        self.action = action
+        self.actionargs = d
+        self.actionargs['update'] = self.options.update
+
+    def run(self):
+        """ Main launcher. """
+        self.parseargs()
+
+        # check for root privs as this command requires it
+        if os.getuid() <> 0:
+            msg = 'This command requires root access!'
+            self.printMsgExit(msg)
+
+        # get the db instance
+        #source engine from environment variable, explicit cmndline arg
+        # takes preference over environment variable
+        engine = os.getenv('KUSU_DB_ENGINE')
+        if not engine: #default to postgres
+            engine = 'postgres'
+        dbdriver = engine
+        dbdatabase = 'kusudb'
+        dbuser = 'apache'
+        dbpassword = None
+        if self.options.dbdriver:
+            dbdriver = self.options.dbdriver
+        if self.options.dbdatabase:
+            dbdatabase = self.options.dbdatabase
+        if self.options.dbuser:
+            dbuser = self.options.dbuser
+        if self.options.dbpassword:
+            dbpassword = self.options.dbpassword
+
+
+        self.db = db.DB(dbdriver, dbdatabase, dbuser, dbpassword)
+
+        self.patcher = DriverPatch(self.db, self.stdoutMessage, self.stderrMessage)
+
+        # set verbosity
+        self.verbose = self.options.verbose
+
+        # call the correct sub-handler for the action
+        m = self.action.split('-')[0] \
+            + ''.join([l.capitalize() for l in self.action.split('-')[1:]]) \
+            + 'Action'
+
+        handler = getattr(self.patcher, m)
+
+        try:
+            handler(self.actionargs)
+        except InvalidArguments, e:
+            self.stderrMessage(e)
+            self.printUsageExit()
+        except DriverPatchActionError, e:
+            self.printMsgExit(e)
+
+if __name__ == '__main__':
+	app = App()
+	app.run()
+	sys.exit(0)
+

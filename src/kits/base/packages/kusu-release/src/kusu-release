@@ -1,0 +1,1 @@
+Kusu "${KUSU_RELEASE_NAME}" ${VERSION_STR} (build ${KUSU_REVISION})

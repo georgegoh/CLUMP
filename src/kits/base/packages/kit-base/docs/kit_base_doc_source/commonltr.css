@@ -1,0 +1,407 @@
+/*
+ | (c) Copyright IBM Corp. 2004, 2005 All Rights Reserved.
+ */
+ 
+ /* element definitions */
+
+body
+{
+	font-family: Arial,Verdana,sans-serif;
+	font-size: 0.82em;
+}
+
+H1
+{
+	color: #003366;
+	font-weight: bold;
+	font-size: 1.75em;
+	margin-top: 0em; 
+	margin-bottom: 0em;
+}
+
+H2
+{
+	color: #003366;
+	margin-top: 1pc; 
+	margin-bottom: .45em; 
+	font-size: 1.5em; 
+	margin-top: 0em; 
+	margin-bottom: 0em;
+}
+
+H3
+{
+	color: #003366;
+	font-size: 1.25em; 
+	margin-top: 0em; 
+	margin-bottom: 0em;
+}
+
+H4
+{
+	color: #003366;
+	font-style: italic
+	font-size: 1.0em; 
+	margin-top: 0em; 
+	margin-bottom: 0em;
+}
+
+pre { 
+    font-size: 1em; 
+	font-family: Courier New, Courier, monospace; 
+}
+
+
+/* table styles */
+
+table
+{	
+	font-size: 0.92em;
+	border:none;
+	border-color:#FFFFFF;
+	border-bottom:thin;
+	border-bottom-style: solid;
+	border-bottom-color: #DDDDDD;
+	border-bottom-width: thin;
+	border-left: none;
+	border-right: none;
+}
+
+th
+{
+	border-left: none;
+	border-right: none;
+}
+
+td
+{
+	border-top:thin;
+	border-top-style: solid;
+	border-top-color: #DDDDDD;
+	border-top-width: thin;
+	border-left: none;
+	border-right: none;
+}
+
+/* code tables without borders */
+div.tablenoborder table
+{
+	font-size: 0.92em;
+	border:none;
+	border-color:#FFFFFF;
+	border-bottom:thin;
+	border-bottom-style: none;
+	border-bottom-color: pink;
+	border-bottom-width: thin;
+	border-left: none;
+	border-right: none;
+}
+
+div.tablenoborder table td
+{
+	border-top:none;
+	border-top-style: none;
+	border-top-color: red;
+	border-top-width: thin;
+	border-left: none;
+	border-right: none;
+}
+
+tr
+{	
+}
+
+thead
+{
+	color: #003366;
+	background-color:#D1DEE6;
+}
+
+tbody
+{
+}
+
+.unresolved { background-color: skyblue; }
+.noTemplate { background-color: yellow; }
+
+.base { background-color: #ffffff; }
+
+/* Add space for top level topics */
+.nested0 { margin-top : 1em;}
+
+/* div with class=p is used for paragraphs that contain blocks, to keep the XHTML valid */
+.p {margin-top: 0em; margin-bottom: 0em;}
+
+.ul
+{margin-top: 0em; margin-bottom: 0em;
+}
+
+.li
+{
+}
+
+/* Default of italics to set apart figure captions */
+.figcap { font-style: italic }
+.figdesc { font-style: normal }
+
+/* Use @frame to create frames on figures */
+.figborder { border-style: solid; padding-left : 3px; border-width : 2px; padding-right : 3px; margin-top: 1em; border-color : Silver;}
+.figsides { border-left : 2px solid; padding-left : 3px; border-right : 2px solid; padding-right : 3px; margin-top: 1em; border-color : Silver;}
+.figtop { border-top : 2px solid; margin-top: 1em; border-color : Silver;}
+.figbottom { border-bottom : 2px solid; border-color : Silver;}
+.figtopbot { border-top : 2px solid; border-bottom : 2px solid; margin-top: 1em; border-color : Silver;}
+
+/* Most link groups are created with <div>. Ensure they have space before and after. */
+.ullinks { list-style-type: none }
+.ulchildlink { margin-top: 1em; margin-bottom: 1em }
+.olchildlink { margin-top: 1em; margin-bottom: 1em }
+.linklist { margin-bottom: 1em }
+.linklistwithchild { margin-left: 1.5em; margin-bottom: 1em  }
+.sublinklist { margin-left: 1.5em; margin-bottom: 1em  }
+.relconcepts { margin-top: 1em; margin-bottom: 1em }
+.reltasks { margin-top: 1em; margin-bottom: 1em }
+.relref { margin-top: 1em; margin-bottom: 1em }
+.relinfo { margin-top: 1em; margin-bottom: 1em }
+.breadcrumb { font-size : smaller; margin-bottom: 1em }
+.prereq { margin-left : 20px;}
+
+/* Set heading sizes, getting smaller for deeper nesting */
+.topictitle1 { margin-top: 0pc; margin-bottom: .1em; font-size: 1.9em; font-weight: bold;	color: #003366;}
+.topictitle2 { margin-top: 1pc; margin-bottom: .45em; font-size: 1.4em; color: #003366;}
+.topictitle3 { margin-top: 1pc; margin-bottom: .17em; font-size: 1.25em; font-weight: bold; color: #003366;}
+.topictitle4 { margin-top: .83em; font-size: 1.10em; font-weight: bold; color: #003366;}
+.topictitle5 { font-size: .75em; font-weight: bold; color: #003366;}
+.topictitle6 { font-size: .60em; font-style: italic; color: #003366;}
+.sectiontitle { margin-top: 1em; margin-bottom: 0em; font-size: 1.25em; color: #003366;}
+.section { margin-top: 1em; margin-bottom: 1em; }
+.example { margin-top: 1em; margin-bottom: 1em; font-family: Courier New, Courier, monospace; }
+
+/* handle nested section titles */
+h1.sectiontitle { margin-top: 0pc; margin-bottom: .1em; font-size: 1.5em; font-weight: bold; color: #003366;
+}
+h2.sectiontitle { margin-top: 0pc; margin-bottom: .1em; font-size: 1.25em; font-weight: bold;	color: #003366;
+}
+h3.sectiontitle { margin-top: 0pc; margin-bottom: .1em; font-size: 1.0em; font-weight: bold;	color: #003366;
+}
+h4.sectiontitle { margin-top: 0pc; margin-bottom: .1em; font-size: .9em; color: #003366;
+}
+
+/* Handle pagebreak and pagewide output class on headings */
+h1.pagewide { margin-top: 0pc; margin-bottom: .1em; font-size: 1.75em; font-weight: bold; color: #003366;
+}
+h2.pagewide { margin-top: 0pc; margin-bottom: .1em; font-size: 1.5em; font-weight: bold;	color: #003366;
+}
+h3.pagewide { margin-top: 0pc; margin-bottom: .1em; font-size: 1.25em; font-weight: bold;	color: #003366;
+}
+h4.pagewide { margin-top: 0pc; margin-bottom: .1em; font-size: 1.0em; font-weight: bold;	color: #003366;
+}
+
+h1.pagebreak { margin-top: 0pc; margin-bottom: .1em; font-size: 1.75em; font-weight: bold;	color: #003366;
+}
+h2.pagebreak { margin-top: 0pc; margin-bottom: .1em; font-size: 1.5em; font-weight: bold;	color: #003366;
+}
+h3.pagebreak { margin-top: 0pc; margin-bottom: .1em; font-size: 1.25em; font-weight: bold;	color: #003366;
+}
+h4.pagebreak { margin-top: 0pc; margin-bottom: .1em; font-size: 1.0em; font-weight: bold;	color: #003366;
+}
+
+/* All note formats have the same default presentation */
+.note {
+	margin-top: 1em;
+	margin-bottom : 1em;
+	border-top-color: #D1DEE6;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #D1DEE6;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #014175;
+	font-size: 0.92em;
+}
+.notetitle { font-weight: bold; color: #003366; }
+.notelisttitle { font-weight: bold; color: #003366; }
+
+.tip {
+	margin-top: 1em;
+	margin-bottom : 1em;
+	margin-top: 1em;
+	margin-bottom : 1em;
+	border-top-color: #D1DEE6;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #C3C9A7;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #014175;
+	font-size: 0.92em;
+}
+.tiptitle { font-weight: bold; color: #003366;}
+
+/* old tip with green text and rulings
+
+.tip { margin-top: 1em; margin-bottom : 1em; 
+	border-top-color: #8ea276;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #8ea276;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #014175;
+	font-size: 0.92em;
+}
+.tiptitle { font-weight: bold; color: #003366;}
+*/
+.fastpath { margin-top: 1em; margin-bottom : 1em;
+	border-top-color: #D1DEE6;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #D1DEE6;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #014175;
+	font-size: 0.92em;
+}
+.fastpathtitle { font-weight: bold; color: #003366; }
+
+.important {
+	margin-top: 1em;
+	margin-bottom : 1em;
+	border-top-color: #CC0000;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #CC0000;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456;
+	font-size: 0.92em;
+}
+.importanttitle {
+	font-weight: bold;
+	color: #CC0000;
+	text-transform: uppercase;
+}
+
+.remember { margin-top: 1em; margin-bottom : 1em; 
+	border-top-color: #D1DEE6;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #D1DEE6;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456;
+	font-size: 0.92em;
+}
+.remembertitle { font-weight: bold; color: #003366; }
+
+.restriction { margin-top: 1em; margin-bottom : 1em; 
+	border-top-color: #D1DEE6;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #D1DEE6;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456; 
+	font-size: 0.92em;
+	font-size: 0.92em;
+}
+.restrictiontitle { font-weight: bold; color: #003456; }
+
+.attention { margin-top: 1em; margin-bottom : 1em; 
+	border-top-color: #CC0000;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #CC0000;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456; 
+	font-size: 0.92em;
+}
+.attentiontitle { 	font-weight: bold;
+	color: #CC0000;
+	text-transform: uppercase;
+ }
+
+.danger { font-weight: bold; margin-top: 1em; margin-bottom : 1em; 
+	border-top-color: #CC0000;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #CC0000;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456; 
+	font-size: 0.92em;
+}
+.dangertitle { 	font-weight: bold;
+	color: #CC0000;
+	text-transform: uppercase;
+ }
+
+.caution { font-weight: bold; margin-bottom : 1em; 
+	border-top-color: #CC0000;
+	border-top-style: solid;
+	border-top-width: thin;
+	border-bottom-color: #CC0000;
+	border-bottom-style: solid;
+	border-bottom-width: thin;
+	color: #003456; 
+	font-size: 0.92em;
+}
+.cautiontitle { 	font-weight: bold;
+	color: #CC0000;
+	text-transform: uppercase;
+ }
+
+/* Simple lists do not get a bullet */
+ul.simple { list-style-type: none }
+
+ul.check
+{
+	list-style-type: square;
+}
+
+/* Used on the first column of a table, when rowheader="firstcol" is used */
+.firstcol { font-weight : bold;}
+
+/* Various basic phrase styles */
+.bold { font-weight: bold; }
+.boldItalic { font-weight: bold; font-style: italic; }
+.italic { font-style: italic; }
+.underlined { text-decoration: underline; }
+.uicontrol { font-weight: bold; }
+.parmname { font-weight: bold; }
+kbd { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.kwd { font-weight: bold; font-family: Courier New, Courier, monospace; }
+.defkwd { font-weight: bold; text-decoration: underline; }
+.var { font-style : italic;}
+.shortcut { text-decoration: underline; }
+.userinput { font-size: 1em; font-weight: bold; font-family: Courier New, Courier, monospace; }
+.sysout { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.synph { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.codeph { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.option { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.filepath { font-size: 1em; font-family: Courier New, Courier, monospace; }
+.cmdname { font-size: 1em; font-family: Courier New, Courier, monospace;  }
+
+/* Default of bold for definition list terms */
+.dlterm { font-weight: bold; }
+
+/* Use CSS to expand lists with @compact="no" */
+.li { margin-top: 1em; margin-bottom: 1em;}
+.dltermexpand { font-weight: bold; margin-top: 1em; }
+*[compact="yes"]>li { margin-top: 0em;}
+*[compact="no"]>li { margin-top: .53em;}	
+.liexpand { margin-top: 0em; margin-bottom: 1em }
+.sliexpand { margin-top: 0em; margin-bottom: 1em }
+.dlexpand { margin-top: 0em; margin-bottom: 1em }
+.ddexpand { margin-top: 0em; margin-bottom: 1em }
+.stepexpand { margin-top: 0em; margin-bottom: 1em }
+.substepexpand { margin-top: 0em; margin-bottom: 1em }
+
+/* Align images based on @align on topic/image */
+div.imageleft { text-align: left }
+div.imagecenter { text-align: center }
+div.imageright { text-align: right }
+div.imagejustify { text-align: justify }
+
+pre.screen { padding: 5px 5px 5px 5px; border: outset; background-color: #CCCCCC; margin-top: 2px; margin-bottom : 2px; white-space: pre}
+

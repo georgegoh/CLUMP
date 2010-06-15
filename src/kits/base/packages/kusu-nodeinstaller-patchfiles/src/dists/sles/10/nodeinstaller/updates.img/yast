@@ -1,0 +1,85 @@
+#!/bin/sh
+# $Id$
+#
+# Copyright 2007 Platform Computing Corporation.
+#
+# Licensed under GPL version 2; See LICENSE for details.
+#
+# Kusu 'faux yast' loader for nodeinstaller
+
+# Preserve the current environment 
+envfile="/tmp/yast-current-environment.$$.tmp"
+/usr/bin/env > $envfile
+
+# link /sbin/biosdecode from pmtools
+/bin/ln -sf /tmp/updates/usr/sbin/biosdecode /sbin/biosdecode
+
+export TERM=linux
+export LANG="en_US.UTF-8"
+source /opt/kusu/bin/kusuenv.sh
+
+# The following should go into kusuenv.sh
+export PYTHONPATH=$PYTHONPATH:/mounts/instsys/usr/lib/python2.4/site-packages:/mounts/instsys/usr/lib64/python2.4/site-packages
+
+# kusuenv.sh does not detect the following properly yet
+export KUSU_DIST="sles"
+export KUSU_DISTVER="10"
+export PRIMITIVE_LOCKDIR="/tmp"
+
+# sysfs interface to BIOS EDD information
+echo "Installing BIOS EDD kernel module ..."
+echo "modprobe edd"
+modprobe edd
+
+/usr/bin/python /opt/kusu/bin/nodeinstaller
+
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then 
+    echo "Modifying /etc/install.inf ..."
+    # Need to modify /etc/install.inf. install.inf is written out by linuxrc 
+    # for yast. Documented in README.linuxrc in linuxrc src
+    /bin/egrep -v 'InstMode:|SourceType:' /etc/install.inf > /tmp/install.inf.tmp
+    echo -e "AutoYaST: file:///tmp/kusu/autoinst.xml\nInstMode: http" >> /tmp/install.inf.tmp
+    /bin/cp -f /tmp/install.inf.tmp /etc/install.inf
+
+    # Unset kusu bits
+    for key in `/usr/bin/env | /bin/awk -F= '{print $1}' | grep KUSU`; do 
+        unset $key > /dev/null 2>&1
+    done
+    unset LANG > /dev/null 2>&1
+    unset PYTHONPATH  > /dev/null 2>&1
+    
+    # Restore the environment when we are done
+    source $envfile > /dev/null 2>&1 
+
+    echo "Starting the real yast..."
+    /usr/lib/YaST2/startup/YaST2.First-Stage "$@"
+
+    if [ -f "/kusu/mnt/var/lock/subsys/kusu-installer" ]; then
+        /bin/rm -f /kusu/mnt/var/lock/subsys/kusu-installer > /dev/null 2>&1
+    fi
+
+    if [ "$?" -eq 0 ]; then
+        /usr/bin/python /opt/kusu/bin/updatestate /kusu/mnt/etc/profile.nii > /dev/null 2>&1
+    fi
+
+elif [ $EXIT_CODE -eq 1 ]; then
+    # an unknown exception has occurred. Give user an option to copy out log+dump
+    echo "An internal program error has occurred."
+    echo "A log of the session can be found in /tmp/kusu.log"
+    echo "A dump of the error can be found in /tmp/exception.dump";
+    echo
+    echo "Press any key to reboot.";
+    read -n 1
+    echo b > /proc/sysrq-trigger
+elif [ $EXIT_CODE -eq 2 ]; then
+    # exit code 2 means user chose to exit
+    echo "Exiting on request. Please standby for reboot...";
+    echo b > /proc/sysrq-trigger
+else
+    # in case of problem with the Kusu Installer, we halt
+    echo "Something has gone very wrong. Press any key to reboot.";
+    read -n 1
+    echo b > /proc/sysrq-trigger
+fi
+

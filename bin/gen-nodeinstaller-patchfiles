@@ -1,0 +1,347 @@
+#!/usr/bin/env python
+# $Id$
+#
+# Copyright (C) 2007 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+# 
+# This script will create the nodeinstaller patchfiles tarball for the Kusu Boot Media
+#
+import os
+import subprocess
+import sys
+import tempfile
+import shutil
+import optparse
+import atexit
+import string
+
+# This is the list of components found in src/kits/base/packages that are
+# required to build the kusu installer runtime
+KUSU_RUNTIME = ['kusu-autoinstall',
+                'kusu-boot',
+                'kusu-buildkit',
+                'python-cheetah',
+                'kusu-core',
+                'kusu-createrepo',
+                'kusu-driverpatch',
+                'kusu-hardware',
+                'kusu-installer',
+                'python-IPy',
+                'kusu-kitops',
+                'kusu-md5crypt',
+                'kusu-networktool',
+                'kusu-nodeinstaller',
+                'primitive',
+                'kusu-path',
+                'python-sqlite2',
+                'kusu-repoman',
+                'python-sqlalchemy',
+                'kusu-ui',
+                'kusu-util']
+                
+CURRENT_PKGS = []
+
+def cleanup(tdir):
+    """Housekeeping routines"""
+    if os.path.exists(tdir): shutil.rmtree(tdir)
+
+def getKusuTrunk():
+    """Returns the SVN trunk for Kusu/Emerald"""
+    script = sys.argv[0]
+    bindir = os.path.dirname(script)
+    trunk = os.path.normpath(bindir + '/..')
+    return trunk
+
+def getRPM(arg, dirname, names):
+    """Returns the binary RPM"""
+    li = []
+    if '.svn' in names: names.remove('.svn')
+    for pkg in KUSU_RUNTIME:
+        li.extend([name for name in names if name.startswith(pkg) and name.endswith('.rpm')])
+        
+    if li:
+        for l in li: CURRENT_PKGS.append(os.path.abspath(os.path.join(dirname,l)))
+        
+def getAnacondaScript(distro, version):
+    """Returns the 'faux' anaconda script from the SVN sources."""
+    trunk = getKusuTrunk()
+    distspath = 'src/dists/%(distro)s/%(version)s/nodeinstaller' % {'distro':distro,
+                'version':version}
+    anacondaScript = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'updates.img/anaconda')))
+    return anacondaScript
+    
+def getKSTemplate(distro, version):
+    """Returns the ks.cfg.tmpl from the SVN sources."""
+    trunk = getKusuTrunk()
+    distspath = 'src/dists/%(distro)s/%(version)s/nodeinstaller' % {'distro':distro,
+                'version':version}
+    kscfgtmpl = os.path.abspath(os.path.join(trunk, os.path.join(distspath,'ks.cfg.tmpl')))
+    return kscfgtmpl
+    
+def generateUpdatesImg(updatesdir, updatesimgpath):
+    """ Generate the updates.img file. updatesdir points to the directory containing the contents that
+        should be included in the updates.img file.
+    """
+    packExt2FS(updatesdir, updatesimgpath, 20000)
+
+def packExt2FS(dirname, rootimgpath, size=5000):
+    """Packs the directory dir into an ext2fs rootimgpath. The size of the image can be passed as well.
+    """
+
+    if not os.path.exists(dirname):
+        raise OSError
+
+    if os.getuid() <> 0: raise OSError, "Operation requires root access!"
+
+    # nuke existing rootimgpath if existing
+    if os.path.exists(rootimgpath): os.remove(rootimgpath)
+
+    rootimgpath = os.path.abspath(rootimgpath)
+
+    # create scratchdir
+    scratchdir = tempfile.mkdtemp('emerald-')
+    tmprootdir = tempfile.mkdtemp(dir=scratchdir)
+
+    # create a block device, format it, mount it
+    cwd = scratchdir
+    ddP = subprocess.Popen("dd of=%s if=/dev/zero bs=1024 count=%s >/dev/null 2>&1" % (rootimgpath,size),shell=True,cwd=scratchdir)
+    ddP.communicate()
+    mke2fsP = subprocess.Popen("mke2fs -F %s >/dev/null 2>&1" % rootimgpath,shell=True,cwd=scratchdir)
+    mke2fsP.communicate()
+    mountP = subprocess.Popen("mount -o loop %s %s" % (rootimgpath,tmprootdir),shell=True,cwd=scratchdir)
+    mountP.communicate()
+
+    # copy the contents over to the newly made ext2fs filesystem
+    cmd = '(find . | cpio -mpdu %s) >/dev/null 2>&1'
+    cpioP = subprocess.Popen(cmd % tmprootdir,shell=True,cwd=dirname,stdout=subprocess.PIPE)
+    cpioP.wait()
+
+    # housecleaning
+    umountP = subprocess.Popen("umount %s" % tmprootdir,shell=True,cwd=scratchdir)
+    umountP.communicate()
+    if os.path.exists(tmprootdir): shutil.rmtree(tmprootdir)
+    if os.path.exists(scratchdir): shutil.rmtree(scratchdir)
+    
+
+        
+
+if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option('-d', '--dir', dest='nidir', help="Specify path of the nodeinstaller directory to generate.")
+    options, args = parser.parse_args()
+    
+    if not options.nidir:
+        print 'Please specify the name of nodeinstaller directory to generate!'
+        sys.exit(-1)
+    
+    #tarball = os.path.abspath(options.tarball)
+    nidir = os.path.abspath(options.nidir)
+    
+    # ensure the directory is safe
+    if nidir in ['/'+d for d in os.listdir('/') if not os.path.isfile(d)]:
+        print '%s is not a safe directory. Please specify another path!' % options.nidir
+        sys.exit(-1)
+    
+    # get the base kit RPMS directory
+    basekitRPMSdir = os.path.join(getKusuTrunk(),'src/kits/base/RPMS')
+    os.path.walk(basekitRPMSdir,getRPM,None)
+    
+    # take out kusu-nodeinstaller-patchfiles
+    nipkg = [p for p in CURRENT_PKGS if os.path.basename(p).startswith('kusu-nodeinstaller-patchfiles')]
+    
+    for p in nipkg:
+        CURRENT_PKGS.remove(p)
+    
+    if len(CURRENT_PKGS) <> len(KUSU_RUNTIME):
+        #print 'There are missing packages from the Base kit. Please rebuild the Base kit!'
+        tmplst = KUSU_RUNTIME[:]
+        NEW_CURRENT_PKGS = []
+	for i in CURRENT_PKGS:
+            n = string.join(string.split(os.path.basename(i), '-')[:-2], '-')
+            if n in tmplst:
+                NEW_CURRENT_PKGS.append(i)
+                tmplst.remove(n)
+        
+        CURRENT_PKGS = NEW_CURRENT_PKGS[:]
+        if len(tmplst) > 0:
+            print 'There are missing packages from the Base kit. Please rebuild the Base kit!'
+            print 'Missing packages:'
+	    for i in tmplst:
+                print '    %s' % i
+            sys.exit(-1)
+        
+    print 'Generating nodeinstaller patchfiles for rhel, fedora and centos'
+
+
+    rhel5AnacondaScript = getAnacondaScript('rhel','5')
+    rhel5kscfgTemplate = getKSTemplate('rhel','5')
+    
+    centos5AnacondaScript = getAnacondaScript('centos','5')
+    centos5kscfgTemplate = getKSTemplate('centos','5')
+    
+    fedora6AnacondaScript = getAnacondaScript('fedora','6')
+    fedora6kscfgTemplate = getKSTemplate('fedora','6')
+        
+    # get the nodeinstaller patchfiles directory
+    tardir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup,tardir)
+    
+    niPatchfilesDir = tardir
+    
+
+    # create the necessary patchfiles subdirectories
+    
+    # RHEL 5
+    rhel5PatchfilesDir = os.path.join(niPatchfilesDir,'nodeinstaller/rhel/5')
+    os.makedirs(rhel5PatchfilesDir)
+    os.mkdir(os.path.join(rhel5PatchfilesDir,'i386'))
+    shutil.copy(rhel5kscfgTemplate,os.path.join(rhel5PatchfilesDir,'i386'))
+    
+    os.mkdir(os.path.join(rhel5PatchfilesDir,'x86_64'))
+    shutil.copy(rhel5kscfgTemplate,os.path.join(rhel5PatchfilesDir,'x86_64'))
+    
+    # create a temp holding directory
+    tdir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup,tdir)
+    
+    # get a handle to /dev/null for redirecting stderr
+    err = open('/dev/null','w')
+    
+    for pkg in CURRENT_PKGS:
+        rpm2cpioP = subprocess.Popen('rpm2cpio %s' % pkg, shell=True, cwd=tdir, stdout=subprocess.PIPE, stderr=err)
+        cpioP = subprocess.Popen('cpio -id', shell=True, cwd=tdir,stdin=rpm2cpioP.stdout,stdout=subprocess.PIPE, stderr=err)
+        cpioP.wait()
+    
+    # fix the missing __init__.py
+    initpy = os.path.join(tdir,'opt/kusu/lib/python/kusu/__init__.py')
+    f = open(initpy,'w')
+    f.close()
+        
+    # copy the 'faux' anaconda script for each distro
+    shutil.copy(rhel5AnacondaScript, tdir)
+    os.chmod(os.path.join(tdir,'anaconda'),0755)
+    
+    updatesimg = os.path.join(rhel5PatchfilesDir,'i386/updates.img')
+    generateUpdatesImg(tdir,updatesimg)
+    
+    # also copy this for the x86_64 version
+    shutil.copy(updatesimg, os.path.join(rhel5PatchfilesDir,'x86_64/updates.img'))
+    
+    # remove temp holding directory
+    shutil.rmtree(tdir,ignore_errors=True)
+    err.close()
+    
+
+    # CENTOS 5
+    centos5PatchfilesDir = os.path.join(niPatchfilesDir,'nodeinstaller/centos/5')
+    os.makedirs(centos5PatchfilesDir)
+    
+    os.mkdir(os.path.join(centos5PatchfilesDir,'i386'))
+    shutil.copy(centos5kscfgTemplate,os.path.join(centos5PatchfilesDir,'i386'))
+    
+    os.mkdir(os.path.join(centos5PatchfilesDir,'x86_64'))
+    shutil.copy(centos5kscfgTemplate,os.path.join(centos5PatchfilesDir,'x86_64'))
+    
+    # create a temp holding directory
+    tdir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup,tdir)
+    
+    # get a handle to /dev/null for redirecting stderr
+    err = open('/dev/null','w')
+    
+    for pkg in CURRENT_PKGS:
+        rpm2cpioP = subprocess.Popen('rpm2cpio %s' % pkg, shell=True, cwd=tdir, stdout=subprocess.PIPE, stderr=err)
+        cpioP = subprocess.Popen('cpio -id', shell=True, cwd=tdir,stdin=rpm2cpioP.stdout,stdout=subprocess.PIPE, stderr=err)
+        cpioP.wait()
+        
+    # fix the missing __init__.py
+    initpy = os.path.join(tdir,'opt/kusu/lib/python/kusu/__init__.py')
+    f = open(initpy,'w')
+    f.close()
+        
+    # copy the 'faux' anaconda script for each distro
+    shutil.copy(centos5AnacondaScript, tdir)
+    os.chmod(os.path.join(tdir,'anaconda'),0755)
+    
+    updatesimg = os.path.join(centos5PatchfilesDir,'i386/updates.img')
+    generateUpdatesImg(tdir,updatesimg)
+    
+    # also copy this for the x86_64 version
+    shutil.copy(updatesimg, os.path.join(centos5PatchfilesDir,'x86_64/updates.img'))
+    
+    # remove temp holding directory
+    shutil.rmtree(tdir,ignore_errors=True)
+    err.close()
+    
+    
+    # FEDORA CORE 6
+    fedora6PatchfilesDir = os.path.join(niPatchfilesDir,'nodeinstaller/fedora/6')
+    os.makedirs(fedora6PatchfilesDir)
+    
+    os.mkdir(os.path.join(fedora6PatchfilesDir,'i386'))
+    shutil.copy(fedora6kscfgTemplate,os.path.join(fedora6PatchfilesDir,'i386'))
+    
+    os.mkdir(os.path.join(fedora6PatchfilesDir,'x86_64'))
+    shutil.copy(fedora6kscfgTemplate,os.path.join(fedora6PatchfilesDir,'x86_64'))
+    
+    # create a temp holding directory
+    tdir = tempfile.mkdtemp(prefix='emerald-')
+    atexit.register(cleanup,tdir)
+    
+    # get a handle to /dev/null for redirecting stderr
+    err = open('/dev/null','w')
+    
+    for pkg in CURRENT_PKGS:
+        rpm2cpioP = subprocess.Popen('rpm2cpio %s' % pkg, shell=True, cwd=tdir, stdout=subprocess.PIPE, stderr=err)
+        cpioP = subprocess.Popen('cpio -id', shell=True, cwd=tdir,stdin=rpm2cpioP.stdout,stdout=subprocess.PIPE, stderr=err)
+        cpioP.wait()
+        
+    # fix the missing __init__.py
+    initpy = os.path.join(tdir,'opt/kusu/lib/python/kusu/__init__.py')
+    f = open(initpy,'w')
+    f.close()
+        
+    # copy the 'faux' anaconda script for each distro
+    shutil.copy(fedora6AnacondaScript, tdir)
+    os.chmod(os.path.join(tdir,'anaconda'),0755)
+    
+    updatesimg = os.path.join(fedora6PatchfilesDir,'i386/updates.img')
+    generateUpdatesImg(tdir,updatesimg)
+    
+    # also copy this for the x86_64 version
+    shutil.copy(updatesimg, os.path.join(fedora6PatchfilesDir,'x86_64/updates.img'))
+    
+    # remove temp holding directory
+    shutil.rmtree(tdir,ignore_errors=True)
+    err.close()
+    
+    # remove existing nidir if any
+    if os.path.exists(nidir): shutil.rmtree(nidir)
+    
+    os.mkdir(nidir)
+
+    err = open('/dev/null','w')
+    cmd = 'find . | cpio -mpdu %s' % nidir
+    cpioP = subprocess.Popen(cmd,shell=True,cwd=tardir,stdout=subprocess.PIPE,stderr=err)
+    cpioP.wait()
+    err.close()
+    
+    print 'Generate nodeinstaller patchfile in', nidir
+
+    sys.exit(0)
+
+
+

@@ -1,0 +1,118 @@
+.TH kusu-net-tool 8 "Version: ${VERSION_STR}" "Platform Computing" "Kusu Base"
+.SH NAME
+kusu-net-tool \- advanced administrators tool for PCM
+.SH SYNOPSIS
+.PP
+.B kusu-net-tool <action> [options]
+.SH DESCRIPTION
+kusu-net-tool is an advanced administrators tool for configuring the PCM
+cluster.  It is used for changing PCM cluster settings, which typically are
+configured once during the PCM installation.
+.PP
+For example, kusu-net-tool can be used to change the host name of the primary installer, add/remove provisioning networks, and adjust PCM DNS settings.
+.PP
+Any action that results in the changing of a PCM configuration file
+will result in the restarting of any dependent services.  For example,
+if the DNS settings are changed.
+.PP
+It is
+.I highly
+recommended to restart the system whenever changes are made
+to the OS networking configuration.
+.PP
+WARNING: incorrect usage of this tool can result in a malfunctioning
+cluster.  Use with caution!
+.BI named
+is restarted as necessary.
+.SH ACTIONS
+Being a multi-purpose tool,
+.BI kusu-net-tool
+is action-based.  The functionality of the tool is dependent on the
+specified action keyword.
+
+The possible actions are as follows:
+.TP
+.B
+hostname [hostname]
+Display or update the hostname
+
+When called without the 'hostname' argument, "kusu-net-tool" will
+display the current PCM installer host name.  Specifying the host name
+will set the host name of the PCM primary installer and the system.
+If the system host name differs from the PCM host name, it will be noted.
+
+It is recommended to reboot the installer after changing this setting to
+ensure consistency between the system and PCM cluster.
+.TP
+.B
+addinstnic <device> \-\-desc=<text> [\-\-netmask=NETMASK] [\-\-ip\-address=<ipaddr>] [\-\-start\-ip=<ipaddr>] [\-\-provision|\-\-public] [\-\-gateway=<ipaddr>] [\-\-macaddr=MACADDR] [\-\-force] [\-\-default]
+Add the network interface specified by <device> to the PCM installer.
+
+The network interface will then be accessible from kusu-netedit and kusu-ngedit for
+further configuration within the PCM cluster.
+
+This will add the network interface to the OS network configuration. It is
+.I strongly
+recommended to reboot the system after
+performing this action.
+.TP
+.B
+delinstnic <device> [\-\-force]
+Remove the network interface specified by <device> from the PCM installer.
+
+Use '\-\-force' to skip the confirmation prompt when removing a network interface.
+
+Warning: removing a network interface in a running cluster may result in the
+loss of connectivity to any nodes connected to that network.  Use with caution!
+.TP
+.B
+updinstnic <device> [\-\-ip-address=<ipaddress>] [\-\-netmask=NETMASK] [\-\-macaddr=MACADDR] [\-\-gateway=<ipaddr>] [\-\-start-ip=<ipaddr>] [\-\-desc=<text>] [\-\-provision|\-\-public]
+Update the network settings for the specified installer NIC.
+
+This will update the OS network configuration (/etc/sysconfig/network-scripts/ifcfg-<device>). It is
+.I strongly
+recommended to reboot the
+system after making this change as the current network configuration will be
+out of sync with the configuration files.
+
+Warning: changing network configuration in a running PCM cluster may result
+in the loss of connectivity to any nodes connected to that network.  Use
+with caution!
+.TP
+.B
+hostinfo [hostname]
+Displays information about the given host or the installer.
+
+Without the 'hostname' parameter, this displays the network information for the
+installer host, otherwise it displays network information for the specified host.
+.TP
+.B
+dns <dns action> [options]
+The 'dns' action has sub-actions where <dns action> is one of the following:
+
+.B
+info
+\- Display the current settings for public and private DNS domain.
+
+.B
+set <dns1|dns2|dns3> <ipaddr>
+\- Set the specified DNS server 'slot' to the specified IP address. DNS servers are
+queried in order, meaning that 'dns1' takes precedence over 'dns2'.
+
+.B
+unset <dns1|dns2|dns3>
+\- Unset the specified DNS server 'slot'.  NOTE: at least one DNS server is
+required.
+
+.B
+domain public <domain>
+\- Set the public DNS domain to 'domain'.
+
+.B
+domain private <domain>
+\- Set the private DNS domain to 'domain'.
+.SH AUTHORS
+Mike Frisch <mfrisch_at_platform_dot_com>
+.SH "SEE ALSO"
+kusu-netedit(8),
+kusu-ngedit(8)

@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en-us" xml:lang="en-us">
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<meta name="copyright" content="(C) Copyright 2005" />
+<meta name="DC.rights.owner" content="(C) Copyright 2005" />
+<meta content="public" name="security" />
+<meta content="index,follow" name="Robots" />
+<meta http-equiv="PICS-Label" content='(PICS-1.1 "http://www.icra.org/ratingsv02.html" l gen true r (cz 1 lz 1 nz 1 oz 1 vz 1) "http://www.rsac.org/ratingsv01.html" l gen true r (n 0 s 0 v 0 l 0) "http://www.classify.org/safesurf/" l gen true r (SS~~000 1))' />
+<meta content="concept" name="DC.Type" />
+<meta name="DC.Title" content="About this kit" />
+<meta content="XHTML" name="DC.Format" />
+<meta content="v1485903" name="DC.Identifier" />
+<link href="commonltr.css" type="text/css" rel="stylesheet" />
+<title>About this kit</title>
+<script language="JavaScript">
+    
+    myUrl = location.href;
+    mySub1 = "/";
+    mySub2 = ".html";
+    //Returns everything right of the last instance of the subString to the end of the fullString
+    function rightFromSubStringToEndOfFullString(fullString, subString) {
+    if (fullString.lastIndexOf(subString) == -1) {
+    return "";
+    } else {
+    return fullString.substring(fullString.lastIndexOf(subString)+1, fullString.length);
+    }
+    }
+    
+    //Returns everything left of the last instance of the subString to the start of the fullString
+    function leftFromSubStringToBeginningOfFullString(fullString, subString) {
+    if (fullString.lastIndexOf(subString) == -1) {
+    return "";
+    } else {
+    return fullString.substring(0, fullString.lastIndexOf(subString));
+    }
+    }
+    
+    //Strip out everything before the last "/"
+    myVar = rightFromSubStringToEndOfFullString(myUrl, mySub1);
+    
+    //Strip out the .html
+    myText = leftFromSubStringToBeginningOfFullString(myVar, mySub2);
+    
+    // frameJammer_hp v2.52
+    
+    if (window.name!='main' && window.name!='booker_'
+    
+                             && !((self.innerHeight == 0) && (self.innerWidth == 0)))
+                            top.location.replace('index.htm?' +myVar+ '~main');
+    
+    // frameJammer_hp End
+    
+    
+    </script></head>
+<body><p align="right"><SCRIPT language="JavaScript">
+    
+      <!-- This script was supplied free by Hypergurl
+       http://www.hypergurl.com -->
+      <!-- Begin
+      if (window.print) {
+      document.write('<form>' + '<input type=button name=print value="Print" '
+      + 'onClick="javascript:window.print()"></form>');
+      }
+    // End -->
+             
+      </SCRIPT></p><br /><a name="v1485903"><!-- --></a>
+
+<h1 class="topictitle1">About this kit</h1>
+
+<div id="v1485905"><a name="v1485905"><!-- --></a><div class="section" id="v1485903__v1485906"><a name="v1485903__v1485906"><!-- --></a><p id="v1485903__v1489432"><a name="v1485903__v1489432"><!-- --></a>This Base kit contains a number of useful tools and utilities to help make cluster management easier. </p>
+
+<div class="p" id="v1485903__v1489433"><a name="v1485903__v1489433"><!-- --></a>
+<hr />
+<a name="v1485903__v1489434"><!-- --></a><table summary="" cellspacing="0" cellpadding="4" id="v1485903__v1489434" frame="hsides" border="0" rules="none"><thead align="left"><tr><th valign="top" width="NaN%" id="N10051"><p id="v1485903__v1489441"><a name="v1485903__v1489441"><!-- --></a>Tool</p>
+</th>
+<th valign="top" width="NaN%" id="N1005C"><p id="v1485903__v1489443"><a name="v1485903__v1489443"><!-- --></a>Description</p>
+</th>
+</tr>
+</thead>
+<tbody><tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489447"><a name="v1485903__v1489447"><!-- --></a>addhost</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489450"><a name="v1485903__v1489450"><!-- --></a>This tool lets you quickly and easily add and remove nodes from a specified OCS nodegroup. It also performs the following functions:</p>
+<div class="p" id="v1485903__v1489451"><a name="v1485903__v1489451"><!-- --></a><a name="v1485903__v1489452"><!-- --></a><ul id="v1485903__v1489452"><li id="v1485903__v1489453"><a name="v1485903__v1489453"><!-- --></a><p id="v1485903__v1489454"><a name="v1485903__v1489454"><!-- --></a>Monitors the DHCP log file for new MAC addresses; when a new address is detected, the host is added to the specified nodegroup</p>
+</li>
+<li id="v1485903__v1489455"><a name="v1485903__v1489455"><!-- --></a><p id="v1485903__v1489456"><a name="v1485903__v1489456"><!-- --></a>Updates existing hosts with new MAC addresses—this allows you to replace a compute node if it fails</p>
+</li>
+<li id="v1485903__v1489459"><a name="v1485903__v1489459"><!-- --></a><p id="v1485903__v1489460"><a name="v1485903__v1489460"><!-- --></a>Adds multiple hosts using a a file that contains a list of MAC addresses</p>
+</li>
+<li id="v1485903__v1489461"><a name="v1485903__v1489461"><!-- --></a><p id="v1485903__v1489462"><a name="v1485903__v1489462"><!-- --></a>Adds unmanaged nodes to the cluster</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489465"><a name="v1485903__v1489465"><!-- --></a>boothost</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489467"><a name="v1485903__v1489467"><!-- --></a>This tool creates the PXE configuration files used when starting up a node. Using this tool you can perform the following:</p>
+<div class="p" id="v1485903__v1489468"><a name="v1485903__v1489468"><!-- --></a><a name="v1485903__v1489469"><!-- --></a><ul id="v1485903__v1489469"><li id="v1485903__v1489470"><a name="v1485903__v1489470"><!-- --></a><p id="v1485903__v1489471"><a name="v1485903__v1489471"><!-- --></a>View the boot status of nodes or nodegroups</p>
+</li>
+<li id="v1485903__v1489472"><a name="v1485903__v1489472"><!-- --></a><p id="v1485903__v1489473"><a name="v1485903__v1489473"><!-- --></a>Set kernel and initrd parameters for a host</p>
+</li>
+<li id="v1485903__v1489474"><a name="v1485903__v1489474"><!-- --></a><p id="v1485903__v1489475"><a name="v1485903__v1489475"><!-- --></a>Write PXE files to <span class="filepath" id="v1485903__v1489476"><a name="v1485903__v1489476"><!-- --></a>/tftpboot/kusu/pxelinux.cfg</span> (each node has a PXE file that is created using the node’s MAC address)</p>
+</li>
+<li id="v1485903__v1489477"><a name="v1485903__v1489477"><!-- --></a><p id="v1485903__v1489478"><a name="v1485903__v1489478"><!-- --></a>Reinstall nodes using <span class="keyword">pdsh</span></p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489482"><a name="v1485903__v1489482"><!-- --></a>buildimage</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489484"><a name="v1485903__v1489484"><!-- --></a>This tool creates images (diskless and imaged). Other attributes include the following:</p>
+<div class="p" id="v1485903__v1489485"><a name="v1485903__v1489485"><!-- --></a><a name="v1485903__v1489486"><!-- --></a><ul id="v1485903__v1489486"><li id="v1485903__v1489487"><a name="v1485903__v1489487"><!-- --></a><p id="v1485903__v1489488"><a name="v1485903__v1489488"><!-- --></a>Automatically called by <span class="keyword">ngedit</span></p>
+</li>
+<li id="v1485903__v1489490"><a name="v1485903__v1489490"><!-- --></a><p id="v1485903__v1489491"><a name="v1485903__v1489491"><!-- --></a>Used in scripts to create custom OCS tools</p>
+</li>
+<li id="v1485903__v1489492"><a name="v1485903__v1489492"><!-- --></a><p id="v1485903__v1489493"><a name="v1485903__v1489493"><!-- --></a>Run when packages are added or removed from an image</p>
+</li>
+<li id="v1485903__v1489494"><a name="v1485903__v1489494"><!-- --></a><p id="v1485903__v1489495"><a name="v1485903__v1489495"><!-- --></a>Creates a chrooted file system to assemble all of the packages for an image</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489498"><a name="v1485903__v1489498"><!-- --></a>buildinitrd</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489500"><a name="v1485903__v1489500"><!-- --></a>This tool builds the initial ram disk for diskless and imaged nodegroups. Other attributes include the following:</p>
+<div class="p" id="v1485903__v1489501"><a name="v1485903__v1489501"><!-- --></a><a name="v1485903__v1489502"><!-- --></a><ul id="v1485903__v1489502"><li id="v1485903__v1489503"><a name="v1485903__v1489503"><!-- --></a><p id="v1485903__v1489504"><a name="v1485903__v1489504"><!-- --></a>Automatically called by <span class="keyword">ngedit</span></p>
+</li>
+<li id="v1485903__v1489506"><a name="v1485903__v1489506"><!-- --></a><p id="v1485903__v1489507"><a name="v1485903__v1489507"><!-- --></a>Used to customize the ram disk to support hardware or new drivers for existing hardware</p>
+</li>
+<li id="v1485903__v1489508"><a name="v1485903__v1489508"><!-- --></a><p id="v1485903__v1489509"><a name="v1485903__v1489509"><!-- --></a>Run this to rebuild the initrd when kernel drivers are added or removed from a nodegroup</p>
+</li>
+<li id="v1485903__v1489510"><a name="v1485903__v1489510"><!-- --></a><p id="v1485903__v1489511"><a name="v1485903__v1489511"><!-- --></a>Stores initrds in <span class="filepath" id="v1485903__v1489512"><a name="v1485903__v1489512"><!-- --></a>/tftpboot/kusu</span></p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489515"><a name="v1485903__v1489515"><!-- --></a>cfm</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489517"><a name="v1485903__v1489517"><!-- --></a>This tool is a configuration file manager that synchronizes nodegroup packages and files. It also has the following attributes:</p>
+<div class="p" id="v1485903__v1489518"><a name="v1485903__v1489518"><!-- --></a><a name="v1485903__v1489519"><!-- --></a><ul id="v1485903__v1489519"><li id="v1485903__v1489520"><a name="v1485903__v1489520"><!-- --></a><p id="v1485903__v1489521"><a name="v1485903__v1489521"><!-- --></a>Automatically called by <span class="keyword">ngedit</span> and <span class="keyword">addhost</span> tools</p>
+</li>
+<li id="v1485903__v1489524"><a name="v1485903__v1489524"><!-- --></a><p id="v1485903__v1489525"><a name="v1485903__v1489525"><!-- --></a>Extensible and can manage any file, including binaries</p>
+</li>
+<li id="v1485903__v1489526"><a name="v1485903__v1489526"><!-- --></a><p id="v1485903__v1489527"><a name="v1485903__v1489527"><!-- --></a>Restarts services on file changes by using plug-ins</p>
+</li>
+<li id="v1485903__v1489528"><a name="v1485903__v1489528"><!-- --></a><p id="v1485903__v1489529"><a name="v1485903__v1489529"><!-- --></a>Wraps other tools, such as <span class="keyword">cfmsync</span> (prepares files for distribution by the web server and broadcasts when available), <span class="keyword">cfmd</span> (listens for the <span class="keyword">cfmsync</span> broadcast and then starts <span class="keyword">cfmclient</span>), and <span class="keyword">cfmclient</span> (downloads appropriate packages from the http server)</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489537"><a name="v1485903__v1489537"><!-- --></a>netedit</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489539"><a name="v1485903__v1489539"><!-- --></a>This tool defines available network interfaces in the cluster; these defined networks are then associated with nodegroups. Netedit can define any network, including those not connected to the primary install node. Defined networks include Ethernet and Infiniband.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489542"><a name="v1485903__v1489542"><!-- --></a>ngedit</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489544"><a name="v1485903__v1489544"><!-- --></a>This is the nodegroup editor tool for OCS. (A nodegroup is a template that defines cluster node properties, including repositories, install-type, components, network configurations, OS packages, custom scripts, etc.)</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489547"><a name="v1485903__v1489547"><!-- --></a>nghosts</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489549"><a name="v1485903__v1489549"><!-- --></a>This tool moves hosts between node groups. Choose to move individual hosts of entire nodegroups.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489552"><a name="v1485903__v1489552"><!-- --></a>repoman</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489554"><a name="v1485903__v1489554"><!-- --></a>Nodegroups in an OCS cluster are associated with a particular repository—This tool manages those repositories. Note the following:<a name="v1485903__v1489555"><!-- --></a><ul id="v1485903__v1489555"><li id="v1485903__v1489556"><a name="v1485903__v1489556"><!-- --></a><p id="v1485903__v1489557"><a name="v1485903__v1489557"><!-- --></a>OCS kits are added to repositories</p>
+</li>
+<li id="v1485903__v1489558"><a name="v1485903__v1489558"><!-- --></a><p id="v1485903__v1489559"><a name="v1485903__v1489559"><!-- --></a>Multiple repositories can be installed on a single OCS primary install node</p>
+</li>
+<li id="v1485903__v1489560"><a name="v1485903__v1489560"><!-- --></a><p id="v1485903__v1489561"><a name="v1485903__v1489561"><!-- --></a>Repositories can be customized and updated; repository snapshots can be taken</p>
+</li>
+<li id="v1485903__v1489562"><a name="v1485903__v1489562"><!-- --></a><p id="v1485903__v1489563"><a name="v1485903__v1489563"><!-- --></a>OS media kits are turned into repositories.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489566"><a name="v1485903__v1489566"><!-- --></a>repopatch</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489568"><a name="v1485903__v1489568"><!-- --></a>This tool updates OCS repositories using <span class="keyword">yum</span>, and/or from RHN.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489572"><a name="v1485903__v1489572"><!-- --></a>kitops</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489574"><a name="v1485903__v1489574"><!-- --></a>This tool is used to manipulate kits in an OCS cluster. It can add, remove, and list kits. (Kits are pre-packaged applications or services that can be automatically installed and configured on cluster nodes once installed in an OCS cluster). </p>
+<div class="p" id="v1485903__v1489575"><a name="v1485903__v1489575"><!-- --></a>Note the following:<a name="v1485903__v1489576"><!-- --></a><ul id="v1485903__v1489576"><li id="v1485903__v1489577"><a name="v1485903__v1489577"><!-- --></a><p id="v1485903__v1489578"><a name="v1485903__v1489578"><!-- --></a>Kits can be installed from an iso, or a mount point</p>
+</li>
+<li id="v1485903__v1489579"><a name="v1485903__v1489579"><!-- --></a><p id="v1485903__v1489580"><a name="v1485903__v1489580"><!-- --></a>Kits must be added to a repository after they are installed</p>
+</li>
+<li id="v1485903__v1489581"><a name="v1485903__v1489581"><!-- --></a><p id="v1485903__v1489582"><a name="v1485903__v1489582"><!-- --></a>Kits typically contain default nodegroup associations</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489585"><a name="v1485903__v1489585"><!-- --></a>boot-media-tool</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489587"><a name="v1485903__v1489587"><!-- --></a>This tool is used by developers and Platform support personnel to create an OCS Kusu boot media from supported linux distributions.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489590"><a name="v1485903__v1489590"><!-- --></a>buildkit</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489592"><a name="v1485903__v1489592"><!-- --></a>This tool allows administrators and developers to build new OCS kits. It does this by creating a template workspace for the kit.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489595"><a name="v1485903__v1489595"><!-- --></a>driverpatch</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489597"><a name="v1485903__v1489597"><!-- --></a>This tool updates the initrd image with new sets of driverpacks.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489600"><a name="v1485903__v1489600"><!-- --></a>genconfig</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><div class="p" id="v1485903__v1489602"><a name="v1485903__v1489602"><!-- --></a>This is the OCS database reporting and file generating tool. It creates these configuration files for system services:<a name="v1485903__v1489603"><!-- --></a><ul id="v1485903__v1489603"><li id="v1485903__v1489604"><a name="v1485903__v1489604"><!-- --></a><p id="v1485903__v1489605"><a name="v1485903__v1489605"><!-- --></a>debug: A debug file for support purposes</p>
+</li>
+<li id="v1485903__v1489606"><a name="v1485903__v1489606"><!-- --></a><p id="v1485903__v1489607"><a name="v1485903__v1489607"><!-- --></a>hosts: The cluster’s <span class="filepath" id="v1485903__v1489608"><a name="v1485903__v1489608"><!-- --></a>/etc/hosts</span> file </p>
+</li>
+<li id="v1485903__v1489609"><a name="v1485903__v1489609"><!-- --></a><p id="v1485903__v1489610"><a name="v1485903__v1489610"><!-- --></a>hostspdsh: The cluster hosts file for pdsh</p>
+</li>
+<li id="v1485903__v1489611"><a name="v1485903__v1489611"><!-- --></a><p id="v1485903__v1489612"><a name="v1485903__v1489612"><!-- --></a>zone: The DNS zone file for the cluster</p>
+</li>
+<li id="v1485903__v1489613"><a name="v1485903__v1489613"><!-- --></a><p id="v1485903__v1489614"><a name="v1485903__v1489614"><!-- --></a>named: The DNS named.conf file</p>
+</li>
+<li id="v1485903__v1489615"><a name="v1485903__v1489615"><!-- --></a><p id="v1485903__v1489616"><a name="v1485903__v1489616"><!-- --></a>nodegroups: A list of OCS nodegroups</p>
+</li>
+<li id="v1485903__v1489617"><a name="v1485903__v1489617"><!-- --></a><p id="v1485903__v1489618"><a name="v1485903__v1489618"><!-- --></a>bashrc: The cluster bashrc configuration file</p>
+</li>
+<li id="v1485903__v1489619"><a name="v1485903__v1489619"><!-- --></a><p id="v1485903__v1489620"><a name="v1485903__v1489620"><!-- --></a>nodes: A list of nodes in the cluster</p>
+</li>
+<li id="v1485903__v1489621"><a name="v1485903__v1489621"><!-- --></a><p id="v1485903__v1489622"><a name="v1485903__v1489622"><!-- --></a>apache_conf: An apache configuration file</p>
+</li>
+<li id="v1485903__v1489623"><a name="v1485903__v1489623"><!-- --></a><p id="v1485903__v1489624"><a name="v1485903__v1489624"><!-- --></a>hostequiv: The hostequiv file</p>
+</li>
+<li id="v1485903__v1489625"><a name="v1485903__v1489625"><!-- --></a><p id="v1485903__v1489626"><a name="v1485903__v1489626"><!-- --></a>dhcpd: The dhcpd configuration file</p>
+</li>
+<li id="v1485903__v1489627"><a name="v1485903__v1489627"><!-- --></a><p id="v1485903__v1489628"><a name="v1485903__v1489628"><!-- --></a>revers: The DNS reverse lookup file</p>
+</li>
+<li id="v1485903__v1489629"><a name="v1485903__v1489629"><!-- --></a><p id="v1485903__v1489630"><a name="v1485903__v1489630"><!-- --></a>ssh: The ssh configuration file for nodes</p>
+</li>
+</ul>
+</div>
+<p id="v1485903__v1489631"><a name="v1485903__v1489631"><!-- --></a>Some plugins for this tool may allow the generation of configuration files for other OCS kits such as LSF, Lava, Nagios, and Cacti.</p>
+<p id="v1485903__v1489632"><a name="v1485903__v1489632"><!-- --></a>This tool is automatically called other OCS tools such as <span class="keyword">addhost</span> and <span class="keyword">ngedit</span>.</p>
+</td>
+</tr>
+<tr><td valign="top" width="NaN%" headers="N10051 "><p id="v1485903__v1489637"><a name="v1485903__v1489637"><!-- --></a>pdsh</p>
+</td>
+<td valign="top" width="NaN%" headers="N1005C "><p id="v1485903__v1489639"><a name="v1485903__v1489639"><!-- --></a>This high-performance, parellel remote shell utility is used to run commands in parallel across the OCS cluster. Note the following:</p>
+<div class="p" id="v1485903__v1489640"><a name="v1485903__v1489640"><!-- --></a><a name="v1485903__v1489641"><!-- --></a><ul id="v1485903__v1489641"><li id="v1485903__v1489642"><a name="v1485903__v1489642"><!-- --></a><p id="v1485903__v1489643"><a name="v1485903__v1489643"><!-- --></a>OCS automatically generates a pdsh “hosts” file</p>
+</li>
+<li id="v1485903__v1489644"><a name="v1485903__v1489644"><!-- --></a><p id="v1485903__v1489645"><a name="v1485903__v1489645"><!-- --></a>Configured to use ssh</p>
+</li>
+<li id="v1485903__v1489646"><a name="v1485903__v1489646"><!-- --></a><p id="v1485903__v1489647"><a name="v1485903__v1489647"><!-- --></a>Uses different remote execution modules, such as rsh, ssh, exec, etc.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+</div>
+
+<p id="v1485903__v1489867"><a name="v1485903__v1489867"><!-- --></a>This kit also provides an Environment Module package. Use this package to dynamically modify your environment with the use of modulefiles. Every modulefile contains the information required for configuring an application shell.</p>
+
+</div>
+
+</div>
+
+<div />
+
+</body>
+</html>

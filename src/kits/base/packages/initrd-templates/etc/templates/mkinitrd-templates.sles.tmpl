@@ -1,0 +1,296 @@
+#!/bin/sh
+
+##
+## Generate initrd templates
+##
+
+TEMP=\$( getopt -o v -l debug,destdir: -- "\$@" )
+eval set -- "\$TEMP"
+
+## Default destination directory
+DESTDIR="/opt/kusu/initrds"
+
+##
+## Default overlay directory
+##
+## This directory contains files which are placed inside the generated
+## initrd template.
+##
+OVERLAYDIR="/opt/kusu/share/initrd-templates/overlay"
+
+## Default file name of initrd-template
+ARCH=$ARCH
+FILENAME="rootfs.\$ARCH.cpio.gz"
+
+## Parse command-line arguments
+while true; do
+    case \$1 in
+        "-v")
+            shift
+            VERBOSE="yes"
+            ;;
+        "--debug")
+            shift
+            DEBUG="yes"
+            VERBOSE="yes"
+            ;;
+        "--destdir")
+            if [ ! -d "$2" ]; then
+                echo "Error: destdir $2 does not exist"
+                exit 1
+            fi
+            DESTDIR="$2"
+            shift 2
+            ;;
+        "--overlay")
+            if [ ! -d "$2" ]; then
+                echo "Error: overlay directory $2 does not exist"
+                exit 1
+            fi
+            OVERLAYDIR="$2"
+            shift 2
+            ;;
+        "--")
+            shift
+            break
+            ;;
+    esac
+done
+
+if [ "\$DEBUG" == "yes" ]; then set -x; fi
+
+INITRD_PATH="\$DESTDIR/\$FILENAME"
+
+echo "Creating initrd-template \"\$INITRD_PATH\""
+
+CURDIR=\$( pwd )
+
+# Temporary directory to contain fakeroot image
+#FAKEROOT="/var/tmp/kusu/initrd-templates-$$"
+FAKEROOT=$FAKEROOT
+
+if [ "\$VERBOSE" == "yes" ]; then
+    echo "Creating fakeroot in \$FAKEROOT"
+fi
+
+RSYNC="rsync -a"
+if [ "\$VERBOSE" == "yes" ]; then RSYNC="\$RSYNC -v"; fi
+
+echo "Getting packages via zypper.  Please wait..."
+
+PKGLIST="python python-xml busybox e2fsprogs device-mapper parted pyparted udev lvm2 aaa_base module-init-tools mingetty dhcp-client tar util-linux gawk yast2-python-bindings yast2-installation yast2-storage pmtools kusu-primitive iproute2"
+
+echo y | /usr/bin/zypper --root \$FAKEROOT service-add file://$REPOPATH localpackages
+echo y | /usr/bin/zypper --root \$FAKEROOT --non-interactive --no-gpg-checks install --auto-agree-with-licenses \$PKGLIST
+
+retval=$?
+
+if [ \$retval -ne 0 ]; then
+    echo "zypper returned an error (\$retval)"
+    exit 1
+fi
+
+rmdir \$FAKEROOT/media
+rmdir \$FAKEROOT/boot
+
+## Create symlinks to busybox
+( cd "\$FAKEROOT"; \
+ln -sf sbin/init; \
+ln -sf usr/bin/busybox linuxrc; \
+)
+
+## Remove a bunch of necessary files/directories
+rm -rf "\$FAKEROOT/etc/ppp"
+rm -rf "\$FAKEROOT/etc/skel"
+rm -rf "\$FAKEROOT/usr/local"
+rm -rf "\$FAKEROOT/usr/share/doc"
+rm -rf "\$FAKEROOT/usr/share/man"
+rm -rf "\$FAKEROOT/usr/games"
+rm -rf "\$FAKEROOT/usr/kerberos"
+rm -rf "\$FAKEROOT/usr/share/info"
+rm -rf "\$FAKEROOT/usr/share/locale"
+rm -rf "\$FAKEROOT/usr/share/eula"
+rm -rf "\$FAKEROOT/usr/share/games"
+rm -rf "\$FAKEROOT/usr/share/firstboot"
+rm -rf "\$FAKEROOT/usr/share/terminfo"
+rm -rf "\$FAKEROOT/usr/lib/locale"
+rm -rf "\$FAKEROOT/usr/lib/pkgconfig"
+rm -rf "\$FAKEROOT/usr/share/i18n"
+rm -rf "\$FAKEROOT/usr/lib/gconv"
+
+if [ "\$ARCH" = "x86_64" ]; then
+	rm -rf "\$FAKEROOT/usr/lib64/gconv"
+fi
+
+## Remove binaries and establish symlinks to busybox
+( cd "\$FAKEROOT/usr/bin"; \
+rm -f ./[; ln -s busybox ./[; \
+rm -f ./[[; ln -s busybox ./[[; \
+rm -f ./bunzip2; ln -s busybox ./bunzip2; \
+rm -f ./bzcat; ln -s busybox ./bzcat; \
+rm -f ./chvt; ln -s busybox ./chvt; \
+rm -f ./clear; ln -s busybox ./clear; \
+rm -f ./cmp; ln -s busybox ./cmp; \
+rm -f ./cut; ln -s busybox ./cut; \
+rm -f ./dirname; ln -s busybox ./dirname; \
+rm -f ./du; ln -s busybox ./du; \
+rm -f ./env; ln -s busybox ./env; \
+rm -f ./expr; ln -s busybox ./expr; \
+rm -f ./find; ln -s busybox ./find; \
+rm -f ./free; ln -s busybox ./free; \
+rm -f ./head; ln -s busybox ./head; \
+rm -f ./hexdump; ln -s busybox ./hexdump; \
+rm -f ./id; ln -s busybox ./id; \
+rm -f ./killall; ln -s busybox ./killall; \
+rm -f ./logger; ln -s busybox ./logger; \
+rm -f ./printf; ln -s busybox ./printf; \
+rm -f ./readlink; ln -s busybox ./readlink; \
+rm -f ./reset; ln -s busybox ./reset; \
+rm -f ./strings; ln -s busybox ./strings; \
+rm -f ./tail; ln -s busybox ./tail; \
+rm -f ./test; ln -s busybox ./test; \
+rm -f ./time; ln -s busybox ./time; \
+rm -f ./tty; ln -s busybox ./tty; \
+rm -f ./uniq; ln -s busybox ./uniq; \
+rm -f ./uptime; ln -s busybox ./uptime; \
+rm -f ./wc; ln -s busybox ./wc; \
+rm -f ./wget; ln -s busybox ./wget; \
+rm -f ./which; ln -s busybox ./which; \
+rm -f ./whoami; ln -s busybox ./whoami; \
+rm -f ./xargs; ln -s busybox ./xargs; \
+rm -f ./yes; ln -s busybox ./yes; \
+)
+
+( cd "\$FAKEROOT/bin"; \
+rm -f ./ash; ln -s ../usr/bin/busybox ./ash; \
+rm -f ./basename; ln -s ../usr/bin/busybox ./basename; \
+rm -f ./cat; ln -s ../usr/bin/busybox ./cat; \
+rm -f ./chgrp; ln -s ../usr/bin/busybox ./chgrp; \
+rm -f ./chmod; ln -s ../usr/bin/busybox ./chmod; \
+rm -f ./chown; ln -s ../usr/bin/busybox ./chown; \
+rm -f ./cp; ln -s ../usr/bin/busybox ./cp; \
+rm -f ./cpio; ln -s ../usr/bin/busybox ./cpio; \
+rm -f ./date; ln -s ../usr/bin/busybox ./date; \
+rm -f ./dd; ln -s ../usr/bin/busybox ./dd; \
+rm -f ./df; ln -s ../usr/bin/busybox ./df; \
+rm -f ./dmesg; ln -s ../usr/bin/busybox ./dmesg; \
+rm -f ./echo; ln -s ../usr/bin/busybox ./echo; \
+rm -f ./egrep; ln -s ../usr/bin/busybox ./egrep; \
+rm -f ./false; ln -s ../usr/bin/busybox ./false; \
+rm -f ./fgrep; ln -s ../usr/bin/busybox ./fgrep; \
+rm -f ./grep; ln -s ../usr/bin/busybox ./grep; \
+rm -f ./gunzip; ln -s ../usr/bin/busybox ./gunzip; \
+rm -f ./gzip; ln -s ../usr/bin/busybox ./gzip; \
+rm -f ./hostname; ln -s ../usr/bin/busybox ./hostname; \
+rm -f ./kill; ln -s ../usr/bin/busybox ./kill; \
+rm -f ./ln; ln -s ../usr/bin/busybox ./ln; \
+rm -f ./mkdir; ln -s ../usr/bin/busybox ./mkdir; \
+rm -f ./mknod; ln -s ../usr/bin/busybox ./mknod; \
+rm -f ./more; ln -s ../usr/bin/busybox ./more; \
+rm -f ./mv; ln -s ../usr/bin/busybox ./mv; \
+rm -f ./pidof; ln -s ../usr/bin/busybox ./pidof; \
+rm -f ./ping; ln -s ../usr/bin/busybox ./ping; \
+rm -f ./ps; ln -s ../usr/bin/busybox ./ps; \
+rm -f ./pwd; ln -s ../usr/bin/busybox ./pwd; \
+rm -f ./rm; ln -s ../usr/bin/busybox ./rm; \
+rm -f ./rmdir; ln -s ../usr/bin/busybox ./rmdir; \
+rm -f ./sed; ln -s ../usr/bin/busybox ./sed; \
+rm -f ./sh; ln -s bash sh; \
+rm -f ./sleep; ln -s ../usr/bin/busybox ./sleep; \
+rm -f ./sort; ln -s ../usr/bin/busybox ./sort; \
+rm -f ./sync; ln -s ../usr/bin/busybox ./sync; \
+rm -f ./touch; ln -s ../usr/bin/busybox ./touch; \
+rm -f ./true; ln -s ../usr/bin/busybox ./true; \
+rm -f ./uname; ln -s ../usr/bin/busybox ./uname; \
+rm -f ./usleep; ln -s ../usr/bin/busybox ./usleep; \
+rm -f ./zcat; ln -s ../usr/bin/busybox ./zcat; \
+)
+
+( cd "\$FAKEROOT/sbin"; \
+rm -f halt; ln -s ../usr/bin/busybox halt; \
+rm -f ifconfig; ln -s ../usr/bin/busybox ifconfig; \
+rm -f init; ln -s ../usr/bin/busybox init; \
+rm -f klogd; ln -s ../usr/bin/busybox klogd; \
+rm -f pivot_root; ln -s ../usr/bin/busybox pivot_root; \
+rm -f poweroff; ln -s ../usr/bin/busybox poweroff; \
+rm -f reboot; ln -s ../usr/bin/busybox reboot; \
+rm -f route; ln -s ../usr/bin/busybox route; \
+rm -f swapoff; ln -s ../usr/bin/busybox swapoff; \
+rm -f swapon; ln -s ../usr/bin/busybox swapon; \
+rm -f syslogd; ln -s ../usr/bin/busybox syslogd; \
+)
+
+## Remove and recreate /var directory with symlinks to /tmp
+rm -rf "\$FAKEROOT/var"
+mkdir -p "\$FAKEROOT/var/lib"
+( cd "\$FAKEROOT/var"; \
+ln -s ../../tmp lib/pcmcia; \
+ln -s ../tmp cache; \
+ln -s ../tmp lock; \
+ln -s ../tmp log; \
+ln -s ../tmp pcmcia; \
+ln -s ../tmp run; \
+ln -s ../tmp spool; \
+ln -s ../tmp tmp; \
+)
+
+touch \$FAKEROOT/etc/mtab
+
+## Create /dev entries
+$MAKEDEV generic-i386
+$MAKEDEV tty{1..7}
+$MAKEDEV netlink
+$MAKEDEV ptmx
+$MAKEDEV rtc
+
+mkdir \$FAKEROOT/dev/pts
+mkdir \$FAKEROOT/dev/shm
+
+( cd \$FAKEROOT/dev; ln -s ../tmp/log log )
+
+## Massage the initscript directories
+
+## ... remove all initscripts, except 'functions'
+find \$FAKEROOT/etc/rc.d -type f -not -name functions -exec rm -f {} \;
+
+## .. remove symlinks
+rm -f \$FAKEROOT/etc/rc.local \$FAKEROOT/etc/rc.sysinit \$FAKEROOT/etc/rc
+rm -f \$FAKEROOT/etc/rc{0..6}.d
+
+## ... remove unnecessary rc directories
+rm -rf \$FAKEROOT/etc/rc.d/rc{0..6}.d
+
+## These files exist from kusu-base-installer and kusu-base-node
+if [ "\$ARCH" = "x86_64" ]; then
+    mkdir -p \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/kusu/lib/python/path.py* \$FAKEROOT/usr/lib64/python2.4
+else
+    mkdir -p \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/kusu/lib/python/path.py* \$FAKEROOT/usr/lib/python2.4
+fi
+
+## Copy overlay files
+echo -n "Copying overlay files... "
+\$RSYNC \$OVERLAYDIR/ \$FAKEROOT
+if [ $? -ne 0 ]; then
+    echo "failed."
+    echo "Error: rsync failed copying \$OVERLAYDIR to \$FAKEROOT"
+    exit 1
+fi
+echo "done."
+
+## Create the cpio image
+echo -n "Creating cpio image... "
+( cd "\$FAKEROOT"; find . | cpio -ocv | gzip - >\$INITRD_PATH ) >/dev/null 2>&1
+echo "done."
+
+## Cleanup the temporary fakeroot directory
+if [ "\$DEBUG" != "yes" ]; then rm -rf "\$FAKEROOT"; fi
+
+echo "Done."

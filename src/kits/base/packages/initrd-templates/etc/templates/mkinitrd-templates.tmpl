@@ -1,0 +1,422 @@
+#!/bin/sh
+
+##
+## Generate initrd templates
+##
+
+TEMP=\$( getopt -o v -l debug,destdir: -- "\$@" )
+eval set -- "\$TEMP"
+
+## Default destination directory
+DESTDIR="/opt/kusu/initrds"
+
+##
+## Default overlay directory
+##
+## This directory contains files which are placed inside the generated
+## initrd template.
+##
+OVERLAYDIR="/opt/kusu/share/initrd-templates/overlay"
+
+## Default file name of initrd-template
+ARCH=$ARCH
+FILENAME="rootfs.\$ARCH.cpio.gz"
+
+## Parse command-line arguments
+while true; do
+    case \$1 in
+        "-v")
+            shift
+            VERBOSE="yes"
+            ;;
+        "--debug")
+            shift
+            DEBUG="yes"
+            VERBOSE="yes"
+            ;;
+        "--destdir")
+            if [ ! -d "$2" ]; then
+                echo "Error: destdir $2 does not exist"
+                exit 1
+            fi
+            DESTDIR="$2"
+            shift 2
+            ;;
+        "--overlay")
+            if [ ! -d "$2" ]; then
+                echo "Error: overlay directory $2 does not exist"
+                exit 1
+            fi
+            OVERLAYDIR="$2"
+            shift 2
+            ;;
+        "--")
+            shift
+            break
+            ;;
+    esac
+done
+
+if [ "\$DEBUG" == "yes" ]; then set -x; fi
+
+INITRD_PATH="\$DESTDIR/\$FILENAME"
+
+echo "Creating initrd-template \"\$INITRD_PATH\""
+
+CURDIR=\$( pwd )
+
+# Temporary directory to contain fakeroot image
+#FAKEROOT="/var/tmp/kusu/initrd-templates-$$"
+FAKEROOT=$FAKEROOT
+
+if [ "\$VERBOSE" == "yes" ]; then
+    echo "Creating fakeroot in \$FAKEROOT"
+fi
+
+RSYNC="rsync -a"
+if [ "\$VERBOSE" == "yes" ]; then RSYNC="\$RSYNC -v"; fi
+
+echo "Getting packages via yum.  Please wait..."
+
+PKGLIST="python busybox e2fsprogs device-mapper parted pyparted udev lvm2 rng-utils sendmail"
+
+## Ensure we're using packages for the right architecture
+for pkg in \$PKGLIST; do NEWPKGLIST="\$NEWPKGLIST \$pkg.\$ARCH"; done
+
+PKGLIST="\$NEWPKGLIST"
+
+yum -y -c $yumconf --installroot=\$FAKEROOT install \$NEWPKGLIST >/dev/null 2>&1
+
+retval=$?
+
+if [ \$retval -ne 0 ]; then
+    echo "yum returned an error (\$retval)"
+    exit 1
+fi
+
+rmdir \$FAKEROOT/selinux
+rmdir \$FAKEROOT/media
+rmdir \$FAKEROOT/boot
+
+## Create symlinks to busybox
+( cd "\$FAKEROOT"; \
+ln -sf sbin/init; \
+ln -sf sbin/busybox linuxrc; \
+)
+
+## Remove a bunch of necessary files/directories
+rm -rf "\$FAKEROOT/etc/ppp"
+rm -rf "\$FAKEROOT/etc/skel"
+rm -rf "\$FAKEROOT/usr/local"
+rm -rf "\$FAKEROOT/usr/share/doc"
+rm -rf "\$FAKEROOT/usr/share/man"
+rm -rf "\$FAKEROOT/usr/games"
+rm -rf "\$FAKEROOT/usr/kerberos"
+rm -rf "\$FAKEROOT/usr/share/info"
+rm -rf "\$FAKEROOT/usr/share/locale"
+rm -rf "\$FAKEROOT/usr/share/eula"
+rm -rf "\$FAKEROOT/usr/share/games"
+rm -rf "\$FAKEROOT/usr/share/firstboot"
+rm -rf "\$FAKEROOT/usr/share/terminfo"
+rm -rf "\$FAKEROOT/usr/lib/locale"
+rm -rf "\$FAKEROOT/usr/lib/pkgconfig"
+rm -rf "\$FAKEROOT/usr/share/i18n"
+rm -rf "\$FAKEROOT/usr/lib/gconv"
+
+if [ "\$ARCH" = "x86_64" ]; then
+	rm -rf "\$FAKEROOT/usr/lib64/gconv"
+fi
+
+echo "Removing unnecessary packages"
+rpm --root "\$FAKEROOT" -e --nodeps mingetty tzdata SysVinit
+
+## Remove binaries and establish symlins to busybox
+( cd "\$FAKEROOT/usr/bin"; \
+rm -f ./[; ln -s ../../sbin/busybox ./[; \
+rm -f ./[[; ln -s ../../sbin/busybox ./[[; \
+rm -f ./ar; ln -s ../../sbin/busybox ./ar; \
+rm -f ./arping; ln -s ../../sbin/busybox ./arping; \
+rm -f ./awk; ln -s ../../sbin/busybox ./awk; \
+rm -f ./basename; ln -s ../../sbin/busybox ./basename; \
+rm -f ./bunzip2; ln -s ../../sbin/busybox ./bunzip2; \
+rm -f ./bzcat; ln -s ../../sbin/busybox ./bzcat; \
+rm -f ./chrt; ln -s ../../sbin/busybox ./chrt; \
+rm -f ./chvt; ln -s ../../sbin/busybox ./chvt; \
+rm -f ./cksum; ln -s ../../sbin/busybox ./cksum; \
+rm -f ./clear; ln -s ../../sbin/busybox ./clear; \
+rm -f ./cmp; ln -s ../../sbin/busybox ./cmp; \
+rm -f ./crontab; ln -s ../../sbin/busybox ./crontab; \
+rm -f ./cut; ln -s ../../sbin/busybox ./cut; \
+rm -f ./dc; ln -s ../../sbin/busybox ./dc; \
+rm -f ./deallocvt; ln -s ../../sbin/busybox ./deallocvt; \
+rm -f ./diff; ln -s ../../sbin/busybox ./diff; \
+rm -f ./dirname; ln -s ../../sbin/busybox ./dirname; \
+rm -f ./dos2unix; ln -s ../../sbin/busybox ./dos2unix; \
+rm -f ./du; ln -s ../../sbin/busybox ./du; \
+rm -f ./dumpleases; ln -s ../../sbin/busybox ./dumpleases; \
+rm -f ./eject; ln -s ../../sbin/busybox ./eject; \
+rm -f ./env; ln -s ../../sbin/busybox ./env; \
+rm -f ./ether-wake; ln -s ../../sbin/busybox ./ether-wake; \
+rm -f ./expr; ln -s ../../sbin/busybox ./expr; \
+rm -f ./fdformat; ln -s ../../sbin/busybox ./fdformat; \
+rm -f ./find; ln -s ../../sbin/busybox ./find; \
+rm -f ./fold; ln -s ../../sbin/busybox ./fold; \
+rm -f ./free; ln -s ../../sbin/busybox ./free; \
+rm -f ./fuser; ln -s ../../sbin/busybox ./fuser; \
+rm -f ./head; ln -s ../../sbin/busybox ./head; \
+rm -f ./hexdump; ln -s ../../sbin/busybox ./hexdump; \
+rm -f ./hostid; ln -s ../../sbin/busybox ./hostid; \
+rm -f ./id; ln -s ../../sbin/busybox ./id; \
+rm -f ./install; ln -s ../../sbin/busybox ./install; \
+rm -f ./ipcrm; ln -s ../../sbin/busybox ./ipcrm; \
+rm -f ./ipcs; ln -s ../../sbin/busybox ./ipcs; \
+rm -f ./killall; ln -s ../../sbin/busybox ./killall; \
+rm -f ./killall5; ln -s ../../sbin/busybox ./killall5; \
+rm -f ./last; ln -s ../../sbin/busybox ./last; \
+rm -f ./length; ln -s ../../sbin/busybox ./length; \
+rm -f ./less; ln -s ../../sbin/busybox ./less; \
+rm -f ./loadfont; ln -s ../../sbin/busybox ./loadfont; \
+rm -f ./logger; ln -s ../../sbin/busybox ./logger; \
+rm -f ./logname; ln -s ../../sbin/busybox ./logname; \
+rm -f ./lzmacat; ln -s ../../sbin/busybox ./lzmacat; \
+rm -f ./md5sum; ln -s ../../sbin/busybox ./md5sum; \
+rm -f ./mesg; ln -s ../../sbin/busybox ./mesg; \
+rm -f ./mkfifo; ln -s ../../sbin/busybox ./mkfifo; \
+rm -f ./nohup; ln -s ../../sbin/busybox ./nohup; \
+rm -f ./od; ln -s ../../sbin/busybox ./od; \
+rm -f ./openvt; ln -s ../../sbin/busybox ./openvt; \
+rm -f ./passwd; ln -s ../../sbin/busybox ./passwd; \
+rm -f ./patch; ln -s ../../sbin/busybox ./patch; \
+rm -f ./printf; ln -s ../../sbin/busybox ./printf; \
+rm -f ./readlink; ln -s ../../sbin/busybox ./readlink; \
+rm -f ./realpath; ln -s ../../sbin/busybox ./realpath; \
+rm -f ./renice; ln -s ../../sbin/busybox ./renice; \
+rm -f ./reset; ln -s ../../sbin/busybox ./reset; \
+rm -f ./resize; ln -s ../../sbin/busybox ./resize; \
+rm -f ./seq; ln -s ../../sbin/busybox ./seq; \
+rm -f ./setkeycodes; ln -s ../../sbin/busybox ./setkeycodes; \
+rm -f ./setsid; ln -s ../../sbin/busybox ./setsid; \
+rm -f ./sha1sum; ln -s ../../sbin/busybox ./sha1sum; \
+rm -f ./sort; ln -s ../../sbin/busybox ./sort; \
+rm -f ./strings; ln -s ../../sbin/busybox ./strings; \
+rm -f ./tail; ln -s ../../sbin/busybox ./tail; \
+rm -f ./tee; ln -s ../../sbin/busybox ./tee; \
+rm -f ./telnet; ln -s ../../sbin/busybox ./telnet; \
+rm -f ./test; ln -s ../../sbin/busybox ./test; \
+rm -f ./tftp; ln -s ../../sbin/busybox ./tftp; \
+rm -f ./time; ln -s ../../sbin/busybox ./time; \
+rm -f ./top; ln -s ../../sbin/busybox ./top; \
+rm -f ./tr; ln -s ../../sbin/busybox ./tr; \
+rm -f ./traceroute; ln -s ../../sbin/busybox ./traceroute; \
+rm -f ./tty; ln -s ../../sbin/busybox ./tty; \
+rm -f ./uniq; ln -s ../../sbin/busybox ./uniq; \
+rm -f ./unix2dos; ln -s ../../sbin/busybox ./unix2dos; \
+rm -f ./unlzma; ln -s ../../sbin/busybox ./unlzma; \
+rm -f ./unzip; ln -s ../../sbin/busybox ./unzip; \
+rm -f ./uptime; ln -s ../../sbin/busybox ./uptime; \
+rm -f ./uudecode; ln -s ../../sbin/busybox ./uudecode; \
+rm -f ./uuencode; ln -s ../../sbin/busybox ./uuencode; \
+rm -f ./vlock; ln -s ../../sbin/busybox ./vlock; \
+rm -f ./wc; ln -s ../../sbin/busybox ./wc; \
+rm -f ./wget; ln -s ../../sbin/busybox ./wget; \
+rm -f ./which; ln -s ../../sbin/busybox ./which; \
+rm -f ./who; ln -s ../../sbin/busybox ./who; \
+rm -f ./whoami; ln -s ../../sbin/busybox ./whoami; \
+rm -f ./xargs; ln -s ../../sbin/busybox ./xargs; \
+rm -f ./yes; ln -s ../../sbin/busybox ./yes; \
+)
+
+( cd "\$FAKEROOT/bin"; \
+rm -f ./addgroup; ln -s ../sbin/busybox ./addgroup; \
+rm -f ./adduser; ln -s ../sbin/busybox ./adduser; \
+rm -f ./ash; ln -s ../sbin/busybox ./ash; \
+rm -f ./cat; ln -s ../sbin/busybox ./cat; \
+rm -f ./catv; ln -s ../sbin/busybox ./catv; \
+rm -f ./chgrp; ln -s ../sbin/busybox ./chgrp; \
+rm -f ./chmod; ln -s ../sbin/busybox ./chmod; \
+rm -f ./chown; ln -s ../sbin/busybox ./chown; \
+rm -f ./cp; ln -s ../sbin/busybox ./cp; \
+rm -f ./cpio; ln -s ../sbin/busybox ./cpio; \
+rm -f ./date; ln -s ../sbin/busybox ./date; \
+rm -f ./dd; ln -s ../sbin/busybox ./dd; \
+rm -f ./delgroup; ln -s ../sbin/busybox ./delgroup; \
+rm -f ./deluser; ln -s ../sbin/busybox ./deluser; \
+rm -f ./df; ln -s ../sbin/busybox ./df; \
+rm -f ./dmesg; ln -s ../sbin/busybox ./dmesg; \
+rm -f ./dumpkmap; ln -s ../sbin/busybox ./dumpkmap; \
+rm -f ./echo; ln -s ../sbin/busybox ./echo; \
+rm -f ./egrep; ln -s ../sbin/busybox ./egrep; \
+rm -f ./false; ln -s ../sbin/busybox ./false; \
+rm -f ./fdflush; ln -s ../sbin/busybox ./fdflush; \
+rm -f ./fgrep; ln -s ../sbin/busybox ./fgrep; \
+rm -f ./getopt; ln -s ../sbin/busybox ./getopt; \
+rm -f ./grep; ln -s ../sbin/busybox ./grep; \
+rm -f ./gunzip; ln -s ../sbin/busybox ./gunzip; \
+rm -f ./gzip; ln -s ../sbin/busybox ./gzip; \
+rm -f ./hostname; ln -s ../sbin/busybox ./hostname; \
+rm -f ./ip; ln -s ../sbin/busybox ./ip; \
+rm -f ./ipaddr; ln -s ../sbin/busybox ./ipaddr; \
+rm -f ./iplink; ln -s ../sbin/busybox ./iplink; \
+rm -f ./iproute; ln -s ../sbin/busybox ./iproute; \
+rm -f ./iprule; ln -s ../sbin/busybox ./iprule; \
+rm -f ./iptunnel; ln -s ../sbin/busybox ./iptunnel; \
+rm -f ./kill; ln -s ../sbin/busybox ./kill; \
+rm -f ./linux32; ln -s ../sbin/busybox ./linux32; \
+rm -f ./linux64; ln -s ../sbin/busybox ./linux64; \
+rm -f ./ln; ln -s ../sbin/busybox ./ln; \
+rm -f ./login; ln -s ../sbin/busybox ./login; \
+rm -f ./ls; ln -s ../sbin/busybox ./ls; \
+rm -f ./mkdir; ln -s ../sbin/busybox ./mkdir; \
+rm -f ./mknod; ln -s ../sbin/busybox ./mknod; \
+rm -f ./mktemp; ln -s ../sbin/busybox ./mktemp; \
+rm -f ./more; ln -s ../sbin/busybox ./more; \
+rm -f ./mount; ln -s ../sbin/busybox ./mount; \
+rm -f ./mountpoint; ln -s ../sbin/busybox ./mountpoint; \
+rm -f ./mt; ln -s ../sbin/busybox ./mt; \
+rm -f ./mv; ln -s ../sbin/busybox ./mv; \
+rm -f ./netstat; ln -s ../sbin/busybox ./netstat; \
+rm -f ./nice; ln -s ../sbin/busybox ./nice; \
+rm -f ./pidof; ln -s ../sbin/busybox ./pidof; \
+rm -f ./ping; ln -s ../sbin/busybox ./ping; \
+rm -f ./pipe_progress; ln -s ../sbin/busybox ./pipe_progress; \
+rm -f ./printenv; ln -s ../sbin/busybox ./printenv; \
+rm -f ./ps; ln -s ../sbin/busybox ./ps; \
+rm -f ./pwd; ln -s ../sbin/busybox ./pwd; \
+rm -f ./rm; ln -s ../sbin/busybox ./rm; \
+rm -f ./rmdir; ln -s ../sbin/busybox ./rmdir; \
+rm -f ./run-parts; ln -s ../sbin/busybox ./run-parts; \
+rm -f ./sed; ln -s ../sbin/busybox ./sed; \
+rm -f ./setarch; ln -s ../sbin/busybox ./setarch; \
+rm -f ./sh; ln -s bash sh; \
+rm -f ./sleep; ln -s ../sbin/busybox ./sleep; \
+rm -f ./stty; ln -s ../sbin/busybox ./stty; \
+rm -f ./su; ln -s ../sbin/busybox ./su; \
+rm -f ./sync; ln -s ../sbin/busybox ./sync; \
+rm -f ./tar; ln -s ../sbin/busybox ./tar; \
+rm -f ./touch; ln -s ../sbin/busybox ./touch; \
+rm -f ./true; ln -s ../sbin/busybox ./true; \
+rm -f ./umount; ln -s ../sbin/busybox ./umount; \
+rm -f ./uname; ln -s ../sbin/busybox ./uname; \
+rm -f ./usleep; ln -s ../sbin/busybox ./usleep; \
+rm -f ./vi; ln -s ../sbin/busybox ./vi; \
+rm -f ./watch; ln -s ../sbin/busybox ./watch; \
+rm -f ./zcat; ln -s ../sbin/busybox ./zcat; \
+)
+
+( cd "\$FAKEROOT/sbin"; \
+rm -f fdisk; ln -s busybox fdisk; \
+rm -f freeramdisk; ln -s busybox freeramdisk; \
+rm -f getty; ln -s busybox getty; \
+rm -f halt; ln -s busybox halt; \
+rm -f hdparm; ln -s busybox hdparm; \
+rm -f hwclock; ln -s busybox hwclock; \
+rm -f ifconfig; ln -s busybox ifconfig; \
+rm -f ifdown; ln -s busybox ifdown; \
+rm -f ifup; ln -s busybox ifup; \
+rm -f init; ln -s busybox init; \
+rm -f insmod; ln -s busybox insmod; \
+rm -f klogd; ln -s busybox klogd; \
+rm -f loadkmap; ln -s busybox loadkmap; \
+rm -f losetup; ln -s busybox losetup; \
+rm -f lsmod; ln -s busybox lsmod; \
+rm -f makedevs; ln -s busybox makedevs; \
+rm -f mdev; ln -s busybox mdev; \
+rm -f mkswap; ln -s busybox mkswap; \
+rm -f modprobe; ln -s busybox modprobe; \
+rm -f nameif; ln -s busybox nameif; \
+rm -f pivot_root; ln -s busybox pivot_root; \
+rm -f poweroff; ln -s busybox poweroff; \
+rm -f reboot; ln -s busybox reboot; \
+rm -f rmmod; ln -s busybox rmmod; \
+rm -f route; ln -s busybox route; \
+rm -f runlevel; ln -s busybox runlevel; \
+rm -f setconsole; ln -s busybox setconsole; \
+rm -f start-stop-daemon; ln -s busybox start-stop-daemon; \
+rm -f sulogin; ln -s busybox sulogin; \
+rm -f swapoff; ln -s busybox swapoff; \
+rm -f swapon; ln -s busybox swapon; \
+rm -f switch_root; ln -s busybox switch_root; \
+rm -f sysctl; ln -s busybox sysctl; \
+rm -f syslogd; ln -s busybox syslogd; \
+rm -f udhcpc; ln -s busybox udhcpc; \
+rm -f vconfig; ln -s busybox vconfig; \
+rm -f watchdog; ln -s busybox watchdog; \
+)
+
+## Remove and recreate /var directory with symlinks to /tmp
+rm -rf "\$FAKEROOT/var"
+mkdir -p "\$FAKEROOT/var/lib"
+( cd "\$FAKEROOT/var"; \
+ln -s ../../tmp lib/pcmcia; \
+ln -s ../tmp cache; \
+ln -s ../tmp lock; \
+ln -s ../tmp log; \
+ln -s ../tmp pcmcia; \
+ln -s ../tmp run; \
+ln -s ../tmp spool; \
+ln -s ../tmp tmp; \
+)
+
+touch \$FAKEROOT/etc/mtab
+
+## Create /dev entries
+$MAKEDEV console
+$MAKEDEV tty{0..7}
+$MAKEDEV ttyp{0..9}
+$MAKEDEV hd{a,b}{1..14}
+$MAKEDEV fb{0..3}
+$MAKEDEV input kmem mem net null ptmx random rtc shm urandom zero
+$MAKEDEV loop{0..1}
+$MAKEDEV ptyp{0..9}
+$MAKEDEV ram
+$MAKEDEV ttyS{0..3}
+
+mkdir \$FAKEROOT/dev/pts
+mkdir \$FAKEROOT/dev/shm
+
+( cd \$FAKEROOT/dev; ln -s ../tmp/log log )
+
+## Massage the initscript directories
+
+## ... remove all initscripts, except 'functions'
+find \$FAKEROOT/etc/rc.d -type f -not -name functions -exec rm -f {} \;
+
+## .. remove symlinks
+rm -f \$FAKEROOT/etc/rc.local \$FAKEROOT/etc/rc.sysinit \$FAKEROOT/etc/rc
+rm -f \$FAKEROOT/etc/rc{0..6}.d
+
+## ... remove unnecessary rc directories
+rm -rf \$FAKEROOT/etc/rc.d/rc{0..6}.d
+
+## These files are from kusu-base-node and primitive
+if [ "\$ARCH" = "x86_64" ]; then
+    mkdir -p \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib64/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib64/python2.4
+else
+    mkdir -p \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/kusu/lib/python/kusu/ipfun.py \$FAKEROOT/usr/lib/python2.4
+    cp -a /opt/primitive/lib/python2.*/site-packages/primitive/nodeinstall/niifun.py* \
+          \$FAKEROOT/usr/lib/python2.4
+fi
+
+## Copy overlay files
+echo -n "Copying overlay files... "
+\$RSYNC \$OVERLAYDIR/ \$FAKEROOT
+if [ $? -ne 0 ]; then
+    echo "failed."
+    echo "Error: rsync failed copying \$OVERLAYDIR to \$FAKEROOT"
+    exit 1
+fi
+echo "done."
+
+## Create the cpio image
+echo -n "Creating cpio image... "
+( cd "\$FAKEROOT"; find . | cpio -ocv | gzip - >\$INITRD_PATH ) >/dev/null 2>&1
+echo "done."
+
+## Cleanup the temporary fakeroot directory
+if [ "\$DEBUG" != "yes" ]; then rm -rf "\$FAKEROOT"; fi
+
+echo "Done."

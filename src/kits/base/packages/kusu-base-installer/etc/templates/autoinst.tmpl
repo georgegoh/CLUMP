@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile SYSTEM "/usr/share/autoinstall/dtd/profile.dtd">
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+    <general>
+        <mode>
+            <confirm config:type="boolean">false</confirm>
+        </mode>
+        <signature-handling>
+            <accept_file_without_checksum config:type="boolean">true</accept_file_without_checksum>
+            <accept_non_trusted_gpg_key config:type="boolean">true</accept_non_trusted_gpg_key>
+            <accept_unknown_gpg_key config:type="boolean">true</accept_unknown_gpg_key>
+            <accept_unsigned_file config:type="boolean">true</accept_unsigned_file>
+            <accept_verification_failed config:type="boolean">true</accept_verification_failed>
+            <import_gpg_key config:type="boolean">true</import_gpg_key>
+        </signature-handling>
+    </general>
+
+    <runlevel>
+        <default>3</default>
+    </runlevel>
+
+    <keyboard>
+        <keymap>$keybd</keymap>
+    </keyboard>
+
+    <language>
+        <language>$lang</language>
+        <languages></languages>
+    </language>
+
+    <networking>
+        <dhcp_options>
+            <dhclient_additional_options></dhclient_additional_options>
+            <dhclient_client_id></dhclient_client_id>
+            <dhclient_hostname_option>AUTO</dhclient_hostname_option>
+        </dhcp_options>
+        <dns>
+            <dhcp_hostname config:type="boolean">true</dhcp_hostname>
+            <dhcp_resolv config:type="boolean">true</dhcp_resolv>
+        </dns>
+    </networking>
+
+    ## Partitioning takes in a DiskProfile-type object in the partitions namespace.
+    <partitioning config:type="list">
+    $generateDiskFromRules($partitionrules)
+    </partitioning>
+
+    <users config:type="list">
+        <user>
+            <encrypted config:type="boolean">true</encrypted>
+            <user_password>$rootpw</user_password>
+            <username>root</username>
+        </user>
+    </users>
+
+    <software>
+        <packages config:type="list">
+            #for $pkg in $packages
+            <package>$pkg</package>
+            #end for
+        </packages>
+        <patterns config:type="list">
+            <pattern>base</pattern>
+        </patterns>
+    </software>
+
+    <timezone>
+        <hwclock>localtime</hwclock>
+        <timezone>$tz</timezone>
+    </timezone>
+
+    <scripts>
+        <chroot-scripts config:type="list">
+            <script>
+                <filename>before_reboot.sh</filename>
+                <chrooted config:type="boolean">true</chrooted>
+                <interpreter>shell</interpreter>
+                <source><![CDATA[
+#!/bin/sh
+sed -i 's/<auto-refresh>true/<auto-refresh>false/' /var/lib/zypp/db/sources/*
+]]>
+                </source>
+            </script>
+        </chroot-scripts>
+        <post-scripts config:type="list">
+            <script>
+                <filename>after_stage2.sh</filename>
+                <interpreter>shell</interpreter>
+                <source><![CDATA[
+#!/bin/sh
+sed -i 's/<auto-refresh>false/<auto-refresh>true/' /var/lib/zypp/db/sources/*
+]]>
+                </source>
+            </script>
+        </post-scripts>
+    </scripts>
+
+</profile>
+
+## Partitioning
+#def generateDiskFromRules($rules)
+    ## This function generates XML entities using rules extracted from the
+    ## kusu database. The rules are a list of objects with the following
+    ## attributes:
+    ##      i.  mntpnt
+    ##      ii. fstype
+    ##      iii.size
+
+        <drive>
+            <partitions config:type="list">
+            #for $rule in $rules
+                #if $rule.fstype=='linux-swap'
+                <partition>
+                    <create config:type="boolean">true</create>
+                    <format config:type="boolean">true</format>
+                    <mount>swap</mount>
+                    <filesystem config:type="symbol">swap</filesystem>
+                    <size>$rule.size</size>
+                </partition>
+                #elif $rule.fstype=='reiserfs'
+                <partition>
+                    <create config:type="boolean">true</create>
+                    <format config:type="boolean">true</format>
+                    <mount>$rule.mntpnt</mount>
+                    <filesystem config:type="symbol">reiser</filesystem>
+                    <size>$rule.size</size>
+                </partition>
+                #elif $rule.fstype
+                <partition>
+                    <create config:type="boolean">true</create>
+                    <format config:type="boolean">true</format>
+                    <mount>$rule.mntpnt</mount>
+                    <filesystem config:type="symbol">$rule.fstype</filesystem>
+                    <size>$rule.size</size>
+                </partition>
+                #end if
+            #end for
+            </partitions>
+            <use>all</use>
+        </drive>
+#end def

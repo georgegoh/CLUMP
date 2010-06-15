@@ -1,0 +1,62 @@
+#! /bin/bash
+#
+# name_eths       NIC Enumeration Script
+#
+# chkconfig: 2345 9 91
+# description: Updates the MAC addresses so that on-board NICs
+#              are assigned eth0/1 ahead of add-on NICs.
+#
+
+# Source rc.status.
+### BEGIN INIT INFO
+# Provides:       name_eths
+# Required-Start: 
+# Should-Start: 
+# Required-Stop:  
+# Default-Start:  3 5
+# Default-Stop:  
+# X-Start-Before: $network
+# Description:    Start NIC Enumeration service
+### END INIT INFO
+
+. /etc/rc.status
+
+if [ ! -f /etc/sysconfig/network/config ]; then
+    exit 0
+fi
+
+. /etc/sysconfig/network/config
+
+# The name_eths_suse script must exist. 
+[ -x /opt/kusu/libexec/name_eths/name_eths_suse ] || exit 1
+
+CWD=`pwd`
+cd /opt/kusu/libexec/name_eths
+
+# See how we were called.
+case "$1" in
+    start)
+        echo -n "Running NIC Enumeration script: "
+        ./name_eths_suse
+        rc_status -v -r
+
+        # Some hardware like Dell PE2970 needs
+        # udev to be restarted so that the network
+        # interfaces are named properly. Without the
+        # following steps, on-board NICs will end up
+        # as eth1/3 on those hardware.
+        service network stop
+        service boot.udev stop
+        service boot.udev start
+        service network start
+        ;;
+    stop)
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop}"
+        exit 1
+esac
+
+cd "$CWD"
+
+exit 0

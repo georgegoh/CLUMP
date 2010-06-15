@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# $Id:$
+#
+#   Copyright 2007 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 	
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#
+
+# chkconfig: - 97 97
+# description: Cluster File Manager for Kusu - Client synchronization
+
+### BEGIN INIT INFO
+# Provides: cfmclient
+# Required-Start: $local_fs $remote_fs $network
+# Should-Start: $time postgresql mysql
+# Required-Stop:
+# Default-Start:  3 5
+# Default-Stop:   
+# description: Cluster File Manager for Kusu - Client synchronization
+### END INIT INFO 
+
+. /lib/lsb/init-functions
+
+prog='cfmclient'
+
+export PYTHONPATH=/opt/kusu/lib/python
+
+start() {
+    echo -n $"Starting $prog. "	
+  
+    if [ -f /etc/profile.nii ]; then
+        source /etc/profile.nii
+    fi
+
+    if [ -x /opt/kusu/sbin/cfmclient ]; then
+	# XXX: if there's more than one installer the cfm needs to parse the list of installers, it doesn't right now.
+	if [ -n ${NII_INSTALLERS} ]; then
+	   /opt/kusu/sbin/cfmclient -t 7 -i ${NII_INSTALLERS}
+	   RETVAL=$?
+	fi
+
+	if [ -z ${NII_INSTALLERS} ]; then
+	   /opt/kusu/sbin/cfmclient -t 7 -i self
+	   RETVAL=$?
+        fi
+    else
+	echo -n "$prog: not found"
+	RETVAL=1
+    fi
+    
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
+    echo
+    return $RETVAL
+}
+
+stop() {
+    # Stop daemons.
+    echo -n $"Stopping $prog: "
+    RETVAL=0
+    if /sbin/pidof -o %PPID $prog >/dev/null; then
+	killproc $prog -TERM >/dev/null 2>&1
+	RETVAL=$?
+    fi;
+
+    [ $RETVAL -eq 0 ] && log_success_msg || log_failure_msg
+    echo
+    return $RETVAL
+}
+
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac

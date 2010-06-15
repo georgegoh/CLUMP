@@ -1,0 +1,34 @@
+.\" Copyright (c) 2009 Platform Computing Inc
+.TH "updatenic" "8" "Version: ${VERSION_STR}" "Mark Black" "Kusu Base"
+.SH "NAME"
+.LP 
+updatenic \- Compute node NIC configurator.
+.SH "SYNOPSIS"
+.LP 
+\fBupdatenic\fR [\-h|\-v]  
+
+.SH "DESCRIPTION"
+.LP 
+The updatenic is a tool for reconfigureing the NIC interfaces on a compute node.  The tool queries the installer for the current network configuration it should have, then rebuilds the \fB/etc/profile.nii\fR and then rebuilds the network configuration files and start or stops the interfaces.  It is started by a \fBcfmclient\fR plugin, and is not typically run by users.
+.LP 
+The tool will not run on an installer.
+.LP 
+The following options are available, however the command is typically invoked by \fBcfmd\fR:
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-h \fR
+Prints some help and exits. 
+.TP 
+\fB\-v \fR
+Prints the tools version and exits.
+
+.SH "FILES"
+.LP 
+.TP 
+.SH "AUTHORS"
+.LP 
+Mark Black <mblack_at_platform_dot_com>
+.SH "SEE ALSO"
+.LP 
+cfmsync(8) cfmd(8) cfmclient(8)  
