@@ -1,9 +1,0 @@
-# This file provides defaults for generating the kusu-power.conf file
-# for remotely controlling the power state of nodes.
-# It provides the following default values:
-#
-# NOTE:  Do not make this file readable by others
-
-# The type of management processor (racadm|ipmi15|ipmi20)
-MPTYPE=ipmi15
-
