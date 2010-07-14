@@ -33,6 +33,7 @@ from kusu.core.rcplugin import PluginRunner
 from primitive.system.software import probe as softprobe
 from primitive.support.util import runCommand
 from kusu.repoman.repofactory import RepoFactory
+from primitive.system.software.dispatcher import Dispatcher
 
 try:
     import subprocess
@@ -250,8 +251,9 @@ class KusuSetup(object):
             message.display("\nAbort forced. Exiting...")
 
     def _firewallEnabled(self):
-        p = subprocess.Popen('service iptables status', shell=True,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        
+        p = subprocess.Popen('%s >/dev/null 2>&1' % Dispatcher.get('firewall_status'), shell=True)
+                
         p.wait()
         return p.returncode == 0
 
@@ -259,13 +261,13 @@ class KusuSetup(object):
         if self._firewallEnabled():
             message.display("""
 NOTICE: The default firewall configuration blocks almost
-        all ports. It is necessary to open these ports for
-        the various HPC applications to work.
-        You can manually open these ports or run the following
-        commands to generate new firewall rules:
+all ports. It is necessary to open these ports for
+the various HPC applications to work.
+You can manually open these ports or run the following
+commands to generate new firewall rules:
 
-        # source /opt/kusu/bin/kusuenv.sh
-        # /opt/kusu/bin/kusurc /etc/rc.kusu.d/firstrun/S03KusuIptables.rc.py
+# source /opt/kusu/bin/kusuenv.sh
+# /opt/kusu/bin/kusurc /etc/rc.kusu.d/firstrun/S03KusuIptables.rc.py
 """)
 
         message.display("""
@@ -277,7 +279,6 @@ Your Kusu installation is now complete.
 NOTE: Reboot your server at this point for the
       final kusu settings to be applied.
 """)
-
 
 if __name__ == "__main__":
 
