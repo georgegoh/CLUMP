@@ -79,8 +79,8 @@ gpgcheck=0
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS), shell=True, stdout=subprocess.PIPE)
-        result, code = yumCmd.communicate()
+        yumCmd = subprocess.Popen("yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result, err = yumCmd.communicate()
 
         yum_file.close()
 
