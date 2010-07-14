@@ -53,8 +53,7 @@ class InstallOSKitReceiver(object):
         self.kitops.setPrefix(path('/'))
         self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
 
-        name, ver, arch = softprobe.OS()
-        ver = ver.split(".")[0] #keep only major number of version
+        name, ver, arch = softprobe.OS_full_version()
 
         self.bootstrap_os_version = ver
         self.bootstrap_os_arch =  arch
@@ -94,7 +93,7 @@ class InstallOSKitReceiver(object):
             self.kitops.unmountMedia()
             return False, 'Cannot add OS kit ' + \
                           'because the media does not match the ' + \
-                          'following criteria:' + '\n'.join(err_list)
+                          'following criteria:\n' + '\n'.join(err_list)
 
         try:
             self._addOSKit(kit_media, cd)
@@ -131,25 +130,23 @@ class InstallOSKitReceiver(object):
         if ostype == self.bootstrap_os_type:
             osTypeMatch = True
         else:
-            err_list.append('Expected OS:%s, provided OS:%s' % (self.bootstrap_os_type.ljust(10),
-                                                   ostype or 'Unknown'))
+            err_list.append('Expected OS:%s, provided OS:%s' % \
+                    (self.bootstrap_os_type, ostype or 'Unknown'))
 
-        distro_ver = distro.getVersion() or 'Unknown'
-        if distro_ver != 'Unknown':
-            distro_ver = distro_ver.split('.')[0]
+        distro_ver = distro.getVersionString() or 'Unknown'
 
         if self.bootstrap_os_version == distro_ver:
             versionMatch = True
         else:
-            err_list.append('Expected major version:%s, provided major version:%s' % (self.bootstrap_os_version.ljust(5),
-                                                             distro_ver))
+            err_list.append('Expected major version:%s, provided major version:%s' % \
+                    (self.bootstrap_os_version, distro_ver))
 
         if self.bootstrap_os_arch == distro.getArch():
             archMatch = True
         else:
             if distro.getArch() != 'noarch':
-                err_list.append('Expected arch:%s, provided arch:%s' % (self.bootstrap_os_arch,
-                                                           distro.getArch() or 'Unknown'))
+                err_list.append('Expected arch:%s, provided arch:%s' % \
+                        (self.bootstrap_os_arch, distro.getArch() or 'Unknown'))
 
         return osTypeMatch and versionMatch and archMatch, err_list
 
@@ -163,7 +160,8 @@ class InstallOSKitReceiver(object):
 
         sortedRPMs = sorted(rpms)
         m = md5.new()
-        m.update(str(sortedRPMs)) #alternatively the list can be flattened into a string: "".join(sortedRPMS)
+        m.update(str(sortedRPMs))
+        #alternatively the list can be flattened into a string: "".join(sortedRPMS)
 
         return m.hexdigest()
 
@@ -203,7 +201,7 @@ class InstallOSKitReceiver(object):
     def _addOSKit(self, kit_media, cdrom):
         try:
             kit = self.kitops.prepareOSKit(self.kits)
-        except (IOError,FileAlreadyExists,CopyError), e :
+        except (IOError, FileAlreadyExists, CopyError), e :
             self.kitops.unmountMedia()
             message.display('Error reading OS disk. Ensure that the ' + \
                             'OS disk is not corrupted or that ' + \
@@ -232,7 +230,7 @@ class InstallOSKitReceiver(object):
 
         if sum([f.size for f in kitdir.walkfiles()]) <= 900000000: # cd provided
             while 1:
-                answer = message.input('\nAny more disks for this OS kit? (Y/N)[N]:').strip()
+                answer = message.input('\nAny more disks for this OS kit? (Y/N) [N]:').strip()
                 # unmount and eject.
                 self.kitops.unmountMedia()
                 if cdrom:
@@ -382,6 +380,9 @@ class InstallOSKitReceiver(object):
             kits, cd = self.get_kits_from_media(kit_media)
         except Exception, msg:
             return False, "\nNot able to mount kit media: %s" % msg
+
+        status = False
+        msg = 'Provided media is not valid.'
 
         kits = self.selectKits(kits)
         if kits:

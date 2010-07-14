@@ -29,16 +29,16 @@ class Command(object):
     def execute(self):
         pass
 
-    def getYesNoAsBool(self, prompt, default_param = 'N'):
+    def getYesNoAsBool(self, prompt, default_param='N'):
         answer = "INITIAL_PROMPT"
 
         #force a single-character Yes/No response
         while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
-            answer = message.input("%s? (Y/N)[%s]:" % (prompt, default_param))
+            answer = message.input("%s? (Y/N) [%s]:" % (prompt, default_param))
 
-        if answer.strip().lower() in ['yes','y']:
+        if answer.strip().lower() in ['yes', 'y']:
             return True
-        elif answer.strip().lower() in ['no','n']:
+        elif answer.strip().lower() in ['no', 'n']:
             return False
         else:
             if default_param == 'N':
