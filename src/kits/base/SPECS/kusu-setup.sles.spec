@@ -146,7 +146,6 @@ install -m644 lib/networkreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstr
 install -m644 lib/languagereceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/ramcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/ramcheckreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/rpmcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/rpminstallcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/rpminstallreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/sanitizeinstallcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup

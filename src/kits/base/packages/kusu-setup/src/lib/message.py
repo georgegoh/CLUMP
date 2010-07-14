@@ -26,8 +26,10 @@ except:
     from popen5 import subprocess
 
 import kusu.util.log as kusulog
-
 kl = kusulog.getKusuLog()
+if not kl.handlers:
+    kl.addFileHandler()
+
 
 def display(desc):
     ignore_first_newline = True

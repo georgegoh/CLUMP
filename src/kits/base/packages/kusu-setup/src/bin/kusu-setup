@@ -26,6 +26,32 @@ import atexit
 sys.path.append('/opt/kusu/bootstrap/lib/python')
 sys.path.append('/opt/kusu/bootstrap/lib/python2.4/site-packages/')
 
+KUSU_DISTRO_NAME = '${KUSU_DISTRO_NAME}'
+KUSU_DISTRO_VERSION = '${KUSU_DISTRO_VERSION}'
+
+from bootstrap.setup import message
+try:
+    from primitive.support import osfamily
+    from primitive.system.software import probe
+
+    message.display("Checking for OS compatibility")
+    os_name, os_version, os_arch = probe.OS()
+    os_version_major = os_version.split('.')[0]
+
+    def distro_and_system_is_of_rhelfamily():
+        return os_name.lower() in osfamily.getOSNames('rhelfamily') and \
+                KUSU_DISTRO_NAME.lower() in osfamily.getOSNames('rhelfamily')
+
+    if (os_name.lower() == KUSU_DISTRO_NAME.lower() or \
+            distro_and_system_is_of_rhelfamily()) and \
+            os_version_major == KUSU_DISTRO_VERSION:
+        message.success()
+    else:
+        message.failure("This operating system is not compatible with this installer.")
+        sys.exit(1)
+except Exception, err:
+    sys.exit(1)
+
 from path import path
 from bootstrap.setup import *
 from kusu.core import database as db
@@ -43,6 +69,7 @@ except:
 
 KUSURC_COMMAND = ". /opt/kusu/bin/kusuenv.sh; /opt/kusu/bin/kusurc"
 SQLITE_KUSUDB = path('/root/kusu.db')
+
 
 class KusuSetup(object):
 
@@ -102,11 +129,12 @@ class KusuSetup(object):
 
     def installKusu(self):
         try:
-            selinuxstatus = selinuxcheckcommand.SELinuxCheckCommand()
-            selinuxstatus.execute()
-            if not selinuxstatus.proceedStatus:
-                message.failure("%s" % selinuxstatus.quitMessage)
-                sys.exit(1)
+            if self.os_type in osfamily.getOSNames('rhelfamily') + ['fedora']:
+                selinuxstatus = selinuxcheckcommand.SELinuxCheckCommand()
+                selinuxstatus.execute()
+                if not selinuxstatus.proceedStatus:
+                    message.failure("%s" % selinuxstatus.quitMessage)
+                    sys.exit(1)
 
             sanitizeInstall = sanitizeinstallcommand.SanitizeInstallCommand(self._cleanupReceiver)
             sanitizeInstall.execute()
@@ -117,15 +145,6 @@ class KusuSetup(object):
                 ##
                 self._installCompleted = True
                 sys.exit(0)
-
-            ##installer init
-            ## 1) verify that installer is compatible with target OS
-            ## 2) check whether this is a supported OS
-            rpmCheck = rpmcheckcommand.RpmCheckCommand(self._installerInitReceiver)
-            rpmCheck.execute()
-            if not rpmCheck.proceedStatus:
-                message.failure("%s" % rpmCheck.quitMessage)
-                sys.exit(1)
 
             ##Create Network Receiver
             self._networkReceiver = networkreceiver.NetworkReceiver(rpmCheck.distroName)

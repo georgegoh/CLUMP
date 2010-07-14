@@ -31,7 +31,8 @@ except:
     from popen5 import subprocess
 
 kl = kusulog.getKusuLog()
-kl.addFileHandler()
+if not kl.handlers:
+    kl.addFileHandler()
 
 class Plugin:
     nodename = None

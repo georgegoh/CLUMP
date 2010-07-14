@@ -72,7 +72,7 @@ init:
 	@sed -e 's%$${VERSION_STR}%$(KUSU_VERSION)%g' -i packages/kusu-appglobals-tool/src/man/kusu-appglobals-tool.8
 	@sed -e 's%$${KUSU_DISTRO_NAME}%$(KUSU_DISTRO_NAME)%g' \
              -e 's%$${KUSU_DISTRO_VERSION}%$(KUSU_DISTRO_VERSION)%g' \
-             -i packages/kusu-setup/src/lib/rpmcheckcommand.py
+             -i packages/kusu-setup/src/bin/kusu-setup
 
 ifeq ($(KUSU_DISTRO_NAME), sles)
 	@echo 'Removing EPEL and Fedora packages from source tree'
