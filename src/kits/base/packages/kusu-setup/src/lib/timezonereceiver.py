@@ -62,17 +62,17 @@ class TimezoneReceiver(object):
         if out:
              try:
                  if  out.rstrip().split('=')[1] and out.rstrip().split('=')[1].lower() == 'true':
-                    self._utc = 1 
-                 else: 
+                    self._utc = 1
+                 else:
                     self._utc = 0
              except Exception, msg:
                  raise KusuProbePluginError, "Kusu Installer failed to probe timezone utc. %s" % msg
         else:
             raise KusuProbePluginError, "Kusu Installer failed to probe timezone utc."
 
-       
+
         message.success()
-        return True 
+        return True
 
     def get_time_zone(self):
         """ Interface to expose the timezone property """

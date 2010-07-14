@@ -1,3 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 import os, tempfile
 from path import path
 from primitive.support.rpmtool import RPM
@@ -36,15 +56,15 @@ gpgcheck=0
             Install RPMs from local repository
         """
 
-        name, ver, arch = softprobe.OS() 
+        name, ver, arch = softprobe.OS()
 
         distro = name.lower()
- 
+
         if distro == 'rhel':
             repoText = self._rhel_repoTemplate % repoid
         elif distro == 'centos':
             repoText = self._centos_repoTemplate % repoid
-            
+
         #generate a tempfile for our yum config
         yum_file = tempfile.NamedTemporaryFile(mode='w')
         yum_file.file.writelines(repoText)
@@ -81,7 +101,7 @@ gpgcheck=0
             out, err = fCmd.communicate()
             if out:
                 return out.rstrip('\n')
-        
+
     def verifyRPMDistro(self, kit_info_component):
         if kit_info_component[0]['name'] == 'component-base-installer':
             base_os = kit_info_component[0]['os']

@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
 import sys
@@ -24,7 +43,7 @@ class InstallOSKitReceiver:
     This class prompts for, and installs the OS kit
     """
     def __init__(self, kusu_db ):
-       
+
         self._db = kusu_db
 
         self.kitops = KitOps(installer=False)
@@ -41,8 +60,8 @@ class InstallOSKitReceiver:
 
 
     def associateComps(self):
-        """ 
-            After the base and os kits have been installed, we still need to update our 
+        """
+            After the base and os kits have been installed, we still need to update our
             component associations
         """
 
@@ -64,11 +83,11 @@ class InstallOSKitReceiver:
                     nc = self._db.NGHasComp(ngid=ng.ngid, cid=comp.cid)
                     nc.save()
                     nc.flush()
-    
+
 
     def updateNodeGroupImages(self, initrd, kernel, longname):
         """
-            Update the node group initrd and kernel images 
+            Update the node group initrd and kernel images
         """
         ngs = self._db.NodeGroups.select()
         ngids = [row.ngid for row in self._db.NGHasComp.select()]
@@ -90,13 +109,13 @@ class InstallOSKitReceiver:
             cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
 
             #print "Media device list: %s" % cdrom_list
-            #print cdrom_dict  
+            #print cdrom_dict
             boot_cd = ''
             for cd in cdrom_list:
                 try:
                     self.kitops.setKitMedia(cd)
                     self.kits = self.kitops.addKitPrepare()
-         
+
                     ostype = self.kits.ostype
                     if ostype is not None:
                         kit_list = self.kitops.listKit()
@@ -164,7 +183,7 @@ class InstallOSKitReceiver:
 
                 if prepare_success:
                     try:
-                        print 'Copying OS kit (%s).This might take a while...' % kit['name']
+                        print 'Copying OS kit (%s). This might take a while...' % kit['name']
 
                         self.kitops.copyOSKitMedia(kit)
                     except CopyOSMediaError, e:
@@ -193,7 +212,7 @@ class InstallOSKitReceiver:
 
             self.associateComps()
             self.updateNodeGroupImages(kit['initrd'], kit['kernel'], kit['longname'])
- 
+
 
             self.kitops.finalizeOSKit(kit)
             return True, ''
@@ -265,7 +284,7 @@ class InstallOSKitReceiver:
 
     def verifyDistroVersionAndArch(self, distro):
         """
-        Verify that a distro matches the version and architecture 
+        Verify that a distro matches the version and architecture
         """
         verified = False
         err_list = []
@@ -273,14 +292,14 @@ class InstallOSKitReceiver:
 
         osTypeMatch = False
         versionMatch = False
-        archMatch = False 
-    
+        archMatch = False
+
         if ostype == self.bootstrap_os_type:
             osTypeMatch = True
         else:
              err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
                                                    ostype or 'Unknown'))
-    
+
         distro_ver = distro.getVersion() or 'Unknown'
         if distro_ver != 'Unknown':
             distro_ver = distro_ver.split('.')[0]
@@ -290,7 +309,7 @@ class InstallOSKitReceiver:
         else:
             err_list.append('Expected Major Version:%s Provided Major Version:%s' % (self.bootstrap_os_version.ljust(5),
                                                              distro_ver))
-            
+
         if self.bootstrap_os_arch == distro.getArch():
             archMatch = True
         else:
@@ -299,8 +318,8 @@ class InstallOSKitReceiver:
                                                            distro.getArch() or 'Unknown'))
 
         return osTypeMatch and versionMatch and archMatch, err_list
-                                 
-                                 
+
+
     def computeChecksum(self, mountpoint):
         """ Do a recursive directory listing of the cdrom. use this concatenated
             listing to perform an md5 checksum as fingerprint for CD
@@ -308,14 +327,14 @@ class InstallOSKitReceiver:
         rpms = []
         for root, dirs, files in os.walk(mountpoint):
             rpms.extend(files)
-    
+
         sortedRPMs = sorted(rpms)
         m = md5.new()
         m.update(str(sortedRPMs)) #alternatively the list can be flattened into a string: "".join(sortedRPMS)
-    
+
         return m.hexdigest()
-                                
-                                
+
+
     def promptYesNo(self, prompt):
         answer = "N"
 
@@ -326,7 +345,7 @@ class InstallOSKitReceiver:
         if upper(answer) == "YES":
             return True
 
-        return False                                 
+        return False
 
     def closeTray(self, path):
         """Close a CD/DVD drive. Give me a path string."""
@@ -375,20 +394,20 @@ class InstallOSKitReceiver:
             return
 
         disks_cksum = []
-    
+
         # Compute the checksum of the very first Kit CD
         print 'Starting checksum... this might take a while...'
-    
-        #Checksum first disk    
+
+        #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(kitops.mountpoint)
-    
+
         #store checksum
         disks_cksum.append(cur_disk_cksum)
-    
-   
+
+
         print 'Copying OS kit (%s). This might take while...' % kit['name']
         kitdir = self.kitops.copyOSKitMedia(kit)
-    
+
         if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
             while self.promptYesNo('Any more disks for this OS kit?'):
                 # unmount and eject.
@@ -398,38 +417,38 @@ class InstallOSKitReceiver:
                 raw_input ('Please insert the next disk. Press enter when ready...')
                 self.closeTray(cdrom)
                 print 'Copying OS kit (%s). This might take a while...' % kit['name']
-    
+
                 self.kitops.setKitMedia(cdrom)
                 self.kitops.addKitPrepare()
-    
+
                 # compute the next checksum
                 cur_disk_cksum = self.computeChecksum(self.kitops.mountpoint)
-    
+
                 # If the checksum has already existed (duplicate CD), then prompt user to insert the next CD
                 # for the current OS kit
                 if cur_disk_cksum in disks_cksum:
                     raw_input ('Duplicate CD Inserted. This CD has already been copied. Please press ENTER to proceed with the installation for this OS kit')
-                    
+
                 disks_cksum.append(cur_disk_cksum)
-    
+
                 dist = self.kitops.getOSDist()
-    
+
                 kit_name = dist.ostype
                 if kit_name in osfamily.getOSNames('rhelfamily') and self.bootstrap_os_type in osfamily.getOSNames('rhelfamily'):
                     kit_name = self.bootstrap_os_type
-    
+
                 if not dist.ostype or not dist.getVersion() or not dist.getArch() or \
                     kit_name != self.bootstrap_os_type or \
                     dist.getVersion() != self.bootstrap_os_version or \
                     dist.getArch() != self.bootstrap_os_version:
                     print ('Wrong OS Disk. Disk does not match selected OS.')
                     continue
-                
+
                 self.kitops.copyOSKitMedia(kit)
 
         self.associateComps()
         self.updateNodeGroupImages(kit['initrd'], kit['kernel'], kit['longname'])
-                
+
         self.kitops.finalizeOSKit(kit)
 
 
@@ -437,12 +456,12 @@ class InstallOSKitReceiver:
         """ This method allows for the arbitrary installation of kits from CD media.
             Use this method to add 1) base kit, 2) all other kits (extra kits)
         """
-   
+
         retVal = False
-        msg = "" 
+        msg = ""
         self.kitops.setDB(self._db)
         self.kitops.setKitMedia(cdrom)
-    
+
         #LOGME: print ('Preparing to add a kit from media.')
         try:
             kits = self.kitops.addKitPrepare()
@@ -451,33 +470,33 @@ class InstallOSKitReceiver:
             return False, msg
         except Exception, ex:
             print ex
-    
+
         #LOGME: print ('Getting OS distribution')
-    
+
         ostype = None
         try:
             ostype = kits.ostype
         except AttributeError:
             pass
-    
+
         if ostype is not None:
             kit_list = self.kitops.listKit()
             os = [kit.rname for kit in kit_list if kit.isOS]
-    
+
             if os:
-    
+
                 return False, 'Cannot add more than one OS kit ' + \
                                              'during installation. ' + \
                                              'You can add additional OS kit using kusu-kitops later.'
-    
+
         #LOGME: print 'Adding  Kit(s)'
 
-        #if len(kits) > 0: 
+        #if len(kits) > 0:
         #    print ("The following kits were found, and will be added:")
         #    for kit in kits:
         #        print kit[1]['name']
         #    print "\n"
-    
+
 
         for kit in kits:
             kitname = kit[1]['name']
@@ -485,9 +504,9 @@ class InstallOSKitReceiver:
                 print( "Adding Kit: '%s'..." % kitname)
                 self.kitops.addKit(kit, api=str(kit[4]))
                 retVal = True
-                
+
             except KitAlreadyInstalledError:
-                
+
                 print ("The kit '%s' " % kitname + 'is already installed.')
                 #LOGME ("The kit '%s' " % kitname + 'is already installed.')
             except AssertionError:
@@ -511,7 +530,7 @@ class InstallOSKitReceiver:
             import primitive.system.hardware.probe
             cdrom_dict = primitive.system.hardware.probe.getCDROM()
             cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
-         
+
             for cd in cdrom_list:
                 self.addKitFromCDAction(self.kitops, cd)
 
@@ -547,7 +566,7 @@ class InstallOSKitReceiver:
             if kitError:
                 return False, kitError
             return True, 'Kit %s is added successfully.' % kit_str
-       
+
     def prompt_for_kit(self):
         kit_iso = ""
         while not os.path.exists(kit_iso):
@@ -615,7 +634,7 @@ class InstallOSKitReceiver:
             import primitive.system.hardware.probe
             cdrom_dict = primitive.system.hardware.probe.getCDROM()
             cdrom_list = ['/dev/' + cd for cd in sorted(cdrom_dict.keys())]
-           
+
             #print 'Media device list: %s' % cdrom_list
 
             boot_cd = ''
@@ -650,4 +669,4 @@ class InstallOSKitReceiver:
 if __name__ == "__main__":
     osk = InstallOSKitReceiver()
     osk.installKitsOnBootMedia()
- 
+

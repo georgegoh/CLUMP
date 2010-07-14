@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from time import sleep
 from primitive.support.util import runCommand
@@ -40,7 +59,7 @@ KUSU_RPM_LIST = [
 
 class CleanupReceiver:
     """
-       This class performs cleanup/sanitization of environment before bootstrap is run or re-run. 
+       This class performs cleanup/sanitization of environment before bootstrap is run or re-run.
     """
     def __init__(self):
         self._need_to_dropdb = False
@@ -53,7 +72,7 @@ class CleanupReceiver:
         if outStr.find(rpmName) >= 0 :
             return True
         else:
-            return False        
+            return False
 
 
     def isDBAvailable(self):
@@ -83,14 +102,14 @@ class CleanupReceiver:
                 except:
                     pass
 
-                return passwd       
+                return passwd
         else:
             return ""
 
     def detectOldKusu(self):
-        
+
         dirtyFlag = False
-        
+
         #Check for presence of /depot
         message.display("Checking for presence of '/depot' folder")
         if os.path.exists("/depot"):
@@ -100,8 +119,8 @@ class CleanupReceiver:
             message.warning()
         else:
             message.success()
-            
-       
+
+
 
         #Check for presence of kusudb
         message.display("Checking for presence of kusudb database")
@@ -113,12 +132,12 @@ class CleanupReceiver:
             message.warning()
         else:
             message.success()
-           
-        
+
+
         #Check for presence of kusu rpms
         #FIXME: Check only for component-* rpms
         message.display("Checking for presence of Kusu RPMs")
-        
+
         if self.hasRPM("component-base-installer") or self.hasRPM("component-base-node") or self.hasRPM("component-gnome-desktop") :
             dirtyFlag = True
             self._need_to_remove_rpms = True
@@ -126,17 +145,17 @@ class CleanupReceiver:
             message.warning()
         else:
             message.success()
-            
+
         self._dirtyFlag = dirtyFlag
         return dirtyFlag
-        
+
     def cleanup(self):
         """
             This method completely removes all traces of a kusu install from the system
         """
 
         if self._dirtyFlag:
-            
+
             #remove all RPMs
             if self._need_to_remove_rpms:
                 message.display("Removing Component Kusu RPMs....")
@@ -147,7 +166,7 @@ class CleanupReceiver:
                 rpmList = ' '.join(KUSU_RPM_LIST)
                 outStr, errStr = runCommand("yum -y remove %s" % rpmList)
                 message.success()
-    
+
             #drop kusudb
             if self._need_to_dropdb:
                 message.display("Dropping kusudb database....")
@@ -160,7 +179,7 @@ class CleanupReceiver:
                     else:
                         #message.display("\nFailed to retrieve kusudb password. NOT dropping kusudb.")
                         message.failure()
-                        
+
                 except Exception , msg:
                     #message.display("\nFailed to drop kusudb. %s" % msg)
                     #Log failure
@@ -171,8 +190,8 @@ class CleanupReceiver:
             #    try:
             #        os.remove('/root/kusu.db')
             #    except:
-            #        print "An error has occured removing /root/kusu.db"             
-    
+            #        print "An error has occured removing /root/kusu.db"
+
             #remove /depot folder
             if self._need_to_remove_depot:
                 message.display("Removing '/depot' folder....")
@@ -210,7 +229,7 @@ class CleanupReceiver:
                     print ("\n    Failed to remove /depot. Folder. %s" % msg)
                     message.failure()
 
-                
+
 
 
 

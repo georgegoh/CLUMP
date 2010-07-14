@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from command import Command
 from string import strip
@@ -31,7 +50,7 @@ class DhcpCheckCommand(Command):
 
     def execute(self):
 
-        ##Ask the user if have external or local DHCP for the provisioning network. 
+        ##Ask the user if have external or local DHCP for the provisioning network.
         while True:
             self.prompt_for_dhcp_locality()
             dhcpLocality = raw_input("Please enter the number corresponding to your selection: [1]")
@@ -51,7 +70,7 @@ class DhcpCheckCommand(Command):
                 print "Invalid selection. Please choose either (1) or (2) from the given options."
             else:
                 break
- 
+
         ##If external, we set the DHCP nic equal to provisioning NIC (must be on same network anyway)
             ##If local, we detect
                 ##If can't find, bitch about it
@@ -70,7 +89,7 @@ class DhcpCheckCommand(Command):
             self.dnsLocality = 1
         else:
             self.dnsLocality = 0
- 
-        self._proceedStatus = True    
-        
+
+        self._proceedStatus = True
+
 

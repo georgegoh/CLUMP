@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 
 from path import path
@@ -21,14 +40,14 @@ class InitKusuDBReceiver:
             public_nic, public_nic_props = nicCheck.publicInterfaceTuple
 
         provision_nic, provision_nic_props = nicCheck.provisionInterfaceTuple
- 
+
         #row = self.__db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
         #row = self.__db.AppGlobals.select_by(kname = 'PIXIE_ROOT')
         #row = self.__db.AppGlobals.select_by(kname = 'DEPOT_DOCS_ROOT')
 
         #insert basic data into DB
         # Insert into appglobals table
-        # Get the hostname and PublicDNSZone from fqdn name. 
+        # Get the hostname and PublicDNSZone from fqdn name.
 
         hostname = envCheck.pub_fqdn.split('.')[0]
         pub_domain = envCheck.pub_fqdn.split('.',1)[-1]
@@ -49,20 +68,20 @@ class InitKusuDBReceiver:
         self._db.AppGlobals(kname='Timezone_ntp_server', kvalue=systemSettings.timezone['ntp'])
         self._db.AppGlobals(kname='Keyboard', kvalue=systemSettings.keyboardLayout.strip('"'))
         self._db.AppGlobals(kname='Language', kvalue=systemSettings.language)
-        self._db.AppGlobals(kname='SYSLOG_SERVER', kvalue=provision_nic_props['ip']) 
+        self._db.AppGlobals(kname='SYSLOG_SERVER', kvalue=provision_nic_props['ip'])
 
         count = 1
         for nsip in systemSettings.nameservers:
             self._db.AppGlobals(kname='dns%s' % count, kvalue=nsip)
             count = count + 1
-    
+
             if count == 3:
                 break #we only support up to dns3
-        
+
         self._db.flush()
 
 
-# netid |  network   |    subnet     | device | suffix |   gateway    | options | netname |  startip   | inc |   type    | usingdhcp 
+# netid |  network   |    subnet     | device | suffix |   gateway    | options | netname |  startip   | inc |   type    | usingdhcp
 #-------+------------+---------------+--------+--------+--------------+---------+---------+------------+-----+-----------+-----------
 #     1 | 172.20.0.0 | 255.255.0.0   | eth0   | -eth0  | 172.20.0.1   |         | cluster | 172.20.0.1 |   1 | provision | f
 #     2 | 10.10.0.0  | 255.255.240.0 | eth1   | -eth1  | 10.10.11.254 |         | public  | 10.10.0.1  |   1 | public    | f
@@ -91,7 +110,7 @@ class InitKusuDBReceiver:
         provision_network.netname = 'cluster'
         provision_network.gateway = provision_nic_props['ip']
         provision_network.startip = provision_nic_props['ip']
-        provision_network.type = 'provision' 
+        provision_network.type = 'provision'
         provision_network.save()
         provision_network.flush()
 

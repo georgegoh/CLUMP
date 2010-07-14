@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from command import Command
 
@@ -20,17 +39,17 @@ class NicCheckCommand(Command):
         print "\nSelect one of the following interfaces to use for the %s network:" % network_type
         for interface in interfaces:
             if properties[interface]['ip'] is not None and properties[interface]['ip'].strip() != '':
-                if network_type == 'public': 
+                if network_type == 'public':
                     print "\t %d) Interface: %s, Ip: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask'])
                     count += 1
                 elif network_type == 'provisioning':
                     print "\t %d) Interface: %s, Ip: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask'])
                     count += 1
-             
+
          # If we do not find any interface then exit
         if count == 1:
             self._quitMessage = "Kusu setup could not detect any statically configured network interfaces\n   for use as your public network. At least TWO statically configured network interfaces\n   are required to install Kusu."
-            self._proceedStatus = False 
+            self._proceedStatus = False
             return self._proceedStatus
         return True
 
@@ -73,7 +92,7 @@ class NicCheckCommand(Command):
         if not status:
             return
 
-        #if we have more than one configured nic, we prompt for whether the user want's to configure 
+        #if we have more than one configured nic, we prompt for whether the user want's to configure
         # a second/public nic.
         if self._configuredNicCount > 1 and self.getYesNoAsBool("    Would you like to configure a public network"):
 
