@@ -29,7 +29,7 @@ class RpmInstallCommand(Command):
         self._repoid = repoid
 
     def execute(self):
-        message.display("\nInstalling Kusu RPMs")
+        message.display("\nInstalling Kusu RPMs. This will take a while...")
         status = self._receiver.installRPMs(self._repoid)
 
         if status:

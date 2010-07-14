@@ -230,6 +230,7 @@ class KusuSetup(object):
             self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
             self._repo.is_in_installer = True # makes Repo instance skip genupdatesimg
             self._repo.refresh(createOSRepo.default_repo_id)
+            message.success() 
 
             #Install Kusu RPMs from our local OS repo
             rpmInstall = rpminstallcommand.RpmInstallCommand(self._rpmInstallReceiver, createOSRepo.default_repo_id)
