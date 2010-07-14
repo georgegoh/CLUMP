@@ -26,7 +26,7 @@ from diskspacecheckreceiver import MINIMUM_DISK_SPACE_REQ
 
 class SystemSettingsCommand(Command):
     """
-    This is the command class for checking system settings
+    This is the command class for checking system settings.
     """
     def __init__(self, networkReceiver, kb_receiver, locale_receiver, timezone_receiver, fqdn_receiver, diskspace_receiver):
         super(SystemSettingsCommand, self).__init__()
@@ -46,7 +46,7 @@ class SystemSettingsCommand(Command):
             if self._diskspace_receiver.is_depot_valid_installdir():
                 message.success()
             else:
-                message.failure("Kusu Setup has found existing '/depot' mountpoint with insufficient diskspace.\nPlease make sure that the '\depot' partition has atleast %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
+                message.failure("Kusu Setup has found existing '/depot' mountpoint with insufficient diskspace.\nMake sure that the '/depot' partition has at least %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
                 self._quitMessage = "\nBye!"
                 self._proceedStatus = False
                 return
@@ -69,22 +69,22 @@ class SystemSettingsCommand(Command):
             self._proceedStatus = True
         else:
             self._proceedStatus = False
-            self._quitMessage = "Not enough statically configured network interfaces.\nKusu installation requires at least 1 statically configured network interfaces"
+            self._quitMessage = "Not enough statically configured network interfaces.\nKusu installation requires at least 1 statically configured network interface."
             return
 
         #make a note of how many configured interfaces we have
         self.configuredNicCount = ipCount
 
-        message.display("Checking for the public hostname.")
+        message.display("Checking for the public hostname")
         if not self._fqdn_receiver.pub_dns_discover():
-            message.failure("Kusu-setup failed to discover the public hostname.\nPlease set a valid public FQDN for your machine.")
+            message.failure("Kusu Setup is not able to discover the public hostname.\nDo configure a valid public FQDN for your machine.")
             self._quitMessage = "\nBye!"
             self._proceedStatus = False
             return
         else:
             message.success()
 
-        message.display("Checking for existing DNS server.")
+        message.display("Checking for existing DNS server")
         if self._networkReceiver.is_dns_installed():
                 message.warning("\nA previously installed DNS server has been detected.\nProceeding will overwrite existing settings.")
                 if not self.getYesNoAsBool("Would you like to proceed"):
@@ -119,7 +119,7 @@ class SystemSettingsCommand(Command):
         except KusuProbePluginError, msg:
             message.failure()
             self._proceedStatus = False
-            self._quitMessage = "Failed to properly detect system settings [%s]. Quitting." % msg
+            self._quitMessage = "Not able to detect system settings [%s]. Quitting." % msg
             return
 
         message.display("Probing for DNS settings")
@@ -128,7 +128,7 @@ class SystemSettingsCommand(Command):
             message.warning("No 'nameserver' entries were found in /etc/resolv.conf")
             nameservers = ""
             while nameservers == "":
-                nameservers = message.input("\nPlease enter the IP addresses of your nameservers separated by commas: ")
+                nameservers = message.input("\nEnter the IP addresses of your nameservers separated by commas: ")
                 if nameservers.strip() == "":
                     continue
 
@@ -146,7 +146,7 @@ class SystemSettingsCommand(Command):
                     self._proceedStatus = True
                     break
                 else:
-                    message.display("Node of the entered addresses is a valid IP address.")
+                    message.display("None of the entered addresses is a valid IP address.")
                     nameservers = ""
         else:
             self.nameservers = resolvList

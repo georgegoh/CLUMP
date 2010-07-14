@@ -56,10 +56,9 @@ class NetworkReceiver(object):
 
     def hasRPM(self, rpmName):
         outStr, errStr = runCommand("rpm -qai %s" % rpmName)
-        if outStr.find(rpmName) >= 0 :
+        if outStr.find(rpmName) >= 0:
             return True
-        else:
-            return False
+        return False
 
     def is_static(self, interface, properties, distro):
         if distro.lower() in osfamily.getOSNames('rhelfamily') + ['fedora']:
@@ -97,7 +96,7 @@ class NetworkReceiver(object):
 
     def is_dhcp_installed(self):
         """
-            Testing for the package install is sufficient
+            Testing whether the package is installed is sufficient.
         """
         return self.hasRPM('dhcp')
 
@@ -115,7 +114,6 @@ class NetworkReceiver(object):
                 sel_interfaces[intf] = interfaces[intf]
 
         return sel_intfs, sel_interfaces
-
 
     def _get_nameservers(self):
         nslist = []

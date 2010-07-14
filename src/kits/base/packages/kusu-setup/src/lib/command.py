@@ -19,6 +19,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import message
+
 class Command(object):
 
     def __init__(self):
@@ -26,7 +27,7 @@ class Command(object):
         self._quitMessage = ""
 
     def execute(self):
-       pass
+        pass
 
     def getYesNoAsBool(self, prompt):
         answer = "INITIAL_PROMPT"
@@ -50,8 +51,8 @@ class Command(object):
     def getProceedStatus(self):
         """
             This determines whether our caller can proceed with the next call or not
-            _proceedStatus = True - Proceed
-            _proceedStatus = False - Halt and get reason from quitMessage property
+            _proceedStatus = True  # Proceed
+            _proceedStatus = False # Halt and get reason from quitMessage property
         """
         return self._proceedStatus
 

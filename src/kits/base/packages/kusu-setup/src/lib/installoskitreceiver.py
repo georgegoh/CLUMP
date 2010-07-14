@@ -42,7 +42,7 @@ except:
 
 class InstallOSKitReceiver:
     """
-    This class prompts for, and installs the OS kit
+    This class prompts for, and installs the OS kit.
     """
     def __init__(self, kusu_db ):
 
@@ -58,11 +58,11 @@ class InstallOSKitReceiver:
 
         self.bootstrap_os_version = ver
         self.bootstrap_os_arch =  arch
-        self.bootstrap_os_type = name.lower() #prevents stuff like "CentOS == centos"
+        self.bootstrap_os_type = name.lower()
 
     def updateNodeGroupImages(self, initrd, kernel, longname):
         """
-            Update the node group initrd and kernel images
+            Update the node group initrd and kernel images.
         """
         ngs = self._db.NodeGroups.select()
         ngids = [row.ngid for row in self._db.NGHasComp.select()]
@@ -81,7 +81,7 @@ class InstallOSKitReceiver:
         try:
             self.kits, cd = self.get_kits_from_media(kit_media)
         except Exception, msg:
-            return False, "\nFailed to mount kit media:  %s" % msg
+            return False, "\nNot able to mount kit media: %s" % msg
 
         st, msg = self._check_for_duplicate_os_kit(self.kits)
         if st:
@@ -100,7 +100,7 @@ class InstallOSKitReceiver:
             self._addOSKit(kit_media, cd)
         except Exception, msg:
             self.kitops.unmountMedia()
-            return False, "\nFailed to add OS Kit:  %s" % msg
+            return False, "\nNot able to add OS Kit: %s" % msg
 
         return True, ''
 
@@ -115,7 +115,7 @@ class InstallOSKitReceiver:
 
     def verifyDistroVersionAndArch(self, distro):
         """
-        Verify that a distro matches the version and architecture
+        Verify that a distro matches the version and architecture.
         """
         verified = False
         err_list = []
@@ -131,7 +131,7 @@ class InstallOSKitReceiver:
         if ostype == self.bootstrap_os_type:
             osTypeMatch = True
         else:
-            err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
+            err_list.append('Expected OS:%s, provided OS:%s' % (self.bootstrap_os_type.ljust(10),
                                                    ostype or 'Unknown'))
 
         distro_ver = distro.getVersion() or 'Unknown'
@@ -141,14 +141,14 @@ class InstallOSKitReceiver:
         if self.bootstrap_os_version == distro_ver:
             versionMatch = True
         else:
-            err_list.append('Expected Major Version:%s Provided Major Version:%s' % (self.bootstrap_os_version.ljust(5),
+            err_list.append('Expected major version:%s, provided major version:%s' % (self.bootstrap_os_version.ljust(5),
                                                              distro_ver))
 
         if self.bootstrap_os_arch == distro.getArch():
             archMatch = True
         else:
             if distro.getArch() != 'noarch':
-                err_list.append('Expected Arch:%s\tProvided Arch:%s' % (self.bootstrap_os_arch,
+                err_list.append('Expected arch:%s, provided arch:%s' % (self.bootstrap_os_arch,
                                                            distro.getArch() or 'Unknown'))
 
         return osTypeMatch and versionMatch and archMatch, err_list
@@ -191,18 +191,18 @@ class InstallOSKitReceiver:
             distro_name = self.bootstrap_os_type
 
         if distro_name != self.bootstrap_os_type or \
-            distro_ver != self.bootstrap_os_version or \
-            distro_arch != self.bootstrap_os_arch:
+                distro_ver != self.bootstrap_os_version or \
+                distro_arch != self.bootstrap_os_arch:
             message.failure('Wrong OS disk. Inserted OS disk does ' \
-                                 'not match selected operating system: %s. ' \
-                                 'Please insert the correct disc.\n\n' \
-                                 'Expected name: %s ver: %s arch: %s\n' \
-                                 'Given name: %s ver: %s arch: %s' % \
-                                  (self.bootstrap_os_type,
-                                   self.bootstrap_os_type,
-                                   self.bootstrap_os_version,
-                                   self.bootstrap_os_arch,
-                                   distro_name, distro_ver, distro_arch), 0)
+                            'not match selected operating system: %s. ' \
+                            'Insert the correct disc.\n\n' \
+                            'Expected name: %s ver: %s arch: %s\n' \
+                            'Given name: %s ver: %s arch: %s' % \
+                            (self.bootstrap_os_type,
+                             self.bootstrap_os_type,
+                             self.bootstrap_os_version,
+                             self.bootstrap_os_arch,
+                             distro_name, distro_ver, distro_arch), 0)
 
             return False
 
@@ -213,20 +213,20 @@ class InstallOSKitReceiver:
             kit = self.kitops.prepareOSKit(self.kits)
         except (IOError,FileAlreadyExists,CopyError), e :
             self.kitops.unmountMedia()
-            message.display('Error reading OS disk. Please ensure that the ' + \
-                                     'OS disk is not corrupted or that' + \
-                                     'the CD/DVD drive is not faulty.')
+            message.display('Error reading OS disk. Ensure that the ' + \
+                            'OS disk is not corrupted or that ' + \
+                            'the CD/DVD drive is not faulty.')
             return
 
         except UnrecognizedKitMediaError, e:
             self.kitops.unmountMedia()
-            message.failure('Media Error : %s' % e.args[0], 0)
+            message.failure('Media Error: %s' % e.args[0], 0)
             return
 
         disks_cksum = []
 
         # Compute the checksum of the very first Kit CD
-        message.display('\nStarting checksum, this might take a while...')
+        message.display('\nStarting checksum. This might take a while...')
 
         #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(self.kitops.mountpoint)
@@ -246,7 +246,7 @@ class InstallOSKitReceiver:
                 if cdrom:
                     out, err = self.eject(cdrom)
                     if err:
-                        message.failure('CD/DVD Drive Eject Error: %s' % err, 0)
+                        message.failure('Not able to eject CD/DVD: %s' % err, 0)
 
                 if answer.lower() in ['no', 'n', '']:
                     break
@@ -267,7 +267,7 @@ class InstallOSKitReceiver:
                 # If the checksum has already existed (duplicate CD), then prompt user to insert the next CD
                 # for the current OS kit
                 if cur_disk_cksum in disks_cksum:
-                    message.display('\nDuplicate Media Inserted. This media has already been copied.')
+                    message.display('\nDuplicate media inserted. This media has already been copied.')
                     continue
 
                 disks_cksum.append(cur_disk_cksum)
@@ -295,7 +295,7 @@ class InstallOSKitReceiver:
             if self.os_kit:
                 return True, '\nCannot add more than one OS kit ' + \
                                'during installation. ' + \
-                               '\nYou can add additional OS kit using kusu-kitops later.'
+                               '\nYou can add additional OS kits using kusu-kitops later.'
 
         return False, ''
 
@@ -311,7 +311,7 @@ class InstallOSKitReceiver:
 
         base = [kit.rname for kit in self.kitops.listKit() if kit.rname == 'base']
         if base:
-            return True, '\nCannot add more than one base kit' +\
+            return True, '\nCannot add more than one base kit ' +\
                           'during installation.' +\
                           '\nYou can add additional base kits using kusu-kitops later.'
         return False, ''
@@ -327,7 +327,7 @@ class InstallOSKitReceiver:
 
             st, msg = self._check_for_duplicate_base_kit(kit)
             if st:
-                 message.warning("\n%s" %msg)
+                 message.warning("\n%s" % msg)
                  continue
 
             kitname = kit[1]['name']
@@ -337,10 +337,10 @@ class InstallOSKitReceiver:
                 retVal = True
             except (KitAlreadyInstalledError, InstallKitRPMError,
                         ComponentAlreadyInstalledError,UnsupportedKitAPIError), e:
-                msg += "\nInstallation of the kit '%s' failed %s" % (kitname, e)
+                msg += "\nNot able to install the kit '%s': %s" % (kitname, e)
                 message.failure(msg, 0)
             except AssertionError:
-                msg += "\nThe inserted disk could not be identified."
+                msg += "\nThe inserted disk cannot be identified."
                 message.failure(msg,0)
 
         self.kitops.unmountMedia()
@@ -374,11 +374,11 @@ class InstallOSKitReceiver:
                 if base == 'base':
                     if not self._has_base_kit(kits):
                         self.kitops.unmountMedia()
-                        msg = "\nCould not find the correct base kit in the media." +\
-                               "\nPlease make sure that the base kit is for the same distro and arch"
+                        msg = "\nCould not find the correct base kit in the media." + \
+                              "\nMake sure that the base kit is for the same distro and arch."
                         return [], msg
             except Exception, e:
-                msg = "\nPlease provide a valid iso file: %s" % e
+                msg = "\nProvide a valid iso file: %s" % e
                 return [], msg
 
         return kits, ''
@@ -388,7 +388,7 @@ class InstallOSKitReceiver:
         try:
             kits, cd = self.get_kits_from_media(kit_media)
         except Exception, msg:
-            return False, "\nFailed to mount kit media:  %s" % msg
+            return False, "\nNot able to mount kit media: %s" % msg
 
         kits = self.selectKits(kits)
         if kits:
@@ -407,11 +407,11 @@ class InstallOSKitReceiver:
 
         for kit in kits:
             try:
-                message.display("\nDeleting kit %s" %kit.rname)
+                message.display("\nDeleting kit %s" % kit.rname)
                 self.kitops.deleteKit(del_name=kit.rname, del_version=kit.version, del_arch=kit.arch)
             except DeleteKitsError, msg:
                 return False, msg
-            message.display("\nKit %s deleted successfully" %kit.rname)
+            message.display("\nKit %s deleted successfully." % kit.rname)
 
         return True, ''
 
@@ -448,7 +448,7 @@ class InstallOSKitReceiver:
     def prompt_for_kit(self):
         kit_iso = ""
         while not os.path.exists(kit_iso):
-            kit_iso = message.input("Please provide path to ISO image or mount point: ")
+            kit_iso = message.input("Provide the path to the ISO image or mount point: ")
             if not os.path.exists(kit_iso):
                 message.failure("The specified path or file does not exist.",0)
 
@@ -463,7 +463,7 @@ class InstallOSKitReceiver:
 
         retVal, msg = self.install_extra_kits(kits)
         if retVal:
-            msg = "\nBase kit Installation Succeded."
+            msg = "\nBase kit installation succeded."
 
         self.installedBootMediaKits = retVal
         return retVal, msg
@@ -486,7 +486,7 @@ class InstallOSKitReceiver:
 
     def selectKits(self, kits, policy='add'):
         """
-        From a list of kits select kits to add/delete.
+        From a list of kits, select kits to add/delete.
         """
         if len(kits) <= 1:
             return kits
@@ -507,7 +507,7 @@ class InstallOSKitReceiver:
                    "or ENTER to %s none:" % policy).strip()
             res = [x.strip() for x in res.split(',')]
             if res == ['']:
-                message.warning('No kits selected', 0)
+                message.warning('No kits selected.', 0)
                 return selected_kits
 
             if res == ['all']:

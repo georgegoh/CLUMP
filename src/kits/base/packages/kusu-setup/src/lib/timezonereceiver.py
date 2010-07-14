@@ -40,7 +40,7 @@ class TimezoneReceiver(object):
     def probe_timezone(self):
         message.display("Probing for timezone settings")
         if not path(TIMEZONE_FILE).exists():
-            raise KusuProbePluginError, "Kusu Installer failed to probe timezone."
+            raise KusuProbePluginError, "Not able to probe the timezone setting."
 
         #Get the zone
         command = GREP_ZONE_COMMAND +  TIMEZONE_FILE
@@ -50,13 +50,13 @@ class TimezoneReceiver(object):
              try:
                  self._timezone = out.rstrip().split('=')[1]
              except Exception, msg:
-                 raise KusuProbePluginError, "Kusu Installer failed to probe timezone zone. %s" % msg
+                 raise KusuProbePluginError, "Not able to probe the timezone setting. %s" % msg
         else:
-            raise KusuProbePluginError, "Kusu Installer failed to probe timezone zone."
+            raise KusuProbePluginError, "Not able to probe the timezone setting."
 
 
         #check if UTC is enabled
-        command = GREP_UTC_COMMAND +  TIMEZONE_FILE
+        command = GREP_UTC_COMMAND + TIMEZONE_FILE
         run_cmd = subprocess.Popen(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         out, err = run_cmd.communicate()
         if out:
@@ -66,9 +66,9 @@ class TimezoneReceiver(object):
                  else:
                     self._utc = 0
              except Exception, msg:
-                 raise KusuProbePluginError, "Kusu Installer failed to probe timezone utc. %s" % msg
+                 raise KusuProbePluginError, "Not able to probe the timezone's utc setting. %s" % msg
         else:
-            raise KusuProbePluginError, "Kusu Installer failed to probe timezone utc."
+            raise KusuProbePluginError, "Not able to probe the timezone's utc setting."
 
 
         message.success()

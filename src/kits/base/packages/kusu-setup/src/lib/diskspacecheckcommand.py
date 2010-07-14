@@ -23,13 +23,14 @@ import message
 
 class DiskSpaceCheckCommand(Command):
     """
-    This is the command class for checking requisite amount of diskspace in the system
+    This is the command class for checking requisite amount of diskspace
+    in the system.
     """
     def __init__(self, receiver):
         self._receiver = receiver
 
     def show_partition_list(self, partitions):
-        message.display("\nSelect one of the following mountpoints where kusu should place it's '/depot' folder:")
+        message.display("\nSelect one of the following mountpoints where Kusu should place its '/depot' folder:")
         count = 1
         for (mountpoint, size) in partitions:
             message.display("\n\t %d) MountPoint: '%s' FreeSpace: '%sB' " %(count, mountpoint, size))
@@ -39,7 +40,7 @@ class DiskSpaceCheckCommand(Command):
         partitions = self._receiver.freeDiskSpace
 
         if len(partitions) == 1 and partitions[0][0] == '/depot':
-            message.display("\nKusu Setup has found valid '/depot' mountpoint to place it's '/depot' folder.")
+            message.display("\nKusu Setup has found valid '/depot' mountpoint to place its '/depot' folder.")
             self._proceedStatus = True
             self.depot_partition = partitions[0]
             return
@@ -57,11 +58,11 @@ class DiskSpaceCheckCommand(Command):
                 else:
                     value = None
                     self.show_partition_list(partitions)
-                    message.display("\nInvalid selection. Please select a number that corresponds to a mountpoint in the given list.")
+                    message.display("\nSelection is not valid. Choose correct number from the given options.")
 
             except ValueError:
                 #in case non-integer selections or alphabetic chars are entered
                 self.show_partition_list(partitions)
-                message.display("\nInvalid selection. Please select a number that corresponds to a mountpoint in the given list.")
+                message.display("\nSelection is not valid. Choose correct number from the given options.")
 
 

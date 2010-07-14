@@ -29,7 +29,7 @@ from kusu.core import netutil
 
 class InitKusuDBReceiver:
     """
-    This class initializes the sqlite kusudb
+    This class initializes the sqlite kusudb.
     """
     def __init__(self, kusu_db):
         self._db = kusu_db
@@ -41,23 +41,20 @@ class InitKusuDBReceiver:
 
         provision_nic, provision_nic_props = nicCheck.provisionInterfaceTuple
 
-        #row = self.__db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
-        #row = self.__db.AppGlobals.select_by(kname = 'PIXIE_ROOT')
-        #row = self.__db.AppGlobals.select_by(kname = 'DEPOT_DOCS_ROOT')
-
         #insert basic data into DB
         # Insert into appglobals table
-        # Get the hostname and PublicDNSZone from fqdn name.
 
+        # Get the hostname and PublicDNSZone from fqdn name.
         hostname = envCheck.pub_fqdn.split('.')[0]
         pub_domain = envCheck.pub_fqdn.split('.',1)[-1]
+
         # Get the private DNSZone from the prov_fqdn
 
         # update InstallerServeDHCP and InstallerServeDNS
         appglobals = self._db.AppGlobals.selectone_by(kname='InstallerServeDHCP')
-        appglobals.kvalue=dhcpCheck.dhcpLocality
+        appglobals.kvalue = dhcpCheck.dhcpLocality
         appglobals = self._db.AppGlobals.selectone_by(kname='InstallerServeDNS')
-        appglobals.kvalue=dhcpCheck.dhcpLocality
+        appglobals.kvalue = dhcpCheck.dhcpLocality
 
         #add in PrimaryInstaller, DNSZone and PublicDNSZone name to DB
         self._db.AppGlobals(kname='PrimaryInstaller', kvalue=hostname)
@@ -141,8 +138,6 @@ class InitKusuDBReceiver:
         provision_network.nodegroups.append(self._db.NodeGroups.selectone_by(ngname='compute-diskless'))
         provision_network.save()
         provision_network.flush()
-
-
 
         #node = self._db.Nodes(name=hostname)
         # Default name of the installer node is master, update this value.

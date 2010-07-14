@@ -24,7 +24,7 @@ import message
 
 class DhcpCheckCommand(Command):
     """
-    This is the command class for verifying DHCP environment
+    This is the command class for verifying DHCP environment.
     """
     def __init__(self, receiver):
         super(DhcpCheckCommand, self).__init__()
@@ -36,26 +36,26 @@ class DhcpCheckCommand(Command):
         """
             Ask the user whether their DHCP server is to be run locally or externally
         """
-        message.display("\nPlease indicate whether you are running a local (master node) or external (on attached network) DHCP server for your provisioning network")
-        message.display("\n\t1) Local DHCP Server")
-        message.display("\n\t2) External DHCP Server")
+        message.display("\nIndicate whether you are running a local (master node) or external (on attached network) DHCP server for your provisioning network")
+        message.display("\n\t1) Local DHCP server")
+        message.display("\n\t2) External DHCP server")
 
     def prompt_for_dns_locality(self):
         """
-            Ask the user whether their Domain Namespace server is to be run locally or externally
+            Ask the user whether their Domain Name server is to be run locally or externally
         """
-        message.display("\nPlease indicate whether you are running a local (master node) or external (on attached network) Domain name server for your provisioning network")
-        message.display("\n\t1) Local Domain Namespace Server(DNS)")
-        message.display("\n\t2) External Domain Namespace Server(DNS)")
+        message.display("\nIndicate whether you are running a local (master node) or external (on attached network) Domain Name server for your provisioning network")
+        message.display("\n\t1) Local Domain Name Server (DNS)")
+        message.display("\n\t2) External Domain Name Server (DNS)")
 
     def execute(self):
 
         ##Ask the user if have external or local DHCP for the provisioning network.
         while True:
             self.prompt_for_dhcp_locality()
-            dhcpLocality = message.input("\nPlease enter the number corresponding to your selection: [1]")
-            if strip(dhcpLocality) not in ["1","2",""]:
-                message.display("\nInvalid selection. Please choose either (1) or (2) from the given options.")
+            dhcpLocality = message.input("\nEnter the number corresponding to your selection: [1]")
+            if strip(dhcpLocality) not in ["1", "2", ""]:
+                message.display("\nSelection is not valid. Choose either (1) or (2) from the given options.")
             else:
                 break
 
@@ -65,9 +65,9 @@ class DhcpCheckCommand(Command):
 
         while True:
             self.prompt_for_dns_locality()
-            dnsLocality = message.input("\nPlease enter the number corresponding to your selection: [1]")
-            if strip(dnsLocality) not in ["1","2",""]:
-                message.display("\nInvalid selection. Please choose either (1) or (2) from the given options.")
+            dnsLocality = message.input("\nEnter the number corresponding to your selection: [1]")
+            if strip(dnsLocality) not in ["1", "2", ""]:
+                message.display("\nSelection is not valid. Choose either (1) or (2) from the given options.")
             else:
                 break
 
@@ -80,11 +80,11 @@ class DhcpCheckCommand(Command):
         if dnsLocality == "":
             dnsLocality = "1"
 
-
         if dhcpLocality == "1":
             self.dhcpLocality = 1
         else:
             self.dhcpLocality = 0
+
         if dnsLocality == "1":
             self.dnsLocality = 1
         else:

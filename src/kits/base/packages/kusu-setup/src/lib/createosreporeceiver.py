@@ -36,13 +36,11 @@ REPOMAN_REFRESH_REPO_COMMAND = 'kusu-repoman -u -r %s'
 
 class CreateOSRepoReceiver:
     """
-    This class creates/initializes the OS repo
+    This class creates/initializes the OS repo.
     """
     def __init__(self, db):
-        #self.__db = db.DB(self.dbdriver, self.dbdatabase, self.dbuser, self.dbpassword)
         self.__db = db
 
-        #self._db = db.DB(self.dbdriver, self.dbdatabase, self.dbuser, self.dbpassword)
     def verify_if_repo_exists(self):
         if not self.__db.Repos.select():
             return False
@@ -93,14 +91,13 @@ class CreateOSRepoReceiver:
         cmd = REPOMAN_REFRESH_REPO_COMMAND % (repo_name)
         out, err = runCommand(cmd)
         if err:
-            message.warning("\nThe repository was not properly refreshed.\n Please do a manual refresh once the installer exits.", 0)
+            message.warning("\nThe repository was not properly refreshed.\nDo a manual refresh once the installer exits.", 0)
         else:
             message.success()
 
-
     def makeRepo(self):
-        """ This method update's our temporary DELETEME repo, and creates the new repo with id 1000
-            This new repo must be refreshed.
+        """ This method updates our temporary DELETEME repo, and creates
+            the new repo with id 1000. This new repo must be refreshed.
         """
         #from kusu.repoman.repofactory import RepoFactory
 
@@ -163,10 +160,6 @@ class CreateOSRepoReceiver:
 
         return True
 
-
-    def dbTest(self):
-        os_kit_id =  self.__db.Kits.select_by(self.__db.Kits.c.isOS == True)[0]
-        print os_kit_id
 
 if __name__ == "__main__":
     cor = CreateOSRepoReceiver()

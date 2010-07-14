@@ -28,21 +28,6 @@ class RpmInstallCommand(Command):
         self._repoid = repoid
 
     def execute(self):
-
-        #installLocation = "/mnt//base" #FIXME:
-        #installLocation = message.input("Please enter location of Kusu RPMs: [/media/cdrom] ")
-
-
-        #if not os.path.exists(installLocation):
-        #    self._proceedStatus = False
-        #    self._quitMessage = "Invalid install location provided. Exiting..."
-        #    return
-
-        #if not self._receiver.verifyKusuDistroSupported(installLocation):
-	    #self._proceedStatus = False
-        #    self._quitMessage = "Kusu RPMs provided are not OS-compatible with the Installer machine."
-        #    return
-
         message.display("\nInstalling Kusu RPMs")
         status = self._receiver.installRPMs(self._repoid)
 
@@ -52,5 +37,5 @@ class RpmInstallCommand(Command):
         else:
             message.failure()
             self._proceedStatus = False
-            self._quitMessage = "\nRPM Installation failed. Exiting."
+            self._quitMessage = "\nNot able to install RPMs. Exiting."
 

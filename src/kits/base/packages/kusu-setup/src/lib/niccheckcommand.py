@@ -23,7 +23,7 @@ import message
 
 class NicCheckCommand(Command):
     """
-    This is the command class for gathering information on the provisioning network
+    This is the command class for gathering information on the provisioning network.
     """
     def __init__(self, receiver, configuredNicCount):
         super(NicCheckCommand, self).__init__()
@@ -41,15 +41,15 @@ class NicCheckCommand(Command):
         for interface in interfaces:
             if properties[interface]['ip'] is not None and properties[interface]['ip'].strip() != '':
                 if network_type == 'public':
-                    message.display("\n\t %d) Interface: %s, Ip: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask']))
+                    message.display("\n\t %d) Interface: %s, IP: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask']))
                     count += 1
                 elif network_type == 'provisioning':
-                    message.display("\n\t %d) Interface: %s, Ip: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask']))
+                    message.display("\n\t %d) Interface: %s, IP: %s, Netmask: %s " % (count, interface, properties[interface]['ip'], properties[interface]['netmask']))
                     count += 1
 
          # If we do not find any interface then exit
         if count == 1:
-            self._quitMessage = "Kusu setup could not detect any statically configured network interfaces\nfor use as your public network. At least TWO statically configured network interfaces\nare required to install Kusu."
+            self._quitMessage = "Not able to detect any statically configured network interfaces\nfor use as your public network. At least two statically configured network interfaces\nare required to install Kusu."
             self._proceedStatus = False
             return self._proceedStatus
         return True
@@ -65,9 +65,9 @@ class NicCheckCommand(Command):
                     break
                 else:
                     value = None
-                    message.display("\nInvalid selection. Select a number that corresponds to an interface in the above list.")
+                    message.display("\nSelection is not valid. Choose correct number from the given options.")
             except ValueError:
-                    message.display("\nInvalid selection. Select a number that corresponds to an interface in the above list.")
+                    message.display("\nSelection is not valid. Choose correct number from the given options.")
 
         return status, (interfaces[value], properties[interfaces[value]])
 

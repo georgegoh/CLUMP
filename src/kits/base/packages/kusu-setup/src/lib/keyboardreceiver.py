@@ -35,12 +35,12 @@ class KeyboardReceiver(object):
 
     def __init__(self, args=None):
         super(KeyboardReceiver, self).__init__()
-        self.keyboard_layout = None        
+        self.keyboard_layout = None
 
     def probe_keyboard(self):
         message.display("Probing keyboard settings")
         if not path(KEYBOARD_FILE).exists():
-            raise KusuProbePluginError, "Kusu Installer failed to probe keyboard layout."
+            raise KusuProbePluginError, "Not able to probe keyboard layout."
 
         command = GREP_COMMAND + KEYBOARD_FILE
         run_cmd = subprocess.Popen(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -49,21 +49,21 @@ class KeyboardReceiver(object):
              try:
                  self.keyboard_layout = out.rstrip().split('=')[1].split('.')[0]
              except:
-                 raise KusuProbePluginError, "Kusu Installer failed to probe keyboard layout."
+                 raise KusuProbePluginError, "Not able to probe keyboard layout."
         else:
             message.failure()
-            raise KusuProbePluginError, "Kusu Installer failed to probe keyboard layout."
+            raise KusuProbePluginError, "Not able to probe keyboard layout."
 
         message.success()
-        return True 
+        return True
 
     def get_keyboard_layout(self):
         """ This method returns the keyboard layout as probed by this class. """
-        return self.keyboard_layout 
+        return self.keyboard_layout
 
     keyboardLayout = property(get_keyboard_layout)
-    
- 
+
+
 if __name__ == "__main__":
     keyboard = KeyboardCommandReceiver()
     keyboard.run()

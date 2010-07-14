@@ -23,16 +23,16 @@ import message
 
 class InstallExtraKitCommand(Command):
     """
-    This is the command class for prompting and installing additional kits
+    This is the command class for prompting and installing additional kits.
     """
     def __init__(self, receiver):
         super(InstallExtraKitCommand, self).__init__()
         self._receiver = receiver
 
     def execute(self):
-        self._prompt_for_additional_kit()
+        self._prompt_for_additional_kits()
 
-    def _prompt_for_additional_kit(self):
+    def _prompt_for_additional_kits(self):
 
         input_msg = "\nChoose one of the following:" +\
                "\n[A]dd kit" +\
@@ -47,8 +47,8 @@ class InstallExtraKitCommand(Command):
                                           '1)\tCD/DVD drive \n'
                                           '2)\tISO image or mount point\n'
                                           '>> '))
-                except:
-                    message.display("Invalid option is given.")
+                except ValueError:
+                    message.display("Selection is not valid.")
                     continue
 
                 if value == 1:
@@ -62,7 +62,7 @@ class InstallExtraKitCommand(Command):
                     if not status:
                         message.display(msg)
                 else:
-                    message.display("Invalid option is given.")
+                    message.display("Selection is not valid.")
                     continue
             elif value.lower() in ['d']:
                 status, msg =  self._receiver.delete_kits()
@@ -71,15 +71,16 @@ class InstallExtraKitCommand(Command):
             elif value.lower() in ['c', '']:
                 break
             else:
-                message.display("Wrong Input enter [A|D|C]")
+                message.display("Input is not valid. Enter either A, D or C.")
                 continue
 
         kits = []
         kits = self._receiver.find_incompatible_kits()
         if kits:
             message.warning(msg, 0)
-            message.display('\nKusu setup is removing the incompatible kits')
+            message.display('\nKusu Setup is removing the incompatible kits.')
             self._receiver.delete_kits(kits)
-            self._prompt_for_additional_kit()
+            self._prompt_for_additional_kits()
 
         self._proceedStatus = True
+

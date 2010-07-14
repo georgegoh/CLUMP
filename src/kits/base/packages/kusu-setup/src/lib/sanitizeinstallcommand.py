@@ -23,7 +23,7 @@ import message
 
 class SanitizeInstallCommand(Command):
     """
-    This is the command class for the pre-install cleanup task
+    This is the command class for the pre-install cleanup task.
     """
     def __init__(self, receiver):
         super(SanitizeInstallCommand, self).__init__()
@@ -39,8 +39,7 @@ class SanitizeInstallCommand(Command):
 
             if not self.getYesNoAsBool("\nWould you like to proceed"):
                 self._proceedStatus = False
-                self._quitMessage = "User abort. Exiting..."
+                self._quitMessage = "Exiting as requested..."
             else:
                 self._receiver.cleanup()
-
 

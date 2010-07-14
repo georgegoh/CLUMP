@@ -69,11 +69,9 @@ class CleanupReceiver:
 
     def hasRPM(self, rpmName):
         outStr, errStr = runCommand("rpm -qai %s" % rpmName)
-        if outStr.find(rpmName) >= 0 :
+        if outStr.find(rpmName) >= 0:
             return True
-        else:
-            return False
-
+        return False
 
     def isDBAvailable(self):
         from kusu.core import database as db
@@ -96,13 +94,13 @@ class CleanupReceiver:
 
     def _get_pgpasswd(self):
         if os.path.exists("/opt/kusu/etc/pgdb.passwd"):
-                try:
-                    outStr, errStr = runCommand("cat /opt/kusu/etc/pgdb.passwd")
-                    passwd = outStr.strip()
-                except:
-                    pass
+            try:
+                outStr, errStr = runCommand("cat /opt/kusu/etc/pgdb.passwd")
+                passwd = outStr.strip()
+            except:
+                pass
 
-                return passwd
+            return passwd
         else:
             return ""
 
@@ -119,8 +117,6 @@ class CleanupReceiver:
         else:
             message.success()
 
-
-
         #Check for presence of kusudb
         message.display("\nChecking for presence of kusudb database")
 
@@ -131,15 +127,16 @@ class CleanupReceiver:
         else:
             message.success()
 
-
         #Check for presence of kusu rpms
         #FIXME: Check only for component-* rpms
         message.display("\nChecking for presence of Kusu RPMs")
 
-        if self.hasRPM("component-base-installer") or self.hasRPM("component-base-node") or self.hasRPM("component-gnome-desktop") :
+        if self.hasRPM("component-base-installer") or \
+                self.hasRPM("component-base-node") or \
+                self.hasRPM("component-gnome-desktop"):
             dirtyFlag = True
             self._need_to_remove_rpms = True
-            message.warning("\nKusu RPMS was found")
+            message.warning("\nKusu RPMs was found")
         else:
             message.success()
 
@@ -153,7 +150,7 @@ class CleanupReceiver:
         if self._dirtyFlag:
             #remove all RPMs
             if self._need_to_remove_rpms:
-                message.display("\nRemoving Component Kusu RPMs....")
+                message.display("\nRemoving Kusu component RPMs...")
                 outStr, errStr = runCommand("yum -y remove component-base-installer component-base-node component-gnome-desktop")
                 message.success()
 
@@ -164,7 +161,7 @@ class CleanupReceiver:
 
             #drop kusudb
             if self._need_to_dropdb:
-                message.display("\nDropping kusudb database....")
+                message.display("\nDropping kusudb database...")
                 #fetch kusudb password
                 try:
                     passwd = self._get_pgpasswd()
@@ -172,10 +169,10 @@ class CleanupReceiver:
                         outStr, errStr = runCommand(DROP_DB_COMMAND % passwd)
                         message.success()
                     else:
-                        message.failure("Failed to retrieve kusudb password. NOT dropping kusudb.")
+                        message.failure("Not able to retrieve kusudb password. kusudb is not dropped.")
 
                 except Exception , msg:
-                    message.failure("Failed to drop kusudb. %s" % msg)
+                    message.failure("Not able to drop kusudb. %s" % msg)
 
             #if os.path.exists('/root/kusu.db'):
             #    print "Removing sqlite database"
@@ -199,17 +196,9 @@ class CleanupReceiver:
                         #remove all kusu subfolders, leaving /depot intact
                         message.display('\n/depot is a mountpoint. Only removing kusu subfolders.')
 
-                        if os.path.exists('/depot/contrib'):
-                            shutil.rmtree('/depot/contrib')
-
-                        if os.path.exists('/depot/kits'):
-                            shutil.rmtree('/depot/kits')
-
-                        if os.path.exists('/depot/repos'):
-                            shutil.rmtree('/depot/repos')
-
-                        if os.path.exists('/depot/www'):
-                            shutil.rmtree('/depot/www')
+                        for subdir in ['contrib', 'kits', 'repos', 'www']:
+                            if os.path.exists('/depot/%s' % subdir):
+                                shutil.rmtree('/depot/%s' % subdir)
 
                         message.success()
 
@@ -218,4 +207,5 @@ class CleanupReceiver:
                         message.success()
 
                 except Exception, msg:
-                    message.failure("\nFailed to remove /depot. Folder. %s" % msg)
+                    message.failure("\nNot able to remove /depot folder. %s" % msg)
+

@@ -44,14 +44,14 @@ class LanguageReceiver(object):
         if out:
              self._language = out.split('=')[1].split('.')[0]
         else:
-             raise KusuProbePluginError, "Kusu installer could not figure out the system language."
+             raise KusuProbePluginError, "Not able to figure out the system language."
 
         message.success()
         return True
- 
+
     def get_lang(self):
-        """ Returns the selected language. """    
-        return self._language      
+        """ Returns the selected language. """
+        return self._language
 
     language = property(get_lang)
 
@@ -59,3 +59,4 @@ class LanguageReceiver(object):
 if __name__ == "__main__":
     lang = LanguageReceiver()
     lang.probe_locale()
+

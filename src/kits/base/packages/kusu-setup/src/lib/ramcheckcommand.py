@@ -25,14 +25,14 @@ RECOMMENDED_RAM_SIZE = 2048
 
 class RamCheckCommand(Command):
     """
-    This is the command class for checking requisite amount of RAM in the system
+    This is the command class for checking requisite amount of RAM in the system.
     """
     def __init__(self, receiver):
         self._receiver = receiver
 
     def execute(self):
         """
-            By default we require the master node to have at least 2Gb RAM
+            By default we require the master node to have at least 2GB RAM.
         """
 
         message.display("Checking if at least 2GB of RAM is present")
@@ -43,4 +43,5 @@ class RamCheckCommand(Command):
         else:
 
             self._proceedStatus = False
-            self._quitMessage = "\nInsufficient memory for a master node installation at least 2GB is required.\n You have only %dMB available " % int(ramSize)
+            self._quitMessage = "\nInsufficient memory for a master node installation. At least 2GB is required.\n You have only %dMB available." % int(ramSize)
+

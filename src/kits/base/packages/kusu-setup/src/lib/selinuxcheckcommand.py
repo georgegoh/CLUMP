@@ -32,7 +32,7 @@ class SELinuxCheckCommand(Command):
 
         if probe.getSelinuxStatus():
             self._proceedStatus = False
-            self._quitMessage = "SELinux is enabled. Kusu cannot be installed on a system with SELinux enabled. Please disable SELinux and restart the kusu-setup installation. NOTE: A system restart may be required after disabling SELinux"
+            self._quitMessage = "SELinux is enabled. Kusu cannot be installed on a system with SELinux enabled. Disable SELinux and then restart the kusu-setup installation. NOTE: A system restart may be required after disabling SELinux."
 
         else:
             self._proceedStatus = True

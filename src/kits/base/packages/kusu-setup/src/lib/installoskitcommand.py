@@ -23,7 +23,7 @@ import message
 
 class InstallOSKitCommand(Command):
     """
-    This is the command class for prompting and installing the OS kit
+    This is the command class for prompting and installing the OS kit.
     """
     def __init__(self, receiver):
         super(InstallOSKitCommand, self).__init__()
@@ -38,22 +38,22 @@ class InstallOSKitCommand(Command):
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
             except ValueError:
-                message.display("\nInvalid option is given.")
+                message.display("\nSelection is not valid.")
                 continue
 
             if value == 1:
                 #Prompt for and install the additional kits
-                message.input("Insert the CD/DVD media containing your KUSU Installation. Press ENTER to continue...")
+                message.input("Insert the CD/DVD media containing your Kusu Installation. Press ENTER to continue...")
                 status, msg = self._receiver.installKitsOnBootMedia('cdrom')
             elif value == 2:
                 status, msg = self._receiver.installKitsOnBootMedia('iso')
             else:
-                message.display("\nInvalid option is given.")
+                message.display("\nSelection is not valid.")
                 continue
 
             if not status:
                 message.display(msg)
-                message.display("\nInstallation can't continue until the 'base kit' has been installed")
+                message.display("\nInstallation cannot continue until the 'base kit' has been installed.")
                 self._proceedStatus = False
             else:
                 self._proceedStatus = True
@@ -67,7 +67,7 @@ class InstallOSKitCommand(Command):
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
             except ValueError:
-                message.display("\nInvalid option is given.")
+                message.display("\nSelection is not valid.")
                 continue
 
             if value == 1:
@@ -77,12 +77,12 @@ class InstallOSKitCommand(Command):
             elif value == 2:
                 status, msg = self._receiver.install_os_kit('iso')
             else:
-                message.display("\nInvalid option is given.")
+                message.display("\nSelection is not valid.")
                 continue
 
             if not status:
                 message.display(msg)
-                message.display("\nInstallation can't continue until the 'OS kit' has been installed")
+                message.display("\nInstallation cannot continue until the 'OS kit' has been installed.")
                 self._proceedStatus = False
             else:
                 self._proceedStatus = True

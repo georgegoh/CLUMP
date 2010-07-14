@@ -38,7 +38,7 @@ class RamCheckReceiver(object):
 
     def get_ram_size(self):
         """
-            Returns the amount of RAM in the system
+            Returns the amount of RAM in the system.
         """
         grep_command = GREP_COMMAND + '^MemTotal\s*:' + ' %s' % PROC_MEMINFO
         run_cmd = subprocess.Popen(grep_command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -47,7 +47,7 @@ class RamCheckReceiver(object):
         if out:
              host_memsize = convert_to_megabytes(out.split()[1], out.split()[2])
         else:
-            raise KusuProbePluginError, "Failed to detect amount of RAM in system"
+            raise KusuProbePluginError, "Not able to detect amount of RAM in system."
 
         return host_memsize
 
@@ -57,3 +57,4 @@ class RamCheckReceiver(object):
 if __name__ == "__main__":
     mem = RAMCheckReceiver()
     mem.run()
+

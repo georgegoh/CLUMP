@@ -89,17 +89,6 @@ gpgcheck=0
 
         return yumCmd.returncode == 0 #assume success if returncode == 0
 
-    def verifyKusuDistroSupported(self, basedir):
-        kit_rpm_path = self.retrieveKitRPM(basedir)
-        if path(kit_rpm_path).exists():
-            kit_rpm = RPM(kit_rpm_path)
-            kops = KitOps()
-            kit, component = kops.getKitRPMInfo(kit_rpm)
-            return self.verifyRPMDistro(component)
-        else:
-            print "kit-base RPM cannot be found. Please check the location of KUSU RPMS."
-            return False
-
     def retrieveKitRPM(self, basedir):
         basedir = path(basedir)
         if basedir.exists():
@@ -117,3 +106,4 @@ gpgcheck=0
             if installer.distroName.lower() in osfamily.getOSNames('rhelfamily') and base_os_name == 'rhelfamily':
                 return True
         return False
+

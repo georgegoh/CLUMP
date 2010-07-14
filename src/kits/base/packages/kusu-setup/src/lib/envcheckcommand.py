@@ -25,7 +25,8 @@ import message
 
 class EnvCheckCommand(Command):
     """
-    This is the command class for checking/probing for timestamp, language, FQDN and Keyboard
+    This is the command class for checking/probing for timestamp, language,
+    FQDN and Keyboard.
     """
     def __init__(self, provisioningInterfaceTuple, publicInterfaceTuple, fqdn_receiver):
 
@@ -47,5 +48,5 @@ class EnvCheckCommand(Command):
         except KusuProbePluginError, msg:
             message.failure()
             self._proceedStatus = False
-            self._quitMessage = "Failed to properly detect system settings [%s]. Quitting." % msg
+            self._quitMessage = "Not able to properly detect system settings [%s]. Quitting." % msg
 
