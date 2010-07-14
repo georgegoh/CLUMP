@@ -1,22 +1,22 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# 
-# $Id$ 
-# 
-# Copyright (C) 2010 Platform Computing Inc. 
-# 
-# This program is free software; you can redistribute it and/or modify it under 
-# the terms of version 2 of the GNU General Public License as published by the 
-# Free Software Foundation. 
-# 
-# This program is distributed in the hope that it will be useful, but WITHOUT 
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
-# details. 
-# 
-# You should have received a copy of the GNU General Public License along with: 
-# this program; if not, write to the Free Software Foundation, Inc., 51 
-# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA 
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with:
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
 import os
@@ -27,7 +27,6 @@ from path import path
 from Cheetah.Template import Template
 
 from kusu.repoman.tools import getConfig
-from kusu.driverpatch import DriverPatchController
 from kusu.util.errors import DirDoesNotExistError
 from kusu.util.errors import InvalidInitrd
 from kusu.util.errors import UnableToUpdateInitrdKernel
@@ -63,14 +62,14 @@ class BaseUpdate:
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
-        
+
         self.prefix = prefix
         self.db = db
         self.configFile = None
 
         self.proxy = None
 
-        self.updates_root = updates_root 
+        self.updates_root = updates_root
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_UPDATES_ROOT')
         if row: self.updates_root = row[0].kvalue
         if self.updates_root[0] == '/': self.updates_root = self.updates_root[1:]
@@ -100,7 +99,7 @@ class BaseUpdate:
     def makeUpdateKit(self, pkgs):
         """Makes the update kit"""
 
-        kitName = '%s-updates' % self.os_name 
+        kitName = '%s-updates' % self.os_name
         kitVersion = self.os_version
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
@@ -119,18 +118,18 @@ class BaseUpdate:
             # Use abs symlink. Relative links does not work
             # when kusu-buildkit prepares temp new directory for
             # making kit
-            file.symlink(dest) 
-    
+            file.symlink(dest)
+
         kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
         self.makeKit(tempkitdir, kitdir, kitName)
-        
+
         return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
 
     def getNextRelease(self, kitName, kitVersion, kitArch):
 
         # Find max version
         kits = self.db.Kits.select_by(rname = kitName, version=kitVersion, arch=kitArch)
-       
+
         maxRelease = 0
         for kit in kits:
             if kit.release > maxRelease:
@@ -139,10 +138,11 @@ class BaseUpdate:
         return maxRelease + 1
 
     def updateInitrdVmlinuz(self, kitVersion, repo, kernelPkgs):
-        
+
         if not kernelPkgs:
             return
 
+        from kusu.driverpatch import DriverPatchController
         controller = DriverPatchController(self.db)
 
         tftpbootdir = path(self.prefix / 'tftpboot' / 'kusu')
@@ -155,15 +155,15 @@ class BaseUpdate:
                 nginitrd = ng.initrd
                 if not nginitrd:
                     raise InvalidInitrd, 'initrd not found for nodegroup: %s' % ng.ngname
-                
-                else:    
+
+                else:
                     initrdpath = tftpbootdir / nginitrd
                     if not initrdpath.exists():
                         raise InvalidInitrd, 'initrd: %s does not exists' % initrdpath
-     
+
                 newinitrd = 'initrd-%s-%s-%s.%s.img' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
                 newkernel = 'kernel-%s-%s-%s.%s' % (self.os_name, kitVersion, self.os_arch, ng.ngid)
-                
+
                 cmd = 'kusu-driverpatch -u nodegroup id=%s initrd=%s kernel=%s' % (ng.ngid, newinitrd, newkernel)
                 p = subprocess.Popen(cmd,
                                      shell=True,
@@ -183,7 +183,7 @@ class BaseUpdate:
                                      stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 retcode = p.returncode
-   
+
                 if retcode:
                     raise UnableToUpdateInitrdKernel, 'kusu-buildinitrd failed to run'
 
@@ -196,7 +196,7 @@ class BaseUpdate:
                                      stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 retcode = p.returncode
-                
+
                 if retcode:
                     raise UnableToUpdateInitrdKernel, 'kusu-boothost failed to run'
 
@@ -204,16 +204,16 @@ class BaseUpdate:
         from kusu.kitops import kitops
 
         ko = kitops.KitOps()
-        ko.setDB(self.db) 
+        ko.setDB(self.db)
         ko.setKitMedia(kitdir)
         kits = ko.addKitPrepare()
 
         for kit in kits:
-            
+
             kitName = '%s-updates' % self.os_name
             if kit[1]['name'] == kitName:
                 kid = ko.addKit(kit, api='0.2')[0]
-                
+
                 if kitdir.exists():
                     kitdir.rmtree()
 
@@ -221,10 +221,10 @@ class BaseUpdate:
                 updateKit.arch = self.os_arch
                 updateKit.save_or_update()
                 updateKit.flush()
-        
+
                 return updateKit
-    
-        raise UnrecognizedKitMediaError, "Update kit cannot be found"    
+
+        raise UnrecognizedKitMediaError, "Update kit cannot be found"
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
 
@@ -242,7 +242,7 @@ class BaseUpdate:
         else:
             ns['kitarch'] = self.os_arch
 
-            
+
         ns['kitarch'] = 'noarch'
         ns['kitdesc'] = 'Updates for %s %s %s on %s' % \
                         (self.os_name, self.os_version, self.os_arch, time.asctime())
@@ -252,18 +252,18 @@ class BaseUpdate:
         kpkgs = self.getKernelPackagesList(tempkitdir)
         ns['kernels'] = []
         for kpkg in kpkgs:
-            kpkg = rpmtool.RPM(str(kpkg))            
-            filename = kpkg.getFilename().basename() 
+            kpkg = rpmtool.RPM(str(kpkg))
+            filename = kpkg.getFilename().basename()
             desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
             ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
                                   'release':kpkg.release, 'filename':filename})
- 
-        t = Template(file=str(template), searchList=[ns])  
+
+        t = Template(file=str(template), searchList=[ns])
         f = open(dest, 'w')
         f.write(str(t))
         f.close()
-   
-        return kpkgs 
+
+        return kpkgs
 
     def prepKit(self, workingDir, kitName):
         cmd = 'kusu-buildkit new kit=%s' % kitName
@@ -279,7 +279,7 @@ class BaseUpdate:
             return True
         else:
             raise UnableToPrepUpdateKit, out
-    
+
     def makeKit(self, workingDir, destDir, kitName):
         cmd = 'kusu-buildkit make kit=%s dir=%s' % (kitName, destDir)
         p = subprocess.Popen(cmd,
@@ -345,13 +345,13 @@ class BaseUpdate:
         if not http_proxy and not https_proxy:
             #neither http nor https proxy
             return None
-        
+
         if http_proxy:
             proxy['http'] = http_proxy
 
         #if not set https, then default use http proxy
         proxy['https'] = https_proxy or http_proxy
-                    
+
         return Proxy(proxy)
 
     def setConfig(self, configFile):
@@ -365,10 +365,10 @@ class YumUpdate(BaseUpdate):
     def getURI(self):
         """Returns the relavant uri of yum repos"""
         raise NotImplementedError
-        
+
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
-    
+
         dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
@@ -411,12 +411,12 @@ class YumUpdate(BaseUpdate):
             else:
                 # No such existing rpm, so download it
                 downloadPkgs.append(r)
-                            
+
         # Download the packages
         for r in downloadPkgs:
             filename = r.getFilename()
             dest = path(dir / filename.basename())
-            
+
             if dest.exists():
                 try:
                     rpmtool.RPM(str(dest))
@@ -434,7 +434,7 @@ class YumUpdate(BaseUpdate):
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
         pkgs = rpmPkgs.getList()
-        
+
         newKernels = rpmtool.RPMCollection()
         for pkg in pkgs:
             if pkg.getName().startswith('kernel'):
@@ -461,7 +461,7 @@ class YumUpdate(BaseUpdate):
 
                         if c.RPMExists(name, arch):
                             if r > c[name][arch][0]:
-                                c[name][arch][0] = r 
+                                c[name][arch][0] = r
                         else:
                             c.add(r)
 
@@ -502,7 +502,7 @@ class RHNUpdate(BaseUpdate):
         dir = path(self.prefix) / self.updates_root / self.os_name / self.os_version / self.os_arch
         if not dir.exists():
             dir.makedirs()
-        
+
         username, password, yumrhn, url, serverid = self.getRHN()
 
         c = RHNUpdateCommand(username = username, password = password,
@@ -512,12 +512,12 @@ class RHNUpdate(BaseUpdate):
                              proxy = self.proxy)
 
         downloadPkgs, systemid = c.execute()
-        
+
         for channel, pkgs in downloadPkgs.items():
             for r in pkgs:
                 filename = r.getFilename()
                 dest = path(dir / filename.basename())
-                
+
                 if dest.exists():
                     try:
                         rpmtool.RPM(str(dest))
@@ -537,7 +537,7 @@ class RHNUpdate(BaseUpdate):
 
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
         pkgs = rpmPkgs.getList()
-        
+
         newKernels = rpmtool.RPMCollection()
         for pkg in pkgs:
             if pkg.getName().startswith('kernel'):
@@ -579,7 +579,7 @@ class YouUpdate(BaseUpdate):
 
     def getUpdates(self):
         """Gets the updates and writes them into the destination dir"""
-   
+
         dir = path(self.prefix) / self.updates_root / self.os_name / self.getOSVersion() / self.os_arch
         if not dir.exists():
             dir.makedirs()
@@ -588,7 +588,7 @@ class YouUpdate(BaseUpdate):
 
         if self.os_arch == 'i386':
             os_arch = 'i586'
-        else:    
+        else:
             os_arch = self.os_arch
 
         c = YouUpdateCommand(username = username, password = password,
@@ -601,7 +601,7 @@ class YouUpdate(BaseUpdate):
         for r in downloadPkgs:
             filename = r.getFilename()
             dest = path(dir / filename.basename())
-        
+
             if dest.exists():
                 try:
                     rpmtool.RPM(str(dest))
@@ -616,10 +616,10 @@ class YouUpdate(BaseUpdate):
                              proxy=self.proxy,
                              overwrite=False)
             status , dest = fc.execute()
- 
+
         rpmPkgs = rpmtool.getLatestRPM([dir], True)
         pkgs = rpmPkgs.getList()
-        
+
         newKernels = rpmtool.RPMCollection()
         for pkg in pkgs:
             if pkg.getName().startswith('kernel'):
@@ -632,11 +632,11 @@ class YouUpdate(BaseUpdate):
                 newKernels.add(newKernelPkg)
 
         return (pkgs, newKernels)
-    
+
     def makeUpdateKit(self, pkgs):
         """Makes the update kit"""
 
-        kitName = '%s-updates' % self.os_name 
+        kitName = '%s-updates' % self.os_name
         kitVersion =  self.getOSVersion()
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
@@ -655,11 +655,11 @@ class YouUpdate(BaseUpdate):
             # Use abs symlink. Relative links does not work
             # when kusu-buildkit prepares temp new directory for
             # making kit
-            file.symlink(dest) 
-    
+            file.symlink(dest)
+
         kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
         self.makeKit(tempkitdir, kitdir, kitName)
-        
+
         return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
@@ -687,28 +687,28 @@ class YouUpdate(BaseUpdate):
         kpkgs = self.getKernelPackagesList(tempkitdir, r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
         ns['kernels'] = []
         for kpkg in kpkgs:
-            kpkg = rpmtool.RPM(str(kpkg))            
-            filename = kpkg.getFilename().basename() 
+            kpkg = rpmtool.RPM(str(kpkg))
+            filename = kpkg.getFilename().basename()
             desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
             ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
                                   'release':kpkg.release, 'filename':filename})
- 
-        t = Template(file=str(template), searchList=[ns])  
+
+        t = Template(file=str(template), searchList=[ns])
         f = open(dest, 'w')
         f.write(str(t))
         f.close()
-   
-        return kpkgs 
+
+        return kpkgs
 
 
 class OpenSUSEUpdate(YumUpdate):
     def __init__(self, os_version, os_arch, prefix, db):
         YumUpdate.__init__(self, 'opensuse', os_version, os_arch, prefix, db)
- 
+
     def makeUpdateKit(self, pkgs):
         """Makes the update kit"""
 
-        kitName = '%s-updates' % self.os_name 
+        kitName = '%s-updates' % self.os_name
         kitVersion =  self.getOSVersion()
         kitRelease = self.getNextRelease(kitName, kitVersion, self.os_arch)
         kitArch = 'noarch'
@@ -727,11 +727,11 @@ class OpenSUSEUpdate(YumUpdate):
             # Use abs symlink. Relative links does not work
             # when kusu-buildkit prepares temp new directory for
             # making kit
-            file.symlink(dest) 
-    
+            file.symlink(dest)
+
         kernelPkgs = self.makeKitScript(tempkitdir, kitName, kitVersion, kitRelease)
         self.makeKit(tempkitdir, kitdir, kitName)
-        
+
         return (kitdir, kitName, kitVersion, kitRelease, kitArch, kernelPkgs)
 
     def makeKitScript(self, tempkitdir, kitName, kitVersion, kitRelease):
@@ -759,18 +759,18 @@ class OpenSUSEUpdate(YumUpdate):
         kpkgs = self.getKernelPackagesList(tempkitdir, r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
         ns['kernels'] = []
         for kpkg in kpkgs:
-            kpkg = rpmtool.RPM(str(kpkg))            
-            filename = kpkg.getFilename().basename() 
+            kpkg = rpmtool.RPM(str(kpkg))
+            filename = kpkg.getFilename().basename()
             desc = ' %s for %s' % (kpkg.summary,kpkg.arch)
             ns['kernels'].append({'name':kpkg.name, 'version':kpkg.version, \
                                   'release':kpkg.release, 'filename':filename})
- 
-        t = Template(file=str(template), searchList=[ns])  
+
+        t = Template(file=str(template), searchList=[ns])
         f = open(dest, 'w')
         f.write(str(t))
         f.close()
-   
-        return kpkgs 
+
+        return kpkgs
 
 
 

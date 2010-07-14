@@ -207,10 +207,6 @@ install -m644 kusu-base-node/lib/kusu/ipfun.py $RPM_BUILD_ROOT/%{_kusu}/lib/pyth
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
 install -m644 kusu-repoman/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
 
-# for pulling in kusu-driverpatch
-install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-
 # for pulling in kusu-createrepo
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
 install -d $RPM_BUILD_ROOT/%{_kusu}/sbin
