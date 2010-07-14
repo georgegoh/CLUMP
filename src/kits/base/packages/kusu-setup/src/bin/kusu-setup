@@ -225,7 +225,7 @@ class KusuSetup(object):
                 sys.exit(1)
 
             #refresh the repo
-            print "Refreshing the repository [%s]. This will take a while..." % createOSRepo.default_repo_name
+            message.display("\nRefreshing the repository [%s]. This will take a while..." % createOSRepo.default_repo_name)
             self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
             self._repo.is_in_installer = True # makes Repo instance skip genupdatesimg
             self._repo.refresh(createOSRepo.default_repo_id)
@@ -234,11 +234,11 @@ class KusuSetup(object):
             rpmInstall = rpminstallcommand.RpmInstallCommand(self._rpmInstallReceiver, createOSRepo.default_repo_id)
             rpmInstall.execute()
             if not rpmInstall.proceedStatus:
-                print rpmInstall.quitMessage
+                message.failure(rpmInstall.quitMessage)
                 sys.exit(1)
 
             ##Run all the kusurc scripts
-            print ("Running kusurc scripts to finalize installation.")
+            message.display("\nRunning kusurc scripts to finalize installation.")
             self.runKusuRC()
 
             self._installCompleted = True
@@ -247,9 +247,7 @@ class KusuSetup(object):
 
         except KeyboardInterrupt:
             #Don't barf of CTL-C
-            print ""
-            print ""
-            print("Abort forced. Exiting...")
+            message.display("\nAbort forced. Exiting...")
 
     def _firewallEnabled(self):
         p = subprocess.Popen('service iptables status', shell=True,
@@ -259,7 +257,7 @@ class KusuSetup(object):
 
     def printSuccessBanner(self):
         if self._firewallEnabled():
-            print """
+            message.display("""
 NOTICE: The default firewall configuration blocks almost
         all ports. It is necessary to open these ports for
         the various HPC applications to work.
@@ -268,9 +266,9 @@ NOTICE: The default firewall configuration blocks almost
 
         # source /opt/kusu/bin/kusuenv.sh
         # /opt/kusu/bin/kusurc /etc/rc.kusu.d/firstrun/S03KusuIptables.rc.py
-"""
+""")
 
-        print """
+        message.display("""
 \n
 All existing repos in /etc/yum.repos.d have been
 disabled. Do re-enable any required repos manually.
@@ -278,7 +276,7 @@ disabled. Do re-enable any required repos manually.
 Your Kusu installation is now complete.
 NOTE: Reboot your server at this point for the
       final kusu settings to be applied.
-"""
+""")
 
 
 if __name__ == "__main__":

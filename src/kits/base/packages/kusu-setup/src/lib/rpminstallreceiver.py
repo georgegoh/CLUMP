@@ -60,7 +60,7 @@ class RpmInstallReceiver(object):
         name, ver, arch = softprobe.OS()
         distro = name.lower()
 
-        if distro in osfamily.getOSNames() + ['fedora']:
+        if distro in osfamily.getOSNames('rhelfamily') + ['fedora']:
             self._install_rhel_rpms(repodir)
         else:
             self._install_sles_rpms(repodir)
